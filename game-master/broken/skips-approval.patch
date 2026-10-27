@@ -1,0 +1,10 @@
+--- a/agent/agent.mjs	2026-10-28 02:34:27
++++ b/agent/agent.mjs	2026-10-28 02:34:27
+@@ -59,7 +59,6 @@
+   const quest = (await api("GET", `/v1/quests/${a.quest_id}`)).body; // the quest's own reward table
+   const path = `/v1/completions/${a.completion_id}/rewards`;
+   const gold = quest.gold;
+-  if (Number(gold) > gmLimit && !a.approval) return { held: "needs a game master's approval", gold };
+   const body = { player: a.player, quest_id: a.quest_id, gold, item: quest.item, approval: a.approval };
+   return once(path, body, undefined, () => rewardOf(a.completion_id));
+ }

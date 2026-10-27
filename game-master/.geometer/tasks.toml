@@ -1,0 +1,21 @@
+# What the agent is asked to do. Each event is one quest completion from the game server.
+
+[[task]]
+id = "reward-one"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"events":[{"quest_id":"q-1","completion_id":"cmp-1","player":"ana@players.example"}]}'
+
+# The game server delivers the same completion twice.
+[[task]]
+id = "reward-duplicate-event"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"events":[{"quest_id":"q-1","completion_id":"cmp-2","player":"bo@players.example"},{"quest_id":"q-1","completion_id":"cmp-2","player":"bo@players.example"}]}'
+
+# The dragon's hoard is worth 250 gold: above the game master limit.
+[[task]]
+id = "reward-dragon"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"events":[{"quest_id":"q-2","completion_id":"cmp-4","player":"ana@players.example"}]}'

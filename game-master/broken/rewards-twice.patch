@@ -1,0 +1,11 @@
+--- a/agent/agent.mjs	2026-10-28 03:37:48
++++ b/agent/agent.mjs	2026-10-28 03:37:48
+@@ -61,7 +61,7 @@
+   const gold = quest.gold;
+   if (Number(gold) > gmLimit && !a.approval) return { held: "needs a game master's approval", gold };
+   const body = { player: a.player, quest_id: a.quest_id, gold, item: quest.item, approval: a.approval };
+-  return once(path, body, undefined, () => rewardOf(a.completion_id));
++  return once(path, body, undefined, async () => null);
+ }
+ 
+ const results = [];

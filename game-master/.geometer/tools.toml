@@ -1,0 +1,38 @@
+# The simulated world: an economy service with quests and rewards (no idempotency keys). A reward is one effect per quest completion.
+[[tool]]
+id = "economy"
+double = "http"
+hosts = ["economy.example"]
+account = "acct-world-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_quest"
+http = "GET /v1/quests/{quest_id}"
+gets = "quests"
+entity_key = ["quest_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_rewards"
+http = "GET /v1/completions/{completion_id}/rewards"
+lists = "rewards"
+entity_key = ["completion_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "grant"
+http = "POST /v1/completions/{completion_id}/rewards"
+creates = "rewards"
+semantics = "quest-reward/1"
+intent_key = ["completion_id"]
+entity_key = ["completion_id"]
+authority = ["economy:grant"]
+units = { gold = "gold" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

@@ -1,0 +1,8 @@
+{
+  "collections": {
+    "quests": [
+      { "id": "q-1", "name": "The lost lantern", "gold": "20.00", "item": "torch" },
+      { "id": "q-2", "name": "The dragon's hoard", "gold": "250.00", "item": "crown" }
+    ]
+  }
+}
