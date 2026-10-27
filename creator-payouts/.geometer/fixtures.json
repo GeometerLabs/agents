@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "creators": [
+      { "id": "c-1", "owed": "120.00", "account": "c1@creators.example" },
+      { "id": "c-2", "owed": "80.00", "account": "c2@creators.example" },
+      { "id": "c-3", "owed": "900.00", "account": "c3@creators.example" }
+    ]
+  }
+}

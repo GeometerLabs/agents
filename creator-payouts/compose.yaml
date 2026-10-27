@@ -1,0 +1,11 @@
+# The creator payouts agent. It reaches its model and the payouts service by hostname; Geometer
+# answers those names with a scripted model and a simulated payouts service.
+services:
+  agent:
+    build: ./agent
+    environment:
+      MODEL_URL: http://model.example/v1
+      PAYOUTS_URL: http://payouts.example
+      OPENAI_API_KEY: sk-test-creator-payouts
+      APPROVAL_LIMIT: "500.00"
+    command: ["sleep", "infinity"]
