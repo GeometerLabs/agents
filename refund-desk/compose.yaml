@@ -1,0 +1,12 @@
+# The refund desk agent. It reaches its model and the payments service by hostname;
+# Geometer answers those names with a scripted model and a simulated payments service
+# (see .geometer/tools.toml). No keys, no network, no real money.
+services:
+  agent:
+    build: ./agent
+    environment:
+      MODEL_URL: http://model.example/v1
+      PAYMENTS_URL: http://payments.example
+      OPENAI_API_KEY: sk-test-refund-desk
+      APPROVAL_LIMIT: "50.00"
+    command: ["sleep", "infinity"]

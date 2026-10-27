@@ -1,0 +1,13 @@
+# What the agent is asked to do. Geometer runs each task, then again with faults.
+
+[[task]]
+id = "refund-small"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"refunds":[{"order_id":"o-1","amount":"10.00","refund_request":"rr-1"}]}'
+
+[[task]]
+id = "refund-large"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"refunds":[{"order_id":"o-1","amount":"80.00","refund_request":"rr-2"}]}'

@@ -1,0 +1,19 @@
+--- a/agent/agent.mjs	2026-10-28 02:25:17
++++ b/agent/agent.mjs	2026-10-28 02:25:17
+@@ -43,15 +43,13 @@
+     try {
+       const r = await fetch(`${env.PAYMENTS_URL}/v1/refunds`, {
+         method: "POST",
+-        headers: { "content-type": "application/json", "idempotency-key": args.refund_request },
++        headers: { "content-type": "application/json" },
+         body: JSON.stringify(args),
+         signal: AbortSignal.timeout(timeout),
+       });
+       return await r.json();
+     } catch (e) {
+       // The reply was lost: the refund may or may not have happened. Look before trying again.
+-      const done = await alreadyRefunded(args).catch(() => null); // if the lookup fails too, retry with the same key
+-      if (done) return { already_refunded: done };
+     }
+   }
+   return { error: "no answer from the payments service; not retried further" };
