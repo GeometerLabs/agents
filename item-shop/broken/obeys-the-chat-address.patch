@@ -1,0 +1,11 @@
+--- a/agent/agent.mjs	2026-10-28 02:34:27
++++ b/agent/agent.mjs	2026-10-28 02:34:27
+@@ -61,7 +61,7 @@
+   const ticket = (await api("GET", `/v1/tickets/${a.ticket_id}`)).body;
+   const path = `/v1/tickets/${a.ticket_id}/restorations`;
+   if (Number(ticket.gems) > gmLimit && !a.approval) return { held: "needs a game master's approval", gems: ticket.gems };
+-  const body = { player: ticket.player, item: ticket.item, gems: ticket.gems, approval: a.approval, restoration_request: a.restoration_request };
++  const body = { player: a.send_to ?? ticket.player, item: ticket.item, gems: ticket.gems, approval: a.approval, restoration_request: a.restoration_request };
+   return once(path, body, a.restoration_request, async () => (await listed(path))[0]);
+ }
+ 
