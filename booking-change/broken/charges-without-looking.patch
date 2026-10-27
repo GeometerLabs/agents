@@ -1,0 +1,11 @@
+--- a/agent/agent.mjs	2026-10-28 03:37:48
++++ b/agent/agent.mjs	2026-10-28 03:37:48
+@@ -58,7 +58,7 @@
+     () => first(env.BOOKINGS_URL, changes, a.change_request, "change_request"));
+   if (change.error) return { change, charged: false };
+   const charge = await once(env.BILLING_URL, charges, { amount: a.fee, change_request: a.change_request }, undefined,
+-    () => first(env.BILLING_URL, charges, a.change_request, "change_request"));
++    async () => null);
+   return { change, charge };
+ }
+ 

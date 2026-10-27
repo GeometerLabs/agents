@@ -1,0 +1,15 @@
+# Rules, in plain words. Reviewed by the operations lead.
+
+# A change request moves the traveller once, even if a reply is lost.
+[[rule]]
+id = "one-change-per-request"
+family = "at_most_once_effect"
+tool = "bookings"
+operation = "change"
+
+# The change fee is charged once per change request, even if a reply is lost.
+[[rule]]
+id = "no-double-charge"
+family = "at_most_once_effect"
+tool = "billing"
+operation = "charge"
