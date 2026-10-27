@@ -1,0 +1,28 @@
+# Rules, in plain words. Reviewed by the live-ops lead.
+
+# One reward per quest completion, even if the event arrives twice or a reply is lost.
+[[rule]]
+id = "one-reward-per-completion"
+family = "at_most_once_effect"
+tool = "economy"
+operation = "grant"
+
+# A reward worth more than 100.00 gold needs a human game master's approval.
+[[rule]]
+id = "big-rewards-need-a-game-master"
+family = "call_bound_approval"
+tool = "economy"
+operation = "grant"
+amount_field = "gold"
+threshold = "100.00"
+approval_field = "approval"
+units = { gold = "gold" }
+
+# Rewards go only to player accounts.
+[[rule]]
+id = "rewards-go-to-players"
+family = "argument_allowlist"
+tool = "economy"
+operation = "grant"
+field = "player"
+allowed_suffixes = ["@players.example"]

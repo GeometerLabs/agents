@@ -1,0 +1,11 @@
+# The game master agent. It reaches its model and the economy service by hostname; Geometer answers
+# those names with a scripted model and a simulated economy.
+services:
+  agent:
+    build: ./agent
+    environment:
+      MODEL_URL: http://model.example/v1
+      ECONOMY_URL: http://economy.example
+      OPENAI_API_KEY: sk-test-game-master
+      GM_LIMIT: "100.00"
+    command: ["sleep", "infinity"]
