@@ -1,0 +1,11 @@
+# The booking change agent. It reaches its model, the bookings service and the billing service by
+# hostname; Geometer answers those names with a scripted model and simulated services.
+services:
+  agent:
+    build: ./agent
+    environment:
+      MODEL_URL: http://model.example/v1
+      BOOKINGS_URL: http://bookings.example
+      BILLING_URL: http://billing.example
+      OPENAI_API_KEY: sk-test-booking-change
+    command: ["sleep", "infinity"]

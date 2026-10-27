@@ -1,0 +1,56 @@
+# The simulated world: a bookings service (seat changes) and a billing service (change fees).
+# Bookings takes an Idempotency-Key. Billing does not: only a look-up protects against a double charge.
+[[tool]]
+id = "bookings"
+double = "http"
+hosts = ["bookings.example"]
+account = "acct-air-1"
+
+[[tool.operation]]
+name = "list_changes"
+http = "GET /v1/bookings/{booking_id}/changes"
+lists = "changes"
+entity_key = ["booking_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "change"
+http = "POST /v1/bookings/{booking_id}/changes"
+creates = "changes"
+semantics = "booking-change/1"
+intent_key = ["booking_id", "change_request"]
+entity_key = ["booking_id"]
+authority = ["bookings:change"]
+idempotency_key_header = "Idempotency-Key"
+idempotency_lifetime_seconds = 86400
+receipt_lookup = true
+
+[[tool]]
+id = "billing"
+double = "http"
+hosts = ["billing.example"]
+account = "acct-bill-1"
+
+[[tool.operation]]
+name = "list_charges"
+http = "GET /v1/bookings/{booking_id}/charges"
+lists = "charges"
+entity_key = ["booking_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "charge"
+http = "POST /v1/bookings/{booking_id}/charges"
+creates = "charges"
+semantics = "change-fee-charge/1"
+intent_key = ["booking_id", "change_request"]
+entity_key = ["booking_id"]
+authority = ["billing:charge"]
+units = { amount = "USD" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

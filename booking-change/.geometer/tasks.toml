@@ -1,0 +1,14 @@
+# What the agent is asked to do. Each command is one stored change request.
+
+[[task]]
+id = "change-one"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[{"booking_id":"b-1","change_request":"cr-1","seat":"14C","fee":"25.00"}]}'
+
+# The same request arrives twice (a customer taps twice).
+[[task]]
+id = "change-twice"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[{"booking_id":"b-2","change_request":"cr-2","seat":"9A","fee":"25.00"},{"booking_id":"b-2","change_request":"cr-2","seat":"9A","fee":"25.00"}]}'
