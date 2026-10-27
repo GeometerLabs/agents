@@ -1,0 +1,52 @@
+# The simulated world: a helpdesk that can credit an account or refund a card for a ticket.
+[[tool]]
+id = "helpdesk"
+double = "http"
+hosts = ["helpdesk.example"]
+account = "acct-help-1"
+
+[[tool.operation]]
+name = "list_credits"
+http = "GET /v1/tickets/{ticket_id}/credits"
+lists = "credits"
+entity_key = ["ticket_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_refunds"
+http = "GET /v1/tickets/{ticket_id}/refunds"
+lists = "refunds"
+entity_key = ["ticket_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "credit"
+http = "POST /v1/tickets/{ticket_id}/credits"
+creates = "credits"
+semantics = "ticket-credit/1"
+intent_key = ["ticket_id"]
+entity_key = ["ticket_id"]
+authority = ["helpdesk:credit"]
+units = { amount = "USD" }
+idempotency_key_header = "Idempotency-Key"
+idempotency_lifetime_seconds = 86400
+receipt_lookup = true
+
+[[tool.operation]]
+name = "refund"
+http = "POST /v1/tickets/{ticket_id}/refunds"
+creates = "refunds"
+semantics = "ticket-refund/1"
+intent_key = ["ticket_id"]
+entity_key = ["ticket_id"]
+authority = ["helpdesk:refund"]
+units = { amount = "USD" }
+idempotency_key_header = "Idempotency-Key"
+idempotency_lifetime_seconds = 86400
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

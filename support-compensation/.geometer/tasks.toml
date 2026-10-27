@@ -1,0 +1,27 @@
+# What the agent is asked to do. Each command is [tool, arguments].
+
+[[task]]
+id = "credit-one"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["credit",{"ticket_id":"k-1","request_id":"req-1","amount":"15.00"}]]}'
+
+# The customer asks for a credit, then changes their mind and asks for a refund on the same ticket.
+[[task]]
+id = "credit-then-refund"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["credit",{"ticket_id":"k-2","request_id":"req-2","amount":"15.00"}],["refund",{"ticket_id":"k-2","request_id":"req-3","amount":"15.00"}]]}'
+
+# ... and the other way round.
+[[task]]
+id = "refund-then-credit"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["refund",{"ticket_id":"k-3","request_id":"req-4","amount":"20.00"}],["credit",{"ticket_id":"k-3","request_id":"req-5","amount":"20.00"}]]}'
+
+[[task]]
+id = "refund-large"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["refund",{"ticket_id":"k-4","request_id":"req-6","amount":"250.00"}]]}'

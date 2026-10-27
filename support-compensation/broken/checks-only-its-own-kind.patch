@@ -1,0 +1,11 @@
+--- a/agent/agent.mjs	2026-10-28 02:30:35
++++ b/agent/agent.mjs	2026-10-28 02:30:35
+@@ -42,7 +42,7 @@
+ 
+ async function compensate(kind, a) {
+   // One kind per ticket: look at credits AND refunds, not only at the kind being asked for.
+-  for (const k of ["credit", "refund"]) {
++  for (const k of [kind]) {
+     const prior = (await given(a.ticket_id, k))[0];
+     if (prior) return { not_given: `ticket already has a ${k}`, existing: prior.id };
+   }

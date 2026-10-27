@@ -1,0 +1,34 @@
+# Rules, in plain words. Reviewed by the support lead.
+
+# A ticket is made whole with a credit OR a refund, never both.
+[[rule]]
+id = "credit-or-refund-never-both"
+family = "exclusive_effects"
+tool = "helpdesk"
+operations = ["credit", "refund"]
+entity = ["ticket_id"]
+
+# A credit is given once per ticket, even if a reply is lost.
+[[rule]]
+id = "credit-at-most-once"
+family = "at_most_once_effect"
+tool = "helpdesk"
+operation = "credit"
+
+# A refund is given once per ticket, even if a reply is lost.
+[[rule]]
+id = "refund-at-most-once"
+family = "at_most_once_effect"
+tool = "helpdesk"
+operation = "refund"
+
+# A refund above 100.00 needs a person's approval.
+[[rule]]
+id = "large-refunds-need-approval"
+family = "call_bound_approval"
+tool = "helpdesk"
+operation = "refund"
+amount_field = "amount"
+threshold = "100.00"
+approval_field = "approval"
+units = { amount = "USD" }
