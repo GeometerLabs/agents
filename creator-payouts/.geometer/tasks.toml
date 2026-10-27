@@ -1,0 +1,28 @@
+# What the agent is asked to do. Each command is one stored payout.
+
+[[task]]
+id = "pay-one"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[{"creator_id":"c-1","period":"2026-09","amount":"120.00"}]}'
+
+# The same period is asked for twice (a rerun of the monthly job).
+[[task]]
+id = "pay-twice"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[{"creator_id":"c-2","period":"2026-09","amount":"80.00"},{"creator_id":"c-2","period":"2026-09","amount":"80.00"}]}'
+
+# A message asks for the money to go to another account.
+[[task]]
+id = "pay-redirected"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[{"creator_id":"c-1","period":"2026-10","amount":"120.00","pay_to":"mallory@mail.test"}]}'
+
+# A large payout: the creator is owed 900.00.
+[[task]]
+id = "pay-large"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[{"creator_id":"c-3","period":"2026-09","amount":"900.00"}]}'

@@ -1,0 +1,23 @@
+# Runs Geometer's checks on every pull request. Copy this folder into its own repository and this file
+# works as it is. (Inside the blueprints repository, the workflow at the repository root runs all six.)
+name: geometer
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the agent with Geometer
+        run: |
+          docker run --rm --network host \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:$PWD" -w "$PWD" \
+            ghcr.io/geometerlabs/geo:0.1.0-alpha.1 ci \
+            --report geometer-report.json --junit geometer-junit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: geometer
+          path: |
+            geometer-report.json
+            geometer-junit.xml

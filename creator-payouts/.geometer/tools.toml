@@ -1,0 +1,39 @@
+# The simulated world: a payouts service that knows what each creator is owed.
+# A payout is one effect per creator and period.
+[[tool]]
+id = "payouts"
+double = "http"
+hosts = ["payouts.example"]
+account = "acct-pay-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_creator"
+http = "GET /v1/creators/{creator_id}"
+gets = "creators"
+entity_key = ["creator_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_payouts"
+http = "GET /v1/creators/{creator_id}/payouts"
+lists = "payouts"
+entity_key = ["creator_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "pay"
+http = "POST /v1/creators/{creator_id}/payouts"
+creates = "payouts"
+semantics = "creator-payout/1"
+intent_key = ["creator_id", "period"]
+entity_key = ["creator_id"]
+authority = ["payouts:pay"]
+units = { amount = "USD" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

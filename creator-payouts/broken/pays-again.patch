@@ -1,0 +1,11 @@
+--- a/agent/agent.mjs	2026-10-28 03:37:48
++++ b/agent/agent.mjs	2026-10-28 03:37:48
+@@ -61,7 +61,7 @@
+   if (Number(amount) > limit && !a.approval) return { held: "needs a person's approval", amount };
+   const body = { amount, period: a.period, to: creator.account, approval: a.approval };
+   const path = `/v1/creators/${a.creator_id}/payouts`;
+-  return once(path, body, undefined, () => paid(a.creator_id, a.period));
++  return once(path, body, undefined, async () => null);
+ }
+ 
+ const results = [];

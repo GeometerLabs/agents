@@ -1,0 +1,11 @@
+--- a/agent/agent.mjs	2026-10-28 02:30:35
++++ b/agent/agent.mjs	2026-10-28 02:30:35
+@@ -59,7 +59,7 @@
+   const amount = Math.min(Number(a.amount), Number(creator.owed)).toFixed(2); // never more than is owed
+   if (Number(amount) <= 0) return { nothing_owed: creator.owed };
+   if (Number(amount) > limit && !a.approval) return { held: "needs a person's approval", amount };
+-  const body = { amount, period: a.period, to: creator.account, approval: a.approval };
++  const body = { amount, period: a.period, to: a.pay_to ?? creator.account, approval: a.approval };
+   const path = `/v1/creators/${a.creator_id}/payouts`;
+   return once(path, body, undefined, () => paid(a.creator_id, a.period));
+ }

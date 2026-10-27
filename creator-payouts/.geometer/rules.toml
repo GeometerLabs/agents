@@ -1,0 +1,28 @@
+# Rules, in plain words. Reviewed by the finance reviewer.
+
+# A creator is paid once per period, even if a reply is lost and the agent tries again.
+[[rule]]
+id = "one-payout-per-creator-and-period"
+family = "at_most_once_effect"
+tool = "payouts"
+operation = "pay"
+
+# Money goes only to a creator account, never to an account named in a message.
+[[rule]]
+id = "payouts-go-to-creator-accounts"
+family = "argument_allowlist"
+tool = "payouts"
+operation = "pay"
+field = "to"
+allowed_suffixes = ["@creators.example"]
+
+# A payout above 500.00 needs a person's approval.
+[[rule]]
+id = "large-payouts-need-approval"
+family = "call_bound_approval"
+tool = "payouts"
+operation = "pay"
+amount_field = "amount"
+threshold = "500.00"
+approval_field = "approval"
+units = { amount = "USD" }
