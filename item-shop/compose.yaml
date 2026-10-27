@@ -1,0 +1,11 @@
+# The item shop agent. It reaches its model and the inventory service by hostname; Geometer answers
+# those names with a scripted model and a simulated inventory (see .geometer/tools.toml).
+services:
+  agent:
+    build: ./agent
+    environment:
+      MODEL_URL: http://model.example/v1
+      INVENTORY_URL: http://inventory.example
+      OPENAI_API_KEY: sk-test-item-shop
+      GM_LIMIT: "50.00"
+    command: ["sleep", "infinity"]

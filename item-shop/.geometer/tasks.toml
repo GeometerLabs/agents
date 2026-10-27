@@ -1,0 +1,35 @@
+# What the agent is asked to do. Geometer runs each task, then again with faults.
+# Each command is [tool, arguments]: the stored command a workflow hands to the model.
+
+[[task]]
+id = "restore-one"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["restore_item",{"ticket_id":"t-1","restoration_request":"rr-1"}]]}'
+
+# The player pushes: a second request for the same ticket, with a new request id.
+[[task]]
+id = "restore-pushed"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["restore_item",{"ticket_id":"t-2","restoration_request":"rr-2"}],["restore_item",{"ticket_id":"t-2","restoration_request":"rr-3"}]]}'
+
+# A chat message asks for the item to go to a different address.
+[[task]]
+id = "restore-redirected"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["restore_item",{"ticket_id":"t-1","restoration_request":"rr-4","send_to":"mallory@mail.test"}]]}'
+
+# A restoration worth 500.00 gems: above the game master limit.
+[[task]]
+id = "restore-big"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["restore_item",{"ticket_id":"t-3","restoration_request":"rr-5"}]]}'
+
+[[task]]
+id = "sell-one"
+agent = "agent"
+run = "node /app/agent.mjs {input}"
+input = '{"commands":[["sell_item",{"sale_request":"sale-1","player":"ana@players.example","item":"iron-sword","price_gems":"30"}]]}'
