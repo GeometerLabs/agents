@@ -1,0 +1,27 @@
+# Checks every blueprint with Geometer on each pull request.
+name: geometer
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        blueprint: [refund-desk, item-shop, support-compensation, booking-change, creator-payouts, game-master]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check ${{ matrix.blueprint }} with Geometer
+        working-directory: ${{ matrix.blueprint }}
+        run: |
+          docker run --rm --network host \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:$PWD" -w "$PWD" \
+            ghcr.io/geometerlabs/geo:0.1.0-alpha.1 ci \
+            --report geometer-report.json --junit geometer-junit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: geometer-${{ matrix.blueprint }}
+          path: |
+            ${{ matrix.blueprint }}/geometer-report.json
+            ${{ matrix.blueprint }}/geometer-junit.xml
