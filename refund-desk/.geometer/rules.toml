@@ -1,0 +1,19 @@
+# Rules, in plain words.
+
+# A refund request pays out once, even when a reply is lost and the agent tries again.
+[[rule]]
+id = "refund-at-most-once"
+family = "at_most_once_effect"
+tool = "payments"
+operation = "refund"
+
+# A refund above 50.00 needs a person's approval first.
+[[rule]]
+id = "large-refunds-need-approval"
+family = "call_bound_approval"
+tool = "payments"
+operation = "refund"
+amount_field = "amount"
+threshold = "50.00"
+approval_field = "approval"
+units = { amount = "USD" }

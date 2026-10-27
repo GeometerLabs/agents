@@ -1,0 +1,30 @@
+# The simulated world: a payments service (a refund is one effect per order and refund request).
+[[tool]]
+id = "payments"
+double = "payments"
+hosts = ["payments.example"]
+account = "acct-shop-1"
+orders = { "o-1" = "100.00", "o-2" = "40.00" }
+
+[[tool.operation]]
+name = "refund"
+http = "POST /v1/refunds"
+semantics = "refund/1"
+intent_key = ["order_id", "refund_request"]
+authority = ["refunds:write"]
+units = { amount = "USD" }
+idempotency_key_header = "Idempotency-Key"
+idempotency_lifetime_seconds = 86400
+receipt_lookup = true
+
+[[tool.operation]]
+name = "list_refunds"
+http = "GET /v1/refunds"
+effect_class = "read"
+intent_unsupported = "a lookup changes nothing"
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"
