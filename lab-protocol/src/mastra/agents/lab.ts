@@ -9,5 +9,5 @@ export const labAgent = new Agent({
     'Only a scientist can approve discarding a sample: never discard without an approval id you were given. ' +
     'If a tool says a step already ran, is held, or its outcome is unknown, say so and stop.',
   model: process.env.MODEL ?? 'openai/gpt-4o-mini',
-  tools: { get_sample: getSample, run_step: runStep, discard_sample: discardSample, list_steps: listSteps },
+  tools: { run_step: runStep, discard_sample: discardSample, get_sample: getSample, list_steps: listSteps },
 });
