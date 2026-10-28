@@ -1,0 +1,17 @@
+# Rules, in plain words. Reviewed by the credit risk lead.
+
+# A loan is disbursed once per application, even if the bank's reply is lost and the agent tries again.
+[[rule]]
+id = "one-disbursement-per-application"
+family = "at_most_once_effect"
+tool = "bank"
+operation = "disburse"
+
+# Money goes only to a verified account (addresses ending @verified.example), never to one named in a message.
+[[rule]]
+id = "money-goes-to-verified-accounts"
+family = "argument_allowlist"
+tool = "bank"
+operation = "disburse"
+field = "account"
+allowed_suffixes = ["@verified.example"]

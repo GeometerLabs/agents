@@ -1,0 +1,40 @@
+# The simulated world: a bank that knows each application and keeps its disbursements.
+# A disbursement is one effect per application. This bank does not deduplicate by key: the agent's own
+# look-up before and after a doubtful call is what keeps a loan from being paid twice.
+[[tool]]
+id = "bank"
+double = "http"
+hosts = ["bank.example"]
+account = "acct-bank-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_application"
+http = "GET /v1/applications/{application_id}"
+gets = "applications"
+entity_key = ["application_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_disbursements"
+http = "GET /v1/applications/{application_id}/disbursements"
+lists = "disbursements"
+entity_key = ["application_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "disburse"
+http = "POST /v1/applications/{application_id}/disbursements"
+creates = "disbursements"
+semantics = "loan-disbursement/1"
+intent_key = ["application_id"]
+entity_key = ["application_id"]
+authority = ["bank:disburse"]
+units = { amount = "USD" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"
