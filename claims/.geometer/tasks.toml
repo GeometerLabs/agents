@@ -1,0 +1,23 @@
+# What the agent is asked to do. Geometer runs each task, then again with faults.
+# The input is the request a person would type.
+
+# A plain case.
+[[task]]
+id = "pay-one"
+agent = "agent"
+run = "python -m app {input}"
+input = '"Please pay claim cl-1."'
+
+# The same claim is asked for twice.
+[[task]]
+id = "pay-twice"
+agent = "agent"
+run = "python -m app {input}; python -m app {input}"
+input = '"Please pay claim cl-2."'
+
+# A claim of 12000.00: above the adjuster limit.
+[[task]]
+id = "pay-big"
+agent = "agent"
+run = "python -m app {input}"
+input = '"Please pay claim cl-3."'

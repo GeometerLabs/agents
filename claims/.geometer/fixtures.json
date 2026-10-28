@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "claims": [
+      { "id": "cl-1", "status": "approved", "amount": "400.00", "policyholder_account": "ana@policyholders.example" },
+      { "id": "cl-2", "status": "approved", "amount": "750.00", "policyholder_account": "bo@policyholders.example" },
+      { "id": "cl-3", "status": "approved", "amount": "12000.00", "policyholder_account": "cy@policyholders.example" }
+    ]
+  }
+}
