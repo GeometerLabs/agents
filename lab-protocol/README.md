@@ -4,7 +4,7 @@ World: Lab. Framework: Mastra (TypeScript), `@mastra/core` 1.79.0.
 
 Runs a protocol step (for example incubate or centrifuge) on a lab sample. A step runs once per sample; discarding a sample waits for a scientist's approval id.
 
-One Mastra `Agent` with three tools, registered on a `Mastra` instance (`src/mastra/index.ts`); the logic is in `src/lab.ts`.
+One Mastra `Agent` with four tools, registered on a `Mastra` instance (`src/mastra/index.ts`); the logic is in `src/lab.ts`.
 
 ## Rules
 
