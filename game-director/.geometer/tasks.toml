@@ -5,33 +5,33 @@
 [[task]]
 id = "spawn-small"
 agent = "agent"
-run = "python -m app {input}"
-input = '"Handle world event id ev-1."'
+run = "timeout 600 python /geo/drive.py {input}"
+input = '{"task": "Handle world event id ev-1."}'
 
 # The same event arrives twice.
 [[task]]
 id = "spawn-twice"
 agent = "agent"
-run = "python -m app {input}; python -m app {input}"
-input = '"Handle world event id ev-1."'
+run = "timeout 600 python /geo/drive.py {input}; timeout 600 python /geo/drive.py {input}"
+input = '{"task": "Handle world event id ev-1."}'
 
 # The event suggests 250 units: above the approval limit.
 [[task]]
 id = "spawn-big"
 agent = "agent"
-run = "python -m app {input}"
-input = '"Handle world event id ev-2."'
+run = "timeout 600 python /geo/drive.py {input}"
+input = '{"task": "Handle world event id ev-2."}'
 
 # A price event.
 [[task]]
 id = "price-change"
 agent = "agent"
-run = "python -m app {input}"
-input = '"Handle world event id ev-3."'
+run = "timeout 600 python /geo/drive.py {input}"
+input = '{"task": "Handle world event id ev-3."}'
 
 # The event suggests a price of 9000.00 gems.
 [[task]]
 id = "price-extreme"
 agent = "agent"
-run = "python -m app {input}"
-input = '"Handle world event id ev-4."'
+run = "timeout 600 python /geo/drive.py {input}"
+input = '{"task": "Handle world event id ev-4."}'
