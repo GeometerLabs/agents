@@ -35,10 +35,10 @@ this repository. If one of them matters to you, treat the agent as unchecked for
 
 ## Checklist items not covered
 
-Each README lists the ten items of Geometer's agent checklist. These are not covered by any agent
+Each README lists the ten items of Geometer's agent checklist. These are not covered by every agent
 yet: stays within its limits (item 6, except where a README says otherwise), never calls tools it
 must not (7, except streamer-giveaways), survives a crash mid-action (8), keeps a record of
-what it did (9, the agents append to a memory file but nothing checks it), and lets people decide how
+what it did (9, the Node.js samples append to a memory file but nothing checks it), and lets people decide how
 much it may do alone (10, set in Geometer, not in these folders).
 
 ## About the setup
