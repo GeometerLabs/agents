@@ -50,7 +50,7 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 
 ## What Geometer tried, and the result
 
-Faults tried: a lost reply at the bank's disbursement call and at the agent's own tool call, on every task, up to two at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through the OpenAI Agents SDK (0.24.0, the version it was tested with) and ran it from `.geometer/tasks.toml`.
+Faults tried: a lost reply at the bank's disbursement call and at the agent's own tool call, on every task, up to three at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through the OpenAI Agents SDK (0.24.0, the version it was tested with) and ran it from `.geometer/tasks.toml`.
 
 `geo check .` on the agent as written: exit 0, "No problems found in what was tried" (18 fault runs). Rules checked: `one-disbursement-per-application`, `money-goes-to-verified-accounts`. The project's own tests: 4 passed. Held means: no rule broke in these runs. It is a bounded try, not every case.
 

@@ -50,7 +50,7 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 
 ## What Geometer tried, and the result
 
-Faults tried: a lost reply at the lab service's calls and at the agent's own tool calls, on every task, up to two at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through Mastra (1.79.0) and ran it from `.geometer/tasks.toml`.
+Faults tried: a lost reply at the lab service's calls and at the agent's own tool calls, on every task, up to three at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through Mastra and ran it from `.geometer/tasks.toml`. The Mastra version here (1.79.0) is newer than the one Geometer's hook was tested with (1.67.0).
 
 `geo check .` on the agent as written: exit 0, "No problems found in what was tried" (24 fault runs). Rule checked: `one-run-per-sample-and-step`. Rule not reached: `discards-need-a-scientist` (the agent holds the discard in its code before the call, so the check had no call to judge; this is not a pass, see [LIMITS.md](../LIMITS.md)). The project's own tests ran (`npm test`) and passed.
 
