@@ -102,4 +102,4 @@ Tell me what Geometer did not check. Do not say the agent is correct; say what h
 A real agent in its framework, run here against simulated services and a scripted stand-in for the model. Geometer's results are held within what was tried, nothing more. Licence: Apache-2.0.
 
 
-Note: Geometer's driver feeds a crew only the inputs written in `app/__main__.py` (request pr-1), so the over-limit request cannot be asked for in a check; see [LIMITS.md](../LIMITS.md).
+Geometer's driver hands each task's text to the crew's `{request}` placeholder, so `.geometer/tasks.toml` asks for pr-1, pr-2 and the over-limit pr-3 (2400.00 against a limit of 500.00).
