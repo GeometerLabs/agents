@@ -52,12 +52,13 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 
 Faults tried: a lost reply at the lab service's calls and at the agent's own tool calls, on every task, up to three at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through Mastra and ran it from `.geometer/tasks.toml`. The Mastra version here (1.79.0) is newer than the one Geometer's hook was tested with (1.67.0).
 
-`geo check .` on the agent as written: exit 0, "No problems found in what was tried" (24 fault runs). Rule checked: `one-run-per-sample-and-step`. Rule not reached: `discards-need-a-scientist` (the agent holds the discard in its code before the call, so the check had no call to judge; this is not a pass, see [LIMITS.md](../LIMITS.md)). The project's own tests ran (`npm test`) and passed.
+`geo check .` on the agent as written: exit 0, "No problems found in what was tried" (24 fault runs). Rule checked: `one-run-per-sample-and-step`. Rule not reached: `discards-need-a-scientist` (the agent holds the discard in its code before the call, so the check had no call to judge; this is not a pass, see [LIMITS.md](../LIMITS.md)). The agent lists `run_step` and `discard_sample` first: in Geometer's Mastra runs the third tool call of a model reply does not finish its requests. The project's own tests ran (`npm test`) and passed.
 
 With the patch from [`broken/`](broken) applied:
 
 | Patch | Geometer's result |
 | --- | --- |
+| `discards-without-approval` | **Broke**: "A discard of 1.50 went through without an approval (over 0.00)" (rule `discards-need-a-scientist`), 48 fault runs |
 | `retries-blind` | **Broke**: "The same run_step was run step carried out twice (lims)" (rule `one-run-per-sample-and-step`), 36 fault runs; the project's own tests also fail |
 
 Then `geo replay <problem id>` shows the problem happening again, step by step.
@@ -72,6 +73,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
+| `broken/discards-without-approval.patch` | drops the check that holds a discard without an approval id | `discards-need-a-scientist` |
 | `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-run-per-sample-and-step` |
 
 ## Agent checklist
