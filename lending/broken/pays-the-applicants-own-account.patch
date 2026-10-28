@@ -5,7 +5,7 @@
      if done:
          return f"already disbursed: {json.dumps(done)}"
 -    body = {"account": app["verified_account"], "amount": app["amount"]}
-+    body = {"account": send_to or app["verified_account"], "amount": app["amount"]}
++    body = {"account": app["applicant_account"], "amount": app["amount"]}
      sent = call("POST", f"/v1/applications/{application_id}/disbursements", body, key=f"disburse-{application_id}")
      if sent is None:  # no answer: look before saying anything, and never send again
          done = disbursed(application_id)

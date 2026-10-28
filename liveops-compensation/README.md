@@ -16,7 +16,7 @@ Each rule is in plain words in [`.geometer/rules.toml`](.geometer/rules.toml); t
 
 ## Run it for real
 
-You need your own model key and a service that answers the calls below. Nothing is sent anywhere else.
+You need your own model key and a service that answers the calls below. The agent's own code calls only the model and your service.
 
 ```sh
 python -m venv .venv && . .venv/bin/activate
@@ -61,7 +61,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
 | `broken/skips-approval.patch` | raises the limit to 5000.00 gems | `big-restorations-need-a-game-master` |
-| `broken/obeys-the-chat-address.patch` | sends the items to the address named in chat | `restored-items-go-to-players` |
+| `broken/restores-to-whoever-filed-the-ticket.patch` | sends the items to the address that reported the ticket instead of the ticket's player | `restored-items-go-to-players` |
 
 ## Agent checklist
 
@@ -86,7 +86,7 @@ What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
 pip install pytest && pytest
 ```
 
-They run the real tools against a small local copy of the service (the same records as `.geometer/fixtures.json`) and the agent with a scripted model. No model is called.
+They run the real tools against a small local copy of the service (the records in `tests/fixtures.json`), and the compiled graph with a scripted model in place of a real one. No model is called.
 
 ## Build your own: paste this into your coding assistant
 

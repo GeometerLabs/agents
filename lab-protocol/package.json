@@ -6,7 +6,7 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "start": "tsx src/main.ts",
-    "test": "node --experimental-strip-types --test test/"
+    "test": "node --experimental-strip-types --test \"test/*.test.ts\""
   },
   "dependencies": {
     "@mastra/core": "1.79.0",

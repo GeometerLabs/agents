@@ -1,9 +1,36 @@
 {
   "collections": {
     "tickets": [
-      { "id": "t-1", "player": "ana@players.example", "kind": "item", "item": "iron-sword", "quantity": "1", "gems": "10.00", "reason": "server crash" },
-      { "id": "t-2", "player": "bo@players.example", "kind": "currency", "item": "gems", "quantity": "20", "gems": "20.00", "reason": "server crash" },
-      { "id": "t-3", "player": "cy@players.example", "kind": "item", "item": "dragon-egg", "quantity": "1", "gems": "500.00", "reason": "server crash" }
+      {
+        "id": "t-1",
+        "player": "ana@players.example",
+        "kind": "item",
+        "item": "iron-sword",
+        "quantity": "1",
+        "gems": "10.00",
+        "reason": "server crash",
+        "reported_by": "ana@mail.test"
+      },
+      {
+        "id": "t-2",
+        "player": "bo@players.example",
+        "kind": "currency",
+        "item": "gems",
+        "quantity": "20",
+        "gems": "20.00",
+        "reason": "server crash",
+        "reported_by": "bo@mail.test"
+      },
+      {
+        "id": "t-3",
+        "player": "cy@players.example",
+        "kind": "item",
+        "item": "dragon-egg",
+        "quantity": "1",
+        "gems": "500.00",
+        "reason": "server crash",
+        "reported_by": "cy@mail.test"
+      }
     ]
   }
 }

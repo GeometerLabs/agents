@@ -19,7 +19,7 @@ this repository. If one of them matters to you, treat the agent as unchecked for
 | game-director | Prices within bounds (`prices-stay-in-bounds`) | The rule reads a stored price column. This agent talks to a simulated HTTP service, so the check may report it as not reached or could not tell; the agent refuses out-of-range prices in code, and nothing checks that it does. |
 | streamer-giveaways | The list of approved campaigns | It is written into the rule as the campaign ids `camp-spring` and `camp-launch`; if your approved campaigns change, change the rule. The rule matches the end of the id. |
 | streamer-giveaways | That a chat name is one person | The viewer handle comes from chat; one person with two handles gets two codes. |
-| streamer-giveaways | That the host never calls the export tool (`never-exports-codes`) | The clean agent is never given the tool, so the rule is reported as never reached, not as passed. The broken variant that hands it over is caught. |
+| streamer-giveaways | That the host never calls the export tool (`never-exports-codes`) | The clean agent is never given the tool, so a clean result for this rule is because of how the agent is built, not because the agent chose well. The broken variant that hands the tool to chat is the one the rule is meant to catch. |
 | purchasing | Each buyer's own limit | The rule holds one amount (500.00, the limit of every buyer in the sample). Real limits per buyer would need a rule per limit. The agent reads the buyer's limit from the request. |
 | purchasing | The supplier is on an approved list | No supplier rule is declared. |
 | lending | That the loan amount is the amount the credit officer approved | The agent pays the amount on the application; nothing compares it with the approval. |

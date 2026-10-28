@@ -15,7 +15,7 @@ Each rule is in plain words in [`.geometer/rules.toml`](.geometer/rules.toml); t
 
 ## Run it for real
 
-You need your own model key and a service that answers the calls below. Nothing is sent anywhere else.
+You need your own model key and a service that answers the calls below. The agent's own code calls only the model and your service.
 
 ```sh
 python -m venv .venv && . .venv/bin/activate
@@ -59,7 +59,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
 | `broken/forgets-to-look.patch` | stops reading the bank's list before paying | `one-disbursement-per-application` |
-| `broken/pays-the-account-in-the-request.patch` | pays the account named in the request | `money-goes-to-verified-accounts` |
+| `broken/pays-the-applicants-own-account.patch` | pays the account the applicant typed in instead of the verified one | `money-goes-to-verified-accounts` |
 
 ## Agent checklist
 
@@ -84,7 +84,7 @@ What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
 pip install pytest && pytest
 ```
 
-They run the real tools against a small local copy of the service (the same records as `.geometer/fixtures.json`) and the agent with a scripted model. No model is called.
+They run the real tools against a small local copy of the service (the records in `tests/fixtures.json`); the agent itself is not run. No model is called.
 
 ## Build your own: paste this into your coding assistant
 

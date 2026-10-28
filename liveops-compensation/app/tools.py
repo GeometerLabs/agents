@@ -49,7 +49,8 @@ def restore_loadout(ticket_id, approval="", send_to=""):
     done = first(path)
     if done:
         return f"already restored: {json.dumps(done)}"
-    body = {k: ticket[k] for k in ("player", "kind", "item", "quantity", "gems")} | {"approval": approval}
+    body = {"player": ticket["player"], "kind": ticket["kind"], "item": ticket["item"], "quantity": ticket["quantity"],
+            "gems": ticket["gems"], "approval": approval}
     sent = call("POST", path, body, key=f"restore-{ticket_id}")
     if sent is None:  # no answer: look before saying anything, and never send again
         done = first(path)
