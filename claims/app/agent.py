@@ -33,5 +33,4 @@ def default_model():
     return OpenAIModel(client_args=client_args, model_id=os.environ.get("MODEL", "gpt-4o-mini"))
 
 
-def build_agent(model=None):
-    return Agent(model=model or default_model(), system_prompt=SYSTEM, tools=[get_claim, pay_claim])
+claims_agent = Agent(model=default_model(), system_prompt=SYSTEM, tools=[get_claim, pay_claim])

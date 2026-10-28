@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "requests": [
+      { "id": "pr-1", "buyer": "b-1", "supplier": "acme-supplies", "item": "printer toner", "quantity": "10", "amount": "200.00", "buyer_limit": "500.00" },
+      { "id": "pr-2", "buyer": "b-1", "supplier": "acme-supplies", "item": "paper reams", "quantity": "50", "amount": "450.00", "buyer_limit": "500.00" },
+      { "id": "pr-3", "buyer": "b-2", "supplier": "bright-lab-co", "item": "centrifuge", "quantity": "1", "amount": "2400.00", "buyer_limit": "500.00" }
+    ]
+  }
+}

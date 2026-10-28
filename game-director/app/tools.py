@@ -61,6 +61,10 @@ def spawn_resource(event_id, resource, count, approval=""):
 
 
 def set_price(event_id, item, price):
-    if not MIN_PRICE <= float(price) <= MAX_PRICE:
-        return f"refused: a price of {price} gems is outside {MIN_PRICE:.2f} to {MAX_PRICE:.2f}"
-    return once(f"/v1/events/{event_id}/prices", {"item": item, "price": f"{float(price):.2f}"}, f"price-{event_id}")
+    try:
+        gems = float(price)
+    except (TypeError, ValueError):
+        return f"refused: {price!r} is not a price"
+    if not MIN_PRICE <= gems <= MAX_PRICE:
+        return f"refused: a price of {gems:.2f} gems is outside {MIN_PRICE:.2f} to {MAX_PRICE:.2f}"
+    return once(f"/v1/events/{event_id}/prices", {"item": item, "price": f"{gems:.2f}"}, f"price-{event_id}")

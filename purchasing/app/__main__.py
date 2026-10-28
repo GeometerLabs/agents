@@ -1,6 +1,6 @@
 """python -m app "Order the supplies on purchase request pr-1." """
 import sys
 
-from .agent import build_crew
+from .agent import crew
 
-print(build_crew(" ".join(sys.argv[1:])).kickoff())
+print(crew.kickoff(inputs={"request": " ".join(sys.argv[1:])}))

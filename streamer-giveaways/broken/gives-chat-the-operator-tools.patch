@@ -1,11 +1,11 @@
 --- a/src/agent.ts
 +++ b/src/agent.ts
-@@ -38,7 +38,7 @@
- }
- 
- /** One chat message in, the host's reply out. */
--export async function reply(message: string, model: LanguageModel = defaultModel(), toolset: ToolSet = tools) {
-+export async function reply(message: string, model: LanguageModel = defaultModel(), toolset: ToolSet = operatorTools) {
-   const { text } = await generateText({ model, system, prompt: message, tools: toolset, stopWhen: stepCountIs(6) });
+@@ -39,7 +39,7 @@
+     model,
+     system,
+     prompt: message,
+-    tools: { lookup_campaign, give_code },
++    tools: { lookup_campaign, give_code, export_codes },
+     stopWhen: stepCountIs(6),
+   });
    return text;
- }

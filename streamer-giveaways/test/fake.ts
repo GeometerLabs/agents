@@ -1,11 +1,12 @@
 // A small in-memory copy of the service, on a local port, so the tools' real HTTP calls can be tested.
-// Records come from .geometer/fixtures.json (the same ones Geometer's simulated service uses).
+// Records come from fixtures.json here, a copy of ../.geometer/fixtures.json (the records Geometer's simulated
+// service uses); the copy is kept so the tests run on their own, wherever the folder is copied.
 // GET /v1/<collection>/<id> returns a record; POST /v1/<collection>/<id>/<what> stores a body and GET of the
 // same path lists what was stored. `svc.drop.reply = true` makes the next POSTs take effect but never answer.
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 
-const fixtures = JSON.parse(readFileSync(new URL("../.geometer/fixtures.json", import.meta.url), "utf8")).collections;
+const fixtures = JSON.parse(readFileSync(new URL("./fixtures.json", import.meta.url), "utf8")).collections;
 
 export async function startService() {
   const posts: any[] = [];

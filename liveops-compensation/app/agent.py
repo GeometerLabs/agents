@@ -27,18 +27,19 @@ def restore_loadout(ticket_id: str, approval: str = "", send_to: str = "") -> st
     return tools.restore_loadout(ticket_id, approval, send_to)
 
 
-def build_graph(model=None):
-    """The graph: the model answers, a tool call goes to the tools, their results go back to the model."""
-    model = (model or ChatOpenAI(model=os.environ.get("MODEL", "gpt-4o-mini"),
-                                 base_url=os.environ.get("OPENAI_BASE_URL"))).bind_tools([get_ticket, restore_loadout])
+llm = ChatOpenAI(model=os.environ.get("MODEL", "gpt-4o-mini"),
+                 base_url=os.environ.get("OPENAI_BASE_URL")).bind_tools([get_ticket, restore_loadout])
 
-    def agent(state: MessagesState):
-        return {"messages": [model.invoke([("system", SYSTEM)] + state["messages"])]}
 
-    graph = StateGraph(MessagesState)
-    graph.add_node("agent", agent)
-    graph.add_node("tools", ToolNode([get_ticket, restore_loadout]))
-    graph.add_edge(START, "agent")
-    graph.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
-    graph.add_edge("tools", "agent")
-    return graph.compile()
+def agent(state: MessagesState):
+    """The model answers; a tool call in its answer sends the graph to the tools."""
+    return {"messages": [llm.invoke([("system", SYSTEM)] + state["messages"])]}
+
+
+builder = StateGraph(MessagesState)
+builder.add_node("agent", agent)
+builder.add_node("tools", ToolNode([get_ticket, restore_loadout]))
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
+builder.add_edge("tools", "agent")
+graph = builder.compile()

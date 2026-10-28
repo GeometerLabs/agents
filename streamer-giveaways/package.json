@@ -3,9 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "tsx src/main.ts",
+    "operator": "tsx src/operator.ts",
     "test": "node --experimental-strip-types --test test/"
   },
   "dependencies": {

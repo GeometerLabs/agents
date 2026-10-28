@@ -20,7 +20,7 @@ You need your own model key and a service that answers the calls below. Nothing 
 ```sh
 npm install
 cp .env.example .env            # then fill in the model key and your service's address
-node --env-file=.env --import tsx src/main.ts "Run the incubate step on sample s-1."     # or: set the variables and run npm start
+node --env-file=.env --import tsx src/main.ts "Run the incubate step on sample id s-1."     # or: set the variables and run npm start
 ```
 
 Settings (see [`.env.example`](.env.example)):
