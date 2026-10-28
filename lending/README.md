@@ -48,6 +48,21 @@ geo check .          # needs Geometer and Docker; the model is a stand-in and th
 
 Geometer reads the folder, builds the agent in a container, runs the tasks in `.geometer/tasks.toml` against the simulated service, runs them again with something going wrong on purpose (a reply that never arrives, for example), and checks the rules. CI: [`.github/workflows/geometer.yml`](.github/workflows/geometer.yml) runs `geo ci` on every pull request.
 
+## What Geometer tried, and the result
+
+Faults tried: a lost reply at the bank's disbursement call and at the agent's own tool call, on every task, up to two at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through the OpenAI Agents SDK (0.24.0, the version it was tested with) and ran it from `.geometer/tasks.toml`.
+
+`geo check .` on the agent as written: exit 0, "No problems found in what was tried" (18 fault runs). Rules checked: `one-disbursement-per-application`, `money-goes-to-verified-accounts`. The project's own tests: 4 passed. Held means: no rule broke in these runs. It is a bounded try, not every case.
+
+With a patch from [`broken/`](broken) applied (each is a copy of the folder with one line changed):
+
+| Patch | Geometer's result |
+| --- | --- |
+| `forgets-to-look` | **Broke**: "The same disburse was disburse carried out twice (bank)" (rule `one-disbursement-per-application`), 25 fault runs; two of the project's own tests also fail |
+| `pays-the-applicants-own-account` | **Broke**: "Bank disburse went to ana@mail.test, which is not allowed (only addresses ending in @verified.example)" (rule `money-goes-to-verified-accounts`); two of the project's own tests also fail |
+
+Then `geo replay <problem id>` shows the problem happening again, step by step.
+
 ## Mistakes to try
 
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
