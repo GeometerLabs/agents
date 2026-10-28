@@ -1,4 +1,4 @@
-# Checks every blueprint with Geometer on each pull request.
+# Checks every agent with Geometer on each pull request.
 name: geometer
 on: [pull_request]
 jobs:
@@ -7,11 +7,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        blueprint: [refund-desk, item-shop, support-compensation, booking-change, creator-payouts, game-master]
+        agent: [refund-desk, item-shop, support-compensation, booking-change, creator-payouts, game-master, liveops-compensation, game-director, streamer-giveaways, purchasing, lending, claims, lab-protocol, access-grants]
     steps:
       - uses: actions/checkout@v4
-      - name: Check ${{ matrix.blueprint }} with Geometer
-        working-directory: ${{ matrix.blueprint }}
+      - name: Check ${{ matrix.agent }} with Geometer
+        working-directory: ${{ matrix.agent }}
         run: |
           docker run --rm --network host \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: geometer-${{ matrix.blueprint }}
+          name: geometer-${{ matrix.agent }}
           path: |
-            ${{ matrix.blueprint }}/geometer-report.json
-            ${{ matrix.blueprint }}/geometer-junit.xml
+            ${{ matrix.agent }}/geometer-report.json
+            ${{ matrix.agent }}/geometer-junit.xml
