@@ -1,0 +1,19 @@
+# Rules, in plain words. Reviewed by the security lead.
+
+# A role is granted once per request, even if the directory's reply is lost and the agent tries again.
+[[rule]]
+id = "one-grant-per-request"
+family = "at_most_once_effect"
+tool = "directory"
+operation = "grant"
+
+# An admin role (privilege level above 2) needs a security lead's approval.
+[[rule]]
+id = "admin-roles-need-approval"
+family = "call_bound_approval"
+tool = "directory"
+operation = "grant"
+amount_field = "level"
+threshold = "2"
+approval_field = "approval"
+units = { level = "level" }
