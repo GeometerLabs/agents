@@ -15,7 +15,7 @@ Each rule is in plain words in [`.geometer/rules.toml`](.geometer/rules.toml); t
 
 ## Run it for real
 
-You need your own model key and a service that answers the calls below. Nothing is sent anywhere else.
+You need your own model key and a service that answers the calls below. The agent's own code calls only the model and your service.
 
 ```sh
 npm install
@@ -83,7 +83,7 @@ What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
 npm test
 ```
 
-They run the real tools against a small local copy of the service (the same records as `.geometer/fixtures.json`) and the agent with a scripted model. No model is called.
+They run the real tools through Mastra's tool objects against a small local copy of the service (the records in `test/fixtures.json`) and check the Mastra instance holds the agent with its tools; the agent itself is not run. No model is called.
 
 ## Build your own: paste this into your coding assistant
 
