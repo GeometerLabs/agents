@@ -1,0 +1,28 @@
+# Rules, in plain words. Reviewed by the live-ops lead.
+
+# One restoration per ticket, however often the player asks and even if the inventory's reply is lost.
+[[rule]]
+id = "one-restoration-per-ticket"
+family = "at_most_once_effect"
+tool = "inventory"
+operation = "restore"
+
+# Items and currency go only to player accounts, never to an address named in chat.
+[[rule]]
+id = "restored-items-go-to-players"
+family = "argument_allowlist"
+tool = "inventory"
+operation = "restore"
+field = "player"
+allowed_suffixes = ["@players.example"]
+
+# A restoration worth more than 50.00 gems needs a game master's approval.
+[[rule]]
+id = "big-restorations-need-a-game-master"
+family = "call_bound_approval"
+tool = "inventory"
+operation = "restore"
+amount_field = "gems"
+threshold = "50.00"
+approval_field = "approval"
+units = { gems = "gems" }
