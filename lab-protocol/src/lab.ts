@@ -50,6 +50,6 @@ export async function discardSample(sample: string, approval = "") {
   if (r?.status !== 200) return "no such sample; nothing was discarded";
   if (!approval) return `held: discarding ${sample} needs a scientist's approval id`;
   const body = { volume_ml: r.body.volume_ml, approval };
-  const sent = await call("POST", `/v1/samples/${sample}/discard`, body, `discard-${sample}`);
+  const sent = await call("POST", `/v1/samples/${sample}/discards`, body, `discard-${sample}`);
   return sent ? sent.body : "no answer from the lab service; whether the sample was discarded is unknown.";
 }

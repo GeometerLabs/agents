@@ -35,7 +35,8 @@ Your service must answer these calls (JSON bodies):
 | `GET /v1/samples/{id}` | the sample: `label`, `volume_ml`, `status` |
 | `GET /v1/samples/{id}/steps` | a list of the steps already run on the sample: each has a `step` |
 | `POST /v1/samples/{id}/steps` | runs one: `step`, `volume_ml` |
-| `POST /v1/samples/{id}/discard` | discards the sample: `volume_ml`, `approval` |
+| `POST /v1/samples/{id}/discards` | discards the sample: `volume_ml`, `approval` |
+| `GET /v1/samples/{id}/discards` | a list of the discards already made (optional) |
 
 If your service has other paths or field names, change the one file that makes the calls (`src/lab.ts`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../LIMITS.md).
 

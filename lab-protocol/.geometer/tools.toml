@@ -32,8 +32,15 @@ authority = ["lims:run"]
 receipt_lookup = true
 
 [[tool.operation]]
+name = "list_discards"
+http = "GET /v1/samples/{sample_id}/discards"
+lists = "discards"
+entity_key = ["sample_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
 name = "discard"
-http = "POST /v1/samples/{sample_id}/discard"
+http = "POST /v1/samples/{sample_id}/discards"
 creates = "discards"
 semantics = "sample-discard/1"
 intent_key = ["sample_id"]
