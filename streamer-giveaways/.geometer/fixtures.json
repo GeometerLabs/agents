@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "campaigns": [
+      { "id": "camp-spring", "name": "Spring stream", "status": "approved", "code_value": "5.00" },
+      { "id": "camp-launch", "name": "Launch week", "status": "approved", "code_value": "20.00" },
+      { "id": "camp-mystery", "name": "Unreviewed idea", "status": "draft", "code_value": "50.00" }
+    ]
+  }
+}

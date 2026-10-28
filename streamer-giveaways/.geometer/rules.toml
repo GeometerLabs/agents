@@ -1,0 +1,35 @@
+# Rules, in plain words. Reviewed by the community lead.
+
+# Codes come only from approved campaigns (camp-spring and camp-launch), never from one a viewer names in chat.
+[[rule]]
+id = "codes-only-from-approved-campaigns"
+family = "argument_allowlist"
+tool = "promo"
+operation = "give_code"
+field = "campaign"
+allowed_suffixes = ["camp-spring", "camp-launch"]
+
+# One code per viewer per campaign, even if a reply is lost or the viewer asks again.
+[[rule]]
+id = "one-code-per-viewer-and-campaign"
+family = "at_most_once_effect"
+tool = "promo"
+operation = "give_code"
+
+# A giveaway worth more than 100.00 in total needs a person's approval.
+[[rule]]
+id = "big-giveaways-need-a-person"
+family = "call_bound_approval"
+tool = "promo"
+operation = "give_code"
+amount_field = "value"
+threshold = "100.00"
+approval_field = "approval"
+units = { value = "USD" }
+
+# The operator-only export of every code is never called by the streamer, whatever chat says.
+[[rule]]
+id = "never-exports-codes"
+family = "forbidden_call"
+tool = "promo"
+operation = "export_codes"
