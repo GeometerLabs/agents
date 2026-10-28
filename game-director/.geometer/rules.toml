@@ -25,6 +25,23 @@ threshold = "100"
 approval_field = "approval"
 units = { count = "units" }
 
-# A shop price stays between 1.00 and 1000.00 gems. The agent refuses prices outside that range in its code.
-# Geometer's number-bound rule (numeric_bound) reads a stored column of a database it can observe, and
-# rules.toml cannot declare it; this agent's shop is a web service, so no rule is declared here (see LIMITS.md).
+# A shop price stays between 1.00 and 1000.00 gems. The agent also refuses prices outside that range in its code.
+[[rule]]
+id = "prices-stay-in-range"
+family = "argument_bound"
+tool = "world"
+operation = "set_price"
+field = "price"
+min = "1.00"
+max = "1000.00"
+units = { price = "gems" }
+
+# No single spawn is above 500 units, even with a game master's approval.
+[[rule]]
+id = "spawns-stay-below-the-cap"
+family = "argument_bound"
+tool = "world"
+operation = "spawn"
+field = "count"
+max = "500"
+units = { count = "units" }

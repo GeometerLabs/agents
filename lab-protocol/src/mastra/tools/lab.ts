@@ -22,10 +22,3 @@ export const discardSample = createTool({
   inputSchema: z.object({ sample_id: z.string(), approval: z.string().default('') }),
   execute: async ({ sample_id, approval }) => lab.discardSample(sample_id, approval),
 });
-
-export const listSteps = createTool({
-  id: 'list_steps',
-  description: 'List the protocol steps already run on a sample.',
-  inputSchema: z.object({ sample_id: z.string() }),
-  execute: async ({ sample_id }) => lab.listSteps(sample_id),
-});

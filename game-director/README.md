@@ -11,6 +11,8 @@ Three tools on one Pydantic AI `Agent` (`app/agent.py`); the logic is in `app/to
 - `one-spawn-per-event`: A world event is answered with one spawn at most, even if the world's reply is lost.
 - `one-price-change-per-event`: A world event changes a shop price at most once.
 - `big-spawns-need-approval`: A spawn of more than 100 units needs a game master's approval id.
+- `prices-stay-in-range`: A shop price is between 1.00 and 1000.00 gems (a `argument_bound` rule).
+- `spawns-stay-below-the-cap`: No spawn is above 500 units, even with approval (a `argument_bound` rule).
 
 Each rule is in plain words in [`.geometer/rules.toml`](.geometer/rules.toml); the simulated service is in `.geometer/tools.toml`, the tasks in `.geometer/tasks.toml`.
 
@@ -64,7 +66,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
 | `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-spawn-per-event, one-price-change-per-event` |
-| `broken/spawns-without-approval.patch` | raises the approval limit to 100000 units | `big-spawns-need-approval` |
+| `broken/spawns-without-approval.patch` | raises the approval limit to 100000 units | `big-spawns-need-approval`, `spawns-stay-below-the-cap` |
 
 ## Agent checklist
 
@@ -75,7 +77,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | 3 | Asks a person above a limit | big-spawns-need-approval |
 | 4 | Acts only for the right account or player | Built into the tool (the target comes from the record, not from the message); no rule |
 | 5 | Never compensates the same case twice | Not applicable: one kind of action |
-| 6 | Stays within its limits | In the tool's code (prices outside 1.00 to 1000.00 gems are refused); no Geometer rule, see LIMITS.md |
+| 6 | Stays within its limits | prices-stay-in-range, spawns-stay-below-the-cap (also in the tool's code) |
 | 7 | Never calls tools it must not | No rule |
 | 8 | Survives a crash mid-action | Not tried |
 | 9 | Keeps a record of what it did | Not checked |
