@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -46,7 +46,7 @@
+     if int(req["level"]) > ADMIN_LEVEL and not approval:
+         return f"held: the {req['role']} role needs a security lead's approval id"
+     path = f"/v1/requests/{request_id}/grants"
+-    done = first(path)
++    done = None
+     if done:
+         return f"already granted: {json.dumps(done)}"
+     body = {k: req[k] for k in ("account", "role", "level")} | {"approval": approval}

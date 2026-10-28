@@ -1,0 +1,39 @@
+# The simulated world: a company directory with access requests and the grants made for them.
+# A grant is one effect per request. Privilege level: 1 viewer, 2 editor, 3 admin.
+[[tool]]
+id = "directory"
+double = "http"
+hosts = ["directory.example"]
+account = "acct-dir-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_request"
+http = "GET /v1/requests/{request_id}"
+gets = "requests"
+entity_key = ["request_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_grants"
+http = "GET /v1/requests/{request_id}/grants"
+lists = "grants"
+entity_key = ["request_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "grant"
+http = "POST /v1/requests/{request_id}/grants"
+creates = "grants"
+semantics = "role-grant/1"
+intent_key = ["request_id"]
+entity_key = ["request_id"]
+authority = ["directory:grant"]
+units = { level = "level" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -29,7 +29,7 @@
+     r = call("GET", path)
+     return (r[1] or [None])[0] if r and r[0] == 200 else None
+ 
+-ADMIN_LEVEL = int(os.environ.get("ADMIN_LEVEL", "2"))  # levels above this need approval
++ADMIN_LEVEL = int(os.environ.get("ADMIN_LEVEL", "9"))  # levels above this need approval
+ 
+ 
+ def get_request(request_id):
