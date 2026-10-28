@@ -1,2 +1,2 @@
 google-adk==2.13.0
-litellm==1.106.5
+litellm[mcp]==1.106.5
