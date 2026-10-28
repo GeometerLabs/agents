@@ -59,7 +59,6 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
 | `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-run-per-sample-and-step` |
-| `broken/discards-without-approval.patch` | drops the check for an approval id | `discards-need-a-scientist` |
 
 ## Agent checklist
 
