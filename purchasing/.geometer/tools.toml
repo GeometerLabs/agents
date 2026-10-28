@@ -1,0 +1,39 @@
+# The simulated world: a procurement service with purchase requests (each with its buyer's limit) and the orders placed.
+# An order is one effect per request.
+[[tool]]
+id = "procurement"
+double = "http"
+hosts = ["procurement.example"]
+account = "acct-buy-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_request"
+http = "GET /v1/requests/{request_id}"
+gets = "requests"
+entity_key = ["request_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_orders"
+http = "GET /v1/requests/{request_id}/orders"
+lists = "orders"
+entity_key = ["request_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "place_order"
+http = "POST /v1/requests/{request_id}/orders"
+creates = "orders"
+semantics = "purchase-order/1"
+intent_key = ["request_id"]
+entity_key = ["request_id"]
+authority = ["procurement:order"]
+units = { amount = "USD" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

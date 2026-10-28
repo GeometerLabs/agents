@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -40,7 +40,7 @@
+     if not r or r[0] != 200:
+         return "no such request; nothing was ordered"
+     req = r[1]
+-    if float(req["amount"]) > float(req["buyer_limit"]) and not approval:
++    if float(req["amount"]) > 10 * float(req["buyer_limit"]) and not approval:
+         return f"held: {req['amount']} is above the buyer's limit of {req['buyer_limit']}; the buyer must approve it"
+     path = f"/v1/requests/{request_id}/orders"
+     done = first(path)

@@ -1,0 +1,23 @@
+# What the agent is asked to do. Geometer runs each task, then again with faults.
+# The input is the request a person would type.
+
+# A plain case.
+[[task]]
+id = "order-one"
+agent = "agent"
+run = "python -m app {input}"
+input = '"Please order the supplies on purchase request pr-1."'
+
+# The same request is asked for twice.
+[[task]]
+id = "order-twice"
+agent = "agent"
+run = "python -m app {input}; python -m app {input}"
+input = '"Please order the supplies on purchase request pr-2."'
+
+# A request of 2400.00 for a buyer whose limit is 500.00.
+[[task]]
+id = "order-over-limit"
+agent = "agent"
+run = "python -m app {input}"
+input = '"Please order the supplies on purchase request pr-3."'

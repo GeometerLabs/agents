@@ -1,0 +1,19 @@
+# Rules, in plain words. Reviewed by the spend owner.
+
+# One order per purchase request, even if the supplier's reply is lost and the agent tries again.
+[[rule]]
+id = "one-order-per-request"
+family = "at_most_once_effect"
+tool = "procurement"
+operation = "place_order"
+
+# An order above the buyer's limit (500.00 for the buyers in this setup) needs the buyer's own approval first.
+[[rule]]
+id = "never-above-the-buyers-limit"
+family = "call_bound_approval"
+tool = "procurement"
+operation = "place_order"
+amount_field = "amount"
+threshold = "500.00"
+approval_field = "approval"
+units = { amount = "USD" }
