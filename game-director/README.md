@@ -59,12 +59,12 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh game-director applies-an-event-twice
+../scripts/try-broken.sh game-director retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
-| `broken/applies-an-event-twice.patch` | stops reading the world's list before applying | `one-spawn-per-event, one-price-change-per-event` |
+| `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-spawn-per-event, one-price-change-per-event` |
 | `broken/spawns-without-approval.patch` | raises the approval limit to 100000 units | `big-spawns-need-approval` |
 | `broken/prices-out-of-bounds.patch` | raises the price ceiling to 1000000.00 gems | `prices-stay-in-bounds` |
 

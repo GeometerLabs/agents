@@ -9,7 +9,7 @@
   "scripts": {
     "start": "tsx src/main.ts",
     "operator": "tsx src/operator.ts",
-    "test": "node --experimental-strip-types --test \"test/*.test.ts\""
+    "test": "node --experimental-strip-types --test --test-force-exit \"test/*.test.ts\""
   },
   "dependencies": {
     "@ai-sdk/openai": "4.0.104",

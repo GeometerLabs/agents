@@ -1,0 +1,11 @@
+--- a/src/tools.ts
++++ b/src/tools.ts
+@@ -48,7 +48,7 @@
+   for (let attempt = 0; attempt < 2; attempt++) { // no answer: look whether it landed before trying once more
+     const sent = await call("POST", `/v1/campaigns/${campaign}/codes`, body, `code-${campaign}-${viewer}`);
+     if (sent) return sent.body;
+-    const seen = await codeOf(campaign, viewer);
++    const seen = undefined;
+     if (seen) return `given: ${JSON.stringify(seen)}`;
+   }
+   return "no answer from the promo service; whether the code was given is unknown.";

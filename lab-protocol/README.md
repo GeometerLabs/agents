@@ -52,12 +52,12 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh lab-protocol reruns-the-step
+../scripts/try-broken.sh lab-protocol retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
-| `broken/reruns-the-step.patch` | stops reading the steps already run | `one-run-per-sample-and-step` |
+| `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-run-per-sample-and-step` |
 | `broken/discards-without-approval.patch` | drops the check for an approval id | `discards-need-a-scientist` |
 
 ## Agent checklist

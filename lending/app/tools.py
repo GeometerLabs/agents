@@ -47,8 +47,11 @@ def disburse_loan(application_id, send_to=""):
     if done:
         return f"already disbursed: {json.dumps(done)}"
     body = {"account": app["verified_account"], "amount": app["amount"]}
-    sent = call("POST", f"/v1/applications/{application_id}/disbursements", body, key=f"disburse-{application_id}")
-    if sent is None:  # no answer: look before saying anything, and never send again
+    for _ in range(2):  # no answer: look whether it landed before trying once more
+        sent = call("POST", f"/v1/applications/{application_id}/disbursements", body, key=f"disburse-{application_id}")
+        if sent is not None:
+            return json.dumps(sent[1])
         done = disbursed(application_id)
-        return f"disbursed: {json.dumps(done)}" if done else "no answer from the bank; whether it was paid is unknown. A person should check."
-    return json.dumps(sent[1])
+        if done:
+            return f"disbursed: {json.dumps(done)}"
+    return "no answer from the bank; whether it was paid is unknown. A person should check."

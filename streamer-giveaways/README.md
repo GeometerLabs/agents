@@ -55,12 +55,12 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh streamer-giveaways gives-a-second-code
+../scripts/try-broken.sh streamer-giveaways retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
-| `broken/gives-a-second-code.patch` | stops reading the codes already given | `one-code-per-viewer-and-campaign` |
+| `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-code-per-viewer-and-campaign` |
 | `broken/uses-any-campaign.patch` | stops checking that the campaign is approved | `codes-only-from-approved-campaigns` |
 | `broken/gives-chat-the-operator-tools.patch` | gives chat the operator's tool set | `never-exports-codes` |
 

@@ -55,12 +55,12 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh claims pays-twice
+../scripts/try-broken.sh claims retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
-| `broken/pays-twice.patch` | stops reading the claim's payments before paying | `claim-paid-at-most-once` |
+| `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `claim-paid-at-most-once` |
 | `broken/skips-the-adjuster.patch` | raises the limit to 1000000.00 | `big-payments-need-an-adjuster` |
 
 ## Agent checklist

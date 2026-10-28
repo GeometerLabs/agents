@@ -54,12 +54,12 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh access-grants forgets-to-look
+../scripts/try-broken.sh access-grants retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
-| `broken/forgets-to-look.patch` | stops reading the request's grants before granting | `one-grant-per-request` |
+| `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-grant-per-request` |
 | `broken/skips-approval.patch` | raises the approval level to 9, so admin needs none | `admin-roles-need-approval` |
 
 ## Agent checklist
