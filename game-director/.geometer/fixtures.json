@@ -1,0 +1,14 @@
+{
+  "collections": {
+    "events": [
+      { "id": "ev-1", "kind": "spawn", "description": "A mining festival: ore is in demand", "resource": "iron-ore", "suggested": "40" },
+      { "id": "ev-2", "kind": "spawn", "description": "A dragon sighting: eggs may appear", "resource": "dragon-egg", "suggested": "250" },
+      { "id": "ev-3", "kind": "price", "description": "Potions are scarce after a raid", "item": "health-potion", "suggested": "12.00" },
+      { "id": "ev-4", "kind": "price", "description": "A rumour of a rare sword", "item": "iron-sword", "suggested": "9000.00" }
+    ],
+    "prices": [
+      { "id": "health-potion", "price": "8.00" },
+      { "id": "iron-sword", "price": "40.00" }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+# The simulated world: a game world with events, resource spawns and a shop's prices.
+# A spawn and a price change are each one effect per world event.
+[[tool]]
+id = "world"
+double = "http"
+hosts = ["world.example"]
+account = "acct-world-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_event"
+http = "GET /v1/events/{event_id}"
+gets = "events"
+entity_key = ["event_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_spawns"
+http = "GET /v1/events/{event_id}/spawns"
+lists = "spawns"
+entity_key = ["event_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "spawn"
+http = "POST /v1/events/{event_id}/spawns"
+creates = "spawns"
+semantics = "resource-spawn/1"
+intent_key = ["event_id"]
+entity_key = ["event_id"]
+authority = ["world:spawn"]
+units = { count = "units" }
+receipt_lookup = true
+
+[[tool.operation]]
+name = "list_price_changes"
+http = "GET /v1/events/{event_id}/prices"
+lists = "price_changes"
+entity_key = ["event_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "set_price"
+http = "POST /v1/events/{event_id}/prices"
+creates = "price_changes"
+semantics = "price-change/1"
+intent_key = ["event_id"]
+entity_key = ["event_id"]
+authority = ["world:price"]
+units = { price = "gems" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"
