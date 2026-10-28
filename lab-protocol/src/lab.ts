@@ -30,6 +30,11 @@ export async function getSample(sample: string) {
   return r?.status === 200 ? r.body : "no such sample";
 }
 
+export async function listSteps(sample: string) {
+  const r = await call("GET", `/v1/samples/${sample}/steps`);
+  return r?.status === 200 ? r.body : "no steps listed";
+}
+
 export async function runStep(sample: string, step: string) {
   const r = await call("GET", `/v1/samples/${sample}`);
   if (r?.status !== 200) return "no such sample; nothing was run";

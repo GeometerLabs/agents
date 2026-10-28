@@ -24,7 +24,7 @@ test("a discard through the Mastra tool is held without an approval id", async (
   svc.close();
 });
 
-test("the Mastra instance holds the lab agent with its three tools", async () => {
+test("the Mastra instance holds the lab agent with its four tools", async () => {
   const tools = await mastra.getAgent("lab").listTools();
-  assert.deepEqual(Object.keys(tools).sort(), ["discard_sample", "get_sample", "run_step"]);
+  assert.deepEqual(Object.keys(tools).sort(), ["discard_sample", "get_sample", "list_steps", "run_step"]);
 });
