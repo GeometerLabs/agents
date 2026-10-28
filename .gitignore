@@ -1,0 +1,7 @@
+.venv/
+node_modules/
+.env
+__pycache__/
+.pytest_cache/
+geometer-report.json
+geometer-junit.xml
