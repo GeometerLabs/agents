@@ -25,11 +25,6 @@ threshold = "100"
 approval_field = "approval"
 units = { count = "units" }
 
-# A shop price stays between 1.00 and 1000.00 gems.
-[[rule]]
-id = "prices-stay-in-bounds"
-family = "numeric_bound"
-ns = "world.price_changes"
-column = "price"
-min = 1
-max = 1000
+# A shop price stays between 1.00 and 1000.00 gems. The agent refuses prices outside that range in its code.
+# Geometer's number-bound rule (numeric_bound) reads a stored column of a database it can observe, and
+# rules.toml cannot declare it; this agent's shop is a web service, so no rule is declared here (see LIMITS.md).

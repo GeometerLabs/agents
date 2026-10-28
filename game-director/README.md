@@ -2,7 +2,7 @@
 
 World: Geometer Worlds. Framework: Pydantic AI (Python), `pydantic-ai-slim[openai]` 2.63.0.
 
-An AI director for a small world economy. For each world event it spawns resources or adjusts a shop price. Each event is applied once; a spawn of more than 100 units waits for a game master's approval id; a shop price is refused outside 1.00 to 1000.00 gems.
+An AI director for a small world economy. For each world event it spawns resources or adjusts a shop price. Each event is applied once; a spawn of more than 100 units waits for a game master's approval id; a shop price is refused outside 1.00 to 1000.00 gems (in the agent's code).
 
 Three tools on one Pydantic AI `Agent` (`app/agent.py`); the logic is in `app/tools.py`.
 
@@ -11,7 +11,6 @@ Three tools on one Pydantic AI `Agent` (`app/agent.py`); the logic is in `app/to
 - `one-spawn-per-event`: A world event is answered with one spawn at most, even if the world's reply is lost.
 - `one-price-change-per-event`: A world event changes a shop price at most once.
 - `big-spawns-need-approval`: A spawn of more than 100 units needs a game master's approval id.
-- `prices-stay-in-bounds`: A shop price stays between 1.00 and 1000.00 gems (a number-bound rule on the price changes).
 
 Each rule is in plain words in [`.geometer/rules.toml`](.geometer/rules.toml); the simulated service is in `.geometer/tools.toml`, the tasks in `.geometer/tasks.toml`.
 
@@ -66,7 +65,6 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | --- | --- | --- |
 | `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-spawn-per-event, one-price-change-per-event` |
 | `broken/spawns-without-approval.patch` | raises the approval limit to 100000 units | `big-spawns-need-approval` |
-| `broken/prices-out-of-bounds.patch` | raises the price ceiling to 1000000.00 gems | `prices-stay-in-bounds` |
 
 ## Agent checklist
 
@@ -77,7 +75,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | 3 | Asks a person above a limit | big-spawns-need-approval |
 | 4 | Acts only for the right account or player | Built into the tool (the target comes from the record, not from the message); no rule |
 | 5 | Never compensates the same case twice | Not applicable: one kind of action |
-| 6 | Stays within its limits | prices-stay-in-bounds |
+| 6 | Stays within its limits | In the tool's code (prices outside 1.00 to 1000.00 gems are refused); no Geometer rule, see LIMITS.md |
 | 7 | Never calls tools it must not | No rule |
 | 8 | Survives a crash mid-action | Not tried |
 | 9 | Keeps a record of what it did | Not checked |
