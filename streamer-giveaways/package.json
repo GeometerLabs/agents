@@ -1,0 +1,19 @@
+{
+  "name": "streamer-giveaways",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "test": "node --experimental-strip-types --test test/"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "4.0.104",
+    "ai": "7.0.155",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
+  }
+}
