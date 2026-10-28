@@ -48,6 +48,20 @@ geo check .          # needs Geometer and Docker; the model is a stand-in and th
 
 Geometer reads the folder, builds the agent in a container, runs the tasks in `.geometer/tasks.toml` against the simulated service, runs them again with something going wrong on purpose (a reply that never arrives, for example), and checks the rules. CI: [`.github/workflows/geometer.yml`](.github/workflows/geometer.yml) runs `geo ci` on every pull request.
 
+## What Geometer tried, and the result
+
+Faults tried: a lost reply at the lab service's calls and at the agent's own tool calls, on every task, up to two at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through Mastra (1.79.0) and ran it from `.geometer/tasks.toml`.
+
+`geo check .` on the agent as written: exit 0, "No problems found in what was tried" (24 fault runs). Rule checked: `one-run-per-sample-and-step`. Rule not reached: `discards-need-a-scientist` (the agent holds the discard in its code before the call, so the check had no call to judge; this is not a pass, see [LIMITS.md](../LIMITS.md)). The project's own tests ran (`npm test`) and passed.
+
+With the patch from [`broken/`](broken) applied:
+
+| Patch | Geometer's result |
+| --- | --- |
+| `retries-blind` | **Broke**: "The same run_step was run step carried out twice (lims)" (rule `one-run-per-sample-and-step`), 36 fault runs; the project's own tests also fail |
+
+Then `geo replay <problem id>` shows the problem happening again, step by step.
+
 ## Mistakes to try
 
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
