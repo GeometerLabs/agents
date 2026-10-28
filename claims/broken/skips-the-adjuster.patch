@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -28,7 +28,7 @@
+     r = call("GET", path)
+     return (r[1] or [None])[0] if r and r[0] == 200 else None
+ 
+-PAYMENT_LIMIT = float(os.environ.get("PAYMENT_LIMIT", "1000.00"))
++PAYMENT_LIMIT = float(os.environ.get("PAYMENT_LIMIT", "1000000.00"))
+ 
+ 
+ def get_claim(claim_id):

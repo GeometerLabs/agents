@@ -1,0 +1,40 @@
+# The simulated world: an insurer's claims service with approved claims and the payments made for them.
+# A payment is one effect per claim. This service does not deduplicate by key: the agent's own look-up
+# before and after a doubtful call is what keeps a claim from being paid twice.
+[[tool]]
+id = "claims_api"
+double = "http"
+hosts = ["claims.example"]
+account = "acct-claims-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_claim"
+http = "GET /v1/claims/{claim_id}"
+gets = "claims"
+entity_key = ["claim_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_payments"
+http = "GET /v1/claims/{claim_id}/payments"
+lists = "payments"
+entity_key = ["claim_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "pay"
+http = "POST /v1/claims/{claim_id}/payments"
+creates = "payments"
+semantics = "claim-payment/1"
+intent_key = ["claim_id"]
+entity_key = ["claim_id"]
+authority = ["claims:pay"]
+units = { amount = "USD" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

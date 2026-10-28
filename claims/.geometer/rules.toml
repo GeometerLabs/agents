@@ -1,0 +1,19 @@
+# Rules, in plain words. Reviewed by the claims lead.
+
+# A claim is paid at most once, even if the payment reply is lost and the agent tries again.
+[[rule]]
+id = "claim-paid-at-most-once"
+family = "at_most_once_effect"
+tool = "claims_api"
+operation = "pay"
+
+# A payment above 1000.00 needs an adjuster's approval.
+[[rule]]
+id = "big-payments-need-an-adjuster"
+family = "call_bound_approval"
+tool = "claims_api"
+operation = "pay"
+amount_field = "amount"
+threshold = "1000.00"
+approval_field = "approval"
+units = { amount = "USD" }
