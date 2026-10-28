@@ -34,6 +34,6 @@ def spawn_resource(event_id: str, resource: str, count: int, approval: str = "")
 
 
 @director.tool_plain
-def set_price(event_id: str, item: str, price: str) -> str:
+def set_price(event_id: str, item: str, price: float) -> str:
     """Set a shop item's price in gems in answer to an event. Prices outside the allowed range are refused."""
     return tools.set_price(event_id, item, price)

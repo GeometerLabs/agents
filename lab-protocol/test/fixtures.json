@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "samples": [
+      { "id": "s-1", "label": "plate A1", "volume_ml": "1.50", "status": "active" },
+      { "id": "s-2", "label": "plate B2", "volume_ml": "2.00", "status": "active" },
+      { "id": "s-3", "label": "plate C3", "volume_ml": "0.80", "status": "active" }
+    ]
+  }
+}

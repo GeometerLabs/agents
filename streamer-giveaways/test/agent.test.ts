@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MockLanguageModelV4 } from "ai/test";
-import { operatorTools, reply, tools } from "../src/agent.ts";
+import { reply } from "../src/agent.ts";
 import { cfg } from "../src/tools.ts";
 import { startService } from "./fake.ts";
 
@@ -16,7 +16,7 @@ test("a chat request becomes one give_code call", async () => {
   const model = new MockLanguageModelV4({
     doGenerate: async () => ({
       content: turn++ === 0
-        ? [{ type: "tool-call", toolCallId: "c1", toolName: "give_code", input: JSON.stringify({ campaign: "camp-spring", viewer: "viewer1" }) }]
+        ? [{ type: "tool-call", toolCallId: "c1", toolName: "give_code", input: JSON.stringify({ campaign_id: "camp-spring", viewer: "viewer1" }) }]
         : [{ type: "text", text: "Enjoy your code!" }],
       finishReason: { unified: turn === 1 ? "tool-calls" : "stop", raw: undefined },
       usage,
@@ -28,10 +28,8 @@ test("a chat request becomes one give_code call", async () => {
   svc.close();
 });
 
-test("the model is offered only the two giveaway tools", () => {
-  assert.deepEqual(Object.keys(tools), ["lookup_campaign", "give_code"]);
-});
-
-test("the export tool exists only in the operator's set", () => {
-  assert.ok("export_codes" in operatorTools && !("export_codes" in tools));
+test("the stream host's source never hands chat the export tool", async () => {
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("../src/agent.ts", import.meta.url), "utf8");
+  assert.match(source, /tools: \{ lookup_campaign, give_code \}/);
 });

@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "requests": [
+      { "id": "r-1", "account": "ana@corp.example", "role": "viewer", "level": "1" },
+      { "id": "r-2", "account": "bo@corp.example", "role": "editor", "level": "2" },
+      { "id": "r-3", "account": "cy@corp.example", "role": "admin", "level": "3" }
+    ]
+  }
+}

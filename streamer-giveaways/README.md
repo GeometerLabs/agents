@@ -22,7 +22,7 @@ You need your own model key and a service that answers the calls below. Nothing 
 ```sh
 npm install
 cp .env.example .env            # then fill in the model key and your service's address
-node --env-file=.env --import tsx src/main.ts "viewer1 in chat: can I get a code from camp-spring?"     # or: set the variables and run npm start
+node --env-file=.env --import tsx src/main.ts "viewer1 in chat: can I get a code from campaign id camp-spring?"     # or: set the variables and run npm start
 ```
 
 Settings (see [`.env.example`](.env.example)):

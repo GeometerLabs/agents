@@ -23,7 +23,7 @@ python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env            # then fill in the model key and your service's address
 set -a; . ./.env; set +a
-python -m app "Please restore the loadout for ticket t-1."
+python -m app "Please restore the loadout for ticket id t-1."
 ```
 
 Settings (see [`.env.example`](.env.example)):

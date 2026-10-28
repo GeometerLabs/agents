@@ -22,7 +22,7 @@ python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env            # then fill in the model key and your service's address
 set -a; . ./.env; set +a
-python -m app "Please order the supplies on purchase request pr-1."
+python -m app "Please order the supplies on purchase request id pr-1."
 ```
 
 Settings (see [`.env.example`](.env.example)):

@@ -1,0 +1,9 @@
+{
+  "collections": {
+    "applications": [
+      { "id": "a-1", "status": "approved", "amount": "2500.00", "verified_account": "ana@verified.example" },
+      { "id": "a-2", "status": "approved", "amount": "4000.00", "verified_account": "bo@verified.example" },
+      { "id": "a-3", "status": "declined", "amount": "9000.00", "verified_account": "cy@verified.example" }
+    ]
+  }
+}
