@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -51,7 +51,7 @@
+         sent = call("POST", path, body, key=f"order-{request_id}")
+         if sent is not None:
+             return json.dumps(sent[1])
+-        done = first(path)
++        done = None
+         if done:
+             return f"ordered: {json.dumps(done)}"
+     return "no answer from the supplier; whether it was ordered is unknown."

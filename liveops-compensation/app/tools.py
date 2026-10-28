@@ -51,8 +51,11 @@ def restore_loadout(ticket_id, approval="", send_to=""):
         return f"already restored: {json.dumps(done)}"
     body = {"player": ticket["player"], "kind": ticket["kind"], "item": ticket["item"], "quantity": ticket["quantity"],
             "gems": ticket["gems"], "approval": approval}
-    sent = call("POST", path, body, key=f"restore-{ticket_id}")
-    if sent is None:  # no answer: look before saying anything, and never send again
+    for _ in range(2):  # no answer: look whether it landed before trying once more
+        sent = call("POST", path, body, key=f"restore-{ticket_id}")
+        if sent is not None:
+            return json.dumps(sent[1])
         done = first(path)
-        return f"restored: {json.dumps(done)}" if done else "no answer from the inventory service; whether it was restored is unknown."
-    return json.dumps(sent[1])
+        if done:
+            return f"restored: {json.dumps(done)}"
+    return "no answer from the inventory service; whether it was restored is unknown."

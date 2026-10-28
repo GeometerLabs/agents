@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -48,7 +48,7 @@
+         sent = call("POST", path, body, key=key)
+         if sent is not None:
+             return json.dumps(sent[1])
+-        done = first(path)
++        done = None
+         if done:
+             return f"applied: {json.dumps(done)}"
+     return "no answer from the world; whether it was applied is unknown."

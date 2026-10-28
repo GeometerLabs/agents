@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -55,7 +55,7 @@
+         sent = call("POST", path, body, key=f"pay-{claim_id}")
+         if sent is not None:
+             return json.dumps(sent[1])
+-        done = first(path)
++        done = None
+         if done:
+             return f"paid: {json.dumps(done)}"
+     return "no answer from the claims service; whether it was paid is unknown."

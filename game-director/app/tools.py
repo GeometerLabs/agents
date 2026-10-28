@@ -44,11 +44,14 @@ def once(path, body, key):
     done = first(path)
     if done:
         return f"already applied: {json.dumps(done)}"
-    sent = call("POST", path, body, key=key)
-    if sent is None:
+    for _ in range(2):  # no answer: look whether it landed before trying once more
+        sent = call("POST", path, body, key=key)
+        if sent is not None:
+            return json.dumps(sent[1])
         done = first(path)
-        return f"applied: {json.dumps(done)}" if done else "no answer from the world; whether it was applied is unknown."
-    return json.dumps(sent[1])
+        if done:
+            return f"applied: {json.dumps(done)}"
+    return "no answer from the world; whether it was applied is unknown."
 
 
 def spawn_resource(event_id, resource, count, approval=""):

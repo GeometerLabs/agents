@@ -45,12 +45,13 @@ export async function giveCode(campaign: string, viewer: string, quantity = 1, a
   const done = await codeOf(campaign, viewer);
   if (done) return `already given: ${JSON.stringify(done)}`;
   const body = { campaign, viewer, quantity, value, approval };
-  const sent = await call("POST", `/v1/campaigns/${campaign}/codes`, body, `code-${campaign}-${viewer}`);
-  if (!sent) { // no answer: look before saying anything, and never send again
+  for (let attempt = 0; attempt < 2; attempt++) { // no answer: look whether it landed before trying once more
+    const sent = await call("POST", `/v1/campaigns/${campaign}/codes`, body, `code-${campaign}-${viewer}`);
+    if (sent) return sent.body;
     const seen = await codeOf(campaign, viewer);
-    return seen ? `given: ${JSON.stringify(seen)}` : "no answer from the promo service; whether the code was given is unknown.";
+    if (seen) return `given: ${JSON.stringify(seen)}`;
   }
-  return sent.body;
+  return "no answer from the promo service; whether the code was given is unknown.";
 }
 
 /** Operator-only: every code of a campaign. Kept out of the model's reach (see agent.ts). */

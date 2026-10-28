@@ -35,12 +35,14 @@ export async function runStep(sample: string, step: string) {
   if (r?.status !== 200) return "no such sample; nothing was run";
   const done = await stepOf(sample, step);
   if (done) return `already run: ${JSON.stringify(done)}`;
-  const sent = await call("POST", `/v1/samples/${sample}/steps`, { step, volume_ml: r.body.volume_ml }, `step-${sample}-${step}`);
-  if (!sent) { // no answer: look before saying anything, and never send again
+  const body = { step, volume_ml: r.body.volume_ml };
+  for (let attempt = 0; attempt < 2; attempt++) { // no answer: look whether it ran before trying once more
+    const sent = await call("POST", `/v1/samples/${sample}/steps`, body, `step-${sample}-${step}`);
+    if (sent) return sent.body;
     const seen = await stepOf(sample, step);
-    return seen ? `run: ${JSON.stringify(seen)}` : "no answer from the lab service; whether the step ran is unknown.";
+    if (seen) return `run: ${JSON.stringify(seen)}`;
   }
-  return sent.body;
+  return "no answer from the lab service; whether the step ran is unknown.";
 }
 
 export async function discardSample(sample: string, approval = "") {

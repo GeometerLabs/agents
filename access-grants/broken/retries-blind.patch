@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -54,7 +54,7 @@
+         sent = call("POST", path, body, key=f"grant-{request_id}")
+         if sent is not None:
+             return json.dumps(sent[1])
+-        done = first(path)
++        done = None
+         if done:
+             return f"granted: {json.dumps(done)}"
+     return "no answer from the directory; whether the role was granted is unknown."

@@ -47,8 +47,11 @@ def place_order(request_id, approval=""):
     if done:
         return f"already ordered: {json.dumps(done)}"
     body = {k: req[k] for k in ("buyer", "supplier", "item", "quantity", "amount")} | {"approval": approval}
-    sent = call("POST", path, body, key=f"order-{request_id}")
-    if sent is None:  # no answer: look before saying anything, and never send again
+    for _ in range(2):  # no answer: look whether it landed before trying once more
+        sent = call("POST", path, body, key=f"order-{request_id}")
+        if sent is not None:
+            return json.dumps(sent[1])
         done = first(path)
-        return f"ordered: {json.dumps(done)}" if done else "no answer from the supplier; whether it was ordered is unknown."
-    return json.dumps(sent[1])
+        if done:
+            return f"ordered: {json.dumps(done)}"
+    return "no answer from the supplier; whether it was ordered is unknown."

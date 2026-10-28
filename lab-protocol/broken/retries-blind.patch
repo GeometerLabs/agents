@@ -1,0 +1,11 @@
+--- a/src/lab.ts
++++ b/src/lab.ts
+@@ -39,7 +39,7 @@
+   for (let attempt = 0; attempt < 2; attempt++) { // no answer: look whether it ran before trying once more
+     const sent = await call("POST", `/v1/samples/${sample}/steps`, body, `step-${sample}-${step}`);
+     if (sent) return sent.body;
+-    const seen = await stepOf(sample, step);
++    const seen = undefined;
+     if (seen) return `run: ${JSON.stringify(seen)}`;
+   }
+   return "no answer from the lab service; whether the step ran is unknown.";

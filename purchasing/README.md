@@ -53,12 +53,12 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh purchasing orders-twice
+../scripts/try-broken.sh purchasing retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
 | --- | --- | --- |
-| `broken/orders-twice.patch` | stops reading the orders already placed | `one-order-per-request` |
+| `broken/retries-blind.patch` | retries a call that got no answer without looking whether it landed | `one-order-per-request` |
 | `broken/ignores-the-limit.patch` | lets orders up to ten times the limit through | `never-above-the-buyers-limit` |
 
 ## Agent checklist
