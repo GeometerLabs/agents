@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -43,7 +43,7 @@
+     if float(req["amount"]) > float(req["buyer_limit"]) and not approval:
+         return f"held: {req['amount']} is above the buyer's limit of {req['buyer_limit']}; the buyer must approve it"
+     path = f"/v1/requests/{request_id}/orders"
+-    done = first(path)
++    done = None
+     if done:
+         return f"already ordered: {json.dumps(done)}"
+     body = {k: req[k] for k in ("buyer", "supplier", "item", "quantity", "amount")} | {"approval": approval}
