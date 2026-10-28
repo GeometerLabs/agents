@@ -33,6 +33,13 @@ units = { value = "USD" }
 receipt_lookup = true
 
 [[tool.operation]]
+name = "list_exports"
+http = "GET /v1/admin/exports"
+lists = "exports"
+entity_key = ["campaign"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
 name = "export_codes"
 http = "POST /v1/admin/exports"
 creates = "exports"
@@ -40,7 +47,7 @@ semantics = "code-export/1"
 intent_key = ["campaign"]
 entity_key = ["campaign"]
 authority = ["promo:admin"]
-intent_unsupported = "an operator export, never called by the streamer"
+receipt_lookup = true
 
 [[model]]
 id = "model"
