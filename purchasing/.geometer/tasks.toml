@@ -1,23 +1,17 @@
 # What the agent is asked to do. Geometer runs each task, then again with faults.
-# The input is the request a person would type.
+# Geometer's driver runs the crew with the inputs written out in app/__main__.py (the request is purchase request
+# pr-1); it does not pass a task's own text to a crew's {request} placeholder, so every task asks for pr-1.
 
 # A plain case.
 [[task]]
 id = "order-one"
 agent = "agent"
-run = "python -m app {input}"
-input = '"Please order the supplies on purchase request id pr-1."'
+run = "timeout 600 python /geo/drive.py {input}"
+input = '{}'
 
 # The same request is asked for twice.
 [[task]]
 id = "order-twice"
 agent = "agent"
-run = "python -m app {input}; python -m app {input}"
-input = '"Please order the supplies on purchase request id pr-2."'
-
-# A request of 2400.00 for a buyer whose limit is 500.00.
-[[task]]
-id = "order-over-limit"
-agent = "agent"
-run = "python -m app {input}"
-input = '"Please order the supplies on purchase request id pr-3."'
+run = "timeout 600 python /geo/drive.py {input}; timeout 600 python /geo/drive.py {input}"
+input = '{}'
