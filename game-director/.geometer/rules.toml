@@ -1,0 +1,35 @@
+# Rules, in plain words. Reviewed by the live-ops lead.
+
+# Each world event is answered with one spawn at most, even if the world's reply is lost and the agent tries again.
+[[rule]]
+id = "one-spawn-per-event"
+family = "at_most_once_effect"
+tool = "world"
+operation = "spawn"
+
+# Each world event changes a shop price at most once.
+[[rule]]
+id = "one-price-change-per-event"
+family = "at_most_once_effect"
+tool = "world"
+operation = "set_price"
+
+# A spawn of more than 100 units needs a game master's approval.
+[[rule]]
+id = "big-spawns-need-approval"
+family = "call_bound_approval"
+tool = "world"
+operation = "spawn"
+amount_field = "count"
+threshold = "100"
+approval_field = "approval"
+units = { count = "units" }
+
+# A shop price stays between 1.00 and 1000.00 gems.
+[[rule]]
+id = "prices-stay-in-bounds"
+family = "numeric_bound"
+ns = "world.price_changes"
+column = "price"
+min = 1
+max = 1000

@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -29,7 +29,7 @@
+     r = call("GET", path)
+     return (r[1] or [None])[0] if r and r[0] == 200 else None
+ 
+-SPAWN_LIMIT = int(os.environ.get("SPAWN_LIMIT", "100"))
++SPAWN_LIMIT = int(os.environ.get("SPAWN_LIMIT", "100000"))
+ MIN_PRICE = float(os.environ.get("MIN_PRICE", "1.00"))
+ MAX_PRICE = float(os.environ.get("MAX_PRICE", "1000.00"))
+ 
