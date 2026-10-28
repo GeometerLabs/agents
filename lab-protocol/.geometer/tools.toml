@@ -1,0 +1,49 @@
+# The simulated world: a lab-information service with samples, the protocol steps run on them and discards.
+# A protocol step is one effect per sample and step; a discard is one effect per sample.
+[[tool]]
+id = "lims"
+double = "http"
+hosts = ["lims.example"]
+account = "acct-lab-1"
+fixtures = "fixtures.json"
+
+[[tool.operation]]
+name = "get_sample"
+http = "GET /v1/samples/{sample_id}"
+gets = "samples"
+entity_key = ["sample_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "list_steps"
+http = "GET /v1/samples/{sample_id}/steps"
+lists = "steps"
+entity_key = ["sample_id"]
+intent_unsupported = "a lookup changes nothing"
+
+[[tool.operation]]
+name = "run_step"
+http = "POST /v1/samples/{sample_id}/steps"
+creates = "steps"
+semantics = "protocol-step/1"
+intent_key = ["sample_id", "step"]
+entity_key = ["sample_id"]
+authority = ["lims:run"]
+receipt_lookup = true
+
+[[tool.operation]]
+name = "discard"
+http = "POST /v1/samples/{sample_id}/discard"
+creates = "discards"
+semantics = "sample-discard/1"
+intent_key = ["sample_id"]
+entity_key = ["sample_id"]
+authority = ["lims:discard"]
+units = { volume_ml = "ml" }
+receipt_lookup = true
+
+[[model]]
+id = "model"
+hosts = ["model.example"]
+stand_in = "scripted"
+provider = "https://api.openai.com/v1"

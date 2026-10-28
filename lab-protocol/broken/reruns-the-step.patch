@@ -1,0 +1,11 @@
+--- a/src/lab.ts
++++ b/src/lab.ts
+@@ -33,7 +33,7 @@
+ export async function runStep(sample: string, step: string) {
+   const r = await call("GET", `/v1/samples/${sample}`);
+   if (r?.status !== 200) return "no such sample; nothing was run";
+-  const done = await stepOf(sample, step);
++  const done = undefined;
+   if (done) return `already run: ${JSON.stringify(done)}`;
+   const sent = await call("POST", `/v1/samples/${sample}/steps`, { step, volume_ml: r.body.volume_ml }, `step-${sample}-${step}`);
+   if (!sent) { // no answer: look before saying anything, and never send again

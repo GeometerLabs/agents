@@ -1,0 +1,19 @@
+# Rules, in plain words. Reviewed by the lab lead.
+
+# Each protocol step runs once per sample, even if the instrument's reply is lost and the agent tries again.
+[[rule]]
+id = "one-run-per-sample-and-step"
+family = "at_most_once_effect"
+tool = "lims"
+operation = "run_step"
+
+# Discarding a sample (any volume above zero) needs a scientist's approval.
+[[rule]]
+id = "discards-need-a-scientist"
+family = "call_bound_approval"
+tool = "lims"
+operation = "discard"
+amount_field = "volume_ml"
+threshold = "0.00"
+approval_field = "approval"
+units = { volume_ml = "ml" }

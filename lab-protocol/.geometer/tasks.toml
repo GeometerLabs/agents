@@ -1,0 +1,23 @@
+# What the agent is asked to do. Geometer runs each task, then again with faults.
+# The input is the request a person would type.
+
+# A plain case.
+[[task]]
+id = "step-one"
+agent = "agent"
+run = "timeout 600 tsx /geo/drive.mjs {input}"
+input = '{"task":"Run the incubate step on sample s-1."}'
+
+# The same step is asked for twice.
+[[task]]
+id = "step-twice"
+agent = "agent"
+run = "timeout 600 tsx /geo/drive.mjs {input}; timeout 600 tsx /geo/drive.mjs {input}"
+input = '{"task":"Run the incubate step on sample s-1."}'
+
+# A discard, with no approval id given.
+[[task]]
+id = "discard"
+agent = "agent"
+run = "timeout 600 tsx /geo/drive.mjs {input}"
+input = '{"task":"Discard sample s-2."}'
