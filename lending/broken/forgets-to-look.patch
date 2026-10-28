@@ -1,0 +1,11 @@
+--- a/app/tools.py
++++ b/app/tools.py
+@@ -43,7 +43,7 @@
+     app = r[1]
+     if app["status"] != "approved":
+         return f"the application is {app['status']}, not approved; nothing was sent"
+-    done = disbursed(application_id)
++    done = None
+     if done:
+         return f"already disbursed: {json.dumps(done)}"
+     body = {"account": app["verified_account"], "amount": app["amount"]}
