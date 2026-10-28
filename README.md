@@ -25,7 +25,7 @@ Geometer catch it, a CI workflow and a prompt for your coding assistant.
 
 ## Try one in 5 minutes
 
-You need [Geometer](https://geometer.dev/docs/install) and Docker running.
+You need [Geometer](https://geometer.dev/docs/install) `0.1.0-alpha.2` or later and Docker running. The first six agents also check with `0.1.0-alpha.1`; the eight framework agents need `0.1.0-alpha.2`, which added their framework support.
 
 ```sh
 git clone <this repository> agents && cd agents/refund-desk
