@@ -1,6 +1,6 @@
 # item-shop
 
-World: Geometer Worlds.
+Market: Games and live worlds.
 
 A live-ops agent for a game. It restores items lost to a crash and sells items for gems. The ticket, not the chat message, decides who gets the item; a ticket is restored once however often the player asks; a restoration worth more than 50.00 gems waits for a game master's approval id.
 

@@ -1,6 +1,6 @@
 # game-master
 
-World: Geometer Worlds (creative).
+Market: Games and live worlds.
 
 An AI game master that rewards players when the game server reports a finished quest. The reward comes from the quest's own table; a completion is rewarded once even if the server sends the event twice or a reply is lost; a reward above 100.00 gold waits for a human game master's approval id.
 

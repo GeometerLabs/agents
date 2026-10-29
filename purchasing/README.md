@@ -1,6 +1,6 @@
 # purchasing
 
-World: Purchasing. Framework: CrewAI (Python), `crewai` 1.15.32.
+Market: Money movement (purchasing). Framework: CrewAI (Python), `crewai` 1.15.32.
 
 Buys supplies for purchase requests within a buyer's mandate. The request decides the supplier, item and amount; each request is ordered once; an order above the buyer's limit waits for the buyer's own approval id.
 

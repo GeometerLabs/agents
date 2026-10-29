@@ -1,6 +1,6 @@
 # game-director
 
-World: Geometer Worlds. Framework: Pydantic AI (Python), `pydantic-ai-slim[openai]` 2.63.0.
+Market: Games and live worlds. Framework: Pydantic AI (Python), `pydantic-ai-slim[openai]` 2.63.0.
 
 An AI director for a small world economy. For each world event it spawns resources or adjusts a shop price. Each event is applied once; a spawn of more than 100 units waits for a game master's approval id; a shop price is refused outside 1.00 to 1000.00 gems (in the agent's code).
 

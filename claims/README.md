@@ -1,6 +1,6 @@
 # claims
 
-World: Claims. Framework: Strands Agents (Python), `strands-agents[openai]` 1.62.0.
+Market: Money movement (claims). Framework: Strands Agents (Python), `strands-agents[openai]` 1.62.0.
 
 Pays out an insurance claim that an adjuster has approved. A claim is paid at most once, to the policyholder's account on file; a payment above 1000.00 waits for an adjuster's approval id. The model is any OpenAI-compatible endpoint by default (Strands' OpenAI provider); Amazon Bedrock is an option.
 

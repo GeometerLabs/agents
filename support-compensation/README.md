@@ -1,6 +1,6 @@
 # support-compensation
 
-World: Support.
+Market: Commerce and support (support).
 
 A helpdesk agent that makes a customer whole after a bad experience with either a credit on their account or a refund to their card, never both for one ticket. Before it acts it looks at both kinds already given to the ticket; a refund above 100.00 waits for a person's approval id.
 

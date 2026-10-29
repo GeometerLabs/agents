@@ -1,6 +1,6 @@
 # access-grants
 
-World: Access. Framework: Google ADK (Python), `google-adk` 2.13.0 with `litellm` 1.106.5.
+Market: Operations (access). Framework: Google ADK (Python), `google-adk` 2.13.0 with `litellm` 1.106.5.
 
 Grants a role on request. The request decides which account gets which role; a request is granted once; an admin role (privilege level above 2) waits for a security lead's approval id.
 

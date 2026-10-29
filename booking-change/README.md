@@ -1,6 +1,6 @@
 # booking-change
 
-World: Bookings.
+Market: Commerce and support (bookings).
 
 An airline-style agent that moves a traveller to another seat and charges the change fee. The bookings service takes idempotency keys; the billing service does not, so after a lost reply the agent looks at the booking's charges before it charges again.
 
