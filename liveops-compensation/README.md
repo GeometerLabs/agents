@@ -1,6 +1,6 @@
 # liveops-compensation
 
-World: Geometer Worlds. Framework: LangGraph (Python), `langgraph` 1.2.18 with `langchain-openai` 1.7.3.
+Market: Games and live worlds. Framework: LangGraph (Python), `langgraph` 1.2.18 with `langchain-openai` 1.7.3.
 
 After a server crash eats a raid loadout, this agent restores the lost items or currency for the player's support ticket. The ticket, not the chat message, decides who gets what; a ticket is restored once however often the player asks; a restoration worth more than 50.00 gems waits for a game master's approval id.
 

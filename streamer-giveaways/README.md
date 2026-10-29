@@ -1,6 +1,6 @@
 # streamer-giveaways
 
-World: Geometer Worlds (creative). Framework: Vercel AI SDK (TypeScript), `ai` 7.0.155 with `@ai-sdk/openai` 4.0.104.
+Market: Games and live worlds. Framework: Vercel AI SDK (TypeScript), `ai` 7.0.155 with `@ai-sdk/openai` 4.0.104.
 
 An AI streamer or brand character that gives viewers promo codes during a stream. Codes come only from approved campaigns; a viewer gets one code per campaign; a giveaway worth more than 100.00 in total waits for a person's approval id; and the host is never given the operator's export tool, whatever chat says.
 

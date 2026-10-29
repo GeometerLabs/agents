@@ -1,6 +1,6 @@
 # creator-payouts
 
-World: Payments.
+Market: Money movement (payouts).
 
 An agent that pays creators their share for a period. The amount is cut down to what the payouts service says the creator is owed, the money goes to the registered account the service holds, a period is paid once, and a payout above 500.00 waits for a person's approval id.
 

@@ -6,22 +6,22 @@ charge, pay, reward, order, disburse, grant) and are built to act correctly. The
 key and your own services. Each one has its rules in plain words, a one-line mistake you can apply to watch
 Geometer catch it, a CI workflow and a prompt for your coding assistant.
 
-| Agent | World | Framework | What it does, in one line |
+| Agent | Market | Framework | What it does, in one line |
 | --- | --- | --- | --- |
-| [refund-desk](refund-desk) | Payments | Node.js, no framework | Refunds orders once, with an idempotency key and a look-up before any retry; large refunds wait for a person. |
-| [item-shop](item-shop) | Geometer Worlds | Node.js, no framework | Restores lost items once per ticket and sells items for gems; the ticket decides who gets the item. |
-| [support-compensation](support-compensation) | Support | Node.js, no framework | Makes a customer whole with a credit or a refund for a ticket, never both. |
-| [booking-change](booking-change) | Bookings | Node.js, no framework | Moves a traveller to another seat and charges the fee, once, even when a reply is lost. |
-| [creator-payouts](creator-payouts) | Payments | Node.js, no framework | Pays creators what they are owed, once per period, to their registered account only. |
-| [game-master](game-master) | Geometer Worlds (creative) | Node.js, no framework | An AI game master that rewards quest completions in a small economy, once per completion. |
-| [liveops-compensation](liveops-compensation) | Geometer Worlds | LangGraph (Python) | After a server crash eats a raid loadout, restores the items or currency per ticket; big ones wait for a game master. |
-| [game-director](game-director) | Geometer Worlds | Pydantic AI (Python) | An AI director that spawns resources and adjusts shop prices in a small world economy, each event once, prices within bounds. |
-| [streamer-giveaways](streamer-giveaways) | Geometer Worlds (creative) | Vercel AI SDK (TypeScript) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never an operator tool. |
-| [purchasing](purchasing) | Purchasing | CrewAI (Python) | Buys supplies within a buyer's mandate, one order per request. |
-| [lending](lending) | Lending | OpenAI Agents SDK (Python) | Disburses an approved loan once per application, to the verified account only. |
-| [claims](claims) | Claims | Strands Agents (Python) | Pays out an insurance claim at most once; an adjuster approves big ones. |
-| [lab-protocol](lab-protocol) | Lab | Mastra (TypeScript) | Runs a protocol step on a sample once; a scientist approves discards. |
-| [access-grants](access-grants) | Access | Google ADK (Python) | Grants a role on request, once; admin roles need approval. |
+| [refund-desk](refund-desk) | Commerce and support (payments) | Node.js, no framework | Refunds orders once, with an idempotency key and a look-up before any retry; large refunds wait for a person. |
+| [item-shop](item-shop) | Games and live worlds | Node.js, no framework | Restores lost items once per ticket and sells items for gems; the ticket decides who gets the item. |
+| [support-compensation](support-compensation) | Commerce and support (support) | Node.js, no framework | Makes a customer whole with a credit or a refund for a ticket, never both. |
+| [booking-change](booking-change) | Commerce and support (bookings) | Node.js, no framework | Moves a traveller to another seat and charges the fee, once, even when a reply is lost. |
+| [creator-payouts](creator-payouts) | Money movement (payouts) | Node.js, no framework | Pays creators what they are owed, once per period, to their registered account only. |
+| [game-master](game-master) | Games and live worlds | Node.js, no framework | An AI game master that rewards quest completions in a small economy, once per completion. |
+| [liveops-compensation](liveops-compensation) | Games and live worlds | LangGraph (Python) | After a server crash eats a raid loadout, restores the items or currency per ticket; big ones wait for a game master. |
+| [game-director](game-director) | Games and live worlds | Pydantic AI (Python) | An AI director that spawns resources and adjusts shop prices in a small world economy, each event once, prices within bounds. |
+| [streamer-giveaways](streamer-giveaways) | Games and live worlds | Vercel AI SDK (TypeScript) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never an operator tool. |
+| [purchasing](purchasing) | Money movement (purchasing) | CrewAI (Python) | Buys supplies within a buyer's mandate, one order per request. |
+| [lending](lending) | Money movement (lending) | OpenAI Agents SDK (Python) | Disburses an approved loan once per application, to the verified account only. |
+| [claims](claims) | Money movement (claims) | Strands Agents (Python) | Pays out an insurance claim at most once; an adjuster approves big ones. |
+| [lab-protocol](lab-protocol) | Operations (lab) | Mastra (TypeScript) | Runs a protocol step on a sample once; a scientist approves discards. |
+| [access-grants](access-grants) | Operations (access) | Google ADK (Python) | Grants a role on request, once; admin roles need approval. |
 
 ## Try one in 5 minutes
 

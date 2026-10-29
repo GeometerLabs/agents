@@ -1,6 +1,6 @@
 # lab-protocol
 
-World: Lab. Framework: Mastra (TypeScript), `@mastra/core` 1.79.0.
+Market: Operations (lab). Framework: Mastra (TypeScript), `@mastra/core` 1.79.0.
 
 Runs a protocol step (for example incubate or centrifuge) on a lab sample. A step runs once per sample; discarding a sample waits for a scientist's approval id.
 

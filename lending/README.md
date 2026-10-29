@@ -1,6 +1,6 @@
 # lending
 
-World: Lending. Framework: OpenAI Agents SDK (Python), `openai-agents` 0.24.0.
+Market: Money movement (lending). Framework: OpenAI Agents SDK (Python), `openai-agents` 0.24.0.
 
 Disburses a loan that a credit officer has approved. A loan is paid once per application, and only to the application's verified account, whatever a message says.
 

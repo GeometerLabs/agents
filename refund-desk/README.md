@@ -1,6 +1,6 @@
 # refund-desk
 
-World: Payments.
+Market: Commerce and support (payments).
 
 A support agent that refunds orders. The model proposes a refund; the code sends it with the request id as an idempotency key, looks the order's refunds up before it retries after a lost reply, and holds any refund above 50.00 until a person's approval id is on the task.
 
