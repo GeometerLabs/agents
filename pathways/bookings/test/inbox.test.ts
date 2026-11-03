@@ -337,3 +337,83 @@ test("as its own process: with no WhatsApp setting it refuses to start; path-tok
     assert.ok(!out.includes(TOKEN));
   } finally { child.kill("SIGTERM"); }
 });
+
+// ---- the owner's replies also go to the approvals relay ----------------------------------------------------------------------------
+
+const RELAY = { relayToken: "relay-token-own-0123456789", ownerWhatsapp: "+16505551234" };
+const whatsappFrom = (from: string, id: string, text: string) => JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "1", changes: [{ field: "messages", value: { messaging_product: "whatsapp", messages: [{ from, id, timestamp: "1749416383", type: "text", text: { body: text } }] } }] }] });
+
+test("the owner's message goes to the relay with the relay's own token, and to the runtime as well; a customer's goes to the runtime only", async () => {
+  const relay = await scripted(() => ({ status: 200, json: { ok: true } }));
+  try {
+    await withInbox(async ({ runtime, post }) => {
+      const owner = whatsappFrom("16505551234", "wamid.owner-1", "approve K7M2QX");
+      assert.equal((await post("/webhooks/whatsapp", owner, whatsappHeaders(owner))).status, 200);
+      assert.equal(runtime.requests.length, 1, "the runtime still gets it, as before");
+      assert.equal(JSON.parse(runtime.requests[0].body).events[0].message.text, "approve K7M2QX");
+      assert.equal(relay.requests.length, 1);
+      assert.equal(relay.requests[0].url, "/internal/owner-messages");
+      assert.equal(relay.requests[0].headers.authorization, `Bearer ${RELAY.relayToken}`, "the relay's own token");
+      assert.notEqual(runtime.requests[0].headers.authorization, relay.requests[0].headers.authorization, "never the runtime's");
+      assert.deepEqual(JSON.parse(relay.requests[0].body), { messages: [{ id: "wamid.owner-1", from: "+16505551234", text: "approve K7M2QX", timestamp: 1749416383000 }] });
+
+      const customer = whatsappFrom("919811111111", "wamid.cust-1", "approve K7M2QX"); // a customer typing the same words
+      assert.equal((await post("/webhooks/whatsapp", customer, whatsappHeaders(customer))).status, 200);
+      assert.equal(runtime.requests.length, 2);
+      assert.equal(relay.requests.length, 1, "the relay hears only the owner's number");
+    }, { config: { ...RELAY, relayUrl: relay.url } });
+  } finally { await relay.close(); }
+});
+
+test("a webhook with the owner's message and a customer's sends the relay only the owner's", async () => {
+  const relay = await scripted(() => ({ status: 200, json: {} }));
+  try {
+    await withInbox(async ({ post, runtime }) => {
+      const body = JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "1", changes: [{ field: "messages", value: { messaging_product: "whatsapp", messages: [
+        { from: "919811111111", id: "wamid.c", timestamp: "1749416383", type: "text", text: { body: "hello" } },
+        { from: "16505551234", id: "wamid.o", timestamp: "1749416384", type: "text", text: { body: "deny K7M2QX" } },
+      ] } }] }] });
+      assert.equal((await post("/webhooks/whatsapp", body, whatsappHeaders(body))).status, 200);
+      assert.equal(JSON.parse(runtime.requests[0].body).events.length, 2);
+      assert.deepEqual(JSON.parse(relay.requests[0].body).messages.map((m: any) => m.id), ["wamid.o"]);
+    }, { config: { ...RELAY, relayUrl: relay.url } });
+  } finally { await relay.close(); }
+});
+
+test("if the relay cannot take the owner's message the provider is told to send it again (the runtime skips what it saved); a customer's message does not need the relay", async () => {
+  const down = await scripted(() => ({ status: 500, json: {} }));
+  try {
+    await withInbox(async ({ post, runtime }) => {
+      const owner = whatsappFrom("16505551234", "wamid.owner-2", "approve K7M2QX");
+      assert.equal((await post("/webhooks/whatsapp", owner, whatsappHeaders(owner))).status, 503);
+      assert.equal(runtime.requests.length, 1);
+      const customer = whatsappFrom("919811111111", "wamid.cust-2", "hello");
+      assert.equal((await post("/webhooks/whatsapp", customer, whatsappHeaders(customer))).status, 200, "a relay that is down does not stop customers");
+    }, { config: { ...RELAY, relayUrl: down.url } });
+  } finally { await down.close(); }
+  await withInbox(async ({ post }) => { // not even listening
+    const owner = whatsappFrom("16505551234", "wamid.owner-3", "approve K7M2QX");
+    assert.equal((await post("/webhooks/whatsapp", owner, whatsappHeaders(owner))).status, 503);
+  }, { config: { ...RELAY, relayUrl: "http://127.0.0.1:1" } });
+});
+
+test("path-token mode forwards the owner's messages too (the code in the reply is what stands between a leaked URL and a forged approval)", async () => {
+  const relay = await scripted(() => ({ status: 200, json: {} }));
+  try {
+    await withInbox(async ({ post }) => {
+      const owner = whatsappFrom("16505551234", "wamid.owner-4", "approve K7M2QX");
+      assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, owner)).status, 200);
+      assert.equal(relay.requests.length, 1);
+    }, { config: { ...PATH_MODE, ...RELAY, relayUrl: relay.url } });
+  } finally { await relay.close(); }
+});
+
+test("the relay is all or nothing: a relay address without the owner's number or its own token is refused at start", async () => {
+  const start = (extra: Partial<InboxConfig>) => startInbox({ runtimeUrl: "http://127.0.0.1:1", ...SECRETS, ...extra }, { port: 0 });
+  await assert.rejects(() => start({ relayUrl: "http://127.0.0.1:2" }), /relayUrl, relayToken and ownerWhatsapp together/);
+  await assert.rejects(() => start({ relayUrl: "http://127.0.0.1:2", relayToken: "x" }), /together/);
+  await assert.rejects(() => start({ ownerWhatsapp: "+16505551234" }), /together/);
+  await assert.rejects(() => start({ ...RELAY, relayUrl: "http://127.0.0.1:2", ownerWhatsapp: "owner" }), /not a phone number/);
+  const ok = await start({ ...RELAY, relayUrl: "http://127.0.0.1:2" });
+  await ok.close();
+});
