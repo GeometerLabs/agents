@@ -29,8 +29,11 @@ export interface Ui {
   bookingsNone: string;
   bookingsOk(n: number): string;
   bookingsMissing(found: number, total: number): string;
+  bookingsCancelled(n: number): string;
+  bookingsCancelledStill(n: number): string;
   depositsNone: string;
-  deposits(amount: string): string;
+  deposits(kept: string): string;
+  depositsReturned(collected: string, returned: string, kept: string): string;
   discountNone: string;
   discountRefused(amounts: number[]): string;
   outsideHours(n: number): string;
@@ -68,8 +71,11 @@ const en: Ui = {
   bookingsNone: "No bookings yet. Make one on the Customer tab.",
   bookingsOk: (n) => (n === 1 ? "The booking it made is in your calendar. We checked." : `All ${n} bookings it made are in your calendar. We checked.`),
   bookingsMissing: (f, t) => `Only ${f} of ${t} bookings are in your calendar. Look at the rest.`,
+  bookingsCancelled: (n) => (n === 1 ? "1 booking was made and then cancelled. It is off your calendar." : `${n} bookings were made and then cancelled. They are off your calendar.`),
+  bookingsCancelledStill: (n) => `${n} cancelled ${n === 1 ? "booking is" : "bookings are"} still on your calendar. Look at ${n === 1 ? "it" : "them"}.`,
   depositsNone: "No deposit has been paid yet.",
-  deposits: (a) => `${a} in deposits, as the payment record shows.`,
+  deposits: (k) => `${k} in deposits, as the payment record shows.`,
+  depositsReturned: (c, r, k) => `${c} in deposits came in and ${r} went back. You keep ${k}, as the payment record shows.`,
   discountNone: "Nobody has asked for a discount yet. It never goes below your price.",
   discountRefused: (a) => (a.length === 1 ? `It said no to ${formatInr(a[0])}. It never goes below your price.` : `It said no to a lower price ${a.length} times (lowest ${formatInr(lowest(a))}). It never goes below your price.`),
   outsideHours: (n) => `It said no to ${n} ${n === 1 ? "request" : "requests"} outside your opening hours.`,
@@ -105,8 +111,11 @@ const hi: Ui = {
   bookingsNone: "अभी कोई बुकिंग नहीं है। ग्राहक वाले टैब में एक बुकिंग बनाइए।",
   bookingsOk: (n) => (n === 1 ? "इसने जो बुकिंग की, वह आपके कैलेंडर में है। हमने जाँचा है।" : `इसने जितनी भी बुकिंग कीं (${n}), सब आपके कैलेंडर में हैं। हमने जाँचा है।`),
   bookingsMissing: (f, t) => `${t} में से सिर्फ़ ${f} बुकिंग आपके कैलेंडर में हैं। बाकी देख लीजिए।`,
+  bookingsCancelled: (n) => (n === 1 ? "1 बुकिंग हुई थी और फिर रद्द हो गई। वह आपके कैलेंडर से हट गई है।" : `${n} बुकिंग हुई थीं और फिर रद्द हो गईं। वे आपके कैलेंडर से हट गई हैं।`),
+  bookingsCancelledStill: (n) => `रद्द हुई ${n} बुकिंग अब भी आपके कैलेंडर में है। उसे देख लीजिए।`,
   depositsNone: "अभी किसी ने जमा राशि नहीं दी है।",
-  deposits: (a) => `${a} जमा राशि मिली, जैसा पेमेंट रिकॉर्ड दिखाता है।`,
+  deposits: (k) => `${k} जमा राशि मिली, जैसा पेमेंट रिकॉर्ड दिखाता है।`,
+  depositsReturned: (c, r, k) => `${c} जमा राशि आई और ${r} वापस गई। आपके पास ${k} रहे, जैसा पेमेंट रिकॉर्ड दिखाता है।`,
   discountNone: "अभी किसी ने छूट नहीं माँगी। यह आपकी कीमत से नीचे कभी नहीं जाता।",
   discountRefused: (a) => (a.length === 1 ? `${formatInr(a[0])} में करने से इसने मना कर दिया। यह आपकी कीमत से नीचे कभी नहीं जाता।` : `कम कीमत माँगने पर इसने ${a.length} बार मना किया (सबसे कम ${formatInr(lowest(a))})। यह आपकी कीमत से नीचे कभी नहीं जाता।`),
   outsideHours: (n) => `खुलने के समय के बाहर की ${n} माँग को इसने मना किया।`,

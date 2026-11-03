@@ -46,7 +46,7 @@ Added 3 November 2026 in `demo/`. The product doc's partner journey asks for "a 
 
 **3. The owner's lines are counted, not written.** Each line comes from the stand-ins' records or the agent's action record: "in your calendar, we checked" needs a "booked" message that really is in the outbox, a confirmed event on the calendar's own list at the booking's start, and a payment on the link. The ₹ amount of a refused discount is read from the price rule's decision. Lines about things that have not happened are rules, not results ("Nobody has asked for a discount yet. It never goes below your price."). The strings exist in English and Hindi; any other language shows English until a reviewed set is added to `demo/strings.ts`.
 
-**4. The fake clock starts at the real time**, so "tomorrow" on the owner's phone is the real tomorrow (tests pin it to Tue 3 Nov 2026, 10:00). The suggestions under the chat are written from the shop's own first service, prices and opening days, and move to the next open day when tomorrow is closed.
+**4. The fake clock starts on today's real date at 10:00 shop time**, so "tomorrow" on the owner's phone is the real tomorrow and every suggestion is still ahead whatever the hour (starting at the real time of day would put an evening demo's "tomorrow 6pm" inside the 24-hour window, and "1 day passes" would then run past the booking instead of cancelling inside the window). Tests pin it to Tue 3 Nov 2026, 10:00. The suggestions under the chat are written from the shop's own first service, prices and opening days, and move to the next open day when tomorrow is closed.
 
 **5. One shop per server.** The shop form replaces the shop for every device on this server (other open pages start again on their next request), so a partner can set it up on the laptop and open it on the phone. A failed form changes nothing. An untouched service keeps all its names, and untouched hours keep each day's own hours; a renamed service uses the new name in every language. The refund limit is raised to at least the deposit.
 
@@ -54,7 +54,7 @@ Added 3 November 2026 in `demo/`. The product doc's partner journey asks for "a 
 
 **Choices to review**
 1. One shop for the whole server, not per phone (decision 5).
-2. The clock starts at the real time, not a fixed day, so a script that says "tomorrow" fails when tomorrow is closed unless the suggestions are used.
+2. The clock starts on the real date, not a fixed day, so a script that says "tomorrow" fails when tomorrow is a closed day unless the suggestions are used.
 3. "Pay it twice" is only offered while a deposit is waiting, or once more after it was paid.
 4. The record layer ("What we did") is English only; it is for the person showing the demo.
 5. The demo's screens use Hindi written without a native review.
@@ -65,7 +65,7 @@ Only erasable TypeScript: no enums, namespaces, parameter properties or decorato
 
 ## Size
 
-About 2,900 lines in `src/` (of which the agent is about 760, the templates 150, the date and time reading 200), about 1,600 lines of tests, situations and script, 116 tests, 27 situations, 130 checks inside them. The demo adds about 1,600 lines in `demo/` and 22 tests. No dependencies. The two largest costs are the two languages of templates and the flow's honesty (look first, read back, reconcile), which is the point of the pathway.
+About 2,900 lines in `src/` (of which the agent is about 760, the templates 150, the date and time reading 200), about 1,600 lines of tests, situations and script, 116 tests, 27 situations, 130 checks inside them. The demo adds about 1,600 lines in `demo/` and 23 tests. No dependencies. The two largest costs are the two languages of templates and the flow's honesty (look first, read back, reconcile), which is the point of the pathway.
 
 ## Choices to review
 

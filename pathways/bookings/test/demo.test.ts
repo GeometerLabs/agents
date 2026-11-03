@@ -203,8 +203,12 @@ test("owner approval: a late cancellation waits for the owner, and Approve gives
   assert.ok(s.owner.messages.some((m: any) => /Reply "approve b-1"/.test(m.text)), "the owner was asked on WhatsApp");
   assert.equal(calendarOf(s).length, 0, "the slot is free again");
 
+  assert.ok(s.owner.summary.some((l: any) => l.kind === "ok" && /made and then cancelled/.test(l.text)), "the owner is told the booking was made and is now off the calendar");
+  assert.ok(!s.owner.summary.some((l: any) => /No bookings yet/.test(l.text)), "a cancelled booking is not 'no bookings'");
+
   s = await b.do("/api/owner", { command: "approve", ref: s.owner.waiting[0].ref });
   assert.deepEqual(refundsOf(s).map((r) => r.amountInr), [200]);
+  assert.ok(s.owner.summary.some((l: any) => /₹200 in deposits came in and ₹200 went back\. You keep ₹0/.test(l.text)), "collected, given back and kept are all said");
   assert.equal(s.owner.waiting.length, 0);
   assert.ok(s.owner.messages.some((m: any) => m.who === "me" && m.text === "approve b-1"), "the owner's command is shown as sent");
   assert.ok(customerSaid(s).some((t) => /owner approved your refund/.test(t)));
@@ -513,6 +517,13 @@ test("one world per browser: sessions are separate, cookies are private to the p
   assert.deepEqual(calendarOf(reset), []);
   assert.deepEqual(linksOf(reset), []);
   assert.equal(reset.clock, "Tue 3 Nov, 10:00 am");
+});
+
+test("started without a chosen time, the clock is the morning of the real date, so every suggestion is still ahead", async () => {
+  const demo = await startDemo({ settings: glowSalon(), hosts: ["127.0.0.1"], port: 0 });
+  running.push(demo);
+  const s = await browser(demo).state();
+  assert.match(s.clock, /10:00 am$/);
 });
 
 test("the world in memory cannot grow for ever, and a port already in use is explained", async () => {

@@ -60,7 +60,7 @@
 | Reviewed Hindi, Malayalam and Kannada screen words | `demo/strings.ts` has English and Hindi (not reviewed by a native speaker). Other languages show English screens while the agent's own messages follow the language pack | A native speaker reviews the words |
 | A PIN for the shop form; the shop is one per server | Anyone on the same Wi-Fi can change the shop or press Start again. Fine for a laptop in a shop, not for a shared network | A shared-network use appears |
 | Looking more like WhatsApp (ticks, voice notes, the 30-second voice summary) | The product doc plans a voice note for the owner; the demo shows text only | The voice-note work (W12) exists |
-| Starting on a chosen day (for example, a Sunday-closed shop on a Saturday) | The clock starts at the real time; suggestions skip closed days, but typed requests do not | Partners ask |
+| Starting on a chosen day or time | The clock starts on the real date at 10:00 shop time; suggestions skip closed days, but typed requests do not | Partners ask |
 
 ## WhatsApp coexistence (check before any shop goes live)
 

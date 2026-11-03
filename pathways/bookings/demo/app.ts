@@ -10,6 +10,7 @@ import type { Demo, OwnerCommand } from "./session.ts";
 import { renderPage } from "./page.ts";
 import { buildState } from "./view.ts";
 import type { Settings } from "../src/settings.ts";
+import { localParts, zonedToMs } from "../src/time.ts";
 
 export const MAX_BODY_BYTES = 16 * 1024;
 const COOKIE = "geo_demo";
@@ -22,7 +23,7 @@ export interface DemoOptions {
   hosts?: string[];
   /** 0 picks a free port. Default 8787. */
   port?: number;
-  /** Where the fake clock starts for a new world. Default: the real now, so "tomorrow" is the real tomorrow. */
+  /** Where the fake clock starts for a new world. Default: today's real date at 10:00 in the shop's time zone, so "tomorrow" is the real tomorrow. */
   nowMs?: number | (() => number);
   maxSessions?: number;
   /** Requests per second one device may make (it may burst to 4 times this). */
@@ -118,7 +119,12 @@ export function createHandler(options: DemoOptions) {
   const maxSessions = options.maxSessions ?? 20;
   const rate = options.ratePerSecond ?? 10;
   const buckets = new Map<string, { tokens: number; at: number }>();
-  const startMs = () => (typeof options.nowMs === "function" ? options.nowMs() : options.nowMs ?? Date.now());
+  const startMs = () => {
+    if (typeof options.nowMs === "function") return options.nowMs();
+    if (options.nowMs !== undefined) return options.nowMs;
+    const tz = shop.settings.timezone;
+    return zonedToMs(localParts(Date.now(), tz), { hour: 10, minute: 0 }, tz); // the morning of the real date: every suggestion is still ahead
+  };
 
   function allowRequest(who: string): boolean {
     const now = Date.now();

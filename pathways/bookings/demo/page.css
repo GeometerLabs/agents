@@ -18,7 +18,7 @@ button { cursor: pointer; }
 [hidden] { display: none !important; }
 
 .banner {
-  position: sticky; top: 0; z-index: 30; padding: 11px 16px; text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .01em;
+  position: sticky; top: 0; z-index: 70; padding: 11px 16px; text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .01em;
   background: var(--amber-bg); color: var(--amber-ink); border-bottom: 2px solid var(--amber-line);
 }
 .wrap { max-width: 620px; margin: 0 auto; padding: 0 16px; }

@@ -39,14 +39,23 @@ export function summaryLines(demo: Demo): SummaryLine[] {
   const checked = live.filter((b) => b
     && events.some((ev) => ev.bookingRef === b.id && ev.status === "confirmed" && ev.start === b.startMs)
     && (links.find((l) => l.reference_id === b.id)?.payments.length ?? 0) > 0);
-  if (live.length === 0) lines.push({ kind: "info", text: ui.bookingsNone });
-  else if (checked.length === live.length) lines.push({ kind: "ok", text: ui.bookingsOk(live.length) });
-  else lines.push({ kind: "warn", text: ui.bookingsMissing(checked.length, live.length) });
+  if (live.length > 0 && checked.length === live.length) lines.push({ kind: "ok", text: ui.bookingsOk(live.length) });
+  else if (live.length > 0) lines.push({ kind: "warn", text: ui.bookingsMissing(checked.length, live.length) });
+  // A booking it told a customer about that was cancelled since: it must be off the calendar's own list too.
+  const gone = [...told].filter((id) => !live.some((b) => b?.id === id));
+  const stillThere = gone.filter((id) => events.some((ev) => ev.bookingRef === id && ev.status === "confirmed"));
+  if (gone.length > 0 && stillThere.length === 0) lines.push({ kind: "ok", text: ui.bookingsCancelled(gone.length) });
+  else if (stillThere.length > 0) lines.push({ kind: "warn", text: ui.bookingsCancelledStill(stillThere.length) });
+  if (told.size === 0) lines.push({ kind: "info", text: ui.bookingsNone });
 
-  // 2. Deposits, from the payments record.
+  // 2. Deposits, from the payments record: what came in, what went back, what is kept.
   const payments = links.flatMap((l) => l.payments);
-  const netPaise = payments.reduce((sum, p) => sum + p.amount - p.amount_refunded, 0);
-  lines.push(payments.length === 0 ? { kind: "info", text: ui.depositsNone } : { kind: "ok", text: ui.deposits(formatInr(netPaise / 100)) });
+  const collectedPaise = payments.reduce((sum, p) => sum + p.amount, 0);
+  const returnedPaise = payments.reduce((sum, p) => sum + p.amount_refunded, 0);
+  const inr = (paise: number) => formatInr(paise / 100);
+  if (payments.length === 0) lines.push({ kind: "info", text: ui.depositsNone });
+  else if (returnedPaise === 0) lines.push({ kind: "ok", text: ui.deposits(inr(collectedPaise)) });
+  else lines.push({ kind: "ok", text: ui.depositsReturned(inr(collectedPaise), inr(returnedPaise), inr(collectedPaise - returnedPaise)) });
 
   // 3. Discounts it refused: a price-list block that was shown to a customer.
   const sent = entries.filter((e) => e.action === "send_message");

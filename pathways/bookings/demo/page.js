@@ -314,6 +314,7 @@
     body.appendChild(row2);
     formParts = parts;
     sheet.hidden = false;
+    sheet.style.top = $("banner").offsetHeight + "px"; // the demo banner stays visible above the form
     sheet.scrollTop = 0;
   }
   function closeSheet() { $("sheet").hidden = true; formParts = null; }
