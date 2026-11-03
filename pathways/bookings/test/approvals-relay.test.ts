@@ -124,6 +124,7 @@ run("a forged answer is refused: another number, a code nobody issued, a used co
   w.runtime.kick(); await w.runtime.idle();
   assert.equal(refunded(w), 0, "Guard has no approval on record, so it releases nothing");
   assert.equal(w.model.approvals().length, 1, "and the agent's ask to Guard made no new hold");
+  assert.deepEqual(w.record().filter((e) => e.action === "owner_decision" && e.outcome === "confirmed"), [], "a forged approve leaves no 'the owner approved' in the record");
   assert.equal(w.toOwner().length, before, "the agent said nothing to the owner about a code");
 
   // the real answer works once

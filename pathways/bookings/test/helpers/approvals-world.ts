@@ -13,6 +13,7 @@ import type { FakePayments } from "../../src/adapters/payments.ts";
 import { fakeClock } from "../../src/clock.ts";
 import type { FakeClock } from "../../src/clock.ts";
 import { glowSalon, HARNESS_GUARD } from "../../src/harness.ts";
+import type { RecordEntry } from "../../src/record.ts";
 import { razorpayLimitsSpec } from "../../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../../src/language/templates.ts";
@@ -54,6 +55,8 @@ export interface ApprovalsWorld {
   store: RelayStore;
   relay: Relay;
   lines: string[];
+  /** The runtime's action record, as last saved. */
+  record(): readonly RecordEntry[];
   /** The relay, restarted over the same data (a crash and a start). */
   restartRelay(more?: Partial<RelayOptions>): Relay;
   /** A customer books, pays and cancels in time: a ₹200 refund, above the ₹100 limit, which Guard holds. Returns the approval's id. */
@@ -75,7 +78,7 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; re
   const model = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock);
   const payments = createFakePayments(clock, { guard: model });
   const lines: string[] = [];
-  const { runtime } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(`runtime: ${l}`) });
+  const { runtime, db } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(`runtime: ${l}`) });
   const runtimeServer = await startServer(runtime, { token: INTERNAL_TOKEN, port: 0 });
   const guard = await startStubGuard({ clock, upstreamUrl: "http://127.0.0.1:1", spec: razorpayLimitsSpec(settings, HARNESS_GUARD), model, agentId: AGENT_ID, approver: { id: APPROVER_ID, secret: OWNER_SECRET }, readToken: READ_TOKEN });
   const guardClient = createGuardClient({ adminUrl: guard.adminUrl, readToken: READ_TOKEN, approverId: APPROVER_ID, approverSecret: OWNER_SECRET, now: () => clock.now() });
@@ -100,7 +103,7 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; re
   }
 
   const world: ApprovalsWorld = {
-    kit, settings, clock, owner, model, payments, runtime, runtimeServer, guard, guardClient, runtimeClient, whatsapp, lines,
+    kit, settings, clock, owner, model, payments, runtime, runtimeServer, guard, guardClient, runtimeClient, whatsapp, lines, record: () => db.loadState().record,
     store: undefined as unknown as RelayStore, relay: undefined as unknown as Relay,
     restartRelay(more) { world.relay = makeRelay(more); return world.relay; },
     async heldRefund(who = "+919811111111") {
