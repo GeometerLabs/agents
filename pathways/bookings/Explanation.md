@@ -221,7 +221,7 @@ All three are made from one `MonthlyReport` object (`report/data.ts`). The owner
 
 **4. No phone numbers anywhere.** Entries are listed by booking id. The fingerprint of an entry is the sha256 of the entry *without* its `conversation` (the customer's number), so no number, not even a hash of one, reaches a page or a file.
 
-**5. The go-live certificate does not claim more than was run.** It is made from one run of the hand check (`runAll()`), so it carries the hand check's counts, its list of what was not tested (the list moved to `crash-test/not-tested.ts`, by id, so the hand check and the certificate cannot drift apart; the hand check prints exactly what it printed before) and its own phrase, "stand-in services". But every situation runs on Glow Salon's example settings. For any other shop the certificate shows that shop's limits and says the situations did not run on them: it adds "these checks on this shop's own settings (they ran on the example shop, Glow Salon)" to the not-tested list (so 15, not 14) and carries both settings digests. This is the "personalised shop" problem already in this file's Deferred.md; the certificate handles it by saying it, not by hiding it. The monthly report does the same.
+**5. The go-live certificate does not claim more than was run.** It is made from one run of the hand check, so it carries the hand check's counts, its list of what was not tested (the list moved to `crash-test/not-tested.ts`, by id, so the hand check and the certificate cannot drift apart; the hand check prints exactly what it printed before) and its own phrase, "stand-in services". *Updated the same day, see "The hand check on a shop's own settings" below:* `scripts/go-live-certificate.ts` now runs the situations on the shop's own settings, so a shop whose situations all ran gets no caveat at all. The caveat survives in two places that are still true: a certificate built from a run on Glow Salon's settings for a different shop still adds "these checks on this shop's own settings (they ran on the example shop, Glow Salon)" (15, not 14), and a run on the shop's own settings that could not run some situations adds "some of these checks, which this shop's settings cannot run (so they were left out)" (also 15) and names them in the JSON. The monthly report is not told which settings the checks ran on, so it still adds the first line for any shop but Glow Salon (Deferred.md).
 
 **6. Banned words are in the code.** `BANNED` in `report/strings.ts`: English words checked in every language (safe, guarantee, certified, 100%, secure, proven, earn, income, profit, revenue) and each language's own (Hindi सुरक्षित, गारंटी, प्रमाणित, कमाई; Malayalam സുരക്ഷിത, ഗ്യാരണ്ടി, സർട്ടിഫൈഡ്, വരുമാനം; Kannada ಸುರಕ್ಷಿತ, ಗ್ಯಾರಂಟಿ, ಪ್ರಮಾಣೀಕೃತ, ಆದಾಯ). The words are exact: "certificate" is allowed and "certified" is not, and the confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are allowed, because "confirmed bookings" has to be sayable. A test runs the owner text, the page text, the certificate text and every string through the list, in every language and in "both".
 
@@ -364,6 +364,51 @@ Run on 3 November 2026 against the production-profile Razorpay template (a stub 
 2. A refund the relay cannot ask about (a disagreement, a missing booking) is not re-asked: the builder re-requests it; there is no tool for that yet.
 3. After a Guard hold expires, the customer is told to contact the shop; the agent does not ask again. The alternative (one automatic re-ask) would put a second request in front of an owner who did not answer the first.
 4. "Done" for an approved refund means the payments service's own list shows it; a 2xx without a listing is `unconfirmed`, not retried.
+
+## The hand check on a shop's own settings, and equipment rental (added 3 November 2026)
+
+**Why.** The hand check used to run on Glow Salon alone, so a certificate for any other shop said, truthfully, that "these checks on this shop's own settings" were not run. The community templates need a real answer: a village hiring centre's settings are nothing like a salon's.
+
+**What changed.**
+
+- `crash-test/situations.ts` now builds its situations from settings: `buildSituations(settings)`. `situations` (what the tests iterate) is `buildSituations(glowSalon())`, so Glow Salon's 33 situations are the same 33. `runOn(settings)` runs them and returns the results, the settings used, and the situations that could not be run. `runAll(settings?)` is kept for the callers that only want results.
+- `crash-test/shop.ts` makes the plan: the service the scripted customers ask for (the first), a start that is on the shop's slot grid and inside its hours, a lower price to haggle for (two thirds of the price, rounded, never a number that sits inside another amount), the languages the shop speaks, and the days. Each situation asks for the slot it needs (a booking with room for a second one after it; one far enough away that a cancellation is inside the window; one far enough away that the first reminder falls due more than 24 hours after the customer last wrote) instead of the fixed "tomorrow at 6pm".
+- `crash-test/says.ts` holds `SAYS` (Glow Salon's reviewed sentences, unchanged: a test fixes their hash, because REVIEW-ml.md and REVIEW-kn.md list them), the few words a check looks for in a reply (written by hand, per language, not read back from the templates), and `sayingsFor`, which writes the same kinds of sentence for any shop from the word lists the formatters use. A test shows that for Glow Salon these are read the same way as `SAYS` (same service, price, day, time, trick). For any other shop they are machine-written and not reviewed, like all Malayalam and Kannada here.
+- `scripts/hand-check.ts --settings <file>` runs it on any shop. The heading names the shop and its languages. Situations that could not be run are listed under "NOT RUN ... and not counted above". A part of a situation that cannot be expressed is `left out` (a shop open every day has no closed day to ask for).
+- The go-live certificate runs `runOn(shop)`, carries the digest of the settings the situations ran on, and counts what could not be run as one more thing not tested (`situations-skipped`, with a row in REVIEW-ml.md and REVIEW-kn.md). `summariseRun` builds the summary; `summariseHandCheck(results)` is unchanged and still means "ran on Glow Salon".
+
+**For Glow Salon nothing changed.** `--details` was diffed before and after: one `how:` line differs (the inside-the-window situation described itself in a way that was not accurate; it now says what it does). 33 of 33, 201 checks, the same labels.
+
+**Which situations stay on the salon only: none.** Every one of the 33 could be written from settings. What a shop can fail to have is the thing a situation needs, and then the situation is skipped for that shop, never swapped for a salon run:
+
+| Needs | A shop without it |
+| --- | --- |
+| A cancellation window of at least 1 hour | The three "late cancellation" situations are not run |
+| A day and time on the grid, inside the hours, that fits the first service (and a free day or two with room for a second booking, or three separate times, for the two-customers and reschedule situations) | The situations that need it are not run |
+| A lower price that is not part of another amount | None of the situations can be built, and the hand check and the certificate stop with that reason |
+
+The sweep in `test/hand-check-shops.test.ts` runs thirteen other settings (a salon with a smaller deposit, a refund limit of nothing, closed on Wednesday and Thursday, one reminder, Hindi only, 15-minute slots, a 6 to 9 morning, the rental with Sunday closed or two reminders or a refund limit below its deposit or a 4-hour grid) and checks that whatever can run holds. To see that the situations still bite on the rental, a bug was put into the no-double-booking rule by hand: four situations failed, and the change was undone.
+
+**Two settings are raised inside some situations.** Where a situation is about a refund of the deposit being *within* the limit (the paid-twice, late-payment, cancel-after-window and cancel-inside-window situations), a shop whose refund limit is below its deposit gets the limit raised to the deposit inside that situation, and the situation's `how:` says so. The over-the-limit case is the "refund above the limit" situation, which always lowers the limit to half the deposit. This is the only place a situation changes a shop's settings.
+
+**What a check does not know.** The scripted customer for another shop writes in the shop's first language that has a name for the service, with its first name for the service. A farmer who writes "tractor" and nothing else is not tried (the agent shows the price list and asks which job).
+
+### Equipment rental on the Bookings pathway
+
+`settings/equipment-rental.example.json` is a made-up Karnataka village hiring centre (Hosahalli Farm Hiring Centre): one tractor, rented with its attachments (rotavator half day ₹3,200 and full day ₹5,600, sprayer half day ₹2,400, trolley full day ₹4,000), open 6 to 6 every day, bookings starting every 2 hours from midnight, an hour's gap after each, a ₹1,000 deposit held 30 minutes, a 24-hour cancellation window, a ₹1,000 refund limit, one reminder 24 hours before, Kannada first and Hindi second, the owner in Kannada. It is settings and nothing else: no pathway code changed for it.
+
+Why these numbers, because each one is a limit of the settings and not a taste:
+
+- The slot grid starts at midnight, so a 240-minute grid would give starts at 4, 8, 12, 16 and 20 and no 6 am. A 120-minute grid gives the 6, 8, 10 ... starts a farm day wants.
+- A job cannot be longer than 8 hours (`durationMinutes` is at most 480), so "full day" is 8 hours, not dawn to dusk.
+- One deposit for every job, and never more than the cheapest. ₹1,000 is under the sprayer's ₹2,400.
+- Reminders are "hours before", not a time of day. A second reminder 2 or 12 hours before a 6 am start would arrive at night, so there is one, 24 hours before, which lands at the same time of day as the booking.
+- Every name must be different, and a farmer who writes only the machine ("rotavator") gets the price list and is asked which job. Each job has its full name and a shorter way of saying it. A bare "tractor" matches nothing, on purpose.
+- The jobs are all one tractor with different attachments, so the shop-wide "one booking at a time" rule is exactly right for it. A centre with a tractor and a separate pump set cannot use one file for both (below).
+
+**What Bookings cannot do for rental** is the list in Deferred.md under "Equipment rental". I chose not to change pathway code: the gap that matters most (several machines at the same time) needs a capacity per service in the calendar rule, in Guard's spec, in the report and in the demo, which is not small; the 8-hour limit is a one-number change, but it is a limit the owner and the tests have documented, so it is listed with its suggested change rather than changed here.
+
+**The variant sell guide** (`sell/variants/equipment-rental.<lang>.md`) covers sections 1, 3, 4, 5, 6, 7, 8 and 11 and points to the main guide for 2, 9 and 10. Its test checks what it says against the settings and the real hand check ("28 of 28 situations held"), drives the demo through its four taps in Hindi and Kannada, and found one thing worth keeping: the demo has one customer, so a second booking for the same customer replaces the first, and it cannot show two machines clashing. The guide says to explain that rule in words.
 
 ## Syntax rules used
 

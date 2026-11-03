@@ -10,7 +10,7 @@
 // tested. Every number, amount and date is read from the hand check, the settings or the report, and written by the
 // per-language formatters; the words around them are in strings.ts.
 import { HAND_RUN, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
-import type { SituationResult } from "../crash-test/situations.ts";
+import type { HandCheckRun, SituationResult } from "../crash-test/situations.ts";
 import { formatDate, formatInr } from "../src/language/format.ts";
 import { LANGUAGES, serviceName } from "../src/settings.ts";
 import type { Language, Settings } from "../src/settings.ts";
@@ -33,6 +33,19 @@ export interface HandCheckSummary {
   checks: number;
   /** The titles (English) of the situations that did not hold. */
   failedTitles: string[];
+  /** The digest of the settings the situations ran on, when it is not Glow Salon's (the default). */
+  ranOn?: string;
+  /** The titles (English) of situations that these settings could not run: they are not in `total`. */
+  notRun?: string[];
+}
+
+/** A run on one shop's own settings: the counts, the digest of the settings it ran on, and the situations those settings could not run. */
+export function summariseRun(run: HandCheckRun): HandCheckSummary {
+  return {
+    ...summariseHandCheck(run.results),
+    ranOn: policyDigest(run.settings),
+    ...(run.skipped.length > 0 ? { notRun: run.skipped.map((s) => s.title) } : {}),
+  };
 }
 
 export function summariseHandCheck(results: readonly SituationResult[]): HandCheckSummary {
@@ -57,13 +70,13 @@ export interface GoLiveCertificate {
   preparedBy: string | null;
   issuedAt: string;
   issuedOn: LocalDate;
-  checks: { held: number; total: number; failed: number; failedTitles: string[]; checks: number };
+  checks: { held: number; total: number; failed: number; failedTitles: string[]; checks: number; notRun?: string[] };
   notTested: NotTestedKey[];
   limits: {
     services: { id: string; priceInr: number; name: Record<Language, string> }[];
     depositInr: number; holdMinutes: number; windowHours: number; refundLimitInr: number;
   };
-  /** The shop's settings (without contact details) and the settings the checks actually ran on. They differ for any shop but the example. */
+  /** The shop's settings (without contact details) and the settings the checks actually ran on. They differ only when the checks were not run on this shop's own settings. */
   policyDigest: string;
   checkedPolicyDigest: string;
   anchor: null;
@@ -89,15 +102,15 @@ export function buildGoLiveCertificate(input: GoLiveInput): GoLiveCertificate {
     preparedBy: input.preparedBy ?? null,
     issuedAt: new Date(issuedAt).toISOString(),
     issuedOn: { year: day.year, month: day.month, day: day.day },
-    checks: { held: handCheck.held, total: handCheck.total, failed: handCheck.total - handCheck.held, failedTitles: handCheck.failedTitles, checks: handCheck.checks },
-    notTested: notTestedFor(settings),
+    checks: { held: handCheck.held, total: handCheck.total, failed: handCheck.total - handCheck.held, failedTitles: handCheck.failedTitles, checks: handCheck.checks, ...(handCheck.notRun ? { notRun: handCheck.notRun } : {}) },
+    notTested: notTestedFor(settings, { onPolicyDigest: handCheck.ranOn, notRun: handCheck.notRun?.length }),
     limits: {
       services: settings.services.map((s) => ({ id: s.id, priceInr: s.priceInr, name: Object.fromEntries(LANGUAGES.map((l) => [l, serviceName(s, l)])) as Record<Language, string> })),
       depositInr: settings.deposit.amountInr, holdMinutes: settings.deposit.holdMinutes,
       windowHours: settings.cancellation.windowHours, refundLimitInr: settings.cancellation.refundLimitInr,
     },
     policyDigest: policyDigest(settings),
-    checkedPolicyDigest: checkedPolicyDigest(),
+    checkedPolicyDigest: handCheck.ranOn ?? checkedPolicyDigest(),
     anchor: null,
   };
 }
