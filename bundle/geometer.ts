@@ -3,7 +3,7 @@
 //   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [backup options]
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   shop add <name> --from <client folder>      copy a client folder in (settings.json, runtime.json, pathway.lock)
-//   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Changes nothing.
+//   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing.
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.

@@ -182,7 +182,7 @@ async function serverProblems(ctx: Context, server: ServerConfig): Promise<Probl
   return problems;
 }
 
-/** `check`: everything a deploy would check, offline, and nothing changed. */
+/** `check`: everything a deploy would check, offline. It starts nothing and touches nothing that is running (it does take the secrets handed in out of the inbox, and make any token that is missing). */
 export async function checkShop(ctx: Context, name: string): Promise<{ ok: boolean; problems: Problem[]; notes: string[]; lines: string[] }> {
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
@@ -322,7 +322,15 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
   ctx.log(`Bringing up ${prepared.map((p) => p.folder.name).join(", ")}...`);
   const up = await compose(ctx, ["up", "-d", "--remove-orphans"]);
   if (up.code !== 0) throw new Refused([{ rule: "compose-up", message: `docker compose up failed: ${up.stderr.trim().split("\n").slice(-6).join(" | ")}` }]);
-  const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files);
+  // A Guard shares its forwarder's network namespace. If the forwarder was recreated (a shop added changes the model forwarder's networks), the Guard must
+  // be recreated too, or it is left in a namespace that no longer exists. Compose does this for a dependent; this makes sure, and costs one restart at most.
+  const stranded = Object.keys(hashes).filter((n) => n.startsWith("fwd-") && before[n] && before[n].block !== hashes[n].block && before[`g-${n.slice(4)}`]).map((n) => `g-${n.slice(4)}`);
+  if (stranded.length > 0) {
+    ctx.log(`Recreating ${stranded.join(", ")} (their forwarder's networks changed).`);
+    const r = await compose(ctx, ["up", "-d", "--force-recreate", "--no-deps", ...stranded]);
+    if (r.code !== 0) throw new Refused([{ rule: "compose-recreate", message: `docker compose could not recreate ${stranded.join(", ")}: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
+  }
+  const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files && !stranded.includes(n));
   const changed = Object.keys(hashes).filter((n) => !before[n] || before[n].block !== hashes[n].block || before[n].files !== hashes[n].files);
   if (restart.length > 0) {
     ctx.log(`Restarting ${restart.join(", ")} (their files changed).`);
@@ -332,8 +340,10 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
   state.serviceHashes = hashes;
   saveState(ctx.dir, state);
 
-  // 5. the RUNNING Guards say what they enforce
+  // 5. the RUNNING Guards say what they enforce, the model Guard's among them
   const results: ShopResult[] = [];
+  const modelProof = await proveRunning(ctx, [model]);
+  if (modelProof.problems.length > 0) throw new Refused(modelProof.problems);
   for (const p of prepared) {
     const proof = await proveRunning(ctx, p.guards);
     if (proof.problems.length === 0) await renewRelayCredential(ctx, p.folder.name);
@@ -343,7 +353,7 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
     const line = provenLine({ ...total, notSelfTestable: Object.values(proof.guards).flatMap((g) => g.notSelfTestable) });
     updateStatus(ctx.dir, p.folder.name, ctx.now(), (s) => {
       s.lastDeploy = { at, ok: proof.problems.length === 0, refusal: proof.problems.length === 0 ? null : proof.problems };
-      s.tripwires = { source: "running Guards", ...total, line, perGuard: proof.guards };
+      s.tripwires = { source: "running Guards", ...total, line, perGuard: proof.guards, model: modelProof.guards.model };
       s.versions = { pathway: state.shops[p.folder.name].applied!.pathway, bundle: opsBundleVersion(), guardImage: server.guardImage, guards: Object.fromEntries(Object.entries(state.shops[p.folder.name].guards).map(([k, v]) => [k, v.version])) };
       s.stopped = stop ?? null;
       s.webhooks = { razorpay: `https://${server.domain}/c/${p.folder.name}/webhooks/razorpay`, whatsapp: `https://${server.domain}/c/${p.folder.name}/webhooks/whatsapp` };

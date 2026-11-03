@@ -86,10 +86,10 @@ test("nothing mounts the Docker socket, nothing is privileged, every program of 
   }
 });
 
-test("the runtime mounts its folder, the pathway, its data volume and its own credentials, and waits for its Guards to be healthy", () => {
+test("the runtime mounts its folder, the pathway, its data volume and its own credentials, and waits for its own three Guards to be healthy (not the shared model Guard)", () => {
   const c = two();
   assert.deepEqual(mounts(c, "rt-glow-salon"), ["/repo/pathways/bookings:/pathway:ro", "/srv/generated/shops/glow-salon/client:/client:ro", "/srv/secrets/rt-glow-salon:/run/secrets:ro", "rt-data-glow-salon:/home/node"]);
-  assert.deepEqual(Object.keys(c.services["rt-glow-salon"].block.depends_on as object).sort(), ["g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp", "g-model"]);
+  assert.deepEqual(Object.keys(c.services["rt-glow-salon"].block.depends_on as object).sort(), ["g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp"]);
   assert.deepEqual(c.services["rt-glow-salon"].block.command, ["node", "/pathway/server/main.ts", "--client", "/client"]);
 });
 

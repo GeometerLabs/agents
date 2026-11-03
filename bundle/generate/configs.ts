@@ -61,15 +61,17 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
 
 export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string })[]): string {
   const net = addressing(server);
+  const modelGuard = { id: "guard-model", service: names.modelGuard, adminUrl: url(net.adminIp(undefined, "model"), ADMIN_FORWARD_PORT), healthUrl: url(net.adminIp(undefined, "model"), HEALTH_PORT), adminTokenFile: "/run/secrets/_model/admin_token" };
   return stableJson({
     deploymentId: server.id, bundleVersion: BUNDLE_VERSION, heartbeatSeconds: server.heartbeatSeconds,
     ...(server.fleet ? { fleet: { url: server.fleet.url, keyFile: "/run/secrets/fleet_key" } } : {}),
     shops: Object.fromEntries(shops.map((s) => [s.name, {
       pathway: "bookings", pathwayVersion: s.pathwayVersion,
       runtimeUrl: runtimeUrl(server, s), internalTokenFile: `/run/secrets/${s.name}/internal_token`,
-      guards: SHOP_GUARD_KINDS.map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })),
+      // the shop's three Guards, and the server's model Guard (shared, so it is listed under every shop: if it is not ready, every shop says so)
+      guards: [...SHOP_GUARD_KINDS.map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })), modelGuard],
     }])),
-    model: { id: "guard-model", service: names.modelGuard, adminUrl: url(net.adminIp(undefined, "model"), ADMIN_FORWARD_PORT), healthUrl: url(net.adminIp(undefined, "model"), HEALTH_PORT), adminTokenFile: "/run/secrets/_model/admin_token" },
+    model: modelGuard,
   });
 }
 

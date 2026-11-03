@@ -140,7 +140,7 @@ test("a stopped shop stays stopped through a deploy, and two shops get their own
   } finally { w.done(); }
 });
 
-test("check changes nothing: it names the problems and the proof, and starts nothing", async () => {
+test("check starts nothing and records nothing as applied: it names the problems and the proof", async () => {
   const w = world(); try {
     w.handIn("glow-salon");
     const r = await checkShop(w.ctx, "glow-salon");
@@ -175,5 +175,22 @@ test("an unknown file in the secrets inbox is left where it is and said so; a ba
     assert.ok(problems.some((p) => p.rule === "secrets-intake" && /razorpay_key must be the key id and the key secret/.test(p.message)));
     assert.ok(existsSync(join(w.paths.secretsInbox, "glow-salon", "mystery.txt")));
     assert.ok(existsSync(join(w.paths.secretsInbox, "glow-salon", "razorpay_key")), "a bad file stays so it can be fixed");
+  } finally { w.done(); }
+});
+
+test("adding a second shop recreates the model forwarder, so the model Guard that shares its namespace is recreated too; and the model Guard is proven like the others", async () => {
+  const w = world({ "glow-salon": panelRuntime(), "bright-tuition": panelRuntime() }); try {
+    w.handIn("glow-salon");
+    await deploy(w.ctx, "glow-salon");
+    assert.ok(readStatus(w.root, "glow-salon")!.tripwires!.model, "the model Guard's own proof is in the status");
+    assert.ok(w.admin.includes("g-model GET /admin/status"), "and was asked of the running Guard");
+    w.handIn("bright-tuition");
+    w.calls.length = 0;
+    await deploy(w.ctx, "bright-tuition");
+    const recreated = composeCalls(w).filter((c) => c.includes("--force-recreate")).flat();
+    assert.ok(recreated.includes("g-model") && recreated.includes("--no-deps"), recreated.join(" "));
+    assert.ok(!recreated.includes("g-glow-salon-razorpay"), "only the Guard whose forwarder changed");
+    const ops = JSON.parse(read(join(w.paths.generated, "ops", "ops.json")));
+    assert.deepEqual(ops.shops["bright-tuition"].guards.map((g: { id: string }) => g.id), ["guard-razorpay", "guard-whatsapp", "guard-calendar", "guard-model"]);
   } finally { w.done(); }
 });
