@@ -144,7 +144,105 @@ const hi: TemplateSet = {
   owner_unknown_command: () => `मैं समझ नहीं पाया। "approve", "deny" या "retry" लिखें और उसके बाद बुकिंग का रेफ़रेंस।`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en, hi };
+// Malayalam and Kannada. Machine-written: a native speaker must read every line (REVIEW-ml.md, REVIEW-kn.md) before a real
+// shop uses them. Choices that keep them safe for any shop: no service name or business name gets a case ending glued on
+// (so "ഹെയർകട്ട് വില ₹450", "ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450", never a form that depends on the name's last letter), the date and time are
+// written as a unit or in brackets, and owner commands stay in Latin letters ("approve b-3") with the meaning in the owner's language.
+const ml: TemplateSet = {
+  menu: (f) => `നമസ്കാരം! ${f.businessName}-ലേക്ക് സ്വാഗതം. ഞങ്ങളുടെ സേവനങ്ങൾ: ${menuList(f)}. ഏത് സേവനം, ഏത് ദിവസം, ഏത് സമയം വേണമെന്ന് പറയൂ.`,
+  ask_when: (f) => `${need(f, "serviceName")} ഏത് ദിവസം, ഏത് സമയത്ത് വേണം?`,
+  ask_new_time: () => "പകരം ഏത് ദിവസം, ഏത് സമയം വേണം?",
+  price_floor: (f) => `${need(f, "serviceName")} വില ${inr(f, "priceInr")} ആണ്. ക്ഷമിക്കണം, ഇതിൽ കുറയ്ക്കാൻ കഴിയില്ല.`,
+  confirm_details: (f) => `ഉറപ്പിക്കാൻ: ${need(f, "serviceName")}, ${slot(f)}. തുടരാൻ "ശരി" എന്ന് മറുപടി അയയ്ക്കൂ.`,
+  quote_and_link: (f) => `${need(f, "serviceName")} വില ${inr(f, "priceInr")} ആണ്. ${slot(f)} ഒഴിവുണ്ട്. ബുക്കിംഗ് ഉറപ്പിക്കാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കൂ: ${need(f, "link")} (ഈ സമയം ${need(f, "holdMinutes")} മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)`,
+  // After price_floor has already said the price, the quote does not repeat it.
+  slot_and_link: (f) => `${slot(f)} ഒഴിവുണ്ട്. ബുക്കിംഗ് ഉറപ്പിക്കാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കൂ: ${need(f, "link")} (ഈ സമയം ${need(f, "holdMinutes")} മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)`,
+  already_waiting: (f) => `നിങ്ങളുടെ സമയം (${slot(f)}) മാറ്റിവച്ചിട്ടുണ്ട്. ഉറപ്പിക്കാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കൂ: ${need(f, "link")}`,
+  slot_unavailable: (f) => `ക്ഷമിക്കണം, ${slot(f)} ഒഴിവില്ല. ദയവായി മറ്റൊരു സമയം പറയാമോ?`,
+  outside_hours: (f) => `ക്ഷമിക്കണം, ${slot(f)} ഞങ്ങൾ അടച്ചിരിക്കും. ദയവായി മറ്റൊരു സമയം പറയാമോ?`,
+  hold_failed: (f) => `ക്ഷമിക്കണം, ഇപ്പോൾ ${slot(f)} നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഒന്നും ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. ദയവായി കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ.`,
+  link_failed: () => "ക്ഷമിക്കണം, ഇപ്പോൾ പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഒന്നും ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്.",
+  booked: (f) => `ബുക്ക് ആയി! ${need(f, "serviceName")}, ${slot(f)}. നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് ലഭിച്ചു. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് ${need(f, "windowHours")} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.`,
+  couldnt_confirm: (f) => `നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് ലഭിച്ചു, പക്ഷേ ${slot(f)} ഞങ്ങളുടെ കലണ്ടറിൽ ഇതുവരെ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.`,
+  hold_expired: (f) => `അഡ്വാൻസ് സമയത്ത് ലഭിക്കാത്തതിനാൽ ${slot(f)} നിങ്ങൾക്കായി മാറ്റിവച്ചത് ഒഴിവാക്കി. ഇനിയും ബുക്ക് ചെയ്യണമെങ്കിൽ എനിക്ക് മെസ്സേജ് അയയ്ക്കൂ.`,
+  slot_gone_refund: (f) => `നിങ്ങളുടെ ${inr(f, "depositInr")} പേയ്മെന്റ് എത്തിയപ്പോഴേക്കും ${slot(f)} മാറ്റിവച്ചത് അവസാനിച്ചിരുന്നു, ആ സമയം മറ്റൊരാൾക്ക് നൽകിക്കഴിഞ്ഞു. ${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നുണ്ട്.`,
+  refund_unbooked: (f) => `നിങ്ങളുടെ ${inr(f, "depositInr")} പേയ്മെന്റ് ലഭിച്ചു, പക്ഷേ അതിന് ഇപ്പോൾ ഒരു ബുക്കിംഗും ഇല്ല. ${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നുണ്ട്.`,
+  reschedule_failed: (f) => `ക്ഷമിക്കണം, നിങ്ങളുടെ ബുക്കിംഗ് മാറ്റുന്നത് (പുതിയ സമയം: ${slot(f)}) ഞങ്ങളുടെ കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.`,
+  duplicate_refund: (f) => `നിങ്ങൾ അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി അടച്ച ${inr(f, "refundInr")} തിരികെ നൽകുന്നുണ്ട്.`,
+  duplicate_refund_pending: (f) => `നിങ്ങൾ അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി അടച്ച ${inr(f, "refundInr")} ഉടമ അംഗീകരിച്ച ശേഷം തിരികെ നൽകും.`,
+  cancelled_refund: (f) => `ബുക്കിംഗ് റദ്ദാക്കി (${slot(f)}). നിങ്ങളുടെ ${inr(f, "refundInr")} അഡ്വാൻസ് തിരികെ നൽകുന്നുണ്ട്.`,
+  cancelled_refund_pending: (f) => `ബുക്കിംഗ് റദ്ദാക്കി (${slot(f)}). നിങ്ങളുടെ ${inr(f, "refundInr")} തിരികെ നൽകുന്ന കാര്യം ഉടമ ഉടൻ ഉറപ്പാക്കും.`,
+  cancelled_late: (f) => `ബുക്കിംഗ് റദ്ദാക്കി (${slot(f)}). തുടങ്ങാൻ ${need(f, "windowHours")} മണിക്കൂറിൽ താഴെ മാത്രം ബാക്കിയുള്ളതിനാൽ, നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസിന്റെ കാര്യത്തിൽ ഉടമ തീരുമാനിച്ച് നിങ്ങളെ അറിയിക്കും.`,
+  cancelled_no_deposit: (f) => `ബുക്കിംഗ് റദ്ദാക്കി (${slot(f)}). പണം ഒന്നും ഈടാക്കിയിട്ടില്ല.`,
+  no_booking_found: () => "മാറ്റാൻ ബുക്കിംഗ് ഒന്നും കണ്ടില്ല. സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ, ഞാൻ ബുക്ക് ചെയ്യാം.",
+  refund_approved: (f) => `ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. ${inr(f, "refundInr")} തിരികെ വരുന്നുണ്ട്.`,
+  refund_denied: (f) => `${inr(f, "depositInr")} അഡ്വാൻസ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു.`,
+  rescheduled: (f) => `മാറ്റിയിട്ടുണ്ട്. ${need(f, "serviceName")} പുതിയ സമയം: ${slot(f)}.`,
+  reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}-ൽ നിങ്ങളുടെ ${need(f, "serviceName")} ബുക്കിംഗ് സമയം: ${slot(f)}.`,
+  didnt_understand: () => "ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ.",
+
+  owner_refund_needs_approval: (f) => `അനുമതി വേണം: ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}) എന്നവർക്ക് ${inr(f, "refundInr")} റീഫണ്ട്. "approve ${need(f, "bookingRef")}" അല്ലെങ്കിൽ "deny ${need(f, "bookingRef")}" എന്ന് മറുപടി അയയ്ക്കൂ.`,
+  owner_cant_confirm: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. അവരുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് രേഖപ്പെടുത്തിയിട്ടുണ്ട്. കലണ്ടർ വീണ്ടും നോക്കാൻ "retry ${need(f, "bookingRef")}" എന്നും, ബുക്കിംഗ് റദ്ദാക്കി അഡ്വാൻസ് തിരികെ നൽകാൻ "approve ${need(f, "bookingRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
+  owner_late_cancellation: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} തുടങ്ങാൻ ${need(f, "windowHours")} മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് ${inr(f, "depositInr")}. തിരികെ നൽകാൻ "approve ${need(f, "bookingRef")}" എന്നും, നിങ്ങൾ വയ്ക്കാൻ "deny ${need(f, "bookingRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
+  owner_duplicate_payment: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി വന്ന ${inr(f, "refundInr")} തിരികെ നൽകി.`,
+  owner_slot_gone: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${inr(f, "depositInr")} പേയ്മെന്റ് എത്തിയപ്പോഴേക്കും ${slot(f)} മാറ്റിവച്ചത് അവസാനിച്ചിരുന്നു, ആ സമയം മറ്റൊരാൾക്ക് പോയി. ${inr(f, "refundInr")} തിരികെ നൽകി.`,
+  owner_unbooked_payment: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${inr(f, "depositInr")} പേയ്മെന്റ് ഇപ്പോൾ നിലവിലില്ലാത്ത ഒരു ബുക്കിംഗിനായി വന്നു. ${inr(f, "refundInr")} തിരികെ നൽകി.`,
+  owner_link_failed: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.`,
+  owner_reschedule_failed: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")} — പുതിയ സമയം ${slot(f)} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി അവരുടെ ബുക്കിംഗ് പരിശോധിക്കൂ.`,
+  owner_hold_failed: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")} — ${slot(f)} കലണ്ടറിൽ മാറ്റിവയ്ക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.`,
+  owner_message_held: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: അയയ്ക്കാനിരുന്ന ഒരു സന്ദേശം ബുക്കിംഗ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞു. ഒന്നും അയച്ചിട്ടില്ല.`,
+  owner_opted_out: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.`,
+  owner_unknown_command: () => `എനിക്ക് മനസ്സിലായില്ല. "approve", "deny" അല്ലെങ്കിൽ "retry" എന്ന് എഴുതി അതിനു ശേഷം ബുക്കിംഗ് റഫറൻസ് എഴുതൂ.`,
+};
+
+const kn: TemplateSet = {
+  menu: (f) => `ನಮಸ್ಕಾರ! ${f.businessName}-ಗೆ ಸ್ವಾಗತ. ನಮ್ಮ ಸೇವೆಗಳು: ${menuList(f)}. ಯಾವ ಸೇವೆ, ಯಾವ ದಿನ, ಯಾವ ಸಮಯ ಬೇಕು ಎಂದು ತಿಳಿಸಿ.`,
+  ask_when: (f) => `${need(f, "serviceName")} ಯಾವ ದಿನ, ಯಾವ ಸಮಯಕ್ಕೆ ಬೇಕು?`,
+  ask_new_time: () => "ಬದಲಿಗೆ ಯಾವ ದಿನ, ಯಾವ ಸಮಯ ಬೇಕು?",
+  price_floor: (f) => `${need(f, "serviceName")} ಬೆಲೆ ${inr(f, "priceInr")}. ಕ್ಷಮಿಸಿ, ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ.`,
+  confirm_details: (f) => `ಖಚಿತಪಡಿಸಲು: ${need(f, "serviceName")}, ${slot(f)}. ಮುಂದುವರಿಯಲು "ಹೌದು" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  quote_and_link: (f) => `${need(f, "serviceName")} ಬೆಲೆ ${inr(f, "priceInr")}. ${slot(f)} ಖಾಲಿ ಇದೆ. ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಪಾವತಿಸಿ: ${need(f, "link")} (ಈ ಸಮಯವನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)`,
+  // After price_floor has already said the price, the quote does not repeat it.
+  slot_and_link: (f) => `${slot(f)} ಖಾಲಿ ಇದೆ. ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಪಾವತಿಸಿ: ${need(f, "link")} (ಈ ಸಮಯವನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)`,
+  already_waiting: (f) => `ನಿಮ್ಮ ಸಮಯ (${slot(f)}) ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ. ಖಚಿತಪಡಿಸಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಪಾವತಿಸಿ: ${need(f, "link")}`,
+  slot_unavailable: (f) => `ಕ್ಷಮಿಸಿ, ${slot(f)} ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೇರೆ ಸಮಯ ತಿಳಿಸಿ.`,
+  outside_hours: (f) => `ಕ್ಷಮಿಸಿ, ${slot(f)} ನಾವು ಮುಚ್ಚಿರುತ್ತೇವೆ. ದಯವಿಟ್ಟು ಬೇರೆ ಸಮಯ ತಿಳಿಸಿ.`,
+  hold_failed: (f) => `ಕ್ಷಮಿಸಿ, ಈಗ ${slot(f)} ಸಮಯವನ್ನು ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.`,
+  link_failed: () => "ಕ್ಷಮಿಸಿ, ಈಗ ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.",
+  booked: (f) => `ಬುಕ್ ಆಗಿದೆ! ${need(f, "serviceName")}, ${slot(f)}. ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.`,
+  couldnt_confirm: (f) => `ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ, ಆದರೆ ${slot(f)} ಸಮಯವನ್ನು ನಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಇನ್ನೂ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.`,
+  hold_expired: (f) => `ಮುಂಗಡ ಹಣ ಸಮಯಕ್ಕೆ ಸಿಗದ ಕಾರಣ ${slot(f)} ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಿದ್ದನ್ನು ಬಿಡುಗಡೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೂ ಬುಕ್ ಮಾಡಬೇಕಾದರೆ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.`,
+  slot_gone_refund: (f) => `ನಿಮ್ಮ ${inr(f, "depositInr")} ಪಾವತಿ ಬರುವ ವೇಳೆಗೆ ${slot(f)} ಕಾಯ್ದಿರಿಸಿದ್ದು ಮುಗಿದಿತ್ತು, ಆ ಸಮಯ ಬೇರೆಯವರಿಗೆ ಹೋಗಿದೆ. ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,
+  refund_unbooked: (f) => `ನಿಮ್ಮ ${inr(f, "depositInr")} ಪಾವತಿ ಬಂದಿದೆ, ಆದರೆ ಅದಕ್ಕೆ ಈಗ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ. ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,
+  reschedule_failed: (f) => `ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಬುಕಿಂಗ್ ಬದಲಾವಣೆಯನ್ನು (ಹೊಸ ಸಮಯ: ${slot(f)}) ನಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.`,
+  duplicate_refund: (f) => `ನೀವು ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,
+  duplicate_refund_pending: (f) => `ನೀವು ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ ${inr(f, "refundInr")} ಮಾಲೀಕರು ಒಪ್ಪಿದ ನಂತರ ಮರಳಿ ಕೊಡಲಾಗುವುದು.`,
+  cancelled_refund: (f) => `ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ (${slot(f)}). ನಿಮ್ಮ ${inr(f, "refundInr")} ಮುಂಗಡ ಹಣ ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,
+  cancelled_refund_pending: (f) => `ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ (${slot(f)}). ನಿಮ್ಮ ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡುವ ಬಗ್ಗೆ ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ಖಚಿತಪಡಿಸುತ್ತಾರೆ.`,
+  cancelled_late: (f) => `ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ (${slot(f)}). ಪ್ರಾರಂಭಕ್ಕೆ ${need(f, "windowHours")} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಸಮಯ ಇರುವುದರಿಂದ, ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣದ ಬಗ್ಗೆ ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿ ನಿಮಗೆ ತಿಳಿಸುತ್ತಾರೆ.`,
+  cancelled_no_deposit: (f) => `ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ (${slot(f)}). ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ.`,
+  no_booking_found: () => "ಬದಲಾಯಿಸಲು ಯಾವುದೇ ಬುಕಿಂಗ್ ಸಿಗಲಿಲ್ಲ. ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ, ನಾನು ಬುಕ್ ಮಾಡುತ್ತೇನೆ.",
+  refund_approved: (f) => `ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಒಪ್ಪಿದ್ದಾರೆ. ${inr(f, "refundInr")} ಮರಳಿ ಬರುತ್ತಿದೆ.`,
+  refund_denied: (f) => `${inr(f, "depositInr")} ಮುಂಗಡ ಹಣವನ್ನು ಮರಳಿ ಕೊಡದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ.`,
+  rescheduled: (f) => `ಆಯಿತು. ${need(f, "serviceName")} ಹೊಸ ಸಮಯ: ${slot(f)}.`,
+  reminder: (f) => `ನೆನಪಿಸುವುದು: ${f.businessName}-ನಲ್ಲಿ ನಿಮ್ಮ ${need(f, "serviceName")} ಬುಕಿಂಗ್ ಸಮಯ: ${slot(f)}.`,
+  didnt_understand: () => "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ.",
+
+  owner_refund_needs_approval: (f) => `ಅನುಮತಿ ಬೇಕು: ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}) ಅವರಿಗೆ ${inr(f, "refundInr")} ರೀಫಂಡ್. "approve ${need(f, "bookingRef")}" ಅಥವಾ "deny ${need(f, "bookingRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_cant_confirm: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಅವರ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ದಾಖಲಾಗಿದೆ. ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಲು "retry ${need(f, "bookingRef")}" ಎಂದು, ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗಿಸಲು "approve ${need(f, "bookingRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_late_cancellation: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} ಪ್ರಾರಂಭಕ್ಕೆ ${need(f, "windowHours")} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಇರುವಾಗ ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ. ಮುಂಗಡ ${inr(f, "depositInr")}. ಹಿಂತಿರುಗಿಸಲು "approve ${need(f, "bookingRef")}" ಎಂದು, ಇಟ್ಟುಕೊಳ್ಳಲು "deny ${need(f, "bookingRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_duplicate_payment: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚುವರಿ ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
+  owner_slot_gone: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${inr(f, "depositInr")} ಪಾವತಿ ಬರುವ ವೇಳೆಗೆ ${slot(f)} ಕಾಯ್ದಿರಿಸಿದ್ದು ಮುಗಿದಿತ್ತು, ಆ ಸಮಯ ಬೇರೆಯವರಿಗೆ ಹೋಗಿದೆ. ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
+  owner_unbooked_payment: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${inr(f, "depositInr")} ಪಾವತಿ ಈಗ ಇಲ್ಲದ ಒಂದು ಬುಕಿಂಗ್‌ಗಾಗಿ ಬಂದಿದೆ. ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
+  owner_link_failed: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.`,
+  owner_reschedule_failed: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")} — ಹೊಸ ಸಮಯ ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರ ಬುಕಿಂಗ್ ಪರಿಶೀಲಿಸಿ.`,
+  owner_hold_failed: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")} — ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಕಾಯ್ದಿರಿಸಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.`,
+  owner_message_held: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ಕಳುಹಿಸಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಬುಕಿಂಗ್ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.`,
+  owner_opted_out: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
+  owner_unknown_command: () => `ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. "approve", "deny" ಅಥವಾ "retry" ಎಂದು ಬರೆದು, ನಂತರ ಬುಕಿಂಗ್ ರೆಫರೆನ್ಸ್ ಬರೆಯಿರಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en, hi, ml, kn };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

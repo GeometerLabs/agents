@@ -2,8 +2,11 @@
 // Validation is written by hand and says what is wrong in plain words, so a builder can fix it without a manual.
 import { isValidTimeZone, parseClock } from "./time.ts";
 
-export type Language = "hi" | "en";
-export const LANGUAGES: readonly Language[] = ["hi", "en"];
+export type Language = "hi" | "en" | "ml" | "kn";
+export const LANGUAGES: readonly Language[] = ["hi", "en", "ml", "kn"];
+/** What each language is called in plain words (for the messages that tell a builder what to fix). Every language must have one. */
+export const LANGUAGE_NAMES: Record<Language, string> = { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" };
+const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
 export type WeekdayKey = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"; // same order as Date#getDay()
 export const WEEKDAY_KEYS: readonly WeekdayKey[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -103,7 +106,7 @@ export function parseSettings(input: unknown): Settings {
 
 /** The name the agent says for a service in a language, falling back to the first language that has one. */
 export function serviceName(service: Service, language: Language): string {
-  return service.names[language]?.[0] ?? service.names.en?.[0] ?? service.names.hi?.[0] ?? service.id;
+  return service.names[language]?.[0] ?? service.names.en?.[0] ?? service.names.hi?.[0] ?? service.names.ml?.[0] ?? service.names.kn?.[0] ?? service.id;
 }
 
 /** Opening and closing time as minutes since midnight for a weekday (0 = Sunday), or null when closed. */
@@ -141,9 +144,9 @@ function readLanguages(v: unknown, errors: string[]): Language[] {
   }
   const out: Language[] = [];
   for (const l of v) {
-    if (l !== "hi" && l !== "en") errors.push(`The language ${JSON.stringify(l)} is not supported yet. Use "hi" (Hindi) or "en" (English).`);
-    else if (out.includes(l)) errors.push(`The language "${l}" is listed twice.`);
-    else out.push(l);
+    if (!LANGUAGES.includes(l as Language)) errors.push(`The language ${JSON.stringify(l)} is not supported yet. Use one of ${languageList()}.`);
+    else if (out.includes(l as Language)) errors.push(`The language "${l}" is listed twice.`);
+    else out.push(l as Language);
   }
   return out.length > 0 ? out : ["hi", "en"];
 }
@@ -173,7 +176,7 @@ function readServices(v: unknown, languages: Language[], errors: string[]): Serv
       for (const lang of languages) {
         const list = raw.names[lang];
         if (!Array.isArray(list) || list.length === 0 || !list.every((n) => typeof n === "string" && n.trim() !== "")) {
-          errors.push(`${label} needs at least one name in ${lang === "hi" ? "Hindi (\"hi\")" : "English (\"en\")"}, because customers can write in it.`);
+          errors.push(`${label} needs at least one name in ${LANGUAGE_NAMES[lang]} ("${lang}"), because customers can write in it.`);
           continue;
         }
         names[lang] = list.map((n: string) => n.trim());
@@ -248,8 +251,9 @@ function readOwner(v: unknown, errors: string[]): Settings["owner"] | undefined 
     errors.push("The owner's WhatsApp number (\"owner.whatsapp\") must start with + and the country code, then digits only, for example +919800000000.");
   }
   const language = v.language ?? "en";
-  if (language !== "hi" && language !== "en") errors.push("The owner's language (\"owner.language\") must be \"hi\" or \"en\".");
-  return typeof whatsapp === "string" && (language === "hi" || language === "en") ? { whatsapp, language } : undefined;
+  const languageOk = LANGUAGES.includes(language as Language);
+  if (!languageOk) errors.push(`The owner's language ("owner.language") must be one of ${languageList()}.`);
+  return typeof whatsapp === "string" && languageOk ? { whatsapp, language: language as Language } : undefined;
 }
 
 function readReminders(v: unknown, errors: string[]): Settings["reminders"] {
