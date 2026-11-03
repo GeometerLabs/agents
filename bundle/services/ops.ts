@@ -69,7 +69,8 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
 export async function stopShop(config: OpsConfig, shop: string, on: boolean, by: string, reason: string, fetchFn: typeof fetch = fetch) {
   const c = config.shops[shop];
   if (!c) throw new Error(`no shop ${shop} on this server`);
-  const why = on ? `stopped by ${by} at ${new Date().toISOString()}${reason ? `: ${reason}` : ""}` : `released by ${by} at ${new Date().toISOString()}`;
+  // by "-" the reason is used as it is: the deployer re-applying a stop that was already worded must not wrap it in a second "stopped by"
+  const why = by === "-" ? reason : on ? `stopped by ${by} at ${new Date().toISOString()}${reason ? `: ${reason}` : ""}` : `released by ${by} at ${new Date().toISOString()}`;
   const results = await Promise.all([
     ...c.guards.map(async (g) => ({ guard: g.service, ...(await adminCall(g, "POST", "/admin/kill", { on, reason: why }, fetchFn)) })),
     // The model Guard is shared, so only this shop's agent is stopped there: the other shops keep working.

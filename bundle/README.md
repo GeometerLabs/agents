@@ -28,8 +28,7 @@ The runtime holds no key, and the only things it can connect to are its own Guar
 curl -fsSL https://get.docker.com | sudo sh          # Docker's own script; or follow docs.docker.com/engine/install/ubuntu
 sudo usermod -aG docker "$USER" && newgrp docker
 docker compose version                               # must print v2.2x or newer
-# Node 26 (any way you like; this one needs nothing else)
-curl -fsSL https://nodejs.org/dist/latest-v26.x/node-v26.10.0-linux-x64.tar.xz | sudo tar -xJ -C /usr/local --strip-components=1
+# Node 26: take the Linux binaries from nodejs.org/en/download (or NodeSource's setup script, or nvm) and put `node` on the PATH
 node --version                                       # v26.x
 ```
 

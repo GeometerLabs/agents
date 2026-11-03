@@ -135,7 +135,7 @@ test("a stopped shop stays stopped through a deploy, and two shops get their own
     (await import("../lib/state.ts")).saveState(w.root, state);
     w.admin.length = 0;
     await deploy(w.ctx, "glow-salon");
-    assert.ok(w.admin.includes("stop glow-salon on arjun@laptop stopped by arjun@laptop"), w.admin.join(" | "));
+    assert.ok(w.admin.includes("stop glow-salon on - stopped by arjun@laptop"), w.admin.join(" | "));
     assert.equal(readStatus(w.root, "glow-salon")!.stopped?.by, "arjun@laptop");
   } finally { w.done(); }
 });

@@ -348,7 +348,7 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
     const proof = await proveRunning(ctx, p.guards);
     if (proof.problems.length === 0) await renewRelayCredential(ctx, p.folder.name);
     const stop = state.shops[p.folder.name].stopped;
-    if (stop) await ops(ctx, ["stop", p.folder.name, "on", stop.by, stop.reason]); // a recreated Guard keeps its kill switch in its store; this makes sure
+    if (stop) await ops(ctx, ["stop", p.folder.name, "on", "-", stop.reason]); // a recreated Guard keeps its kill switch in its store; this makes sure
     const total = Object.values(proof.guards).reduce((t, g) => ({ passed: t.passed + g.passed, of: t.of + g.of }), { passed: 0, of: 0 });
     const line = provenLine({ ...total, notSelfTestable: Object.values(proof.guards).flatMap((g) => g.notSelfTestable) });
     updateStatus(ctx.dir, p.folder.name, ctx.now(), (s) => {
