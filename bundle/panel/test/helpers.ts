@@ -105,7 +105,7 @@ export const tokenOf = (text: string): string => {
   return m[1];
 };
 
-export interface Reply { status: number; text: string; headers: Headers; location?: string; cookies: string[] }
+export interface Reply { status: number; text: string; /** The page's text with HTML escapes undone, to look for a sentence that has an apostrophe in it. */ plain: string; headers: Headers; location?: string; cookies: string[] }
 
 export class Browser {
   jar = new Map<string, string>();
@@ -126,7 +126,8 @@ export class Browser {
       const name = pair.slice(0, eq).trim();
       if (attrs.some((a) => /^\s*Max-Age=0\s*$/iu.test(a))) this.jar.delete(name); else this.jar.set(name, pair.slice(eq + 1).trim());
     }
-    return { status: res.status, text: await res.text(), headers: res.headers, location: res.headers.get("location") ?? undefined, cookies };
+    const text = await res.text();
+    return { status: res.status, text, plain: text.replace(/&#39;/gu, "'").replace(/&quot;/gu, '"').replace(/&lt;/gu, "<").replace(/&gt;/gu, ">").replace(/&amp;/gu, "&"), headers: res.headers, location: res.headers.get("location") ?? undefined, cookies };
   }
   get(path: string, extra: Record<string, string> = {}) { return this.req("GET", path, undefined, extra); }
   /** POST a form carrying the token found on `from` (a page of this panel that has a form). */

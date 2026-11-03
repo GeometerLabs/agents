@@ -59,11 +59,11 @@ export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolea
   ${c.who ? html`<div class="who">${c.who.name} · ${roleWord(c, c.who.role)}</div>` : ""}
 </div></header>
 <div class="wrap">
-  <nav class="langs" aria-label="Language">${LANGUAGES.map((l) => html`<a href="/lang/${l}?next=${encodeURIComponent(c.path)}" lang="${l}" ${l === c.lang ? raw('aria-current="true"') : ""}>${languageName(l)}</a>`)}</nav>
+  <nav class="langs" aria-label="${c.w.languageName}">${LANGUAGES.map((l) => html`<a href="/lang/${l}?next=${encodeURIComponent(c.path)}" lang="${l}" ${l === c.lang ? raw('aria-current="true"') : ""}>${languageName(l)}</a>`)}</nav>
   <main>${body}</main>
   ${c.draftLanguage ? html`<p class="draft">${c.w.draftNote}</p>` : ""}
 </div>
-${showNav ? html`<nav class="tabbar" aria-label="Menu">
+${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
   <a class="tab" href="/shops">${c.w.nav.shops}</a>
   <a class="tab" href="/setup">${c.w.nav.setUp}</a>
   ${c.canInvite ? html`<a class="tab" href="/invite">${c.w.nav.invite}</a>` : ""}

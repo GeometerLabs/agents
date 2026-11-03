@@ -69,6 +69,8 @@ test("a partner sees only their own shops; a builder sees every shop; a shop tha
     assert.equal((await divya.get("/shops/%2e%2e")).location, "/shops", "the browser-style dot-dot is just the front page");
     for (const path of ["/shops/..%2f..%2fetc", "/shops/divya-shop%2f..%2fmeena-shop", "/shops/DIVYA-SHOP", "/shops/divya shop"]) assert.equal((await divya.get(path)).status, 404, path);
     assert.equal((await divya.post("/shops/divya-shop/stop", {}, "/shops/divya-shop/stop")).status, 303); // their own is fine
+    // "Show what we did" is the builder's: a partner's page has the plain words and no engine details.
+    assert.ok(!(await divya.get("/shops/divya-shop")).plain.includes("sha256 ") && (await arjun.get("/shops/divya-shop")).plain.includes("sha256 "));
   } finally { await b.close(); }
 });
 
@@ -156,6 +158,10 @@ test("sign in: a wrong passphrase and an unknown name look the same; after five 
     assert.ok(Number(locked.headers.get("retry-after")) > 0);
     assert.ok(locked.text.includes("Too many tries"));
     assert.equal((await wrong.get("/shops")).status, 303, "the right passphrase did not get in");
+    // An address the visitor makes up in X-Forwarded-For is not believed unless the server sits behind its own proxy.
+    const spoof = b.browser();
+    spoof.headers["x-forwarded-for"] = "203.0.113.77";
+    assert.equal((await spoof.post("/login", { handle: "divya", passphrase: PASS }, "/login")).status, 429);
     const fine = b.browser();
     const ok = await fine.post("/login", { handle: "meena", passphrase: PASS }, "/login");
     assert.deepEqual([ok.status, ok.location], [303, "/shops"]);
