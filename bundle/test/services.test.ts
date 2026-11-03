@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, createVerify } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRefresher, exchange, signAssertion } from "../services/refresher.ts";
@@ -61,6 +61,7 @@ test("a failed exchange is tried once, then waits 1 minute, then 2, and the old 
     assert.match(log[0], /\(the token endpoint answered 400\); trying again in 1 min/);
     assert.ok(!log[0].includes("SECRET-ECHO"), "the body of a failed answer (which could echo a credential) is never logged");
     assert.equal(r.healthy(), true, "a broken key does not hold every other shop back: it has been tried, and that shop has no token file");
+    assert.ok(existsSync(join(f.dir, "out", "s")), "but its folder exists, so its Calendar Guard container can at least be made (it then fails to start, alone)");
     assert.deepEqual(r.state().s.expiresAt, null);
     assert.equal(readFileSync(join(f.dir, "sa.json"), "utf8"), before);
     assert.match((await exchange(join(f.dir, "missing.json"), "s") as { why: string }).why, /could not be read/);
