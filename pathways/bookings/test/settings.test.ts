@@ -90,3 +90,37 @@ test("every problem is listed at once, not one at a time", () => {
 test("parseSettings throws one error that lists every problem", () => {
   assert.throws(() => parseSettings({}), /These settings need fixing/);
 });
+
+test("Malayalam and Kannada are supported languages; listing one needs a name for every service in it", () => {
+  const ok = copy();
+  ok.owner.language = "ml";
+  const parsed = parseSettings(ok); // the example lists all four languages and names every service in each
+  assert.deepEqual(parsed.languages, ["hi", "en", "ml", "kn"]);
+  assert.equal(parsed.owner.language, "ml");
+  assert.equal(serviceName(parsed.services[0], "ml"), "ഹെയർകട്ട്");
+  assert.equal(serviceName(parsed.services[0], "kn"), "ಹೇರ್ ಕಟ್");
+
+  const missing = errorsFor((s) => { delete s.services[0].names.ml; });
+  assert.match(missing.join("\n"), /Service "haircut" needs at least one name in Malayalam \("ml"\)/);
+  const kannada = errorsFor((s) => { delete s.services[2].names.kn; });
+  assert.match(kannada.join("\n"), /Service "facial" needs at least one name in Kannada \("kn"\)/);
+  const notListed = copy();
+  notListed.languages = ["hi", "en"];
+  delete notListed.services[0].names.ml;
+  assert.doesNotThrow(() => parseSettings(notListed)); // a business that does not list Malayalam does not need Malayalam names
+});
+
+test("an unsupported language is named with the ones that are supported", () => {
+  const language = errorsFor((s) => { s.languages = ["hi", "ta"]; });
+  assert.match(language.join("\n"), /"ta" is not supported yet\. Use one of "hi" \(Hindi\), "en" \(English\), "ml" \(Malayalam\), "kn" \(Kannada\)/);
+  const owner = errorsFor((s) => { s.owner.language = "ta"; });
+  assert.match(owner.join("\n"), /owner's language .* must be one of "hi" \(Hindi\)/);
+});
+
+test("a service name in a language the business does not list is allowed (it is a synonym), but a typo in the language key is not", () => {
+  const extra = copy();
+  extra.services[0].names.kn = ["ಹೇರ್ ಕಟ್"];
+  assert.doesNotThrow(() => parseSettings(extra));
+  const typo = errorsFor((s) => { s.services[0].names.mal = ["x"]; });
+  assert.match(typo.join("\n"), /I don't know what "mal" means/);
+});
