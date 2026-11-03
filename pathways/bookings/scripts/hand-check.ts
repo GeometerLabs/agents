@@ -8,7 +8,8 @@ import { runAll } from "../crash-test/situations.ts";
 const NOT_TESTED = [
   "voice calls", "group bookings", "walk-ins", "payments outside Razorpay",
   "real WhatsApp", "real Razorpay (test mode or live)", "a real calendar", "webhook signatures",
-  "a real model (the parser is rule-based, and messages are templates only)", "Malayalam and other languages",
+  "a real model (the parser is rule-based, and messages are templates only)", "Tamil, Telugu and other languages",
+  "a native speaker's review of the Malayalam and Kannada wording (machine-written, see REVIEW-ml.md and REVIEW-kn.md)",
   "a crash or restart in the middle of a step", "two customers at the exact same instant",
   "faults beyond the ones listed above",
 ];
@@ -24,13 +25,13 @@ const checkCount = results.reduce((n, r) => n + r.checks.length, 0);
 const lines: string[] = [];
 lines.push("Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype.");
 lines.push("");
-lines.push("CRASH TEST   Glow Salon · Bookings · Hindi + English            (stand-in services, hand-run)");
+lines.push("CRASH TEST   Glow Salon · Bookings · Hindi + English + Malayalam + Kannada   (stand-in services, hand-run)");
 lines.push("");
 lines.push(`  Held ${held.length} of ${results.length}.  ${failed.length} failed.  ${NOT_TESTED.length} not tested.`);
 lines.push("");
 lines.push(`  Work done for you: ${results.length} situations and ${checkCount} checks in ${tookMs} ms, against stand-in WhatsApp,`);
 lines.push("  calendar and payments: lost replies, duplicate messages and payments, silent calendar failures, late payments,");
-lines.push("  an expired key, and customers haggling or trying to trick the agent in Hindi and English.");
+lines.push("  an expired key, and customers haggling or trying to trick the agent in Hindi, English, Malayalam and Kannada.");
 if (!showAll) lines.push("  Show what was done in each situation: add --details");
 lines.push("");
 for (const r of results) {
