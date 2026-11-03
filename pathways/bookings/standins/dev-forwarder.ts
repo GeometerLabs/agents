@@ -110,7 +110,7 @@ export async function startDevForwarder(config: DevForwarderConfig, listen: { po
     headers[route.credential[0]] = route.credential[1];
     const target = route.base.replace(/\/+$/u, "") + (m[2] ?? "/") + url.search;
     try {
-      const upstream = await fetch(target, { method: req.method, headers, body: ["GET", "HEAD"].includes(req.method ?? "GET") || body.length === 0 ? undefined : body, signal: AbortSignal.timeout(30_000), redirect: "manual" });
+      const upstream = await fetch(target, { method: req.method, headers, body: ["GET", "HEAD"].includes(req.method ?? "GET") || body.length === 0 ? undefined : new Uint8Array(body), signal: AbortSignal.timeout(30_000), redirect: "manual" });
       const payload = Buffer.from(await upstream.arrayBuffer());
       res.writeHead(upstream.status, { "content-type": upstream.headers.get("content-type") ?? "application/json", "x-geometer-dev-forwarder": "not-guard" });
       res.end(payload);

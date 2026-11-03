@@ -24,7 +24,7 @@ test("it refuses a live Razorpay key (in either place), a key that is not a test
     { RAZORPAY_KEY_ID: "key_without_prefix", RAZORPAY_KEY_SECRET: "s" },
     { RAZORPAY_KEY_ID: "rzp_test_abc" },
     {},
-  ]) {
+  ] as Record<string, string>[]) {
     assert.throws(() => configFromEnv(env), (e: Error) => !e.message.includes(mustNotMention) && !e.message.includes("rzp-secret-xyz"));
   }
   assert.throws(() => configFromEnv({ ...KEYS, RAZORPAY_KEY_ID: mustNotMention }), /LIVE Razorpay key/);

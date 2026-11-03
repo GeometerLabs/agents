@@ -172,8 +172,13 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
   };
 }
 
+export interface MetaSubmission {
+  name: string; language: string; category: "UTILITY"; parameter_format: "positional";
+  components: { type: "BODY"; text: string; example: { body_text: string[][] } }[];
+}
+
 /** One entry per template and language, in the body Meta's create-template call takes (POST /{waba-id}/message_templates). */
-export function metaSubmissions(settings: Settings): object[] {
+export function metaSubmissions(settings: Settings): MetaSubmission[] {
   return META_TEMPLATES.flatMap((t) => LANGUAGES.map((language) => ({
     name: t.name, language: META_LANGUAGE[language], category: "UTILITY", parameter_format: "positional",
     components: [{ type: "BODY", text: metaBody(t.bodies[language]), example: { body_text: [parametersFor(t, language, exampleFacts(settings, language))] } }],

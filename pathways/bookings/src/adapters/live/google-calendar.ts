@@ -22,7 +22,7 @@
 import { ApiError, ConflictError } from "../faults.ts";
 import type { Busy, Calendar, CalendarEvent, NewCalendarEvent } from "../calendar.ts";
 import { zonedToMs } from "../../time.ts";
-import { asArray, createHttp, isObject, num, str } from "./http.ts";
+import { asArray, createHttp, isObject, str } from "./http.ts";
 import type { Http, HttpReply, Json } from "./http.ts";
 
 export interface GoogleCalendarConfig { baseUrl: string; calendarId: string; timeoutMs?: number }

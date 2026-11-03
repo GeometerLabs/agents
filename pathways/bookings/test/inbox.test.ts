@@ -19,7 +19,7 @@ async function withInbox(run: (t: { inbox: RunningInbox; runtime: Scripted; logs
   const logs: string[] = [];
   const inbox = await startInbox({ runtimeUrl: runtime.url, ...SECRETS, log: (l) => logs.push(l), ...options.config }, { port: 0 });
   const post = async (path: string, body: string | Buffer, headers: Record<string, string> = {}) => {
-    const r = await fetch(inbox.url + path, { method: "POST", body, headers });
+    const r = await fetch(inbox.url + path, { method: "POST", body: typeof body === "string" ? body : new Uint8Array(body), headers });
     return { status: r.status, text: await r.text() };
   };
   try { await run({ inbox, runtime, logs, post }); } finally { await inbox.close(); await runtime.close(); }
