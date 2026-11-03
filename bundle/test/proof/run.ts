@@ -129,8 +129,35 @@ const ipOf = (service: string, network: string): string => dk(["inspect", contai
 const adminIpOf = (service: string) => ipOf(service, "admin");
 const readSecret = (container: string, file: string) => readFileSync(secretFile(SERVER, container, ...file.split("/")), "utf8").trim();
 
+/** The two things the design leans on, tried in a minute before anything is built: a busybox `nc` can forward into a joined container's loopback, and the images are here. */
+async function smoke(): Promise<void> {
+  say("== prerequisites ==");
+  for (const image of ["busybox:1.37.0", "node:26-alpine", "caddy:2.8.4-alpine", "litestream/litestream:0.5.17-scratch", "minio/minio:latest", "alpine:3.22", GUARD_IMAGE]) {
+    const have = dk(["image", "inspect", "--format", "{{.Id}}", image]).code === 0;
+    const pulled = have ? { code: 0, err: "" } : GUARD_IMAGE === image ? { code: 1, err: "the Guard image is not on this machine" } : dk(["pull", "-q", image], { timeout: 900_000 });
+    check(`image ${image}`, pulled.code === 0, have ? "already here" : pulled.code === 0 ? "pulled" : pulled.err.slice(0, 120));
+    if (pulled.code !== 0) throw new Error(`cannot go on without ${image}`);
+  }
+  results.imageVersions = Object.fromEntries(["busybox:1.37.0", "node:26-alpine", "caddy:2.8.4-alpine", "litestream/litestream:0.5.17-scratch"].map((i) => [i, dk(["image", "inspect", "--format", "{{.Size}} bytes, {{.Architecture}}", i]).out.trim()]));
+  say("== smoke: can a busybox nc forward into a joined container's loopback? ==");
+  const net = "geometer-smoke";
+  dk(["rm", "-f", `${net}-fwd`, `${net}-app`]); dk(["network", "rm", net]);
+  dk(["network", "create", "--internal", "--subnet", "10.239.77.0/24", net]);
+  dk(["run", "-d", "--name", `${net}-fwd`, "--network", net, "--ip", "10.239.77.5", "--user", "65532:65532", "--read-only", "--cap-drop", "ALL", "busybox:1.37.0", "nc", "-ll", "-s", "10.239.77.5", "-p", "8190", "-e", "nc", "127.0.0.1", "8082"]);
+  dk(["run", "-d", "--name", `${net}-app`, "--network", `container:${net}-fwd`, "node:26-alpine", "node", "-e", "require('http').createServer((q,r)=>r.end('hello '+q.method+' '+q.url)).listen(8082,'127.0.0.1')"]);
+  await sleep(4000);
+  const get = () => dk(["run", "--rm", "--network", net, "node:26-alpine", "node", "-e", "fetch('http://10.239.77.5:8190/x?y=1',{method:'POST',body:'{}'}).then(r=>r.text()).then(t=>console.log(t)).catch(e=>console.log('ERR '+e.message))"]);
+  const first = get(); const second = get();
+  const direct = dk(["run", "--rm", "--network", net, "node:26-alpine", "node", "-e", "const s=require('net').connect({host:'10.239.77.5',port:8082,timeout:2000});s.on('connect',()=>console.log('REACHED'));s.on('timeout',()=>{console.log('TIMEOUT');process.exit()});s.on('error',e=>console.log('ERR '+e.code))"]);
+  dk(["rm", "-f", `${net}-fwd`, `${net}-app`]); dk(["network", "rm", net]);
+  check("a busybox nc forwarder carries an HTTP call into the Guard's loopback (twice)", first.out.includes("hello POST /x?y=1") && second.out.includes("hello POST /x?y=1"), first.out.trim() || first.err.slice(0, 160));
+  check("and the loopback port itself is not reachable from the network", !direct.out.includes("REACHED"), direct.out.trim());
+  if (!first.out.includes("hello POST")) throw new Error("the forwarder design does not work on this Docker; see the smoke output above");
+}
+
 async function main_(): Promise<void> {
   say(`proof directory: ${SCRATCH}\nstarted ${results.startedAt}`);
+  await smoke();
   // ------------------------------------------------------------------ the server folder, the stand-ins, the bucket, the fleet
   const identityFile = join(SCRATCH, "age-identity.txt");
   rmSync(SERVER, { recursive: true, force: true });
