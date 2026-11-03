@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { decrypt, generateIdentity } from "../backup/age.ts";
+import { restoreSnapshot } from "../backup/restore-snapshot.ts";
 import { drillShop } from "../backup/drill-check.ts";
 import { runBackup, runDrill } from "../backup/jobs.ts";
 import { recordFacts, snapshotShop } from "../backup/snapshot.ts";
@@ -56,6 +57,19 @@ test("a snapshot is a consistent copy, encrypted to the recipient, with a manife
     assert.equal(manifest.files.find((f: { key: string }) => f.key.endsWith("state.db.age")).sha256, sha("guard-state-bytes"));
     assert.ok(!existsSync(guardBackup), "Guard's staging copy is removed once shipped");
     assert.ok(!existsSync(join(t.dir, "scratch", "glow-salon.db")), "no plain copy is left behind");
+  } finally { t.done(); }
+});
+
+test("a downloaded snapshot is opened with the identity into an empty folder, and the database in it is the one that was copied", async () => {
+  const t = tmp(); try {
+    const db = runtimeDb(join(t.dir, "rt"), 4);
+    const key = generateIdentity(); const store = folderStore(join(t.dir, "bucket"));
+    await snapshotShop({ name: "s", runtimeDb: db, guards: [] }, { stamp: "20261104T013000Z", keepDays: 30, recipient: key.recipient, target: { url: "x" }, shops: [] }, store, join(t.dir, "scratch"));
+    const files = restoreSnapshot(join(t.dir, "bucket", "s", "20261104T013000Z"), key.identity, join(t.dir, "open"));
+    assert.deepEqual(files.map((f) => f.slice(join(t.dir, "open").length + 1)).sort(), ["manifest.json", "runtime/agent.db"]);
+    assert.equal(recordFacts(new DatabaseSync(join(t.dir, "open", "runtime", "agent.db"), { readOnly: true })).lastSeq, 4);
+    assert.throws(() => restoreSnapshot(join(t.dir, "bucket", "s", "20261104T013000Z"), key.identity, join(t.dir, "open")), /is not empty/);
+    assert.throws(() => restoreSnapshot(join(t.dir, "bucket", "s", "20261104T013000Z"), generateIdentity().identity, join(t.dir, "other")), /cannot open/);
   } finally { t.done(); }
 });
 
