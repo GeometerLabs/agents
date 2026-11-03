@@ -8,7 +8,7 @@ import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:cr
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 
-export class VaultError extends Error {}
+export class VaultError extends Error { override name = "VaultError"; }
 
 export interface Vault {
   readonly encrypted: boolean;

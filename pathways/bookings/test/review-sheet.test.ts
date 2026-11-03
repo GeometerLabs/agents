@@ -54,7 +54,11 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
   test(`reviewSheet(${language}) is what is committed, apart from what reviewers fill in`, () => {
     // Reviewers fill the last column of each row; the generated sheet has it empty, so compare with that column removed.
     const generated = reviewSheet(language).trimEnd().split("\n");
-    const lines = committed.trimEnd().split("\n");
+    // Section 7 (the panel's words) is appended by bundle/panel/review-sheet.ts and checked by bundle/panel/test/words.test.ts; sections 1 to 6 are this file's.
+    const all = committed.trimEnd().split("\n");
+    const lines = all.slice(0, generated.length);
+    const rest = all.slice(generated.length).join("\n").trim();
+    assert.ok(rest === "" || rest.startsWith("## 7. The panel and the phone setup"), "after section 6 the sheet may only continue with section 7, the panel's words");
     assert.equal(lines.length, generated.length, "the committed sheet has a different number of lines");
     for (let i = 0; i < generated.length; i++) {
       if (!generated[i].startsWith("|")) { assert.equal(lines[i], generated[i], `line ${i + 1}`); continue; }
