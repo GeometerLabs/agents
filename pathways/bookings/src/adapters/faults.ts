@@ -54,6 +54,8 @@ export interface Faults<Op extends string, Mode extends string> {
   inject(op: Op, mode: Mode, options?: FaultOptions): void;
   /** Called by the fake at the start of an operation: the fault to apply to this call, if any. */
   take(op: Op): Mode | undefined;
+  /** What `take` would give next, without using it up. */
+  peek(op: Op): Mode | undefined;
   clear(): void;
 }
 
@@ -73,6 +75,10 @@ export function createFaults<Op extends string, Mode extends string>(): Faults<O
       plan.times -= 1;
       if (plan.times <= 0) list.shift();
       return plan.mode;
+    },
+    peek(op) {
+      const plan = plans.get(op)?.[0];
+      return plan && plan.after <= 0 ? plan.mode : undefined;
     },
     clear() { plans.clear(); },
   };
