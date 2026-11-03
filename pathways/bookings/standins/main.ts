@@ -30,6 +30,6 @@ console.log("Geometer · stand-in services for Bookings. Test money, practice me
 console.log(`  Razorpay, Google Calendar and WhatsApp wire formats:  ${standins.url}`);
 console.log(`  Control routes:                                       ${standins.url}/_standin/state`);
 console.log(inboxUrl ? `  Signed webhooks go to:                                ${inboxUrl}` : "  No --inbox given, so customer messages and payments are not delivered anywhere.");
-console.log("  Webhook secrets: the defaults in this file, or STANDIN_RAZORPAY_WEBHOOK_SECRET and STANDIN_WHATSAPP_APP_SECRET if set. Give the same two to the inbox, as files.");
+console.log("  Webhook secrets: made-up stand-in values (the README lists them), or STANDIN_RAZORPAY_WEBHOOK_SECRET and STANDIN_WHATSAPP_APP_SECRET if set. Give the same two to the inbox, as files.");
 console.log("Press Ctrl+C to stop.");
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { void standins.close().then(() => process.exit(0)); });

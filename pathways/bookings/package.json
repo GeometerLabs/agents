@@ -6,6 +6,10 @@
   "scripts": {
     "test": "node --test test/",
     "hand-check": "node scripts/hand-check.ts",
-    "demo": "node demo/server.ts"
+    "demo": "node demo/server.ts",
+    "standins": "node standins/main.ts",
+    "inbox": "node inbox/main.ts",
+    "dev-forwarder": "node standins/dev-forwarder.ts",
+    "whatsapp-templates": "node scripts/whatsapp-templates.ts"
   }
 }
