@@ -125,6 +125,12 @@ test("the YAML writer quotes every scalar, so a path or an address can never be 
   assert.equal(yaml({ a: "yes", b: "10.231.0.1", c: ["x: y", "- z"], d: { e: true, f: 8080 }, "g-h": null }), 'a: "yes"\nb: "10.231.0.1"\nc:\n  - "x: y"\n  - "- z"\nd:\n  e: true\n  f: 8080\ng-h: null');
 });
 
+test("ops sees the deployer's status files read-only (for the backup times in the heartbeat), and still holds no folder the panel's contract does not name", () => {
+  const c = two();
+  assert.deepEqual(mounts(c, "ops"), ["/repo:/app:ro", "/srv/generated/ops:/etc/geometer:ro", "/srv/secrets/ops:/run/secrets:ro", "/srv/status:/server/status:ro"]);
+  assert.doesNotMatch(JSON.stringify(c.services.ops.block), /docker\.sock|\/srv\/state|\/srv\/shops|\/srv\/secrets-inbox/);
+});
+
 test("the panel: on front and its own network only, as the user who runs the deployer, with exactly the folders the contract gives it and no others", () => {
   const c = two();
   const p = c.services.panel.block;

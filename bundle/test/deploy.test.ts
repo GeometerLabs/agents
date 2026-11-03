@@ -197,5 +197,6 @@ test("adding a second shop recreates the model forwarder, so the model Guard tha
     assert.ok(!recreated.includes("g-glow-salon-razorpay"), "only the Guard whose forwarder changed");
     const ops = JSON.parse(read(join(w.paths.generated, "ops", "ops.json")));
     assert.deepEqual(ops.shops["bright-tuition"].guards.map((g: { id: string }) => g.id), ["guard-razorpay", "guard-whatsapp", "guard-calendar", "guard-model"]);
+    assert.deepEqual([ops.shops["bright-tuition"].statusFile, ops.shops["glow-salon"].statusFile], ["/server/status/bright-tuition.json", "/server/status/glow-salon.json"], "where ops reads each shop's backup times");
   } finally { w.done(); }
 });

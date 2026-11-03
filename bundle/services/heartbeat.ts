@@ -2,8 +2,13 @@
 // in exactly the shape of Geometer's fleet contract (monorepo apps/fleet/README.md). COUNTS, VERSIONS AND HEALTH ONLY: nothing here reads a message, a name
 // or a number, and the body is made field by field from numbers, booleans and a few fixed words, never copied from a reply.
 //
-// A Guard whose tripwires failed, or that is not ready, is sent as ready=false. A failed backup drill is NOT sent as a runtime problem: the contract has
-// no field for it (Deferred.md), and calling it "not ready" would raise the wrong alert and stop the shop counting as live for billing.
+// A Guard whose tripwires failed, or that is not ready, is sent as ready=false. A failed backup drill is NOT sent as a runtime problem: calling it "not ready"
+// would raise the wrong alert and stop the shop counting as live for billing. It has its own optional fields, which fleet judges separately:
+//   backup_age_s     seconds since the shop's last successful nightly snapshot
+//   drill            { age_s, ok }: how long ago the last weekly restore drill ran, and whether it passed
+// Both are AGES, worked out here from the host's own clock, because the contract's counts stop at 999,999 on purpose (a phone number cannot pass as one) and a
+// time as text looks like a phone number to fleet's check. A field is left out when there is nothing to say (no snapshot or drill yet): fleet reads
+// "absent" as "nothing to report", never as a problem. The drill's free-text reason is never sent; it stays in status/<shop>.json for `geometer status`.
 
 export interface GuardObservation {
   id: string;
@@ -29,6 +34,9 @@ export interface RuntimeStatus {
   steps?: number; errors?: number; startedAt?: string;
 }
 
+/** What the deployer's backup jobs recorded for one shop (status/<shop>.json, `backups`): times as ISO text, the drill's verdict as a flag. Nothing else of that file is read. */
+export interface BackupFacts { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null }
+
 export interface ShopObservation {
   id: string;
   pathway: string;
@@ -38,6 +46,8 @@ export interface ShopObservation {
   /** GET /status, or null when the runtime could not be asked. */
   status: RuntimeStatus | null;
   guards: GuardObservation[];
+  /** From the deployer's status file; left out when the file is missing or unreadable (then no backup field is sent, never a wrong one). */
+  backups?: BackupFacts;
 }
 
 /** Running totals as last ACCEPTED by fleet, per shop. The difference is what a heartbeat sends. */
@@ -46,6 +56,12 @@ export type Baseline = Record<string, { startedAt: string; steps: number; errors
 const MAX_COUNT = 999_999;
 const count = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.min(MAX_COUNT, Math.floor(v)) : 0);
 const STATE_NAME = /^[a-z_]{1,64}$/u;
+
+/** Whole seconds from an ISO time to `now`, as a count. A time in the future (a clock set back) is 0; text that is not a time is nothing to report. */
+function ageSeconds(now: Date, at: string | null | undefined): number | undefined {
+  const t = typeof at === "string" ? Date.parse(at) : Number.NaN;
+  return Number.isFinite(t) ? count(Math.floor((now.getTime() - t) / 1000)) : undefined;
+}
 
 /** Steps and errors since the last accepted heartbeat. A new start time means the runtime restarted and its totals began again from zero. */
 export function since(status: RuntimeStatus | null, base: Baseline[string] | undefined): { steps: number; errors: number } {
@@ -63,6 +79,9 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
     if (s && typeof s.startedAt === "string") next[shop.id] = { startedAt: s.startedAt, steps: count(s.steps), errors: count(s.errors) };
     const lastStep = s?.lastStepAt ? Math.max(0, Math.floor((input.now.getTime() - Date.parse(s.lastStepAt)) / 1000)) : null;
     const bookings = Object.fromEntries(Object.entries(known?.bookings ?? {}).filter(([k]) => STATE_NAME.test(k)).slice(0, 16).map(([k, v]) => [k, count(v)]));
+    const snapshotAge = ageSeconds(input.now, shop.backups?.lastCopyAt);
+    const drillAge = ageSeconds(input.now, shop.backups?.lastDrillAt);
+    const drillOk = shop.backups?.drillOk;
     return {
       id: shop.id,
       pathway: shop.pathway,
@@ -82,6 +101,8 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
         held_calls: count(g.held),
       })),
       since_last: delta,
+      ...(snapshotAge !== undefined ? { backup_age_s: snapshotAge } : {}),
+      ...(drillAge !== undefined && typeof drillOk === "boolean" ? { drill: { age_s: drillAge, ok: drillOk } } : {}),
     };
   });
   return {
