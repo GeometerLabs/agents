@@ -15,6 +15,8 @@ Not built, or built only as far as said. The first block needs another part of t
 - **Pin the Razorpay account.** Pin the `account_id` of the first signed webhook and have the inbox refuse events from any other account. Until then the check proves the key works and is in the right mode, and the page tells the person to look for the shop's name on the first test payment link.
 - **Pin the key id into Guard's allowlist** the same way the WhatsApp number and the calendar are pinned.
 
+- **A shop name is reserved only by the panel's own drafts.** Between step 4 and the save, a shop folder made by hand with the same name is refused at the save (its folder is not touched), but this partner's keys already sit in `secrets-inbox/<id>/`. The bundle's `shop add` should refuse a name whose inbox already holds files.
+
 ## Cost line
 
 - Real usage instead of assumptions: counts of messages and model tokens from the runtime, so "early estimate" becomes "from the record" for those lines too (today only the number of bookings comes from the record).

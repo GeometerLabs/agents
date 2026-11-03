@@ -206,8 +206,77 @@ test("it asks only for what the template uses, and a template added to pathways/
     const start = await divya.post("/setup", { template: "mini" }, "/setup");
     const d = start.location!.split("/")[2];
     assert.equal((await divya.post(`/setup/${d}/1`, STEP1, `/setup/${d}/1`)).location, `/setup/${d}/2`);
+    assert.equal((await divya.post(`/setup/${d}/2`, STEP3, `/setup/${d}/2`)).location, `/setup/${d}/3`);
     const three = await divya.get(`/setup/${d}/3`);
     assert.ok(three.plain.includes(WORDS.en.setup.steps.accounts) && three.plain.includes('name="waToken"'));
     assert.ok(!three.plain.includes('name="calId"') && !three.plain.includes('name="rzpKeyId"') && !three.plain.includes('name="deposit"'), "no calendar, no Razorpay and no deposit question for this template");
+  } finally { await b.close(); }
+});
+
+test("setup never writes into another shop: a name taken after step 1 gets a fresh id before any secret is written, a file already waiting in an inbox is never overwritten, and a shop that appears before the save is not touched", async () => {
+  const b = await boot({}, { standins: true });
+  try {
+    const divya = await b.account("divya", "partner");
+    // 1. Another shop with the same name appears after step 1 (a builder adds it on the server).
+    const start = await divya.post("/setup", { template: "bookings" }, "/setup");
+    const d = start.location!.split("/")[2];
+    for (const [i, form] of [STEP1, STEP2, STEP3].entries()) assert.equal((await divya.post(`/setup/${d}/${i + 1}`, form, `/setup/${d}/${i + 1}`)).status, 303);
+    assert.equal(JSON.parse(readFileSync(join(b.dir, "panel", "data", "drafts", `${d}.json`), "utf8")).shopId, "hosahalli-beauty");
+    b.addShop("hosahalli-beauty", { name: "Someone Else's Shop" });
+    const theirs = readFileSync(join(b.dir, "shops", "hosahalli-beauty", "settings.json"), "utf8");
+    assert.equal((await divya.post(`/setup/${d}/4`, STEP4, `/setup/${d}/4`)).status, 303);
+    const mine = JSON.parse(readFileSync(join(b.dir, "panel", "data", "drafts", `${d}.json`), "utf8")).shopId as string;
+    assert.equal(mine, "hosahalli-beauty-2");
+    assert.equal(existsSync(join(b.dir, "secrets-inbox", "hosahalli-beauty")), false, "nothing went into the other shop's inbox");
+    assert.ok(existsSync(join(b.dir, "secrets-inbox", mine, "whatsapp_token")));
+    await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/5`);
+    assert.equal(readFileSync(join(b.dir, "shops", "hosahalli-beauty", "settings.json"), "utf8"), theirs, "the other shop's settings are untouched");
+    assert.ok(existsSync(join(b.dir, "shops", mine, "owner.json")));
+
+    // 2. A file already waiting in the inbox of the id this draft wants: not overwritten, another id is used.
+    const s2 = await divya.post("/setup", { template: "bookings" }, "/setup");
+    const d2 = s2.location!.split("/")[2];
+    await divya.post(`/setup/${d2}/1`, { ...STEP1, name: "Quiet Corner" }, `/setup/${d2}/1`);
+    for (const n of [2, 3]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? STEP2 : STEP3, `/setup/${d2}/${n}`);
+    mkdirSync(join(b.dir, "secrets-inbox", "quiet-corner"), { recursive: true });
+    writeFileSync(join(b.dir, "secrets-inbox", "quiet-corner", "whatsapp_token"), "someone-elses-token\n");
+    assert.equal((await divya.post(`/setup/${d2}/4`, STEP4, `/setup/${d2}/4`)).status, 303);
+    assert.equal(readFileSync(join(b.dir, "secrets-inbox", "quiet-corner", "whatsapp_token"), "utf8"), "someone-elses-token\n");
+    assert.equal(JSON.parse(readFileSync(join(b.dir, "panel", "data", "drafts", `${d2}.json`), "utf8")).shopId, "quiet-corner-2");
+
+    // 3. A shop appears between step 4 and the save: the save is refused, and its folder is not touched.
+    const s3 = await divya.post("/setup", { template: "bookings" }, "/setup");
+    const d3 = s3.location!.split("/")[2];
+    await divya.post(`/setup/${d3}/1`, { ...STEP1, name: "Late Arrival" }, `/setup/${d3}/1`);
+    for (const n of [2, 3, 4]) await divya.post(`/setup/${d3}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : STEP4, `/setup/${d3}/${n}`);
+    b.addShop("late-arrival", { name: "Not Mine" });
+    const before = readFileSync(join(b.dir, "shops", "late-arrival", "settings.json"), "utf8");
+    const refused = await divya.post(`/setup/${d3}/save`, {}, `/setup/${d3}/5`);
+    assert.equal(refused.status, 409);
+    assert.ok(refused.plain.includes("already exists"));
+    assert.equal(readFileSync(join(b.dir, "shops", "late-arrival", "settings.json"), "utf8"), before);
+    assert.equal(existsSync(join(b.dir, "shops", "late-arrival", "owner.json")), false);
+  } finally { await b.close(); }
+});
+
+test("every step URL can be opened directly, and a step whose earlier steps are not filled in goes back to the first one that is not: no crash, nothing written", async () => {
+  const b = await boot({}, { standins: true });
+  try {
+    const divya = await b.account("divya", "partner");
+    const start = await divya.post("/setup", { template: "bookings" }, "/setup");
+    const d = start.location!.split("/")[2];
+    for (const n of [2, 3, 4, 5]) {
+      const r = await divya.get(`/setup/${d}/${n}`);
+      assert.deepEqual([r.status, r.location], [303, `/setup/${d}/1`], `GET step ${n}`);
+    }
+    for (const n of [2, 3, 4]) assert.deepEqual((await divya.post(`/setup/${d}/${n}`, STEP4, `/setup/${d}/1`)).location, `/setup/${d}/1`, `POST step ${n}`);
+    for (const path of ["save", "check", "ready", "expected"]) assert.deepEqual((await divya.post(`/setup/${d}/${path}`, {}, `/setup/${d}/1`)).location, `/setup/${d}/1`, path);
+    assert.equal(existsSync(join(b.dir, "secrets-inbox")), false);
+    assert.deepEqual(readdirSync(join(b.dir, "shops")), []);
+    // Half way: step 3 still waits for step 2.
+    await divya.post(`/setup/${d}/1`, STEP1, `/setup/${d}/1`);
+    assert.equal((await divya.get(`/setup/${d}/3`)).location, `/setup/${d}/2`);
+    assert.equal((await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/1`)).location, `/setup/${d}/2`);
+    assert.ok(!b.logs.some((l) => l.startsWith("failed")), b.logs.filter((l) => l.startsWith("failed")).join("\n"));
   } finally { await b.close(); }
 });

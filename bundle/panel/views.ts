@@ -73,7 +73,7 @@ ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
 </html>`.markup;
 }
 
-const languageName = (l: Language): string => languageOptions().find((o) => o.code === l)?.label.split(" · ")[0] ?? l;
+export const languageName = (l: Language): string => languageOptions().find((o) => o.code === l)?.label.split(" · ")[0] ?? l;
 
 // ---- sign in, invitations ---------------------------------------------------------------------------------------------------------------
 

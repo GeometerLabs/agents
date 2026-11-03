@@ -3,7 +3,7 @@
 //  - it is never logged, never put in a page or a redirect, never put in the panel's own data (only the fact that it arrived, and when);
 //  - a problem with it is described by the field's name, never by the value, so no error message can repeat it.
 // The deployer moves each file into the one container that needs it and deletes it from the inbox.
-import { chmodSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, linkSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { SECRET_NAMES, SHOP_ID, isObj } from "./contract.ts";
@@ -37,8 +37,17 @@ export function checkSecret(name: SecretName, value: string): SecretCheck {
   }
 }
 
+/** A file with this name is already waiting in the shop's inbox and the panel did not put it there. Nothing was overwritten. */
+export class InboxTaken extends Error { override name = "InboxTaken"; }
+
 export function createInbox(shops: Shops, now: () => number = Date.now) {
   return {
+    /** Would a first write of any of these names land on a file that is already there? (Existence only; nothing is opened.) */
+    taken(shop: string, names: SecretName[]): boolean {
+      if (!SHOP_ID.test(shop)) return true;
+      const meta = shops.meta(shop);
+      return names.some((n) => meta.receipts[n] === undefined && existsSync(join(shops.paths.inbox(shop), n)));
+    },
     /** Write one secret for one shop and note that it arrived. Returns nothing: there is nothing to show. */
     put(shop: string, name: SecretName, text: string): void {
       if (!SHOP_ID.test(shop) || !(SECRET_NAMES as readonly string[]).includes(name)) throw new Error("not a place the secrets inbox takes");
@@ -48,8 +57,12 @@ export function createInbox(shops: Shops, now: () => number = Date.now) {
       const tmp = join(dir, `.${randomBytes(6).toString("hex")}.tmp`);
       writeFileSync(tmp, text.endsWith("\n") ? text : `${text}\n`, { mode: 0o600 });
       chmodSync(tmp, 0o600);
-      renameSync(tmp, file); // a new key for the same name replaces one the deployer has not collected yet
       const meta = shops.meta(shop);
+      if (meta.receipts[name] === undefined) {
+        // The first time this panel writes this name for this shop: create it only if nothing is there (a hard link fails when the name exists).
+        try { linkSync(tmp, file); } catch (e) { unlinkSync(tmp); if ((e as NodeJS.ErrnoException).code === "EEXIST") throw new InboxTaken("a file by that name is already waiting in the inbox"); throw e; }
+        unlinkSync(tmp);
+      } else renameSync(tmp, file); // a new key for a name this panel wrote before replaces it, if the deployer has not collected it yet
       shops.saveMeta(shop, { ...meta, receipts: { ...meta.receipts, [name]: new Date(now()).toISOString() } });
     },
   };

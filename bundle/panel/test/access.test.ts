@@ -265,3 +265,29 @@ test("hosted mode keeps everything the panel itself holds encrypted, with the ke
     assert.ok(h.logs.some((l) => /VaultError/u.test(l)));
   } finally { await h.close(); }
 });
+
+test("hosted mode seals the papers too: after a shop is set up, checked and made ready, nothing the panel keeps reads in plain text, and the papers still open for the people who may see them", async () => {
+  const { M, STEP1, STEP2, STEP3, STEP4, setUp } = await import("./flow.ts");
+  const h = await boot({}, { mode: "hosted", standins: true, signing: true });
+  try {
+    const divya = await h.account("divya.marker", "partner");
+    const f = await setUp(h, divya);
+    await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
+    h.status(f.shop, { updatedAt: new Date(Date.parse("2026-11-04T10:00:00+05:30") - 60_000).toISOString(), deploy: { state: "applied", at: "2026-11-04T09:00:00Z" }, limits: { proven: 9, of: 9, unprovable: [] } });
+    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/5`);
+    assert.equal((await divya.post(`/setup/${f.draft}/ready`, {}, `/setup/${f.draft}/5`)).status, 303);
+    const doc = await divya.get(`/shops/${f.shop}/docs/go-live/go-live-certificate-ml.html`);
+    assert.ok(doc.status === 200 && doc.text.includes("Hosahalli Beauty"), "the paper opens for its owner");
+    assert.equal((await (await h.account("meena", "partner")).get(`/shops/${f.shop}/docs/go-live/go-live-certificate-ml.html`)).status, 404);
+    // Everything the panel itself keeps: sealed. (What the deployer must read, shops/ and the inbox, is the deployer's, and not the panel's own data.)
+    const files = readdirSync(join(h.dir, "panel"), { recursive: true, withFileTypes: true }).filter((e) => e.isFile());
+    assert.ok(files.some((e) => e.name.endsWith(".html")) && files.some((e) => e.name === "checks" || e.parentPath.endsWith("checks")), "the papers and the checks are among the files that were looked at");
+    for (const e of files) {
+      const text = readFileSync(join(e.parentPath, e.name), "utf8");
+      assert.ok(text.startsWith("geo1."), `${join(e.parentPath, e.name)} is sealed`);
+      assert.ok(!/Hosahalli|divya|DIVYA|<!doctype|go-live|\+9198765|rzp_live|geometer-go-live/u.test(text), `${e.name} shows plain text`);
+    }
+    for (const m of [M.token, M.secret, M.hook]) assert.ok(!files.some((e) => readFileSync(join(e.parentPath, e.name), "utf8").includes(m)));
+    void STEP1; void STEP2; void STEP3; void STEP4;
+  } finally { await h.close(); }
+});

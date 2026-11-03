@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { openStores } from "../server.ts";
 import { CALENDAR_ID, PHONE_ID } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
@@ -31,7 +32,7 @@ export async function setUp(b: Boot, who: Browser, steps: Record<string, string>
     replies.push(r.text);
     assert.equal(r.status, 303, `step ${i + 1}: ${r.text.replace(/<[^>]+>/gu, " ").replace(/\s+/gu, " ").slice(0, 400)}`);
   }
-  const shop = JSON.parse(readFileSync(join(b.dir, "panel", "data", "drafts", `${draft}.json`), "utf8")).shopId as string;
+  const shop = openStores(b.config).store.read<{ shopId: string }>(`drafts/${draft}.json`)!.shopId;
   return { draft, shop, replies };
 }
 
