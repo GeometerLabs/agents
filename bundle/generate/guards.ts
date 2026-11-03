@@ -45,8 +45,8 @@ export interface SpecIdentity { tenant: string; name: string; version: number; r
 const base = (def: GuardDef, id: SpecIdentity, approvalTtlSeconds = 900) => ({ schema: 1, tenant: id.tenant, tool: def.tool, name: id.name, version: id.version, reviewed_by: id.reviewedBy, approval_ttl_seconds: approvalTtlSeconds });
 const count = (id: string, operation: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [], cap: String(cap), window_seconds: windowSeconds });
 
-export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours: number): LimitsSpec {
-  return razorpayLimitsSpec(settings, { tenant: id.tenant, name: id.name, version: id.version, reviewedBy: id.reviewedBy }, { approvalTtlSeconds: approvalHours * 3600 });
+export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours: number, linksPerHour?: number): LimitsSpec {
+  return razorpayLimitsSpec(settings, { tenant: id.tenant, name: id.name, version: id.version, reviewedBy: id.reviewedBy }, { approvalTtlSeconds: approvalHours * 3600, ...(linksPerHour !== undefined ? { caps: { linksPerHour } } : {}) });
 }
 
 /** The shop's own WhatsApp number, exactly: not a longer number that ends the same way. */

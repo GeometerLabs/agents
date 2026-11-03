@@ -89,8 +89,8 @@ function stats(): { name: string; mib: number }[] {
   const r = dk(["stats", "--no-stream", "--format", "{{.Name}}\t{{.MemUsage}}"]);
   return r.out.trim().split("\n").filter((l) => l.startsWith(`${PROJECT}-`)).map((l) => {
     const [name, usage] = l.split("\t");
-    const m = /^([\d.]+)\s*([KMG]i?)B/u.exec(usage)!;
-    return { name: name.replace(`${PROJECT}-`, "").replace(/-1$/u, ""), mib: Number(m[1]) * (m[2].startsWith("G") ? GiB : m[2].startsWith("K") ? 1 / 1024 : 1) };
+    const m = /^([\d.]+)\s*([KMG]i?)B/u.exec(usage ?? "");
+    return { name: name.replace(`${PROJECT}-`, "").replace(/-1$/u, ""), mib: m ? Number(m[1]) * (m[2].startsWith("G") ? GiB : m[2].startsWith("K") ? 1 / 1024 : 1) : 0 };
   });
 }
 function group(name: string): string {
@@ -126,7 +126,9 @@ function probe(from: string, host: string, port: number): string {
   return r.out.trim().split("\n").at(-1) ?? r.err.trim().slice(0, 80);
 }
 const ipOf = (service: string, network: string): string => dk(["inspect", containerOf(service), "--format", `{{(index .NetworkSettings.Networks "${PROJECT}_${network}").IPAddress}}`]).out.trim();
-const adminIpOf = (service: string) => ipOf(service, "admin");
+/** A Guard shares its forwarder's network namespace, so the address on the admin network is the forwarder's. */
+const ownerOf = (service: string) => (service.startsWith("g-") ? `fwd-${service.slice(2)}` : service);
+const adminIpOf = (service: string) => ipOf(ownerOf(service), "admin");
 const readSecret = (container: string, file: string) => readFileSync(secretFile(SERVER, container, ...file.split("/")), "utf8").trim();
 
 /** The two things the design leans on, tried in a minute before anything is built: a busybox `nc` can forward into a joined container's loopback, and the images are here. */
@@ -166,7 +168,7 @@ async function main_(): Promise<void> {
   if (code !== 0) throw new Error("init failed");
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
   conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
-  conf.heartbeatSeconds = 10; conf.panel = { enabled: false };
+  conf.heartbeatSeconds = 10; conf.panel = { enabled: false }; conf.limits = { razorpayLinksPerHour: 1_000_000 }; // the load test must not meet the shop's own cap
   writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
   mkdirSync(join(SCRATCH, "minio", "geo-stream"), { recursive: true }); mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
   writeFileSync(testCompose, `services:
@@ -274,7 +276,15 @@ async function isolation(shops: number) {
   say(`\n== isolation (${shops} shop(s)) ==`);
   const rt = "rt-glow-salon";
   const rows: Record<string, string> = {};
-  const attempt = (label: string, host: string, port: number, expect: "REACHED" | "NOT") => { const got = probe(rt, host, port); rows[label] = got; check(`from the runtime: ${label} -> ${got}`, expect === "REACHED" ? got === "REACHED" : got !== "REACHED", got); };
+  const attempt = (label: string, host: string, port: number, expect: "REACHED" | "NOT") => {
+    if (host === "") { check(`from the runtime: ${label}`, false, "no address was found to try (the probe would prove nothing)"); return; }
+    const got = probe(rt, host, port); rows[label] = got;
+    check(`from the runtime: ${label} -> ${got}`, expect === "REACHED" ? got === "REACHED" : got !== "REACHED", got);
+  };
+  // controls: the same probe from a container that IS meant to reach them must succeed, or "not reachable" above would mean nothing
+  const control = (label: string, host: string, port: number) => check(`control, from ops: ${label} -> ${probe("ops", host, port)}`, probe("ops", host, port) === "REACHED", host);
+  control("razorpay Guard's admin forwarder", adminIpOf("g-glow-salon-razorpay"), 8190);
+  control("the runtime's door", adminIpOf("door-glow-salon"), 8780);
   const sip = ipOf("standins", "egress");
   attempt("its own razorpay Guard (agent port)", "g-glow-salon-razorpay", 8080, "REACHED");
   attempt("its own whatsapp Guard (agent port)", "g-glow-salon-whatsapp", 8080, "REACHED");
@@ -325,18 +335,23 @@ console.log(JSON.stringify({ok,refused,unreachable,other}))})()`;
   await sleep(8000);
   const midLinks = link();
   const killedAt = Date.now();
-  dk(["kill", containerOf("g-glow-salon-razorpay")]);
+  dk(["stop", "-t", "0", containerOf("g-glow-salon-razorpay")]); // stopped by hand: Docker does not restart it, so the window is the whole rest of the load
   const afterKillLinks = link();
   await new Promise<void>((resolve) => child.on("close", () => resolve()));
   const after = link();
   const counts = JSON.parse(out.trim().split("\n").at(-1) ?? "{}");
   say(`load results: ${JSON.stringify(counts)}; links at the stand-in: before ${before.links}, 8 s in ${midLinks.links}, just after the kill ${afterKillLinks.links}, at the end ${after.links}`);
   check("under load, some calls went through before the kill", midLinks.links > before.links, { before: before.links, mid: midLinks.links });
-  check("after the Razorpay Guard was killed NOTHING reached the Razorpay stand-in", after.links === afterKillLinks.links && counts.unreachable > 0, { atKill: afterKillLinks.links, atEnd: after.links, unreachable: counts.unreachable, afterSeconds: Math.round((Date.now() - killedAt) / 1000) });
+  check("after the Razorpay Guard was stopped NOTHING reached the Razorpay stand-in", after.links === afterKillLinks.links && counts.unreachable > 0, { atKill: afterKillLinks.links, atEnd: after.links, unreachable: counts.unreachable, afterSeconds: Math.round((Date.now() - killedAt) / 1000) });
   results.killUnderLoad = { before, midLinks, afterKillLinks, after, counts };
   dc(["up", "-d", "g-glow-salon-razorpay"]);
   await waitFor("the Guard to be ready again", () => dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), 90);
-  check("the Guard comes back by itself and refuses nothing it should allow", dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), "");
+  check("the Guard comes back when started again", dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), "");
+  // and a crash (SIGKILL) is restarted by Docker on its own, in the same namespace
+  dk(["kill", containerOf("g-glow-salon-razorpay")]);
+  const back = await waitFor("the crashed Guard to be restarted by Docker", () => dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), 90);
+  const reach = nodeEval(rt, `fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{headers:{authorization:'Bearer ${agent}'}}).then(r=>console.log(r.status))`).out.trim();
+  check("a crashed Guard is restarted by Docker and answers its runtime again (the forwarder owns the namespace)", back && /^(200|403)$/u.test(reach), reach);
 }
 
 function approvalFlow(approvalId: string, decision: "approve" | "deny" = "approve") {
@@ -417,7 +432,11 @@ async function webhookThroughCaddy() {
   const body = JSON.stringify({ event: "payment.captured", created_at: Math.floor(Date.now() / 1000), payload: { payment: { entity: { id: "pay_proof_1", order_id: "order_x", amount: 20000, currency: "INR", status: "captured", notes: {} } } } });
   const sig = (secret: string) => createHmac("sha256", secret).update(body).digest("hex");
   const post = (shop: string, secret: string) => sh("curl", ["-sk", "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST", `https://localhost:18443/c/${shop}/webhooks/razorpay`, "-H", "content-type: application/json", "-H", `x-razorpay-signature: ${sig(secret)}`, "-H", `x-razorpay-event-id: evt_proof_${Math.random()}`, "--data-binary", body]).out;
+  const tasks = () => { try { const o = JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "observe"]).out.trim().split("\n").at(-1) ?? "{}") as { shops: { id: string; status?: { tasks?: { pending: number; done: number; failed: number } } }[] }; const t = o.shops.find((s) => s.id === "glow-salon")?.status?.tasks; return (t?.pending ?? 0) + (t?.done ?? 0) + (t?.failed ?? 0); } catch { return -1; } };
+  const before = tasks();
   const good = post("glow-salon", readSecret("inbox", "glow-salon/razorpay_webhook_secret"));
+  await sleep(2000);
+  check("and the runtime saved it (Caddy -> inbox -> door -> runtime)", tasks() === before + 1, { before, after: tasks() });
   const wrong = post("glow-salon", "not-the-secret-of-this-shop");
   const nothing = sh("curl", ["-sk", "-o", "/dev/null", "-w", "%{http_code}", "https://localhost:18443/webhooks/razorpay"]).out;
   check("Caddy -> inbox -> runtime: a correctly signed webhook is accepted", good === "200", good);
