@@ -1,7 +1,7 @@
 // The services the agent talks to. In "fakes" mode they are the in-memory stand-ins, good for a local run (they forget
 // everything when the process stops). In "live" mode they are the real adapters, loaded only then, each pointing at a Guard
 // that holds the keys. The runtime holds no service key and no webhook secret.
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
 import { createFakeMessaging } from "../src/adapters/messaging.ts";
@@ -17,7 +17,30 @@ import type { WindowStore } from "./store.ts";
 
 /** The shape of src/adapters/live/index.ts. */
 export interface LiveModule {
-  createLiveAdapters(services: NonNullable<RuntimeConfig["services"]>, deps: { clock: Clock; window: WindowStore }): Services;
+  createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore }): Services;
+}
+
+/** The services as the live adapters take them: each Guard's credential for this agent has been read from its file. */
+export type LiveServices = {
+  payments: { baseUrl: string; agentToken?: string };
+  calendar: { baseUrl: string; calendarId: string; agentToken?: string };
+  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string };
+  timeoutMs?: number;
+};
+
+/** Read the files that hold this agent's credential for each Guard. The credential is never logged and never part of the config the runtime keeps. */
+export function readAgentTokens(config: NonNullable<RuntimeConfig["services"]>): LiveServices {
+  const token = (file: string | undefined): { agentToken?: string } => {
+    if (!file) return {};
+    let text: string;
+    try { text = readFileSync(file, "utf8").trim(); } catch { throw new ClientError(`I could not read the agent credential file ${file} (services.*.agentTokenFile).`); }
+    if (text.length === 0) throw new ClientError(`The agent credential file ${file} is empty.`);
+    return { agentToken: text };
+  };
+  const { agentTokenFile: p, ...payments } = config.payments;
+  const { agentTokenFile: c, ...calendar } = config.calendar;
+  const { agentTokenFile: m, ...messaging } = config.messaging;
+  return { payments: { ...payments, ...token(p) }, calendar: { ...calendar, ...token(c) }, messaging: { ...messaging, ...token(m) }, ...(config.timeoutMs !== undefined ? { timeoutMs: config.timeoutMs } : {}) };
 }
 
 const LIVE_MODULE = new URL("../src/adapters/live/index.ts", import.meta.url);
@@ -41,7 +64,7 @@ export interface ServicesDeps {
 export async function buildServices(config: Pick<RuntimeConfig, "mode" | "services">, deps: ServicesDeps): Promise<Services> {
   if (config.mode === "live") {
     const live = await (deps.loadLive ?? loadLiveModule)();
-    return live.createLiveAdapters(config.services!, { clock: deps.clock, window: deps.window });
+    return live.createLiveAdapters(readAgentTokens(config.services!), { clock: deps.clock, window: deps.window });
   }
 
   const fake = createFakeMessaging(deps.clock);

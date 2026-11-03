@@ -194,3 +194,33 @@ test("live mode loads the live adapters only then, hands them the services and t
 test("when this build has no live adapters, live mode refuses with a clear message", { skip: existsSync(new URL("../src/adapters/live/index.ts", import.meta.url)) }, async () => {
   await assert.rejects(loadLiveModule(), /does not have them.*"fakes"/s);
 });
+
+test("services may name a file that holds this agent's credential for each Guard; it is read at start, a relative path is measured from the client folder, and nothing else called a token is allowed", async () => {
+  const { validateRuntimeConfig } = await import("../server/config.ts");
+  const { readAgentTokens } = await import("../server/services.ts");
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = mkdtempSync(join(tmpdir(), "geo-agent-token-"));
+  try {
+    writeFileSync(join(dir, "payments.token"), "gg_payments-agent-token\n");
+    const services = { payments: { baseUrl: "http://guard-razorpay:8080", agentTokenFile: "payments.token" }, calendar: { baseUrl: "http://guard-calendar:8080", calendarId: "c" }, messaging: { baseUrl: "http://guard-whatsapp:8080", phoneNumberId: "1" } };
+    const checked = validateRuntimeConfig({ mode: "live", services }, dir);
+    assert.ok(checked.ok);
+    const config = checked.ok ? checked.config.services! : undefined!;
+    assert.equal(config.payments.agentTokenFile, join(dir, "payments.token"));
+    const read = readAgentTokens(config);
+    assert.equal(read.payments.agentToken, "gg_payments-agent-token", "the newline is dropped");
+    assert.equal((read.payments as Record<string, unknown>).agentTokenFile, undefined, "the file's name does not travel on");
+    assert.equal(read.calendar.agentToken, undefined, "a Guard that is not given one gets no Authorization header");
+    // a file that is not there, or empty, is said plainly
+    assert.throws(() => readAgentTokens({ ...config, calendar: { ...config.calendar, agentTokenFile: join(dir, "missing") } }), /could not read the agent credential file/);
+    writeFileSync(join(dir, "empty"), "\n");
+    assert.throws(() => readAgentTokens({ ...config, calendar: { ...config.calendar, agentTokenFile: join(dir, "empty") } }), /is empty/);
+    // what is not allowed: a token in the file itself, or a path that is not text
+    const bad = validateRuntimeConfig({ mode: "live", services: { ...services, payments: { baseUrl: "http://g:8080", token: "hunter2" } } }, dir);
+    assert.ok(!bad.ok && /I don't know what "token" means in services\.payments/.test(bad.errors.join(" ")) && !bad.errors.join(" ").includes("hunter2"));
+    const notText = validateRuntimeConfig({ mode: "live", services: { ...services, payments: { baseUrl: "http://g:8080", agentTokenFile: 7 } } }, dir);
+    assert.ok(!notText.ok && /agentTokenFile must be the path of a file/.test(notText.errors.join(" ")));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
