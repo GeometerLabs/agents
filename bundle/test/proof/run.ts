@@ -363,12 +363,12 @@ async function isolation(shops: number) {
   results[`isolation${shops}`] = rows; save();
 }
 
-/** The panel's own agent at each Guard: three reads and nothing else, and its network holds nothing else it could use. */
+/** The panel's own agent at each Guard: its connection-check reads and nothing else, and its network holds nothing else it could use. */
 async function panelAccess(shops: number) {
   say(`\n== the panel's access (${shops} shop(s)) ==`);
   const from = "panel-probe";
   const call = (shop: string, kind: string, method: string, path: string, body?: unknown) => {
-    const token = readSecret("panel", `${shop}/${kind}`);
+    const token = readSecret("panel", "guard_agent_token"); // one token for the panel, presented to every Guard (the panel reads a single file)
     const r = nodeEval(from, `fetch('http://g-${shop}-${kind}:8080${path}',{method:'${method}',headers:{authorization:'Bearer ${token}','content-type':'application/json'}${body ? `,body:${JSON.stringify(JSON.stringify(body))}` : ""}}).then(async r=>console.log(r.status+' '+(await r.text()).slice(0,100)))`);
     return r.out.trim() || r.err.trim().slice(0, 120);
   };
@@ -378,6 +378,10 @@ async function panelAccess(shops: number) {
   const wa = call(shop, "whatsapp", "GET", `/v26.0/${phoneOf(1)}?fields=id,display_phone_number`), cal = call(shop, "calendar", "GET", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(1))}`);
   check("the panel reads the shop's WhatsApp number through its Guard (passed on to the provider)", passedOn(wa), wa.slice(0, 100));
   check("the panel reads the shop's calendar through its Guard (passed on to the provider)", passedOn(cal), cal.slice(0, 100));
+  const events = call(shop, "calendar", "GET", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(1))}/events?maxResults=1`);
+  check("the panel lists one event of the shop's calendar through its Guard (the second half of its calendar check: that is where the access role comes back)", passedOn(events), events.slice(0, 100));
+  const otherEvents = shops > 1 ? call(shop, "calendar", "GET", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(2))}/events?maxResults=1`) : "";
+  if (shops > 1) check("and cannot list another shop's calendar through this shop's Guard (exact allowlist)", /^403/u.test(otherEvents), otherEvents);
   check("the panel reads the shop's payment links through its Guard", call(shop, "razorpay", "GET", "/v1/payment_links?reference_id=geometer-connection-check").startsWith("200"), "");
   const send = call(shop, "whatsapp", "POST", `/v26.0/${phoneOf(1)}/messages`, { messaging_product: "whatsapp", to: "919800000000", type: "text", text: { body: "hi" } });
   check("the panel cannot SEND a message (its agent is not allowed that operation)", /^403/u.test(send) || /^40[13]/u.test(send), send);

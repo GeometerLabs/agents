@@ -24,26 +24,32 @@ const withPanel = { panel: { enabled: true } };
 const tomlOf = (w: ReturnType<typeof world>, svc: string) => read(join(w.paths.generated, "guards", svc, "guard.toml"));
 const agentBlock = (toml: string, id: string) => toml.split("[[agents]]").find((b) => b.includes(`id = "${id}"`));
 
-test("each Guard has the panel's own agent, allowed three reads and nothing else, and its token is in the panel's folder only (0600) with only a hash in the Guard's", async () => {
-  const w = world({ "glow-salon": panelRuntime() }, withPanel); try {
-    w.handIn("glow-salon"); await deploy(w.ctx);
-    for (const [kind, ops] of [["razorpay", "list_links"], ["whatsapp", "read_number"], ["calendar", "get_calendar"]] as const) {
-      const toml = tomlOf(w, `g-glow-salon-${kind}`);
-      const block = agentBlock(toml, "panel-glow-salon")!;
-      assert.ok(block.includes(`operations = ["${ops}"]`), `${kind}: ${block}`);
-      const token = read(join(w.paths.secrets, "panel", "glow-salon", kind)).trim();
-      assert.match(token, /^gg_[0-9a-f]{32}$/);
+test("each Guard has the panel's own agent, allowed its connection-check reads and nothing else; its one token is in the panel's folder only (0600), with only a hash in the Guards'", async () => {
+  const w = world({ "glow-salon": panelRuntime(), "bright-tuition": panelRuntime() }, withPanel); try {
+    w.handIn("glow-salon"); w.handIn("bright-tuition"); await deploy(w.ctx);
+    const tokenFile = join(w.paths.secrets, "panel", "guard_agent_token");
+    const token = read(tokenFile).trim();
+    assert.match(token, /^gg_[0-9a-f]{32}$/);
+    assert.equal(statSync(tokenFile).mode & 0o777, 0o600);
+    assert.equal(readdirSync(join(w.paths.secrets, "panel")).sort().join(), "data_key,guard_agent_token,signing_key", "one folder, three files: no per-shop folders");
+    for (const shop of ["glow-salon", "bright-tuition"]) for (const [kind, ops] of [["razorpay", '["list_links"]'], ["whatsapp", '["read_number"]'], ["calendar", '["get_calendar", "list"]']] as const) {
+      const toml = tomlOf(w, `g-${shop}-${kind}`);
+      const block = agentBlock(toml, `panel-${shop}`)!;
+      assert.ok(block.includes(`operations = ${ops}`), `${shop} ${kind}: ${block}`);
       assert.ok(block.includes(sha256Hex(token)) && !toml.includes(token), "the Guard has the hash, never the token");
-      assert.equal(statSync(join(w.paths.secrets, "panel", "glow-salon", kind)).mode & 0o777, 0o600);
-      for (const other of readdirSync(w.paths.secrets).filter((d) => d !== "panel")) {
-        const hit = readdirSync(join(w.paths.secrets, other), { recursive: true, encoding: "utf8" }).filter((f) => existsSync(join(w.paths.secrets, other, f)) && statSync(join(w.paths.secrets, other, f)).isFile()).some((f) => read(join(w.paths.secrets, other, f)).includes(token));
-        assert.ok(!hit, `the panel's token for ${kind} is also in secrets/${other}`);
-      }
+      assert.ok(!toml.split("[[agents]]").some((b) => b.includes(`id = "runtime-${shop}"`) && b.includes(sha256Hex(token))), "and the runtime's agent is another credential");
     }
-    for (const key of ["data_key", "signing_key"]) {
-      assert.match(read(join(w.paths.secrets, "panel", key)).trim(), /^[0-9a-f]{64}$/);
-      assert.equal(statSync(join(w.paths.secrets, "panel", key)).mode & 0o777, 0o600, "the panel refuses a key anyone else could read");
+    for (const other of readdirSync(w.paths.secrets).filter((d) => d !== "panel")) {
+      const hit = readdirSync(join(w.paths.secrets, other), { recursive: true, encoding: "utf8" }).filter((f) => statSync(join(w.paths.secrets, other, f)).isFile()).some((f) => read(join(w.paths.secrets, other, f)).includes(token));
+      assert.ok(!hit, `the panel's token is also in secrets/${other}`);
     }
+    // the keys, in the formats the panel reads (vault.ts: 32 bytes as hex; report/sign.ts loadPrivateKey: an Ed25519 key it can open, mode 0600)
+    assert.match(read(join(w.paths.secrets, "panel", "data_key")).trim(), /^[0-9a-f]{64}$/);
+    const { createPrivateKey } = await import("node:crypto");
+    assert.equal(createPrivateKey(readFileSync(join(w.paths.secrets, "panel", "signing_key"))).asymmetricKeyType, "ed25519");
+    for (const key of ["data_key", "signing_key"]) assert.equal(statSync(join(w.paths.secrets, "panel", key)).mode & 0o777, 0o600, `${key}: the panel refuses a key anyone else could read`);
+    const again = read(tokenFile); await deploy(w.ctx, "glow-salon");
+    assert.equal(read(tokenFile), again, "kept across deploys: a token is made once");
     for (const d of ["requests", "exports", "panel"]) assert.ok(existsSync(join(w.root, d)), d);
     assert.match(read(join(w.paths.generated, "compose.yaml")), /\n  panel:\n    internal: true/, "the panel's network exists");
     assert.doesNotMatch(read(join(w.paths.generated, "compose.yaml")), /bundle\/panel\/main\.ts/, "but with no panel program in this checkout no panel container is generated");

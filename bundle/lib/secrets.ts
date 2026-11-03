@@ -45,11 +45,11 @@ export function readSecretFile(path: string): string | undefined {
 }
 
 /** The value in the file, or, if there is none, make one, write it and return it. A token is made once and kept. */
-export function ensureSecret(path: string, make: () => string): string {
+export function ensureSecret(path: string, make: () => string, mode?: number): string {
   const have = readSecretFile(path);
   if (have) return have;
   const value = make();
-  writeSecretFile(path, value);
+  writeSecretFile(path, value, mode);
   return value;
 }
 

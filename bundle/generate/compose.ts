@@ -236,7 +236,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       environment: {
         PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl, PANEL_TRUST_PROXY: "1",
         PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_PATHWAYS_DIR: "/app/pathways",
-        PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: "/run/secrets/{shop}/{kind}", PANEL_WEBHOOK_URL: `${publicUrl}/c/{shop}/webhooks/{kind}`,
+        PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl}/c/{shop}/webhooks/{kind}`,
         ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
       },
       volumes: [appVolume, `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],

@@ -25,6 +25,8 @@ export const names = {
   agentId: (shop: string) => `runtime-${shop}`,
   relayAgentId: (shop: string) => `relay-${shop}`,
   panelAgentId: (shop: string) => `panel-${shop}`,
+  /** The one token file the panel presents to every Guard it checks (secrets/panel/<this>); the panel reads a single file (golive.ts). */
+  panelGuardToken: "guard_agent_token",
   approverId: (shop: string) => `owner-${shop}`,
 };
 
