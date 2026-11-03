@@ -157,6 +157,9 @@ test("verify-bundle's answer is read: 4 of 4 with the untestable ones named, and
   const refusals = refusalProblems("compile", "refused: rules[2] (refund-once): needs an intents entry\nrefused: limits[0] (x): bad cap\n");
   assert.equal(refusals.length, 2);
   assert.match(refusals[0].message, /refund-once/);
+  assert.equal(refusals[0].rule, "compile:refund-once");
+  const real = refusalProblems("compile", "refused: a rule of this spec would not hold, so no bundle was written: own-number-only expected refuse for phone_number_id = geometer-tripwire-x, got allow (phone_number_id allowed)");
+  assert.equal(real[0].rule, "compile:own-number-only", "the rule's id, from the compiler's own sentence");
 });
 
 test("the specs for WhatsApp and Calendar are the same bytes for the same settings", () => {

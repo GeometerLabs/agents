@@ -49,6 +49,9 @@ export function createRefresher(config: RefresherConfig, deps: { fetch?: typeof 
   const shops: Record<string, { expiresAt: number | null; lastError: string | null; failures: number; nextAt: number; tried: boolean }> = Object.fromEntries(Object.keys(config.shops).map((s) => [s, { expiresAt: null, lastError: null, failures: 0, nextAt: 0, tried: false }]));
   let timer: ReturnType<typeof setInterval> | undefined;
   let running = false;
+  // Each shop's folder exists from the start, token or no token: a Calendar Guard mounts its own sub-folder of the token volume, and Docker cannot even create
+  // the container if the folder is missing. A shop whose key does not work then has a Guard that cannot start (no token file), and no other shop is held back.
+  for (const name of Object.keys(config.shops)) { try { mkdirSync(join(config.outDir, name), { recursive: true, mode: 0o755 }); } catch { /* the first exchange will say */ } }
 
   async function refresh(name: string): Promise<void> {
     const c = config.shops[name]; const s = shops[name];

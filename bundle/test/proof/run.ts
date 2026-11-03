@@ -184,6 +184,13 @@ async function main_(): Promise<void> {
     command: ["node", "/app/bundle/test/proof/standins.ts"]
     volumes: ["${APP}:/app:ro"]
     networks: [egress]
+    healthcheck: { test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8791/_state"], interval: 3s, timeout: 3s, retries: 20, start_period: 3s }
+  refresher:
+    depends_on:
+      standins: { condition: service_healthy }
+  litestream:
+    depends_on:
+      minio: { condition: service_started }
   panel-probe:
     image: node:26-alpine
     user: "${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}"
@@ -226,7 +233,14 @@ networks:
     const ctx = ctxFor();
     say("\n== deploy 1 shop ==");
     let t0 = Date.now();
-    const res = await deploy(ctx);
+    let res: Awaited<ReturnType<typeof deploy>>;
+    try { res = await deploy(ctx); } catch (e) {
+      const ps = dc(["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"]).out;
+      const bad = ps.trim().split("\n").map((l) => l.split("\t")).filter(([, st]) => st && !/\(healthy\)/u.test(st) && !/^Up /u.test(st)).map(([n]) => n);
+      results.diagnosis = { ps, logs: Object.fromEntries(bad.slice(0, 8).map((n) => [n, dc(["logs", "--no-color", "--tail", "25", n]).out.slice(-1800)])) };
+      say(`diagnosis:\n${ps}\n${JSON.stringify((results.diagnosis as { logs: unknown }).logs, null, 1).slice(0, 4000)}`);
+      throw e;
+    }
     results.deployOneShopSeconds = Math.round((Date.now() - t0) / 1000);
     check("deploy: every tripwire passes on the running Guards", res.length === 1 && res[0].proven.passed === res[0].proven.of && res[0].proven.of > 0, res[0]?.proven.line);
     say(`   ${res[0].proven.line}`);

@@ -381,7 +381,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const before = state.serviceHashes ?? {};
   ctx.log(`Bringing up ${prepared.map((p) => p.folder.name).join(", ")}...`);
   const up = await compose(ctx, ["up", "-d", "--remove-orphans"]);
-  if (up.code !== 0) throw new Refused([{ rule: "compose-up", message: `docker compose up failed: ${up.stderr.trim().split("\n").slice(-6).join(" | ")}` }]);
+  if (up.code !== 0) throw new Refused([{ rule: "compose-up", message: `docker compose up failed: ${up.stderr.trim().split("\n").slice(-3).join(" | ")}. ${await whatIsNotUp(ctx)}` }]);
   // A Guard shares its forwarder's network namespace. If the forwarder was recreated (a shop added changes the model forwarder's networks), the Guard must
   // be recreated too, or it is left in a namespace that no longer exists. Compose does this for a dependent; this makes sure, and costs one restart at most.
   const stranded = Object.keys(hashes).filter((n) => n.startsWith("fwd-") && before[n] && before[n].block !== hashes[n].block && before[`g-${n.slice(4)}`]).map((n) => `g-${n.slice(4)}`);
@@ -426,6 +426,15 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   }
   ctx.log(`Changed services: ${changed.length === 0 ? "none" : changed.join(", ")}`);
   return results;
+}
+
+/** After a failed `up`: which services are not running well, and the last lines each one said (they hold no secret: our programs never log one). */
+async function whatIsNotUp(ctx: Context): Promise<string> {
+  const ps = await compose(ctx, ["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"], { timeoutMs: 60_000 });
+  const bad = ps.stdout.trim().split("\n").map((l) => l.split("\t")).filter(([, status]) => status !== undefined && !/\((healthy)\)|^Up (?!.*\((unhealthy|health: starting)\))/u.test(status)).map(([service, status]) => `${service}: ${status}`);
+  if (bad.length === 0) return "";
+  const logs = await compose(ctx, ["logs", "--no-color", "--tail", "6", ...bad.slice(0, 4).map((b) => b.split(":")[0])], { timeoutMs: 60_000 });
+  return `Not running well: ${bad.slice(0, 6).join("; ")}. Their last lines: ${logs.stdout.trim().split("\n").slice(-12).join(" | ").slice(0, 900)}`;
 }
 
 const opsBundleVersion = (): string => (JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string }).version;
