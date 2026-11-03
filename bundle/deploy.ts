@@ -380,6 +380,12 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const hashes = Object.fromEntries(Object.keys(composed.services).map((n) => [n, serviceHashes(composed, n)]));
   const before = state.serviceHashes ?? {};
   ctx.log(`Bringing up ${prepared.map((p) => p.folder.name).join(", ")}...`);
+  // A new shop's Calendar Guard mounts its own sub-folder of the token volume, and Docker cannot even create that container before the folder exists. The refresher
+  // makes every shop's folder when it starts, so a refresher that is already running with the old list is restarted FIRST, and waited for.
+  if (before.refresher && before.refresher.block === hashes.refresher.block && before.refresher.files !== hashes.refresher.files) {
+    await compose(ctx, ["restart", "refresher"]);
+    for (let i = 0; i < 40; i++) { const ps = await compose(ctx, ["ps", "refresher"], { timeoutMs: 30_000 }); if (/\(healthy\)/u.test(ps.stdout)) break; await ctx.sleep(3_000); }
+  }
   const up = await compose(ctx, ["up", "-d", "--remove-orphans"]);
   if (up.code !== 0) throw new Refused([{ rule: "compose-up", message: `docker compose up failed: ${up.stderr.trim().split("\n").slice(-3).join(" | ")}. ${await whatIsNotUp(ctx)}` }]);
   // A Guard shares its forwarder's network namespace. If the forwarder was recreated (a shop added changes the model forwarder's networks), the Guard must
@@ -390,7 +396,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
     const r = await compose(ctx, ["up", "-d", "--force-recreate", "--no-deps", ...stranded]);
     if (r.code !== 0) throw new Refused([{ rule: "compose-recreate", message: `docker compose could not recreate ${stranded.join(", ")}: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
   }
-  const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files && !stranded.includes(n));
+  const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files && !stranded.includes(n) && n !== "refresher");
   const changed = Object.keys(hashes).filter((n) => !before[n] || before[n].block !== hashes[n].block || before[n].files !== hashes[n].files);
   if (restart.length > 0) {
     ctx.log(`Restarting ${restart.join(", ")} (their files changed).`);

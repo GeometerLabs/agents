@@ -108,7 +108,8 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
     if (toCheck.length > 0) {
       const jobFile = join(work, "job.json");
       writeFileSync(jobFile, JSON.stringify({ maxLagEntries: 100, shops: toCheck.map((s) => ({ name: s, restored: `/scratch/${s}/agent.db`, live: `/v/${names.dataVolume(s)}/data/agent.db` })) }), { mode: 0o644 });
-      const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${work}:/scratch:ro`, ...toCheck.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
+      // the scratch folder is mounted writable: a restored database in WAL mode needs its -shm beside it to be opened, even to be read
+      const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${work}:/scratch`, ...toCheck.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
       const j = lastJson(r.stdout) as { results?: DrillResult[] } | undefined;
       if (!j?.results) toCheck.forEach((s) => verdicts.push({ name: s, ok: false, detail: `the drill's check did not run: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 200)}` }));
       else verdicts.push(...j.results);
