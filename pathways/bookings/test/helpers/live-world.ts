@@ -58,6 +58,8 @@ export async function liveWorld(options: { timeoutMs?: number; calendarPageSize?
       await agent.handle({ kind: "message", message: parsed });
       return parsed;
     },
+    /** What the runtime does when it saves an inbound message: remember when this person last wrote. */
+    noteInbound(phone: string, at: number) { lastInbound.set(phone, at); },
     /** Someone writes to the number and the runtime notes the time, but the agent is not asked to answer (this opens their 24-hour window). */
     listen(from: string, text = "hello") {
       const message = fakes.messaging.receive(from, text);
