@@ -70,17 +70,18 @@ export interface ApprovalsWorld {
 
 let nextId = 1;
 
-export async function startApprovalsWorld(options: { refundLimitInr?: number; relay?: Partial<RelayOptions>; ownerLanguage?: "en" | "hi" | "ml" | "kn" } = {}): Promise<ApprovalsWorld> {
+export async function startApprovalsWorld(options: { refundLimitInr?: number; approvalTtlSeconds?: number; relay?: Partial<RelayOptions>; ownerLanguage?: "en" | "hi" | "ml" | "kn" } = {}): Promise<ApprovalsWorld> {
   const base = JSON.parse(JSON.stringify(glowSalon()));
   const settings = parseSettings({ ...base, cancellation: { windowHours: 24, refundLimitInr: options.refundLimitInr ?? 100 }, owner: { ...base.owner, language: options.ownerLanguage ?? base.owner.language } });
   const kit = createKit();
   const clock = kit.clock;
-  const model = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock);
+  const spec = razorpayLimitsSpec(settings, HARNESS_GUARD, options.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: options.approvalTtlSeconds } : {});
+  const model = createGuardModel(spec, clock);
   const payments = createFakePayments(clock, { guard: model });
   const lines: string[] = [];
   const { runtime, db } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(`runtime: ${l}`) });
   const runtimeServer = await startServer(runtime, { token: INTERNAL_TOKEN, port: 0 });
-  const guard = await startStubGuard({ clock, upstreamUrl: "http://127.0.0.1:1", spec: razorpayLimitsSpec(settings, HARNESS_GUARD), model, agentId: AGENT_ID, approver: { id: APPROVER_ID, secret: OWNER_SECRET }, readToken: READ_TOKEN });
+  const guard = await startStubGuard({ clock, upstreamUrl: "http://127.0.0.1:1", spec, model, agentId: AGENT_ID, approver: { id: APPROVER_ID, secret: OWNER_SECRET }, readToken: READ_TOKEN });
   const guardClient = createGuardClient({ adminUrl: guard.adminUrl, readToken: READ_TOKEN, approverId: APPROVER_ID, approverSecret: OWNER_SECRET, now: () => clock.now() });
   const runtimeClient = createRuntimeClient({ url: runtimeServer.url, token: INTERNAL_TOKEN });
   const whatsapp = createFakeMessaging(clock);
