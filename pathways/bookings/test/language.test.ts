@@ -72,7 +72,7 @@ test("mutation check: changing any one value in any rendered template makes the 
       }
     }
   }
-  assert.ok(tried > 150, `only ${tried} mutations were tried; the check would be vacuous`);
+  assert.ok(tried > 300, `only ${tried} mutations were tried; the check would be vacuous`);
 });
 
 // ---- the specific failures the product names ----

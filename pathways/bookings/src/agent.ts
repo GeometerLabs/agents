@@ -257,23 +257,28 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- the booking flow ------------------------------------------------------------------------------------------
 
+  /** The two limits about WHEN: inside opening hours, and not on top of anything else in the calendar (holds included). */
+  async function slotRules(b: Booking, start: number, end: number): Promise<{ hours: Decision; clash: Decision }> {
+    const buffer = settings.bufferMinutes * MINUTE;
+    const nearby = await calendar.conflicts(start - buffer, end + buffer);
+    return {
+      hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start }),
+      clash: checkNoDoubleBooking({
+        startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(),
+        others: nearby.map((e) => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined })),
+      }),
+    };
+  }
+
   /** Check the limits for a slot, then hold it in the calendar. */
   async function tryHold(b: Booking): Promise<{ ok: true; decisions: Decision[] } | { ok: false; why: "outside_hours" | "unavailable" | "failed"; decisions: Decision[] }> {
     const service = serviceOf(b)!;
     const start = b.startMs!;
     const end = b.endMs!;
     const decisions: Decision[] = [checkPriceAtOrAboveList({ serviceName: serviceName(service, "en"), listInr: service.priceInr, proposedInr: service.priceInr })];
-    const hours = checkWithinHours({ settings, service, startMs: start });
-    decisions.push(hours);
+    const { hours, clash } = await slotRules(b, start, end);
+    decisions.push(hours, clash);
     if (hours.verdict === "block") { log(b, b.customer, "hold_slot", "blocked", { start }, { decisions }); return { ok: false, why: "outside_hours", decisions }; }
-
-    const buffer = settings.bufferMinutes * MINUTE;
-    const nearby = await calendar.conflicts(start - buffer, end + buffer);
-    const clash = checkNoDoubleBooking({
-      startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(),
-      others: nearby.map((e) => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined })),
-    });
-    decisions.push(clash);
     if (clash.verdict === "block") { log(b, b.customer, "hold_slot", "blocked", { start }, { decisions }); return { ok: false, why: "unavailable", decisions }; }
 
     b.holdExpiresAt = clock.now() + settings.deposit.holdMinutes * MINUTE;
@@ -561,17 +566,10 @@ export function createAgent(deps: AgentDeps): Agent {
     probe.timePhrase = { hour: old.hour % 12 || 12, minute: old.minute, period: old.hour < 12 ? "am" : "pm" };
     if (!fill(probe, intent)) { await tellCustomer(b, phone, ["didnt_understand"]); return; }
     settle(probe);
-    const service = serviceOf(b)!;
     const start = probe.startMs!;
     const end = probe.endMs!;
 
-    const hours = checkWithinHours({ settings, service, startMs: start });
-    const buffer = settings.bufferMinutes * MINUTE;
-    const nearby = await calendar.conflicts(start - buffer, end + buffer);
-    const clash = checkNoDoubleBooking({
-      startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(),
-      others: nearby.map((e) => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined })),
-    });
+    const { hours, clash } = await slotRules(b, start, end);
     const blocked = start <= clock.now() || hours.verdict === "block" || clash.verdict === "block";
     if (blocked) {
       log(b, phone, "reschedule_booking", "blocked", { start }, { decisions: [hours, clash], notes: start <= clock.now() ? "that time has already passed" : undefined });
