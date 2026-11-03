@@ -147,8 +147,10 @@ export function prepareShop(ctx: Context, server: ServerConfig, state: State, na
   const versions: Record<string, number> = {};
   for (const g of first.guards) versions[g.kind] = prev[g.kind]?.contentHash === contentHash(g.spec) ? prev[g.kind].version : (prev[g.kind]?.version ?? 0) + 1;
   const plan = planShop(server, folder, versions);
+  // reserve the network index now, so two shops added together never share one (it is saved only when the deploy goes through)
+  const index = (state.shops[name] ??= { index: shopIndex(state, name), guards: {}, lockHistory: [] }).index;
   return {
-    prepared: { folder, plan, webhooks, pathwayDir, index: shopIndex(state, name), guards: plan.guards.map((g) => ({ plan: g, version: versions[g.kind], contentHash: contentHash(g.spec) })), desiredHash: desiredHashOf(folder) },
+    prepared: { folder, plan, webhooks, pathwayDir, index, guards: plan.guards.map((g) => ({ plan: g, version: versions[g.kind], contentHash: contentHash(g.spec) })), desiredHash: desiredHashOf(folder) },
     problems, notes,
   };
 }
@@ -296,7 +298,7 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
 
   const at = ctx.now().toISOString();
   for (const p of prepared) {
-    const s = state.shops[p.folder.name] ??= { index: p.index, guards: {}, lockHistory: [] };
+    const s = state.shops[p.folder.name];
     const previousLock = s.applied?.lockText;
     if (previousLock !== undefined && previousLock !== p.folder.lockText) s.lockHistory.push(previousLock);
     for (const g of p.guards) s.guards[g.plan.kind] = { version: g.version, contentHash: g.contentHash, digest: g.compiled!.digest, tripwires: { passed: g.tripwires!.passed, of: g.tripwires!.of, notSelfTestable: g.tripwires!.notSelfTestable } };
@@ -329,7 +331,7 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
   // 5. the RUNNING Guards say what they enforce
   const results: ShopResult[] = [];
   for (const p of prepared) {
-    const proof = await proveRunning(ctx, p.folder.name, p.guards);
+    const proof = await proveRunning(ctx, p.guards);
     if (proof.problems.length === 0) await renewRelayCredential(ctx, p.folder.name);
     const stop = state.shops[p.folder.name].stopped;
     if (stop) await ops(ctx, ["stop", p.folder.name, "on", stop.by, stop.reason]); // a recreated Guard keeps its kill switch in its store; this makes sure
@@ -364,17 +366,16 @@ export async function renewRelayCredential(ctx: Context, shop: string, ttlSecond
 }
 
 /** Wait for the shop's Guards, then read their policy and tripwires from the running processes. */
-async function proveRunning(ctx: Context, shop: string, guards: PreparedGuard[]): Promise<{ guards: Record<string, GuardProof>; problems: Problem[] }> {
+async function proveRunning(ctx: Context, guards: PreparedGuard[]): Promise<{ guards: Record<string, GuardProof>; problems: Problem[] }> {
   const out: Record<string, GuardProof> = {};
   const problems: Problem[] = [];
-  const deadline = ctx.now().getTime() + (ctx.waitSeconds ?? 120) * 1000;
+  const tries = Math.max(1, Math.ceil((ctx.waitSeconds ?? 120) / 3));
   for (const g of guards) {
     let status: { status: number; body: any } = { status: 0, body: null };
-    for (;;) {
+    for (let attempt = 0; attempt < tries; attempt++) {
       status = await adminCall(ctx, g.plan.service, "GET", "/admin/status");
       if (status.status === 200 && status.body?.tripwires?.ran === true) break;
-      if (ctx.now().getTime() >= deadline) break;
-      await ctx.sleep(3_000);
+      if (attempt < tries - 1) await ctx.sleep(3_000);
     }
     const b = status.body;
     const digest: string | undefined = b?.policy?.digest;
@@ -384,7 +385,6 @@ async function proveRunning(ctx: Context, shop: string, guards: PreparedGuard[])
     if (digest !== g.compiled!.digest) problems.push({ rule: `running-guard:${g.plan.service}`, message: `${g.plan.service} is running the policy ${String(digest)}, not the one that was checked (${g.compiled!.digest}). The shop has been stopped.` });
     if (t.ok !== true) problems.push({ rule: `tripwire:${(t.failed ?? []).join(",") || g.plan.service}`, message: `${g.plan.service}'s tripwires failed on the running Guard (${t.passed} of ${t.of}). The shop has been stopped.` });
   }
-  void shop;
   return { guards: out, problems };
 }
 
