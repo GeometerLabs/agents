@@ -169,13 +169,16 @@ test("status is counts only: bookings by state, tasks, the last step, the record
     const reply = await t.get("/status", auth);
     assert.equal(reply.status, 200);
     const status = await reply.json() as any;
-    assert.deepEqual(Object.keys(status).sort(), ["bookings", "lastFailureAt", "lastStepAt", "oldestPendingAt", "pathway", "recordLength", "refunds", "tasks", "version"]);
+    assert.deepEqual(Object.keys(status).sort(), ["bookings", "errors", "lastFailureAt", "lastStepAt", "oldestPendingAt", "pathway", "recordLength", "refunds", "startedAt", "steps", "tasks", "version"]);
     assert.deepEqual(status.refunds, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } });
     assert.equal(status.pathway, "bookings");
     assert.equal(status.version, "0.1.0");
     assert.deepEqual(status.bookings, { awaiting_deposit: 1 });
     assert.deepEqual(status.tasks, { pending: 0, done: 1, failed: 0 });
     assert.ok(status.recordLength > 5 && status.lastStepAt && status.lastFailureAt === null);
+    // Running totals for a heartbeat: one task finished, none failed; startedAt says when they started from zero.
+    assert.deepEqual([status.steps, status.errors], [1, 0]);
+    assert.match(status.startedAt, /^\d{4}-\d\d-\d\dT/);
     const text = JSON.stringify(status);
     for (const secret of ["haircut", "6pm", CUSTOMER.slice(3), "Glow", "plink", "rzp"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
   } finally { await t.close(); }

@@ -32,13 +32,14 @@ function readBody(req: IncomingMessage): Promise<string | undefined> {
 
 export interface RunningRelayServer { port: number; url: string; close(): Promise<void> }
 
-export function startRelayServer(relay: Relay, options: { token: string; host?: string; port?: number }): Promise<RunningRelayServer> {
-  const wanted = sha256(options.token);
+/** The relay's routes as a request handler with nothing listening, for a caller that serves several relays itself (the deploy bundle: one per shop, behind /c/<shop>). */
+export function relayHandler(relay: Relay, token: string): (req: IncomingMessage, res: ServerResponse) => void {
+  const wanted = sha256(token);
   const authorised = (req: IncomingMessage) => {
     const given = /^bearer\s+(\S+)$/iu.exec(req.headers.authorization ?? "")?.[1];
     return given !== undefined && timingSafeEqual(sha256(given), wanted);
   };
-  const server = createServer(async (req, res) => {
+  return async (req, res) => {
     try {
       const path = new URL(req.url ?? "/", "http://relay").pathname;
       if (path === "/healthz" && req.method === "GET") return send(res, 200, { ok: true });
@@ -62,7 +63,11 @@ export function startRelayServer(relay: Relay, options: { token: string; host?: 
     } catch {
       if (!res.headersSent) send(res, 500, { error: "The relay could not handle that. Send it again." });
     }
-  });
+  };
+}
+
+export function startRelayServer(relay: Relay, options: { token: string; host?: string; port?: number }): Promise<RunningRelayServer> {
+  const server = createServer(relayHandler(relay, options.token));
   server.requestTimeout = 10_000;
   server.headersTimeout = 5_000;
   return new Promise((resolve, reject) => {
