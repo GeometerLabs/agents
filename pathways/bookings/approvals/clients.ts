@@ -7,6 +7,8 @@
 import { createHmac, randomUUID } from "node:crypto";
 
 const TIMEOUT_MS = 5_000;
+/** Why a request failed, in a word: "ECONNREFUSED", "TimeoutError". Never the address or anything the other side said. */
+const why = (e: unknown): string => (e as { cause?: { code?: string } })?.cause?.code ?? (e as Error)?.name ?? "error";
 
 // ---- Guard ------------------------------------------------------------------------------------------------------------------------
 
@@ -90,7 +92,7 @@ export function createGuardClient(config: GuardConfig): GuardClient {
         const body = await response.json() as unknown;
         return isRecord(body) && Array.isArray(body.reviews) ? { ok: true, items: body.reviews } : { ok: false, credential: false, error: "Guard's review list was not in the form expected" };
       } catch (e) {
-        return { ok: false, credential: false, error: `Guard could not be reached (${(e as Error).name})` };
+        return { ok: false, credential: false, error: `Guard could not be reached (${why(e)})` };
       }
     },
 
@@ -111,7 +113,7 @@ export function createGuardClient(config: GuardConfig): GuardClient {
         if (response.status === 404) return { kind: "missing" };
         return { kind: "refused", status: response.status, error: error.slice(0, 200) };
       } catch (e) {
-        return { kind: "unreachable", error: `Guard could not be reached (${(e as Error).name})` };
+        return { kind: "unreachable", error: `Guard could not be reached (${why(e)})` };
       }
     },
   };
@@ -159,7 +161,7 @@ export function createRuntimeClient(config: { url: string; token: string }): Run
           && typeof c.serviceName === "string" && Number.isFinite(c.slotMs) && typeof c.paymentId === "string" && Number.isSafeInteger(c.amountPaise) && typeof c.approval === "string";
         return ok ? { kind: "found", context: c as unknown as RefundContext } : { kind: "error", error: "the runtime's answer was not in the form expected" };
       } catch (e) {
-        return { kind: "error", error: `the runtime could not be reached (${(e as Error).name})` };
+        return { kind: "error", error: `the runtime could not be reached (${why(e)})` };
       }
     },
 
