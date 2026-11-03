@@ -66,7 +66,7 @@ test("stop engages the kill switch and records who; start releases it; both are 
     assert.match(by.by, /@/); assert.equal(readStatus(w.root, "glow-salon")!.stopped?.by, by.by);
     assert.equal((await quiet(() => main(["start", "glow-salon", "--server", w.root], w.ctx))).result, 0);
     assert.equal(loadState(w.root).shops["glow-salon"].stopped, undefined);
-    assert.equal(readStatus(w.root, "glow-salon")!.stopped, null);
+    assert.equal(readStatus(w.root, "glow-salon")!.stopped, undefined);
   } finally { w.done(); }
 });
 

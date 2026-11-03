@@ -8,13 +8,13 @@
 //      certificate ("N of M limits proven to bite") is read from there. A mismatch stops the shop with the kill switch.
 //   6. write status/<shop>.json for the panel
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
-import { existsSync, readFileSync } from "node:fs";
+import { chownSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composeServer } from "./generate/compose.ts";
-import type { Composed, Dirs, ShopDeploy } from "./generate/compose.ts";
+import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
 import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
-import { guardToml } from "./generate/guards.ts";
+import { PANEL_READS, guardToml } from "./generate/guards.ts";
 import { litestreamConfig } from "./generate/litestream.ts";
 import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./generate/rules.ts";
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
@@ -22,12 +22,12 @@ import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
 import { pathwayDirFor } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
-import { ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { ensureSecret, panelUser, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { Snapshot, State } from "./lib/state.ts";
-import { updateStatus } from "./lib/status.ts";
+import { readStatus, refusalMessage, updateStatus } from "./lib/status.ts";
 import type { GuardProof } from "./lib/status.ts";
 import { Refused, ensureDir, mintGuardToken, mintSecret, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
 import type { Problem } from "./lib/util.ts";
@@ -53,7 +53,7 @@ export const composeFile = (dir: string) => join(serverPaths(dir).generated, "co
 
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
-  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, shops: p.shops, secretsInbox: p.secretsInbox };
+  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config };
 }
 
 /** `docker compose` on this server's generated file. */
@@ -77,7 +77,7 @@ const have = (dir: string, container: string, file: string) => !!readSecretFile(
 
 function webhooksFor(dir: string, shop: string): ShopWebhooks {
   const meta = have(dir, "inbox", `${shop}/whatsapp_app_secret`);
-  return { verification: !meta && have(dir, "inbox", `${shop}/whatsapp_path_token`) ? "path-token" : "meta-signature", hasGoogle: have(dir, "refresher", `${shop}/google_service_account.json`) };
+  return { verification: !meta && have(dir, "inbox", `${shop}/whatsapp_path_token`) ? "path-token" : "meta-signature", hasGoogle: have(dir, "refresher", `${shop}/google_service_account.json`) || have(dir, "refresher", "_server/google_service_account.json"), ownGoogleKey: have(dir, "refresher", `${shop}/google_service_account.json`) };
 }
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. */
@@ -88,14 +88,16 @@ function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks): Prob
     ...need(`g-${shop}-whatsapp`, "whatsapp_authorization", "whatsapp_token"),
     ...need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret"),
     ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
-    ...need("refresher", `${shop}/google_service_account.json`, "google_service_account.json"),
+    // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
+    ...(have(dir, "refresher", "_server/google_service_account.json") ? [] : need("refresher", `${shop}/google_service_account.json`, "google_service_account.json")),
   ];
 }
 
-interface Credentials { agent: Record<"razorpay" | "whatsapp" | "calendar" | "model" | "relay", string>; admin: Record<"razorpay" | "whatsapp" | "calendar", string> }
+type Three = "razorpay" | "whatsapp" | "calendar";
+interface Credentials { agent: Record<Three | "model" | "relay", string>; admin: Record<Three, string>; /** the panel's own agent at each Guard (only when the panel is on): three reads, nothing else */ panel?: Record<Three, string> }
 
 /** Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. */
-function ensureCredentials(dir: string, shop: string): Credentials {
+function ensureCredentials(dir: string, shop: string, panelOn: boolean): Credentials {
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
@@ -111,13 +113,20 @@ function ensureCredentials(dir: string, shop: string): Credentials {
   writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
   writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar);
   ensureDir(secretFile(dir, `g-${shop}-calendar`));
-  return { agent, admin };
+  // The panel's agent token for each Guard lives ONLY in the panel's folder (the Guard keeps its hash). 0600: the panel runs as the user who wrote it.
+  const panel = panelOn ? Object.fromEntries((["razorpay", "whatsapp", "calendar"] as const).map((k) => {
+    const path = secretFile(dir, "panel", shop, k);
+    return [k, readSecretFile(path) ?? (() => { const t = mintGuardToken(); writeSecretFile(path, t, 0o600); return t; })()];
+  })) as Record<Three, string> : undefined;
+  return { agent, admin, ...(panel ? { panel } : {}) };
 }
 
 const sha = (value: string) => sha256Hex(value);
 const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials) => [
   { id: names.agentId(shop), sha: sha(c.agent[kind as "razorpay"]) },
   ...(kind === "whatsapp" ? [{ id: names.relayAgentId(shop), sha: sha(c.agent.relay), operations: ["send"] }] : []),
+  // the panel's own agent: allowed the read operations of its connection checks at this Guard and nothing else
+  ...(c.panel && kind !== "model" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel[kind as Three]), operations: PANEL_READS[kind as Three] }] : []),
 ];
 
 // ---- preparing a shop -----------------------------------------------------------------------------------------------------------------------
@@ -127,7 +136,7 @@ interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]
 
 const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
-export const desiredHashOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText">): string => sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText }));
+export const desiredHashOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText">): string => sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText }));
 
 /** Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. */
 export function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string): { prepared?: Prepared; problems: Problem[]; notes: string[] } {
@@ -142,6 +151,14 @@ export function prepareShop(ctx: Context, server: ServerConfig, state: State, na
   const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${folder.lock.pathway}@${folder.lock.version}`)}, or change the pin once that version has passed the crash test with this shop's settings.` });
   problems.push(...missingSecrets(ctx.dir, name, webhooks));
+  // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch.
+  const pinned = folder.pins.razorpay;
+  const authorization = pinned ? readSecretFile(secretFile(ctx.dir, `g-${name}-razorpay`, "razorpay_authorization")) : undefined;
+  if (pinned && authorization) {
+    const keyId = Buffer.from(authorization.replace(/^Basic /u, ""), "base64").toString("utf8").split(":")[0];
+    if (keyId !== pinned.keyId) problems.push({ rule: "razorpay-key-matches-pin", message: `${name}: the Razorpay key handed in (id ${keyId}) is not the account the connection check confirmed (id ${pinned.keyId}). Check the account again before going on.` });
+    else if (!keyId.startsWith(`rzp_${pinned.mode}_`)) problems.push({ rule: "razorpay-key-matches-pin", message: `${name}: the Razorpay key ${keyId} is not a ${pinned.mode}-mode key, which is what the connection check confirmed.` });
+  }
   if (first.problems.length > 0 || !pathwayDir) return { problems, notes };
 
   // Guard loads a bundle only if its version is HIGHER than the one it already has: the same content keeps its version, changed content gets the next.
@@ -190,7 +207,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name);
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled);
     for (const g of prepared.guards) {
       problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
@@ -234,10 +251,33 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const [accessKeyId, ...secret] = (readSecretFile(secretFile(ctx.dir, "backup", "stream")) ?? ":").split(":");
     writeSecretFile(secretFile(ctx.dir, "litestream", "litestream.yml"), litestreamConfig(server.backup, shops.map((s) => s.name), { accessKeyId, secretAccessKey: secret.join(":") }));
   }
-  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup });
+  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;
+}
+
+/**
+ * What the panel container needs from the host: two keys (0600, in secrets/panel/, which the panel refuses to use if anyone else could read them), folders it can write
+ * (the shops, the secrets inbox, stop requests, its own data) and the user to run as. It is given NO other folder of the server.
+ */
+function preparePanel(ctx: Context): PanelOptions {
+  const p = serverPaths(ctx.dir);
+  for (const name of ["data_key", "signing_key"]) {
+    const path = secretFile(ctx.dir, "panel", name);
+    if (!readSecretFile(path)) writeSecretFile(path, mintSecret(), 0o600);
+  }
+  const { uid, gid } = panelUser();
+  for (const d of [p.shops, p.secretsInbox, p.requests, p.exports, p.panel, p.status]) {
+    ensureDir(d);
+    if (process.getuid?.() === 0 && d !== p.exports && d !== p.status) chownSync(d, uid, gid); // a deployer running as root hands the panel's folders to the user the panel runs as
+  }
+  const server = secretFile(ctx.dir, "refresher", "_server", "google_service_account.json");
+  let shareAddress: string | undefined;
+  try { shareAddress = (JSON.parse(readFileSync(server, "utf8")) as { client_email?: string }).client_email; } catch { /* no server-wide key */ }
+  const run = existsSync(join(ctx.appDir, "bundle", "panel", "main.ts"));
+  if (!run) ctx.log("note: the panel is switched on in geometer.json, but this checkout has no bundle/panel/main.ts, so no panel container is started (its network, keys and Guard agents are still made).");
+  return { user: `${uid}:${gid}`, run, ...(shareAddress ? { shareAddress } : {}) };
 }
 
 function writeGuardFiles(dir: string, service: string, g: { specText: string; bundleText: string; tomlText: string }): void {
@@ -259,6 +299,26 @@ export interface ShopResult { shop: string; proven: { passed: number; of: number
  * Deploy one shop, or all shops. Returns what was proven on the running Guards. Throws Refused, naming every broken rule, before anything is changed.
  */
 export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]> {
+  const targets = only ? [only] : listShops(ctx.dir);
+  const known = targets.filter((t) => existsSync(serverPaths(ctx.dir).shop(t)));
+  const before = new Map(known.map((shop) => [shop, readStatus(ctx.dir, shop)?.deploy]));
+  for (const shop of known) updateStatus(ctx.dir, shop, ctx.now(), (s) => { s.deploy = { state: "in-progress", at: ctx.now().toISOString() }; });
+  try {
+    return await deployChecked(ctx, only);
+  } catch (e) {
+    if (e instanceof Refused) {
+      // A refusal names its shop in its message. One that names none (the Guard image, the model's key) is every target's; one that names another shop is not mine.
+      const names = (p: Problem) => known.filter((k) => new RegExp(`(^|[^a-z0-9-])${k}([^a-z0-9-]|$)`, "u").test(p.message));
+      for (const shop of known) {
+        const why = e.problems.filter((p) => { const n = names(p); return n.length === 0 || n.includes(shop); });
+        updateStatus(ctx.dir, shop, ctx.now(), (s) => { s.deploy = why.length > 0 ? { state: "failed", at: ctx.now().toISOString(), message: refusalMessage(why), refusal: why } : before.get(shop) ?? { state: "never" }; }, why.length > 0);
+      }
+    }
+    throw e;
+  }
+}
+
+async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]> {
   const server = loadServer(ctx.dir);
   prepareSecretsRoot(ctx.dir);
   const state = loadState(ctx.dir);
@@ -277,7 +337,7 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name)]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled)]));
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
@@ -296,7 +356,7 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
     for (const g of p.guards) { configs[`${g.plan.service}/spec.json`] = g.plan.specText; configs[`${g.plan.service}/guard.toml`] = g.toml!; }
   }
   configs["g-model/guard.toml"] = model.toml!;
-  const secretValues = prepared.flatMap((p) => { const c = creds.get(p.folder.name)!; return [...Object.values(c.agent), ...Object.values(c.admin), ...["razorpay_authorization", "whatsapp_authorization"].map((f) => readSecretFile(secretFile(ctx.dir, `g-${p.folder.name}-${f.split("_")[0]}`, f)) ?? ""), readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), "internal_token")) ?? ""]; });
+  const secretValues = prepared.flatMap((p) => { const c = creds.get(p.folder.name)!; return [...Object.values(c.agent), ...Object.values(c.admin), ...Object.values(c.panel ?? {}), ...["razorpay_authorization", "whatsapp_authorization"].map((f) => readSecretFile(secretFile(ctx.dir, `g-${p.folder.name}-${f.split("_")[0]}`, f)) ?? ""), readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), "internal_token")) ?? ""]; });
   const leaks = noSecretsIn(configs, secretValues.filter(Boolean));
   if (leaks.length > 0) throw new Refused(leaks);
 
@@ -352,10 +412,10 @@ export async function deploy(ctx: Context, only?: string): Promise<ShopResult[]>
     const total = Object.values(proof.guards).reduce((t, g) => ({ passed: t.passed + g.passed, of: t.of + g.of }), { passed: 0, of: 0 });
     const line = provenLine({ ...total, notSelfTestable: Object.values(proof.guards).flatMap((g) => g.notSelfTestable) });
     updateStatus(ctx.dir, p.folder.name, ctx.now(), (s) => {
-      s.lastDeploy = { at, ok: proof.problems.length === 0, refusal: proof.problems.length === 0 ? null : proof.problems };
-      s.tripwires = { source: "running Guards", ...total, line, perGuard: proof.guards, model: modelProof.guards.model };
-      s.versions = { pathway: state.shops[p.folder.name].applied!.pathway, bundle: opsBundleVersion(), guardImage: server.guardImage, guards: Object.fromEntries(Object.entries(state.shops[p.folder.name].guards).map(([k, v]) => [k, v.version])) };
-      s.stopped = stop ?? null;
+      s.deploy = proof.problems.length === 0 ? { state: "applied", at } : { state: "failed", at, message: refusalMessage(proof.problems), refusal: proof.problems };
+      s.limits = { proven: total.passed, of: total.of, unprovable: [...new Set(Object.values(proof.guards).flatMap((g) => g.notSelfTestable))], line, perGuard: proof.guards, model: modelProof.guards.model };
+      s.versions = { pathway: state.shops[p.folder.name].applied!.pathway, bundle: opsBundleVersion(), guard: server.guardImage, guards: Object.fromEntries(Object.entries(state.shops[p.folder.name].guards).map(([k, v]) => [k, v.version])) };
+      if (stop) s.stopped = { at: stop.at, by: stop.by, reason: stop.reason, ...(stop.requestId ? { requestId: stop.requestId } : {}) }; else delete s.stopped;
       s.webhooks = { razorpay: `https://${server.domain}/c/${p.folder.name}/webhooks/razorpay`, whatsapp: `https://${server.domain}/c/${p.folder.name}/webhooks/whatsapp` };
     });
     if (proof.problems.length > 0) {

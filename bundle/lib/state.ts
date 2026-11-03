@@ -30,7 +30,7 @@ export interface ShopState {
   index: number;
   guards: Record<string, GuardApplied>;
   lockHistory: string[];
-  stopped?: { by: string; at: string; reason: string };
+  stopped?: { by: string; at: string; reason: string; requestId?: string };
   applied?: Snapshot;
   lastDeployAt?: string;
   lastBackupAt?: string;
@@ -47,7 +47,7 @@ export interface State {
   /** Each compose service as last applied: its entry, and the files it mounts. A changed entry is recreated by compose; changed files need a restart. */
   serviceHashes?: Record<string, { block: string; files: string }>;
   /** When the deployer's scheduled jobs last ran (ISO times), so each runs once when it is due and not again after a restart. */
-  jobs?: { snapshotAt?: string; drillAt?: string; relayCredentialsAt?: string };
+  jobs?: { snapshotAt?: string; drillAt?: string; relayCredentialsAt?: string; exportsAt?: string };
 }
 
 const file = (dir: string) => join(serverPaths(dir).state, "state.json");

@@ -148,7 +148,7 @@ test("`backup now` has each Guard make its own backup, then runs ONE snapshot co
     assert.match(flags, /geometer-acme-vps-1_gs-glow-salon-razorpay:\/v\/gs-glow-salon-razorpay/);
     assert.match(flags, /:\/run\/secrets\/snapshots:ro/);
     assert.ok(!jobs[0].some((a) => a.includes("SECRET2")), "the bucket key is a mounted file, never an argument");
-    assert.equal(readStatus(w.root, "glow-salon")!.backup.lastBackupAt, "2026-11-04T10:00:00.000Z");
+    assert.equal(readStatus(w.root, "glow-salon")!.backups!.lastCopyAt, "2026-11-04T10:00:00.000Z");
     assert.equal(loadState(w.root).shops["glow-salon"].lastBackupAt, "2026-11-04T10:00:00.000Z");
   } finally { w.done(); }
 });
@@ -164,11 +164,11 @@ test("a failed drill is written where the panel and `status` show it, with the r
     const r = await runDrill(w.ctx);
     assert.equal(r.ok, false);
     assert.match(r.lines[0], /glow-salon: restore drill FAILED: the continuous copy could not be restored: litestream: no snapshots found/);
-    const s = readStatus(w.root, "glow-salon")!.backup.lastDrill!;
-    assert.deepEqual([s.ok, s.at], [false, "2026-11-04T10:00:00.000Z"]);
+    const s = readStatus(w.root, "glow-salon")!.backups!;
+    assert.deepEqual([s.drillOk, s.lastDrillAt, s.drillDetail], [false, "2026-11-04T10:00:00.000Z", "the continuous copy could not be restored: litestream: no snapshots found"]);
     assert.equal(loadState(w.root).shops["glow-salon"].lastDrill?.ok, false);
     w.ctx.runner = fakeRunner((_c, args) => args.includes("restore") ? ok() : ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, detail: "restored 3 entries, integrity ok, last entry #3 matches the live record" }] })));
     assert.equal((await runDrill(w.ctx)).ok, true);
-    assert.equal(readStatus(w.root, "glow-salon")!.backup.lastDrill!.ok, true);
+    assert.equal(readStatus(w.root, "glow-salon")!.backups!.drillOk, true);
   } finally { w.done(); }
 });

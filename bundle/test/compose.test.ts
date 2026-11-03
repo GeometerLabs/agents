@@ -7,9 +7,9 @@ import type { ShopDeploy } from "../generate/compose.ts";
 import { names } from "../generate/shop.ts";
 import { serverConfig } from "./helpers.ts";
 
-const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox" };
+const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json" };
 const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/pathways/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
-const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}, backup = true) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup });
+const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}, backup = true) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup, panel: { user: "501:20", shareAddress: "calendar@x.iam.gserviceaccount.com" } });
 const nets = (c: ReturnType<typeof build>, svc: string): string[] => { const n = c.services[svc].block.networks as Record<string, unknown> | string[] | undefined; return n === undefined ? [] : Array.isArray(n) ? n : Object.keys(n); };
 const mounts = (c: ReturnType<typeof build>, svc: string): string[] => ((c.services[svc].block.volumes as unknown[]) ?? []).map((v) => typeof v === "string" ? v : JSON.stringify(v));
 const two = () => build([shop("glow-salon", 1), shop("bright-tuition", 2)]);
@@ -27,7 +27,7 @@ test("a runtime is on ONE internal network, shared with its own Guards and the m
 test("only Guards (and the few services that must call out) are on the egress network; the runtime and Caddy never are", () => {
   const c = two();
   const onEgress = Object.keys(c.services).filter((s) => nets(c, s).includes("egress")).sort();
-  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "litestream", "ops", "panel", "refresher"]);
+  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "litestream", "ops", "refresher"]);
   for (const g of ["g-glow-salon-razorpay", "g-model"]) assert.match(String(c.services[g].block.network_mode), /^service:fwd-/, `${g} joins its forwarder's namespace`);
   assert.deepEqual(nets(c, "caddy"), ["front"]);
   assert.deepEqual(nets(c, "inbox").sort(), ["admin", "front"]);
@@ -70,8 +70,8 @@ test("each secret folder is mounted into the one container that needs it, and no
   assert.deepEqual(holders("rt-glow-salon"), ["rt-glow-salon"]);
   for (const f of ["inbox", "relay", "refresher", "ops", "litestream", "g-model"]) assert.equal(holders(f).length, 1, f);
   assert.deepEqual(holders("inbox"), ["inbox"]);
-  assert.ok(!mounts(c, "panel").some((m) => m.includes("/srv/secrets/")) && !mounts(c, "caddy").some((m) => m.includes("/srv/secrets/")), "the panel and Caddy see no secrets folder");
-  assert.ok(mounts(c, "panel").some((m) => m.startsWith("/srv/secrets-inbox:")), "the panel writes the inbox");
+  assert.deepEqual(holders("panel"), ["panel"], "the panel's keys and its agent tokens are in a folder only the panel mounts");
+  assert.ok(!mounts(c, "caddy").some((m) => m.includes("/srv/secrets/")), "Caddy sees no secrets folder");
 });
 
 test("nothing mounts the Docker socket, nothing is privileged, every program of ours runs without root and with a read-only filesystem", () => {
@@ -80,7 +80,7 @@ test("nothing mounts the Docker socket, nothing is privileged, every program of 
   assert.doesNotMatch(c.compose, /privileged/);
   for (const [name, s] of Object.entries(c.services)) {
     if (name.startsWith("fwd-") || name === "caddy") continue;
-    assert.ok(["1000:1000", "65532:65532"].includes(String(s.block.user)), `${name} runs as ${String(s.block.user)}`);
+    assert.ok(["1000:1000", "65532:65532"].includes(String(s.block.user)) || (name === "panel" && !String(s.block.user).startsWith("0:")), `${name} runs as ${String(s.block.user)}`);
     assert.equal(s.block.read_only, true, name);
     assert.deepEqual(s.block.cap_drop, ["ALL"], name);
   }
@@ -107,19 +107,54 @@ test("litestream streams only the runtimes' databases: no Guard store is mounted
   assert.equal(build([shop("a", 1)], {}, false).services.litestream, undefined, "no backup configured, no litestream");
 });
 
-test("Caddy sends /c/* to the inbox and the panel's path to the panel, and makes its own certificate only for a local name", () => {
+test("Caddy sends /c/* to the inbox and everything else to the panel (it serves from the root), and makes its own certificate only for a local name", () => {
   const server = serverConfig({ panel: { enabled: true } });
   const real = caddyfile(server);
   assert.match(real, /^shops\.example\.com \{$/m);
   assert.doesNotMatch(real, /tls internal/);
   assert.match(real, /handle \/c\/\* \{\n\t\treverse_proxy inbox:8788/);
-  assert.match(real, /handle_path \/panel\/\* \{\n\t\treverse_proxy panel:8800/);
+  assert.match(real, /handle \{\n\t\treverse_proxy panel:8790/);
   const local = caddyfile(serverConfig({ domain: "localhost" }));
   assert.match(local, /^https:\/\/localhost \{$/m); assert.match(local, /tls internal/);
-  assert.doesNotMatch(local, /handle_path/, "no panel, no panel route");
+  assert.match(local, /respond "Geometer" 404/, "no panel, nothing else is served");
+  assert.doesNotMatch(local, /reverse_proxy panel/, "and no route to a panel that is not there");
   assert.doesNotMatch(real, /reverse_proxy relay/, "the relay is for the inbox to call, not for the internet");
 });
 
 test("the YAML writer quotes every scalar, so a path or an address can never be misread", () => {
   assert.equal(yaml({ a: "yes", b: "10.231.0.1", c: ["x: y", "- z"], d: { e: true, f: 8080 }, "g-h": null }), 'a: "yes"\nb: "10.231.0.1"\nc:\n  - "x: y"\n  - "- z"\nd:\n  e: true\n  f: 8080\ng-h: null');
+});
+
+test("the panel: on front and its own network only, as the user who runs the deployer, with exactly the folders the contract gives it and no others", () => {
+  const c = two();
+  const p = c.services.panel.block;
+  assert.deepEqual(nets(c, "panel").sort(), ["front", "panel"], "no egress, no admin network");
+  assert.equal(p.user, "501:20");
+  assert.deepEqual(mounts(c, "panel"), ["/repo:/app:ro", "/srv/secrets/panel:/run/secrets:ro", "/srv/shops:/server/shops", "/srv/secrets-inbox:/server/secrets-inbox", "/srv/requests:/server/requests", "/srv/status:/server/status:ro", "/srv/exports:/server/exports:ro", "/srv/panel:/server/panel", "/srv/geometer.json:/server/geometer.json:ro"]);
+  assert.doesNotMatch(JSON.stringify(p), /docker\.sock|\/srv\/state|\/srv\/generated|"\/srv\/secrets:/);
+  const env = p.environment as Record<string, string>;
+  assert.deepEqual([env.PANEL_SERVER_DIR, env.PANEL_MODE, env.PANEL_PORT, env.PANEL_TRUST_PROXY, env.PANEL_DATA_KEY_FILE, env.PANEL_SIGNING_KEY_FILE], ["/server", "own", "8790", "1", "/run/secrets/data_key", "/run/secrets/signing_key"]);
+  assert.deepEqual([env.PANEL_GUARD_URL, env.PANEL_GUARD_AGENT_TOKEN_FILE, env.PANEL_WEBHOOK_URL], ["http://g-{shop}-{kind}:8080", "/run/secrets/{shop}/{kind}", "https://shops.example.com/c/{shop}/webhooks/{kind}"]);
+  assert.equal(env.PANEL_PUBLIC_URL, "https://shops.example.com");
+  assert.equal(env.PANEL_CALENDAR_SHARE_ADDRESS, "calendar@x.iam.gserviceaccount.com");
+  assert.equal(p.read_only, true);
+});
+
+test("the panel reaches each shop's three Guards by name on its own network, at an address of the forwarder that listens there for the agent port only", () => {
+  const c = two();
+  for (const kind of ["razorpay", "whatsapp", "calendar"]) {
+    const f = (c.services[`fwd-glow-salon-${kind}`].block.networks as Record<string, { ipv4_address?: string; aliases?: string[] }>).panel;
+    assert.match(f.ipv4_address!, /^10\.231\.22\d\.\d+$/);
+    assert.deepEqual(f.aliases, [`g-glow-salon-${kind}`]);
+  }
+  assert.equal((c.services["fwd-model"].block.networks as Record<string, unknown>).panel, undefined, "the model Guard is not the panel's to read");
+  assert.equal((c.services["door-glow-salon"].block.networks as Record<string, unknown>).panel, undefined, "nor is the runtime");
+  const cmd = c.services["fwd-glow-salon-razorpay"].block.command as string[];
+  assert.ok(cmd[3].startsWith("10.231.240."), "the admin forwarder still listens on the admin address alone");
+  assert.match(c.compose, /\n  panel:\n    internal: true/);
+  assert.equal(build([shop("a", 1)], { panel: { enabled: false } }).services.panel, undefined);
+});
+
+test("hosted mode is passed to the panel", () => {
+  assert.equal((build([shop("a", 1)], { panel: { enabled: true, mode: "hosted" } }).services.panel.block.environment as Record<string, string>).PANEL_MODE, "hosted");
 });

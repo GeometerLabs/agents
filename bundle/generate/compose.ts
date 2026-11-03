@@ -29,14 +29,14 @@
 import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import type { GuardKind } from "./guards.ts";
-import { RUNTIME_PORT, names } from "./shop.ts";
+import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 
 export const FORWARDER_IMAGE = "busybox:1.37.0";
 export const ADMIN_FORWARD_PORT = 8190;
 export const INBOX_PORT = 8788;
 export const RELAY_PORT = 8795;
 export const REFRESHER_PORT = 8791;
-export const PANEL_PORT = 8800;
+export const PANEL_PORT = 8790;
 export const HEALTH_PORT = 8081;
 /** A shop's three Guards, in the order that fixes each one's address on the admin network (the shop's door is the fourth). */
 export const SHOP_GUARD_KINDS: readonly Exclude<GuardKind, "model">[] = ["razorpay", "whatsapp", "calendar"];
@@ -62,18 +62,30 @@ export interface Dirs {
   status: string;
   shops: string;
   secretsInbox: string;
+  requests: string;
+  exports: string;
+  /** The panel's own data folder. */
+  panelData: string;
+  /** geometer.json, which the panel reads (the model, and nothing secret is in it). */
+  config: string;
 }
 
 export interface Addressing {
   subnets: Record<string, string>;
   adminIp: (shop: string | undefined, slot: Slot, index?: number) => string;
+  /** A Guard's address on the panel's network: its agent port is reachable there, and nothing else is listening on that address. */
+  panelIp: (kind: Exclude<GuardKind, "model">, index: number) => string;
 }
 
 /** Fixed small subnets for every network, so a busy Docker host never runs out of default pools, and the forwarders know their address. */
 export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
-    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20` },
+    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21` },
+    panelIp(kind, index) {
+      const n = 16 + index * 4 + SHOP_GUARD_KINDS.indexOf(kind);
+      return `${base}.${224 + (n >> 8)}.${n & 255}`;
+    },
     adminIp(_shop, slot, index = 0) {
       const n = slot === "model" ? 8 : 16 + index * 4 + (slot === "door" ? 3 : SHOP_GUARD_KINDS.indexOf(slot));
       return `${base}.${240 + (n >> 8)}.${n & 255}`;
@@ -119,7 +131,16 @@ export interface Composed {
   services: Record<string, { block: Service; files: string[] }>;
 }
 
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean }): Composed {
+export interface PanelOptions {
+  /** `uid:gid` the panel container runs as (the user who runs the deployer; see lib/secrets.ts panelUser). */
+  user: string;
+  /** The server-wide Google service account's address, when there is one: the panel tells people to share a calendar with it. */
+  shareAddress?: string;
+  /** False when this checkout has no panel program (bundle/panel/main.ts): the panel's network, agents and keys are still made, the container is not. */
+  run?: boolean;
+}
+
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean; panel?: PanelOptions }): Composed {
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
   const net = addressing(server);
   const services: Composed["services"] = {};
@@ -131,12 +152,13 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // -- the Guards (per shop and the model) and their forwarders. The forwarder OWNS the network namespace (as the TLS front does in deploy/compose) and the
   // Guard joins it: a Guard that restarts or crashes leaves the namespace, its addresses and the forwarder as they were. The Guard's name on the shop's
   // network is an alias on the forwarder.
-  const guard = (g: GuardRef, attach: string[], adminAddress: string, extraVolumes: Y[], dependsOn?: Record<string, Y>) => {
+  const guard = (g: GuardRef, attach: string[], adminAddress: string, extraVolumes: Y[], dependsOn?: Record<string, Y>, panelAddress?: string) => {
     const fwd = `fwd-${g.service.replace(/^g-/u, "")}`;
     add(fwd, {
       image: FORWARDER_IMAGE, ...hardened, user: guardUser,
       command: ["nc", "-ll", "-s", adminAddress, "-p", String(ADMIN_FORWARD_PORT), "-e", "nc", "127.0.0.1", "8082"],
-      networks: { ...Object.fromEntries(attach.map((n) => [n, { aliases: [g.service] }])), egress: {}, admin: { ipv4_address: adminAddress } },
+      // the panel's network carries only the Guard's agent port (the forwarder listens on the admin address alone); the panel reaches the Guard by name there
+      networks: { ...Object.fromEntries(attach.map((n) => [n, { aliases: [g.service] }])), egress: {}, admin: { ipv4_address: adminAddress }, ...(panelAddress ? { panel: { ipv4_address: panelAddress, aliases: [g.service] } } : {}) },
     });
     add(g.service, {
       image: server.guardImage, ...hardened, user: guardUser, stop_grace_period: "30s", network_mode: `service:${fwd}`,
@@ -152,6 +174,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
         g, [names.net(shop.name)], net.adminIp(shop.name, g.kind, shop.index),
         g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: shop.name } }] : [],
         g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined,
+        features.panel ? net.panelIp(g.kind as Exclude<GuardKind, "model">, shop.index) : undefined,
       );
     }
     const doorIp = net.adminIp(shop.name, "door", shop.index);
@@ -203,13 +226,23 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       depends_on: Object.fromEntries(shops.map((s) => [names.runtime(s.name), { condition: "service_healthy" }])),
     }, [`${secretDir("litestream")}/litestream.yml`]);
   }
-  if (server.panel.enabled) {
-    add("panel", node(["node", "/app/bundle/panel/main.ts"], {
-      environment: { GEOMETER_SERVER_DIR: "/server", PORT: String(PANEL_PORT), HOST: "0.0.0.0" },
-      // The panel writes the desired state and the secrets inbox and reads the results. It has no Docker socket and no secrets folder.
-      volumes: [appVolume, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.status}:/server/status:ro`],
-      networks: { front: {}, egress: {} },
-    }));
+  if (server.panel.enabled && features.panel && features.panel.run !== false) {
+    const publicUrl = `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}`;
+    // The panel writes the desired state, the secrets inbox and stop requests; it reads the results and the exports; it keeps its own data. It sees NONE of the
+    // server's other folders (not secrets/, not state/, not generated/), has no Docker socket, and its network holds only the Guards' agent ports, where it
+    // presents its own agent (`panel-<shop>`: three reads and nothing else). Its keys are in secrets/panel/, 0600, readable by the user it runs as.
+    add("panel", {
+      image: server.appImage, user: features.panel.user, init: true, ...hardened, command: ["node", "/app/bundle/panel/main.ts"],
+      environment: {
+        PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl, PANEL_TRUST_PROXY: "1",
+        PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_PATHWAYS_DIR: "/app/pathways",
+        PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: "/run/secrets/{shop}/{kind}", PANEL_WEBHOOK_URL: `${publicUrl}/c/{shop}/webhooks/{kind}`,
+        ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
+      },
+      volumes: [appVolume, `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],
+      networks: { front: {}, panel: {} },
+      healthcheck: healthWget(PANEL_PORT, "/healthz"),
+    });
   }
   add("caddy", {
     image: CADDY_IMAGE, restart: "unless-stopped", security_opt: ["no-new-privileges:true"],
@@ -223,6 +256,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     front: { ipam: { config: [{ subnet: net.subnets.front }] } },
     egress: { ipam: { config: [{ subnet: net.subnets.egress }] } },
     admin: { internal: true, ipam: { config: [{ subnet: net.subnets.admin }] } },
+    ...(server.panel.enabled && features.panel ? { panel: { internal: true, ipam: { config: [{ subnet: net.subnets.panel }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
   const volumes: Record<string, Y> = { "google-auth": {}, "relay-state": {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {} };
@@ -248,8 +282,8 @@ export function caddyfile(server: ServerConfig): string {
     `${local ? "https://" : ""}${server.domain} {`,
     ...(local ? [`\ttls internal`] : []),
     `\thandle /c/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`,
-    ...(server.panel.enabled ? [`\thandle_path /panel/* {`, `\t\treverse_proxy panel:${PANEL_PORT}`, `\t}`] : []),
-    `\thandle {`, `\t\trespond "Geometer" 404`, `\t}`, `}`, ``,
+    // everything else is the panel's, when there is one: it serves from the root of its own address
+    ...(server.panel.enabled ? [`\thandle {`, `\t\treverse_proxy panel:${PANEL_PORT}`, `\t}`] : [`\thandle {`, `\t\trespond "Geometer" 404`, `\t}`]), `}`, ``,
   ].join("\n");
 }
 

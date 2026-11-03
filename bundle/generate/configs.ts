@@ -9,8 +9,10 @@ import { stableJson } from "../lib/util.ts";
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
-  /** True when the Google service account key was handed in for this shop. */
+  /** True when a Google service account key is available to this shop: its own, or the server-wide one. */
   hasGoogle: boolean;
+  /** True when the shop handed in a key of its own; otherwise the server-wide one is used. */
+  ownGoogleKey: boolean;
 }
 
 const url = (ip: string, port: number) => `http://${ip}:${port}`;
@@ -53,7 +55,7 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
   return stableJson({
     outDir: "/home/node", refreshMinutes: 45, scope: overrides.scope ?? "https://www.googleapis.com/auth/calendar",
     shops: Object.fromEntries(shops.filter((s) => s.webhooks.hasGoogle).map((s) => [s.name, {
-      serviceAccountFile: `/run/secrets/${s.name}/google_service_account.json`,
+      serviceAccountFile: s.webhooks.ownGoogleKey ? `/run/secrets/${s.name}/google_service_account.json` : "/run/secrets/_server/google_service_account.json",
       guardAdminUrl: guardAdmin(server, s, "calendar").adminUrl, adminTokenFile: `/run/secrets/${s.name}/admin_token`,
     }])),
   });

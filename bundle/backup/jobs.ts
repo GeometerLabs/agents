@@ -64,11 +64,28 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [...lines, `The snapshot job failed: ${r.stderr.trim().split("\n").slice(-3).join(" | ") || `exit ${r.code}`}`] };
   let ok = true;
   for (const res of out.results) {
-    if (res.ok) { state.shops[res.name].lastBackupAt = ctx.now().toISOString(); updateStatus(ctx.dir, res.name, ctx.now(), (s) => { s.backup.lastBackupAt = ctx.now().toISOString(); }); lines.push(`${res.name}: snapshot ${res.stamp} written (${res.files} files, ${res.bytes} bytes, encrypted)${res.record ? `, record at entry #${res.record.lastSeq ?? 0}` : ""}`); }
+    if (res.ok) { state.shops[res.name].lastBackupAt = ctx.now().toISOString(); updateStatus(ctx.dir, res.name, ctx.now(), (s) => { s.backups = { ...(s.backups ?? { lastDrillAt: null, drillOk: null }), lastCopyAt: ctx.now().toISOString() }; }, false); lines.push(`${res.name}: snapshot ${res.stamp} written (${res.files} files, ${res.bytes} bytes, encrypted)${res.record ? `, record at entry #${res.record.lastSeq ?? 0}` : ""}`); }
     else { ok = false; lines.push(`${res.name}: NO snapshot (${res.error})`); }
   }
   saveState(ctx.dir, state);
   return { ok, lines };
+}
+
+/** The record and the bookings of every shop, exported for the monthly report: one container, every shop, files without customers' numbers (see export.ts). */
+export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
+  const server = loadServer(ctx.dir);
+  const state = loadState(ctx.dir);
+  const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  if (shops.length === 0) return { ok: true, lines: [] };
+  const work = join(serverPaths(ctx.dir).state, "work");
+  ensureDir(work);
+  const jobFile = join(work, `export-${stampOf(ctx.now())}.json`);
+  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}` })) }), { mode: 0o644 });
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
+  rmSync(jobFile, { force: true });
+  const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; error?: string }[] } | undefined;
+  if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
+  return { ok: out.results.every((x) => x.ok || x.error === "no database yet"), lines: out.results.map((x) => (x.ok ? `${x.name}: exported ${x.entries} record entries and ${x.bookings} bookings` : `${x.name}: not exported (${x.error})`)) };
 }
 
 /** The weekly drill: restore the continuous copy into a scratch folder and compare it with the live record. A failure is written where the panel and `status` show it. */
@@ -100,7 +117,7 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
   const at = ctx.now().toISOString();
   for (const v of verdicts) {
     state.shops[v.name].lastDrill = { at, ok: v.ok, detail: v.detail };
-    updateStatus(ctx.dir, v.name, ctx.now(), (s) => { s.backup.lastDrill = { at, ok: v.ok, detail: v.detail }; });
+    updateStatus(ctx.dir, v.name, ctx.now(), (s) => { s.backups = { ...(s.backups ?? { lastCopyAt: null }), lastDrillAt: at, drillOk: v.ok, drillDetail: v.detail }; }, false);
     lines.push(`${v.name}: restore drill ${v.ok ? "passed" : "FAILED"}: ${v.detail}`);
   }
   saveState(ctx.dir, state);

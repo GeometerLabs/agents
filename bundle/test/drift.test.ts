@@ -14,6 +14,9 @@ const CANDIDATES = [process.env.GEOMETER_MONOREPO, join(ROOT, "..", "monorepo"),
 const TEMPLATES = CANDIDATES.map((c) => join(c, "deploy", "pathways", "bookings")).find((c) => existsSync(join(c, "razorpay", "spec.json")));
 const skip = TEMPLATES ? false : "the monorepo's deploy/pathways/bookings templates are not at a sibling path (set GEOMETER_MONOREPO to its folder to run this)";
 
+/** What the bundle adds to the fixtures on purpose: the panel's read-only routes and the exact-id rule beside each. Anything else that differs is drift. */
+const ADDED = { routes: ["read_number", "get_calendar"], rules: ["own-number-read", "own-calendar-get-calendar"] };
+
 const read = (dir: string, file: string) => readFileSync(join(TEMPLATES!, dir, file), "utf8");
 const shape = (spec: any) => ({
   schema: spec.schema, tool: spec.tool,
@@ -59,7 +62,10 @@ for (const [kind, dir, model] of [
 ] as const) {
   test(`the generated ${dir} spec and guard.toml have the shape of the monorepo template`, { skip }, () => {
     const { g, toml } = generatedToml(kind, model);
-    assert.deepEqual(shape(g.spec), shape(JSON.parse(read(dir, "spec.json"))), `${dir}/spec.json drifted from the generator`);
+    const generated = shape(g.spec);
+    generated.routes = generated.routes.filter((r: string[]) => !ADDED.routes.includes(r[2]));
+    generated.rules = generated.rules.filter((r: unknown[]) => !ADDED.rules.includes(r[0] as string));
+    assert.deepEqual(generated, shape(JSON.parse(read(dir, "spec.json"))), `${dir}/spec.json drifted from the generator`);
     assert.deepEqual(tomlShape(toml), tomlShape(read(dir, "guard.toml")), `${dir}/guard.toml drifted from the generator`);
   });
 }

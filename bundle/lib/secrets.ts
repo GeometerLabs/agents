@@ -1,7 +1,7 @@
 // Secrets are files, each in the folder of the one container that needs it (secrets/<container>/), and the secrets intake that moves what the panel was
 // handed into those folders. File modes: every folder under secrets/ is 0755 and every file 0644 so a container's own non-root user can read it, while
 // secrets/ itself is 0700, so no other user of the machine can get to any of them. Docker mounts one container's folder into that container only.
-import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { serverPaths } from "./server.ts";
 import { ensureDir, writeAtomic } from "./util.ts";
@@ -14,10 +14,24 @@ export function prepareSecretsRoot(dir: string): void {
   ensureDir(serverPaths(dir).secrets, 0o700);
 }
 
-export function writeSecretFile(path: string, value: string): void {
+/** `mode` 0600 is for what a program insists on being private to its user (the panel's keys); the panel then runs as the user who wrote them (see panelUser). */
+export function writeSecretFile(path: string, value: string, mode = 0o644): void {
   ensureDirsFor(path);
-  writeAtomic(path, value.endsWith("\n") ? value : `${value}\n`, 0o644);
+  writeAtomic(path, value.endsWith("\n") ? value : `${value}\n`, mode);
+  const owner = panelOwner();
+  if (mode === 0o600 && owner) chownSync(path, owner.uid, owner.gid);
 }
+
+/**
+ * The user the panel container runs as: whoever runs the deployer, so that the files the panel writes (mode 0600, as the panel insists) are the deployer's own to read and
+ * the files the deployer writes for it (its keys, 0600) are the panel's. A deployer running as root cannot hand a root-run panel its files, so then the panel
+ * runs as the node image's user (1000) and the files made for it are given to that user.
+ */
+export function panelUser(): { uid: number; gid: number } {
+  const uid = process.getuid?.() ?? 1000; const gid = process.getgid?.() ?? 1000;
+  return uid === 0 ? { uid: 1000, gid: 1000 } : { uid, gid };
+}
+const panelOwner = (): { uid: number; gid: number } | undefined => ((process.getuid?.() ?? 1000) === 0 ? panelUser() : undefined);
 
 function ensureDirsFor(path: string): void {
   const parts = path.split("/");
