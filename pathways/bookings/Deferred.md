@@ -228,4 +228,12 @@
 
 ## Panel follow-ups
 
-- The panel's connection checks need the shop's Guards to list `GET /{version}/{phone_number_id}` and `GET /calendar/v3/calendars/{calendarId}` (see `bundle/panel/Deferred.md`).
+- ~~The panel's connection checks need the shop's Guards to list `GET /{version}/{phone_number_id}` and `GET /calendar/v3/calendars/{calendarId}`.~~ Done by the deploy bundle (4 November 2026): `read_number`, `get_calendar` and `list`, for the panel's own agent only.
+
+## Under the deploy bundle (added 3 November 2026)
+
+See [bundle/Deferred.md](../../bundle/Deferred.md) for everything the bundle leaves open. What touches this pathway:
+
+- **Model calls are counted per server, not per shop.** The model Guard has one cap; this pathway's record has each action's model cost, and nothing yet stops one shop from using the server's whole allowance.
+- **The runtime's single `services.timeoutMs`** applies to every service. The bundle needs it above Guard's 15 s for payments; WhatsApp, Calendar and the model are then also given that long. A per-service value would let the model parser keep its 8 s.
+- **`steps` does not count clock ticks.** A tick that sends a reminder is work, but is not counted as a step, so a shop that only sends reminders shows no steps. Revisit when: fleet wants a "ticks" count.

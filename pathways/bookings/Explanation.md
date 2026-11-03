@@ -450,6 +450,15 @@ Why these numbers, because each one is a limit of the settings and not a taste:
 
 **A public function changed.** `buildMonthlyReport` takes an optional `goLive` and the report has a new `goLive` field, so every monthly report's digest is different from before; `NotTestedKey` has three new values; `MonthlyCertificate` has `goLive`. `notTestedFor` and `checkedPolicyDigest` are unchanged and still serve the go-live certificate itself.
 
+## What the deploy bundle needed from the pathway (added 3 November 2026)
+
+The deploy bundle (`bundle/`, [its Explanation](../../bundle/Explanation.md)) runs this pathway. Four small changes, each because the contract needed it; the pathway's behaviour is otherwise unchanged (580 tests, 4 more than before).
+
+- **`/status` carries `steps`, `errors` and `startedAt`** (`server/tasks.ts`, `server/runtime.ts`). The fleet heartbeat needs "steps finished and attempts failed since the last accepted heartbeat"; the runtime keeps running totals since it started, and a new `startedAt` tells the sender the totals began again from zero. `steps` counts finished tasks, not clock ticks; `errors` counts failed attempts of a task and failed ticks.
+- **`parser.agentTokenFile` in runtime.json** (`server/config.ts`, `server/start.ts`). A Guard refuses a call without its agent credential, and the model parser sent none, so a real model Guard would have answered 401. The credential is read from the named file and added as `Authorization: Bearer` by a `fetch` the parser is given (`createModelParser` already took one for the eval). `ANTHROPIC_VERSION` is exported from `model-llm.ts` so the model Guard's `anthropic-version` header is the same value.
+- **The inbox is a handler** (`inbox/server.ts`: `inboxHandler`, with `startInbox` built on it) so the bundle can run one per shop behind `/c/<shop>`. New optional `whatsappPhoneNumberId`: a body whose `metadata.phone_number_id` is another number is verified and then not forwarded, because several shops can share one Meta app and so one app secret. The relay's HTTP face is a handler in the same way (`approvals/server.ts`: `relayHandler`).
+- **The owner's "within N hours" is Guard's.** The relay already computed it from the hold's `expires_at_ms` less its time; the last constant (`24`, a default in the relay's store) is gone, and a test with a six-hour hold shows "within 6 hours".
+
 ## Syntax rules used
 
 Only erasable TypeScript: no enums, namespaces, parameter properties or decorators. Type-only imports use `import type`. Imports carry their `.ts` extension. Files that read the settings JSON use `new URL(…, import.meta.url)`, so they work from any directory.

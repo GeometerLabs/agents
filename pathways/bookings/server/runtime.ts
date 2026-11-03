@@ -56,6 +56,10 @@ export interface Status {
   lastStepAt: string | null;
   lastFailureAt: string | null;
   recordLength: number;
+  /** Running totals since `startedAt` (this process): tasks finished and failed attempts. A new `startedAt` means the totals started again from zero. */
+  steps: number;
+  errors: number;
+  startedAt: string;
 }
 
 /**
@@ -131,6 +135,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     if (refunds.needBuilder.total > was) log(`A refund needs the builder, not the owner (${describe(refunds.needBuilder)}). The record says why; /status counts them.`);
   }
 
+  const startedAt = new Date(clock.now()).toISOString();
   const runner = createRunner({ db, step, retryDelaysMs: options.retryDelaysMs ?? RETRY_DELAYS_MS, log, now: () => clock.now() });
   const iso = (ms: number | null) => (ms === null ? null : new Date(ms).toISOString());
 
@@ -151,6 +156,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       lastStepAt: iso(runner.lastStepAt()),
       lastFailureAt: iso(runner.lastFailureAt()),
       recordLength: entries.length,
+      ...runner.counters(),
+      startedAt,
     }),
 
     refundContext(receipt) {

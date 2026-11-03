@@ -37,6 +37,14 @@ run("the owner is asked once, in the pathway's own words: the amount and the pay
   assert.equal(w.model.approvals().find((a) => a.id === approval)!.state, "pending");
 });
 
+run("the hours in the owner's message are Guard's own: the hold's expiry less the hold, whatever the spec said (6 hours here, not a constant)", async (w) => {
+  await w.heldRefund();
+  await w.relay.poll();
+  const text = w.toOwner()[0].text;
+  assert.match(text, /within 6 hours\.$/u);
+  assert.ok(!/24 hours/u.test(text));
+}, { approvalTtlSeconds: 21_600 });
+
 run("when the owner has written today, the ask goes as free text inside the window", async (w) => {
   await w.heldRefund();
   await w.ownerWrites("hello");
