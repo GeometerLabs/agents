@@ -1,0 +1,72 @@
+title: "[Build] "
+labels: ["template: custom"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Show your build.** A custom agent you made (bring your own AI) and what running it taught you. Counts from your record are welcome; client details and earnings are not.
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: The kind of business. A maintainer adds the matching domain label, so others can find threads by domain.
+      options:
+        - Salons and beauty
+        - Tuition and coaching
+        - Clinics and health
+        - Real estate
+        - Retail and orders
+        - Services (home services, repairs, events)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What the agent does
+      description: One or two sentences, in plain words.
+      placeholder: Takes bookings for a dental clinic on WhatsApp and collects a ₹300 deposit.
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: The limits it runs with
+      description: The rules it can't break, in the owner's words.
+      placeholder: Never below the price list. Refunds over ₹500 ask the owner. Only clinic hours.
+    validations:
+      required: true
+  - type: textarea
+    id: caught
+    attributes:
+      label: What Guard and the checks caught
+      description: Counts from the record, if you have them.
+      placeholder: "In 30 days: 4 low price requests refused, 1 double payment refunded once, 2 messages held because they did not match the record."
+  - type: textarea
+    id: not-tested
+    attributes:
+      label: What was not tested
+      placeholder: Voice calls, two customers at the same instant.
+    validations:
+      required: true
+  - type: textarea
+    id: next
+    attributes:
+      label: What the client asked for next
+      description: This is how good custom builds become new templates.
+  - type: input
+    id: built-with
+    attributes:
+      label: Built with
+      placeholder: Claude Code, n8n, Lovable, LangGraph, plain Node...
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before you post
+      options:
+        - label: No client or customer data (names, phone numbers, messages), and no keys or tokens.
+          required: true
+        - label: No earnings or income figures. What you charge a shop is fine to discuss in replies; income screenshots are not.
+          required: true
+        - label: I do not call the agent "safe" or "guaranteed". I say what was checked and what was not.
+          required: true

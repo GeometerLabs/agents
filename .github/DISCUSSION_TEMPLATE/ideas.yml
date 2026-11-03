@@ -1,0 +1,33 @@
+body:
+  - type: textarea
+    id: job
+    attributes:
+      label: The job the agent would do
+      placeholder: Reminds gym members their fee is due, with a payment link, and never after they have paid.
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: The kind of business. A maintainer adds the matching domain label, so others can find threads by domain.
+      options:
+        - Salons and beauty
+        - Tuition and coaching
+        - Clinics and health
+        - Real estate
+        - Retail and orders
+        - Services (home services, repairs, events)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: who-pays
+    attributes:
+      label: Who would pay for it, and why
+      description: What does the business lose today without it?
+  - type: textarea
+    id: limits
+    attributes:
+      label: The limits it would need
+      placeholder: Never message after STOP. Never quote a different fee than the record.

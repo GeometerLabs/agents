@@ -1,0 +1,35 @@
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you stuck on?
+    validations:
+      required: true
+  - type: dropdown
+    id: about
+    attributes:
+      label: About
+      options:
+        - Template: Bookings
+        - Template: Fee and dues collection
+        - A custom agent (bring your own AI)
+        - Running it on a server (the bundle)
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried, and what happened
+      description: Paste error lines and the hand-check result line. Never keys, tokens or customer data.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before you post
+      options:
+        - label: No client or customer data (names, phone numbers, messages), and no keys or tokens.
+          required: true
+        - label: No earnings or income figures. What you charge a shop is fine to discuss in replies; income screenshots are not.
+          required: true
+        - label: I do not call the agent "safe" or "guaranteed". I say what was checked and what was not.
+          required: true
