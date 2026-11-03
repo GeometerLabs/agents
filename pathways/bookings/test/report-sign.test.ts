@@ -234,5 +234,5 @@ test("scripts/verify-report.ts: 0 for a file you trust, 1 for a changed one or a
   assert.equal(run("verify-report.ts", unsigned).status, 3);
   assert.equal(run("verify-report.ts").status, 64);
   assert.equal(run("verify-report.ts", join(dir, "missing.json")).status, 64);
-  assert.equal(run("verify-report.ts", signed, "--trust-key", "nonsense").status, 1);
+  assert.equal(run("verify-report.ts", signed, "--trust-key", "nonsense").status, 64);
 });

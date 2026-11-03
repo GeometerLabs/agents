@@ -321,7 +321,7 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `cert.yourLimits` | ನಿಮ್ಮ ಮಿತಿಗಳು | Your limits |  |
 | `cert.floor` | ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಇಲ್ಲ: … | Nothing below your price list: … |  |
 | `cert.deposit` | ಮುಂಗಡ ಹಣ ₹200; ಅದಕ್ಕಾಗಿ ಸಮಯವನ್ನು 15 ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗುತ್ತದೆ | Deposit ₹200, and the slot is held 15 minutes for it |  |
-| `cert.cancel` | ಆರಂಭಕ್ಕೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ | Cancel at least 24 hours before the start and the deposit goes back |  |
+| `cert.cancel` | ಆರಂಭಕ್ಕೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ; ನಂತರ ರದ್ದುಮಾಡಿದರೆ ತೀರ್ಮಾನ ನಿಮ್ಮದು | Cancel at least 24 hours before the start and the deposit goes back; a later cancellation is your decision |  |
 | `cert.refund` | ₹200 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ | Refunds above ₹200 only with your OK |  |
 | `cert.hours` | ಕೆಲಸದ ಸಮಯದ ಹೊರಗೆ ಬುಕಿಂಗ್ ಇಲ್ಲ | No bookings outside your opening hours |  |
 | `cert.notAGrade` | ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ. | This counts the situations tried. It does not grade the agent. |  |

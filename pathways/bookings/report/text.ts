@@ -42,7 +42,7 @@ export function ownerText(report: MonthlyReport, language: Language): string {
   ].filter(Boolean).join(" · ");
   const asked = [
     pair(s.label.wasAsked, owner.asked), pair(s.label.approved, owner.approved), pair(s.label.saidNo, owner.denied),
-    unconfirmed.open > 0 ? pair(s.label.notConfirmed, unconfirmed.open) : "",
+    unconfirmed.openOnBookings > 0 ? pair(s.label.notConfirmed, unconfirmed.openOnBookings) : "",
   ].filter(Boolean).join(" · ");
 
   const byCount = RULE_IDS.filter((r) => stopped.byRule[r] > 0).sort((a, b) => stopped.byRule[b] - stopped.byRule[a]); // ties keep the rules' own order

@@ -59,7 +59,7 @@ test("the owner text leads with bookings and money, and carries the counts, in t
     assert.ok(title.includes(s.sourceTag["stand-in"]), `${language}: says where the numbers come from`);
     assert.ok(money.includes(`${s.label.bookingsMade}: 26`) && money.includes(`${s.label.cancelled}: 6`), money);
     assert.ok(money.includes(`${s.label.depositsCollected}: ₹5,400`) && money.includes(`${s.label.givenBack}: ₹1,000`), money);
-    assert.ok(asked.includes(`${s.label.wasAsked}: 3`) && asked.includes(`${s.label.approved}: 1`) && asked.includes(`${s.label.saidNo}: 1`) && asked.includes(`${s.label.notConfirmed}: 2`), asked);
+    assert.ok(asked.includes(`${s.label.wasAsked}: 3`) && asked.includes(`${s.label.approved}: 1`) && asked.includes(`${s.label.saidNo}: 1`) && asked.includes(`${s.label.notConfirmed}: 1`), asked);
     assert.ok(stopped.includes(`${s.label.stoppedByLimits}: 10`) && stopped.includes(`${s.stop["price-at-or-above-list"]}: 3`), stopped);
     assert.ok(notChecked.startsWith(s.label.notChecked) && notChecked.includes(s.notTested["voice-calls"]) && notChecked.includes(s.notTested["walk-ins"]) && notChecked.includes(s.handRun), notChecked);
   }

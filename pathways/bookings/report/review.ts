@@ -40,7 +40,7 @@ export function sampleReport(): MonthlyReport {
     money: { deposits: { count: 88, paise: 1_760_000 }, refunds: { count: 2, paise: 40_000, ofDeposits: { count: 2, paise: 40_000 }, ofSecondPayments: { count: 0, paise: 0 } } },
     owner: { asked: 3, approved: 2, denied: 1, retried: 0 },
     stopped: { total: 5, byRule: { ...base.stopped.byRule, "price-at-or-above-list": 3, "no-double-booking": 1, "within-hours": 1 } },
-    unconfirmed: { open: 1, settledLater: 0, rows: [] },
+    unconfirmed: { open: 1, openOnBookings: 1, settledLater: 0, rows: [{ seq: 9, action: "confirm_booking", outcome: "unconfirmed", booking: "b-9", settledLater: false }] },
   };
 }
 

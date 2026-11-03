@@ -192,7 +192,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     period: r.period,
     counted: {
       bookingsMade: r.bookings.made, cancelled: r.bookings.cancelled, depositsPaise: r.money.deposits.paise, refundsPaise: r.money.refunds.paise, stopped: r.stopped.total,
-      unconfirmedOpen: r.unconfirmed.open, asked: r.owner.asked, approved: r.owner.approved, denied: r.owner.denied,
+      unconfirmedOpen: r.unconfirmed.openOnBookings, asked: r.owner.asked, approved: r.owner.approved, denied: r.owner.denied,
     },
     record: { entries: r.record.entries, digest: r.record.digest },
     report: { digest: report.digest, code: report.code },

@@ -139,7 +139,7 @@ test("the monthly certificate repeats the report's counts exactly, and points at
   const r = report.document;
   assert.deepEqual(cert.counted, {
     bookingsMade: r.bookings.made, cancelled: r.bookings.cancelled, depositsPaise: r.money.deposits.paise, refundsPaise: r.money.refunds.paise, stopped: r.stopped.total,
-    unconfirmedOpen: r.unconfirmed.open, asked: r.owner.asked, approved: r.owner.approved, denied: r.owner.denied,
+    unconfirmedOpen: r.unconfirmed.openOnBookings, asked: r.owner.asked, approved: r.owner.approved, denied: r.owner.denied,
   });
   assert.deepEqual(cert.report, { digest: report.digest, code: report.code });
   assert.deepEqual(cert.record, { entries: r.record.entries, digest: r.record.digest });

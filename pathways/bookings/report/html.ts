@@ -4,6 +4,7 @@
 // the digests. Every value that reaches the page is escaped; shop and service names come from the settings file.
 import { formatDate } from "../src/language/format.ts";
 import { localParts } from "../src/time.ts";
+const two = (n: number) => String(n).padStart(2, "0");
 import { RULE_IDS } from "./data.ts";
 import type { MonthlyReport } from "./data.ts";
 import type { Envelope } from "./sign.ts";
@@ -125,8 +126,8 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
   const actions = Object.keys(r.record.byAction).sort();
   const outcomes = [...new Set(actions.flatMap((a) => Object.keys(r.record.byAction[a])))].sort();
   const byAction = table([{ text: p.colAction }, ...outcomes.map((o) => ({ text: o, n: true }))], actions.map((a) => [`<code>${esc(a)}</code>`, ...outcomes.map((o) => String(r.record.byAction[a][o] ?? ""))]));
-  const entries = table([{ text: p.colNo, n: true }, { text: p.colTime }, { text: p.colAction }, { text: p.colOutcome }, { text: p.colBooking }, { text: p.colFingerprint }],
-    r.record.rows.map((x) => [String(x.seq), esc(x.time.slice(0, 19).replace("T", " ")), `<code>${esc(x.action)}</code>`, `<code>${esc(x.outcome)}</code>`, esc(x.booking ?? "–"), `<code>${esc(x.digest.slice(7, 23))}</code>`]));
+  const entries = table([{ text: p.colNo, n: true }, { text: `${p.colTime} (${r.shop.timeZone})` }, { text: p.colAction }, { text: p.colOutcome }, { text: p.colBooking }, { text: p.colFingerprint }],
+    r.record.rows.map((x) => { const t = localParts(Date.parse(x.time), r.shop.timeZone); return [String(x.seq), esc(`${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}`), `<code>${esc(x.action)}</code>`, `<code>${esc(x.outcome)}</code>`, esc(x.booking ?? "–"), `<code>${esc(x.digest.slice(7, 23))}</code>`]; }));
 
   return `<section class="doc" lang="${language}">
 <header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}</header>

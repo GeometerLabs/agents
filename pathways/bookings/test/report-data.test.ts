@@ -34,7 +34,7 @@ test("the busy month: bookings, owner decisions and what the limits stopped, as 
   assert.equal(report.stopped.total, 10);
   assert.equal(report.messages.heldBack, 2);
   assert.deepEqual(report.unconfirmed, {
-    open: 2, settledLater: 1,
+    open: 2, openOnBookings: 1, settledLater: 1,
     rows: [
       { seq: report.unconfirmed.rows[0].seq, action: "confirm_booking", outcome: "unconfirmed", booking: "b-33", settledLater: true },
       { seq: report.unconfirmed.rows[1].seq, action: "confirm_booking", outcome: "unconfirmed", booking: "b-34", settledLater: false },

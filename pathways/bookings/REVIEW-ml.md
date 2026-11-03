@@ -321,7 +321,7 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `cert.yourLimits` | നിങ്ങളുടെ പരിധികൾ | Your limits |  |
 | `cert.floor` | ലിസ്റ്റ് വിലയിൽ കുറയില്ല: … | Nothing below your price list: … |  |
 | `cert.deposit` | അഡ്വാൻസ് ₹200; അതിനായി സമയം 15 മിനിറ്റ് മാറ്റിവയ്ക്കും | Deposit ₹200, and the slot is held 15 minutes for it |  |
-| `cert.cancel` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് 24 മണിക്കൂർ മുമ്പ് റദ്ദാക്കിയാൽ അഡ്വാൻസ് തിരികെ ലഭിക്കും | Cancel at least 24 hours before the start and the deposit goes back |  |
+| `cert.cancel` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് 24 മണിക്കൂർ മുമ്പ് റദ്ദാക്കിയാൽ അഡ്വാൻസ് തിരികെ ലഭിക്കും; അതിനു ശേഷം റദ്ദാക്കിയാൽ തീരുമാനം നിങ്ങളുടേത് | Cancel at least 24 hours before the start and the deposit goes back; a later cancellation is your decision |  |
 | `cert.refund` | ₹200-ന് മുകളിലുള്ള റീഫണ്ട് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം | Refunds above ₹200 only with your OK |  |
 | `cert.hours` | പ്രവൃത്തി സമയത്തിന് പുറത്ത് ബുക്കിംഗ് ഇല്ല | No bookings outside your opening hours |  |
 | `cert.notAGrade` | ഇത് പരീക്ഷിച്ച സാഹചര്യങ്ങളുടെ എണ്ണം മാത്രമാണ്. ഇത് ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | This counts the situations tried. It does not grade the agent. |  |

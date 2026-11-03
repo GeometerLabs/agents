@@ -91,7 +91,7 @@ export interface MonthlyReport {
   owner: { asked: number; approved: number; denied: number; retried: number };
   stopped: { total: number; byRule: Record<RuleId, number> };
   messages: { toCustomers: { total: number; byLanguage: ByLanguage }; toOwner: { total: number; byLanguage: ByLanguage }; heldBack: number };
-  unconfirmed: { open: number; settledLater: number; rows: { seq: number; action: Action; outcome: "unconfirmed" | "failed"; booking: string | null; settledLater: boolean }[] };
+  unconfirmed: { open: number; /** The open ones that touch a booking, a payment or the calendar: everything but a message. This is what the owner's line counts. */ openOnBookings: number; settledLater: number; rows: { seq: number; action: Action; outcome: "unconfirmed" | "failed"; booking: string | null; settledLater: boolean }[] };
   atReportTime: { waitingForOwner: number; paidNotBooked: number };
   /** Entries that should carry a detail (an amount, a command, who a message went to) and do not, so that count is incomplete. */
   missing: { depositAmounts: number; refundAmounts: number; ownerCommands: number; messageTargets: number };
@@ -269,7 +269,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     owner,
     stopped: { total: stoppedTotal, byRule },
     messages: { toCustomers, toOwner, heldBack },
-    unconfirmed: { open: rows.length - settledLater, settledLater, rows },
+    unconfirmed: { open: rows.length - settledLater, openOnBookings: rows.filter((r) => !r.settledLater && r.action !== "send_message").length, settledLater, rows },
     atReportTime: {
       waitingForOwner: bookings.filter((b) => b.pending.length > 0).length,
       paidNotBooked: bookings.filter((b) => b.state === "needs_owner").length,

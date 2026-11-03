@@ -17,7 +17,7 @@ await main(async () => {
   if (!file || args.positionals.length > 1) throw new UsageError("Say which file to check:\n  node pathways/bookings/scripts/verify-report.ts <file.json> [--trust-key <public key>]");
   let text: string;
   try { text = readFileSync(file, "utf8"); } catch { throw new UsageError(`I cannot read ${file}.`); }
-  const trust = (args.values["trust-key"] ?? []).map(trustedKeyId);
+  const trust = (args.values["trust-key"] ?? []).map((spec) => { try { return trustedKeyId(spec); } catch (e) { throw new UsageError((e as Error).message); } });
   const v = verifyEnvelopeText(text, trust);
 
   console.log(`File: ${file}`);
