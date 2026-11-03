@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRuleParser, parseIntent } from "../src/adapters/rule-parser.ts";
-import { coerceIntent, createOpenAICompatibleParser } from "../src/adapters/model.ts";
+import { coerceIntent } from "../src/adapters/model.ts";
+import { createModelParser } from "../src/adapters/model-llm.ts";
 import { parseSettings } from "../src/settings.ts";
 
 const settings = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon.example.json", import.meta.url), "utf8")));
@@ -115,8 +116,9 @@ test("the model parser makes no call on import or on creation, and refuses to st
   let calls = 0;
   globalThis.fetch = (() => { calls++; throw new Error("the network must not be touched"); }) as typeof fetch;
   try {
-    assert.throws(() => createOpenAICompatibleParser({}), /MODEL_BASE_URL/);
-    createOpenAICompatibleParser({ MODEL_BASE_URL: "http://localhost:0", MODEL_API_KEY: "k", MODEL_NAME: "m" }); // created, never asked
+    assert.throws(() => createModelParser({ wire: "openai", baseUrl: "", model: "m" }), /baseUrl/);
+    assert.throws(() => createModelParser({ wire: "openai", baseUrl: "http://localhost:0", model: "" }), /model/);
+    createModelParser({ wire: "openai", baseUrl: "http://localhost:0", model: "m" }); // created, never asked
     assert.equal(calls, 0);
   } finally {
     globalThis.fetch = original;
