@@ -310,7 +310,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!ref || !settings) return notFound(r);
     const template = templates().find((t) => t.id === (ref.owner?.template ?? "bookings")) ?? templates()[0];
     if (!template) return notFound(r);
-    const id = randomBytes(12).toString("base64url");
+    const id = randomBytes(12).toString("hex");
     store.write(`drafts/${id}.json`, draftFromShop(id, r.account!.id, template.id, ref.id, settings, shops.runtime(ref.id), shops.meta(ref.id), new Date(now()).toISOString()));
     redirect(r, `/setup/${id}/1`);
   });
@@ -367,7 +367,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   on("POST", /^\/setup$/u, "user", async (r) => {
     const template = templates().find((t) => t.id === r.form.template && t.setup === "bookings");
     if (!template) return notFound(r);
-    const id = randomBytes(12).toString("base64url");
+    const id = randomBytes(12).toString("hex");
     store.write(`drafts/${id}.json`, newDraft(id, r.account!.id, template, exampleOf(template), new Date(now()).toISOString()));
     redirect(r, `/setup/${id}/1`);
   });
