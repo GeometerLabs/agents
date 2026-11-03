@@ -18,12 +18,26 @@
 | Left open | Why | Revisit when |
 | --- | --- | --- |
 | Model-written text around the templates | v0 is template-only. The outgoing check already reads final text, but it cannot catch a promise made in words ("it's confirmed") or a quantity spelled out in words in every language | Real-model testing; add a check for confirmation words |
-| A real model parser | Only a stub exists (`createOpenAICompatibleParser`); it is never called, and a model call needs approval and a key | The owner approves a model and a spend cap |
 | Tamil, Telugu and other languages; more Hindi coverage | Hindi, English, Malayalam and Kannada are built. Each new language is one entry in every per-language table (the type system lists what is missing), its word list in `src/language/words.ts`, and a review sheet. The rule-based parser knows common Hindi and a little Hindi in Latin letters, not slang or mixed sentences | Tamil and Telugu are wanted by a client |
 | STOP acknowledgement and opting back in (START) | STOP is strict: no message at all, even if the customer writes again. One confirmation of the STOP is common practice; allowing it, and a way back in, is a policy call | The owner decides the policy |
 | Meta template wording and variables | Template bodies are plain text here. Real templates need approved wording with numbered variables | WhatsApp templates are submitted for approval |
 | The check compares values, not labels | An amount only has to be one of this booking's own values, so a deposit and a price swapped between themselves ("Pay a ₹450 deposit") still pass. Another service's price is refused outside the menu. A per-label check needs the templates to declare which value goes where | Model-written text, or a template change that mixes amounts |
 | Number words and symbols the check does not read ("Rs 450", "four hundred", "18:00") | They are blocked (nothing the check cannot explain is sent), but a future model would be blocked from using them too | Model-written text |
+
+## The model parser and its eval
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| A run against a real model | No key was available to the build, so both wire shapes are tested only against a local stub server. The model ids and extra request fields in `eval/models.json` were read from each provider's docs and not tried (newer OpenAI models and Sarvam's variants are the least certain) | The owner puts a key in `.env` and runs the eval; fix any candidate that fails every message with an HTTP error |
+| Native review of the eval labels | The 136 messages and their labels are machine-written, Hindi, Malayalam and Kannada included. A wrong label would reward or punish a model for nothing | A native speaker reviews `eval/messages.jsonl`, as for the Malayalam and Kannada word lists |
+| A bigger and harder eval | About 33 messages a language means one message moves a score by 3 points. The set is one message at a time with no conversation, so a bare "yes" never has to be understood in context. Each run is one pass at temperature 0 with no repeat to measure noise. The rule parser already gets about 86 percent, so the set separates models mostly on the hard cases | Two models are within a few points of each other |
+| Prices in `eval/models.json` | Left empty on purpose: prices change, and are filled from each provider's current price page. Until then the cost row says "no price set" | The candidates are chosen |
+| Model cost in the action record | The plan's record has a "model cost" field. `parseDetailed` already returns the tokens the model reported, but the agent records only why a fallback happened | The report (W12) needs spend per shop |
+| Reading the model's `language` for the reply language | The agent switches the customer's language from the intent's `language`. A model may call a code-mixed message by the wrong language where the rule parser would use the script | The eval shows language misses that matter, or a shop complains |
+| Retries, streaming and prompt caching | One try, then the rule parser reads the message. A retry would add seconds to a WhatsApp reply, and the prompt (about 4,300 characters) is probably under the size most providers cache | A model that is often slow, or a longer prompt |
+| The model call going through Guard | The parser points at any base URL. Guard's route to a model provider, per-client spend caps and the allowance are Guard and gateway work (W14, W19) | Guard has a model upstream |
+| Sending real customers' messages to a model provider | The eval sends only invented messages. A live shop would send customers' text to a provider, which needs the consent text, a provider that does not train on the data (plan section 7) and a retention decision | Before a real client goes live with the model parser |
+| Letting the model flag a trick the rule parser misses | `overrideAttempt` is true if the model or the rule parser's patterns say so, so a fooled model cannot hide a known trick. A trick the model misses and the patterns do not know is not flagged. It changes nothing either way, because the limits decide, but the record would not note it | The eval shows tricks going unflagged |
 
 ## Malayalam and Kannada
 
