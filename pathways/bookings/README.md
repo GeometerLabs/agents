@@ -6,7 +6,7 @@ A WhatsApp agent for businesses that take bookings with a deposit and a cancella
 
 **What this folder is, and is not.** It is the v0 core of the pathway, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
 
-It has no dependencies. The agent and its tests make no network call off this computer (the server in `server/` listens on a port you choose, see "Run the agent as a server"). TypeScript is run directly by Node's built-in type stripping.
+It has no dependencies. The agent and its tests make no network call off this computer (the server in `server/` listens on a port you choose, see "Run the agent as a server"). The rule parser reads the messages; a model parser exists too (see "Choose the model"), but nothing uses it until you point it at a model. TypeScript is run directly by Node's built-in type stripping.
 
 ## Run it
 
@@ -17,6 +17,7 @@ You need Node 26 (any Node with built-in TypeScript type stripping works). There
 node --test pathways/bookings/test/            # the unit and situation tests
 node pathways/bookings/scripts/hand-check.ts   # the hand check; add --details to see what was done in each situation
 node pathways/bookings/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
+node pathways/bookings/scripts/model-eval.ts        # the model eval: the rule parser baseline, plus any model whose key is in .env (see Choose the model)
 ```
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
@@ -125,6 +126,36 @@ Agent:    ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450. ಕ್ಷಮಿಸಿ, ಇ
 - **Machine-written, not yet read by a native speaker.** [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every Malayalam and Kannada message and every word the agent understands, with a column for the native reviewer. No real shop should use these two languages before that review. The sheets are made by `node pathways/bookings/scripts/review-sheet.ts ml` (or `kn`), and a test fails if a sheet falls behind the templates.
 - Adding another language (Tamil and Telugu are next) means adding its entry to each per-language table: the type system refuses to build without a template for every message and a name for every weekday and month. Its customer words go in [`src/language/words.ts`](src/language/words.ts).
 
+## Choose the model
+
+Geometer bundles one model (decision 6 in the implementation plan). The eval picks it: it reads 136 labelled customer messages (about 33 each in Hindi, English, Malayalam and Kannada, with Hinglish, Manglish and Kanglish, typos, cancels, reschedules, haggling and "ignore your rules" tricks) and scores the rule parser and each candidate on the same ones. The labels are machine-written and **need a native speaker's review** before a result decides anything.
+
+```sh
+# 1. Put the keys you have in a file called .env at the root of this repository. Git ignores it. One line per provider:
+#      ANTHROPIC_API_KEY=...
+#      GEMINI_API_KEY=...
+#      SARVAM_API_KEY=...
+#      GROQ_API_KEY=...
+#      OPENAI_API_KEY=...
+# 2. Check the candidates in pathways/bookings/eval/models.json (name, wire, base URL, model id, the key's name, and the price
+#    per million input and output tokens, left empty until you fill it in from the provider's current price page).
+# 3. Run the eval from the root of this repository:
+node pathways/bookings/scripts/model-eval.ts --max-messages 40      # a cheap first look: 40 messages, spread over the four languages
+node pathways/bookings/scripts/model-eval.ts                        # all 136 messages
+node pathways/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemini-3.5-flash-lite
+```
+
+It prints one table with a column for the rule parser (the baseline) and one for each model that has a key: how often all six fields were right (kind, service, date, time, offered price, and the trick flag), by language and by field; how often the model could not be used and the rule parser read the message instead; p50 and p95 latency; the tokens used; and the cost of 1,000 messages from the tokens the API reported. A candidate with no key in `.env` is skipped with a line saying so; with no keys at all only the baseline runs. Each model call costs a little, so `--max-messages` caps how many are sent, and the token totals are printed. The full results go to `eval/results.json`, which git ignores. Keys are read and sent by the eval script only (`scripts/eval-keys.ts`); the pathway's own model parser holds no key.
+
+To use a model in the agent, build the parser and pass it as `parser` (the rule parser stays the default everywhere):
+
+```ts
+import { createModelParser } from "./src/adapters/model-llm.ts";
+const parser = createModelParser({ wire: "openai", baseUrl: "https://your-guard.example/model/v1", model: "..." }); // wire: "openai" | "anthropic"
+```
+
+In production `baseUrl` is a Guard instance in front of the model provider, and Guard adds the key. If the model times out (8 seconds unless `timeoutMs` says otherwise), answers with an error, or gives an answer that is not a valid intent, the rule parser reads the message and the record says why.
+
 ## Settings: tailoring without code
 
 One JSON file per business. [`settings/glow-salon.example.json`](settings/glow-salon.example.json) is a complete example. Mistakes are listed all at once, in plain words, for example: `Service "haircut" needs a price in whole rupees ("priceInr"), for example 450.`
@@ -193,7 +224,8 @@ src/settings.ts                    settings types and hand-written validation
 src/record.ts                      the append-only action record
 src/limits.ts                      the nine rules as pure checks
 src/booking.ts, src/agent.ts       the state machine and the agent
-src/adapters/                      calendar, payments, messaging fakes; the intent parser seam
+src/adapters/                      calendar, payments, messaging fakes; the intent parser seam (model.ts), the rule parser, and the model
+                                   parser over HTTP (model-llm.ts, with its prompt and answer schema in model-prompt.ts)
 src/language/                      templates (hi, en, ml, kn), the outgoing check, date and time phrases;
                                    words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
@@ -208,6 +240,8 @@ scripts/hand-check.ts              the hand check
 demo/                              the partner demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
                                    view.ts (the owner's summary and the record), personalise.ts (the shop form), strings.ts, page.ts/.css/.js
 scripts/review-sheet.ts            writes REVIEW-ml.md and REVIEW-kn.md from the templates and word lists
+scripts/model-eval.ts              the model eval (eval-score.ts scores it, eval-keys.ts reads the keys: laptop only)
+eval/                              messages.jsonl (the labelled messages), models.json (the candidates); results.json is git-ignored
 REVIEW-ml.md, REVIEW-kn.md         every Malayalam and Kannada line, for a native speaker to mark OK or change
 Explanation.md, Deferred.md        how it was built and why; what is left open and why
 ```
@@ -217,7 +251,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 - **Real services.** No real WhatsApp provider, Razorpay or Google Calendar adapter. The fakes are shaped like them so an adapter can replace each.
 - **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
-- **Model-written text.** Messages are templates only. The model parser is a stub that is never called (`createOpenAICompatibleParser`).
+- **Model-written text.** Messages are templates only. The model parser only reads a customer's message into an intent. It is built and tested against a local stub server, **not yet run against a real model**, and the agent uses the rule parser unless it is given the model parser.
 - **The monthly client report, the builder panel and hosting**, and **Tamil, Telugu** and other languages. (Restarts and persistence are built, in `server/`.) Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
 
 The full list, with a reason and a trigger for each, is in [Deferred.md](Deferred.md). What the hand check does not test is printed every time it runs.

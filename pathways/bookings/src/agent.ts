@@ -218,8 +218,11 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function readIntent(text: string): Promise<{ intent: Intent; note?: string }> {
     try {
-      const intent = coerceIntent(await parser.parse(text, parseContext), parseContext);
-      return intent ? { intent } : { intent: { kind: "unknown" }, note: "the parser's answer was not a valid intent, so the message was treated as not understood" };
+      // A parser that can say why it fell back (the model parser) gets that said in the record.
+      const read = parser.parseDetailed ? await parser.parseDetailed(text, parseContext) : { intent: await parser.parse(text, parseContext), fallbackReason: undefined };
+      const intent = coerceIntent(read.intent, parseContext);
+      const note = read.fallbackReason ? `the model could not be used (${read.fallbackReason}), so the rule parser read the message` : undefined;
+      return intent ? { intent, note } : { intent: { kind: "unknown" }, note: "the parser's answer was not a valid intent, so the message was treated as not understood" };
     } catch (e) {
       return { intent: { kind: "unknown" }, note: `the parser failed (${(e as Error).message}), so the message was treated as not understood` };
     }
