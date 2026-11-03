@@ -6,6 +6,7 @@
 //                 g-<shop>-whatsapp       cannot restrict argument values, so a shared WhatsApp Guard could be told to send from another shop's number
 //                 g-<shop>-calendar
 //                 fwd-<shop>-<tool>       3 tiny forwarders, one per Guard, in the Guard's network namespace: the way to its admin port (see below)
+//                 door-<shop>             a tiny forwarder from the `admin` network to the runtime's port: how the inbox, the relay and ops reach the runtime
 //   per server    g-model                 the model Guard (the server's key and cap; every shop's runtime is an agent of it)
 //                 inbox, relay            webhooks in /c/<shop>/..., owners' approvals; each routes by shop and holds that shop's secrets
 //                 refresher, ops          the Google token refresher; the heartbeat sender and the admin client the deployer reaches through `docker exec`
@@ -14,6 +15,12 @@
 // Networks. net-<shop> and admin are `internal: true`: no route out. egress and front are not. Only the Guards (and the services that must call out:
 // ops for the heartbeat, the refresher for Google, litestream for the bucket) are on egress. Caddy is on front with the inbox, the relay and the panel, so
 // it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call).
+//
+// The runtime's network, net-<shop>, holds ONLY the runtime, its own three Guards, the model Guard and its door. Docker has no one-way network, so a
+// service that is on the runtime's network can be connected to by the runtime: the inbox, the relay and ops are therefore NOT on it. They reach the
+// runtime through its door, which listens only on its address on the `admin` network (the runtime is not on that network and cannot connect to it),
+// and the relay reaches the shop's WhatsApp Guard on that Guard's address on the `admin` network too. So the only things the runtime can connect to are
+// its Guards and the model Guard. Each of them refuses a call without the right credential.
 //
 // Guard's admin port (kill switch, approvals, reload, status) is on 127.0.0.1 inside the Guard, because Guard's production profile refuses it on
 // any other address without TLS on the agent port too. fwd-* is a busybox `nc` in the Guard's own network namespace, listening only on the Guard's
@@ -30,8 +37,9 @@ export const RELAY_PORT = 8795;
 export const REFRESHER_PORT = 8791;
 export const PANEL_PORT = 8800;
 export const HEALTH_PORT = 8081;
-/** First-seen order of a shop's three Guards, which fixes each one's address on the admin network. */
+/** A shop's three Guards, in the order that fixes each one's address on the admin network (the shop's door is the fourth). */
 export const SHOP_GUARD_KINDS: readonly Exclude<GuardKind, "model">[] = ["razorpay", "whatsapp", "calendar"];
+export type Slot = GuardKind | "door";
 
 /** A Guard as the compose file needs to know it. */
 export interface GuardRef { kind: GuardKind; service: string; tenant: string }
@@ -57,7 +65,7 @@ export interface Dirs {
 
 export interface Addressing {
   subnets: Record<string, string>;
-  adminIp: (shop: string | undefined, kind: GuardKind, index?: number) => string;
+  adminIp: (shop: string | undefined, slot: Slot, index?: number) => string;
 }
 
 /** Fixed small subnets for every network, so a busy Docker host never runs out of default pools, and the forwarders know their address. */
@@ -65,9 +73,9 @@ export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
     subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20` },
-    adminIp(_shop, kind, index = 0) {
-      const slot = kind === "model" ? 8 : 16 + index * 4 + SHOP_GUARD_KINDS.indexOf(kind);
-      return `${base}.${240 + (slot >> 8)}.${slot & 255}`;
+    adminIp(_shop, slot, index = 0) {
+      const n = slot === "model" ? 8 : 16 + index * 4 + (slot === "door" ? 3 : SHOP_GUARD_KINDS.indexOf(slot));
+      return `${base}.${240 + (n >> 8)}.${n & 255}`;
     },
   };
 }
@@ -144,6 +152,12 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
         g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined,
       );
     }
+    const doorIp = net.adminIp(shop.name, "door", shop.index);
+    add(names.door(shop.name), {
+      image: FORWARDER_IMAGE, ...hardened, user: guardUser,
+      command: ["nc", "-ll", "-s", doorIp, "-p", String(RUNTIME_PORT), "-e", "nc", names.runtime(shop.name), String(RUNTIME_PORT)],
+      networks: { [names.net(shop.name)]: {}, admin: { ipv4_address: doorIp } },
+    });
     const own = shop.guards.map((g) => g.service);
     add(names.runtime(shop.name), node(["node", "/pathway/server/main.ts", "--client", "/client"], {
       environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token" },
@@ -157,16 +171,15 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;
-  const everyShopNet = Object.fromEntries(shopNets.map((n) => [n, {}]));
   add("inbox", node(["node", "/app/bundle/services/inbox.ts"], {
     environment: { CONFIG: "/etc/geometer/inbox.json", PORT: String(INBOX_PORT), HOST: "0.0.0.0" },
     volumes: [appVolume, `${dirs.generated}/inbox:/etc/geometer:ro`, `${secretDir("inbox")}:/run/secrets:ro`],
-    networks: { front: {}, ...everyShopNet }, healthcheck: healthWget(INBOX_PORT, "/healthz"),
+    networks: { front: {}, admin: {} }, healthcheck: healthWget(INBOX_PORT, "/healthz"),
   }), [`${dirs.generated}/inbox/inbox.json`]);
   add("relay", node(["node", "/app/bundle/services/relay.ts"], {
     environment: { CONFIG: "/etc/geometer/relay.json", PORT: String(RELAY_PORT), HOST: "0.0.0.0" },
     volumes: [appVolume, `${dirs.generated}/relay:/etc/geometer:ro`, `${secretDir("relay")}:/run/secrets:ro`, "relay-state:/home/node"],
-    networks: { front: {}, admin: {}, ...everyShopNet }, healthcheck: healthWget(RELAY_PORT, "/healthz"),
+    networks: { front: {}, admin: {} }, healthcheck: healthWget(RELAY_PORT, "/healthz"),
   }), [`${dirs.generated}/relay/relay.json`]);
   add("refresher", node(["node", "/app/bundle/services/refresher.ts"], {
     environment: { CONFIG: "/etc/geometer/refresher.json", PORT: String(REFRESHER_PORT), HOST: "0.0.0.0" },
@@ -176,7 +189,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
     environment: { CONFIG: "/etc/geometer/ops.json" },
     volumes: [appVolume, `${dirs.generated}/ops:/etc/geometer:ro`, `${secretDir("ops")}:/run/secrets:ro`],
-    networks: { admin: {}, egress: {}, ...everyShopNet },
+    networks: { admin: {}, egress: {} },
   }), [`${dirs.generated}/ops/ops.json`]);
   if (features.backup) {
     add("litestream", {

@@ -29,7 +29,18 @@ test("only Guards (and the few services that must call out) are on the egress ne
   const onEgress = Object.keys(c.services).filter((s) => nets(c, s).includes("egress")).sort();
   assert.deepEqual(onEgress, ["g-bright-tuition-calendar", "g-bright-tuition-razorpay", "g-bright-tuition-whatsapp", "g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp", "g-model", "litestream", "ops", "panel", "refresher"]);
   assert.deepEqual(nets(c, "caddy"), ["front"]);
-  assert.deepEqual(nets(c, "inbox").sort(), ["front", "net-bright-tuition", "net-glow-salon"]);
+  assert.deepEqual(nets(c, "inbox").sort(), ["admin", "front"]);
+});
+
+test("a runtime's network holds ONLY the runtime, its own three Guards, the model Guard and its door: not the inbox, the relay or ops, which the runtime could otherwise connect to", () => {
+  const c = two();
+  const members = (net: string) => Object.keys(c.services).filter((s) => nets(c, s).includes(net)).sort();
+  assert.deepEqual(members("net-glow-salon"), ["door-glow-salon", "g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp", "g-model", "rt-glow-salon"]);
+  assert.deepEqual(members("net-bright-tuition"), ["door-bright-tuition", "g-bright-tuition-calendar", "g-bright-tuition-razorpay", "g-bright-tuition-whatsapp", "g-model", "rt-bright-tuition"]);
+  const door = c.services["door-glow-salon"].block;
+  const ip = ((door.networks as Record<string, { ipv4_address?: string }>).admin).ipv4_address!;
+  assert.deepEqual(door.command, ["nc", "-ll", "-s", ip, "-p", "8780", "-e", "nc", "rt-glow-salon", "8780"]);
+  assert.match(ip, /^10\.231\.24\d\.\d+$/, "the door listens only on the admin network, where the runtime is not");
 });
 
 test("a runtime talks to its Guards by name and reaches the admin network through nothing: the admin forwarders are in the Guards' own namespaces on an address of the admin network", () => {
