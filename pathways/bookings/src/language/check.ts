@@ -5,28 +5,30 @@
 import { LANGUAGES } from "../settings.ts";
 import type { Language } from "../settings.ts";
 import { localParts } from "../time.ts";
-import { HINDI_PERIODS, MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatTime, plain } from "./format.ts";
+import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatTime, languageOfScript, plain } from "./format.ts";
 import { wordRe } from "./dates.ts";
 import type { MessageFacts } from "./templates.ts";
 
 export interface CheckResult { ok: boolean; problems: string[] }
 
 const alternation = (words: string[]) => words.map(plain).join("|");
-const WEEKDAYS = alternation([...WEEKDAY_NAMES.en, ...WEEKDAY_NAMES.hi]);
-const MONTHS = alternation([...MONTH_NAMES.en, ...MONTH_NAMES.hi]);
-const PERIODS = alternation(Object.values(HINDI_PERIODS));
+const WEEKDAYS = alternation(LANGUAGES.flatMap((l) => WEEKDAY_NAMES[l]));
+const MONTHS = alternation(LANGUAGES.flatMap((l) => MONTH_NAMES[l]));
+const periodsOf = (language: "hi" | "ml" | "kn") => alternation(Object.values(DAY_PART_WORDS[language]));
 
-// A date is "Tue 10 Nov" or "मंगलवार, 10 नवंबर"; a time is "6:00 pm" or "शाम 6:00 बजे". Exactly what the formatters write.
+// A date is "Tue 10 Nov", "मंगलवार, 10 नवंबर", "ചൊവ്വ, 10 നവംബർ" or "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್"; a time is "6:00 pm", "शाम 6:00 बजे",
+// "വൈകുന്നേരം 6:00" or "ಸಂಜೆ 6:00". Exactly what the formatters write; the period word is part of the time, so a wrong one is caught.
 const DATE_RE = new RegExp(`(?:${WEEKDAYS})\\s*,?\\s*\\d{1,2}\\s+(?:${MONTHS})`, "giu");
-const TIME_RE = new RegExp(`(?:${PERIODS})\\s+\\d{1,2}:\\d{2}\\s+बजे|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
+const TIME_RE = new RegExp(`(?:${periodsOf("hi")})\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:${periodsOf("ml")}|${periodsOf("kn")})\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
 const URL_RE = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s)]*/giu;
 const AMOUNT_RE = /₹\s*(\d[\d,]*(?:\.\d+)?)/gu;
 const QUANTITY_WORD_RE = wordRe(["hundred", "thousand", "lakh", "crore", "सौ", "हज़ार", "हजार", "लाख", "करोड़"], "iu");
+// Malayalam and Kannada join number words into one ("ഇരുന്നൂറ്" is 200), so these are looked for inside words, not only as words.
+const QUANTITY_STEM_RE = new RegExp(["നൂറ", "ആയിരം", "ലക്ഷം", "കോടി", "ನೂರ", "ಸಾವಿರ", "ಲಕ್ಷ", "ಕೋಟಿ"].map(plain).join("|"), "u");
 
 /** Whitespace, commas and case vary in what is written; the values do not. */
-const normaliseDate = (s: string) => s.toLowerCase().replace(/,/gu, " ").replace(/\s+/gu, " ").trim();
-const normaliseTime = (s: string) => s.toLowerCase().replace(/\s+/gu, " ").replace(/(\d)\s*(am|pm)$/u, "$1 $2").trim();
-const isLatin = (s: string) => /[a-z]/iu.test(s);
+const normaliseDate = (s: string) => plain(s).toLowerCase().replace(/,/gu, " ").replace(/\s+/gu, " ").trim();
+const normaliseTime = (s: string) => plain(s).toLowerCase().replace(/\s+/gu, " ").replace(/(\d)\s*(am|pm)$/u, "$1 $2").trim();
 
 interface Allowed {
   amounts: Set<number>;
@@ -35,12 +37,12 @@ interface Allowed {
   times: Set<string>;
   urls: Set<string>;
   literals: string[]; // names and references the message may repeat; masked out before numbers are looked for
-  shown: Record<Language, { date: string; time: string } | undefined>; // how the record's slot reads, for the problem text
+  shown: Partial<Record<Language, { date: string; time: string }>>; // how the record's slot reads, for the problem text
   amountList: number[];
 }
 
 function allowedFrom(facts: MessageFacts): Allowed {
-  const a: Allowed = { amounts: new Set(), counts: new Set(), dates: new Set(), times: new Set(), urls: new Set(), literals: [], shown: { hi: undefined, en: undefined }, amountList: [] };
+  const a: Allowed = { amounts: new Set(), counts: new Set(), dates: new Set(), times: new Set(), urls: new Set(), literals: [], shown: {}, amountList: [] };
   for (const v of [facts.priceInr, facts.depositInr, facts.refundInr, ...facts.services.map((s) => s.priceInr)]) if (v !== undefined) a.amounts.add(v);
   a.amountList = [...a.amounts].sort((x, y) => x - y);
   for (const v of [facts.holdMinutes, facts.windowHours]) if (v !== undefined) a.counts.add(v);
@@ -98,13 +100,13 @@ export function checkMessage(finalText: string, facts: MessageFacts): CheckResul
   const times = tokens(TIME_RE, text);
   for (const d of dates) {
     if (!allowed.dates.has(normaliseDate(d.text))) {
-      const record = allowed.shown[isLatin(d.text) ? "en" : "hi"]?.date;
+      const record = allowed.shown[languageOfScript(d.text)]?.date;
       problems.push(`The message says the date "${d.text}", but the record has ${record ?? "no date for this conversation"}.`);
     }
   }
   for (const t of times) {
     if (!allowed.times.has(normaliseTime(t.text))) {
-      const record = allowed.shown[isLatin(t.text) ? "en" : "hi"]?.time;
+      const record = allowed.shown[languageOfScript(t.text)]?.time;
       problems.push(`The message says the time "${t.text}", but the record has ${record ?? "no time for this conversation"}.`);
     }
   }
@@ -125,7 +127,7 @@ export function checkMessage(finalText: string, facts: MessageFacts): CheckResul
   for (const m of text.matchAll(/\d+/gu)) {
     if (!allowed.counts.has(Number(m[0]))) problems.push(`The message has the number ${m[0]}, which is not in the record for this conversation.`);
   }
-  if (QUANTITY_WORD_RE.test(text)) problems.push("The message spells out a quantity in words (hundred, thousand, सौ, हज़ार ...), which cannot be checked against the record.");
+  if (QUANTITY_WORD_RE.test(text) || QUANTITY_STEM_RE.test(text)) problems.push("The message spells out a quantity in words (hundred, thousand, सौ, हज़ार, നൂറ്, ನೂರು ...), which cannot be checked against the record.");
 
   return { ok: problems.length === 0, problems: [...new Set(problems)] };
 }

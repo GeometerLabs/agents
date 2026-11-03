@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Adapters for a real WhatsApp provider, Razorpay and Google Calendar | Phase 0 here is local, zero cost, no network. The fakes are shaped like the real services (Razorpay field names and paise, WhatsApp message ids and the 24-hour window, a calendar that can lose or drop a write) so each can be swapped for an adapter without changing the agent | Test-mode accounts exist (the plan's Phase 0 prototype against real test-mode services) |
 | Guard enforcing the limits outside the AI | Guard needs its fail-closed production minimum first (W14). The limits are written as pure functions so they can move | Guard passes its fail-closed minimum |
-| The engine's crash test: simulated services, injected faults at every step, exact replay, saved checks | Phase 2 work (W1 to W5, W8). The 26 situations here are hand-written stand-ins, and they try only the faults listed | Phase 2 starts; then port the situations as saved checks |
+| The engine's crash test: simulated services, injected faults at every step, exact replay, saved checks | Phase 2 work (W1 to W5, W8). The situations here are hand-written stand-ins, and they try only the faults listed | Phase 2 starts; then port the situations as saved checks |
 | Webhook signature checks | The fake events carry no signature. The real adapter or Guard must verify them | A real Razorpay adapter |
 | Message delivery status (sent, delivered, read, failed) | The product says a message counts when WhatsApp reports it delivered. v0 treats "the provider's outbox holds it" as the read-back | A provider with status callbacks |
 | Retrying a message whose reply was lost | There is nothing to look it up by (no client reference), and a resend could duplicate a message. It is recorded as `unconfirmed` and not sent again | A provider that accepts a client reference |
@@ -19,11 +19,24 @@
 | --- | --- | --- |
 | Model-written text around the templates | v0 is template-only. The outgoing check already reads final text, but it cannot catch a promise made in words ("it's confirmed") or a quantity spelled out in words in every language | Real-model testing; add a check for confirmation words |
 | A real model parser | Only a stub exists (`createOpenAICompatibleParser`); it is never called, and a model call needs approval and a key | The owner approves a model and a spend cap |
-| Malayalam, Tamil and other languages; more Hindi coverage | Hindi and English first, as planned. The rule-based parser knows common Hindi and a little Hindi in Latin letters, not slang or mixed sentences | Phase 2 adds Malayalam |
+| Tamil, Telugu and other languages; more Hindi coverage | Hindi, English, Malayalam and Kannada are built. Each new language is one entry in every per-language table (the type system lists what is missing), its word list in `src/language/words.ts`, and a review sheet. The rule-based parser knows common Hindi and a little Hindi in Latin letters, not slang or mixed sentences | Tamil and Telugu are wanted by a client |
 | STOP acknowledgement and opting back in (START) | STOP is strict: no message at all, even if the customer writes again. One confirmation of the STOP is common practice; allowing it, and a way back in, is a policy call | The owner decides the policy |
 | Meta template wording and variables | Template bodies are plain text here. Real templates need approved wording with numbered variables | WhatsApp templates are submitted for approval |
 | The check compares values, not labels | An amount only has to be one of this booking's own values, so a deposit and a price swapped between themselves ("Pay a ₹450 deposit") still pass. Another service's price is refused outside the menu. A per-label check needs the templates to declare which value goes where | Model-written text, or a template change that mixes amounts |
 | Number words and symbols the check does not read ("Rs 450", "four hundred", "18:00") | They are blocked (nothing the check cannot explain is sent), but a future model would be blocked from using them too | Model-written text |
+
+## Malayalam and Kannada
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **Native-speaker review of every Malayalam and Kannada line** | Written by a model. Word choices that need a native ear: "അഡ്വാൻസ്" and "ಮುಂಗಡ ಹಣ" for the deposit, "ഉടമ" and "ಮಾಲೀಕರು" for the owner, the day-part words and their hours (is 4 pm evening or afternoon; is 5 am "രാവിലെ" or dawn), the hyphen after a business name ("Glow Salon-ലേക്ക്"), and whether the tone is polite and short enough for a shop customer. The owner reads Malayalam; Kannada goes to native readers. The sheets are [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) | **Before any real shop sees either language.** Fold the answers back into `templates.ts`, `format.ts` and `words.ts`, regenerate the sheets, keep the reviewers' notes |
+| Numbers spelled out in words ("ആറ് മണി", "ಆರು ಗಂಟೆ") | The parser reads digits only. A customer who writes the hour in words is asked again. Common in speech, less on WhatsApp | A real conversation log shows how often it happens |
+| A day of the month without its month ("10-ാം തീയതി", "10ನೇ ತಾರೀಖು"), and a month name with an ending ("നവംബറിൽ", "ನವೆಂಬರ್‌ನಲ್ಲಿ") | Month names are matched whole so a short word like "ಮೇ" (May) does not match inside other words | Same |
+| Long weekday forms written by a future model ("ചൊവ്വാഴ്ച, 10 നവംബർ") in outgoing text | The formatters write the short forms (ചൊവ്വ, ಮಂಗಳವಾರ). The check reads only what the formatters write, so a long form with a date is blocked (it fails closed) rather than checked | Model-written text |
+| Which language "nale" and "naale" alone are | Both mean tomorrow in both languages. Alone, they leave the language unchanged; with another word ("mani", "gante") the language is clear | A reviewer or a log shows a better rule |
+| Sentences that mix scripts or languages | The language is the script of the whole message, so "haircut നാളെ 6 മണി" is Malayalam. Words are matched in all four languages anyway | Real conversations |
+| WhatsApp template approval for Malayalam and Kannada | The stand-in approves all three template names for every language. A real provider approves each name per language, with numbered variables | The first real shop in either language |
+| Tamil and Telugu | Wanted next; not built | A client in Chennai or Hyderabad |
 
 ## Booking behaviour
 

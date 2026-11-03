@@ -2,7 +2,7 @@
 
 Market: Commerce and support (bookings).
 
-A WhatsApp agent for businesses that take bookings with a deposit and a cancellation rule: salons, tuition centres, fitness studios and home services. A customer writes in Hindi or English; the agent holds a slot, sends a deposit link, books only when the calendar and the payment record both agree, reminds the customer, and handles cancellations, refunds and rescheduling, asking the owner when a decision is theirs.
+A WhatsApp agent for businesses that take bookings with a deposit and a cancellation rule: salons, tuition centres, fitness studios and home services. A customer writes in Hindi, English, Malayalam or Kannada; the agent holds a slot, sends a deposit link, books only when the calendar and the payment record both agree, reminds the customer, and handles cancellations, refunds and rescheduling, asking the owner when a decision is theirs.
 
 **What this folder is, and is not.** It is the v0 core of the pathway, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
 
@@ -16,6 +16,7 @@ You need Node 26 (any Node with built-in TypeScript type stripping works). There
 # from the root of this repository
 node --test pathways/bookings/test/            # the unit and situation tests
 node pathways/bookings/scripts/hand-check.ts   # the hand check; add --details to see what was done in each situation
+node pathways/bookings/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
 ```
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
@@ -64,6 +65,32 @@ Agent:    हमारा हेयरकट ₹450 का है, इससे 
 
 Every amount, date, time, service and link in a message is written from the booking's record by a fixed template, then read back from the final text and checked against the record's values before it is sent. In v0 there is no model-written text.
 
+## Languages
+
+Hindi and English were first. **Malayalam (`ml`) and Kannada (`kn`)** are added: the same messages, the same checks, the same rules. A customer is answered in the language of their last message (by its script, or by the Latin-letter words people type, "nale 6 mani haircut venam"); a bare "yes" keeps the language they were using.
+
+```text
+Customer: നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട്, 300 രൂപയ്ക്ക് ചെയ്യാമോ?
+Agent:    ഹെയർകട്ട് വില ₹450 ആണ്. ക്ഷമിക്കണം, ഇതിൽ കുറയ്ക്കാൻ കഴിയില്ല. ബുധൻ, 4 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവുണ്ട്.
+          ബുക്കിംഗ് ഉറപ്പിക്കാൻ ₹200 അഡ്വാൻസ് അടയ്ക്കൂ: https://rzp.io/l/… (ഈ സമയം 15 മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)
+
+Customer: ನಾಳೆ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು, 300ಕ್ಕೆ ಮಾಡ್ತೀರಾ?
+Agent:    ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450. ಕ್ಷಮಿಸಿ, ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ. ಬುಧವಾರ, 4 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಖಾಲಿ ಇದೆ.
+          ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸಲು ₹200 ಮುಂಗಡ ಹಣ ಪಾವತಿಸಿ: https://rzp.io/l/… (ಈ ಸಮಯವನ್ನು 15 ನಿಮಿಷ ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)
+```
+
+| Written in the messages | Hindi | English | Malayalam | Kannada |
+| --- | --- | --- | --- | --- |
+| Date | मंगलवार, 10 नवंबर | Tue 10 Nov | ചൊവ്വ, 10 നവംബർ | ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್ |
+| Time | शाम 6:00 बजे | 6:00 pm | വൈകുന്നേരം 6:00 | ಸಂಜೆ 6:00 |
+| Amount | ₹450 | ₹450 | ₹450 | ₹450 |
+
+- **Amounts, dates, times, service names and links are always filled in from the record**, never translated. Amounts are written with Western digits (₹450) in every language. The outgoing check knows the Malayalam and Kannada weekday, month and part-of-the-day words, so a wrong date, time or amount in any of the four languages is blocked, and anything it cannot explain is blocked too.
+- The agent never glues an ending onto a shop's service name or business name (Malayalam and Kannada endings change with the last letter of the word), so a message reads right for any shop's names.
+- Owner commands stay `approve b-1`, `deny b-1`, `retry b-1` in Latin letters, explained in the owner's language (set `owner.language`).
+- **Machine-written, not yet read by a native speaker.** [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every Malayalam and Kannada message and every word the agent understands, with a column for the native reviewer. No real shop should use these two languages before that review. The sheets are made by `node pathways/bookings/scripts/review-sheet.ts ml` (or `kn`), and a test fails if a sheet falls behind the templates.
+- Adding another language (Tamil and Telugu are next) means adding its entry to each per-language table: the type system refuses to build without a template for every message and a name for every weekday and month. Its customer words go in [`src/language/words.ts`](src/language/words.ts).
+
 ## Settings: tailoring without code
 
 One JSON file per business. [`settings/glow-salon.example.json`](settings/glow-salon.example.json) is a complete example. Mistakes are listed all at once, in plain words, for example: `Service "haircut" needs a price in whole rupees ("priceInr"), for example 450.`
@@ -72,13 +99,13 @@ One JSON file per business. [`settings/glow-salon.example.json`](settings/glow-s
 | --- | --- |
 | `name`, `address` | The business |
 | `timezone` | Default `Asia/Kolkata`. Dates such as "कल" are read in this zone |
-| `services` | Each has an `id`, `names` per language (the first is what the agent says; the rest are synonyms, including Hindi), `priceInr` in whole rupees (**also the price floor**) and `durationMinutes` |
+| `services` | Each has an `id`, `names` per language (the first is what the agent says; the rest are synonyms, including Hindi, Malayalam and Kannada), `priceInr` in whole rupees (**also the price floor**) and `durationMinutes` |
 | `openingHours` | Per weekday, `{ "open": "10:00", "close": "20:00" }`, or `null` when closed |
 | `slotMinutes`, `bufferMinutes` | Bookings start on this grid; this gap is kept between bookings |
 | `deposit` | `amountInr`, and `holdMinutes` (default 15) |
 | `cancellation` | `windowHours`: cancel at least this long before the start and the deposit is refunded. `refundLimitInr`: the agent refunds up to and including this amount alone; above it the owner must approve |
-| `languages` | `["hi", "en"]` by default; the first is the default |
-| `owner` | `whatsapp` number, and `language` for the owner's messages (default `en`) |
+| `languages` | Any of `"hi"`, `"en"`, `"ml"`, `"kn"`; `["hi", "en"]` by default; the first is the default. Every service needs a name in each language listed |
+| `owner` | `whatsapp` number, and `language` for the owner's messages (default `en`; any of the four) |
 | `reminders` | `hoursBefore`, default `[24, 2]` |
 
 ## The rules, in plain words
@@ -116,11 +143,11 @@ Every write to a service is followed by a read from that service's own store. On
 
 | Phrase | Read as |
 | --- | --- |
-| आज / today, कल / tomorrow, परसों / the day after | The calendar date in the business's zone. (कल also means yesterday in Hindi; bookings are only for the future, so it means tomorrow) |
-| अगले मंगलवार / next Tuesday | The Tuesday in the **next calendar week** (weeks run Monday to Sunday). Said on Tue 3 Nov: Tue 10 Nov |
+| आज / today, कल / tomorrow, परसों / the day after (ഇന്ന് / നാളെ / മറ്റന്നാൾ, ಇಂದು / ನಾಳೆ / ನಾಡಿದ್ದು) | The calendar date in the business's zone. (कल also means yesterday in Hindi; bookings are only for the future, so it means tomorrow. ഇന്നലെ / ನಿನ್ನೆ, yesterday, is not read as a date) |
+| अगले मंगलवार / next Tuesday (അടുത്ത ചൊവ്വാഴ്ച, ಮುಂದಿನ ಮಂಗಳವಾರ) | The Tuesday in the **next calendar week** (weeks run Monday to Sunday). Said on Tue 3 Nov: Tue 10 Nov |
 | इस मंगलवार / this Tuesday | That day in the current week, today included; if it has passed, the next one |
 | मंगलवार / Tuesday | The first such day **after** today |
-| "6 बजे", "10:30" without am/pm | The reading that falls inside opening hours |
+| "6 बजे", "6 മണി", "6 ಗಂಟೆ", "10:30" without am/pm | The reading that falls inside opening hours |
 
 For any weekday phrase or guessed am/pm, the agent writes back the full date and time ("मंगलवार, 10 नवंबर, शाम 6:00 बजे") and places **no hold** until the customer says yes.
 
@@ -133,13 +160,16 @@ src/record.ts                      the append-only action record
 src/limits.ts                      the nine rules as pure checks
 src/booking.ts, src/agent.ts       the state machine and the agent
 src/adapters/                      calendar, payments, messaging fakes; the intent parser seam
-src/language/                      templates (hi, en), the outgoing check, date and time phrases
+src/language/                      templates (hi, en, ml, kn), the outgoing check, date and time phrases;
+                                   words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
 test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints
 scripts/hand-check.ts              the hand check
 demo/                              the partner demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
                                    view.ts (the owner's summary and the record), personalise.ts (the shop form), strings.ts, page.ts/.css/.js
+scripts/review-sheet.ts            writes REVIEW-ml.md and REVIEW-kn.md from the templates and word lists
+REVIEW-ml.md, REVIEW-kn.md         every Malayalam and Kannada line, for a native speaker to mark OK or change
 Explanation.md, Deferred.md        how it was built and why; what is left open and why
 ```
 
@@ -149,7 +179,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 - **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser is a stub that is never called (`createOpenAICompatibleParser`).
-- **The monthly client report, the builder panel, hosting, restarts and persistence** (state is in memory), and **Malayalam** and other languages. The demo above is local only; a hosted demo link is not built.
+- **The monthly client report, the builder panel, hosting, restarts and persistence** (state is in memory), and **Tamil, Telugu** and other languages. Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
 
 The full list, with a reason and a trigger for each, is in [Deferred.md](Deferred.md). What the hand check does not test is printed every time it runs.
 

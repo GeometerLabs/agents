@@ -1,4 +1,4 @@
-// Dates and times the customer typed, in Hindi or English, turned into real ones in the business's time zone.
+// Dates and times the customer typed, in Hindi, English, Malayalam or Kannada, turned into real ones in the business's time zone.
 //
 // The rules for the phrases people use loosely are explicit, and the agent always says the full date back:
 //   आज / today ................ the business's current calendar date.
@@ -9,6 +9,8 @@
 //                               that is Tue 10 Nov, never tomorrow's Tuesday.
 //   इस मंगलवार / this Tuesday .. the Tuesday in the current week, today included; if it has already passed this
 //                               week, the next one.
+// The Malayalam and Kannada words for these (ഇന്ന് / ഇಂದು, നാളെ / ನಾಳೆ, മറ്റന്നാൾ / ನಾಡಿದ್ದು, അടുത്ത / ಮುಂದಿನ ...) follow the
+// same rules; their lists are in words.ts. "വരുന്ന ചൊവ്വാഴ്ച" (coming Tuesday) is a plain weekday: the first one after today.
 //   मंगलवार / Tuesday .......... the first Tuesday AFTER today (a Tuesday said on a Tuesday means a week from today;
 //                               "today" is how people say today).
 // Any weekday phrase is ambiguous in everyday speech, so the agent places no hold until the customer says yes to
@@ -16,6 +18,7 @@
 import { addDays, daysBetween, localParts } from "../time.ts";
 import type { LocalDate, LocalTime } from "../time.ts";
 import { canon } from "./format.ts";
+import { WORDS, inBoth } from "./words.ts";
 
 export type DatePhrase =
   | { kind: "relative"; offsetDays: 0 | 1 | 2 }
@@ -31,10 +34,32 @@ const NOT_LETTER_BEFORE = "(?<![\\p{L}\\p{M}\\p{N}])";
 const NOT_LETTER_AFTER = "(?![\\p{L}\\p{M}\\p{N}])";
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** A regex for whole words (works for Devanagari, where \b does not): longest alternative first. */
-export function wordRe(words: string[], flags = "u"): RegExp {
-  const alt = words.map(canon).sort((a, b) => b.length - a.length).map(escapeRe).join("|");
+const DRAVIDIAN_LETTERS = /[ഀ-ൿಀ-೿]/u; // Malayalam and Kannada
+const ENDS_IN_VIRAMA = /[്್]$/u;
+// A Malayalam word that ends in a chillu ("ഫേഷ്യൽ") shows the plain consonant when an ending follows ("ഫേഷ്യലിന്").
+const CHILLU_BASE: Record<string, string> = { "ൺ": "ണ", "ൻ": "ന", "ർ": "രറ", "ൽ": "ല", "ൾ": "ള", "ൿ": "ക" };
+const stemPattern = (w: string): string => {
+  const last = w.slice(-1);
+  if (last in CHILLU_BASE) return `${escapeRe(w.slice(0, -1))}[${last}${CHILLU_BASE[last]}]`;
+  return escapeRe(w.replace(ENDS_IN_VIRAMA, ""));
+};
+
+/**
+ * A regex for whole words (works for Devanagari, where \b does not): longest alternative first. A word in Malayalam or
+ * Kannada letters also matches with more letters stuck on its end (the endings of those languages: "നാളെ" + "യ്ക്ക്"),
+ * unless `inflect` is false. Words in other scripts always match as whole words.
+ */
+export function wordRe(words: string[], flags = "u", inflect = true): RegExp {
+  const alt = words.map(canon).sort((a, b) => b.length - a.length)
+    .map((w) => (inflect && DRAVIDIAN_LETTERS.test(w) ? `${stemPattern(w)}[\\p{L}\\p{M}]*` : escapeRe(w)))
+    .join("|");
   return new RegExp(`${NOT_LETTER_BEFORE}(?:${alt})${NOT_LETTER_AFTER}`, flags);
+}
+
+/** A regex for phrases that may continue after the last word, with any spaces between the words ("समय बदल" matches "समय बदलना"). */
+export function phraseRe(phrases: string[], flags = "u"): RegExp {
+  const alt = phrases.map(canon).sort((a, b) => b.length - a.length).map((p) => escapeRe(p).replace(/ +/gu, "\\s+")).join("|");
+  return new RegExp(`${NOT_LETTER_BEFORE}(?:${alt})`, flags);
 }
 
 // Romanised Hindi ("kal shaam 6 baje") is common on WhatsApp, so the common words are accepted too.
@@ -47,6 +72,7 @@ const WEEKDAY_WORDS: string[][] = [
   ["friday", "fri", "शुक्रवार", "shukravar", "shukrawar", "shukravaar"],
   ["saturday", "शनिवार", "shanivar", "shaniwar", "shanivaar"],
 ];
+for (let d = 0; d < 7; d++) WEEKDAY_WORDS[d].push(...WORDS.ml.weekdays[d], ...WORDS.kn.weekdays[d]);
 const WEEKDAY_RES = WEEKDAY_WORDS.map((w) => wordRe(w));
 
 const MONTH_WORDS: string[][] = [
@@ -54,38 +80,64 @@ const MONTH_WORDS: string[][] = [
   ["may", "मई"], ["june", "jun", "जून"], ["july", "jul", "जुलाई"], ["august", "aug", "अगस्त"],
   ["september", "sep", "sept", "सितंबर", "सितम्बर"], ["october", "oct", "अक्टूबर", "अक्तूबर"], ["november", "nov", "नवंबर", "नवम्बर"], ["december", "dec", "दिसंबर", "दिसम्बर"],
 ];
-const MONTH_RES = MONTH_WORDS.map((w) => wordRe(w));
+for (let m = 0; m < 12; m++) MONTH_WORDS[m].push(...WORDS.ml.months[m], ...WORDS.kn.months[m]);
+const MONTH_RES = MONTH_WORDS.map((w) => wordRe(w, "u", false)); // a month name is short and a common word: no endings
 
-const DAY_AFTER_RE = wordRe(["day after tomorrow", "परसों", "परसो", "parso", "parson", "parsoon"]);
-const TOMORROW_RE = wordRe(["tomorrow", "tmrw", "tomorow", "कल", "kal"]);
-const TODAY_RE = wordRe(["today", "आज", "aaj"]);
-const NEXT_RE = new RegExp(`${NOT_LETTER_BEFORE}(?:${["next", "अगले", "अगला", "अगली", "agle", "agla"].map(escapeRe).join("|")})\\s+$`, "u");
-const THIS_RE = new RegExp(`${NOT_LETTER_BEFORE}(?:${["this", "इस"].map(escapeRe).join("|")})\\s+$`, "u");
+const DAY_AFTER_RE = wordRe(["day after tomorrow", "परसों", "परसो", "parso", "parson", "parsoon", ...inBoth((w) => w.dayAfterTomorrow)]);
+const TOMORROW_RE = wordRe(["tomorrow", "tmrw", "tomorow", "कल", "kal", ...inBoth((w) => w.tomorrow)]);
+const TODAY_RE = wordRe(["today", "आज", "aaj", ...inBoth((w) => w.today)]);
+const YESTERDAY_RE = wordRe(inBoth((w) => w.yesterday), "gu");
+const BEFORE_WEEKDAY = (words: string[]) => new RegExp(`${NOT_LETTER_BEFORE}(?:${words.map(canon).map(escapeRe).join("|")})\\s+$`, "u");
+const NEXT_RE = BEFORE_WEEKDAY(["next", "अगले", "अगला", "अगली", "agle", "agla", ...inBoth((w) => w.next)]);
+const THIS_RE = BEFORE_WEEKDAY(["this", "इस", ...inBoth((w) => w.thisWeek)]);
 
-const PERIODS: { re: RegExp; kind: "morning" | "afternoon" | "evening" | "night" }[] = [
-  { re: wordRe(["सुबह", "सवेरे", "subah", "savere", "morning"]), kind: "morning" },
-  { re: wordRe(["दोपहर", "dopahar", "afternoon", "noon"]), kind: "afternoon" },
-  { re: wordRe(["शाम", "shaam", "sham", "evening"]), kind: "evening" },
-  { re: wordRe(["रात", "raat", "night", "tonight"]), kind: "night" },
-];
-const PERIOD_WORDS = "सुबह|सवेरे|subah|savere|morning|दोपहर|dopahar|afternoon|noon|शाम|shaam|sham|evening|रात|raat|night";
+const PERIOD_WORD_LISTS = {
+  morning: ["सुबह", "सवेरे", "subah", "savere", "morning", ...inBoth((w) => w.morning)],
+  afternoon: ["दोपहर", "dopahar", "afternoon", "noon", ...inBoth((w) => w.afternoon)],
+  evening: ["शाम", "shaam", "sham", "evening", ...inBoth((w) => w.evening)],
+  night: ["रात", "raat", "night", "tonight", ...inBoth((w) => w.night)],
+};
+const PERIODS = (Object.entries(PERIOD_WORD_LISTS) as ["morning" | "afternoon" | "evening" | "night", string[]][]).map(([kind, words]) => ({ re: wordRe(words), kind }));
+const PERIOD_WORDS = Object.values(PERIOD_WORD_LISTS).flat().map(canon).sort((a, b) => b.length - a.length).map(escapeRe).join("|");
+
+// "6 മണി" / "6 ಗಂಟೆ": the hour is followed by a word for "o'clock". Not "6 മണിക്കൂർ" (6 hours): a word ends where letters end.
+const CLOCK_WORDS = inBoth((w) => w.oclock).map(canon).sort((a, b) => b.length - a.length).map((w) => `${escapeRe(w)}(?![\\p{L}\\p{M}])`).join("|");
+const HOUR_BEFORE_CLOCK_WORD = new RegExp(`(?<![\\d:.])(\\d{1,2})(?::(\\d{2}))?\\s*(?:बजे|baje|bje|o'?clock|${CLOCK_WORDS})`, "u");
+// Kannada "6ಕ್ಕೆ" (at 6): only hours 1-12 (a bigger number with ಕ್ಕೆ is a price, "300ಕ್ಕೆ").
+const KANNADA_AT_HOUR = /(?<![\d:.])(1[0-2]|[1-9])(?::(\d{2}))?\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ])(?![\p{L}\p{M}])/u;
+const GREETING_WITH_TIME_RE = phraseRe(["good morning", "good afternoon", "good evening", "good night", "सुप्रभात", "शुभ रात्रि", ...inBoth((w) => w.greetingsWithTime)], "gu"); // a greeting is not a time
 
 // ---- finding phrases in a message -----------------------------------------------------------------------------
 
+interface WrittenDate { day: number; month: number; start: number; end: number }
+
+/** A date written with its month: "11 nov", "11 नवंबर", "nov 11", "10 നവംബർ", "ನವೆಂಬರ್ 10". With where it sits in the text. */
+function findWrittenDate(text: string): WrittenDate | undefined {
+  for (let m = 0; m < 12; m++) {
+    const month = MONTH_RES[m].exec(text);
+    if (!month) continue;
+    const monthEnd = month.index + month[0].length;
+    const before = /(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?$/u.exec(text.slice(0, month.index));
+    const after = /^\s*(\d{1,2})(?!\d|\s*(?::|am|pm|बजे|മണി|ಗಂಟೆ))/u.exec(text.slice(monthEnd));
+    const hit = before ?? after;
+    const day = Number(hit?.[1]);
+    if (day >= 1 && day <= 31) return { day, month: m + 1, start: before ? before.index : month.index, end: before ? monthEnd : monthEnd + (after as RegExpExecArray)[0].length };
+  }
+  return undefined;
+}
+
+/** The text with a written date ("നവംബർ 10") blanked out, so its day number is not mistaken for an hour or a price ("10ಕ್ಕೆ"). */
+export function blankWrittenDate(text: string): string {
+  const d = findWrittenDate(text);
+  return d ? text.slice(0, d.start) + " ".repeat(d.end - d.start) + text.slice(d.end) : text;
+}
+
 /** The first date phrase in the message, if any. */
 export function findDatePhrase(rawText: string): DatePhrase | undefined {
-  const text = canon(rawText);
+  const text = canon(rawText).replace(YESTERDAY_RE, " ");
 
-  // "11 nov", "11 नवंबर", "nov 11"
-  for (let m = 0; m < 12; m++) {
-    const re = MONTH_RES[m];
-    const month = re.exec(text);
-    if (!month) continue;
-    const before = /(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?$/u.exec(text.slice(0, month.index));
-    const after = /^\s*(\d{1,2})(?!\d|\s*(?::|am|pm|बजे))/u.exec(text.slice(month.index + month[0].length));
-    const day = Number((before ?? after)?.[1]);
-    if (day >= 1 && day <= 31) return { kind: "calendar", day, month: m + 1 };
-  }
+  const written = findWrittenDate(text);
+  if (written) return { kind: "calendar", day: written.day, month: written.month };
 
   if (DAY_AFTER_RE.test(text)) return { kind: "relative", offsetDays: 2 };
   if (TOMORROW_RE.test(text)) return { kind: "relative", offsetDays: 1 };
@@ -111,7 +163,7 @@ function periodToMeridiem(kind: "morning" | "afternoon" | "evening" | "night", h
   return hour >= 6 && hour <= 11 ? "pm" : "am"; // night: 8 is 8 pm, but 12 and 2 are after midnight
 }
 
-/** The first time of day in the message, if any: "6pm", "6:30 pm", "18:00", "6 बजे", "शाम 6 बजे", "evening 6". */
+/** The first time of day in the message, if any: "6pm", "6:30 pm", "18:00", "6 बजे", "शाम 6 बजे", "evening 6", "വൈകുന്നേരം 6 മണിക്ക്", "ಸಂಜೆ 6 ಗಂಟೆಗೆ". */
 export function findTimePhrase(rawText: string): TimePhrase | undefined {
   const text = canon(rawText);
   let found: { hour: number; minute: number; period?: "am" | "pm" } | undefined;
@@ -123,7 +175,8 @@ export function findTimePhrase(rawText: string): TimePhrase | undefined {
     if (m) found = { hour: Number(m[1]), minute: 0, period: m[2][0] === "a" ? "am" : "pm" };
   }
   if (!found) {
-    m = /(?<![\d:.])(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje|bje|o'?clock)/u.exec(text)
+    m = HOUR_BEFORE_CLOCK_WORD.exec(text)
+      ?? KANNADA_AT_HOUR.exec(blankWrittenDate(text)) // "ನವೆಂಬರ್ 10ಕ್ಕೆ" is the 10th, not ten o'clock
       ?? new RegExp(`(?:${PERIOD_WORDS})\\s*(?:को\\s*|ko\\s*|at\\s*)?(\\d{1,2})(?::(\\d{2}))?(?![\\d])`, "u").exec(text)
       ?? new RegExp(`(?<![\\d:.])(\\d{1,2})\\s*(?:in the |at )?(?:${PERIOD_WORDS})`, "u").exec(text)
       ?? /(?<![\d:.])\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\d)/u.exec(text);
@@ -131,7 +184,7 @@ export function findTimePhrase(rawText: string): TimePhrase | undefined {
   }
   if (!found || found.hour > 23 || found.minute > 59) return undefined;
   if (found.period === undefined && found.hour >= 1 && found.hour <= 12) {
-    const hint = periodHint(text.replace(/good\s+(?:morning|afternoon|evening|night)|सुप्रभात|शुभ रात्रि/gu, " ")); // a greeting is not a time
+    const hint = periodHint(text.replace(GREETING_WITH_TIME_RE, " "));
     if (hint) found.period = periodToMeridiem(hint, found.hour);
   }
   return found.period ? found : { hour: found.hour, minute: found.minute };
