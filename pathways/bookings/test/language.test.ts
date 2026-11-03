@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { checkMessage } from "../src/language/check.ts";
-import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, plain } from "../src/language/format.ts";
+import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, languageOfScript, plain } from "../src/language/format.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
 import { zonedToMs } from "../src/time.ts";
@@ -209,11 +209,31 @@ test("no slot in the record means no date or time may appear", () => {
 
 test("a refused haggle states the price once, not twice (the mom test)", async () => {
   const { createWorld, CUSTOMER } = await import("../src/harness.ts");
-  for (const [language, ask] of [["hi", "कल शाम 6 बजे हेयरकट, 300 में हो जाएगा?"], ["en", "Can I get a haircut tomorrow at 6pm for 300?"]] as const) {
+  for (const [language, ask] of [
+    ["hi", "कल शाम 6 बजे हेयरकट, 300 में हो जाएगा?"],
+    ["en", "Can I get a haircut tomorrow at 6pm for 300?"],
+    ["ml", "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് വേണം, 300 രൂപയ്ക്ക് ചെയ്യാമോ?"],
+    ["kn", "ನಾಳೆ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್\u200cಕಟ್ ಬೇಕು, 300ಕ್ಕೆ ಮಾಡ್ತೀರಾ?"],
+  ] as const) {
     const world = createWorld();
     await world.say(ask);
     const reply = world.lastTextTo(CUSTOMER);
     assert.equal((reply.match(/₹450/gu) ?? []).length, 1, `${language}: ${reply}`);
     assert.ok(reply.includes("₹200"), `${language}: the deposit is still quoted: ${reply}`);
+    assert.ok(!reply.includes("300"), `${language}: the customer's price is never repeated: ${reply}`);
+    assert.equal(languageOfScript(reply), language, `the reply is in the customer's language: ${reply}`);
   }
+});
+
+test("the agent answers in the language the customer wrote, and the date and time in it read as the record says", async () => {
+  const { createWorld, CUSTOMER, OTHER_CUSTOMER } = await import("../src/harness.ts");
+  const world = createWorld();
+  await world.say("നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് വേണം");
+  assert.match(world.lastTextTo(CUSTOMER), /ബുധൻ, 4 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവുണ്ട്/u);
+  assert.match(world.lastTextTo(CUSTOMER), /^ഹെയർകട്ട് വില ₹450 ആണ്\./u);
+  await world.say("ನಾಳೆ ಸಂಜೆ 7 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು", { from: OTHER_CUSTOMER });
+  assert.match(world.lastTextTo(OTHER_CUSTOMER), /ಬುಧವಾರ, 4 ನವೆಂಬರ್, ಸಂಜೆ 7:00 ಖಾಲಿ ಇದೆ/u);
+  await world.say("ok"); // says nothing about language: a customer who wrote in Malayalam keeps getting Malayalam
+  assert.equal(languageOfScript(world.lastTextTo(CUSTOMER)), "ml", world.lastTextTo(CUSTOMER));
+  assert.match(world.lastTextTo(CUSTOMER), /\/l\/plink/u);
 });

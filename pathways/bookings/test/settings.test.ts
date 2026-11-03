@@ -93,17 +93,21 @@ test("parseSettings throws one error that lists every problem", () => {
 
 test("Malayalam and Kannada are supported languages; listing one needs a name for every service in it", () => {
   const ok = copy();
-  ok.languages = ["hi", "en", "ml", "kn"];
   ok.owner.language = "ml";
-  for (const s of ok.services) { s.names.ml = s.names.ml ?? [`ml-${s.id}`]; s.names.kn = s.names.kn ?? [`kn-${s.id}`]; }
-  const parsed = parseSettings(ok);
+  const parsed = parseSettings(ok); // the example lists all four languages and names every service in each
   assert.deepEqual(parsed.languages, ["hi", "en", "ml", "kn"]);
   assert.equal(parsed.owner.language, "ml");
+  assert.equal(serviceName(parsed.services[0], "ml"), "ഹെയർകട്ട്");
+  assert.equal(serviceName(parsed.services[0], "kn"), "ಹೇರ್ ಕಟ್");
 
-  const missing = errorsFor((s) => { s.languages = ["hi", "ml"]; s.services = s.services.slice(0, 1); });
+  const missing = errorsFor((s) => { delete s.services[0].names.ml; });
   assert.match(missing.join("\n"), /Service "haircut" needs at least one name in Malayalam \("ml"\)/);
-  const kannada = errorsFor((s) => { s.languages = ["kn"]; s.services = s.services.slice(0, 1); });
-  assert.match(kannada.join("\n"), /needs at least one name in Kannada \("kn"\)/);
+  const kannada = errorsFor((s) => { delete s.services[2].names.kn; });
+  assert.match(kannada.join("\n"), /Service "facial" needs at least one name in Kannada \("kn"\)/);
+  const notListed = copy();
+  notListed.languages = ["hi", "en"];
+  delete notListed.services[0].names.ml;
+  assert.doesNotThrow(() => parseSettings(notListed)); // a business that does not list Malayalam does not need Malayalam names
 });
 
 test("an unsupported language is named with the ones that are supported", () => {
