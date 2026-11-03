@@ -53,7 +53,7 @@ function serverDir(values: { server?: string }): string {
   return resolve(dir);
 }
 
-export async function main(argv: string[]): Promise<number> {
+export async function main(argv: string[], overrides: Partial<Context> = {}): Promise<number> {
   const [command, ...rest] = argv;
   const { values, positionals } = parseArgs({
     args: rest, allowPositionals: true, strict: false,
@@ -70,7 +70,7 @@ export async function main(argv: string[]): Promise<number> {
   try {
     if (!command || command === "--help" || command === "help") { console.log(readFileSync(new URL(import.meta.url), "utf8").split("\n").filter((l) => l.startsWith("//")).map((l) => l.slice(3)).join("\n")); return command ? 0 : 2; }
 
-    if (command === "init") return init(positionals[0], values as Record<string, string | boolean | undefined>);
+    if (command === "init") return await init(positionals[0], values as Record<string, string | boolean | undefined>);
 
     const dir = serverDir({ server: str("server") });
     if (command === "model-key") {
@@ -112,7 +112,7 @@ export async function main(argv: string[]): Promise<number> {
       return 0;
     }
 
-    const ctx = makeContext(dir);
+    const ctx = makeContext(dir, overrides);
     const shop = positionals[0];
 
     if (command === "check") {

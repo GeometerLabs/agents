@@ -13,6 +13,10 @@ export interface DrillJob { shops: { name: string; restored: string; live: strin
 export interface DrillResult { name: string; ok: boolean; detail: string }
 
 export function drillShop(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
+  try { return check(shop, maxLag); } catch (e) { return { name: shop.name, ok: false, detail: `the restored file could not be used as a database (${(e as Error).message})` }; }
+}
+
+function check(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
   if (!existsSync(shop.restored)) return { name: shop.name, ok: false, detail: "nothing was restored: the continuous copy has no database for this shop" };
   const restored = new DatabaseSync(shop.restored, { readOnly: true });
   try {
