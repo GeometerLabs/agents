@@ -105,7 +105,8 @@ export function digest(value: unknown): string {
   return createHash("sha256").update(canonicalJson(value)).digest("hex").slice(0, 16);
 }
 
-function canonicalJson(value: unknown): string {
+/** The one byte form of a JSON value: keys sorted, no spaces, so the same content always has the same bytes (and the same digest). */
+export function canonicalJson(value: unknown): string {
   if (value === undefined) return "null";
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
