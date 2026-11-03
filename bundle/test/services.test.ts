@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, wri
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRefresher, exchange, signAssertion } from "../services/refresher.ts";
-import { adminCall, observeGuard, stopShop } from "../services/ops.ts";
+import { adminCall, observeGuard, observeShop, readBackups, stopShop } from "../services/ops.ts";
 import type { OpsConfig } from "../services/ops.ts";
 import { rereadingGuardClient } from "../services/relay.ts";
 
@@ -82,6 +82,37 @@ test("stop engages the kill switch on all three of the shop's Guards, stops the 
   await assert.rejects(stopShop(config, "nobody", true, "x", "", fake), /no shop nobody/);
   assert.equal((await adminCall({ adminUrl: "http://127.0.0.1:1", adminTokenFile: "/n" }, "GET", "/admin/status")).status, 0, "a Guard that cannot be reached is status 0, not a crash");
   assert.equal((await observeGuard(config.model, false, (async () => { throw new Error("no"); }) as unknown as typeof fetch)).healthReady, false);
+});
+
+test("ops reads three backup facts from the deployer's status file and nothing else: not the drill's reason, not a wrong type, and a missing or broken file is nothing to report", () => {
+  const f = folder(); try {
+    const file = join(f.dir, "glow-salon.json");
+    writeFileSync(file, JSON.stringify({ shop: "glow-salon", deploy: { state: "applied", message: "9876543210" }, webhooks: { razorpay: "https://x/c/glow-salon/webhooks/razorpay" },
+      backups: { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: "2026-11-02T03:00:00.000Z", drillOk: false, drillDetail: "the continuous copy could not be restored: litestream: no snapshots found" } }));
+    const got = readBackups(file);
+    assert.deepEqual(got, { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: "2026-11-02T03:00:00.000Z", drillOk: false });
+    assert.doesNotMatch(JSON.stringify(got), /litestream|9876543210|webhooks/);
+    writeFileSync(file, JSON.stringify({ backups: { lastCopyAt: 5, lastDrillAt: ["x"], drillOk: "yes" } }));
+    assert.deepEqual(readBackups(file), { lastCopyAt: null, lastDrillAt: null, drillOk: null }, "wrong types are nothing, not coerced");
+    writeFileSync(file, JSON.stringify({ shop: "glow-salon" }));
+    assert.equal(readBackups(file), undefined, "no backups block yet");
+    writeFileSync(file, "{ not json");
+    assert.equal(readBackups(file), undefined, "a half-written or broken file");
+    assert.equal(readBackups(join(f.dir, "nobody.json")), undefined, "no file");
+    assert.equal(readBackups(undefined), undefined, "no path in ops.json (an older generated config)");
+  } finally { f.done(); }
+});
+
+test("observeShop adds the backup facts to what it saw, and leaves the key out when the file cannot be read", async () => {
+  const f = folder(); try {
+    const file = join(f.dir, "glow-salon.json");
+    writeFileSync(file, JSON.stringify({ backups: { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: null, drillOk: null } }));
+    const fetchFn = (async () => new Response("{}", { status: 200 })) as unknown as typeof fetch;
+    const shop = { pathway: "bookings", pathwayVersion: "0.1.0", runtimeUrl: "http://rt", internalTokenFile: "/nonexistent", guards: [] };
+    assert.deepEqual((await observeShop("glow-salon", { ...shop, statusFile: file }, fetchFn)).backups, { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: null, drillOk: null });
+    assert.equal("backups" in (await observeShop("glow-salon", { ...shop, statusFile: join(f.dir, "none.json") }, fetchFn)), false);
+    assert.equal("backups" in (await observeShop("glow-salon", shop, fetchFn)), false);
+  } finally { f.done(); }
 });
 
 test("the relay re-reads its reading credential from its file on every call, so a renewed one is used without a restart", async () => {

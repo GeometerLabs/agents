@@ -2,7 +2,7 @@
 // config files holds a secret: they name the secret FILES. Pure text in, text out; the deployer writes them.
 import { BUNDLE_VERSION } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, RELAY_PORT, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
+import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { ShopDeploy } from "./compose.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
@@ -70,6 +70,8 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
     shops: Object.fromEntries(shops.map((s) => [s.name, {
       pathway: "bookings", pathwayVersion: s.pathwayVersion,
       runtimeUrl: runtimeUrl(server, s), internalTokenFile: `/run/secrets/${s.name}/internal_token`,
+      // where the deployer records the shop's backup times (the heartbeat reports their ages)
+      statusFile: `${OPS_STATUS_DIR}/${s.name}.json`,
       // the shop's three Guards, and the server's model Guard (shared, so it is listed under every shop: if it is not ready, every shop says so)
       guards: [...SHOP_GUARD_KINDS.map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })), modelGuard],
     }])),
