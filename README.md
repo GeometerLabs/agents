@@ -14,6 +14,10 @@ A **pathway** is a ready, tested agent for one job a local business already pays
 | --- | --- | --- |
 | [bookings](pathways/bookings) | Salons and studios taking bookings with a deposit on WhatsApp, in Hindi, English, Malayalam and Kannada. Also village equipment hiring (see Community templates) | Built and checked against stand-in services; not yet live with a real business |
 
+## Deploy bundle: run it on a small server (new)
+
+[bundle/](bundle/README.md) turns a folder per shop into one Docker Compose file: the shop's runtime, one Guard per upstream per shop, the server's model Guard, the webhook inbox, owner approvals on WhatsApp, HTTPS, a heartbeat to Geometer and a continuous copy of every record. A deploy is refused, naming the rule, unless every limit is proven to bite on the Guard. A builder runs it on their own VPS; the guide goes from an empty Ubuntu server to the first shop. The Guard image is not in a registry yet, so it is loaded from a file.
+
 ## Community templates: money and records that many people share
 
 Villages and community groups often lack one thing: trust in **who handles the money and the records**. These templates answer it with limits that sit outside the AI, and with a signed statement on every member's phone, so a quiet change would not match the other copies. The agent only records and reminds; it never holds, pools, lends or moves money. They're free and open, and the specs are open for comment.
