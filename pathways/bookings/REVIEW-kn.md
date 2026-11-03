@@ -186,3 +186,147 @@ These are the exact sentences the crash-test situations send (`pathways/bookings
 | ಮುಂದಿನ ಮಂಗಳವಾರ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್‌ಕಟ್ | Asks for next Tuesday at 6 in the evening (read back with the full date) | book, service haircut, next Tuesday, 6:00 pm |  |
 | ಹೌದು | The customer's yes to that | yes |  |
 | ನನ್ನ ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ | Asks to cancel the booking | cancel |  |
+
+## 6. The monthly report and the certificates
+
+The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below. The sample is a made-up month (Glow Salon, ಫೆಬ್ರವರಿ 2027). The certificate lists the shop's price list like this: ಹೇರ್ ಕಟ್ ₹450 · ಗಡ್ಡ ಟ್ರಿಮ್ ₹250 · ಫೇಶಿಯಲ್ ₹900 · ಹೇರ್ ಕಲರ್ ₹1,800.
+
+What to look for first: (1) is every line something a shop owner would understand in ten seconds; (2) is each label short and never an exaggeration (these documents count and state facts: they never say a shop is safe, guaranteed or approved, and a native reader should flag any word that sounds like it does); (3) is "deposit" the everyday word here, as in section 1; (4) is the word for "limits" (the rules the shop set) the one a shopkeeper would use; (5) the technical words kept in Latin letters on purpose (STOP, WhatsApp, Razorpay, webhook signatures, stand-in services).
+
+### The five lines, with sample numbers
+
+```text
+Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳು, ಟೆಸ್ಟ್ ಹಣ
+ಆದ ಬುಕಿಂಗ್: 38 · ರದ್ದಾದವು: 3 · ಬಂದ ಮುಂಗಡ ಹಣ: ₹17,600 · ಹಿಂತಿರುಗಿಸಿದ್ದು: ₹400
+ನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: 3 · ನೀವು ಒಪ್ಪಿದ್ದು: 2 · ನೀವು ಬೇಡ ಎಂದದ್ದು: 1 · ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: 1
+ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5 (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: 3 · ಕೆಲಸದ ಸಮಯದ ಹೊರಗಿನ ಬುಕಿಂಗ್: 1 · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: 1)
+ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+```
+
+### Every word and phrase of the report and the certificates
+
+| Id | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- |
+| `agent` | ಬುಕಿಂಗ್ ಏಜೆಂಟ್ | Bookings agent |  |
+| `monthlyReport` | ಮಾಸಿಕ ವರದಿ | Monthly report |  |
+| `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
+| `monthlyCertificate` | ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ | Monthly record certificate |  |
+| `languageName.hi` | ಹಿಂದಿ | Hindi |  |
+| `languageName.en` | ಇಂಗ್ಲಿಷ್ | English |  |
+| `languageName.ml` | ಮಲಯಾಳಂ | Malayalam |  |
+| `languageName.kn` | ಕನ್ನಡ | Kannada |  |
+| `label.bookingsMade` | ಆದ ಬುಕಿಂಗ್ | Bookings made |  |
+| `label.cancelled` | ರದ್ದಾದವು | Cancelled |  |
+| `label.moved` | ಸಮಯ ಬದಲಾದವು | Moved to a new time |  |
+| `label.depositsCollected` | ಬಂದ ಮುಂಗಡ ಹಣ | Deposits collected |  |
+| `label.givenBack` | ಹಿಂತಿರುಗಿಸಿದ್ದು | Given back |  |
+| `label.wasAsked` | ನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು | You were asked |  |
+| `label.approved` | ನೀವು ಒಪ್ಪಿದ್ದು | You approved |  |
+| `label.saidNo` | ನೀವು ಬೇಡ ಎಂದದ್ದು | You said no |  |
+| `label.notConfirmed` | ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು | Could not confirm |  |
+| `label.stoppedByLimits` | ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು | Stopped by your limits |  |
+| `label.notChecked` | ಪರಿಶೀಲಿಸದ್ದು | Not checked |  |
+| `stop.price-at-or-above-list` | ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು | Prices below your list |  |
+| `stop.within-hours` | ಕೆಲಸದ ಸಮಯದ ಹೊರಗಿನ ಬುಕಿಂಗ್ | Outside opening hours |  |
+| `stop.no-double-booking` | ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್ | Double bookings |  |
+| `stop.confirm-only-when-recorded` | ದಾಖಲೆಗೆ ಮುಂಚೆ "ಬುಕ್ ಆಯಿತು" ಎನ್ನುವುದು | "Booked" said too early |  |
+| `stop.one-deposit-per-booking` | ಎರಡನೇ ಬಾರಿ ಕಟ್ಟಿದ ಮುಂಗಡ | Second payments |  |
+| `stop.refund-limit` | ಮಿತಿಗಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ | Refunds over your limit |  |
+| `stop.no-message-after-stop` | ರದ್ದು ಅಥವಾ STOP ನಂತರದ ಜ್ಞಾಪನೆ | Reminders after cancel or STOP |  |
+| `stop.message-matches-record` | ದಾಖಲೆಗೆ ಹೊಂದದ ಸಂದೇಶ | Messages not matching the record |  |
+| `stop.opt-out` | STOP ನಂತರದ ಸಂದೇಶ | Messages after STOP |  |
+| `more` | ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ) | and 12 more (see the full report) |  |
+| `handRun` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ. | Checks were run by hand. |  |
+| `sourceTag.stand-in` | ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳು, ಟೆಸ್ಟ್ ಹಣ | stand-in services, test money |  |
+| `sourceTag.test-mode` | ಟೆಸ್ಟ್ ಮೋಡ್, ಟೆಸ್ಟ್ ಹಣ | test mode, test money |  |
+| `sourceLong.stand-in` | ಈ ಲೆಕ್ಕಗಳು ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳು ಮತ್ತು ಟೆಸ್ಟ್ ಹಣದಿಂದ ಬಂದವು. ನಿಜವಾದ ಯಾವುದನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ, ಪಾವತಿಸಿಲ್ಲ. | These numbers come from stand-in services and test money. Nothing real was sent or paid. |  |
+| `sourceLong.test-mode` | ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ಟೆಸ್ಟ್ ಮೋಡ್‌ನಿಂದ ಬಂದವು. ಹಣ ಟೆಸ್ಟ್ ಹಣವಾಗಿತ್ತು. | These numbers come from real services in test mode. The money was test money. |  |
+| `sourceLong.live` | ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ನಡೆಯುತ್ತಿರುವ ದಾಖಲೆಯಿಂದ ಬಂದವು. | These numbers come from the live record of real services. |  |
+| `notTested.voice-calls` | ಫೋನ್ ಕರೆಗಳು | phone calls |  |
+| `notTested.group-bookings` | ಗುಂಪು ಬುಕಿಂಗ್ | group bookings |  |
+| `notTested.walk-ins` | ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) | walk-ins |  |
+| `notTested.payments-outside-razorpay` | Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು | payments made outside Razorpay |  |
+| `notTested.real-whatsapp` | ನಿಜವಾದ WhatsApp | real WhatsApp |  |
+| `notTested.real-razorpay` | ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್) | real Razorpay, in test mode or live |  |
+| `notTested.real-calendar` | ನಿಜವಾದ ಕ್ಯಾಲೆಂಡರ್ | a real calendar |  |
+| `notTested.webhook-signatures` | ಪಾವತಿ ಸೂಚನೆಗಳ ಸಹಿ (webhook signatures) | webhook signatures (proof that a payment notice came from Razorpay) |  |
+| `notTested.real-model` | ನಿಜವಾದ AI ಮಾದರಿ (ಸಂದೇಶ ಓದುವುದು ನಿಗದಿತ ನಿಯಮಗಳಿಂದ, ಉತ್ತರಗಳು ನಿಗದಿತ ಮಾದರಿಗಳಿಂದ) | a real AI model (messages are read by fixed rules and answered from fixed templates) |  |
+| `notTested.other-languages` | ತಮಿಳು, ತೆಲುಗು ಮತ್ತು ಇತರ ಭಾಷೆಗಳು | Tamil, Telugu and other languages |  |
+| `notTested.native-review` | ಮಲಯಾಳಂ ಮತ್ತು ಕನ್ನಡ ಪದಗಳನ್ನು ಮಾತೃಭಾಷಿಕರು ಪರಿಶೀಲಿಸುವುದು (ಇವು ಯಂತ್ರ ಬರೆದದ್ದು) | a native speaker's review of the Malayalam and Kannada wording (machine-written) |  |
+| `notTested.restart-mid-step` | ಒಂದು ಹಂತದ ಮಧ್ಯದಲ್ಲಿ ನಿಲ್ಲುವುದು ಅಥವಾ ಮತ್ತೆ ಆರಂಭವಾಗುವುದು | a crash or restart in the middle of a step |  |
+| `notTested.same-instant` | ಒಂದೇ ಕ್ಷಣದಲ್ಲಿ ಇಬ್ಬರು ಗ್ರಾಹಕರು | two customers at the exact same instant |  |
+| `notTested.other-faults` | ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು | problems beyond the ones tried |  |
+| `notTested.own-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಇವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
+| `notCounted.no-shows` | ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ) | who turned up (a booking is marked finished when its time passes) |  |
+| `notCounted.read-receipts` | ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ) | whether customers read their messages (only that WhatsApp's record held them) |  |
+| `notCounted.outside-agent` | ಏಜೆಂಟ್ ಮೂಲಕ ಅಲ್ಲದೆ ನಡೆದ ಬುಕಿಂಗ್, ಕರೆ, ಪಾವತಿ | bookings, calls and payments that did not go through the agent |  |
+| `notCounted.rule-breaks` | ಯಾವುದಾದರೂ ಮಿತಿ ದಾಟಿತೇ ಎಂದು (ಇಲ್ಲಿ ಮಿತಿಗಳು ತಡೆದದ್ದನ್ನು ಮಾತ್ರ ಎಣಿಸಲಾಗಿದೆ) | whether anything got past a limit (this counts what the limits stopped) |  |
+| `page.numbers` | ಲೆಕ್ಕಗಳು | The numbers |  |
+| `page.item` | ಏನು | What |  |
+| `page.count` | ಎಷ್ಟು | How many |  |
+| `page.amount` | ಮೊತ್ತ | Amount |  |
+| `page.droppedBeforeBooked` | ಕೇಳಿದರು, ಆದರೆ ಬುಕ್ ಆಗುವ ಮೊದಲು ಕೈಬಿಟ್ಟರು | Asked for, then dropped before it was booked |  |
+| `page.givenBackDeposits` | ಇದರಲ್ಲಿ ಹಿಂತಿರುಗಿಸಿದ ಮುಂಗಡ ಹಣ | of which deposits given back |  |
+| `page.givenBackSecond` | ಇದರಲ್ಲಿ ಹಿಂತಿರುಗಿಸಿದ ಎರಡನೇ ಪಾವತಿ | of which second payments given back |  |
+| `page.retried` | ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಲು ನೀವು ಹೇಳಿದ್ದು | You asked it to check the calendar again |  |
+| `page.stoppedHeading` | ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು | What your limits stopped |  |
+| `page.stoppedTotal` | ತಡೆದ ವಿಷಯಗಳು | Things stopped |  |
+| `page.stoppedNote` | ಒಂದು ವಿಷಯವನ್ನು ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡು ಮಿತಿಗಳು ತಡೆಯಬಹುದು, ಆದ್ದರಿಂದ ಸಾಲುಗಳ ಮೊತ್ತ ಒಟ್ಟಿಗಿಂತ ಹೆಚ್ಚಾಗಬಹುದು. | One thing can be stopped by two limits at once, so the rows can add up to more than the total. |  |
+| `page.rule` | ಮಿತಿ | Limit |  |
+| `page.times` | ಬಾರಿ | Times |  |
+| `page.messagesHeading` | ಕಳುಹಿಸಿದ ಸಂದೇಶಗಳು | Messages sent |  |
+| `page.toCustomers` | ಗ್ರಾಹಕರಿಗೆ | To customers |  |
+| `page.toYou` | ನಿಮಗೆ, ಮಾಲೀಕರಿಗೆ | To you, the owner |  |
+| `page.heldBack` | ಕಳುಹಿಸುವ ಮೊದಲು ತಡೆದದ್ದು | Held back before sending |  |
+| `page.unconfirmedHeading` | ಖಚಿತವಾಗದೆ ಉಳಿದದ್ದು ಅಥವಾ ವಿಫಲವಾದದ್ದು | Left unconfirmed or failed |  |
+| `page.stillOpen` | ಇನ್ನೂ ತೆರೆದಿರುವುದು | Still open |  |
+| `page.settledLater` | ನಂತರದ ಹಂತದಲ್ಲಿ ಮುಗಿದದ್ದು | Settled by a later step |  |
+| `page.nothing` | ಯಾವುದೂ ಇಲ್ಲ. | None. |  |
+| `page.waitingNow` | ಈ ವರದಿ ಮಾಡುವಾಗ ನಿಮ್ಮ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದ್ದದ್ದು | Waiting for your answer when this report was made |  |
+| `page.paidNotBooked` | ಹಣ ಬಂತು, ಆದರೆ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಬುಕಿಂಗ್ ಕಾಣಲಿಲ್ಲ | Paid, but the calendar did not show the booking |  |
+| `page.missingHeading` | ದಾಖಲೆಯಲ್ಲಿ ಬರೆಯದೆ ಉಳಿದದ್ದು, ಆದ್ದರಿಂದ ಮೇಲಿನ ಎಣಿಕೆ ಪೂರ್ಣವಲ್ಲ | Missing from the record, so the counts above are incomplete |  |
+| `page.missingDepositAmounts` | ಮೊತ್ತ ಬರೆಯದ ಮುಂಗಡಗಳು | Deposits with no amount written down |  |
+| `page.missingRefundAmounts` | ಮೊತ್ತ ಬರೆಯದ ರೀಫಂಡ್‌ಗಳು | Refunds with no amount written down |  |
+| `page.missingOwnerCommands` | ಆದೇಶ ಬರೆಯದ ನಿಮ್ಮ ಉತ್ತರಗಳು | Answers from you with no command written down |  |
+| `page.missingMessageTargets` | ಸ್ವೀಕರಿಸುವವರು ಬರೆಯದ ಸಂದೇಶಗಳು | Messages with no recipient written down |  |
+| `page.notCountedHeading` | ಎಣಿಸದ್ದು | Not counted |  |
+| `page.notTestedHeading` | ಪರಿಶೀಲಿಸದ್ದು | Not tested |  |
+| `page.checkHeading` | ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ | Check this document |  |
+| `page.code` | ಕೋಡ್ | Code |  |
+| `page.digest` | ಡೈಜೆಸ್ಟ್ | Digest |  |
+| `page.limitsDigest` | ಮಿತಿಗಳ ಡೈಜೆಸ್ಟ್ | Limits digest |  |
+| `page.recordDigest` | ದಾಖಲೆಯ ಡೈಜೆಸ್ಟ್ | Record digest |  |
+| `page.countedFrom` | ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು | Counted from |  |
+| `page.setUpBy` | ಸಿದ್ಧಪಡಿಸಿದವರು | Set up by |  |
+| `page.madeOn` | ಮಾಡಿದ ದಿನ | Made on |  |
+| `page.agentVersion` | ಏಜೆಂಟ್ ಆವೃತ್ತಿ | Agent version |  |
+| `page.checkAt` | ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಿ | Check it at |  |
+| `page.signedBy` | ಈ ಕೀಲಿಯಿಂದ ಸಹಿ ಮಾಡಲಾಗಿದೆ | Signed with key |  |
+| `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
+| `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
+| `page.showWhatWeDid` | ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸ | Show what we did ▸ |  |
+| `page.byActionHeading` | ಏನು ಮಾಡಲಾಯಿತು, ಕೆಲಸ ಮತ್ತು ಫಲಿತಾಂಶದ ಪ್ರಕಾರ | What was done, by action and outcome |  |
+| `page.entriesHeading` | ದಾಖಲೆಯ ಪ್ರತಿ ನಮೂದು (ಬೆರಳಚ್ಚು ಮಾತ್ರ: ಗ್ರಾಹಕರ ಸಂದೇಶಗಳಾಗಲಿ ಫೋನ್ ಸಂಖ್ಯೆಗಳಾಗಲಿ ಇಲ್ಲ) | Every entry in the record (fingerprints only: no customer messages and no phone numbers) |  |
+| `page.colNo` | ಕ್ರ. | No. |  |
+| `page.colTime` | ಸಮಯ | Time |  |
+| `page.colAction` | ಕೆಲಸ | Action |  |
+| `page.colOutcome` | ಫಲಿತಾಂಶ | Outcome |  |
+| `page.colBooking` | ಬುಕಿಂಗ್ | Booking |  |
+| `page.colFingerprint` | ಬೆರಳಚ್ಚು | Fingerprint |  |
+| `page.notAGrade` | ಇವು ದಾಖಲೆಯಲ್ಲಿ ಕಾಣುವುದರ ಎಣಿಕೆ ಮಾತ್ರ. ಇವು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ. | These are counts of what the record shows. They do not grade the agent. |  |
+| `page.period` | ಅವಧಿ | Period |  |
+| `cert.date` | ದಿನಾಂಕ | Date |  |
+| `cert.held` | 31 ಸಂದರ್ಭಗಳಲ್ಲಿ 29 ಸರಿಯಾಗಿ ನಿಂತವು. 2 ತಪ್ಪಿದವು. 14 ವಿಷಯಗಳನ್ನು ಪರಿಶೀಲಿಸಿಲ್ಲ. | Held 29 of 31 situations. 2 failed. 14 not tested. |  |
+| `cert.intro` | ಆರಂಭಿಸುವ ಮೊದಲು ತಪ್ಪಾಗಬಹುದಾದ ಸಂದರ್ಭಗಳನ್ನು ನಾವು ಪ್ರಯತ್ನಿಸಿದೆವು: ಕಳೆದುಹೋದ ಉತ್ತರಗಳು, ಎರಡು ಬಾರಿ ಬಂದ ಪಾವತಿಗಳು, ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಮೌನವಾಗಿ ಉಳಿಯದಿರುವುದು, ಏಜೆಂಟ್ ಅನ್ನು ಮೋಸಗೊಳಿಸಲು ಯತ್ನಿಸುವ ಗ್ರಾಹಕರು. | Before switching on, we tried situations that could go wrong: lost replies, duplicate payments, silent calendar failures, customers trying to trick the agent. |  |
+| `cert.yourLimits` | ನಿಮ್ಮ ಮಿತಿಗಳು | Your limits |  |
+| `cert.floor` | ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಇಲ್ಲ: … | Nothing below your price list: … |  |
+| `cert.deposit` | ಮುಂಗಡ ಹಣ ₹200; ಅದಕ್ಕಾಗಿ ಸಮಯವನ್ನು 15 ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗುತ್ತದೆ | Deposit ₹200, and the slot is held 15 minutes for it |  |
+| `cert.cancel` | ಆರಂಭಕ್ಕೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ | Cancel at least 24 hours before the start and the deposit goes back |  |
+| `cert.refund` | ₹200 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ | Refunds above ₹200 only with your OK |  |
+| `cert.hours` | ಕೆಲಸದ ಸಮಯದ ಹೊರಗೆ ಬುಕಿಂಗ್ ಇಲ್ಲ | No bookings outside your opening hours |  |
+| `cert.notAGrade` | ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ. | This counts the situations tried. It does not grade the agent. |  |
+| `cert.didNotHold` | ತಪ್ಪಿದವು | Did not hold |  |
+| `cert.handRunLine` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp, ಪಾವತಿ, ಕ್ಯಾಲೆಂಡರ್ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ. | Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only. |  |
+| `cert.countedIntro` | ಏಜೆಂಟ್‌ನ ದಾಖಲೆಯಿಂದ ಎಣಿಸಿದ್ದು, Nov 2026: | Counted from the agent's record for Nov 2026: |  |
+| `cert.checkedOn` | ಪರಿಶೀಲನೆ ನಡೆದದ್ದು | Checks run on |  |
+

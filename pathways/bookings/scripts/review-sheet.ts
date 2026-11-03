@@ -13,6 +13,7 @@ import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatSlot } from "../src/l
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
 import { WORDS } from "../src/language/words.ts";
+import { reportStringRows, sampleFloor, sampleOwnerText } from "../report/review.ts";
 import { LANGUAGE_NAMES, serviceName } from "../src/settings.ts";
 import type { Language } from "../src/settings.ts";
 import { zonedToMs } from "../src/time.ts";
@@ -200,6 +201,14 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push("### Sentences the hand check types as a customer", "");
   out.push("These are the exact sentences the crash-test situations send (`pathways/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.", "");
   out.push(table(["Customer writes", "What it is", "The agent reads", REVIEWER], HAND_CHECK_ROLES.map(([key, role]) => [SAYS[language][key], role, describeIntent(parseIntent(SAYS[language][key], ctx)), ""])), "");
+
+  // 6. The monthly report and the certificates (report/strings.ts). The owner's lines are "label: number", so no number takes an ending.
+  out.push("## 6. The monthly report and the certificates", "");
+  out.push(`The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below. The sample is a made-up month (Glow Salon, ${MONTH_NAMES[language][1]} 2027). The certificate lists the shop's price list like this: ${sampleFloor(language)}.`, "");
+  out.push("What to look for first: (1) is every line something a shop owner would understand in ten seconds; (2) is each label short and never an exaggeration (these documents count and state facts: they never say a shop is safe, guaranteed or approved, and a native reader should flag any word that sounds like it does); (3) is \"deposit\" the everyday word here, as in section 1; (4) is the word for \"limits\" (the rules the shop set) the one a shopkeeper would use; (5) the technical words kept in Latin letters on purpose (STOP, WhatsApp, Razorpay, webhook signatures, stand-in services).", "");
+  out.push("### The five lines, with sample numbers", "", "```text", sampleOwnerText(language), "```", "");
+  out.push("### Every word and phrase of the report and the certificates", "");
+  out.push(table(["Id", `Text (${name})`, "Meaning (English)", REVIEWER], reportStringRows(language).map((r) => [`\`${r.id}\``, r.text, r.english, ""])), "");
   return out.join("\n");
 }
 
