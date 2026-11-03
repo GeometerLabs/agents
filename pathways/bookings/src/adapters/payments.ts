@@ -36,6 +36,8 @@ export interface Refund {
   status: "pending" | "processed";
   receipt?: string;
   created_at: number;
+  /** Guard answered from its record: this is the first reply to the same refund, and nothing was sent again. */
+  replayed?: boolean;
 }
 
 export type PaymentEventName = "payment_link.paid" | "payment.captured" | "refund.processed";
@@ -60,8 +62,13 @@ export interface Payments {
   listPaymentLinks(query?: { reference_id?: string; payment_id?: string }): Promise<PaymentLink[]>;
   cancelPaymentLink(id: string): Promise<PaymentLink>;
   fetchPayment(id: string): Promise<Payment | null>;
-  /** Refund part or all of a payment, never more than what is left on it. */
+  /**
+   * Refund part or all of a payment, never more than what is left on it. Through a Guard, a refund above the owner's limit is not
+   * done: it throws GuardHeldError (HTTP 202), carrying the exact bytes it was sent with in `call.body`.
+   */
   refund(paymentId: string, request: { amount: number; receipt?: string }): Promise<Refund>;
+  /** Send a refund Guard held again, with those exact bytes (`call.body` of the GuardHeldError). Only after the owner approved it. */
+  resendRefund(paymentId: string, body: string): Promise<Refund>;
   listRefunds(paymentId: string): Promise<Refund[]>;
 }
 
@@ -173,6 +180,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       emit("refund.processed", { refund: { id: refund.id, payment_id: paymentId } });
       if (fault === "lostReply") throw new TimeoutError("refund");
       return { ...refund };
+    },
+
+    async resendRefund(paymentId, body) {
+      const sent = JSON.parse(body) as { amount: number; receipt?: string };
+      return this.refund(paymentId, { amount: sent.amount, receipt: sent.receipt });
     },
 
     async listRefunds(paymentId) {

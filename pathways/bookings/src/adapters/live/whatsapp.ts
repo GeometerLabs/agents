@@ -36,7 +36,7 @@ export const GRAPH_VERSION = "v26.0";
 /** The runtime's own knowledge of when each customer last wrote. WhatsApp has no API for the 24-hour window. */
 export interface WindowStore { lastInboundAt(phone: string): number | undefined }
 
-export interface WhatsAppConfig { baseUrl: string; phoneNumberId: string; timeoutMs?: number }
+export interface WhatsAppConfig { baseUrl: string; phoneNumberId: string; timeoutMs?: number; /** Guard's credential for this agent (never a WhatsApp token). Left out, no Authorization header is sent. */ agentToken?: string }
 
 const WINDOW_CLOSED_CODE = 131047;
 const KEPT_MESSAGES = 1000; // the local copy is for the read-back right after a send; it does not grow without end
@@ -63,7 +63,7 @@ export function templateBody(to: string, template: TemplateMessage): Json {
 }
 
 export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: Clock; window: WindowStore }): Messaging {
-  const http: Http = createHttp(config.baseUrl, "WhatsApp", config.timeoutMs);
+  const http: Http = createHttp(config.baseUrl, "WhatsApp", config.timeoutMs, config.agentToken);
   const path = `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}/messages`;
   const sent = new Map<string, OutboundMessage>();
 
