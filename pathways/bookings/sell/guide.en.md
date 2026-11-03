@@ -1,0 +1,223 @@
+# Pitch and sell the Bookings pathway
+
+For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks.
+
+```text
+practise with a friend → a friendly shop → a stranger's shop → quote → first payment → still paying at month 3
+```
+
+## 1. Is this shop a fit?
+
+| A good fit | Not a fit (for now) |
+| --- | --- |
+| Salons with high-ticket bookings: bridal, makeup, spa | Walk-in-only shops |
+| Studios (fitness, dance, photo) | Kiranas |
+| Home services | Pharmacies |
+| Anyone who takes bookings on WhatsApp and has no-shows, or wants deposits | Clinics (health data is the wrong place to learn first) |
+
+Tuition and coaching centres: wait for the fee and dues pathway.
+
+### Ask yourself
+
+1. Do this shop's customers book a time, instead of just walking in?
+2. Do they book on WhatsApp today?
+3. Does the shop lose money to no-shows and late cancellations, or would the owner like to take a deposit?
+
+Three yes: go. Two yes: go, but carefully. One or none: skip it. A polite skip is better than a pitch that fails.
+
+## 2. Before you go
+
+1. Practise with a friend who plays the owner. Do sections 3 and 5 out loud, three times.
+2. Run the demo yourself, twice, start to finish (section 4).
+3. Visit a friendly shop first. Ask the founder or your buddy to come on the first visit.
+4. Then visit a shop you don't know. A "no" is normal. Write down what they said.
+5. Know your price before you walk in (section 6). Write it on a card.
+
+Carry: your laptop (charged, demo tested on a phone), 3 printed one-page sheets with your name and number written in, the shop terms with your price filled in, and a pen.
+
+## 3. The first three sentences
+
+Say them in the owner's language, slowly.
+
+1. "Hello, I'm [your name] from [town], and I help shops with bookings on WhatsApp."
+2. "It's a booking helper: it answers your customers, books the time and takes a deposit, but only inside rules you set, so it can't go below your prices."
+3. "May I show you on your own phone, with test money, in 3 minutes?"
+
+Then stop talking. If they say yes, go to section 4. If they say no, say "Thank you. May I leave this sheet with you?" and leave.
+
+Don't open with "AI", with technology, or with the price. If they ask "Is this AI?", say yes (section 5).
+
+## 4. Show it on the owner's own phone
+
+**Before you go in.** On your laptop, in the agents folder:
+
+```sh
+node pathways/bookings/demo/server.ts            # English
+node pathways/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
+```
+
+It prints a line like `On a phone, same Wi-Fi:  http://192.168.1.23:8787`. Open that address on the owner's phone. Both devices need the same Wi-Fi. If the phone can't open it, turn on your phone's hotspot and join your laptop to it. The demo has no login: never open it to the internet.
+
+Optional, 30 seconds: tap "Set up for this shop" and enter the shop's name, up to 4 services with the owner's own prices, the deposit and the opening hours. Do this before the visit if you have the price list.
+
+**Say first:** "This is a practice copy. It uses test money. Nothing real is sent to anyone." Every screen says it too: "Demo · test money · nothing real is sent".
+
+| Step | You tap | The owner sees | You say |
+| --- | --- | --- | --- |
+| 1. A customer books and pays a test deposit | On the "Customer" tab, tap the first suggestion ("I want a haircut tomorrow at 6pm"). Then tap "Pay the ₹200 deposit (test money)". | The price, a free time and a deposit link held for 15 minutes. Then "Booked!". On the "Owner" tab: "The booking it made is in your calendar. We checked." | "A customer wrote on WhatsApp. It booked the time and took the deposit." |
+| 2. The customer haggles | Tap "Start again". Tap the second suggestion ("haircut tomorrow at 6pm, can you do it for ₹300?"). | "Our haircut is ₹450, and I can't go lower than that." Then the deposit link at the real price. On the "Owner" tab: "It said no to ₹300. It never goes below your price." | "It can't go below your ₹450 price, even when a customer pushes." |
+| 3. A refund it can't give alone | Tap "Start again", the first suggestion and "Pay the ₹200 deposit (test money)". Tap "1 day passes". Tap "Cancel the booking". Open the "Owner" tab. | A question: "Give back ₹200?", the reason "Cancelled less than 24 hours before the start.", and the buttons "Approve" and "Deny". | "A cancellation this late is your decision, so it asks you. Nothing goes back until you tap." Let the owner tap "Approve". |
+| 4. Show what we did | Open the "What we did" tab. Tap "Show what we did ▸". | Every action in a list, each marked "confirmed" when it was read back from the calendar or the payment record. | "Nothing is hidden. The monthly report is made from this record." |
+
+**Good to know**
+
+- The refund question also appears when a refund is above the owner's refund limit. The demo shows the late cancellation because it is quick to show.
+- The prices are Glow Salon's unless you set the demo up for the shop. Use the owner's own prices when you can.
+- Let the owner type as a customer and try to talk it into a discount. That is the best part of the demo.
+- The demo shows what happened in the demo. It is not a claim about a live shop. It always shows "We didn't check: phone calls · walk-ins."
+- Stop it with Ctrl+C. Nothing is saved.
+
+## 5. Questions owners ask
+
+Answer in your own words, but keep to what is true. Where the answer is "it depends", say so. The answers describe a live shop; section 11 says what exists today.
+
+### "What if it makes a mistake?"
+
+> "It can make mistakes. That is why it works inside your limits, and why every month you see what it did, including its mistakes. If it gets something wrong, call me. We look at the record together and fix it."
+
+Never say it won't make mistakes.
+
+### "Who sees my customers' messages?"
+
+> "Their messages go through WhatsApp and the WhatsApp service we use, like with any business WhatsApp tool. They stay with me and you. Geometer only receives counts and health signals, never the words of a message. A customer who writes STOP gets no more messages."
+
+Name the service and where it runs when you know. Don't say that nobody can see them. You can.
+
+### "Meta gives AI for free in WhatsApp. Why pay?"
+
+> "Meta's free AI can answer and book. That is real, and for simple replies it may be enough. What it doesn't give you is these four things: limits you set, like 'it can't go below your ₹450 price' and 'it asks you before a refund'; deposits taken with the money visible; a report every month of what it did; and me, a person in [town] you can call. We work alongside it, not against it."
+
+Don't run Meta's AI down. In November 2026 it replies, books and speaks Indian languages, and UPI was "coming soon". Check before each pitch: this changes.
+
+### "Will I lose my WhatsApp number or my app?"
+
+> "No. You keep your number and your WhatsApp Business app; the helper works next to them. But it depends on your account. I check it before I set up anything. If it can't keep your number and your app, we don't go ahead."
+
+The facts behind "it depends":
+
+- It must be the WhatsApp Business app, not plain WhatsApp.
+- The account may need to be some months old. Some providers ask for about 3 months of real use.
+- Open the app at least once every 2 weeks, or the connection drops. Uninstalling the app disconnects the number.
+- Linked devices are unlinked and must be linked again. In one-to-one chats, disappearing messages, view-once and live location stop working, and broadcast lists become read-only.
+
+### "What does it cost?"
+
+> "It's [your monthly price] a month, and [your setup price] once for setting it up. Razorpay takes its own fee, about 2%, on each deposit. WhatsApp's message fees are small, at cost. Nothing else. You can stop with one message."
+
+Section 6 has the numbers.
+
+### "What happens if it stops working?"
+
+> "Your own WhatsApp keeps working as always, and you can answer customers yourself. The helper just stops answering until it is fixed. If it isn't sure, it sends nothing rather than guess. In the first week I check it myself every day, and you can call me any time."
+
+When it is live there will be alerts to you. They are not built yet (section 11).
+
+### "Can I switch it off?"
+
+> "Yes, any time. Tell me with one message and I stop it. You can also disconnect it yourself from your phone: in the WhatsApp Business app, Settings, Account, Business Platform, Disconnect. The menu names can change. Your number and your chats stay."
+
+### "Who do I call?"
+
+> "Me. My name and number are on this sheet. I set it up, so I'm the one who answers for it."
+
+Answer your phone, and reply the same day.
+
+### "Is this AI?"
+
+> "Yes. It is an AI that only does bookings and deposits, inside your rules. It doesn't chat about anything else."
+
+## 6. Price
+
+Three payments, three different people. Keep them apart.
+
+| Who pays | Who gets it | What for | Amount |
+| --- | --- | --- | --- |
+| You | Geometer | Each live shop, each month | ₹199 |
+| The shop | You | The monthly service (a starting point; you decide) | ₹999 to ₹1,999 |
+| The shop | You | Setup, once. You keep all of it. | ₹1,999 to ₹2,999 |
+| The shop | Razorpay | A fee on each deposit | about 2% plus GST |
+| As you agree with the shop | WhatsApp, at cost | Message fees | about ₹100 to ₹300 per shop per month |
+
+1. **Geometer's fee: ₹199 per live shop per month.** This is the founding price, locked for life, for the first 100 builders and partners. After the first 100 it is ₹199 to ₹499, and not final. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a shop goes live.
+2. **The shop's price: a starting point; you decide.** Near ₹999 for a one-chair salon or a tutor, near ₹1,999 for a shop with several staff. The setup is ₹1,999 to ₹2,999.
+3. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
+4. **Tell the shop about Razorpay's fee:** "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins.
+5. **When to take money:** until the founder tells you your town is ready, don't take the setup fee or a first month. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
+6. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make, not even as an example. Geometer doesn't either.
+
+## 7. Never say
+
+| Never say | Why | Say instead |
+| --- | --- | --- |
+| "It's safe." | An owner can check a limit. Nobody can check a promise like that. | "It can't go below your ₹450 price." |
+| "It's guaranteed." / "It never makes mistakes." | Mistakes can happen. | "Every month you see what it did, including mistakes." |
+| "We take the risk." / "We'll cover any loss." | We don't pay for losses, as insurance would. | "It asks you before any refund over your limit." |
+| "It's certified." | A certificate only states facts. | "Here is what we tried, what held, and what we did not check." |
+| "Everything gets done." / "It never misses a booking." | "Done" is what the records show, within what was checked. | "Every booking it makes is checked against your calendar. And I'll show you what wasn't checked." |
+| "It will pay for itself." | Nobody can promise that. | "Each month the report shows the deposits it took. You can judge." |
+| "It's already working in many shops." | No shop is live yet. | "It has been tested on practice services. Your shop would be among the first." |
+| "It's an AI chatbot, like ChatGPT." | WhatsApp doesn't allow general chatbots. This is a booking service. | "A booking helper that takes deposits, inside your rules." |
+| "Meta's free AI is no good." | We don't know that, and we work alongside it. | "Meta's AI answers. We add your limits, deposits you can see, a report, and me." |
+| "Nothing can go wrong with your WhatsApp." | It depends on the account. | "I check your WhatsApp first. If it can't keep your number and app, we don't go ahead." |
+| "You'll make ₹X a month selling this." | Nobody can say how much anyone will make. | "The shop pays you, and you set your price." |
+| "Introduce me to a friend and get a discount." | No rewards for introductions, ever. | "Would you introduce me to one shop owner you know?" |
+
+## 8. The setup visit
+
+Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner.
+
+- [ ] **The WhatsApp check.** Open the shop's WhatsApp with the owner.
+  - It must be the WhatsApp Business app, and the shop keeps its number and its app.
+  - Ask how old the account is. If it is too new, the helper can't connect yet: agree a date to check again, and don't take the setup fee.
+  - Tell the owner: open the app at least every 2 weeks, don't uninstall it, and link the other devices again afterwards.
+- [ ] **Share the calendar together.** On your laptop, not the phone: the owner's Google Calendar, Settings and sharing, Share with specific people. Add the address Geometer gives you, with "Make changes to events". It takes about 2 minutes. If the shop uses a paper diary, make a Google Calendar first and add the next 2 weeks together.
+- [ ] **The shop's own Razorpay account.** Deposits go straight to the shop, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. It may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes minutes, or up to 4 working days.
+- [ ] **The limits, in the owner's words.** Ask, write down, read back:
+
+  | Limit | Ask | Example (Glow Salon) |
+  | --- | --- | --- |
+  | Price list | "What is the lowest you will ever do each service for?" | "It can't go below your ₹450 price." |
+  | Opening hours | "When do you take bookings?" | "No bookings outside 10 am to 8 pm." |
+  | Deposit | "How much to hold a booking?" | "₹200." |
+  | Hold time | "How long do we keep a slot for the deposit?" | "15 minutes." |
+  | Cancellation window | "How early must a customer cancel to get the deposit back?" | "24 hours before." |
+  | Refund limit | "Up to how much may it give back without asking you?" | "Up to ₹200. Above that, it asks you." |
+
+- [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Give back ₹200?". The owner answers "approve b-1" or "deny b-1". Practise one together.
+- [ ] **One test booking with test money.** From your own phone, book, pay a test deposit, see it in the owner's calendar, then cancel. Nothing real is paid.
+- [ ] **The go-live certificate, read together.** Read every line aloud in the owner's language, including "Not checked". It says the checks were run by hand on practice services, and it lists what was not checked, such as these checks on this shop's own settings (they ran on the example shop). Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
+- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, the WhatsApp message fees, whether the deposit is refundable or counts against the bill (the shop's accountant decides), cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet.
+
+## 9. The first month
+
+1. **Week 1: check in.**
+   - Be there, or on the phone, for the first real booking.
+   - For 7 days, look at the record every day. You are the alert for now.
+   - At the end of the week, ask: "Did it say anything you would not have said?" A limit gets wider only when the owner says so, and it is written down.
+2. **End of the month: read the first report together.** It is 5 lines on WhatsApp, with a page behind it. Read every line, including the mistakes and "Not checked". If there is a mistake, you say it first.
+3. **Ask for one introduction.** "Do you know another shop owner who takes bookings on WhatsApp? Would you introduce me?" Ask only after the owner has seen the report and is happy. Never offer a reward, a discount or a gift for it.
+4. **Keep checking in.** A shop that is still paying at month 3 is the real result.
+
+## 10. When something goes wrong
+
+1. **Stop the agent first.** In the pilot you stop it by hand, because the stop button is not built yet: learn how before your first visit. The owner can also disconnect it from their phone (section 5).
+2. **Call the owner before they find out.** "Something went wrong with [what]. I have stopped the helper. Here is what happened and what I am doing. Your own WhatsApp works as normal."
+3. **Look at the record.** Find the action, what was confirmed, and which limit said what. "Show what we did" shows it.
+4. **Fix it, check it again, then switch it on.** If a customer was charged wrongly, sit with the owner while they refund it from their own Razorpay account.
+5. **Put it in the report.** It goes in the month's mistakes, and you tell the founder the same day.
+
+You are the shop's named, accountable person. Your name is on the report and the certificate. Don't blame the software, and don't say "it won't happen again".
+
+## 11. Be honest about what's true today
+
+As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and the founder tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this.
