@@ -21,7 +21,7 @@
       "responseFormat": "json_schema",
       "priceInputPerMillion": null,
       "priceOutputPerMillion": null,
-      "note": "Google's cheapest stable Gemini tier on the models page; reached through Gemini's OpenAI-compatible endpoint (key sent as a Bearer token). Free-tier keys are rate limited: add \"pauseMs\": 4000 if messages fail with HTTP 429. Price: fill from the provider's current price page."
+      "note": "Google's cheapest stable Gemini tier on the models page; reached through Gemini's OpenAI-compatible endpoint (key sent as a Bearer token). Free-tier keys are rate limited: add \"pauseMs\": 4000 if messages fail with HTTP 429. If every message gets HTTP 400, try \"responseFormat\": \"json_object\": whether its compatibility layer accepts a closed strict schema is the least certain part. Price: fill from the provider's current price page."
     },
     {
       "name": "sarvam-105b-conversations",
