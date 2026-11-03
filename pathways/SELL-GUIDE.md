@@ -24,9 +24,9 @@ Number the headings `## 1.` to `## 11.` exactly. Short pages, one example each, 
 | 3 | The first three sentences | Exactly three sentences for the door, in the owner's language |
 | 4 | Show it on the owner's own phone | The demo: the command, the Wi-Fi link, exactly what to tap, what the owner sees, what to say. Test money, nothing real sent. |
 | 5 | Questions owners ask | Honest answers to the questions below, in quotes |
-| 6 | Price | Who pays whom and how much; Geometer's fee; the suggested shop price as "a starting point; you decide"; the setup fee the partner keeps; the price in the shop terms; pass-through fees |
+| 6 | Price | Who pays whom and how much; Geometer's fee; the suggested shop price as "a starting point; you decide"; the setup fee the partner keeps; the price in the shop terms; pass-through fees; **any platform access the user pays for themselves** (for example X's paid API tiers for a social posting pathway) |
 | 7 | Never say | A table: phrase, why, what to say instead |
-| 8 | The setup visit | A checklist of everything done with the owner at the shop, ending with the go-live certificate read together and the shop terms signed |
+| 8 | The setup visit | A checklist of everything done with the owner at the shop, ending with the go-live certificate read together and the shop terms signed. **Say what platform access the pathway needs and how long it takes** (for example Meta's app review before Instagram publishing), so nobody promises a start date the platform controls. |
 | 9 | The first month | A check in week 1, the first monthly report read together, one introduction asked for (never a reward) |
 | 10 | When something goes wrong | Stop the agent, call the owner before they find out, look at the record, own it |
 | 11 | Be honest about what's true today | One short paragraph, dated: what exists, what isn't tested or built yet |
