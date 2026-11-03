@@ -72,7 +72,8 @@ export async function stopShop(config: OpsConfig, shop: string, on: boolean, by:
   // by "-" the reason is used as it is: the deployer re-applying a stop that was already worded must not wrap it in a second "stopped by"
   const why = by === "-" ? reason : on ? `stopped by ${by} at ${new Date().toISOString()}${reason ? `: ${reason}` : ""}` : `released by ${by} at ${new Date().toISOString()}`;
   const results = await Promise.all([
-    ...c.guards.map(async (g) => ({ guard: g.service, ...(await adminCall(g, "POST", "/admin/kill", { on, reason: why }, fetchFn)) })),
+    // the shop's OWN Guards only: the model Guard is listed under every shop for the heartbeat, and its kill switch would stop every shop
+    ...c.guards.filter((g) => g.id !== "guard-model").map(async (g) => ({ guard: g.service, ...(await adminCall(g, "POST", "/admin/kill", { on, reason: why }, fetchFn)) })),
     // The model Guard is shared, so only this shop's agent is stopped there: the other shops keep working.
     adminCall(config.model, "POST", `/admin/agents/runtime-${shop}/stop`, { on, reason: why }, fetchFn).then((r) => ({ guard: config.model.service, ...r })),
   ]);

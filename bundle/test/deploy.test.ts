@@ -189,6 +189,9 @@ test("adding a second shop recreates the model forwarder, so the model Guard tha
     w.handIn("bright-tuition");
     w.calls.length = 0;
     await deploy(w.ctx, "bright-tuition");
+    const calls = composeCalls(w).map((c) => c.join(" "));
+    assert.ok(calls.indexOf("restart refresher") >= 0 && calls.indexOf("restart refresher") < calls.findIndex((c) => c.startsWith("up -d --remove-orphans")), "the refresher makes the new shop's token folder BEFORE the new Calendar Guard container is created: " + calls.join(" | "));
+    assert.equal(calls.filter((c) => c.startsWith("restart") && c.includes("refresher")).length, 1, "and is not restarted a second time");
     const recreated = composeCalls(w).filter((c) => c.includes("--force-recreate")).flat();
     assert.ok(recreated.includes("g-model") && recreated.includes("--no-deps"), recreated.join(" "));
     assert.ok(!recreated.includes("g-glow-salon-razorpay"), "only the Guard whose forwarder changed");

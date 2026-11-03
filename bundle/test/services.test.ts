@@ -73,10 +73,11 @@ test("stop engages the kill switch on all three of the shop's Guards, stops the 
   const calls: { url: string; body: unknown }[] = [];
   const fake = (async (url: string, init: RequestInit) => { calls.push({ url, body: JSON.parse(String(init.body)) }); return new Response('{"ok":true}', { status: 200 }); }) as unknown as typeof fetch;
   const g = (id: string, ip: number) => ({ id: `guard-${id}`, service: `g-glow-salon-${id}`, adminUrl: `http://10.231.240.${ip}:8190`, healthUrl: `http://10.231.240.${ip}:8081`, adminTokenFile: "/nonexistent" });
-  const config: OpsConfig = { deploymentId: "x", bundleVersion: "0.1.0", shops: { "glow-salon": { pathway: "bookings", pathwayVersion: "0.1.0", runtimeUrl: "http://rt", internalTokenFile: "/n", guards: [g("razorpay", 20), g("whatsapp", 21), g("calendar", 22)] } }, model: { id: "guard-model", service: "g-model", adminUrl: "http://10.231.240.8:8190", healthUrl: "http://10.231.240.8:8081", adminTokenFile: "/n" } };
+  const config: OpsConfig = { deploymentId: "x", bundleVersion: "0.1.0", shops: { "glow-salon": { pathway: "bookings", pathwayVersion: "0.1.0", runtimeUrl: "http://rt", internalTokenFile: "/n", guards: [g("razorpay", 20), g("whatsapp", 21), g("calendar", 22), { id: "guard-model", service: "g-model", adminUrl: "http://10.231.240.8:8190", healthUrl: "http://10.231.240.8:8081", adminTokenFile: "/n" }] } }, model: { id: "guard-model", service: "g-model", adminUrl: "http://10.231.240.8:8190", healthUrl: "http://10.231.240.8:8081", adminTokenFile: "/n" } };
   const r = await stopShop(config, "glow-salon", true, "arjun@laptop", "customer complaint", fake);
   assert.deepEqual(calls.map((c) => c.url).sort(), ["http://10.231.240.20:8190/admin/kill", "http://10.231.240.21:8190/admin/kill", "http://10.231.240.22:8190/admin/kill", "http://10.231.240.8:8190/admin/agents/runtime-glow-salon/stop"]);
   for (const c of calls) { assert.equal((c.body as { on: boolean }).on, true); assert.match((c.body as { reason: string }).reason, /^stopped by arjun@laptop at 20\d\d-.*: customer complaint$/); }
+  assert.equal(calls.filter((c) => c.url.endsWith("/admin/kill")).length, 3, "the model Guard's own kill switch (shared by every shop) is never pulled for one shop");
   assert.match(r.reason, /stopped by arjun@laptop/);
   await assert.rejects(stopShop(config, "nobody", true, "x", "", fake), /no shop nobody/);
   assert.equal((await adminCall({ adminUrl: "http://127.0.0.1:1", adminTokenFile: "/n" }, "GET", "/admin/status")).status, 0, "a Guard that cannot be reached is status 0, not a crash");
