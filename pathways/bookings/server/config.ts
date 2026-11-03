@@ -73,7 +73,7 @@ const NO_KEY = "No key goes in runtime.json: the base URL is a Guard in front of
 function readParser(raw: unknown, errors: string[]): ParserConfig | undefined {
   if (!isObj(raw)) { errors.push('"parser" must be an object like {"wire": "openai", "baseUrl": "https://your-guard.example/model/v1", "model": "<the model\'s name>"}. Leave it out and the built-in rules read the messages.'); return undefined; }
   const before = errors.length;
-  const keyLike = Object.keys(raw).filter((k) => /key|token|secret|password|authorization|bearer/iu.test(k));
+  const keyLike = Object.keys(raw).filter((k) => /^(api[_-]?key|key|access[_-]?token|auth[_-]?token|token|client[_-]?secret|secret|password|passwd|authorization|bearer)$/iu.test(k)); // whole names: maxTokens is no key
   for (const k of keyLike) errors.push(`parser.${k} is not allowed. ${NO_KEY}`);
   unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs"], "parser", errors);
   if (raw.wire !== "openai" && raw.wire !== "anthropic") errors.push('parser.wire must be "openai" (OpenAI-compatible chat completions, which Gemini, Groq and Sarvam also speak) or "anthropic" (the Anthropic Messages API).');

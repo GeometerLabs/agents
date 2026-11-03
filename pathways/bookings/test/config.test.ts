@@ -123,6 +123,9 @@ test("a malformed parser is refused in plain words, all at once; one that carrie
   assert.match(refuse({ ...GOOD_PARSER, model: "  " }), /parser\.model must be/);
   for (const timeoutMs of [0, 1.5, "8000", -1]) assert.match(refuse({ ...GOOD_PARSER, timeoutMs }), /parser\.timeoutMs must be a whole number/);
   assert.match(refuse({ ...GOOD_PARSER, temperature: 0 }), /I don't know what "temperature" means in parser/);
+  const maxTokens = refuse({ ...GOOD_PARSER, maxTokens: 512 }); // a model setting, not a key: it is not allowed here either, but it is not called one
+  assert.match(maxTokens, /I don't know what "maxTokens" means in parser/);
+  assert.ok(!/Guard holds the key/.test(maxTokens), maxTokens);
 
   // Credentials: in the address, in its query, or in a field of their own. The refusal says where keys live, and never repeats the secret.
   for (const baseUrl of ["https://someone:hunter2@guard-model.example/v1", "https://hunter2@guard-model.example/v1", "https://guard-model.example/v1?key=hunter2", "https://guard-model.example/v1#hunter2"]) {
