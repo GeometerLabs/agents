@@ -77,7 +77,7 @@ export interface RelayStore {
   ask(approval: string): Ask | undefined;
   askByCode(code: string): Ask | undefined;
   asks(state?: AskState[]): Ask[];
-  insertAsk(a: Pick<Ask, "approval" | "state" | "receipt" | "paymentId" | "amountPaise" | "firstSeenMs" | "guardExpiresAtMs"> & Partial<Ask>): void;
+  insertAsk(a: Pick<Ask, "approval" | "state" | "receipt" | "paymentId" | "amountPaise" | "firstSeenMs" | "guardExpiresAtMs" | "approvalHours"> & Partial<Ask>): void;
   updateAsk(approval: string, changes: Partial<Omit<Ask, "approval">>): void;
   /** Move to `to` only if it is in `from` now. True if this call made the move: the one use of a code is this compare-and-set. */
   moveAsk(approval: string, from: AskState[], to: AskState, changes?: Partial<Omit<Ask, "approval" | "state">>): boolean;
