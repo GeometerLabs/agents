@@ -414,6 +414,10 @@ test("variant guide: what it says about the example shop and the check is what t
   assert.deepEqual(shop.reminders.hoursBefore, [24]);
   assert.ok(WEEKDAYS_ALL_OPEN(shop), "the example is open every day, which is why the closed-day request is left out");
   assert.ok(variant("en").includes(`${run.results.length} of ${run.results.length} situations held`));
+  // the same count is quoted in two READMEs: they must not drift from the real run either
+  for (const readme of ["../../../README.md", "../README.md"]) {
+    assert.ok(readFileSync(new URL(readme, import.meta.url), "utf8").includes(`${run.results.length} of ${run.results.length} situations`), `${readme} quotes the example's count`);
+  }
   for (const l of LANGUAGES) {
     const text = variant(l);
     assert.ok(text.includes(RENTAL_FILE) && existsSync(new URL(`../${RENTAL_FILE.replace("pathways/bookings/", "")}`, import.meta.url)), `${l}: the example file it names exists`);

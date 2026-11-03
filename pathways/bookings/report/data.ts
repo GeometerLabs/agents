@@ -126,7 +126,7 @@ export function policyOf(settings: Settings): unknown {
 }
 export const policyDigest = (settings: Settings): string => digestOf(policyOf(settings));
 
-/** The example settings the hand check runs on. A certificate for any other settings has to say the checks were not run on them. */
+/** The example settings the hand check runs on when it is not given others. A certificate whose checks ran on different settings from the shop's has to say so; the monthly report is not told what ran, so it says so for every shop but Glow Salon. */
 export const checkedPolicyDigest = (): string => policyDigest(glowSalon());
 
 /**
