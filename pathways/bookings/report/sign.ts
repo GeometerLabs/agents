@@ -38,9 +38,9 @@ export interface Envelope<T = unknown> {
 
 const toBytes = (document: unknown): Buffer => Buffer.from(SIGNED_PREFIX + canonicalJson(document), "utf8");
 
-/** The raw public key (hex) of a key object. */
+/** The raw public key (hex) of a key object, public or private. */
 export function publicKeyHex(key: KeyObject): string {
-  const x = createPublicKey(key).export({ format: "jwk" }).x as string;
+  const x = (key.type === "public" ? key : createPublicKey(key)).export({ format: "jwk" }).x as string;
   return Buffer.from(x, "base64url").toString("hex");
 }
 
@@ -156,7 +156,7 @@ export function verifyEnvelopeText(text: string, trust: string[] = []): Verifica
     trusted = signed && signatureOk && trust.includes(keyId as string);
     record("Signed by a key you trust", trusted, trusted ? `The signing key is ${keyId}, which you named.` : signed ? `The signing key is ${keyId}, which is not one you named.` : "The file is not signed.");
   } else if (signed) {
-    notChecked.push(`Who holds the key ${keyId}. A key written inside a file proves nothing about who it belongs to: anyone can change a document and sign it again with their own key. Name a key you trust with --trust-key to check this.`);
+    notChecked.push(`Who holds ${keyId}. A key written inside a file proves nothing about who it belongs to: anyone can change a document and sign it again with their own key. Name a key you trust with --trust-key to check this.`);
   }
   if (!unchanged) {
     return { unchanged, signed, trusted, keyId, checks, notChecked, summary: "Something in this file has been changed, or the signature does not fit. Do not rely on it.", envelope };
@@ -165,7 +165,7 @@ export function verifyEnvelopeText(text: string, trust: string[] = []): Verifica
     notChecked.push("Guard's ledger. This document has no ledger anchor yet, so nothing links it to Guard's hash-chained record.");
   }
   const summary = !signed ? "Unchanged since the digest was made, but this file is not signed, so it does not show who issued it."
-    : trust.length === 0 ? `Unchanged since the key ${keyId} signed it. This does not show who holds that key, and it does not show the numbers are true.`
+    : trust.length === 0 ? `Unchanged since ${keyId} signed it. This does not show who holds that key, and it does not show the numbers are true.`
       : trusted ? `Unchanged since a key you trust (${keyId}) signed it. This does not show the numbers are true.`
         : `Unchanged since ${keyId} signed it, but that is not a key you named as trusted.`;
   return { unchanged, signed, trusted, keyId, checks, notChecked, summary, envelope };
