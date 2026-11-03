@@ -201,3 +201,139 @@ test("if a later batch is not taken, the provider is told 503 (it sends the webh
     assert.equal(runtime.requests.length, 2);
   }, { runtime: () => (++calls === 2 ? { status: 503, json: {} } : { status: 200, json: {} }) });
 });
+
+// ---- the second way to verify WhatsApp: a token in the URL, for a provider that does not sign its webhooks ----
+
+const TOKEN = "Zk3-mQ9_vT7xLp2Rw8YdNa5c";
+const PATH_MODE = { whatsappVerification: "path-token" as const, whatsappPathToken: TOKEN, whatsappAppSecret: undefined, whatsappVerifyToken: undefined };
+const jsonHeaders = { "content-type": "application/json" };
+
+test("path-token: a post to the URL with the token is forwarded with no signature, timestamps in milliseconds", async () => {
+  await withInbox(async ({ runtime, post }) => {
+    assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, whatsappBody, jsonHeaders)).status, 200);
+    assert.deepEqual(JSON.parse(runtime.requests[0].body).events, [{ kind: "message", message: { id: "wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=", from: "+16505551234", text: "Does it come in another color?", timestamp: 1749416383000 } }]);
+    const status = fixtureText("whatsapp-webhook-status-delivered.json");
+    assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, status, jsonHeaders)).status, 200); // nothing to forward
+    assert.equal(runtime.requests.length, 1);
+    assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, "{not json", jsonHeaders)).status, 400);
+  }, { config: PATH_MODE });
+});
+
+test("path-token: a wrong, missing, altered or extended token is 404 for every method, the same answer as a route that does not exist, and nothing is forwarded", async () => {
+  await withInbox(async ({ inbox, runtime, post }) => {
+    const unknown = await (await fetch(`${inbox.url}/nope`)).text();
+    for (const path of ["/webhooks/whatsapp", "/webhooks/whatsapp/", "/webhooks/whatsapp/wrong", `/webhooks/whatsapp/${TOKEN}x`, `/webhooks/whatsapp/${TOKEN.slice(0, -1)}`, `/webhooks/whatsapp/${TOKEN.toUpperCase()}`,
+      `/webhooks/whatsapp/${TOKEN}/extra`, `/webhooks/whatsapp/${TOKEN}%00`, "/webhooks/whatsapp/%E0%A4%A"]) {
+      const r = await post(path, whatsappBody, jsonHeaders);
+      assert.equal(r.status, 404, path);
+      assert.equal(r.text, unknown, path); // nothing says "this is the right route, wrong token"
+      assert.equal((await fetch(inbox.url + path)).status, 404, `GET ${path}`);
+    }
+    // a Meta-signed post to the plain route is not honoured in this mode
+    assert.equal((await post("/webhooks/whatsapp", whatsappBody, whatsappHeaders(whatsappBody))).status, 404);
+    assert.equal((await fetch(`${inbox.url}/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=x&hub.challenge=1`)).status, 404);
+    assert.equal(runtime.requests.length, 0);
+    // the right token is found whether or not it is percent-encoded
+    assert.equal((await post(`/webhooks/whatsapp/${[...TOKEN].map((c) => `%${c.charCodeAt(0).toString(16)}`).join("")}`, whatsappBody, jsonHeaders)).status, 200);
+    assert.equal((await fetch(`${inbox.url}/webhooks/whatsapp/${TOKEN}`)).status, 200); // a provider checking that the URL is alive
+    assert.equal((await fetch(`${inbox.url}/webhooks/whatsapp/${TOKEN}`, { method: "PUT", body: "x" })).status, 405);
+  }, { config: PATH_MODE });
+});
+
+test("path-token mode leaves Razorpay's signature check as it was, and meta-signature mode has no token route", async () => {
+  await withInbox(async ({ runtime, post }) => {
+    assert.equal((await post("/webhooks/razorpay", razorpayBody, { "content-type": "application/json" })).status, 401);
+    assert.equal((await post("/webhooks/razorpay", razorpayBody, razorpayHeaders(razorpayBody))).status, 200);
+    assert.equal(runtime.requests.length, 1);
+  }, { config: PATH_MODE });
+  await withInbox(async ({ runtime, post }) => {
+    assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, whatsappBody, whatsappHeaders(whatsappBody))).status, 404);
+    assert.equal((await post("/webhooks/whatsapp", whatsappBody, whatsappHeaders(whatsappBody))).status, 200);
+    assert.equal(runtime.requests.length, 1);
+  });
+});
+
+test("an allow-list of sources sits on top: other sources are refused (403), a wrong token is still 404, and a proxy's header is read from its last entry", async () => {
+  const allow = async (sources: string[], expectStatus: number, extra: Partial<InboxConfig> = {}, headers: Record<string, string> = {}, forwarded = expectStatus === 200 ? 1 : 0) => {
+    await withInbox(async ({ runtime, post }) => {
+      assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, whatsappBody, { ...jsonHeaders, ...headers })).status, expectStatus, JSON.stringify([sources, extra, headers]));
+      assert.equal(runtime.requests.length, forwarded);
+    }, { config: { ...PATH_MODE, whatsappAllowedSources: sources, ...extra } });
+  };
+  await allow(["127.0.0.0/8"], 200); // the test connects from this computer
+  await allow(["127.0.0.1"], 200);
+  await allow(["::1", "203.0.113.0/24"], 403, {}, {}); // a list that does not include 127.0.0.1
+  await allow(["203.0.113.0/24", "2001:db8::/32"], 403);
+  await allow(["203.0.113.0/24"], 200, { sourceIpHeader: "X-Forwarded-For" }, { "x-forwarded-for": "198.51.100.7, 203.0.113.9" }); // the proxy's own entry is last
+  await allow(["203.0.113.0/24"], 403, { sourceIpHeader: "x-forwarded-for" }, { "x-forwarded-for": "203.0.113.9, 198.51.100.7" }); // the caller can put anything first
+  await allow(["203.0.113.0/24"], 403, { sourceIpHeader: "x-forwarded-for" }, {}); // no header, no address
+  await allow(["2001:db8::/32"], 200, { sourceIpHeader: "x-real-ip" }, { "x-real-ip": "2001:db8::17" });
+  await withInbox(async ({ inbox, runtime }) => {
+    assert.equal((await fetch(`${inbox.url}/webhooks/whatsapp/wrong`, { method: "POST", body: whatsappBody })).status, 404); // the token is checked first
+    assert.equal(runtime.requests.length, 0);
+  }, { config: { ...PATH_MODE, whatsappAllowedSources: ["203.0.113.0/24"] } });
+  // the same list also guards the signed route
+  await withInbox(async ({ runtime, post }) => {
+    assert.equal((await post("/webhooks/whatsapp", whatsappBody, whatsappHeaders(whatsappBody))).status, 403);
+    assert.equal(runtime.requests.length, 0);
+  }, { config: { whatsappAllowedSources: ["203.0.113.0/24"] } });
+  for (const bad of ["not-an-ip", "10.0.0.0/33", "10.0.0.0/x", "::1/129", ""]) await assert.rejects(() => startInbox({ runtimeUrl: "http://127.0.0.1:1", ...SECRETS, ...PATH_MODE, whatsappAllowedSources: [bad] }, { port: 0 }), /not an IP address/);
+});
+
+test("the inbox will not start unless a WhatsApp mode is fully configured, and a path token must be long enough to be unguessable and fit in a URL", async () => {
+  const start = (extra: Partial<InboxConfig>) => startInbox({ runtimeUrl: "http://127.0.0.1:1", internalToken: SECRETS.internalToken, razorpayWebhookSecret: SECRETS.razorpayWebhookSecret, ...extra }, { port: 0 });
+  await assert.rejects(() => start({}), /WhatsApp is not configured/); // neither mode
+  await assert.rejects(() => start({ whatsappAppSecret: SECRETS.whatsappAppSecret }), /meta-signature needs/); // the default mode needs the verify token too
+  await assert.rejects(() => start({ whatsappVerification: "path-token", whatsappAppSecret: SECRETS.whatsappAppSecret, whatsappVerifyToken: SECRETS.whatsappVerifyToken }), /path-token needs whatsappPathToken/);
+  for (const token of ["short", "has/slash/in/it/1234567890", "dots.are.not.allowed.12345", "spaces are not ok 1234567"]) {
+    await assert.rejects(() => start({ whatsappVerification: "path-token", whatsappPathToken: token }), /at least 16 characters/);
+  }
+  await assert.rejects(() => start({ whatsappVerification: "sms" as any, whatsappAppSecret: "a", whatsappVerifyToken: "b" }), /must be "meta-signature" or "path-token"/);
+  const ok = await start({ whatsappVerification: "path-token", whatsappPathToken: TOKEN }); // the verify token and app secret are not needed
+  await ok.close();
+  const defaulted = await start({ whatsappAppSecret: SECRETS.whatsappAppSecret, whatsappVerifyToken: SECRETS.whatsappVerifyToken }); // default is meta-signature
+  await defaulted.close();
+});
+
+test("the token never reaches the log, whether the request is right, wrong or broken", async () => {
+  await withInbox(async ({ inbox, post, logs }) => {
+    await post(`/webhooks/whatsapp/${TOKEN}`, whatsappBody, jsonHeaders);
+    await post(`/webhooks/whatsapp/${TOKEN}`, "{not json", jsonHeaders);
+    await post(`/webhooks/whatsapp/${TOKEN}x`, whatsappBody, jsonHeaders);
+    await post("/webhooks/whatsapp/guess-by-an-attacker", whatsappBody, jsonHeaders);
+    await fetch(`${inbox.url}/webhooks/whatsapp/${TOKEN}`);
+    assert.ok(logs.length >= 5);
+    const all = logs.join("\n");
+    assert.ok(!all.includes(TOKEN) && !all.includes("guess-by-an-attacker") && !all.includes(TOKEN.slice(0, 8)), all);
+  }, { config: PATH_MODE });
+});
+
+test("as its own process: with no WhatsApp setting it refuses to start; path-token mode reads the token from a file and never prints it", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "inbox-pt-"));
+  const file = (name: string, content: string) => { const p = join(dir, name); writeFileSync(p, content); return p; };
+  const base = { RUNTIME_URL: "http://127.0.0.1:1", PORT: "0", HOST: "127.0.0.1", INTERNAL_TOKEN_FILE: file("token", "internal-token-1\n"), RAZORPAY_WEBHOOK_SECRET_FILE: file("rzp", "rzp-secret-1\n") };
+  const main = new URL("../inbox/main.ts", import.meta.url).pathname;
+  const run = (e: Record<string, string>) => spawn(process.execPath, [main], { env: { PATH: process.env.PATH ?? "", ...e } });
+
+  const none = run(base);
+  let err = "";
+  none.stderr.on("data", (d) => { err += d; });
+  assert.equal(await new Promise((r) => none.on("close", r)), 2);
+  assert.match(err, /WhatsApp is not configured/);
+  assert.match(err, /path-token/);
+
+  const child = run({ ...base, WHATSAPP_VERIFICATION: "path-token", WHATSAPP_PATH_TOKEN_FILE: file("pt", `${TOKEN}\n`), WHATSAPP_ALLOWED_SOURCES: "127.0.0.0/8, ::1" });
+  const out = await new Promise<string>((resolve, reject) => {
+    let seen = "";
+    const timer = setTimeout(() => reject(new Error(`the inbox did not start: ${seen}`)), 8000);
+    child.stderr.on("data", (d) => { seen += d; if (/listening on/.test(seen)) { clearTimeout(timer); resolve(seen); } });
+  });
+  try {
+    const port = /127\.0\.0\.1:(\d+)/.exec(out)![1];
+    const status = fixtureText("whatsapp-webhook-status-delivered.json");
+    assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/${TOKEN}`, { method: "POST", body: status })).status, 200); // nothing to forward, so no runtime is needed
+    assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/not-the-token`, { method: "POST", body: status })).status, 404);
+    assert.match(out, /path-token/);
+    assert.ok(!out.includes(TOKEN));
+  } finally { child.kill("SIGTERM"); }
+});

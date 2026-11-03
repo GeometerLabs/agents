@@ -4,6 +4,13 @@
 //   RAZORPAY_WEBHOOK_SECRET_FILE=/run/secrets/razorpay_webhook WHATSAPP_APP_SECRET_FILE=/run/secrets/whatsapp_app_secret \
 //   WHATSAPP_VERIFY_TOKEN_FILE=/run/secrets/whatsapp_verify PORT=8788 node pathways/bookings/inbox/main.ts
 //
+// WhatsApp webhooks are verified one of two ways, chosen by WHATSAPP_VERIFICATION (default meta-signature):
+//   meta-signature  Meta's X-Hub-Signature-256. Needs WHATSAPP_APP_SECRET_FILE and WHATSAPP_VERIFY_TOKEN_FILE. Callback: POST /webhooks/whatsapp
+//   path-token      for a provider that does not sign (Gupshup). Needs WHATSAPP_PATH_TOKEN_FILE (16+ characters of A-Z a-z 0-9 _ -).
+//                   Callback: POST /webhooks/whatsapp/<token>; a wrong or missing token is 404. WEAKER than a signature: see Explanation.md.
+// Either way, WHATSAPP_ALLOWED_SOURCES (comma-separated IPs or CIDRs) refuses every other source, and WHATSAPP_SOURCE_IP_HEADER (for example
+// x-forwarded-for) says which header your reverse proxy sets with the real address (the last one in it is used).
+//
 // Secrets are read from files (never from arguments, which show up in process lists), and a trailing newline is dropped. PORT defaults to
 // 8788. HOST defaults to 127.0.0.1; set HOST=0.0.0.0 inside a container. Put the HTTPS entry in front of it.
 import { readFileSync } from "node:fs";
@@ -28,12 +35,27 @@ try { new URL(runtimeUrl); } catch { console.error("RUNTIME_URL is not a web add
 const port = Number(process.env.PORT ?? 8788);
 if (!Number.isInteger(port) || port < 0 || port > 65535) { console.error("PORT must be a whole number between 0 and 65535."); process.exit(2); }
 
-const inbox = await startInbox({
-  runtimeUrl,
-  internalToken: secretFrom("INTERNAL_TOKEN_FILE"),
-  razorpayWebhookSecret: secretFrom("RAZORPAY_WEBHOOK_SECRET_FILE"),
-  whatsappAppSecret: secretFrom("WHATSAPP_APP_SECRET_FILE"),
-  whatsappVerifyToken: secretFrom("WHATSAPP_VERIFY_TOKEN_FILE"),
-}, { port, host: process.env.HOST ?? "127.0.0.1" });
-console.error(`Inbox listening on ${process.env.HOST ?? "127.0.0.1"}:${inbox.port}. Forwarding to ${new URL(runtimeUrl).origin}. POST /webhooks/razorpay and /webhooks/whatsapp, GET /webhooks/whatsapp for Meta's check.`);
+const verification = process.env.WHATSAPP_VERIFICATION ?? "meta-signature";
+if (verification !== "meta-signature" && verification !== "path-token") { console.error('WHATSAPP_VERIFICATION must be "meta-signature" (the default) or "path-token".'); process.exit(2); }
+if (verification === "meta-signature" && !process.env.WHATSAPP_APP_SECRET_FILE) {
+  console.error("WhatsApp is not configured. Set WHATSAPP_APP_SECRET_FILE and WHATSAPP_VERIFY_TOKEN_FILE (meta-signature, the default), or WHATSAPP_VERIFICATION=path-token with WHATSAPP_PATH_TOKEN_FILE.");
+  process.exit(2);
+}
+const sources = (process.env.WHATSAPP_ALLOWED_SOURCES ?? "").split(",").map((x) => x.trim()).filter((x) => x.length > 0);
+
+let inbox;
+try {
+  inbox = await startInbox({
+    runtimeUrl,
+    internalToken: secretFrom("INTERNAL_TOKEN_FILE"),
+    razorpayWebhookSecret: secretFrom("RAZORPAY_WEBHOOK_SECRET_FILE"),
+    whatsappVerification: verification,
+    ...(verification === "meta-signature"
+      ? { whatsappAppSecret: secretFrom("WHATSAPP_APP_SECRET_FILE"), whatsappVerifyToken: secretFrom("WHATSAPP_VERIFY_TOKEN_FILE") }
+      : { whatsappPathToken: secretFrom("WHATSAPP_PATH_TOKEN_FILE") }),
+    whatsappAllowedSources: sources,
+    ...(process.env.WHATSAPP_SOURCE_IP_HEADER ? { sourceIpHeader: process.env.WHATSAPP_SOURCE_IP_HEADER } : {}),
+  }, { port, host: process.env.HOST ?? "127.0.0.1" });
+} catch (e) { console.error((e as Error).message); process.exit(2); }
+console.error(`Inbox listening on ${process.env.HOST ?? "127.0.0.1"}:${inbox.port}. Forwarding to ${new URL(runtimeUrl).origin}. WhatsApp: ${verification}${sources.length > 0 ? `, sources limited to ${sources.length} address range(s)` : ""}. POST /webhooks/razorpay and /webhooks/whatsapp${verification === "path-token" ? "/<token>" : ""}.`);
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { void inbox.close().then(() => process.exit(0)); });

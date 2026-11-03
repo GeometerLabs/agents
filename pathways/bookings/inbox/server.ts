@@ -6,12 +6,20 @@
 // The runtime saves each event before it answers, so anything it did not save is answered 503 and the provider sends it again.
 // A bad signature is 401 and nothing is forwarded. Nothing secret, and no message text or phone number, is ever logged.
 //
+// WhatsApp webhooks can be verified in one of two ways, chosen in the config (default: meta-signature):
+//   - meta-signature: Meta's X-Hub-Signature-256 over the raw body, at POST /webhooks/whatsapp. A body signature proves the body.
+//   - path-token: for a provider that does not sign its webhooks (Gupshup's callbacks carry no signature; only an IP allowlist exists).
+//     The callback URL carries an unguessable token, POST /webhooks/whatsapp/<token>. A wrong or missing token is 404, as if the route
+//     did not exist. An optional list of source addresses (IPs or CIDRs) refuses everyone else. THIS IS WEAKER than a body signature:
+//     whoever learns the URL can post messages that look like they came from any customer or from the owner (see Explanation.md).
+//
 // Razorpay wants an answer within 5 seconds (https://razorpay.com/docs/webhooks/best-practices.md) and retries for 24 hours;
 // Meta retries for up to 7 days (https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/overview.md).
 // So the wait on the runtime is shorter than 5 seconds, and a slow runtime becomes a 503 here rather than a timeout there.
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { BlockList, isIP } from "node:net";
 import type { AgentEvent } from "../src/agent.ts";
 import { parseRazorpayEvent, parseWhatsAppWebhook, verifyMetaSignature, verifyRazorpaySignature } from "../src/adapters/live/webhooks.ts";
 
@@ -21,8 +29,17 @@ export interface InboxConfig {
   /** Sent to the runtime as `Authorization: Bearer <token>`. */
   internalToken: string;
   razorpayWebhookSecret: string;
-  whatsappAppSecret: string;
-  whatsappVerifyToken: string;
+  /** How WhatsApp webhooks are verified. Default "meta-signature". */
+  whatsappVerification?: "meta-signature" | "path-token";
+  /** meta-signature: the App Secret that signs the body, and the token for Meta's GET handshake. */
+  whatsappAppSecret?: string;
+  whatsappVerifyToken?: string;
+  /** path-token: the unguessable part of the callback URL (at least 16 characters of A-Z a-z 0-9 _ -). Never logged. */
+  whatsappPathToken?: string;
+  /** Optional: only these source addresses (IPs or CIDRs, for example 203.0.113.0/24) may post WhatsApp webhooks; anyone else is refused (403). */
+  whatsappAllowedSources?: string[];
+  /** Behind a reverse proxy the socket's address is the proxy's. Name the header your proxy sets (for example x-forwarded-for) and the LAST address in it is used. */
+  sourceIpHeader?: string;
   /** How long to wait for the runtime. Default 4 seconds (Razorpay waits 5). */
   forwardTimeoutMs?: number;
   /** The runtime refuses a request of more than 100 events or 256 KiB. Events are sent in batches below both. Defaults: 100 events, 200 KiB. */
@@ -81,16 +98,31 @@ export function batches(events: AgentEvent[], maxEvents: number, maxBytes: numbe
   return out;
 }
 
-const sameText = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+/** Constant-time comparison that does not even reveal the length: both sides are hashed first. */
+const sameText = (a: string, b: string) => timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
 const header = (req: IncomingMessage, name: string): string | undefined => {
   const v = req.headers[name];
   return Array.isArray(v) ? v[0] : v;
 };
 
 export async function startInbox(config: InboxConfig, listen: { port: number; host?: string }): Promise<RunningInbox> {
-  for (const [what, value] of Object.entries({ internalToken: config.internalToken, razorpayWebhookSecret: config.razorpayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, whatsappVerifyToken: config.whatsappVerifyToken })) {
-    if (value.length === 0) throw new Error(`The inbox needs a non-empty ${what}.`);
+  const mode = config.whatsappVerification ?? "meta-signature";
+  if (mode !== "meta-signature" && mode !== "path-token") throw new Error(`whatsappVerification must be "meta-signature" or "path-token".`);
+  const missing = (what: string) => new Error(`The inbox needs a non-empty ${what}.`);
+  if (!config.internalToken) throw missing("internalToken");
+  if (!config.razorpayWebhookSecret) throw missing("razorpayWebhookSecret");
+  const whatsappChoice = "Choose meta-signature (an App Secret and a verify token) or path-token (an unguessable URL token).";
+  if (mode === "meta-signature" && (!config.whatsappAppSecret || !config.whatsappVerifyToken)) throw new Error(`WhatsApp is not configured: meta-signature needs whatsappAppSecret and whatsappVerifyToken. ${whatsappChoice}`);
+  if (mode === "path-token" && !config.whatsappPathToken) throw new Error(`WhatsApp is not configured: path-token needs whatsappPathToken. ${whatsappChoice}`);
+  if (mode === "path-token" && !/^[A-Za-z0-9_-]{16,}$/u.test(config.whatsappPathToken!)) throw new Error("The WhatsApp path token must be at least 16 characters of A-Z, a-z, 0-9, _ and -, so it can sit in a URL and cannot be guessed.");
+  const allowed = new BlockList();
+  for (const entry of config.whatsappAllowedSources ?? []) {
+    const [address, prefix] = entry.trim().split("/");
+    const family = isIP(address) === 6 ? "ipv6" : isIP(address) === 4 ? "ipv4" : undefined;
+    if (!family || (prefix !== undefined && !(Number.isInteger(Number(prefix)) && Number(prefix) >= 0 && Number(prefix) <= (family === "ipv4" ? 32 : 128)))) throw new Error(`"${entry}" is not an IP address or a CIDR range.`);
+    if (prefix === undefined) allowed.addAddress(address, family); else allowed.addSubnet(address, Number(prefix), family);
   }
+  const restrictSources = (config.whatsappAllowedSources?.length ?? 0) > 0;
   const log = config.log ?? ((line: string) => console.error(line));
   const forwardTimeoutMs = config.forwardTimeoutMs ?? 4000;
   const maxEvents = config.maxEventsPerRequest ?? 100;
@@ -132,9 +164,20 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
     return `200 ${events.length} event(s) forwarded`;
   }
 
+  /** Where the request came from: the socket's address, or the last address in the header the proxy sets. */
+  function sourceAllowed(req: IncomingMessage): boolean {
+    if (!restrictSources) return true;
+    const raw = config.sourceIpHeader ? String(req.headers[config.sourceIpHeader.toLowerCase()] ?? "").split(",").at(-1)?.trim() : req.socket.remoteAddress;
+    const address = raw?.replace(/^::ffff:/iu, "");
+    const family = address && isIP(address) === 6 ? "ipv6" : address && isIP(address) === 4 ? "ipv4" : undefined;
+    return address !== undefined && family !== undefined && allowed.check(address, family);
+  }
+
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://inbox");
-    const done = (what: string) => log(`${req.method} ${url.pathname} -> ${what}`);
+    // The log names the route, never the path: in path-token mode the path holds the secret.
+    const label = url.pathname === "/healthz" ? "/healthz" : url.pathname === "/webhooks/razorpay" ? "/webhooks/razorpay" : url.pathname.startsWith("/webhooks/whatsapp") ? "/webhooks/whatsapp" : "(other)";
+    const done = (what: string) => log(`${req.method} ${label} -> ${what}`);
     const route = async (): Promise<string> => {
       if (url.pathname === "/healthz") { if (req.method !== "GET") { reply(res, 405, { error: "GET only" }, { allow: "GET" }); return "405"; } reply(res, 200, "ok"); return "200"; }
 
@@ -145,10 +188,22 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
           (json) => { const event = parseRazorpayEvent(json, header(req, "x-razorpay-event-id")); return event ? [{ kind: "payment_event", event }] : []; });
       }
 
-      if (url.pathname === "/webhooks/whatsapp") {
+      const wa = /^\/webhooks\/whatsapp(?:\/([^/]*))?$/u.exec(url.pathname);
+      if (wa) {
+        const segment = wa[1]; // what follows /webhooks/whatsapp/, still percent-encoded
+        if (mode === "path-token") {
+          let given: string | undefined;
+          try { given = segment === undefined ? undefined : decodeURIComponent(segment); } catch { given = undefined; }
+          if (given === undefined || !sameText(given, config.whatsappPathToken!)) { reply(res, 404, { error: "not found" }); return "404"; } // not 401: say nothing about what exists
+          if (!sourceAllowed(req)) { reply(res, 403, { error: "not an allowed source" }); return "403 source refused"; }
+          if (req.method === "GET") { reply(res, 200, "ok"); return "200"; } // a provider checking that the URL is alive
+          if (req.method !== "POST") { reply(res, 405, { error: "GET or POST only" }, { allow: "GET, POST" }); return "405"; }
+          return webhook(req, res, limits.whatsapp, () => true, (json) => parseWhatsAppWebhook(json).map((message): AgentEvent => ({ kind: "message", message })));
+        }
+        if (segment !== undefined) { reply(res, 404, { error: "not found" }); return "404"; } // meta-signature has no token in the path
         if (req.method === "GET") { // Meta's handshake when the webhook is set up
           const token = url.searchParams.get("hub.verify_token");
-          if (url.searchParams.get("hub.mode") === "subscribe" && token !== null && sameText(token, config.whatsappVerifyToken)) {
+          if (url.searchParams.get("hub.mode") === "subscribe" && token !== null && sameText(token, config.whatsappVerifyToken!)) {
             reply(res, 200, url.searchParams.get("hub.challenge") ?? "");
             return "200 verified";
           }
@@ -156,8 +211,9 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
           return "403";
         }
         if (req.method !== "POST") { reply(res, 405, { error: "GET or POST only" }, { allow: "GET, POST" }); return "405"; }
+        if (!sourceAllowed(req)) { reply(res, 403, { error: "not an allowed source" }); return "403 source refused"; }
         return webhook(req, res, limits.whatsapp,
-          (raw) => verifyMetaSignature(raw, header(req, "x-hub-signature-256"), config.whatsappAppSecret),
+          (raw) => verifyMetaSignature(raw, header(req, "x-hub-signature-256"), config.whatsappAppSecret!),
           (json) => parseWhatsAppWebhook(json).map((message): AgentEvent => ({ kind: "message", message })));
       }
 
