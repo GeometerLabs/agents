@@ -44,8 +44,11 @@ export const RULE_IDS: readonly RuleId[] = [
 export type NotCountedId = "no-shows" | "read-receipts" | "outside-agent" | "rule-breaks";
 export const NOT_COUNTED: readonly NotCountedId[] = ["no-shows", "read-receipts", "outside-agent", "rule-breaks"];
 
-/** What the checks behind an agent do not cover: the hand check's list, plus this when they ran on someone else's settings. */
-export type NotTestedKey = NotTestedId | "own-settings";
+/**
+ * What the checks behind an agent do not cover: the hand check's list, plus "own-settings" when they ran on someone else's settings,
+ * or "situations-skipped" when they ran on this shop's settings but some situations could not be run on them.
+ */
+export type NotTestedKey = NotTestedId | "own-settings" | "situations-skipped";
 
 /** The entry where a rule's "no" is counted (see the header: a block is written twice). */
 const STOP_SITES: Record<RuleId, readonly Action[]> = {
@@ -126,10 +129,14 @@ export const policyDigest = (settings: Settings): string => digestOf(policyOf(se
 /** The example settings the hand check runs on. A certificate for any other settings has to say the checks were not run on them. */
 export const checkedPolicyDigest = (): string => policyDigest(glowSalon());
 
-/** What the checks behind this shop's agent do not cover. */
-export function notTestedFor(settings: Settings): NotTestedKey[] {
+/**
+ * What the checks behind this shop's agent do not cover. `ran` says what the hand check ran on: the digest of the settings it used
+ * (Glow Salon's, when left out) and how many situations those settings could not run.
+ */
+export function notTestedFor(settings: Settings, ran: { onPolicyDigest?: string; notRun?: number } = {}): NotTestedKey[] {
   const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
-  return policyDigest(settings) === checkedPolicyDigest() ? ids : [...ids, "own-settings"];
+  if (policyDigest(settings) !== (ran.onPolicyDigest ?? checkedPolicyDigest())) return [...ids, "own-settings"];
+  return (ran.notRun ?? 0) > 0 ? [...ids, "situations-skipped"] : ids;
 }
 
 /** "2026-11" in a time zone as [from, to) in epoch milliseconds. */

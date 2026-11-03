@@ -263,6 +263,7 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `notTested.same-instant` | ഒരേ നിമിഷത്തിൽ രണ്ട് ഉപഭോക്താക്കൾ | two customers at the exact same instant |  |
 | `notTested.other-faults` | പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ | problems beyond the ones tried |  |
 | `notTested.own-settings` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (ഇവ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത്) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
+| `notTested.situations-skipped` | ഈ പരിശോധനകളിൽ ചിലത്, ഈ കടയുടെ ക്രമീകരണങ്ങളിൽ നടത്താൻ കഴിയാത്തതിനാൽ ഒഴിവാക്കി | some of these checks, which this shop's settings cannot run (so they were left out) |  |
 | `notCounted.no-shows` | ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും) | who turned up (a booking is marked finished when its time passes) |  |
 | `notCounted.read-receipts` | ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ഏജന്റ് വഴിയല്ലാതെ നടന്ന ബുക്കിംഗ്, കോൾ, പേയ്മെന്റ് | bookings, calls and payments that did not go through the agent |  |

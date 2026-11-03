@@ -127,7 +127,7 @@ test("the not-tested and not-counted lists are always on the page, in the shop's
     assert.ok(page.includes(s.notTested["own-settings"]) === false, "Glow Salon's own settings are what the checks ran on");
     assert.ok(ownerText(report, language).split("\n")[4].includes(String(report.notTested.length + report.notCounted.length - 2)));
   }
-  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 1);
+  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 2, "the hand check's list, \"own-settings\" and \"situations-skipped\"");
 });
 
 test("a shop whose settings are not the ones the checks ran on is told so, in the lists", async () => {

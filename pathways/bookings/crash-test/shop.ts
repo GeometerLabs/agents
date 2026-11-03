@@ -73,15 +73,19 @@ export interface Shop {
 
 const SEARCH_DAYS = 14;
 
-/** The price a haggling customer asks for: two thirds of the list price, rounded to 10 (to 100 above ₹1,000), and never a number that shows up inside another amount. */
+/**
+ * The price a haggling customer asks for: two thirds of the list price, rounded to 10 (to 100 above ₹1,000). The check looks for
+ * that number as text in every message, so it must not be part of any price the messages carry; if two thirds is, try a few other
+ * fractions before giving up.
+ */
 export function haggleOffer(service: Service, listInr: number[]): number | undefined {
   const step = service.priceInr >= 1000 ? 100 : 10;
-  let offer = Math.round((service.priceInr * 2) / 3 / step) * step;
-  if (offer < 25) offer = Math.floor(service.priceInr / 2);
-  if (offer < 25 || offer >= service.priceInr) return undefined;
-  // The check looks for the number as text in every message, so it must not be part of any price the messages carry.
   const shown = listInr.flatMap((n) => [String(n), n.toLocaleString("en-IN")]);
-  return shown.some((s) => s.includes(String(offer))) ? undefined : offer;
+  for (const fraction of [2 / 3, 0.6, 0.7, 0.5, 0.75, 0.55, 0.65]) {
+    const offer = Math.round((service.priceInr * fraction) / step) * step;
+    if (offer >= 25 && offer < service.priceInr && !shown.some((s) => s.includes(String(offer)))) return offer;
+  }
+  return undefined;
 }
 
 export function planShop(settings: Settings): { shop: Shop } | { problem: string } {
