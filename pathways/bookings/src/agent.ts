@@ -453,7 +453,7 @@ export function createAgent(deps: AgentDeps): Agent {
           return;
         case "refused": {
           const reason = sorted.error.guard.reason ?? sorted.error.message;
-          if (/expire/iu.test(reason)) return expireHold(b, hold, reason);
+          if (/expire/iu.test(reason)) return expireGuardHold(b, hold, reason);
           return stop("refused", `Guard refused the approved refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${reason}. Nothing was refunded.`, "blocked");
         }
         case "no_good": return stop("failed", `Guard did not take the approved refund and will not on a retry: ${sorted.why}. Nothing was refunded.`, "failed");
@@ -472,7 +472,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** Guard's approval ran out before the owner answered (or before the approved call could be used). Nothing was refunded; the customer is told. */
-  async function expireHold(b: Booking, hold: Hold, why = "the owner did not answer before Guard's approval ran out"): Promise<void> {
+  async function expireGuardHold(b: Booking, hold: Hold, why = "the owner did not answer before Guard's approval ran out"): Promise<void> {
     dropHold(b, hold);
     const note = `${why}. Nothing was refunded. A new request for payment ${hold.paymentId} has to be made by the builder.`;
     log(b, b.customer, "refund", "failed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: note });
@@ -1004,7 +1004,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (const b of [...store.bookings.values()]) {
       for (const p of [...b.pending]) {
         if (p.kind === "guard_hold") {
-          if (p.expiresAtMs !== null && p.expiresAtMs <= now) await expireHold(b, p);
+          if (p.expiresAtMs !== null && p.expiresAtMs <= now) await expireGuardHold(b, p);
           else if (p.approved && p.retryAtMs !== undefined && p.retryAtMs <= now) await releaseHeld(b, p);
         } else if (p.kind === "refund_retry" && p.retryAtMs <= now) await retryRefund(b, p);
       }

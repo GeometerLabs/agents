@@ -80,8 +80,10 @@ export interface Payments {
  *  - guardUnavailable: Guard cannot decide (503). Nothing was sent.
  *  - uncertainHold: Guard holds the call with no approval id, because an earlier attempt may have happened.
  *  - outcomeUnknown: the refund is stored, then Guard says the outcome is unknown (504). It is not repeated.
+ *  - guardRefused: Guard refuses the call before it is sent, by a limit (the day's refund cap).
+ *  - serverError: the refund is stored, then the service answers 500, which Guard passes through as it came. The refund may have happened.
  */
-export type PaymentsFault = "lostReply" | "error" | "guardUnavailable" | "uncertainHold" | "outcomeUnknown";
+export type PaymentsFault = "lostReply" | "error" | "guardUnavailable" | "uncertainHold" | "outcomeUnknown" | "guardRefused" | "serverError";
 export type PaymentsOp = "createPaymentLink" | "fetchPaymentLink" | "listPaymentLinks" | "cancelPaymentLink" | "fetchPayment" | "refund" | "listRefunds";
 
 export interface FakePaymentsOptions {
@@ -141,6 +143,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       faults.take("refund");
       throw new GuardUnavailableError(503, "refused by the Guard: kill switch engaged: test", info("deny", "guard_unavailable", "later", "kill switch engaged: test"), sentCall);
     }
+    if (before === "guardRefused") {
+      faults.take("refund");
+      const reason = "limit refund-paise-per-day would be exceeded (0.00 of 0.00 already reserved for this scope); refused before dispatch";
+      throw new GuardRefusedError(403, `refused by the Guard: ${reason}`, info("deny", "refused_by_policy", "no", reason), sentCall, "limit", "refund-paise-per-day");
+    }
     if (before === "uncertainHold") {
       faults.take("refund");
       const detail = { approval: null, status: "pending", expires_at_ms: null };
@@ -176,6 +183,10 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     if (fault === "outcomeUnknown") {
       guard?.recordUnknown(paymentId);
       throw new GuardOutcomeUnknownError(504, "refused by the Guard: outcome unknown: the request may or may not have reached the provider. The action may have happened; it is not repeated automatically", { decision: "unknown", code: "outcome_unknown", sent: "unknown", retry: "do_not_repeat", detail: null }, sentCall);
+    }
+    if (fault === "serverError") {
+      guard?.recordUnknown(paymentId);
+      throw new ApiError(500, "The payments service answered 500.");
     }
     guard?.recordSent(paymentId, request, { ...refund });
     if (fault === "lostReply") throw new TimeoutError("refund");
