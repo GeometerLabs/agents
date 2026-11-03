@@ -103,9 +103,9 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
 
     async pay(times) {
       const target = demo.payTarget();
-      if (!target) return ui.nothingToPay;
+      // A deposit nobody has paid can be paid once or twice (two phones); one already paid can only be paid again ("twice").
+      if (!target || (target.mode === "again" && times === 1)) return ui.nothingToPay;
       const link = world.linkFor(target.booking.id)!;
-      // A deposit nobody has paid can be paid once or twice (two phones); one already paid can only be paid again.
       for (let i = 0; i < (target.mode === "first" ? times : 1); i++) world.payments.customerPays(link.id);
       await settle();
       return undefined;
