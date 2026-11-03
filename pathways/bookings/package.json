@@ -5,6 +5,7 @@
   "description": "Bookings with a deposit and cancellation: v0 core, run against stand-in services. No dependencies.",
   "scripts": {
     "test": "node --test test/",
-    "hand-check": "node scripts/hand-check.ts"
+    "hand-check": "node scripts/hand-check.ts",
+    "demo": "node demo/server.ts"
   }
 }

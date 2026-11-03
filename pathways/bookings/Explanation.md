@@ -65,7 +65,7 @@ Only erasable TypeScript: no enums, namespaces, parameter properties or decorato
 
 ## Size
 
-About 2,900 lines in `src/` (of which the agent is about 760, the templates 150, the date and time reading 200), about 1,600 lines of tests, situations and script, 116 tests, 27 situations, 130 checks inside them. The demo adds about 1,600 lines in `demo/` and 21 tests (516 lines). No dependencies. The two largest costs are the two languages of templates and the flow's honesty (look first, read back, reconcile), which is the point of the pathway.
+About 2,900 lines in `src/` (of which the agent is about 760, the templates 150, the date and time reading 200), about 1,600 lines of tests, situations and script, 116 tests, 27 situations, 130 checks inside them. The demo adds about 1,600 lines in `demo/` and 22 tests. No dependencies. The two largest costs are the two languages of templates and the flow's honesty (look first, read back, reconcile), which is the point of the pathway.
 
 ## Choices to review
 

@@ -8,7 +8,7 @@ import vm from "node:vm";
 import { MAX_BODY_BYTES, isLocalNetworkAddress, isPrivateIPv4, lanAddresses, startDemo } from "../demo/app.ts";
 import type { DemoOptions, RunningDemo } from "../demo/app.ts";
 import { applyLanguage, languageOptions } from "../demo/personalise.ts";
-import { chipsFor, createDemo } from "../demo/session.ts";
+import { MAX_CUSTOMER_MESSAGES, chipsFor, createDemo } from "../demo/session.ts";
 import { glowSalon } from "../src/harness.ts";
 import { LANGUAGES, parseSettings } from "../src/settings.ts";
 import { zonedToMs } from "../src/time.ts";
@@ -513,4 +513,15 @@ test("one world per browser: sessions are separate, cookies are private to the p
   assert.deepEqual(calendarOf(reset), []);
   assert.deepEqual(linksOf(reset), []);
   assert.equal(reset.clock, "Tue 3 Nov, 10:00 am");
+});
+
+test("the world in memory cannot grow for ever, and a port already in use is explained", async () => {
+  const demo = createDemo(glowSalon(), NOW);
+  let notice: string | undefined;
+  for (let i = 0; i <= MAX_CUSTOMER_MESSAGES; i++) notice = await demo.say("hello");
+  assert.equal(notice, demo.ui.demoFull, "after the limit it says to start again");
+  assert.equal(demo.customerLog.filter((b) => b.who === "me").length, MAX_CUSTOMER_MESSAGES);
+
+  const first = await boot();
+  await assert.rejects(startDemo({ settings: glowSalon(), hosts: ["127.0.0.1"], port: first.port }), /already in use.*--port/);
 });

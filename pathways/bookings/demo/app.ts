@@ -284,7 +284,10 @@ export async function startDemo(options: DemoOptions): Promise<RunningDemo> {
     servers.push(server);
     urls.push(`http://${host.includes(":") ? `[${host}]` : host}:${port}`);
   }
-  if (servers.length === 0) throw new Error(`The demo could not start on any address: ${skipped.join("; ")}`);
+  if (servers.length === 0) {
+    const busy = skipped.some((s) => s.includes("EADDRINUSE"));
+    throw new Error(busy ? `Port ${options.port ?? 8787} is already in use. Start the demo with --port 8790 (or another free number).` : `The demo could not start on any address: ${skipped.join("; ")}`);
+  }
   return {
     port, urls, skipped, servers,
     sessionCount: app.sessionCount,

@@ -15,6 +15,7 @@ import { CUSTOMER_WORDS, uiFor } from "./strings.ts";
 import type { Ui } from "./strings.ts";
 
 export const MAX_CUSTOMER_MESSAGES = 200; // per world; the page offers "Start again" after that
+export const MAX_TAPS = 600; // every other tap together: the world is in memory, so it is not allowed to grow forever
 export const MAX_MESSAGE_LENGTH = 300;
 const TICK_MINUTES = 15; // time passes in steps: one big jump would skip reminders the agent sends one tick at a time
 
@@ -52,6 +53,7 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
   const ownerLog: Bubble[] = [];
   let sentSeen = 0;
   let customerMessages = 0;
+  let taps = 0;
   let queue: Promise<unknown> = Promise.resolve();
 
   const clockText = (ms: number) => {
@@ -86,7 +88,7 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
     },
 
     async say(text) {
-      if (customerMessages >= MAX_CUSTOMER_MESSAGES) return ui.demoFull;
+      if (customerMessages >= MAX_CUSTOMER_MESSAGES || taps >= MAX_TAPS) return ui.demoFull;
       customerMessages++;
       customerLog.push({ who: "me", text, time: clockText(world.clock.now()), template: false });
       await world.say(text);
@@ -102,6 +104,7 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
     },
 
     async pay(times) {
+      if (++taps > MAX_TAPS) return ui.demoFull;
       const target = demo.payTarget();
       // A deposit nobody has paid can be paid once or twice (two phones); one already paid can only be paid again ("twice").
       if (!target || (target.mode === "again" && times === 1)) return ui.nothingToPay;
@@ -112,6 +115,7 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
     },
 
     async advance(minutes) {
+      if (++taps > MAX_TAPS) return ui.demoFull;
       for (let left = minutes; left > 0; left -= TICK_MINUTES) await world.advance(Math.min(TICK_MINUTES, left));
       await settle();
       return undefined;
@@ -125,6 +129,7 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
     },
 
     async owner(command, ref) {
+      if (++taps > MAX_TAPS) return ui.demoFull;
       const text = `${command} ${ref}`;
       ownerLog.push({ who: "me", text, time: clockText(world.clock.now()), template: false });
       await world.say(text, { from: world.owner });
