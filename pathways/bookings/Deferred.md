@@ -225,3 +225,11 @@
 | **The sheets were not opened in a browser or printed** | Built without a browser. The structure is checked (no script, no external address, A4 print rule, phone viewport), but not that each language fits on one A4 page, nor how the Devanagari, Malayalam and Kannada fonts look on a real phone or printer | Print each sheet to PDF and look at it; shorten the text of any that runs to a second page |
 | **The demo's screen words in Malayalam and Kannada** | `demo/strings.ts` has English and Hindi only, so with `--lang ml` or `--lang kn` the buttons, tabs, suggestions and the owner's summary are English. The Malayalam and Kannada guides quote the English labels and give sentences to type. The test checks the guide against `uiFor(language)`, so adding reviewed words there makes it demand the guide's new wording | A reviewed Malayalam and Kannada set for the demo |
 | **Facts in the guide that move** | The founding fee ₹199 for the first 100 (later ₹199 to ₹499, not final), Meta's free WhatsApp AI (UPI "coming soon" in November 2026), the WhatsApp account-age rule (it differs by provider; the provider is not chosen), Razorpay's fee on Payment Links (2% assumed; its pages disagree) and that the fee is not returned on a refund (from a search summary of its FAQ) | The provider is chosen, Razorpay confirms in writing, the pilot opens a town; update section 11 and the sheets' dated line when anything here changes |
+
+## Under the deploy bundle (added 3 November 2026)
+
+See [bundle/Deferred.md](../../bundle/Deferred.md) for everything the bundle leaves open. What touches this pathway:
+
+- **Model calls are counted per server, not per shop.** The model Guard has one cap; this pathway's record has each action's model cost, and nothing yet stops one shop from using the server's whole allowance.
+- **The runtime's single `services.timeoutMs`** applies to every service. The bundle needs it above Guard's 15 s for payments; WhatsApp, Calendar and the model are then also given that long. A per-service value would let the model parser keep its 8 s.
+- **`steps` does not count clock ticks.** A tick that sends a reminder is work, but is not counted as a step, so a shop that only sends reminders shows no steps. Revisit when: fleet wants a "ticks" count.
