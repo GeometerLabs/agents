@@ -4,13 +4,16 @@
 // service; here the base URLs point straight at the stand-ins, which is the only difference.
 //
 // Nothing is written to the repository: the secrets (generated here) and a copy of the client folder, with the runtime's data, live in a
-// temp folder that `stop()` removes. Used by test/full-chain.test.ts and by the command line (below).
+// temp folder that `stop()` removes. Used by test/full-chain.test.ts and by the command line (the end of this file):
+//
+//   node pathways/bookings/scripts/local-stack.ts [--client <folder>] [--free-ports]        (npm run stack, inside pathways/bookings)
 import { randomBytes } from "node:crypto";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { startInbox } from "../inbox/server.ts";
 import type { RunningInbox } from "../inbox/server.ts";
 import { startClient } from "../server/start.ts";
@@ -20,6 +23,8 @@ import type { RunningStandins } from "../standins/server.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
 import { systemClock } from "../src/clock.ts";
 import type { Clock } from "../src/clock.ts";
+import { hoursOn } from "../src/settings.ts";
+import { DAY, localParts } from "../src/time.ts";
 
 const EXAMPLE_CLIENT = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 
@@ -126,3 +131,49 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
     throw e;
   }
 }
+
+// ---- the command line ---------------------------------------------------------------------------------------------------------
+
+const DEFAULT_PORTS = { standins: 8790, inbox: 8788, runtime: 8780 };
+
+async function main(args: string[]): Promise<void> {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("Usage: node pathways/bookings/scripts/local-stack.ts [--client <folder>] [--free-ports]\n  --client       a client folder to copy (default: the Glow Salon example)\n  --free-ports   let the system pick the ports (default: 8790 stand-ins, 8788 inbox, 8780 runtime)");
+    return;
+  }
+  const at = args.indexOf("--client");
+  const known = ["--client", "--free-ports", "--help", "-h"];
+  if (args.some((a, i) => a.startsWith("-") && !known.includes(a)) || (at !== -1 && (args[at + 1] === undefined || args[at + 1].startsWith("--")))) {
+    console.error("I don't know that option. Use --client <folder>, --free-ports or --help.");
+    process.exit(2);
+  }
+
+  let stack: LocalStack;
+  try {
+    stack = await startLocalStack({ clientFolder: at === -1 ? undefined : args[at + 1], ports: args.includes("--free-ports") ? {} : DEFAULT_PORTS, log: (line) => console.log(`  ${line}`) });
+  } catch (e) {
+    const error = e as NodeJS.ErrnoException;
+    console.error(error.code === "EADDRINUSE" ? `A port this stack needs is already in use (${error.message}). Stop what is using it, or run with --free-ports.` : error instanceof Error && error.constructor.name === "ClientError" ? error.message : `The stack could not start: ${error.stack ?? error}`);
+    process.exit(1);
+  }
+
+  const { settings } = stack.runtime!.client;
+  const tomorrowOpen = hoursOn(settings, localParts(Date.now() + DAY, settings.timezone).weekday) !== null;
+  const standins = `localhost:${stack.standins.port}`;
+  console.log(`Geometer · Bookings · local stack for ${settings.name}. Stand-in services, test money, nothing real is contacted.`);
+  console.log(`  Stand-ins (Razorpay, Google Calendar, WhatsApp; control routes under /_standin/):  ${stack.standins.url}`);
+  console.log(`  Inbox (checks each signed webhook, hands it on):                                    ${stack.inbox.url}`);
+  console.log(`  Agent runtime (live mode, its adapters call the stand-ins):                         ${stack.runtime!.server.url}`);
+  console.log(`  Secrets and data: ${stack.dir} (removed when you stop)`);
+  console.log("Try it, in another terminal:");
+  console.log(`  curl -s -X POST ${standins}/_standin/whatsapp/inbound -d '{"from":"+919811111111","text":"haircut ${tomorrowOpen ? "tomorrow" : "the day after tomorrow"} at 6pm"}'   # a customer writes`);
+  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # they pay the deposit link (the first link is plink_1; later ones are in the state)`);
+  console.log(`  curl -s ${standins}/_standin/state   # what the stand-ins hold: the outbox, the links, the calendar`);
+  console.log("Press Ctrl+C to stop.");
+
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.once(signal, () => { void stack.stop().then(() => process.exit(0), (e: Error) => { console.error(e.message); process.exit(1); }); });
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main(process.argv.slice(2));

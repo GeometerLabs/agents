@@ -201,6 +201,8 @@ The runtime server, the live adapters, the inbox and the stand-ins were built on
 
 **3. The seams.** One: the stand-in's `POST /_standin/razorpay/deliver` takes `{"all": true}` and sends every event so far again, which is what a provider does with an event the receiver did not accept, or with a late repeat. Without it, an event counts as delivered once the stand-in has tried it, even when the inbox said 503, so the provider's retry could not be played. Nothing changed in the runtime: base URLs come from `runtime.json`, the clock from `startClient`'s option, and the stack picks the runtime's port in advance and keeps it across a stop and start (the inbox forwards to a fixed address).
 
+**4. One command for it.** `npm run stack` is the same `startLocalStack` behind a command line: defaults to the ports in the README (8790, 8788, 8780; `--free-ports` lets the system choose), copies the example client (or `--client <folder>`, with its old `data` left behind) so nothing is written inside the repository, prints the three `curl`s, and on Ctrl+C or SIGTERM stops the three servers and removes the temp folder. The "try it" message names tomorrow, or the day after when the shop is closed tomorrow, so it works on a Saturday too. `test/full-chain.test.ts` runs the command as a child process, plays the printed `curl`s as they are printed, and checks that SIGTERM exits 0 and the folder with the secrets is gone.
+
 ## Syntax rules used
 
 Only erasable TypeScript: no enums, namespaces, parameter properties or decorators. Type-only imports use `import type`. Imports carry their `.ts` extension. Files that read the settings JSON use `new URL(…, import.meta.url)`, so they work from any directory.

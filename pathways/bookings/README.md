@@ -34,6 +34,9 @@ const { payments, calendar, messaging } = createLiveAdapters(
 );
 ```
 
+**One command for the whole local stack.** From `pathways/bookings`, `npm run stack` starts the stand-ins, the inbox and a runtime in live mode against them, on a temp copy of the example client (`-- --client <folder>` for another, `-- --free-ports` if 8790, 8788 or 8780 are taken).
+It prints the URLs and three `curl`s: a customer writes, they pay the deposit link, read what the stand-ins hold. The secrets are generated into a temp folder, never into the repository, and Ctrl+C removes it with everything else. `test/full-chain.test.ts` runs the same chain.
+
 **Against stand-ins** (nothing real, no keys, no network beyond this computer). The stand-ins speak the three wire formats over HTTP in front of the same in-memory fakes the tests use, and deliver signed webhooks like the providers do:
 
 ```sh

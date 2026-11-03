@@ -7,6 +7,8 @@
 // the stand-ins' own records (the calendar, the payments, the outbox), never from what the agent said.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { SAYS } from "../crash-test/situations.ts";
 import { signMeta, signRazorpay } from "../src/adapters/live/webhooks.ts";
 import { fakeClock } from "../src/clock.ts";
@@ -157,4 +159,36 @@ test("a webhook with a bad signature changes nothing: a forged payment does not 
     assert.equal(witnesses(s).confirmed.length, 1);
     assert.equal(witnesses(s).toldBooked(CUSTOMER), 1);
   });
+});
+
+test("npm run stack: the command prints where everything is, the customer's message and payment book it, and Ctrl+C stops it and removes its secrets", async () => {
+  const child = spawn(process.execPath, [new URL("../scripts/local-stack.ts", import.meta.url).pathname, "--free-ports"], { stdio: ["ignore", "pipe", "pipe"] });
+  let out = "";
+  child.stdout.on("data", (c) => { out += c; });
+  child.stderr.on("data", (c) => { out += c; });
+  const exited = new Promise<number | null>((resolve) => child.on("close", resolve));
+  try {
+    for (let i = 0; i < 400 && !out.includes("Press Ctrl+C"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    const standins = /Stand-ins .*?(http:\/\/\S+)/u.exec(out)?.[1];
+    const dir = /Secrets and data: (\S+)/u.exec(out)?.[1];
+    assert.ok(standins && dir, out);
+    assert.ok(existsSync(dir));
+    assert.match(out, /Try it/);
+    // The two printed curls, as printed (the day in the message is chosen so that the shop is open that day).
+    const printed = (route: string) => new RegExp(`${route} -d '(\\{.*?\\})'`, "u").exec(out)?.[1];
+    const post = async (route: string) => (await fetch(standins + route, { method: "POST", body: printed(route) })).json() as Promise<any>;
+    const wrote = await post("/_standin/whatsapp/inbound");
+    assert.deepEqual(statuses(wrote), [200]);
+    let state: any = {};
+    for (let i = 0; i < 200 && !(state.links?.length > 0); i++) { await new Promise((resolve) => setTimeout(resolve, 10)); state = await (await fetch(`${standins}/_standin/state`)).json(); }
+    assert.equal(state.links.length, 1, "the agent sent the link");
+    assert.deepEqual(statuses(await post("/_standin/razorpay/pay")), [200, 200]);
+    for (let i = 0; i < 200 && !state.calendar.every((e: any) => e.status === "confirmed"); i++) { await new Promise((resolve) => setTimeout(resolve, 10)); state = await (await fetch(`${standins}/_standin/state`)).json(); }
+    assert.deepEqual(state.calendar.map((e: any) => e.status), ["confirmed"]);
+    assert.equal(state.authorizationSeen, 0);
+
+    child.kill("SIGTERM");
+    assert.equal(await exited, 0);
+    assert.ok(!existsSync(dir), "the temp folder with the secrets and the data is gone");
+  } finally { child.kill("SIGKILL"); }
 });
