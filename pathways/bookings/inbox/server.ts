@@ -25,6 +25,9 @@ export interface InboxConfig {
   whatsappVerifyToken: string;
   /** How long to wait for the runtime. Default 4 seconds (Razorpay waits 5). */
   forwardTimeoutMs?: number;
+  /** The runtime refuses a request of more than 100 events or 256 KiB. Events are sent in batches below both. Defaults: 100 events, 200 KiB. */
+  maxEventsPerRequest?: number;
+  maxRequestBytes?: number;
   /** Largest body accepted per provider. Defaults: Razorpay 256 KB, WhatsApp 3 MB (Meta's documented ceiling). */
   maxBodyBytes?: { razorpay?: number; whatsapp?: number };
   /** One line per request, with no body, secret, number or text in it. Default: standard error. */
@@ -60,6 +63,24 @@ function reply(res: ServerResponse, status: number, body: unknown, extra: Record
   res.end(text);
 }
 
+/**
+ * Split events, keeping their order, into requests of at most `maxEvents` events and `maxBytes` of JSON. A single event over the byte limit
+ * goes alone (the runtime will refuse it and the provider will keep retrying; a WhatsApp text is at most 4096 characters, so it does not happen).
+ */
+export function batches(events: AgentEvent[], maxEvents: number, maxBytes: number): AgentEvent[][] {
+  const out: AgentEvent[][] = [];
+  let current: AgentEvent[] = [];
+  let bytes = Buffer.byteLength('{"events":[]}');
+  for (const event of events) {
+    const size = Buffer.byteLength(JSON.stringify(event)) + 1; // + the comma
+    if (current.length > 0 && (current.length >= maxEvents || bytes + size > maxBytes)) { out.push(current); current = []; bytes = Buffer.byteLength('{"events":[]}'); }
+    current.push(event);
+    bytes += size;
+  }
+  if (current.length > 0) out.push(current);
+  return out;
+}
+
 const sameText = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const header = (req: IncomingMessage, name: string): string | undefined => {
   const v = req.headers[name];
@@ -72,20 +93,25 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
   }
   const log = config.log ?? ((line: string) => console.error(line));
   const forwardTimeoutMs = config.forwardTimeoutMs ?? 4000;
+  const maxEvents = config.maxEventsPerRequest ?? 100;
+  const maxBytes = config.maxRequestBytes ?? 200 * 1024;
   const limits = { razorpay: config.maxBodyBytes?.razorpay ?? DEFAULT_RAZORPAY_MAX, whatsapp: config.maxBodyBytes?.whatsapp ?? DEFAULT_WHATSAPP_MAX };
 
-  /** Give the runtime the events. True only if it answered 2xx, which means it has saved them. */
+  /** Give the runtime the events, in order, in as many requests as its limits need. True only if it answered 2xx to every one (it has saved them all). */
   async function forward(events: AgentEvent[]): Promise<boolean> {
-    try {
-      const response = await fetch(config.runtimeUrl.replace(/\/+$/u, "") + "/internal/events", {
-        method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${config.internalToken}` },
-        body: JSON.stringify({ events }), signal: AbortSignal.timeout(forwardTimeoutMs),
-      });
-      await response.arrayBuffer().catch(() => undefined);
-      return response.status >= 200 && response.status < 300;
-    } catch {
-      return false;
+    for (const batch of batches(events, maxEvents, maxBytes)) {
+      try {
+        const response = await fetch(config.runtimeUrl.replace(/\/+$/u, "") + "/internal/events", {
+          method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${config.internalToken}` },
+          body: JSON.stringify({ events: batch }), signal: AbortSignal.timeout(forwardTimeoutMs),
+        });
+        await response.arrayBuffer().catch(() => undefined);
+        if (response.status < 200 || response.status >= 300) return false;
+      } catch {
+        return false;
+      }
     }
+    return true; // if a later batch failed, the provider sends the whole webhook again and the runtime skips what it already saved (same message ids)
   }
 
   /** The steps every POST webhook shares. `read` gets the verified, parsed JSON and says which events to forward. */

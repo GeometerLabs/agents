@@ -162,3 +162,42 @@ test("as its own process: it refuses to start without its settings, reads secret
     for (const secret of Object.values(SECRETS)) assert.ok(!out.includes(secret));
   } finally { child.kill("SIGTERM"); }
 });
+
+// ---- the runtime refuses more than 100 events or 256 KiB in one request ----
+
+function manyMessages(count: number, textLength = 20) {
+  const hook = JSON.parse(fixtureText("whatsapp-webhook-text.json"));
+  const base = hook.entry[0].changes[0].value.messages[0];
+  hook.entry[0].changes[0].value.messages = Array.from({ length: count }, (_v, i) => ({ ...base, id: `wamid.m${i}`, timestamp: String(1749416383 + i), text: { body: String(i).padStart(4, "0") + "x".repeat(textLength) } }));
+  return JSON.stringify(hook);
+}
+
+test("a webhook with many messages is forwarded in order, in requests of at most 100 events and 200 KiB, and every timestamp is milliseconds", async () => {
+  await withInbox(async ({ runtime, post }) => {
+    const body = manyMessages(250);
+    assert.equal((await post("/webhooks/whatsapp", body, whatsappHeaders(body))).status, 200);
+    const sent = runtime.requests.map((r) => JSON.parse(r.body).events);
+    assert.deepEqual(sent.map((e) => e.length), [100, 100, 50]);
+    const all = sent.flat();
+    assert.deepEqual(all.map((e: any) => e.message.id), Array.from({ length: 250 }, (_v, i) => `wamid.m${i}`));
+    assert.equal(all[0].message.timestamp, 1749416383 * 1000); // WhatsApp sends epoch seconds; the runtime wants milliseconds
+    assert.equal(all[249].message.timestamp, (1749416383 + 249) * 1000);
+    for (const r of runtime.requests) assert.ok(Buffer.byteLength(r.body) <= 200 * 1024);
+  });
+  await withInbox(async ({ runtime, post }) => {
+    const body = manyMessages(90, 4000); // 90 messages of about 4 KB: under 100 events, but more than 200 KiB
+    assert.equal((await post("/webhooks/whatsapp", body, whatsappHeaders(body))).status, 200);
+    assert.ok(runtime.requests.length >= 2);
+    for (const r of runtime.requests) { assert.ok(Buffer.byteLength(r.body) <= 200 * 1024); assert.ok(JSON.parse(r.body).events.length <= 100); }
+    assert.equal(runtime.requests.reduce((n, r) => n + JSON.parse(r.body).events.length, 0), 90);
+  });
+});
+
+test("if a later batch is not taken, the provider is told 503 (it sends the webhook again, and the runtime skips the message ids it already saved)", async () => {
+  let calls = 0;
+  await withInbox(async ({ runtime, post }) => {
+    const body = manyMessages(150);
+    assert.equal((await post("/webhooks/whatsapp", body, whatsappHeaders(body))).status, 503);
+    assert.equal(runtime.requests.length, 2);
+  }, { runtime: () => (++calls === 2 ? { status: 503, json: {} } : { status: 200, json: {} }) });
+});
