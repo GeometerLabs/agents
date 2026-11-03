@@ -7,7 +7,6 @@ import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import { MONTH_NAMES, formatInr } from "../src/language/format.ts";
 import { glowSalon } from "../src/harness.ts";
 import { LANGUAGES, parseSettings } from "../src/settings.ts";
-import type { Language } from "../src/settings.ts";
 import { buildMonthlyReport, monthRange, NOT_COUNTED, RULE_IDS } from "../report/data.ts";
 import type { MonthlyReport, Source } from "../report/data.ts";
 import { at, runBusyMonth } from "../report/example-month.ts";

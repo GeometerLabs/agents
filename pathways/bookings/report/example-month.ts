@@ -13,7 +13,7 @@
 import { createWorld, glowSalon } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { DAY_PART_WORDS, dayPartOf } from "../src/language/format.ts";
-import { LANGUAGES, serviceName } from "../src/settings.ts";
+import { serviceName } from "../src/settings.ts";
 import type { Language } from "../src/settings.ts";
 import { MINUTE, zonedToMs } from "../src/time.ts";
 
