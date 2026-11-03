@@ -14,10 +14,13 @@ const settings = glowSalon();
 const line = (c: { lines: CostLine[] }, id: CostLine["id"]) => c.lines.find((l) => l.id === id)!;
 
 // The sha256 of each committed price list. A price list is never edited after it is committed; a new price is a new file, and a new line here.
-const PINNED: Record<string, string> = { "2026-11-03.json": "0d77094e78500264c426f4e587f61299ad0d8bda7f450631306a6e15fa6db64f" };
+const PINNED: Record<string, string> = {
+  "2026-11-03.json": "0d77094e78500264c426f4e587f61299ad0d8bda7f450631306a6e15fa6db64f",
+  "2026-11-04.json": "6c495979cdaf40194c811e6f9716ec1286afc02a8003418c5e68bb913d8a156d",
+};
 
-test("the price list is the one dated 2026-11-03, and its bytes are pinned: a changed price is a new file", () => {
-  assert.equal(prices.date, "2026-11-03");
+test("the newest price list is the one dated 2026-11-04, and the bytes of every list are pinned: a changed price is a new file", () => {
+  assert.equal(prices.date, "2026-11-04");
   const files = readdirSync(PRICES_DIR).filter((f) => f.endsWith(".json")).sort();
   assert.deepEqual(files, Object.keys(PINNED), "a price list is in bundle/prices that is not pinned here (or the reverse)");
   for (const file of files) {
@@ -26,12 +29,14 @@ test("the price list is the one dated 2026-11-03, and its bytes are pinned: a ch
   }
 });
 
-test("every rate names its source, the day it was read and how sure we are", () => {
+test("every rate names its source, the day it was read (not after the list's own day) and how sure we are", () => {
   for (const [id, r] of Object.entries(prices.rates)) {
     assert.match(r.source, /^(https:\/\/|docs\/)/u, id);
-    assert.match(r.read, /^2026-11-03$/u, id);
+    assert.match(r.read, /^\d{4}-\d{2}-\d{2}$/u, id);
+    assert.ok(r.read <= prices.date, `${id} was read after the list's date`);
     assert.ok(r.note.length > 20, id);
   }
+  assert.deepEqual([prices.rates["geometer.fee"].source, prices.rates["geometer.fee"].read, prices.rates["geometer.fee"].micro], ["https://geometer.dev/pricing", "2026-11-04", 199_000_000]);
   assert.equal(prices.rates["whatsapp.in.utility"].quality, "second-hand");
   assert.equal(prices.rates["razorpay.platform-fee"].quality, "conflicting");
   assert.equal(prices.exchange.USD?.quality, "assumed");
@@ -50,20 +55,41 @@ test("a price list is refused when its date is not its file name's, or a rate ha
 });
 
 test("Glow Salon, 40 bookings a month: the line, to the paisa", () => {
-  const c = monthlyCost({ settings, model: "claude-haiku-5-5" }, prices);
+  const c = monthlyCost({ settings }, prices);
   assert.equal(c.basis, "early-estimate");
   assert.equal(c.bookings, 40);
   // 40 bookings x (2 reminders + 1 owner notice) = 120 utility templates at 11.5 paise = 1,380 paise. 240 replies are inside the 1,000 free ones.
   assert.deepEqual([line(c, "whatsapp").state, line(c, "whatsapp").paise, line(c, "whatsapp").quantities.templates, line(c, "whatsapp").quantities.paidServiceReplies], ["amount", 1380, 120, 0]);
   // 40 deposits of Rs 200: fee 400 paise + 18% GST 72 paise = 472 each.
   assert.deepEqual([line(c, "razorpay").paise, line(c, "razorpay").payer], [40 * 472, "shop-pays-razorpay"]);
-  // Nothing sets the allowance, no provider is chosen and nothing has measured the hosting: those three are unknown, not zero.
-  for (const id of ["whatsapp-provider", "model", "hosting"] as const) assert.deepEqual([line(c, id).state, line(c, id).paise], ["unknown", null], id);
-  assert.equal(line(c, "model").usagePaise, 238); // 240 calls x (600 in at $0.10 + 100 out at $0.50 per million) at an assumed INR 90 per dollar = 237.6 paise, rounded up
-  assert.deepEqual(c.total, { paise: 1380 + 18880, complete: false, unknown: ["whatsapp-provider", "model", "hosting"] });
-  assert.ok(c.caveats.includes("early-estimate") && c.caveats.includes("allowance-not-set") && c.caveats.includes("provider-not-chosen") && c.caveats.includes("hosting-not-measured"));
-  assert.ok(c.caveats.includes("payment-link-fee-conflict") && c.caveats.includes("whatsapp-rate-second-hand"));
-  assert.deepEqual(c.priceList.date, "2026-11-03");
+  // Geometer's fee is flat, INR 199 (the founding price), and the AI model is in it: no model line, nothing passed through, nothing that depends on bookings.
+  assert.deepEqual([line(c, "geometer").state, line(c, "geometer").paise, line(c, "geometer").payer, line(c, "geometer").uses], ["amount", 19900, "builder-pays-geometer", ["geometer.fee"]]);
+  assert.deepEqual(c.lines.map((l) => l.id), ["whatsapp", "whatsapp-provider", "razorpay", "geometer", "hosting"]);
+  assert.deepEqual(c.lines.map((l) => l.payer), ["builder-pays-whatsapp-provider", "builder-pays-whatsapp-provider", "shop-pays-razorpay", "builder-pays-geometer", "hosting"]);
+  // No provider is chosen and nothing has measured the hosting: those two are unknown, not zero.
+  for (const id of ["whatsapp-provider", "hosting"] as const) assert.deepEqual([line(c, id).state, line(c, id).paise], ["unknown", null], id);
+  assert.deepEqual(c.total, { paise: 1380 + 18880 + 19900, complete: false, unknown: ["whatsapp-provider", "hosting"] });
+  assert.ok(c.caveats.includes("early-estimate") && c.caveats.includes("provider-not-chosen") && c.caveats.includes("hosting-not-measured"));
+  assert.ok(c.caveats.includes("payment-link-fee-conflict") && c.caveats.includes("whatsapp-rate-second-hand") && !c.caveats.includes("fee-not-priced"));
+  assert.deepEqual(c.priceList.date, "2026-11-04");
+});
+
+test("Geometer's fee comes from the price list and nowhere else: a changed fee changes the line, in rupees it needs no exchange rate, and a list without it is unknown, never INR 0", () => {
+  const fee = prices.rates["geometer.fee"];
+  const dearer: PriceList = { ...prices, rates: { ...prices.rates, "geometer.fee": { ...fee, micro: 299_000_000 } } };
+  assert.equal(line(monthlyCost({ settings }, dearer), "geometer").paise, 29900);
+  assert.equal(line(monthlyCost({ settings, observedBookings: 500 }, prices), "geometer").paise, 19900, "flat: bookings do not change it");
+  assert.equal(line(monthlyCost({ settings }, { ...prices, exchange: {} }), "geometer").paise, 19900);
+  const inDollars: PriceList = { ...prices, rates: { ...prices.rates, "geometer.fee": { ...fee, currency: "USD", micro: 3_000_000 } } };
+  const usd = monthlyCost({ settings }, inDollars);
+  assert.equal(line(usd, "geometer").paise, 27000); // US$3 at the list's assumed INR 90
+  assert.ok(usd.caveats.includes("assumed-exchange-rate"));
+  const { "geometer.fee": _gone, ...without } = prices.rates;
+  const unpriced = monthlyCost({ settings }, { ...prices, rates: without });
+  assert.deepEqual([line(unpriced, "geometer").state, line(unpriced, "geometer").paise], ["unknown", null]);
+  assert.ok(unpriced.caveats.includes("fee-not-priced") && unpriced.total.unknown.includes("geometer"));
+  const older = loadPriceList(new URL("2026-11-03.json", PRICES_DIR).pathname); // the list before the flat fee existed
+  assert.equal(line(monthlyCost({ settings }, older), "geometer").paise, null, "an old list says unknown for a rate it never had");
 });
 
 test("each line is rounded up once, to the next paisa: three templates are 34.5 paise, so 35, not 34 and not 3 x 12", () => {
@@ -92,31 +118,12 @@ test("a provider the list has no price for is unknown, and so is a dollar price 
   assert.deepEqual([line(p, "whatsapp-provider").state, line(p, "whatsapp-provider").paise], ["unknown", null]);
   assert.ok(p.caveats.includes("provider-not-priced"));
   const noExchange: PriceList = { ...prices, exchange: {} };
-  const q = monthlyCost({ settings, whatsappProvider: "gupshup", model: "claude-haiku-5-5" }, noExchange);
+  const q = monthlyCost({ settings, whatsappProvider: "gupshup" }, noExchange);
   assert.equal(line(q, "whatsapp-provider").paise, null);
-  assert.equal(line(q, "model").paise, null);
-  assert.equal(line(q, "model").usagePaise, undefined);
-});
-
-test("model usage against the allowance: inside it the line says included, over it only the excess is passed on, and no allowance is unknown", () => {
-  const base = { settings, model: "claude-haiku-5-5" };
-  const inside = line(monthlyCost({ ...base, modelAllowancePaise: 500 }, prices), "model");
-  assert.deepEqual([inside.state, inside.paise, inside.usagePaise], ["included", 0, 238]);
-  const over = line(monthlyCost({ ...base, modelAllowancePaise: 100 }, prices), "model");
-  assert.deepEqual([over.state, over.paise, over.usagePaise], ["amount", 138, 238]);
-  assert.equal(line(monthlyCost(base, prices), "model").paise, null);
-});
-
-test("a model that is not in the price list, or none named, is unknown: never zero", () => {
-  for (const model of ["sarvam-105b-conversations", "groq-gpt-oss-20b", undefined]) {
-    const c = monthlyCost({ settings, ...(model ? { model } : {}), modelAllowancePaise: 100 }, prices);
-    assert.deepEqual([line(c, "model").state, line(c, "model").paise, line(c, "model").usagePaise], ["unknown", null, undefined], String(model));
-    assert.ok(c.caveats.includes("model-not-priced"));
-  }
 });
 
 test("when every price is known the total is complete; real bookings from the record make it 'from the record', not an early estimate", () => {
-  const c = monthlyCost({ settings, model: "gemini-3.1-flash-lite", modelAllowancePaise: 1000, whatsappProvider: "gupshup", hostingSharePaise: 5000, observedBookings: 12 }, prices);
+  const c = monthlyCost({ settings, whatsappProvider: "gupshup", hostingSharePaise: 5000, observedBookings: 12 }, prices);
   assert.equal(c.basis, "from-record");
   assert.equal(c.bookings, 12);
   assert.ok(!c.caveats.includes("early-estimate"));
@@ -126,7 +133,7 @@ test("when every price is known the total is complete; real bookings from the re
 });
 
 test("no line is ever zero by being unknown", () => {
-  for (const input of [{}, { model: "claude-haiku-5-5" }, { whatsappProvider: "nobody" }, { hostingSharePaise: 0 }]) {
+  for (const input of [{}, { whatsappProvider: "gupshup" }, { whatsappProvider: "nobody" }, { hostingSharePaise: 0 }]) {
     for (const l of monthlyCost({ settings, ...input }, prices).lines) assert.equal(l.state === "unknown", l.paise === null, `${l.id}: only an unknown line has no amount`);
   }
 });

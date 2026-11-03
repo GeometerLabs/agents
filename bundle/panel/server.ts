@@ -159,7 +159,6 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const observed = data ? monthlyFromExport(settings, data, monthOf(now(), settings.timezone), "live", now()).bookings.made : undefined;
     return monthlyCost({
       settings, ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
-      ...(config.model ? { model: config.model } : {}), ...(config.modelAllowancePaise !== undefined ? { modelAllowancePaise: config.modelAllowancePaise } : {}),
       ...(config.whatsappProvider ? { whatsappProvider: config.whatsappProvider } : {}), ...(config.hostingSharePaise !== undefined ? { hostingSharePaise: config.hostingSharePaise } : {}),
     }, prices);
   }

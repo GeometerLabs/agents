@@ -72,15 +72,17 @@ export const hi: Words = {
   },
   cost: {
     heading: "हर महीने चलाने का ख़र्च", early: "शुरुआती अंदाज़ा: अभी असली बुकिंग गिनी नहीं गई हैं।", fromRecord: (n) => `रिकॉर्ड की ${n} बुकिंग से निकाला गया।`, assumption: (n) => `हमने महीने में ${n} बुकिंग मानी हैं।`,
-    lines: { whatsapp: "WhatsApp संदेश (Meta की फ़ीस)", "whatsapp-provider": "WhatsApp प्रोवाइडर की अपनी फ़ीस", model: "मॉडल का इस्तेमाल", razorpay: "Razorpay की फ़ीस", hosting: "होस्टिंग का हिस्सा" },
-    payer: { "passed-through": "लागत के दाम पर आगे डाला जाता है", "shop-pays-razorpay": "दुकान सीधे Razorpay को देती है", hosting: "सर्वर का ख़र्च, बाँटकर" },
-    unknown: "पता नहीं", included: "शामिल", usage: (a) => `मॉडल के इस्तेमाल का लगभग ${a}`, total: "कुल", subtotal: (n) => `अभी का जोड़। ${n} ${t1(n, "चीज़ की", "चीज़ों की")} कीमत अभी पता नहीं है, इसलिए यह पूरा ख़र्च नहीं है।`, priceList: (d) => `कीमतें ${d} की सूची से ली गई हैं।`,
+    lines: { whatsapp: "WhatsApp संदेश (Meta की फ़ीस)", "whatsapp-provider": "WhatsApp प्रोवाइडर की अपनी फ़ीस", razorpay: "Razorpay की फ़ीस", geometer: "Geometer की फ़ीस (शुरुआती कीमत)", hosting: "होस्टिंग का हिस्सा" },
+    payer: {
+      "builder-pays-whatsapp-provider": "बिल्डर या पार्टनर अपने WhatsApp प्रोवाइडर को देता है", "shop-pays-razorpay": "दुकान सीधे Razorpay को देती है",
+      "builder-pays-geometer": "बिल्डर या पार्टनर Geometer को देता है; AI मॉडल इसमें शामिल है", hosting: "सर्वर का ख़र्च, बाँटकर",
+    },
+    unknown: "पता नहीं", total: "कुल", subtotal: (n) => `अभी का जोड़। ${n} ${t1(n, "चीज़ की", "चीज़ों की")} कीमत अभी पता नहीं है, इसलिए यह पूरा ख़र्च नहीं है।`, priceList: (d) => `कीमतें ${d} की सूची से ली गई हैं।`,
     caveats: {
       "assumed-exchange-rate": "डॉलर और यूरो की कीमतों में अंदाज़े का भाव (₹90 और ₹100) लिया गया है। असली बिल अलग हो सकता है।",
       "provider-not-chosen": "WhatsApp प्रोवाइडर अभी चुना नहीं गया है, इसलिए उसकी फ़ीस पता नहीं।",
       "provider-not-priced": "कीमत-सूची में इस प्रोवाइडर की कीमत नहीं है।",
-      "allowance-not-set": "मॉडल के इस्तेमाल की शामिल हद तय नहीं है, इसलिए आगे डाली जाने वाली रकम पता नहीं।",
-      "model-not-priced": "कीमत-सूची में इस मॉडल की कीमत नहीं है।",
+      "fee-not-priced": "कीमत-सूची में Geometer की फ़ीस की कीमत नहीं है।",
       "hosting-not-measured": "होस्टिंग का हिस्सा अभी नापा नहीं गया है।",
       "payment-link-fee-conflict": "पेमेंट लिंक की फ़ीस पर Razorpay के अपने पेज एक-दूसरे से अलग बात कहते हैं। ऊँची वाली (2%) ली गई है।",
       "whatsapp-rate-second-hand": "WhatsApp का रुपये वाला भाव Meta के पेज से नहीं, किसी रीसेलर के पेज से आया है। पहले इनवॉइस पर इसे जाँच लीजिए।",

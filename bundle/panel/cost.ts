@@ -110,47 +110,36 @@ export interface Assumptions {
   serviceRepliesPerBooking: number;
   /** Notices to the owner as templates, per booking (a held refund, a late cancellation, a calendar problem). */
   ownerNoticesPerBooking: number;
-  /** Customer messages the model reads for one booking. */
-  modelCallsPerBooking: number;
-  modelInputTokensPerCall: number;
-  modelOutputTokensPerCall: number;
 }
 
-/** Ours, except the token counts, which are the research's example of a booking message (600 in, 100 out). Said on the page as assumptions. */
-export const DEFAULT_ASSUMPTIONS: Assumptions = {
-  bookingsPerMonth: 40, serviceRepliesPerBooking: 6, ownerNoticesPerBooking: 1, modelCallsPerBooking: 6, modelInputTokensPerCall: 600, modelOutputTokensPerCall: 100,
-};
+/** Ours. Said on the page as assumptions. */
+export const DEFAULT_ASSUMPTIONS: Assumptions = { bookingsPerMonth: 40, serviceRepliesPerBooking: 6, ownerNoticesPerBooking: 1 };
 
 export interface CostInput {
   settings: Settings;
   /** Bookings counted from the record this month. Left out: the line is an early estimate from `assumptions.bookingsPerMonth`. */
   observedBookings?: number;
   assumptions?: Partial<Assumptions>;
-  /** The model the server's model Guard allows (priced as model.<name>.input and .output). Left out, or not in the price list: unknown. */
-  model?: string;
-  /** What the model costs the shop's plan before it is passed through, in paise a month. Left out: unknown (nobody has set the allowance). */
-  modelAllowancePaise?: number;
   /** "gupshup" or "360dialog". Left out: the provider's own fee is unknown. */
   whatsappProvider?: string;
   /** This shop's share of the server, in paise a month. Left out: unknown until the bundle measures it. */
   hostingSharePaise?: number;
 }
 
-export type LineId = "whatsapp" | "whatsapp-provider" | "model" | "razorpay" | "hosting";
-export type LineState = "amount" | "included" | "unknown";
-export type Payer = "passed-through" | "shop-pays-razorpay" | "hosting";
+export type LineId = "whatsapp" | "whatsapp-provider" | "razorpay" | "geometer" | "hosting";
+export type LineState = "amount" | "unknown";
+/** Who pays whom. Geometer passes nothing through: its own line is its flat fee (the AI model is in it), and it never handles anyone else's money. */
+export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-razorpay" | "builder-pays-geometer" | "hosting";
 export type Caveat =
-  | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "allowance-not-set" | "model-not-priced" | "hosting-not-measured"
+  | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "fee-not-priced" | "hosting-not-measured"
   | "payment-link-fee-conflict" | "whatsapp-rate-second-hand";
 
 export interface CostLine {
   id: LineId;
   payer: Payer;
   state: LineState;
-  /** Whole paise, rounded up once. Null exactly when the state is "unknown". 0 when "included". */
+  /** Whole paise, rounded up once. Null exactly when the state is "unknown". */
   paise: number | null;
-  /** For an "unknown" model line or an "included" one: what the usage would cost before the allowance, when it can be worked out. */
-  usagePaise?: number;
   /** The numbers behind it (counts, never money), so "Show what we did" can list them. */
   quantities: Record<string, number>;
   /** The price-list rates it used. */
@@ -182,10 +171,10 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   if (!observed) caveats.add("early-estimate");
   const lines: CostLine[] = [];
 
-  const known = (id: LineId, payer: Payer, micro: bigint, quantities: Record<string, number>, uses: string[], quality: Quality, extra: Partial<CostLine> = {}): CostLine =>
-    ({ id, payer, state: "amount", paise: paiseOf(micro), quantities, uses, quality, ...extra });
-  const unknown = (id: LineId, payer: Payer, quantities: Record<string, number> = {}, uses: string[] = [], extra: Partial<CostLine> = {}): CostLine =>
-    ({ id, payer, state: "unknown", paise: null, quantities, uses, quality: null, ...extra });
+  const known = (id: LineId, payer: Payer, micro: bigint, quantities: Record<string, number>, uses: string[], quality: Quality): CostLine =>
+    ({ id, payer, state: "amount", paise: paiseOf(micro), quantities, uses, quality });
+  const unknown = (id: LineId, payer: Payer, quantities: Record<string, number> = {}, uses: string[] = []): CostLine =>
+    ({ id, payer, state: "unknown", paise: null, quantities, uses, quality: null });
 
   // 1. WhatsApp messages, Meta's fee: reminders and owner notices are utility templates; replies inside the window are free up to a monthly number.
   {
@@ -196,9 +185,9 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     const free = BigInt(prices.rates["whatsapp.in.service"]?.freePerMonth ?? 0);
     const paidReplies = replies > free ? replies - free : 0n;
     const quantities = { templates: Number(templates), serviceReplies: Number(replies), freeServiceReplies: Number(free), paidServiceReplies: Number(paidReplies) };
-    if (!utility || !service) lines.push(unknown("whatsapp", "passed-through", quantities, ["whatsapp.in.utility", "whatsapp.in.service"]));
+    if (!utility || !service) lines.push(unknown("whatsapp", "builder-pays-whatsapp-provider", quantities, ["whatsapp.in.utility", "whatsapp.in.service"]));
     else {
-      lines.push(known("whatsapp", "passed-through", templates * utility.value + paidReplies * service.value, quantities, ["whatsapp.in.utility", "whatsapp.in.service"], weakest(utility.quality, service.quality)));
+      lines.push(known("whatsapp", "builder-pays-whatsapp-provider", templates * utility.value + paidReplies * service.value, quantities, ["whatsapp.in.utility", "whatsapp.in.service"], weakest(utility.quality, service.quality)));
       if (QUALITIES.indexOf(weakest(utility.quality, service.quality)) <= QUALITIES.indexOf("second-hand")) caveats.add("whatsapp-rate-second-hand");
     }
   }
@@ -208,47 +197,21 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     const messages = bookings * (2n * BigInt(a.serviceRepliesPerBooking) + reminders + BigInt(a.ownerNoticesPerBooking)); // customers' messages come in about as often as replies go out
     const quantities = { messages: Number(messages) };
     const provider = input.whatsappProvider;
-    if (provider === undefined) { lines.push(unknown("whatsapp-provider", "passed-through", quantities)); caveats.add("provider-not-chosen"); }
+    if (provider === undefined) { lines.push(unknown("whatsapp-provider", "builder-pays-whatsapp-provider", quantities)); caveats.add("provider-not-chosen"); }
     else {
       const id = `whatsapp.provider.${provider}`;
       const rate = prices.rates[id];
       const m = microPaise(prices, id);
-      if (!rate || !m) { lines.push(unknown("whatsapp-provider", "passed-through", quantities, [id])); caveats.add("provider-not-priced"); }
+      if (!rate || !m) { lines.push(unknown("whatsapp-provider", "builder-pays-whatsapp-provider", quantities, [id])); caveats.add("provider-not-priced"); }
       else {
         const count = rate.per === "message" ? messages : 1n; // a flat fee per number a month is one number
-        lines.push(known("whatsapp-provider", "passed-through", count * m.value, rate.per === "message" ? quantities : { numbers: 1 }, [id], m.quality));
+        lines.push(known("whatsapp-provider", "builder-pays-whatsapp-provider", count * m.value, rate.per === "message" ? quantities : { numbers: 1 }, [id], m.quality));
         if (m.assumedRate) caveats.add("assumed-exchange-rate");
       }
     }
   }
 
-  // 3. Model usage against the included allowance.
-  {
-    const calls = bookings * BigInt(a.modelCallsPerBooking);
-    const inTokens = calls * BigInt(a.modelInputTokensPerCall);
-    const outTokens = calls * BigInt(a.modelOutputTokensPerCall);
-    const quantities = { calls: Number(calls), inputTokens: Number(inTokens), outputTokens: Number(outTokens) };
-    const inId = `model.${input.model}.input`;
-    const outId = `model.${input.model}.output`;
-    const pin = input.model === undefined ? null : microPaise(prices, inId);
-    const pout = input.model === undefined ? null : microPaise(prices, outId);
-    if (!pin || !pout) { lines.push(unknown("model", "passed-through", quantities, input.model === undefined ? [] : [inId, outId])); caveats.add("model-not-priced"); }
-    else {
-      const usage = ceilDiv(inTokens * pin.value + outTokens * pout.value, 1_000_000n); // the rates are per million tokens
-      const quality = weakest(pin.quality, pout.quality);
-      if (pin.assumedRate || pout.assumedRate) caveats.add("assumed-exchange-rate");
-      if (input.modelAllowancePaise === undefined) { lines.push(unknown("model", "passed-through", quantities, [inId, outId], { usagePaise: paiseOf(usage), quality })); caveats.add("allowance-not-set"); }
-      else {
-        const allowance = BigInt(need(input.modelAllowancePaise, 0)) * MICRO;
-        const over = usage > allowance ? usage - allowance : 0n;
-        lines.push(over === 0n
-          ? { id: "model", payer: "passed-through", state: "included", paise: 0, usagePaise: paiseOf(usage), quantities, uses: [inId, outId], quality }
-          : known("model", "passed-through", over, quantities, [inId, outId], quality, { usagePaise: paiseOf(usage) }));
-      }
-    }
-  }
-
-  // 4. Razorpay's fee: 2% of each deposit and 18% GST on that fee, paid by the shop to Razorpay, and not returned when the deposit is refunded.
+  // 3. Razorpay's fee: 2% of each deposit and 18% GST on that fee, paid by the shop to Razorpay, and not returned when the deposit is refunded.
   {
     const fee = prices.rates["razorpay.platform-fee"];
     const gst = prices.rates["razorpay.gst-on-fee"];
@@ -263,6 +226,17 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
       const quality = weakest(fee.quality, gst.quality);
       lines.push(known("razorpay", "shop-pays-razorpay", exact, quantities, ["razorpay.platform-fee", "razorpay.gst-on-fee"], quality));
       if (fee.quality === "conflicting") caveats.add("payment-link-fee-conflict");
+    }
+  }
+
+  // 4. Geometer's own fee: one flat amount for each running shop, with the AI model in it (nothing is metered or passed through). It does not depend on
+  // bookings, and it is read from the price list like every other rate, so a changed fee is a new list. A list without it makes the line unknown, never INR 0.
+  {
+    const fee = microPaise(prices, "geometer.fee");
+    if (!fee) { lines.push(unknown("geometer", "builder-pays-geometer", { shops: 1 }, ["geometer.fee"])); caveats.add("fee-not-priced"); }
+    else {
+      lines.push(known("geometer", "builder-pays-geometer", fee.value, { shops: 1 }, ["geometer.fee"], fee.quality));
+      if (fee.assumedRate) caveats.add("assumed-exchange-rate");
     }
   }
 
