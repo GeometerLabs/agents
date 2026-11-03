@@ -107,7 +107,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
   if (shop.settings && problems.length === 0) {
     const identity = (kind: GuardKind) => ({ tenant: shop.name, name: `${shop.name}-${kind}`, version: versions[kind] ?? 1, reviewedBy: server.reviewedBy });
     const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined };
-    try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); }
+    try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); }
     specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour });
     specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of ["razorpay", "whatsapp", "calendar"] as const) {

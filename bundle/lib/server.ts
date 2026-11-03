@@ -59,7 +59,7 @@ export interface ServerConfig {
   network: { base: string };
   /** For a test: another host for a provider's Guard. */
   upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model", Upstream>>;
-  limits: { whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
+  limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
   panel: { enabled: boolean };
   /** Publish Caddy's ports on these host ports. Default 80 and 443. */
   ports: { http: number; https: number };
@@ -143,7 +143,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     ...(isObj(o.backup) ? { backup: o.backup as unknown as BackupConfig } : {}),
     network: { base },
     ...(isObj(o.upstreams) ? { upstreams: o.upstreams as ServerConfig["upstreams"] } : {}),
-    limits: { whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
+    limits: { razorpayLinksPerHour: limit("razorpayLinksPerHour", 60), whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
     panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
