@@ -55,7 +55,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   const store = openStore(client.runtime.dataDir);
   let runtime: Runtime;
   try {
-    const services = await buildServices(client.runtime, { clock, window: store, say: log, loadLive: options.loadLive });
+    const services = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
     runtime = createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? createRuleParser(), pathwayVersion: pathwayVersion(), log });
   } catch (e) {
     store.close();

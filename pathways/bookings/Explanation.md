@@ -112,7 +112,7 @@ Two more customer languages, `ml` and `kn`, on the same rules: every amount, dat
 3. A step that fails every time is marked failed and the customer gets no answer. Someone has to look at `failed` in the status. The alternative of a generic "we'll get back to you" message would be a message the agent has not checked against the record.
 4. The port (8780), the 256 KiB limit, the 30 s tick and the four tries are defaults, not measured.
 
-**Size.** `server/` is about 1,000 lines in 11 files; its tests are about 900 lines in 7 files and 42 tests (225 in all with the 183 before).
+**Size.** `server/` is about 1,000 lines in 11 files; its tests are about 950 lines in 7 files and 43 tests (226 in all with the 183 before).
 
 ## Syntax rules used
 

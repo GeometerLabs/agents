@@ -182,3 +182,25 @@ test("it listens on 127.0.0.1 unless told otherwise; other paths and methods are
     assert.equal((await fetch(`${t.server.url}/healthz`, { method: "POST" })).status, 405);
   } finally { await t.close(); }
 });
+
+test("two requests at the same moment are saved both and handled one at a time", async () => {
+  let inStep = 0;
+  let most = 0;
+  const order: string[] = [];
+  const t = await boot({ runtime: { aroundStep: async (event, run) => {
+    inStep++; most = Math.max(most, inStep);
+    if (event.kind === "message") order.push(event.message.text);
+    await new Promise((r) => setTimeout(r, 15));
+    await run();
+    inStep--;
+  } } });
+  try {
+    const replies = await Promise.all(["hello", "hi there", "namaste"].map((text) => t.post({ events: [customerMessage(t.kit, text)] })));
+    assert.deepEqual(replies.map((r) => r.status), [200, 200, 200]);
+    await t.runtime.idle();
+    assert.equal(most, 1, "no two steps overlapped");
+    assert.deepEqual(order.slice().sort(), ["hello", "hi there", "namaste"]);
+    assert.deepEqual(t.runtime.status().tasks, { pending: 0, done: 3, failed: 0 });
+    assert.equal(t.kit.messaging.outbox().length, 3, "each customer message was answered once");
+  } finally { await t.close(); }
+});
