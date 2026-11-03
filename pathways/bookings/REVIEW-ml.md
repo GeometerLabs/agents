@@ -492,23 +492,21 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.assumption` | ഒരു മാസം 40 ബുക്കിംഗ് ഉണ്ടാകും എന്ന് ഞങ്ങൾ കണക്കാക്കി. | We assumed 40 bookings a month. |  |
 | `cost.lines.whatsapp` | WhatsApp സന്ദേശങ്ങൾ (Meta-യുടെ ഫീസ്) | WhatsApp messages (Meta's fee) |  |
 | `cost.lines.whatsapp-provider` | WhatsApp പ്രൊവൈഡറുടെ സ്വന്തം ഫീസ് | WhatsApp provider's own fee |  |
-| `cost.lines.model` | മോഡൽ ഉപയോഗം | Model use |  |
 | `cost.lines.razorpay` | Razorpay-യുടെ ഫീസ് | Razorpay's fee |  |
+| `cost.lines.geometer` | Geometer-ന്റെ ഫീസ് (ആദ്യകാല വില) | Geometer's fee (founding price) |  |
 | `cost.lines.hosting` | ഹോസ്റ്റിംഗ് വിഹിതം | Hosting share |  |
-| `cost.payer.passed-through` | ചെലവ് തുകയ്ക്ക് തന്നെ കൈമാറുന്നു | passed on at cost |  |
+| `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or partner to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-razorpay` | കട Razorpay-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to Razorpay |  |
+| `cost.payer.builder-pays-geometer` | ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു | paid to Geometer by the builder or partner; the AI model is included |  |
 | `cost.payer.hosting` | സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത് | the server's cost, shared |  |
 | `cost.unknown` | അറിയില്ല | unknown |  |
-| `cost.included` | ഉൾപ്പെടുന്നു | included |  |
-| `cost.usage` | മോഡൽ ഉപയോഗം: ഏകദേശം ₹2.38 | about ₹2.38 of model use |  |
 | `cost.total` | ആകെ | Total |  |
 | `cost.subtotal` | ഇതുവരെയുള്ള തുക. വില ഇല്ലാത്ത കാര്യങ്ങൾ: 3. അതിനാൽ ഇത് മുഴുവൻ ചെലവല്ല. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
 | `cost.priceList` | വിലകൾ എടുത്തത് ഈ തീയതിയിലെ ലിസ്റ്റിൽ നിന്ന്: 2026-11-03. | Prices from the list of 2026-11-03. |  |
 | `cost.caveats.assumed-exchange-rate` | ഡോളർ, യൂറോ വിലകൾ ഒരു കണക്കാക്കിയ നിരക്കിലാണ് (₹90, ₹100). യഥാർത്ഥ ബില്ലിൽ വ്യത്യാസം വരാം. | Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ. |  |
 | `cost.caveats.provider-not-chosen` | WhatsApp പ്രൊവൈഡറെ ഇതുവരെ തിരഞ്ഞെടുത്തിട്ടില്ല, അതിനാൽ അതിന്റെ ഫീസ് അറിയില്ല. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
 | `cost.caveats.provider-not-priced` | വില ലിസ്റ്റിൽ ഈ പ്രൊവൈഡറുടെ വില ഇല്ല. | The price list has no price for this provider. |  |
-| `cost.caveats.allowance-not-set` | ഉൾപ്പെടുത്തിയ മോഡൽ ഉപയോഗത്തിന്റെ പരിധി സെറ്റ് ചെയ്തിട്ടില്ല, അതിനാൽ കൈമാറുന്ന തുക അറിയില്ല. | The included model allowance is not set, so what is passed on is unknown. |  |
-| `cost.caveats.model-not-priced` | വില ലിസ്റ്റിൽ ഈ മോഡലിന്റെ വില ഇല്ല. | The price list has no price for this model. |  |
+| `cost.caveats.fee-not-priced` | വില ലിസ്റ്റിൽ Geometer-ന്റെ ഫീസിന്റെ വില ഇല്ല. | The price list has no price for Geometer's fee. |  |
 | `cost.caveats.hosting-not-measured` | ഹോസ്റ്റിംഗ് വിഹിതം ഇതുവരെ അളന്നിട്ടില്ല. | The hosting share has not been measured yet. |  |
 | `cost.caveats.payment-link-fee-conflict` | പേയ്മെന്റ് ലിങ്കുകളുടെ ഫീസിനെക്കുറിച്ച് Razorpay-യുടെ സ്വന്തം പേജുകൾ പരസ്പരം യോജിക്കുന്നില്ല. കൂടുതലുള്ളത് (2%) എടുത്തിരിക്കുന്നു. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
 | `cost.caveats.whatsapp-rate-second-hand` | WhatsApp-ന്റെ രൂപ നിരക്ക് Meta-യുടെ പേജിൽ നിന്നല്ല, ഒരു റീസെല്ലറുടെ പേജിൽ നിന്നാണ്. ആദ്യത്തെ ഇൻവോയ്സിൽ ഇത് നോക്കൂ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |

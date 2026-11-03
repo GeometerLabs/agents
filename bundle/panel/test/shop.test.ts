@@ -110,7 +110,7 @@ test("Stop writes a request and says so; 'Stopped. Nothing more goes out.' appea
 });
 
 test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; an early estimate says so; the sum says it is a subtotal", async () => {
-  const b = await boot({ model: "claude-haiku-5-5" });
+  const b = await boot();
   try {
     const arjun = await owned(b);
     const page = (await arjun.get("/shops/glow-salon")).plain;
@@ -118,25 +118,29 @@ test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; 
     // 40 bookings: 120 reminders and notices at 11.5 paise; 40 deposits of ₹200 cost the shop 472 paise each in Razorpay's fee.
     assert.ok(page.includes(formatRupees(1380)) && page.includes(formatRupees(40 * 472)));
     const rowOf = (label: string) => page.split("<tr").find((r) => r.includes(label)) ?? "";
-    for (const line of ["whatsapp-provider", "model", "hosting"] as const) {
+    for (const line of ["whatsapp-provider", "hosting"] as const) {
       const row = rowOf(WORDS.en.cost.lines[line]);
       assert.ok(row.includes(`>${WORDS.en.cost.unknown}<`) && !row.includes(">₹0"), `${line} is unknown, not zero: ${row.slice(0, 200)}`);
     }
-    assert.ok(rowOf(WORDS.en.cost.lines.model).includes("₹2.38"), "what the model use would cost is still shown, beside 'unknown'");
+    // Geometer's flat fee, read from the price list, with the AI model in it and nothing passed through.
+    const fee = rowOf(WORDS.en.cost.lines.geometer);
+    assert.ok(fee.includes(formatRupees(19900)) && fee.includes(WORDS.en.cost.payer["builder-pays-geometer"]) && WORDS.en.cost.payer["builder-pays-geometer"].includes("AI model"), fee.slice(0, 300));
+    assert.ok(rowOf(WORDS.en.cost.lines.whatsapp).includes(WORDS.en.cost.payer["builder-pays-whatsapp-provider"]));
     const totalRow = page.split('<tr class="total">')[1].split("</tr>")[0];
-    assert.ok(totalRow.includes(WORDS.en.cost.subtotal(3)) && !totalRow.includes(`<td>${WORDS.en.cost.total}</td>`), "unknown lines make a subtotal");
-    assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-razorpay"]) && page.includes(WORDS.en.cost.caveats["allowance-not-set"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
-    assert.ok(page.includes(WORDS.en.cost.priceList("2026-11-03")));
+    assert.ok(totalRow.includes(WORDS.en.cost.subtotal(2)) && !totalRow.includes(`<td>${WORDS.en.cost.total}</td>`), "unknown lines make a subtotal");
+    assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-razorpay"]) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
+    assert.ok(page.includes(WORDS.en.cost.priceList("2026-11-04")));
     assert.ok(!/unknown\s*₹0/u.test(page));
   } finally { await b.close(); }
-  const full = await boot({ model: "claude-haiku-5-5", modelAllowancePaise: 500, whatsappProvider: "gupshup", hostingSharePaise: 5000 });
+  const full = await boot({ whatsappProvider: "gupshup", hostingSharePaise: 5000 });
   try {
     const arjun = await owned(full);
     const page = (await arjun.get("/shops/glow-salon")).plain;
     const totalRow = page.split('<tr class="total">')[1].split("</tr>")[0];
-    assert.ok(totalRow.includes(`<td>${WORDS.en.cost.total}</td>`) && totalRow.includes("₹") && !page.includes("Subtotal") && page.includes(`>${WORDS.en.cost.included}<`));
+    assert.ok(totalRow.includes(`<td>${WORDS.en.cost.total}</td>`) && totalRow.includes("₹") && !page.includes("Subtotal") && !page.includes(`>${WORDS.en.cost.unknown}<`), "no cost row is unknown once everything is priced");
     const hindi = await full.account("hindi", "builder", "hi");
-    assert.ok((await hindi.get("/shops/glow-salon")).plain.includes(WORDS.hi.cost.heading));
+    const hiPage = (await hindi.get("/shops/glow-salon")).plain;
+    assert.ok(hiPage.includes(WORDS.hi.cost.heading) && hiPage.includes(WORDS.hi.cost.payer["builder-pays-geometer"]));
   } finally { await full.close(); }
 });
 

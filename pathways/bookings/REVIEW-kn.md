@@ -492,23 +492,21 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.assumption` | ತಿಂಗಳಿಗೆ 40 ಬುಕಿಂಗ್ ಎಂದು ಅಂದಾಜು ಮಾಡಲಾಗಿದೆ. | We assumed 40 bookings a month. |  |
 | `cost.lines.whatsapp` | WhatsApp ಸಂದೇಶಗಳು (Meta ಶುಲ್ಕ) | WhatsApp messages (Meta's fee) |  |
 | `cost.lines.whatsapp-provider` | WhatsApp ಪ್ರೊವೈಡರ್‌ನ ಸ್ವಂತ ಶುಲ್ಕ | WhatsApp provider's own fee |  |
-| `cost.lines.model` | AI ಮಾದರಿ ಬಳಕೆ | Model use |  |
 | `cost.lines.razorpay` | Razorpay ಶುಲ್ಕ | Razorpay's fee |  |
+| `cost.lines.geometer` | Geometer ಶುಲ್ಕ (ಆರಂಭಿಕ ಬೆಲೆ) | Geometer's fee (founding price) |  |
 | `cost.lines.hosting` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲು | Hosting share |  |
-| `cost.payer.passed-through` | ಆದ ಖರ್ಚಿನಷ್ಟೇ, ಏನೂ ಸೇರಿಸದೆ | passed on at cost |  |
+| `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or partner to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-razorpay` | ಅಂಗಡಿಯೇ Razorpay ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to Razorpay |  |
+| `cost.payer.builder-pays-geometer` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ | paid to Geometer by the builder or partner; the AI model is included |  |
 | `cost.payer.hosting` | ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ | the server's cost, shared |  |
 | `cost.unknown` | ಗೊತ್ತಿಲ್ಲ | unknown |  |
-| `cost.included` | ಒಳಗೊಂಡಿದೆ | included |  |
-| `cost.usage` | ಸುಮಾರು ₹2.38 AI ಮಾದರಿ ಬಳಕೆ | about ₹2.38 of model use |  |
 | `cost.total` | ಒಟ್ಟು | Total |  |
 | `cost.subtotal` | ಉಪಮೊತ್ತ. 3 ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಬೆಲೆ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಇದು ಪೂರ್ಣ ವೆಚ್ಚವಲ್ಲ. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
 | `cost.priceList` | ಬೆಲೆಗಳು ಈ ದಿನಾಂಕದ ಬೆಲೆ ಪಟ್ಟಿಯಿಂದ: 2026-11-03. | Prices from the list of 2026-11-03. |  |
 | `cost.caveats.assumed-exchange-rate` | ಡಾಲರ್ ಮತ್ತು ಯೂರೋ ಬೆಲೆಗಳಿಗೆ ಊಹಿಸಿದ ದರ ಬಳಸಲಾಗಿದೆ (₹90 ಮತ್ತು ₹100). ನಿಜವಾದ ಬಿಲ್ ಬೇರೆ ಇರಬಹುದು. | Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ. |  |
 | `cost.caveats.provider-not-chosen` | WhatsApp ಪ್ರೊವೈಡರ್ ಅನ್ನು ಇನ್ನೂ ಆರಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದರ ಶುಲ್ಕ ಗೊತ್ತಿಲ್ಲ. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
 | `cost.caveats.provider-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಪ್ರೊವೈಡರ್‌ಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this provider. |  |
-| `cost.caveats.allowance-not-set` | AI ಮಾದರಿ ಬಳಕೆಯಲ್ಲಿ ಒಳಗೊಂಡ ಪ್ರಮಾಣವನ್ನು ಇನ್ನೂ ನಿಗದಿಪಡಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಗ್ರಾಹಕರಿಗೆ ವರ್ಗಾಯಿಸುವ ಮೊತ್ತ ಗೊತ್ತಿಲ್ಲ. | The included model allowance is not set, so what is passed on is unknown. |  |
-| `cost.caveats.model-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಮಾದರಿಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this model. |  |
+| `cost.caveats.fee-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ Geometer ಶುಲ್ಕಕ್ಕೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for Geometer's fee. |  |
 | `cost.caveats.hosting-not-measured` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲನ್ನು ಇನ್ನೂ ಅಳೆದಿಲ್ಲ. | The hosting share has not been measured yet. |  |
 | `cost.caveats.payment-link-fee-conflict` | ಪಾವತಿ ಲಿಂಕ್‌ಗಳ ಶುಲ್ಕದ ಬಗ್ಗೆ Razorpay ಪುಟಗಳೇ ಬೇರೆ ಬೇರೆ ಹೇಳುತ್ತವೆ. ಹೆಚ್ಚಿನದನ್ನು (2%) ಬಳಸಲಾಗಿದೆ. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
 | `cost.caveats.whatsapp-rate-second-hand` | WhatsApp ರೂಪಾಯಿ ದರ Meta ಪುಟದಿಂದ ಬಂದಿಲ್ಲ, ಒಬ್ಬ ರಿಸೆಲ್ಲರ್ ಪುಟದಿಂದ ಬಂದಿದೆ. ಮೊದಲ ಬಿಲ್ ಬಂದಾಗ ಪರಿಶೀಲಿಸಿ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
