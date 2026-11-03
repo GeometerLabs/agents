@@ -120,7 +120,7 @@ A client is a folder (`clients/glow-salon.example/` is a working example that ru
 | File | What it holds |
 | --- | --- |
 | `settings.json` | The business: the same format as `settings/glow-salon.example.json` |
-| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30) and, for live, `services`: the base URL of the Guard in front of payments, the calendar and messaging |
+| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does) |
 | `pathway.lock` | The pathway version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
 
 What it answers:
@@ -137,7 +137,7 @@ curl -s localhost:8780/internal/events -H "Authorization: Bearer $(cat /tmp/inbo
   -d '{"events":[{"kind":"message","message":{"id":"wamid.1","from":"+919811111111","text":"I want a haircut tomorrow at 6pm","timestamp":'$(date +%s)'000}}]}'
 ```
 
-In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the stand-in services forget everything when the process stops, so use a new data folder for each local run. If the process dies in the middle of a step, the step runs again from the last saved state; read "Running it as a server" in [Explanation.md](Explanation.md) for what that means for a WhatsApp message. Live mode needs the live adapters (`src/adapters/live/`), which are built on another branch and say so plainly when missing.
+In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the stand-in services forget everything when the process stops, so use a new data folder for each local run. If the process dies in the middle of a step, the step runs again from the last saved state; read "Running it as a server" in [Explanation.md](Explanation.md) for what that means for a WhatsApp message. Live mode uses the live adapters (`src/adapters/live/`); `npm run stack` runs a client in live mode against the stand-ins.
 
 ## What the customer sees
 
@@ -196,14 +196,18 @@ node pathways/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemi
 
 It prints one table with a column for the rule parser (the baseline) and one for each model that has a key: how often all six fields were right (kind, service, date, time, offered price, and the trick flag), by language and by field; how often the model could not be used and the rule parser read the message instead; p50 and p95 latency; the tokens used; and the cost of 1,000 messages from the tokens the API reported. A candidate with no key in `.env` is skipped with a line saying so; with no keys at all only the baseline runs. Each model call costs a little, so `--max-messages` caps how many are sent, and the token totals are printed. The full results go to `eval/results.json`, which git ignores. Keys are read and sent by the eval script only (`scripts/eval-keys.ts`); the pathway's own model parser holds no key.
 
-To use a model in the agent, build the parser and pass it as `parser` (the rule parser stays the default everywhere):
+To use a model, give the client a `parser` in its `runtime.json` (the rule parser stays the default everywhere), or build it in code:
+
+```json
+"parser": { "wire": "openai", "baseUrl": "https://your-guard.example/model/v1", "model": "...", "timeoutMs": 8000 }
+```
 
 ```ts
 import { createModelParser } from "./src/adapters/model-llm.ts";
-const parser = createModelParser({ wire: "openai", baseUrl: "https://your-guard.example/model/v1", model: "..." }); // wire: "openai" | "anthropic"
+const parser = createModelParser({ wire: "openai", baseUrl: "https://your-guard.example/model/v1", model: "..." }); // wire: "openai" | "anthropic"; the same fields
 ```
 
-In production `baseUrl` is a Guard instance in front of the model provider, and Guard adds the key. If the model times out (8 seconds unless `timeoutMs` says otherwise), answers with an error, or gives an answer that is not a valid intent, the rule parser reads the message and the record says why.
+`runtime.json` takes no key, and refuses a `baseUrl` that carries one (a user name, a password, a query), in plain words. In production `baseUrl` is a Guard instance in front of the model provider, and Guard adds the key. If the model times out (8 seconds unless `timeoutMs` says otherwise), answers with an error, or gives an answer that is not a valid intent, the rule parser reads the message and the record says why.
 
 ## Settings: tailoring without code
 

@@ -17,6 +17,15 @@ export interface LiveServicesConfig {
   timeoutMs?: number;
 }
 
+/** The model that reads customers' messages (the same fields as `ModelConfig` in src/adapters/model-llm.ts). Left out: the rule parser reads them. */
+export interface ParserConfig {
+  wire: "openai" | "anthropic";
+  /** The Guard in front of the model provider. No key goes here or anywhere in runtime.json: Guard holds it. */
+  baseUrl: string;
+  model: string;
+  timeoutMs?: number;
+}
+
 export interface RuntimeConfig {
   mode: "fakes" | "live";
   host: string;
@@ -24,6 +33,7 @@ export interface RuntimeConfig {
   dataDir: string; // absolute
   tickSeconds: number;
   services?: LiveServicesConfig;
+  parser?: ParserConfig;
 }
 
 export interface ClientFolder {
@@ -57,11 +67,32 @@ function readService(raw: unknown, name: string, extra: string | undefined, erro
   return raw;
 }
 
+const NO_KEY = "No key goes in runtime.json: the base URL is a Guard in front of the model provider, and Guard holds the key.";
+
+/** `parser`: which model reads the messages. Every refusal is in plain words and none repeats what was written, in case it was a key. */
+function readParser(raw: unknown, errors: string[]): ParserConfig | undefined {
+  if (!isObj(raw)) { errors.push('"parser" must be an object like {"wire": "openai", "baseUrl": "https://your-guard.example/model/v1", "model": "<the model\'s name>"}. Leave it out and the built-in rules read the messages.'); return undefined; }
+  const before = errors.length;
+  const keyLike = Object.keys(raw).filter((k) => /key|token|secret|password|authorization|bearer/iu.test(k));
+  for (const k of keyLike) errors.push(`parser.${k} is not allowed. ${NO_KEY}`);
+  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs"], "parser", errors);
+  if (raw.wire !== "openai" && raw.wire !== "anthropic") errors.push('parser.wire must be "openai" (OpenAI-compatible chat completions, which Gemini, Groq and Sarvam also speak) or "anthropic" (the Anthropic Messages API).');
+  let url: URL | undefined;
+  try { url = isText(raw.baseUrl) ? new URL(raw.baseUrl) : undefined; } catch { url = undefined; }
+  if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) errors.push("parser.baseUrl must be the address of the Guard in front of the model provider, starting with http:// or https://.");
+  else if (url.username || url.password) errors.push(`parser.baseUrl must not hold a user name or password. ${NO_KEY}`);
+  else if (url.search || url.hash) errors.push(`parser.baseUrl must not carry a query or a #fragment, which is where a key hides. ${NO_KEY}`);
+  if (!isText(raw.model)) errors.push("parser.model must be the name of the model to ask, as the provider calls it.");
+  if (raw.timeoutMs !== undefined && (!Number.isInteger(raw.timeoutMs) || (raw.timeoutMs as number) < 1)) errors.push("parser.timeoutMs must be a whole number of milliseconds. Left out, it waits 8000 before the rules read the message.");
+  if (errors.length > before) return undefined;
+  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}) };
+}
+
 /** Check runtime.json's contents. `folder` is what a relative dataDir is measured from. */
 export function validateRuntimeConfig(input: unknown, folder: string): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -87,9 +118,11 @@ export function validateRuntimeConfig(input: unknown, folder: string): { ok: tru
     }
   }
 
+  const parser = input.parser !== undefined ? readParser(input.parser, errors) : undefined;
+
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */

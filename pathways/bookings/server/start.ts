@@ -1,6 +1,7 @@
 // Start one client's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep
 // the clock ticking. main.ts is a thin command line around this; the tests start it directly.
 import { readFileSync } from "node:fs";
+import { createModelParser } from "../src/adapters/model-llm.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
 import { systemClock } from "../src/clock.ts";
@@ -21,6 +22,7 @@ export interface StartOptions {
   /** A file holding the internal bearer token (INTERNAL_TOKEN_FILE). */
   tokenFile: string | undefined;
   clock?: Clock;
+  /** Instead of what runtime.json says (its `parser`, or the rule parser when it has none). A test seam. */
   parser?: IntentParser;
   log?: (line: string) => void;
   loadLive?: () => Promise<LiveModule>;
@@ -56,7 +58,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   let runtime: Runtime;
   try {
     const services = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
-    runtime = createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? createRuleParser(), pathwayVersion: pathwayVersion(), log });
+    // The model parser sends no key and no Authorization header: its base URL is the Guard in front of the model provider.
+    const parser = options.parser ?? (client.runtime.parser ? createModelParser(client.runtime.parser) : createRuleParser());
+    runtime = createRuntime({ settings: client.settings, store, clock, services, parser, pathwayVersion: pathwayVersion(), log });
   } catch (e) {
     store.close();
     throw e;

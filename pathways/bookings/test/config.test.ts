@@ -92,6 +92,61 @@ test("live mode needs where Guard stands for each service; fakes mode needs noth
   assert.equal(good.config.services?.timeoutMs, 8000);
 });
 
+const GOOD_PARSER = { wire: "openai", baseUrl: "https://guard-model.example:8083/model/v1", model: "some-model" };
+
+test("runtime.json's parser is optional: left out there is none (the rules read the messages), and a good one is read as written", () => {
+  const without = validateRuntimeConfig({ mode: "fakes" }, "/x");
+  assert.ok(without.ok);
+  assert.equal(without.config.parser, undefined);
+  const withOne = validateRuntimeConfig({ mode: "fakes", parser: GOOD_PARSER }, "/x");
+  assert.ok(withOne.ok);
+  assert.deepEqual(withOne.config.parser, GOOD_PARSER);
+  const slow = validateRuntimeConfig({ mode: "fakes", parser: { ...GOOD_PARSER, wire: "anthropic", timeoutMs: 12000 } }, "/x");
+  assert.ok(slow.ok);
+  assert.deepEqual(slow.config.parser, { ...GOOD_PARSER, wire: "anthropic", timeoutMs: 12000 });
+});
+
+test("a malformed parser is refused in plain words, all at once; one that carries a credential is refused without repeating it", () => {
+  const refuse = (parser: unknown) => {
+    const result = validateRuntimeConfig({ mode: "fakes", parser }, "/x");
+    assert.ok(!result.ok, JSON.stringify(parser));
+    return result.errors.join("\n");
+  };
+  assert.match(refuse("gpt"), /"parser" must be an object/);
+  assert.match(refuse(null), /"parser" must be an object/);
+  const empty = refuse({});
+  assert.match(empty, /parser\.wire must be "openai".*"anthropic"/);
+  assert.match(empty, /parser\.baseUrl must be the address of the Guard/);
+  assert.match(empty, /parser\.model must be the name/);
+  assert.match(refuse({ ...GOOD_PARSER, wire: "gemini" }), /parser\.wire must be/);
+  for (const baseUrl of ["guard-model", "ftp://guard-model/v1", "", 7, undefined]) assert.match(refuse({ ...GOOD_PARSER, baseUrl }), /parser\.baseUrl must be the address of the Guard.*http/);
+  assert.match(refuse({ ...GOOD_PARSER, model: "  " }), /parser\.model must be/);
+  for (const timeoutMs of [0, 1.5, "8000", -1]) assert.match(refuse({ ...GOOD_PARSER, timeoutMs }), /parser\.timeoutMs must be a whole number/);
+  assert.match(refuse({ ...GOOD_PARSER, temperature: 0 }), /I don't know what "temperature" means in parser/);
+
+  // Credentials: in the address, in its query, or in a field of their own. The refusal says where keys live, and never repeats the secret.
+  for (const baseUrl of ["https://someone:hunter2@guard-model.example/v1", "https://hunter2@guard-model.example/v1", "https://guard-model.example/v1?key=hunter2", "https://guard-model.example/v1#hunter2"]) {
+    const said = refuse({ ...GOOD_PARSER, baseUrl });
+    assert.match(said, /parser\.baseUrl must not (hold a user name or password|carry a query or a #fragment)/);
+    assert.match(said, /Guard holds the key/);
+    assert.ok(!said.includes("hunter2"), said);
+  }
+  for (const field of ["apiKey", "api_key", "token", "Authorization", "secret", "password"]) {
+    const said = refuse({ ...GOOD_PARSER, [field]: "hunter2" });
+    assert.match(said, new RegExp(`parser\\.${field} is not allowed.*Guard holds the key`));
+    assert.ok(!said.includes("hunter2"));
+  }
+});
+
+test("a client folder whose parser is malformed does not load, and the refusal names runtime.json", () => {
+  const c = client({ runtime: { mode: "fakes", parser: { ...GOOD_PARSER, baseUrl: "https://k:v@guard.example/v1" } } });
+  try {
+    const said = refusal(c.dir);
+    assert.match(said, /runtime\.json needs fixing/);
+    assert.match(said, /parser\.baseUrl must not hold a user name or password/);
+  } finally { c.done(); }
+});
+
 test("the internal token comes from a file: trimmed, and refused when missing or too short", () => {
   const dir = mkdtempSync(join(tmpdir(), "geo-token-"));
   try {

@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { ClientError } from "../server/config.ts";
 import { startClient } from "../server/start.ts";
 import { openStore } from "../server/store.ts";
+import { answer, openaiReply, startStubModel } from "./stub-model-server.ts";
 
 const EXAMPLE = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 const MAIN = new URL("../server/main.ts", import.meta.url).pathname;
@@ -25,7 +26,7 @@ function setup(runtime: object = { mode: "fakes", port: 0, tickSeconds: 1 }, loc
   return { root, folder, tokenFile, done: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-const event = (id: string) => ({ events: [{ kind: "message", message: { id, from: "+919811111111", text: "hello", timestamp: Date.now() } }] });
+const event = (id: string, text = "hello") => ({ events: [{ kind: "message", message: { id, from: "+919811111111", text, timestamp: Date.now() } }] });
 const post = (url: string, body: unknown) => fetch(`${url}/internal/events`, { method: "POST", headers: { authorization: `Bearer ${TOKEN}` }, body: JSON.stringify(body) });
 
 test("a client starts from its folder, answers with its token, keeps its data in its own folder, and picks up where it stopped", async () => {
@@ -53,6 +54,38 @@ test("a client starts from its folder, answers with its token, keeps its data in
     assert.ok(lines.some((l) => /remembers earlier bookings/.test(l)), "fakes mode warns that the stand-ins forgot");
     await second.stop();
   } finally { s.done(); }
+});
+
+// A message the rule parser cannot read, which a model (here a stub) reads as a haircut tomorrow at 6 pm.
+const HARD = "Could you sort out my hair for the morrow around six in the evening please?";
+const MODEL_READS_AS_BOOKING = answer({ kind: "book", language: "en", serviceId: "haircut", date: { kind: "relative", offsetDays: 1 }, time: { hour: 6, minute: 0, period: "pm" } });
+
+test("with no parser in runtime.json the rules read the messages; with one the model parser is wired to its base URL and sends no key", async () => {
+  const stub = await startStubModel(() => ({ json: openaiReply(MODEL_READS_AS_BOOKING) }));
+  const withModel = setup({ mode: "fakes", port: 0, tickSeconds: 1, parser: { wire: "openai", baseUrl: `${stub.url}/model/v1`, model: "stub-model", timeoutMs: 2000 } });
+  const withoutModel = setup();
+  const lines: string[] = [];
+  try {
+    const rules = await startClient({ clientFolder: withoutModel.folder, tokenFile: withoutModel.tokenFile, log: (l) => lines.push(l) });
+    assert.equal((await post(rules.server.url, event("wamid.rules", HARD))).status, 200);
+    await rules.runtime.idle();
+    await rules.stop();
+    assert.equal(stub.requests.length, 0, "no parser configured: nothing asked a model");
+    assert.ok(lines.some((l) => /I didn't understand/.test(l)), lines.join("\n"));
+    assert.ok(!lines.some((l) => /rzp\.io/.test(l)), "the rules did not book it");
+
+    lines.length = 0;
+    const model = await startClient({ clientFolder: withModel.folder, tokenFile: withModel.tokenFile, log: (l) => lines.push(l) });
+    assert.equal((await post(model.server.url, event("wamid.model", HARD))).status, 200);
+    await model.runtime.idle();
+    await model.stop();
+    assert.equal(stub.requests.length, 1);
+    const [request] = stub.requests;
+    assert.equal(request.path, "/model/v1/chat/completions", "the call goes to the configured base URL");
+    assert.equal(request.body.model, "stub-model");
+    assert.equal(request.headers.authorization, undefined, "no key: Guard adds it");
+    assert.ok(lines.some((l) => /rzp\.io/.test(l)), `the model's reading was used, and the agent quoted and sent a link: ${lines.join(" | ")}`);
+  } finally { await stub.close(); withModel.done(); withoutModel.done(); }
 });
 
 test("a client pinned to another version does not start, and does not even create its data folder", async () => {

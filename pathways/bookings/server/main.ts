@@ -25,6 +25,8 @@ try {
   const { client, server } = running;
   console.log(`Geometer · Bookings agent · ${client.settings.name} (${client.name}) · ${client.lock.pathway}@${client.lock.version}`);
   console.log(client.runtime.mode === "fakes" ? "Stand-in services: nothing real is contacted." : "Live: every call to a service goes through Guard.");
+  const parser = client.runtime.parser;
+  console.log(parser ? `Messages are read by a model (${parser.wire} wire, ${new URL(parser.baseUrl).origin}); if it cannot answer, the rules read the message.` : "Messages are read by the built-in rules (no model).");
   console.log(`Listening on ${server.url} · data in ${client.runtime.dataDir} · a tick every ${client.runtime.tickSeconds} s`);
   console.log("Press Ctrl+C to stop.");
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
