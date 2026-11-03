@@ -102,6 +102,11 @@ It prints the addresses to open, for example `http://192.168.1.23:8787` for the 
 
 **What this is not.** A demo of the pathway on stand-ins. The owner's lines are counted from the stand-ins' records, so they show what happened in the demo, not a claim about a live shop. The "We didn't check" line is always shown. The clock is a fake clock that starts on today's real date at 10:00 in the shop's time zone and moves only when you tap.
 
+## Sell it
+
+A pathway isn't ready to sell until its guide is. [`sell/`](sell/) has the pitch-and-sell guide for local partners and builders in English, Hindi, Malayalam and Kannada (`guide.<lang>.md`, from "is this shop a fit" to the first month, built on the demo above) and the one-page sheet the partner leaves with the owner (`one-pager.<lang>.html`, printable on A4).
+Hindi, Malayalam and Kannada are machine-written and wait for native review ([Deferred.md](Deferred.md)). What every pathway's guide must cover: [../SELL-GUIDE.md](../SELL-GUIDE.md). `test/sell-guide.test.ts` checks the sections, the banned words, the amounts and the demo steps.
+
 ## Run the agent as a server
 
 `server/` runs one client's agent live: it saves every incoming event as a task before it answers, handles one task at a time, saves the agent's state after each step, and picks up where it stopped after a restart. Two pieces it does not contain: the inbox, which checks each provider's webhook signature and forwards the event to it, and Guard, which holds the service keys. The runtime holds no secret of either kind.
@@ -314,6 +319,7 @@ scripts/review-sheet.ts            writes REVIEW-ml.md and REVIEW-kn.md from the
 scripts/model-eval.ts              the model eval (eval-score.ts scores it, eval-keys.ts reads the keys: laptop only)
 eval/                              messages.jsonl (the labelled messages), models.json (the candidates); results.json is git-ignored
 REVIEW-ml.md, REVIEW-kn.md         every Malayalam and Kannada line, for a native speaker to mark OK or change
+sell/                              the sell guide: guide.<lang>.md and one-pager.<lang>.html for en, hi, ml, kn (spec: ../SELL-GUIDE.md)
 Explanation.md, Deferred.md        how it was built and why; what is left open and why
 ```
 
