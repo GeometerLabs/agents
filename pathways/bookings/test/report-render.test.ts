@@ -205,3 +205,9 @@ test("every string table is complete in all four languages", () => {
     for (const text of [...Object.values(s.label), ...Object.values(s.page), ...Object.values(s.stop), ...Object.values(s.notTested), ...Object.values(s.notCounted)]) assert.ok(text.trim() !== "");
   }
 });
+
+test("a line break typed into a shop's name cannot make a sixth line", () => {
+  const odd = parseSettings({ ...JSON.parse(JSON.stringify(settings)), name: "Glow\nSalon\r\n\u2028Kochi" });
+  const r = buildMonthlyReport({ settings: odd, entries: [], bookings: [], ...monthRange("2026-11", settings.timezone), source: "live", madeAt: 0, preparedBy: "Divya\nlocal partner" });
+  for (const language of LANGUAGES) assert.equal(ownerText(r, language).split(/\r?\n|\u2028/).length, 5);
+});

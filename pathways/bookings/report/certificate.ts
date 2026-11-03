@@ -21,7 +21,7 @@ import type { MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.t
 import { esc, list, page, sealBlock, table } from "./html.ts";
 import type { Envelope } from "./sign.ts";
 import { STRINGS } from "./strings.ts";
-import { languagesOf, periodLabel, rupees } from "./text.ts";
+import { languagesOf, oneLine, periodLabel, rupees } from "./text.ts";
 import type { ReportLanguage } from "./text.ts";
 
 // ---- the hand check, summed up -------------------------------------------------------------------------------------------
@@ -120,14 +120,14 @@ export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Lang
   const s = STRINGS[language];
   const cert = envelope.document;
   const lines = [
-    `${cert.shop.name} · ${s.agent} · ${s.goLiveCertificate} · ${dateText(cert.issuedOn, language)}`,
+    `${oneLine(cert.shop.name)} · ${s.agent} · ${s.goLiveCertificate} · ${dateText(cert.issuedOn, language)}`,
     heldLine(cert, language),
     ...(cert.checks.failed > 0 ? [`${s.cert.didNotHold}: ${cert.checks.failedTitles.join("; ")}`] : []),
     `${s.cert.yourLimits}:`,
     ...limitLines(cert, language).map((line) => `• ${line}`),
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.cert.handRunLine,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${cert.preparedBy} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
   ];
   return lines.join("\n");
 }
@@ -218,12 +218,12 @@ export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, l
   const cert = envelope.document;
   const tag = s.sourceTag[cert.source];
   return [
-    `${cert.shop.name} · ${s.agent} · ${s.monthlyCertificate} · ${periodLabel(cert.period, language)}${tag ? ` · ${tag}` : ""}`,
+    `${oneLine(cert.shop.name)} · ${s.agent} · ${s.monthlyCertificate} · ${periodLabel(cert.period, language)}${tag ? ` · ${tag}` : ""}`,
     `${s.cert.countedIntro(periodLabel(cert.period, language))} ${countedPairs(cert, language).join(" · ")}`,
     `${s.page.notCountedHeading}: ${cert.notCounted.map((id) => s.notCounted[id]).join(" · ")}`,
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.handRun,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${cert.preparedBy} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
   ].join("\n");
 }
 

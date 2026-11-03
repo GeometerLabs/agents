@@ -23,6 +23,9 @@ export function periodLabel(period: MonthlyReport["period"], language: Language)
 
 export const rupees = (paise: number): string => formatInr(paise / 100);
 
+/** Text typed into the settings (a shop's name, who set it up) on one line, so a line break in it cannot make a sixth line. */
+export const oneLine = (text: string): string => text.replace(/\s+/g, " ").trim();
+
 /** The five lines for one language. */
 export function ownerText(report: MonthlyReport, language: Language): string {
   const s = STRINGS[language];
@@ -30,7 +33,7 @@ export function ownerText(report: MonthlyReport, language: Language): string {
   const pair = (label: string, value: string | number) => `${label}: ${value}`;
   const tag = s.sourceTag[report.source];
 
-  const title = [report.shop.name, periodLabel(report.period, language), tag].filter(Boolean).join(" · ");
+  const title = [oneLine(report.shop.name), periodLabel(report.period, language), tag].filter(Boolean).join(" · ");
   const moneyAndBookings = [
     pair(s.label.bookingsMade, bookings.made),
     bookings.cancelled > 0 ? pair(s.label.cancelled, bookings.cancelled) : "",

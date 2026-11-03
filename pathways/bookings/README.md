@@ -55,6 +55,22 @@ It prints the addresses to open, for example `http://192.168.1.23:8787` for the 
 
 **What this is not.** A demo of the pathway on stand-ins. The owner's lines are counted from the stand-ins' records, so they show what happened in the demo, not a claim about a live shop. The "We didn't check" line is always shown. The clock is a fake clock that starts on today's real date at 10:00 in the shop's time zone and moves only when you tap.
 
+## The monthly report and the certificates
+
+What a shop is given, in its language (Hindi, English, Malayalam, Kannada, or Hindi and English together): a five-line WhatsApp text it can read in ten seconds, a printable page behind it ("Show what we did ▸" for the detail), a go-live certificate before it switches on, and a monthly record certificate. Everything is counted from the action record; nothing is written by a model. They state facts and list what was **not** tested or not counted on every document; they never say "safe", "guaranteed" or "certified", and they make no earnings claim. Phase 1 documents say the checks were run by hand, and the go-live certificate says it was against stand-in services.
+
+```sh
+# from the root of this repository
+node pathways/bookings/scripts/report-example.ts                 # a sample of everything, from a scripted busy month, into pathways/bookings/report-sample/ (git-ignored)
+node pathways/bookings/scripts/report-key.ts ~/geometer-keys     # make the signing key, outside any repository
+node pathways/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
+     --month 2026-11 --lang hi --out ./out --source stand-in --key ~/geometer-keys/report-key.pem
+node pathways/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out --key ~/geometer-keys/report-key.pem
+node pathways/bookings/scripts/verify-report.ts ./out/report-2026-11.json --trust-key ~/geometer-keys/report-key.pub.pem
+```
+
+`--source` (stand-in, test-mode or live) is required and printed on every layer. `--lang both` writes the Hindi and English messages separately and one page with both. A signature shows who issued a document and that it has not changed; it does not show the numbers are true. How it works, and what is not built (the verify page on geometer.dev, a QR code, the Guard anchor): [Explanation.md](Explanation.md) and [Deferred.md](Deferred.md).
+
 ## What the customer sees
 
 ```text
@@ -164,6 +180,11 @@ src/language/                      templates (hi, en, ml, kn), the outgoing chec
                                    words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
+crash-test/not-tested.ts           what the hand check does not cover (printed by it, carried by the go-live certificate)
+report/                            the monthly report and the certificates: data.ts (counts), text.ts (owner's five lines), html.ts (the page),
+                                   certificate.ts, strings.ts (every word, per language, and the banned words), sign.ts (seal and check),
+                                   keys.ts (the key pair), run.ts and cli.ts (the scripts' work), example-month.ts (a scripted busy month)
+scripts/report-key.ts, client-report.ts, go-live-certificate.ts, verify-report.ts, report-example.ts
 test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints
 scripts/hand-check.ts              the hand check
 demo/                              the partner demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
@@ -179,7 +200,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 - **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser is a stub that is never called (`createOpenAICompatibleParser`).
-- **The monthly client report, the builder panel, hosting, restarts and persistence** (state is in memory), and **Tamil, Telugu** and other languages. Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
+- **The builder panel, hosting, sending the report, restarts and persistence** (state is in memory), and **Tamil, Telugu** and other languages. Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
 
 The full list, with a reason and a trigger for each, is in [Deferred.md](Deferred.md). What the hand check does not test is printed every time it runs.
 
