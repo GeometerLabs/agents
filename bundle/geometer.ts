@@ -134,10 +134,11 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       const r = await checkShop(ctx, shop);
       r.notes.forEach((n) => console.log(`note: ${n}`));
       r.lines.forEach((l) => console.log(l));
-      console.log(await connectionChecks(ctx, shop));
+      const c = await connectionChecks(ctx, shop);
+      console.log(c.text);
       if (!r.ok) { console.log(refusal(new Refused(r.problems))); return 1; }
-      console.log(`${shop} passes every check. Nothing was started.`);
-      return 0;
+      console.log(`${shop} passes the generator's checks${c.failed ? ", but the connection checks above failed" : ""}. Nothing was started or changed on the Guards.`);
+      return c.failed ? 1 : 0;
     }
 
     if (command === "deploy") {
@@ -210,16 +211,26 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
   }
 }
 
-/** The panel's read-only connection checks (the WhatsApp number is this shop's, the Razorpay key is the shop's own account, the calendar is shared and writable). Not built here. */
-async function connectionChecks(ctx: Context, shop: string): Promise<string> {
-  const path = join(ctx.appDir, "bundle", "panel", "checks.ts");
-  if (!existsSync(path)) return "Connection checks: not run. They come from the panel (bundle/panel/checks.ts, exporting `connectionChecks({ serverDir, shop })`), and this build has no panel, so the WhatsApp number, the Razorpay account and the calendar were not confirmed.";
-  try {
-    const mod = await import(path) as { connectionChecks?: (input: { serverDir: string; shop: string }) => Promise<{ ok: boolean; lines: string[] }> };
-    if (typeof mod.connectionChecks !== "function") return "Connection checks: not run. bundle/panel/checks.ts does not export connectionChecks({ serverDir, shop }).";
-    const r = await mod.connectionChecks({ serverDir: ctx.dir, shop });
-    return `Connection checks (read-only, nothing is sent or charged): ${r.ok ? "all passed" : "FAILED"}\n${r.lines.map((l) => `  ${l}`).join("\n")}`;
-  } catch (e) { return `Connection checks: not run (${(e as Error).message}).`; }
+/**
+ * The panel's read-only connection checks (the WhatsApp number is this shop's, the Razorpay key is the right mode, the calendar is shared and writable), run where they
+ * can run: inside the panel container, which is on the network the Guards' agent ports are on and has the token (services/connection-check.ts). They go through the shop's
+ * RUNNING Guards, so they only happen once the shop has been deployed; before that this says so. Returns the text to print and whether anything failed.
+ */
+export async function connectionChecks(ctx: Context, shop: string): Promise<{ text: string; failed: boolean }> {
+  const not = (why: string) => ({ text: `Connection checks: not run. ${why}`, failed: false });
+  let server;
+  try { server = loadServer(ctx.dir); } catch (e) { return not((e as Error).message); }
+  if (!server.panel.enabled) return not("This server has no panel (\"panel\" in geometer.json), and the checks run inside it.");
+  if (readStatus(ctx.dir, shop)?.deploy.state !== "applied") return not(`${shop} is not deployed yet, so its Guards are not up to be asked: deploy it, then run \`geometer check ${shop}\` again (or press "Run the checks" in the panel).`);
+  const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/services/connection-check.ts", shop], { timeoutMs: 120_000 });
+  let body: { connections?: { service: string; ok: boolean; code: string; detail?: string; notChecked?: string[] }[] | null; missing?: boolean } | undefined;
+  try { body = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? ""); } catch { /* not JSON */ }
+  if (!body) return not(`The panel did not answer (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 200)}). Is the panel container up (\`geometer status\`)?`);
+  if (body.missing) return not(`The panel has no settings for ${shop} (the panel keeps them in shops/${shop}/).`);
+  if (!body.connections) return not("The panel has not been told where the Guards are (PANEL_GUARD_URL).");
+  const failed = body.connections.some((c) => !c.ok);
+  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? "confirmed" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
+  return { text: `Connection checks (read-only through the shop's Guards; nothing is sent or charged; the same as the panel's "Run the checks", so the panel shows these too): ${failed ? "FAILED" : "all passed"}\n${lines.map((l) => `  ${l}`).join("\n")}`, failed };
 }
 
 async function init(folder: string | undefined, v: Record<string, string | boolean | undefined>): Promise<number> {
