@@ -51,7 +51,12 @@ export function formatSlot(ms: number, timeZone: string, language: Language): st
   return `${formatDate(p, language)}, ${formatTime(p, language)}`;
 }
 
-/** The text a customer typed, made easy to match: Unicode-composed, lower case, Devanagari digits turned into 0-9. */
+/** Text with a single spelling for the same thing: Unicode-composed, Devanagari digits turned into 0-9. Case is kept. */
+export function plain(text: string): string {
+  return text.normalize("NFC").replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
+}
+
+/** The text a customer typed, made easy to match: plain() and lower case. */
 export function canon(text: string): string {
-  return text.normalize("NFC").toLowerCase().replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
+  return plain(text).toLowerCase();
 }
