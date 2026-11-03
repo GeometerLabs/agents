@@ -63,6 +63,8 @@ export interface ServerConfig {
   panel: { enabled: boolean };
   /** Publish Caddy's ports on these host ports. Default 80 and 443. */
   ports: { http: number; https: number };
+  /** Seconds between heartbeats. Fleet's contract says 60; a test makes it shorter. */
+  heartbeatSeconds: number;
 }
 
 export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.2-pathways.1";
@@ -143,6 +145,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     ...(isObj(o.upstreams) ? { upstreams: o.upstreams as ServerConfig["upstreams"] } : {}),
     limits: { whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
     panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false },
+    heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
   if (config.backup) {

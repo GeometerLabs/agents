@@ -16,6 +16,7 @@ export interface OpsGuard { id: string; service: string; adminUrl: string; healt
 export interface OpsConfig {
   deploymentId: string;
   bundleVersion: string;
+  heartbeatSeconds?: number;
   fleet?: { url: string; keyFile: string };
   shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; guards: OpsGuard[] }>;
   model: OpsGuard;
@@ -123,7 +124,7 @@ async function run(config: OpsConfig): Promise<number> {
     if (r.accepted) { baseline = next; lastProblem = ""; } else if (r.problem !== lastProblem) { lastProblem = r.problem ?? ""; console.error(`heartbeat not accepted: ${lastProblem}`); }
   };
   await tick();
-  setInterval(() => void tick().catch((e) => console.error(`heartbeat failed: ${(e as Error).message}`)), 60_000);
+  setInterval(() => void tick().catch((e) => console.error(`heartbeat failed: ${(e as Error).message}`)), (config.heartbeatSeconds ?? 60) * 1000);
   await new Promise(() => undefined);
   return 0;
 }

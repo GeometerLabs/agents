@@ -45,6 +45,8 @@ export interface Context {
   docker: string;
   /** Seconds to wait for the Guards after `up`. Default 120. */
   waitSeconds?: number;
+  /** More compose files merged over the generated one (a test adds its stand-ins and a bucket this way). Never used by a real server. */
+  extraComposeFiles?: string[];
 }
 
 export const composeFile = (dir: string) => join(serverPaths(dir).generated, "compose.yaml");
@@ -56,7 +58,7 @@ export function dirsOf(ctx: Context): Dirs {
 
 /** `docker compose` on this server's generated file. */
 export function compose(ctx: Context, args: string[], options: { timeoutMs?: number } = {}) {
-  return ctx.runner.run(ctx.docker, ["compose", "-f", composeFile(ctx.dir), "--project-directory", serverPaths(ctx.dir).generated, ...args], { timeoutMs: options.timeoutMs ?? 600_000 });
+  return ctx.runner.run(ctx.docker, ["compose", "-f", composeFile(ctx.dir), ...(ctx.extraComposeFiles ?? []).flatMap((f) => ["-f", f]), "--project-directory", serverPaths(ctx.dir).generated, ...args], { timeoutMs: options.timeoutMs ?? 600_000 });
 }
 
 /** One command inside the ops container: the only way to a Guard's admin port. */

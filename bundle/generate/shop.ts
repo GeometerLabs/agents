@@ -16,6 +16,7 @@ export const names = {
   runtime: (shop: string) => `rt-${shop}`,
   guard: (shop: string, kind: GuardKind) => `g-${shop}-${kind}`,
   forwarder: (shop: string, kind: GuardKind) => `fwd-${shop}-${kind}`,
+  door: (shop: string) => `door-${shop}`,
   dataVolume: (shop: string) => `rt-data-${shop}`,
   stateVolume: (shop: string, kind: GuardKind) => `gs-${shop}-${kind}`,
   /** The model Guard is one per server. */
