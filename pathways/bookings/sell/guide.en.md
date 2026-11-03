@@ -198,7 +198,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 
 - [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Give back ₹200?". The owner answers "approve b-1" or "deny b-1". Practise one together.
 - [ ] **One test booking with test money.** From your own phone, book, pay a test deposit, see it in the owner's calendar, then cancel. Nothing real is paid.
-- [ ] **The go-live certificate, read together.** Read every line aloud in the owner's language, including "Not checked". It says the checks were run by hand on practice services, and it lists what was not checked, such as these checks on this shop's own settings (they ran on the example shop). Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
+- [ ] **The go-live certificate, read together.** Read every line aloud in the owner's language, including "Not checked". It says the checks were run by hand on practice services, using this shop's own prices, hours and limits, and it lists what was not checked. If some checks could not be run on this shop's settings, it says so. Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
 - [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, the WhatsApp message fees, whether the deposit is refundable or counts against the bill (the shop's accountant decides), cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet.
 
 ## 9. The first month

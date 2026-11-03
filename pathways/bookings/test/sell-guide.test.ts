@@ -10,8 +10,9 @@ import { uiFor } from "../demo/strings.ts";
 import { recordRows, summaryLines, waitingCards, workDone } from "../demo/view.ts";
 import { bannedIn } from "../report/strings.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES, hoursOn } from "../src/settings.ts";
-import type { Language } from "../src/settings.ts";
+import { LANGUAGES, hoursOn, validateSettings } from "../src/settings.ts";
+import type { Language, Settings } from "../src/settings.ts";
+import { runOn } from "../crash-test/situations.ts";
 import { zonedToMs } from "../src/time.ts";
 
 const SELL = new URL("../sell/", import.meta.url);
@@ -307,4 +308,188 @@ test("one-pagers: the same layout in every language, and the same amounts and nu
     same(numbers(visible(sheet(l))), numbers(visible(sheet("en"))));
   }
   same(rupees(visible(sheet("en"))), new Set(["₹200", "₹300", "₹450"]));
+});
+
+// ---- variants: a guide that changes only what differs (../../SELL-GUIDE.md, "Variants") --------------------------------------
+// The equipment-rental variant of the Bookings guide: sell/variants/equipment-rental.<lang>.md. It keeps the main guide's section
+// numbers, covers only the sections that differ, points to the main guide for the rest, and is held to the same rules.
+
+const VARIANT_SECTIONS_ALLOWED = [1, 3, 4, 5, 6, 7, 8, 11];
+const VARIANT_SECTIONS_REQUIRED = [1, 3, 4, 5, 6, 8];
+const variant = (l: Language) => readFileSync(new URL(`variants/equipment-rental.${l}.md`, SELL), "utf8");
+const RENTAL_FILE = "pathways/bookings/settings/equipment-rental.example.json";
+const rentalSettings = () => {
+  const result = validateSettings(JSON.parse(readFileSync(new URL("../settings/equipment-rental.example.json", import.meta.url), "utf8")));
+  assert.ok(result.ok);
+  return result.settings;
+};
+
+test("variant guide: every language has the equipment-rental variant, and it points to the main guide in its own language", () => {
+  for (const l of LANGUAGES) {
+    assert.ok(existsSync(new URL(`variants/equipment-rental.${l}.md`, SELL)), `variants/equipment-rental.${l}.md is missing`);
+    assert.ok(variant(l).length > 3000, `${l}: the variant is almost empty`);
+    assert.ok(variant(l).includes(`(../guide.${l}.md)`), `${l}: the variant must link to the main guide it changes`);
+    assert.ok(existsSync(new URL(`guide.${l}.md`, SELL)));
+  }
+});
+
+test("variant guide: only sections that differ, with the main guide's numbers, the same in every language, and nothing empty", () => {
+  const master = sections(variant("en")).map((s) => s.n);
+  for (const n of VARIANT_SECTIONS_REQUIRED) assert.ok(master.includes(n), `section ${n} is required`);
+  assert.deepEqual(master, [...master].sort((a, b) => a - b), "the sections are out of order");
+  for (const n of master) assert.ok(VARIANT_SECTIONS_ALLOWED.includes(n), `section ${n} is not a section a variant restates`);
+  for (const l of LANGUAGES) {
+    const found = sections(variant(l));
+    assert.deepEqual(found.map((s) => s.n), master, `${l}: a different set of sections from the English`);
+    for (const s of found) assert.ok(s.body.trim().length > 40, `${l}: section ${s.n} is empty`);
+  }
+});
+
+test("variant guide: every section has the same shape in every language (rows, steps, checklist items, code blocks)", () => {
+  const master = sections(variant("en"));
+  for (const l of TRANSLATED) {
+    const other = sections(variant(l));
+    master.forEach((s, i) => assert.deepEqual(shape(other[i].body), shape(s.body), `${l}: section ${s.n} does not have the same shape as the English`));
+  }
+});
+
+test("variant guide: the first three sentences are exactly three, each one sentence; the setup checklist and the questions are there", () => {
+  for (const l of LANGUAGES) {
+    const found = sections(variant(l));
+    const by = (n: number) => found.find((s) => s.n === n)!;
+    const three = by(3).body.split("\n").filter((x) => /^\d+\. /.test(x));
+    assert.equal(three.length, 3, `${l}: section 3 must give exactly three sentences`);
+    for (const line of three) {
+      assert.ok(/^\d+\. "[^"]+"$/.test(line), `${l}: each sentence is written as a quoted script`);
+      assert.ok(!/[.?!।]\s/.test(line.slice(4, -1)), `${l}: each of the three is ONE sentence: ${line}`);
+    }
+    assert.ok(shape(by(8).body).checklist >= 6, `${l}: the rental setup checklist has its items`);
+    assert.ok(shape(by(5).body).subheads >= 7, `${l}: section 5 answers the rental questions`);
+    assert.ok(shape(by(7).body).tableRows >= 6, `${l}: the "Never say" rows for rental`);
+    assert.equal(shape(by(4).body).tableRows, 6, `${l}: the demo table has its four steps`);
+  }
+});
+
+test("variant guide: no banned word in any language (the Never say column is the one place that quotes them)", () => {
+  assert.ok(banned(variant("en")).length > 0, "the English variant quotes a banned phrase in section 7, so the skip is in use");
+  for (const l of LANGUAGES) assert.deepEqual(banned(checked(variant(l))), [], `variants/equipment-rental.${l}.md`);
+});
+
+test("variant guide: the ₹ amounts are the same set in every language, section by section, and are the ones the shop and the plan give", () => {
+  const en = variant("en");
+  // The GTM figures the main guide uses (₹199, ₹999 to ₹1,999, ₹1,999 to ₹2,999), the example shop's price ₹3,200, deposit and refund limit ₹1,000,
+  // the demo's haggle ₹2,130, and Razorpay's fee on a ₹1,000 deposit, about ₹24.
+  same(rupees(en), new Set(["₹24", "₹199", "₹999", "₹1000", "₹1999", "₹2130", "₹2999", "₹3200"]));
+  for (const l of TRANSLATED) {
+    same(rupees(variant(l)), rupees(en));
+    const master = sections(en);
+    const other = sections(variant(l));
+    master.forEach((s, i) => same(rupees(other[i].body), rupees(s.body)));
+  }
+  for (const l of LANGUAGES) assert.ok(!/\b(Rs\.?|INR)\s?\d|\d\s?(रुपये|रुपए|रु\.|രൂപ|ರೂಪಾಯಿ|ರೂ\.)/u.test(variant(l)), `${l}: write every amount with its own ₹ sign, in Western digits`);
+});
+
+test("variant guide: every number is the same in every language", () => {
+  for (const l of TRANSLATED) same(numbers(variant(l)), numbers(variant("en")));
+});
+
+test("variant guide: the Hindi, Malayalam and Kannada variants carry the machine-written banner with the date; the English does not", () => {
+  for (const l of TRANSLATED) {
+    const top = variant(l).split("\n").slice(0, 6).join("\n");
+    assert.ok(/Machine-written/.test(top), `${l}: banner missing`);
+    assert.ok(/native speaker/.test(top), `${l}: banner must say it needs a native speaker's review`);
+    assert.ok(/3 November 2026/.test(top), `${l}: banner must carry the date`);
+  }
+  assert.ok(!/Machine-written/.test(variant("en").split("\n").slice(0, 6).join("\n")));
+});
+
+test("variant guide: what it says about the example shop and the check is what the settings and the hand check say today", async () => {
+  const shop = rentalSettings();
+  const run = await runOn(shop);
+  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [28, 28, 0]);
+  assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), ["outside-hours"]);
+  const [job] = shop.services;
+  assert.deepEqual([job.priceInr, shop.deposit.amountInr, shop.cancellation.refundLimitInr, shop.deposit.holdMinutes, shop.cancellation.windowHours, shop.slotMinutes], [3200, 1000, 1000, 30, 24, 120]);
+  assert.equal(Math.max(...shop.services.map((s) => s.durationMinutes)), 8 * 60, "the longest job is 8 hours");
+  assert.deepEqual(shop.reminders.hoursBefore, [24]);
+  assert.ok(WEEKDAYS_ALL_OPEN(shop), "the example is open every day, which is why the closed-day request is left out");
+  assert.ok(variant("en").includes(`${run.results.length} of ${run.results.length} situations held`));
+  for (const l of LANGUAGES) {
+    const text = variant(l);
+    assert.ok(text.includes(RENTAL_FILE) && existsSync(new URL(`../${RENTAL_FILE.replace("pathways/bookings/", "")}`, import.meta.url)), `${l}: the example file it names exists`);
+    assert.ok(text.includes("hand-check.ts --settings"), `${l}: the check on the shop's own settings is the real command`);
+    assert.ok(text.includes("28"), `${l}: the count`);
+  }
+  const server = readFileSync(new URL("../demo/server.ts", import.meta.url), "utf8");
+  assert.ok(server.includes('"--settings"') && server.includes('"--lang"'));
+  const handCheck = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
+  assert.ok(handCheck.includes("settings: { type: \"string\" }"));
+});
+
+const WEEKDAYS_ALL_OPEN = (s: Settings) => [0, 1, 2, 3, 4, 5, 6].every((d) => hoursOn(s, d) !== null);
+
+// What the variant tells a partner to type in Kannada, where the demo's suggestions are in English with the machine's name in Kannada.
+const RENTAL_TYPED_KN = {
+  book: "ನಾಳೆ ಮಧ್ಯಾಹ್ನ 12 ಗಂಟೆಗೆ ರೋಟಾವೇಟರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಅರ್ಧ ದಿನ ಬೇಕು",
+  haggle: "ನಾಳೆ ಮಧ್ಯಾಹ್ನ 12 ಗಂಟೆಗೆ ರೋಟಾವೇಟರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಅರ್ಧ ದಿನ, ₹2130ಕ್ಕೆ ಮಾಡ್ತೀರಾ?",
+};
+
+test("variant guide: the variant quotes the demo's own screen words and suggestions, as the demo shows them for the example shop", () => {
+  for (const l of LANGUAGES) {
+    const demoLanguage: Language = l === "hi" ? "hi" : "kn"; // the example speaks Kannada and Hindi: those are the two demos
+    const ui = uiFor(demoLanguage);
+    const text = variant(l);
+    const quoted = [ui.tabCustomer, ui.tabOwner, ui.tabRecord, ui.setup, ui.reset, ui.time1d, ui.cancel, ui.showRecord, ui.approve, ui.deny,
+      ui.payButton("₹1,000"), ui.askRefund("₹1,000"), ui.reasonLate(24), ui.bookingsOk(1), ui.discountRefused([2130]), ui.banner];
+    for (const words of quoted) assert.ok(text.includes(words), `${l}: the variant must quote the demo's words exactly: ${words}`);
+  }
+  const hindi = applyLanguage(rentalSettings(), "hi");
+  assert.ok(hindi.ok);
+  const chips = createDemo(hindi.settings, NOW).chips().map((c) => c.text);
+  assert.ok(variant("hi").includes(chips[0]) && variant("hi").includes(chips[1]), "the Hindi variant quotes the demo's first two suggestions");
+  assert.ok(variant("kn").includes(RENTAL_TYPED_KN.book) && variant("kn").includes(RENTAL_TYPED_KN.haggle), "the Kannada variant quotes the sentences to type");
+});
+
+test("variant guide: the four demo steps it teaches do what it says on the example shop, in Hindi and in Kannada, whatever day the partner starts", async () => {
+  for (let k = 0; k < 7; k++) {
+    const start = NOW + k * DAY;
+    for (const demoLanguage of ["hi", "kn"] as const) {
+      const applied = applyLanguage(rentalSettings(), demoLanguage);
+      assert.ok(applied.ok);
+      const settings = applied.settings;
+      const ui = uiFor(demoLanguage);
+      const where = `${demoLanguage}, start day +${k}`;
+      const chips = createDemo(settings, start).chips().map((c) => c.text);
+      const book = demoLanguage === "kn" ? RENTAL_TYPED_KN.book : chips[0];
+      const haggle = demoLanguage === "kn" ? RENTAL_TYPED_KN.haggle : chips[1];
+      assert.ok(chips[1].includes("2130"), `${where}: the demo's own haggle is ₹2130, the figure the variant quotes`);
+
+      let demo = createDemo(settings, start);
+      await demo.say(book);
+      assert.ok(demo.payTarget(), `${where}: a deposit link is waiting`);
+      await demo.pay(1);
+      assert.ok(summaryLines(demo).some((x) => x.text === ui.bookingsOk(1)), `${where}: the owner sees the booking is in the calendar`);
+
+      demo = createDemo(settings, start);
+      await demo.say(haggle);
+      assert.ok(demo.customerLog.some((b) => b.who === "agent" && b.text.includes("₹3,200")), `${where}: the agent states the real price`);
+      assert.ok(summaryLines(demo).some((x) => x.text === ui.discountRefused([2130])), `${where}: the owner sees it said no to ₹2,130`);
+
+      demo = createDemo(settings, start);
+      await demo.say(book);
+      await demo.pay(1);
+      await demo.advance(1440); // "1 day passes", once
+      const booking = [...demo.world.store.bookings.values()].at(-1)!;
+      assert.ok(booking.startMs - demo.world.clock.now() < DAY, `${where}: one tap of "1 day passes" is enough, as the variant says`);
+      await demo.cancel();
+      const cards = waitingCards(demo);
+      assert.equal(cards.length, 1, `${where}: one question is waiting`);
+      assert.equal(cards[0].title, ui.askRefund("₹1,000"));
+      assert.equal(cards[0].reason, ui.reasonLate(24));
+      assert.deepEqual(cards[0].buttons.map((b) => b.label), [ui.approve, ui.deny]);
+      await demo.owner("approve", cards[0].ref);
+      assert.equal(waitingCards(demo).length, 0);
+      assert.ok(recordRows(demo).length > 0 && workDone(demo).length > 0);
+    }
+  }
 });
