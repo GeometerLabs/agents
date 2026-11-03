@@ -120,10 +120,9 @@ test("`backup now` has each Guard make its own backup, then runs ONE snapshot co
     assert.ok(existsSync(secretFile(w.root, "litestream", "litestream.yml")));
     w.admin.length = 0; w.calls.length = 0;
     const jobs: string[][] = [];
-    const base = w.ctx.runner.run;
-    w.ctx.runner = fakeRunner((command, args, options) => {
+    w.ctx.runner = fakeRunner((_c, args) => {
       if (args[0] === "run") { jobs.push(args); return ok(JSON.stringify({ stamp: "x", results: [{ name: "glow-salon", ok: true, stamp: "20261104T100000Z", files: 4, bytes: 999, record: { records: 3, lastSeq: 3, lastEntryDigest: "d" } }] })); }
-      void base; void options; return ok(JSON.stringify({ status: 200, body: {} }));
+      return ok(JSON.stringify({ status: 200, body: {} }));
     });
     const r = await runBackup(w.ctx);
     assert.equal(r.ok, true);

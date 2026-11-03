@@ -40,7 +40,6 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
   const calls: { command: string; args: string[] }[] = [];
   const admin: string[] = [];
   const failing = new Map<string, string[]>();
-  const compiled = new Map<string, string>(); // service -> digest, from the spec's name
   const runningDigest = new Map<string, string>();
   const digestByName = new Map<string, string>();
   const tool: GuardTool = {
@@ -50,11 +49,10 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
       digestByName.set(spec.name, digest);
       return { ok: true, result: { digest, tool: spec.tool, tenant: spec.tenant, version: spec.version, text: JSON.stringify({ compiled: spec }) } };
     },
-    async verify(bundleText, toml) {
+    async verify(_bundle, toml) {
       const name = /^deployment = "([^"]+)"/mu.exec(toml)?.[1] ?? "";
       const service = name === "" ? "" : toml.includes('tool = "model"') ? "g-model" : `g-${name}`;
       const rules = failing.get(service);
-      void bundleText;
       return rules ? { ok: false, passed: 0, of: 4, notSelfTestable: [], failedRules: rules, text: "tripwire failed" } : GOOD;
     },
   };
@@ -82,7 +80,6 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
     return ok();
   });
   const ctx: Context = { dir: t.root, appDir: new URL("../../", import.meta.url).pathname.replace(/\/$/u, ""), runner, tool, log: () => undefined, now: () => new Date("2026-11-04T10:00:00Z"), sleep: async () => undefined, docker: "docker", waitSeconds: 1 };
-  void compiled;
   return {
     ctx, root: t.root, paths: t.paths, calls, admin, runningDigest,
     failVerify: (service, rules) => failing.set(service, rules),

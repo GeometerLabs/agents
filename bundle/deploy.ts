@@ -26,7 +26,7 @@ import { ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecre
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
-import type { GuardApplied, Snapshot, State } from "./lib/state.ts";
+import type { Snapshot, State } from "./lib/state.ts";
 import { updateStatus } from "./lib/status.ts";
 import type { GuardProof } from "./lib/status.ts";
 import { Refused, ensureDir, mintGuardToken, mintSecret, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
