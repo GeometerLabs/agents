@@ -2,7 +2,7 @@
 
 Sample payloads for the live adapters and the webhook parsers. None of them is a call to a real service.
 
-**Copied from the providers' own documentation (read 3 Nov 2026), values unchanged; long samples are trimmed to the fields the code reads:**
+**Reproduced from the providers' own documentation pages (read 3 Nov 2026) through a summarising fetch tool, and trimmed to the fields the code reads. Spot-check against the pages before relying on an exact value:**
 
 - `razorpay-payment-link-create.json`, `razorpay-payment-link-fetch.json`, `razorpay-payment-links-list.json`, `razorpay-payment.json`, `razorpay-refund-create.json`, `razorpay-error-not-exist.json`: https://razorpay.com/docs/api/payments/payment-links/ , https://razorpay.com/docs/api/payments/fetch-with-id/ , https://razorpay.com/docs/api/refunds/create-normal/
 - `razorpay-webhook-*.json`: https://razorpay.com/docs/webhooks/payloads/payment-links/ , /payments/ , /refunds/ (trimmed)
