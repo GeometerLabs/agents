@@ -207,7 +207,7 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 ಆದ ಬುಕಿಂಗ್: 38 · ರದ್ದಾದವು: 3 · ಬಂದ ಮುಂಗಡ ಹಣ: ₹17,600 · ಹಿಂತಿರುಗಿಸಿದ್ದು: ₹400
 ನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: 3 · ನೀವು ಒಪ್ಪಿದ್ದು: 2 · ನೀವು ಬೇಡ ಎಂದದ್ದು: 1 · ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: 1
 ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5 (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: 3 · ಕೆಲಸದ ಸಮಯದ ಹೊರಗಿನ ಬುಕಿಂಗ್: 1 · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: 1)
-ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ```
 
 ### Every word and phrase of the report and the certificates
@@ -265,6 +265,9 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `notTested.other-faults` | ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು | problems beyond the ones tried |  |
 | `notTested.own-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಇವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
 | `notTested.situations-skipped` | ಈ ಪರಿಶೀಲನೆಗಳಲ್ಲಿ ಕೆಲವು, ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಡೆಸಲಾಗದ ಕಾರಣ ಬಿಟ್ಟಿದೆ | some of these checks, which this shop's settings cannot run (so they were left out) |  |
+| `notTested.other-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ ಇವು ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು) | these checks on this shop's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ) | these checks on this shop's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಕೊಟ್ಟ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ) | these checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
 | `notCounted.no-shows` | ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ) | who turned up (a booking is marked finished when its time passes) |  |
 | `notCounted.read-receipts` | ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ಏಜೆಂಟ್ ಮೂಲಕ ಅಲ್ಲದೆ ನಡೆದ ಬುಕಿಂಗ್, ಕರೆ, ಪಾವತಿ | bookings, calls and payments that did not go through the agent |  |
@@ -337,4 +340,11 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `cert.handRunLine` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp, ಪಾವತಿ, ಕ್ಯಾಲೆಂಡರ್ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ. | Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only. |  |
 | `cert.countedIntro` | ಏಜೆಂಟ್‌ನ ದಾಖಲೆಯಿಂದ ಎಣಿಸಿದ್ದು, Nov 2026: | Counted from the agent's record for Nov 2026: |  |
 | `cert.checkedOn` | ಪರಿಶೀಲನೆ ನಡೆದದ್ದು | Checks run on |  |
+| `goLive.heading` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆ | Go-live checks |  |
+| `goLive.own` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆಯೇ ನಡೆದವು, Tue 10 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ. | The go-live checks ran on this shop's own settings, in the go-live certificate of Tue 10 Nov 2026. |  |
+| `goLive.example` | Tue 10 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು, ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಅಲ್ಲ. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on the example shop, Glow Salon, not on this shop's own settings. |  |
+| `goLive.different` | Tue 10 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಗಿಂತ ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು, ಆದ್ದರಿಂದ ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave. |  |
+| `goLive.untrusted` | ಒಂದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಡಲಾಗಿತ್ತು, ಆದರೆ ಅದನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ (ಅದರಲ್ಲಿ ಸಹಿ ಇಲ್ಲ, ಸಹಿ ಹೊಂದುವುದಿಲ್ಲ, ಅಥವಾ ಅದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವೇ ಅಲ್ಲ), ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate), so it was not used. |  |
+| `goLive.none` | ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ, ಆದ್ದರಿಂದ ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಯಾವ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು ಎಂದು ಈ ದಾಖಲೆ ಹೇಳುವುದಿಲ್ಲ. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರಕ್ಕೆ ಸಹಿ ಮಾಡಿದ್ದು key:3f9a1c… ಎಂಬ ಕೀಲಿಯಿಂದ. ಆ ಕೀಲಿ ಯಾರ ಬಳಿ ಇದೆ ಎಂದು ಕೀಲಿ ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate is signed with key:3f9a1c…. A key does not show who holds it. |  |
 

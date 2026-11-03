@@ -45,10 +45,26 @@ export type NotCountedId = "no-shows" | "read-receipts" | "outside-agent" | "rul
 export const NOT_COUNTED: readonly NotCountedId[] = ["no-shows", "read-receipts", "outside-agent", "rule-breaks"];
 
 /**
- * What the checks behind an agent do not cover: the hand check's list, plus "own-settings" when they ran on someone else's settings,
- * or "situations-skipped" when they ran on this shop's settings but some situations could not be run on them.
+ * What the checks behind an agent do not cover: the hand check's list, plus one more when the checks are not shown to have run on this shop's
+ * own settings: "own-settings" (they ran on the example shop, Glow Salon), "other-settings" (on some other settings), "no-go-live-certificate"
+ * (the monthly report was given none), "go-live-untrusted" (it was given one it could not trust), or "situations-skipped" when they did run
+ * on this shop's settings but some situations could not be run on them.
  */
-export type NotTestedKey = NotTestedId | "own-settings" | "situations-skipped";
+export type NotTestedKey = NotTestedId | "own-settings" | "other-settings" | "no-go-live-certificate" | "go-live-untrusted" | "situations-skipped";
+
+/**
+ * What the monthly report was told about the go-live checks, from the go-live certificate it was given (report/go-live.ts reads and checks one).
+ * Only a certificate whose signature is good and whose document is a go-live certificate is ever read; anything else is "untrusted", and
+ * no certificate at all is "none". For a certificate that was read, `own` says its checks ran on this shop's own settings (the digest of the
+ * settings they ran on is the digest of this shop's), `example` that they ran on Glow Salon's example settings, `different` on any other settings.
+ * Counts are carried only for `own`, as the certificate states them: a count from settings that are not this shop's would be read as this shop's.
+ */
+export interface GoLiveSeen { code: string; signedBy: string; issuedOn: LocalDate }
+export type GoLiveFinding =
+  | { status: "none" }
+  | { status: "untrusted" }
+  | ({ status: "own"; held: number; total: number; failed: number; notRun: number; notTested: number } & GoLiveSeen)
+  | ({ status: "example" | "different" } & GoLiveSeen);
 
 /**
  * The actions that are a message going out. A reply to a voice note ("please type") is one too: it is counted in "messages sent" and, when it
@@ -107,6 +123,8 @@ export interface MonthlyReport {
   missing: { depositAmounts: number; refundAmounts: number; ownerCommands: number; messageTargets: number };
   notCounted: NotCountedId[];
   notTested: NotTestedKey[];
+  /** What the report was told about the go-live checks: no certificate, one it could not trust, or one it read and what that says the checks ran on. */
+  goLive: GoLiveFinding;
   /** Reserved for the head of Guard's hash-chained ledger when it exists; null until then. Part of the signed bytes. */
   anchor: null;
 }
@@ -124,6 +142,8 @@ export interface ReportInput {
   /** When the report is made (epoch milliseconds). Passed in, never read from the machine, so the same input gives the same report. */
   madeAt: number;
   preparedBy?: string;
+  /** What the go-live certificate the caller was given says (report/go-live.ts). Left out, the report says that no go-live certificate was given. */
+  goLive?: GoLiveFinding;
 }
 
 /** What governs how the agent behaves and speaks, without contact details. Two shops with the same policy digest have the same limits and words. */
@@ -133,7 +153,7 @@ export function policyOf(settings: Settings): unknown {
 }
 export const policyDigest = (settings: Settings): string => digestOf(policyOf(settings));
 
-/** The example settings the hand check runs on when it is not given others. A certificate whose checks ran on different settings from the shop's has to say so; the monthly report is not told what ran, so it says so for every shop but Glow Salon. */
+/** The example settings the hand check runs on when it is not given others. A go-live certificate whose checks ran on different settings from the shop's has to say so. The monthly report no longer assumes anything about this: it is told what ran (see GoLiveFinding). */
 export const checkedPolicyDigest = (): string => policyDigest(glowSalon());
 
 /**
@@ -144,6 +164,18 @@ export function notTestedFor(settings: Settings, ran: { onPolicyDigest?: string;
   const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
   if (policyDigest(settings) !== (ran.onPolicyDigest ?? checkedPolicyDigest())) return [...ids, "own-settings"];
   return (ran.notRun ?? 0) > 0 ? [...ids, "situations-skipped"] : ids;
+}
+
+/** What the monthly report lists as not tested: the hand check's list, and one more unless a go-live certificate shows the checks ran on this shop's own settings with nothing left out. */
+export function notTestedForReport(goLive: GoLiveFinding): NotTestedKey[] {
+  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+  switch (goLive.status) {
+    case "own": return goLive.notRun > 0 ? [...ids, "situations-skipped"] : ids;
+    case "example": return [...ids, "own-settings"];
+    case "different": return [...ids, "other-settings"];
+    case "untrusted": return [...ids, "go-live-untrusted"];
+    case "none": return [...ids, "no-go-live-certificate"];
+  }
 }
 
 /** "2026-11" in a time zone as [from, to) in epoch milliseconds. */
@@ -170,6 +202,7 @@ export function entryDigest(entry: RecordEntry): string {
 
 export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const { settings, bookings, from, to, source, madeAt } = input;
+  const goLive: GoLiveFinding = input.goLive ?? { status: "none" };
   if (!(from < to)) throw new Error("The report period must end after it starts.");
   if (!SOURCES.includes(source)) throw new Error(`Say what the numbers were counted from: ${SOURCES.join(", ")}.`);
   const all = [...input.entries].filter((e) => Date.parse(e.time) < to).sort((a, b) => a.seq - b.seq); // nothing after the period can matter
@@ -290,7 +323,8 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     },
     missing,
     notCounted: [...NOT_COUNTED],
-    notTested: notTestedFor(settings),
+    notTested: notTestedForReport(goLive),
+    goLive,
     anchor: null,
   };
 }
