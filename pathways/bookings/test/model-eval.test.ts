@@ -67,7 +67,7 @@ test("max-messages takes messages in turn from each language", () => {
   assert.equal(pickMessages(messages, 1000).length, messages.length);
 });
 
-test("models.json: every candidate is complete, no price is invented and no key is in the file", () => {
+test("models.json: every candidate is complete, every price names its page and date, and no key is in the file", () => {
   const text = readFileSync(new URL("../eval/models.json", import.meta.url), "utf8");
   const { candidates } = JSON.parse(text) as { candidates: Candidate[] };
   assert.ok(candidates.length >= 2);
@@ -75,8 +75,12 @@ test("models.json: every candidate is complete, no price is invented and no key 
     for (const field of ["name", "wire", "baseUrl", "model", "keyEnv"] as const) assert.equal(typeof c[field], "string", `${c.name} ${field}`);
     assert.ok(["openai", "anthropic"].includes(c.wire));
     assert.match(c.keyEnv, /^[A-Z][A-Z0-9_]+$/);
-    assert.equal(c.priceInputPerMillion, null, `${c.name}: fill prices from the provider's current price page, not from memory`);
-    assert.equal(c.priceOutputPerMillion, null);
+    // A price is either not filled in yet, or read from the provider's price page with the page and the date in the note.
+    if (c.priceInputPerMillion !== null || c.priceOutputPerMillion !== null) {
+      assert.equal(typeof c.priceInputPerMillion, "number", `${c.name}: both prices or neither`);
+      assert.equal(typeof c.priceOutputPerMillion, "number", `${c.name}: both prices or neither`);
+      assert.match(c.note ?? "", /Price from \S+, read \d{1,2} [A-Z][a-z]{2} \d{4}/, `${c.name}: say which price page, and when it was read`);
+    }
     assert.match(c.note ?? "", /price/i);
   }
   assert.ok(!/sk-[A-Za-z0-9]{10}|AIza[0-9A-Za-z_-]{20}|Bearer [A-Za-z0-9]{20}/.test(text), "a key must never be in models.json");
