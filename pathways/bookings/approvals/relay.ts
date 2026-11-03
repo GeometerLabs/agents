@@ -303,7 +303,14 @@ export function createRelay(options: RelayOptions): Relay {
   async function finishLeftovers(): Promise<void> {
     for (const ask of store.asks(["sending"])) if (!triedThisPass.has(ask.approval)) await sendAsk(ask);
     for (const ask of store.asks(["deciding"])) await finishDecision(ask); // work is one thing at a time, so a "deciding" found here was cut short
-    for (const ask of store.asks(["decided"])) if (!ask.runtimeTold || !ask.ownerTold) await finishNotices(ask);
+    for (const ask of store.asks(["decided"])) {
+      if (!ask.runtimeTold && clock.now() > ask.guardExpiresAtMs + HOUR) { // the agent cannot use the approval any more, whatever it is told
+        store.updateAsk(ask.approval, { runtimeTold: true });
+        alert(ask.approval, "runtime_never_told", `The runtime could not be told what the owner decided about approval ${ask.approval} before it ran out.`);
+      }
+      const now = store.ask(ask.approval)!;
+      if (!now.runtimeTold || !now.ownerTold) await finishNotices(now);
+    }
   }
 
   let timer: ReturnType<typeof setInterval> | undefined;
