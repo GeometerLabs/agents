@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (32)
+## 1. Messages to the customer (33)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -44,6 +44,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | നിങ്ങളുടെ ₹200 റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം. | We are checking your ₹200 refund and will message you as soon as it is confirmed. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ₹200 റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
+| `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല. | Please type your message; I can't listen to voice notes yet. |  |
 
 ## 2. Messages to the owner (14)
 

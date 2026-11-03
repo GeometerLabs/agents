@@ -14,7 +14,7 @@ The example shop is made up: Hosahalli Farm Hiring Centre, in `pathways/bookings
 | A village owner of one machine, rented by the half day or the day | Hire priced per acre or per hour used: each job here has one fixed price |
 | Farmers who book by WhatsApp or phone today, and cancel late when it rains | A hire of several days in a row, or longer than 8 hours: one booking is one day at most |
 | An owner who loses a day's work when a farmer doesn't turn up | A hire that needs a driver, a delivery or the field's place written down: the helper doesn't record them |
-| An owner who is happy to type or read short messages | Farmers who only send voice notes: a voice note gets no reply |
+| An owner who is happy to type or read short messages | Farmers who only send voice notes: a voice note gets one short reply asking them to type; it is not listened to |
 
 ### Ask yourself
 
@@ -93,7 +93,7 @@ Don't promise a helper for each machine until the founder says it is ready.
 
 ### "Many of my farmers send voice notes."
 
-> "Right now it reads typed messages in Kannada, Hindi, Malayalam and English. A voice note gets no reply. Ask farmers to type, or reply to them yourself."
+> "Right now it reads typed messages in Kannada, Hindi, Malayalam and English. A voice note gets one short reply asking the farmer to type; it does not listen to it. Ask farmers to type, or reply to them yourself."
 
 ### "How do farmers pay?"
 
@@ -142,4 +142,4 @@ Do the checklist in section 8 of the main guide (the WhatsApp check, the shared 
 
 ## 11. Be honest about what's true today
 
-As of 3 November 2026 the rental example (a made-up centre) has been checked by hand on practice services with test money: 28 of 28 situations held, and the closed-day request was left out because the example is open every day. No hiring centre is live. It books one thing at a time for the whole business, a booking is one day at most (8 hours), prices are fixed per job, it doesn't record the field, the driver, the weather or the rest of the payment, and a voice note gets no reply. Kannada and Hindi wording is machine-written and waits for a native speaker's review. Never say more than this.
+As of 3 November 2026 the rental example (a made-up centre) has been checked by hand on practice services with test money: 28 of 28 situations held, and the closed-day request was left out because the example is open every day. No hiring centre is live. It books one thing at a time for the whole business, a booking is one day at most (8 hours), prices are fixed per job, it doesn't record the field, the driver, the weather or the rest of the payment, and it does not listen to a voice note (it replies with one line asking the customer to type). Kannada and Hindi wording is machine-written and waits for a native speaker's review. Never say more than this.

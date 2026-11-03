@@ -50,17 +50,24 @@ export const NOT_COUNTED: readonly NotCountedId[] = ["no-shows", "read-receipts"
  */
 export type NotTestedKey = NotTestedId | "own-settings" | "situations-skipped";
 
+/**
+ * The actions that are a message going out. A reply to a voice note ("please type") is one too: it is counted in "messages sent" and, when it
+ * is lost, among the messages that are not confirmed, and it never makes the owner's "could not confirm" line, which counts bookings.
+ * Any other action name the report does not know is counted only in the page's table by action, and nowhere else.
+ */
+const MESSAGE_ACTIONS: readonly Action[] = ["send_message", "voice_note_reply"];
+
 /** The entry where a rule's "no" is counted (see the header: a block is written twice). */
 const STOP_SITES: Record<RuleId, readonly Action[]> = {
-  "price-at-or-above-list": ["send_message"],
+  "price-at-or-above-list": MESSAGE_ACTIONS,
   "within-hours": ["hold_slot", "reschedule_booking"],
   "no-double-booking": ["hold_slot", "reschedule_booking"],
-  "confirm-only-when-recorded": ["send_message"],
+  "confirm-only-when-recorded": MESSAGE_ACTIONS,
   "one-deposit-per-booking": ["record_deposit"],
   "refund-limit": ["refund"],
-  "no-message-after-stop": ["send_message"],
-  "message-matches-record": ["send_message"],
-  "opt-out": ["send_message"],
+  "no-message-after-stop": MESSAGE_ACTIONS,
+  "message-matches-record": MESSAGE_ACTIONS,
+  "opt-out": MESSAGE_ACTIONS,
 };
 
 /** Actions whose unconfirmed or failed entry can be settled by a later confirmed entry for the same booking. */
@@ -231,7 +238,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const toCustomers = { total: 0, byLanguage: zeroByLanguage() };
   const toOwner = { total: 0, byLanguage: zeroByLanguage() };
   let heldBack = 0;
-  for (const e of month.filter((x) => x.action === "send_message")) {
+  for (const e of month.filter((x) => MESSAGE_ACTIONS.includes(x.action))) {
     if (e.outcome === "blocked") heldBack++;
     if (e.outcome !== "confirmed") continue;
     const side = e.refs.to === "customer" ? toCustomers : e.refs.to === "owner" ? toOwner : undefined;
@@ -276,7 +283,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     owner,
     stopped: { total: stoppedTotal, byRule },
     messages: { toCustomers, toOwner, heldBack },
-    unconfirmed: { open: rows.length - settledLater, openOnBookings: rows.filter((r) => !r.settledLater && r.action !== "send_message").length, settledLater, rows },
+    unconfirmed: { open: rows.length - settledLater, openOnBookings: rows.filter((r) => !r.settledLater && !MESSAGE_ACTIONS.includes(r.action)).length, settledLater, rows },
     atReportTime: {
       waitingForOwner: bookings.filter((b) => b.pending.length > 0).length,
       paidNotBooked: bookings.filter((b) => b.state === "needs_owner").length,

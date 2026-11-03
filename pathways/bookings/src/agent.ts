@@ -82,8 +82,9 @@ export function createAgent(deps: AgentDeps): Agent {
    * sends only if none blocks, and reads the message back from the messaging service. Returns whether it went out.
    * `shown` are decisions worth recording alongside the message (for example "price floor held") that do not gate it.
    */
-  async function say(a: { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean }): Promise<boolean> {
+  async function say(a: { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action }): Promise<boolean> {
     const toCustomer = a.to === "customer";
+    const action = a.action ?? "send_message"; // the record's name for this message: a reply to a voice note is its own action
     const toNumber = toCustomer ? a.phone : owner;
     const language = toCustomer ? languageOf(a.phone, a.booking) : settings.owner.language;
     const facts = factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") });
@@ -92,7 +93,7 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       text = a.templates.map((id) => render(id, facts)).join(" ");
     } catch (e) {
-      log(a.booking, a.phone, "send_message", "blocked", inputs, { notes: (e as Error).message, decisions: a.shown, refs: { to: a.to }, language });
+      log(a.booking, a.phone, action, "blocked", inputs, { notes: (e as Error).message, decisions: a.shown, refs: { to: a.to }, language });
       return false;
     }
 
@@ -106,7 +107,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const decisions = [...(a.shown ?? []), ...gates];
     const worst = strictest(gates);
     if (worst.verdict !== "allow") {
-      log(a.booking, a.phone, "send_message", "blocked", inputs, { decisions, notes: worst.reason, refs: { to: a.to }, language });
+      log(a.booking, a.phone, action, "blocked", inputs, { decisions, notes: worst.reason, refs: { to: a.to }, language });
       if (toCustomer && worst.ruleId === "message-matches-record") await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] });
       return false;
     }
@@ -116,16 +117,16 @@ export function createAgent(deps: AgentDeps): Agent {
         ? await messaging.sendText(toNumber, text)
         : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
-      log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+"), to: a.to }, language });
+      log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+"), to: a.to }, language });
       return seen !== null;
     } catch (e) {
       // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
-      log(a.booking, a.phone, "send_message", mayHaveHappened(e) ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
+      log(a.booking, a.phone, action, mayHaveHappened(e) ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
       return false;
     }
   }
 
-  const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean } = {}) =>
+  const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action } = {}) =>
     say({ booking: b, phone, to: "customer", templates, ...more });
   const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number } = {}) =>
     say({ booking: b, phone, to: "owner", templates: [template], ...more });
@@ -944,6 +945,27 @@ export function createAgent(deps: AgentDeps): Agent {
     await tellOwner(null, phone, "owner_opted_out");
   }
 
+  // ---- a voice note ------------------------------------------------------------------------------------------------
+
+  /**
+   * A voice note (or an audio file) cannot be listened to yet (plan B29 is the voice module), so the sender gets one plain line asking them to
+   * type, in the language this conversation already uses (else the shop's first language). The record names it `voice_note_reply`. The audio
+   * is never fetched or kept, the model is never asked about it, and it does not change the customer's language. STOP means STOP: nothing is
+   * sent to a customer who opted out. The owner's messages are commands, so an owner's voice note gets the same line in the owner's language.
+   * A reply that cannot go out is recorded as unconfirmed or failed by `say`, like any other, and the step does not fail.
+   */
+  async function onVoiceNote(msg: InboundMessage): Promise<void> {
+    const phone = msg.from;
+    if (phone === owner) {
+      await say({ booking: null, phone, to: "owner", templates: ["voice_note"], action: "voice_note_reply" });
+      return;
+    }
+    const customer = customerOf(phone);
+    log(null, phone, "receive_message", "confirmed", { voiceNote: true, id: msg.id }, { notes: "a voice note: it is not listened to and nothing of it is kept", refs: { messageId: msg.id } });
+    if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
+    await tellCustomer(null, phone, ["voice_note"], { action: "voice_note_reply" });
+  }
+
   // ---- events ------------------------------------------------------------------------------------------------------
 
   async function onMessage(msg: InboundMessage): Promise<void> {
@@ -952,6 +974,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     store.seenMessages.add(msg.id);
+    if (msg.voiceNote) return onVoiceNote(msg);
     if (msg.from === owner) return onOwnerMessage(msg);
 
     const phone = msg.from;

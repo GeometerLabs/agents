@@ -124,7 +124,7 @@ node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equi
 
 **What it can do:** book one machine (with its attachments) by the half day or the day at fixed prices, take a deposit, refund an early cancellation alone and ask the owner about a late one, remind the day before, and answer in Kannada and Hindi (and Malayalam and English if the file lists them).
 
-**What it cannot do, so say it before you sell it:** book two machines at the same time (it books one thing at a time for the whole business), charge per acre or per hour, keep a booking longer than 8 hours or over several days, record the field, the driver or the weather, hold a security deposit until a machine comes back, or answer a voice note (a voice note gets no reply). The list, with what would close each gap, is in [Deferred.md](Deferred.md) under "Equipment rental". The sell guide is a variant: [sell/variants/](sell/variants/).
+**What it cannot do, so say it before you sell it:** book two machines at the same time (it books one thing at a time for the whole business), charge per acre or per hour, keep a booking longer than 8 hours or over several days, record the field, the driver or the weather, hold a security deposit until a machine comes back, or listen to a voice note (a voice note gets one short reply asking the customer to type). The list, with what would close each gap, is in [Deferred.md](Deferred.md) under "Equipment rental". The sell guide is a variant: [sell/variants/](sell/variants/).
 
 ## Run the agent as a server
 
