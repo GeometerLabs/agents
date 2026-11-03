@@ -58,6 +58,7 @@ node bundle/geometer.ts init ~/geometer-server \
 ```sh
 export GEOMETER_SERVER=~/geometer-server
 node bundle/geometer.ts model-key ~/model-key.txt                    # one line; goes to the model Guard only
+node bundle/geometer.ts google-key ~/google-key.json                 # optional: one service account for every shop that hands in none of its own
 node bundle/geometer.ts backup-key stream ~/stream-key.txt           # access-key-id:secret
 node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
 ```
@@ -134,23 +135,36 @@ node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the re
 | Every runtime database, and each Guard's own store and evidence ledger | every night, kept 30 days | your snapshot place | age, to the public key in `geometer.json` |
 | Restore drill | every week | restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live record | |
 
-A failed drill, or a snapshot that did not happen, shows in `status` and in `status/<shop>.json`. It cannot yet reach Geometer's alerts: the heartbeat has no field for it (see [Deferred.md](Deferred.md)).
+A failed drill, or a snapshot that did not happen, shows in `status` and in `status/<shop>.json` (`backups`). The record and bookings the panel's monthly report reads are exported every quarter of an hour to `exports/<shop>/`.
+
+A failed drill cannot yet reach Geometer's alerts: the heartbeat has no field for it (see [Deferred.md](Deferred.md)).
 
 Restoring a snapshot needs the secret half of the age key, which is not on the server: `restore` uses the continuous copy; a snapshot is decrypted on the machine that has the key.
 
 ## The folder, for the panel
 
 ```
-<server>/geometer.json         this server (written by init)
-<server>/shops/<shop>/         settings.json, runtime.json, pathway.lock           the panel writes; the deployer applies
-<server>/secrets-inbox/<shop>/ razorpay_key, whatsapp_token, ...                    the panel writes (write-only in spirit); the deployer moves and deletes
-<server>/status/<shop>.json    last deploy, "N of M limits proven", versions, last backup and drill   the deployer writes; the panel reads
-<server>/state/                the deployer's memory (Guard bundle versions, who stopped a shop, lock history)
-<server>/generated/            compose.yaml, Caddyfile, per-container config: rewritten on every deploy, never edited
-<server>/secrets/              one folder per container
+<server>/geometer.json            this server (written by init)
+<server>/shops/<shop>/            settings.json, runtime.json, pathway.lock, owner.json, pins.json   the panel writes; the deployer applies
+<server>/secrets-inbox/<shop>/    razorpay_key ("<key id>:<key secret>"), whatsapp_token, ...        the panel writes, mode 0600; the deployer moves and deletes
+<server>/requests/<shop>.stop.json  a request to stop a shop                                          the panel writes; the deployer acts, shows it in status, removes it
+<server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads
+<server>/exports/<shop>/          record.json and bookings.json, without customers' numbers           the deployer writes; the panel's monthly report reads
+<server>/panel/                   the panel's own data
+<server>/state/                   the deployer's memory (Guard bundle versions, who stopped a shop, lock history)
+<server>/generated/               compose.yaml, Caddyfile, per-container config: rewritten on every deploy, never edited
+<server>/secrets/                 one folder per container
 ```
 
-The panel is a container named `panel` that runs `bundle/panel/main.ts` (when it exists, set `"panel": {"enabled": true}` in `geometer.json`). It gets the shops folder and the secrets inbox to write, the status folder to read, and a route at `/panel/`. It gets no Docker socket and no secrets folder. `check` calls `connectionChecks({ serverDir, shop })` exported by `bundle/panel/checks.ts` when that file exists, and says plainly that the read-only connection checks were not run when it does not.
+**The panel** is a container named `panel` that runs `bundle/panel/main.ts` (set `"panel": {"enabled": true, "mode": "own"}` in `geometer.json`, or `--panel` at `init`; Geometer's partner server uses `"mode": "hosted"`). It is served at the root of your domain (the inbox keeps `/c/...`). It is mounted with exactly the folders above that it writes or reads, plus `geometer.json` read-only: **not** `secrets/`, `state/` or `generated/`, no Docker socket. It runs as the user who runs the deployer, because it insists on keeping its keys and the files it writes private to its user (0600); a deployer run as root hands those files to uid 1000 and the panel runs as that. Its two keys are made for it in `secrets/panel/`.
+
+The panel reaches each shop's Razorpay, WhatsApp and Calendar Guards on a network of its own that carries nothing else (no runtime, no model Guard, no admin port, no inbox). At each Guard it presents its own agent, `panel-<shop>`, which that Guard allows **three reads and nothing else**: `list_links` at Razorpay, `read_number` at WhatsApp (`GET /{version}/{phone_number_id}`) and `get_calendar` at Calendar (`GET /calendar/v3/calendars/{calendarId}`), each pinned to the shop's own id like the routes beside it. The tokens are in `secrets/panel/<shop>/<kind>`, mounted only into the panel. Without these the panel's "Ready to go live" cannot pass in production.
+
+`pins.json` (the ids the panel's connection checks confirmed) is used for the exact allowlists when it is there, and for the runtime too, so the two always agree; a changed pin is a new version of that Guard's bundle. A Razorpay key handed in that is not the key id the check confirmed, or of the other mode, is refused by name. With no `google_service_account.json` in a shop's inbox, the server-wide key (`node bundle/geometer.ts google-key <file>`) is used, which is how Geometer's hosted server works; the panel is told its address so it can say who to share a calendar with.
+
+`status/<shop>.json` is the panel's own shape (`bundle/panel/contract.ts`, `parseStatus`): `updatedAt`, `deploy {state, at, message}`, `limits {proven, of, unprovable}`, `versions`, `stopped {at, requestId}`, `backups`. `updatedAt` is the last time the deployer confirmed the shop **from its running Guards**; while `apply --watch` runs it is refreshed every minute if the runtime and all three Guards answer, and is left alone when one does not, so the panel shows "Not confirmed yet" rather than a stale "live". A failed tripwire is written at once (fewer limits proven than there are).
+
+`check` calls `connectionChecks({ serverDir, shop })` exported by `bundle/panel/checks.ts` when that file exists, and says plainly that the read-only connection checks were not run when it does not.
 
 ## Running it on your laptop
 

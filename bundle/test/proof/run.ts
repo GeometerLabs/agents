@@ -173,7 +173,7 @@ async function main_(): Promise<void> {
   if (code !== 0) throw new Error("init failed");
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
   conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
-  conf.heartbeatSeconds = 10; conf.panel = { enabled: false }; conf.limits = { razorpayLinksPerHour: 1_000_000 }; // the load test must not meet the shop's own cap
+  conf.heartbeatSeconds = 10; conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000 }; // the load test must not meet the shop's own cap
   writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
   mkdirSync(join(SCRATCH, "minio", "geo-stream"), { recursive: true }); mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
   writeFileSync(testCompose, `services:
@@ -184,6 +184,12 @@ async function main_(): Promise<void> {
     command: ["node", "/app/bundle/test/proof/standins.ts"]
     volumes: ["${APP}:/app:ro"]
     networks: [egress]
+  panel-probe:
+    image: node:26-alpine
+    user: "${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}"
+    command: ["sleep", "100000"]
+    volumes: ["${join(SERVER, "secrets", "panel")}:/run/secrets:ro"]
+    networks: [panel]
   minio:
     image: minio/minio:latest
     command: ["server", "/data"]
@@ -192,6 +198,7 @@ async function main_(): Promise<void> {
     networks: [egress]
 networks:
   egress: {}
+  panel: {}
 `);
   writeFileSync(join(SCRATCH, "model-key"), "sk-proof-model-key-0123456789\n"); writeFileSync(join(SCRATCH, "bucket-key"), "proofkey:proofsecret123\n");
   for (const a of [["model-key", join(SCRATCH, "model-key")], ["backup-key", "stream", join(SCRATCH, "bucket-key")], ["backup-key", "snapshots", join(SCRATCH, "bucket-key")]]) if (await main([...a, "--server", SERVER]) !== 0) throw new Error(`${a[0]} failed`);
@@ -227,11 +234,13 @@ networks:
     measure("1 shop (idle)", 1);
 
     await isolation(1);
+    await panelAccess(1);
     await killUnderLoad();
     await heldRefundSurvives();
     await tripwireForced(fleetAdmin, fleetLog);
     await webhookThroughCaddy();
     await stopPersists();
+    await deployerOutputs();
     await dataDuties();
     await modelGuard();
     measure("1 shop (after the checks above)", 1);
@@ -253,7 +262,7 @@ networks:
       const viaModel = nodeEval(`rt-${newest}`, `fetch('http://g-model:8080/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer ${readSecret(`rt-${newest}`, "agent_model")}','content-type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'user',content:'hi'}]})}).then(r=>console.log(r.status))`).out.trim();
       check(`the newest shop's runtime reaches the model Guard after the scale step (its namespace was not stranded)`, viaModel === "200", viaModel);
       measure(`${size} shops (idle)`, size);
-      if (size === SIZES.filter((s) => s > 1)[0]) await isolation(size);
+      if (size === SIZES.filter((s) => s > 1)[0]) { await isolation(size); await panelAccess(size); }
     }
   } finally {
     results.fleetLog = readFileSync(fleetLog, "utf8").split("\n").filter((l) => /alert|Guard|incident|recover/iu.test(l)).slice(-12);
@@ -337,6 +346,65 @@ async function isolation(shops: number) {
   check("the WhatsApp Guard sends from the shop's own number", own.startsWith("200"), own);
   check("the WhatsApp Guard refuses another shop's number (exact allowlist)", foreign.startsWith("403") && /refused_by_policy/u.test(foreign), foreign);
   results[`isolation${shops}`] = rows; save();
+}
+
+/** The panel's own agent at each Guard: three reads and nothing else, and its network holds nothing else it could use. */
+async function panelAccess(shops: number) {
+  say(`\n== the panel's access (${shops} shop(s)) ==`);
+  const from = "panel-probe";
+  const call = (shop: string, kind: string, method: string, path: string, body?: unknown) => {
+    const token = readSecret("panel", `${shop}/${kind}`);
+    const r = nodeEval(from, `fetch('http://g-${shop}-${kind}:8080${path}',{method:'${method}',headers:{authorization:'Bearer ${token}','content-type':'application/json'}${body ? `,body:${JSON.stringify(JSON.stringify(body))}` : ""}}).then(async r=>console.log(r.status+' '+(await r.text()).slice(0,100)))`);
+    return r.out.trim() || r.err.trim().slice(0, 120);
+  };
+  const shop = "glow-salon";
+  check("the panel reads the shop's WhatsApp number through its Guard", call(shop, "whatsapp", "GET", `/v26.0/${phoneOf(1)}?fields=id,display_phone_number`).startsWith("200"), call(shop, "whatsapp", "GET", `/v26.0/${phoneOf(1)}?fields=id`));
+  check("the panel reads the shop's calendar through its Guard", call(shop, "calendar", "GET", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(1))}`).startsWith("200"), call(shop, "calendar", "GET", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(1))}`));
+  check("the panel reads the shop's payment links through its Guard", call(shop, "razorpay", "GET", "/v1/payment_links?reference_id=geometer-connection-check").startsWith("200"), "");
+  const send = call(shop, "whatsapp", "POST", `/v26.0/${phoneOf(1)}/messages`, { messaging_product: "whatsapp", to: "919800000000", type: "text", text: { body: "hi" } });
+  check("the panel cannot SEND a message (its agent is not allowed that operation)", /^403/u.test(send) || /^40[13]/u.test(send), send);
+  const link = call(shop, "razorpay", "POST", "/v1/payment_links", { amount: 20000, currency: "INR", description: "x", reference_id: "from-the-panel" });
+  check("the panel cannot create a payment link", /^40[13]/u.test(link), link);
+  const book = call(shop, "calendar", "POST", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(1))}/events`, { summary: "x" });
+  check("the panel cannot write to the calendar", /^40[13]/u.test(book), book);
+  const other = shops > 1 ? call(shop, "whatsapp", "GET", `/v26.0/${phoneOf(2)}?fields=id`) : "";
+  if (shops > 1) check("and cannot read another shop's number through this shop's Guard (exact allowlist)", /^403/u.test(other), other);
+  const R = (label: string, host: string, port: number) => { const got = probe(from, host, port); check(`from the panel's network: ${label} -> ${got}`, UNREACHABLE.test(got), got); };
+  R("the shop's runtime, by name", "rt-glow-salon", 8780);
+  R("the shop's runtime door", adminIpOf("door-glow-salon"), 8780);
+  R("the razorpay Guard's admin forwarder (its admin-network address)", adminIpOf("g-glow-salon-razorpay"), 8190);
+  R("the model Guard", "g-model", 8080);
+  R("the inbox", "inbox", 8788);
+  R("ops", "ops", 80);
+  R("a public address", "1.1.1.1", 443);
+  R("the stand-in provider", "standins", 8790);
+  const reach = probe(from, "g-glow-salon-razorpay", 8080);
+  check("a control: the panel's network does reach the Guards' agent ports", reach === "REACHED", reach);
+}
+
+/** What the panel reads and writes: a stop request, the status file, the exports. */
+async function deployerOutputs() {
+  say("\n== the panel's inputs and outputs ==");
+  const { processStopRequests, refreshStatuses } = await import("../../apply.ts");
+  const { runExports } = await import("../../backup/jobs.ts");
+  const ctx = ctxFor();
+  const before = readStatus(SERVER, "glow-salon")!;
+  await sleep(1100);
+  const refreshed = await refreshStatuses(ctx);
+  const after = readStatus(SERVER, "glow-salon")!;
+  check("the deployer's status refresh confirms the shop from its running Guards (updatedAt moves, N of M from the Guards)", refreshed.includes("glow-salon") && after.updatedAt !== before.updatedAt && after.limits!.proven === after.limits!.of && after.limits!.of > 0, { proven: after.limits?.proven, of: after.limits?.of, updatedAt: after.updatedAt });
+  const exp = await runExports(ctx); exp.lines.forEach(say);
+  const dir = join(SERVER, "exports", "glow-salon");
+  const files = ["record.json", "bookings.json"].map((f) => { try { return JSON.parse(readFileSync(join(dir, f), "utf8")) as unknown[]; } catch { return undefined; } });
+  check("the record and the bookings are exported for the monthly report, as lists, with no phone number in them", files.every((f) => Array.isArray(f)) && !/\+?91\d{10}/u.test(JSON.stringify(files)), { record: files[0]?.length, bookings: files[1]?.length });
+  mkdirSync(join(SERVER, "requests"), { recursive: true });
+  const request = join(SERVER, "requests", "glow-salon.stop.json");
+  writeFileSync(request, JSON.stringify({ schema: 1, requestId: "req-proof-1", shop: "glow-salon", requestedAt: new Date().toISOString(), requestedBy: { id: "acct-1", name: "Divya", role: "partner" } }));
+  const done = await processStopRequests(ctx);
+  const status = readStatus(SERVER, "glow-salon")!;
+  const killed = JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", "g-glow-salon-whatsapp", "GET", "/admin/status"]).out.trim().split("\n").at(-1) ?? "{}").body?.kill_switch;
+  check("a stop request from the panel is carried out on the Guards, shown in status with its request id, and then removed", done.includes("glow-salon") && status.stopped?.requestId === "req-proof-1" && killed?.on === true && !existsSync(request), { requestId: status.stopped?.requestId, by: status.stopped?.by, reason: killed?.reason });
+  await main(["start", "glow-salon", "--server", SERVER], ctx);
 }
 
 async function killUnderLoad() {
