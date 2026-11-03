@@ -55,8 +55,8 @@
 
 | Left open | Why | Revisit when |
 | --- | --- | --- |
-| Persistence and restarts | State lives in an in-memory store passed to the agent. A crash loses it (the calendar and payments records survive, and every step looks before it writes) | The hosted runtime (W9) |
-| Two events at the exact same instant | Steps are handled one at a time; there is no locking | The runtime can run steps concurrently |
+| Persistence and restarts | Built in `server/` (SQLite, one file per client agent); what it leaves open is in "The runtime server" below | n/a |
+| Two events at the exact same instant | The agent still has no locking; the runtime server runs steps one at a time through a serial queue, so two events at once are handled in order. Running the agent any other way (the demo does its own queue) needs the same care | The runtime can run steps concurrently |
 | Owner approvals through Guard | The owner is recognised by their WhatsApp number alone. Anyone who can spoof that number could approve a refund | WhatsApp approvals through Guard (W10) |
 | Customer data retention, consent text and deletion (DPDP) | The record keeps message text only as a digest, but the store holds phone numbers and bookings, and there is no retention setting | Before a real client goes live |
 | The monthly client report and the builder panel | Separate workstreams (W12 and W10) built on this record | After the first live client |
@@ -82,3 +82,21 @@
 **Why it's deferred:** v0 talks only to an in-memory messaging stand-in. One reviewer of a WhatsApp provider reported being locked out of their normal app after moving their number to the API. Meta's free Business AI also lives in the same app, and Geometer is meant to work alongside it.
 
 **Revisit trigger:** choosing the WhatsApp provider (implementation plan B22), before the first real shop.
+
+## The runtime server (`server/`)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| A WhatsApp message can go out twice if the process dies mid-step | A cut-off step runs again from the last saved state. The calendar, payment-link and refund writes look before they repeat, but a WhatsApp send has nothing to look up by (see "Retrying a message whose reply was lost" above). The window is one step, from its first send to its save. Writing "about to send" to the store before each send would shrink it to a send whose reply was lost, at the cost of a change to `say` in the agent | Before the first live client, or when a provider accepts a client reference |
+| One process per data folder is not enforced | A second runtime on the same folder would run the same pending task twice. SQLite's write lock keeps the file intact, but nothing stops two queues. The bundle starts one per client | A deploy that could start two (restart policies, blue/green) |
+| Failed tasks are only counted | They stay in the store with their error and wait. There is no command to look at, retry or drop one, and no alert on `failed > 0`. The status endpoint carries the count for the heartbeat | The first failed task on a real client; the builder panel |
+| The state is one snapshot, rewritten whole after every step | Simple and exact for a shop's volume. The set of seen message and event ids, the bookings and the whole record (kept in memory too) only grow. Fine to some thousands of bookings; no pruning, paging or per-booking rows yet | A client with thousands of bookings, or memory growing |
+| Retention, deletion and backups | Message text is not kept once a task is done (the task's payload is emptied; the record keeps digests), but phone numbers and bookings stay in the snapshot and the window table, and the record is append-only by design. No per-client retention setting, no DPDP deletion, no backup job (copy `agent.db` with SQLite's backup, not a plain file copy while it runs) | Before a real client goes live; the daily backups the bundle sets up |
+| The heartbeat sender and the panel | `/status` is their source (counts only). Nothing sends it anywhere yet | The licence and heartbeat service |
+| The model-backed parser | The server uses the rule parser. The model parser is built elsewhere and plugs in through `parser` in `startClient` | Its branch merges |
+| The live adapters | Live mode loads `src/adapters/live/index.ts` by dynamic import and fails with a clear message when it is missing, as on this branch. Its wiring is tested against a stand-in module, not the real one, and no live run has happened | The live-services branch merges; then run one client through Guard in test mode |
+| Fakes mode forgets | The stand-in services are in memory, so after a restart the saved bookings point at calendar events and payment links that no longer exist (the server warns). The stand-in WhatsApp never hears that a customer wrote, so replies go as templates | Persisting the stand-ins is not planned: local runs are for looking, not for keeping |
+| Modules in `pathway.lock` | The lock may one day list client modules. The runtime refuses a lock that does, rather than start without what it pins | Client modules are built |
+| Hardening beyond a token and a body limit | No rate limit, no TLS (the inbox or a reverse proxy does that), no IP allow list. It listens on 127.0.0.1 unless told otherwise and should be reached only from the inbox on a private network | The deploy bundle (the HTTPS entry and the internal network) |
+| A hung step blocks shutdown | Stopping waits for the step in hand. If a service call hangs (the live adapters carry a timeout), the process is killed and the task runs again at the next start | The first time it happens |
+| A tick runs between tasks, not after all the tasks that arrived before it | A tick asks the queue for its turn; tasks that arrive while it waits can come after it. The agent copes with either order (a late payment re-checks the slot), but a strict "events first" order would need the tick to wait for the pending tasks | A case where the order shows |

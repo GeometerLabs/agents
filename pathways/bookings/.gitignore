@@ -1,0 +1,2 @@
+# Each client agent keeps its saved state here (customer phone numbers and bookings); never commit it.
+clients/*/data/

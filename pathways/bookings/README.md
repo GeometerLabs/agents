@@ -6,7 +6,7 @@ A WhatsApp agent for businesses that take bookings with a deposit and a cancella
 
 **What this folder is, and is not.** It is the v0 core of the pathway, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
 
-It has no dependencies and makes no network call. TypeScript is run directly by Node's built-in type stripping.
+It has no dependencies. The agent and its tests make no network call off this computer (the server in `server/` listens on a port you choose, see "Run the agent as a server"). TypeScript is run directly by Node's built-in type stripping.
 
 ## Run it
 
@@ -54,6 +54,40 @@ It prints the addresses to open, for example `http://192.168.1.23:8787` for the 
 6. If the owner (or a friend who codes) wants proof, tap **Show what we did ▸**.
 
 **What this is not.** A demo of the pathway on stand-ins. The owner's lines are counted from the stand-ins' records, so they show what happened in the demo, not a claim about a live shop. The "We didn't check" line is always shown. The clock is a fake clock that starts on today's real date at 10:00 in the shop's time zone and moves only when you tap.
+
+## Run the agent as a server
+
+`server/` runs one client's agent live: it saves every incoming event as a task before it answers, handles one task at a time, saves the agent's state after each step, and picks up where it stopped after a restart. Two pieces it does not contain: the inbox, which checks each provider's webhook signature and forwards the event to it, and Guard, which holds the service keys. The runtime holds no secret of either kind.
+
+```sh
+# from the root of this repository
+openssl rand -hex 32 > /tmp/inbox-token                                 # the secret the inbox sends as a bearer token
+INTERNAL_TOKEN_FILE=/tmp/inbox-token npm run serve --prefix pathways/bookings -- --client clients/glow-salon.example
+```
+
+A client is a folder (`clients/glow-salon.example/` is a working example that runs on the stand-in services):
+
+| File | What it holds |
+| --- | --- |
+| `settings.json` | The business: the same format as `settings/glow-salon.example.json` |
+| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30) and, for live, `services`: the base URL of the Guard in front of payments, the calendar and messaging |
+| `pathway.lock` | The pathway version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
+
+What it answers:
+
+| Request | Answer |
+| --- | --- |
+| `POST /internal/events` with `Authorization: Bearer <token>` and `{"events": [{"kind": "message", "message": {...}}, {"kind": "payment_event", "event": {...}}]}` | `200 {"saved": n, "duplicates": m}` once the events are on disk. An event id seen before is a no-op. Anything else (401, 400, 413, 500) means "not saved, send it again" |
+| `GET /healthz` | The process is up |
+| `GET /readyz` | 200 if the store can be read and the queue is going, otherwise 503 |
+| `GET /status` with the token | Counts only, never message content: bookings by state, tasks pending, done and failed, the last step, the record length, the pathway version |
+
+```sh
+curl -s localhost:8780/internal/events -H "Authorization: Bearer $(cat /tmp/inbox-token)" \
+  -d '{"events":[{"kind":"message","message":{"id":"wamid.1","from":"+919811111111","text":"I want a haircut tomorrow at 6pm","timestamp":'$(date +%s)'000}}]}'
+```
+
+In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the stand-in services forget everything when the process stops, so use a new data folder for each local run. If the process dies in the middle of a step, the step runs again from the last saved state; read "Running it as a server" in [Explanation.md](Explanation.md) for what that means for a WhatsApp message. Live mode needs the live adapters (`src/adapters/live/`), which are built on another branch and say so plainly when missing.
 
 ## What the customer sees
 
@@ -163,8 +197,13 @@ src/adapters/                      calendar, payments, messaging fakes; the inte
 src/language/                      templates (hi, en, ml, kn), the outgoing check, date and time phrases;
                                    words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
+server/                            the runtime server: main.ts (command line), start.ts (read the client folder, wire, listen), config.ts,
+                                   runtime.ts (a step is saved whole), tasks.ts (one at a time, retries), store.ts (SQLite), snapshot.ts,
+                                   events.ts, server.ts (HTTP), ticker.ts, services.ts (fakes or live)
+clients/glow-salon.example/        an example client folder: settings.json, runtime.json, pathway.lock
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
-test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints
+test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints;
+                                   the runtime server's tests (runtime, store, server, ticker, config, start) use test/runtime-kit.ts
 scripts/hand-check.ts              the hand check
 demo/                              the partner demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
                                    view.ts (the owner's summary and the record), personalise.ts (the shop form), strings.ts, page.ts/.css/.js
@@ -179,7 +218,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 - **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser is a stub that is never called (`createOpenAICompatibleParser`).
-- **The monthly client report, the builder panel, hosting, restarts and persistence** (state is in memory), and **Tamil, Telugu** and other languages. Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
+- **The monthly client report, the builder panel and hosting**, and **Tamil, Telugu** and other languages. (Restarts and persistence are built, in `server/`.) Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
 
 The full list, with a reason and a trigger for each, is in [Deferred.md](Deferred.md). What the hand check does not test is printed every time it runs.
 
