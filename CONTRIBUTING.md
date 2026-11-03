@@ -11,6 +11,7 @@ Everything in this repository is free to use, change and share under the [Apache
 | **A crash-test situation** that the hand check doesn't cover yet | The hand check prints what it doesn't test. Turning a line of that list into a situation is the most direct way to make an agent more trustworthy. |
 | **A sell guide translation**, or a better answer to a question shop owners actually ask | The people who sell these agents are local. A guide in their language is what gets a shop live. |
 | **A new pathway or module** | One consequential job, done carefully. See below. |
+| **Comments on a planned community template** | Self-help group savings, community and committee funds, and meeting follow-through are specs, not code. If you know such a group, tell us where the spec is wrong: [pathways/planned](pathways/planned/README.md), in GitHub Discussions. |
 
 ## What a pathway must have
 
@@ -26,6 +27,10 @@ A pathway is a complete agent for one consequential job, such as bookings with a
 8. **Tests that run with `node --test`**, no dependencies, and an `Explanation.md` and `Deferred.md` that say what was built and what wasn't.
 
 [pathways/bookings](pathways/bookings) is the worked example.
+
+**A new kind of customer for a pathway that exists** (for example equipment rental on Bookings) is not a new pathway. Add a settings example, run the hand check on it (`node pathways/bookings/scripts/hand-check.ts --settings <your file>`), and write a **variant** sell guide that covers only what differs (see "Variants" in [pathways/SELL-GUIDE.md](pathways/SELL-GUIDE.md)). List what the pathway can't do for that customer in the pathway's `Deferred.md`.
+
+**Community and village templates.** Anything that handles money or records that many people share (a savings group, a fund, a committee) must also: never hold, pool, lend or move money itself; judge "paid" from the provider's record, or from a named person's marked entry labelled as such; give every member a statement of their own entries; keep a member's detail private from other members; and name the laws to check (chit funds, money lending, data protection) with "get legal review before launch". The specs in [pathways/planned](pathways/planned/README.md) show the shape.
 
 ## Rules every contribution follows
 

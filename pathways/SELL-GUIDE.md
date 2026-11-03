@@ -33,6 +33,20 @@ Number the headings `## 1.` to `## 11.` exactly. Short pages, one example each, 
 
 **Section 5 must cover at least:** what if it makes a mistake; who sees my customers' messages; Meta gives AI for free, so why pay; will I lose my number or my app; what does it cost; what happens if it stops working; can I switch it off; who do I call. A pathway adds its own.
 
+## Variants
+
+A pathway can be sold to more than one kind of business (Bookings to a salon, or to a hiring centre that rents out a tractor). Do not copy the whole guide for each. Write a **variant**: `sell/variants/<name>.<lang>.md`, in every language the guide has.
+
+- **It covers only what differs.** Section 1 (who is a fit), 3 (the first three sentences), 4 (the demo taps), 5 (the questions that business asks), 6 (price), 7 (more rows for "Never say"), 8 (setup visit items) and 11 (what is true today for this business). It never restates 2, 9 or 10.
+- **It keeps the main guide's section numbers**, in order, so "section 5" means the same thing in both. Section titles may be adapted. Sections 1, 3, 4, 5, 6 and 8 are required.
+- **It points to the main guide** for everything else, in the first lines: a link to `../guide.<lang>.md`, and which sections are the same.
+- **It follows every rule below:** the claim rules and banned words, `₹` amounts in Western digits, the same amounts and numbers in every language, the machine-written banner with the date on Hindi, Malayalam and Kannada, and the demo words and taps checked against the demo itself.
+- **It is checked against the business it describes.** Anything it says about the example settings or the hand check ("28 of 28 situations held") is compared with the real run, so it cannot drift.
+- **It adds a Deferred row** for what the business needs that the pathway cannot do yet, so section 1 and section 11 stay honest.
+- **The one-page sheet is the main guide's** until the variant has its own. Say so at the top, and list the missing sheet in Deferred.
+
+The test for variants is in `test/sell-guide.test.ts` ("variant guide: ..."). The first variant is [`bookings/sell/variants/equipment-rental.en.md`](bookings/sell/variants/equipment-rental.en.md).
+
 ## The one-pager
 
 A single page the partner leaves behind. Self-contained: inline CSS, no scripts, no external fonts, images or URLs, system fonts that render Devanagari, Malayalam and Kannada. Green and white, other colours only as accents. Readable on a phone, printable on A4. It has:
@@ -63,4 +77,4 @@ A guide must never claim more than the day's truth. Section 11 and the one-pager
 
 ## Copying it for the next pathway
 
-Copy `bookings/sell/` and its test, then rewrite what is specific: who is a fit (section 1), the demo and the taps (section 4), the questions (section 5), the prices (section 6), the setup visit (section 8) and the report lines (section 9). Keep the section order, the file names, the banner rule and the test. For fee and dues collection the demo's key moment will be a reminder that stops once the parent has paid.
+If the next business uses the same pathway, write a variant (above) instead. For a new pathway, copy `bookings/sell/` and its test, then rewrite what is specific: who is a fit (section 1), the demo and the taps (section 4), the questions (section 5), the prices (section 6), the setup visit (section 8) and the report lines (section 9). Keep the section order, the file names, the banner rule and the test. For fee and dues collection the demo's key moment will be a reminder that stops once the parent has paid.

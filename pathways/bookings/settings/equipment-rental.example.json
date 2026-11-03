@@ -1,0 +1,59 @@
+{
+  "name": "Hosahalli Farm Hiring Centre",
+  "address": "Hosahalli village, near the bus stand, Haveri district",
+  "timezone": "Asia/Kolkata",
+  "services": [
+    {
+      "id": "rotavator-half-day",
+      "names": {
+        "kn": ["ರೋಟಾವೇಟರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಅರ್ಧ ದಿನ", "ರೋಟಾವೇಟರ್ ಅರ್ಧ ದಿನ"],
+        "hi": ["रोटावेटर ट्रैक्टर आधा दिन", "रोटावेटर आधा दिन"]
+      },
+      "priceInr": 3200,
+      "durationMinutes": 240
+    },
+    {
+      "id": "rotavator-full-day",
+      "names": {
+        "kn": ["ರೋಟಾವೇಟರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಪೂರ್ಣ ದಿನ", "ರೋಟಾವೇಟರ್ ಪೂರ್ಣ ದಿನ"],
+        "hi": ["रोटावेटर ट्रैक्टर पूरा दिन", "रोटावेटर पूरा दिन"]
+      },
+      "priceInr": 5600,
+      "durationMinutes": 480
+    },
+    {
+      "id": "sprayer-half-day",
+      "names": {
+        "kn": ["ಸ್ಪ್ರೇಯರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಅರ್ಧ ದಿನ", "ಸ್ಪ್ರೇಯರ್ ಅರ್ಧ ದಿನ"],
+        "hi": ["स्प्रेयर ट्रैक्टर आधा दिन", "स्प्रेयर आधा दिन"]
+      },
+      "priceInr": 2400,
+      "durationMinutes": 240
+    },
+    {
+      "id": "trolley-full-day",
+      "names": {
+        "kn": ["ಟ್ರ್ಯಾಕ್ಟರ್ ಟ್ರಾಲಿ ಪೂರ್ಣ ದಿನ", "ಟ್ರಾಲಿ ಪೂರ್ಣ ದಿನ"],
+        "hi": ["ट्रैक्टर ट्रॉली पूरा दिन", "ट्रॉली पूरा दिन"]
+      },
+      "priceInr": 4000,
+      "durationMinutes": 480
+    }
+  ],
+  "openingHours": {
+    "mon": { "open": "06:00", "close": "18:00" },
+    "tue": { "open": "06:00", "close": "18:00" },
+    "wed": { "open": "06:00", "close": "18:00" },
+    "thu": { "open": "06:00", "close": "18:00" },
+    "fri": { "open": "06:00", "close": "18:00" },
+    "sat": { "open": "06:00", "close": "18:00" },
+    "sun": { "open": "06:00", "close": "18:00" }
+  },
+  "slotMinutes": 120,
+  "bufferMinutes": 60,
+  "deposit": { "amountInr": 1000, "holdMinutes": 30 },
+  "cancellation": { "windowHours": 24, "refundLimitInr": 1000 },
+  "languages": ["kn", "hi"],
+  "owner": { "whatsapp": "+919000000000", "language": "kn" },
+  "reminders": { "hoursBefore": [24] }
+}

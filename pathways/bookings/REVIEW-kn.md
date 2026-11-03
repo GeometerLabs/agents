@@ -263,6 +263,7 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `notTested.same-instant` | ಒಂದೇ ಕ್ಷಣದಲ್ಲಿ ಇಬ್ಬರು ಗ್ರಾಹಕರು | two customers at the exact same instant |  |
 | `notTested.other-faults` | ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು | problems beyond the ones tried |  |
 | `notTested.own-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಇವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
+| `notTested.situations-skipped` | ಈ ಪರಿಶೀಲನೆಗಳಲ್ಲಿ ಕೆಲವು, ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಡೆಸಲಾಗದ ಕಾರಣ ಬಿಟ್ಟಿದೆ | some of these checks, which this shop's settings cannot run (so they were left out) |  |
 | `notCounted.no-shows` | ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ) | who turned up (a booking is marked finished when its time passes) |  |
 | `notCounted.read-receipts` | ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ಏಜೆಂಟ್ ಮೂಲಕ ಅಲ್ಲದೆ ನಡೆದ ಬುಕಿಂಗ್, ಕರೆ, ಪಾವತಿ | bookings, calls and payments that did not go through the agent |  |
