@@ -66,12 +66,14 @@ Optional, 30 seconds: tap "Set up for this shop" and enter the shop's name, up t
 | --- | --- | --- | --- |
 | 1. A customer books and pays a test deposit | On the "Customer" tab, tap the first suggestion ("I want a haircut tomorrow at 6pm"). Then tap "Pay the ₹200 deposit (test money)". | The price, a free time and a deposit link held for 15 minutes. Then "Booked!". On the "Owner" tab: "The booking it made is in your calendar. We checked." | "A customer wrote on WhatsApp. It booked the time and took the deposit." |
 | 2. The customer haggles | Tap "Start again". Tap the second suggestion ("haircut tomorrow at 6pm, can you do it for ₹300?"). | "Our haircut is ₹450, and I can't go lower than that." Then the deposit link at the real price. On the "Owner" tab: "It said no to ₹300. It never goes below your price." | "It can't go below your ₹450 price, even when a customer pushes." |
-| 3. A refund it can't give alone | Tap "Start again", the first suggestion and "Pay the ₹200 deposit (test money)". Tap "1 day passes". Tap "Cancel the booking". Open the "Owner" tab. | A question: "Give back ₹200?", the reason "Cancelled less than 24 hours before the start.", and the buttons "Approve" and "Deny". | "A cancellation this late is your decision, so it asks you. Nothing goes back until you tap." Let the owner tap "Approve". |
+| 3. A refund it can't give alone | Tap "Start again", the first suggestion and "Pay the ₹200 deposit (test money)". Tap "1 day passes" (again, if the booking is still more than a day away). Tap "Cancel the booking". Open the "Owner" tab. | A question: "Give back ₹200?", the reason "Cancelled less than 24 hours before the start.", and the buttons "Approve" and "Deny". | "A cancellation this late is your decision, so it asks you. Nothing goes back until you tap." Let the owner tap "Approve". |
 | 4. Show what we did | Open the "What we did" tab. Tap "Show what we did ▸". | Every action in a list (written for you, in English), each marked "confirmed" when it was read back from the calendar or the payment record. | "Nothing is hidden. The monthly report is made from this record." |
 
 **Good to know**
 
 - In Malayalam and Kannada the demo's buttons, tabs and suggestions are still in English, and so is the reply to "Cancel the booking". To see the chat in Malayalam or Kannada, type the customer's message yourself: the Malayalam and Kannada guides give the sentences.
+- If the shop is closed tomorrow (Glow Salon is closed on Sunday, so on a Saturday), the suggestions pick the next open day. In Malayalam and Kannada, change "tomorrow" in the sentence you type to "the day after tomorrow" (നാളെ becomes മറ്റന്നാൾ, ನಾಳೆ becomes ನಾಡಿದ್ದು).
+- For step 3 the booking must be less than 24 hours away. Look at the demo clock and the booking time in the chat, and tap "1 day passes" again if it is further away. On a Saturday it takes two taps.
 - The refund question also appears when a refund is above the owner's refund limit. The demo shows the late cancellation because it is quick to show.
 - The prices are Glow Salon's unless you set the demo up for the shop. Use the owner's own prices when you can.
 - Let the owner type as a customer and try to talk it into a discount. That is the best part of the demo.
@@ -188,7 +190,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
   | Limit | Ask | Example (Glow Salon) |
   | --- | --- | --- |
   | Price list | "What is the lowest you will ever do each service for?" | "It can't go below your ₹450 price." |
-  | Opening hours | "When do you take bookings?" | "No bookings outside 10 am to 8 pm." |
+  | Opening hours | "When do you take bookings?" | "Weekdays: no bookings outside 10 am to 8 pm." |
   | Deposit | "How much to hold a booking?" | "₹200." |
   | Hold time | "How long do we keep a slot for the deposit?" | "15 minutes." |
   | Cancellation window | "How early must a customer cancel to get the deposit back?" | "24 hours before." |

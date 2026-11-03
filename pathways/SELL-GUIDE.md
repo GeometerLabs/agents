@@ -46,8 +46,8 @@ A single page the partner leaves behind. Self-contained: inline CSS, no scripts,
 
 - English is the master. The other files are real translations in natural spoken register, with the loanwords locals use ("booking", "deposit", "link").
 - Amounts, numbers and the order of sections are identical in every language. Write every amount as `₹450` in Western digits, a range as `₹999 to ₹1,999`.
-- Each translation starts with a banner: machine-written, needs native review, plus the date. It stays until a native speaker has reviewed the file. Add a Deferred row for the review.
-- Anything the owner will tap, read or hear is quoted exactly as the product shows it, and the test checks it against the product's own strings.
+- Each translation starts with a banner: machine-written, needs native review, plus the date. On a one-page sheet it is an HTML comment, so the owner's printed copy stays clean. It stays until a native speaker has reviewed the file. Add a Deferred row for the review.
+- Anything the owner will tap, read or hear is quoted exactly as the product shows it, and the test checks it against the product's own strings. If a demo step is taught, the test drives the demo through it for every language, on each of the seven days a partner might start (a shop's closed day changes what the demo does).
 
 ## Rules every guide follows
 

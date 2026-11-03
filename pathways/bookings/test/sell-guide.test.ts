@@ -10,7 +10,7 @@ import { uiFor } from "../demo/strings.ts";
 import { recordRows, summaryLines, waitingCards, workDone } from "../demo/view.ts";
 import { bannedIn } from "../report/strings.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../src/settings.ts";
+import { LANGUAGES, hoursOn } from "../src/settings.ts";
 import type { Language } from "../src/settings.ts";
 import { zonedToMs } from "../src/time.ts";
 
@@ -104,7 +104,10 @@ test("sell guide: the first three sentences are exactly three, and the checklist
     const found = sections(guide(l));
     const three = found[2].body.split("\n").filter((x) => /^\d+\. /.test(x));
     assert.equal(three.length, 3, `${l}: section 3 must give exactly three sentences`);
-    for (const line of three) assert.ok(/["“«]/.test(line), `${l}: each sentence is written as a quoted script`);
+    for (const line of three) {
+      assert.ok(/^\d+\. "[^"]+"$/.test(line), `${l}: each sentence is written as a quoted script`);
+      assert.ok(!/[.?!।]\s/.test(line.slice(4, -1)), `${l}: each of the three is ONE sentence (join with a comma, not a full stop): ${line}`);
+    }
     assert.equal(shape(found[7].body).checklist, 8, `${l}: the setup visit checklist has 8 items`);
     assert.ok(shape(found[6].body).tableRows >= 12, `${l}: the "Never say" table has its rows`);
     assert.ok(shape(found[4].body).subheads >= 8, `${l}: section 5 answers at least the 8 required questions`);
@@ -153,11 +156,13 @@ test("sell guide: every number is the same in every language", () => {
 
 // ---- the demo the guide teaches -----------------------------------------------------------------------------------------
 
-// What the guide tells a partner to type in Malayalam and Kannada, where the demo's suggestions are in English.
-const TYPED: Partial<Record<Language, { book: string; haggle: string }>> = {
-  ml: { book: "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് വേണം", haggle: "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട്, ₹300-ന് ചെയ്യാമോ?" },
-  kn: { book: "ನಾಳೆ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು", haggle: "ನಾಳೆ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು, ₹300ಕ್ಕೆ ಮಾಡ್ತೀರಾ?" },
+// What the guide tells a partner to type in Malayalam and Kannada, where the demo's suggestions are in English. When the shop is
+// closed tomorrow (Glow Salon: Sundays, so on a Saturday) the guide says to write "the day after tomorrow" instead of "tomorrow".
+const TYPED: Partial<Record<Language, { book: string; haggle: string; tomorrow: string; dayAfter: string }>> = {
+  ml: { book: "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് വേണം", haggle: "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട്, ₹300-ന് ചെയ്യാമോ?", tomorrow: "നാളെ", dayAfter: "മറ്റന്നാൾ" },
+  kn: { book: "ನಾಳೆ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು", haggle: "ನಾಳೆ ಸಂಜೆ 6 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು, ₹300ಕ್ಕೆ ಮಾಡ್ತೀರಾ?", tomorrow: "ನಾಳೆ", dayAfter: "ನಾಡಿದ್ದು" },
 };
+const DAY = 24 * 60 * 60 * 1000;
 
 function shop(l: Language) {
   const applied = applyLanguage(glowSalon(), l);
@@ -174,48 +179,59 @@ test("sell guide: the guide quotes the demo's own screen words (the buttons, tab
     for (const words of quoted) assert.ok(text.includes(words), `${l}: the guide must quote the demo's words exactly: ${words}`);
     const chips = createDemo(shop(l), NOW).chips().map((c) => c.text);
     const typed = TYPED[l];
-    for (const words of typed ? [typed.book, typed.haggle] : [chips[0], chips[1]]) assert.ok(text.includes(words), `${l}: the guide must quote what to tap or type: ${words}`);
+    for (const words of typed ? [typed.book, typed.haggle, `"${typed.tomorrow}"`, `"${typed.dayAfter}"`] : [chips[0], chips[1]]) assert.ok(text.includes(words), `${l}: the guide must quote what to tap or type: ${words}`);
   }
 });
 
-test("sell guide: the four demo steps the guide teaches do what it says, in every language", async () => {
-  for (const l of LANGUAGES) {
-    const ui = uiFor(l);
-    const settings = shop(l);
-    const typed = TYPED[l];
-    const book = typed?.book ?? createDemo(settings, NOW).chips()[0].text;
-    const haggle = typed?.haggle ?? createDemo(settings, NOW).chips()[1].text;
+test("sell guide: the four demo steps the guide teaches do what it says, in every language, whatever day of the week the partner starts", async () => {
+  for (let k = 0; k < 7; k++) { // the demo clock starts on the real date: Glow Salon is closed on Sundays, so a Saturday is different
+    const start = NOW + k * DAY;
+    for (const l of LANGUAGES) {
+      const ui = uiFor(l);
+      const settings = shop(l);
+      const typed = TYPED[l];
+      const where = `${l}, start day +${k}`;
+      const tomorrow = new Date(start + DAY).toLocaleDateString("en-US", { weekday: "short", timeZone: settings.timezone });
+      const closedTomorrow = hoursOn(settings, ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(tomorrow)) === null;
+      const say = (text: string) => (typed && closedTomorrow ? text.replace(typed.tomorrow, typed.dayAfter) : text); // the guide's rule for the sentences you type
+      const chips = createDemo(settings, start).chips().map((c) => c.text);
+      const book = say(typed?.book ?? chips[0]);
+      const haggle = say(typed?.haggle ?? chips[1]);
 
-    // 1. A customer books and pays a test deposit.
-    let demo = createDemo(settings, NOW);
-    await demo.say(book);
-    assert.ok(demo.payTarget(), `${l}: a deposit link is waiting`);
-    await demo.pay(1);
-    assert.ok(summaryLines(demo).some((x) => x.text === ui.bookingsOk(1)), `${l}: the owner sees the booking is in the calendar`);
+      // 1. A customer books and pays a test deposit.
+      let demo = createDemo(settings, start);
+      await demo.say(book);
+      assert.ok(demo.payTarget(), `${where}: a deposit link is waiting`);
+      await demo.pay(1);
+      assert.ok(summaryLines(demo).some((x) => x.text === ui.bookingsOk(1)), `${where}: the owner sees the booking is in the calendar`);
 
-    // 2. The customer haggles and is refused.
-    demo = createDemo(settings, NOW); // "Start again"
-    await demo.say(haggle);
-    assert.ok(demo.customerLog.some((b) => b.who === "agent" && b.text.includes("₹450")), `${l}: the agent states the real price`);
-    assert.ok(summaryLines(demo).some((x) => x.text === ui.discountRefused([300])), `${l}: the owner sees it said no to ₹300`);
+      // 2. The customer haggles and is refused.
+      demo = createDemo(settings, start); // "Start again"
+      await demo.say(haggle);
+      assert.ok(demo.customerLog.some((b) => b.who === "agent" && b.text.includes("₹450")), `${where}: the agent states the real price`);
+      assert.ok(summaryLines(demo).some((x) => x.text === ui.discountRefused([300])), `${where}: the owner sees it said no to ₹300`);
 
-    // 3. A refund it can't give alone asks the owner.
-    demo = createDemo(settings, NOW);
-    await demo.say(book);
-    await demo.pay(1);
-    await demo.advance(1440); // "1 day passes"
-    await demo.cancel(); // "Cancel the booking"
-    const cards = waitingCards(demo);
-    assert.equal(cards.length, 1, `${l}: one question is waiting`);
-    assert.equal(cards[0].title, ui.askRefund("₹200"));
-    assert.equal(cards[0].reason, ui.reasonLate(24));
-    assert.deepEqual(cards[0].buttons.map((b) => b.label), [ui.approve, ui.deny]);
-    await demo.owner("approve", cards[0].ref); // the owner taps "Approve"
-    assert.equal(waitingCards(demo).length, 0);
+      // 3. A refund it can't give alone asks the owner. The guide: tap "1 day passes" again if the booking is still more than a day away.
+      demo = createDemo(settings, start);
+      await demo.say(book);
+      await demo.pay(1);
+      let taps = 0;
+      const booking = () => [...demo.world.store.bookings.values()].at(-1)!;
+      do { await demo.advance(1440); taps++; } while (booking().startMs - demo.world.clock.now() >= DAY && taps < 5);
+      assert.ok(taps <= 2, `${where}: it never takes more than two taps of "1 day passes" (the guide says two on a Saturday)`);
+      await demo.cancel(); // "Cancel the booking"
+      const cards = waitingCards(demo);
+      assert.equal(cards.length, 1, `${where}: one question is waiting`);
+      assert.equal(cards[0].title, ui.askRefund("₹200"));
+      assert.equal(cards[0].reason, ui.reasonLate(24));
+      assert.deepEqual(cards[0].buttons.map((b) => b.label), [ui.approve, ui.deny]);
+      await demo.owner("approve", cards[0].ref); // the owner taps "Approve"
+      assert.equal(waitingCards(demo).length, 0);
 
-    // 4. "Show what we did": the record and the work-done line are there.
-    assert.ok(recordRows(demo).length > 0);
-    assert.ok(workDone(demo).length > 0);
+      // 4. "Show what we did": the record and the work-done line are there.
+      assert.ok(recordRows(demo).length > 0);
+      assert.ok(workDone(demo).length > 0);
+    }
   }
 });
 
@@ -240,6 +256,14 @@ test("sell guide: the Hindi, Malayalam and Kannada guides carry the machine-writ
     assert.ok(/3 November 2026/.test(top), `${l}: banner must carry the date`);
   }
   assert.ok(!/Machine-written/.test(guide("en").split("\n").slice(0, 6).join("\n")));
+});
+
+test("one-pagers: the Hindi, Malayalam and Kannada sheets carry the same banner as an HTML comment (not printed on the owner's copy); the English does not", () => {
+  for (const l of TRANSLATED) {
+    const comment = /<!--([\s\S]*?)-->/.exec(sheet(l).slice(0, 400))?.[1] ?? "";
+    for (const part of [/Machine-written/, /native speaker/, /3 November 2026/]) assert.ok(part.test(comment), `one-pager.${l}.html: the banner comment must say ${part}`);
+  }
+  assert.ok(!/Machine-written/.test(sheet("en")));
 });
 
 // ---- the one-page sheets ---------------------------------------------------------------------------------------------------
