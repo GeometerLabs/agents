@@ -1,0 +1,51 @@
+/* The panel's own additions to the demo's style (green and white, readable on a phone). The demo's page.css is read first, not copied. */
+body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+.topbar { background: var(--card); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; padding-bottom: 10px; }
+.brand { font-weight: 800; color: var(--green-dark); text-decoration: none; font-size: 20px; letter-spacing: .01em; }
+.who { color: var(--muted); font-size: 14px; text-align: right; overflow-wrap: anywhere; }
+.langs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; padding: 8px 0 0; }
+.langs a { padding: 6px 12px; min-height: 36px; border: 1.5px solid var(--line); border-radius: 18px; color: var(--green-dark); text-decoration: none; font-size: 15px; }
+.langs a[aria-current="true"] { background: var(--green-tint); border-color: var(--green); font-weight: 700; }
+h1 { font-size: 24px; margin: 20px 0 8px; line-height: 1.25; }
+h2 { font-size: 18px; margin: 22px 0 8px; color: var(--green-dark); }
+p { margin: 6px 0; }
+a.btn, button.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; min-height: 48px; padding: 10px 16px; border-radius: 10px; border: 1.5px solid var(--green); background: var(--card); color: var(--green-dark); font-weight: 600; }
+a.btn.primary, button.btn.primary { background: var(--green); color: #fff; }
+button.btn.danger, a.btn.danger { border-color: var(--bad); color: var(--bad); }
+button.btn.danger.primary { background: var(--bad); color: #fff; }
+.tab { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.cards { display: grid; gap: 10px; margin: 12px 0; }
+.shopcard { display: block; background: var(--card); border: 1px solid var(--line); border-left: 8px solid var(--line); border-radius: var(--radius); padding: 12px 14px; color: var(--ink); text-decoration: none; }
+.shopcard.live { border-left-color: var(--green); } .shopcard.attention, .shopcard.stopping { border-left-color: var(--amber-line); } .shopcard.stopped { border-left-color: var(--bad); }
+.shopcard .name { font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+.shopcard .meta { color: var(--muted); font-size: 15px; margin-top: 2px; }
+.state { display: inline-block; padding: 3px 12px; border-radius: 14px; font-weight: 700; background: var(--green-tint); color: var(--green-dark); }
+.state.attention, .state.stopping { background: var(--amber-bg); color: var(--amber-ink); } .state.stopped { background: #fbe0e0; color: var(--bad); } .state.unknown, .state.setting-up { background: #eef1ef; color: var(--muted); }
+.big { font-size: 22px; line-height: 1.35; }
+.notice { background: var(--green-tint); border: 1.5px solid var(--green); border-radius: var(--radius); padding: 10px 14px; margin: 12px 0; }
+.note { color: var(--muted); font-size: 15px; }
+.steps { display: flex; gap: 6px; margin: 8px 0; padding: 0; list-style: none; }
+.steps li { flex: 1; height: 8px; border-radius: 4px; background: var(--line); } .steps li.done { background: var(--green); } .steps li.now { background: var(--green-dark); }
+.linklist { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.linklist a { display: block; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--green-dark); text-decoration: none; font-weight: 600; }
+table.cost { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+table.cost td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+table.cost tr:first-child td { border-top: 0; }
+table.cost td.n { text-align: right; white-space: nowrap; font-weight: 700; }
+table.cost small { display: block; color: var(--muted); font-weight: 400; }
+table.cost tr.total td { background: var(--green-tint); font-weight: 700; }
+.checks { list-style: none; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+.checks .mark { font-weight: 700; text-align: center; color: var(--green); } .checks li.bad { border-color: var(--amber-line); background: #fffaf0; } .checks li.bad .mark { color: var(--warn); } .checks li.wait .mark { color: var(--muted); }
+.field input[type=checkbox], .field input[type=radio] { width: 20px; height: 20px; min-height: 0; }
+.field textarea { width: 100%; min-height: 110px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 10px; font: 14px/1.4 ui-monospace, Menlo, monospace; }
+.help { color: var(--muted); font-size: 14px; margin: 3px 0 0; }
+.guide { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px 10px 34px; margin: 8px 0; }
+.guide li { margin: 4px 0; }
+code.addr { display: block; padding: 10px 12px; background: var(--green-tint); border-radius: 8px; overflow-wrap: anywhere; user-select: all; font-size: 16px; }
+details.what { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 14px; margin: 14px 0; }
+details.what summary { cursor: pointer; padding: 10px 0; font-weight: 600; color: var(--green-dark); }
+details.what pre { overflow-x: auto; font-size: 13px; background: var(--bg); padding: 8px; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.draft { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0 6px; }
+.inline { display: inline; }
