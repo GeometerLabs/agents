@@ -102,9 +102,10 @@ export function waitingCards(demo: Demo): WaitingCard[] {
     const detail = [service?.names[demo.uiLanguage as Language]?.[0] ?? service?.names.en?.[0] ?? "", when(b.startMs), b.customer].filter(Boolean).join(" · ");
     if (pending.kind === "calendar") {
       cards.push({ ref: b.id, title: ui.askCalendar, detail, reason: "", buttons: [{ command: "retry", label: ui.retry }, { command: "approve", label: ui.cancelAndRefund }] });
-    } else {
-      const reason = pending.reason === "late_cancellation" ? ui.reasonLate(settings.cancellation.windowHours)
-        : pending.reason === "over_limit" ? ui.reasonOverLimit(formatInr(settings.cancellation.refundLimitInr)) : ui.reasonFailed;
+    } else if (pending.kind === "refund") {
+      // Only a late cancellation within the limit is the agent's own question. A refund above the limit is Guard's: the approvals relay asks the owner
+      // by WhatsApp with a code, so there is no card for it (the demo's limit is never below the deposit, so it does not come up here).
+      const reason = ui.reasonLate(settings.cancellation.windowHours);
       cards.push({ ref: b.id, title: ui.askRefund(formatInr(pending.amountInr)), detail, reason, buttons: [{ command: "approve", label: ui.approve }, { command: "deny", label: ui.deny }] });
     }
   }

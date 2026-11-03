@@ -4,17 +4,34 @@
 //
 // What a failure means for the agent (the agent looks before it retries, so the difference matters):
 //  - no reply (timeout, a connection cut after the request went out): the call MAY have happened, so a TimeoutError;
-//  - the connection was refused or the host is unknown: nothing was sent, so an ApiError (503);
-//  - any other non-2xx answer: an ApiError with that status.
-import { ApiError, TimeoutError } from "../faults.ts";
+//  - the connection was refused or the host is unknown: nothing was sent, so a NotSentError (an ApiError, 503);
+//  - an answer with a `guard` object: GUARD decided, and it is never the service's reply, whatever its HTTP status (a held call is
+//    a 202). It becomes one of the GuardError kinds in faults.ts, below, in ONE place (`classify`), before any adapter reads a body;
+//  - a 200 with `Guard-Replayed: true`: the service's first reply, from Guard's record. It comes back marked `replayed`;
+//  - anything else is the service's own reply, passed through as it was: the adapters read it, and any other non-2xx is theirs to
+//    turn into an ApiError.
+import { GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "../faults.ts";
+import type { GuardInfo, SentCall } from "../faults.ts";
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
 
-export interface HttpReply { status: number; body: unknown }
+export interface HttpReply {
+  status: number;
+  body: unknown;
+  /** True when Guard answered from its record instead of sending again (`Guard-Replayed: true`): this is the service's FIRST reply. */
+  replayed?: boolean;
+}
+
+export interface HttpRequestOptions {
+  query?: Record<string, string | number | undefined>;
+  body?: unknown;
+  /** The exact bytes to send as the body, instead of serialising `body`. A call Guard held is sent again with the bytes it was held with: Guard binds an approval to the call's digest, and `60000` is not `"60000"`. */
+  rawBody?: string;
+}
 
 export interface Http {
-  /** Returns the reply whatever its status; only "no reply" and "could not connect" throw. */
-  request(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, options?: { query?: Record<string, string | number | undefined>; body?: unknown }): Promise<HttpReply>;
+  /** Returns the service's own reply whatever its status. Throws when there is no reply, when the connection is refused, and for every answer that is Guard's rather than the service's. */
+  request(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, options?: HttpRequestOptions): Promise<HttpReply>;
 }
 
 /** The base URL is joined by plain concatenation, so a path prefix on it (http://localhost:8790/razorpay) is kept. */
@@ -35,6 +52,64 @@ export function checkBaseUrl(baseUrl: string, what: string): string {
   return baseUrl;
 }
 
+// ---- Guard's answers, told apart in one place ------------------------------------------------------------------------------------
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/** The `guard` object of a body, if it is Guard's. Both `decision` and `code` must be words: a service's own body that happens to have a `guard` key is not Guard. */
+export function guardObject(body: unknown): GuardInfo | undefined {
+  const g = isRecord(body) ? body.guard : undefined;
+  if (!isRecord(g) || typeof g.decision !== "string" || typeof g.code !== "string") return undefined;
+  return {
+    decision: g.decision, code: g.code, sent: typeof g.sent === "string" ? g.sent : "no", retry: typeof g.retry === "string" ? g.retry : "no",
+    ...(typeof g.reason === "string" ? { reason: g.reason } : {}), ...(g.detail !== undefined ? { detail: g.detail } : {}),
+  };
+}
+
+const milliseconds = (v: unknown): number | null => {
+  const n = typeof v === "number" ? v : typeof v === "string" && /^\d{1,16}$/u.test(v) ? Number(v) : NaN;
+  return Number.isSafeInteger(n) && n >= 0 ? n : null;
+};
+
+/** A limit's refusal and a rule's are the same status and the same code; only the words of the reason tell them apart ("limit <id> would be exceeded ..."). */
+function refusalKind(reason: string | undefined): { kind: "rule" | "limit"; ruleId?: string } {
+  const limit = /^limit\s+(\S+)\s+would be exceeded/iu.exec(reason ?? "");
+  if (limit) return { kind: "limit", ruleId: limit[1] };
+  const rule = /^([A-Za-z0-9][A-Za-z0-9._:/@+-]*):\s/u.exec(reason ?? "");
+  return { kind: "rule", ...(rule ? { ruleId: rule[1] } : {}) };
+}
+
+/**
+ * Is this answer Guard's decision, and if so which? Returns the error to throw, or undefined when the answer is the service's own
+ * (including a replay, which `replayed` reports). Pure, so the tests can feed it the bodies in guard-for-pathways.md.
+ * Anything with a `guard` object that this code does not know is still a GuardError: a decision Guard made is never read as a success.
+ */
+export function classify(status: number, headers: { get(name: string): string | null }, body: unknown, call: SentCall): GuardError | undefined {
+  const guard = guardObject(body);
+  if (!guard) return undefined;
+  const words = isRecord(body) && typeof body.error === "string" ? body.error : guard.reason ?? `Guard answered ${status}.`;
+  const reason = guard.reason ?? words;
+  if (guard.decision === "hold" || guard.code === "held_for_approval") {
+    const detail = isRecord(guard.detail) ? guard.detail : {};
+    const header = headers.get("guard-held")?.trim();
+    const approval = typeof detail.approval === "string" && detail.approval.length > 0 ? detail.approval : header ? header : null;
+    return new GuardHeldError(status, words, guard, call, approval, milliseconds(detail.expires_at_ms));
+  }
+  if (guard.code === "outcome_unknown" || guard.decision === "unknown" || headers.get("guard-outcome")?.toLowerCase() === "unknown") return new GuardOutcomeUnknownError(status, words, guard, call);
+  if (guard.code === "guard_unavailable" || guard.code === "busy" || guard.code === "provider_unreachable") {
+    const header = headers.get("retry-after");
+    const after = header === null || header.trim() === "" ? NaN : Number(header);
+    return new GuardUnavailableError(status, words, guard, call, Number.isFinite(after) && after >= 0 ? after : undefined);
+  }
+  if (guard.code === "unauthenticated") return new GuardUnauthenticatedError(status, words, guard, call);
+  if (guard.code === "conflict") return new GuardConflictError(status, words, guard, call);
+  if (guard.code === "refused_by_policy") {
+    const { kind, ruleId } = refusalKind(reason);
+    return new GuardRefusedError(status, words, guard, call, kind, ruleId);
+  }
+  return new GuardError(status, words, guard, call);
+}
+
 const NOT_SENT = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH", "ENETUNREACH", "ERR_INVALID_URL"]);
 
 /** Node's fetch wraps the real cause in `error.cause`. */
@@ -43,20 +118,26 @@ function causeCode(e: unknown): string | undefined {
   return cause?.code ?? (e as { code?: string } | undefined)?.code;
 }
 
-export function createHttp(baseUrl: string, what: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Http {
+/**
+ * `agentToken` is the credential a Guard asks of the AGENT (`Authorization: Bearer ...`), never a key of the service: Guard removes it
+ * before it forwards the call. It is off unless given, so a runtime pointed at a stand-in sends no Authorization header at all.
+ */
+export function createHttp(baseUrl: string, what: string, timeoutMs: number = DEFAULT_TIMEOUT_MS, agentToken?: string): Http {
   checkBaseUrl(baseUrl, what);
   return {
     async request(method, path, options = {}) {
       const url = joinUrl(baseUrl, path, options.query);
       const headers: Record<string, string> = { accept: "application/json" };
+      if (agentToken) headers.authorization = `Bearer ${agentToken}`;
       let body: string | undefined;
-      if (options.body !== undefined) { body = JSON.stringify(options.body); headers["content-type"] = "application/json"; }
+      if (options.rawBody !== undefined) { body = options.rawBody; headers["content-type"] = "application/json"; }
+      else if (options.body !== undefined) { body = JSON.stringify(options.body); headers["content-type"] = "application/json"; }
       let response: Response;
       try {
         response = await fetch(url, { method, headers, body, signal: AbortSignal.timeout(timeoutMs) });
       } catch (e) {
         const code = causeCode(e);
-        if (code && NOT_SENT.has(code)) throw new ApiError(503, `${what}: could not connect (${code}).`);
+        if (code && NOT_SENT.has(code)) throw new NotSentError(`${what}: could not connect (${code}).`);
         throw new TimeoutError(what); // timed out, or the connection was cut after the request left: it may have happened
       }
       let text: string;
@@ -68,7 +149,11 @@ export function createHttp(baseUrl: string, what: string, timeoutMs: number = DE
           parsed = { raw: text.slice(0, 200) };
         }
       }
-      return { status: response.status, body: parsed };
+      const call: SentCall = { method, path, ...(body !== undefined ? { body } : {}) };
+      const decided = classify(response.status, response.headers, parsed, call); // Guard's decision, before any adapter reads the body
+      if (decided) throw decided;
+      const replayed = response.status >= 200 && response.status < 300 && response.headers.get("guard-replayed")?.toLowerCase() === "true";
+      return { status: response.status, body: parsed, ...(replayed ? { replayed: true } : {}) };
     },
   };
 }

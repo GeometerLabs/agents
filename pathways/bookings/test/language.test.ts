@@ -20,7 +20,7 @@ function facts(language: Language, change: Partial<MessageFacts> = {}): MessageF
     services: [{ name: HAIRCUT[language], priceInr: 450 }], // as in a real message: only this booking's own service
     serviceName: HAIRCUT[language],
     priceInr: 450, depositInr: 200, refundInr: 200, slotMs: SLOT,
-    link: "https://rzp.io/l/plink3", holdMinutes: 15, windowHours: 24, bookingRef: "b-3", customerPhone: "+919811111111",
+    link: "https://rzp.io/l/plink3", holdMinutes: 15, windowHours: 24, bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
     ...change,
   };
 }

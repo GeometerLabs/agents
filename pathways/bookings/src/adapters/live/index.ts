@@ -15,9 +15,10 @@ import type { WindowStore } from "./whatsapp.ts";
 export type { WindowStore } from "./whatsapp.ts";
 
 export interface LiveServices {
-  payments: { baseUrl: string }; // Guard in front of Razorpay
-  calendar: { baseUrl: string; calendarId: string }; // Guard in front of Google Calendar
-  messaging: { baseUrl: string; phoneNumberId: string }; // Guard in front of the WhatsApp provider
+  // Each Guard may ask the agent for its own credential (`agentToken`: what Guard calls the agent's token, never a service key).
+  payments: { baseUrl: string; agentToken?: string }; // Guard in front of Razorpay
+  calendar: { baseUrl: string; calendarId: string; agentToken?: string }; // Guard in front of Google Calendar
+  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string }; // Guard in front of the WhatsApp provider
   /** How long to wait for any one reply before treating it as lost. Default 10 seconds. */
   timeoutMs?: number;
 }
@@ -25,8 +26,8 @@ export interface LiveServices {
 export function createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore }): { payments: Payments; calendar: Calendar; messaging: Messaging } {
   const timeoutMs = services.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   return {
-    payments: createRazorpayPayments({ baseUrl: services.payments.baseUrl, timeoutMs }),
-    calendar: createGoogleCalendar({ baseUrl: services.calendar.baseUrl, calendarId: services.calendar.calendarId, timeoutMs }),
-    messaging: createWhatsAppMessaging({ baseUrl: services.messaging.baseUrl, phoneNumberId: services.messaging.phoneNumberId, timeoutMs }, deps),
+    payments: createRazorpayPayments({ baseUrl: services.payments.baseUrl, agentToken: services.payments.agentToken, timeoutMs }),
+    calendar: createGoogleCalendar({ baseUrl: services.calendar.baseUrl, calendarId: services.calendar.calendarId, agentToken: services.calendar.agentToken, timeoutMs }),
+    messaging: createWhatsAppMessaging({ baseUrl: services.messaging.baseUrl, phoneNumberId: services.messaging.phoneNumberId, agentToken: services.messaging.agentToken, timeoutMs }, deps),
   };
 }

@@ -19,6 +19,14 @@ export class ApiError extends Error {
   }
 }
 
+/** Nothing was sent: the connection was refused or the host is unknown. (A timeout or a cut connection is a TimeoutError: that call may have happened.) */
+export class NotSentError extends ApiError {
+  constructor(message: string) {
+    super(503, message);
+    this.name = "NotSentError";
+  }
+}
+
 export class ConflictError extends ApiError {
   constructor(message: string) {
     super(409, message);
@@ -46,6 +54,8 @@ export interface Faults<Op extends string, Mode extends string> {
   inject(op: Op, mode: Mode, options?: FaultOptions): void;
   /** Called by the fake at the start of an operation: the fault to apply to this call, if any. */
   take(op: Op): Mode | undefined;
+  /** What `take` would give next, without using it up. */
+  peek(op: Op): Mode | undefined;
   clear(): void;
 }
 
@@ -66,6 +76,102 @@ export function createFaults<Op extends string, Mode extends string>(): Faults<O
       if (plan.times <= 0) list.shift();
       return plan.mode;
     },
+    peek(op) {
+      const plan = plans.get(op)?.[0];
+      return plan && plan.after <= 0 ? plan.mode : undefined;
+    },
     clear() { plans.clear(); },
   };
 }
+
+// ---- Guard's own answers ---------------------------------------------------------------------------------------------------------
+// A Guard in front of a service answers for itself when it decides a call (hold, refuse, cannot decide, outcome unknown). Those
+// answers carry a `guard` object (see monorepo docs/guard-for-pathways.md) and are NEVER the service's reply, whatever their HTTP
+// status: a held call is a 202. http.ts turns each into one of the errors below before any adapter reads a body. They extend
+// ApiError, so code that already treats an ApiError as "this did not work" keeps doing so.
+
+/** The `guard` object of a Guard answer, as Guard sent it. */
+export interface GuardInfo {
+  decision: string; // hold, deny, unknown
+  code: string; // held_for_approval, refused_by_policy, conflict, unauthenticated, guard_unavailable, busy, provider_unreachable, outcome_unknown
+  sent: string; // "no", or "unknown" for a lost answer
+  retry: string; // after_approval, no, later, do_not_repeat
+  reason?: string; // plain words, for a person
+  detail?: unknown;
+}
+
+/** The call as the adapter sent it. `body` is the exact text that went out: a held call is sent again with these same bytes. */
+export interface SentCall { method: string; path: string; body?: string }
+
+export class GuardError extends ApiError {
+  guard: GuardInfo;
+  call: SentCall;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message);
+    this.name = "GuardError";
+    this.guard = guard;
+    this.call = call;
+  }
+}
+
+/** Held for a person (HTTP 202). Nothing was done. `approval` is null when only a person at the server can resolve it: it cannot be approved on WhatsApp. */
+export class GuardHeldError extends GuardError {
+  approval: string | null;
+  expiresAtMs: number | null;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall, approval: string | null, expiresAtMs: number | null) {
+    super(status, message, guard, call);
+    this.name = "GuardHeldError";
+    this.approval = approval;
+    this.expiresAtMs = expiresAtMs;
+  }
+}
+
+/** Refused (403): by a rule (or a route the policy does not list), or by a limit counted over time. Do not retry. */
+export class GuardRefusedError extends GuardError {
+  kind: "rule" | "limit";
+  /** The rule's or limit's id when the reason names one. */
+  ruleId?: string;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall, kind: "rule" | "limit", ruleId?: string) {
+    super(status, message, guard, call);
+    this.name = "GuardRefusedError";
+    this.kind = kind;
+    this.ruleId = ruleId;
+  }
+}
+
+/** Guard cannot decide, is busy, or cannot reach the service: nothing was sent. Retry later. */
+export class GuardUnavailableError extends GuardError {
+  retryAfterSeconds?: number;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall, retryAfterSeconds?: number) {
+    super(status, message, guard, call);
+    this.name = "GuardUnavailableError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+/** The service may have acted and the answer was lost (504, Guard-Outcome: unknown). NEVER send it again. */
+export class GuardOutcomeUnknownError extends GuardError {
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message, guard, call);
+    this.name = "GuardOutcomeUnknownError";
+  }
+}
+
+/** No or wrong agent credential: a mistake in how this deployment was set up. */
+export class GuardUnauthenticatedError extends GuardError {
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message, guard, call);
+    this.name = "GuardUnauthenticatedError";
+  }
+}
+
+/** The same business action again with other arguments (409). Do not retry. */
+export class GuardConflictError extends GuardError {
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message, guard, call);
+    this.name = "GuardConflictError";
+  }
+}
+
+/** True for an error that says the call may have gone through: no reply came back, or Guard said the outcome is unknown. */
+export const mayHaveHappened = (e: unknown): boolean => e instanceof TimeoutError || e instanceof GuardOutcomeUnknownError;

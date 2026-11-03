@@ -32,7 +32,7 @@ export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
     services: (id === "menu" ? salon.services : [haircut]).map((s) => ({ name: serviceName(s, language), priceInr: s.priceInr })),
     serviceName: serviceName(haircut, language), priceInr: haircut.priceInr, depositInr: salon.deposit.amountInr, refundInr: salon.deposit.amountInr,
     slotMs: SAMPLE_SLOT, link: "https://rzp.io/l/plink3", holdMinutes: salon.deposit.holdMinutes, windowHours: salon.cancellation.windowHours,
-    bookingRef: "b-3", customerPhone: "+919811111111",
+    bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
   };
 }
 
@@ -68,7 +68,9 @@ const WHEN: Record<TemplateId, string> = {
   rescheduled: "Booking moved to the new time",
   reminder: "Reminder before the booking",
   didnt_understand: "The message was not understood",
-  owner_refund_needs_approval: "A refund needs the owner's yes or no",
+  refund_checking: "A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner",
+  refund_expired: "The owner did not answer a refund request in time: nothing was sent",
+  owner_refund_needs_approval: "A refund above the limit waits for the owner's one-use code (sent by the approvals relay, never by the agent)",
   owner_cant_confirm: "Deposit paid but the calendar could not confirm; the owner can retry or refund",
   owner_late_cancellation: "A late cancellation: the owner decides about the deposit",
   owner_duplicate_payment: "Told after a double payment was refunded",
@@ -78,6 +80,10 @@ const WHEN: Record<TemplateId, string> = {
   owner_message_held: "A message was held back because it did not match the record",
   owner_opted_out: "A customer sent STOP",
   owner_unknown_command: "The owner's reply was not approve, deny or retry",
+  owner_approval_done: "The owner approved with the code: the refund is being sent",
+  owner_approval_denied: "The owner denied with the code: nothing is sent",
+  owner_approval_expired: "The owner answered after the request had run out: nothing was refunded",
+  owner_approval_failed: "The owner's answer could not be recorded just now: send it again",
 };
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */

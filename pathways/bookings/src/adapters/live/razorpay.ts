@@ -20,12 +20,12 @@
 //             https://razorpay.com/docs/api/refunds/fetch-multiple-refund-payment/
 //  - a missing id is HTTP 400 "The id provided does not exist", not 404.
 //  - errors: { error: { code, description, source, step, reason, metadata } }.
-import { ApiError } from "../faults.ts";
+import { ApiError, GuardError } from "../faults.ts";
 import type { NewPaymentLink, Payment, PaymentLink, Payments, Refund } from "../payments.ts";
 import { asArray, createHttp, isObject, num, str } from "./http.ts";
 import type { Http, HttpReply, Json } from "./http.ts";
 
-export interface RazorpayConfig { baseUrl: string; timeoutMs?: number }
+export interface RazorpayConfig { baseUrl: string; timeoutMs?: number; /** Guard's credential for this agent (never a Razorpay key). Left out, no Authorization header is sent. */ agentToken?: string }
 
 // ---- wire -> our types (pure, exported so the tests can read them against the docs' own samples) -----------------------------
 
@@ -111,7 +111,7 @@ export function toRefund(raw: Json): Refund | null {
 // ---- the adapter ------------------------------------------------------------------------------------------------------------
 
 export function createRazorpayPayments(config: RazorpayConfig): Payments {
-  const http: Http = createHttp(config.baseUrl, "Razorpay", config.timeoutMs);
+  const http: Http = createHttp(config.baseUrl, "Razorpay", config.timeoutMs, config.agentToken);
 
   /** A link's payments come from the payments record, so their refunds are known. A payment that cannot be read keeps what the link says. */
   async function paymentsOf(link: Json): Promise<Payment[]> {
@@ -120,7 +120,8 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
       if (!isObject(item)) continue;
       const thin = embeddedPayment(item, String(link.id));
       if (!thin) continue;
-      const full = await fetchPaymentRecord(thin.id).catch(() => null);
+      // A payment that cannot be read keeps what the link says. A Guard that refuses or cannot answer is not "cannot be read": that is raised.
+      const full = await fetchPaymentRecord(thin.id).catch((e) => { if (e instanceof GuardError) throw e; return null; });
       out.push(full ? { ...full, link_id: thin.link_id } : thin);
     }
     return out;
@@ -131,6 +132,14 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
     const reply = await http.request("GET", `/v1/payments/${encodeURIComponent(id)}`);
     if (isMissing(reply)) return null;
     return toPayment(expectOk(reply), "");
+  }
+
+  const refundPath = (paymentId: string) => `/v1/payments/${encodeURIComponent(paymentId)}/refund`;
+  function refundReply(reply: HttpReply): Refund {
+    if (isMissing(reply)) throw new ApiError(404, "No such payment.");
+    const refund = toRefund(expectOk(reply));
+    if (!refund) throw new ApiError(502, "Razorpay accepted the refund but reports it as failed.");
+    return reply.replayed ? { ...refund, replayed: true } : refund;
   }
 
   return {
@@ -167,11 +176,12 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
     fetchPayment: fetchPaymentRecord,
 
     async refund(paymentId, request) {
-      const reply = await http.request("POST", `/v1/payments/${encodeURIComponent(paymentId)}/refund`, { body: { amount: request.amount, receipt: request.receipt } });
-      if (isMissing(reply)) throw new ApiError(404, "No such payment.");
-      const refund = toRefund(expectOk(reply));
-      if (!refund) throw new ApiError(502, "Razorpay accepted the refund but reports it as failed.");
-      return refund;
+      return refundReply(await http.request("POST", refundPath(paymentId), { body: { amount: request.amount, receipt: request.receipt } }));
+    },
+
+    /** The bytes of a call Guard held, sent again exactly as they were: Guard releases a call only if it is the same call. */
+    async resendRefund(paymentId, body) {
+      return refundReply(await http.request("POST", refundPath(paymentId), { rawBody: body }));
     },
 
     async listRefunds(paymentId) {

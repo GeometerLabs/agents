@@ -446,8 +446,8 @@ export const situations: Situation[] = [
 
   {
     id: "refund-above-limit",
-    title: "A refund above the limit is held for the owner",
-    how: "The refund limit is ₹100 and the deposit ₹200; two customers cancel in time",
+    title: "A refund above the limit is held by Guard, and the owner is asked once",
+    how: "The refund limit is ₹100 and the deposit ₹200; two customers cancel in time. Guard (a model built from the same limit) holds both refunds; the owner answers through the approvals relay's part, the approval event",
     async run() {
       const { results, expect } = checker();
       const base = glowSalon();
@@ -458,12 +458,23 @@ export const situations: Situation[] = [
       await w.say("cancel my booking", { from: CUSTOMER });
       await w.say("cancel my booking", { from: OTHER_CUSTOMER });
       expect("Nothing was refunded: both refunds are above the limit", w.payments.refunds().length === 0, JSON.stringify(w.payments.refunds()));
-      expect("The owner was asked about both", w.textsTo(w.owner).filter((t) => t.includes("approve b-")).length === 2, w.textsTo(w.owner).join(" | "));
-      await w.say("deny b-1", { from: w.owner });
-      expect("After a deny there is still no refund for the first customer", w.payments.refunds().length === 0);
-      await w.say("approve b-2", { from: w.owner });
+      const held = w.heldForOwner();
+      expect("Guard holds both refunds for the owner, by amount in paise (₹200 is 20000)", held.length === 2 && held.every((h) => h.amountPaise === 20000), JSON.stringify(held));
+      expect("The agent did not ask the owner itself: the relay does, once, with a code", w.textsTo(w.owner).length === 0, w.textsTo(w.owner).join(" | "));
+      expect("Each customer was told the owner will confirm the ₹200", [CUSTOMER, OTHER_CUSTOMER].every((c) => w.lastTextTo(c).includes("₹200")), `${w.lastTextTo(CUSTOMER)} | ${w.lastTextTo(OTHER_CUSTOMER)}`);
+      const first = held.find((h) => h.receipt.startsWith("b-1:"))!;
+      const second = held.find((h) => h.receipt.startsWith("b-2:"))!;
+      await w.say("approve K7M2QX", { from: w.owner });
+      expect("A reply that looks like a relay code is ignored by the agent, without a word", w.textsTo(w.owner).length === 0 && w.payments.refunds().length === 0, w.textsTo(w.owner).join(" | "));
+      await w.ownerAnswers("deny", first.id);
+      expect("After a deny there is still no refund for the first customer, who is told", w.payments.refunds().length === 0 && w.lastTextTo(CUSTOMER).includes("वापस न करने का फ़ैसला"), w.lastTextTo(CUSTOMER));
+      await w.advance(60);
+      expect("A deny is final: Guard holds nothing new for the first customer", w.heldForOwner().every((h) => h.id === second.id), JSON.stringify(w.heldForOwner()));
+      await w.ownerAnswers("approve", second.id);
       const refunds = w.payments.refunds();
-      expect("After an approve, exactly the second customer's deposit is refunded", refunds.length === 1 && refunds[0].payment_id === paidDeposit(w, "b-2")[0].id && refunds[0].amount === 20000, JSON.stringify(refunds));
+      expect("After an approve, exactly the second customer's deposit is refunded, once", refunds.length === 1 && refunds[0].payment_id === paidDeposit(w, "b-2")[0].id && refunds[0].amount === 20000, JSON.stringify(refunds));
+      await w.agent.handle({ kind: "approval_decision", approval: second.id, decision: "approve" });
+      expect("The same answer arriving again refunds nothing more and asks nobody", w.payments.refunds().length === 1 && w.heldForOwner().length === 0, JSON.stringify(w.heldForOwner()));
       return results;
     },
   },

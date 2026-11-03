@@ -40,6 +40,15 @@ export interface InboxConfig {
   whatsappAllowedSources?: string[];
   /** Behind a reverse proxy the socket's address is the proxy's. Name the header your proxy sets (for example x-forwarded-for) and the LAST address in it is used. */
   sourceIpHeader?: string;
+  /**
+   * The approvals relay, a second place the OWNER's messages go (the runtime still gets them too, as before). The owner's reply to an approval
+   * request ("approve K7M2QX") has to reach the relay straight from here and never through the runtime, because the runtime must not be able to
+   * approve anything. Needs `ownerWhatsapp`: a message is the owner's if it comes from that number. `relayToken` is sent as a bearer token and is
+   * the relay's own, not the runtime's.
+   */
+  relayUrl?: string;
+  relayToken?: string;
+  ownerWhatsapp?: string;
   /** How long to wait for the runtime. Default 4 seconds (Razorpay waits 5). */
   forwardTimeoutMs?: number;
   /** The runtime refuses a request of more than 100 events or 256 KiB. Events are sent in batches below both. Defaults: 100 events, 200 KiB. */
@@ -123,6 +132,10 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
     if (prefix === undefined) allowed.addAddress(address, family); else allowed.addSubnet(address, Number(prefix), family);
   }
   const restrictSources = (config.whatsappAllowedSources?.length ?? 0) > 0;
+  const relay = config.relayUrl || config.relayToken || config.ownerWhatsapp;
+  if (relay && !(config.relayUrl && config.relayToken && config.ownerWhatsapp)) throw new Error("The approvals relay needs relayUrl, relayToken and ownerWhatsapp together: the inbox needs to know which number is the owner's.");
+  const ownerDigits = config.ownerWhatsapp?.replace(/\D/gu, "");
+  if (relay && !/^\d{6,15}$/u.test(ownerDigits ?? "")) throw new Error("ownerWhatsapp is not a phone number.");
   const log = config.log ?? ((line: string) => console.error(line));
   const forwardTimeoutMs = config.forwardTimeoutMs ?? 4000;
   const maxEvents = config.maxEventsPerRequest ?? 100;
@@ -146,6 +159,24 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
     return true; // if a later batch failed, the provider sends the whole webhook again and the runtime skips what it already saved (same message ids)
   }
 
+  /** The owner's messages in these events: from the owner's number, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */
+  const fromOwner = (events: AgentEvent[]): AgentEvent[] => (relay ? events.filter((e) => e.kind === "message" && e.message.from.replace(/\D/gu, "") === ownerDigits) : []);
+
+  /** The owner's messages go to the relay as well. True only if the relay answered 2xx: it keeps what it was given, and drops a message id it has seen. */
+  async function forwardToRelay(events: AgentEvent[]): Promise<boolean> {
+    try {
+      const messages = events.flatMap((e) => (e.kind === "message" ? [e.message] : []));
+      const response = await fetch(config.relayUrl!.replace(/\/+$/u, "") + "/internal/owner-messages", {
+        method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${config.relayToken}` },
+        body: JSON.stringify({ messages }), signal: AbortSignal.timeout(forwardTimeoutMs),
+      });
+      await response.arrayBuffer().catch(() => undefined);
+      return response.status >= 200 && response.status < 300;
+    } catch {
+      return false;
+    }
+  }
+
   /** The steps every POST webhook shares. `read` gets the verified, parsed JSON and says which events to forward. */
   async function webhook(req: IncomingMessage, res: ServerResponse, limit: number, verify: (raw: Buffer) => boolean, read: (json: unknown) => AgentEvent[]): Promise<string> {
     let raw: Buffer;
@@ -160,8 +191,12 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
     const events = read(json);
     if (events.length === 0) { reply(res, 200, { forwarded: 0 }); return "200 nothing to forward"; } // a status, or an event the agent does not use: do not make the provider retry it
     if (!(await forward(events))) { reply(res, 503, { error: "the runtime did not take the events; send them again" }); return `503 ${events.length} event(s) not taken`; }
+    // An owner's reply may be an answer to an approval request. The relay is told directly; if it cannot take it, the provider sends the webhook again
+    // (the runtime skips what it has saved, and the relay skips a message id it has seen), so an answer is not lost and not counted twice.
+    const owners = fromOwner(events);
+    if (owners.length > 0 && !(await forwardToRelay(owners))) { reply(res, 503, { error: "the approvals relay did not take the owner's message; send it again" }); return `503 ${owners.length} owner message(s) not taken by the relay`; }
     reply(res, 200, { forwarded: events.length });
-    return `200 ${events.length} event(s) forwarded`;
+    return `200 ${events.length} event(s) forwarded${owners.length > 0 ? `, ${owners.length} to the relay` : ""}`;
   }
 
   /** Where the request came from: the socket's address, or the last address in the header the proxy sets. */

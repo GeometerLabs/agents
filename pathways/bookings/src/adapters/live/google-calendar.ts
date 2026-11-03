@@ -25,7 +25,7 @@ import { zonedToMs } from "../../time.ts";
 import { asArray, createHttp, isObject, str } from "./http.ts";
 import type { Http, HttpReply, Json } from "./http.ts";
 
-export interface GoogleCalendarConfig { baseUrl: string; calendarId: string; timeoutMs?: number }
+export interface GoogleCalendarConfig { baseUrl: string; calendarId: string; timeoutMs?: number; /** Guard's credential for this agent (never a Google token). Left out, no Authorization header is sent. */ agentToken?: string }
 
 const MAX_PAGES = 20;
 
@@ -83,7 +83,7 @@ export function toWire(event: Partial<NewCalendarEvent>): Json {
 // ---- the adapter -------------------------------------------------------------------------------------------------------------
 
 export function createGoogleCalendar(config: GoogleCalendarConfig): Calendar {
-  const http: Http = createHttp(config.baseUrl, "Google Calendar", config.timeoutMs);
+  const http: Http = createHttp(config.baseUrl, "Google Calendar", config.timeoutMs, config.agentToken);
   const base = `/calendar/v3/calendars/${encodeURIComponent(config.calendarId)}`;
 
   function expectOk(reply: HttpReply): Json {

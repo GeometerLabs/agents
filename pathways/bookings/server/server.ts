@@ -3,6 +3,7 @@
 //
 //   POST /internal/events   {"events": [...]}   the inbox's already-checked events (bearer token)
 //   GET  /status                                counts only, never message content (bearer token)
+//   GET  /internal/refund-context?receipt=...   read-only: the booking behind a refund Guard holds, for the approvals relay (bearer token)
 //   GET  /healthz                               the process is up
 //   GET  /readyz                                the store can be read and the queue is going
 //
@@ -91,6 +92,14 @@ export function startServer(runtime: Runtime, options: ServerOptions): Promise<R
       only("GET");
       if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
       return send(res, 200, runtime.status());
+    }
+    if (path === "/internal/refund-context") {
+      only("GET");
+      if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
+      const receipt = new URL(req.url ?? "/", "http://runtime").searchParams.get("receipt");
+      if (!receipt || receipt.length > 200) return send(res, 400, { error: "Give the refund's receipt: ?receipt=b-3:pay_..." });
+      const context = runtime.refundContext(receipt);
+      return context ? send(res, 200, context) : send(res, 404, { error: "No refund is held under that receipt." });
     }
     if (path === "/internal/events") {
       only("POST");

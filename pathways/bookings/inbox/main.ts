@@ -11,6 +11,10 @@
 // Either way, WHATSAPP_ALLOWED_SOURCES (comma-separated IPs or CIDRs) refuses every other source, and WHATSAPP_SOURCE_IP_HEADER (for example
 // x-forwarded-for) says which header your reverse proxy sets with the real address (the last one in it is used).
 //
+// The owner's replies also go to the approvals relay (pathways/bookings/approvals/), straight from here and never through the runtime:
+//   OWNER_WHATSAPP=+919800000001 RELAY_URL=http://relay:8795 RELAY_TOKEN_FILE=/run/secrets/relay_token   (all three, or none)
+// The relay's token is its own, not the runtime's: the inbox is the only thing that holds both.
+//
 // Secrets are read from files (never from arguments, which show up in process lists), and a trailing newline is dropped. PORT defaults to
 // 8788. HOST defaults to 127.0.0.1; set HOST=0.0.0.0 inside a container. Put the HTTPS entry in front of it.
 import { readFileSync } from "node:fs";
@@ -41,6 +45,12 @@ if (verification === "meta-signature" && !process.env.WHATSAPP_APP_SECRET_FILE) 
   console.error("WhatsApp is not configured. Set WHATSAPP_APP_SECRET_FILE and WHATSAPP_VERIFY_TOKEN_FILE (meta-signature, the default), or WHATSAPP_VERIFICATION=path-token with WHATSAPP_PATH_TOKEN_FILE.");
   process.exit(2);
 }
+const relayUrl = process.env.RELAY_URL;
+if (relayUrl) { try { new URL(relayUrl); } catch { console.error("RELAY_URL is not a web address."); process.exit(2); } }
+if (Boolean(relayUrl) !== Boolean(process.env.OWNER_WHATSAPP) || Boolean(relayUrl) !== Boolean(process.env.RELAY_TOKEN_FILE)) {
+  console.error("The approvals relay needs RELAY_URL, RELAY_TOKEN_FILE and OWNER_WHATSAPP together, or none of them.");
+  process.exit(2);
+}
 const sources = (process.env.WHATSAPP_ALLOWED_SOURCES ?? "").split(",").map((x) => x.trim()).filter((x) => x.length > 0);
 
 let inbox;
@@ -54,8 +64,9 @@ try {
       ? { whatsappAppSecret: secretFrom("WHATSAPP_APP_SECRET_FILE"), whatsappVerifyToken: secretFrom("WHATSAPP_VERIFY_TOKEN_FILE") }
       : { whatsappPathToken: secretFrom("WHATSAPP_PATH_TOKEN_FILE") }),
     whatsappAllowedSources: sources,
+    ...(relayUrl ? { relayUrl, relayToken: secretFrom("RELAY_TOKEN_FILE"), ownerWhatsapp: process.env.OWNER_WHATSAPP } : {}),
     ...(process.env.WHATSAPP_SOURCE_IP_HEADER ? { sourceIpHeader: process.env.WHATSAPP_SOURCE_IP_HEADER } : {}),
   }, { port, host: process.env.HOST ?? "127.0.0.1" });
 } catch (e) { console.error((e as Error).message); process.exit(2); }
-console.error(`Inbox listening on ${process.env.HOST ?? "127.0.0.1"}:${inbox.port}. Forwarding to ${new URL(runtimeUrl).origin}. WhatsApp: ${verification}${sources.length > 0 ? `, sources limited to ${sources.length} address range(s)` : ""}. POST /webhooks/razorpay and /webhooks/whatsapp${verification === "path-token" ? "/<token>" : ""}.`);
+console.error(`Inbox listening on ${process.env.HOST ?? "127.0.0.1"}:${inbox.port}. Forwarding to ${new URL(runtimeUrl).origin}. WhatsApp: ${verification}${sources.length > 0 ? `, sources limited to ${sources.length} address range(s)` : ""}${relayUrl ? `, the owner's messages also go to the approvals relay at ${new URL(relayUrl).origin}` : ""}. POST /webhooks/razorpay and /webhooks/whatsapp${verification === "path-token" ? "/<token>" : ""}.`);
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { void inbox.close().then(() => process.exit(0)); });

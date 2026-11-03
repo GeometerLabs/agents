@@ -12,8 +12,9 @@
 import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkOptOut, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours, strictest } from "./limits.ts";
 import type { Decision } from "./limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
-import type { Booking, Store } from "./booking.ts";
-import { ApiError, ConflictError, TimeoutError } from "./adapters/faults.ts";
+import type { Booking, Pending, RefundIssueKind, Store } from "./booking.ts";
+import { RELAY_CODE_REPLY } from "./approval-code.ts";
+import { ApiError, ConflictError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "./adapters/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
 import type { InboundMessage, Messaging } from "./adapters/messaging.ts";
 import { coerceIntent } from "./adapters/model.ts";
@@ -25,6 +26,7 @@ import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { TemplateId } from "./language/templates.ts";
 import type { Action, ActionRecord, Outcome } from "./record.ts";
+import { formatInr } from "./language/format.ts";
 import { hoursOn, serviceName } from "./settings.ts";
 import type { Language, Settings } from "./settings.ts";
 import { HOUR, MINUTE, localParts, weekdayOf, zonedToMs } from "./time.ts";
@@ -43,11 +45,16 @@ export interface AgentDeps {
 export type AgentEvent =
   | { kind: "message"; message: InboundMessage } // a customer's (or the owner's) WhatsApp message
   | { kind: "payment_event"; event: PaymentEvent } // a Razorpay webhook
+  // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund
+  // only if its own record says the owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
+  | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
   | { kind: "tick" }; // time has passed: let holds expire and send due reminders
 
 export interface Agent { handle(event: AgentEvent): Promise<void> }
 
 const ATTEMPTS = 2; // look, try, read back; and once more if that did not settle it
+/** After a refund could not be sent at all, or an approved one could not be sent again: minutes before each next try, then the builder is told. */
+const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, calendar, payments, messaging, parser, record, store } = deps;
@@ -113,7 +120,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return seen !== null;
     } catch (e) {
       // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
-      log(a.booking, a.phone, "send_message", e instanceof TimeoutError ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
+      log(a.booking, a.phone, "send_message", mayHaveHappened(e) ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
       return false;
     }
   }
@@ -192,28 +199,293 @@ export function createAgent(deps: AgentDeps): Agent {
     return last ? { link: last } : { link: null, error };
   }
 
-  /** Refund part of a payment, once. Returns true only if the payments service's own record shows the refund. */
-  async function refundPayment(b: Booking, paymentId: string, amountInr: number, decisions: Decision[]): Promise<boolean> {
-    const receipt = `${b.id}:${paymentId}`;
-    const refundRefs = { paymentId, amountPaise: String(amountInr * 100) };
-    log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs: refundRefs });
+  // ---- refunds: look first, send once, never send again what may have gone out ------------------------------------------------
+  //
+  // A refund above the owner's limit is not decided here. The agent sends it like any other; Guard holds it (HTTP 202) and the approvals
+  // relay asks the owner, once, with a code. The agent keeps the approval id and the exact bytes of the held call, and sends those same
+  // bytes again only when the relay says the owner approved: Guard releases a call only if it is the identical call, and `60000` is not
+  // `"60000"`. Between the hold and the answer the agent does nothing: no timer sends a held refund again.
+  //
+  // Whatever Guard or the service answered, a refund that may have gone out is never sent again: Guard's own record makes the second one a
+  // new hold, which would ask the owner about money already paid.
+
+  type RefundResult = "done" | "held" | "retry" | "stopped";
+
+  const issuesOf = (b: Booking) => (b.refundIssues ??= []);
+  const stoppedOf = (b: Booking) => (b.stoppedRefunds ??= []);
+  /** The builder must look at this refund, not the owner. It is in the record (the entry's notes) and counted in the runtime's status. */
+  function raise(b: Booking, paymentId: string, kind: RefundIssueKind, note: string): void {
+    issuesOf(b).push({ paymentId, kind, note, atMs: clock.now() });
+    if (kind !== "unheld") stoppedOf(b).push(paymentId); // asking Guard again could only ask the owner about the same money again
+  }
+
+  type Sorted =
+    | { is: "held"; error: GuardHeldError }
+    | { is: "may_have_happened"; why: string } // look once, never send again
+    | { is: "refused"; error: GuardRefusedError }
+    | { is: "no_good"; why: string } // Guard said no and trying again will not change it
+    | { is: "lost"; why: string } // no reply: the next look says whether it landed
+    | { is: "not_sent"; why: string }; // nothing went out: Guard could not decide or reach the service, or the service refused this call
+
+  /** What an error from a refund call means for the refund. Anything that is not one of the service errors is the agent's own bug, and is thrown. */
+  function sortRefundError(e: unknown): Sorted {
+    if (e instanceof GuardHeldError) return { is: "held", error: e };
+    if (e instanceof GuardOutcomeUnknownError) return { is: "may_have_happened", why: "Guard says the outcome is unknown" };
+    if (e instanceof GuardRefusedError) return { is: "refused", error: e };
+    if (e instanceof GuardUnavailableError) return { is: "not_sent", why: e.message };
+    if (e instanceof GuardConflictError || e instanceof GuardError) return { is: "no_good", why: e.message };
+    if (e instanceof NotSentError) return { is: "not_sent", why: e.message };
+    if (e instanceof TimeoutError) return { is: "lost", why: e.message };
+    // the service's own answer, as it came through Guard: a 5xx may have happened (Guard will not repeat it either); a 4xx did not
+    if (e instanceof ApiError) return e.status >= 500 ? { is: "may_have_happened", why: `the payments service answered ${e.status}` } : { is: "not_sent", why: e.message };
+    throw e;
+  }
+
+  const findRefund = async (paymentId: string, receipt: string) => (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt);
+
+  /**
+   * Ask for a refund of a deposit payment, once. `expectHold`: the amount is above the owner's limit, so Guard should hold it.
+   * "done": the payments service's own list shows the refund. "held": Guard is holding it for the owner. "retry": nothing went out, it will
+   * be tried again by itself. "stopped": the builder has been told, and nothing more is done for this payment.
+   */
+  async function requestRefund(b: Booking, paymentId: string, amountInr: number, decisions: Decision[], expectHold: boolean): Promise<RefundResult> {
+    const receipt = `${b.id}:${paymentId}`; // the booking id travels in the receipt: the relay finds the booking from it
+    const amountPaise = amountInr * 100;
+    const refs = { paymentId, amountPaise: String(amountPaise) };
+    if (stoppedOf(b).includes(paymentId)) {
+      log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: "an earlier try at this refund ended with a no, an unclear outcome, or a failure, so Guard is not asked again" });
+      return "stopped";
+    }
+    log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs });
+
+    /** The refund may have gone out and cannot be sent again: read the payments service's own list once, and stop. */
+    async function maybeDone(why: string): Promise<RefundResult> {
+      const found = await findRefund(paymentId, receipt).catch(() => undefined);
+      if (found) { log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, notes: `${why}; the payments service's own list shows the refund, and it is not sent again` }); return "done"; }
+      const note = `${why}. The refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`;
+      log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
+      raise(b, paymentId, "unknown", note);
+      return "stopped";
+    }
+
+    /** The service took the refund (2xx): read it back once. Never send again, whatever the list shows. */
+    async function readBack(note?: string): Promise<RefundResult> {
+      const found = await findRefund(paymentId, receipt).catch(() => undefined);
+      if (found) {
+        log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, ...(note ? { notes: note } : {}) });
+        if (expectHold) {
+          const why = `A refund of ${formatInr(amountInr)} is above the ${formatInr(settings.cancellation.refundLimitInr)} limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the Razorpay limits spec.`;
+          log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
+          raise(b, paymentId, "unheld", why);
+        }
+        return "done";
+      }
+      const why = "the payments service accepted the refund, but its own list does not show it yet. It is NOT sent again";
+      log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
+      raise(b, paymentId, "unconfirmed", why);
+      return "stopped";
+    }
+
     let error: string | undefined;
     for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-      const done = (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt); // an earlier try may have landed
-      if (done) {
-        log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refundRefs, refundId: done.id } });
-        return true;
-      }
       try {
-        await payments.refund(paymentId, { amount: amountInr * 100, receipt });
+        const done = await findRefund(paymentId, receipt); // look first: an earlier try, or a lost reply, may have landed
+        if (done) {
+          log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: done.id } });
+          return "done";
+        }
       } catch (e) {
         if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
-        error = (e as Error).message;
+        error = `could not look at the existing refunds first (${(e as Error).message}), so nothing was sent`;
+        break; // what cannot be looked at is not sent blind
+      }
+      try {
+        const sent = await payments.refund(paymentId, { amount: amountPaise, receipt });
+        return await readBack(sent.replayed ? "Guard answered from its record; nothing was sent again" : undefined);
+      } catch (e) {
+        const sorted = sortRefundError(e);
+        switch (sorted.is) {
+          case "held": {
+            if (sorted.error.approval === null || sorted.error.call.body === undefined) {
+              const note = `Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`;
+              log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
+              raise(b, paymentId, "uncertain", note);
+              return "stopped";
+            }
+            b.pending.push({ kind: "guard_hold", amountInr, paymentId, receipt, approval: sorted.error.approval, body: sorted.error.call.body, expiresAtMs: sorted.error.expiresAtMs, heldAtMs: clock.now() });
+            log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { decisions, refs: { ...refs, approval: sorted.error.approval }, notes: "Guard is holding this refund for the owner. The approvals relay asks the owner, once; the agent does not." });
+            return "held";
+          }
+          case "may_have_happened": return await maybeDone(sorted.why);
+          case "refused": {
+            const note = `Guard refused the refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${sorted.error.guard.reason ?? sorted.error.message}. Nothing was refunded.`;
+            log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: note });
+            raise(b, paymentId, "refused", note);
+            return "stopped";
+          }
+          case "no_good": {
+            const note = `Guard did not take the refund and will not on a retry: ${sorted.why}. Nothing was refunded.`;
+            log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
+            raise(b, paymentId, "failed", note);
+            return "stopped";
+          }
+          case "lost": case "not_sent": error = sorted.why; break; // look again, and try once more
+        }
       }
     }
-    const final = (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt);
-    log(b, b.customer, "refund", final ? "confirmed" : error ? "failed" : "unconfirmed", { paymentId, amountInr }, { refs: final ? { ...refundRefs, refundId: final.id } : refundRefs, notes: error });
-    return final !== undefined;
+    log(b, b.customer, "refund", error ? "failed" : "unconfirmed", { paymentId, amountInr }, { refs, notes: `${error ?? "the refund could not be sent"}; it will be tried again` });
+    return "retry";
+  }
+
+  /** What the customer is told after a refund was asked for, and what is kept to try again. */
+  async function afterRefund(b: Booking, result: RefundResult, a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }): Promise<void> {
+    if (result === "done") {
+      await tellCustomer(b, b.customer, [a.done.customer], { refundInr: a.amountInr });
+      if (a.done.owner) await tellOwner(b, b.customer, a.done.owner, { refundInr: a.amountInr });
+      return;
+    }
+    if (result === "held") { await tellCustomer(b, b.customer, [a.held], { refundInr: a.amountInr }); return; }
+    if (result === "retry") b.pending.push({ kind: "refund_retry", amountInr: a.amountInr, paymentId: a.paymentId, tries: 0, retryAtMs: clock.now() + RETRY_MINUTES[0] * MINUTE, then: { ...a.done, held: a.held } });
+    await tellCustomer(b, b.customer, ["refund_checking"], { refundInr: a.amountInr });
+  }
+
+  const overLimit = (amountInr: number) => amountInr > settings.cancellation.refundLimitInr;
+
+  /** A refund that could not be sent at all is tried again by the clock, a few times; then the builder is told. */
+  async function retryRefund(b: Booking, p: Extract<Pending, { kind: "refund_retry" }>): Promise<void> {
+    b.pending = b.pending.filter((x) => x !== p);
+    const result = await requestRefund(b, p.paymentId, p.amountInr, [], overLimit(p.amountInr));
+    if (result === "retry") {
+      const tries = p.tries + 1;
+      if (tries >= RETRY_MINUTES.length) {
+        const note = `The refund of ${formatInr(p.amountInr)} for payment ${p.paymentId} could not be sent after ${tries + 1} tries. Nothing was refunded.`;
+        log(b, b.customer, "refund", "failed", { paymentId: p.paymentId, amountInr: p.amountInr }, { notes: note, refs: { paymentId: p.paymentId } });
+        raise(b, p.paymentId, "failed", note);
+        return;
+      }
+      b.pending.push({ ...p, tries, retryAtMs: clock.now() + RETRY_MINUTES[tries] * MINUTE });
+      return;
+    }
+    if (result === "done") { await tellCustomer(b, b.customer, [p.then.customer], { refundInr: p.amountInr }); if (p.then.owner) await tellOwner(b, b.customer, p.then.owner, { refundInr: p.amountInr }); }
+    else if (result === "held") await tellCustomer(b, b.customer, [p.then.held], { refundInr: p.amountInr });
+  }
+
+  // ---- a refund Guard held: the relay says the owner decided ---------------------------------------------------------------------
+
+  type Hold = Extract<Pending, { kind: "guard_hold" }>;
+  const holdFor = (approval: string): { b: Booking; hold: Hold } | undefined => {
+    for (const b of store.bookings.values()) for (const hold of b.pending) if (hold.kind === "guard_hold" && hold.approval === approval) return { b, hold };
+    return undefined;
+  };
+  const dropHold = (b: Booking, hold: Hold) => { b.pending = b.pending.filter((x) => x !== hold); };
+
+  async function onApprovalDecision(event: Extract<AgentEvent, { kind: "approval_decision" }>): Promise<void> {
+    const found = holdFor(event.approval);
+    if (!found) {
+      log(null, owner, "owner_decision", "blocked", { approval: event.approval, decision: event.decision }, { notes: "no refund is waiting on this approval, so nothing is done (it may be answered already, expired, or not ours)", refs: { approval: event.approval } });
+      return;
+    }
+    const { b, hold } = found;
+    const command = event.decision;
+    // What the relay said is not yet a fact: the agent cannot see Guard's record. An approval is counted as the owner's (owner_decision, confirmed) only
+    // when Guard has RELEASED the held call (see releaseHeld), so a forged "approve" event leaves nothing false in the record or the monthly report.
+    log(b, owner, "owner_decision", "attempted", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay says the owner decided" });
+    if (command === "deny") {
+      // A deny cannot be checked from here (a refund Guard did not send leaves no trace to read). It is the safe direction for the money, and it is final.
+      log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay reported that the owner denied the refund" });
+      dropHold(b, hold);
+      stoppedOf(b).push(hold.paymentId); // Guard would hold the same call again under a new approval: the agent must not ask again
+      log(b, b.customer, "refund", "blocked", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: "the owner declined the refund" });
+      await tellCustomer(b, b.customer, ["refund_denied"]);
+      return;
+    }
+    hold.approved = true;
+    await releaseHeld(b, hold);
+  }
+
+  /** Send the held call again, with the very bytes it was held with. Only after the relay said the owner approved. */
+  async function releaseHeld(b: Booking, hold: Hold): Promise<void> {
+    const { paymentId, amountInr } = hold;
+    const refs = { paymentId, amountPaise: String(amountInr * 100), approval: hold.approval };
+    const later = (why: string) => {
+      hold.tries = (hold.tries ?? 0) + 1;
+      if (hold.tries >= RETRY_MINUTES.length) {
+        dropHold(b, hold);
+        const note = `The owner approved the refund, but it could not be sent after ${hold.tries} tries (${why}). Nothing was refunded.`;
+        log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
+        raise(b, paymentId, "failed", note);
+        return tellCustomer(b, b.customer, ["refund_checking"], { refundInr: amountInr }).then(() => undefined);
+      }
+      hold.retryAtMs = clock.now() + RETRY_MINUTES[hold.tries - 1] * MINUTE;
+      log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: `the approved refund could not be sent yet (${why}); it is tried again` });
+    };
+    /** Guard let the held call go, which it does only for an approved one: now the owner's approval is a fact the report may count. */
+    const released = () => log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: "approve" }, { refs: { command: "approve", approval: hold.approval }, notes: "Guard released the held refund, so the owner's approval is on Guard's record" });
+    const finish = async (refundId: string, note?: string) => {
+      dropHold(b, hold);
+      log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId }, ...(note ? { notes: note } : {}) });
+      await tellCustomer(b, b.customer, ["refund_approved"], { refundInr: amountInr });
+    };
+    const stop = async (kind: RefundIssueKind, note: string, outcome: "failed" | "unconfirmed" | "blocked") => {
+      dropHold(b, hold);
+      log(b, b.customer, "refund", outcome, { paymentId, amountInr }, { refs, notes: note });
+      raise(b, paymentId, kind, note);
+      await tellCustomer(b, b.customer, ["refund_checking"], { refundInr: amountInr });
+    };
+
+    // look before retrying: the refund may exist already
+    let listed;
+    try { listed = await findRefund(paymentId, hold.receipt); } catch (e) {
+      if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
+      return later(`could not look at the existing refunds first: ${(e as Error).message}`);
+    }
+    if (listed) return finish(listed.id, "the refund was already on the payments service's own list, so it was not sent again");
+
+    try {
+      await payments.resendRefund(paymentId, hold.body);
+    } catch (e) {
+      const sorted = sortRefundError(e);
+      switch (sorted.is) {
+        case "held":
+          if (sorted.error.approval === null) return stop("uncertain", `After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`, "unconfirmed");
+          hold.approved = false;
+          if (sorted.error.approval === hold.approval) { // Guard has no approval on record for this call: the owner's answer was not recorded there, and the owner was already asked
+            log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { refs, notes: "Guard still holds the refund: its record does not show the owner's approval. It waits; the owner is not asked again" });
+            return;
+          }
+          hold.approval = sorted.error.approval;
+          hold.expiresAtMs = sorted.error.expiresAtMs;
+          log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { refs: { ...refs, approval: sorted.error.approval }, notes: "Guard held the call again under a new approval (the first was used up or no longer valid). The relay will ask the owner about the new one" });
+          return;
+        case "refused": {
+          const reason = sorted.error.guard.reason ?? sorted.error.message;
+          if (/expire/iu.test(reason)) return expireGuardHold(b, hold, reason);
+          return stop("refused", `Guard refused the approved refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${reason}. Nothing was refunded.`, "blocked");
+        }
+        case "no_good": return stop("failed", `Guard did not take the approved refund and will not on a retry: ${sorted.why}. Nothing was refunded.`, "failed");
+        case "may_have_happened": case "lost": {
+          released(); // the call went out: Guard does not send an unapproved one
+          const found = await findRefund(paymentId, hold.receipt).catch(() => undefined);
+          if (found) return finish(found.id, `${sorted.why}; the payments service's own list shows the refund, and it is not sent again`);
+          return stop("unknown", `${sorted.why}. The approved refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`, "unconfirmed");
+        }
+        case "not_sent": return later(sorted.why);
+      }
+    }
+    // the service took it: read back once; whatever the list shows, it is not sent again
+    released();
+    const after = await findRefund(paymentId, hold.receipt).catch(() => undefined);
+    if (after) return finish(after.id);
+    return stop("unconfirmed", "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again", "unconfirmed");
+  }
+
+  /** Guard's approval ran out before the owner answered (or before the approved call could be used). Nothing was refunded; the customer is told. */
+  async function expireGuardHold(b: Booking, hold: Hold, why = "the owner did not answer before Guard's approval ran out"): Promise<void> {
+    dropHold(b, hold);
+    const note = `${why}. Nothing was refunded. A new request for payment ${hold.paymentId} has to be made by the builder.`;
+    log(b, b.customer, "refund", "failed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: note });
+    raise(b, hold.paymentId, "expired", note);
+    await tellCustomer(b, b.customer, ["refund_expired"], { refundInr: hold.amountInr });
   }
 
   // ---- reading a message -------------------------------------------------------------------------------------------
@@ -464,32 +736,19 @@ export function createAgent(deps: AgentDeps): Agent {
     const payment = await payments.fetchPayment(paymentId);
     if (payment && payment.amount_refunded >= payment.amount) return; // already refunded by someone
     const limit = checkRefundLimit({ amountInr: leftInr, limitInr: settings.cancellation.refundLimitInr, paidInr: leftInr });
-    if (limit.verdict === "allow" && (await refundPayment(b, paymentId, leftInr, [oneDeposit, limit]))) {
-      await tellCustomer(b, b.customer, ["duplicate_refund"], { refundInr: leftInr });
-      await tellOwner(b, b.customer, "owner_duplicate_payment", { refundInr: leftInr });
-      return;
-    }
-    b.pending.push({ kind: "refund", amountInr: leftInr, paymentId, reason: limit.verdict === "allow" ? "refund_failed" : "over_limit" });
-    log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr: leftInr }, { decisions: [oneDeposit, limit], refs: { paymentId, amountPaise: String(leftInr * 100) } });
-    await tellCustomer(b, b.customer, ["duplicate_refund_pending"], { refundInr: leftInr });
-    await tellOwner(b, b.customer, "owner_refund_needs_approval", { refundInr: leftInr });
+    if (limit.verdict === "block") { log(b, b.customer, "refund", "blocked", { paymentId, amountInr: leftInr }, { decisions: [oneDeposit, limit], refs: { paymentId, amountPaise: String(leftInr * 100) } }); return; }
+    // Above the limit the agent does not ask the owner: Guard holds the refund, and the approvals relay asks, once.
+    const result = await requestRefund(b, paymentId, leftInr, [oneDeposit, limit], limit.verdict !== "allow");
+    await afterRefund(b, result, { paymentId, amountInr: leftInr, done: { customer: "duplicate_refund", owner: "owner_duplicate_payment" }, held: "duplicate_refund_pending" });
   }
 
   /** The deposit arrived but there is no booking it can confirm. */
   async function refundUnbookable(b: Booking, why: "slot_gone" | "inactive"): Promise<void> {
     const amountInr = b.depositInr!;
     const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr });
-    if (limit.verdict === "allow" && (await refundPayment(b, b.depositPaymentId!, amountInr, [limit]))) {
-      if (b.state !== "cancelled") moveTo(b, "cancelled");
-      await tellCustomer(b, b.customer, [why === "slot_gone" ? "slot_gone_refund" : "refund_unbooked"], { refundInr: amountInr });
-      await tellOwner(b, b.customer, "owner_payment_unused", { refundInr: amountInr });
-      return;
-    }
-    b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason: limit.verdict === "allow" ? "refund_failed" : "over_limit" });
-    log(b, b.customer, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit], refs: { paymentId: b.depositPaymentId!, amountPaise: String(amountInr * 100) } });
+    const result = limit.verdict === "block" ? "stopped" : await requestRefund(b, b.depositPaymentId!, amountInr, [limit], limit.verdict !== "allow");
     if (b.state !== "cancelled") moveTo(b, "cancelled");
-    await tellCustomer(b, b.customer, ["cancelled_refund_pending"], { refundInr: amountInr });
-    await tellOwner(b, b.customer, "owner_refund_needs_approval", { refundInr: amountInr });
+    await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: why === "slot_gone" ? "slot_gone_refund" : "refund_unbooked", owner: "owner_payment_unused" }, held: "cancelled_refund_pending" });
   }
 
   // ---- cancelling and rescheduling ---------------------------------------------------------------------------------
@@ -537,7 +796,9 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
 
-    // A paid booking. Inside the cancellation window the deposit goes back (within the refund limit); outside it, the owner decides.
+    // A paid booking. Inside the cancellation window the deposit goes back. Above the refund limit Guard holds it for the owner (asked once, by
+    // the relay). Outside the window and within the limit, whether to give it back is the owner's call, and the agent asks. Outside the window
+    // AND above the limit it is the same one ask, Guard's: asking twice about one refund is what this avoids.
     const hoursLeft = (b.startMs - clock.now()) / HOUR;
     const inWindow = hoursLeft >= settings.cancellation.windowHours;
     const amountInr = b.depositInr!;
@@ -546,16 +807,18 @@ export function createAgent(deps: AgentDeps): Agent {
     b.pending = [];
     moveTo(b, "cancelled");
     log(b, phone, "cancel_booking", "confirmed", { hoursLeft: Math.floor(hoursLeft), inWindow });
-    const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr, inCancellationWindow: inWindow });
-    if (limit.verdict === "allow" && (await refundPayment(b, b.depositPaymentId!, amountInr, [limit]))) {
-      await tellCustomer(b, phone, ["cancelled_refund"], { refundInr: amountInr });
+    const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr });
+    if (limit.verdict === "block") { log(b, phone, "refund", "blocked", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit], refs: { paymentId: b.depositPaymentId!, amountPaise: String(amountInr * 100) } }); return; }
+    if (!inWindow && limit.verdict === "allow") {
+      const late = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr, inCancellationWindow: false });
+      b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason: "late_cancellation" });
+      log(b, phone, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [late], refs: { paymentId: b.depositPaymentId!, amountPaise: String(amountInr * 100) } });
+      await tellCustomer(b, phone, ["cancelled_late"], { refundInr: amountInr });
+      await tellOwner(b, phone, "owner_late_cancellation", { refundInr: amountInr });
       return;
     }
-    const reason = limit.verdict === "allow" ? "refund_failed" : inWindow ? "over_limit" : "late_cancellation";
-    b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason });
-    log(b, phone, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit], refs: { paymentId: b.depositPaymentId!, amountPaise: String(amountInr * 100) } });
-    await tellCustomer(b, phone, [reason === "late_cancellation" ? "cancelled_late" : "cancelled_refund_pending"], { refundInr: amountInr });
-    await tellOwner(b, phone, reason === "late_cancellation" ? "owner_late_cancellation" : "owner_refund_needs_approval", { refundInr: amountInr });
+    const result = await requestRefund(b, b.depositPaymentId!, amountInr, [limit], limit.verdict !== "allow");
+    await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: "cancelled_refund" }, held: inWindow ? "cancelled_refund_pending" : "cancelled_late" });
   }
 
   async function onReschedule(phone: string, intent: Intent): Promise<void> {
@@ -617,6 +880,9 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- the owner's answers -----------------------------------------------------------------------------------------
 
   async function onOwnerMessage(msg: InboundMessage): Promise<void> {
+    // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent:
+    // no reply and no record, so the owner is not told "I didn't understand" about an answer that was understood elsewhere.
+    if (RELAY_CODE_REPLY.test(msg.text)) return;
     const m = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i.exec(msg.text);
     const b = m ? store.bookings.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
@@ -645,8 +911,14 @@ export function createAgent(deps: AgentDeps): Agent {
       const amountInr = b.depositInr!;
       const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr, ownerApproved: true });
       log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
-      if (await refundPayment(b, b.depositPaymentId!, amountInr, [limit])) await tellCustomer(b, b.customer, ["cancelled_refund"], { refundInr: amountInr });
-      else b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason: "refund_failed" });
+      // The owner chose to cancel. The deposit going back is a separate matter if it is above the limit: Guard holds it and the relay asks.
+      const result = await requestRefund(b, b.depositPaymentId!, amountInr, [limit], overLimit(amountInr));
+      await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: "cancelled_refund" }, held: "cancelled_refund_pending" });
+      return;
+    }
+
+    if (pending.kind === "guard_hold" || pending.kind === "refund_retry") {
+      log(b, owner, "owner_decision", "blocked", { command }, { notes: pending.kind === "guard_hold" ? "this refund is held by Guard: it is answered with the code in the approval message, not with the booking reference" : "this refund is being sent again by itself", refs: said });
       return;
     }
 
@@ -658,14 +930,10 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const limit = checkRefundLimit({ amountInr: pending.amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: pending.amountInr, ownerApproved: true });
-    if (limit.verdict === "allow" && (await refundPayment(b, pending.paymentId, pending.amountInr, [limit]))) {
-      b.pending.shift();
-      log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
-      await tellCustomer(b, b.customer, ["refund_approved"], { refundInr: pending.amountInr });
-    } else {
-      log(b, owner, "owner_decision", "failed", { command }, { notes: "the refund did not go through", refs: said });
-      await tellOwner(b, b.customer, "owner_refund_needs_approval", { refundInr: pending.amountInr });
-    }
+    log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
+    b.pending = b.pending.filter((x) => x !== pending);
+    const result = await requestRefund(b, pending.paymentId, pending.amountInr, [limit], overLimit(pending.amountInr));
+    await afterRefund(b, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending" });
   }
 
   // ---- STOP --------------------------------------------------------------------------------------------------------
@@ -739,6 +1007,16 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function onTick(): Promise<void> {
     const now = clock.now();
+    // Refunds first, whatever state their booking is in. A hold whose approval ran out is over; one the owner approved and that could not be
+    // sent yet is sent again; a refund that could not be sent at all is tried again. A hold nobody answered is NOT sent again: it just waits.
+    for (const b of [...store.bookings.values()]) {
+      for (const p of [...b.pending]) {
+        if (p.kind === "guard_hold") {
+          if (p.expiresAtMs !== null && p.expiresAtMs <= now) await expireGuardHold(b, p);
+          else if (p.approved && p.retryAtMs !== undefined && p.retryAtMs <= now) await releaseHeld(b, p);
+        } else if (p.kind === "refund_retry" && p.retryAtMs <= now) await retryRefund(b, p);
+      }
+    }
     for (const b of [...store.bookings.values()]) {
       if (b.state === "awaiting_deposit" && b.holdExpiresAt !== undefined && b.holdExpiresAt <= now) await expireHold(b);
       if (b.state !== "confirmed" || b.startMs === undefined || b.endMs === undefined) continue;
@@ -759,6 +1037,7 @@ export function createAgent(deps: AgentDeps): Agent {
   async function handle(event: AgentEvent): Promise<void> {
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
+    if (event.kind === "approval_decision") return onApprovalDecision(event);
     return onTick();
   }
 

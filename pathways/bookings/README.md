@@ -34,7 +34,7 @@ const { payments, calendar, messaging } = createLiveAdapters(
 );
 ```
 
-**One command for the whole local stack.** From `pathways/bookings`, `npm run stack` starts the stand-ins, the inbox and a runtime in live mode against them, on a temp copy of the example client (`-- --client <folder>` for another, `-- --free-ports` if 8790, 8788 or 8780 are taken).
+**One command for the whole local stack.** From `pathways/bookings`, `npm run stack` starts the stand-ins, the inbox, a stub Guard in front of the refunds, the approvals relay and a runtime in live mode against them, on a temp copy of the example client (`-- --client <folder>` for another, `-- --free-ports` if 8790, 8788, 8780 or 8795 are taken, `-- --refund-limit 100` to make a refund wait for the owner).
 It prints the URLs and three `curl`s: a customer writes, they pay the deposit link, read what the stand-ins hold. The secrets are generated into a temp folder, never into the repository, and Ctrl+C removes it with everything else. `test/full-chain.test.ts` runs the same chain.
 
 **Against stand-ins** (nothing real, no keys, no network beyond this computer). The stand-ins speak the three wire formats over HTTP in front of the same in-memory fakes the tests use, and deliver signed webhooks like the providers do:
@@ -143,6 +143,12 @@ curl -s localhost:8780/internal/events -H "Authorization: Bearer $(cat /tmp/inbo
 ```
 
 In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the stand-in services forget everything when the process stops, so use a new data folder for each local run. If the process dies in the middle of a step, the step runs again from the last saved state; read "Running it as a server" in [Explanation.md](Explanation.md) for what that means for a WhatsApp message. Live mode uses the live adapters (`src/adapters/live/`); `npm run stack` runs a client in live mode against the stand-ins.
+
+## Owner approvals on WhatsApp
+
+A refund above `cancellation.refundLimitInr` is held by Guard; the agent does not ask the owner. `approvals/` is its own process (`node pathways/bookings/approvals/main.ts`): it holds the owner's approver secret, reads Guard's held refunds, asks the owner once with a one-use code (`approve K7M2QX`), and carries the answer to Guard (signed) and then to the runtime, which sends the identical refund again.
+Guard's limits spec comes from the same settings: `node pathways/bookings/scripts/guard-spec.ts --client clients/glow-salon.example --tenant glow-salon --reviewed-by <you> > spec.json`, then `geo-guard compile`.
+Try it end to end against a stub Guard: `npm run stack -- --refund-limit 100`. Why and how: [Explanation.md](Explanation.md), "Approvals on WhatsApp".
 
 ## The monthly report and the certificates
 
@@ -302,8 +308,10 @@ src/adapters/                      calendar, payments, messaging fakes; the inte
                                    parser over HTTP (model-llm.ts, with its prompt and answer schema in model-prompt.ts)
 src/adapters/live/                 the same three over Razorpay, Google Calendar and WhatsApp wire formats (no keys), and webhooks.ts
 src/language/meta-templates.ts     the WhatsApp templates in Meta's form; whatsapp-templates.json is the list to submit
-inbox/                             the webhook inbox: its own process, holds the webhook secrets, verifies, forwards to the runtime
-standins/                          the three wire formats over HTTP in front of the fakes; dev-forwarder.ts for real test-mode services
+inbox/                             the webhook inbox: its own process, holds the webhook secrets, verifies, forwards to the runtime (and the owner's messages to the relay)
+approvals/                         the approvals relay: its own process, holds the owner's approver secret, asks the owner once with a code (main.ts, relay.ts, clients.ts, store.ts, server.ts)
+standins/                          the three wire formats over HTTP in front of the fakes; guard.ts (a stub Guard over the refunds); dev-forwarder.ts for real test-mode services
+src/guard-limits.ts                the Razorpay limits spec from the settings (the one refund threshold); src/adapters/guard-model.ts is Guard's refund behaviour, built from it
 src/language/                      templates (hi, en, ml, kn), the outgoing check, date and time phrases;
                                    words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
@@ -333,7 +341,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 ## What is not done yet
 
 - **Real services.** The live adapters, the inbox and the stand-ins are written and tested, but only against the stand-ins and the providers' own sample payloads. Nothing here has talked to a real Razorpay, Google or WhatsApp account yet, and the WhatsApp provider is not chosen.
-- **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
+- **Guard.** A refund above the limit is held by Guard (the real binary is tested, one case, here; the hand check uses a model of it). The other limits still run in the agent's own process, nothing else is enforced outside the AI yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser only reads a customer's message into an intent. It is built and tested against a local stub server, **not yet run against a real model**, and the agent uses the rule parser unless it is given the model parser.
 - **The builder panel, hosting and sending the report**, and **Tamil, Telugu** and other languages. (Restarts and persistence are built, in `server/`; the report and certificates are built, in `report/`.) Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.

@@ -11,7 +11,7 @@
 import { createAgent } from "../src/agent.ts";
 import type { AgentEvent } from "../src/agent.ts";
 import { createStore } from "../src/booking.ts";
-import type { Store } from "../src/booking.ts";
+import type { RefundIssueKind, Store } from "../src/booking.ts";
 import type { Calendar } from "../src/adapters/calendar.ts";
 import type { Messaging } from "../src/adapters/messaging.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
@@ -19,7 +19,8 @@ import type { Payments } from "../src/adapters/payments.ts";
 import type { Clock } from "../src/clock.ts";
 import { createRecord } from "../src/record.ts";
 import type { RecordEntry } from "../src/record.ts";
-import type { Settings } from "../src/settings.ts";
+import { serviceName } from "../src/settings.ts";
+import type { Language, Settings } from "../src/settings.ts";
 import type { IncomingEvent } from "./events.ts";
 import { parseStore, serializeStore } from "./snapshot.ts";
 import type { DurableStore, TaskCounts, WindowStore } from "./store.ts";
@@ -49,11 +50,40 @@ export interface Status {
   pathway: string;
   version: string;
   bookings: Record<string, number>; // by state; a state with no bookings is left out
+  refunds: RefundCounts;
   tasks: TaskCounts;
   oldestPendingAt: string | null;
   lastStepAt: string | null;
   lastFailureAt: string | null;
   recordLength: number;
+}
+
+/**
+ * Refunds, counted. `waitingForOwner`: Guard holds them and the approvals relay has asked (or will ask) the owner. `beingSentAgain`: nothing
+ * went out and the agent is trying again. `needBuilder`: refunds that need the builder and NOT the owner, by why: an unclear outcome
+ * (`unknown`, `uncertain`, `unconfirmed`), Guard said no (`refused`, `failed`), the owner never answered (`expired`), or Guard let a refund
+ * above the limit through unheld (`unheld`: its threshold does not match the settings).
+ */
+export interface RefundCounts {
+  waitingForOwner: number;
+  beingSentAgain: number;
+  needBuilder: Partial<Record<RefundIssueKind, number>> & { total: number };
+}
+
+/** What the approvals relay may know about a refund Guard is holding, found by the receipt the agent put on it (the booking id and the payment). Read-only. */
+export interface RefundContext {
+  booking: string;
+  customerPhone: string;
+  businessName: string;
+  timeZone: string;
+  /** The owner's language, and the service named in it. */
+  ownerLanguage: Language;
+  serviceName: string;
+  slotMs: number;
+  paymentId: string;
+  amountPaise: number;
+  approval: string;
+  expiresAtMs: number | null;
 }
 
 export interface Runtime {
@@ -65,6 +95,8 @@ export interface Runtime {
   tick(): Promise<void>;
   idle(): Promise<void>;
   status(): Status;
+  /** The held refund with this receipt, for the approvals relay to cross-check against what Guard says it holds; null if none is held. */
+  refundContext(receipt: string): RefundContext | null;
   ready(): { ok: true } | { ok: false; reason: string };
   close(): Promise<void>;
 }
@@ -78,6 +110,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   let snapshot = saved.snapshot ?? serializeStore(createStore());
   let entries: readonly RecordEntry[] = saved.record;
   let bookings = countByState(parseStore(snapshot));
+  let refunds = countRefunds(parseStore(snapshot));
 
   async function step(event: AgentEvent, taskId?: string): Promise<void> {
     const store = parseStore(snapshot);
@@ -93,6 +126,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     snapshot = after;
     entries = all;
     bookings = countByState(store);
+    const was = refunds.needBuilder.total;
+    refunds = countRefunds(store);
+    if (refunds.needBuilder.total > was) log(`A refund needs the builder, not the owner (${describe(refunds.needBuilder)}). The record says why; /status counts them.`);
   }
 
   const runner = createRunner({ db, step, retryDelaysMs: options.retryDelaysMs ?? RETRY_DELAYS_MS, log, now: () => clock.now() });
@@ -109,12 +145,28 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       pathway: PATHWAY,
       version: pathwayVersion,
       bookings,
+      refunds,
       tasks: db.taskCounts(),
       oldestPendingAt: iso(db.oldestPendingAt()),
       lastStepAt: iso(runner.lastStepAt()),
       lastFailureAt: iso(runner.lastFailureAt()),
       recordLength: entries.length,
     }),
+
+    refundContext(receipt) {
+      const store = parseStore(snapshot);
+      const match = /^(b-\d+):/u.exec(receipt);
+      const b = match ? store.bookings.get(match[1]) : undefined;
+      const hold = b?.pending.find((p) => p.kind === "guard_hold" && p.receipt === receipt);
+      if (!b || !hold || hold.kind !== "guard_hold" || b.startMs === undefined) return null;
+      const service = settings.services.find((s) => s.id === b.serviceId);
+      if (!service) return null;
+      return {
+        booking: b.id, customerPhone: b.customer, businessName: settings.name, timeZone: settings.timezone,
+        ownerLanguage: settings.owner.language, serviceName: serviceName(service, settings.owner.language), slotMs: b.startMs,
+        paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs,
+      };
+    },
 
     ready() {
       try { db.ping(); } catch (e) { return { ok: false, reason: `The store cannot be read: ${(e as Error).message}` }; }
@@ -127,6 +179,23 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     },
   };
 }
+
+function countRefunds(store: Store): RefundCounts {
+  const counts: RefundCounts = { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } };
+  for (const b of store.bookings.values()) {
+    for (const p of b.pending) {
+      if (p.kind === "guard_hold") counts.waitingForOwner++;
+      else if (p.kind === "refund_retry") counts.beingSentAgain++;
+    }
+    for (const issue of b.refundIssues ?? []) {
+      counts.needBuilder[issue.kind] = (counts.needBuilder[issue.kind] ?? 0) + 1;
+      counts.needBuilder.total++;
+    }
+  }
+  return counts;
+}
+
+const describe = (needBuilder: RefundCounts["needBuilder"]) => Object.entries(needBuilder).filter(([kind, n]) => kind !== "total" && n > 0).map(([kind, n]) => `${n} ${kind}`).join(", ");
 
 function countByState(store: Store): Record<string, number> {
   const counts: Record<string, number> = {};
