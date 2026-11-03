@@ -17,7 +17,7 @@ test("an entry gets a sequence number, a time and a digest of its inputs, and ca
   assert.match(e.inputsDigest, /^[0-9a-f]{16}$/);
   assert.throws(() => { (e as any).outcome = "confirmed"; }, TypeError);
   assert.equal(record.entries().length, 1);
-  record.entries().length = 0; // changing the returned list does not change the record
+  (record.entries() as unknown[]).length = 0; // changing the returned list does not change the record
   assert.equal(record.entries().length, 1);
 });
 

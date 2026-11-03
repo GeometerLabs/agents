@@ -12,7 +12,7 @@ export type Outcome = "attempted" | "confirmed" | "unconfirmed" | "failed" | "bl
 export type Action =
   | "receive_message" | "receive_payment_event" | "send_message" | "ask_owner" | "opt_out" | "owner_decision"
   | "hold_slot" | "release_slot" | "create_deposit_link" | "cancel_deposit_link" | "record_deposit"
-  | "confirm_booking" | "reschedule_booking" | "cancel_booking" | "refund";
+  | "confirm_booking" | "reschedule_booking" | "cancel_booking" | "complete_booking" | "refund";
 
 export type Verdict = "allow" | "block" | "hold_for_owner";
 
