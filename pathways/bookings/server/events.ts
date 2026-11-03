@@ -7,9 +7,11 @@ export type IncomingEvent = Exclude<AgentEvent, { kind: "tick" }>;
 
 export const MAX_EVENTS_PER_REQUEST = 100;
 
-/** Message ids and payment event ids are different id spaces, so each gets its own prefix. */
+/** Message ids, payment event ids and approval ids are different id spaces, so each gets its own prefix. An approval's two answers are two events. */
 export function eventKey(event: IncomingEvent): string {
-  return event.kind === "message" ? `message:${event.message.id}` : `payment_event:${event.event.id}`;
+  if (event.kind === "message") return `message:${event.message.id}`;
+  if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}`;
+  return `payment_event:${event.event.id}`;
 }
 
 export type CheckedEvents = { ok: true; events: IncomingEvent[] } | { ok: false; error: string };
@@ -18,6 +20,8 @@ type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 256;
 const PAYMENT_EVENTS = ["payment_link.paid", "payment.captured", "refund.processed"];
+/** Guard's approval ids look like ap-glow-salon-razorpay-458e...-3: letters, digits and a few separators, never anything a path or a log line could be confused by. */
+const APPROVAL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u;
 
 /** All or nothing: one bad event refuses the whole request, so the inbox sees the mistake instead of half a batch. */
 export function checkEvents(body: unknown): CheckedEvents {
@@ -59,5 +63,12 @@ function checkOne(raw: unknown): IncomingEvent | string {
     if (!hasWhatItNeeds) return `a ${e.event} event is missing the ids in its payload that say which payment it is about.`;
     return { kind: "payment_event", event: e as unknown as Extract<IncomingEvent, { kind: "payment_event" }>["event"] };
   }
-  return 'the kind must be "message" or "payment_event" (a tick is never sent from outside).';
+  if (raw.kind === "approval_decision") {
+    // The approvals relay's word for what the owner decided. It carries no authority: Guard releases a held refund only if its own record shows the approval.
+    if (typeof raw.approval !== "string" || !APPROVAL_ID.test(raw.approval) || (raw.decision !== "approve" && raw.decision !== "deny")) {
+      return 'an approval_decision needs approval (Guard\'s approval id) and decision ("approve" or "deny").';
+    }
+    return { kind: "approval_decision", approval: raw.approval, decision: raw.decision };
+  }
+  return 'the kind must be "message", "payment_event" or "approval_decision" (a tick is never sent from outside).';
 }
