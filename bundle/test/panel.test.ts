@@ -21,12 +21,21 @@ import { read, secretsFor, world } from "./world.ts";
 const CONTRACT = [process.env.GEOMETER_PANEL_CONTRACT, new URL("../panel/contract.ts", import.meta.url).pathname].find((p) => p && existsSync(p));
 const contract = CONTRACT ? await import(CONTRACT) as { parseStatus(text: string | undefined): { ok: boolean; status?: any; reason?: string }; parseStopRequest(text: string | undefined): unknown } : undefined;
 const withPanel = { panel: { enabled: true } };
+/** A stand-in app folder: the real pathways, and a panel program only when asked (so a test does not depend on whether THIS checkout has bundle/panel/main.ts). */
+function standInApp(w: ReturnType<typeof world>, panelProgram: boolean): string {
+  const app = mkdtempSync(join(tmpdir(), "geo-app-"));
+  symlinkSync(join(w.ctx.appDir, "pathways"), join(app, "pathways"));
+  if (panelProgram) { mkdirSync(join(app, "bundle", "panel"), { recursive: true }); writeFileSync(join(app, "bundle", "panel", "main.ts"), "// the panel\n"); }
+  return app;
+}
 const tomlOf = (w: ReturnType<typeof world>, svc: string) => read(join(w.paths.generated, "guards", svc, "guard.toml"));
 const agentBlock = (toml: string, id: string) => toml.split("[[agents]]").find((b) => b.includes(`id = "${id}"`));
 
 test("each Guard has the panel's own agent, allowed its connection-check reads and nothing else; its one token is in the panel's folder only (0600), with only a hash in the Guards'", async () => {
   const w = world({ "glow-salon": panelRuntime(), "bright-tuition": panelRuntime() }, withPanel); try {
-    w.handIn("glow-salon"); w.handIn("bright-tuition"); await deploy(w.ctx);
+    w.handIn("glow-salon"); w.handIn("bright-tuition");
+    const realApp = w.ctx.appDir; const noPanelApp = standInApp(w, false); w.ctx.appDir = noPanelApp; // the Guards and keys are made whether or not this checkout has a panel program
+    await deploy(w.ctx);
     const tokenFile = join(w.paths.secrets, "panel", "guard_agent_token");
     const token = read(tokenFile).trim();
     assert.match(token, /^gg_[0-9a-f]{32}$/);
@@ -53,6 +62,7 @@ test("each Guard has the panel's own agent, allowed its connection-check reads a
     for (const d of ["requests", "exports", "panel"]) assert.ok(existsSync(join(w.root, d)), d);
     assert.match(read(join(w.paths.generated, "compose.yaml")), /\n  panel:\n    internal: true/, "the panel's network exists");
     assert.doesNotMatch(read(join(w.paths.generated, "compose.yaml")), /bundle\/panel\/main\.ts/, "but with no panel program in this checkout no panel container is generated");
+    rmSync(noPanelApp, { recursive: true, force: true }); w.ctx.appDir = realApp;
   } finally { w.done(); }
 });
 
@@ -108,8 +118,7 @@ test("with no Google key in a shop's inbox the server-wide key is used (hosted m
     writeFileSync(key, JSON.stringify({ client_email: "hosted@project.iam.gserviceaccount.com", private_key: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n", token_uri: "https://oauth2.googleapis.com/token" }));
     assert.equal(await main(["google-key", key, "--server", w.root], w.ctx), 0); rmSync(key);
     // a checkout that has the panel program: a stand-in app folder with the real pathways and a bundle/panel/main.ts
-    const app = mkdtempSync(join(tmpdir(), "geo-app-"));
-    symlinkSync(join(w.ctx.appDir, "pathways"), join(app, "pathways")); mkdirSync(join(app, "bundle", "panel"), { recursive: true }); writeFileSync(join(app, "bundle", "panel", "main.ts"), "// the panel\n");
+    const app = standInApp(w, true);
     w.ctx.appDir = app;
     await deploy(w.ctx);
     rmSync(app, { recursive: true, force: true });

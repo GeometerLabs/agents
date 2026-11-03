@@ -123,3 +123,19 @@ test("check runs the generator's checks, then the panel's connection checks insi
     try { const r = await quiet(() => main(["check", "glow-salon", "--server", none.root], none.ctx)); assert.match(r.out, /This server has no panel/); } finally { none.done(); }
   } finally { w.done(); }
 });
+
+test("panel invite asks the running panel for a one-time link (the first builder's way in) and says what is wrong when it cannot", async () => {
+  const w = world({ "glow-salon": panelRuntime() }, { panel: { enabled: true } }); try {
+    const calls: string[][] = [];
+    const ctx = { ...w.ctx, runner: fakeRunner((_c, args) => { calls.push(args); return args.includes("/app/bundle/panel/main.ts") ? { code: 0, stdout: "https://shops.example.com/join/abc123\n\nThis link works once.\n", stderr: "" } : { code: 0, stdout: "", stderr: "" }; }) };
+    const r = await quiet(() => main(["panel", "invite", "--role", "builder", "--note", "Arjun", "--server", w.root], ctx));
+    assert.equal(r.result, 0, r.err); assert.match(r.out, /^https:\/\/shops\.example\.com\/join\/abc123/);
+    const exec = calls.at(-1)!;
+    assert.deepEqual(exec.slice(exec.indexOf("exec")), ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", "invite", "--role", "builder", "--note", "Arjun"]);
+    assert.match((await quiet(() => main(["panel", "invite", "--server", w.root], ctx))).err, /Say who the invitation is for/);
+    const down = { ...w.ctx, runner: fakeRunner(() => ({ code: 1, stdout: "", stderr: 'service "panel" is not running' })) };
+    assert.match((await quiet(() => main(["panel", "invite", "--role", "partner", "--server", w.root], down))).err, /did not make a link .*not running/);
+    const none = world({ "glow-salon": panelRuntime() });
+    try { assert.match((await quiet(() => main(["panel", "invite", "--role", "builder", "--server", none.root], none.ctx))).err, /This server has no panel/); } finally { none.done(); }
+  } finally { w.done(); }
+});
