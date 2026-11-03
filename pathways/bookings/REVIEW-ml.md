@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (32)
+## 1. Messages to the customer (33)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -44,6 +44,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | നിങ്ങളുടെ ₹200 റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം. | We are checking your ₹200 refund and will message you as soon as it is confirmed. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ₹200 റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
+| `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല. | Please type your message; I can't listen to voice notes yet. |  |
 
 ## 2. Messages to the owner (14)
 
@@ -206,7 +207,7 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 ബുക്ക് ആയവ: 38 · റദ്ദാക്കിയവ: 3 · ലഭിച്ച അഡ്വാൻസ്: ₹17,600 · തിരികെ നൽകിയത്: ₹400
 നിങ്ങളോട് ചോദിച്ചത്: 3 · നിങ്ങൾ അംഗീകരിച്ചത്: 2 · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: 1 · ഉറപ്പിക്കാൻ കഴിയാത്തത്: 1
 നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 5 (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: 3 · പ്രവൃത്തി സമയത്തിന് പുറത്തുള്ള ബുക്കിംഗ്: 1 · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: 1)
-പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
+പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 ```
 
 ### Every word and phrase of the report and the certificates
@@ -264,6 +265,9 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `notTested.other-faults` | പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ | problems beyond the ones tried |  |
 | `notTested.own-settings` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (ഇവ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത്) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
 | `notTested.situations-skipped` | ഈ പരിശോധനകളിൽ ചിലത്, ഈ കടയുടെ ക്രമീകരണങ്ങളിൽ നടത്താൻ കഴിയാത്തതിനാൽ ഒഴിവാക്കി | some of these checks, which this shop's settings cannot run (so they were left out) |  |
+| `notTested.other-settings` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (സർട്ടിഫിക്കറ്റ് പ്രകാരം ഇവ മറ്റ് ക്രമീകരണങ്ങളിലാണ് നടത്തിയത്) | these checks on this shop's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല) | these checks on this shop's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (നൽകിയ പരിശോധനാ സർട്ടിഫിക്കറ്റ് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഉപയോഗിച്ചില്ല) | these checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
 | `notCounted.no-shows` | ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും) | who turned up (a booking is marked finished when its time passes) |  |
 | `notCounted.read-receipts` | ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ഏജന്റ് വഴിയല്ലാതെ നടന്ന ബുക്കിംഗ്, കോൾ, പേയ്മെന്റ് | bookings, calls and payments that did not go through the agent |  |
@@ -336,4 +340,326 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `cert.handRunLine` | പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ്, കലണ്ടർ എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് (stand-in services). ടെസ്റ്റ് പണം മാത്രം. | Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only. |  |
 | `cert.countedIntro` | ഏജന്റിന്റെ രേഖയിൽ നിന്ന് എണ്ണിയത്, Nov 2026: | Counted from the agent's record for Nov 2026: |  |
 | `cert.checkedOn` | പരിശോധിച്ചത് | Checks run on |  |
+| `goLive.heading` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധന | Go-live checks |  |
+| `goLive.own` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ തന്നെയാണ് നടത്തിയത്, Tue 10 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പ്രകാരം. | The go-live checks ran on this shop's own settings, in the go-live certificate of Tue 10 Nov 2026. |  |
+| `goLive.example` | Tue 10 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത് എന്നാണ്, ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ അല്ല. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on the example shop, Glow Salon, not on this shop's own settings. |  |
+| `goLive.different` | Tue 10 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഈ കടയുടേതിൽ നിന്ന് വ്യത്യസ്തമായ ക്രമീകരണങ്ങളിലാണ് നടത്തിയത് എന്നാണ്, അതിനാൽ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങൾ എങ്ങനെ പ്രവർത്തിക്കുന്നു എന്ന് അത് കാണിക്കുന്നില്ല. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave. |  |
+| `goLive.untrusted` | ഒരു പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിരുന്നു, പക്ഷേ അത് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല (അതിൽ ഒപ്പില്ല, ഒപ്പ് ചേരുന്നില്ല, അല്ലെങ്കിൽ അത് പരിശോധനാ സർട്ടിഫിക്കറ്റ് അല്ല), അതിനാൽ ഉപയോഗിച്ചില്ല. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate), so it was not used. |  |
+| `goLive.none` | പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല, അതിനാൽ തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഏത് ക്രമീകരണങ്ങളിലാണ് നടത്തിയതെന്ന് ഈ രേഖ പറയുന്നില്ല. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | പരിശോധനാ സർട്ടിഫിക്കറ്റിൽ ഒപ്പിട്ടത് key:3f9a1c… എന്ന കീ ഉപയോഗിച്ചാണ്. ആ കീ ആരുടെ കൈയിലാണെന്ന് കീ കാണിക്കുന്നില്ല. | The go-live certificate is signed with key:3f9a1c…. A key does not show who holds it. |  |
+
+## 7. The panel and the phone setup
+
+Everything a partner or builder reads in the panel, in Malayalam: signing in, the shop's status and its monthly cost line, and the five setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the checks). Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
+
+What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and Razorpay read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, Razorpay, Google Calendar, Guard, Geometer).
+
+| Id | Text (Malayalam) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- |
+| `appName` | Geometer | Geometer |  |
+| `languageName` | മലയാളം | English |  |
+| `draftNote` | ഈ പരിഭാഷ ഒരു യന്ത്രം എഴുതിയതാണ്, ഒരു മലയാളം അറിയാവുന്ന ആൾ ഇതുവരെ വായിച്ചിട്ടില്ല. ഏതെങ്കിലും വാക്ക് ശരിയല്ലെന്ന് തോന്നിയാൽ നിങ്ങളുടെ Geometer ബന്ധപ്പെടേണ്ട ആളോട് പറയൂ. |  |  |
+| `nav.shops` | കടകൾ | Shops |  |
+| `nav.setUp` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
+| `nav.invite` | ഒരാളെ ക്ഷണിക്കൂ | Invite someone |  |
+| `nav.signOut` | ലോഗൗട്ട് | Sign out |  |
+| `common.back` | പിന്നോട്ട് | Back |  |
+| `common.next` | അടുത്തത് | Next |  |
+| `common.save` | സേവ് ചെയ്യൂ | Save |  |
+| `common.counts` | എണ്ണം മാത്രം. ഒരു സന്ദേശവും ഇവിടെ കാണിക്കില്ല. | Counts only. No message is shown here. |  |
+| `login.title` | ലോഗിൻ | Sign in |  |
+| `login.handle` | ലോഗിൻ പേര് | Your sign-in name |  |
+| `login.passphrase` | പാസ്ഫ്രേസ് | Passphrase |  |
+| `login.button` | ലോഗിൻ ചെയ്യൂ | Sign in |  |
+| `login.wrong` | ആ പേരോ പാസ്ഫ്രേസോ ശരിയല്ല. | That name or passphrase is not right. |  |
+| `login.wait` | ഒരുപാട് തവണ ശ്രമിച്ചു. 30 സെക്കൻഡ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Too many tries. Wait 30 seconds and try again. |  |
+| `login.byInvitation` | അക്കൗണ്ടുകൾ ക്ഷണം വഴി മാത്രമേ ഉണ്ടാക്കൂ. ഈ സെർവർ നടത്തുന്ന ആളോട് നിങ്ങളുടെ ലിങ്ക് ചോദിക്കൂ. | Accounts are made by invitation. Ask the person who runs this server for your link. |  |
+| `join.title` | നിങ്ങളുടെ partner അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create your partner account |  |
+| `join.intro` | നിങ്ങളുടെ ക്ഷണം ഒരു തവണ മാത്രമേ പ്രവർത്തിക്കൂ. എങ്ങനെ ലോഗിൻ ചെയ്യണമെന്ന് തിരഞ്ഞെടുക്കൂ. | Your invitation works once. Choose how you sign in. |  |
+| `join.name` | നിങ്ങളുടെ പേര് | Your name |  |
+| `join.handle` | ലോഗിൻ ചെയ്യാനുള്ള പേര് | Name to sign in with |  |
+| `join.handleHelp` | 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ്. | 3 to 40 letters, digits, dots or dashes. |  |
+| `join.passphrase` | പാസ്ഫ്രേസ് | Passphrase |  |
+| `join.passphraseHelp` | കുറഞ്ഞത് 10 അക്ഷരങ്ങൾ വേണം. പല വാക്കുകൾ ചേർത്ത് എഴുതിയാൽ ഓർക്കാൻ എളുപ്പമാണ്, ഊഹിക്കാൻ പ്രയാസവും. | At least 10 characters. A few words in a row is easy to remember and hard to guess. |  |
+| `join.language` | നിങ്ങളുടെ ഭാഷ | Your language |  |
+| `join.button` | അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create account |  |
+| `join.problems.invite-unknown` | ഈ ലിങ്ക് ഞങ്ങൾ ഉണ്ടാക്കിയതല്ല. പുതിയത് ചോദിക്കൂ. | This link is not one we made. Ask for a new one. |  |
+| `join.problems.invite-used` | ഈ ലിങ്ക് മുമ്പേ ഉപയോഗിച്ചു. പുതിയത് ചോദിക്കൂ. | This link was already used. Ask for a new one. |  |
+| `join.problems.invite-expired` | ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. പുതിയത് ചോദിക്കൂ. | This link has run out. Ask for a new one. |  |
+| `join.problems.handle-bad` | ലോഗിൻ പേരിന് 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ് ഉപയോഗിക്കൂ. | Use 3 to 40 letters, digits, dots or dashes for the sign-in name. |  |
+| `join.problems.handle-taken` | ആ ലോഗിൻ പേര് മറ്റൊരാൾ എടുത്തിട്ടുണ്ട്. വേറൊന്ന് തിരഞ്ഞെടുക്കൂ. | That sign-in name is taken. Choose another. |  |
+| `join.problems.name-bad` | നിങ്ങളുടെ പേര് എഴുതൂ. | Write your name. |  |
+| `join.problems.language-bad` | പട്ടികയിൽ നിന്ന് ഒരു ഭാഷ തിരഞ്ഞെടുക്കൂ. | Choose a language from the list. |  |
+| `join.problems.short` | പാസ്ഫ്രേസിന് കുറഞ്ഞത് 10 അക്ഷരങ്ങൾ വേണം. | The passphrase needs at least 10 characters. |  |
+| `join.problems.long` | പാസ്ഫ്രേസ് വളരെ നീളമുള്ളതാണ് (പരമാവധി 200 അക്ഷരങ്ങൾ). | The passphrase is too long (200 characters at most). |  |
+| `join.problems.same-as-handle` | പാസ്ഫ്രേസ് നിങ്ങളുടെ ലോഗിൻ പേരിന് തുല്യമാകരുത്. | The passphrase cannot be the same as your sign-in name. |  |
+| `roles.builder` | ബിൽഡർ | builder |  |
+| `roles.partner` | പാർട്ണർ | partner |  |
+| `invite.title` | ഒരാളെ ക്ഷണിക്കൂ | Invite someone |  |
+| `invite.role` | അവരുടെ റോൾ | They will be a |  |
+| `invite.note` | ആർക്കാണ് ഇത്? | Who is it for? |  |
+| `invite.button` | ലിങ്ക് ഉണ്ടാക്കൂ | Make a link |  |
+| `invite.made` | ഇതാ ലിങ്ക്. ഇത് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും, 3 ദിവസം കഴിഞ്ഞാൽ പ്രവർത്തിക്കില്ല. | Here is the link. It works once and runs out in 3 days. |  |
+| `invite.copy` | ഇത് ആ ആൾക്ക് മാത്രം അയയ്ക്കൂ. | Send it only to that person. |  |
+| `invite.hostedOnly` | ഈ സെർവറിൽ ക്ഷണങ്ങൾ ഉണ്ടാക്കുന്നത് സെർവർ നടത്തുന്ന ആളാണ്. | On this server, invitations are made by whoever runs the server. |  |
+| `shops.title` | നിങ്ങളുടെ കടകൾ | Your shops |  |
+| `shops.titleAll` | ഈ സെർവറിലെ എല്ലാ കടകളും | All shops on this server |  |
+| `shops.empty` | ഇതുവരെ കടകൾ ഇല്ല. | No shops yet. |  |
+| `shops.setUp` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
+| `shops.version` | പതിപ്പ് bookings@0.1.0 | Version bookings@0.1.0 |  |
+| `shops.limits` | ആകെ 9 പരിധികളിൽ 9 എണ്ണം പരീക്ഷിച്ച് ശരിയായി നിന്നു | 9 of 9 limits proven |  |
+| `shops.limitsUnknown` | പരിധികൾ: ഇതുവരെ ഉറപ്പിച്ചിട്ടില്ല | Limits: not confirmed yet |  |
+| `shops.setUpBy` | സെറ്റ് അപ്പ് ചെയ്തത്: Divya | Set up by Divya |  |
+| `shops.setUpOnServer` | സെർവറിൽ സെറ്റ് അപ്പ് ചെയ്തു | Set up on the server |  |
+| `live.unknown` | ഇതുവരെ ഉറപ്പിച്ചിട്ടില്ല | Not confirmed yet |  |
+| `live.setting-up` | സെറ്റ് അപ്പ് നടക്കുന്നു | Being set up |  |
+| `live.live` | ലൈവ് | Live |  |
+| `live.attention` | ശ്രദ്ധ വേണം | Needs a look |  |
+| `live.stopping` | നിർത്താൻ പറഞ്ഞിട്ടുണ്ട്. സെർവർ അറിയിക്കുന്നതുവരെ കാത്തിരിക്കുന്നു. | Stop requested. Waiting for the server to confirm. |  |
+| `live.stopped` | നിർത്തി. ഇനി ഒന്നും പുറത്തേക്ക് പോകില്ല. | Stopped. Nothing more goes out. |  |
+| `why.no-status` | ഈ കടയെക്കുറിച്ച് സെർവർ ഇതുവരെ ഒന്നും അറിയിച്ചിട്ടില്ല. | The server has not reported on this shop yet. |  |
+| `why.status-unreadable` | സെർവറിന്റെ അറിയിപ്പ് വായിക്കാൻ കഴിഞ്ഞില്ല. | The server's report could not be read. |  |
+| `why.status-old` | സെർവർ കുറച്ചു നേരമായി ഒന്നും അറിയിച്ചിട്ടില്ല. | The server has not reported for a while. |  |
+| `why.deploy-failed` | അവസാനത്തെ അപ്ഡേറ്റ് നടന്നില്ല. | The last update did not go through. |  |
+| `why.limits-not-proven` | എല്ലാ പരിധികളും ശരിയായി നിൽക്കുന്നുവെന്ന് ഇതുവരെ പരീക്ഷിച്ച് കണ്ടിട്ടില്ല. | Not every limit has been proven to hold yet. |  |
+| `why.runtime-unreachable` | ഏജന്റ് മറുപടി തരുന്നില്ല. | The agent does not answer. |  |
+| `why.runtime-not-ready` | ഏജന്റ് പറയുന്നു, അത് തയ്യാറായിട്ടില്ലെന്ന്. | The agent says it is not ready. |  |
+| `why.refunds-need-builder` | റീഫണ്ടിന് ഉടമയുടെയല്ല, ബിൽഡറുടെ നടപടി വേണം. | A refund needs the builder, not the owner. |  |
+| `shop.status` | സ്ഥിതി | Status |  |
+| `shop.versions` | പാത്ത്വേ 0.1.0, ബണ്ടിൽ 0.1.0 | Pathway 0.1.0, bundle 0.1.0 |  |
+| `shop.lastDeploy` | അവസാന അപ്ഡേറ്റ്: 4 Nov 2026, 10:30 | Last update: 4 Nov 2026, 10:30 |  |
+| `shop.neverDeployed` | ഇതുവരെ അപ്ഡേറ്റ് ചെയ്തിട്ടില്ല. | Not updated yet. |  |
+| `shop.limitsHeading` | പരിധികൾ | Limits |  |
+| `shop.unprovable` | ഇവ ഒറ്റയ്ക്ക് പരീക്ഷിക്കാൻ കഴിയില്ല: refund-limit | These cannot be tested on their own: refund-limit |  |
+| `shop.backups` | ബാക്കപ്പ് | Backups |  |
+| `shop.backupCopy` | സെർവറിന് പുറത്തുള്ള അവസാന കോപ്പി: 4 Nov 2026, 10:30 | Last copy off the server: 4 Nov 2026, 10:30 |  |
+| `shop.backupNone` | സെർവറിന് പുറത്ത് ഇതുവരെ കോപ്പി ഇല്ല. | No copy off the server yet. |  |
+| `shop.backupDrill` | ബാക്കപ്പ് തിരിച്ചെടുത്ത് നോക്കിയ അവസാന പരിശോധന: 4 Nov 2026, 04:00, പൊരുത്തപ്പെട്ടു | Last restore check: 4 Nov 2026, 04:00, it matched |  |
+| `shop.backupDrillNone` | ബാക്കപ്പ് തിരിച്ചെടുത്ത് ഇതുവരെ നോക്കിയിട്ടില്ല. | No restore check yet. |  |
+| `shop.settings` | ഈ കടയെക്കുറിച്ച് ഏജന്റിന് അറിയാവുന്നത് | What the agent knows about this shop |  |
+| `shop.settingsEdit` | ക്രമീകരണങ്ങൾ മാറ്റൂ | Change settings |  |
+| `shop.summaryServices` | സേവനങ്ങൾ | Services |  |
+| `shop.summaryHours` | തുറക്കുന്ന സമയം | Open |  |
+| `shop.hoursRange` | 10:00 മുതൽ 20:00 വരെ | 10:00 to 20:00 |  |
+| `shop.summaryClosed` | അവധി | closed |  |
+| `shop.summaryDeposit` | ഡെപ്പോസിറ്റ് ₹200; പണം അടയ്ക്കാനായി സ്ലോട്ട് 15 മിനിറ്റ് മാറ്റിവയ്ക്കും | Deposit ₹200; the slot is held 15 minutes while it is paid |  |
+| `shop.summaryCancel` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് 24 മണിക്കൂർ മുമ്പ് റദ്ദാക്കിയാൽ ഡെപ്പോസിറ്റ് തിരികെ നൽകും; ₹200 കവിയുന്ന റീഫണ്ടിന് മുമ്പ് ഏജന്റ് നിങ്ങളോട് ചോദിക്കും | Deposit goes back if cancelled at least 24 hours before; it asks you before refunding more than ₹200 |  |
+| `shop.summaryLanguages` | ഉപഭോക്താക്കളുടെ ഭാഷകൾ | Customer languages |  |
+| `shop.summaryOwner` | ഉടമയുടെ WhatsApp | Owner's WhatsApp |  |
+| `shop.activity` | ഈ മാസം | This month |  |
+| `shop.activityNote` | എണ്ണം മാത്രം. ഒരു സന്ദേശവും ഇവിടെ കാണിക്കില്ല. | Counts only. No message is shown here. |  |
+| `shop.noRecord` | രേഖ ഇതുവരെ പാനലുമായി പങ്കിട്ടിട്ടില്ല, അതിനാൽ ഇപ്പോൾ ലൈവ് ആയി നടക്കുന്നത് മാത്രം കാണിക്കുന്നു. | The record has not been shared with the panel yet, so only what is live right now is shown. |  |
+| `shop.waiting` | ഉടമയുടെ മറുപടി കാത്തിരിക്കുന്ന റീഫണ്ടുകൾ: 2 | 2 refunds wait for the owner |  |
+| `shop.needBuilder` | ബിൽഡർ ചെയ്യേണ്ട റീഫണ്ടുകൾ: 1 | 1 refund needs the builder |  |
+| `shop.made` | ബുക്ക് ആയവ | Bookings made |  |
+| `shop.cancelled` | റദ്ദാക്കിയവ | Cancelled |  |
+| `shop.moved` | സമയം മാറ്റിയവ | Moved |  |
+| `shop.deposits` | ലഭിച്ച ഡെപ്പോസിറ്റ് | Deposits received |  |
+| `shop.refunds` | നൽകിയ റീഫണ്ടുകൾ | Refunds given |  |
+| `shop.saidNo` | ഏജന്റ് നിരസിച്ച അഭ്യർത്ഥനകൾ | Requests it said no to |  |
+| `shop.approvals` | ഉടമയുടെ അനുമതികൾ | Owner approvals |  |
+| `shop.approvalsLine` | ചോദിച്ചത് 3 തവണ: അംഗീകരിച്ചത് 2, വേണ്ടെന്ന് പറഞ്ഞത് 1. | Asked 3 times: approved 2, denied 1. |  |
+| `shop.bookingStates.enquiry` | അന്വേഷിക്കുന്നു | Asking |  |
+| `shop.bookingStates.confirming_details` | വിവരങ്ങൾ ഉറപ്പിക്കുന്നു | Checking details |  |
+| `shop.bookingStates.awaiting_deposit` | ഡെപ്പോസിറ്റിനായി കാത്തിരിക്കുന്നു | Waiting for the deposit |  |
+| `shop.bookingStates.needs_owner` | ഉടമയ്ക്കായി കാത്തിരിക്കുന്നു | Waiting for the owner |  |
+| `shop.bookingStates.confirmed` | ബുക്ക് ആയി | Booked |  |
+| `shop.bookingStates.expired` | മാറ്റിവച്ച സമയം കഴിഞ്ഞു | Hold ran out |  |
+| `shop.bookingStates.cancelled` | റദ്ദാക്കി | Cancelled |  |
+| `shop.bookingStates.completed` | പൂർത്തിയായി | Done |  |
+| `shop.papers` | ഉടമയ്ക്കുള്ള രേഖകൾ | Papers for the owner |  |
+| `shop.goLive` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
+| `shop.goLiveNone` | ഇതുവരെ ഉണ്ടാക്കിയിട്ടില്ല. സെറ്റ് അപ്പിലെ പരിശോധനകൾ ശരിയായാൽ ഇത് ഉണ്ടാകും. | Not made yet. It is made when the checks pass in setup. |  |
+| `shop.monthly` | പ്രതിമാസ റിപ്പോർട്ട് | Monthly report |  |
+| `shop.makeReport` | റിപ്പോർട്ട് ഉണ്ടാക്കൂ: 2026-11 | Make the report for 2026-11 |  |
+| `shop.reportNoRecord` | രേഖ ഇതുവരെ പാനലുമായി പങ്കിട്ടിട്ടില്ല, അതിനാൽ പ്രതിമാസ റിപ്പോർട്ട് ഉണ്ടാക്കാൻ കഴിയില്ല. | The record has not been shared with the panel yet, so a monthly report cannot be made. |  |
+| `shop.reportMade` | റിപ്പോർട്ട് തയ്യാറായി. | The report is ready. |  |
+| `shop.stop` | ഈ കട നിർത്തൂ | Stop this shop |  |
+| `shop.stopTitle` | Glow Salon നിർത്തണോ? | Stop Glow Salon? |  |
+| `shop.stopText` | ഇത് ഏജന്റിനെ നിർത്താൻ സെർവറിനോട് പറയും. സെർവർ നിർത്തിക്കഴിഞ്ഞാൽ ഇനി ഒന്നും പുറത്തേക്ക് പോകില്ല. ഇതിന് ഒരു മിനിറ്റ് എടുത്തേക്കാം. നിങ്ങൾ പറഞ്ഞാൽ മാത്രമേ സെർവർ ഇത് വീണ്ടും തുടങ്ങൂ. | This asks the server to stop the agent. Nothing more goes out once the server has stopped it. It can take a minute, and the server starts it again only when you ask. |  |
+| `shop.stopConfirm` | അതെ, നിർത്തൂ | Yes, stop it |  |
+| `shop.stopAsked` | നിർത്താൻ പറഞ്ഞ സമയം: 4 Nov 2026, 10:30. സെർവർ അറിയിക്കുന്നതുവരെ കാത്തിരിക്കുന്നു. | Stop requested at 4 Nov 2026, 10:30. Waiting for the server to confirm. |  |
+| `shop.stopOnly` | നിർത്തി എന്ന് പറയാൻ സെർവറിന് മാത്രമേ കഴിയൂ. | Only the server can say it has stopped. |  |
+| `shop.details` | ഞങ്ങൾ ചെയ്തത് കാണുക ▸ | Show what we did ▸ |  |
+| `shop.detailsDeploy` | സെർവറിന്റെ അവസാന സന്ദേശം | The server's last message |  |
+| `shop.detailsPins` | പരിശോധനകൾ ശരിവച്ച ഐഡികൾ | Ids the checks confirmed |  |
+| `shop.detailsPrices` | വില ലിസ്റ്റ്: 2026-11-03 | Price list of 2026-11-03 |  |
+| `shop.detailsNothing` | ഇതുവരെ ഒന്നുമില്ല | nothing yet |  |
+| `shop.detailsStatusFile` | സെർവർ അറിയിച്ചത് | What the server reported |  |
+| `cost.heading` | ഓരോ മാസവും ഇത് പ്രവർത്തിപ്പിക്കാനുള്ള ചെലവ് | What it costs to run, each month |  |
+| `cost.early` | ആദ്യത്തെ കണക്ക്: യഥാർത്ഥ ബുക്കിംഗുകൾ ഇതുവരെ എണ്ണിയിട്ടില്ല. | Early estimate: no real bookings are counted yet. |  |
+| `cost.fromRecord` | രേഖയിലെ 38 ബുക്കിംഗ് നോക്കി കണക്കാക്കിയത്. | Worked out from 38 bookings in the record. |  |
+| `cost.assumption` | ഒരു മാസം 40 ബുക്കിംഗ് ഉണ്ടാകും എന്ന് ഞങ്ങൾ കണക്കാക്കി. | We assumed 40 bookings a month. |  |
+| `cost.lines.whatsapp` | WhatsApp സന്ദേശങ്ങൾ (Meta-യുടെ ഫീസ്) | WhatsApp messages (Meta's fee) |  |
+| `cost.lines.whatsapp-provider` | WhatsApp പ്രൊവൈഡറുടെ സ്വന്തം ഫീസ് | WhatsApp provider's own fee |  |
+| `cost.lines.model` | മോഡൽ ഉപയോഗം | Model use |  |
+| `cost.lines.razorpay` | Razorpay-യുടെ ഫീസ് | Razorpay's fee |  |
+| `cost.lines.hosting` | ഹോസ്റ്റിംഗ് വിഹിതം | Hosting share |  |
+| `cost.payer.passed-through` | ചെലവ് തുകയ്ക്ക് തന്നെ കൈമാറുന്നു | passed on at cost |  |
+| `cost.payer.shop-pays-razorpay` | കട Razorpay-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to Razorpay |  |
+| `cost.payer.hosting` | സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത് | the server's cost, shared |  |
+| `cost.unknown` | അറിയില്ല | unknown |  |
+| `cost.included` | ഉൾപ്പെടുന്നു | included |  |
+| `cost.usage` | മോഡൽ ഉപയോഗം: ഏകദേശം ₹2.38 | about ₹2.38 of model use |  |
+| `cost.total` | ആകെ | Total |  |
+| `cost.subtotal` | ഇതുവരെയുള്ള തുക. വില ഇല്ലാത്ത കാര്യങ്ങൾ: 3. അതിനാൽ ഇത് മുഴുവൻ ചെലവല്ല. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
+| `cost.priceList` | വിലകൾ എടുത്തത് ഈ തീയതിയിലെ ലിസ്റ്റിൽ നിന്ന്: 2026-11-03. | Prices from the list of 2026-11-03. |  |
+| `cost.caveats.assumed-exchange-rate` | ഡോളർ, യൂറോ വിലകൾ ഒരു കണക്കാക്കിയ നിരക്കിലാണ് (₹90, ₹100). യഥാർത്ഥ ബില്ലിൽ വ്യത്യാസം വരാം. | Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ. |  |
+| `cost.caveats.provider-not-chosen` | WhatsApp പ്രൊവൈഡറെ ഇതുവരെ തിരഞ്ഞെടുത്തിട്ടില്ല, അതിനാൽ അതിന്റെ ഫീസ് അറിയില്ല. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
+| `cost.caveats.provider-not-priced` | വില ലിസ്റ്റിൽ ഈ പ്രൊവൈഡറുടെ വില ഇല്ല. | The price list has no price for this provider. |  |
+| `cost.caveats.allowance-not-set` | ഉൾപ്പെടുത്തിയ മോഡൽ ഉപയോഗത്തിന്റെ പരിധി സെറ്റ് ചെയ്തിട്ടില്ല, അതിനാൽ കൈമാറുന്ന തുക അറിയില്ല. | The included model allowance is not set, so what is passed on is unknown. |  |
+| `cost.caveats.model-not-priced` | വില ലിസ്റ്റിൽ ഈ മോഡലിന്റെ വില ഇല്ല. | The price list has no price for this model. |  |
+| `cost.caveats.hosting-not-measured` | ഹോസ്റ്റിംഗ് വിഹിതം ഇതുവരെ അളന്നിട്ടില്ല. | The hosting share has not been measured yet. |  |
+| `cost.caveats.payment-link-fee-conflict` | പേയ്മെന്റ് ലിങ്കുകളുടെ ഫീസിനെക്കുറിച്ച് Razorpay-യുടെ സ്വന്തം പേജുകൾ പരസ്പരം യോജിക്കുന്നില്ല. കൂടുതലുള്ളത് (2%) എടുത്തിരിക്കുന്നു. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
+| `cost.caveats.whatsapp-rate-second-hand` | WhatsApp-ന്റെ രൂപ നിരക്ക് Meta-യുടെ പേജിൽ നിന്നല്ല, ഒരു റീസെല്ലറുടെ പേജിൽ നിന്നാണ്. ആദ്യത്തെ ഇൻവോയ്സിൽ ഇത് നോക്കൂ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
+| `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
+| `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
+| `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
+| `setup.templateElsewhere` | ഇത് ഒരു ബിൽഡർ പ്ലഗിൻ ഉപയോഗിച്ച് സെറ്റ് അപ്പ് ചെയ്യും. ഫോണിലെ സെറ്റ് അപ്പിൽ ഇത് ഇതുവരെ ഇല്ല. | A builder sets this one up with the plugin. The phone setup does not have it yet. |  |
+| `setup.start` | തുടങ്ങൂ | Start |  |
+| `setup.progress` | ഘട്ടം 2 (ആകെ 5) | Step 2 of 5 |  |
+| `setup.steps.business` | കട | The business |  |
+| `setup.steps.deposit` | ഡെപ്പോസിറ്റും റദ്ദാക്കലും | Deposit and cancellation |  |
+| `setup.steps.languages` | ഭാഷകളും നിങ്ങളുടെ നമ്പറും | Languages and your number |  |
+| `setup.steps.accounts` | കടയുടെ അക്കൗണ്ടുകൾ ബന്ധിപ്പിക്കൂ | Connect the shop's accounts |  |
+| `setup.steps.checks` | പരിശോധനകൾ | Checks |  |
+| `setup.problemsTitle` | ഇത് ശരിയാക്കൂ: | Please fix this: |  |
+| `setup.fallback` | ഒരു കാര്യം ശരിയാക്കണം: The deposit is more than the cheapest service. | One thing needs fixing: The deposit is more than the cheapest service. |  |
+| `setup.business.name` | കടയുടെ പേര് | Shop name |  |
+| `setup.business.services` | സേവനങ്ങൾ (കുറഞ്ഞത് ഒന്ന്, പരമാവധി നാല്) | Services (at least one, up to four) |  |
+| `setup.business.serviceName` | പേര് | Name |  |
+| `setup.business.also` | മറ്റ് പേരുകൾ (കോമ ഇട്ട്) | Also called (commas) |  |
+| `setup.business.price` | വില ₹ | Price ₹ |  |
+| `setup.business.minutes` | മിനിറ്റ് | Minutes |  |
+| `setup.business.opens` | തുറക്കുന്നത് | Opens |  |
+| `setup.business.closes` | അടയ്ക്കുന്നത് | Closes |  |
+| `setup.business.openOn` | തുറക്കുന്ന ദിവസങ്ങൾ | Open on |  |
+| `setup.business.hint` | ഒരു സേവനത്തിന്റെ വില തന്നെയാണ് ഏജന്റ് സമ്മതിക്കുന്ന ഏറ്റവും കുറഞ്ഞ വിലയും. | A service's price is also the lowest the agent will ever agree to. |  |
+| `setup.business.dayNames.1` | ഞായർ | Sun |  |
+| `setup.business.dayNames.2` | തിങ്കൾ | Mon |  |
+| `setup.business.dayNames.3` | ചൊവ്വ | Tue |  |
+| `setup.business.dayNames.4` | ബുധൻ | Wed |  |
+| `setup.business.dayNames.5` | വ്യാഴം | Thu |  |
+| `setup.business.dayNames.6` | വെള്ളി | Fri |  |
+| `setup.business.dayNames.7` | ശനി | Sat |  |
+| `setup.depositStep.amount` | ഡെപ്പോസിറ്റ് ₹ | Deposit ₹ |  |
+| `setup.depositStep.window` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് ഇത്ര മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം | Cancel at least this many hours before |  |
+| `setup.depositStep.windowHint` | ഇത്രയും മുമ്പ് ഒരു ഉപഭോക്താവ് റദ്ദാക്കിയാൽ ഡെപ്പോസിറ്റ് തിരികെ നൽകും. അതിനു ശേഷമാണെങ്കിൽ തീരുമാനം നിങ്ങളുടേത്. | If a customer cancels at least this long before, the deposit goes back. Later than that, you decide. |  |
+| `setup.depositStep.whatThisMeans` | ഇതിന്റെ അർത്ഥം എന്താണ് | What this means for you |  |
+| `setup.limits.price` | ഇതിന് നിങ്ങളുടെ വിലയിൽ താഴെ പോകാനാവില്ല, ഏത് റീഫണ്ടിനും മുമ്പ് നിങ്ങളോട് ചോദിക്കും. | It can't go below your prices, and it asks you before any refund. |  |
+| `setup.limits.hours` | നിങ്ങളുടെ പ്രവൃത്തി സമയത്തിന് പുറത്ത് ഇത് ഒരിക്കലും ബുക്ക് ചെയ്യില്ല. | It never books outside your opening hours. |  |
+| `setup.limits.deposit` | ഡെപ്പോസിറ്റ് ₹200 ആണ്, നിങ്ങളുടെ ഏറ്റവും കുറഞ്ഞ വിലയേക്കാൾ കൂടില്ല, പണം അടയ്ക്കാനായി സ്ലോട്ട് 15 മിനിറ്റ് മാറ്റിവയ്ക്കും. | The deposit is ₹200, never more than your cheapest price, and the slot is held 15 minutes while it is paid. |  |
+| `setup.limits.refund` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് 24 മണിക്കൂർ മുമ്പ് ഒരു ഉപഭോക്താവ് റദ്ദാക്കിയാൽ ഡെപ്പോസിറ്റ് തിരികെ നൽകും; അതിനു ശേഷമുള്ളതും ₹200 കവിയുന്ന ഏത് റീഫണ്ടും WhatsApp-ൽ നിങ്ങളുടെ OK വരുന്നതുവരെ കാത്തിരിക്കും. | A customer who cancels at least 24 hours before gets the deposit back; anything later, or any refund above ₹200, waits for your OK on WhatsApp. |  |
+| `setup.limits.booked` | ഇത് "ബുക്ക് ആയി" എന്ന് പറയുമ്പോൾ, സ്ലോട്ട് നിങ്ങളുടെ കലണ്ടറിലും ഡെപ്പോസിറ്റ് നിങ്ങളുടെ അക്കൗണ്ടിലും ഉണ്ടാകും. | When it says booked, the slot is in your calendar and the deposit is in your account. |  |
+| `setup.limits.language` | നിങ്ങളുടെ ഉപഭോക്താക്കൾക്ക് അവരുടെ ഭാഷയിൽ, ശരിയായ വിലയും തീയതിയും സഹിതം മറുപടി കിട്ടും. | Your customers are answered in their language, with the right price and date. |  |
+| `setup.limits.charge` | നിങ്ങളുടെ ഫോണിലൂടെ, തീരുമാനം എപ്പോഴും നിങ്ങളുടേതാണ്. | You stay in charge from your phone. |  |
+| `setup.languagesStep.main` | ഉപഭോക്താക്കളുടെ പ്രധാന ഭാഷ | Main language of your customers |  |
+| `setup.languagesStep.also` | ഉപഭോക്താക്കൾ എഴുതാറുള്ള മറ്റ് ഭാഷകളും ടിക്ക് ചെയ്യൂ | Also tick any others your customers write in |  |
+| `setup.languagesStep.hint` | ഏജന്റ് പ്രധാന ഭാഷയിൽ തുടങ്ങും, ഓരോ ഉപഭോക്താവും എഴുതുന്ന ഭാഷയിൽ മറുപടി നൽകും. | The agent starts in the main language and answers each customer in the one they write in. |  |
+| `setup.languagesStep.ownerLanguage` | നിങ്ങൾക്കുള്ള സന്ദേശങ്ങളുടെ ഭാഷ | Your language for messages to you |  |
+| `setup.languagesStep.ownerNumber` | നിങ്ങളുടെ സ്വന്തം WhatsApp നമ്പർ | Your own WhatsApp number |  |
+| `setup.languagesStep.ownerNumberHelp` | രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് തുടങ്ങൂ, ഉദാഹരണം +91 98765 43210. ഏത് റീഫണ്ടിനും മുമ്പ് ഏജന്റ് ഈ നമ്പറിൽ നിങ്ങളോട് ചോദിക്കും. ഇത് നിങ്ങളുടെ സ്വന്തം നമ്പർ ആണ്, ഉപഭോക്താക്കൾ സന്ദേശം അയയ്ക്കുന്ന കടയുടെ നമ്പർ അല്ല. | Start with the country code, for example +91 98765 43210. The agent asks you here before any refund. It is your own number, not the shop's number that customers write to. |  |
+| `setup.problems.nameEmpty` | കടയുടെ പേര് എഴുതൂ. | Write the shop's name. |  |
+| `setup.problems.noService` | വിലയോടൊപ്പം കുറഞ്ഞത് ഒരു സേവനം ചേർക്കൂ. | Add at least one service with a price. |  |
+| `setup.problems.priceBad` | സേവനം 2: വില മുഴുവൻ രൂപയിൽ എഴുതൂ, ഉദാഹരണം 450. | Service 2: write the price in whole rupees, for example 450. |  |
+| `setup.problems.depositBad` | ഡെപ്പോസിറ്റ് മുഴുവൻ രൂപയിൽ എഴുതൂ, ഉദാഹരണം 200. | Write the deposit in whole rupees, for example 200. |  |
+| `setup.problems.depositTooBig` | ഡെപ്പോസിറ്റ് (₹500) നിങ്ങളുടെ ഏറ്റവും കുറഞ്ഞ വിലയുള്ള സേവനത്തേക്കാൾ (₹450) കൂടുതലാണ്. ഡെപ്പോസിറ്റ് കുറയ്ക്കൂ. | The deposit (₹500) is more than your cheapest service (₹450). Make the deposit smaller. |  |
+| `setup.problems.windowBad` | മണിക്കൂർ ഒരു പൂർണ്ണസംഖ്യയായി എഴുതൂ, ഉദാഹരണം 24. | Write the hours as a whole number, for example 24. |  |
+| `setup.problems.hoursBad` | കട അടയ്ക്കുന്നതിന് മുമ്പ് തുറക്കണം. 10:00, 20:00 പോലെ സമയം എഴുതൂ. | The shop must open before it closes. Write times like 10:00 and 20:00. |  |
+| `setup.problems.noDay` | കട തുറക്കുന്ന ഒരു ദിവസമെങ്കിലും ടിക്ക് ചെയ്യൂ. | Tick at least one day the shop is open. |  |
+| `setup.problems.noLanguage` | ഒരു ഭാഷയെങ്കിലും ടിക്ക് ചെയ്യൂ. | Tick at least one language. |  |
+| `setup.problems.ownerNumberBad` | രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് നിങ്ങളുടെ നമ്പർ എഴുതൂ, ഉദാഹരണം +91 98765 43210. | Write your number with the country code, for example +91 98765 43210. |  |
+| `setup.problems.sameNumber` | നിങ്ങളുടെ നമ്പറും കടയുടെ WhatsApp നമ്പറും വ്യത്യസ്തമായിരിക്കണം. നിങ്ങൾ മറുപടി നൽകുന്നത് നിങ്ങളുടെ സ്വന്തം ഫോണിൽ നിന്നാണ്. | Your number and the shop's WhatsApp number must be different. You answer from your own phone. |  |
+| `setup.problems.serviceNameEmpty` | സേവനം 2: വില ഉണ്ട്, പക്ഷേ പേര് ഇല്ല. പേര് എഴുതൂ. | Service 2 has a price but no name. |  |
+| `setup.problems.expectedBad` | മാസത്തിലെ ബുക്കിംഗുകളുടെ എണ്ണം പൂർണ്ണസംഖ്യയായി എഴുതൂ, ഉദാഹരണം 40, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
+| `setup.problems.numberIdBad` | ഫോൺ നമ്പർ ഐഡിയിൽ അക്കങ്ങൾ മാത്രമേ ഉണ്ടാകൂ (6 മുതൽ 20 വരെ). | The phone number ID is digits only (6 to 20 of them). |  |
+| `setup.problems.businessNumberBad` | കടയുടെ WhatsApp നമ്പർ രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് എഴുതൂ. | Write the shop's WhatsApp number with the country code. |  |
+| `setup.problems.keyIdBad` | കീ ഐഡി rzp_live_ അല്ലെങ്കിൽ rzp_test_ എന്ന് തുടങ്ങണം. | The key ID starts with rzp_live_ or rzp_test_. |  |
+| `setup.problems.secretMissing` | the access token പൂരിപ്പിക്കൂ. | Fill in the access token. |  |
+| `setup.problems.secretShape` | the access token എന്നതിൽ സ്പേസോ വരിമാറ്റമോ ഉണ്ട്. അവ ഇല്ലാതെ വീണ്ടും കോപ്പി ചെയ്യൂ. | the access token has spaces or line breaks in it. Copy it again, without them. |  |
+| `setup.problems.calendarIdBad` | കലണ്ടർ ഐഡി സ്പേസ് ഇല്ലാതെ എഴുതൂ. | Write the calendar's ID without spaces. |  |
+| `setup.problems.jsonBad` | അത് Google സർവീസ്-അക്കൗണ്ട് കീ ഫയൽ അല്ല. മുഴുവൻ ഫയലും പേസ്റ്റ് ചെയ്യൂ. | That is not a Google service-account key file. Paste the whole file. |  |
+| `setup.problems.modeBad` | ലൈവ് ആണോ പരിശീലനം ആണോ എന്ന് തിരഞ്ഞെടുക്കൂ. | Choose live or practice. |  |
+| `setup.accounts.intro` | ഓരോ അക്കൗണ്ടും കടയുടേതാണ്. കീകൾ സെർവറിന്റെ കീ സ്റ്റോറിലേക്ക് പോകും, വീണ്ടും കാണിക്കില്ല, ഈ പാനലിൽ സൂക്ഷിക്കുകയുമില്ല. | Each account is the shop's own. Keys go to the server's key store, are never shown again, and are not kept in this panel. |  |
+| `setup.accounts.received` | കിട്ടിയ സമയം: 4 Nov 2026, 10:30. | Received 4 Nov 2026, 10:30. |  |
+| `setup.accounts.keepEmpty` | ഇപ്പോഴുള്ളത് നിലനിർത്താൻ ഒഴിച്ചിടൂ. | Leave empty to keep it. |  |
+| `setup.accounts.neverShown` | സേവ് ചെയ്ത ശേഷം ഇത് വീണ്ടും കാണിക്കില്ല. | It is not shown again after you save. |  |
+| `setup.accounts.whatsapp.title` | WhatsApp അക്കൗണ്ട് | WhatsApp |  |
+| `setup.accounts.whatsapp.intro` | കട അതിന്റെ സ്വന്തം നമ്പറും WhatsApp Business ആപ്പും തന്നെ ഉപയോഗിക്കും. ഉപഭോക്താക്കൾ മുമ്പത്തെ അതേ നമ്പറിൽ തന്നെ സന്ദേശം അയയ്ക്കും. | The shop keeps its own number and its WhatsApp Business app. Customers write to the same number as before. |  |
+| `setup.accounts.whatsapp.steps.1` | കടയുടെ ഫോണിൽ, കടയുടെ നമ്പറിൽ, WhatsApp Business ആപ്പ് ഇനിയും ഉപയോഗിക്കൂ. | Keep using the WhatsApp Business app on the shop's phone, with the shop's number. |  |
+| `setup.accounts.whatsapp.steps.2` | ആ നമ്പർ ഏജന്റുമായി ബന്ധിപ്പിച്ച ആൾ നിങ്ങൾക്ക് മൂന്ന് കാര്യങ്ങൾ തരും: ഫോൺ നമ്പർ ഐഡി, ഒരു ആക്സസ് ടോക്കൺ, ആപ്പ് സീക്രട്ട്. | Whoever connected the number to the helper gives you three things: the phone number ID, an access token and the app secret. |  |
+| `setup.accounts.whatsapp.steps.3` | അവ താഴെ ടൈപ്പ് ചെയ്യൂ. | Type them below. |  |
+| `setup.accounts.whatsapp.number` | കടയുടെ WhatsApp നമ്പർ | The shop's WhatsApp number |  |
+| `setup.accounts.whatsapp.numberId` | ഫോൺ നമ്പർ ഐഡി | Phone number ID |  |
+| `setup.accounts.whatsapp.token` | ആക്സസ് ടോക്കൺ | Access token |  |
+| `setup.accounts.whatsapp.appSecret` | ആപ്പ് സീക്രട്ട് | App secret |  |
+| `setup.accounts.calendar.title` | Google കലണ്ടർ | Calendar |  |
+| `setup.accounts.calendar.intro` | ബുക്കിംഗുകൾ കടയുടെ സ്വന്തം Google കലണ്ടറിൽ പോകും. | Bookings go into the shop's own Google Calendar. |  |
+| `setup.accounts.calendar.steps.1` | കമ്പ്യൂട്ടറിൽ Google Calendar തുറന്ന്, ആ കലണ്ടറിന്റെ ക്രമീകരണങ്ങൾ (settings) തുറക്കൂ. | Open Google Calendar on a computer, and open the calendar's settings. |  |
+| `setup.accounts.calendar.steps.2` | “Share with specific people” എന്നതിൽ താഴെയുള്ള വിലാസം ചേർത്ത് “Make changes to events” തിരഞ്ഞെടുക്കൂ. | Under “Share with specific people”, add the address below and choose “Make changes to events”. |  |
+| `setup.accounts.calendar.steps.3` | “Integrate calendar” എന്നതിൽ നിന്ന് Calendar ID കോപ്പി ചെയ്ത് താഴെ ടൈപ്പ് ചെയ്യൂ. | Under “Integrate calendar”, copy the Calendar ID and type it below. |  |
+| `setup.accounts.calendar.shareAddress` | കലണ്ടർ ഈ വിലാസവുമായി ഷെയർ ചെയ്യൂ: | Share the calendar with this address: |  |
+| `setup.accounts.calendar.noAddress` | ഈ സെർവറിന് പങ്കിടാനുള്ള വിലാസം ഇല്ല. നിങ്ങളുടെ ബിൽഡർ തന്ന കീ ഫയൽ താഴെ പേസ്റ്റ് ചെയ്യൂ. | This server has no shared address. Paste the key file your builder gave you, below. |  |
+| `setup.accounts.calendar.id` | കലണ്ടർ ഐഡി | Calendar ID |  |
+| `setup.accounts.calendar.json` | സർവീസ്-അക്കൗണ്ട് കീ ഫയൽ | Service-account key file |  |
+| `setup.accounts.calendar.jsonHelp` | നിങ്ങളുടെ ബിൽഡർ തന്നിട്ടുണ്ടെങ്കിൽ മാത്രം. മുഴുവൻ ഫയലും പേസ്റ്റ് ചെയ്യൂ. | Only if your builder gave you one. Paste the whole file. |  |
+| `setup.accounts.razorpay.title` | Razorpay അക്കൗണ്ട് | Razorpay |  |
+| `setup.accounts.razorpay.intro` | ഉപഭോക്താക്കൾ ഡെപ്പോസിറ്റ് അടയ്ക്കുന്നത് കടയുടെ സ്വന്തം Razorpay അക്കൗണ്ടിലേക്കാണ്. പണം നേരെ കടയുടെ ബാങ്കിലേക്ക് പോകും. Geometer അത് ഒരിക്കലും കൈവശം വയ്ക്കില്ല. | Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it. |  |
+| `setup.accounts.razorpay.steps.1` | കടയുടെ സ്വന്തം Razorpay അക്കൗണ്ടിൽ ലോഗിൻ ചെയ്യൂ. | Sign in to the shop's own Razorpay account. |  |
+| `setup.accounts.razorpay.steps.2` | Settings, API keys എന്നതിൽ ഒരു കീ ഉണ്ടാക്കി Key ID, Key secret എന്നിവ കോപ്പി ചെയ്യൂ. | Under Settings, API keys, make a key and copy the Key ID and the Key secret. |  |
+| `setup.accounts.razorpay.steps.3` | Settings, Webhooks എന്നതിൽ താഴെ കാണിച്ച വെബ് വിലാസം ചേർത്ത്, നിങ്ങളുടെ സ്വന്തം ഒരു സീക്രട്ട് തിരഞ്ഞെടുക്കൂ. അതേ സീക്രട്ട് ഇവിടെയും ടൈപ്പ് ചെയ്യൂ. | Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here. |  |
+| `setup.accounts.razorpay.mode` | ഇത് ഏത് കീ ആണ്? | Which key is this? |  |
+| `setup.accounts.razorpay.modeLive` | ലൈവ്: യഥാർത്ഥ പണം | Live: real money |  |
+| `setup.accounts.razorpay.modeTest` | പരിശീലനം: ടെസ്റ്റ് പണം | Practice: test money |  |
+| `setup.accounts.razorpay.keyId` | കീ ഐഡി | Key ID |  |
+| `setup.accounts.razorpay.keySecret` | കീ സീക്രട്ട് | Key secret |  |
+| `setup.accounts.razorpay.webhookSecret` | വെബ്ഹുക്ക് സീക്രട്ട് | Webhook secret |  |
+| `setup.accounts.razorpay.webhookUrl` | വെബ്ഹുക്കിനുള്ള വെബ് വിലാസം: https://shops.example.com/hooks/glow-salon/razorpay | Web address for the webhook: https://shops.example.com/hooks/glow-salon/razorpay |  |
+| `setup.checks.saveFirst` | ആദ്യം ഈ കട സെർവറിൽ സേവ് ചെയ്യൂ. | Save this shop to the server first. |  |
+| `setup.checks.saveButton` | സേവ് ചെയ്ത് ബന്ധിപ്പിക്കൂ | Save and connect |  |
+| `setup.checks.saved` | സേവ് ചെയ്തു. സെർവർ ഇത് നടപ്പാക്കും, നടപ്പായാൽ ഈ പേജ് അത് കാണിക്കും. | Saved. The server will apply it, and this page shows when it has. |  |
+| `setup.checks.runButton` | പരിശോധനകൾ നടത്തൂ | Run the checks |  |
+| `setup.checks.waiting` | ഈ കട നടപ്പാക്കാൻ സെർവറിനായി കാത്തിരിക്കുന്നു. | Waiting for the server to apply the shop. |  |
+| `setup.checks.settingsOk` | ക്രമീകരണങ്ങൾ പൂർണ്ണമാണ്. | The settings are complete. |  |
+| `setup.checks.handCheck` | ഈ കടയുടെ സ്വന്തം വിലകളിലും സമയത്തിലും നടത്തിയ പരീക്ഷണങ്ങൾ | The tests on this shop's own prices and hours |  |
+| `setup.checks.handNotRun` | ഇതുവരെ നടത്തിയിട്ടില്ല. | Not run yet. |  |
+| `setup.checks.deploy` | സെർവറിന്റെ അപ്ഡേറ്റ് | The server's update |  |
+| `setup.checks.deployApplied` | നടപ്പാക്കിയ സമയം: 4 Nov 2026, 10:30. | Applied 4 Nov 2026, 10:30. |  |
+| `setup.checks.deployNot` | ഇതുവരെ നടപ്പായിട്ടില്ല. | Not applied yet. |  |
+| `setup.checks.limitsProven` | ആകെ 9 പരിധികളിൽ 9 എണ്ണം, പ്രവർത്തിക്കുന്ന ഏജന്റിൽ പരീക്ഷിച്ച് ശരിയായി നിന്നു. | 9 of 9 limits proven to hold on the running agent. |  |
+| `setup.checks.limitsNot` | പരിധികൾ ഇതുവരെ പരീക്ഷിച്ച് കണ്ടിട്ടില്ല. | Limits not proven yet. |  |
+| `setup.checks.guardNotSet` | അക്കൗണ്ടുകൾ എവിടെ പരിശോധിക്കണമെന്ന് ഈ സെർവർ പാനലിനോട് ഇതുവരെ പറഞ്ഞിട്ടില്ല, അതിനാൽ ഇവിടെ അവ പരിശോധിക്കാൻ കഴിയില്ല. | This server has not told the panel where to check the accounts yet, so they cannot be checked here. |  |
+| `setup.checks.readOnly` | പരിശോധനകൾ വായിക്കുക മാത്രം ചെയ്യും. അവ സന്ദേശം അയയ്ക്കുകയോ പണം എടുക്കുകയോ ബുക്കിംഗ് ഉണ്ടാക്കുകയോ ഇല്ല, അതിനാൽ സന്ദേശം അയയ്ക്കലും പേയ്മെന്റും ഇവിടെ പരീക്ഷിക്കുന്നില്ല. | Checks only read. They never send a message, take a payment or make a booking, so sending and payments are not tested here. |  |
+| `setup.checks.whatsapp.title` | WhatsApp അക്കൗണ്ട് | WhatsApp |  |
+| `setup.checks.whatsapp.confirmed` | ഇത് ഈ കടയുടെ നമ്പർ ആണ് (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
+| `setup.checks.whatsapp.differs` | കിട്ടിയ നമ്പറിന്റെ അവസാന അക്കങ്ങൾ 3210 ആണ്; ഇത് കടയുടെ നമ്പർ അല്ല. ഒന്നും മാറ്റിയിട്ടില്ല. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
+| `setup.checks.whatsapp.notFound` | ആ ഫോൺ നമ്പർ ഐഡി ഈ അക്കൗണ്ടിൽ ഇല്ല. | That phone number ID is not on this account. |  |
+| `setup.checks.razorpay.title` | Razorpay അക്കൗണ്ട് | Razorpay |  |
+| `setup.checks.razorpay.confirmed` | കീ പ്രവർത്തിക്കുന്നു (Live). | The key works (Live). |  |
+| `setup.checks.razorpay.differs` | ഇത് മുമ്പ് ഉറപ്പിച്ച കീയിൽ നിന്ന് വ്യത്യസ്തമായ കീ ആണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | This is a different key from the one confirmed before. Nothing was changed. |  |
+| `setup.checks.razorpay.wrongMode` | ഈ കീയുടെ മോഡ് മുകളിൽ തിരഞ്ഞെടുത്തതല്ല. അതിന് ചേരുന്ന കീ ഉപയോഗിക്കൂ. | This key's mode is not the one chosen above. Use the key that matches. |  |
+| `setup.checks.calendar.title` | Google കലണ്ടർ | Calendar |  |
+| `setup.checks.calendar.confirmed` | “Glow Salon bookings” കണ്ടെത്തി. ഇതിൽ മാറ്റങ്ങൾ വരുത്താൻ കഴിയും. | Found “Glow Salon bookings”, and it can be changed. |  |
+| `setup.checks.calendar.differs` | Google കാണിക്കുന്ന കലണ്ടർ നൽകിയതിൽ നിന്ന് വ്യത്യസ്തമാണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | Google shows a different calendar from the one given. Nothing was changed. |  |
+| `setup.checks.calendar.notFound` | കണ്ടില്ല. ഐഡി ശരിയാണോ എന്നും, മുകളിലെ വിലാസവുമായി ഷെയർ ചെയ്തിട്ടുണ്ടോ എന്നും നോക്കൂ. | Not found. Check the ID, and that it is shared with the address above. |  |
+| `setup.checks.calendar.notWritable` | ഷെയർ ചെയ്തിട്ടുണ്ട്, പക്ഷേ “Make changes to events” അനുമതിയോടെ അല്ല (ഇപ്പോഴത്തെ അനുമതി: reader). | It is shared, but not with “Make changes to events” (it says reader). |  |
+| `setup.checks.generic.not_allowed` | അക്കൗണ്ട് ഈ പരിശോധന സ്വീകരിച്ചില്ല. കീകൾ നോക്കൂ. | The account did not accept the check. Check the keys. |  |
+| `setup.checks.generic.refused_by_guard` | സെർവറിന്റെ Guard ഈ പരിശോധന കടത്തിവിട്ടില്ല. | The server's Guard did not let this check through. |  |
+| `setup.checks.generic.unreachable` | ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Could not reach it. Try again in a minute. |  |
+| `setup.checks.generic.unexpected_response` | കിട്ടിയ മറുപടി ഈ സേവനം സാധാരണ തരാറുള്ളതല്ല, അതിനാൽ അത് ഉപയോഗിച്ചില്ല. | The answer was not what this service gives, so it was not used. |  |
+| `setup.checks.generic.not_configured` | ആദ്യം മുകളിലെ വിവരങ്ങൾ പൂരിപ്പിക്കൂ. | Fill in the details above first. |  |
+| `setup.checks.razorpayWhose` | ഒരു കീ ആരുടെ അക്കൗണ്ടിന്റേതാണെന്ന് Razorpay പറയില്ല. ആദ്യത്തെ ടെസ്റ്റ് പേയ്മെന്റ് ലിങ്ക് തുറന്ന് നോക്കൂ: അതിൽ കടയുടെ പേര് ഉണ്ടാകണം. | Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it. |  |
+| `setup.checks.guardWords` | Guard പറഞ്ഞത്: the route is not listed | Guard said: the route is not listed |  |
+| `setup.checks.bookingsExpected` | ഓരോ മാസവും നിങ്ങൾ പ്രതീക്ഷിക്കുന്ന ബുക്കിംഗുകൾ (ചെലവ് കണക്കാക്കാൻ മാത്രം) | Bookings you expect each month (only used for the cost) |  |
+| `setup.checks.readyButton` | തുടങ്ങാൻ തയ്യാർ | Ready to go live |  |
+| `setup.checks.ready` | തുടങ്ങാൻ തയ്യാർ. തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് ഉണ്ടാക്കി. | Ready to go live. The go-live certificate is made. |  |
+| `setup.checks.notReady` | ഇതുവരെ തയ്യാറായിട്ടില്ല. ശരിയാക്കാനുള്ള കാര്യങ്ങൾ: 2. | Not ready yet: 2 things need fixing. |  |
+| `setup.checks.certificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് തുറക്കൂ | Open the go-live certificate |  |
+| `setup.checks.switchOn` | സെർവർ ഇത് നടപ്പാക്കുമ്പോൾ കട ഓൺ ആകും. | The server switches the shop on when it applies it. |  |
+| `errors.notFound` | ഇവിടെ ഒന്നുമില്ല. | There is nothing here. |  |
+| `errors.notAllowed` | ഇത് ചെയ്യാൻ നിങ്ങൾക്ക് അനുവാദമില്ല. | You cannot do that. |  |
+| `errors.csrf` | ആ ഫോം പഴയതായിരുന്നു, അല്ലെങ്കിൽ ഈ പേജിൽ നിന്നുള്ളതായിരുന്നില്ല. പിന്നോട്ട് പോയി വീണ്ടും ശ്രമിക്കൂ. | That form was too old or did not come from this page. Go back and try again. |  |
+| `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
+| `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
+| `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
 

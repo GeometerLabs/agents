@@ -9,7 +9,7 @@
 //    https://developers.facebook.com/docs/graph-api/webhooks/getting-started
 //  - Razorpay payload examples: https://razorpay.com/docs/webhooks/payloads/payment-links/ , /payments/ , /refunds/
 //  - WhatsApp payload examples: https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages.md
-//    (text.md, interactive.md, button.md, status.md next to it)
+//    (text.md, interactive.md, button.md, audio.md, status.md next to it)
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { InboundMessage } from "../messaging.ts";
 import type { PaymentEvent } from "../payments.ts";
@@ -99,13 +99,17 @@ function textOf(message: Record<string, unknown>): string | undefined {
       return str(reply?.title);
     }
     case "button": return isObject(message.button) ? str(message.button.text) ?? str(message.button.payload) : undefined; // a template's quick-reply button
-    default: return undefined; // images, voice notes, locations ...: not understood yet (Deferred.md)
+    default: return undefined; // images, locations ...: not understood yet (Deferred.md). A voice note is not text, but it is answered: see parseWhatsAppWebhook
   }
 }
 
 /**
  * The customer messages in a WhatsApp webhook. Delivery statuses (sent, delivered, read, failed) are ignored for now (Deferred.md).
  * Messages with no id, no sender number or no words are left out. The timestamp is epoch seconds as a string; ours is milliseconds.
+ *
+ * A voice note or an audio file (`type: "audio"`; Meta marks a recorded voice note with `audio.voice: true`) has no words, but the person
+ * is waiting, so it becomes a message with empty text and `voiceNote: true`. Nothing else of it is read: the media id and the file type in
+ * the `audio` object are left behind on purpose, so the audio can never reach the agent, the saved events or the record.
  */
 export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
   if (!isObject(body)) return [];
@@ -116,10 +120,11 @@ export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
       for (const m of asArray(change.value.messages).filter(isObject)) {
         const id = str(m.id);
         const from = toE164(m.from);
-        const text = textOf(m);
-        if (!id || !from || text === undefined || text.length === 0) continue;
+        const voiceNote = m.type === "audio";
+        const text = voiceNote ? "" : textOf(m);
+        if (!id || !from || text === undefined || (text.length === 0 && !voiceNote)) continue;
         const seconds = Number(str(m.timestamp) ?? m.timestamp);
-        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0 });
+        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}) });
       }
     }
   }

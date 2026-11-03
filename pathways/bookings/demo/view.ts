@@ -120,6 +120,7 @@ const ACTION_WORDS: Record<RecordEntry["action"], string> = {
   hold_slot: "Held the slot in the calendar", release_slot: "Released the slot", create_deposit_link: "Made the deposit link",
   cancel_deposit_link: "Closed the deposit link", record_deposit: "Recorded the deposit", confirm_booking: "Confirmed the booking in the calendar",
   reschedule_booking: "Moved the booking", cancel_booking: "Cancelled the booking", complete_booking: "Marked the booking done", refund: "Refunded the deposit",
+  voice_note_reply: "Answered a voice note (asked the customer to type)",
 };
 const OUTCOME_WORDS: Record<Outcome, string> = {
   confirmed: "confirmed (read back from the service's own record)", attempted: "tried (checked in the next step)", unconfirmed: "NOT confirmed",

@@ -17,11 +17,11 @@ import type { Language, Settings } from "../src/settings.ts";
 import { localParts } from "../src/time.ts";
 import type { LocalDate } from "../src/time.ts";
 import { PATHWAY, checkedPolicyDigest, notTestedFor, policyDigest } from "./data.ts";
-import type { MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
-import { esc, list, page, sealBlock, table } from "./html.ts";
+import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
+import { esc, goLiveBlock, list, page, sealBlock, table } from "./html.ts";
 import type { Envelope } from "./sign.ts";
 import { STRINGS } from "./strings.ts";
-import { languagesOf, oneLine, periodLabel, rupees } from "./text.ts";
+import { goLiveLines, languagesOf, oneLine, periodLabel, rupees } from "./text.ts";
 import type { ReportLanguage } from "./text.ts";
 
 // ---- the hand check, summed up -------------------------------------------------------------------------------------------
@@ -188,6 +188,8 @@ export interface MonthlyCertificate {
   policyDigest: string;
   notCounted: NotCountedId[];
   notTested: NotTestedKey[];
+  /** What the report was told about the go-live checks, copied from it: none, untrusted, or what a go-live certificate that was read says they ran on. */
+  goLive: GoLiveFinding;
   anchor: null;
 }
 
@@ -212,6 +214,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     policyDigest: r.policyDigest,
     notCounted: [...r.notCounted],
     notTested: [...r.notTested],
+    goLive: r.goLive,
     anchor: null,
   };
 }
@@ -235,6 +238,7 @@ export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, l
     `${s.cert.countedIntro(periodLabel(cert.period, language))} ${countedPairs(cert, language).join(" · ")}`,
     `${s.page.notCountedHeading}: ${cert.notCounted.map((id) => s.notCounted[id]).join(" · ")}`,
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
+    goLiveLines(cert.goLive, language).join(" "),
     s.handRun,
     `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
   ].join("\n");
@@ -249,6 +253,7 @@ export function monthlySection(envelope: Envelope<MonthlyCertificate>, language:
 <p class="note">${esc(s.sourceLong[cert.source])} ${esc(s.handRun)}</p>
 <h2>${esc(s.cert.countedIntro(periodLabel(cert.period, language)))}</h2>
 ${table([{ text: s.page.item }, { text: s.page.count, n: true }], countedPairs(cert, language).map((p) => { const i = p.lastIndexOf(": "); return [esc(p.slice(0, i)), esc(p.slice(i + 2))]; }))}
+<h2>${esc(s.goLive.heading)}</h2>${goLiveBlock(cert.goLive, language)}
 <div class="warn"><h2>${esc(s.page.notCountedHeading)}</h2>${list(cert.notCounted.map((id) => s.notCounted[id]))}<h2>${esc(s.page.notTestedHeading)}</h2>${list(cert.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(s.page.notAGrade)}</p>
 ${sealBlock(s, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),
