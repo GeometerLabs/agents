@@ -26,7 +26,7 @@ import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { TemplateId } from "./language/templates.ts";
 import type { Action, ActionRecord, Outcome } from "./record.ts";
 import { hoursOn, serviceName } from "./settings.ts";
-import type { Settings } from "./settings.ts";
+import type { Language, Settings } from "./settings.ts";
 import { HOUR, MINUTE, localParts, weekdayOf, zonedToMs } from "./time.ts";
 
 export interface AgentDeps {
@@ -64,7 +64,7 @@ export function createAgent(deps: AgentDeps): Agent {
   };
   const languageOf = (phone: string, b?: Booking | null) => b?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
 
-  function log(b: Booking | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string> } = {}) {
+  function log(b: Booking | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: b?.id || null, action, inputs, outcome, language: languageOf(phone, b), ...more });
   }
 
@@ -85,7 +85,7 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       text = a.templates.map((id) => render(id, facts)).join(" ");
     } catch (e) {
-      log(a.booking, a.phone, "send_message", "blocked", inputs, { notes: (e as Error).message, decisions: a.shown });
+      log(a.booking, a.phone, "send_message", "blocked", inputs, { notes: (e as Error).message, decisions: a.shown, refs: { to: a.to }, language });
       return false;
     }
 
@@ -99,7 +99,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const decisions = [...(a.shown ?? []), ...gates];
     const worst = strictest(gates);
     if (worst.verdict !== "allow") {
-      log(a.booking, a.phone, "send_message", "blocked", inputs, { decisions, notes: worst.reason });
+      log(a.booking, a.phone, "send_message", "blocked", inputs, { decisions, notes: worst.reason, refs: { to: a.to }, language });
       if (toCustomer && worst.ruleId === "message-matches-record") await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] });
       return false;
     }
@@ -109,11 +109,11 @@ export function createAgent(deps: AgentDeps): Agent {
         ? await messaging.sendText(toNumber, text)
         : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
-      log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+") } });
+      log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+"), to: a.to }, language });
       return seen !== null;
     } catch (e) {
       // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
-      log(a.booking, a.phone, "send_message", e instanceof TimeoutError ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message });
+      log(a.booking, a.phone, "send_message", e instanceof TimeoutError ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
       return false;
     }
   }
@@ -195,12 +195,13 @@ export function createAgent(deps: AgentDeps): Agent {
   /** Refund part of a payment, once. Returns true only if the payments service's own record shows the refund. */
   async function refundPayment(b: Booking, paymentId: string, amountInr: number, decisions: Decision[]): Promise<boolean> {
     const receipt = `${b.id}:${paymentId}`;
-    log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions });
+    const refundRefs = { paymentId, amountPaise: String(amountInr * 100) };
+    log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs: refundRefs });
     let error: string | undefined;
     for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
       const done = (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt); // an earlier try may have landed
       if (done) {
-        log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { refundId: done.id, paymentId } });
+        log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refundRefs, refundId: done.id } });
         return true;
       }
       try {
@@ -211,7 +212,7 @@ export function createAgent(deps: AgentDeps): Agent {
       }
     }
     const final = (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt);
-    log(b, b.customer, "refund", final ? "confirmed" : error ? "failed" : "unconfirmed", { paymentId, amountInr }, { refs: final ? { refundId: final.id, paymentId } : { paymentId }, notes: error });
+    log(b, b.customer, "refund", final ? "confirmed" : error ? "failed" : "unconfirmed", { paymentId, amountInr }, { refs: final ? { ...refundRefs, refundId: final.id } : refundRefs, notes: error });
     return final !== undefined;
   }
 
@@ -416,10 +417,10 @@ export function createAgent(deps: AgentDeps): Agent {
       if (rule.verdict === "allow") {
         b.depositPaymentId = payment.id;
         b.depositInr = payment.amount / 100;
-        log(b, b.customer, "record_deposit", "confirmed", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, linkId: link.id } });
+        log(b, b.customer, "record_deposit", "confirmed", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, linkId: link.id, amountPaise: String(payment.amount) } });
         await afterDeposit(b);
       } else {
-        log(b, b.customer, "record_deposit", "blocked", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id } });
+        log(b, b.customer, "record_deposit", "blocked", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, amountPaise: String(payment.amount) } });
         await handleExtraPayment(b, payment.id, payment.amount / 100 - payment.amount_refunded / 100, rule);
       }
     }
@@ -469,7 +470,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     b.pending.push({ kind: "refund", amountInr: leftInr, paymentId, reason: limit.verdict === "allow" ? "refund_failed" : "over_limit" });
-    log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr: leftInr }, { decisions: [oneDeposit, limit] });
+    log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr: leftInr }, { decisions: [oneDeposit, limit], refs: { paymentId, amountPaise: String(leftInr * 100) } });
     await tellCustomer(b, b.customer, ["duplicate_refund_pending"], { refundInr: leftInr });
     await tellOwner(b, b.customer, "owner_refund_needs_approval", { refundInr: leftInr });
   }
@@ -485,7 +486,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason: limit.verdict === "allow" ? "refund_failed" : "over_limit" });
-    log(b, b.customer, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit] });
+    log(b, b.customer, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit], refs: { paymentId: b.depositPaymentId!, amountPaise: String(amountInr * 100) } });
     if (b.state !== "cancelled") moveTo(b, "cancelled");
     await tellCustomer(b, b.customer, ["cancelled_refund_pending"], { refundInr: amountInr });
     await tellOwner(b, b.customer, "owner_refund_needs_approval", { refundInr: amountInr });
@@ -552,7 +553,7 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     const reason = limit.verdict === "allow" ? "refund_failed" : inWindow ? "over_limit" : "late_cancellation";
     b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason });
-    log(b, phone, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit] });
+    log(b, phone, "refund", "held_for_owner", { paymentId: b.depositPaymentId, amountInr }, { decisions: [limit], refs: { paymentId: b.depositPaymentId!, amountPaise: String(amountInr * 100) } });
     await tellCustomer(b, phone, [reason === "late_cancellation" ? "cancelled_late" : "cancelled_refund_pending"], { refundInr: amountInr });
     await tellOwner(b, phone, reason === "late_cancellation" ? "owner_late_cancellation" : "owner_refund_needs_approval", { refundInr: amountInr });
   }
@@ -620,9 +621,10 @@ export function createAgent(deps: AgentDeps): Agent {
     const b = m ? store.bookings.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
     const pending = b?.pending[0];
-    log(b ?? null, owner, "owner_decision", "attempted", { command, ref: m?.[2] });
+    const said = command ? { command } : undefined; // the record keeps the command in the clear, so a report can count approvals and refusals
+    log(b ?? null, owner, "owner_decision", "attempted", { command, ref: m?.[2] }, { refs: said });
     if (!b || !command || !pending) {
-      log(b ?? null, owner, "owner_decision", "blocked", { command }, { notes: "not a command for something waiting on the owner" });
+      log(b ?? null, owner, "owner_decision", "blocked", { command }, { notes: "not a command for something waiting on the owner", refs: said });
       await say({ booking: null, phone: owner, to: "owner", templates: ["owner_unknown_command"] });
       return;
     }
@@ -630,7 +632,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (pending.kind === "calendar") {
       if (command === "deny") { await say({ booking: null, phone: owner, to: "owner", templates: ["owner_unknown_command"] }); return; }
       if (command === "retry") {
-        log(b, owner, "owner_decision", "confirmed", { command });
+        log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
         await completeBooking(b); // sends "booked" only if the calendar now shows it
         return;
       }
@@ -642,7 +644,7 @@ export function createAgent(deps: AgentDeps): Agent {
       log(b, b.customer, "cancel_booking", "confirmed", { by: "owner" });
       const amountInr = b.depositInr!;
       const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr, ownerApproved: true });
-      log(b, owner, "owner_decision", "confirmed", { command });
+      log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
       if (await refundPayment(b, b.depositPaymentId!, amountInr, [limit])) await tellCustomer(b, b.customer, ["cancelled_refund"], { refundInr: amountInr });
       else b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason: "refund_failed" });
       return;
@@ -651,17 +653,17 @@ export function createAgent(deps: AgentDeps): Agent {
     if (command === "retry") { await say({ booking: null, phone: owner, to: "owner", templates: ["owner_unknown_command"] }); return; }
     if (command === "deny") {
       b.pending.shift();
-      log(b, owner, "owner_decision", "confirmed", { command }, { notes: "the owner declined the refund" });
+      log(b, owner, "owner_decision", "confirmed", { command }, { notes: "the owner declined the refund", refs: said });
       await tellCustomer(b, b.customer, ["refund_denied"]);
       return;
     }
     const limit = checkRefundLimit({ amountInr: pending.amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: pending.amountInr, ownerApproved: true });
     if (limit.verdict === "allow" && (await refundPayment(b, pending.paymentId, pending.amountInr, [limit]))) {
       b.pending.shift();
-      log(b, owner, "owner_decision", "confirmed", { command });
+      log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
       await tellCustomer(b, b.customer, ["refund_approved"], { refundInr: pending.amountInr });
     } else {
-      log(b, owner, "owner_decision", "failed", { command }, { notes: "the refund did not go through" });
+      log(b, owner, "owner_decision", "failed", { command }, { notes: "the refund did not go through", refs: said });
       await tellOwner(b, b.customer, "owner_refund_needs_approval", { refundInr: pending.amountInr });
     }
   }

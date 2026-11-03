@@ -102,7 +102,7 @@
 | Two events at the exact same instant | The agent still has no locking; the runtime server runs steps one at a time through a serial queue, so two events at once are handled in order. Running the agent any other way (the demo does its own queue) needs the same care | The runtime can run steps concurrently |
 | Owner approvals through Guard | The owner is recognised by their WhatsApp number alone. Anyone who can spoof that number could approve a refund | WhatsApp approvals through Guard (W10) |
 | Customer data retention, consent text and deletion (DPDP) | The record keeps message text only as a digest, but the store holds phone numbers and bookings, and there is no retention setting | Before a real client goes live |
-| The monthly client report and the builder panel | Separate workstreams (W12 and W10) built on this record | After the first live client |
+| The builder panel | A separate workstream (W10) built on this record. (The monthly client report and the certificates are built: see below.) | After the first live client |
 | Time zones with daylight saving | India has none; the time helpers handle offsets through `Intl`, but no daylight-saving case is tested | A client outside India |
 
 ## The partner demo (`demo/`)
@@ -117,6 +117,28 @@
 | A PIN for the shop form; the shop is one per server | Anyone on the same Wi-Fi can change the shop or press Start again. Fine for a laptop in a shop, not for a shared network | A shared-network use appears |
 | Looking more like WhatsApp (ticks, voice notes, the 30-second voice summary) | The product doc plans a voice note for the owner; the demo shows text only | The voice-note work (W12) exists |
 | Starting on a chosen day or time | The clock starts on the real date at 10:00 shop time; suggestions skip closed days, but typed requests do not | Partners ask |
+
+## The monthly report and the certificates (`report/`)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **The verify page on geometer.dev (`/verify/<code>`)** | The documents print their short code and the path `/verify/<code>`, but no page answers it. A page needs hosting, a place that keeps each issued document (or its digest) so a code can be looked up, and **the owner's approval before anything is deployed**. Until then a reader checks a file with `scripts/verify-report.ts`, or asks the partner. The printed path is text, not a link | The owner approves the deploy; decide whether Geometer keeps issued documents or only digests |
+| A QR code on the certificates | It needs an encoder written by hand (no dependencies) and a test against a known reference vector, and it would point at the verify page above, which does not exist. Not built rather than built unchecked | The verify page exists |
+| **Native review of the report and certificate words** | The Hindi, Malayalam and Kannada strings in `report/strings.ts` are machine-written. Section 6 of [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) lists them; Hindi has no sheet yet. Word choices to look at: "പരിധി"/"ಮಿತಿ"/"सीमा" for the shop's limits, "അഡ്വാൻസ്"/"ಮುಂಗಡ ಹಣ" for the deposit, the label forms ("label: number") for the owner's lines, and that nothing reads as a promise | **Before any real shop sees either language**; a Hindi sheet before the Hindi pilot |
+| The Guard anchor | Every document has `anchor: null`, inside the signed bytes. Guard's hash-chained ledger does not exist yet | Guard passes its fail-closed minimum; then fill the field before signing and write the matching anchor file |
+| `geo-verify` reading these files | Same conventions, not the same format: geometer-verify writes integers as strings and its schemas are strict and generated. Joining them means adding the report and certificate records to the contract schemas | The anchor work above |
+| Key custody beyond a file | One Ed25519 key in a file the caller names, 0600, never in a repository. No rotation, no revocation list, no key log, no hardware key. A lost key means old documents can still be checked (the public key is in the file) but nothing can be re-issued under it | Before documents from more than one partner are signed |
+| A go-live certificate from real services in test mode | The hand check runs on stand-in services only, so the go-live certificate says so and has no `source` choice. When the checks run against test-mode accounts (Phase 1) it needs its own wording | Test-mode accounts exist |
+| The situations run on the shop's own settings | Still true from above: the hand check runs on Glow Salon's example settings, so any other shop's certificate says "these checks on this shop's own settings" is not tested (15, not 14) | Situations can run against any settings |
+| Sending the report | The scripts write the text and the files; nothing sends them. Sending needs the WhatsApp provider, an approved template for a message outside the 24-hour window, and the owner's number | The runtime server and the provider are live |
+| The 30-second voice note | The product doc plans a voice note beside the message. Not built (needs a text-to-speech choice and a spend) | The owner approves a voice service |
+| Who turned up, whether messages were read | The record has no attendance and no delivery status (a booking is "completed" when its time passes; a message is "confirmed" when the provider's outbox holds it). Listed as "not counted" on every report | The provider reports delivery; the report needs attendance (see the booking section above) |
+| What slipped past a limit | The report counts what the limits stopped. It does not re-read the record for a break (a reminder after STOP, a "booked" with no deposit). Listed as "not counted" | Before "raise the limit" (autonomy levels), which needs exactly this |
+| Month-on-month and per-service breakdowns | One month at a time; no trend, no "this month vs last" | Owners ask |
+| Very large months | The page lists every entry of the month (fingerprints only). A month of ten thousand entries is a page of about 2 MB. It is collapsed and prints closed | A shop that big |
+| Looking at the pages on a real phone | The pages were checked by structure (self-contained, escaped, no script or link, phone viewport, print rules) and not opened in a browser or on a phone. System fonts only, so Malayalam and Kannada shaping depends on the device | The first partner opens one |
+| The runtime server calling these functions | `buildMonthlyReport` takes the whole record and the store's bookings as plain arrays; `report/run.ts` writes the files. Nothing schedules a monthly run or stores an issued document | The runtime server (W9) |
+| Entries made before the record kept amounts | They are counted but add nothing to a ₹ total, and the report says how many (`missing`). Nothing live exists yet, so nothing is missing today | Only if an older record is ever reported on |
 
 ## WhatsApp coexistence (check before any shop goes live)
 

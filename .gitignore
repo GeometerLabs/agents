@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 geometer-report.json
 geometer-junit.xml
+
+# sample monthly reports and certificates made by pathways/bookings/scripts/report-example.ts
+pathways/bookings/report-sample/

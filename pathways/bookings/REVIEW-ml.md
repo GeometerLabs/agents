@@ -186,3 +186,147 @@ These are the exact sentences the crash-test situations send (`pathways/bookings
 | അടുത്ത ചൊവ്വാഴ്ച വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് | Asks for next Tuesday at 6 in the evening (read back with the full date) | book, service haircut, next Tuesday, 6:00 pm |  |
 | ശരി | The customer's yes to that | yes |  |
 | എന്റെ ബുക്കിംഗ് റദ്ദാക്കണം | Asks to cancel the booking | cancel |  |
+
+## 6. The monthly report and the certificates
+
+The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below. The sample is a made-up month (Glow Salon, ഫെബ്രുവരി 2027). The certificate lists the shop's price list like this: ഹെയർകട്ട് ₹450 · താടി ട്രിം ₹250 · ഫേഷ്യൽ ₹900 · ഹെയർ കളർ ₹1,800.
+
+What to look for first: (1) is every line something a shop owner would understand in ten seconds; (2) is each label short and never an exaggeration (these documents count and state facts: they never say a shop is safe, guaranteed or approved, and a native reader should flag any word that sounds like it does); (3) is "deposit" the everyday word here, as in section 1; (4) is the word for "limits" (the rules the shop set) the one a shopkeeper would use; (5) the technical words kept in Latin letters on purpose (STOP, WhatsApp, Razorpay, webhook signatures, stand-in services).
+
+### The five lines, with sample numbers
+
+```text
+Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സംവിധാനങ്ങൾ, ടെസ്റ്റ് പണം
+ബുക്ക് ആയവ: 38 · റദ്ദാക്കിയവ: 3 · ലഭിച്ച അഡ്വാൻസ്: ₹17,600 · തിരികെ നൽകിയത്: ₹400
+നിങ്ങളോട് ചോദിച്ചത്: 3 · നിങ്ങൾ അംഗീകരിച്ചത്: 2 · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: 1 · ഉറപ്പിക്കാൻ കഴിയാത്തത്: 1
+നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 5 (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: 3 · പ്രവൃത്തി സമയത്തിന് പുറത്തുള്ള ബുക്കിംഗ്: 1 · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: 1)
+പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
+```
+
+### Every word and phrase of the report and the certificates
+
+| Id | Text (Malayalam) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- |
+| `agent` | ബുക്കിംഗ് ഏജന്റ് | Bookings agent |  |
+| `monthlyReport` | പ്രതിമാസ റിപ്പോർട്ട് | Monthly report |  |
+| `goLiveCertificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
+| `monthlyCertificate` | പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ് | Monthly record certificate |  |
+| `languageName.hi` | ഹിന്ദി | Hindi |  |
+| `languageName.en` | ഇംഗ്ലീഷ് | English |  |
+| `languageName.ml` | മലയാളം | Malayalam |  |
+| `languageName.kn` | കന്നഡ | Kannada |  |
+| `label.bookingsMade` | ബുക്ക് ആയവ | Bookings made |  |
+| `label.cancelled` | റദ്ദാക്കിയവ | Cancelled |  |
+| `label.moved` | സമയം മാറ്റിയവ | Moved to a new time |  |
+| `label.depositsCollected` | ലഭിച്ച അഡ്വാൻസ് | Deposits collected |  |
+| `label.givenBack` | തിരികെ നൽകിയത് | Given back |  |
+| `label.wasAsked` | നിങ്ങളോട് ചോദിച്ചത് | You were asked |  |
+| `label.approved` | നിങ്ങൾ അംഗീകരിച്ചത് | You approved |  |
+| `label.saidNo` | നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത് | You said no |  |
+| `label.notConfirmed` | ഉറപ്പിക്കാൻ കഴിയാത്തത് | Could not confirm |  |
+| `label.stoppedByLimits` | നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത് | Stopped by your limits |  |
+| `label.notChecked` | പരിശോധിക്കാത്തത് | Not checked |  |
+| `stop.price-at-or-above-list` | ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ | Prices below your list |  |
+| `stop.within-hours` | പ്രവൃത്തി സമയത്തിന് പുറത്തുള്ള ബുക്കിംഗ് | Outside opening hours |  |
+| `stop.no-double-booking` | ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ് | Double bookings |  |
+| `stop.confirm-only-when-recorded` | രേഖയിൽ വരുംമുമ്പ് "ബുക്ക് ആയി" എന്ന് പറയൽ | "Booked" said too early |  |
+| `stop.one-deposit-per-booking` | രണ്ടാമത് അടച്ച അഡ്വാൻസ് | Second payments |  |
+| `stop.refund-limit` | പരിധിക്ക് മുകളിലുള്ള റീഫണ്ട് | Refunds over your limit |  |
+| `stop.no-message-after-stop` | റദ്ദാക്കിയതിനോ STOP-നോ ശേഷമുള്ള ഓർമ്മപ്പെടുത്തൽ | Reminders after cancel or STOP |  |
+| `stop.message-matches-record` | രേഖയുമായി പൊരുത്തപ്പെടാത്ത സന്ദേശം | Messages not matching the record |  |
+| `stop.opt-out` | STOP-ന് ശേഷമുള്ള സന്ദേശം | Messages after STOP |  |
+| `more` | കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ) | and 12 more (see the full report) |  |
+| `handRun` | പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു. | Checks were run by hand. |  |
+| `sourceTag.stand-in` | പരിശീലന സംവിധാനങ്ങൾ, ടെസ്റ്റ് പണം | stand-in services, test money |  |
+| `sourceTag.test-mode` | ടെസ്റ്റ് മോഡ്, ടെസ്റ്റ് പണം | test mode, test money |  |
+| `sourceLong.stand-in` | ഈ കണക്കുകൾ പരിശീലന സംവിധാനങ്ങളിൽ നിന്നും ടെസ്റ്റ് പണത്തിൽ നിന്നും ഉള്ളതാണ്. യഥാർത്ഥമായ ഒന്നും അയയ്ക്കുകയോ അടയ്ക്കുകയോ ചെയ്തിട്ടില്ല. | These numbers come from stand-in services and test money. Nothing real was sent or paid. |  |
+| `sourceLong.test-mode` | ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ ടെസ്റ്റ് മോഡിൽ നിന്നുള്ളതാണ്. പണം ടെസ്റ്റ് പണമായിരുന്നു. | These numbers come from real services in test mode. The money was test money. |  |
+| `sourceLong.live` | ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ പ്രവർത്തിക്കുന്ന രേഖയിൽ നിന്നുള്ളതാണ്. | These numbers come from the live record of real services. |  |
+| `notTested.voice-calls` | ഫോൺ കോളുകൾ | phone calls |  |
+| `notTested.group-bookings` | ഗ്രൂപ്പ് ബുക്കിംഗ് | group bookings |  |
+| `notTested.walk-ins` | നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) | walk-ins |  |
+| `notTested.payments-outside-razorpay` | Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ | payments made outside Razorpay |  |
+| `notTested.real-whatsapp` | യഥാർത്ഥ WhatsApp | real WhatsApp |  |
+| `notTested.real-razorpay` | യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡോ ലൈവോ) | real Razorpay, in test mode or live |  |
+| `notTested.real-calendar` | യഥാർത്ഥ കലണ്ടർ | a real calendar |  |
+| `notTested.webhook-signatures` | പേയ്മെന്റ് അറിയിപ്പുകളുടെ ഒപ്പ് (webhook signatures) | webhook signatures (proof that a payment notice came from Razorpay) |  |
+| `notTested.real-model` | യഥാർത്ഥ AI മോഡൽ (സന്ദേശം വായിക്കുന്നത് നിശ്ചിത നിയമങ്ങളാലാണ്, മറുപടികൾ നിശ്ചിത മാതൃകകളാണ്) | a real AI model (messages are read by fixed rules and answered from fixed templates) |  |
+| `notTested.other-languages` | തമിഴ്, തെലുങ്ക്, മറ്റ് ഭാഷകൾ | Tamil, Telugu and other languages |  |
+| `notTested.native-review` | മലയാളം, കന്നഡ വാക്കുകൾ മാതൃഭാഷക്കാരൻ പരിശോധിക്കൽ (ഇവ യന്ത്രം എഴുതിയതാണ്) | a native speaker's review of the Malayalam and Kannada wording (machine-written) |  |
+| `notTested.restart-mid-step` | ഒരു ഘട്ടത്തിനിടയിൽ നിൽക്കുകയോ വീണ്ടും തുടങ്ങുകയോ ചെയ്യുന്നത് | a crash or restart in the middle of a step |  |
+| `notTested.same-instant` | ഒരേ നിമിഷത്തിൽ രണ്ട് ഉപഭോക്താക്കൾ | two customers at the exact same instant |  |
+| `notTested.other-faults` | പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ | problems beyond the ones tried |  |
+| `notTested.own-settings` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (ഇവ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത്) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
+| `notCounted.no-shows` | ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും) | who turned up (a booking is marked finished when its time passes) |  |
+| `notCounted.read-receipts` | ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം) | whether customers read their messages (only that WhatsApp's record held them) |  |
+| `notCounted.outside-agent` | ഏജന്റ് വഴിയല്ലാതെ നടന്ന ബുക്കിംഗ്, കോൾ, പേയ്മെന്റ് | bookings, calls and payments that did not go through the agent |  |
+| `notCounted.rule-breaks` | ഏതെങ്കിലും പരിധി മറികടന്നോ എന്ന് (ഇവിടെ പരിധികൾ തടഞ്ഞത് മാത്രം എണ്ണിയിരിക്കുന്നു) | whether anything got past a limit (this counts what the limits stopped) |  |
+| `page.numbers` | കണക്കുകൾ | The numbers |  |
+| `page.item` | എന്ത് | What |  |
+| `page.count` | എത്ര | How many |  |
+| `page.amount` | തുക | Amount |  |
+| `page.droppedBeforeBooked` | ചോദിച്ചു, പക്ഷേ ബുക്ക് ആകുംമുമ്പ് ഒഴിവാക്കി | Asked for, then dropped before it was booked |  |
+| `page.givenBackDeposits` | ഇതിൽ തിരികെ നൽകിയ അഡ്വാൻസ് | of which deposits given back |  |
+| `page.givenBackSecond` | ഇതിൽ തിരികെ നൽകിയ രണ്ടാമത്തെ പേയ്മെന്റ് | of which second payments given back |  |
+| `page.retried` | കലണ്ടർ വീണ്ടും നോക്കാൻ നിങ്ങൾ പറഞ്ഞത് | You asked it to check the calendar again |  |
+| `page.stoppedHeading` | നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത് | What your limits stopped |  |
+| `page.stoppedTotal` | തടഞ്ഞ കാര്യങ്ങൾ | Things stopped |  |
+| `page.stoppedNote` | ഒരു കാര്യം ഒരേ സമയം രണ്ട് പരിധികൾ തടഞ്ഞേക്കാം, അതിനാൽ വരികളുടെ ആകെത്തുക മൊത്തത്തേക്കാൾ കൂടുതലാകാം. | One thing can be stopped by two limits at once, so the rows can add up to more than the total. |  |
+| `page.rule` | പരിധി | Limit |  |
+| `page.times` | തവണ | Times |  |
+| `page.messagesHeading` | അയച്ച സന്ദേശങ്ങൾ | Messages sent |  |
+| `page.toCustomers` | ഉപഭോക്താക്കൾക്ക് | To customers |  |
+| `page.toYou` | നിങ്ങൾക്ക്, ഉടമയ്ക്ക് | To you, the owner |  |
+| `page.heldBack` | അയയ്ക്കുംമുമ്പ് തടഞ്ഞത് | Held back before sending |  |
+| `page.unconfirmedHeading` | ഉറപ്പിക്കാതെ പോയതോ പരാജയപ്പെട്ടതോ | Left unconfirmed or failed |  |
+| `page.stillOpen` | ഇപ്പോഴും തുറന്നത് | Still open |  |
+| `page.settledLater` | പിന്നീടുള്ള ഘട്ടത്തിൽ തീർന്നത് | Settled by a later step |  |
+| `page.nothing` | ഒന്നുമില്ല. | None. |  |
+| `page.waitingNow` | ഈ റിപ്പോർട്ട് ഉണ്ടാക്കുമ്പോൾ നിങ്ങളുടെ മറുപടിക്കായി കാത്തിരുന്നത് | Waiting for your answer when this report was made |  |
+| `page.paidNotBooked` | പണം ലഭിച്ചു, പക്ഷേ കലണ്ടറിൽ ബുക്കിംഗ് കണ്ടില്ല | Paid, but the calendar did not show the booking |  |
+| `page.missingHeading` | രേഖയിൽ എഴുതാതെ പോയത്, അതിനാൽ മുകളിലെ എണ്ണം പൂർണ്ണമല്ല | Missing from the record, so the counts above are incomplete |  |
+| `page.missingDepositAmounts` | തുക എഴുതാത്ത അഡ്വാൻസുകൾ | Deposits with no amount written down |  |
+| `page.missingRefundAmounts` | തുക എഴുതാത്ത റീഫണ്ടുകൾ | Refunds with no amount written down |  |
+| `page.missingOwnerCommands` | കമാൻഡ് എഴുതാത്ത നിങ്ങളുടെ മറുപടികൾ | Answers from you with no command written down |  |
+| `page.missingMessageTargets` | സ്വീകർത്താവ് എഴുതാത്ത സന്ദേശങ്ങൾ | Messages with no recipient written down |  |
+| `page.notCountedHeading` | എണ്ണാത്തത് | Not counted |  |
+| `page.notTestedHeading` | പരിശോധിക്കാത്തത് | Not tested |  |
+| `page.checkHeading` | ഈ രേഖ പരിശോധിക്കുക | Check this document |  |
+| `page.code` | കോഡ് | Code |  |
+| `page.digest` | ഡൈജസ്റ്റ് | Digest |  |
+| `page.limitsDigest` | പരിധികളുടെ ഡൈജസ്റ്റ് | Limits digest |  |
+| `page.recordDigest` | രേഖയുടെ ഡൈജസ്റ്റ് | Record digest |  |
+| `page.countedFrom` | എവിടെ നിന്ന് എണ്ണി | Counted from |  |
+| `page.setUpBy` | തയ്യാറാക്കിയത് | Set up by |  |
+| `page.madeOn` | ഉണ്ടാക്കിയ തീയതി | Made on |  |
+| `page.agentVersion` | ഏജന്റ് പതിപ്പ് | Agent version |  |
+| `page.checkAt` | ഇവിടെ പരിശോധിക്കുക | Check it at |  |
+| `page.signedBy` | ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു | Signed with key |  |
+| `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
+| `page.signatureNote` | ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
+| `page.showWhatWeDid` | ഞങ്ങൾ ചെയ്തത് കാണുക ▸ | Show what we did ▸ |  |
+| `page.byActionHeading` | എന്ത് ചെയ്തു, പ്രവൃത്തിയും ഫലവും അനുസരിച്ച് | What was done, by action and outcome |  |
+| `page.entriesHeading` | രേഖയിലെ ഓരോ എൻട്രിയും (വിരലടയാളം മാത്രം: ഉപഭോക്തൃ സന്ദേശങ്ങളോ ഫോൺ നമ്പറുകളോ ഇല്ല) | Every entry in the record (fingerprints only: no customer messages and no phone numbers) |  |
+| `page.colNo` | നം. | No. |  |
+| `page.colTime` | സമയം | Time |  |
+| `page.colAction` | പ്രവൃത്തി | Action |  |
+| `page.colOutcome` | ഫലം | Outcome |  |
+| `page.colBooking` | ബുക്കിംഗ് | Booking |  |
+| `page.colFingerprint` | വിരലടയാളം | Fingerprint |  |
+| `page.notAGrade` | ഇവ രേഖയിൽ കാണുന്നതിന്റെ എണ്ണം മാത്രമാണ്. ഇവ ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | These are counts of what the record shows. They do not grade the agent. |  |
+| `page.period` | കാലയളവ് | Period |  |
+| `cert.date` | തീയതി | Date |  |
+| `cert.held` | 31 സാഹചര്യങ്ങളിൽ 29 എണ്ണം ശരിയായി നിന്നു. 2 എണ്ണം പിഴച്ചു. 14 കാര്യങ്ങൾ പരിശോധിച്ചിട്ടില്ല. | Held 29 of 31 situations. 2 failed. 14 not tested. |  |
+| `cert.intro` | തുടങ്ങുന്നതിന് മുമ്പ് തെറ്റാൻ സാധ്യതയുള്ള സാഹചര്യങ്ങൾ ഞങ്ങൾ പരീക്ഷിച്ചു: നഷ്ടപ്പെട്ട മറുപടികൾ, രണ്ടുതവണ വന്ന പേയ്മെന്റുകൾ, കലണ്ടറിൽ നിശ്ശബ്ദമായി സേവ് ആകാതിരിക്കൽ, ഏജന്റിനെ കബളിപ്പിക്കാൻ ശ്രമിക്കുന്ന ഉപഭോക്താക്കൾ. | Before switching on, we tried situations that could go wrong: lost replies, duplicate payments, silent calendar failures, customers trying to trick the agent. |  |
+| `cert.yourLimits` | നിങ്ങളുടെ പരിധികൾ | Your limits |  |
+| `cert.floor` | ലിസ്റ്റ് വിലയിൽ കുറയില്ല: … | Nothing below your price list: … |  |
+| `cert.deposit` | അഡ്വാൻസ് ₹200; അതിനായി സമയം 15 മിനിറ്റ് മാറ്റിവയ്ക്കും | Deposit ₹200, and the slot is held 15 minutes for it |  |
+| `cert.cancel` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് 24 മണിക്കൂർ മുമ്പ് റദ്ദാക്കിയാൽ അഡ്വാൻസ് തിരികെ ലഭിക്കും; അതിനു ശേഷം റദ്ദാക്കിയാൽ തീരുമാനം നിങ്ങളുടേത് | Cancel at least 24 hours before the start and the deposit goes back; a later cancellation is your decision |  |
+| `cert.refund` | ₹200-ന് മുകളിലുള്ള റീഫണ്ട് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം | Refunds above ₹200 only with your OK |  |
+| `cert.hours` | പ്രവൃത്തി സമയത്തിന് പുറത്ത് ബുക്കിംഗ് ഇല്ല | No bookings outside your opening hours |  |
+| `cert.notAGrade` | ഇത് പരീക്ഷിച്ച സാഹചര്യങ്ങളുടെ എണ്ണം മാത്രമാണ്. ഇത് ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | This counts the situations tried. It does not grade the agent. |  |
+| `cert.didNotHold` | പിഴച്ചവ | Did not hold |  |
+| `cert.handRunLine` | പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ്, കലണ്ടർ എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് (stand-in services). ടെസ്റ്റ് പണം മാത്രം. | Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only. |  |
+| `cert.countedIntro` | ഏജന്റിന്റെ രേഖയിൽ നിന്ന് എണ്ണിയത്, Nov 2026: | Counted from the agent's record for Nov 2026: |  |
+| `cert.checkedOn` | പരിശോധിച്ചത് | Checks run on |  |
+
