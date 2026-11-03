@@ -33,7 +33,7 @@
       "quality": "official",
       "source": "https://geometer.dev/pricing",
       "read": "2026-11-04",
-      "note": "Geometer's flat fee for each shop it counts as running in a month, paid by the builder or partner to Geometer. This is the founding price, INR 199, kept for life by the first 100; the page shows a range of INR 199 to 499 and the later price is not decided. The AI model is included, up to a monthly cap per shop. Nothing is metered: a shop counts for a month when fleet's records show it live on 15 or more days. WhatsApp messages are paid to the builder's own provider and payment fees by the shop to its provider; Geometer handles neither."
+      "note": "Geometer's flat fee for each shop it counts as running in a month, paid by the builder or partner to Geometer: INR 199 a month, the founding price (owner, 4 Nov). The AI model is included, up to a monthly cap per shop. Nothing is metered; fleet's records count the shops. The later price and the offer to the first 100 builders and partners are in docs/product/gtm-and-revenue.md, section 2, and are not read here. WhatsApp messages are paid to the builder's own provider and payment fees by the shop to its provider; Geometer handles neither."
     },
     "whatsapp.in.utility": {
       "currency": "INR",
