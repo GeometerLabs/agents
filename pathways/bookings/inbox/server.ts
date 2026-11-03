@@ -36,6 +36,11 @@ export interface InboxConfig {
   whatsappVerifyToken?: string;
   /** path-token: the unguessable part of the callback URL (at least 16 characters of A-Z a-z 0-9 _ -). Never logged. */
   whatsappPathToken?: string;
+  /**
+   * Optional: this shop's WhatsApp phone number id. A body that names another number (`metadata.phone_number_id`) is not forwarded, even with a
+   * valid signature: several shops can share one Meta app, and so one app secret, and the signature alone does not say whose message it is.
+   */
+  whatsappPhoneNumberId?: string;
   /** Optional: only these source addresses (IPs or CIDRs, for example 203.0.113.0/24) may post WhatsApp webhooks; anyone else is refused (403). */
   whatsappAllowedSources?: string[];
   /** Behind a reverse proxy the socket's address is the proxy's. Name the header your proxy sets (for example x-forwarded-for) and the LAST address in it is used. */
@@ -114,7 +119,12 @@ const header = (req: IncomingMessage, name: string): string | undefined => {
   return Array.isArray(v) ? v[0] : v;
 };
 
-export async function startInbox(config: InboxConfig, listen: { port: number; host?: string }): Promise<RunningInbox> {
+/**
+ * The inbox as a request handler, with nothing listening: the checks in `startInbox`, for a caller that serves it itself. The deploy bundle
+ * runs one of these per shop behind a router (/c/<shop>/...), each with that shop's own secrets and its own runtime, so one shop's webhook
+ * can only ever reach that shop's runtime.
+ */
+export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: ServerResponse) => void {
   const mode = config.whatsappVerification ?? "meta-signature";
   if (mode !== "meta-signature" && mode !== "path-token") throw new Error(`whatsappVerification must be "meta-signature" or "path-token".`);
   const missing = (what: string) => new Error(`The inbox needs a non-empty ${what}.`);
@@ -158,6 +168,15 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
     }
     return true; // if a later batch failed, the provider sends the whole webhook again and the runtime skips what it already saved (same message ids)
   }
+
+  /** True unless the body names a phone number id and it is not this shop's. */
+  const ownNumber = (json: unknown): boolean => {
+    if (!config.whatsappPhoneNumberId) return true;
+    const ids: unknown[] = [];
+    for (const entry of (json as { entry?: unknown[] } | null)?.entry ?? []) for (const change of (entry as { changes?: unknown[] } | null)?.changes ?? []) ids.push(((change as { value?: { metadata?: { phone_number_id?: unknown } } } | null)?.value?.metadata?.phone_number_id));
+    return ids.every((id) => id === undefined || id === config.whatsappPhoneNumberId);
+  };
+  const messagesIn = (json: unknown): AgentEvent[] => ownNumber(json) ? parseWhatsAppWebhook(json).map((message): AgentEvent => ({ kind: "message", message })) : [];
 
   /** The owner's messages in these events: from the owner's number, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */
   const fromOwner = (events: AgentEvent[]): AgentEvent[] => (relay ? events.filter((e) => e.kind === "message" && e.message.from.replace(/\D/gu, "") === ownerDigits) : []);
@@ -208,7 +227,7 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
     return address !== undefined && family !== undefined && allowed.check(address, family);
   }
 
-  const server = createServer((req, res) => {
+  return (req, res) => {
     const url = new URL(req.url ?? "/", "http://inbox");
     // The log names the route, never the path: in path-token mode the path holds the secret.
     const label = url.pathname === "/healthz" ? "/healthz" : url.pathname === "/webhooks/razorpay" ? "/webhooks/razorpay" : url.pathname.startsWith("/webhooks/whatsapp") ? "/webhooks/whatsapp" : "(other)";
@@ -233,7 +252,7 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
           if (!sourceAllowed(req)) { reply(res, 403, { error: "not an allowed source" }); return "403 source refused"; }
           if (req.method === "GET") { reply(res, 200, "ok"); return "200"; } // a provider checking that the URL is alive
           if (req.method !== "POST") { reply(res, 405, { error: "GET or POST only" }, { allow: "GET, POST" }); return "405"; }
-          return webhook(req, res, limits.whatsapp, () => true, (json) => parseWhatsAppWebhook(json).map((message): AgentEvent => ({ kind: "message", message })));
+          return webhook(req, res, limits.whatsapp, () => true, messagesIn);
         }
         if (segment !== undefined) { reply(res, 404, { error: "not found" }); return "404"; } // meta-signature has no token in the path
         if (req.method === "GET") { // Meta's handshake when the webhook is set up
@@ -249,14 +268,18 @@ export async function startInbox(config: InboxConfig, listen: { port: number; ho
         if (!sourceAllowed(req)) { reply(res, 403, { error: "not an allowed source" }); return "403 source refused"; }
         return webhook(req, res, limits.whatsapp,
           (raw) => verifyMetaSignature(raw, header(req, "x-hub-signature-256"), config.whatsappAppSecret!),
-          (json) => parseWhatsAppWebhook(json).map((message): AgentEvent => ({ kind: "message", message })));
+          messagesIn);
       }
 
       reply(res, 404, { error: "not found" });
       return "404";
     };
     route().then(done, () => { if (!res.headersSent) reply(res, 500, { error: "inbox error" }); done("500"); });
-  });
+  };
+}
+
+export async function startInbox(config: InboxConfig, listen: { port: number; host?: string }): Promise<RunningInbox> {
+  const server = createServer(inboxHandler(config));
   server.requestTimeout = 10_000;
   server.headersTimeout = 5_000;
 

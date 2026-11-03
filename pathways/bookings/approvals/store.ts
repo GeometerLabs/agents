@@ -56,7 +56,7 @@ const MIGRATIONS = [`
   CREATE TABLE asks (
     approval TEXT PRIMARY KEY, state TEXT NOT NULL, code_hash TEXT UNIQUE, code TEXT, receipt TEXT NOT NULL, booking TEXT, payment_id TEXT NOT NULL,
     amount_paise INTEGER NOT NULL, customer_phone TEXT, language TEXT, context TEXT, first_seen_ms INTEGER NOT NULL, asked_at_ms INTEGER, code_expires_at_ms INTEGER,
-    guard_expires_at_ms INTEGER NOT NULL, approval_hours INTEGER NOT NULL DEFAULT 24, decision TEXT, guard_told INTEGER NOT NULL DEFAULT 0,
+    guard_expires_at_ms INTEGER NOT NULL, approval_hours INTEGER NOT NULL, decision TEXT, guard_told INTEGER NOT NULL DEFAULT 0,
     runtime_told INTEGER NOT NULL DEFAULT 0, owner_told INTEGER NOT NULL DEFAULT 0, late_replied INTEGER NOT NULL DEFAULT 0, send_tries INTEGER NOT NULL DEFAULT 0
   );
   CREATE TABLE messages (id TEXT PRIMARY KEY, sender TEXT NOT NULL, body TEXT NOT NULL, ts INTEGER NOT NULL, received_ms INTEGER NOT NULL, processed INTEGER NOT NULL DEFAULT 0, seq INTEGER NOT NULL);
@@ -128,7 +128,7 @@ export function openRelayStore(dir: string): RelayStore {
     askByCode: (code) => { const r = getByHash.get(hashCode(code)) as Record<string, any> | undefined; return r ? toAsk(r) : undefined; },
     asks: (state) => (db.prepare(`SELECT * FROM asks${state ? ` WHERE state IN (${state.map(() => "?").join(",")})` : ""} ORDER BY first_seen_ms`).all(...(state ?? [])) as Record<string, any>[]).map(toAsk),
     insertAsk(a) {
-      const full = { approvalHours: 24, ...a } as Record<string, unknown>;
+      const full = a as unknown as Record<string, unknown>;
       const keys = Object.keys(full).filter((k) => k !== "approval");
       db.prepare(`INSERT INTO asks (approval, ${keys.map(column).join(", ")}) VALUES (?, ${keys.map(() => "?").join(", ")})`).run(a.approval, ...keys.map((k) => value(full[k])));
     },
