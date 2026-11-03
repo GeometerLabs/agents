@@ -48,3 +48,11 @@
 | Customer data retention, consent text and deletion (DPDP) | The record keeps message text only as a digest, but the store holds phone numbers and bookings, and there is no retention setting | Before a real client goes live |
 | The monthly client report and the builder panel | Separate workstreams (W12 and W10) built on this record | After the first live client |
 | Time zones with daylight saving | India has none; the time helpers handle offsets through `Intl`, but no daylight-saving case is tested | A client outside India |
+
+## WhatsApp coexistence (check before any shop goes live)
+
+**What:** the shop must keep its existing WhatsApp number and its normal WhatsApp Business app working alongside the official API the agent uses. A builder or partner should use one shared provider account across their shops, not one plan per shop.
+
+**Why it's deferred:** v0 talks only to an in-memory messaging stand-in. One reviewer of a WhatsApp provider reported being locked out of their normal app after moving their number to the API. Meta's free Business AI also lives in the same app, and Geometer is meant to work alongside it.
+
+**Revisit trigger:** choosing the WhatsApp provider (implementation plan B22), before the first real shop.
