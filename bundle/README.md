@@ -68,7 +68,7 @@ node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
 ```sh
 node bundle/geometer.ts shop add glow-salon --from ~/clients/glow-salon
 mkdir -p $GEOMETER_SERVER/secrets-inbox/glow-salon      # then put the secrets in it, one file each (below)
-node bundle/geometer.ts check glow-salon                # changes nothing; says what is wrong, all at once
+node bundle/geometer.ts check glow-salon                # starts nothing; says what is wrong, all at once
 node bundle/geometer.ts deploy glow-salon
 ```
 

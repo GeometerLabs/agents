@@ -166,7 +166,9 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       volumes: [`${shop.pathwayDir}:/pathway:ro`, `${dirs.generated}/shops/${shop.name}/client:/client:ro`, `${secretDir(names.runtime(shop.name))}:/run/secrets:ro`, `${names.dataVolume(shop.name)}:/home/node`],
       networks: { [names.net(shop.name)]: {} },
       healthcheck: healthWget(RUNTIME_PORT, "/readyz"),
-      depends_on: Object.fromEntries([...own, names.modelGuard].map((s) => [s, { condition: "service_healthy" }])),
+      // its own three Guards must be healthy before it starts (fail closed). The model Guard is shared and the runtime reads messages with its built-in rules
+      // when the model cannot be asked, so a model outage must not stop every shop from starting.
+      depends_on: Object.fromEntries(own.map((s) => [s, { condition: "service_healthy" }])),
     }), [`${dirs.generated}/shops/${shop.name}/client/runtime.json`, `${dirs.generated}/shops/${shop.name}/client/settings.json`, `${dirs.generated}/shops/${shop.name}/client/pathway.lock`]);
   }
   guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);

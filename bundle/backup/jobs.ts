@@ -8,7 +8,7 @@
 //   each Guard's store    nightly with the above, Guard's own POST /admin/backup (a consistent copy of its store and its evidence ledger, checked by
 //                         geo-verify), not Litestream: Litestream has to own the checkpointing of what it streams
 //   the weekly drill      restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live one
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { adminCall, compose } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
@@ -83,7 +83,7 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
   try {
     for (const shop of shops) {
       const out = join(work, shop);
-      mkdirSync(out, { recursive: true, mode: 0o777 });
+      mkdirSync(out, { recursive: true, mode: 0o777 }); chmodSync(out, 0o777); // the umask would make this 0755, and Litestream runs as another user
       const r = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", `${project(server)}_egress`, "-v", `${out}:/out`, "-v", `${secretFile(ctx.dir, "litestream", "litestream.yml")}:/etc/litestream.yml:ro`, LITESTREAM_IMAGE, "restore", "-config", "/etc/litestream.yml", "-o", "/out/agent.db", `/data/${shop}/data/agent.db`], { timeoutMs: 600_000 });
       if (r.code !== 0) verdicts.push({ name: shop, ok: false, detail: `the continuous copy could not be restored: ${(r.stderr || r.stdout).trim().split("\n").slice(-2).join(" | ").slice(0, 200)}` });
     }

@@ -10,7 +10,7 @@ export interface ShopStatus {
   updatedAt: string;
   lastDeploy: { at: string; ok: boolean; refusal: { rule: string; message: string }[] | null } | null;
   /** "N of M limits proven to bite", read from the RUNNING Guards after a deploy. The go-live certificate quotes `line`. */
-  tripwires: { source: "running Guards" | "offline check"; passed: number; of: number; line: string; perGuard: Record<string, GuardProof> } | null;
+  tripwires: { source: "running Guards" | "offline check"; passed: number; of: number; line: string; perGuard: Record<string, GuardProof>; /** The server's shared model Guard, proven the same way (not part of the shop's total). */ model?: GuardProof } | null;
   versions: { pathway: string; bundle: string; guardImage: string; guards: Record<string, number> } | null;
   stopped: { by: string; at: string; reason: string } | null;
   backup: { lastBackupAt: string | null; lastDrill: { at: string; ok: boolean; detail: string } | null };

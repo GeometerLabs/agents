@@ -7,11 +7,11 @@
 // geometer-proof-* and is removed at the end (volumes, networks, containers); it never deletes an image.
 import { spawn, spawnSync } from "node:child_process";
 import { createHmac, generateKeyPairSync } from "node:crypto";
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main } from "../../geometer.ts";
-import { Refused, deploy } from "../../deploy.ts";
+import { Refused, deploy, renewRelayCredential } from "../../deploy.ts";
 import type { Context } from "../../deploy.ts";
 import { dockerGuardTool } from "../../generate/verify.ts";
 import type { GuardTool } from "../../generate/verify.ts";
@@ -52,6 +52,8 @@ const dc = (a: string[], o?: { input?: string; timeout?: number }) => dk(["compo
 const exec = (service: string, a: string[], o?: { input?: string; timeout?: number }) => dc(["exec", "-T", service, ...a], o);
 const nodeEval = (service: string, code: string, timeout = 60_000) => exec(service, ["node", "-e", code], { timeout });
 const containerOf = (service: string) => dc(["ps", "-q", service]).out.trim();
+/** "Up 2 minutes (healthy)" -- and NOT "(unhealthy)", which also contains the word. */
+const healthy = (service: string) => /\(healthy\)/u.test(dc(["ps", service]).out);
 
 // ---------------------------------------------------------------------------------------------------------------------------------- the shops
 
@@ -123,8 +125,11 @@ async function waitFor(what: string, test: () => boolean | Promise<boolean>, sec
 /** A connection attempt from inside a container, answered in one word. */
 function probe(from: string, host: string, port: number): string {
   const r = nodeEval(from, `const s=require('net').connect({host:'${host}',port:${port},timeout:3000});s.on('connect',()=>{console.log('REACHED');process.exit(0)});s.on('timeout',()=>{console.log('TIMEOUT');process.exit(0)});s.on('error',e=>{console.log('ERR '+e.code);process.exit(0)})`);
-  return r.out.trim().split("\n").at(-1) ?? r.err.trim().slice(0, 80);
+  const answer = r.out.trim().split("\n").at(-1) ?? "";
+  return /^(REACHED|TIMEOUT|ERR [A-Z_]+)$/u.test(answer) ? answer : `DID-NOT-RUN (${(answer || r.err).trim().slice(0, 80)})`;
 }
+/** Only an explicit network refusal counts as "not reachable": a probe that failed to run proves nothing. */
+const UNREACHABLE = /^(TIMEOUT|ERR (ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET))$/u;
 const ipOf = (service: string, network: string): string => dk(["inspect", containerOf(service), "--format", `{{(index .NetworkSettings.Networks "${PROJECT}_${network}").IPAddress}}`]).out.trim();
 /** A Guard shares its forwarder's network namespace, so the address on the admin network is the forwarder's. */
 const ownerOf = (service: string) => (service.startsWith("g-") ? `fwd-${service.slice(2)}` : service);
@@ -240,6 +245,13 @@ networks:
       results[`deploy${size}Seconds`] = Math.round((Date.now() - t0) / 1000);
       check(`deploy ${size} shops: every Guard proven`, r.length === size && r.every((x) => x.proven.passed === x.proven.of), r.map((x) => x.proven.line).slice(0, 2));
       await sleep(80_000);
+      const ps = dc(["ps", "--format", "{{.Service}}\t{{.Status}}"]).out.trim().split("\n").map((l) => l.split("\t"));
+      const mustBeHealthy = ps.filter(([n]) => /^(g-|rt-|inbox$|relay$|refresher$)/u.test(n));
+      const notHealthy = mustBeHealthy.filter(([, st]) => !/\(healthy\)/u.test(st)).map(([n, st]) => `${n}: ${st}`);
+      check(`after scaling to ${size} shops every Guard, runtime and shared service is (healthy)`, notHealthy.length === 0 && mustBeHealthy.length >= size * 4 + 4, notHealthy.slice(0, 5));
+      const newest = shopName(size);
+      const viaModel = nodeEval(`rt-${newest}`, `fetch('http://g-model:8080/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer ${readSecret(`rt-${newest}`, "agent_model")}','content-type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'user',content:'hi'}]})}).then(r=>console.log(r.status))`).out.trim();
+      check(`the newest shop's runtime reaches the model Guard after the scale step (its namespace was not stranded)`, viaModel === "200", viaModel);
       measure(`${size} shops (idle)`, size);
       if (size === SIZES.filter((s) => s > 1)[0]) await isolation(size);
     }
@@ -269,6 +281,13 @@ async function refusalDemo() {
   say(`deploy with a mismatched tool name refused:\n${shown}`);
   results.refusalDeploy = shown;
   check("deploy refuses a Guard whose guard.toml names another tool, and starts nothing", shown !== "" && dk(["ps", "-q", "--filter", `name=${PROJECT}`]).out.trim() === "" && !existsSync(composeFile), shown.slice(0, 300));
+  // 3. the whole deploy, with a rule that would let a forbidden call through (the Calendar-style exact pin swapped for every suffix a tripwire could use)
+  const weak: GuardTool = { compile: (specText) => { const spec = JSON.parse(specText); if (spec.tool === "whatsapp") spec.rules = [{ id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", allowed_suffixes: [..."xqzkjvw0123456789-_.abcdefghilmnoprstuy"] }]; return real.compile(JSON.stringify(spec)); }, verify: (b, t) => real.verify(b, t) };
+  let weakShown = "";
+  try { await deploy(ctxFor(weak)); } catch (e) { if (e instanceof Refused) weakShown = e.problems.map((p) => `  - [${p.rule}] ${p.message}`).join("\n"); else throw e; }
+  say(`deploy with a rule that fails its tripwire refused:\n${weakShown}`);
+  results.refusalDeployTripwire = weakShown;
+  check("deploy refuses a rule that would let a forbidden call through, by the rule's name, and starts nothing", /own-number-only/u.test(weakShown) && /tripwire/iu.test(weakShown) && dk(["ps", "-q", "--filter", `name=${PROJECT}`]).out.trim() === "" && !existsSync(composeFile), weakShown.slice(0, 400));
   rmSync(join(SERVER, "shops", "glow-salon"), { recursive: true, force: true }); rmSync(join(SERVER, "state", "state.json"), { force: true });
 }
 
@@ -279,7 +298,7 @@ async function isolation(shops: number) {
   const attempt = (label: string, host: string, port: number, expect: "REACHED" | "NOT") => {
     if (host === "") { check(`from the runtime: ${label}`, false, "no address was found to try (the probe would prove nothing)"); return; }
     const got = probe(rt, host, port); rows[label] = got;
-    check(`from the runtime: ${label} -> ${got}`, expect === "REACHED" ? got === "REACHED" : got !== "REACHED", got);
+    check(`from the runtime: ${label} -> ${got}`, expect === "REACHED" ? got === "REACHED" : UNREACHABLE.test(got), got);
   };
   // controls: the same probe from a container that IS meant to reach them must succeed, or "not reachable" above would mean nothing
   const control = (label: string, host: string, port: number) => check(`control, from ops: ${label} -> ${probe("ops", host, port)}`, probe("ops", host, port) === "REACHED", host);
@@ -345,11 +364,11 @@ console.log(JSON.stringify({ok,refused,unreachable,other}))})()`;
   check("after the Razorpay Guard was stopped NOTHING reached the Razorpay stand-in", after.links === afterKillLinks.links && counts.unreachable > 0, { atKill: afterKillLinks.links, atEnd: after.links, unreachable: counts.unreachable, afterSeconds: Math.round((Date.now() - killedAt) / 1000) });
   results.killUnderLoad = { before, midLinks, afterKillLinks, after, counts };
   dc(["up", "-d", "g-glow-salon-razorpay"]);
-  await waitFor("the Guard to be ready again", () => dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), 90);
-  check("the Guard comes back when started again", dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), "");
+  await waitFor("the Guard to be ready again", () => healthy("g-glow-salon-razorpay"), 90);
+  check("the Guard comes back when started again", healthy("g-glow-salon-razorpay"), "");
   // and a crash (SIGKILL) is restarted by Docker on its own, in the same namespace
   dk(["kill", containerOf("g-glow-salon-razorpay")]);
-  const back = await waitFor("the crashed Guard to be restarted by Docker", () => dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), 90);
+  const back = await waitFor("the crashed Guard to be restarted by Docker", () => healthy("g-glow-salon-razorpay"), 90);
   const reach = nodeEval(rt, `fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{headers:{authorization:'Bearer ${agent}'}}).then(r=>console.log(r.status))`).out.trim();
   check("a crashed Guard is restarted by Docker and answers its runtime again (the forwarder owns the namespace)", back && /^(200|403)$/u.test(reach), reach);
 }
@@ -376,10 +395,13 @@ async function heldRefundSurvives() {
   const approval = held.body?.guard?.detail?.approval;
   check("a refund above the owner's limit is HELD by Guard (202, nothing refunded)", held.status === 202 && held.body?.guard?.decision === "hold" && typeof approval === "string" && (stand("/_standin/state").refunds?.length ?? 1) === 0, { status: held.status, approval, expiresInHours: held.body?.guard?.detail?.expires_at_ms ? +((held.body.guard.detail.expires_at_ms - Date.now()) / 3_600_000).toFixed(1) : null });
   // restart the Guard (its store is on a volume), then the runtime
-  dc(["restart", "g-glow-salon-razorpay"]); await waitFor("the Guard", () => dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), 90);
-  dc(["restart", "rt-glow-salon"]); await waitFor("the runtime", () => dc(["ps", "rt-glow-salon"]).out.includes("healthy"), 90);
+  dc(["restart", "g-glow-salon-razorpay"]); await waitFor("the Guard", () => healthy("g-glow-salon-razorpay"), 90);
+  dc(["restart", "rt-glow-salon"]); await waitFor("the runtime", () => healthy("rt-glow-salon"), 90);
   const again = call("POST", `/v1/payments/${paymentId}/refund`, refund);
   check("after both restarts the same refund is still held, under the SAME approval", again.status === 202 && again.body?.guard?.detail?.approval === approval, { status: again.status, same: again.body?.guard?.detail?.approval === approval });
+  const renewed = [await renewRelayCredential(ctxFor(), "glow-salon"), await renewRelayCredential(ctxFor(), "glow-salon")];
+  const reviews = nodeEval("relay", `fetch('http://${adminIpOf("g-glow-salon-razorpay")}:8190/admin/reviews',{headers:{authorization:'Bearer ${readSecret("relay", "glow-salon/read_token")}'}}).then(async r=>console.log(r.status+' '+(await r.text())))`).out.trim();
+  check("the relay's reading credential can be renewed twice, and the renewed one lists the held refund", renewed.every(Boolean) && reviews.startsWith("200") && reviews.includes(approval), { renewed, reviews: reviews.slice(0, 80) });
   const answer = approvalFlow(approval);
   check("the owner's signed approval is accepted after the restarts", answer.startsWith("200"), answer);
   const sent = call("POST", `/v1/payments/${paymentId}/refund`, refund);
@@ -449,7 +471,7 @@ async function stopPersists() {
   const st = (s: string) => JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", s, "GET", "/admin/status"]).out.trim().split("\n").at(-1) ?? "{}").body?.kill_switch;
   check("stop engages the kill switch on the shop's Guards", code === 0 && st("g-glow-salon-razorpay")?.on === true && st("g-glow-salon-whatsapp")?.on === true, st("g-glow-salon-razorpay"));
   check("the stop record says who", /stopped by \S+@\S+/u.test(st("g-glow-salon-razorpay")?.reason ?? "") && readStatus(SERVER, "glow-salon")?.stopped?.by !== undefined, st("g-glow-salon-razorpay")?.reason);
-  dc(["restart", "g-glow-salon-razorpay"]); await waitFor("the Guard", () => dc(["ps", "g-glow-salon-razorpay"]).out.includes("healthy"), 90);
+  dc(["restart", "g-glow-salon-razorpay"]); await waitFor("the Guard", () => healthy("g-glow-salon-razorpay"), 90);
   check("the kill switch survives a restart of the Guard", st("g-glow-salon-razorpay")?.on === true, "");
   const refused = nodeEval("rt-glow-salon", `fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{method:'POST',headers:{authorization:'Bearer ${readSecret("rt-glow-salon", "agent_razorpay")}','content-type':'application/json'},body:JSON.stringify({amount:20000,currency:'INR',description:'x',reference_id:'y'})}).then(async r=>console.log(r.status))`).out.trim();
   check("a stopped shop's Guard refuses new calls", refused === "503", refused);
@@ -463,16 +485,17 @@ async function dataDuties() {
   check("Litestream is streaming the runtime database to the bucket", objects("geo-stream") > 0, { objects: objects("geo-stream") });
   const snap = await runBackup(ctxFor()); snap.lines.forEach(say);
   check("the nightly snapshot ran and every file in the bucket is age-encrypted", snap.ok && objects("geo-snaps") > 0, { objects: objects("geo-snaps") });
-  const files = sh("find", [join(SCRATCH, "minio", "geo-snaps"), "-type", "f"]).out.trim().split("\n").filter(Boolean);
-  // MinIO keeps each object as a folder holding the data part; the stored bytes start with the age header
-  const heads = files.map((f) => ({ f, head: sh("sh", ["-c", `head -c 21 "${f}"`]).out })).filter((x) => x.head.length > 0);
-  check("no plain database in the snapshot bucket", heads.length > 0 && heads.every((h) => h.head.startsWith("age-encryption.org/v1") || h.head.startsWith("{") ), heads.slice(0, 3).map((h) => h.head.slice(0, 22)));
+  // MinIO stores objects as xl.meta and part files (small ones inline); the bytes of an age file are in them as written, and a plain SQLite file would show its header
+  const grep = (pattern: string, dir: string) => sh("sh", ["-c", `grep -rlaF "${pattern}" "${join(SCRATCH, "minio", dir)}" | wc -l`]).out.trim();
+  const ageFiles = Number(grep("age-encryption.org/v1", "geo-snaps")), plainFiles = Number(grep("SQLite format 3", "geo-snaps")), plainStream = Number(grep("SQLite format 3", "geo-stream"));
+  check("every snapshot object is an age file and none holds a plain SQLite database", ageFiles > 0 && plainFiles === 0, { ageFiles, plainFiles });
+  results.streamHoldsPlainSqlite = plainStream; say(`(the continuous copy is not age-encrypted by Litestream 0.5: ${plainStream} plain-SQLite-looking objects in the stream bucket)`);
   const drill = await runDrill(ctxFor()); drill.lines.forEach(say);
   check("the weekly drill restores the continuous copy and it matches the live record", drill.ok, drill.lines);
   // restore: add a record entry, then put the record back from the copy
   check("restore puts the record back from the continuous copy", (await restoreShop(ctxFor(), "glow-salon", {}).then((m) => { say(m); return true; }).catch((e) => { say(String(e)); return false; })), "");
-  await waitFor("the runtime", () => dc(["ps", "rt-glow-salon"]).out.includes("healthy"), 90);
-  check("the shop is running again after a restore", dc(["ps", "rt-glow-salon"]).out.includes("healthy"), "");
+  await waitFor("the runtime", () => healthy("rt-glow-salon"), 90);
+  check("the shop is running again after a restore", healthy("rt-glow-salon"), "");
   // age interop with the real tool
   const k = generateIdentity(); const dir = join(SCRATCH, "age"); mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "id.txt"), k.identity); writeFileSync(join(dir, "ours.age"), encrypt(Buffer.from("hello from node ".repeat(10000)), k.recipient));

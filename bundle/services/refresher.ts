@@ -46,13 +46,14 @@ export function createRefresher(config: RefresherConfig, deps: { fetch?: typeof 
   const now = deps.now ?? Date.now;
   const log = deps.log ?? (() => undefined);
   const f = deps.fetch ?? fetch;
-  const shops: Record<string, { expiresAt: number | null; lastError: string | null; failures: number; nextAt: number }> = Object.fromEntries(Object.keys(config.shops).map((s) => [s, { expiresAt: null, lastError: null, failures: 0, nextAt: 0 }]));
+  const shops: Record<string, { expiresAt: number | null; lastError: string | null; failures: number; nextAt: number; tried: boolean }> = Object.fromEntries(Object.keys(config.shops).map((s) => [s, { expiresAt: null, lastError: null, failures: 0, nextAt: 0, tried: false }]));
   let timer: ReturnType<typeof setInterval> | undefined;
   let running = false;
 
   async function refresh(name: string): Promise<void> {
     const c = config.shops[name]; const s = shops[name];
     const t = await exchange(c.serviceAccountFile, config.scope, f, now);
+    s.tried = true;
     if (!t.ok) {
       s.lastError = t.why; s.failures++;
       s.nextAt = now() + Math.min(10, 2 ** (s.failures - 1)) * 60_000; // one try now, then 1, 2, 4, 8, 10, 10 ... minutes: never a tight loop on a credential
@@ -83,8 +84,8 @@ export function createRefresher(config: RefresherConfig, deps: { fetch?: typeof 
     refreshAll: () => refreshAll(true),
     start() { void refreshAll(true); timer = setInterval(() => void refreshAll(false), 15_000); },
     stop() { if (timer) clearInterval(timer); },
-    // Healthy once every shop has a token that has not run out. The Calendar Guards wait for this before they start.
-    healthy: () => Object.values(shops).every((s) => s.expiresAt !== null && s.expiresAt > now()),
+    // Healthy once every shop has been tried. A shop whose key is broken has no token file, so only ITS Calendar Guard cannot start; the others are not held back.
+    healthy: () => Object.values(shops).every((s) => s.tried),
     state: () => Object.fromEntries(Object.entries(shops).map(([n, s]) => [n, { expiresAt: s.expiresAt, lastError: s.lastError }])),
   };
 }

@@ -1,6 +1,6 @@
 // Small things every part of the bundle shares: names, tokens, files and the plain-words problem list.
 import { createHash, randomBytes } from "node:crypto";
-import { chmodSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /** A refusal with a rule name, so a deploy that is stopped says WHICH rule stopped it. */
@@ -48,7 +48,7 @@ export function stableJson(value: unknown): string {
 
 /** Write a file by writing a temporary one beside it and renaming it over: a reader never sees half a file. */
 export function writeAtomic(path: string, content: string | Uint8Array, mode = 0o644): void {
-  mkdirSync(dirname(path), { recursive: true });
+  ensureDirs(dirname(path));
   const tmp = join(dirname(path), `.${Math.random().toString(36).slice(2)}.tmp`);
   writeFileSync(tmp, content, { mode });
   chmodSync(tmp, mode);
@@ -59,6 +59,13 @@ export function writeAtomic(path: string, content: string | Uint8Array, mode = 0
 export function ensureDir(path: string, mode = 0o755): void {
   mkdirSync(path, { recursive: true, mode });
   chmodSync(path, mode);
+}
+
+/** Make a folder and every missing parent 0755, whatever the umask is: a container's own user (not root) has to be able to read what is under it. */
+export function ensureDirs(path: string): void {
+  const missing: string[] = [];
+  for (let p = path; !existsSync(p); p = dirname(p)) missing.unshift(p);
+  for (const p of missing) { mkdirSync(p, { mode: 0o755 }); chmodSync(p, 0o755); }
 }
 
 export const hostId = (): string => `${process.env.USER ?? "someone"}@${process.env.HOSTNAME ?? "this-machine"}`;

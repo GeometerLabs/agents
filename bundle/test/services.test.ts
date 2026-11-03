@@ -39,7 +39,7 @@ test("a refresh writes 'Bearer <token>' for that shop only, asks that shop's Cal
     }) as unknown as typeof fetch;
     const out = join(f.dir, "out");
     const r = createRefresher({ outDir: out, refreshMinutes: 45, scope: "s", shops: { "glow-salon": { serviceAccountFile: join(f.dir, "sa.json"), guardAdminUrl: "http://10.231.240.22:8190", adminTokenFile: join(f.dir, "admin_token") } } }, { fetch: fake, now: () => 1_793_700_000_000, log: (l) => log.push(l) });
-    assert.equal(r.healthy(), false, "no token yet: the Calendar Guards wait");
+    assert.equal(r.healthy(), false, "not tried yet: the Calendar Guards wait");
     await r.refreshAll();
     assert.equal(readFileSync(join(out, "glow-salon", "authorization"), "utf8"), "Bearer ya29.TOKEN-VALUE-0123456789");
     assert.equal(statSync(join(out, "glow-salon", "authorization")).mode & 0o777, 0o644);
@@ -60,7 +60,8 @@ test("a failed exchange is tried once, then waits 1 minute, then 2, and the old 
     await r.refreshAll(); assert.equal(n, 1);
     assert.match(log[0], /\(the token endpoint answered 400\); trying again in 1 min/);
     assert.ok(!log[0].includes("SECRET-ECHO"), "the body of a failed answer (which could echo a credential) is never logged");
-    assert.equal(r.healthy(), false);
+    assert.equal(r.healthy(), true, "a broken key does not hold every other shop back: it has been tried, and that shop has no token file");
+    assert.deepEqual(r.state().s.expiresAt, null);
     assert.equal(readFileSync(join(f.dir, "sa.json"), "utf8"), before);
     assert.match((await exchange(join(f.dir, "missing.json"), "s") as { why: string }).why, /could not be read/);
     t += 61_000; await r.refreshAll(); assert.match(log[1], /in 2 min/);
