@@ -1,0 +1,39 @@
+{
+  "account_id": "acc_E7OQJcEANmBHTC",
+  "contains": ["refund", "payment"],
+  "created_at": 1597734071,
+  "entity": "event",
+  "event": "refund.processed",
+  "payload": {
+    "refund": {
+      "entity": {
+        "id": "rfnd_FS8TWyPrCsa0OB",
+        "entity": "refund",
+        "amount": 50000,
+        "currency": "INR",
+        "payment_id": "pay_FPoJKWQQ8lK13n",
+        "notes": { "comment": "Customer Notes for Webhooks." },
+        "receipt": null,
+        "created_at": 1597734071,
+        "status": "processed",
+        "speed_processed": "normal",
+        "speed_requested": "optimum"
+      }
+    },
+    "payment": {
+      "entity": {
+        "id": "pay_FPoJKWQQ8lK13n",
+        "entity": "payment",
+        "amount": 500000,
+        "currency": "INR",
+        "status": "captured",
+        "order_id": "order_FPoIeimWki9j8A",
+        "method": "netbanking",
+        "amount_refunded": 190000,
+        "refund_status": "partial",
+        "captured": true,
+        "created_at": 1597226379
+      }
+    }
+  }
+}

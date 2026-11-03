@@ -32,7 +32,8 @@ export interface Refund {
   id: string; // rfnd_...
   payment_id: string;
   amount: number; // paise
-  status: "processed";
+  /** "pending" is Razorpay's word for accepted, not yet paid out. A "failed" refund is not a refund and is never listed. */
+  status: "pending" | "processed";
   receipt?: string;
   created_at: number;
 }
@@ -44,7 +45,11 @@ export interface PaymentEvent {
   id: string; // evt_...
   event: PaymentEventName;
   created_at: number;
-  payload: { payment_link?: { id: string; reference_id: string }; payment?: { id: string; link_id: string }; refund?: { id: string; payment_id: string } };
+  /**
+   * `payment.link_id` is missing on a real `payment.captured` event: Razorpay's body names the payment and its order, not the
+   * payment link. The agent then finds the link by the payment id (listPaymentLinks({ payment_id })).
+   */
+  payload: { payment_link?: { id: string; reference_id: string }; payment?: { id: string; link_id?: string }; refund?: { id: string; payment_id: string } };
 }
 
 export interface NewPaymentLink { amount: number; reference_id: string; description: string }
@@ -52,7 +57,7 @@ export interface NewPaymentLink { amount: number; reference_id: string; descript
 export interface Payments {
   createPaymentLink(request: NewPaymentLink): Promise<PaymentLink>;
   fetchPaymentLink(id: string): Promise<PaymentLink | null>;
-  listPaymentLinks(query?: { reference_id?: string }): Promise<PaymentLink[]>;
+  listPaymentLinks(query?: { reference_id?: string; payment_id?: string }): Promise<PaymentLink[]>;
   cancelPaymentLink(id: string): Promise<PaymentLink>;
   fetchPayment(id: string): Promise<Payment | null>;
   /** Refund part or all of a payment, never more than what is left on it. */
@@ -136,7 +141,9 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
 
     async listPaymentLinks(query = {}) {
       begin("listPaymentLinks");
-      return [...linkStore.values()].filter((l) => query.reference_id === undefined || l.reference_id === query.reference_id).map(copyLink);
+      return [...linkStore.values()]
+        .filter((l) => (query.reference_id === undefined || l.reference_id === query.reference_id) && (query.payment_id === undefined || l.payments.some((p) => p.id === query.payment_id)))
+        .map(copyLink);
     },
 
     async cancelPaymentLink(id) {

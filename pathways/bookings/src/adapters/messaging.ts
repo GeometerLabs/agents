@@ -23,9 +23,15 @@ export interface OutboundMessage {
   sentAt: number;
   /** True when the fake had already seen this person send STOP. A correct agent never produces one. */
   afterOptOut: boolean;
+  /** Live only: what the provider said when it took the message ("accepted", or "held_for_quality_assessment"). Taken is not delivered. */
+  acceptedAs?: string;
 }
 
-export interface TemplateMessage { name: string; language: Language; text: string }
+/**
+ * `text` is the whole rendered message (what the outgoing check read, and all the fake needs). A real provider sends the approved
+ * template `name` with the numbered `parameters` ({{1}}, {{2}} ...) instead, and its approved wording must come out as `text`.
+ */
+export interface TemplateMessage { name: string; language: Language; text: string; parameters?: string[] }
 
 export interface Messaging {
   /** Free-form text. Only allowed while the customer's 24-hour window is open. */

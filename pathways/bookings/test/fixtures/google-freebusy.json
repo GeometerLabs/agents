@@ -1,0 +1,14 @@
+{
+  "kind": "calendar#freeBusy",
+  "timeMin": "2026-11-10T00:00:00.000Z",
+  "timeMax": "2026-11-11T00:00:00.000Z",
+  "calendars": {
+    "shop@example.com": {
+      "busy": [ { "start": "2026-11-10T04:30:00Z", "end": "2026-11-10T05:30:00Z" } ]
+    },
+    "broken@example.com": {
+      "errors": [ { "domain": "global", "reason": "notFound" } ],
+      "busy": []
+    }
+  }
+}
