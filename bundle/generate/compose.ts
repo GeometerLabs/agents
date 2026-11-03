@@ -5,7 +5,7 @@
 //                 g-<shop>-razorpay       one Guard per upstream per shop: a Guard binds one tool and one bundle, and its per-agent config
 //                 g-<shop>-whatsapp       cannot restrict argument values, so a shared WhatsApp Guard could be told to send from another shop's number
 //                 g-<shop>-calendar
-//                 fwd-<shop>-<tool>       3 tiny forwarders, one per Guard, in the Guard's network namespace: the way to its admin port (see below)
+//                 fwd-<shop>-<tool>       3 tiny forwarders, one per Guard; each owns its Guard's network namespace and is the way to its admin port (see below)
 //                 door-<shop>             a tiny forwarder from the `admin` network to the runtime's port: how the inbox, the relay and ops reach the runtime
 //   per server    g-model                 the model Guard (the server's key and cap; every shop's runtime is an agent of it)
 //                 inbox, relay            webhooks in /c/<shop>/..., owners' approvals; each routes by shop and holds that shop's secrets
@@ -23,8 +23,9 @@
 // its Guards and the model Guard. Each of them refuses a call without the right credential.
 //
 // Guard's admin port (kill switch, approvals, reload, status) is on 127.0.0.1 inside the Guard, because Guard's production profile refuses it on
-// any other address without TLS on the agent port too. fwd-* is a busybox `nc` in the Guard's own network namespace, listening only on the Guard's
-// address on the `admin` network and passing bytes to 127.0.0.1:8082. The runtime is not on that network, so it cannot see the port at all.
+// any other address without TLS on the agent port too. fwd-* is a busybox `nc` that owns the Guard's network namespace and listens only on its
+// address on the `admin` network, passing bytes to 127.0.0.1:8082 (the Guard shares that loopback). The runtime is not on that network, so it cannot
+// see the port at all.
 import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import type { GuardKind } from "./guards.ts";
@@ -127,27 +128,28 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   const secretDir = (name: string) => `${dirs.secrets}/${name}`;
   const node = (command: string[], extra: Service): Service => ({ image: server.appImage, user: nodeUser, init: true, ...hardened, command, ...extra });
 
-  // -- the Guards (per shop and the model) and their forwarders
-  const guard = (g: GuardRef, attach: Record<string, Y>, adminAddress: string, extraVolumes: Y[], dependsOn?: Record<string, Y>) => {
-    const files = [`${dirs.generated}/guards/${g.service}/guard.toml`, `${dirs.generated}/guards/${g.service}/bundle.json`];
-    add(g.service, {
-      image: server.guardImage, ...hardened, user: guardUser, stop_grace_period: "30s",
-      volumes: [`${dirs.generated}/guards/${g.service}:/etc/geo-guard:ro`, `${g.kind === "model" ? names.modelStateVolume : names.stateVolume(g.tenant, g.kind)}:/var/lib/geo-guard`, `${secretDir(g.service)}:/run/secrets:ro`, ...extraVolumes],
-      networks: { ...attach, egress: {}, admin: { ipv4_address: adminAddress } },
-      healthcheck: { test: ["CMD", "/usr/local/bin/geo-guard", "health", `127.0.0.1:${HEALTH_PORT}/readyz`], interval: "10s", timeout: "3s", retries: 3, start_period: "10s" },
-      depends_on: dependsOn,
-    }, files);
-    add(`fwd-${g.service.replace(/^g-/u, "")}`, {
-      image: FORWARDER_IMAGE, ...hardened, user: guardUser, network_mode: `service:${g.service}`,
+  // -- the Guards (per shop and the model) and their forwarders. The forwarder OWNS the network namespace (as the TLS front does in deploy/compose) and the
+  // Guard joins it: a Guard that restarts or crashes leaves the namespace, its addresses and the forwarder as they were. The Guard's name on the shop's
+  // network is an alias on the forwarder.
+  const guard = (g: GuardRef, attach: string[], adminAddress: string, extraVolumes: Y[], dependsOn?: Record<string, Y>) => {
+    const fwd = `fwd-${g.service.replace(/^g-/u, "")}`;
+    add(fwd, {
+      image: FORWARDER_IMAGE, ...hardened, user: guardUser,
       command: ["nc", "-ll", "-s", adminAddress, "-p", String(ADMIN_FORWARD_PORT), "-e", "nc", "127.0.0.1", "8082"],
-      depends_on: { [g.service]: { condition: "service_started" } },
+      networks: { ...Object.fromEntries(attach.map((n) => [n, { aliases: [g.service] }])), egress: {}, admin: { ipv4_address: adminAddress } },
     });
+    add(g.service, {
+      image: server.guardImage, ...hardened, user: guardUser, stop_grace_period: "30s", network_mode: `service:${fwd}`,
+      volumes: [`${dirs.generated}/guards/${g.service}:/etc/geo-guard:ro`, `${g.kind === "model" ? names.modelStateVolume : names.stateVolume(g.tenant, g.kind)}:/var/lib/geo-guard`, `${secretDir(g.service)}:/run/secrets:ro`, ...extraVolumes],
+      healthcheck: { test: ["CMD", "/usr/local/bin/geo-guard", "health", `127.0.0.1:${HEALTH_PORT}/readyz`], interval: "10s", timeout: "3s", retries: 3, start_period: "10s" },
+      depends_on: { [fwd]: { condition: "service_started" }, ...dependsOn },
+    }, [`${dirs.generated}/guards/${g.service}/guard.toml`, `${dirs.generated}/guards/${g.service}/bundle.json`]);
   };
 
   for (const shop of shops) {
     for (const g of shop.guards) {
       guard(
-        g, { [names.net(shop.name)]: {} }, net.adminIp(shop.name, g.kind, shop.index),
+        g, [names.net(shop.name)], net.adminIp(shop.name, g.kind, shop.index),
         g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: shop.name } }] : [],
         g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined,
       );
@@ -167,7 +169,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       depends_on: Object.fromEntries([...own, names.modelGuard].map((s) => [s, { condition: "service_healthy" }])),
     }), [`${dirs.generated}/shops/${shop.name}/client/runtime.json`, `${dirs.generated}/shops/${shop.name}/client/settings.json`, `${dirs.generated}/shops/${shop.name}/client/pathway.lock`]);
   }
-  guard(modelGuard, Object.fromEntries(shopNets.map((n) => [n, {}])), net.adminIp(undefined, "model"), []);
+  guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;

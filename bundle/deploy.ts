@@ -9,7 +9,7 @@
 //   6. write status/<shop>.json for the panel
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, ShopDeploy } from "./generate/compose.ts";
 import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
@@ -178,7 +178,7 @@ async function serverProblems(ctx: Context, server: ServerConfig): Promise<Probl
   if (!have(ctx.dir, "g-model", keyFile)) problems.push({ rule: "secret-missing:model_key", message: `The model's API key is not in place. Run \`geometer model-key <file>\` (a file with the key on one line); it goes to the model Guard only.` });
   if (server.backup && !have(ctx.dir, "backup", "stream")) problems.push({ rule: "secret-missing:backup-key", message: "The continuous copy's bucket key is not in place. Run `geometer backup-key stream <file>` (the file has `access-key-id:secret` on one line)." });
   if (server.backup && !have(ctx.dir, "backup", "snapshots") && server.backup.snapshots.url.startsWith("s3://")) problems.push({ rule: "secret-missing:backup-key", message: "The snapshot bucket's key is not in place. Run `geometer backup-key snapshots <file>`." });
-  if (server.fleet && !readSecretFile(join(ctx.dir, server.fleet.keyFile)) && !existsSync(server.fleet.keyFile)) problems.push({ rule: "fleet-key", message: `The deployment key file ${server.fleet.keyFile} is missing, so no heartbeat could be sent and Geometer's alerts from outside would never fire.` });
+  if (server.fleet && !readSecretFile(resolve(ctx.dir, server.fleet.keyFile))) problems.push({ rule: "fleet-key", message: `The deployment key file ${server.fleet.keyFile} is missing, so no heartbeat could be sent and Geometer's alerts from outside would never fire.` });
   return problems;
 }
 
@@ -228,6 +228,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   writeAtomic(join(p.generated, "relay", "relay.json"), relayConfig(server, shops));
   writeAtomic(join(p.generated, "refresher", "refresher.json"), refresherConfig(server, shops));
   writeAtomic(join(p.generated, "ops", "ops.json"), opsConfig(server, shops));
+  // the deployment key goes to the one container that sends heartbeats
+  if (server.fleet) writeSecretFile(secretFile(ctx.dir, "ops", "fleet_key"), readSecretFile(resolve(ctx.dir, server.fleet.keyFile)) ?? "");
   if (server.backup) {
     const [accessKeyId, ...secret] = (readSecretFile(secretFile(ctx.dir, "backup", "stream")) ?? ":").split(":");
     writeSecretFile(secretFile(ctx.dir, "litestream", "litestream.yml"), litestreamConfig(server.backup, shops.map((s) => s.name), { accessKeyId, secretAccessKey: secret.join(":") }));
