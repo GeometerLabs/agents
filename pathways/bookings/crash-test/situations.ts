@@ -292,7 +292,7 @@ export const situations: Situation[] = [
       await w.say(push);
       const texts = w.textsTo(CUSTOMER);
       expect("No message to the customer ever mentions ₹300", texts.every((t) => !t.includes("300")), texts.join(" | "));
-      expect("The customer was told the list price, ₹450", texts[0].includes("₹450"), texts[0]);
+      expect("The customer was told the list price, ₹450, and that it cannot be lower", texts[0].includes("₹450") && texts[0].includes(language === "hi" ? "नहीं हो पाएगा" : "can't go lower"), texts[0]);
       expect("The only payment link is the ₹200 deposit", w.payments.links().length === 1 && w.payments.links()[0].amount === 20000, JSON.stringify(w.payments.links()));
       expect("Nothing in the calendar is a cheaper booking: still one hold", bookingEvents(w).length === 1);
       w.payments.customerPays(w.linkFor("b-1")!.id);
