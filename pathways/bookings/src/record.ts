@@ -65,8 +65,9 @@ export interface ActionRecord extends RecordView {
   append(entry: NewEntry): RecordEntry;
 }
 
-export function createRecord(clock: Clock): ActionRecord {
-  const list: RecordEntry[] = [];
+/** `saved` are entries an earlier run already wrote (the server reloads its record from disk); new entries continue after them. */
+export function createRecord(clock: Clock, saved: readonly RecordEntry[] = []): ActionRecord {
+  const list: RecordEntry[] = saved.map(frozen);
 
   const view: RecordView = {
     entries: () => [...list],
@@ -98,6 +99,10 @@ export function createRecord(clock: Clock): ActionRecord {
       return stored;
     },
   };
+}
+
+function frozen(e: RecordEntry): RecordEntry {
+  return Object.freeze({ ...e, decisions: Object.freeze(e.decisions.map((d) => Object.freeze({ ...d }))), refs: Object.freeze({ ...e.refs }) });
 }
 
 /** A short fingerprint of the inputs: same content gives the same digest whatever the key order. */
