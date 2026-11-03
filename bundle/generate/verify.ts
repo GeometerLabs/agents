@@ -30,9 +30,9 @@ export function refusalProblems(stage: string, text: string): Problem[] {
   const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
   const refused = lines.filter((l) => /^(geo-guard: )?(refused:|tripwire failed)/u.test(l));
   return (refused.length > 0 ? refused : lines.slice(0, 5)).map((line) => {
-    // "rules[2] (refund-once): ...", "tripwire failed: rule own-number-only (...", "no bundle was written: own-number-only expected refuse ..."
-    const rule = /rules\[\d+\] \(([^)]+)\)|rule ([A-Za-z0-9][A-Za-z0-9._:/@+-]*)|written: ([A-Za-z0-9][A-Za-z0-9._:/@+-]*) expected/u.exec(line);
-    return { rule: `${stage}${rule ? `:${rule[1] ?? rule[2] ?? rule[3]}` : ""}`, message: line.replace(/^geo-guard: /u, "") };
+    // the compiler names a rule in one of three ways; the most specific is tried first ("a rule of this spec" would otherwise be read as a rule called "of")
+    const id = /no bundle was written: ([A-Za-z0-9][A-Za-z0-9._:/@+-]*) expected/u.exec(line)?.[1] ?? /rules\[\d+\] \(([^)]+)\)/u.exec(line)?.[1] ?? /tripwire failed: rule ([A-Za-z0-9][A-Za-z0-9._:/@+-]*)/u.exec(line)?.[1];
+    return { rule: `${stage}${id ? `:${id}` : ""}`, message: line.replace(/^geo-guard: /u, "") };
   });
 }
 
