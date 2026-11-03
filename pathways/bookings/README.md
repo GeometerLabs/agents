@@ -21,6 +21,40 @@ node pathways/bookings/scripts/review-sheet.ts ml   # the Malayalam review sheet
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
 
+## Show it to a shop
+
+A demo mode a partner runs on a laptop and opens on the shop owner's own phone. It is the **real agent** running on the in-memory stand-ins with a fake clock: **test money only, nothing real is contacted, nothing is saved.** A banner on every screen says so ("Demo · test money · nothing real is sent").
+
+```sh
+# from the root of this repository; both devices on the same Wi-Fi
+node pathways/bookings/demo/server.ts                      # Glow Salon, English
+node pathways/bookings/demo/server.ts --lang hi            # start in Hindi (any language in LANGUAGES)
+node pathways/bookings/demo/server.ts --settings my-shop.json --port 8787
+```
+
+It prints the addresses to open, for example `http://192.168.1.23:8787` for the phone. If the phone cannot open it: put both on the same Wi-Fi (a guest network that separates devices will not work), or turn on the phone's hotspot and join the laptop to it. It listens only on this computer and your private network addresses, and answers nothing that comes from the internet. There is no login, so **never open the port to the internet**.
+
+**Three tabs, phone-sized**
+
+| Tab | What it shows |
+| --- | --- |
+| Customer | A WhatsApp-like chat. Type as a customer in any supported language, or tap a suggestion written for this shop. Buttons: pay the deposit (test money), pay it twice, 1 hour or 1 day passes (holds expire, reminders go out), cancel, start again |
+| Owner | What the owner sees, in the shop's language, in big plain words: requests waiting for an answer with **Approve** and **Deny** buttons (they send the owner's command to the agent), then lines such as "It said no to ₹300", "The booking it made is in your calendar. We checked.", "It asked you before giving money back", "We didn't check: phone calls", and the owner's WhatsApp messages |
+| What we did | Hidden until you tap **Show what we did ▸**. The action record (each action, whether it was confirmed from the service's own record, every rule's decision in plain words), a work-done line, and what the stand-in calendar and payments service hold |
+
+**Make it the shop's own in 30 seconds.** Tap **Set up for this shop**: name, up to four services with prices, deposit, opening hours, language. The check that reads settings files reads this form too, and its plain-words mistakes show on the form. The demo then starts again with the shop's own menu. The shop is kept for every device on this server, so you can set it up on the laptop and open it on the phone. The refund limit is raised to at least the deposit, so a second payment is handed back straight away; late cancellations still ask the owner.
+
+**A 60-second script**
+
+1. *(10 s)* Set up for this shop, or leave Glow Salon. Open **Customer**.
+2. *(15 s)* **A discount is refused.** Tap the suggestion with a lower price ("...can you do it for ₹300?"). The agent states the list price once and sends the deposit link, never the offer. Open **Owner**: "It said no to ₹300. It never goes below your price."
+3. *(15 s)* **Paying twice.** Tap **Pay it twice**. One booking, and the extra payment goes back. Owner: "Someone paid twice. The extra ₹200 went back to them."
+4. *(15 s)* **A confusing date.** Tap **Start again**, then the suggestion with "next" and a weekday (for example "next Friday"). The agent writes the full date back and holds nothing until the customer says yes.
+5. *(optional, 15 s)* **It asks first.** Book, pay, tap **1 day passes**, tap **Cancel the booking**. Owner: "Give back ₹200?" with Approve and Deny. (The agent asks only when the cancellation is less than 24 hours before the start. If the suggestion said "the day after tomorrow" because tomorrow is a closed day, tap **1 day passes** twice first; for a later weekday, until it is the day before.)
+6. If the owner (or a friend who codes) wants proof, tap **Show what we did ▸**.
+
+**What this is not.** A demo of the pathway on stand-ins. The owner's lines are counted from the stand-ins' records, so they show what happened in the demo, not a claim about a live shop. The "We didn't check" line is always shown. The clock is a fake clock that starts on today's real date at 10:00 in the shop's time zone and moves only when you tap.
+
 ## What the customer sees
 
 ```text
@@ -130,8 +164,10 @@ src/language/                      templates (hi, en, ml, kn), the outgoing chec
                                    words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
-test/                              unit tests, plus one test per situation
+test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints
 scripts/hand-check.ts              the hand check
+demo/                              the partner demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
+                                   view.ts (the owner's summary and the record), personalise.ts (the shop form), strings.ts, page.ts/.css/.js
 scripts/review-sheet.ts            writes REVIEW-ml.md and REVIEW-kn.md from the templates and word lists
 REVIEW-ml.md, REVIEW-kn.md         every Malayalam and Kannada line, for a native speaker to mark OK or change
 Explanation.md, Deferred.md        how it was built and why; what is left open and why
@@ -143,7 +179,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 - **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser is a stub that is never called (`createOpenAICompatibleParser`).
-- **The monthly client report, the builder panel, hosting, restarts and persistence** (state is in memory), and **Tamil, Telugu** and other languages. Malayalam and Kannada are built but **not yet reviewed by a native speaker**.
+- **The monthly client report, the builder panel, hosting, restarts and persistence** (state is in memory), and **Tamil, Telugu** and other languages. Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
 
 The full list, with a reason and a trigger for each, is in [Deferred.md](Deferred.md). What the hand check does not test is printed every time it runs.
 

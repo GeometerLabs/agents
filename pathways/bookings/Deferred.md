@@ -62,6 +62,19 @@
 | The monthly client report and the builder panel | Separate workstreams (W12 and W10) built on this record | After the first live client |
 | Time zones with daylight saving | India has none; the time helpers handle offsets through `Intl`, but no daylight-saving case is tested | A client outside India |
 
+## The partner demo (`demo/`)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| A hosted demo link a partner can send | It needs hosting, a public address and abuse limits, and the owner's approval before anything is deployed. The local demo has no login and answers only the private network on purpose | The owner approves a hosted demo and a spend |
+| A QR code in the terminal for the phone | A QR needs an encoder written by hand (no dependencies), or a library. The address is printed instead | Partners ask for it |
+| Buttons that break things on purpose (calendar saves nothing, lost reply) | Strong in a pitch ("it did not say booked"), but they need the fault injection of the stand-ins exposed through the page, and care that they do not confuse an owner | The first partner tries the demo with a sceptical shop |
+| "Stop it now", the product's kill switch, and a crash-test line for the shop ("we tried 27 things; it handled 27") | The agent has no kill switch yet, and the situations run on Glow Salon's settings, so claiming them for a personalised shop would mislead | Guard exists; situations can run against any settings |
+| Reviewed Hindi, Malayalam and Kannada screen words | `demo/strings.ts` has English and Hindi (not reviewed by a native speaker). Other languages show English screens while the agent's own messages follow the language pack | A native speaker reviews the words |
+| A PIN for the shop form; the shop is one per server | Anyone on the same Wi-Fi can change the shop or press Start again. Fine for a laptop in a shop, not for a shared network | A shared-network use appears |
+| Looking more like WhatsApp (ticks, voice notes, the 30-second voice summary) | The product doc plans a voice note for the owner; the demo shows text only | The voice-note work (W12) exists |
+| Starting on a chosen day or time | The clock starts on the real date at 10:00 shop time; suggestions skip closed days, but typed requests do not | Partners ask |
+
 ## WhatsApp coexistence (check before any shop goes live)
 
 **What:** the shop must keep its existing WhatsApp number and its normal WhatsApp Business app working alongside the official API the agent uses. A builder or partner should use one shared provider account across their shops, not one plan per shop.
