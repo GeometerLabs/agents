@@ -40,7 +40,7 @@ Carry: your laptop (charged, demo tested on a phone), 3 printed one-page sheets 
 Say them in the owner's language, slowly.
 
 1. "Hello, I'm [your name] from [town], and I help shops with bookings on WhatsApp."
-2. "It's a booking helper: it answers your customers, books the time and takes a deposit, but only inside rules you set, so it can't go below your prices."
+2. "It's a booking helper: it books the time and takes the deposit, only inside rules you set, so it can't go below your prices."
 3. "May I show you on your own phone, with test money, in 3 minutes?"
 
 Then stop talking. If they say yes, go to section 4. If they say no, say "Thank you. May I leave this sheet with you?" and leave.
@@ -108,7 +108,7 @@ The facts behind "it depends":
 
 - It must be the WhatsApp Business app, not plain WhatsApp.
 - The account may need to be some months old. Some providers ask for about 3 months of real use.
-- Open the app at least once every 2 weeks, or the connection drops. Uninstalling the app disconnects the number.
+- Open the app at least once a week: after about 2 weeks without it, the connection drops. Uninstalling the app disconnects the number.
 - Linked devices are unlinked and must be linked again. In one-to-one chats, disappearing messages, view-once and live location stop working, and broadcast lists become read-only.
 
 ### "What does it cost?"
@@ -180,7 +180,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 - [ ] **The WhatsApp check.** Open the shop's WhatsApp with the owner.
   - It must be the WhatsApp Business app, and the shop keeps its number and its app.
   - Ask how old the account is. If it is too new, the helper can't connect yet: agree a date to check again, and don't take the setup fee.
-  - Tell the owner: open the app at least every 2 weeks, don't uninstall it, and link the other devices again afterwards.
+  - Tell the owner: open the app at least once a week, don't uninstall it, and link the other devices again afterwards.
 - [ ] **Share the calendar together.** On your laptop, not the phone: the owner's Google Calendar, Settings and sharing, Share with specific people. Add the address Geometer gives you, with "Make changes to events". It takes about 2 minutes. If the shop uses a paper diary, make a Google Calendar first and add the next 2 weeks together.
 - [ ] **The shop's own Razorpay account.** Deposits go straight to the shop, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. It may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes minutes, or up to 4 working days.
 - [ ] **The limits, in the owner's words.** Ask, write down, read back:
