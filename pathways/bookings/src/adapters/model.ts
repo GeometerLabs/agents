@@ -8,7 +8,7 @@ import type { Language, Service } from "../settings.ts";
 import type { DatePhrase, TimePhrase } from "../language/dates.ts";
 
 export type IntentKind = "book" | "cancel" | "reschedule" | "yes" | "no" | "stop" | "greeting" | "unknown";
-const KINDS: IntentKind[] = ["book", "cancel", "reschedule", "yes", "no", "stop", "greeting", "unknown"];
+export const KINDS: IntentKind[] = ["book", "cancel", "reschedule", "yes", "no", "stop", "greeting", "unknown"];
 
 export interface Intent {
   kind: IntentKind;
