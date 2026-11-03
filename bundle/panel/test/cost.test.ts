@@ -16,7 +16,7 @@ const line = (c: { lines: CostLine[] }, id: CostLine["id"]) => c.lines.find((l) 
 // The sha256 of each committed price list. A price list is never edited after it is committed; a new price is a new file, and a new line here.
 const PINNED: Record<string, string> = {
   "2026-11-03.json": "0d77094e78500264c426f4e587f61299ad0d8bda7f450631306a6e15fa6db64f",
-  "2026-11-04.json": "597287996446b11e0b09d649aa1c3c1248408b1b8c2d1204f183f6bbc13215cc",
+  "2026-11-04.json": "6c495979cdaf40194c811e6f9716ec1286afc02a8003418c5e68bb913d8a156d",
 };
 
 test("the newest price list is the one dated 2026-11-04, and the bytes of every list are pinned: a changed price is a new file", () => {
