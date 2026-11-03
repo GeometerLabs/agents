@@ -71,6 +71,7 @@ Optional, 30 seconds: tap "Set up for this shop" and enter the shop's name, up t
 
 **Good to know**
 
+- In Malayalam and Kannada the demo's buttons, tabs and suggestions are still in English, and so is the reply to "Cancel the booking". To see the chat in Malayalam or Kannada, type the customer's message yourself: the Malayalam and Kannada guides give the sentences.
 - The refund question also appears when a refund is above the owner's refund limit. The demo shows the late cancellation because it is quick to show.
 - The prices are Glow Salon's unless you set the demo up for the shop. Use the owner's own prices when you can.
 - Let the owner type as a customer and try to talk it into a discount. That is the best part of the demo.
