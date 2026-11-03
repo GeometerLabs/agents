@@ -11,7 +11,7 @@
 import { uiFor } from "../../pathways/bookings/demo/strings.ts";
 import type { Why, LiveCode } from "./contract.ts";
 import type { CheckCode } from "./checks.ts";
-import type { Caveat, LineId } from "./cost.ts";
+import type { Caveat, LineId, Payer } from "./cost.ts";
 
 const demo = uiFor("en");
 
@@ -46,8 +46,8 @@ export interface Words {
   };
   cost: {
     heading: string; early: string; fromRecord(n: number): string; assumption(n: number): string;
-    lines: Record<LineId, string>; payer: Record<"passed-through" | "shop-pays-razorpay" | "hosting", string>;
-    unknown: string; included: string; usage(amount: string): string; total: string; subtotal(unknownItems: number): string; priceList(date: string): string;
+    lines: Record<LineId, string>; payer: Record<Payer, string>;
+    unknown: string; total: string; subtotal(unknownItems: number): string; priceList(date: string): string;
     caveats: Record<Exclude<Caveat, "early-estimate">, string>;
   };
   setup: {
@@ -92,7 +92,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "shop.versions": ["0.1.0", "0.1.0"], "shop.hoursRange": ["10:00", "20:00"], "shop.lastDeploy": ["4 Nov 2026, 10:30"], "shop.unprovable": ["refund-limit"], "shop.backupCopy": ["4 Nov 2026, 10:30"], "shop.backupDrill": ["4 Nov 2026, 04:00", true],
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
-  "cost.fromRecord": [38], "cost.assumption": [40], "cost.usage": ["₹2.38"], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
+  "cost.fromRecord": [38], "cost.assumption": [40], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
@@ -161,15 +161,17 @@ export const en: Words = {
   },
   cost: {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,
-    lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", model: "Model use", razorpay: "Razorpay's fee", hosting: "Hosting share" },
-    payer: { "passed-through": "passed on at cost", "shop-pays-razorpay": "paid by the shop to Razorpay", hosting: "the server's cost, shared" },
-    unknown: "unknown", included: "included", usage: (a) => `about ${a} of model use`, total: "Total", subtotal: (n) => `Subtotal. ${n} ${t1(n, "item has", "items have")} no price yet, so this is not the whole cost.`, priceList: (d) => `Prices from the list of ${d}.`,
+    lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", razorpay: "Razorpay's fee", geometer: "Geometer's fee (founding price)", hosting: "Hosting share" },
+    payer: {
+      "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-razorpay": "paid by the shop to Razorpay",
+      "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included", hosting: "the server's cost, shared",
+    },
+    unknown: "unknown", total: "Total", subtotal: (n) => `Subtotal. ${n} ${t1(n, "item has", "items have")} no price yet, so this is not the whole cost.`, priceList: (d) => `Prices from the list of ${d}.`,
     caveats: {
       "assumed-exchange-rate": "Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ.",
       "provider-not-chosen": "No WhatsApp provider is chosen yet, so its fee is unknown.",
       "provider-not-priced": "The price list has no price for this provider.",
-      "allowance-not-set": "The included model allowance is not set, so what is passed on is unknown.",
-      "model-not-priced": "The price list has no price for this model.",
+      "fee-not-priced": "The price list has no price for Geometer's fee.",
       "hosting-not-measured": "The hosting share has not been measured yet.",
       "payment-link-fee-conflict": "Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used.",
       "whatsapp-rate-second-hand": "The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice.",

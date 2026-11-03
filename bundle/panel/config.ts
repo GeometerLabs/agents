@@ -28,10 +28,8 @@ export interface PanelConfig {
   webhookUrl?: string;
   /** The cost line's settings. */
   whatsappProvider?: string;
-  model?: string;
   /** The model Guard the server runs, from the server's own geometer.json: a shop's runtime.json must ask for exactly this wire and model. */
   serverModel?: { wire: "openai" | "anthropic"; model: string };
-  modelAllowancePaise?: number;
   hostingSharePaise?: number;
   staleMinutes: number;
   now?: () => number;
@@ -85,9 +83,7 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
     ...(env.PANEL_GUARD_URL ? { guardUrl: env.PANEL_GUARD_URL } : {}), ...(env.PANEL_GUARD_AGENT_TOKEN_FILE ? { guardAgentTokenFile: env.PANEL_GUARD_AGENT_TOKEN_FILE } : {}),
     ...(env.PANEL_WEBHOOK_URL ? { webhookUrl: env.PANEL_WEBHOOK_URL } : {}),
     ...(env.PANEL_WHATSAPP_PROVIDER ? { whatsappProvider: env.PANEL_WHATSAPP_PROVIDER } : {}),
-    ...((env.PANEL_MODEL ?? serverModel?.model) ? { model: (env.PANEL_MODEL ?? serverModel?.model) as string } : {}),
     ...(serverModel ? { serverModel } : {}),
-    ...(num(env.PANEL_MODEL_ALLOWANCE_PAISE, "PANEL_MODEL_ALLOWANCE_PAISE") !== undefined ? { modelAllowancePaise: num(env.PANEL_MODEL_ALLOWANCE_PAISE, "PANEL_MODEL_ALLOWANCE_PAISE") as number } : {}),
     ...(num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") !== undefined ? { hostingSharePaise: num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") as number } : {}),
     staleMinutes: num(env.PANEL_STALE_MINUTES, "PANEL_STALE_MINUTES") ?? 30,
   };
