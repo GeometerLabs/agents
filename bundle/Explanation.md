@@ -19,7 +19,7 @@ November 2026. Plan items B9, parts of B9a, B14 (the fail-closed minimum), B19, 
 | `services/ops.ts`, `heartbeat.ts` | the heartbeat sender, and the admin client the deployer reaches through `docker compose exec` |
 | `backup/` | age, the S3 and folder stores, the nightly snapshot, the drill's check, and the host side that runs them |
 | `lib/` | names and files, the server folder, secrets, state, status, the Docker seam, the router |
-| `test/` | 77 tests with no Docker (`npm test`), and `test/proof/run.ts`, the real-Docker proof |
+| `test/` | 94 tests with no Docker (`npm test`), and `test/proof/run.ts`, the real-Docker proof |
 
 ## One source for every spec
 
@@ -94,10 +94,70 @@ The panel (`bundle/panel/`, merged into main separately) shares files with the d
 
 ## What the tests show, and what they do not
 
-77 tests run with no Docker (`cd bundle && npm test`); the pathway's own tests (580) still pass. The tests cover the generator and each of its refusals, the drift against the monorepo fixtures, the compose layout (who is on which network, which container mounts which secrets folder, nothing mounts the Docker socket), the deployer against a fake machine (a broken tripwire starts nothing; versions only rise; only changed services are restarted; a stopped shop stays stopped; a running Guard that disagrees stops the shop), the inbox isolation, the heartbeat against fleet's validator, the refresher's token discipline, snapshots and the drill against real SQLite, age, the S3 signing and the command line.
+94 tests run with no Docker (`cd bundle && npm test`; a 95th checks the status file with the panel's own checker once `bundle/panel/contract.ts` is in the tree, and was run against a copy of it); the pathway's own tests (580, four more than before, one skipped as before) still pass. The tests cover the generator and each of its refusals, the drift against the monorepo fixtures, the compose layout (who is on which network, which container mounts which secrets folder, nothing mounts the Docker socket), the deployer against a fake machine (a broken tripwire starts nothing; versions only rise; only changed services are restarted; a stopped shop stays stopped; a running Guard that disagrees stops the shop), the inbox isolation, the heartbeat against fleet's validator, the refresher's token discipline, snapshots and the drill against real SQLite, age, the S3 signing and the command line.
 
-`test/proof/run.ts` runs the real thing. RESULTS_PLACEHOLDER
+`test/proof/run.ts` runs the real thing, on Docker Desktop (Apple silicon, 8 GB for the VM, Docker 29.8, Compose v2), with the real Guard image `geo-guard:0.1.0-alpha.2-pathways.1`, the stand-ins as the providers, MinIO as the bucket, the real `apps/fleet` on the host with its own temporary config and data, and `age` from Alpine for the interoperability check. The third full run, on 4 November 2026: **148 checks, none failed** (1, 5 and 10 shops, about 25 minutes). The two runs before it found real faults, now fixed and each with a test: stopping one shop had pulled the shared model Guard's kill switch for every shop; a new shop's Calendar Guard could not be created because the token folder it mounts did not exist yet; the drill could not open a restored copy on a read-only mount; and the proof's own mistakes (a stand-in's answer read as a Guard's refusal; `docker kill` read as a crash, which Docker does not restart).
 
-## Where the numbers come from
+### The B14 checks
 
-LOC_PLACEHOLDER
+| Claim | Result |
+|---|---|
+| Every limit is proven on the running Guard | `12 of 12 limits proven to bite` per shop (3 Guards), 7 more named as not testable without writing and not counted; the model Guard 2 of 2. Read from the running Guards' `/admin/status`, with the policy digest equal to the one compiled. 30 s to deploy one shop, 74 s for five, 175 s for ten (compile and verify included). |
+| A refused deploy | Two shown with the real binary (below). Neither started anything. |
+| Kill the Razorpay Guard under load | 12 payment-link calls a second from inside the runtime for 24 s; the Guard was stopped at 8 s. 85 calls reached the Razorpay stand-in; **0 after the stop** (85 at the stop, 85 at the end; 179 calls found no Guard). A real crash (SIGABRT) is restarted by Docker, in the same namespace, and answers its runtime again. |
+| From inside the runtime, nothing but its Guards | Tried by name and by address: the stand-in providers, MinIO, `1.1.1.1:443` and `8.8.8.8:53`, the inbox, the relay, ops, the Guard's own admin port, every forwarder and door address on the admin network, and (with five shops) **the other shop's Guards and runtime**, by name and by address. All unreachable (`ENETUNREACH`, or a timeout where the name does not resolve). It reached its own three Guards and the model Guard, as a control. A control from ops reached the forwarder and the door, so "unreachable" means something. |
+| A held refund survives restarts | A refund above the owner's limit: HTTP 202, the approval held for 24 hours, nothing refunded. After restarting the Guard **and** the runtime, the same call was still held under **the same approval**. The owner's signed approval (through the relay's route) was accepted; the identical retry then went through once (one refund at the provider); a repeat was held again, not sent. The relay's reading credential was renewed twice and listed the hold. |
+| A forced tripwire failure | A policy for another tool was written into the Razorpay Guard's store, as a second replica on a shared store could (the case the tripwires exist for). `/readyz` went to **503**, `/admin/status` said `0 of 2` with the rules named, every call was refused (`the Guard's self-check failed ... nothing is sent until a later check passes`), and **fleet's alert fired** from the heartbeat the bundle sent: `guard-razorpay, the Guard in front of glow-salon's services on proof, reported not ready ... Check first: is the Guard's container running`. With the right policy back `/readyz` was 200 again. |
+| The kill switch | `stop` set it on the shop's three Guards (not the shared model Guard's), the record named who and when, it survived a restart of the Guard, and the Guard refused new calls (503). A stop request from the panel was carried out on the Guards, showed in status with its request id, and was removed. |
+| Webhooks | A signed Razorpay webhook through Caddy, the inbox and the door was saved by the runtime; a wrongly signed one was refused (401); the unprefixed path is not the inbox's. |
+| The panel's access | Its own agent read the WhatsApp number, the calendar and the payment links through the Guards and was refused (403, "agent panel-glow-salon is not authorized for ...") when it tried to send, to create a payment link or to write the calendar, and was refused another shop's number. From its network it reached only the Guards' agent ports. (This branch's stand-ins have no `GET` for the number or the calendar, so those two answers were the stand-in's 404 after the Guard passed them on.) |
+| Data | Litestream streamed to MinIO; a nightly snapshot of 156 files (the runtime's database and the Guard's own backups) is in the snapshot bucket, every object an age file and none holding a plain SQLite header; the weekly drill restored the continuous copy and matched the live record (`restored 1 entries, integrity ok, last entry #1 matches`); `restore` put the record back and the shop ran again; the real `age` opened what Node wrote and Node opened what `age` wrote. The stream bucket holds plain SQLite (Litestream 0.5 cannot encrypt). |
+
+**The refusal output for a broken tripwire**, from the real deploy and the real binary. The spec was changed to list every ending a tripwire could use, so the pin would let any value through:
+
+```
+deploy with a rule that fails its tripwire refused:
+  - [compile:own-number-only] g-glow-salon-whatsapp: refused: a rule of this spec would not hold, so no bundle was written: own-number-only expected refuse for phone_number_id = geometer-tripwire-x, got allow (phone_number_id allowed)
+```
+
+and the failure that started all this, a guard.toml that names another tool than its bundle (a Guard that would look healthy and protect nothing):
+
+```
+  - [tripwire] g-glow-salon-razorpay: geo-guard verify-bundle refused this setup: sha256:955cb4b4... ok (ceiling production) | refused: the policy bundle names tool "razorpay" (rule deposit-amount and 7 more) but guard.toml says tool = "whatsapp": every rule would be skipped and nothing would be protected, so this Guard will not run it
+```
+
+### Memory, and the shops-per-server cap
+
+Measured with `docker stats` on Docker Desktop (cgroup memory, which includes some page cache; **not RSS on a VPS**), 80 seconds after `up`, idle, with the heartbeat every 10 s rather than 60 (the test's setting). The test infrastructure (stand-ins, MinIO) is not counted.
+
+| | 1 shop | 5 shops | 10 shops |
+|---|---|---|---|
+| containers | 19 | 51 | 91 |
+| **bundle total** | **221 MiB** | **439 MiB** | **713 MiB** |
+| each runtime (Node) | 35.6 | 36.5 (max 39.5) | 35.2 (max 38.0) |
+| each shop Guard (Rust) | 2.2 (max 2.7) | 1.8 (max 2.2) | 1.6 (max 3.6) |
+| model Guard | 1.7 | 3.2 | 2.4 |
+| each forwarder or door (busybox) | 1.0 | 1.2 | 1.0 |
+| inbox / relay / refresher | 33.5 / 36.9 / 30.5 | 30.3 / 38.5 / 35.1 | 32.3 / 49.8 / 35.5 |
+| ops (heartbeat and admin client) | 41.3 | 61.4 | 109.4 |
+| Litestream | 13.6 | 16.5 | 20.8 |
+| Caddy | 16.2 | 18.4 | 18.4 |
+
+About **55 MiB for each shop** (a runtime 35, three Guards 5, four forwarders and doors 4, and the share of the growth of ops, the relay and Litestream) on top of about **170 MiB** for everything shared. So `memory(N) = 170 + 55 N` MiB: 20 shops 1.3 GB, 30 shops 1.8 GB, 40 shops 2.4 GB. A Guard is 2 MiB; the Node programs are what weigh. `ops` grows with the shops (it asks every runtime and Guard every heartbeat); it is the first to trim.
+
+**The cap I would set: 25 shops on a 2 vCPU / 4 GB server.** Memory alone would allow about 40, leaving 1.5 GB for the operating system, Docker and bursts (Litestream's first sync is 50 MiB). The cap is lower than memory allows because **CPU under real load, disk and the Docker daemon's own use on a 2 vCPU machine were not measured** (B14 item 4), so 25 is a guess to be tested, not a measurement. At 25 shops a server of ₹500 to ₹2,000 a month is **₹20 to ₹80 a shop a month**; at 10 shops it is ₹50 to ₹200, so the plan's "under about ₹100 per shop" holds from about 20 shops on a ₹2,000 server and at any size on a ₹500 one. That is the hosting share of the cost line. Not measured: B14 item 5 (the demo salon through Guard for two weeks).
+
+
+## Size
+
+Lines of code, counted with `wc -l` on the branch (every line, comments and blank lines included; the bundle's lines are long):
+
+| | Before | After |
+|---|---|---|
+| The Guard templates, hand-copied in the monorepo (5 specs and 5 guard.toml) | 574 lines, edited by hand per shop | still there as fixtures; **the generator that replaces them is `generate/guards.ts`, `shop.ts` and `rules.ts`: 373 lines**, producing every spec and guard.toml for every shop from its settings |
+| `bundle/` programs (everything above except tests) | 0 | **3,423** (the CLI, deployer and apply loop 921; services 476; generator 846; backup 555; lib 625) |
+| `bundle/` tests | 0 | 1,671 (94 tests), plus the proof harness 641 |
+| `bundle/` docs (README, Explanation, Deferred) | 0 | 316 |
+| The pathway (`pathways/bookings`) | unchanged otherwise | +144 / -26 lines including its tests and notes: the status counters, `parser.agentTokenFile`, the inbox and relay as handlers, the relay's hours |
+| The repository as a whole | 40,133 lines | 46,317 lines |
+
