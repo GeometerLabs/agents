@@ -1,0 +1,47 @@
+{
+  "kind": "calendar#events",
+  "summary": "Glow Salon",
+  "timeZone": "Asia/Kolkata",
+  "accessRole": "owner",
+  "items": [
+    {
+      "kind": "calendar#event",
+      "id": "e1hold",
+      "status": "tentative",
+      "summary": "haircut · +919811111111",
+      "start": { "dateTime": "2026-11-10T18:00:00+05:30" },
+      "end": { "dateTime": "2026-11-10T18:45:00+05:30" },
+      "extendedProperties": { "private": { "bookingRef": "b-1", "holdExpiresAt": "1793000000000" } }
+    },
+    {
+      "kind": "calendar#event",
+      "id": "e2owner",
+      "status": "confirmed",
+      "summary": "Dentist",
+      "start": { "dateTime": "2026-11-10T10:00:00+05:30" },
+      "end": { "dateTime": "2026-11-10T11:00:00+05:30" }
+    },
+    {
+      "kind": "calendar#event",
+      "id": "e3allday",
+      "status": "confirmed",
+      "summary": "Diwali",
+      "start": { "date": "2026-11-11" },
+      "end": { "date": "2026-11-12" }
+    },
+    {
+      "kind": "calendar#event",
+      "id": "e4free",
+      "status": "confirmed",
+      "summary": "Note to self",
+      "transparency": "transparent",
+      "start": { "dateTime": "2026-11-10T12:00:00+05:30" },
+      "end": { "dateTime": "2026-11-10T13:00:00+05:30" }
+    },
+    {
+      "kind": "calendar#event",
+      "id": "e5gone",
+      "status": "cancelled"
+    }
+  ]
+}

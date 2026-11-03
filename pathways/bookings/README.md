@@ -6,7 +6,7 @@ A WhatsApp agent for businesses that take bookings with a deposit and a cancella
 
 **What this folder is, and is not.** It is the v0 core of the pathway, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
 
-It has no dependencies. The agent and its tests make no network call off this computer (the server in `server/` listens on a port you choose, see "Run the agent as a server"). The rule parser reads the messages; a model parser exists too (see "Choose the model"), but nothing uses it until you point it at a model. TypeScript is run directly by Node's built-in type stripping.
+It has no dependencies. The agent and its tests make no network call outside this computer: the server, the live adapters, the inbox and the stand-ins talk HTTP, but only to each other on ports you choose, and only the dev forwarder can reach a real service. The rule parser reads the messages; a model parser exists too (see "Choose the model"), but nothing uses it until you point it at a model. TypeScript is run directly by Node's built-in type stripping.
 
 ## Run it
 
@@ -21,6 +21,52 @@ node pathways/bookings/scripts/model-eval.ts        # the model eval: the rule p
 ```
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
+
+## Run it against stand-ins / against test mode
+
+The same agent code can talk to the real wire formats of Razorpay, Google Calendar and WhatsApp. The live adapters (`src/adapters/live/`) hold **no keys** and send **no Authorization header**: each one points at a base URL, which in production is a Guard instance in front of that one service. Only that URL changes between a test, a demo, a stand-in and the real thing.
+
+```ts
+import { createLiveAdapters } from "./src/adapters/live/index.ts";
+const { payments, calendar, messaging } = createLiveAdapters(
+  { payments: { baseUrl }, calendar: { baseUrl, calendarId }, messaging: { baseUrl, phoneNumberId } },
+  { clock, window }, // window: the runtime's own record of when each customer last wrote
+);
+```
+
+**Against stand-ins** (nothing real, no keys, no network beyond this computer). The stand-ins speak the three wire formats over HTTP in front of the same in-memory fakes the tests use, and deliver signed webhooks like the providers do:
+
+```sh
+# from the root of this repository. The inbox reads each secret from a file; the stand-ins sign with these default values.
+mkdir -p /tmp/geometer-dev
+printf 'standin-razorpay-webhook-secret' > /tmp/geometer-dev/rzp
+printf 'standin-whatsapp-app-secret'     > /tmp/geometer-dev/app
+printf 'any-verify-token'                > /tmp/geometer-dev/verify
+printf 'any-internal-token'              > /tmp/geometer-dev/token
+
+node pathways/bookings/standins/main.ts --port 8790 --inbox http://127.0.0.1:8788      # the stand-in services
+RUNTIME_URL=http://127.0.0.1:8787 INTERNAL_TOKEN_FILE=/tmp/geometer-dev/token RAZORPAY_WEBHOOK_SECRET_FILE=/tmp/geometer-dev/rzp \
+  WHATSAPP_APP_SECRET_FILE=/tmp/geometer-dev/app WHATSAPP_VERIFY_TOKEN_FILE=/tmp/geometer-dev/verify PORT=8788 \
+  node pathways/bookings/inbox/main.ts                                                  # the inbox, in another terminal
+
+# a customer writes (the stand-in delivers a signed webhook to the inbox, which hands it to the runtime at RUNTIME_URL):
+curl -s -X POST localhost:8790/_standin/whatsapp/inbound -d '{"from":"+919811111111","text":"haircut tomorrow at 6pm"}'
+curl -s localhost:8790/_standin/state                  # the outbox, links, refunds, events and calendar the fakes hold
+curl -s -X POST localhost:8790/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # the customer pays a link (use an id from "links" in the state)
+curl -s -X POST localhost:8790/_standin/fault -d '{"service":"calendar","op":"insert","mode":"silentFailure"}'   # make the next calendar save do nothing
+```
+
+The scripts are `npm run standins` and `npm run inbox` (inside `pathways/bookings`). The inbox is its own process because it holds the webhook secrets, so the agent runtime never does. WhatsApp webhooks are verified by Meta's signature (the default), or, for a provider that does not sign (Gupshup), by a token in the URL (`WHATSAPP_VERIFICATION=path-token`, `WHATSAPP_PATH_TOKEN_FILE`, optionally `WHATSAPP_ALLOWED_SOURCES`); the second is weaker, see Explanation.md 7b. The tests start both on free ports (`test/standins.test.ts` runs the adapters and the agent against the stand-ins over real HTTP, `test/e2e.test.ts` goes from a stand-in WhatsApp message through a signed webhook and the inbox to a runtime).
+
+**Against real test-mode services, before Guard is configured** (Phase 0 only): the dev forwarder adds the credential and passes each call on to the real host. It has no limits and no record, refuses any Razorpay key that does not start with `rzp_test_`, and prints that in a banner.
+
+```sh
+cp .env.example .env        # at the repository root; git ignores .env. Fill in what you want to try; names only are in the example.
+node pathways/bookings/standins/dev-forwarder.ts --port 8791     # npm run dev-forwarder
+# base URLs for createLiveAdapters:  http://127.0.0.1:8791/razorpay   /google   /whatsapp
+```
+
+WhatsApp is written for Meta's Cloud API shape (Graph v26.0). The provider is not chosen yet, so a provider sandbox that uses other paths needs its own small mapping first. A live "confirmed" message means WhatsApp **accepted** it; WhatsApp has no endpoint to read a message back, and delivery status webhooks are not handled yet. The templates to submit to Meta are in `whatsapp-templates.json` (`node scripts/whatsapp-templates.ts` prints them). Design and decisions: Explanation.md, "Live services". What is left: Deferred.md.
 
 ## Show it to a shop
 
@@ -226,6 +272,10 @@ src/limits.ts                      the nine rules as pure checks
 src/booking.ts, src/agent.ts       the state machine and the agent
 src/adapters/                      calendar, payments, messaging fakes; the intent parser seam (model.ts), the rule parser, and the model
                                    parser over HTTP (model-llm.ts, with its prompt and answer schema in model-prompt.ts)
+src/adapters/live/                 the same three over Razorpay, Google Calendar and WhatsApp wire formats (no keys), and webhooks.ts
+src/language/meta-templates.ts     the WhatsApp templates in Meta's form; whatsapp-templates.json is the list to submit
+inbox/                             the webhook inbox: its own process, holds the webhook secrets, verifies, forwards to the runtime
+standins/                          the three wire formats over HTTP in front of the fakes; dev-forwarder.ts for real test-mode services
 src/language/                      templates (hi, en, ml, kn), the outgoing check, date and time phrases;
                                    words.ts: the Malayalam and Kannada words customers use, as plain lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
@@ -248,7 +298,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 
 ## What is not done yet
 
-- **Real services.** No real WhatsApp provider, Razorpay or Google Calendar adapter. The fakes are shaped like them so an adapter can replace each.
+- **Real services.** The live adapters, the inbox and the stand-ins are written and tested, but only against the stand-ins and the providers' own sample payloads. Nothing here has talked to a real Razorpay, Google or WhatsApp account yet, and the WhatsApp provider is not chosen.
 - **Guard.** The limits run in the agent's own process. Nothing outside the AI enforces them yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser only reads a customer's message into an intent. It is built and tested against a local stub server, **not yet run against a real model**, and the agent uses the rule parser unless it is given the model parser.

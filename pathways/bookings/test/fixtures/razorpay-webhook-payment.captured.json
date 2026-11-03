@@ -1,0 +1,26 @@
+{
+  "account_id": "acc_BFQ7uQEaa7j2z7",
+  "contains": ["payment"],
+  "created_at": 1567675356,
+  "entity": "event",
+  "event": "payment.captured",
+  "payload": {
+    "payment": {
+      "entity": {
+        "id": "pay_DESyzxuld02Zul",
+        "entity": "payment",
+        "amount": 100,
+        "currency": "INR",
+        "status": "captured",
+        "order_id": "order_DESxiijbl9xjDB",
+        "method": "upi",
+        "amount_refunded": 0,
+        "captured": true,
+        "description": null,
+        "contact": "<phone>",
+        "email": "<email>",
+        "created_at": 1567675356
+      }
+    }
+  }
+}

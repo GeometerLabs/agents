@@ -42,13 +42,13 @@ type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
 
 /** A template asks for a value the record does not have: refuse to write the message at all. */
-function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
+export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
   const value = f[key];
   if (value === undefined) throw new Error(`The message needs "${String(key)}" from the record, and the record does not have it.`);
   return value as NonNullable<MessageFacts[K]>;
 }
-const slot = (f: MessageFacts) => formatSlot(need(f, "slotMs"), f.timeZone, f.language);
-const inr = (f: MessageFacts, key: "priceInr" | "depositInr" | "refundInr") => formatInr(need(f, key));
+export const slot = (f: MessageFacts) => formatSlot(need(f, "slotMs"), f.timeZone, f.language);
+export const inr = (f: MessageFacts, key: "priceInr" | "depositInr" | "refundInr") => formatInr(need(f, key));
 const menuList = (f: MessageFacts) => f.services.map((s) => `${s.name} ${formatInr(s.priceInr)}`).join(", ");
 
 const en: TemplateSet = {

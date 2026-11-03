@@ -1,0 +1,582 @@
+[
+  {
+    "name": "booking_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "याद दिलाना: {{1}} में आपका {{2}} {{3}} पर है।",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reminder: your {{1}} at {{2}} is on {{3}}.",
+        "example": {
+          "body_text": [
+            [
+              "haircut",
+              "Glow Salon",
+              "Tue 10 Nov, 6:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർമ്മപ്പെടുത്തൽ: {{1}}-ൽ നിങ്ങളുടെ {{2}} ബുക്കിംഗ് സമയം: {{3}}.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನೆನಪಿಸುವುದು: {{1}}-ನಲ್ಲಿ ನಿಮ್ಮ {{2}} ಬುಕಿಂಗ್ ಸಮಯ: {{3}}.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "बुक हो गया! {{1}}, {{2}}। आपका {{3}} जमा हो गया है। रिफंड के लिए शुरू होने से कम से कम {{4}} घंटे पहले रद्द करें।",
+        "example": {
+          "body_text": [
+            [
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Booked! {{1}} on {{2}}. Your {{3}} deposit is received. Cancel at least {{4}} hours before the start for a refund.",
+        "example": {
+          "body_text": [
+            [
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ബുക്ക് ആയി! {{1}}, {{2}}. നിങ്ങളുടെ {{3}} അഡ്വാൻസ് ലഭിച്ചു. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് {{4}} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.",
+        "example": {
+          "body_text": [
+            [
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಬುಕ್ ಆಗಿದೆ! {{1}}, {{2}}. ನಿಮ್ಮ {{3}} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ {{4}} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_not_confirmed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका {{1}} जमा मिल गया है, लेकिन {{2}} को हमारे कैलेंडर में अभी पक्का नहीं कर पाया, इसलिए बुकिंग पक्की नहीं है। मैंने मालिक को बता दिया है, वे आपसे संपर्क करेंगे।",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_not_confirmed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "We received your {{1}} deposit, but I couldn't confirm {{2}} in our calendar yet, so it is not booked. I've told the owner, who will contact you.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "Tue 10 Nov, 6:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_not_confirmed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} അഡ്വാൻസ് ലഭിച്ചു, പക്ഷേ {{2}} ഞങ്ങളുടെ കലണ്ടറിൽ ഇതുവരെ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_not_confirmed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ, ಆದರೆ {{2}} ಸಮಯವನ್ನು ನಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಇನ್ನೂ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_rescheduled",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "हो गया। आपका {{1}} अब {{2}} पर है।",
+        "example": {
+          "body_text": [
+            [
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_rescheduled",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Done. Your {{1}} is moved to {{2}}.",
+        "example": {
+          "body_text": [
+            [
+              "haircut",
+              "Tue 10 Nov, 6:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_rescheduled",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "മാറ്റിയിട്ടുണ്ട്. {{1}} പുതിയ സമയം: {{2}}.",
+        "example": {
+          "body_text": [
+            [
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_rescheduled",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆಯಿತು. {{1}} ಹೊಸ ಸಮಯ: {{2}}.",
+        "example": {
+          "body_text": [
+            [
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_refund_approved",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने आपके रिफंड को मंज़ूरी दे दी है। {{1}} आपको वापस भेजा जा रहा है।",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_refund_approved",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner approved your refund. {{1}} is on its way.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_refund_approved",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. {{1}} തിരികെ വരുന്നുണ്ട്.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_refund_approved",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಒಪ್ಪಿದ್ದಾರೆ. {{1}} ಮರಳಿ ಬರುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_paid_twice",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपने जमा राशि दो बार भर दी। अतिरिक्त {{1}} वापस किया जा रहा है।",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_paid_twice",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "You paid the deposit twice. The extra {{1}} is being refunded.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_paid_twice",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങൾ അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി അടച്ച {{1}} തിരികെ നൽകുന്നുണ്ട്.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "deposit_paid_twice",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನೀವು ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ {{1}} ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_approval_request",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} ({{2}}, {{3}}) को {{4}} का रिफंड। जवाब दें \"approve {{5}}\" या \"deny {{6}}\"।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_approval_request",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: refund {{1}} for {{2}} ({{3}}, {{4}}). Reply \"approve {{5}}\" or \"deny {{6}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "+919811111111",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_approval_request",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}} ({{2}}, {{3}}) എന്നവർക്ക് {{4}} റീഫണ്ട്. \"approve {{5}}\" അല്ലെങ്കിൽ \"deny {{6}}\" എന്ന് മറുപടി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_approval_request",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮತಿ ಬೇಕು: {{1}} ({{2}}, {{3}}) ಅವರಿಗೆ {{4}} ರೀಫಂಡ್. \"approve {{5}}\" ಅಥವಾ \"deny {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]

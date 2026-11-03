@@ -21,6 +21,7 @@ import type { Intent, IntentParser } from "./adapters/model.ts";
 import type { PaymentEvent, PaymentLink, Payments } from "./adapters/payments.ts";
 import type { Clock } from "./clock.ts";
 import { resolveDate, resolveTime } from "./language/dates.ts";
+import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { TemplateId } from "./language/templates.ts";
 import type { Action, ActionRecord, Outcome } from "./record.ts";
@@ -106,7 +107,7 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       const sent = (await messaging.isWindowOpen(toNumber))
         ? await messaging.sendText(toNumber, text)
-        : await messaging.sendTemplate(toNumber, { name: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer, language, text });
+        : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
       log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+") } });
       return seen !== null;
@@ -719,8 +720,11 @@ export function createAgent(deps: AgentDeps): Agent {
       store.seenEvents.add(event.id);
       return;
     }
-    const linkId = event.payload.payment_link?.id ?? event.payload.payment?.link_id;
-    const b = bookings.find((x) => x.linkId === linkId);
+    // A real payment.captured names the payment, not its link (Razorpay's body has the order id only): ask the payments service which link it paid.
+    const paymentId = event.payload.payment?.id;
+    const linkId = event.payload.payment_link?.id ?? event.payload.payment?.link_id
+      ?? (paymentId ? (await payments.listPaymentLinks({ payment_id: paymentId }))[0]?.id : undefined);
+    const b = linkId ? bookings.find((x) => x.linkId === linkId) : undefined;
     if (!b) {
       log(null, owner, "receive_payment_event", "blocked", { id: event.id, event: event.event }, { notes: "no booking has this payment link, so the event is ignored" });
       store.seenEvents.add(event.id);

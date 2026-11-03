@@ -1,0 +1,30 @@
+{
+  "payment_links": [
+    {
+      "accept_partial": true,
+      "amount": 10000,
+      "amount_paid": 10000,
+      "cancelled_at": 0,
+      "created_at": 1661852539,
+      "currency": "INR",
+      "customer": [],
+      "description": "Grocery",
+      "expire_by": 0,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_KBnb7I424Rc1R9",
+      "notes": [],
+      "notify": { "email": false, "sms": false },
+      "order_id": "order_KBneAVhT2zbzsU",
+      "payments": [],
+      "reference_id": "111",
+      "reminder_enable": false,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/alaBxs0i",
+      "status": "paid",
+      "updated_at": 1661852741,
+      "upi_link": false,
+      "user_id": "HD1JAKCCPGDfRx"
+    }
+  ]
+}
