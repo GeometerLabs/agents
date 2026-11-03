@@ -104,25 +104,40 @@ const PERIOD_WORDS = Object.values(PERIOD_WORD_LISTS).flat().map(canon).sort((a,
 const CLOCK_WORDS = inBoth((w) => w.oclock).map(canon).sort((a, b) => b.length - a.length).map((w) => `${escapeRe(w)}(?![\\p{L}\\p{M}])`).join("|");
 const HOUR_BEFORE_CLOCK_WORD = new RegExp(`(?<![\\d:.])(\\d{1,2})(?::(\\d{2}))?\\s*(?:बजे|baje|bje|o'?clock|${CLOCK_WORDS})`, "u");
 // Kannada "6ಕ್ಕೆ" (at 6): only hours 1-12 (a bigger number with ಕ್ಕೆ is a price, "300ಕ್ಕೆ").
-const KANNADA_AT_HOUR = /(?<![\d:.])(1[0-2]|[1-9])(?::(\d{2}))?\s*(?:ಕ್ಕೆ|ಗೆ)(?![\p{L}\p{M}])/u;
+const KANNADA_AT_HOUR = /(?<![\d:.])(1[0-2]|[1-9])(?::(\d{2}))?\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ])(?![\p{L}\p{M}])/u;
 const GREETING_WITH_TIME_RE = phraseRe(["good morning", "good afternoon", "good evening", "good night", "सुप्रभात", "शुभ रात्रि", ...inBoth((w) => w.greetingsWithTime)], "gu"); // a greeting is not a time
 
 // ---- finding phrases in a message -----------------------------------------------------------------------------
+
+interface WrittenDate { day: number; month: number; start: number; end: number }
+
+/** A date written with its month: "11 nov", "11 नवंबर", "nov 11", "10 നവംബർ", "ನವೆಂಬರ್ 10". With where it sits in the text. */
+function findWrittenDate(text: string): WrittenDate | undefined {
+  for (let m = 0; m < 12; m++) {
+    const month = MONTH_RES[m].exec(text);
+    if (!month) continue;
+    const monthEnd = month.index + month[0].length;
+    const before = /(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?$/u.exec(text.slice(0, month.index));
+    const after = /^\s*(\d{1,2})(?!\d|\s*(?::|am|pm|बजे|മണി|ಗಂಟೆ))/u.exec(text.slice(monthEnd));
+    const hit = before ?? after;
+    const day = Number(hit?.[1]);
+    if (day >= 1 && day <= 31) return { day, month: m + 1, start: before ? before.index : month.index, end: before ? monthEnd : monthEnd + (after as RegExpExecArray)[0].length };
+  }
+  return undefined;
+}
+
+/** The text with a written date ("നവംബർ 10") blanked out, so its day number is not mistaken for an hour or a price ("10ಕ್ಕೆ"). */
+export function blankWrittenDate(text: string): string {
+  const d = findWrittenDate(text);
+  return d ? text.slice(0, d.start) + " ".repeat(d.end - d.start) + text.slice(d.end) : text;
+}
 
 /** The first date phrase in the message, if any. */
 export function findDatePhrase(rawText: string): DatePhrase | undefined {
   const text = canon(rawText).replace(YESTERDAY_RE, " ");
 
-  // "11 nov", "11 नवंबर", "nov 11"
-  for (let m = 0; m < 12; m++) {
-    const re = MONTH_RES[m];
-    const month = re.exec(text);
-    if (!month) continue;
-    const before = /(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?$/u.exec(text.slice(0, month.index));
-    const after = /^\s*(\d{1,2})(?!\d|\s*(?::|am|pm|बजे|മണി|ಗಂಟೆ))/u.exec(text.slice(month.index + month[0].length));
-    const day = Number((before ?? after)?.[1]);
-    if (day >= 1 && day <= 31) return { kind: "calendar", day, month: m + 1 };
-  }
+  const written = findWrittenDate(text);
+  if (written) return { kind: "calendar", day: written.day, month: written.month };
 
   if (DAY_AFTER_RE.test(text)) return { kind: "relative", offsetDays: 2 };
   if (TOMORROW_RE.test(text)) return { kind: "relative", offsetDays: 1 };
@@ -161,7 +176,7 @@ export function findTimePhrase(rawText: string): TimePhrase | undefined {
   }
   if (!found) {
     m = HOUR_BEFORE_CLOCK_WORD.exec(text)
-      ?? KANNADA_AT_HOUR.exec(text)
+      ?? KANNADA_AT_HOUR.exec(blankWrittenDate(text)) // "ನವೆಂಬರ್ 10ಕ್ಕೆ" is the 10th, not ten o'clock
       ?? new RegExp(`(?:${PERIOD_WORDS})\\s*(?:को\\s*|ko\\s*|at\\s*)?(\\d{1,2})(?::(\\d{2}))?(?![\\d])`, "u").exec(text)
       ?? new RegExp(`(?<![\\d:.])(\\d{1,2})\\s*(?:in the |at )?(?:${PERIOD_WORDS})`, "u").exec(text)
       ?? /(?<![\d:.])\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\d)/u.exec(text);

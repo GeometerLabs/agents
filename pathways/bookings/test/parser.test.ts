@@ -235,3 +235,23 @@ test("what the templates ask the customer to reply is understood: ശരി and 
   assert.equal(parse("ശരി").kind, "yes");
   assert.equal(parse("ಹೌದು").kind, "yes");
 });
+
+test("Kannada ಕ್ಕೆ: a price from 25 up, a clock hour from 1 to 12, and a written date's day is neither", () => {
+  assert.equal(parse("ಹೇರ್ ಕಟ್ 300ಕ್ಕೆ").offerInr, 300);
+  assert.equal(parse("ಇಲ್ಲ, 300ಕ್ಕೇ ಮಾಡಿ").offerInr, 300); // the emphatic ೇ ("300ಕ್ಕೇ ಮಾಡಿ", only for 300) is the same price
+  assert.equal(parse("ಇಲ್ಲ, 300ಕ್ಕೇ ಮಾಡಿ").kind, "book"); // a push on the price, not a bare "no"
+  assert.deepEqual(parse("ಸಂಜೆ 6ಕ್ಕೆ ಹೇರ್ ಕಟ್").time, { hour: 6, minute: 0, period: "pm" });
+  assert.deepEqual(parse("6ಕ್ಕೇ ಹೇರ್ ಕಟ್").time, { hour: 6, minute: 0 });
+  const tenth = parse("ನವೆಂಬರ್ 10ಕ್ಕೆ ಹೇರ್ ಕಟ್"); // "for 10 November": the day is 10, there is no hour and no price
+  assert.deepEqual(tenth.date, { kind: "calendar", day: 10, month: 11 });
+  assert.equal(tenth.time, undefined);
+  assert.equal(tenth.offerInr, undefined);
+  const twentyEighth = parse("ನವೆಂಬರ್ 28ಕ್ಕೆ ಹೇರ್ ಕಟ್"); // 28 is above the price minimum, but it is a day
+  assert.deepEqual(twentyEighth.date, { kind: "calendar", day: 28, month: 11 });
+  assert.equal(twentyEighth.offerInr, undefined);
+  const both = parse("ನವೆಂಬರ್ 10ಕ್ಕೆ ಸಂಜೆ 6ಕ್ಕೆ ಹೇರ್ ಕಟ್, 300ಕ್ಕೆ ಆಗುತ್ತಾ?");
+  assert.deepEqual(both.date, { kind: "calendar", day: 10, month: 11 });
+  assert.deepEqual(both.time, { hour: 6, minute: 0, period: "pm" });
+  assert.equal(both.offerInr, 300);
+  assert.equal(parse("10 ನವೆಂಬರ್‌ಗೆ ಹೇರ್ ಕಟ್, 300ಕ್ಕೆ").offerInr, 300); // a day written before its month, then the price
+});

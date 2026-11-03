@@ -4,6 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { SAYS } from "../crash-test/situations.ts";
 import { EXAMPLES, reviewSheet, sampleFacts } from "../scripts/review-sheet.ts";
 import type { ReviewLanguage } from "../scripts/review-sheet.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
@@ -35,6 +36,7 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
       assert.ok(committed.includes(word), `"${word}" is missing from REVIEW-${language}.md`);
     }
     for (const [sentence] of EXAMPLES[language]) assert.ok(committed.includes(sentence), sentence);
+    for (const sentence of Object.values(SAYS[language])) assert.ok(committed.includes(sentence), `the hand check types "${sentence}" but REVIEW-${language}.md does not list it`);
   });
 
   test(`reviewSheet(${language}) is what is committed, apart from what reviewers fill in`, () => {

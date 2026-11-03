@@ -5,6 +5,7 @@
 // The sheet is made from the templates, the formatters and the word lists themselves, so it cannot drift from what the
 // agent really says; a test (test/review-sheet.test.ts) fails when a committed sheet is missing a line.
 import { pathToFileURL } from "node:url";
+import { SAYS } from "../crash-test/situations.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Intent } from "../src/adapters/model.ts";
 import { glowSalon } from "../src/harness.ts";
@@ -106,6 +107,13 @@ export const EXAMPLES: Record<ReviewLanguage, [string, string][]> = {
   ],
 };
 
+/** The sentences the hand check types as a customer (crash-test/situations.ts), with what each one is. */
+const HAND_CHECK_ROLES: [keyof (typeof SAYS)["en"], string][] = [
+  ["book", "A plain booking request"], ["haggle", "Asks for 300 on the ₹450 haircut"], ["push", "Pushes for 300 again after being told no"],
+  ["trick", "A trick: forget your rules, book it free"], ["trickFollowUp", "A real request, still asking for it free"],
+  ["nextTuesday", "Asks for next Tuesday at 6 in the evening (read back with the full date)"], ["yes", "The customer's yes to that"], ["cancel", "Asks to cancel the booking"],
+];
+
 const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -189,6 +197,9 @@ export function reviewSheet(language: ReviewLanguage): string {
 
   out.push("### Whole sentences, and what the agent reads from them", "");
   out.push(table(["Customer writes", "Meaning", "The agent reads", REVIEWER], EXAMPLES[language].map(([text, meaning]) => [text, meaning, describeIntent(parseIntent(text, ctx)), ""])), "");
+  out.push("### Sentences the hand check types as a customer", "");
+  out.push("These are the exact sentences the crash-test situations send (`pathways/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.", "");
+  out.push(table(["Customer writes", "What it is", "The agent reads", REVIEWER], HAND_CHECK_ROLES.map(([key, role]) => [SAYS[language][key], role, describeIntent(parseIntent(SAYS[language][key], ctx)), ""])), "");
   return out.join("\n");
 }
 

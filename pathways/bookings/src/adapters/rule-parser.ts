@@ -4,7 +4,7 @@
 // decides anything: prices, hours and slots are decided by the limits, so a smarter (or fooled) parser changes nothing
 // about what is allowed.
 import { canon } from "../language/format.ts";
-import { findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../language/dates.ts";
+import { blankWrittenDate, findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../language/dates.ts";
 import { WORDS, inBoth } from "../language/words.ts";
 import type { Language } from "../settings.ts";
 import type { Intent, IntentParser, ParseContext } from "./model.ts";
@@ -75,17 +75,19 @@ const RUPEE_AFTER = inBoth((w) => w.rupee).map(canon).sort((a, b) => b.length - 
 
 /** A price the customer proposed. Cues are explicit (₹, Rs, "में", "for"), so a time like "6 बजे" is never read as a price. */
 function findOffer(t: string): number | undefined {
-  const tests: [RegExp, number][] = [
+  const tests: [RegExp, number, boolean?][] = [
     [/(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*(\d[\d,]*)/u, 1],
     [/(?<![\d:.])(\d[\d,]*)\s*(?:₹|rs\b|rupees?|रुपये|रुपए|रुपया|रु\b|में|मे|मैं|mein|only|का\b|ka\b|के लिए|ke liye)/u, 10],
     [new RegExp(`(?<![\\d:.])(\\d[\\d,]*)\\s*(?:${RUPEE_AFTER})`, "u"), 10],
-    [/(?<![\d:.])(\d[\d,]*)\s*(?:ಕ್ಕೆ|ಗೆ|ಕೆ)(?![\p{L}\p{M}])/u, 25], // Kannada "300ಕ್ಕೆ" (for 300); a smaller number with ಕ್ಕೆ is a time, "6ಕ್ಕೆ"
+    [/(?<![\d:.])(\d[\d,]*)\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ]|ಕ[ೆೇ])(?![\p{L}\p{M}])/u, 25, true], // Kannada "300ಕ್ಕೆ" (for 300); a smaller number with ಕ್ಕೆ is a time, "6ಕ್ಕೆ"
     [/(?:\bfor|@)\s*₹?\s*(\d[\d,]*)(?!\s*(?::|am\b|pm\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))/u, 10],
     [/\bat\s*₹?\s*(\d[\d,]*)(?!\s*(?::|am\b|pm\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))/u, 100],
   ];
-  for (const [re, minimum] of tests) {
-    const m = re.exec(t);
-    if (m && toRupees(m[1]) >= minimum && toRupees(m[1]) <= 1_000_000) return toRupees(m[1]);
+  for (const [re, minimum, skipWrittenDate] of tests) {
+    // The first match that is big enough: in "ಸಂಜೆ 6ಕ್ಕೆ ... 300ಕ್ಕೆ" the 6 is an hour and the 300 is the price.
+    for (const m of (skipWrittenDate ? blankWrittenDate(t) : t).matchAll(new RegExp(re.source, `${re.flags}g`))) { // "ನವೆಂಬರ್ 28ಕ್ಕೆ" is a date, not a price of 28
+      if (toRupees(m[1]) >= minimum && toRupees(m[1]) <= 1_000_000) return toRupees(m[1]);
+    }
   }
   return FREE_RE.test(t) ? 0 : undefined;
 }
