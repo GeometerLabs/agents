@@ -387,8 +387,12 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     const { b, hold } = found;
     const command = event.decision;
-    log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: `the owner ${command === "approve" ? "approved" : "denied"} the refund, by the code the approvals relay sent` });
+    // What the relay said is not yet a fact: the agent cannot see Guard's record. An approval is counted as the owner's (owner_decision, confirmed) only
+    // when Guard has RELEASED the held call (see releaseHeld), so a forged "approve" event leaves nothing false in the record or the monthly report.
+    log(b, owner, "owner_decision", "attempted", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay says the owner decided" });
     if (command === "deny") {
+      // A deny cannot be checked from here (a refund Guard did not send leaves no trace to read). It is the safe direction for the money, and it is final.
+      log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay reported that the owner denied the refund" });
       dropHold(b, hold);
       stoppedOf(b).push(hold.paymentId); // Guard would hold the same call again under a new approval: the agent must not ask again
       log(b, b.customer, "refund", "blocked", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: "the owner declined the refund" });
@@ -415,6 +419,8 @@ export function createAgent(deps: AgentDeps): Agent {
       hold.retryAtMs = clock.now() + RETRY_MINUTES[hold.tries - 1] * MINUTE;
       log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: `the approved refund could not be sent yet (${why}); it is tried again` });
     };
+    /** Guard let the held call go, which it does only for an approved one: now the owner's approval is a fact the report may count. */
+    const released = () => log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: "approve" }, { refs: { command: "approve", approval: hold.approval }, notes: "Guard released the held refund, so the owner's approval is on Guard's record" });
     const finish = async (refundId: string, note?: string) => {
       dropHold(b, hold);
       log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId }, ...(note ? { notes: note } : {}) });
@@ -458,6 +464,7 @@ export function createAgent(deps: AgentDeps): Agent {
         }
         case "no_good": return stop("failed", `Guard did not take the approved refund and will not on a retry: ${sorted.why}. Nothing was refunded.`, "failed");
         case "may_have_happened": case "lost": {
+          released(); // the call went out: Guard does not send an unapproved one
           const found = await findRefund(paymentId, hold.receipt).catch(() => undefined);
           if (found) return finish(found.id, `${sorted.why}; the payments service's own list shows the refund, and it is not sent again`);
           return stop("unknown", `${sorted.why}. The approved refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`, "unconfirmed");
@@ -466,6 +473,7 @@ export function createAgent(deps: AgentDeps): Agent {
       }
     }
     // the service took it: read back once; whatever the list shows, it is not sent again
+    released();
     const after = await findRefund(paymentId, hold.receipt).catch(() => undefined);
     if (after) return finish(after.id);
     return stop("unconfirmed", "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again", "unconfirmed");

@@ -64,7 +64,8 @@ test("held, approved, sent again with the same bytes, confirmed once; the owner 
   assert.equal(w.heldForOwner().length, 0, "nothing is left waiting");
   assert.equal(w.guard.approvals().length, 1, "Guard only ever had one approval to ask about: one ask");
   assert.deepEqual(w.textsTo(w.owner), []);
-  assert.deepEqual(entries(w, "owner_decision", "confirmed").map((e) => e.refs.command), ["approve"], "the report counts the owner's approvals from this");
+  assert.deepEqual(entries(w, "owner_decision", "confirmed").map((e) => e.refs.command), ["approve"], "the report counts the owner's approvals from this: once, after Guard released the call");
+  assert.match(entries(w, "owner_decision", "confirmed")[0].notes, /Guard released the held refund/);
 });
 
 test("the same answer twice, an approval for something else, and time passing send nothing more", async () => {
@@ -100,6 +101,8 @@ test("a forged answer through the runtime's path: an approve event Guard has no 
   assert.deepEqual(w.heldForOwner().map((h) => h.id), [id], "the same hold, not a new one: the owner is not asked again");
   assert.equal(w.guard.approvals().length, 1);
   assert.equal((w.store.bookings.get("b-1")!.pending[0] as any).approved, false);
+  assert.deepEqual(entries(w, "owner_decision", "confirmed"), [], "an approval is counted only when Guard released the call: nothing false is in the record, so the monthly count cannot be raised by a forged event");
+  assert.equal(entries(w, "owner_decision", "attempted").length, 1, "what the relay said is in the record, as what it is");
   // and the owner's own commands do not reach it either: "approve b-1" is not how a Guard-held refund is answered
   await w.say("approve b-1", { from: w.owner });
   assert.equal(w.payments.refunds().length, 0);
