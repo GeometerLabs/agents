@@ -578,5 +578,697 @@
         }
       }
     ]
+  },
+  {
+    "name": "owner_late_cancellation",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने {{2}}, {{3}} शुरू होने से {{4}} घंटे से कम पहले रद्द किया। जमा {{5}}। लौटाने के लिए \"approve {{6}}\", रखने के लिए \"deny {{7}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "24",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancellation",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} cancelled {{2}} on {{3}} less than {{4}} hours before the start. Deposit {{5}}. Reply \"approve {{6}}\" to refund it or \"deny {{7}}\" to keep it.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "24",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancellation",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: {{2}}, {{3}} തുടങ്ങാൻ {{4}} മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് {{5}}. തിരികെ നൽകാൻ \"approve {{6}}\" എന്നും, നിങ്ങൾ വയ്ക്കാൻ \"deny {{7}}\" എന്നും മറുപടി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "24",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancellation",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: {{2}}, {{3}} ಪ್ರಾರಂಭಕ್ಕೆ {{4}} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಇರುವಾಗ ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ. ಮುಂಗಡ {{5}}. ಹಿಂತಿರುಗಿಸಲು \"approve {{6}}\" ಎಂದು, ಇಟ್ಟುಕೊಳ್ಳಲು \"deny {{7}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "24",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_cant_confirm",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} का {{2}}, {{3}} कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग पक्की नहीं है। उनका {{4}} जमा दर्ज है। कैलेंडर फिर जाँचने के लिए \"retry {{5}}\" लिखें, या बुकिंग रद्द करके जमा लौटाने के लिए \"approve {{6}}\"।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_cant_confirm",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Could not confirm {{1}}'s {{2}} on {{3}} in the calendar, so it is NOT booked. Their {{4}} deposit is recorded. Reply \"retry {{5}}\" to check the calendar again, or \"approve {{6}}\" to cancel it and refund the deposit.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_cant_confirm",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: {{2}}, {{3}} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. അവരുടെ {{4}} അഡ്വാൻസ് രേഖപ്പെടുത്തിയിട്ടുണ്ട്. കലണ്ടർ വീണ്ടും നോക്കാൻ \"retry {{5}}\" എന്നും, ബുക്കിംഗ് റദ്ദാക്കി അഡ്വാൻസ് തിരികെ നൽകാൻ \"approve {{6}}\" എന്നും മറുപടി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_cant_confirm",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: {{2}}, {{3}} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಅವರ {{4}} ಮುಂಗಡ ಹಣ ದಾಖಲಾಗಿದೆ. ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಲು \"retry {{5}}\" ಎಂದು, ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗಿಸಲು \"approve {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200",
+              "b-3",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_not_booked",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} के {{2}}, {{3}} के लिए बुकिंग तैयार नहीं हो पाई: कैलेंडर या पेमेंट लिंक ने काम नहीं किया। कुछ भी बुक नहीं हुआ।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_not_booked",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Could not set up {{1}}'s {{2}} on {{3}}: the calendar or the payment link did not work. Nothing is booked.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_not_booked",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: {{2}}, {{3}} — കലണ്ടറോ പേയ്മെന്റ് ലിങ്കോ പ്രവർത്തിച്ചില്ല, അതിനാൽ ബുക്കിംഗ് ഒരുക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_not_booked",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: {{2}}, {{3}} — ಕ್ಯಾಲೆಂಡರ್ ಅಥವಾ ಪಾವತಿ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಸಿದ್ಧಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_move_failed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} का {{2}} कैलेंडर में {{3}} पर ले जाना पक्का नहीं हो पाया। कृपया उनकी बुकिंग जाँच लें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_move_failed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Could not confirm moving {{1}}'s {{2}} to {{3}} in the calendar. Please check their booking.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_move_failed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: {{2}} — പുതിയ സമയം {{3}} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി അവരുടെ ബുക്കിംഗ് പരിശോധിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_move_failed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: {{2}} — ಹೊಸ ಸಮಯ {{3}} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರ ಬುಕಿಂಗ್ ಪರಿಶೀಲಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_paid_twice",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने {{2}}, {{3}} के लिए जमा दो बार भरा। अतिरिक्त {{4}} वापस कर दिया गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_paid_twice",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} paid the deposit twice for {{2}} on {{3}}. The extra {{4}} was refunded.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_paid_twice",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: {{2}}, {{3}} — അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി വന്ന {{4}} തിരികെ നൽകി.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_paid_twice",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: {{2}}, {{3}} — ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚುವರಿ {{4}} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_unused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} का {{2}} का भुगतान {{3}} की उस बुकिंग के लिए आया जो अब चालू नहीं थी (स्लॉट छूट गया था या बुकिंग रद्द हो गई थी)। {{4}} वापस कर दिया गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹200",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_unused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "A {{1}} payment from {{2}} arrived for {{3}}, but that booking was no longer active (its hold had ended, or it was cancelled). {{4}} was refunded.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "+919811111111",
+              "Tue 10 Nov, 6:00 pm",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_unused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: {{2}} ബുക്കിംഗിനായി {{3}} പേയ്മെന്റ് വന്നു, പക്ഷേ ആ ബുക്കിംഗ് അപ്പോൾ നിലവിലില്ലായിരുന്നു (മാറ്റിവച്ച സമയം കഴിഞ്ഞിരുന്നു, അല്ലെങ്കിൽ റദ്ദാക്കിയിരുന്നു). {{4}} തിരികെ നൽകി.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_unused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: {{2}} ಬುಕಿಂಗ್‌ಗಾಗಿ {{3}} ಪಾವತಿ ಬಂದಿದೆ, ಆದರೆ ಆ ಬುಕಿಂಗ್ ಆಗ ಚಾಲ್ತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ (ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು, ಅಥವಾ ರದ್ದಾಗಿತ್ತು). {{4}} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_message_held",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह बुकिंग रिकॉर्ड से मेल नहीं खाता था। कुछ नहीं भेजा गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_message_held",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "A message to {{1}} was held back because it did not match the booking record. Nothing was sent.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_message_held",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: അയയ്ക്കാനിരുന്ന ഒരു സന്ദേശം ബുക്കിംഗ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞു. ഒന്നും അയച്ചിട്ടില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_message_held",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: ಕಳುಹಿಸಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಬುಕಿಂಗ್ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} sent STOP. No more messages will go to them.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
   }
 ]

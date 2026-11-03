@@ -30,9 +30,10 @@ export type TemplateId =
   | "slot_gone_refund" | "refund_unbooked" | "reschedule_failed" | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending"
   | "cancelled_late" | "cancelled_no_deposit" | "no_booking_found" | "refund_approved" | "refund_denied" | "rescheduled"
   | "reminder" | "didnt_understand"
-  // to the owner
+  // to the owner. Every line starts and ends with fixed words, because each one is also a WhatsApp template (meta-templates.ts) and
+  // Meta rejects a body that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
   | "owner_refund_needs_approval" | "owner_cant_confirm" | "owner_late_cancellation" | "owner_duplicate_payment"
-  | "owner_slot_gone" | "owner_unbooked_payment" | "owner_link_failed" | "owner_hold_failed" | "owner_reschedule_failed"
+  | "owner_payment_unused" | "owner_not_booked" | "owner_reschedule_failed"
   | "owner_message_held" | "owner_opted_out" | "owner_unknown_command";
 
 /** Which approved WhatsApp template carries a message once the customer's 24-hour window has closed. */
@@ -86,15 +87,15 @@ const en: TemplateSet = {
 
   owner_refund_needs_approval: (f) => `Approval needed: refund ${inr(f, "refundInr")} for ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}). Reply "approve ${need(f, "bookingRef")}" or "deny ${need(f, "bookingRef")}".`,
   owner_cant_confirm: (f) => `Could not confirm ${need(f, "customerPhone")}'s ${need(f, "serviceName")} on ${slot(f)} in the calendar, so it is NOT booked. Their ${inr(f, "depositInr")} deposit is recorded. Reply "retry ${need(f, "bookingRef")}" to check the calendar again, or "approve ${need(f, "bookingRef")}" to cancel it and refund the deposit.`,
-  owner_late_cancellation: (f) => `${need(f, "customerPhone")} cancelled ${need(f, "serviceName")} on ${slot(f)} less than ${need(f, "windowHours")} hours before the start. Deposit ${inr(f, "depositInr")}. Reply "approve ${need(f, "bookingRef")}" to refund it or "deny ${need(f, "bookingRef")}" to keep it.`,
-  owner_duplicate_payment: (f) => `${need(f, "customerPhone")} paid the deposit twice for ${need(f, "serviceName")} on ${slot(f)}. The extra ${inr(f, "refundInr")} was refunded.`,
-  owner_slot_gone: (f) => `A ${inr(f, "depositInr")} payment from ${need(f, "customerPhone")} arrived after the hold on ${slot(f)} ended, and that time was taken. ${inr(f, "refundInr")} was refunded.`,
-  owner_unbooked_payment: (f) => `A ${inr(f, "depositInr")} payment from ${need(f, "customerPhone")} arrived for a booking that is no longer active. ${inr(f, "refundInr")} was refunded.`,
-  owner_link_failed: (f) => `Could not create a payment link for ${need(f, "customerPhone")}'s ${need(f, "serviceName")} on ${slot(f)}. Nothing is booked.`,
+  owner_late_cancellation: (f) => `Customer ${need(f, "customerPhone")} cancelled ${need(f, "serviceName")} on ${slot(f)} less than ${need(f, "windowHours")} hours before the start. Deposit ${inr(f, "depositInr")}. Reply "approve ${need(f, "bookingRef")}" to refund it or "deny ${need(f, "bookingRef")}" to keep it.`,
+  owner_duplicate_payment: (f) => `Customer ${need(f, "customerPhone")} paid the deposit twice for ${need(f, "serviceName")} on ${slot(f)}. The extra ${inr(f, "refundInr")} was refunded.`,
+  // A late payment (the hold had ended and the time was taken) and a payment for a booking that was cancelled get one line: the owner can do nothing about either, the money is back.
+  owner_payment_unused: (f) => `A ${inr(f, "depositInr")} payment from ${need(f, "customerPhone")} arrived for ${slot(f)}, but that booking was no longer active (its hold had ended, or it was cancelled). ${inr(f, "refundInr")} was refunded.`,
+  // The slot could not be held, or the payment link could not be made: either way nothing is booked and the customer has been told to try again.
+  owner_not_booked: (f) => `Could not set up ${need(f, "customerPhone")}'s ${need(f, "serviceName")} on ${slot(f)}: the calendar or the payment link did not work. Nothing is booked.`,
   owner_reschedule_failed: (f) => `Could not confirm moving ${need(f, "customerPhone")}'s ${need(f, "serviceName")} to ${slot(f)} in the calendar. Please check their booking.`,
-  owner_hold_failed: (f) => `Could not hold ${slot(f)} in the calendar for ${need(f, "customerPhone")}'s ${need(f, "serviceName")}. Nothing is booked.`,
   owner_message_held: (f) => `A message to ${need(f, "customerPhone")} was held back because it did not match the booking record. Nothing was sent.`,
-  owner_opted_out: (f) => `${need(f, "customerPhone")} sent STOP. No more messages will go to them.`,
+  owner_opted_out: (f) => `Customer ${need(f, "customerPhone")} sent STOP. No more messages will go to them.`,
   owner_unknown_command: () => `I didn't understand that. Reply "approve", "deny" or "retry" followed by the booking reference.`,
 };
 
@@ -131,16 +132,14 @@ const hi: TemplateSet = {
   didnt_understand: () => "माफ़ कीजिए, मैं समझ नहीं पाया। कृपया सेवा, दिन और समय बताइए।",
 
   owner_refund_needs_approval: (f) => `मंज़ूरी चाहिए: ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}) को ${inr(f, "refundInr")} का रिफंड। जवाब दें "approve ${need(f, "bookingRef")}" या "deny ${need(f, "bookingRef")}"।`,
-  owner_cant_confirm: (f) => `${need(f, "customerPhone")} का ${need(f, "serviceName")}, ${slot(f)} कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग पक्की नहीं है। उनका ${inr(f, "depositInr")} जमा दर्ज है। कैलेंडर फिर जाँचने के लिए "retry ${need(f, "bookingRef")}" लिखें, या बुकिंग रद्द करके जमा लौटाने के लिए "approve ${need(f, "bookingRef")}"।`,
-  owner_late_cancellation: (f) => `${need(f, "customerPhone")} ने ${need(f, "serviceName")}, ${slot(f)} शुरू होने से ${need(f, "windowHours")} घंटे से कम पहले रद्द किया। जमा ${inr(f, "depositInr")}। लौटाने के लिए "approve ${need(f, "bookingRef")}", रखने के लिए "deny ${need(f, "bookingRef")}" लिखें।`,
-  owner_duplicate_payment: (f) => `${need(f, "customerPhone")} ने ${need(f, "serviceName")}, ${slot(f)} के लिए जमा दो बार भरा। अतिरिक्त ${inr(f, "refundInr")} वापस कर दिया गया।`,
-  owner_slot_gone: (f) => `${need(f, "customerPhone")} का ${inr(f, "depositInr")} का भुगतान ${slot(f)} का स्लॉट छूटने के बाद आया और वह समय किसी और को मिल गया। ${inr(f, "refundInr")} वापस कर दिया गया।`,
-  owner_unbooked_payment: (f) => `${need(f, "customerPhone")} का ${inr(f, "depositInr")} का भुगतान ऐसी बुकिंग के लिए आया जो अब चालू नहीं है। ${inr(f, "refundInr")} वापस कर दिया गया।`,
-  owner_link_failed: (f) => `${need(f, "customerPhone")} के ${need(f, "serviceName")}, ${slot(f)} के लिए पेमेंट लिंक नहीं बन पाया। कुछ भी बुक नहीं हुआ।`,
-  owner_reschedule_failed: (f) => `${need(f, "customerPhone")} का ${need(f, "serviceName")} कैलेंडर में ${slot(f)} पर ले जाना पक्का नहीं हो पाया। कृपया उनकी बुकिंग जाँच लें।`,
-  owner_hold_failed: (f) => `${need(f, "customerPhone")} के ${need(f, "serviceName")} के लिए कैलेंडर में ${slot(f)} रोका नहीं जा सका। कुछ भी बुक नहीं हुआ।`,
-  owner_message_held: (f) => `${need(f, "customerPhone")} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह बुकिंग रिकॉर्ड से मेल नहीं खाता था। कुछ नहीं भेजा गया।`,
-  owner_opted_out: (f) => `${need(f, "customerPhone")} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।`,
+  owner_cant_confirm: (f) => `ग्राहक ${need(f, "customerPhone")} का ${need(f, "serviceName")}, ${slot(f)} कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग पक्की नहीं है। उनका ${inr(f, "depositInr")} जमा दर्ज है। कैलेंडर फिर जाँचने के लिए "retry ${need(f, "bookingRef")}" लिखें, या बुकिंग रद्द करके जमा लौटाने के लिए "approve ${need(f, "bookingRef")}"।`,
+  owner_late_cancellation: (f) => `ग्राहक ${need(f, "customerPhone")} ने ${need(f, "serviceName")}, ${slot(f)} शुरू होने से ${need(f, "windowHours")} घंटे से कम पहले रद्द किया। जमा ${inr(f, "depositInr")}। लौटाने के लिए "approve ${need(f, "bookingRef")}", रखने के लिए "deny ${need(f, "bookingRef")}" लिखें।`,
+  owner_duplicate_payment: (f) => `ग्राहक ${need(f, "customerPhone")} ने ${need(f, "serviceName")}, ${slot(f)} के लिए जमा दो बार भरा। अतिरिक्त ${inr(f, "refundInr")} वापस कर दिया गया।`,
+  owner_payment_unused: (f) => `ग्राहक ${need(f, "customerPhone")} का ${inr(f, "depositInr")} का भुगतान ${slot(f)} की उस बुकिंग के लिए आया जो अब चालू नहीं थी (स्लॉट छूट गया था या बुकिंग रद्द हो गई थी)। ${inr(f, "refundInr")} वापस कर दिया गया।`,
+  owner_not_booked: (f) => `ग्राहक ${need(f, "customerPhone")} के ${need(f, "serviceName")}, ${slot(f)} के लिए बुकिंग तैयार नहीं हो पाई: कैलेंडर या पेमेंट लिंक ने काम नहीं किया। कुछ भी बुक नहीं हुआ।`,
+  owner_reschedule_failed: (f) => `ग्राहक ${need(f, "customerPhone")} का ${need(f, "serviceName")} कैलेंडर में ${slot(f)} पर ले जाना पक्का नहीं हो पाया। कृपया उनकी बुकिंग जाँच लें।`,
+  owner_message_held: (f) => `ग्राहक ${need(f, "customerPhone")} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह बुकिंग रिकॉर्ड से मेल नहीं खाता था। कुछ नहीं भेजा गया।`,
+  owner_opted_out: (f) => `ग्राहक ${need(f, "customerPhone")} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।`,
   owner_unknown_command: () => `मैं समझ नहीं पाया। "approve", "deny" या "retry" लिखें और उसके बाद बुकिंग का रेफ़रेंस।`,
 };
 
@@ -185,11 +184,9 @@ const ml: TemplateSet = {
   owner_cant_confirm: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. അവരുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് രേഖപ്പെടുത്തിയിട്ടുണ്ട്. കലണ്ടർ വീണ്ടും നോക്കാൻ "retry ${need(f, "bookingRef")}" എന്നും, ബുക്കിംഗ് റദ്ദാക്കി അഡ്വാൻസ് തിരികെ നൽകാൻ "approve ${need(f, "bookingRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
   owner_late_cancellation: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} തുടങ്ങാൻ ${need(f, "windowHours")} മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് ${inr(f, "depositInr")}. തിരികെ നൽകാൻ "approve ${need(f, "bookingRef")}" എന്നും, നിങ്ങൾ വയ്ക്കാൻ "deny ${need(f, "bookingRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
   owner_duplicate_payment: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി വന്ന ${inr(f, "refundInr")} തിരികെ നൽകി.`,
-  owner_slot_gone: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${inr(f, "depositInr")} പേയ്മെന്റ് എത്തിയപ്പോഴേക്കും ${slot(f)} മാറ്റിവച്ചത് അവസാനിച്ചിരുന്നു, ആ സമയം മറ്റൊരാൾക്ക് പോയി. ${inr(f, "refundInr")} തിരികെ നൽകി.`,
-  owner_unbooked_payment: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${inr(f, "depositInr")} പേയ്മെന്റ് ഇപ്പോൾ നിലവിലില്ലാത്ത ഒരു ബുക്കിംഗിനായി വന്നു. ${inr(f, "refundInr")} തിരികെ നൽകി.`,
-  owner_link_failed: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.`,
+  owner_payment_unused: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${slot(f)} ബുക്കിംഗിനായി ${inr(f, "depositInr")} പേയ്മെന്റ് വന്നു, പക്ഷേ ആ ബുക്കിംഗ് അപ്പോൾ നിലവിലില്ലായിരുന്നു (മാറ്റിവച്ച സമയം കഴിഞ്ഞിരുന്നു, അല്ലെങ്കിൽ റദ്ദാക്കിയിരുന്നു). ${inr(f, "refundInr")} തിരികെ നൽകി.`,
+  owner_not_booked: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — കലണ്ടറോ പേയ്മെന്റ് ലിങ്കോ പ്രവർത്തിച്ചില്ല, അതിനാൽ ബുക്കിംഗ് ഒരുക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.`,
   owner_reschedule_failed: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")} — പുതിയ സമയം ${slot(f)} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി അവരുടെ ബുക്കിംഗ് പരിശോധിക്കൂ.`,
-  owner_hold_failed: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")} — ${slot(f)} കലണ്ടറിൽ മാറ്റിവയ്ക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.`,
   owner_message_held: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: അയയ്ക്കാനിരുന്ന ഒരു സന്ദേശം ബുക്കിംഗ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞു. ഒന്നും അയച്ചിട്ടില്ല.`,
   owner_opted_out: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.`,
   owner_unknown_command: () => `എനിക്ക് മനസ്സിലായില്ല. "approve", "deny" അല്ലെങ്കിൽ "retry" എന്ന് എഴുതി അതിനു ശേഷം ബുക്കിംഗ് റഫറൻസ് എഴുതൂ.`,
@@ -232,11 +229,9 @@ const kn: TemplateSet = {
   owner_cant_confirm: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಅವರ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ದಾಖಲಾಗಿದೆ. ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಲು "retry ${need(f, "bookingRef")}" ಎಂದು, ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗಿಸಲು "approve ${need(f, "bookingRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_late_cancellation: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} ಪ್ರಾರಂಭಕ್ಕೆ ${need(f, "windowHours")} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಇರುವಾಗ ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ. ಮುಂಗಡ ${inr(f, "depositInr")}. ಹಿಂತಿರುಗಿಸಲು "approve ${need(f, "bookingRef")}" ಎಂದು, ಇಟ್ಟುಕೊಳ್ಳಲು "deny ${need(f, "bookingRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_duplicate_payment: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚುವರಿ ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
-  owner_slot_gone: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${inr(f, "depositInr")} ಪಾವತಿ ಬರುವ ವೇಳೆಗೆ ${slot(f)} ಕಾಯ್ದಿರಿಸಿದ್ದು ಮುಗಿದಿತ್ತು, ಆ ಸಮಯ ಬೇರೆಯವರಿಗೆ ಹೋಗಿದೆ. ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
-  owner_unbooked_payment: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${inr(f, "depositInr")} ಪಾವತಿ ಈಗ ಇಲ್ಲದ ಒಂದು ಬುಕಿಂಗ್‌ಗಾಗಿ ಬಂದಿದೆ. ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
-  owner_link_failed: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.`,
+  owner_payment_unused: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${slot(f)} ಬುಕಿಂಗ್‌ಗಾಗಿ ${inr(f, "depositInr")} ಪಾವತಿ ಬಂದಿದೆ, ಆದರೆ ಆ ಬುಕಿಂಗ್ ಆಗ ಚಾಲ್ತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ (ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು, ಅಥವಾ ರದ್ದಾಗಿತ್ತು). ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.`,
+  owner_not_booked: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} — ಕ್ಯಾಲೆಂಡರ್ ಅಥವಾ ಪಾವತಿ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಸಿದ್ಧಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.`,
   owner_reschedule_failed: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")} — ಹೊಸ ಸಮಯ ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರ ಬುಕಿಂಗ್ ಪರಿಶೀಲಿಸಿ.`,
-  owner_hold_failed: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")} — ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಕಾಯ್ದಿರಿಸಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.`,
   owner_message_held: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ಕಳುಹಿಸಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಬುಕಿಂಗ್ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.`,
   owner_opted_out: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
   owner_unknown_command: () => `ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. "approve", "deny" ಅಥವಾ "retry" ಎಂದು ಬರೆದು, ನಂತರ ಬುಕಿಂಗ್ ರೆಫರೆನ್ಸ್ ಬರೆಯಿರಿ.`,

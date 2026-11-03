@@ -71,11 +71,9 @@ const WHEN: Record<TemplateId, string> = {
   owner_cant_confirm: "Deposit paid but the calendar could not confirm; the owner can retry or refund",
   owner_late_cancellation: "A late cancellation: the owner decides about the deposit",
   owner_duplicate_payment: "Told after a double payment was refunded",
-  owner_slot_gone: "Told after a late payment was refunded",
-  owner_unbooked_payment: "Told after a payment for no active booking was refunded",
-  owner_link_failed: "Payment link could not be made",
+  owner_payment_unused: "Told after a payment for a booking that was no longer active (hold ended, or cancelled) was refunded",
+  owner_not_booked: "The slot could not be held or the payment link could not be made: nothing is booked",
   owner_reschedule_failed: "A move could not be confirmed",
-  owner_hold_failed: "A slot could not be held",
   owner_message_held: "A message was held back because it did not match the record",
   owner_opted_out: "A customer sent STOP",
   owner_unknown_command: "The owner's reply was not approve, deny or retry",
@@ -154,7 +152,9 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push("Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.", "");
 
   out.push(`## 1. Messages to the customer (${ids.filter((id) => !id.startsWith("owner_")).length})`, "", table(head, messageRows(false)), "");
-  out.push(`## 2. Messages to the owner (${ids.filter((id) => id.startsWith("owner_")).length})`, "", table(head, messageRows(true)), "");
+  out.push(`## 2. Messages to the owner (${ids.filter((id) => id.startsWith("owner_")).length})`, "");
+  out.push("Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.", "");
+  out.push(table(head, messageRows(true)), "");
 
   out.push("## 3. Dates and times as the agent writes them", "");
   out.push(table(["Weekday", `Written in ${name}`, REVIEWER], WEEKDAY_NAMES[language].map((w, i) => [WEEKDAYS_EN[i], w, ""])), "");

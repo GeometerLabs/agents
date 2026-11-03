@@ -108,6 +108,81 @@ export const META_TEMPLATES: readonly MetaTemplate[] = [
       kn: 'ಅನುಮತಿ ಬೇಕು: {phone} ({service}, {slot}) ಅವರಿಗೆ {refund} ರೀಫಂಡ್. "approve {ref}" ಅಥವಾ "deny {ref}" ಎಂದು ಉತ್ತರಿಸಿ.',
     },
   },
+  // The other owner notices. The owner usually has not written to the number today, so each notice the agent sends on its own has a template here
+  // (only the reply to the owner's own message does not). Two situations share one where a single sentence is true of both: owner_not_booked and
+  // owner_payment_unused. Why not one generic owner template: Explanation.md, "Joining it up", 6.
+  {
+    name: "owner_late_cancellation", usedFor: "owner_late_cancellation", audience: "owner",
+    bodies: {
+      en: 'Customer {phone} cancelled {service} on {slot} less than {hours} hours before the start. Deposit {deposit}. Reply "approve {ref}" to refund it or "deny {ref}" to keep it.',
+      hi: 'ग्राहक {phone} ने {service}, {slot} शुरू होने से {hours} घंटे से कम पहले रद्द किया। जमा {deposit}। लौटाने के लिए "approve {ref}", रखने के लिए "deny {ref}" लिखें।',
+      ml: 'ഉപഭോക്താവ് {phone}: {service}, {slot} തുടങ്ങാൻ {hours} മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് {deposit}. തിരികെ നൽകാൻ "approve {ref}" എന്നും, നിങ്ങൾ വയ്ക്കാൻ "deny {ref}" എന്നും മറുപടി അയയ്ക്കൂ.',
+      kn: 'ಗ್ರಾಹಕರು {phone}: {service}, {slot} ಪ್ರಾರಂಭಕ್ಕೆ {hours} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಇರುವಾಗ ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ. ಮುಂಗಡ {deposit}. ಹಿಂತಿರುಗಿಸಲು "approve {ref}" ಎಂದು, ಇಟ್ಟುಕೊಳ್ಳಲು "deny {ref}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
+  {
+    name: "owner_cant_confirm", usedFor: "owner_cant_confirm", audience: "owner",
+    bodies: {
+      en: `Could not confirm {phone}'s {service} on {slot} in the calendar, so it is NOT booked. Their {deposit} deposit is recorded. Reply "retry {ref}" to check the calendar again, or "approve {ref}" to cancel it and refund the deposit.`,
+      hi: 'ग्राहक {phone} का {service}, {slot} कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग पक्की नहीं है। उनका {deposit} जमा दर्ज है। कैलेंडर फिर जाँचने के लिए "retry {ref}" लिखें, या बुकिंग रद्द करके जमा लौटाने के लिए "approve {ref}"।',
+      ml: 'ഉപഭോക്താവ് {phone}: {service}, {slot} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. അവരുടെ {deposit} അഡ്വാൻസ് രേഖപ്പെടുത്തിയിട്ടുണ്ട്. കലണ്ടർ വീണ്ടും നോക്കാൻ "retry {ref}" എന്നും, ബുക്കിംഗ് റദ്ദാക്കി അഡ്വാൻസ് തിരികെ നൽകാൻ "approve {ref}" എന്നും മറുപടി അയയ്ക്കൂ.',
+      kn: 'ಗ್ರಾಹಕರು {phone}: {service}, {slot} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಅವರ {deposit} ಮುಂಗಡ ಹಣ ದಾಖಲಾಗಿದೆ. ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಲು "retry {ref}" ಎಂದು, ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗಿಸಲು "approve {ref}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
+  {
+    name: "owner_not_booked", usedFor: "owner_not_booked", audience: "owner",
+    bodies: {
+      en: "Could not set up {phone}'s {service} on {slot}: the calendar or the payment link did not work. Nothing is booked.",
+      hi: "ग्राहक {phone} के {service}, {slot} के लिए बुकिंग तैयार नहीं हो पाई: कैलेंडर या पेमेंट लिंक ने काम नहीं किया। कुछ भी बुक नहीं हुआ।",
+      ml: "ഉപഭോക്താവ് {phone}: {service}, {slot} — കലണ്ടറോ പേയ്മെന്റ് ലിങ്കോ പ്രവർത്തിച്ചില്ല, അതിനാൽ ബുക്കിംഗ് ഒരുക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ബുക്ക് ആയിട്ടില്ല.",
+      kn: "ಗ್ರಾಹಕರು {phone}: {service}, {slot} — ಕ್ಯಾಲೆಂಡರ್ ಅಥವಾ ಪಾವತಿ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಸಿದ್ಧಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ.",
+    },
+  },
+  {
+    name: "owner_move_failed", usedFor: "owner_reschedule_failed", audience: "owner",
+    bodies: {
+      en: "Could not confirm moving {phone}'s {service} to {slot} in the calendar. Please check their booking.",
+      hi: "ग्राहक {phone} का {service} कैलेंडर में {slot} पर ले जाना पक्का नहीं हो पाया। कृपया उनकी बुकिंग जाँच लें।",
+      ml: "ഉപഭോക്താവ് {phone}: {service} — പുതിയ സമയം {slot} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി അവരുടെ ബുക്കിംഗ് പരിശോധിക്കൂ.",
+      kn: "ಗ್ರಾಹಕರು {phone}: {service} — ಹೊಸ ಸಮಯ {slot} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರ ಬುಕಿಂಗ್ ಪರಿಶೀಲಿಸಿ.",
+    },
+  },
+  {
+    name: "owner_paid_twice", usedFor: "owner_duplicate_payment", audience: "owner",
+    bodies: {
+      en: "Customer {phone} paid the deposit twice for {service} on {slot}. The extra {refund} was refunded.",
+      hi: "ग्राहक {phone} ने {service}, {slot} के लिए जमा दो बार भरा। अतिरिक्त {refund} वापस कर दिया गया।",
+      ml: "ഉപഭോക്താവ് {phone}: {service}, {slot} — അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി വന്ന {refund} തിരികെ നൽകി.",
+      kn: "ಗ್ರಾಹಕರು {phone}: {service}, {slot} — ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚುವರಿ {refund} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+    },
+  },
+  {
+    name: "owner_payment_unused", usedFor: "owner_payment_unused", audience: "owner",
+    bodies: {
+      en: "A {deposit} payment from {phone} arrived for {slot}, but that booking was no longer active (its hold had ended, or it was cancelled). {refund} was refunded.",
+      hi: "ग्राहक {phone} का {deposit} का भुगतान {slot} की उस बुकिंग के लिए आया जो अब चालू नहीं थी (स्लॉट छूट गया था या बुकिंग रद्द हो गई थी)। {refund} वापस कर दिया गया।",
+      ml: "ഉപഭോക്താവ് {phone}: {slot} ബുക്കിംഗിനായി {deposit} പേയ്മെന്റ് വന്നു, പക്ഷേ ആ ബുക്കിംഗ് അപ്പോൾ നിലവിലില്ലായിരുന്നു (മാറ്റിവച്ച സമയം കഴിഞ്ഞിരുന്നു, അല്ലെങ്കിൽ റദ്ദാക്കിയിരുന്നു). {refund} തിരികെ നൽകി.",
+      kn: "ಗ್ರಾಹಕರು {phone}: {slot} ಬುಕಿಂಗ್‌ಗಾಗಿ {deposit} ಪಾವತಿ ಬಂದಿದೆ, ಆದರೆ ಆ ಬುಕಿಂಗ್ ಆಗ ಚಾಲ್ತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ (ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು, ಅಥವಾ ರದ್ದಾಗಿತ್ತು). {refund} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+    },
+  },
+  {
+    name: "owner_message_held", usedFor: "owner_message_held", audience: "owner",
+    bodies: {
+      en: "A message to {phone} was held back because it did not match the booking record. Nothing was sent.",
+      hi: "ग्राहक {phone} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह बुकिंग रिकॉर्ड से मेल नहीं खाता था। कुछ नहीं भेजा गया।",
+      ml: "ഉപഭോക്താവ് {phone}: അയയ്ക്കാനിരുന്ന ഒരു സന്ദേശം ബുക്കിംഗ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞു. ഒന്നും അയച്ചിട്ടില്ല.",
+      kn: "ಗ್ರಾಹಕರು {phone}: ಕಳುಹಿಸಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಬುಕಿಂಗ್ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.",
+    },
+  },
+  {
+    name: "owner_customer_stopped", usedFor: "owner_opted_out", audience: "owner",
+    bodies: {
+      en: "Customer {phone} sent STOP. No more messages will go to them.",
+      hi: "ग्राहक {phone} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।",
+      ml: "ഉപഭോക്താവ് {phone} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.",
+      kn: "ಗ್ರಾಹಕರು {phone} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+    },
+  },
 ];
 
 /** Every template name, for a provider (or the stand-in) to approve. */
