@@ -80,6 +80,7 @@ const en: Strings = {
     "native-review": "a native speaker's review of the Malayalam and Kannada wording (machine-written)", "restart-mid-step": "a crash or restart in the middle of a step",
     "same-instant": "two customers at the exact same instant", "other-faults": "problems beyond the ones tried",
     "own-settings": "these checks on this shop's own settings (they ran on the example shop, Glow Salon)",
+    "situations-skipped": "some of these checks, which this shop's settings cannot run (so they were left out)",
   },
   notCounted: {
     "no-shows": "who turned up (a booking is marked finished when its time passes)", "read-receipts": "whether customers read their messages (only that WhatsApp's record held them)",
@@ -142,6 +143,7 @@ const hi: Strings = {
     "native-review": "मलयालम और कन्नड़ शब्दों की किसी मातृभाषी से जाँच (ये मशीन से लिखे हैं)", "restart-mid-step": "किसी कदम के बीच में बंद होना या दोबारा चालू होना",
     "same-instant": "ठीक एक ही पल में दो ग्राहक", "other-faults": "आज़माई गई गड़बड़ियों के अलावा दूसरी गड़बड़ियाँ",
     "own-settings": "ये जाँचें इस दुकान की अपनी सेटिंग पर (ये उदाहरण दुकान Glow Salon पर चली थीं)",
+    "situations-skipped": "इनमें से कुछ जाँचें, जो इस दुकान की सेटिंग पर चल नहीं सकतीं (इसलिए छोड़ दी गईं)",
   },
   notCounted: {
     "no-shows": "कौन आया और कौन नहीं (समय बीतने पर बुकिंग पूरी मान ली जाती है)", "read-receipts": "ग्राहकों ने संदेश पढ़े या नहीं (सिर्फ़ इतना कि WhatsApp के रिकॉर्ड में संदेश है)",
@@ -204,6 +206,7 @@ const ml: Strings = {
     "native-review": "മലയാളം, കന്നഡ വാക്കുകൾ മാതൃഭാഷക്കാരൻ പരിശോധിക്കൽ (ഇവ യന്ത്രം എഴുതിയതാണ്)", "restart-mid-step": "ഒരു ഘട്ടത്തിനിടയിൽ നിൽക്കുകയോ വീണ്ടും തുടങ്ങുകയോ ചെയ്യുന്നത്",
     "same-instant": "ഒരേ നിമിഷത്തിൽ രണ്ട് ഉപഭോക്താക്കൾ", "other-faults": "പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ",
     "own-settings": "ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (ഇവ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത്)",
+    "situations-skipped": "ഈ പരിശോധനകളിൽ ചിലത്, ഈ കടയുടെ ക്രമീകരണങ്ങളിൽ നടത്താൻ കഴിയാത്തതിനാൽ ഒഴിവാക്കി",
   },
   notCounted: {
     "no-shows": "ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും)", "read-receipts": "ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം)",
@@ -266,6 +269,7 @@ const kn: Strings = {
     "native-review": "ಮಲಯಾಳಂ ಮತ್ತು ಕನ್ನಡ ಪದಗಳನ್ನು ಮಾತೃಭಾಷಿಕರು ಪರಿಶೀಲಿಸುವುದು (ಇವು ಯಂತ್ರ ಬರೆದದ್ದು)", "restart-mid-step": "ಒಂದು ಹಂತದ ಮಧ್ಯದಲ್ಲಿ ನಿಲ್ಲುವುದು ಅಥವಾ ಮತ್ತೆ ಆರಂಭವಾಗುವುದು",
     "same-instant": "ಒಂದೇ ಕ್ಷಣದಲ್ಲಿ ಇಬ್ಬರು ಗ್ರಾಹಕರು", "other-faults": "ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು",
     "own-settings": "ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಇವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು)",
+    "situations-skipped": "ಈ ಪರಿಶೀಲನೆಗಳಲ್ಲಿ ಕೆಲವು, ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಡೆಸಲಾಗದ ಕಾರಣ ಬಿಟ್ಟಿದೆ",
   },
   notCounted: {
     "no-shows": "ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ)", "read-receipts": "ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ)",

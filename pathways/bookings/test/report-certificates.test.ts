@@ -4,15 +4,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
-import { runAll } from "../crash-test/situations.ts";
+import { runAll, runOn } from "../crash-test/situations.ts";
 import { MONTH_NAMES, formatInr } from "../src/language/format.ts";
 import { glowSalon } from "../src/harness.ts";
 import { LANGUAGES, parseSettings } from "../src/settings.ts";
-import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText, summariseHandCheck } from "../report/certificate.ts";
+import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText, summariseHandCheck, summariseRun } from "../report/certificate.ts";
 import type { HandCheckSummary } from "../report/certificate.ts";
-import { NOT_COUNTED, buildMonthlyReport, monthRange } from "../report/data.ts";
+import { NOT_COUNTED, buildMonthlyReport, checkedPolicyDigest as checkedGlow, monthRange } from "../report/data.ts";
 import { at, runBusyMonth } from "../report/example-month.ts";
 import { seal } from "../report/sign.ts";
 import { STRINGS, bannedIn } from "../report/strings.ts";
@@ -68,6 +69,28 @@ test("a shop whose settings are not the ones the situations ran on gets one more
   // and the limits printed are the other shop's, not Glow Salon's
   const text = goLiveText(env, "en");
   assert.ok(text.includes("Deposit ₹100, and the slot is held 20 minutes") && text.includes("at least 12 hours") && text.includes("Refunds above ₹150") && !text.includes("Refunds above ₹200"));
+});
+
+test("a certificate made from a run on the shop's own settings has no 'own settings' caveat; one that left situations out says so, in every language", async () => {
+  const rental = parseSettings(JSON.parse(readFileSync(new URL("../settings/equipment-rental.example.json", import.meta.url), "utf8")));
+  const summary = summariseRun(await runOn(rental));
+  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length, summary.notRun], [28, 28, 0, undefined]);
+  const own = seal(buildGoLiveCertificate({ settings: rental, handCheck: summary, issuedAt: ISSUED })).document;
+  assert.equal(own.policyDigest, own.checkedPolicyDigest, "the situations ran on the settings the certificate shows");
+  assert.notEqual(own.checkedPolicyDigest, checkedGlow(), "and those are not Glow Salon's");
+  assert.deepEqual(own.notTested, NOT_TESTED.map((n) => n.id), "nothing is added: the checks ran on this shop");
+  assert.equal(own.checks.notRun, undefined);
+  assert.ok(goLiveText(seal(own), "en").includes("Held 28 of 28 situations. 0 failed. 14 not tested."));
+  // situations the shop's settings could not run: they are not in the count, they are named, and they are one more thing not tested
+  const left: HandCheckSummary = { ...summary, total: 26, held: 26, notRun: ["Cancellation after the window", "Reschedule a confirmed booking"] };
+  const cert = seal(buildGoLiveCertificate({ settings: rental, handCheck: left, issuedAt: ISSUED }));
+  assert.equal(cert.document.notTested.at(-1), "situations-skipped");
+  assert.deepEqual(cert.document.checks.notRun, left.notRun);
+  assert.ok(goLiveText(cert, "en").includes("Held 26 of 26 situations. 0 failed. 15 not tested.") && goLiveText(cert, "en").includes(STRINGS.en.notTested["situations-skipped"]));
+  for (const language of LANGUAGES) assert.ok(words(goLivePage(cert, language)).includes(STRINGS[language].notTested["situations-skipped"]), language);
+  // a run on Glow Salon's settings, shown for another shop's, still says so (the old way of making a certificate)
+  const glowRun = summariseRun(await runOn(settings));
+  assert.equal(seal(buildGoLiveCertificate({ settings: rental, handCheck: glowRun, issuedAt: ISSUED })).document.notTested.at(-1), "own-settings");
 });
 
 test("the limits are the shop's own, in plain words, in each language: deposit, hold, cancellation window, refund limit, price floor", async () => {

@@ -94,7 +94,7 @@ test("go-live-certificate.ts runs the hand check and writes the certificate in t
   assert.ok(en.stdout.includes("Held 33 of 33 situations. 0 failed. 14 not tested.") && en.stdout.includes("NOT signed"));
 });
 
-test("go-live-certificate.ts for another shop's settings says the situations did not run on them", async () => {
+test("go-live-certificate.ts runs the situations on the shop's own settings, so another shop's certificate no longer says they ran on the example", async () => {
   const { dir } = await fixtures();
   const other = JSON.parse(readFileSync(SETTINGS, "utf8"));
   other.name = "Bright Salon";
@@ -102,13 +102,35 @@ test("go-live-certificate.ts for another shop's settings says the situations did
   writeFileSync(join(dir, "bright.json"), JSON.stringify(other));
   const r = run("go-live-certificate.ts", "--settings", join(dir, "bright.json"), "--lang", "en", "--out", join(dir, "bright"));
   assert.equal(r.status, 0, r.stderr);
-  assert.ok(r.stdout.includes("Held 33 of 33 situations. 0 failed. 15 not tested.") && r.stdout.includes("they ran on the example shop, Glow Salon"));
+  assert.ok(r.stdout.includes("Held 33 of 33 situations. 0 failed. 14 not tested."), r.stdout);
+  assert.ok(!r.stdout.includes("they ran on the example shop") && !r.stdout.includes("cannot run"), "the checks ran on this shop's settings, so there is nothing to caveat");
   assert.ok(r.stdout.includes("Deposit ₹100"));
+  const cert = JSON.parse(readFileSync(join(dir, "bright", "go-live-certificate.json"), "utf8")).document;
+  assert.equal(cert.policyDigest, cert.checkedPolicyDigest, "the checks ran on the settings the certificate shows");
+  assert.equal(cert.checks.notRun, undefined);
   const bad = join(dir, "bad.json");
   writeFileSync(bad, JSON.stringify({ name: "" }));
   const refused = run("go-live-certificate.ts", "--settings", bad, "--lang", "en", "--out", join(dir, "bad-out"));
   assert.equal(refused.status, 64);
   assert.ok(refused.stderr.includes("The settings need fixing") && !existsSync(join(dir, "bad-out")));
+});
+
+test("go-live-certificate.ts for settings that cannot run some situations leaves them out of the counts, names them, and counts them as not tested", async () => {
+  const { dir } = await fixtures();
+  const noWindow = JSON.parse(readFileSync(SETTINGS, "utf8"));
+  noWindow.name = "Walk-in Salon";
+  noWindow.cancellation.windowHours = 0;
+  writeFileSync(join(dir, "no-window.json"), JSON.stringify(noWindow));
+  const r = run("go-live-certificate.ts", "--settings", join(dir, "no-window.json"), "--lang", "en", "--out", join(dir, "no-window"));
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(r.stdout.includes("Held 30 of 30 situations. 0 failed. 15 not tested."), r.stdout);
+  assert.ok(r.stdout.includes("some of these checks, which this shop's settings cannot run (so they were left out)"));
+  assert.ok(r.stdout.includes("3 situation(s) cannot be run on these settings") && r.stdout.includes("Cancellation after the window"));
+  assert.ok(!r.stdout.includes("they ran on the example shop"));
+  const cert = JSON.parse(readFileSync(join(dir, "no-window", "go-live-certificate.json"), "utf8")).document;
+  assert.deepEqual(cert.checks.notRun, ["Cancellation after the window", "Late cancellation: the customer and the owner both read Malayalam", "Late cancellation: the customer and the owner both read Kannada"]);
+  assert.equal(cert.notTested.at(-1), "situations-skipped");
+  assert.equal(cert.policyDigest, cert.checkedPolicyDigest);
 });
 
 test("report-example.ts makes a sample of everything, in all four languages and both, under the folder it is given, and it verifies", () => {

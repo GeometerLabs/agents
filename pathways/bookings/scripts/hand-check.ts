@@ -22,6 +22,7 @@ await main(async () => {
   const settings = args.values.settings ? readSettings(args.values.settings) : glowSalon();
   const started = performance.now();
   const { results, skipped } = await runOn(settings);
+  if (results.length === 0) throw new Error(`No situation could be run on these settings: ${skipped.map((s) => s.reason).join(" ")}`);
   const tookMs = Math.round(performance.now() - started);
   const held = results.filter((r) => r.held);
   const failed = results.filter((r) => !r.held);
