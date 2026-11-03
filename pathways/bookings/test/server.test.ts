@@ -117,12 +117,21 @@ test("a bad body is refused whole with 400: a tick, a half-formed event, not JSO
       { events: [{ kind: "message", message: { id: "m", from: CUSTOMER } }] },
       { events: [{ kind: "payment_event", event: { id: "e", event: "payment_link.paid", created_at: 1, payload: {} } }] },
       { events: [{ kind: "payment_event", event: { id: "e", event: "refund.processed", created_at: 1, payload: { refund: { id: "r" } } } }] },
+      { events: [{ kind: "payment_event", event: { id: "e", event: "payment.captured", created_at: 1, payload: { payment: {} } } }] },
       { events: [good, { kind: "nonsense" }] },
     ];
     for (const body of bad) assert.equal((await t.post(body)).status, 400, JSON.stringify(body)?.slice(0, 80));
     assert.equal(t.rows().length, 0, "the good event in a bad batch was not saved either");
     const reply = await t.post({ events: [good, { kind: "nonsense" }] });
     assert.match((await reply.json() as any).error, /Event 2/);
+  } finally { await t.close(); }
+});
+
+test("a real payment.captured, which names the payment and not its link, is accepted (the inbox would otherwise answer its provider 503 for ever)", async () => {
+  const t = await boot();
+  try {
+    const captured = { kind: "payment_event", event: { id: "evt_captured", event: "payment.captured", created_at: 1, payload: { payment: { id: "pay_1" } } } };
+    assert.deepEqual(await (await t.post({ events: [captured] })).json(), { saved: 1, duplicates: 0 });
   } finally { await t.close(); }
 });
 

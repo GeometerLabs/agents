@@ -50,9 +50,12 @@ function checkOne(raw: unknown): IncomingEvent | string {
       return `a payment event needs event.id, event.event (${PAYMENT_EVENTS.join(", ")}), event.created_at and event.payload.`;
     }
     const link = isObj(p.payment_link) ? p.payment_link.id : undefined;
-    const paymentLink = isObj(p.payment) ? p.payment.link_id : undefined;
+    const payment = isObj(p.payment) ? p.payment : undefined;
     const refund = isObj(p.refund) ? p.refund : undefined;
-    const hasWhatItNeeds = e.event === "refund.processed" ? isText(refund?.id) && isText(refund?.payment_id) : isText(link) || isText(paymentLink);
+    // A real payment.captured names the payment and not its link (the agent asks the payments service which link it paid), so its payment id is enough.
+    const hasWhatItNeeds = e.event === "refund.processed" ? isText(refund?.id) && isText(refund?.payment_id)
+      : e.event === "payment.captured" ? isText(payment?.id) || isText(payment?.link_id) || isText(link)
+      : isText(link) || isText(payment?.link_id);
     if (!hasWhatItNeeds) return `a ${e.event} event is missing the ids in its payload that say which payment it is about.`;
     return { kind: "payment_event", event: e as unknown as Extract<IncomingEvent, { kind: "payment_event" }>["event"] };
   }

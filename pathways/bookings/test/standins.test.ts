@@ -319,13 +319,16 @@ test("a reminder sent after the 24-hour window goes as the real template, over H
   });
 });
 
-test("an owner who has not written in 24 hours cannot be told by a plain message, and the only owner template is the approval request: the notice fails closed and is recorded as failed", async () => {
+test("an owner who has not written in 24 hours is told by the real template, over HTTP: the notice is accepted, read back as sent, and holds the approved wording", async () => {
   await withWorld(async (w) => {
     await w.control("/_standin/fault", { service: "payments", op: "createPaymentLink", mode: "error", times: 10 });
-    await w.say(BOOK);
-    assert.equal(w.textsTo(w.owner).length, 0, "nothing was sent to the owner");
-    const failed = w.record.entries().filter((e) => e.action === "send_message" && e.outcome === "failed" && /not exist/.test(e.notes ?? ""));
-    assert.ok(failed.length > 0, JSON.stringify(w.record.entries().filter((e) => e.action === "send_message").map((e) => [e.outcome, e.notes])));
-    assert.ok(w.textsTo(CUSTOMER).some((t) => /nothing is booked/.test(t)), "the customer still hears what happened");
+    await w.say(BOOK); // the owner has not written to the number, so a plain message cannot reach them
+    const told = w.fakes.messaging.sentTo(w.owner);
+    assert.equal(told.length, 1);
+    assert.deepEqual([told[0].kind, told[0].templateName, told[0].language], ["template", "owner_not_booked", "en"]);
+    assert.equal(told[0].text, `Could not set up ${CUSTOMER}'s haircut on Wed 4 Nov, 6:00 pm: the calendar or the payment link did not work. Nothing is booked.`);
+    assert.ok(w.record.entries().some((e) => e.action === "send_message" && e.outcome === "confirmed" && e.refs.messageId === told[0].id), "read back as sent");
+    assert.deepEqual(w.record.entries().filter((e) => e.action === "send_message" && e.outcome !== "confirmed").map((e) => [e.outcome, e.notes]), [], "it used to be recorded as failed: the provider did not know the generic template");
+    assert.ok(w.textsTo(CUSTOMER).some((t) => /nothing is booked/.test(t)), "the customer is told as before");
   });
 });

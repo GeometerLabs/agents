@@ -309,7 +309,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const held = await tryHold(b);
     if (!held.ok) {
       const slotMs = b.startMs;
-      if (held.why === "failed") await tellOwner(b, phone, "owner_hold_failed");
+      if (held.why === "failed") await tellOwner(b, phone, "owner_not_booked");
       const template: TemplateId = held.why === "outside_hours" ? "outside_hours" : held.why === "unavailable" ? "slot_unavailable" : "hold_failed";
       moveTo(b, "enquiry");
       await tellCustomer(b, phone, [...prefix, template], { slotMs, shown: [...shown, ...held.decisions] });
@@ -322,7 +322,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!link) {
       log(b, phone, "create_deposit_link", error ? "failed" : "unconfirmed", { amountPaise: depositPaise }, { notes: error ?? "the payments service does not show the link" });
       await releaseSlot(b, "no payment link could be created");
-      await tellOwner(b, phone, "owner_link_failed");
+      await tellOwner(b, phone, "owner_not_booked");
       moveTo(b, "enquiry");
       await tellCustomer(b, phone, ["link_failed"]);
       clearSlot(b);
@@ -482,7 +482,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (limit.verdict === "allow" && (await refundPayment(b, b.depositPaymentId!, amountInr, [limit]))) {
       if (b.state !== "cancelled") moveTo(b, "cancelled");
       await tellCustomer(b, b.customer, [why === "slot_gone" ? "slot_gone_refund" : "refund_unbooked"], { refundInr: amountInr });
-      await tellOwner(b, b.customer, why === "slot_gone" ? "owner_slot_gone" : "owner_unbooked_payment", { refundInr: amountInr });
+      await tellOwner(b, b.customer, "owner_payment_unused", { refundInr: amountInr });
       return;
     }
     b.pending.push({ kind: "refund", amountInr, paymentId: b.depositPaymentId!, reason: limit.verdict === "allow" ? "refund_failed" : "over_limit" });
