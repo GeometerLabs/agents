@@ -64,7 +64,7 @@ const BOOK = "I want a haircut tomorrow at 6pm";
 const calendarOf = (s: any) => s.record.fakes.calendar as { bookingRef: string; status: string; start: string }[];
 const linksOf = (s: any) => s.record.fakes.payments as { id: string; bookingRef: string; amountInr: number; status: string; paid: { id: string; amountInr: number; refundedInr: number }[] }[];
 const refundsOf = (s: any) => s.record.fakes.refunds as { id: string; paymentId: string; amountInr: number }[];
-const customerSaid = (s: any) => s.customer.messages.filter((m: any) => m.who === "agent").map((m: any) => m.text as string);
+const customerSaid = (s: any): string[] => s.customer.messages.filter((m: any) => m.who === "agent").map((m: any) => m.text as string);
 
 // ---- the page ----------------------------------------------------------------------------------------------------------
 

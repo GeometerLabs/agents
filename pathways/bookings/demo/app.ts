@@ -189,7 +189,7 @@ export function createHandler(options: DemoOptions) {
     }
 
     const { session, created } = sessionFor(req);
-    const cookie = created ? { "set-cookie": `${COOKIE}=${session.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${IDLE_MS / 1000}` } : {};
+    const cookie: Record<string, string> = created ? { "set-cookie": `${COOKIE}=${session.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${IDLE_MS / 1000}` } : {};
     if (isState) { sendJson(res, 200, buildState(session.demo), cookie); return; }
 
     // The actions. Each one runs after the ones before it in this session finish.
