@@ -37,6 +37,8 @@ export const INBOX_PORT = 8788;
 export const RELAY_PORT = 8795;
 export const REFRESHER_PORT = 8791;
 export const PANEL_PORT = 8790;
+/** Where the ops container sees the deployer's status files (read-only): it reads the backup times from them for the heartbeat. */
+export const OPS_STATUS_DIR = "/server/status";
 export const HEALTH_PORT = 8081;
 /** A shop's three Guards, in the order that fixes each one's address on the admin network (the shop's door is the fourth). */
 export const SHOP_GUARD_KINDS: readonly Exclude<GuardKind, "model">[] = ["razorpay", "whatsapp", "calendar"];
@@ -215,7 +217,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   }), [`${dirs.generated}/refresher/refresher.json`]);
   add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
     environment: { CONFIG: "/etc/geometer/ops.json" },
-    volumes: [appVolume, `${dirs.generated}/ops:/etc/geometer:ro`, `${secretDir("ops")}:/run/secrets:ro`],
+    volumes: [appVolume, `${dirs.generated}/ops:/etc/geometer:ro`, `${secretDir("ops")}:/run/secrets:ro`, `${dirs.status}:${OPS_STATUS_DIR}:ro`],
     networks: { admin: {}, egress: {} },
   }), [`${dirs.generated}/ops/ops.json`]);
   if (features.backup) {

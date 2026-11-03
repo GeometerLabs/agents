@@ -22,6 +22,8 @@ import { readStatus } from "../lib/status.ts";
 import { writeSecretFile, secretFile } from "../lib/secrets.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
 import { world } from "./world.ts";
+import { buildHeartbeat } from "../services/heartbeat.ts";
+import { readBackups } from "../services/ops.ts";
 
 const tmp = () => { const dir = mkdtempSync(join(tmpdir(), "geo-backup-")); return { dir, done: () => rmSync(dir, { recursive: true, force: true }) }; };
 
@@ -167,6 +169,13 @@ test("a failed drill is written where the panel and `status` show it, with the r
     const s = readStatus(w.root, "glow-salon")!.backups!;
     assert.deepEqual([s.drillOk, s.lastDrillAt, s.drillDetail], [false, "2026-11-04T10:00:00.000Z", "the continuous copy could not be restored: litestream: no snapshots found"]);
     assert.equal(loadState(w.root).shops["glow-salon"].lastDrill?.ok, false);
+    // ... and from there to the heartbeat: the drill's time and verdict travel as an age and a flag, the reason stays on the server, and the shop is still ready
+    const heartbeatAt = (iso: string) => buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now: new Date(iso), baseline: {}, shops: [{ id: "glow-salon", pathway: "bookings", pathwayVersion: "0.1.0", up: true, ready: true, status: null, guards: [], backups: readBackups(w.paths.statusFile("glow-salon")) }] }).body;
+    const agent = (heartbeatAt("2026-11-04T10:30:00.000Z").agents as Record<string, any>[])[0];
+    assert.deepEqual(agent.drill, { age_s: 1800, ok: false });
+    assert.equal(agent.backup_age_s, undefined, "no snapshot has been made on this server yet: nothing is sent, not 0");
+    assert.equal(agent.runtime.ready, true);
+    assert.doesNotMatch(JSON.stringify(heartbeatAt("2026-11-04T10:30:00.000Z")), /continuous copy|litestream|no snapshots/u);
     w.ctx.runner = fakeRunner((_c, args) => args.includes("restore") ? ok() : ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, detail: "restored 3 entries, integrity ok, last entry #3 matches the live record" }] })));
     assert.equal((await runDrill(w.ctx)).ok, true);
     assert.equal(readStatus(w.root, "glow-salon")!.backups!.drillOk, true);

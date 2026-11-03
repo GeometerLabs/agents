@@ -10,7 +10,7 @@
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
 import { buildHeartbeat, sendHeartbeat } from "./heartbeat.ts";
-import type { AdminStatus, Baseline, GuardObservation, RuntimeStatus, ShopObservation } from "./heartbeat.ts";
+import type { AdminStatus, BackupFacts, Baseline, GuardObservation, RuntimeStatus, ShopObservation } from "./heartbeat.ts";
 
 export interface OpsGuard { id: string; service: string; adminUrl: string; healthUrl: string; adminTokenFile: string }
 export interface OpsConfig {
@@ -18,7 +18,7 @@ export interface OpsConfig {
   bundleVersion: string;
   heartbeatSeconds?: number;
   fleet?: { url: string; keyFile: string };
-  shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; guards: OpsGuard[] }>;
+  shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }>;
   model: OpsGuard;
 }
 
@@ -55,6 +55,20 @@ export async function observeGuard(g: OpsGuard, withHeld: boolean, fetchFn: type
   return { id: g.id, healthReady: health.status === 200, admin: status.status === 200 ? (status.body as AdminStatus) : null, held: withHeld ? list : 0 };
 }
 
+/**
+ * The backup times the deployer recorded for a shop, from its status file. Only three fields are taken, each checked for its type; the drill's free-text reason
+ * (`drillDetail`) and everything else in the file are never read into the heartbeat. A missing or unreadable file is `undefined`: no backup field is sent,
+ * which fleet reads as "nothing to report", never as a problem.
+ */
+export function readBackups(statusFile: string | undefined): BackupFacts | undefined {
+  if (!statusFile) return undefined;
+  try {
+    const b = (JSON.parse(readFileSync(statusFile, "utf8")) as { backups?: Record<string, unknown> | null }).backups;
+    if (typeof b !== "object" || b === null) return undefined;
+    return { lastCopyAt: typeof b.lastCopyAt === "string" ? b.lastCopyAt : null, lastDrillAt: typeof b.lastDrillAt === "string" ? b.lastDrillAt : null, drillOk: typeof b.drillOk === "boolean" ? b.drillOk : null };
+  } catch { return undefined; }
+}
+
 export async function observeShop(id: string, c: OpsConfig["shops"][string], fetchFn: typeof fetch = fetch): Promise<ShopObservation> {
   const token = readSecret(c.internalTokenFile);
   const [healthz, readyz, status, guards] = await Promise.all([
@@ -62,7 +76,8 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
     get(`${c.runtimeUrl}/status`, { authorization: `Bearer ${token}` }, fetchFn),
     Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn))),
   ]);
-  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards };
+  const backups = readBackups(c.statusFile);
+  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}) };
 }
 
 /** Stop or start a shop: nothing new goes out. The reason says who and when; Guard writes it, with its own admin id, into its evidence. */
