@@ -24,7 +24,7 @@
 // failed come from status webhooks, which are not handled yet (Deferred.md).
 import type { Clock } from "../../clock.ts";
 import { HOUR } from "../../time.ts";
-import type { Language } from "../../settings.ts";
+import { META_LANGUAGE } from "../../language/meta-templates.ts";
 import { ApiError, WindowClosedError } from "../faults.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "../messaging.ts";
 import { asArray, createHttp, isObject, num, str } from "./http.ts";
@@ -37,9 +37,6 @@ export const GRAPH_VERSION = "v26.0";
 export interface WindowStore { lastInboundAt(phone: string): number | undefined }
 
 export interface WhatsAppConfig { baseUrl: string; phoneNumberId: string; timeoutMs?: number }
-
-/** Our languages as Meta's template language codes. */
-export const META_LANGUAGE: Record<Language, string> = { en: "en", hi: "hi", ml: "ml", kn: "kn" };
 
 const WINDOW_CLOSED_CODE = 131047;
 const KEPT_MESSAGES = 1000; // the local copy is for the read-back right after a send; it does not grow without end

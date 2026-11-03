@@ -15,6 +15,7 @@ import type { IntentParser } from "./adapters/model.ts";
 import { createFakePayments } from "./adapters/payments.ts";
 import type { FakePayments, FakePaymentsOptions, PaymentLink } from "./adapters/payments.ts";
 import { createRuleParser } from "./adapters/rule-parser.ts";
+import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
 import { createRecord } from "./record.ts";
 import type { ActionRecord } from "./record.ts";
@@ -70,7 +71,7 @@ export function createWorld(options: WorldOptions = {}): World {
   const calendar = createFakeCalendar();
   const payments = createFakePayments(clock, options.payments);
   const messaging = createFakeMessaging(clock);
-  for (const name of Object.values(TEMPLATE_NAMES)) for (const language of LANGUAGES) messaging.approve(name, language);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   const record = createRecord(clock);
   const store = createStore();
   const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store });

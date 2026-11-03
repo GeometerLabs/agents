@@ -21,6 +21,7 @@ import type { Intent, IntentParser } from "./adapters/model.ts";
 import type { PaymentEvent, PaymentLink, Payments } from "./adapters/payments.ts";
 import type { Clock } from "./clock.ts";
 import { resolveDate, resolveTime } from "./language/dates.ts";
+import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { TemplateId } from "./language/templates.ts";
 import type { Action, ActionRecord, Outcome } from "./record.ts";
@@ -106,7 +107,7 @@ export function createAgent(deps: AgentDeps): Agent {
     try {
       const sent = (await messaging.isWindowOpen(toNumber))
         ? await messaging.sendText(toNumber, text)
-        : await messaging.sendTemplate(toNumber, { name: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer, language, text });
+        : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
       log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+") } });
       return seen !== null;
