@@ -6,6 +6,16 @@ charge, pay, reward, order, disburse, grant) and are built to act correctly. The
 key and your own services. Each one has its rules in plain words, a one-line mistake you can apply to watch
 Geometer catch it, a CI workflow and a prompt for your coding assistant.
 
+## Pathways: free templates for real jobs (new)
+
+A **pathway** is a ready, tested agent for one job a local business already pays for, built from modules and tailored by settings. Each comes with its limits, a crash test, a record, a monthly report for the shop, and a guide to pitching and selling it locally in every language it speaks. They're free and open, like everything here, and you can [contribute](CONTRIBUTING.md): a language pack, a crash-test situation, a native speaker's review, or a new pathway.
+
+| Pathway | For | State |
+| --- | --- | --- |
+| [bookings](pathways/bookings) | Salons and studios taking bookings with a deposit on WhatsApp, in Hindi, English, Malayalam and Kannada | Built and checked against stand-in services; not yet live with a real business |
+
+## The example agents
+
 | Agent | Market | Framework | What it does, in one line |
 | --- | --- | --- | --- |
 | [refund-desk](refund-desk) | Commerce and support (payments) | Node.js, no framework | Refunds orders once, with an idempotency key and a look-up before any retry; large refunds wait for a person. |
