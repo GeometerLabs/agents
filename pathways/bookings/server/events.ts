@@ -10,7 +10,9 @@ export const MAX_EVENTS_PER_REQUEST = 100;
 /** Message ids, payment event ids and approval ids are different id spaces, so each gets its own prefix. An approval's two answers are two events. */
 export function eventKey(event: IncomingEvent): string {
   if (event.kind === "message") return `message:${event.message.id}`;
-  if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}`;
+  // The relay gives every delivery its own `id`, so an earlier event for the same approval (a forged one) cannot shadow the real one as a "repeat".
+  // Handling is safe to repeat: the agent looks at the refunds first, and a decision for a hold it no longer has does nothing.
+  if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}:${event.id ?? ""}`;
   return `payment_event:${event.event.id}`;
 }
 
@@ -68,7 +70,8 @@ function checkOne(raw: unknown): IncomingEvent | string {
     if (typeof raw.approval !== "string" || !APPROVAL_ID.test(raw.approval) || (raw.decision !== "approve" && raw.decision !== "deny")) {
       return 'an approval_decision needs approval (Guard\'s approval id) and decision ("approve" or "deny").';
     }
-    return { kind: "approval_decision", approval: raw.approval, decision: raw.decision };
+    if (raw.id !== undefined && (typeof raw.id !== "string" || !/^[A-Za-z0-9-]{1,64}$/u.test(raw.id))) return "an approval_decision's id, if given, is up to 64 letters, digits and hyphens.";
+    return { kind: "approval_decision", approval: raw.approval, decision: raw.decision, ...(raw.id !== undefined ? { id: raw.id } : {}) };
   }
   return 'the kind must be "message", "payment_event" or "approval_decision" (a tick is never sent from outside).';
 }

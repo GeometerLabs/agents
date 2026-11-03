@@ -21,6 +21,8 @@ export interface StubGuardConfig {
   upstreamUrl: string;
   /** The generated limits spec: the threshold and the approval time are read from it, as Guard reads them from the bundle. */
   spec: LimitsSpec;
+  /** Use this model instead of a new one, so something else in the same process (a payments fake) shares the same holds. */
+  model?: GuardModel;
   /** The agent id the review queue names. */
   agentId?: string;
   /** If given, every call on the agent port must carry it as `Authorization: Bearer ...`; otherwise any caller is let in. */
@@ -69,7 +71,7 @@ const bearer = (req: IncomingMessage) => /^bearer\s+(\S+)$/iu.exec(String(req.he
 const same = (a: string | undefined, b: string) => a !== undefined && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 export async function startStubGuard(config: StubGuardConfig): Promise<RunningStubGuard> {
-  const model = createGuardModel(config.spec, config.clock);
+  const model = config.model ?? createGuardModel(config.spec, config.clock);
   const agentId = config.agentId ?? "runtime-glow-salon";
   const calls: RunningStubGuard["calls"] = [];
   const accepted: RunningStubGuard["accepted"] = [];

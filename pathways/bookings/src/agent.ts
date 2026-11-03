@@ -47,7 +47,7 @@ export type AgentEvent =
   | { kind: "payment_event"; event: PaymentEvent } // a Razorpay webhook
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund
   // only if its own record says the owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
-  | { kind: "approval_decision"; approval: string; decision: "approve" | "deny" }
+  | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
   | { kind: "tick" }; // time has passed: let holds expire and send due reminders
 
 export interface Agent { handle(event: AgentEvent): Promise<void> }

@@ -39,8 +39,12 @@ test("an approval_decision is a checked event of its own, saved like the others,
   const ok = checkEvents({ events: [{ kind: "approval_decision", approval: "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3", decision: "approve" }] });
   assert.ok(ok.ok);
   assert.deepEqual(ok.ok && ok.events, [{ kind: "approval_decision", approval: "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3", decision: "approve" }]);
-  assert.equal(eventKey({ kind: "approval_decision", approval: "ap-1", decision: "approve" }), "approval_decision:ap-1:approve");
+  assert.equal(eventKey({ kind: "approval_decision", approval: "ap-1", decision: "approve" }), "approval_decision:ap-1:approve:");
   assert.notEqual(eventKey({ kind: "approval_decision", approval: "ap-1", decision: "approve" }), eventKey({ kind: "approval_decision", approval: "ap-1", decision: "deny" }));
+  // the relay's delivery has an id of its own, so one that was sent before it (a forged one) cannot make the runtime drop it as a repeat
+  assert.notEqual(eventKey({ kind: "approval_decision", approval: "ap-1", decision: "approve" }), eventKey({ kind: "approval_decision", approval: "ap-1", decision: "approve", id: "7f1c-2" }));
+  assert.ok(checkEvents({ events: [{ kind: "approval_decision", approval: "ap-1", decision: "approve", id: "7f1c-2" }] }).ok);
+  assert.equal(checkEvents({ events: [{ kind: "approval_decision", approval: "ap-1", decision: "approve", id: "no spaces" }] }).ok, false);
   for (const bad of [
     { kind: "approval_decision", approval: "ap-1", decision: "maybe" },
     { kind: "approval_decision", approval: "", decision: "approve" },
