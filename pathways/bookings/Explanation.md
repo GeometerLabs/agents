@@ -191,6 +191,16 @@ The inbox refuses to start unless one mode is fully configured, and says how. On
 6. The inbox answers 200 for webhooks it has nothing to forward, and 503 for anything the runtime did not save.
 7. `path-token` for an unsigned provider (Gupshup), and that it must not carry owner approvals until the per-request code exists (7b).
 
+## Joining it up (added 3 November 2026)
+
+The runtime server, the live adapters, the inbox and the stand-ins were built on separate branches, each tested against a stand-in for the others (a recorder for the runtime, a scripted module for the adapters). This section is what happened when they were run together.
+
+**1. The whole chain, as real servers.** `scripts/local-stack.ts` (`startLocalStack`) starts the stand-ins, the inbox (Meta signature mode) and a runtime in live mode in one process, each on a free port. The secrets are generated into files in a temp folder and read from there by the inbox and the runtime, as in production. The client folder is a copy in the same temp folder, with `runtime.json` rewritten for live mode and the live adapters' base URLs pointing at the stand-ins (Guard will sit there; nothing else differs). `test/full-chain.test.ts` runs three scenarios on it and judges each from the stand-ins' own records (calendar, payments, outbox), never from what the agent said: a Hindi booking and payment, with the provider's repeat changing nothing; the runtime stopped after the link and before the payment, so the inbox answers 503, and a new runtime on the same data folder and port, handed the events again, completes the booking once (the first message sent again is a no-op too); and a forged payment and a forged message (bad signature, none) turned away at the inbox. The three take about 0.3 seconds together.
+
+**2. What it found: the runtime refused a real `payment.captured`.** `server/events.ts` wanted a link id in every payment event except refunds, but a real `payment.captured` names the payment and not its link (Explanation, Live services, 3). The runtime answered 400, so the inbox answered the provider 503 for that webhook, for ever; only the `payment_link.paid` that follows got through, so a booking was confirmed only if that second event arrived. Each side's tests passed because the recorder in `e2e.test.ts` accepted anything. The check now takes a payment id for `payment.captured`; a payment event with no id at all is still refused.
+
+**3. The seams.** One: the stand-in's `POST /_standin/razorpay/deliver` takes `{"all": true}` and sends every event so far again, which is what a provider does with an event the receiver did not accept, or with a late repeat. Without it, an event counts as delivered once the stand-in has tried it, even when the inbox said 503, so the provider's retry could not be played. Nothing changed in the runtime: base URLs come from `runtime.json`, the clock from `startClient`'s option, and the stack picks the runtime's port in advance and keeps it across a stop and start (the inbox forwards to a fixed address).
+
 ## Syntax rules used
 
 Only erasable TypeScript: no enums, namespaces, parameter properties or decorators. Type-only imports use `import type`. Imports carry their `.ts` extension. Files that read the settings JSON use `new URL(…, import.meta.url)`, so they work from any directory.

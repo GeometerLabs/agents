@@ -81,9 +81,12 @@ export function controlStandin(config: ControlConfig): Handler {
     }
   }
 
-  /** Send every Razorpay event not yet sent, in order, each signed; once, or twice when `twice` (a duplicate delivery). */
-  async function deliverPaymentEvents(twice: boolean): Promise<unknown[]> {
-    const pending = fakes.payments.events.slice(deliveredEvents);
+  /**
+   * Send every Razorpay event not yet sent, in order, each signed; once, or twice when `twice` (a duplicate delivery). With `all`, every
+   * event so far goes again, which is what a provider does when it retries something the receiver did not accept (or sends a late repeat).
+   */
+  async function deliverPaymentEvents(twice: boolean, all = false): Promise<unknown[]> {
+    const pending = fakes.payments.events.slice(all ? 0 : deliveredEvents);
     deliveredEvents = fakes.payments.events.length;
     const results: unknown[] = [];
     for (const event of pending) {
@@ -115,7 +118,7 @@ export function controlStandin(config: ControlConfig): Handler {
       return ok({ payment, delivered: body.deliver === false ? [] : await deliverPaymentEvents(body.twice === true) });
     }
 
-    if (path === "/_standin/razorpay/deliver" && method === "POST") return ok({ delivered: await deliverPaymentEvents(body?.twice === true) });
+    if (path === "/_standin/razorpay/deliver" && method === "POST") return ok({ delivered: await deliverPaymentEvents(body?.twice === true, body?.all === true) });
 
     if (path === "/_standin/fault" && method === "POST") {
       const target = body?.service === "payments" ? fakes.payments : body?.service === "calendar" ? fakes.calendar : body?.service === "messaging" ? fakes.messaging : undefined;
