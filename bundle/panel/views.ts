@@ -150,11 +150,10 @@ export interface ShopView {
 
 function costTable(c: Ctx, cost: MonthlyCost): Raw {
   const w = c.w.cost;
-  const amount = (l: CostLine): string => (l.state === "unknown" ? w.unknown : l.state === "included" ? w.included : formatRupees(l.paise as number));
-  const note = (l: CostLine): Raw => html`<small>${w.payer[l.payer]}${l.usagePaise !== undefined && l.state !== "amount" ? html` · ${w.usage(formatRupees(l.usagePaise))}` : l.usagePaise !== undefined ? html` · ${w.usage(formatRupees(l.usagePaise))}` : ""}</small>`;
+  const amount = (l: CostLine): string => (l.state === "unknown" ? w.unknown : formatRupees(l.paise as number));
   return html`<h2>${w.heading}</h2>
 <table class="cost"><tbody>
-${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${note(l)}</td><td class="n">${amount(l)}</td></tr>`)}
+${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>

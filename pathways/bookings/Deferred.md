@@ -89,7 +89,7 @@
 | Model cost in the action record | The plan's record has a "model cost" field. `parseDetailed` already returns the tokens the model reported, but the agent records only why a fallback happened | The report (W12) needs spend per shop |
 | Reading the model's `language` for the reply language | The agent switches the customer's language from the intent's `language`. A model may call a code-mixed message by the wrong language where the rule parser would use the script | The eval shows language misses that matter, or a shop complains |
 | Retries, streaming and prompt caching | One try, then the rule parser reads the message. A retry would add seconds to a WhatsApp reply, and the prompt (about 4,300 characters) is probably under the size most providers cache | A model that is often slow, or a longer prompt |
-| The model call going through Guard | The parser points at any base URL. Guard's route to a model provider, per-client spend caps and the allowance are Guard and gateway work (W14, W19) | Guard has a model upstream |
+| The model call going through Guard | The parser points at any base URL. Guard's route to a model provider, the monthly model cap per shop (the model is included in Geometer's flat fee) is Guard and gateway work (W14, W19) | Guard has a model upstream |
 | Sending real customers' messages to a model provider | The eval sends only invented messages. A live shop would send customers' text to a provider, which needs the consent text, a provider that does not train on the data (plan section 7) and a retention decision | Before a real client goes live with the model parser |
 | Letting the model flag a trick the rule parser misses | `overrideAttempt` is true if the model or the rule parser's patterns say so, so a fooled model cannot hide a known trick. A trick the model misses and the patterns do not know is not flagged. It changes nothing either way, because the limits decide, but the record would not note it | The eval shows tricks going unflagged |
 
@@ -234,6 +234,6 @@
 
 See [bundle/Deferred.md](../../bundle/Deferred.md) for everything the bundle leaves open. What touches this pathway:
 
-- **Model calls are counted per server, not per shop.** The model Guard has one cap; this pathway's record has each action's model cost, and nothing yet stops one shop from using the server's whole allowance.
+- **Model calls are counted per server, not per shop.** The model Guard has one cap; this pathway's record has each action's model cost, and nothing yet stops one shop from using the server's whole cap.
 - **The runtime's single `services.timeoutMs`** applies to every service. The bundle needs it above Guard's 15 s for payments; WhatsApp, Calendar and the model are then also given that long. A per-service value would let the model parser keep its 8 s.
 - **`steps` does not count clock ticks.** A tick that sends a reminder is work, but is not counted as a step, so a shop that only sends reminders shows no steps. Revisit when: fleet wants a "ticks" count.
