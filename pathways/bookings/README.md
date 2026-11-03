@@ -15,7 +15,7 @@ You need Node 26 (any Node with built-in TypeScript type stripping works). There
 ```sh
 # from the root of this repository
 node --test pathways/bookings/test/            # the unit and situation tests
-node pathways/bookings/scripts/hand-check.ts   # the hand check; add --all to see every check
+node pathways/bookings/scripts/hand-check.ts   # the hand check; add --details to see what was done in each situation
 ```
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
@@ -24,8 +24,8 @@ The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check fo
 
 ```text
 Customer: कल शाम 6 बजे हेयरकट, 300 में हो जाएगा?
-Agent:    हमारा हेयरकट ₹450 का है, इससे कम में नहीं हो पाएगा। हमारा हेयरकट ₹450 है।
-          बुधवार, 4 नवंबर, शाम 6:00 बजे खाली है। ₹200 जमा करके पक्का करें: https://rzp.io/l/… (स्लॉट 15 मिनट के लिए रोका गया है।)
+Agent:    हमारा हेयरकट ₹450 का है, इससे कम में नहीं हो पाएगा। बुधवार, 4 नवंबर, शाम 6:00 बजे खाली है।
+          ₹200 जमा करके पक्का करें: https://rzp.io/l/… (स्लॉट 15 मिनट के लिए रोका गया है।)
 ```
 
 Every amount, date, time, service and link in a message is written from the booking's record by a fixed template, then read back from the final text and checked against the record's values before it is sent. In v0 there is no model-written text.

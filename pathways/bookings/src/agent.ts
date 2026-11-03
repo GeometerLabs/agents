@@ -327,7 +327,7 @@ export function createAgent(deps: AgentDeps): Agent {
     b.linkUrl = link.short_url;
     log(b, phone, "create_deposit_link", "confirmed", { amountPaise: depositPaise }, { refs: { linkId: link.id } });
     moveTo(b, "awaiting_deposit");
-    await tellCustomer(b, phone, [...prefix, "quote_and_link"], { shown: [...shown, ...held.decisions] });
+    await tellCustomer(b, phone, [...prefix, prefix.includes("price_floor") ? "slot_and_link" : "quote_and_link"], { shown: [...shown, ...held.decisions] });
   }
 
   async function onBook(phone: string, intent: Intent): Promise<void> {

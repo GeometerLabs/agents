@@ -25,7 +25,7 @@ export interface MessageFacts {
 
 export type TemplateId =
   // to the customer
-  | "menu" | "ask_when" | "ask_new_time" | "price_floor" | "confirm_details" | "quote_and_link" | "already_waiting"
+  | "menu" | "ask_when" | "ask_new_time" | "price_floor" | "confirm_details" | "quote_and_link" | "slot_and_link" | "already_waiting"
   | "slot_unavailable" | "outside_hours" | "hold_failed" | "link_failed" | "booked" | "couldnt_confirm" | "hold_expired"
   | "slot_gone_refund" | "refund_unbooked" | "reschedule_failed" | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending"
   | "cancelled_late" | "cancelled_no_deposit" | "no_booking_found" | "refund_approved" | "refund_denied" | "rescheduled"
@@ -58,6 +58,8 @@ const en: TemplateSet = {
   price_floor: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}, and I can't go lower than that.`,
   confirm_details: (f) => `Just to be sure: ${need(f, "serviceName")} on ${slot(f)}. Reply "yes" to continue.`,
   quote_and_link: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}. ${slot(f)} is free. Pay a ${inr(f, "depositInr")} deposit to confirm: ${need(f, "link")} (I'll hold the slot for ${need(f, "holdMinutes")} minutes.)`,
+  // After price_floor has already said the price, the quote does not repeat it.
+  slot_and_link: (f) => `${slot(f)} is free. Pay a ${inr(f, "depositInr")} deposit to confirm: ${need(f, "link")} (I'll hold the slot for ${need(f, "holdMinutes")} minutes.)`,
   already_waiting: (f) => `Your slot (${slot(f)}) is already held. Pay the ${inr(f, "depositInr")} deposit to confirm: ${need(f, "link")}`,
   slot_unavailable: (f) => `Sorry, ${slot(f)} is not available. Please suggest another time.`,
   outside_hours: (f) => `Sorry, we are closed at ${slot(f)}. Please suggest another time.`,
@@ -103,6 +105,7 @@ const hi: TemplateSet = {
   price_floor: (f) => `हमारा ${need(f, "serviceName")} ${inr(f, "priceInr")} का है, इससे कम में नहीं हो पाएगा।`,
   confirm_details: (f) => `पक्का करने के लिए: ${need(f, "serviceName")}, ${slot(f)}। आगे बढ़ने के लिए "हाँ" लिखें।`,
   quote_and_link: (f) => `हमारा ${need(f, "serviceName")} ${inr(f, "priceInr")} है। ${slot(f)} खाली है। ${inr(f, "depositInr")} जमा करके पक्का करें: ${need(f, "link")} (स्लॉट ${need(f, "holdMinutes")} मिनट के लिए रोका गया है।)`,
+  slot_and_link: (f) => `${slot(f)} खाली है। ${inr(f, "depositInr")} जमा करके पक्का करें: ${need(f, "link")} (स्लॉट ${need(f, "holdMinutes")} मिनट के लिए रोका गया है।)`,
   already_waiting: (f) => `आपका स्लॉट (${slot(f)}) रोका हुआ है। पक्का करने के लिए ${inr(f, "depositInr")} जमा करें: ${need(f, "link")}`,
   slot_unavailable: (f) => `माफ़ कीजिए, ${slot(f)} खाली नहीं है। कृपया कोई और समय बताइए।`,
   outside_hours: (f) => `माफ़ कीजिए, ${slot(f)} पर हम बंद रहते हैं। कृपया कोई और समय बताइए।`,

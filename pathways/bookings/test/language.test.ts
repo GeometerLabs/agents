@@ -145,3 +145,14 @@ test("no slot in the record means no date or time may appear", () => {
   assert.equal(checkMessage("Welcome! Tell me the day and time you want.", f).ok, true);
   assert.match(checkMessage("How about Tue 10 Nov?", f).problems[0], /no date for this conversation/);
 });
+
+test("a refused haggle states the price once, not twice (the mom test)", async () => {
+  const { createWorld, CUSTOMER } = await import("../src/harness.ts");
+  for (const [language, ask] of [["hi", "कल शाम 6 बजे हेयरकट, 300 में हो जाएगा?"], ["en", "Can I get a haircut tomorrow at 6pm for 300?"]] as const) {
+    const world = createWorld();
+    await world.say(ask);
+    const reply = world.lastTextTo(CUSTOMER);
+    assert.equal((reply.match(/₹450/gu) ?? []).length, 1, `${language}: ${reply}`);
+    assert.ok(reply.includes("₹200"), `${language}: the deposit is still quoted: ${reply}`);
+  }
+});
