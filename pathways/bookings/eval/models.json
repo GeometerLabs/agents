@@ -1,5 +1,5 @@
 {
-  "about": "The models scripts/model-eval.ts tries, besides the rule parser. A starter list: choosing the candidates is a separate research task. Keys go in the repo-root .env under keyEnv (git ignores it). Prices are US dollars per million tokens and stay null until filled in from each provider's current price page; the eval then prints the cost of 1,000 messages. Model ids were read from each provider's own docs on 3 Nov 2026 and have not been tried with a key: if every message of a candidate fails with an HTTP error, check the id and extraBody against the provider's docs.",
+  "about": "The models scripts/model-eval.ts tries, besides the rule parser. A starter list: choosing the candidates is a separate research task. Keys go in the repo-root .env under keyEnv (git ignores it). Prices are US dollars per million tokens and stay null until filled in from each provider's current price page; the eval then prints the cost of 1,000 messages. Model ids were read from each provider's own docs on 3 Nov 2026 and have not been tried with a key: if every message of a candidate fails with an HTTP error, check the id and extraBody against the provider's docs. The Phase 0 research (docs research/2026-11-phase0-providers-and-accounts.md) recommends testing three first: claude-haiku-5-5, gemini-3.1-flash-lite (paid tier: the free tier's text is used for training, which WhatsApp's terms forbid) and sarvam-105b-conversations. The others are kept in reserve (run them with --only).",
   "candidates": [
     {
       "name": "claude-haiku-5-5",
@@ -13,15 +13,26 @@
       "note": "Anthropic's current fast, low-cost model (the id is from the Claude API model list). Effort low because reading one short message needs no long thinking. Price: fill from the provider's current price page."
     },
     {
+      "name": "gemini-3.1-flash-lite",
+      "wire": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-3.1-flash-lite",
+      "keyEnv": "GEMINI_API_KEY",
+      "responseFormat": "json_schema",
+      "priceInputPerMillion": 0.25,
+      "priceOutputPerMillion": 1.5,
+      "note": "One of the three the Phase 0 research recommends: the best independent evidence on Indian languages among the big labs. Use a paid-tier key; free-tier text is used for training. Reached through Gemini's OpenAI-compatible endpoint (key as a Bearer token). If every message gets HTTP 400, try \"responseFormat\": \"json_object\". Price from ai.google.dev/gemini-api/docs/pricing, read 3 Nov 2026: $0.25 in, $1.50 out."
+    },
+    {
       "name": "gemini-3.5-flash-lite",
       "wire": "openai",
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
       "model": "gemini-3.5-flash-lite",
       "keyEnv": "GEMINI_API_KEY",
       "responseFormat": "json_schema",
-      "priceInputPerMillion": null,
-      "priceOutputPerMillion": null,
-      "note": "Google's cheapest stable Gemini tier on the models page; reached through Gemini's OpenAI-compatible endpoint (key sent as a Bearer token). Free-tier keys are rate limited: add \"pauseMs\": 4000 if messages fail with HTTP 429. If every message gets HTTP 400, try \"responseFormat\": \"json_object\": whether its compatibility layer accepts a closed strict schema is the least certain part. Price: fill from the provider's current price page."
+      "priceInputPerMillion": 0.3,
+      "priceOutputPerMillion": 2.5,
+      "note": "The newer Flash-Lite, kept in reserve; reached through Gemini's OpenAI-compatible endpoint (key sent as a Bearer token). Free-tier keys are rate limited: add \"pauseMs\": 4000 if messages fail with HTTP 429. If every message gets HTTP 400, try \"responseFormat\": \"json_object\": whether its compatibility layer accepts a closed strict schema is the least certain part. Price from ai.google.dev/gemini-api/docs/pricing, read 3 Nov 2026: $0.30 in, $2.50 out (thinking tokens count as output)."
     },
     {
       "name": "sarvam-105b-conversations",
@@ -30,7 +41,9 @@
       "model": "sarvam-105b-conversations",
       "keyEnv": "SARVAM_API_KEY",
       "responseFormat": "json_schema",
-      "extraBody": { "reasoning_effort": "low" },
+      "extraBody": {
+        "reasoning_effort": "low"
+      },
       "priceInputPerMillion": null,
       "priceOutputPerMillion": null,
       "note": "An Indian-language model, the variant meant for real-time conversation (the other is sarvam-105b). Its docs list both Authorization: Bearer and api-subscription-key and are not consistent: if every message gets HTTP 401 or 403, set \"authHeader\": \"api-subscription-key\". Reasoning tokens are billed as output tokens. Price: fill from the provider's current price page."
@@ -42,7 +55,9 @@
       "model": "openai/gpt-oss-20b",
       "keyEnv": "GROQ_API_KEY",
       "responseFormat": "json_schema",
-      "extraBody": { "reasoning_effort": "low" },
+      "extraBody": {
+        "reasoning_effort": "low"
+      },
       "priceInputPerMillion": null,
       "priceOutputPerMillion": null,
       "note": "The cheapest production model on Groq's models page with published prices, and one of the models Groq lists for strict JSON-schema output. An open-weight model that may be weaker in Malayalam and Kannada: the eval is how to tell. Price: fill from the provider's current price page."
@@ -54,7 +69,11 @@
       "model": "gpt-6-luna",
       "keyEnv": "OPENAI_API_KEY",
       "responseFormat": "json_schema",
-      "extraBody": { "temperature": null, "max_tokens": null, "max_completion_tokens": 1024 },
+      "extraBody": {
+        "temperature": null,
+        "max_tokens": null,
+        "max_completion_tokens": 1024
+      },
       "priceInputPerMillion": null,
       "priceOutputPerMillion": null,
       "note": "The model OpenAI's models page describes as the most efficient for focused, high-volume tasks. Its request shape was not tried: newer OpenAI models take max_completion_tokens and refuse a set temperature, so extraBody nulls those two. Price: fill from the provider's current price page."
