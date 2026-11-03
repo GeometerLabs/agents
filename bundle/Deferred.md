@@ -26,6 +26,12 @@ Day 0 is the invoice due date. Days 0 to 14 are normal, 15 to 30 are warnings, w
 - **A read-only approver credential in Guard.** The relay's reading credential is an approver credential (it can approve, not only read). The deployer issues a fresh one every day with a seven-day life, so a stolen one is short-lived, but Guard has no role that can only list holds. Revisit when: Guard grows one (the approvals notes already list it).
 - **The connection checks.** `check` calls `connectionChecks({ serverDir, shop })` from `bundle/panel/checks.ts` if it exists and otherwise says they were not run. Until the panel branch is merged nothing confirms, before a deploy, that the WhatsApp number id is the shop's, that the Razorpay key is the shop's own account or that the calendar is shared and writable.
 
+## Not measured
+
+- **CPU, disk and the Docker daemon on a 2 vCPU / 4 GB machine under load** (plan B14 item 4), and **the demo salon through Guard for two weeks** (item 5). The memory numbers are Docker Desktop's cgroup memory on an Apple-silicon Mac, idle, with the heartbeat every 10 s; the cap of 25 shops per server is a guess to test on a real VPS. Revisit when: a Hetzner or DigitalOcean machine is available for a day.
+- **The proof against a real Guard release for another architecture.** It ran on the arm64 image only; the x86_64 image (`tools/release/build-linux.sh --arch x86_64`) has not been put through it.
+- **The proof is a script run by hand** (`bundle/test/proof/run.ts`, about 25 minutes, one hold of the heavy lock), not part of any CI. It names everything it creates `geometer-proof-*` and removes it, and it needs the Guard image, `node:26-alpine`, Caddy, Litestream, BusyBox and MinIO.
+
 ## Not built
 
 - **Age encryption of the continuous copy.** The plan says the Litestream stream is encrypted with age before it leaves the server. Litestream 0.5 (the line that is maintained) dropped client-side encryption and refuses to start with an `age:` block; 0.3 had it. The stream is protected by TLS in transit and by whatever the bucket does at rest (server-side encryption is a bucket setting). The nightly snapshots are age-encrypted. Revisit when: Litestream restores client-side encryption, or the builder accepts pinning 0.3.x. A second option is to replicate to a folder and have the snapshot job encrypt and ship it, at the cost of the one-second loss window.
