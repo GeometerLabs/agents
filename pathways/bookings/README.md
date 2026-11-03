@@ -16,11 +16,14 @@ You need Node 26 (any Node with built-in TypeScript type stripping works). There
 # from the root of this repository
 node --test pathways/bookings/test/            # the unit and situation tests
 node pathways/bookings/scripts/hand-check.ts   # the hand check; add --details to see what was done in each situation
+node pathways/bookings/scripts/hand-check.ts --settings pathways/bookings/settings/equipment-rental.example.json   # the same situations on any shop's own settings
 node pathways/bookings/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
 node pathways/bookings/scripts/model-eval.ts        # the model eval: the rule parser baseline, plus any model whose key is in .env (see Choose the model)
 ```
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
+
+**On a shop's own settings.** `--settings <file>` builds the situations from that shop's service, prices, hours, slot grid, deposit, cancellation window and languages instead of Glow Salon's. A situation the settings cannot express (a shop with no cancellation window has nothing to be "late" for) is not run, is listed under "NOT RUN", and is not in the count. A part of a situation that cannot be expressed is "left out" (a shop open every day has no closed day to ask for). `go-live-certificate.ts` does the same, so a certificate no longer says its checks ran on the example shop unless they did. Design and limits: Explanation.md, "The hand check on a shop's own settings"; what is still open: Deferred.md.
 
 ## Run it against stand-ins / against test mode
 
@@ -108,7 +111,20 @@ It prints the addresses to open, for example `http://192.168.1.23:8787` for the 
 ## Sell it
 
 A pathway isn't ready to sell until its guide is. [`sell/`](sell/) has the pitch-and-sell guide for local partners and builders in English, Hindi, Malayalam and Kannada (`guide.<lang>.md`, from "is this shop a fit" to the first month, built on the demo above) and the one-page sheet the partner leaves with the owner (`one-pager.<lang>.html`, printable on A4).
+A business that is a different kind of customer for the same pathway gets a **variant** that covers only what differs and points here for the rest: [`sell/variants/equipment-rental.<lang>.md`](sell/variants/) (rules: [../SELL-GUIDE.md](../SELL-GUIDE.md), "Variants").
 Hindi, Malayalam and Kannada are machine-written and wait for native review ([Deferred.md](Deferred.md)). What every pathway's guide must cover: [../SELL-GUIDE.md](../SELL-GUIDE.md). `test/sell-guide.test.ts` checks the sections, the banned words, the amounts and the demo steps.
+
+## Equipment rental (custom hiring centres and village equipment owners)
+
+The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 28 of 28 situations on its own settings. Run the demo on it:
+
+```sh
+node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn   # or hi
+```
+
+**What it can do:** book one machine (with its attachments) by the half day or the day at fixed prices, take a deposit, refund an early cancellation alone and ask the owner about a late one, remind the day before, and answer in Kannada and Hindi (and Malayalam and English if the file lists them).
+
+**What it cannot do, so say it before you sell it:** book two machines at the same time (it books one thing at a time for the whole business), charge per acre or per hour, keep a booking longer than 8 hours or over several days, record the field, the driver or the weather, hold a security deposit until a machine comes back, or answer a voice note (a voice note gets no reply). The list, with what would close each gap, is in [Deferred.md](Deferred.md) under "Equipment rental". The sell guide is a variant: [sell/variants/](sell/variants/).
 
 ## Run the agent as a server
 
