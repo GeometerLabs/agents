@@ -10,7 +10,8 @@ import { loadServer } from "../lib/server.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { deploy } from "../deploy.ts";
-import { EXAMPLE_CLIENT } from "./helpers.ts";
+import { fakeRunner } from "../lib/runner.ts";
+import { EXAMPLE_CLIENT, panelRuntime } from "./helpers.ts";
 import { world } from "./world.ts";
 
 async function quiet<T>(work: () => Promise<T>): Promise<{ result: T; out: string; err: string }> {
@@ -97,5 +98,28 @@ test("a refused deploy prints every broken rule by name and exits 1", async () =
     assert.equal(r.result, 1);
     assert.match(r.err, /This was refused, and nothing was started or changed:/);
     assert.match(r.err, /\[secret-missing:razorpay_key\]/);
+  } finally { w.done(); }
+});
+
+test("check runs the generator's checks, then the panel's connection checks inside the panel container once the shop is deployed; it says plainly when they could not run", async () => {
+  const w = world({ "glow-salon": panelRuntime() }, { panel: { enabled: true } }); try {
+    const check = (ctx = w.ctx) => quiet(() => main(["check", "glow-salon", "--server", w.root], ctx));
+    w.handIn("glow-salon");
+    const before = await check();
+    assert.equal(before.result, 0, before.err); assert.match(before.out, /Connection checks: not run\. glow-salon is not deployed yet/);
+    await deploy(w.ctx);
+    const answer = (stdout: string, code = 0) => ({ ...w.ctx, runner: fakeRunner((command, args, options) => args.includes("/app/bundle/services/connection-check.ts") ? { code, stdout, stderr: code ? "service \"panel\" is not running" : "" } : w.ctx.runner.run(command, args, options)) });
+    const good = answer(`${JSON.stringify({ connections: [{ service: "whatsapp", ok: true, code: "confirmed", notChecked: ["sending"] }, { service: "calendar", ok: true, code: "confirmed", notChecked: [] }] })}\n`);
+    const passed = await check(good);
+    assert.equal(passed.result, 0, passed.err); assert.match(passed.out, /all passed[\s\S]*whatsapp: confirmed; not checked: sending/);
+    const exec = good.runner.calls.find((c) => c.args.includes("/app/bundle/services/connection-check.ts"))!;
+    assert.deepEqual(exec.args.slice(exec.args.indexOf("exec")), ["exec", "-T", "panel", "node", "/app/bundle/services/connection-check.ts", "glow-salon"], "it runs in the panel container, the only one on the Guards' network with the token");
+    const bad = answer(JSON.stringify({ connections: [{ service: "whatsapp", ok: false, code: "account_mismatch", notChecked: [] }] }));
+    const failed = await check(bad);
+    assert.equal(failed.result, 1); assert.match(failed.out, /FAILED[\s\S]*whatsapp: NOT confirmed \(account_mismatch\)[\s\S]*connection checks above failed/);
+    const down = await check(answer("", 1));
+    assert.equal(down.result, 0); assert.match(down.out, /not run\. The panel did not answer \(service "panel" is not running\)/);
+    const none = world({ "glow-salon": panelRuntime() }); none.handIn("glow-salon");
+    try { const r = await quiet(() => main(["check", "glow-salon", "--server", none.root], none.ctx)); assert.match(r.out, /This server has no panel/); } finally { none.done(); }
   } finally { w.done(); }
 });
