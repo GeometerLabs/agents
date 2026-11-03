@@ -33,6 +33,8 @@ export interface Draft {
   calendar: { id: string };
   razorpay: { mode: string; keyId: string };
   expectedBookings: string;
+  /** How many steps have been filled in (0 for a new draft). A later step and the save need the earlier ones. A draft made from an existing shop starts with all of them done. */
+  done: number;
 }
 
 /** What the example settings of the template say, as the form's starting point. */
@@ -44,7 +46,7 @@ export function newDraft(id: string, accountId: string, template: Template, exam
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false, form, windowHours: String(example.cancellation.windowHours),
     primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
-    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, expectedBookings: "",
+    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, expectedBookings: "", done: 0,
   };
 }
 
@@ -55,7 +57,7 @@ export function draftFromShop(id: string, accountId: string, templateId: string,
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
     calendar: { id: String(runtime?.services?.calendar?.calendarId ?? "") }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" },
-    expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings),
+    expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings), done: Number.MAX_SAFE_INTEGER,
   };
 }
 

@@ -10,7 +10,8 @@ import { fakeClock } from "../../../pathways/bookings/src/clock.ts";
 import { startStandins } from "../../../pathways/bookings/standins/server.ts";
 import type { RunningStandins } from "../../../pathways/bookings/standins/server.ts";
 import type { PanelConfig } from "../config.ts";
-import { makeInviteLink, startPanel } from "../server.ts";
+import { makeInviteLink, openStores, startPanel } from "../server.ts";
+import { createDocuments } from "../documents.ts";
 import type { RunningPanel } from "../server.ts";
 import type { Role } from "../accounts.ts";
 
@@ -135,4 +136,9 @@ export class Browser {
     const token = tokenOf((await this.get(from)).text);
     return this.req("POST", path, { _csrf: token, ...form });
   }
+}
+
+/** The papers the panel made for a shop, read through its own store (they are sealed there when the panel has a data key). */
+export function papers(b: Boot, shop: string) {
+  return createDocuments(openStores(b.config).store);
 }

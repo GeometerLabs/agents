@@ -25,13 +25,14 @@ import type { Account, Role } from "./accounts.ts";
 import { monthOf, monthlyFromExport, readExport } from "./activity.ts";
 import { ConfigError, isSecure, webhookUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import { liveView, serverPaths, shopIdFromName } from "./contract.ts";
+import { SECRET_NAMES, liveView, serverPaths, shopIdFromName } from "./contract.ts";
+import type { SecretName } from "./contract.ts";
 import type { LiveView } from "./contract.ts";
 import { latestPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { createGoLive } from "./golive.ts";
 import { createLimiter } from "./ratelimit.ts";
-import { createInbox } from "./secrets.ts";
+import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
 import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, runtimeFor } from "./setup.ts";
@@ -41,7 +42,7 @@ import { createStore } from "./store.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, invitePage, joinPage, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import { errorPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
 import type { ChecksView, Ctx, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
@@ -172,7 +173,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       hours: keys.map((k, i) => `${dayNames[i]}: ${s.openingHours[k] ? w.hoursRange(s.openingHours[k]!.open, s.openingHours[k]!.close) : w.summaryClosed}`),
       deposit: w.summaryDeposit(formatInr(s.deposit.amountInr), s.deposit.holdMinutes),
       cancel: w.summaryCancel(s.cancellation.windowHours, formatInr(s.cancellation.refundLimitInr)),
-      languages: s.languages.join(", "),
+      languages: s.languages.map(languageName).join(", "),
       owner: s.owner.whatsapp,
     };
   }
@@ -323,14 +324,14 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const data = readExport(shops.paths.exports(ref.id));
     if (!MONTH.test(month) || !data) return notFound(r);
     monthRange(month, settings.timezone);
-    const certFile = join(shops.paths.documents(ref.id), "go-live", "go-live-certificate.json");
-    const reading = existsSync(certFile) ? readGoLiveCertificate(readFileSync(certFile, "utf8"), settings) : undefined;
+    const certificate = goLive.docs.get(ref.id, "go-live/go-live-certificate.json");
+    const reading = certificate !== undefined ? readGoLiveCertificate(certificate, settings) : undefined;
     const pins = shops.pins(ref.id);
-    writeClientReport({
-      settings, entries: data.entries, bookings: data.bookings, month, language: settings.owner.language, out: join(shops.paths.documents(ref.id), "monthly", month),
+    goLive.docs.make(ref.id, `monthly/${month}`, (scratch) => writeClientReport({
+      settings, entries: data.entries, bookings: data.bookings, month, language: settings.owner.language, out: scratch,
       source: pins?.razorpay?.mode === "live" ? "live" : "test-mode", ...(signingKey ? { key: signingKey } : {}), preparedBy: ref.owner ? `${ref.owner.accountName}, ${ref.owner.role === "partner" ? "local partner" : "builder"}` : undefined,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
-    });
+    }));
     redirect(r, `/shops/${ref.id}?notice=report`);
   });
 
@@ -338,10 +339,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const serveDoc = (r: Req, id: string, sub: string, file: string) => {
     const ref = shops.find(r.account!, id);
     if (!ref || !DOC_FILE.test(file) || !/^[A-Za-z0-9-]{1,20}(\/[A-Za-z0-9-]{1,20})?$/u.test(sub)) return notFound(r);
-    const path = join(shops.paths.documents(ref.id), sub, file);
-    if (!existsSync(path)) return notFound(r);
+    const content = goLive.docs.get(ref.id, `${sub}/${file}`);
+    if (content === undefined) return notFound(r);
     const type = file.endsWith(".html") ? "text/html; charset=utf-8" : file.endsWith(".json") ? "application/json; charset=utf-8" : "text/plain; charset=utf-8";
-    body(r.res, 200, type, readFileSync(path, "utf8"), { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" });
+    body(r.res, 200, type, content, { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" });
   };
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/docs\/go-live\/([^/]+)$/u, "user", (r) => serveDoc(r, r.params[0], "go-live", r.params[1]));
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/docs\/monthly\/(\d{4}-\d{2})\/([^/]+)$/u, "user", (r) => serveDoc(r, r.params[0], `monthly/${r.params[1]}`, r.params[2]));
@@ -357,11 +358,21 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!checked.ok) throw new Error(`The template ${t.id}'s example settings need fixing: ${checked.errors.join("; ")}`);
     return checked.settings;
   };
-  const reservedIds = (): Set<string> => {
+  /** Ids that are taken: shop folders, and the ids other unfinished drafts have reserved. */
+  const reservedIds = (except?: string): Set<string> => {
     const taken = new Set(shops.ids());
-    for (const f of store.list("drafts")) { const d = store.read<Draft>(`drafts/${f}`); if (d?.shopId) taken.add(d.shopId); }
+    for (const f of store.list("drafts")) { const d = store.read<Draft>(`drafts/${f}`); if (d?.shopId && d.id !== except) taken.add(d.shopId); }
     return taken;
   };
+  /** Keep the draft's id if nothing is there; if a shop folder or a file waiting in the inbox has since taken it, choose another BEFORE anything is written. */
+  const unusedId = (d: Draft, names: SecretName[]): string => {
+    const avoid = reservedIds(d.id);
+    let id = d.shopId as string;
+    for (let i = 0; i < 20 && (shops.exists(id) || inbox.taken(id, names)); i++) { avoid.add(id); id = shopIdFromName(d.form.name, avoid); }
+    return id;
+  };
+  /** Steps cannot be skipped: a later step, or the save, goes back to the first one not filled in. */
+  const firstOpen = (d: Draft, template: Template, n: number): string | undefined => (n > d.done + 1 ? `/setup/${d.id}/${Math.min(d.done + 1, template.steps.length)}` : undefined);
 
   on("GET", /^\/setup$/u, "user", (r) => page(r, 200, setupStartPage(r.ctx(), templates())));
   on("POST", /^\/setup$/u, "user", async (r) => {
@@ -399,6 +410,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const template = d && templates().find((t) => t.id === d.template);
     const n = Number(r.params[1]);
     if (!d || !template || n < 1 || n > template.steps.length) return notFound(r);
+    const back = firstOpen(d, template, n);
+    if (back) return redirect(r, back);
     const step = template.steps[n - 1];
     page(r, 200, step === "checks" ? setupChecksPage(r.ctx(), checksView(r, d, template, [])) : setupStepPage(r.ctx(), stepView(r, d, template, n, []), step));
   });
@@ -408,27 +421,33 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const template = d && templates().find((t) => t.id === d.template);
     const n = Number(r.params[1]);
     if (!d || !template || n < 1 || n >= template.steps.length) return notFound(r);
+    const back = firstOpen(d, template, n);
+    if (back) return redirect(r, back);
     const step = template.steps[n - 1];
     const w = r.ctx().w;
     let problems: string[];
     if (step === "business") {
       problems = applyBusiness(d, r.form, w).problems;
-      if (problems.length === 0 && !d.shopId) d.shopId = shopIdFromName(d.form.name, reservedIds());
+      if (problems.length === 0 && !d.shopId) d.shopId = shopIdFromName(d.form.name, reservedIds(d.id));
     } else if (step === "deposit") problems = applyDeposit(d, r.form, w).problems;
     else if (step === "languages") problems = applyLanguages(d, r.form, w).problems;
     else {
+      if (!d.editing) d.shopId = unusedId(d, SECRET_NAMES as unknown as SecretName[]);
       const meta = shops.meta(d.shopId as string);
       const result = applyAccounts(d, r.form, template, meta, Boolean(config.calendarShareAddress), w);
       problems = result.problems;
       if (problems.length === 0) {
         // Everything checked first, then written: a form with one bad box writes nothing to the inbox.
-        for (const s of result.secrets) inbox.put(d.shopId as string, s.name, s.text);
+        try { for (const s of result.secrets) inbox.put(d.shopId as string, s.name, s.text); } catch (e) {
+          if (!(e instanceof InboxTaken)) throw e;
+          problems = [w.setup.fallback("A file for this shop is already waiting in the server's inbox, so nothing was written. Start the setup again.")];
+        }
         const after = shops.meta(d.shopId as string);
-        shops.saveMeta(d.shopId as string, { ...after, whatsapp: { businessNumber: d.whatsapp.businessNumber }, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId },
+        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...after, whatsapp: { businessNumber: d.whatsapp.businessNumber }, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId },
           calendar: { shareAddress: result.clientEmail ?? after.calendar?.shareAddress }, ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
       }
     }
-    if (problems.length === 0) d.saved = false;
+    if (problems.length === 0) { d.saved = false; d.done = Math.max(d.done, n); }
     store.write(`drafts/${d.id}.json`, d);
     if (problems.length > 0) return page(r, 400, setupStepPage(r.ctx(), stepView(r, d, template, n, problems), step as "business"));
     redirect(r, `/setup/${d.id}/${n + 1}`);
@@ -437,7 +456,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   on("POST", /^\/setup\/([A-Za-z0-9_-]{12,40})\/save$/u, "user", (r) => {
     const d = loadDraft(r, r.params[0]);
     const template = d && templates().find((t) => t.id === d.template);
-    if (!d || !template || !d.shopId) return notFound(r);
+    if (!d || !template) return notFound(r);
+    const back = firstOpen(d, template, template.steps.length);
+    if (back) return redirect(r, back);
+    if (!d.shopId) return notFound(r);
     const example = exampleOf(template);
     const built = buildSettings(d, example);
     const w = r.ctx().w;
@@ -445,7 +467,11 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const lock = `${template.id}@${pathwayVersion()}`;
     const problems = built.ok ? shops.checkFolder(built.settings, runtime, lock).map(w.setup.fallback) : built.errors.map(w.setup.fallback);
     if (!built.ok || problems.length > 0) return page(r, 400, setupChecksPage(r.ctx(), { ...checksView(r, d, template, problems), saved: false }));
-    shops.writeFolder(d.shopId, { settings: built.settings, runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id });
+    try { shops.writeFolder(d.shopId, { settings: built.settings, runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id }); } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      // Another shop took this name after step 1. Nothing of it was touched.
+      return page(r, 409, setupChecksPage(r.ctx(), { ...checksView(r, d, template, [w.setup.fallback("A shop with this name already exists on the server, so this one was not saved. Start the setup again with another name.")]), saved: false }));
+    }
     shops.saveMeta(d.shopId, { ...shops.meta(d.shopId), ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
     d.saved = true; d.editing = true;
     store.write(`drafts/${d.id}.json`, d);
@@ -456,7 +482,11 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   on("POST", /^\/setup\/([A-Za-z0-9_-]{12,40})\/(check|ready|expected)$/u, "user", async (r) => {
     const d = loadDraft(r, r.params[0]);
     const template = d && templates().find((t) => t.id === d.template);
-    if (!d || !template || !d.shopId || !shops.exists(d.shopId)) return notFound(r);
+    if (!d || !template) return notFound(r);
+    const back = firstOpen(d, template, template.steps.length);
+    if (back) return redirect(r, back);
+    if (!d.shopId) return notFound(r);
+    if (!shops.exists(d.shopId)) return redirect(r, `/setup/${d.id}/${template.steps.indexOf("checks") + 1}`);
     const here = `/setup/${d.id}/${template.steps.indexOf("checks") + 1}`;
     if (r.params[1] === "check") await goLive.run(d.shopId);
     else if (r.params[1] === "expected") {

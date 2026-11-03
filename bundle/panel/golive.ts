@@ -4,8 +4,7 @@
 //  3. "Ready to go live": allowed only when 1 and 2 passed, the deployer says the last update was applied and every limit is proven, and the settings
 //     are still the ones that were checked. It writes the go-live certificate (report/), signed when the panel has a key.
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { runOn } from "../../pathways/bookings/crash-test/situations.ts";
 import { buildGoLiveCertificate, summariseRun } from "../../pathways/bookings/report/certificate.ts";
 import type { HandCheckSummary } from "../../pathways/bookings/report/certificate.ts";
@@ -17,7 +16,7 @@ import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
 import { guardUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import type { Account } from "./accounts.ts";
+import { createDocuments } from "./documents.ts";
 import type { Shops } from "./shops.ts";
 import type { Store } from "./store.ts";
 
@@ -42,6 +41,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     try { return readFileSync(config.guardAgentTokenFile, "utf8").trim() || undefined; } catch { return undefined; }
   })();
 
+  const docs = createDocuments(store);
   const stored = (shop: string) => store.read<StoredChecks>(`checks/${shop}.json`);
 
   function targetsFor(shop: string): ConnectionTargets | undefined {
@@ -72,11 +72,11 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       const report = targets ? await checkConnections(targets) : undefined;
       // What the providers reported replaces what was typed (a calendar id as Google writes it), and is pinned for Guard's exact allowlists.
       if (report?.allOk) {
+        // Only the pins are written, and runtime.json only if the confirmed calendar id is written differently from what was typed.
+        shops.writePins(shop, { schema: 1, checkedAt: iso(now()), ...report.pins });
         const runtime = shops.runtime(shop);
-        const checked = { schema: 1 as const, checkedAt: iso(now()), ...report.pins };
         const calendarId = report.pins.calendar?.calendarId;
-        const next = runtime && calendarId && runtime.services?.calendar?.calendarId !== calendarId ? { ...runtime, services: { ...runtime.services, calendar: { ...runtime.services.calendar, calendarId } } } : runtime;
-        if (runtime && next) shops.writeFolder(shop, { settings, runtime: next, lock: readFileSync(join(shops.paths.shop(shop), "pathway.lock"), "utf8").trim(), pins: checked });
+        if (runtime && calendarId && runtime.services?.calendar?.calendarId !== calendarId) shops.writeRuntime(shop, { ...runtime, services: { ...runtime.services, calendar: { ...runtime.services.calendar, calendarId } } });
       }
       const result: StoredChecks = {
         at: iso(now()), settingsDigest: policyDigest(settings),
@@ -106,25 +106,15 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       if (!settings) return { ok: false, unmet: ["settings-changed"] };
       const unmet = api.unmet(shop, settings);
       if (unmet.length > 0) return { ok: false, unmet };
-      const out = join(shops.paths.documents(shop), "go-live");
       const checks = stored(shop) as StoredChecks;
-      // The certificate is made from a fresh run so its digest is of the settings as they are now.
-      const files = runAndWrite(settings, out, preparedBy, checks);
+      const files = docs.make(shop, "go-live", (scratch) => writeGoLiveCertificate({ settings, handCheck: checks.hand, language: settings.owner.language, out: scratch, key, preparedBy, now: now() }).files);
       shops.saveMeta(shop, { ...shops.meta(shop), readyAt: iso(now()) });
       return { ok: true, files };
     },
 
-    /** The files of a generated document folder (names only), newest layout first. */
-    documents(shop: string, kind: "go-live" | "monthly"): string[] {
-      const dir = join(shops.paths.documents(shop), kind);
-      return existsSync(dir) ? readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => join(e.parentPath.slice(dir.length + 1), e.name)).sort() : [];
-    },
+    docs,
+    documents: (shop: string, kind: "go-live" | "monthly") => docs.list(shop, kind),
   };
-
-  function runAndWrite(settings: Settings, out: string, preparedBy: string, checks: StoredChecks): string[] {
-    mkdirSync(out, { recursive: true });
-    return writeGoLiveCertificate({ settings, handCheck: checks.hand, language: settings.owner.language, out, key, preparedBy, now: now() }).files;
-  }
 
   return api;
 }

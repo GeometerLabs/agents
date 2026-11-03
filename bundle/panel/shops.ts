@@ -96,7 +96,8 @@ export function createShops(config: PanelConfig, store: Store) {
     /** Write the shop's desired state. owner.json is written once and never again (flag wx), so the first account to set a shop up stays its attribution. */
     writeFolder(id: string, parts: { settings: Settings; runtime: Record<string, unknown>; lock: string; pins?: PinsFile }, creator?: { account: Account; template: string }): void {
       const dir = paths.shop(safe(id));
-      mkdirSync(dir, { recursive: true });
+      // A new shop's folder is made without `recursive`, so a folder that is already there (another shop with this name) is an error, never shared.
+      if (creator) { mkdirSync(paths.shops, { recursive: true }); mkdirSync(dir); } else mkdirSync(dir, { recursive: true });
       writeAtomic(join(dir, "settings.json"), `${JSON.stringify(parts.settings, null, 2)}\n`);
       writeAtomic(join(dir, "runtime.json"), `${JSON.stringify(parts.runtime, null, 2)}\n`);
       writeAtomic(join(dir, "pathway.lock"), `${parts.lock}\n`);
@@ -106,6 +107,10 @@ export function createShops(config: PanelConfig, store: Store) {
         try { writeFileSync(join(dir, "owner.json"), `${JSON.stringify(owner, null, 2)}\n`, { flag: "wx", mode: 0o644 }); } catch (e) { if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e; }
       }
     },
+
+    /** Only the pins: what the providers reported. Settings, runtime and lock are not rewritten, so the deployer sees no change it did not need. */
+    writePins(id: string, pins: PinsFile): void { writeAtomic(join(paths.shop(safe(id)), "pins.json"), `${JSON.stringify(pins, null, 2)}\n`); },
+    writeRuntime(id: string, runtime: Record<string, unknown>): void { writeAtomic(join(paths.shop(safe(id)), "runtime.json"), `${JSON.stringify(runtime, null, 2)}\n`); },
 
     /** Ask the server to stop this shop. The panel does not stop anything itself: it writes the request, and only the deployer's status can say it happened. */
     requestStop(id: string, account: Account): StopRequest {

@@ -66,7 +66,7 @@ test("the words count and state; none of them says a shop is safe, guaranteed or
   for (const [path, text] of english) assert.ok(!/\b(safe|safely|guarantee[ds]?|certified|100%|secure)\b/iu.test(text), `${path}: "${text}"`);
   const limits = [...english].filter(([p]) => p.startsWith("setup.limits."));
   assert.equal(limits.length, 7, "seven limits, each in one sentence");
-  for (const [, text] of limits) assert.ok(text.split(/[.!?]\s/u).length <= 2, `one plain sentence (or two short ones): ${text}`);
+  for (const l of LANGUAGES) for (const [path, text] of flatWords(WORDS[l])) if (path.startsWith("setup.limits.")) assert.ok(!/[.!?।]\s+\S/u.test(text), `${l}: ${path} is one sentence: ${text}`);
 });
 
 test("the benefit lines are the ones in the pricing document, in all four languages", () => {

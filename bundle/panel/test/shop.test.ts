@@ -9,7 +9,7 @@ import { runBusyMonth } from "../../../pathways/bookings/report/example-month.ts
 import { WORDS } from "../languages.ts";
 import { formatRupees } from "../cost.ts";
 import { M, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
-import { NOW, boot } from "./helpers.ts";
+import { NOW, boot, papers } from "./helpers.ts";
 import type { Boot } from "./helpers.ts";
 
 const applied = (o: Record<string, unknown> = {}) => ({
@@ -152,7 +152,7 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     // Before the server has applied the shop, nothing is ready, and pressing ready is refused.
     assert.ok(!(await divya.get(checks)).plain.includes(WORDS.en.setup.checks.readyButton));
     assert.equal((await divya.post(`/setup/${f.draft}/ready`, {}, checks)).status, 409);
-    assert.equal(existsSync(join(b.dir, "panel", "documents")), false);
+    assert.deepEqual(papers(b, f.shop).list(f.shop, "go-live"), [], "no paper before the checks pass");
 
     // 1. The shop's WhatsApp number is not the one behind that id: the check says so and pins nothing.
     const wrong = await boot({}, { standins: true });
@@ -186,9 +186,10 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
 
     const ready = await divya.post(`/setup/${f.draft}/ready`, {}, checks);
     assert.equal(ready.status, 303);
-    const docs = join(b.dir, "panel", "documents", f.shop, "go-live");
-    assert.ok(readdirSync(docs).includes("go-live-certificate.json") && readdirSync(docs).includes("go-live-certificate-ml.html"), readdirSync(docs).join());
-    const cert = JSON.parse(readFileSync(join(docs, "go-live-certificate.json"), "utf8"));
+    const docs = papers(b, f.shop);
+    const names = docs.list(f.shop, "go-live");
+    assert.ok(names.includes("go-live-certificate.json") && names.includes("go-live-certificate-ml.html"), names.join());
+    const cert = JSON.parse(docs.get(f.shop, "go-live/go-live-certificate.json")!);
     assert.ok(cert.signatures?.length > 0 || cert.signature, "signed with the panel's key");
     assert.equal(cert.document.preparedBy, "DIVYA, local partner");
     assert.equal(cert.document.shop.name, "Hosahalli Beauty");
@@ -235,7 +236,7 @@ test("the monthly report reads the go-live certificate the panel made, and says 
     const monthly = "2026-11";
     const before = await owner.post("/shops/glow-salon/report", { month: monthly }, "/shops/glow-salon");
     assert.equal(before.status, 303);
-    const reportJson = (dir: string) => JSON.parse(readFileSync(join(b.dir, "panel", "documents", "glow-salon", "monthly", monthly, dir), "utf8"));
+    const reportJson = (file: string) => JSON.parse(papers(b, "glow-salon").get("glow-salon", `monthly/${monthly}/${file}`)!);
     assert.equal(reportJson(`report-${monthly}.json`).document.goLive.status, "none", "no go-live certificate was given");
     // Make the go-live certificate for this shop's own settings, then the report again.
     const { createGoLive } = await import("../golive.ts");

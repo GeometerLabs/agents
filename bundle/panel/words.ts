@@ -189,7 +189,7 @@ export const en: Words = {
       price: "It can't go below your prices, and it asks you before any refund.",
       hours: "It never books outside your opening hours.",
       deposit: (a, m) => `The deposit is ${a}, never more than your cheapest price, and the slot is held ${m} minutes while it is paid.`,
-      refund: (h, l) => `If a customer cancels at least ${h} hours before, the deposit goes back. Anything later, or any refund above ${l}, waits for your OK on WhatsApp.`,
+      refund: (h, l) => `A customer who cancels at least ${h} hours before gets the deposit back; anything later, or any refund above ${l}, waits for your OK on WhatsApp.`,
       booked: "When it says booked, the slot is in your calendar and the deposit is in your account.",
       language: "Your customers are answered in their language, with the right price and date.",
       charge: "You stay in charge from your phone.",
