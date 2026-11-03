@@ -23,8 +23,8 @@ import { whatsappWebhookBody } from "../standins/control.ts";
 const NOW = zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, glowSalon().timezone);
 const BOOKED = /बुक हो गया!/u;
 
-async function withStack(run: (s: LocalStack) => Promise<void>): Promise<void> {
-  const stack = await startLocalStack({ clock: fakeClock(NOW) });
+async function withStack(run: (s: LocalStack) => Promise<void>, options: { refundLimitInr?: number } = {}): Promise<void> {
+  const stack = await startLocalStack({ clock: fakeClock(NOW), ...options });
   try { await run(stack); } finally { await stack.stop(); }
 }
 
@@ -191,4 +191,51 @@ test("npm run stack: the command prints where everything is, the customer's mess
     assert.equal(await exited, 0);
     assert.ok(!existsSync(dir), "the temp folder with the secrets and the data is gone");
   } finally { child.kill("SIGKILL"); }
+});
+
+test("a refund above the limit: the stub Guard holds it, the relay asks the owner once on WhatsApp, the owner's signed-in reply reaches the relay from the inbox, and the refund is made once", async () => {
+  await withStack(async (s) => {
+    const link = await bookInHindi(s);
+    await control(s, "/_standin/razorpay/pay", { link_id: link.id });
+    await s.settle();
+    assert.equal(witnesses(s).confirmed.length, 1);
+
+    // the customer cancels in time: ₹200 is above the ₹100 limit, so the refund is held (and the agent does not ask the owner itself)
+    assert.deepEqual(statuses(await control(s, "/_standin/whatsapp/inbound", { from: CUSTOMER, text: SAYS.hi.cancel, id: "wamid.cancel-1" })), [200]);
+    await s.settle();
+    const owner = () => s.standins.fakes.messaging.sentTo(s.owner);
+    assert.equal(witnesses(s).refunds.length, 0, "held, not sent");
+    assert.equal(s.guard.model.reviews("x", true).length, 1);
+    assert.equal(owner().length, 0, "the agent did not ask");
+    assert.match(s.standins.fakes.messaging.sentTo(CUSTOMER).at(-1)!.text, /₹200/);
+
+    // the relay reads the stub Guard and asks, once
+    await s.pollRelay(); await s.pollRelay();
+    assert.equal(owner().length, 1);
+    assert.equal(owner()[0].templateName, "owner_approval_request");
+    const code = /"approve ([A-Z0-9]{6})"/u.exec(owner()[0].text)![1];
+    assert.match(owner()[0].text, /^Approval needed: refund ₹200 for \+919811111111 \(/u);
+
+    // another number sends the code: nothing. The owner sends it: the inbox gives it to the runtime AND the relay, and the refund goes once.
+    await control(s, "/_standin/whatsapp/inbound", { from: "+919899999999", text: `approve ${code}`, id: "wamid.forged-1" });
+    await s.settle(); await s.relay.idle();
+    assert.equal(witnesses(s).refunds.length, 0);
+    assert.deepEqual(statuses(await control(s, "/_standin/whatsapp/inbound", { from: s.owner, text: `approve ${code}`, id: "wamid.owner-1" })), [200]);
+    await s.settle(); await s.relay.idle(); await s.settle();
+    const w = witnesses(s);
+    assert.equal(w.refunds.length, 1);
+    assert.equal(w.refunds[0].amount, 20000);
+    assert.equal(w.refunds[0].receipt, `b-1:${w.captured[0].id}`);
+    assert.equal(s.guard.accepted.length, 1);
+    assert.equal(owner().filter((m) => m.templateName === "owner_approval_request").length, 1, "asked exactly once");
+    assert.equal(owner().at(-1)!.text, "Thank you. The ₹200 refund for +919811111111 is being sent, and they will be told.");
+    assert.ok(owner().every((m) => !/understand/u.test(m.text)), "the agent saw the code too, and said nothing");
+    assert.match(s.standins.fakes.messaging.sentTo(CUSTOMER).at(-1)!.text, /₹200/);
+    assert.equal(languageOfScript(s.standins.fakes.messaging.sentTo(CUSTOMER).at(-1)!.text), "hi");
+    // the same webhook delivered again, and time, change nothing
+    await control(s, "/_standin/whatsapp/inbound", { from: s.owner, text: `approve ${code}`, id: "wamid.owner-1" });
+    await s.pollRelay();
+    assert.equal(witnesses(s).refunds.length, 1);
+    assert.deepEqual(s.runtime!.runtime.status().refunds, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } });
+  }, { refundLimitInr: 100 });
 });

@@ -45,7 +45,7 @@ function allowedFrom(facts: MessageFacts): Allowed {
   const a: Allowed = { amounts: new Set(), counts: new Set(), dates: new Set(), times: new Set(), urls: new Set(), literals: [], shown: {}, amountList: [] };
   for (const v of [facts.priceInr, facts.depositInr, facts.refundInr, ...facts.services.map((s) => s.priceInr)]) if (v !== undefined) a.amounts.add(v);
   a.amountList = [...a.amounts].sort((x, y) => x - y);
-  for (const v of [facts.holdMinutes, facts.windowHours]) if (v !== undefined) a.counts.add(v);
+  for (const v of [facts.holdMinutes, facts.windowHours, facts.approvalHours]) if (v !== undefined) a.counts.add(v);
   if (facts.slotMs !== undefined) {
     const p = localParts(facts.slotMs, facts.timeZone);
     for (const language of LANGUAGES) {
@@ -57,7 +57,7 @@ function allowedFrom(facts: MessageFacts): Allowed {
     }
   }
   if (facts.link) a.urls.add(facts.link.toLowerCase());
-  for (const lit of [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, ...facts.services.map((s) => s.name)]) {
+  for (const lit of [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.approvalCode, ...facts.services.map((s) => s.name)]) {
     if (lit) a.literals.push(plain(lit));
   }
   a.literals.sort((x, y) => y.length - x.length);

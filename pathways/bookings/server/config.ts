@@ -11,9 +11,11 @@ import { PATHWAY } from "./runtime.ts";
 
 /** Where the live adapters should call. Each base URL is a Guard instance in front of that service. */
 export interface LiveServicesConfig {
-  payments: { baseUrl: string };
-  calendar: { baseUrl: string; calendarId: string };
-  messaging: { baseUrl: string; phoneNumberId: string };
+  // `agentTokenFile`: a file holding the credential THIS agent presents to that Guard (what Guard calls the agent's token; Guard removes it before it
+  // forwards). It is not a key to the service. Left out, no Authorization header is sent. A relative path is measured from the client folder.
+  payments: { baseUrl: string; agentTokenFile?: string };
+  calendar: { baseUrl: string; calendarId: string; agentTokenFile?: string };
+  messaging: { baseUrl: string; phoneNumberId: string; agentTokenFile?: string };
   timeoutMs?: number;
 }
 
@@ -61,7 +63,8 @@ function unknownKeys(obj: Obj, allowed: string[], where: string, errors: string[
 
 function readService(raw: unknown, name: string, extra: string | undefined, errors: string[]): Obj | undefined {
   if (!isObj(raw)) { errors.push(`In "services", add "${name}" with its "baseUrl"${extra ? ` and "${extra}"` : ""}.`); return undefined; }
-  unknownKeys(raw, extra ? ["baseUrl", extra] : ["baseUrl"], `services.${name}`, errors);
+  unknownKeys(raw, extra ? ["baseUrl", extra, "agentTokenFile"] : ["baseUrl", "agentTokenFile"], `services.${name}`, errors);
+  if (raw.agentTokenFile !== undefined && !isText(raw.agentTokenFile)) errors.push(`services.${name}.agentTokenFile must be the path of a file that holds this agent's credential for that Guard.`);
   if (!isText(raw.baseUrl) || !/^https?:\/\/\S+$/.test(raw.baseUrl)) errors.push(`services.${name}.baseUrl must be the address of the Guard in front of ${name}, starting with http:// or https://.`);
   if (extra && !isText(raw[extra])) errors.push(`services.${name}.${extra} is missing.`);
   return raw;
@@ -114,7 +117,8 @@ export function validateRuntimeConfig(input: unknown, folder: string): { ok: tru
       const calendar = readService(s.calendar, "calendar", "calendarId", errors);
       const messaging = readService(s.messaging, "messaging", "phoneNumberId", errors);
       if (s.timeoutMs !== undefined && (!Number.isInteger(s.timeoutMs) || (s.timeoutMs as number) < 1)) errors.push("services.timeoutMs must be a whole number of milliseconds.");
-      if (payments && calendar && messaging) services = { payments, calendar, messaging, ...(s.timeoutMs !== undefined ? { timeoutMs: s.timeoutMs as number } : {}) } as unknown as LiveServicesConfig;
+      const where = (o: Obj | undefined) => (o && isText(o.agentTokenFile) ? { ...o, agentTokenFile: isAbsolute(o.agentTokenFile) ? o.agentTokenFile : resolve(folder, o.agentTokenFile) } : o);
+      if (payments && calendar && messaging) services = { payments: where(payments), calendar: where(calendar), messaging: where(messaging), ...(s.timeoutMs !== undefined ? { timeoutMs: s.timeoutMs as number } : {}) } as unknown as LiveServicesConfig;
     }
   }
 

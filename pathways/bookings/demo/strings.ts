@@ -24,7 +24,7 @@ export interface Ui {
   payButton(amount: string): string;
   askRefund(amount: string): string;
   askCalendar: string;
-  reasonLate(hours: number): string; reasonOverLimit(limit: string): string; reasonFailed: string;
+  reasonLate(hours: number): string;
   // the owner's summary
   bookingsNone: string;
   bookingsOk(n: number): string;
@@ -66,8 +66,6 @@ const en: Ui = {
   askRefund: (a) => `Give back ${a}?`,
   askCalendar: "The calendar did not show this booking.",
   reasonLate: (h) => `Cancelled less than ${h} hours before the start.`,
-  reasonOverLimit: (l) => `More than the ${l} it may refund alone.`,
-  reasonFailed: "The refund did not go through the first time.",
   bookingsNone: "No bookings yet. Make one on the Customer tab.",
   bookingsOk: (n) => (n === 1 ? "The booking it made is in your calendar. We checked." : `All ${n} bookings it made are in your calendar. We checked.`),
   bookingsMissing: (f, t) => `Only ${f} of ${t} bookings are in your calendar. Look at the rest.`,
@@ -106,8 +104,6 @@ const hi: Ui = {
   askRefund: (a) => `${a} वापस करें?`,
   askCalendar: "कैलेंडर में यह बुकिंग नहीं दिखी।",
   reasonLate: (h) => `शुरू होने से ${h} घंटे से कम पहले रद्द हुई।`,
-  reasonOverLimit: (l) => `यह ${l} की उस सीमा से ज़्यादा है जो यह अकेले लौटा सकता है।`,
-  reasonFailed: "पहली बार में रिफंड नहीं हो पाया।",
   bookingsNone: "अभी कोई बुकिंग नहीं है। ग्राहक वाले टैब में एक बुकिंग बनाइए।",
   bookingsOk: (n) => (n === 1 ? "इसने जो बुकिंग की, वह आपके कैलेंडर में है। हमने जाँचा है।" : `इसने जितनी भी बुकिंग कीं (${n}), सब आपके कैलेंडर में हैं। हमने जाँचा है।`),
   bookingsMissing: (f, t) => `${t} में से सिर्फ़ ${f} बुकिंग आपके कैलेंडर में हैं। बाकी देख लीजिए।`,

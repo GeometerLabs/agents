@@ -12,11 +12,14 @@ import type { FakeCalendar } from "./adapters/calendar.ts";
 import { createFakeMessaging } from "./adapters/messaging.ts";
 import type { FakeMessaging, InboundMessage } from "./adapters/messaging.ts";
 import type { IntentParser } from "./adapters/model.ts";
+import { createGuardModel } from "./adapters/guard-model.ts";
+import type { GuardModel } from "./adapters/guard-model.ts";
 import { createFakePayments } from "./adapters/payments.ts";
 import type { FakePayments, FakePaymentsOptions, PaymentLink } from "./adapters/payments.ts";
 import { createRuleParser } from "./adapters/rule-parser.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
+import { razorpayLimitsSpec } from "./guard-limits.ts";
 import { createRecord } from "./record.ts";
 import type { ActionRecord } from "./record.ts";
 import { LANGUAGES, parseSettings } from "./settings.ts";
@@ -36,6 +39,8 @@ export interface World {
   clock: FakeClock;
   calendar: FakeCalendar;
   payments: FakePayments;
+  /** The Guard in front of the refunds, as there is in production: built from the settings' own refund limit (src/guard-limits.ts). */
+  guard: GuardModel;
   messaging: FakeMessaging;
   record: ActionRecord;
   store: Store;
@@ -50,6 +55,13 @@ export interface World {
   /** Time passes: move the clock, then let the agent expire holds and send due reminders. */
   advance(minutes: number): Promise<void>;
   tick(): Promise<void>;
+  /**
+   * The owner answers a refund Guard is holding, as the approvals relay would carry it: Guard records the owner's decision (a signed
+   * notification in production), then the relay tells the agent. Without an id it is the only refund waiting.
+   */
+  ownerAnswers(decision: "approve" | "deny", approval?: string): Promise<void>;
+  /** The refunds Guard is holding for the owner right now: what the relay would ask about. */
+  heldForOwner(): { id: string; amountPaise: number; paymentId: string; receipt: string }[];
   /** What the messaging service's outbox holds for a number. */
   textsTo(number: string): string[];
   lastTextTo(number: string): string;
@@ -65,11 +77,15 @@ export interface WorldOptions {
   payments?: FakePaymentsOptions;
 }
 
+/** The tenant and builder named in the Guard spec the harness builds; they only label it. */
+export const HARNESS_GUARD = { tenant: "glow-salon", version: 1, reviewedBy: "hand-check" } as const;
+
 export function createWorld(options: WorldOptions = {}): World {
   const settings = options.settings ?? glowSalon();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, settings.timezone));
   const calendar = createFakeCalendar();
-  const payments = createFakePayments(clock, options.payments);
+  const guard = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock);
+  const payments = createFakePayments(clock, { guard, ...options.payments });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   const record = createRecord(clock);
@@ -78,7 +94,7 @@ export function createWorld(options: WorldOptions = {}): World {
   let deliveredEvents = 0;
 
   const world: World = {
-    settings, clock, calendar, payments, messaging, record, store, agent, owner: settings.owner.whatsapp,
+    settings, clock, calendar, payments, guard, messaging, record, store, agent, owner: settings.owner.whatsapp,
     async say(text, o = {}) {
       const message = messaging.receive(o.from ?? CUSTOMER, text, o.id ? { id: o.id } : {});
       await agent.handle({ kind: "message", message });
@@ -100,6 +116,15 @@ export function createWorld(options: WorldOptions = {}): World {
       await agent.handle({ kind: "tick" });
     },
     tick: () => agent.handle({ kind: "tick" }),
+    async ownerAnswers(decision, approval) {
+      const waiting = world.heldForOwner();
+      const id = approval ?? (waiting.length === 1 ? waiting[0].id : undefined);
+      if (!id) throw new Error(`ownerAnswers needs an approval id: ${waiting.length} refund(s) wait for the owner.`);
+      const decided = guard.decide(id, decision === "approve", "owner");
+      if (decided.status !== 200) throw new Error(`Guard would not record that: ${decided.error}`);
+      await agent.handle({ kind: "approval_decision", approval: id, decision });
+    },
+    heldForOwner: () => guard.reviews("runtime-glow-salon", true).map((r) => ({ id: r.id, amountPaise: Number(r.amount), paymentId: r.arguments[1].payment_id[1], receipt: r.arguments[1].receipt?.[1] ?? "" })),
     textsTo: (number) => messaging.sentTo(number).map((m) => m.text),
     lastTextTo: (number) => messaging.sentTo(number).at(-1)?.text ?? "",
     linkFor: (ref) => payments.links().find((l) => l.reference_id === ref),

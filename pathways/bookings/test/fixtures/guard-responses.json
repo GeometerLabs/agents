@@ -1,0 +1,113 @@
+{
+  "_about": "Guard's answers, copied from monorepo docs/guard-for-pathways.md (captured from the real geo-guard on 3 Nov 2026; busy from tests/hardening.rs; refused_no_payouts captured again from the Razorpay template on 3 Nov). Each has the HTTP status, the headers that matter (lower case) and the body. Keep them as the doc has them: the point is to read Guard's own words.",
+  "held": {
+    "status": 202,
+    "headers": { "content-type": "application/json", "guard-held": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3" },
+    "body": {
+      "error": "held by the Guard: refund-needs-owner: above the threshold: a person must approve this exact call",
+      "guard": {
+        "decision": "hold", "code": "held_for_approval", "sent": "no", "retry": "after_approval",
+        "reason": "refund-needs-owner: above the threshold: a person must approve this exact call",
+        "detail": { "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3", "status": "pending", "expires_at_ms": 1793712060824 }
+      }
+    }
+  },
+  "held_uncertain": {
+    "status": 202,
+    "headers": { "content-type": "application/json", "guard-held": "" },
+    "body": {
+      "error": "held by the Guard: an earlier attempt of intent intent:fa8690f73eaf has an unknown outcome and the provider could not be asked (no receipt lookup declared); the Guard will not repeat it (fail-open does not apply to an uncertain irreversible action)",
+      "guard": { "decision": "hold", "code": "held_for_approval", "sent": "no", "retry": "after_approval", "detail": { "approval": null, "status": "pending", "expires_at_ms": null } }
+    }
+  },
+  "refused_rule": {
+    "status": 403,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
+      "guard": { "decision": "deny", "code": "refused_by_policy", "sent": "no", "retry": "no", "reason": "deposit-amount: amount 300000 is above the highest allowed value, 200000", "detail": null }
+    }
+  },
+  "refused_limit": {
+    "status": 403,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: limit refund-paise-per-day would be exceeded (90000.00 of 100000.00 already reserved for this scope); refused before dispatch",
+      "guard": { "decision": "deny", "code": "refused_by_policy", "sent": "no", "retry": "no", "reason": "limit refund-paise-per-day would be exceeded (90000.00 of 100000.00 already reserved for this scope); refused before dispatch", "detail": null }
+    }
+  },
+  "refused_unlisted": {
+    "status": 403,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: GET /v1/orders is not a route this policy covers: the Guard does not guess what it does",
+      "guard": { "decision": "deny", "code": "refused_by_policy", "sent": "no", "retry": "no", "reason": "GET /v1/orders is not a route this policy covers: the Guard does not guess what it does", "detail": null }
+    }
+  },
+  "refused_no_payouts": {
+    "status": 403,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: no-payouts: razorpay.payout is never to be called",
+      "guard": { "decision": "deny", "code": "refused_by_policy", "sent": "no", "retry": "no", "reason": "no-payouts: razorpay.payout is never to be called", "detail": null }
+    }
+  },
+  "conflict": {
+    "status": 409,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
+      "guard": { "decision": "deny", "code": "conflict", "sent": "no", "retry": "no", "reason": "intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated", "detail": null }
+    }
+  },
+  "unauthenticated": {
+    "status": 401,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "authentication required: a per-agent credential issued by this Guard",
+      "guard": { "decision": "deny", "code": "unauthenticated", "sent": "no", "retry": "no" }
+    }
+  },
+  "kill_switch": {
+    "status": 503,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: kill switch engaged: test",
+      "guard": { "decision": "deny", "code": "guard_unavailable", "sent": "no", "retry": "later", "reason": "kill switch engaged: test", "detail": null }
+    }
+  },
+  "busy": {
+    "status": 503,
+    "headers": { "content-type": "application/json", "retry-after": "1" },
+    "body": {
+      "error": "Guard is busy; nothing was sent",
+      "guard": { "decision": "deny", "code": "busy", "sent": "no", "retry": "later", "reason": "too many calls in flight; try again shortly" }
+    }
+  },
+  "provider_unreachable": {
+    "status": 502,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: the provider is unreachable (Connection refused (os error 61)); nothing was sent",
+      "guard": { "decision": "deny", "code": "provider_unreachable", "sent": "no", "retry": "later", "reason": "the provider is unreachable (Connection refused (os error 61)); nothing was sent", "detail": null }
+    }
+  },
+  "outcome_unknown": {
+    "status": 504,
+    "headers": { "content-type": "application/json", "guard-outcome": "unknown" },
+    "body": {
+      "error": "refused by the Guard: outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically",
+      "guard": { "decision": "unknown", "code": "outcome_unknown", "sent": "unknown", "retry": "do_not_repeat", "reason": "outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically", "detail": null }
+    }
+  },
+  "provider_500": {
+    "status": 500,
+    "headers": { "content-type": "application/json" },
+    "body": { "error": { "code": "SERVER_ERROR", "description": "forced by the test" } }
+  },
+  "replayed": {
+    "status": 200,
+    "headers": { "content-type": "application/json", "guard-replayed": "true", "guard-reason": "intent intent:fa8690f73eaf already confirmed: the recorded reply is returned and nothing is sent again" },
+    "body": { "id": "rfnd_Nx1", "entity": "refund", "amount": 60000, "currency": "INR", "payment_id": "pay_Nx1", "status": "processed", "receipt": "b-1:pay_Nx1", "created_at": 1793711200 }
+  }
+}

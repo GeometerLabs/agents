@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (30)
+## 1. Messages to the customer (32)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -41,15 +41,17 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_denied` | The owner kept the deposit | ₹200 അഡ്വാൻസ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു. | The owner has decided not to refund the ₹200 deposit. |  |
 | `rescheduled` | Booking moved to the new time | മാറ്റിയിട്ടുണ്ട്. ഹെയർകട്ട് പുതിയ സമയം: ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. | Done. Your haircut is moved to Tue 10 Nov, 6:00 pm. |  |
 | `reminder` | Reminder before the booking | ഓർമ്മപ്പെടുത്തൽ: Glow Salon-ൽ നിങ്ങളുടെ ഹെയർകട്ട് ബുക്കിംഗ് സമയം: ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. | Reminder: your haircut at Glow Salon is on Tue 10 Nov, 6:00 pm. |  |
+| `refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | നിങ്ങളുടെ ₹200 റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം. | We are checking your ₹200 refund and will message you as soon as it is confirmed. |  |
+| `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ₹200 റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
 
-## 2. Messages to the owner (10)
+## 2. Messages to the owner (14)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
-| `owner_refund_needs_approval` | A refund needs the owner's yes or no | അനുമതി വേണം: +919811111111 (ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00) എന്നവർക്ക് ₹200 റീഫണ്ട്. "approve b-3" അല്ലെങ്കിൽ "deny b-3" എന്ന് മറുപടി അയയ്ക്കൂ. | Approval needed: refund ₹200 for +919811111111 (haircut, Tue 10 Nov, 6:00 pm). Reply "approve b-3" or "deny b-3". |  |
+| `owner_refund_needs_approval` | A refund above the limit waits for the owner's one-use code (sent by the approvals relay, never by the agent) | അനുമതി വേണം: +919811111111 (ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00) എന്നവർക്ക് ₹200 റീഫണ്ട്. 24 മണിക്കൂറിനുള്ളിൽ "approve K7M2QX" അല്ലെങ്കിൽ "deny K7M2QX" എന്ന് മറുപടി അയയ്ക്കൂ. | Approval needed: refund ₹200 for +919811111111 (haircut, Tue 10 Nov, 6:00 pm). Reply "approve K7M2QX" or "deny K7M2QX" within 24 hours. |  |
 | `owner_cant_confirm` | Deposit paid but the calendar could not confirm; the owner can retry or refund | ഉപഭോക്താവ് +919811111111: ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. അവരുടെ ₹200 അഡ്വാൻസ് രേഖപ്പെടുത്തിയിട്ടുണ്ട്. കലണ്ടർ വീണ്ടും നോക്കാൻ "retry b-3" എന്നും, ബുക്കിംഗ് റദ്ദാക്കി അഡ്വാൻസ് തിരികെ നൽകാൻ "approve b-3" എന്നും മറുപടി അയയ്ക്കൂ. | Could not confirm +919811111111's haircut on Tue 10 Nov, 6:00 pm in the calendar, so it is NOT booked. Their ₹200 deposit is recorded. Reply "retry b-3" to check the calendar again, or "approve b-3" to cancel it and refund the deposit. |  |
 | `owner_late_cancellation` | A late cancellation: the owner decides about the deposit | ഉപഭോക്താവ് +919811111111: ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 തുടങ്ങാൻ 24 മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് ₹200. തിരികെ നൽകാൻ "approve b-3" എന്നും, നിങ്ങൾ വയ്ക്കാൻ "deny b-3" എന്നും മറുപടി അയയ്ക്കൂ. | Customer +919811111111 cancelled haircut on Tue 10 Nov, 6:00 pm less than 24 hours before the start. Deposit ₹200. Reply "approve b-3" to refund it or "deny b-3" to keep it. |  |
 | `owner_duplicate_payment` | Told after a double payment was refunded | ഉപഭോക്താവ് +919811111111: ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 — അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി വന്ന ₹200 തിരികെ നൽകി. | Customer +919811111111 paid the deposit twice for haircut on Tue 10 Nov, 6:00 pm. The extra ₹200 was refunded. |  |
@@ -59,6 +61,10 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_message_held` | A message was held back because it did not match the record | ഉപഭോക്താവ് +919811111111: അയയ്ക്കാനിരുന്ന ഒരു സന്ദേശം ബുക്കിംഗ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞു. ഒന്നും അയച്ചിട്ടില്ല. | A message to +919811111111 was held back because it did not match the booking record. Nothing was sent. |  |
 | `owner_opted_out` | A customer sent STOP | ഉപഭോക്താവ് +919811111111 STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല. | Customer +919811111111 sent STOP. No more messages will go to them. |  |
 | `owner_unknown_command` | The owner's reply was not approve, deny or retry | എനിക്ക് മനസ്സിലായില്ല. "approve", "deny" അല്ലെങ്കിൽ "retry" എന്ന് എഴുതി അതിനു ശേഷം ബുക്കിംഗ് റഫറൻസ് എഴുതൂ. | I didn't understand that. Reply "approve", "deny" or "retry" followed by the booking reference. |  |
+| `owner_approval_done` | The owner approved with the code: the refund is being sent | നന്ദി. ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ട് അയയ്ക്കുന്നുണ്ട്, അവരെ അറിയിക്കും. | Thank you. The ₹200 refund for +919811111111 is being sent, and they will be told. |  |
+| `owner_approval_denied` | The owner denied with the code: nothing is sent | മനസ്സിലായി. ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | Understood. The ₹200 refund for +919811111111 will not be sent, and they will be told. |  |
+| `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പ് ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയില്ല: ഉപഭോക്താവ് +919811111111, ₹200. | That request ran out before you answered, so nothing was refunded: ₹200 for +919811111111. |  |
+| `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. ദയവായി കുറച്ച് മിനിറ്റുകൾക്ക് ശേഷം വീണ്ടും അയയ്ക്കൂ. | I could not record your answer just now. Please send it again in a few minutes. |  |
 
 ## 3. Dates and times as the agent writes them
 
