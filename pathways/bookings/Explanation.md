@@ -466,3 +466,7 @@ Live services added about 1,800 lines (adapters and templates about 900, inbox a
 4. The meaning of `windowHours` (decision 9), and that a late cancellation is "ask the owner", not "no refund".
 5. A bare weekday means the first one after today, so "Tuesday" said on a Tuesday means a week from today (decision 7).
 6. Owner commands (`approve b-3`, `deny b-3`, `retry b-3`) are recognised by the owner's number alone. They now decide only a late cancellation within the limit and a calendar that would not confirm; a refund above the limit is Guard's, answered with a code ("Approvals on WhatsApp").
+
+## Read-only reads in the stand-ins, and the template manifest (panel)
+
+The stand-ins answer two reads the panel's connection checks use: `GET /{version}/{phone-number-id}` (the number's own details: id, display number, verified name) and `GET /calendar/v3/calendars/{id}` (the calendar's metadata; a 404 for any id but the one the stand-in is given, as Google does for a calendar the account cannot see). The events list's `accessRole` is an option. No route the agent uses changed. `template.json` in this folder tells the panel which accounts the template uses, so the phone setup asks only for those; see `bundle/panel/Explanation.md`.
