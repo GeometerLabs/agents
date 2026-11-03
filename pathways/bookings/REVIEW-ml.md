@@ -207,7 +207,7 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 ബുക്ക് ആയവ: 38 · റദ്ദാക്കിയവ: 3 · ലഭിച്ച അഡ്വാൻസ്: ₹17,600 · തിരികെ നൽകിയത്: ₹400
 നിങ്ങളോട് ചോദിച്ചത്: 3 · നിങ്ങൾ അംഗീകരിച്ചത്: 2 · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: 1 · ഉറപ്പിക്കാൻ കഴിയാത്തത്: 1
 നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 5 (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: 3 · പ്രവൃത്തി സമയത്തിന് പുറത്തുള്ള ബുക്കിംഗ്: 1 · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: 1)
-പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
+പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 ```
 
 ### Every word and phrase of the report and the certificates
@@ -265,6 +265,9 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `notTested.other-faults` | പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ | problems beyond the ones tried |  |
 | `notTested.own-settings` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (ഇവ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത്) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
 | `notTested.situations-skipped` | ഈ പരിശോധനകളിൽ ചിലത്, ഈ കടയുടെ ക്രമീകരണങ്ങളിൽ നടത്താൻ കഴിയാത്തതിനാൽ ഒഴിവാക്കി | some of these checks, which this shop's settings cannot run (so they were left out) |  |
+| `notTested.other-settings` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (സർട്ടിഫിക്കറ്റ് പ്രകാരം ഇവ മറ്റ് ക്രമീകരണങ്ങളിലാണ് നടത്തിയത്) | these checks on this shop's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല) | these checks on this shop's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (നൽകിയ പരിശോധനാ സർട്ടിഫിക്കറ്റ് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഉപയോഗിച്ചില്ല) | these checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
 | `notCounted.no-shows` | ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും) | who turned up (a booking is marked finished when its time passes) |  |
 | `notCounted.read-receipts` | ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ഏജന്റ് വഴിയല്ലാതെ നടന്ന ബുക്കിംഗ്, കോൾ, പേയ്മെന്റ് | bookings, calls and payments that did not go through the agent |  |
@@ -337,4 +340,11 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `cert.handRunLine` | പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ്, കലണ്ടർ എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് (stand-in services). ടെസ്റ്റ് പണം മാത്രം. | Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only. |  |
 | `cert.countedIntro` | ഏജന്റിന്റെ രേഖയിൽ നിന്ന് എണ്ണിയത്, Nov 2026: | Counted from the agent's record for Nov 2026: |  |
 | `cert.checkedOn` | പരിശോധിച്ചത് | Checks run on |  |
+| `goLive.heading` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധന | Go-live checks |  |
+| `goLive.own` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ തന്നെയാണ് നടത്തിയത്, Tue 10 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പ്രകാരം. | The go-live checks ran on this shop's own settings, in the go-live certificate of Tue 10 Nov 2026. |  |
+| `goLive.example` | Tue 10 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത് എന്നാണ്, ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ അല്ല. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on the example shop, Glow Salon, not on this shop's own settings. |  |
+| `goLive.different` | Tue 10 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഈ കടയുടേതിൽ നിന്ന് വ്യത്യസ്തമായ ക്രമീകരണങ്ങളിലാണ് നടത്തിയത് എന്നാണ്, അതിനാൽ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങൾ എങ്ങനെ പ്രവർത്തിക്കുന്നു എന്ന് അത് കാണിക്കുന്നില്ല. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave. |  |
+| `goLive.untrusted` | ഒരു പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിരുന്നു, പക്ഷേ അത് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല (അതിൽ ഒപ്പില്ല, ഒപ്പ് ചേരുന്നില്ല, അല്ലെങ്കിൽ അത് പരിശോധനാ സർട്ടിഫിക്കറ്റ് അല്ല), അതിനാൽ ഉപയോഗിച്ചില്ല. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate), so it was not used. |  |
+| `goLive.none` | പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല, അതിനാൽ തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഏത് ക്രമീകരണങ്ങളിലാണ് നടത്തിയതെന്ന് ഈ രേഖ പറയുന്നില്ല. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | പരിശോധനാ സർട്ടിഫിക്കറ്റിൽ ഒപ്പിട്ടത് key:3f9a1c… എന്ന കീ ഉപയോഗിച്ചാണ്. ആ കീ ആരുടെ കൈയിലാണെന്ന് കീ കാണിക്കുന്നില്ല. | The go-live certificate is signed with key:3f9a1c…. A key does not show who holds it. |  |
 
