@@ -4,8 +4,9 @@
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder>      copy a client folder in (settings.json, runtime.json, pathway.lock)
-//   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it also
-//                                runs the panel's read-only connection checks (the WhatsApp number, the Razorpay key, the calendar) inside the panel container.
+//   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
+//                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
+//                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
@@ -139,7 +140,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       const c = await connectionChecks(ctx, shop);
       console.log(c.text);
       if (!r.ok) { console.log(refusal(new Refused(r.problems))); return 1; }
-      console.log(`${shop} passes the generator's checks${c.failed ? ", but the connection checks above failed" : ""}. Nothing was started or changed on the Guards.`);
+      console.log(`${shop} passes the generator's checks${c.failed ? ", but the connection checks above failed" : ""}. Nothing was started or changed on the Guards.${c.recorded ? " The connection checks recorded the confirmed ids in the shop's pins.json: the next deploy, or `apply`, pins the Guards to them." : ""}`);
       return c.failed ? 1 : 0;
     }
 
@@ -228,8 +229,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
  * can run: inside the panel container, which is on the network the Guards' agent ports are on and has the token (services/connection-check.ts). They go through the shop's
  * RUNNING Guards, so they only happen once the shop has been deployed; before that this says so. Returns the text to print and whether anything failed.
  */
-export async function connectionChecks(ctx: Context, shop: string): Promise<{ text: string; failed: boolean }> {
-  const not = (why: string) => ({ text: `Connection checks: not run. ${why}`, failed: false });
+export async function connectionChecks(ctx: Context, shop: string): Promise<{ text: string; failed: boolean; /** every check confirmed, so the panel wrote pins.json */ recorded: boolean }> {
+  const not = (why: string) => ({ text: `Connection checks: not run. ${why}`, failed: false, recorded: false });
   let server;
   try { server = loadServer(ctx.dir); } catch (e) { return not((e as Error).message); }
   if (!server.panel.enabled) return not("This server has no panel (\"panel\" in geometer.json), and the checks run inside it.");
@@ -240,9 +241,12 @@ export async function connectionChecks(ctx: Context, shop: string): Promise<{ te
   if (!body) return not(`The panel did not answer (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 200)}). Is the panel container up (\`geometer status\`)?`);
   if (body.missing) return not(`The panel has no settings for ${shop} (the panel keeps them in shops/${shop}/).`);
   if (!body.connections) return not("The panel has not been told where the Guards are (PANEL_GUARD_URL).");
-  const failed = body.connections.some((c) => !c.ok);
-  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? "confirmed" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
-  return { text: `Connection checks (read-only through the shop's Guards; nothing is sent or charged; the same as the panel's "Run the checks", so the panel shows these too): ${failed ? "FAILED" : "all passed"}\n${lines.map((l) => `  ${l}`).join("\n")}`, failed };
+  // "not_configured" means the panel has nothing to check with yet (a shop made by `shop add` has no business number or key id in the panel's own data): that is not a failure
+  const notRun = body.connections.filter((c) => !c.ok && c.code === "not_configured");
+  const failed = body.connections.some((c) => !c.ok && c.code !== "not_configured");
+  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? "confirmed" : c.code === "not_configured" ? "NOT RUN (the panel does not have what it needs for this yet: enter it on the shop's page in the panel)" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
+  const verdict = failed ? "FAILED" : notRun.length > 0 ? "none failed, but some could not run" : "all passed";
+  return { text: `Connection checks (read-only through the shop's Guards; nothing is sent or charged; the same as the panel's "Run the checks", so the panel shows these too, and this writes the shop's pins.json when they all confirm): ${verdict}\n${lines.map((l) => `  ${l}`).join("\n")}`, failed, recorded: body.connections.length > 0 && body.connections.every((c) => c.ok) };
 }
 
 async function init(folder: string | undefined, v: Record<string, string | boolean | undefined>): Promise<number> {

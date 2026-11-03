@@ -117,6 +117,10 @@ test("check runs the generator's checks, then the panel's connection checks insi
     const bad = answer(JSON.stringify({ connections: [{ service: "whatsapp", ok: false, code: "account_mismatch", notChecked: [] }] }));
     const failed = await check(bad);
     assert.equal(failed.result, 1); assert.match(failed.out, /FAILED[\s\S]*whatsapp: NOT confirmed \(account_mismatch\)[\s\S]*connection checks above failed/);
+    // a shop made by `shop add` has no business number in the panel yet: WhatsApp cannot be checked, which is "not run", not a failure
+    const bare = await check(answer(JSON.stringify({ connections: [{ service: "whatsapp", ok: false, code: "not_configured", notChecked: [] }, { service: "calendar", ok: true, code: "confirmed", notChecked: [] }] })));
+    assert.equal(bare.result, 0, bare.out); assert.match(bare.out, /none failed, but some could not run[\s\S]*whatsapp: NOT RUN \(the panel does not have what it needs/); assert.doesNotMatch(bare.out, /recorded the confirmed ids/);
+    assert.match(passed.out + passed.err, /recorded the confirmed ids in the shop's pins\.json/, "when everything confirms the panel has written the pins, and the output says so");
     const down = await check(answer("", 1));
     assert.equal(down.result, 0); assert.match(down.out, /not run\. The panel did not answer \(service "panel" is not running\)/);
     const none = world({ "glow-salon": panelRuntime() }); none.handIn("glow-salon");
