@@ -22,7 +22,7 @@ import type { MessageFacts, TemplateId } from "./templates.ts";
 export const META_LANGUAGE: Record<Language, string> = { en: "en", hi: "hi", ml: "ml", kn: "kn" };
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref";
+export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -32,6 +32,8 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   hours: (f) => String(need(f, "windowHours")),
   phone: (f) => need(f, "customerPhone"),
   ref: (f) => need(f, "bookingRef"),
+  code: (f) => need(f, "approvalCode"),
+  approvalHours: (f) => String(need(f, "approvalHours")),
 };
 
 export interface MetaTemplate {
@@ -102,10 +104,10 @@ export const META_TEMPLATES: readonly MetaTemplate[] = [
   {
     name: "owner_approval_request", usedFor: "owner_refund_needs_approval", audience: "owner",
     bodies: {
-      en: 'Approval needed: refund {refund} for {phone} ({service}, {slot}). Reply "approve {ref}" or "deny {ref}".',
-      hi: 'मंज़ूरी चाहिए: {phone} ({service}, {slot}) को {refund} का रिफंड। जवाब दें "approve {ref}" या "deny {ref}"।',
-      ml: 'അനുമതി വേണം: {phone} ({service}, {slot}) എന്നവർക്ക് {refund} റീഫണ്ട്. "approve {ref}" അല്ലെങ്കിൽ "deny {ref}" എന്ന് മറുപടി അയയ്ക്കൂ.',
-      kn: 'ಅನುಮತಿ ಬೇಕು: {phone} ({service}, {slot}) ಅವರಿಗೆ {refund} ರೀಫಂಡ್. "approve {ref}" ಅಥವಾ "deny {ref}" ಎಂದು ಉತ್ತರಿಸಿ.',
+      en: 'Approval needed: refund {refund} for {phone} ({service}, {slot}). Reply "approve {code}" or "deny {code}" within {approvalHours} hours.',
+      hi: 'मंज़ूरी चाहिए: {phone} ({service}, {slot}) को {refund} का रिफंड। {approvalHours} घंटे के अंदर "approve {code}" या "deny {code}" लिखकर जवाब दें।',
+      ml: 'അനുമതി വേണം: {phone} ({service}, {slot}) എന്നവർക്ക് {refund} റീഫണ്ട്. {approvalHours} മണിക്കൂറിനുള്ളിൽ "approve {code}" അല്ലെങ്കിൽ "deny {code}" എന്ന് മറുപടി അയയ്ക്കൂ.',
+      kn: 'ಅನುಮತಿ ಬೇಕು: {phone} ({service}, {slot}) ಅವರಿಗೆ {refund} ರೀಫಂಡ್. {approvalHours} ಗಂಟೆಯೊಳಗೆ "approve {code}" ಅಥವಾ "deny {code}" ಎಂದು ಉತ್ತರಿಸಿ.',
     },
   },
   // The other owner notices. The owner usually has not written to the number today, so each notice the agent sends on its own has a template here
@@ -188,7 +190,7 @@ export const META_TEMPLATES: readonly MetaTemplate[] = [
 /** Every template name, for a provider (or the stand-in) to approve. */
 export const META_TEMPLATE_NAMES: readonly string[] = META_TEMPLATES.map((t) => t.name);
 
-const SLOT_RE = /\{([a-z]+)\}/gu;
+const SLOT_RE = /\{([A-Za-z]+)\}/gu;
 
 /** The slots of a body in the order they appear. The same value twice is two parameters, because a Meta parameter number is used once. */
 export function slotsOf(body: string): Slot[] {
@@ -243,7 +245,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     depositInr: settings.deposit.amountInr, refundInr: settings.deposit.amountInr,
     slotMs: Date.UTC(2026, 10, 10, 12, 30), // Tue 10 Nov 2026, 6:00 pm in India
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
-    bookingRef: "b-3", customerPhone: "+919811111111",
+    bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
   };
 }
 

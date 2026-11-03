@@ -15,7 +15,7 @@ import { serviceName } from "./settings.ts";
 import type { LocalDate, LocalTime } from "./time.ts";
 import { HOUR } from "./time.ts";
 import type { TimePhrase } from "./language/dates.ts";
-import type { MessageFacts } from "./language/templates.ts";
+import type { MessageFacts, TemplateId } from "./language/templates.ts";
 
 export type BookingState =
   | "enquiry" | "confirming_details" | "awaiting_deposit" | "needs_owner" | "confirmed" | "expired" | "cancelled" | "completed";
@@ -43,10 +43,29 @@ export function moveTo(booking: Booking, to: BookingState): void {
   booking.state = to;
 }
 
-/** Something waiting for the owner's answer on WhatsApp. */
+/**
+ * Something waiting for an answer, or for another try.
+ *  - refund: the owner's own call about a refund WITHIN the limit (a late cancellation), asked by the agent as "approve b-3".
+ *    A refund ABOVE the limit is not asked by the agent at all: Guard holds it, and the approvals relay asks the owner, once.
+ *  - guard_hold: a refund Guard is holding for the owner. It keeps the approval id and the EXACT bytes of the call that was held:
+ *    after the relay says the owner approved, those same bytes are sent again, once. It is never sent again on a timer.
+ *  - refund_retry: a refund that could not be sent at all (nothing went out). The agent tries again by itself, a few times.
+ *  - calendar: the calendar would not confirm a paid booking; the owner can retry or cancel and refund.
+ */
 export type Pending =
-  | { kind: "refund"; amountInr: number; paymentId: string; reason: "late_cancellation" | "over_limit" | "refund_failed" }
+  | { kind: "refund"; amountInr: number; paymentId: string; reason: "late_cancellation" }
+  | {
+    kind: "guard_hold"; amountInr: number; paymentId: string; receipt: string;
+    approval: string; body: string; expiresAtMs: number | null; heldAtMs: number;
+    /** The relay has said the owner approved. Set before the call is sent again, so a send that could not be made is tried again. */
+    approved?: boolean; tries?: number; retryAtMs?: number;
+  }
+  | { kind: "refund_retry"; amountInr: number; paymentId: string; tries: number; retryAtMs: number; then: { customer: TemplateId; owner?: TemplateId; held: TemplateId } }
   | { kind: "calendar" };
+
+/** Why a refund needs the builder, not the owner. "unheld": a refund above the limit was sent without Guard holding it (Guard's threshold does not match the settings). */
+export type RefundIssueKind = "unknown" | "uncertain" | "refused" | "failed" | "unconfirmed" | "expired" | "unheld";
+export interface RefundIssue { paymentId: string; kind: RefundIssueKind; note: string; atMs: number }
 
 export interface Booking {
   id: string; // "b-1": also the calendar event's bookingRef and the payment link's reference_id
@@ -72,6 +91,10 @@ export interface Booking {
   handledPayments: string[]; // payments already dealt with (the deposit, or an extra one that was refunded or sent to the owner)
   reminders: { atMs: number; sent: boolean }[];
   pending: Pending[];
+  /** Refunds that need the builder (never the owner): see RefundIssueKind. Counted in the runtime's status. */
+  refundIssues?: RefundIssue[];
+  /** Payments the agent must not ask Guard to refund again: the owner said no, the outcome is unclear, it failed for good, or the approval ran out. */
+  stoppedRefunds?: string[];
   /** A move to a new time that is waiting for the customer's yes. */
   reschedule?: { date: LocalDate; timePhrase: TimePhrase; startMs: number; endMs: number };
 }

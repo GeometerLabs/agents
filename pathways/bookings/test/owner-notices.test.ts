@@ -48,9 +48,6 @@ const SCENARIOS: Scenario[] = [
     run: async (w) => { await bookAndPay(w); w.calendar.inject("update", "silentFailure", { times: 3 }); await w.say("reschedule to 7pm"); } },
   { name: "a customer sends STOP", template: "owner_customer_stopped", says: `^Customer ${customer} sent STOP\\. No more messages will go to them\\.$`,
     run: async (w) => { await w.say("STOP"); } },
-  { name: "a refund above the limit waits for the owner (the one that had a template before)", template: "owner_approval_request", says: `^Approval needed: refund ₹200 for ${customer} \\(haircut, ${WHEN}\\)\\. Reply "approve b-1" or "deny b-1"\\.$`,
-    world: () => createWorld({ settings: parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), cancellation: { windowHours: 24, refundLimitInr: 100 } }) }),
-    run: async (w) => { await bookAndPay(w); await w.say("cancel my booking"); } },
 ];
 
 for (const scenario of SCENARIOS) {
@@ -83,8 +80,10 @@ for (const scenario of SCENARIOS) {
 
 test("every notice the agent sends the owner on its own has a template in all four languages, and a template fills to exactly the line the check reads", () => {
   const ownerIds = (Object.keys(TEMPLATES.en) as TemplateId[]).filter((id) => id.startsWith("owner_"));
-  // The reply to the owner's own message needs none: they have just written, so their window is open.
-  const needTemplate = ownerIds.filter((id) => id !== "owner_unknown_command");
+  // The reply to the owner's own message needs none: they have just written, so their window is open. The approvals relay's answers to
+  // "approve <code>" / "deny <code>" are such replies; its first ask (owner_refund_needs_approval) is not, and has its template.
+  const repliesToTheOwner = ["owner_unknown_command", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed"];
+  const needTemplate = ownerIds.filter((id) => !repliesToTheOwner.includes(id));
   assert.deepEqual(needTemplate.filter((id) => !META_TEMPLATES.some((t) => t.usedFor === id)), [], "an owner notice has no template, so it would be refused outside the window");
   for (const id of needTemplate) {
     for (const language of LANGUAGES) {
