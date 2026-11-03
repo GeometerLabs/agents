@@ -1,0 +1,54 @@
+labels: ["template: bookings"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        About the **Bookings** pathway: setting it up for a shop, what you changed in its settings, what owners asked, or what went wrong.
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: The kind of business. A maintainer adds the matching domain label, so others can find threads by domain.
+      options:
+        - Salons and beauty
+        - Tuition and coaching
+        - Clinics and health
+        - Real estate
+        - Retail and orders
+        - Services (home services, repairs, events)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Customer language
+      multiple: true
+      options:
+        - Hindi
+        - English
+        - Malayalam
+        - Kannada
+        - Other
+  - type: textarea
+    id: body
+    attributes:
+      label: What you want to share or ask
+    validations:
+      required: true
+  - type: input
+    id: hand-check
+    attributes:
+      label: Hand-check result line (if it is about a run)
+      placeholder: "Held 33 of 33.  0 failed.  14 not tested."
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before you post
+      options:
+        - label: No client or customer data (names, phone numbers, messages), and no keys or tokens.
+          required: true
+        - label: No earnings or income figures. What you charge a shop is fine to discuss in replies; income screenshots are not.
+          required: true
+        - label: I do not call the agent "safe" or "guaranteed". I say what was checked and what was not.
+          required: true

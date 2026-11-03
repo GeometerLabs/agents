@@ -1,0 +1,49 @@
+labels: ["template: collections"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        About the **Fee and dues collection** pathway (arriving in Phase 2): setting it up for a tuition centre or gym, what you changed in its settings, what owners and parents asked, or what went wrong.
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: The kind of business. A maintainer adds the matching domain label, so others can find threads by domain.
+      options:
+        - Salons and beauty
+        - Tuition and coaching
+        - Clinics and health
+        - Real estate
+        - Retail and orders
+        - Services (home services, repairs, events)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Customer language
+      multiple: true
+      options:
+        - Hindi
+        - English
+        - Malayalam
+        - Kannada
+        - Other
+  - type: textarea
+    id: body
+    attributes:
+      label: What you want to share or ask
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before you post
+      options:
+        - label: No client or customer data (names, phone numbers, messages), and no keys or tokens.
+          required: true
+        - label: No earnings or income figures. What you charge a shop is fine to discuss in replies; income screenshots are not.
+          required: true
+        - label: I do not call the agent "safe" or "guaranteed". I say what was checked and what was not.
+          required: true
