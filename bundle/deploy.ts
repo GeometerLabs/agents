@@ -29,7 +29,7 @@ import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { Snapshot, State } from "./lib/state.ts";
 import { readStatus, refusalMessage, updateStatus } from "./lib/status.ts";
 import type { GuardProof } from "./lib/status.ts";
-import { Refused, ensureDir, mintGuardToken, mintSecret, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
+import { Refused, ensureDir, mintGuardToken, mintSecret, mintSigningKey, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
 import type { Problem } from "./lib/util.ts";
 
 export interface Context {
@@ -94,7 +94,7 @@ function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks): Prob
 }
 
 type Three = "razorpay" | "whatsapp" | "calendar";
-interface Credentials { agent: Record<Three | "model" | "relay", string>; admin: Record<Three, string>; /** the panel's own agent at each Guard (only when the panel is on): three reads, nothing else */ panel?: Record<Three, string> }
+interface Credentials { agent: Record<Three | "model" | "relay", string>; admin: Record<Three, string>; /** the panel's own agent at each Guard (only when the panel is on): the connection checks' reads, nothing else. One token: the panel reads ONE token file (golive.ts) and presents it to every Guard. */ panel?: string }
 
 /** Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. */
 function ensureCredentials(dir: string, shop: string, panelOn: boolean): Credentials {
@@ -113,11 +113,9 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean): Credent
   writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
   writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar);
   ensureDir(secretFile(dir, `g-${shop}-calendar`));
-  // The panel's agent token for each Guard lives ONLY in the panel's folder (the Guard keeps its hash). 0600: the panel runs as the user who wrote it.
-  const panel = panelOn ? Object.fromEntries((["razorpay", "whatsapp", "calendar"] as const).map((k) => {
-    const path = secretFile(dir, "panel", shop, k);
-    return [k, readSecretFile(path) ?? (() => { const t = mintGuardToken(); writeSecretFile(path, t, 0o600); return t; })()];
-  })) as Record<Three, string> : undefined;
+  // The panel's agent token lives ONLY in the panel's folder (every Guard keeps its hash, under the agent `panel-<shop>`, allowed the reads and nothing else). 0600: the
+  // panel runs as the user who wrote it. One token for the panel, not one per Guard: the panel reads a single token file and presents it to each Guard it checks.
+  const panel = panelOn ? ensureSecret(secretFile(dir, "panel", names.panelGuardToken), mintGuardToken, 0o600) : undefined;
   return { agent, admin, ...(panel ? { panel } : {}) };
 }
 
@@ -126,7 +124,7 @@ const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials) => [
   { id: names.agentId(shop), sha: sha(c.agent[kind as "razorpay"]) },
   ...(kind === "whatsapp" ? [{ id: names.relayAgentId(shop), sha: sha(c.agent.relay), operations: ["send"] }] : []),
   // the panel's own agent: allowed the read operations of its connection checks at this Guard and nothing else
-  ...(c.panel && kind !== "model" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel[kind as Three]), operations: PANEL_READS[kind as Three] }] : []),
+  ...(c.panel && kind !== "model" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel), operations: PANEL_READS[kind as Three] }] : []),
 ];
 
 // ---- preparing a shop -----------------------------------------------------------------------------------------------------------------------
@@ -263,9 +261,10 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
  */
 function preparePanel(ctx: Context): PanelOptions {
   const p = serverPaths(ctx.dir);
-  for (const name of ["data_key", "signing_key"]) {
+  // data_key: 32 bytes as hex (vault.ts). signing_key: an Ed25519 private key in PEM, as the pathway's report key is (report/sign.ts loadPrivateKey); it signs go-live certificates.
+  for (const [name, make] of [["data_key", mintSecret], ["signing_key", mintSigningKey]] as const) {
     const path = secretFile(ctx.dir, "panel", name);
-    if (!readSecretFile(path)) writeSecretFile(path, mintSecret(), 0o600);
+    if (!readSecretFile(path)) writeSecretFile(path, make(), 0o600);
   }
   const { uid, gid } = panelUser();
   for (const d of [p.shops, p.secretsInbox, p.requests, p.exports, p.panel, p.status]) {

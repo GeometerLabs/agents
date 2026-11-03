@@ -1,5 +1,5 @@
 // Small things every part of the bundle shares: names, tokens, files and the plain-words problem list.
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -21,6 +21,8 @@ export const sha256Hex = (text: string): string => createHash("sha256").update(t
 export const mintGuardToken = (): string => `gg_${randomBytes(16).toString("hex")}`;
 /** A secret for services that talk to each other (the runtime's internal token, the relay's token, an approver's signing secret). */
 export const mintSecret = (): string => randomBytes(32).toString("hex");
+/** An Ed25519 private key in PEM (PKCS8): what the panel signs its go-live certificates with. */
+export const mintSigningKey = (): string => generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 
 /**
  * Shop names go into container names, DNS names, URLs and the fleet heartbeat. Fleet refuses a whole heartbeat for one id that looks like an

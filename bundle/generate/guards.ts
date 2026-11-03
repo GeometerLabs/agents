@@ -50,10 +50,12 @@ export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours
 }
 
 /**
- * What the panel's own agent (`panel-<shop>`) may call at each Guard: the three READ operations its connection checks use, and nothing else. The agent is limited
- * to these operations in guard.toml; the routes are in the specs below (Razorpay's `list_links` was already there).
+ * What the panel's own agent (`panel-<shop>`) may call at each Guard: the READ operations its connection checks use, and nothing else. The agent is limited to these
+ * operations in guard.toml; the routes are in the specs below (Razorpay's `list_links` and the calendar's `list` were already there). The calendar check reads the
+ * calendar (`get_calendar`) and then asks for ONE event (`list`, `maxResults=1`) because the access role (can it write?) only comes back with an events list: so the
+ * panel's agent can list that one calendar's events, which Guard's exact-id rule confines to the shop's own calendar and which its checker throws away (it keeps the role).
  */
-export const PANEL_READS: Record<Exclude<GuardKind, "model">, string[]> = { razorpay: ["list_links"], whatsapp: ["read_number"], calendar: ["get_calendar"] };
+export const PANEL_READS: Record<Exclude<GuardKind, "model">, string[]> = { razorpay: ["list_links"], whatsapp: ["read_number"], calendar: ["get_calendar", "list"] };
 
 /** The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own. */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number }): LimitsSpec {

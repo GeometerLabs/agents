@@ -70,7 +70,7 @@ test("each secret folder is mounted into the one container that needs it, and no
   assert.deepEqual(holders("rt-glow-salon"), ["rt-glow-salon"]);
   for (const f of ["inbox", "relay", "refresher", "ops", "litestream", "g-model"]) assert.equal(holders(f).length, 1, f);
   assert.deepEqual(holders("inbox"), ["inbox"]);
-  assert.deepEqual(holders("panel"), ["panel"], "the panel's keys and its agent tokens are in a folder only the panel mounts");
+  assert.deepEqual(holders("panel"), ["panel"], "the panel's keys and its agent token are in a folder only the panel mounts");
   assert.ok(!mounts(c, "caddy").some((m) => m.includes("/srv/secrets/")), "Caddy sees no secrets folder");
 });
 
@@ -134,7 +134,7 @@ test("the panel: on front and its own network only, as the user who runs the dep
   assert.doesNotMatch(JSON.stringify(p), /docker\.sock|\/srv\/state|\/srv\/generated|"\/srv\/secrets:/);
   const env = p.environment as Record<string, string>;
   assert.deepEqual([env.PANEL_SERVER_DIR, env.PANEL_MODE, env.PANEL_PORT, env.PANEL_TRUST_PROXY, env.PANEL_DATA_KEY_FILE, env.PANEL_SIGNING_KEY_FILE], ["/server", "own", "8790", "1", "/run/secrets/data_key", "/run/secrets/signing_key"]);
-  assert.deepEqual([env.PANEL_GUARD_URL, env.PANEL_GUARD_AGENT_TOKEN_FILE, env.PANEL_WEBHOOK_URL], ["http://g-{shop}-{kind}:8080", "/run/secrets/{shop}/{kind}", "https://shops.example.com/c/{shop}/webhooks/{kind}"]);
+  assert.deepEqual([env.PANEL_GUARD_URL, env.PANEL_GUARD_AGENT_TOKEN_FILE, env.PANEL_WEBHOOK_URL], ["http://g-{shop}-{kind}:8080", "/run/secrets/guard_agent_token", "https://shops.example.com/c/{shop}/webhooks/{kind}"]);
   assert.equal(env.PANEL_PUBLIC_URL, "https://shops.example.com");
   assert.equal(env.PANEL_CALENDAR_SHARE_ADDRESS, "calendar@x.iam.gserviceaccount.com");
   assert.equal(p.read_only, true);
