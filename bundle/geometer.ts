@@ -2,6 +2,7 @@
 //
 //   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [backup options]
 //   model-key <file>             the model's API key, handed to the model Guard only
+//   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder>      copy a client folder in (settings.json, runtime.json, pathway.lock)
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing.
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
@@ -14,7 +15,7 @@
 //   backup now | drill           the nightly snapshot and the weekly restore drill, once
 //
 // The deployer is the only process with the Docker socket. The panel never gets it.
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { applyOnce, watch } from "./apply.ts";
@@ -24,7 +25,7 @@ import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { realRunner } from "./lib/runner.ts";
-import { secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
+import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, loadServer, parseServer, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { readStatus, updateStatus } from "./lib/status.ts";
@@ -62,7 +63,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
-      "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" },
+      "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
     },
   }) as { values: Record<string, string | boolean | undefined>; positionals: string[] };
   const str = (k: string) => (typeof values[k] === "string" ? values[k] as string : undefined);
@@ -94,6 +95,16 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return 0;
     }
 
+    if (command === "google-key") {
+      const file = readFileSync(resolve(positionals[0] ?? ""), "utf8");
+      const problem = INTAKE["google_service_account.json"].check(file);
+      if (problem) throw new Error(problem);
+      prepareSecretsRoot(dir);
+      writeSecretFile(secretFile(dir, "refresher", "_server", "google_service_account.json"), file.trim());
+      console.log(`The server-wide Google key is in place (${(JSON.parse(file) as { client_email: string }).client_email}). A shop that hands in no key of its own uses it; share each shop's calendar with that address.`);
+      return 0;
+    }
+
     if (command === "shop" && positionals[0] === "add") {
       const name = positionals[1] ?? "";
       const problem = shopNameProblem(name);
@@ -102,6 +113,9 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (!from) throw new Error("Say which client folder to copy in: shop add <name> --from <folder>");
       const target = serverPaths(dir).shop(name);
       if (existsSync(target)) throw new Error(`There is already a shop called ${name}.`);
+      // a name whose secrets inbox already holds files belongs to a setup someone else started (the panel makes the inbox first): never adopt it
+      const waiting = serverPaths(dir).inbox(name);
+      if (existsSync(waiting) && readdirSync(waiting).length > 0) throw new Error(`The secrets inbox for ${name} already holds files, so that name is taken by a setup in progress. Choose another name.`);
       mkdirSync(target, { recursive: true });
       for (const file of ["settings.json", "runtime.json", "pathway.lock"]) {
         const src = join(resolve(from), file);
@@ -143,7 +157,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       const result = JSON.parse(r.stdout.trim().split("\n").at(-1)!) as { reason: string; results: { guard: string; status: number }[] };
       const state = loadState(ctx.dir);
       if (state.shops[shop]) { if (on) state.shops[shop].stopped = { by, at: ctx.now().toISOString(), reason: result.reason }; else delete state.shops[shop].stopped; saveState(ctx.dir, state); }
-      updateStatus(ctx.dir, shop, ctx.now(), (s) => { s.stopped = on ? { by, at: ctx.now().toISOString(), reason: result.reason } : null; });
+      updateStatus(ctx.dir, shop, ctx.now(), (s) => { if (on) s.stopped = { at: ctx.now().toISOString(), by, reason: result.reason }; else delete s.stopped; });
       for (const x of result.results) console.log(`${x.guard}: ${x.status === 200 ? (on ? "stopped" : "released") : `HTTP ${x.status} (not confirmed)`}`);
       console.log(on ? `${shop} is stopped: nothing new goes out. ${result.reason}` : `${shop} is released.`);
       return result.results.every((x) => x.status === 200) ? 0 : 1;
@@ -231,13 +245,13 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     model: { wire: s("model-wire") ?? "openai", model: s("model") ?? "" },
     ...(s("fleet-url") ? { fleet: { url: s("fleet-url"), keyFile: s("fleet-key-file") ?? "" } } : {}),
     ...(s("stream-url") && s("snapshots-url") && recipient ? { backup: { stream: { url: s("stream-url"), ...(s("stream-endpoint") ? { endpoint: s("stream-endpoint") } : {}) }, snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
-    panel: { enabled: v.panel === true },
+    panel: { enabled: v.panel === true, mode: v["panel-mode"] === "hosted" ? "hosted" : "own" },
     ports: { http: s("http-port") ? Number(s("http-port")) : 80, https: s("https-port") ? Number(s("https-port")) : 443 },
   };
   const checked = parseServer(raw);
   if (checked.errors.length > 0) throw new Error(`These need fixing:\n- ${checked.errors.join("\n- ")}`);
   const p = serverPaths(dir);
-  for (const d of [p.shops, p.secretsInbox, p.status, p.state, p.generated]) ensureDir(d);
+  for (const d of [p.shops, p.secretsInbox, p.status, p.state, p.generated, p.requests, p.exports, p.panel]) ensureDir(d);
   prepareSecretsRoot(dir);
   writeAtomic(p.config, stableJson(raw));
   console.log(`Server folder ready: ${dir}\nNext: \`geometer model-key <file>\`, then \`geometer shop add <name> --from <client folder>\`, hand in the shop's secrets, and \`geometer check <name>\`.`);
@@ -254,10 +268,10 @@ async function status(ctx: Context): Promise<number> {
   for (const name of shops) {
     const s = readStatus(ctx.dir, name);
     const o = live?.shops.find((x) => x.id === name);
-    console.log(`${name}  ${s?.versions?.pathway ?? state.shops[name].applied?.pathway ?? "(not deployed)"}  ${o ? (o.up && o.ready ? "running" : o.up ? "up, not ready" : "DOWN") : "unknown"}${s?.stopped ? `  STOPPED by ${s.stopped.by} (${s.stopped.at})` : ""}`);
+    console.log(`${name}  ${s?.versions?.pathway ?? state.shops[name].applied?.pathway ?? "(not deployed)"}  ${o ? (o.up && o.ready ? "running" : o.up ? "up, not ready" : "DOWN") : "unknown"}${s?.stopped ? `  STOPPED${s.stopped.by ? ` by ${s.stopped.by}` : ""} (${s.stopped.at})` : ""}`);
     if (o) for (const g of o.guards) console.log(`  ${g.id}: ${g.admin === null ? "admin port not reachable" : `${g.healthReady ? "ready" : "NOT READY"}, ${g.admin.kill_switch?.on ? "KILLED" : "open"}, tripwires ${g.admin.tripwires?.passed ?? "?"} of ${g.admin.tripwires?.of ?? "?"}${g.admin.tripwires?.ok === false ? " (FAILED)" : ""}`}`);
-    if (s?.tripwires) console.log(`  last deploy: ${s.tripwires.line}`);
-    console.log(`  backup: ${s?.backup.lastBackupAt ? `last snapshot ${s.backup.lastBackupAt}` : "no snapshot yet"}; restore drill: ${s?.backup.lastDrill ? `${s.backup.lastDrill.ok ? "passed" : "FAILED"} ${s.backup.lastDrill.at}${s.backup.lastDrill.ok ? "" : ` (${s.backup.lastDrill.detail})`}` : "never run"}`);
+    if (s?.limits) console.log(`  ${s.limits.line}${s.deploy.state === "failed" ? `; the last deploy FAILED: ${s.deploy.message}` : ""}`);
+    console.log(`  backup: ${s?.backups?.lastCopyAt ? `last snapshot ${s.backups.lastCopyAt}` : "no snapshot yet"}; restore drill: ${s?.backups?.lastDrillAt ? `${s.backups.drillOk ? "passed" : "FAILED"} ${s.backups.lastDrillAt}${s.backups.drillOk ? "" : ` (${s.backups.drillDetail})`}` : "never run"}`);
   }
   return 0;
 }

@@ -23,8 +23,9 @@ test("a good deploy: files written, compose brought up, the running Guards asked
     for (const f of ["compose.yaml", "Caddyfile", "guards/g-glow-salon-razorpay/guard.toml", "guards/g-glow-salon-razorpay/bundle.json", "guards/g-model/guard.toml", "shops/glow-salon/client/runtime.json", "inbox/inbox.json", "relay/relay.json", "refresher/refresher.json", "ops/ops.json"]) assert.ok(existsSync(join(w.paths.generated, f)), f);
     assert.ok(composeCalls(w).some((c) => c[0] === "up"), "docker compose up ran");
     const status = readStatus(w.root, "glow-salon")!;
-    assert.deepEqual([status.lastDeploy?.ok, status.tripwires?.source, status.tripwires?.passed, status.tripwires?.of], [true, "running Guards", 12, 12]);
-    assert.equal(status.versions?.pathway, "bookings@0.1.0");
+    assert.deepEqual([status.deploy.state, status.limits?.proven, status.limits?.of], ["applied", 12, 12]);
+    assert.ok(status.limits!.unprovable.length > 0 && status.limits!.unprovable.every((u) => !u.includes(":")), "what cannot be tested is named, and is not counted");
+    assert.deepEqual([status.versions?.pathway, status.versions?.guard], ["bookings@0.1.0", "geo-guard:0.1.0-alpha.2-pathways.1"]);
     assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, calendar: 1 });
     assert.equal(status.webhooks?.razorpay, "https://shops.example.com/c/glow-salon/webhooks/razorpay");
     assert.ok(w.admin.includes("g-glow-salon-razorpay GET /admin/status"), "the running Guard was asked");
@@ -118,7 +119,7 @@ test("a Guard that runs another policy than the one that was checked stops the s
     const problems = await refusedWith(deploy(w.ctx));
     assert.equal(problems[0].rule, "running-guard:g-glow-salon-whatsapp");
     assert.ok(w.admin.some((a) => a.startsWith("stop glow-salon on")), "the kill switch was engaged");
-    assert.equal(readStatus(w.root, "glow-salon")!.lastDeploy?.ok, false);
+    assert.equal(readStatus(w.root, "glow-salon")!.deploy.state, "failed");
   } finally { w.done(); }
 });
 
@@ -155,7 +156,8 @@ test("apply deploys what the panel wrote, leaves what is up to date alone, and d
   const w = world(); try {
     const first = await applyOnce(w.ctx);
     assert.deepEqual([first.applied, first.failed], [[], 1], "no secrets yet: refused, and said");
-    assert.ok(readStatus(w.root, "glow-salon")!.lastDeploy?.refusal?.some((p) => p.rule === "secret-missing:razorpay_key"));
+    assert.ok(readStatus(w.root, "glow-salon")!.deploy.refusal?.some((p) => p.rule === "secret-missing:razorpay_key"));
+    assert.match(readStatus(w.root, "glow-salon")!.deploy.message!, /secret-missing:razorpay_key/, "and the short form the panel shows");
     assert.deepEqual((await applyOnce(w.ctx)).skipped, ["glow-salon"], "not retried while nothing changed");
     w.handIn("glow-salon");
     assert.deepEqual((await applyOnce(w.ctx)).applied, ["glow-salon"], "secrets arrived: deployed");
@@ -182,7 +184,7 @@ test("adding a second shop recreates the model forwarder, so the model Guard tha
   const w = world({ "glow-salon": panelRuntime(), "bright-tuition": panelRuntime() }); try {
     w.handIn("glow-salon");
     await deploy(w.ctx, "glow-salon");
-    assert.ok(readStatus(w.root, "glow-salon")!.tripwires!.model, "the model Guard's own proof is in the status");
+    assert.ok(readStatus(w.root, "glow-salon")!.limits!.model, "the model Guard's own proof is in the status");
     assert.ok(w.admin.includes("g-model GET /admin/status"), "and was asked of the running Guard");
     w.handIn("bright-tuition");
     w.calls.length = 0;

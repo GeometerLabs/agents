@@ -49,18 +49,29 @@ export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours
   return razorpayLimitsSpec(settings, { tenant: id.tenant, name: id.name, version: id.version, reviewedBy: id.reviewedBy }, { approvalTtlSeconds: approvalHours * 3600, ...(linksPerHour !== undefined ? { caps: { linksPerHour } } : {}) });
 }
 
-/** The shop's own WhatsApp number, exactly: not a longer number that ends the same way. */
+/**
+ * What the panel's own agent (`panel-<shop>`) may call at each Guard: the three READ operations its connection checks use, and nothing else. The agent is limited
+ * to these operations in guard.toml; the routes are in the specs below (Razorpay's `list_links` was already there).
+ */
+export const PANEL_READS: Record<Exclude<GuardKind, "model">, string[]> = { razorpay: ["list_links"], whatsapp: ["read_number"], calendar: ["get_calendar"] };
+
+/** The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own. */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number }): LimitsSpec {
   return {
     ...base(guardDef("whatsapp"), id),
-    routes: [{ method: "POST", path: "/{version}/{phone_number_id}/messages", operation: "send" }],
-    rules: [{ id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] }],
+    routes: [{ method: "POST", path: "/{version}/{phone_number_id}/messages", operation: "send" }, { method: "GET", path: "/{version}/{phone_number_id}", operation: "read_number" }],
+    rules: [
+      { id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
+      { id: "own-number-read", kind: "argument_allowlist", operation: "read_number", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
+    ],
     limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
     intents: [], fail_policy: [],
   };
 }
 
 const EVENT_OPERATIONS = ["insert", "list", "get", "patch", "delete"] as const;
+/** The calendar itself (not an event in it) can be read, to confirm it is the shop's own; nothing about a calendar can be changed. */
+const CALENDAR_READ = { operation: "get_calendar", ruleId: "own-calendar-get-calendar" } as const;
 
 /** The shop's own calendar, exactly, on every event operation. Nothing else is listed: clearing or deleting a calendar is refused as unlisted. */
 export function calendarSpec(id: SpecIdentity, o: { calendarId: string; createdPerHour: number; deletedPerDay: number }): LimitsSpec {
@@ -73,8 +84,10 @@ export function calendarSpec(id: SpecIdentity, o: { calendarId: string; createdP
       { method: "PATCH", path: "/calendar/v3/calendars/{calendarId}/events/{eventId}", operation: "patch" },
       { method: "DELETE", path: "/calendar/v3/calendars/{calendarId}/events/{eventId}", operation: "delete" },
       { method: "POST", path: "/calendar/v3/freeBusy", operation: "free_busy" },
+      { method: "GET", path: "/calendar/v3/calendars/{calendarId}", operation: CALENDAR_READ.operation },
     ],
-    rules: EVENT_OPERATIONS.map((operation) => ({ id: `own-calendar-${operation}`, kind: "argument_allowlist", operation, field: "calendarId", match: "exact", allowed_values: [o.calendarId] })),
+    rules: [...EVENT_OPERATIONS.map((operation) => ({ id: `own-calendar-${operation}`, kind: "argument_allowlist", operation, field: "calendarId", match: "exact", allowed_values: [o.calendarId] })),
+      { id: CALENDAR_READ.ruleId, kind: "argument_allowlist", operation: CALENDAR_READ.operation, field: "calendarId", match: "exact", allowed_values: [o.calendarId] }],
     limits: [count("events-created-per-hour", "insert", o.createdPerHour, 3600), count("events-deleted-per-day", "delete", o.deletedPerDay, 86_400)],
     intents: [], fail_policy: [],
   };

@@ -3,6 +3,9 @@
 //   geometer.json            this server: its id, domain, fleet address, backup target, the model (written by `init`)
 //   shops/<shop>/            DESIRED STATE. settings.json, runtime.json, pathway.lock. The panel (or `shop add`) writes these.
 //   secrets-inbox/<shop>/    secrets handed in (razorpay_key, whatsapp_token, ...). The deployer moves each into the one container that needs it and deletes it.
+//   requests/<shop>.stop.json  a request to stop a shop; the deployer acts, shows `stopped` in status, then removes it (the panel writes these)
+//   exports/<shop>/          record.json and bookings.json for the monthly report, without customers' numbers (the deployer writes these)
+//   panel/                   the panel's own data (accounts, drafts, papers); the panel writes it, the deployer never reads it
 //   status/<shop>.json       RESULTS the deployer writes for the panel: last deploy, "N of M limits proven", versions, last backup and drill.
 //   state/                   the deployer's own memory: Guard bundle versions, stopped shops, lock history, backup times.
 //   generated/               compose.yaml, Caddyfile, per-container config. Rewritten on every deploy; never edited by hand.
@@ -60,7 +63,8 @@ export interface ServerConfig {
   /** For a test: another host for a provider's Guard. */
   upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model", Upstream>>;
   limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
-  panel: { enabled: boolean };
+  /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's partner server (the data key is required). */
+  panel: { enabled: boolean; mode: "own" | "hosted" };
   /** Publish Caddy's ports on these host ports. Default 80 and 443. */
   ports: { http: number; https: number };
   /** Seconds between heartbeats. Fleet's contract says 60; a test makes it shorter. */
@@ -82,7 +86,13 @@ export function serverPaths(dir: string) {
     shops: join(root, "shops"),
     shop: (name: string) => join(root, "shops", name),
     secretsInbox: join(root, "secrets-inbox"),
+    inbox: (name: string) => join(root, "secrets-inbox", name),
     status: join(root, "status"),
+    requests: join(root, "requests"),
+    stopRequest: (name: string) => join(root, "requests", `${name}.stop.json`),
+    exports: join(root, "exports"),
+    exportsOf: (name: string) => join(root, "exports", name),
+    panel: join(root, "panel"),
     statusFile: (name: string) => join(root, "status", `${name}.json`),
     state: join(root, "state"),
     generated: join(root, "generated"),
@@ -144,7 +154,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     network: { base },
     ...(isObj(o.upstreams) ? { upstreams: o.upstreams as ServerConfig["upstreams"] } : {}),
     limits: { razorpayLinksPerHour: limit("razorpayLinksPerHour", 60), whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
-    panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false },
+    panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own" },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
@@ -179,9 +189,18 @@ export interface PanelRuntime {
   [key: string]: unknown;
 }
 
+/** shops/<shop>/pins.json, written by the panel after its connection checks: the ids the providers confirmed. None is a secret. The generator pins the Guards to THESE. */
+export interface Pins {
+  whatsapp?: { phoneNumberId: string };
+  calendar?: { calendarId: string };
+  razorpay?: { keyId: string; mode: "test" | "live" };
+}
+
 export interface ShopFolder {
   name: string;
   settingsText: string;
+  pinsText: string;
+  pins: Pins;
   settings: Settings | undefined;
   runtime: PanelRuntime;
   lock: { pathway: string; version: string } | undefined;
@@ -214,8 +233,21 @@ export function readShop(dir: string, name: string): ShopFolder {
   if (runtimeText) {
     try { const parsed: unknown = JSON.parse(runtimeText); if (isObj(parsed)) runtime = parsed as PanelRuntime; else problems.push("runtime.json must be an object."); } catch (e) { problems.push(`runtime.json is not valid JSON: ${(e as Error).message}`); }
   }
+  // pins.json is optional: without it the ids in runtime.json are used
+  const pinsPath = join(folder, "pins.json");
+  const pinsText = existsSync(pinsPath) ? readFileSync(pinsPath, "utf8") : "";
+  const pins: Pins = {};
+  if (pinsText) {
+    try {
+      const p: unknown = JSON.parse(pinsText);
+      if (!isObj(p) || p.schema !== 1) throw new Error("it is not a pins file (schema 1)");
+      if (isObj(p.whatsapp) && typeof p.whatsapp.phoneNumberId === "string") pins.whatsapp = { phoneNumberId: p.whatsapp.phoneNumberId };
+      if (isObj(p.calendar) && typeof p.calendar.calendarId === "string") pins.calendar = { calendarId: p.calendar.calendarId };
+      if (isObj(p.razorpay) && typeof p.razorpay.keyId === "string" && (p.razorpay.mode === "test" || p.razorpay.mode === "live")) pins.razorpay = { keyId: p.razorpay.keyId, mode: p.razorpay.mode };
+    } catch (e) { problems.push(`pins.json is not usable: ${(e as Error).message}`); }
+  }
   const lockText = read("pathway.lock");
   let lock: { pathway: string; version: string } | undefined;
   if (lockText) { try { lock = parseLock(lockText); } catch (e) { problems.push((e as Error).message); } }
-  return { name, settingsText, settings, runtime, lock, lockText, problems };
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, problems };
 }

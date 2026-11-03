@@ -1,7 +1,7 @@
 // One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
-import type { ModelConfig, PanelRuntime, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
+import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
 import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, razorpaySpec, whatsappSpec } from "./guards.ts";
@@ -24,6 +24,7 @@ export const names = {
   modelStateVolume: "gs-model",
   agentId: (shop: string) => `runtime-${shop}`,
   relayAgentId: (shop: string) => `relay-${shop}`,
+  panelAgentId: (shop: string) => `panel-${shop}`,
   approverId: (shop: string) => `owner-${shop}`,
 };
 
@@ -67,10 +68,15 @@ export function modelBaseUrl(model: ModelConfig): string {
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** The pieces of runtime.json the generator needs, checked. */
-function runtimeFacts(server: ServerConfig, panel: PanelRuntime, problems: Problem[], notes: string[]) {
+function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[]) {
   const services = isObj(panel.services) ? panel.services : {};
-  const calendarId = isObj(services.calendar) ? services.calendar.calendarId : undefined;
-  const phoneNumberId = isObj(services.messaging) ? services.messaging.phoneNumberId : undefined;
+  // The ids the providers CONFIRMED (pins.json, written after the panel's connection checks) win over what runtime.json says, for the Guards AND for the
+  // runtime, so the two always agree. A runtime.json that differs is said so.
+  const written = { calendar: isObj(services.calendar) ? services.calendar.calendarId : undefined, whatsapp: isObj(services.messaging) ? services.messaging.phoneNumberId : undefined };
+  const calendarId = pins.calendar?.calendarId ?? written.calendar;
+  const phoneNumberId = pins.whatsapp?.phoneNumberId ?? written.whatsapp;
+  if (pins.calendar && written.calendar !== undefined && written.calendar !== pins.calendar.calendarId) notes.push("runtime.json names another calendar than the one the connection check confirmed (pins.json); the confirmed one is used.");
+  if (pins.whatsapp && written.whatsapp !== undefined && written.whatsapp !== pins.whatsapp.phoneNumberId) notes.push("runtime.json names another WhatsApp number id than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (typeof calendarId !== "string" || calendarId.trim() === "") problems.push({ rule: "calendar-id", message: 'runtime.json needs services.calendar.calendarId: the shop\'s own Google calendar. The calendar Guard allows exactly that one and refuses every other.' });
   if (typeof phoneNumberId !== "string" || !/^\d{6,20}$/u.test(phoneNumberId)) problems.push({ rule: "whatsapp-number-id", message: 'runtime.json needs services.messaging.phoneNumberId: the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.' });
 
@@ -100,7 +106,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, problems: Probl
 export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}): ShopPlan {
   const problems: Problem[] = shop.problems.map((message) => ({ rule: "shop-folder", message }));
   const notes: string[] = [];
-  const facts = runtimeFacts(server, shop.runtime, problems, notes);
+  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes);
   const guards: GuardPlan[] = [];
   let runtime: Record<string, unknown> = {};
 

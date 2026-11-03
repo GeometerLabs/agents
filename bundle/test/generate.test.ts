@@ -22,8 +22,13 @@ test("a good shop gives three Guards: Razorpay from the settings, WhatsApp and C
   const deposit = razorpay.spec.rules.find((r: any) => r.id === "deposit-amount");
   assert.equal(deposit.min, deposit.max, "the only amount a link may be made for is the shop's deposit");
   assert.equal(razorpay.spec.rules.find((r: any) => r.id === "refund-needs-owner").kind, "call_bound_approval");
-  assert.deepEqual(whatsapp.spec.rules, [{ id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", match: "exact", allowed_values: [PHONE_NUMBER_ID] }]);
-  assert.equal(calendar.spec.rules.length, 5);
+  assert.deepEqual(whatsapp.spec.rules, [
+    { id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", match: "exact", allowed_values: [PHONE_NUMBER_ID] },
+    { id: "own-number-read", kind: "argument_allowlist", operation: "read_number", field: "phone_number_id", match: "exact", allowed_values: [PHONE_NUMBER_ID] },
+  ]);
+  assert.deepEqual(calendar.spec.rules.map((r: any) => r.operation), ["insert", "list", "get", "patch", "delete", "get_calendar"]);
+  assert.ok(whatsapp.spec.routes.some((r: any) => r.operation === "read_number" && r.method === "GET" && r.path === "/{version}/{phone_number_id}"));
+  assert.ok(calendar.spec.routes.some((r: any) => r.operation === "get_calendar" && r.method === "GET" && r.path === "/calendar/v3/calendars/{calendarId}"));
   for (const r of calendar.spec.rules) assert.deepEqual([r.field, r.match, r.allowed_values], ["calendarId", "exact", [CALENDAR_ID]]);
   assert.ok(!calendar.spec.routes.some((r: any) => r.operation === "clear"), "clearing a calendar is not even listed");
   for (const g of p.guards) assert.equal(g.tenant, "glow-salon");
