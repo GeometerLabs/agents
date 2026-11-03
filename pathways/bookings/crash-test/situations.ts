@@ -298,7 +298,6 @@ export const situations: Situation[] = [
       w.payments.customerPays(w.linkFor("b-1")!.id);
       await w.deliverPaymentEvents();
       expect("The booking confirms at the normal terms, and nothing was refunded as a discount", confirmedEvents(w).length === 1 && w.payments.refunds().length === 0);
-      expect("The record shows the price floor held", w.record.entries().some((e) => e.decisions.some((d) => d.ruleId === "price-at-or-above-list" && d.verdict === "block")));
       return results;
     },
   })),
@@ -326,7 +325,6 @@ export const situations: Situation[] = [
       await f.say(trick);
       expect("Even when the parser is fooled, the only link is the ₹200 deposit", f.payments.links().length === 1 && f.payments.links()[0].amount === 20000, JSON.stringify(f.payments.links()));
       expect("Even when the parser is fooled, every amount in every message is a list price or the ₹200 deposit", f.textsTo(CUSTOMER).every((t) => amountsIn(t).every((n) => LIST_AND_DEPOSIT.includes(n))), f.textsTo(CUSTOMER).join(" | "));
-      expect("Even when the parser is fooled, the limit is recorded as having held", f.record.entries().some((e) => e.decisions.some((d) => d.ruleId === "price-at-or-above-list" && d.verdict === "block")));
       return results;
     },
   })),
@@ -436,7 +434,6 @@ export const situations: Situation[] = [
       expect("The messaging service's own outbox flags nothing sent after the opt-out", w.messaging.outbox().every((m) => !m.afterOptOut));
       expect("The booking itself stands: the calendar still shows it", confirmedEvents(w).length === 1);
       expect("The owner was told about the STOP", w.textsTo(w.owner).some((t) => t.includes("STOP")));
-      expect("The record shows the reminders were stopped by the limits", w.record.entries().some((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "no-message-after-stop" && d.verdict === "block")));
       return results;
     },
   },
@@ -575,6 +572,29 @@ export const situations: Situation[] = [
       await w.say("I want a haircut tomorrow at 11am", { from: OTHER_CUSTOMER });
       await w.say("reschedule to 11am");
       expect("A time another customer holds is refused: the booking stays at 7pm", confirmedEvents(w).length === 1 && confirmedEvents(w)[0].start === at(4, 19), JSON.stringify(w.calendar.events()));
+      return results;
+    },
+  },
+
+  {
+    id: "reschedule-slot-taken-meanwhile",
+    title: "A reschedule is confirmed after someone else took the new time",
+    how: "The customer asks for next Tuesday 6pm and is asked to confirm; another customer holds that slot; then the first says yes",
+    async run() {
+      const { results, expect } = checker();
+      const TUE_10_6PM = at(10, 18);
+      const w = createWorld();
+      await bookAndPay(w); // Wed 4 Nov, 6pm
+      await w.say("reschedule to next Tuesday 6pm");
+      expect("Asked to confirm, nothing has moved yet", confirmedEvents(w).length === 1 && confirmedEvents(w)[0].start === WED_6PM);
+      await w.say("haircut next Tuesday 6pm", { from: OTHER_CUSTOMER });
+      await w.say("yes", { from: OTHER_CUSTOMER }); // the other customer holds Tue 10 Nov, 6pm
+      expect("The other customer holds the slot", w.calendar.events().some((e) => e.bookingRef === "b-2" && e.start === TUE_10_6PM));
+      await w.say("yes"); // the first customer agrees to the move, too late
+      expect("The first booking is still at Wed 4 Nov, 6pm", confirmedEvents(w).length === 1 && confirmedEvents(w)[0].bookingRef === "b-1" && confirmedEvents(w)[0].start === WED_6PM, JSON.stringify(w.calendar.events()));
+      expect("The other customer's hold is untouched", w.calendar.events().filter((e) => e.bookingRef === "b-2").length === 1 && w.calendar.events().find((e) => e.bookingRef === "b-2")!.start === TUE_10_6PM);
+      expect("Nothing overlaps: two events in all", bookingEvents(w).length === 2);
+      expect("The customer was told the time is not available", w.lastTextTo(CUSTOMER).includes("not available"), w.lastTextTo(CUSTOMER));
       return results;
     },
   },

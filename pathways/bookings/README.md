@@ -28,7 +28,7 @@ Agent:    हमारा हेयरकट ₹450 का है, इससे 
           बुधवार, 4 नवंबर, शाम 6:00 बजे खाली है। ₹200 जमा करके पक्का करें: https://rzp.io/l/… (स्लॉट 15 मिनट के लिए रोका गया है।)
 ```
 
-Every amount, date, time, service and link in a message is written from the booking's record by a fixed template, then read back from the final text and checked against the record before it is sent. In v0 there is no model-written text.
+Every amount, date, time, service and link in a message is written from the booking's record by a fixed template, then read back from the final text and checked against the record's values before it is sent. In v0 there is no model-written text.
 
 ## Settings: tailoring without code
 
@@ -60,7 +60,7 @@ These are pure checks in [`src/limits.ts`](src/limits.ts). Each reads only its a
 | `one-deposit-per-booking` | A second payment is not another deposit: refund it within the limit, and tell the owner |
 | `refund-limit` | A refund above the limit, or for a late cancellation, needs the owner's approval. "Within the limit" includes the limit itself |
 | `no-message-after-stop` | No reminder after a cancellation, a finished booking or STOP |
-| `message-matches-record` | Every amount, date, time and link in a message equals the record. Anything unexplained blocks the message |
+| `message-matches-record` | Every amount, date, time and link in a message is a value from this booking's record; anything the record cannot explain blocks the message. It compares values, not which label a value sits under (see [Deferred.md](Deferred.md)) |
 | `opt-out` | STOP ends all messages to the customer. No reply, no reminder |
 
 ## How a booking moves

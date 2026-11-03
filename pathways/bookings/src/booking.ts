@@ -112,13 +112,14 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 }
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
-export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number } = {}): MessageFacts {
+export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; menu?: boolean } = {}): MessageFacts {
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
     language,
     timeZone: settings.timezone,
     businessName: settings.name,
-    services: settings.services.map((s) => ({ name: serviceName(s, language), priceInr: s.priceInr })),
+    // Only the menu may state every service's price; any other message may state this booking's own service and nothing else.
+    services: (extra.menu ? settings.services : service ? [service] : []).map((s) => ({ name: serviceName(s, language), priceInr: s.priceInr })),
     serviceName: service ? serviceName(service, language) : undefined,
     priceInr: service?.priceInr,
     depositInr: booking?.depositInr ?? settings.deposit.amountInr,

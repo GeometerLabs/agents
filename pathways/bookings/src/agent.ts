@@ -78,7 +78,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const toCustomer = a.to === "customer";
     const toNumber = toCustomer ? a.phone : owner;
     const language = toCustomer ? languageOf(a.phone, a.booking) : settings.owner.language;
-    const facts = factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs });
+    const facts = factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") });
     const inputs = { to: a.to, templates: a.templates, refundInr: a.refundInr, slotMs: a.slotMs };
     let text: string;
     try {
@@ -569,24 +569,30 @@ export function createAgent(deps: AgentDeps): Agent {
     const start = probe.startMs!;
     const end = probe.endMs!;
 
-    const { hours, clash } = await slotRules(b, start, end);
-    const blocked = start <= clock.now() || hours.verdict === "block" || clash.verdict === "block";
-    if (blocked) {
-      log(b, phone, "reschedule_booking", "blocked", { start }, { decisions: [hours, clash], notes: start <= clock.now() ? "that time has already passed" : undefined });
-      await tellCustomer(b, phone, [hours.verdict === "block" ? "outside_hours" : "slot_unavailable"], { slotMs: start, shown: [hours, clash] });
-      return;
-    }
     b.reschedule = { date: probe.date!, timePhrase: probe.timePhrase!, startMs: start, endMs: end };
     if (probe.dateNeedsConfirmation || probe.timeInferred) {
+      // Ask only about a time that is possible right now; it is checked again when the customer says yes.
+      if (!(await moveAllowed(b, b.reschedule))) { b.reschedule = undefined; return; }
       await tellCustomer(b, phone, ["confirm_details"], { slotMs: start });
       return;
     }
     await applyReschedule(b);
   }
 
+  /** Can this booking move to this time right now? If not, say why to the customer. Hours and double-booking are checked again at every move. */
+  async function moveAllowed(b: Booking, move: { startMs: number; endMs: number }): Promise<boolean> {
+    const { hours, clash } = await slotRules(b, move.startMs, move.endMs);
+    const past = move.startMs <= clock.now();
+    if (!past && hours.verdict !== "block" && clash.verdict !== "block") return true;
+    log(b, b.customer, "reschedule_booking", "blocked", { start: move.startMs }, { decisions: [hours, clash], notes: past ? "that time has already passed" : undefined });
+    await tellCustomer(b, b.customer, [hours.verdict === "block" ? "outside_hours" : "slot_unavailable"], { slotMs: move.startMs, shown: [hours, clash] });
+    return false;
+  }
+
   async function applyReschedule(b: Booking): Promise<void> {
     const move = b.reschedule!;
     b.reschedule = undefined;
+    if (!(await moveAllowed(b, move))) return; // the customer's yes may come after someone else took the time
     const want: Wanted = { start: move.startMs, end: move.endMs, status: "confirmed" };
     log(b, b.customer, "reschedule_booking", "attempted", want);
     const found = await ensureEvent(b, want);

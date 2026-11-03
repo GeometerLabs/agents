@@ -12,10 +12,7 @@ const SLOT = zonedToMs({ year: 2026, month: 11, day: 10 }, { hour: 18, minute: 0
 function facts(language: "hi" | "en", change: Partial<MessageFacts> = {}): MessageFacts {
   return {
     language, timeZone: TZ, businessName: "Glow Salon",
-    services: [
-      { name: language === "hi" ? "हेयरकट" : "haircut", priceInr: 450 },
-      { name: language === "hi" ? "फेशियल" : "facial", priceInr: 900 },
-    ],
+    services: [{ name: language === "hi" ? "हेयरकट" : "haircut", priceInr: 450 }], // as in a real message: only this booking's own service
     serviceName: language === "hi" ? "हेयरकट" : "haircut",
     priceInr: 450, depositInr: 200, refundInr: 200, slotMs: SLOT,
     link: "https://rzp.io/l/plink3", holdMinutes: 15, windowHours: 24, bookingRef: "b-3", customerPhone: "+919811111111",
@@ -25,6 +22,13 @@ function facts(language: "hi" | "en", change: Partial<MessageFacts> = {}): Messa
 
 const ids = Object.keys(TEMPLATES.en) as TemplateId[];
 
+/** The facts a message is checked against: only the menu may state every service's price. */
+function factsFor(language: "hi" | "en", id: TemplateId): MessageFacts {
+  return id === "menu"
+    ? facts(language, { services: [{ name: language === "hi" ? "हेयरकट" : "haircut", priceInr: 450 }, { name: language === "hi" ? "फेशियल" : "facial", priceInr: 900 }] })
+    : facts(language);
+}
+
 test("every template exists in every language", () => {
   for (const language of LANGUAGES) assert.deepEqual(Object.keys(TEMPLATES[language]).sort(), [...ids].sort(), language);
 });
@@ -32,8 +36,8 @@ test("every template exists in every language", () => {
 test("drift check: every template, in both languages, passes the outgoing check against the record it was rendered from", () => {
   for (const language of LANGUAGES) {
     for (const id of ids) {
-      const text = render(id, facts(language));
-      const result = checkMessage(text, facts(language));
+      const text = render(id, factsFor(language, id));
+      const result = checkMessage(text, factsFor(language, id));
       assert.deepEqual(result.problems, [], `${language}/${id}: ${text}`);
     }
   }
@@ -46,7 +50,8 @@ test("the product's own examples render exactly as written", () => {
 
 // ---- mutations: change one value in a message that was fine, and the check must catch it ----
 
-const mutations: { name: string; apply: (text: string) => string }[] = [
+const mutations: { name: string; apply: (text: string) => string; skipMenu?: boolean }[] = [
+  { name: "an amount is replaced by ANOTHER service's price", apply: (t) => t.replace("₹450", "₹900"), skipMenu: true }, // the menu legitimately lists both
   { name: "an amount is changed", apply: (t) => t.replace(/₹(\d+)/u, (_, n) => `₹${Number(n) + 50}`) },
   { name: "an amount is replaced by the customer's offer", apply: (t) => t.replace(/₹450/u, "₹300") },
   { name: "the time's am/pm or period is flipped", apply: (t) => t.replace("6:00 pm", "6:00 am").replace("शाम 6:00", "सुबह 6:00") },
@@ -63,12 +68,13 @@ test("mutation check: changing any one value in any rendered template makes the 
   let tried = 0;
   for (const language of LANGUAGES) {
     for (const id of ids) {
-      const original = render(id, facts(language));
+      const original = render(id, factsFor(language, id));
       for (const m of mutations) {
+        if (m.skipMenu && id === "menu") continue;
         const mutated = m.apply(original);
         if (mutated === original) continue; // this template has no such value
         tried++;
-        assert.equal(checkMessage(mutated, facts(language)).ok, false, `${language}/${id}: "${m.name}" was not caught in: ${mutated}`);
+        assert.equal(checkMessage(mutated, factsFor(language, id)).ok, false, `${language}/${id}: "${m.name}" was not caught in: ${mutated}`);
       }
     }
   }
@@ -80,7 +86,16 @@ test("mutation check: changing any one value in any rendered template makes the 
 test("a message that quotes the customer's price instead of the list price is blocked, in plain words", () => {
   const r = checkMessage("Sure, a haircut is ₹300.", facts("en"));
   assert.equal(r.ok, false);
-  assert.match(r.problems[0], /The message says ₹300, but the record only has ₹200, ₹450, ₹900\./);
+  assert.match(r.problems[0], /The message says ₹300, but the record only has ₹200, ₹450\./);
+});
+
+test("another service's price is not this booking's price: a haircut at ₹900 is blocked, the facial's ₹900 is fine on the menu", () => {
+  assert.equal(checkMessage("Our haircut is ₹900.", facts("en")).ok, false);
+  assert.equal(checkMessage(render("menu", factsFor("en", "menu")), factsFor("en", "menu")).ok, true);
+});
+
+test("known limit: values are compared as a set, so a deposit and a price swapped between themselves still pass", () => {
+  assert.equal(checkMessage("Pay a ₹450 deposit to confirm.", facts("en")).ok, true); // both ₹450 and ₹200 belong to this booking; see Deferred.md
 });
 
 test("a wrong time of day is blocked: सुबह 6:00 बजे when the record says 6:00 in the evening", () => {
