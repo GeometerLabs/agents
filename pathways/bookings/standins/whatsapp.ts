@@ -28,8 +28,27 @@ export function approveTemplates(messaging: FakeMessaging): void {
   for (const t of META_TEMPLATES) for (const language of LANGUAGES) messaging.approve(t.name, language);
 }
 
-export function whatsappStandin(messaging: FakeMessaging, options: { phoneNumberId?: string } = {}): Handler {
-  return async ({ method, path, body }) => {
+/**
+ * `displayPhoneNumber` and `verifiedName` are what the read of the number's own details shows (GET /{version}/{phone-number-id}), which is how a
+ * connection check confirms whose number an id is. Meta writes the number with spaces and dashes, so the default does too.
+ */
+export function whatsappStandin(messaging: FakeMessaging, options: { phoneNumberId?: string; displayPhoneNumber?: string; verifiedName?: string } = {}): Handler {
+  const details = (id: string, fields: string | null) => {
+    const all: Record<string, string> = {
+      display_phone_number: options.displayPhoneNumber ?? "+1 555-000-0000", verified_name: options.verifiedName ?? "Stand-in shop",
+      quality_rating: "GREEN", code_verification_status: "VERIFIED",
+    };
+    const wanted = fields ? fields.split(",").map((f) => f.trim()) : Object.keys(all); // like Meta: the fields asked for, and the id
+    return { id, ...Object.fromEntries(Object.entries(all).filter(([k]) => wanted.includes(k))) };
+  };
+  return async ({ method, path, body, query }) => {
+    const own = /^\/v\d+\.\d+\/([^/]+)$/u.exec(path); // read-only: the number's own details
+    if (own) {
+      const id = decodeURIComponent(own[1]);
+      if (method !== "GET") return metaError(405, 100, "Unsupported request.");
+      if (id !== (options.phoneNumberId ?? "100000000000001")) return metaError(400, 100, `Unsupported get request. Object with ID '${id}' does not exist, cannot be loaded due to missing permissions, or does not support this operation.`);
+      return ok(details(id, query.get("fields")));
+    }
     const m = /^\/v\d+\.\d+\/([^/]+)\/messages$/u.exec(path);
     if (!m) return undefined;
     if (method !== "POST") return metaError(405, 100, "Unsupported request.");

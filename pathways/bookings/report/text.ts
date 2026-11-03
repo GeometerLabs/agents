@@ -6,8 +6,9 @@
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import { MONTH_NAMES, formatDate, formatInr } from "../src/language/format.ts";
 import type { Language } from "../src/settings.ts";
+import type { LocalDate } from "../src/time.ts";
 import { RULE_IDS } from "./data.ts";
-import type { MonthlyReport } from "./data.ts";
+import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";
 
 /** "both" is Hindi and English, one message after the other. */
@@ -19,6 +20,23 @@ export const languagesOf = (language: ReportLanguage): readonly Language[] => (l
 export function periodLabel(period: MonthlyReport["period"], language: Language): string {
   if (period.month) return `${MONTH_NAMES[language][period.month.month - 1]} ${period.month.year}`;
   return `${formatDate(period.firstDay, language)} – ${formatDate(period.lastDay, language)} ${period.lastDay.year}`;
+}
+
+/**
+ * What a monthly document says about the go-live checks, as sentences in the shop's language: no certificate was given, one was given and could
+ * not be trusted, or one was read and says what its checks ran on (with its date, the counts it states, and the key that signed it). Never a
+ * grade: the counts are the certificate's own, and only for a certificate whose checks ran on this shop's settings.
+ */
+export function goLiveLines(goLive: GoLiveFinding, language: Language): string[] {
+  const s = STRINGS[language];
+  const when = (d: LocalDate) => `${formatDate(d, language)} ${d.year}`;
+  switch (goLive.status) {
+    case "none": return [s.goLive.none];
+    case "untrusted": return [s.goLive.untrusted];
+    case "own": return [s.goLive.own(when(goLive.issuedOn)), s.cert.held(goLive.held, goLive.total, goLive.failed, goLive.notTested), s.goLive.signedWith(goLive.signedBy)];
+    case "example": return [s.goLive.example(when(goLive.issuedOn)), s.goLive.signedWith(goLive.signedBy)];
+    case "different": return [s.goLive.different(when(goLive.issuedOn)), s.goLive.signedWith(goLive.signedBy)];
+  }
 }
 
 export const rupees = (paise: number): string => formatInr(paise / 100);

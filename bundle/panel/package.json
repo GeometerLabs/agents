@@ -1,0 +1,11 @@
+{
+  "name": "geometer-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geometer's open panel: shops, phone setup, connection checks and the monthly cost line. Zero dependencies; one panel for a builder's own server and for Geometer's partner server.",
+  "scripts": {
+    "test": "node --test test/",
+    "panel": "node main.ts"
+  }
+}

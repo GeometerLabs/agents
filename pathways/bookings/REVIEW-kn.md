@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (32)
+## 1. Messages to the customer (33)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -44,6 +44,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ. ಖಚಿತವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | We are checking your ₹200 refund and will message you as soon as it is confirmed. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Glow Salon ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
+| `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I can't listen to voice notes yet. |  |
 
 ## 2. Messages to the owner (14)
 
@@ -206,7 +207,7 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 ಆದ ಬುಕಿಂಗ್: 38 · ರದ್ದಾದವು: 3 · ಬಂದ ಮುಂಗಡ ಹಣ: ₹17,600 · ಹಿಂತಿರುಗಿಸಿದ್ದು: ₹400
 ನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: 3 · ನೀವು ಒಪ್ಪಿದ್ದು: 2 · ನೀವು ಬೇಡ ಎಂದದ್ದು: 1 · ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: 1
 ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5 (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: 3 · ಕೆಲಸದ ಸಮಯದ ಹೊರಗಿನ ಬುಕಿಂಗ್: 1 · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: 1)
-ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ```
 
 ### Every word and phrase of the report and the certificates
@@ -264,6 +265,9 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `notTested.other-faults` | ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು | problems beyond the ones tried |  |
 | `notTested.own-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಇವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು) | these checks on this shop's own settings (they ran on the example shop, Glow Salon) |  |
 | `notTested.situations-skipped` | ಈ ಪರಿಶೀಲನೆಗಳಲ್ಲಿ ಕೆಲವು, ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಡೆಸಲಾಗದ ಕಾರಣ ಬಿಟ್ಟಿದೆ | some of these checks, which this shop's settings cannot run (so they were left out) |  |
+| `notTested.other-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ ಇವು ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು) | these checks on this shop's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ) | these checks on this shop's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಕೊಟ್ಟ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ) | these checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
 | `notCounted.no-shows` | ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ) | who turned up (a booking is marked finished when its time passes) |  |
 | `notCounted.read-receipts` | ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ಏಜೆಂಟ್ ಮೂಲಕ ಅಲ್ಲದೆ ನಡೆದ ಬುಕಿಂಗ್, ಕರೆ, ಪಾವತಿ | bookings, calls and payments that did not go through the agent |  |
@@ -336,4 +340,326 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `cert.handRunLine` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp, ಪಾವತಿ, ಕ್ಯಾಲೆಂಡರ್ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ. | Checks were run by hand against stand-in services, not real WhatsApp, payments or a calendar. Test money only. |  |
 | `cert.countedIntro` | ಏಜೆಂಟ್‌ನ ದಾಖಲೆಯಿಂದ ಎಣಿಸಿದ್ದು, Nov 2026: | Counted from the agent's record for Nov 2026: |  |
 | `cert.checkedOn` | ಪರಿಶೀಲನೆ ನಡೆದದ್ದು | Checks run on |  |
+| `goLive.heading` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆ | Go-live checks |  |
+| `goLive.own` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆಯೇ ನಡೆದವು, Tue 10 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ. | The go-live checks ran on this shop's own settings, in the go-live certificate of Tue 10 Nov 2026. |  |
+| `goLive.example` | Tue 10 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು, ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಅಲ್ಲ. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on the example shop, Glow Salon, not on this shop's own settings. |  |
+| `goLive.different` | Tue 10 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಗಿಂತ ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು, ಆದ್ದರಿಂದ ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate of Tue 10 Nov 2026 says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave. |  |
+| `goLive.untrusted` | ಒಂದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಡಲಾಗಿತ್ತು, ಆದರೆ ಅದನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ (ಅದರಲ್ಲಿ ಸಹಿ ಇಲ್ಲ, ಸಹಿ ಹೊಂದುವುದಿಲ್ಲ, ಅಥವಾ ಅದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವೇ ಅಲ್ಲ), ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate), so it was not used. |  |
+| `goLive.none` | ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ, ಆದ್ದರಿಂದ ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಯಾವ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು ಎಂದು ಈ ದಾಖಲೆ ಹೇಳುವುದಿಲ್ಲ. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರಕ್ಕೆ ಸಹಿ ಮಾಡಿದ್ದು key:3f9a1c… ಎಂಬ ಕೀಲಿಯಿಂದ. ಆ ಕೀಲಿ ಯಾರ ಬಳಿ ಇದೆ ಎಂದು ಕೀಲಿ ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate is signed with key:3f9a1c…. A key does not show who holds it. |  |
+
+## 7. The panel and the phone setup
+
+Everything a partner or builder reads in the panel, in Kannada: signing in, the shop's status and its monthly cost line, and the five setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the checks). Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
+
+What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and Razorpay read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, Razorpay, Google Calendar, Guard, Geometer).
+
+| Id | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- |
+| `appName` | Geometer | Geometer |  |
+| `languageName` | ಕನ್ನಡ | English |  |
+| `draftNote` | ಈ ಅನುವಾದವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ, ಇನ್ನೂ ಕನ್ನಡ ಮಾತೃಭಾಷಿಕರು ಓದಿಲ್ಲ. ಯಾವುದಾದರೂ ಪದ ತಪ್ಪಾಗಿ ಕಂಡರೆ ನಿಮ್ಮ Geometer ಸಂಪರ್ಕದವರಿಗೆ ತಿಳಿಸಿ. |  |  |
+| `nav.shops` | ಅಂಗಡಿಗಳು | Shops |  |
+| `nav.setUp` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
+| `nav.invite` | ಯಾರನ್ನಾದರೂ ಆಹ್ವಾನಿಸಿ | Invite someone |  |
+| `nav.signOut` | ಸೈನ್ ಔಟ್ | Sign out |  |
+| `common.back` | ಹಿಂದಕ್ಕೆ | Back |  |
+| `common.next` | ಮುಂದಕ್ಕೆ | Next |  |
+| `common.save` | ಉಳಿಸಿ | Save |  |
+| `common.counts` | ಎಣಿಕೆ ಮಾತ್ರ. ಇಲ್ಲಿ ಯಾವುದೇ ಸಂದೇಶ ತೋರಿಸುವುದಿಲ್ಲ. | Counts only. No message is shown here. |  |
+| `login.title` | ಸೈನ್ ಇನ್ | Sign in |  |
+| `login.handle` | ಸೈನ್ ಇನ್ ಮಾಡಲು ನಿಮ್ಮ ಹೆಸರು | Your sign-in name |  |
+| `login.passphrase` | ಪಾಸ್‌ವರ್ಡ್ | Passphrase |  |
+| `login.button` | ಸೈನ್ ಇನ್ ಮಾಡಿ | Sign in |  |
+| `login.wrong` | ಆ ಹೆಸರು ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್ ಸರಿಯಿಲ್ಲ. | That name or passphrase is not right. |  |
+| `login.wait` | ತುಂಬಾ ಬಾರಿ ಪ್ರಯತ್ನಿಸಿದ್ದೀರಿ. 30 ಸೆಕೆಂಡ್ ಕಾದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Too many tries. Wait 30 seconds and try again. |  |
+| `login.byInvitation` | ಖಾತೆಗಳನ್ನು ಆಹ್ವಾನದ ಮೂಲಕ ಮಾತ್ರ ಮಾಡಲಾಗುತ್ತದೆ. ಈ ಸರ್ವರ್ ನಡೆಸುವವರ ಬಳಿ ನಿಮ್ಮ ಲಿಂಕ್ ಕೇಳಿ. | Accounts are made by invitation. Ask the person who runs this server for your link. |  |
+| `join.title` | ನಿಮ್ಮ partner ಖಾತೆ ತೆರೆಯಿರಿ | Create your partner account |  |
+| `join.intro` | ನಿಮ್ಮ ಆಹ್ವಾನ ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಹೇಗೆ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ ಎಂದು ಆರಿಸಿ. | Your invitation works once. Choose how you sign in. |  |
+| `join.name` | ನಿಮ್ಮ ಹೆಸರು | Your name |  |
+| `join.handle` | ಸೈನ್ ಇನ್ ಮಾಡಲು ಹೆಸರು | Name to sign in with |  |
+| `join.handleHelp` | 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | 3 to 40 letters, digits, dots or dashes. |  |
+| `join.passphrase` | ಪಾಸ್‌ವರ್ಡ್ | Passphrase |  |
+| `join.passphraseHelp` | ಕನಿಷ್ಠ 10 ಅಕ್ಷರ. ಕೆಲವು ಪದಗಳನ್ನು ಸೇರಿಸಿ ಬರೆದರೆ ನೆನಪಿಡಲು ಸುಲಭ, ಊಹಿಸಲು ಕಷ್ಟ. | At least 10 characters. A few words in a row is easy to remember and hard to guess. |  |
+| `join.language` | ನಿಮ್ಮ ಭಾಷೆ | Your language |  |
+| `join.button` | ಖಾತೆ ಮಾಡಿ | Create account |  |
+| `join.problems.invite-unknown` | ಈ ಲಿಂಕ್ ನಾವು ಮಾಡಿದ್ದಲ್ಲ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link is not one we made. Ask for a new one. |  |
+| `join.problems.invite-used` | ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಕೆಯಾಗಿದೆ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link was already used. Ask for a new one. |  |
+| `join.problems.invite-expired` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link has run out. Ask for a new one. |  |
+| `join.problems.handle-bad` | ಸೈನ್ ಇನ್ ಹೆಸರಿಗೆ 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ ಬಳಸಿ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | Use 3 to 40 letters, digits, dots or dashes for the sign-in name. |  |
+| `join.problems.handle-taken` | ಈ ಸೈನ್ ಇನ್ ಹೆಸರನ್ನು ಬೇರೆಯವರು ಬಳಸುತ್ತಿದ್ದಾರೆ. ಬೇರೆ ಹೆಸರು ಆರಿಸಿ. | That sign-in name is taken. Choose another. |  |
+| `join.problems.name-bad` | ನಿಮ್ಮ ಹೆಸರು ಬರೆಯಿರಿ. | Write your name. |  |
+| `join.problems.language-bad` | ಪಟ್ಟಿಯಿಂದ ಒಂದು ಭಾಷೆ ಆರಿಸಿ. | Choose a language from the list. |  |
+| `join.problems.short` | ಪಾಸ್‌ವರ್ಡ್‌ಗೆ ಕನಿಷ್ಠ 10 ಅಕ್ಷರ ಬೇಕು. | The passphrase needs at least 10 characters. |  |
+| `join.problems.long` | ಪಾಸ್‌ವರ್ಡ್ ತುಂಬಾ ಉದ್ದವಾಗಿದೆ (ಹೆಚ್ಚೆಂದರೆ 200 ಅಕ್ಷರ). | The passphrase is too long (200 characters at most). |  |
+| `join.problems.same-as-handle` | ಪಾಸ್‌ವರ್ಡ್ ಮತ್ತು ಸೈನ್ ಇನ್ ಹೆಸರು ಒಂದೇ ಆಗಿರಬಾರದು. | The passphrase cannot be the same as your sign-in name. |  |
+| `roles.builder` | ಬಿಲ್ಡರ್ | builder |  |
+| `roles.partner` | ಪಾರ್ಟ್ನರ್ | partner |  |
+| `invite.title` | ಯಾರನ್ನಾದರೂ ಆಹ್ವಾನಿಸಿ | Invite someone |  |
+| `invite.role` | ಅವರ ಪಾತ್ರ | They will be a |  |
+| `invite.note` | ಇದು ಯಾರಿಗಾಗಿ? | Who is it for? |  |
+| `invite.button` | ಲಿಂಕ್ ಮಾಡಿ | Make a link |  |
+| `invite.made` | ಇಲ್ಲಿದೆ ಲಿಂಕ್. ಇದು ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ, 3 ದಿನದಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. | Here is the link. It works once and runs out in 3 days. |  |
+| `invite.copy` | ಈ ಲಿಂಕ್ ಅನ್ನು ಅವರಿಗೆ ಮಾತ್ರ ಕಳುಹಿಸಿ. | Send it only to that person. |  |
+| `invite.hostedOnly` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಆಹ್ವಾನಗಳನ್ನು ಸರ್ವರ್ ನಡೆಸುವವರು ಮಾತ್ರ ಮಾಡುತ್ತಾರೆ. | On this server, invitations are made by whoever runs the server. |  |
+| `shops.title` | ನಿಮ್ಮ ಅಂಗಡಿಗಳು | Your shops |  |
+| `shops.titleAll` | ಈ ಸರ್ವರ್‌ನ ಎಲ್ಲಾ ಅಂಗಡಿಗಳು | All shops on this server |  |
+| `shops.empty` | ಇನ್ನೂ ಯಾವುದೇ ಅಂಗಡಿ ಇಲ್ಲ. | No shops yet. |  |
+| `shops.setUp` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
+| `shops.version` | ಆವೃತ್ತಿ bookings@0.1.0 | Version bookings@0.1.0 |  |
+| `shops.limits` | 9 ಮಿತಿಗಳಲ್ಲಿ 9 ಸಾಬೀತಾಗಿವೆ | 9 of 9 limits proven |  |
+| `shops.limitsUnknown` | ಮಿತಿಗಳು: ಇನ್ನೂ ಖಚಿತವಾಗಿಲ್ಲ | Limits: not confirmed yet |  |
+| `shops.setUpBy` | ಸಿದ್ಧಪಡಿಸಿದವರು: Divya | Set up by Divya |  |
+| `shops.setUpOnServer` | ಸರ್ವರ್‌ನಲ್ಲೇ ಸಿದ್ಧಪಡಿಸಲಾಗಿದೆ | Set up on the server |  |
+| `live.unknown` | ಇನ್ನೂ ಖಚಿತವಾಗಿಲ್ಲ | Not confirmed yet |  |
+| `live.setting-up` | ಸಿದ್ಧವಾಗುತ್ತಿದೆ | Being set up |  |
+| `live.live` | ಲೈವ್ | Live |  |
+| `live.attention` | ಗಮನಿಸಬೇಕು | Needs a look |  |
+| `live.stopping` | ನಿಲ್ಲಿಸಲು ಕೇಳಲಾಗಿದೆ. ಸರ್ವರ್ ಖಚಿತಪಡಿಸುವವರೆಗೆ ಕಾಯಲಾಗುತ್ತಿದೆ. | Stop requested. Waiting for the server to confirm. |  |
+| `live.stopped` | ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. | Stopped. Nothing more goes out. |  |
+| `why.no-status` | ಸರ್ವರ್ ಈ ಅಂಗಡಿಯ ಬಗ್ಗೆ ಇನ್ನೂ ವರದಿ ಮಾಡಿಲ್ಲ. | The server has not reported on this shop yet. |  |
+| `why.status-unreadable` | ಸರ್ವರ್‌ನ ವರದಿಯನ್ನು ಓದಲು ಆಗಲಿಲ್ಲ. | The server's report could not be read. |  |
+| `why.status-old` | ಸರ್ವರ್ ಸ್ವಲ್ಪ ಸಮಯದಿಂದ ವರದಿ ಮಾಡಿಲ್ಲ. | The server has not reported for a while. |  |
+| `why.deploy-failed` | ಕೊನೆಯ ಅಪ್‌ಡೇಟ್ ಆಗಲಿಲ್ಲ. | The last update did not go through. |  |
+| `why.limits-not-proven` | ಎಲ್ಲಾ ಮಿತಿಗಳು ಸರಿಯಾಗಿ ನಿಲ್ಲುತ್ತವೆ ಎಂದು ಇನ್ನೂ ಸಾಬೀತಾಗಿಲ್ಲ. | Not every limit has been proven to hold yet. |  |
+| `why.runtime-unreachable` | ಏಜೆಂಟ್ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ. | The agent does not answer. |  |
+| `why.runtime-not-ready` | ಏಜೆಂಟ್ ತಾನು ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ ಎನ್ನುತ್ತಿದೆ. | The agent says it is not ready. |  |
+| `why.refunds-need-builder` | ರೀಫಂಡ್‌ಗೆ ಬಿಲ್ಡರ್ ಬೇಕು, ಮಾಲೀಕರಲ್ಲ. | A refund needs the builder, not the owner. |  |
+| `shop.status` | ಸ್ಥಿತಿ | Status |  |
+| `shop.versions` | ಪಾತ್‌ವೇ 0.1.0, ಬಂಡಲ್ 0.1.0 | Pathway 0.1.0, bundle 0.1.0 |  |
+| `shop.lastDeploy` | ಕೊನೆಯ ಅಪ್‌ಡೇಟ್: 4 Nov 2026, 10:30 | Last update: 4 Nov 2026, 10:30 |  |
+| `shop.neverDeployed` | ಇನ್ನೂ ಅಪ್‌ಡೇಟ್ ಆಗಿಲ್ಲ. | Not updated yet. |  |
+| `shop.limitsHeading` | ಮಿತಿಗಳು | Limits |  |
+| `shop.unprovable` | ಇವುಗಳನ್ನು ಬೇರೆಯಾಗಿ ಪರೀಕ್ಷಿಸಲು ಆಗುವುದಿಲ್ಲ: refund-limit | These cannot be tested on their own: refund-limit |  |
+| `shop.backups` | ಬ್ಯಾಕಪ್‌ಗಳು | Backups |  |
+| `shop.backupCopy` | ಸರ್ವರ್‌ನ ಹೊರಗೆ ಕೊನೆಯ ಪ್ರತಿ: 4 Nov 2026, 10:30 | Last copy off the server: 4 Nov 2026, 10:30 |  |
+| `shop.backupNone` | ಸರ್ವರ್‌ನ ಹೊರಗೆ ಇನ್ನೂ ಯಾವುದೇ ಪ್ರತಿ ಇಲ್ಲ. | No copy off the server yet. |  |
+| `shop.backupDrill` | ಬ್ಯಾಕಪ್ ಮರಳಿ ತಂದು ನೋಡಿದ ಕೊನೆಯ ಪರೀಕ್ಷೆ: 4 Nov 2026, 04:00, ಮೂಲದ ಜೊತೆ ಹೊಂದಿತು | Last restore check: 4 Nov 2026, 04:00, it matched |  |
+| `shop.backupDrillNone` | ಬ್ಯಾಕಪ್ ಮರಳಿ ತಂದು ನೋಡುವ ಪರೀಕ್ಷೆ ಇನ್ನೂ ಆಗಿಲ್ಲ. | No restore check yet. |  |
+| `shop.settings` | ಈ ಅಂಗಡಿಯ ಬಗ್ಗೆ ಏಜೆಂಟ್‌ಗೆ ತಿಳಿದಿರುವುದು | What the agent knows about this shop |  |
+| `shop.settingsEdit` | ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಬದಲಾಯಿಸಿ | Change settings |  |
+| `shop.summaryServices` | ಸೇವೆಗಳು | Services |  |
+| `shop.summaryHours` | ಕೆಲಸದ ಸಮಯ | Open |  |
+| `shop.hoursRange` | 10:00 ರಿಂದ 20:00 ವರೆಗೆ | 10:00 to 20:00 |  |
+| `shop.summaryClosed` | ಮುಚ್ಚಿದೆ | closed |  |
+| `shop.summaryDeposit` | ಮುಂಗಡ ಹಣ ₹200; ಹಣ ಕಟ್ಟುವವರೆಗೆ ಸಮಯವನ್ನು 15 ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗುತ್ತದೆ | Deposit ₹200; the slot is held 15 minutes while it is paid |  |
+| `shop.summaryCancel` | ಆರಂಭಕ್ಕೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ; ₹200 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ | Deposit goes back if cancelled at least 24 hours before; it asks you before refunding more than ₹200 |  |
+| `shop.summaryLanguages` | ಗ್ರಾಹಕರ ಭಾಷೆಗಳು | Customer languages |  |
+| `shop.summaryOwner` | ಮಾಲೀಕರ WhatsApp ನಂಬರ್ | Owner's WhatsApp |  |
+| `shop.activity` | ಈ ತಿಂಗಳು | This month |  |
+| `shop.activityNote` | ಎಣಿಕೆ ಮಾತ್ರ. ಇಲ್ಲಿ ಯಾವುದೇ ಸಂದೇಶ ತೋರಿಸುವುದಿಲ್ಲ. | Counts only. No message is shown here. |  |
+| `shop.noRecord` | ದಾಖಲೆಯನ್ನು ಇನ್ನೂ ಪ್ಯಾನೆಲ್‌ಗೆ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಈಗ ಲೈವ್ ಇರುವುದನ್ನು ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ. | The record has not been shared with the panel yet, so only what is live right now is shown. |  |
+| `shop.waiting` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿರುವ ರೀಫಂಡ್: 2 | 2 refunds wait for the owner |  |
+| `shop.needBuilder` | ಬಿಲ್ಡರ್ ನೋಡಬೇಕಾದ ರೀಫಂಡ್: 1 | 1 refund needs the builder |  |
+| `shop.made` | ಆದ ಬುಕಿಂಗ್ | Bookings made |  |
+| `shop.cancelled` | ರದ್ದಾದವು | Cancelled |  |
+| `shop.moved` | ಸಮಯ ಬದಲಾದವು | Moved |  |
+| `shop.deposits` | ಬಂದ ಮುಂಗಡ ಹಣ | Deposits received |  |
+| `shop.refunds` | ಹಿಂತಿರುಗಿಸಿದ್ದು | Refunds given |  |
+| `shop.saidNo` | ಏಜೆಂಟ್ ಒಪ್ಪದ ಕೋರಿಕೆಗಳು | Requests it said no to |  |
+| `shop.approvals` | ಮಾಲೀಕರ ಒಪ್ಪಿಗೆಗಳು | Owner approvals |  |
+| `shop.approvalsLine` | ಮಾಲೀಕರನ್ನು 3 ಬಾರಿ ಕೇಳಲಾಗಿದೆ: 2 ಒಪ್ಪಿದ್ದು, 1 ಬೇಡ ಎಂದದ್ದು. | Asked 3 times: approved 2, denied 1. |  |
+| `shop.bookingStates.enquiry` | ವಿಚಾರಿಸುತ್ತಿದ್ದಾರೆ | Asking |  |
+| `shop.bookingStates.confirming_details` | ವಿವರ ಖಚಿತಪಡಿಸಲಾಗುತ್ತಿದೆ | Checking details |  |
+| `shop.bookingStates.awaiting_deposit` | ಮುಂಗಡ ಹಣಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for the deposit |  |
+| `shop.bookingStates.needs_owner` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for the owner |  |
+| `shop.bookingStates.confirmed` | ಬುಕ್ ಆಗಿದೆ | Booked |  |
+| `shop.bookingStates.expired` | ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿದೆ | Hold ran out |  |
+| `shop.bookingStates.cancelled` | ರದ್ದಾಗಿದೆ | Cancelled |  |
+| `shop.bookingStates.completed` | ಮುಗಿದಿದೆ | Done |  |
+| `shop.papers` | ಮಾಲೀಕರಿಗೆ ದಾಖಲೆಗಳು | Papers for the owner |  |
+| `shop.goLive` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
+| `shop.goLiveNone` | ಇನ್ನೂ ಮಾಡಿಲ್ಲ. ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸುವಾಗ ಪರಿಶೀಲನೆಗಳು ಸರಿಹೋದರೆ ಇದು ತಯಾರಾಗುತ್ತದೆ. | Not made yet. It is made when the checks pass in setup. |  |
+| `shop.monthly` | ಮಾಸಿಕ ವರದಿ | Monthly report |  |
+| `shop.makeReport` | 2026-11 ತಿಂಗಳ ವರದಿ ಮಾಡಿ | Make the report for 2026-11 |  |
+| `shop.reportNoRecord` | ದಾಖಲೆಯನ್ನು ಇನ್ನೂ ಪ್ಯಾನೆಲ್‌ಗೆ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಮಾಸಿಕ ವರದಿ ಮಾಡಲು ಆಗುವುದಿಲ್ಲ. | The record has not been shared with the panel yet, so a monthly report cannot be made. |  |
+| `shop.reportMade` | ವರದಿ ಸಿದ್ಧವಾಗಿದೆ. | The report is ready. |  |
+| `shop.stop` | ಈ ಅಂಗಡಿಯನ್ನು ನಿಲ್ಲಿಸಿ | Stop this shop |  |
+| `shop.stopTitle` | Glow Salon ಅಂಗಡಿಯನ್ನು ನಿಲ್ಲಿಸಬೇಕೇ? | Stop Glow Salon? |  |
+| `shop.stopText` | ಇದು ಏಜೆಂಟ್ ಅನ್ನು ನಿಲ್ಲಿಸಲು ಸರ್ವರ್‌ಗೆ ಕೇಳುತ್ತದೆ. ಸರ್ವರ್ ನಿಲ್ಲಿಸಿದ ಮೇಲೆ ಇನ್ನು ಏನನ್ನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಇದಕ್ಕೆ ಒಂದು ನಿಮಿಷ ಆಗಬಹುದು, ಮತ್ತು ನೀವು ಕೇಳಿದಾಗ ಮಾತ್ರ ಸರ್ವರ್ ಅದನ್ನು ಮತ್ತೆ ಆರಂಭಿಸುತ್ತದೆ. | This asks the server to stop the agent. Nothing more goes out once the server has stopped it. It can take a minute, and the server starts it again only when you ask. |  |
+| `shop.stopConfirm` | ಹೌದು, ನಿಲ್ಲಿಸಿ | Yes, stop it |  |
+| `shop.stopAsked` | ನಿಲ್ಲಿಸಲು ಕೇಳಿದ ಸಮಯ: 4 Nov 2026, 10:30. ಸರ್ವರ್ ಖಚಿತಪಡಿಸುವವರೆಗೆ ಕಾಯಲಾಗುತ್ತಿದೆ. | Stop requested at 4 Nov 2026, 10:30. Waiting for the server to confirm. |  |
+| `shop.stopOnly` | ನಿಲ್ಲಿಸಿದೆ ಎಂದು ಸರ್ವರ್ ಮಾತ್ರ ಹೇಳಬಲ್ಲದು. | Only the server can say it has stopped. |  |
+| `shop.details` | ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸ | Show what we did ▸ |  |
+| `shop.detailsDeploy` | ಸರ್ವರ್‌ನ ಕೊನೆಯ ಸಂದೇಶ | The server's last message |  |
+| `shop.detailsPins` | ಪರಿಶೀಲನೆಗಳು ಖಚಿತಪಡಿಸಿದ ಐಡಿಗಳು | Ids the checks confirmed |  |
+| `shop.detailsPrices` | ಬೆಲೆ ಪಟ್ಟಿ: 2026-11-03 | Price list of 2026-11-03 |  |
+| `shop.detailsNothing` | ಇನ್ನೂ ಏನೂ ಇಲ್ಲ | nothing yet |  |
+| `shop.detailsStatusFile` | ಸರ್ವರ್ ವರದಿ ಮಾಡಿದ್ದು | What the server reported |  |
+| `cost.heading` | ಪ್ರತಿ ತಿಂಗಳು ನಡೆಸಲು ಆಗುವ ವೆಚ್ಚ | What it costs to run, each month |  |
+| `cost.early` | ಆರಂಭಿಕ ಅಂದಾಜು: ನಿಜವಾದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ಇನ್ನೂ ಎಣಿಸಿಲ್ಲ. | Early estimate: no real bookings are counted yet. |  |
+| `cost.fromRecord` | ದಾಖಲೆಯಲ್ಲಿರುವ 38 ಬುಕಿಂಗ್ ನೋಡಿ ಲೆಕ್ಕ ಹಾಕಲಾಗಿದೆ. | Worked out from 38 bookings in the record. |  |
+| `cost.assumption` | ತಿಂಗಳಿಗೆ 40 ಬುಕಿಂಗ್ ಎಂದು ಅಂದಾಜು ಮಾಡಲಾಗಿದೆ. | We assumed 40 bookings a month. |  |
+| `cost.lines.whatsapp` | WhatsApp ಸಂದೇಶಗಳು (Meta ಶುಲ್ಕ) | WhatsApp messages (Meta's fee) |  |
+| `cost.lines.whatsapp-provider` | WhatsApp ಪ್ರೊವೈಡರ್‌ನ ಸ್ವಂತ ಶುಲ್ಕ | WhatsApp provider's own fee |  |
+| `cost.lines.model` | AI ಮಾದರಿ ಬಳಕೆ | Model use |  |
+| `cost.lines.razorpay` | Razorpay ಶುಲ್ಕ | Razorpay's fee |  |
+| `cost.lines.hosting` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲು | Hosting share |  |
+| `cost.payer.passed-through` | ಆದ ಖರ್ಚಿನಷ್ಟೇ, ಏನೂ ಸೇರಿಸದೆ | passed on at cost |  |
+| `cost.payer.shop-pays-razorpay` | ಅಂಗಡಿಯೇ Razorpay ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to Razorpay |  |
+| `cost.payer.hosting` | ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ | the server's cost, shared |  |
+| `cost.unknown` | ಗೊತ್ತಿಲ್ಲ | unknown |  |
+| `cost.included` | ಒಳಗೊಂಡಿದೆ | included |  |
+| `cost.usage` | ಸುಮಾರು ₹2.38 AI ಮಾದರಿ ಬಳಕೆ | about ₹2.38 of model use |  |
+| `cost.total` | ಒಟ್ಟು | Total |  |
+| `cost.subtotal` | ಉಪಮೊತ್ತ. 3 ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಬೆಲೆ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಇದು ಪೂರ್ಣ ವೆಚ್ಚವಲ್ಲ. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
+| `cost.priceList` | ಬೆಲೆಗಳು ಈ ದಿನಾಂಕದ ಬೆಲೆ ಪಟ್ಟಿಯಿಂದ: 2026-11-03. | Prices from the list of 2026-11-03. |  |
+| `cost.caveats.assumed-exchange-rate` | ಡಾಲರ್ ಮತ್ತು ಯೂರೋ ಬೆಲೆಗಳಿಗೆ ಊಹಿಸಿದ ದರ ಬಳಸಲಾಗಿದೆ (₹90 ಮತ್ತು ₹100). ನಿಜವಾದ ಬಿಲ್ ಬೇರೆ ಇರಬಹುದು. | Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ. |  |
+| `cost.caveats.provider-not-chosen` | WhatsApp ಪ್ರೊವೈಡರ್ ಅನ್ನು ಇನ್ನೂ ಆರಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದರ ಶುಲ್ಕ ಗೊತ್ತಿಲ್ಲ. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
+| `cost.caveats.provider-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಪ್ರೊವೈಡರ್‌ಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this provider. |  |
+| `cost.caveats.allowance-not-set` | AI ಮಾದರಿ ಬಳಕೆಯಲ್ಲಿ ಒಳಗೊಂಡ ಪ್ರಮಾಣವನ್ನು ಇನ್ನೂ ನಿಗದಿಪಡಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಗ್ರಾಹಕರಿಗೆ ವರ್ಗಾಯಿಸುವ ಮೊತ್ತ ಗೊತ್ತಿಲ್ಲ. | The included model allowance is not set, so what is passed on is unknown. |  |
+| `cost.caveats.model-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಮಾದರಿಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this model. |  |
+| `cost.caveats.hosting-not-measured` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲನ್ನು ಇನ್ನೂ ಅಳೆದಿಲ್ಲ. | The hosting share has not been measured yet. |  |
+| `cost.caveats.payment-link-fee-conflict` | ಪಾವತಿ ಲಿಂಕ್‌ಗಳ ಶುಲ್ಕದ ಬಗ್ಗೆ Razorpay ಪುಟಗಳೇ ಬೇರೆ ಬೇರೆ ಹೇಳುತ್ತವೆ. ಹೆಚ್ಚಿನದನ್ನು (2%) ಬಳಸಲಾಗಿದೆ. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
+| `cost.caveats.whatsapp-rate-second-hand` | WhatsApp ರೂಪಾಯಿ ದರ Meta ಪುಟದಿಂದ ಬಂದಿಲ್ಲ, ಒಬ್ಬ ರಿಸೆಲ್ಲರ್ ಪುಟದಿಂದ ಬಂದಿದೆ. ಮೊದಲ ಬಿಲ್ ಬಂದಾಗ ಪರಿಶೀಲಿಸಿ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
+| `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
+| `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
+| `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
+| `setup.templateElsewhere` | ಇದನ್ನು ಬಿಲ್ಡರ್ ಪ್ಲಗಿನ್ ಮೂಲಕ ಸಿದ್ಧಪಡಿಸುತ್ತಾರೆ. ಫೋನ್ ಸೆಟಪ್‌ನಲ್ಲಿ ಇದು ಇನ್ನೂ ಇಲ್ಲ. | A builder sets this one up with the plugin. The phone setup does not have it yet. |  |
+| `setup.start` | ಆರಂಭಿಸಿ | Start |  |
+| `setup.progress` | ಹಂತ 2 (ಒಟ್ಟು 5) | Step 2 of 5 |  |
+| `setup.steps.business` | ಅಂಗಡಿಯ ವಿವರ | The business |  |
+| `setup.steps.deposit` | ಮುಂಗಡ ಹಣ ಮತ್ತು ರದ್ದುಮಾಡುವುದು | Deposit and cancellation |  |
+| `setup.steps.languages` | ಭಾಷೆಗಳು ಮತ್ತು ನಿಮ್ಮ ನಂಬರ್ | Languages and your number |  |
+| `setup.steps.accounts` | ಅಂಗಡಿಯ ಖಾತೆಗಳನ್ನು ಜೋಡಿಸಿ | Connect the shop's accounts |  |
+| `setup.steps.checks` | ಪರಿಶೀಲನೆಗಳು | Checks |  |
+| `setup.problemsTitle` | ದಯವಿಟ್ಟು ಇದನ್ನು ಸರಿಪಡಿಸಿ: | Please fix this: |  |
+| `setup.fallback` | ಒಂದು ವಿಷಯ ಸರಿಪಡಿಸಬೇಕು: The deposit is more than the cheapest service. | One thing needs fixing: The deposit is more than the cheapest service. |  |
+| `setup.business.name` | ಅಂಗಡಿಯ ಹೆಸರು | Shop name |  |
+| `setup.business.services` | ಸೇವೆಗಳು (ಕನಿಷ್ಠ ಒಂದು, ಹೆಚ್ಚೆಂದರೆ ನಾಲ್ಕು) | Services (at least one, up to four) |  |
+| `setup.business.serviceName` | ಹೆಸರು | Name |  |
+| `setup.business.also` | ಬೇರೆ ಹೆಸರುಗಳು (ಕಾಮಾದಿಂದ) | Also called (commas) |  |
+| `setup.business.price` | ಬೆಲೆ ₹ | Price ₹ |  |
+| `setup.business.minutes` | ನಿಮಿಷ | Minutes |  |
+| `setup.business.opens` | ತೆರೆಯುವ ಸಮಯ | Opens |  |
+| `setup.business.closes` | ಮುಚ್ಚುವ ಸಮಯ | Closes |  |
+| `setup.business.openOn` | ತೆರೆದಿರುವ ದಿನಗಳು | Open on |  |
+| `setup.business.hint` | ಒಂದು ಸೇವೆಯ ಬೆಲೆಯೇ ಏಜೆಂಟ್ ಒಪ್ಪುವ ಅತಿ ಕಡಿಮೆ ಬೆಲೆಯೂ ಹೌದು. | A service's price is also the lowest the agent will ever agree to. |  |
+| `setup.business.dayNames.1` | ಭಾನು | Sun |  |
+| `setup.business.dayNames.2` | ಸೋಮ | Mon |  |
+| `setup.business.dayNames.3` | ಮಂಗಳ | Tue |  |
+| `setup.business.dayNames.4` | ಬುಧ | Wed |  |
+| `setup.business.dayNames.5` | ಗುರು | Thu |  |
+| `setup.business.dayNames.6` | ಶುಕ್ರ | Fri |  |
+| `setup.business.dayNames.7` | ಶನಿ | Sat |  |
+| `setup.depositStep.amount` | ಮುಂಗಡ ಹಣ ₹ | Deposit ₹ |  |
+| `setup.depositStep.window` | ಕನಿಷ್ಠ ಇಷ್ಟು ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಬೇಕು | Cancel at least this many hours before |  |
+| `setup.depositStep.windowHint` | ಗ್ರಾಹಕರು ಇಷ್ಟು ಮೊದಲೇ ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ. ಅದಕ್ಕಿಂತ ತಡವಾದರೆ ತೀರ್ಮಾನ ನಿಮ್ಮದು. | If a customer cancels at least this long before, the deposit goes back. Later than that, you decide. |  |
+| `setup.depositStep.whatThisMeans` | ಇದರ ಅರ್ಥ ನಿಮಗೆ ಏನು | What this means for you |  |
+| `setup.limits.price` | ಇದು ನಿಮ್ಮ ಬೆಲೆಗಿಂತ ಕಡಿಮೆ ಹೋಗಲಾರದು, ಯಾವುದೇ ರೀಫಂಡ್‌ಗೆ ಮೊದಲು ನಿಮ್ಮನ್ನು ಕೇಳುತ್ತದೆ. | It can't go below your prices, and it asks you before any refund. |  |
+| `setup.limits.hours` | ನಿಮ್ಮ ಕೆಲಸದ ಸಮಯದ ಹೊರಗೆ ಇದು ಎಂದೂ ಬುಕಿಂಗ್ ಮಾಡುವುದಿಲ್ಲ. | It never books outside your opening hours. |  |
+| `setup.limits.deposit` | ಮುಂಗಡ ಹಣ ₹200, ನಿಮ್ಮ ಅತಿ ಕಡಿಮೆ ಬೆಲೆಗಿಂತ ಹೆಚ್ಚಲ್ಲ, ಹಣ ಕಟ್ಟುವವರೆಗೆ ಸಮಯವನ್ನು 15 ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗುತ್ತದೆ. | The deposit is ₹200, never more than your cheapest price, and the slot is held 15 minutes while it is paid. |  |
+| `setup.limits.refund` | ಗ್ರಾಹಕರು ಆರಂಭಕ್ಕೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ; ತಡವಾದರೆ, ಅಥವಾ ₹200 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ಆದರೆ, ನಿಮ್ಮ ಒಪ್ಪಿಗೆಗಾಗಿ WhatsApp ಮೂಲಕ ಕಾಯುತ್ತದೆ. | A customer who cancels at least 24 hours before gets the deposit back; anything later, or any refund above ₹200, waits for your OK on WhatsApp. |  |
+| `setup.limits.booked` | ಇದು "ಬುಕ್ ಆಯಿತು" ಎಂದಾಗ, ಸ್ಲಾಟ್ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಮತ್ತು ಡೆಪಾಸಿಟ್ ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಇರುತ್ತದೆ. | When it says booked, the slot is in your calendar and the deposit is in your account. |  |
+| `setup.limits.language` | ನಿಮ್ಮ ಗ್ರಾಹಕರಿಗೆ ಅವರ ಭಾಷೆಯಲ್ಲಿ, ಸರಿಯಾದ ಬೆಲೆ ಮತ್ತು ದಿನಾಂಕದೊಂದಿಗೆ ಉತ್ತರ ಸಿಗುತ್ತದೆ. | Your customers are answered in their language, with the right price and date. |  |
+| `setup.limits.charge` | ನಿಮ್ಮ ಫೋನ್‌ನಿಂದಲೇ, ತೀರ್ಮಾನ ಯಾವಾಗಲೂ ನಿಮ್ಮ ಕೈಯಲ್ಲಿ. | You stay in charge from your phone. |  |
+| `setup.languagesStep.main` | ನಿಮ್ಮ ಗ್ರಾಹಕರ ಮುಖ್ಯ ಭಾಷೆ | Main language of your customers |  |
+| `setup.languagesStep.also` | ನಿಮ್ಮ ಗ್ರಾಹಕರು ಬರೆಯುವ ಬೇರೆ ಭಾಷೆಗಳನ್ನೂ ಟಿಕ್ ಮಾಡಿ | Also tick any others your customers write in |  |
+| `setup.languagesStep.hint` | ಏಜೆಂಟ್ ಮುಖ್ಯ ಭಾಷೆಯಲ್ಲಿ ಶುರು ಮಾಡುತ್ತದೆ, ಮತ್ತು ಪ್ರತಿ ಗ್ರಾಹಕರಿಗೆ ಅವರು ಬರೆದ ಭಾಷೆಯಲ್ಲೇ ಉತ್ತರಿಸುತ್ತದೆ. | The agent starts in the main language and answers each customer in the one they write in. |  |
+| `setup.languagesStep.ownerLanguage` | ನಿಮಗೆ ಬರುವ ಸಂದೇಶಗಳ ಭಾಷೆ | Your language for messages to you |  |
+| `setup.languagesStep.ownerNumber` | ನಿಮ್ಮ ಸ್ವಂತ WhatsApp ನಂಬರ್ | Your own WhatsApp number |  |
+| `setup.languagesStep.ownerNumberHelp` | ದೇಶದ ಕೋಡ್‌ನಿಂದ ಶುರು ಮಾಡಿ, ಉದಾಹರಣೆಗೆ +91 98765 43210. ಯಾವುದೇ ರೀಫಂಡ್‌ಗೆ ಮೊದಲು ಏಜೆಂಟ್ ನಿಮ್ಮನ್ನು ಇಲ್ಲಿ ಕೇಳುತ್ತದೆ. ಇದು ನಿಮ್ಮ ಸ್ವಂತ ನಂಬರ್, ಗ್ರಾಹಕರು ಸಂದೇಶ ಕಳುಹಿಸುವ ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. | Start with the country code, for example +91 98765 43210. The agent asks you here before any refund. It is your own number, not the shop's number that customers write to. |  |
+| `setup.problems.nameEmpty` | ಅಂಗಡಿಯ ಹೆಸರು ಬರೆಯಿರಿ. | Write the shop's name. |  |
+| `setup.problems.noService` | ಬೆಲೆಯೊಂದಿಗೆ ಕನಿಷ್ಠ ಒಂದು ಸೇವೆ ಸೇರಿಸಿ. | Add at least one service with a price. |  |
+| `setup.problems.priceBad` | ಸೇವೆ 2: ಬೆಲೆಯನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 450. | Service 2: write the price in whole rupees, for example 450. |  |
+| `setup.problems.depositBad` | ಮುಂಗಡ ಹಣವನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 200. | Write the deposit in whole rupees, for example 200. |  |
+| `setup.problems.depositTooBig` | ಮುಂಗಡ ಹಣ (₹500) ನಿಮ್ಮ ಅತಿ ಕಡಿಮೆ ಬೆಲೆಯ ಸೇವೆಗಿಂತ (₹450) ಹೆಚ್ಚಾಗಿದೆ. ಮುಂಗಡ ಹಣವನ್ನು ಕಡಿಮೆ ಮಾಡಿ. | The deposit (₹500) is more than your cheapest service (₹450). Make the deposit smaller. |  |
+| `setup.problems.windowBad` | ಗಂಟೆಗಳನ್ನು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 24. | Write the hours as a whole number, for example 24. |  |
+| `setup.problems.hoursBad` | ಅಂಗಡಿ ಮುಚ್ಚುವ ಮೊದಲು ತೆರೆಯಬೇಕು. ಸಮಯವನ್ನು 10:00 ಮತ್ತು 20:00 ಹೀಗೆ ಬರೆಯಿರಿ. | The shop must open before it closes. Write times like 10:00 and 20:00. |  |
+| `setup.problems.noDay` | ಅಂಗಡಿ ತೆರೆದಿರುವ ಕನಿಷ್ಠ ಒಂದು ದಿನ ಟಿಕ್ ಮಾಡಿ. | Tick at least one day the shop is open. |  |
+| `setup.problems.noLanguage` | ಕನಿಷ್ಠ ಒಂದು ಭಾಷೆ ಟಿಕ್ ಮಾಡಿ. | Tick at least one language. |  |
+| `setup.problems.ownerNumberBad` | ನಿಮ್ಮ ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ +91 98765 43210. | Write your number with the country code, for example +91 98765 43210. |  |
+| `setup.problems.sameNumber` | ನಿಮ್ಮ ನಂಬರ್ ಮತ್ತು ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಬೇರೆ ಬೇರೆ ಆಗಿರಬೇಕು. ನೀವು ನಿಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ ಉತ್ತರಿಸುತ್ತೀರಿ. | Your number and the shop's WhatsApp number must be different. You answer from your own phone. |  |
+| `setup.problems.serviceNameEmpty` | ಸೇವೆ 2: ಬೆಲೆ ಇದೆ, ಆದರೆ ಹೆಸರಿಲ್ಲ. | Service 2 has a price but no name. |  |
+| `setup.problems.expectedBad` | ತಿಂಗಳಿಗೆ ಬುಕಿಂಗ್ ಎಷ್ಟು ಎಂದು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 40, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
+| `setup.problems.numberIdBad` | ಫೋನ್ ನಂಬರ್ ID ಅಂಕಿಗಳು ಮಾತ್ರ (6 ರಿಂದ 20 ಅಂಕಿ). | The phone number ID is digits only (6 to 20 of them). |  |
+| `setup.problems.businessNumberBad` | ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ. | Write the shop's WhatsApp number with the country code. |  |
+| `setup.problems.keyIdBad` | ಕೀ ID rzp_live_ ಅಥವಾ rzp_test_ ಎಂದು ಶುರುವಾಗುತ್ತದೆ. | The key ID starts with rzp_live_ or rzp_test_. |  |
+| `setup.problems.secretMissing` | ಇದನ್ನು ತುಂಬಿ: the access token. | Fill in the access token. |  |
+| `setup.problems.secretShape` | ಇದರಲ್ಲಿ ಖಾಲಿ ಜಾಗ ಅಥವಾ ಹೊಸ ಸಾಲು ಇದೆ: the access token. ಅವು ಇಲ್ಲದೆ ಮತ್ತೆ ಕಾಪಿ ಮಾಡಿ. | the access token has spaces or line breaks in it. Copy it again, without them. |  |
+| `setup.problems.calendarIdBad` | ಕ್ಯಾಲೆಂಡರ್ ID ಖಾಲಿ ಜಾಗ ಇಲ್ಲದೆ ಬರೆಯಿರಿ. | Write the calendar's ID without spaces. |  |
+| `setup.problems.jsonBad` | ಇದು Google ಸರ್ವೀಸ್-ಅಕೌಂಟ್ ಕೀ ಫೈಲ್ ಅಲ್ಲ. ಇಡೀ ಫೈಲ್ ಪೇಸ್ಟ್ ಮಾಡಿ. | That is not a Google service-account key file. Paste the whole file. |  |
+| `setup.problems.modeBad` | ಲೈವ್ ಅಥವಾ ಅಭ್ಯಾಸ ಆರಿಸಿ. | Choose live or practice. |  |
+| `setup.accounts.intro` | ಪ್ರತಿ ಖಾತೆಯೂ ಅಂಗಡಿಯದೇ. ಕೀಗಳು ಸರ್ವರ್‌ನ ಕೀ ಸ್ಟೋರ್‌ಗೆ ಹೋಗುತ್ತವೆ, ಮತ್ತೆ ತೋರಿಸುವುದಿಲ್ಲ, ಮತ್ತು ಈ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಇಡುವುದಿಲ್ಲ. | Each account is the shop's own. Keys go to the server's key store, are never shown again, and are not kept in this panel. |  |
+| `setup.accounts.received` | ಬಂದ ಸಮಯ: 4 Nov 2026, 10:30. | Received 4 Nov 2026, 10:30. |  |
+| `setup.accounts.keepEmpty` | ಹಾಗೆಯೇ ಇಡಲು ಖಾಲಿ ಬಿಡಿ. | Leave empty to keep it. |  |
+| `setup.accounts.neverShown` | ಉಳಿಸಿದ ಮೇಲೆ ಇದನ್ನು ಮತ್ತೆ ತೋರಿಸುವುದಿಲ್ಲ. | It is not shown again after you save. |  |
+| `setup.accounts.whatsapp.title` | WhatsApp | WhatsApp |  |
+| `setup.accounts.whatsapp.intro` | ಅಂಗಡಿ ತನ್ನ ನಂಬರ್ ಮತ್ತು WhatsApp Business ಆ್ಯಪ್ ಅನ್ನು ಹಾಗೆಯೇ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. ಗ್ರಾಹಕರು ಮೊದಲಿನ ನಂಬರ್‌ಗೇ ಬರೆಯುತ್ತಾರೆ. | The shop keeps its own number and its WhatsApp Business app. Customers write to the same number as before. |  |
+| `setup.accounts.whatsapp.steps.1` | ಅಂಗಡಿಯ ಫೋನ್‌ನಲ್ಲಿ, ಅಂಗಡಿಯ ನಂಬರ್‌ನೊಂದಿಗೆ WhatsApp Business ಆ್ಯಪ್ ಬಳಸುವುದನ್ನು ಮುಂದುವರಿಸಿ. | Keep using the WhatsApp Business app on the shop's phone, with the shop's number. |  |
+| `setup.accounts.whatsapp.steps.2` | ನಂಬರ್ ಅನ್ನು ಏಜೆಂಟ್‌ಗೆ ಜೋಡಿಸಿದವರು ನಿಮಗೆ ಮೂರು ವಿಷಯ ಕೊಡುತ್ತಾರೆ: ಫೋನ್ ನಂಬರ್ ID, ಆ್ಯಕ್ಸೆಸ್ ಟೋಕನ್ ಮತ್ತು ಆ್ಯಪ್ ಸೀಕ್ರೆಟ್. | Whoever connected the number to the helper gives you three things: the phone number ID, an access token and the app secret. |  |
+| `setup.accounts.whatsapp.steps.3` | ಅವನ್ನು ಕೆಳಗೆ ಟೈಪ್ ಮಾಡಿ. | Type them below. |  |
+| `setup.accounts.whatsapp.number` | ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ | The shop's WhatsApp number |  |
+| `setup.accounts.whatsapp.numberId` | ಫೋನ್ ನಂಬರ್ ID | Phone number ID |  |
+| `setup.accounts.whatsapp.token` | ಆ್ಯಕ್ಸೆಸ್ ಟೋಕನ್ | Access token |  |
+| `setup.accounts.whatsapp.appSecret` | ಆ್ಯಪ್ ಸೀಕ್ರೆಟ್ | App secret |  |
+| `setup.accounts.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
+| `setup.accounts.calendar.intro` | ಬುಕಿಂಗ್‌ಗಳು ಅಂಗಡಿಯದೇ ಆದ Google Calendar ಒಳಗೆ ಹೋಗುತ್ತವೆ. | Bookings go into the shop's own Google Calendar. |  |
+| `setup.accounts.calendar.steps.1` | ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ Google Calendar ತೆರೆಯಿರಿ, ನಂತರ ಆ ಕ್ಯಾಲೆಂಡರ್‌ನ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ. | Open Google Calendar on a computer, and open the calendar's settings. |  |
+| `setup.accounts.calendar.steps.2` | “Share with specific people” ಅಡಿಯಲ್ಲಿ ಕೆಳಗಿನ ಅಡ್ರೆಸ್ ಸೇರಿಸಿ, ಮತ್ತು “Make changes to events” ಆರಿಸಿ. | Under “Share with specific people”, add the address below and choose “Make changes to events”. |  |
+| `setup.accounts.calendar.steps.3` | “Integrate calendar” ಅಡಿಯಲ್ಲಿ Calendar ID ಕಾಪಿ ಮಾಡಿ, ಕೆಳಗೆ ಟೈಪ್ ಮಾಡಿ. | Under “Integrate calendar”, copy the Calendar ID and type it below. |  |
+| `setup.accounts.calendar.shareAddress` | ಈ ಅಡ್ರೆಸ್‌ಗೆ ಕ್ಯಾಲೆಂಡರ್ ಶೇರ್ ಮಾಡಿ: | Share the calendar with this address: |  |
+| `setup.accounts.calendar.noAddress` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಹಂಚಿಕೊಳ್ಳಲು ಅಡ್ರೆಸ್ ಇಲ್ಲ. ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಕೊಟ್ಟ ಕೀ ಫೈಲ್ ಅನ್ನು ಕೆಳಗೆ ಪೇಸ್ಟ್ ಮಾಡಿ. | This server has no shared address. Paste the key file your builder gave you, below. |  |
+| `setup.accounts.calendar.id` | ಕ್ಯಾಲೆಂಡರ್ ID | Calendar ID |  |
+| `setup.accounts.calendar.json` | ಸರ್ವೀಸ್-ಅಕೌಂಟ್ ಕೀ ಫೈಲ್ | Service-account key file |  |
+| `setup.accounts.calendar.jsonHelp` | ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಒಂದು ಕೊಟ್ಟಿದ್ದರೆ ಮಾತ್ರ. ಇಡೀ ಫೈಲ್ ಪೇಸ್ಟ್ ಮಾಡಿ. | Only if your builder gave you one. Paste the whole file. |  |
+| `setup.accounts.razorpay.title` | Razorpay | Razorpay |  |
+| `setup.accounts.razorpay.intro` | ಗ್ರಾಹಕರು ಮುಂಗಡ ಹಣವನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ Razorpay ಖಾತೆಗೆ ಕಟ್ಟುತ್ತಾರೆ. ಹಣ ನೇರವಾಗಿ ಅಂಗಡಿಯ ಬ್ಯಾಂಕ್‌ಗೆ ಹೋಗುತ್ತದೆ. Geometer ಅದನ್ನು ಎಂದೂ ಇಟ್ಟುಕೊಳ್ಳುವುದಿಲ್ಲ. | Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it. |  |
+| `setup.accounts.razorpay.steps.1` | ಅಂಗಡಿಯ ಸ್ವಂತ Razorpay ಖಾತೆಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ. | Sign in to the shop's own Razorpay account. |  |
+| `setup.accounts.razorpay.steps.2` | Settings, API keys ಅಡಿಯಲ್ಲಿ ಒಂದು ಕೀ ಮಾಡಿ, ಮತ್ತು Key ID ಹಾಗೂ Key secret ಕಾಪಿ ಮಾಡಿ. | Under Settings, API keys, make a key and copy the Key ID and the Key secret. |  |
+| `setup.accounts.razorpay.steps.3` | Settings, Webhooks ಅಡಿಯಲ್ಲಿ ಕೆಳಗೆ ತೋರಿಸಿದ ವೆಬ್ ಅಡ್ರೆಸ್ ಸೇರಿಸಿ, ಮತ್ತು ನಿಮ್ಮದೇ ಒಂದು ಸೀಕ್ರೆಟ್ ಆರಿಸಿ. ಅದೇ ಸೀಕ್ರೆಟ್ ಅನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ. | Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here. |  |
+| `setup.accounts.razorpay.mode` | ಇದು ಯಾವ ಕೀ? | Which key is this? |  |
+| `setup.accounts.razorpay.modeLive` | ಲೈವ್: ನಿಜವಾದ ಹಣ | Live: real money |  |
+| `setup.accounts.razorpay.modeTest` | ಅಭ್ಯಾಸ: ಟೆಸ್ಟ್ ಹಣ | Practice: test money |  |
+| `setup.accounts.razorpay.keyId` | ಕೀ ID | Key ID |  |
+| `setup.accounts.razorpay.keySecret` | ಕೀ ಸೀಕ್ರೆಟ್ | Key secret |  |
+| `setup.accounts.razorpay.webhookSecret` | ವೆಬ್‌ಹುಕ್ ಸೀಕ್ರೆಟ್ | Webhook secret |  |
+| `setup.accounts.razorpay.webhookUrl` | ವೆಬ್‌ಹುಕ್‌ಗಾಗಿ ವೆಬ್ ಅಡ್ರೆಸ್: https://shops.example.com/hooks/glow-salon/razorpay | Web address for the webhook: https://shops.example.com/hooks/glow-salon/razorpay |  |
+| `setup.checks.saveFirst` | ಮೊದಲು ಈ ಅಂಗಡಿಯನ್ನು ಸರ್ವರ್‌ಗೆ ಉಳಿಸಿ. | Save this shop to the server first. |  |
+| `setup.checks.saveButton` | ಉಳಿಸಿ ಮತ್ತು ಜೋಡಿಸಿ | Save and connect |  |
+| `setup.checks.saved` | ಉಳಿಸಲಾಗಿದೆ. ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತರುತ್ತದೆ, ಜಾರಿಯಾದಾಗ ಈ ಪುಟದಲ್ಲಿ ಕಾಣುತ್ತದೆ. | Saved. The server will apply it, and this page shows when it has. |  |
+| `setup.checks.runButton` | ಪರಿಶೀಲನೆಗಳನ್ನು ನಡೆಸಿ | Run the checks |  |
+| `setup.checks.waiting` | ಸರ್ವರ್ ಅಂಗಡಿಯನ್ನು ಜಾರಿಗೆ ತರುವವರೆಗೆ ಕಾಯಲಾಗುತ್ತಿದೆ. | Waiting for the server to apply the shop. |  |
+| `setup.checks.settingsOk` | ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಪೂರ್ಣವಾಗಿವೆ. | The settings are complete. |  |
+| `setup.checks.handCheck` | ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಬೆಲೆ ಮತ್ತು ಸಮಯದ ಮೇಲಿನ ಪರೀಕ್ಷೆಗಳು | The tests on this shop's own prices and hours |  |
+| `setup.checks.handNotRun` | ಇನ್ನೂ ನಡೆಸಿಲ್ಲ. | Not run yet. |  |
+| `setup.checks.deploy` | ಸರ್ವರ್‌ನ ಅಪ್‌ಡೇಟ್ | The server's update |  |
+| `setup.checks.deployApplied` | ಜಾರಿಯಾಗಿದೆ: 4 Nov 2026, 10:30. | Applied 4 Nov 2026, 10:30. |  |
+| `setup.checks.deployNot` | ಇನ್ನೂ ಜಾರಿಯಾಗಿಲ್ಲ. | Not applied yet. |  |
+| `setup.checks.limitsProven` | ನಡೆಯುತ್ತಿರುವ ಏಜೆಂಟ್‌ನಲ್ಲಿ 9 ಮಿತಿಗಳಲ್ಲಿ 9 ಸರಿಯಾಗಿ ನಿಲ್ಲುತ್ತವೆ ಎಂದು ಸಾಬೀತಾಗಿದೆ. | 9 of 9 limits proven to hold on the running agent. |  |
+| `setup.checks.limitsNot` | ಮಿತಿಗಳು ಇನ್ನೂ ಸಾಬೀತಾಗಿಲ್ಲ. | Limits not proven yet. |  |
+| `setup.checks.guardNotSet` | ಖಾತೆಗಳನ್ನು ಎಲ್ಲಿ ಪರಿಶೀಲಿಸಬೇಕು ಎಂದು ಈ ಸರ್ವರ್ ಇನ್ನೂ ಪ್ಯಾನೆಲ್‌ಗೆ ಹೇಳಿಲ್ಲ, ಆದ್ದರಿಂದ ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಆಗುವುದಿಲ್ಲ. | This server has not told the panel where to check the accounts yet, so they cannot be checked here. |  |
+| `setup.checks.readOnly` | ಪರಿಶೀಲನೆಗಳು ಓದುವುದು ಮಾತ್ರ. ಅವು ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಹಣ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ, ಬುಕಿಂಗ್ ಮಾಡುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಸಂದೇಶ ಕಳುಹಿಸುವುದು ಮತ್ತು ಪಾವತಿಗಳನ್ನು ಇಲ್ಲಿ ಪರೀಕ್ಷಿಸುವುದಿಲ್ಲ. | Checks only read. They never send a message, take a payment or make a booking, so sending and payments are not tested here. |  |
+| `setup.checks.whatsapp.title` | WhatsApp | WhatsApp |  |
+| `setup.checks.whatsapp.confirmed` | ಇದು ಅಂಗಡಿಯ ನಂಬರ್ (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
+| `setup.checks.whatsapp.differs` | ಸಿಕ್ಕ ನಂಬರ್‌ನ ಕೊನೆಯ ಅಂಕಿಗಳು: 3210. ಇದು ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
+| `setup.checks.whatsapp.notFound` | ಆ ಫೋನ್ ನಂಬರ್ ID ಈ ಖಾತೆಯಲ್ಲಿ ಇಲ್ಲ. | That phone number ID is not on this account. |  |
+| `setup.checks.razorpay.title` | Razorpay | Razorpay |  |
+| `setup.checks.razorpay.confirmed` | ಕೀ ಕೆಲಸ ಮಾಡುತ್ತಿದೆ (Live). | The key works (Live). |  |
+| `setup.checks.razorpay.differs` | ಇದು ಮೊದಲು ಖಚಿತಪಡಿಸಿದ ಕೀ ಅಲ್ಲ, ಬೇರೆ ಕೀ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | This is a different key from the one confirmed before. Nothing was changed. |  |
+| `setup.checks.razorpay.wrongMode` | ಈ ಕೀಯ ಮೋಡ್ ಮೇಲೆ ಆರಿಸಿದ ಮೋಡ್ ಅಲ್ಲ. ಹೊಂದುವ ಕೀ ಬಳಸಿ. | This key's mode is not the one chosen above. Use the key that matches. |  |
+| `setup.checks.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
+| `setup.checks.calendar.confirmed` | “Glow Salon bookings” ಸಿಕ್ಕಿದೆ, ಮತ್ತು ಇದನ್ನು ಬದಲಾಯಿಸಬಹುದು. | Found “Glow Salon bookings”, and it can be changed. |  |
+| `setup.checks.calendar.differs` | Google ಬೇರೆ ಕ್ಯಾಲೆಂಡರ್ ತೋರಿಸುತ್ತಿದೆ, ಕೊಟ್ಟಿದ್ದನ್ನಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | Google shows a different calendar from the one given. Nothing was changed. |  |
+| `setup.checks.calendar.notFound` | ಸಿಗಲಿಲ್ಲ. ID ಸರಿಯಿದೆಯೇ ಮತ್ತು ಮೇಲಿನ ಅಡ್ರೆಸ್‌ಗೆ ಶೇರ್ ಮಾಡಿದೆಯೇ ನೋಡಿ. | Not found. Check the ID, and that it is shared with the address above. |  |
+| `setup.checks.calendar.notWritable` | ಶೇರ್ ಮಾಡಿದೆ, ಆದರೆ “Make changes to events” ಅಲ್ಲ (ಅದು ಹೇಳುವುದು: reader). | It is shared, but not with “Make changes to events” (it says reader). |  |
+| `setup.checks.generic.not_allowed` | ಖಾತೆ ಪರಿಶೀಲನೆಯನ್ನು ಒಪ್ಪಲಿಲ್ಲ. ಕೀಗಳನ್ನು ನೋಡಿ. | The account did not accept the check. Check the keys. |  |
+| `setup.checks.generic.refused_by_guard` | ಸರ್ವರ್‌ನ Guard ಈ ಪರಿಶೀಲನೆಗೆ ಅವಕಾಶ ಕೊಡಲಿಲ್ಲ. | The server's Guard did not let this check through. |  |
+| `setup.checks.generic.unreachable` | ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Could not reach it. Try again in a minute. |  |
+| `setup.checks.generic.unexpected_response` | ಉತ್ತರ ಈ ಸೇವೆ ಕೊಡುವ ರೀತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಬಳಸಲಿಲ್ಲ. | The answer was not what this service gives, so it was not used. |  |
+| `setup.checks.generic.not_configured` | ಮೊದಲು ಮೇಲಿನ ವಿವರಗಳನ್ನು ತುಂಬಿ. | Fill in the details above first. |  |
+| `setup.checks.razorpayWhose` | ಕೀ ಯಾರ ಖಾತೆಗೆ ಸೇರಿದ್ದು ಎಂದು Razorpay ಹೇಳುವುದಿಲ್ಲ. ಮೊದಲ ಟೆಸ್ಟ್ ಪಾವತಿ ಲಿಂಕ್ ತೆರೆದು ನೋಡಿ: ಅದರಲ್ಲಿ ಅಂಗಡಿಯ ಹೆಸರು ಇರಬೇಕು. | Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it. |  |
+| `setup.checks.guardWords` | Guard ಹೇಳಿದ್ದು: the route is not listed | Guard said: the route is not listed |  |
+| `setup.checks.bookingsExpected` | ತಿಂಗಳಿಗೆ ನೀವು ನಿರೀಕ್ಷಿಸುವ ಬುಕಿಂಗ್ (ವೆಚ್ಚದ ಲೆಕ್ಕಕ್ಕೆ ಮಾತ್ರ ಬಳಕೆ) | Bookings you expect each month (only used for the cost) |  |
+| `setup.checks.readyButton` | ಲೈವ್ ಮಾಡಲು ಸಿದ್ಧ | Ready to go live |  |
+| `setup.checks.ready` | ಲೈವ್ ಮಾಡಲು ಸಿದ್ಧ. ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಸಿದ್ಧವಾಗಿದೆ. | Ready to go live. The go-live certificate is made. |  |
+| `setup.checks.notReady` | ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ: ಸರಿಪಡಿಸಬೇಕಾದ ವಿಷಯಗಳು 2. | Not ready yet: 2 things need fixing. |  |
+| `setup.checks.certificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ತೆರೆಯಿರಿ | Open the go-live certificate |  |
+| `setup.checks.switchOn` | ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತಂದಾಗ ಅಂಗಡಿಯನ್ನು ಆನ್ ಮಾಡುತ್ತದೆ. | The server switches the shop on when it applies it. |  |
+| `errors.notFound` | ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ. | There is nothing here. |  |
+| `errors.notAllowed` | ನೀವು ಇದನ್ನು ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ. | You cannot do that. |  |
+| `errors.csrf` | ಆ ಫಾರ್ಮ್ ತುಂಬಾ ಹಳೆಯದಾಗಿತ್ತು ಅಥವಾ ಈ ಪುಟದಿಂದ ಬಂದಿರಲಿಲ್ಲ. ಹಿಂದಕ್ಕೆ ಹೋಗಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That form was too old or did not come from this page. Go back and try again. |  |
+| `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
+| `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
+| `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
 

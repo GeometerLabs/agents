@@ -124,7 +124,7 @@ node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equi
 
 **What it can do:** book one machine (with its attachments) by the half day or the day at fixed prices, take a deposit, refund an early cancellation alone and ask the owner about a late one, remind the day before, and answer in Kannada and Hindi (and Malayalam and English if the file lists them).
 
-**What it cannot do, so say it before you sell it:** book two machines at the same time (it books one thing at a time for the whole business), charge per acre or per hour, keep a booking longer than 8 hours or over several days, record the field, the driver or the weather, hold a security deposit until a machine comes back, or answer a voice note (a voice note gets no reply). The list, with what would close each gap, is in [Deferred.md](Deferred.md) under "Equipment rental". The sell guide is a variant: [sell/variants/](sell/variants/).
+**What it cannot do, so say it before you sell it:** book two machines at the same time (it books one thing at a time for the whole business), charge per acre or per hour, keep a booking longer than 8 hours or over several days, record the field, the driver or the weather, hold a security deposit until a machine comes back, or listen to a voice note (a voice note gets one short reply asking the customer to type). The list, with what would close each gap, is in [Deferred.md](Deferred.md) under "Equipment rental". The sell guide is a variant: [sell/variants/](sell/variants/).
 
 ## Run the agent as a server
 
@@ -174,13 +174,13 @@ What a shop is given, in its language (Hindi, English, Malayalam, Kannada, or Hi
 # from the root of this repository
 node pathways/bookings/scripts/report-example.ts                 # a sample of everything, from a scripted busy month, into pathways/bookings/report-sample/ (git-ignored)
 node pathways/bookings/scripts/report-key.ts ~/geometer-keys     # make the signing key, outside any repository
-node pathways/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
-     --month 2026-11 --lang hi --out ./out --source stand-in --key ~/geometer-keys/report-key.pem
 node pathways/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out --key ~/geometer-keys/report-key.pem
+node pathways/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
+     --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./out/go-live-certificate.json --key ~/geometer-keys/report-key.pem
 node pathways/bookings/scripts/verify-report.ts ./out/report-2026-11.json --trust-key ~/geometer-keys/report-key.pub.pem
 ```
 
-`--source` (stand-in, test-mode or live) is required and printed on every layer. `--lang both` writes the Hindi and English messages separately and one page with both. A signature shows who issued a document and that it has not changed; it does not show the numbers are true. How it works, and what is not built (the verify page on geometer.dev, a QR code, the Guard anchor): [Explanation.md](Explanation.md) and [Deferred.md](Deferred.md).
+`--source` (stand-in, test-mode or live) is required and printed on every layer. `--go-live` is the go-live certificate: the report checks its signature and says what its checks ran on (this shop's own settings, and when; Glow Salon's example; other settings), and says plainly when no certificate was given or the one given could not be trusted (it is still made). The sentences are in [Explanation.md](Explanation.md), "The monthly report reads the go-live certificate". `--lang both` writes the Hindi and English messages separately and one page with both. A signature shows who issued a document and that it has not changed; it does not show the numbers are true. How it works, and what is not built (the verify page on geometer.dev, a QR code, the Guard anchor): [Explanation.md](Explanation.md) and [Deferred.md](Deferred.md).
 
 ## What the customer sees
 
@@ -338,7 +338,7 @@ clients/glow-salon.example/        an example client folder: settings.json, runt
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
 crash-test/not-tested.ts           what the hand check does not cover (printed by it, carried by the go-live certificate)
 report/                            the monthly report and the certificates: data.ts (counts), text.ts (owner's five lines), html.ts (the page),
-                                   certificate.ts, strings.ts (every word, per language, and the banned words), sign.ts (seal and check),
+                                   certificate.ts, go-live.ts (reads the go-live certificate a report is given), strings.ts (every word, per language, and the banned words), sign.ts (seal and check),
                                    keys.ts (the key pair), run.ts and cli.ts (the scripts' work), example-month.ts (a scripted busy month)
 scripts/report-key.ts, client-report.ts, go-live-certificate.ts, verify-report.ts, report-example.ts
 test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints;

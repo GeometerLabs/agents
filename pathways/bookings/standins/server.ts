@@ -27,6 +27,12 @@ export interface StandinsConfig {
   razorpayWebhookSecret: string;
   whatsappAppSecret: string;
   phoneNumberId?: string;
+  /** What reading the WhatsApp number's own details shows (a connection check compares them with what the shop gave). */
+  displayPhoneNumber?: string;
+  verifiedName?: string;
+  /** The one calendar the calendar-metadata read answers for, and the role the account has on it (see google-calendar.ts). */
+  calendarId?: string;
+  calendarAccessRole?: string;
   /** Use these fakes instead of new ones, so a test can read and change them directly. */
   fakes?: Partial<Fakes>;
   /** Events per page of a calendar list (default 250, Google's own default). */
@@ -69,8 +75,8 @@ export async function startStandins(config: StandinsConfig, listen: { port: numb
   let authorizationSeen = 0;
   const handlers: Handler[] = [
     razorpayStandin(fakes.payments),
-    calendarStandin(fakes.calendar, { pageSize: config.calendarPageSize }),
-    whatsappStandin(fakes.messaging, { phoneNumberId: config.phoneNumberId }),
+    calendarStandin(fakes.calendar, { pageSize: config.calendarPageSize, calendarId: config.calendarId, accessRole: config.calendarAccessRole }),
+    whatsappStandin(fakes.messaging, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
     controlStandin({ fakes, inboxUrl: config.inboxUrl, razorpayWebhookSecret: config.razorpayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, phoneNumberId: config.phoneNumberId, authorizationSeen: () => authorizationSeen }),
   ];
 

@@ -74,6 +74,18 @@ test("whatsapp: a signed message is forwarded as a message event; a status-only 
   });
 });
 
+test("whatsapp: a signed voice note is forwarded as a message with voiceNote true and no words, and nothing of the audio (id, type, hash) goes with it", async () => {
+  const hook = JSON.parse(whatsappBody);
+  hook.entry[0].changes[0].value.messages = [{ from: "16505551234", id: "wamid.voice-1", timestamp: "1749416383", type: "audio", audio: { id: "MEDIA-ID-9", mime_type: "audio/ogg; codecs=opus", sha256: "MEDIA-SHA-9", voice: true } }];
+  const voice = JSON.stringify(hook);
+  await withInbox(async ({ runtime, post }) => {
+    assert.equal((await post("/webhooks/whatsapp", voice, whatsappHeaders(voice))).status, 200);
+    const sent = JSON.parse(runtime.requests[0].body);
+    assert.deepEqual(sent.events, [{ kind: "message", message: { id: "wamid.voice-1", from: "+16505551234", text: "", timestamp: 1749416383000, voiceNote: true } }]);
+    assert.ok(!runtime.requests[0].body.includes("MEDIA"), "no media id or hash reaches the runtime");
+  });
+});
+
 test("if the runtime does not take the events (an error, down, or too slow) the provider is told 503 so it sends them again", async () => {
   await withInbox(async ({ post }) => {
     assert.equal((await post("/webhooks/razorpay", razorpayBody, razorpayHeaders(razorpayBody))).status, 503);
