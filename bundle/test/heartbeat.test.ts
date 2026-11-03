@@ -38,6 +38,60 @@ test("fleet's own validator accepts it, including a shop whose runtime is down",
   }
 });
 
+// ---- backups: the age of the last good snapshot and the last restore drill (two optional fields of the contract) ----------------------------------------------
+const BACKUPS = { lastCopyAt: "2026-11-04T09:00:00.000Z", lastDrillAt: "2026-11-02T03:00:00.000Z", drillOk: true };
+const agentOf = (shops: ShopObservation[]) => (build(shops).body.agents as Record<string, unknown>[])[0];
+// Fleet's validator may be an older one (the monorepo's main before apps/fleet knew these fields): then the contract tests below are skipped, and say why.
+const fleetKnowsBackups = fleet ? fleet.checkHeartbeat(build([shop({ backups: BACKUPS })]).body).ok : false;
+const skipUnlessFleetKnows = fleet ? (fleetKnowsBackups ? false : "the fleet validator found does not know backup_age_s and drill yet (merge apps/fleet's backup fields first, or set GEOMETER_MONOREPO)") : "the monorepo's apps/fleet is not at a sibling path (set GEOMETER_MONOREPO)";
+
+test("the last good snapshot and the last restore drill are sent as ages in whole seconds, from the host's clock", () => {
+  const a = agentOf([shop({ backups: BACKUPS })]);
+  assert.equal(a.backup_age_s, 3600); // 09:00 to 10:00
+  assert.deepEqual(a.drill, { age_s: 2 * 86_400 + 7 * 3600, ok: true }); // 2 Nov 03:00 to 4 Nov 10:00
+  assert.deepEqual(Object.keys(a), ["id", "pathway", "pathway_version", "runtime", "guards", "since_last", "backup_age_s", "drill"], "after the contract's required fields");
+  assert.deepEqual((agentOf([shop({ backups: { ...BACKUPS, drillOk: false } })]).drill as { ok: boolean }).ok, false);
+});
+
+test("a field with nothing to say is left out, never sent as 0 or null: no file, no snapshot yet, no drill yet, a drill with no verdict, text that is not a time", () => {
+  const keys = (backups: ShopObservation["backups"]) => Object.keys(agentOf([shop(backups === undefined ? {} : { backups })])).filter((k) => k === "backup_age_s" || k === "drill");
+  assert.deepEqual(keys(undefined), [], "no status file");
+  assert.deepEqual(keys({ lastCopyAt: null, lastDrillAt: null, drillOk: null }), [], "the status file before the first job");
+  assert.deepEqual(keys({ lastCopyAt: BACKUPS.lastCopyAt, lastDrillAt: null, drillOk: null }), ["backup_age_s"]);
+  assert.deepEqual(keys({ lastCopyAt: null, lastDrillAt: BACKUPS.lastDrillAt, drillOk: true }), ["drill"]);
+  assert.deepEqual(keys({ lastCopyAt: BACKUPS.lastCopyAt, lastDrillAt: BACKUPS.lastDrillAt, drillOk: null }), ["backup_age_s"], "a drill with no verdict is not guessed");
+  assert.deepEqual(keys({ lastCopyAt: "last night", lastDrillAt: "Sunday", drillOk: true }), [], "text that is not a time");
+});
+
+test("an age is a count: a time set in the future is 0, an old one stops at 999,999 (about 11.5 days)", () => {
+  const a = agentOf([shop({ backups: { lastCopyAt: "2026-11-04T12:00:00.000Z", lastDrillAt: "2026-01-01T00:00:00.000Z", drillOk: true } })]);
+  assert.equal(a.backup_age_s, 0);
+  assert.deepEqual(a.drill, { age_s: 999_999, ok: true });
+});
+
+test("a failed drill is its own fact: the shop is still ready, no Guard changes, and the drill's reason never travels", () => {
+  const a = agentOf([shop({ backups: { ...BACKUPS, drillOk: false, drillDetail: "the continuous copy could not be restored: litestream: no snapshots found for 9876543210" } as never })]);
+  assert.deepEqual([(a.runtime as { up: boolean }).up, (a.runtime as { ready: boolean }).ready], [true, true]);
+  assert.deepEqual((a.guards as { ready: boolean }[]).map((g) => g.ready), [true, true]);
+  assert.deepEqual(a.drill, { age_s: 198_000, ok: false });
+  assert.doesNotMatch(JSON.stringify(build([shop({ backups: { ...BACKUPS, drillOk: false, drillDetail: "litestream: no snapshots found" } as never })]).body), /litestream|snapshots found|detail/u);
+});
+
+test("fleet's own validator accepts the backup fields, a failed drill, and a shop with only one of them", { skip: skipUnlessFleetKnows }, () => {
+  for (const backups of [BACKUPS, { ...BACKUPS, drillOk: false }, { lastCopyAt: BACKUPS.lastCopyAt }, { lastDrillAt: BACKUPS.lastDrillAt, drillOk: true }, { lastCopyAt: "2026-01-01T00:00:00.000Z", lastDrillAt: "2026-01-01T00:00:00.000Z", drillOk: true }]) {
+    const r = fleet!.checkHeartbeat(build([shop({ backups }), shop({ id: "bright-tuition" })]).body);
+    assert.equal(r.ok, true, JSON.stringify(r));
+  }
+});
+
+test("fleet's validator would refuse a time in place of an age: the fields stay counts (this guards the choice, not the sender)", { skip: skipUnlessFleetKnows }, () => {
+  for (const [field, value] of [["backup_age_s", Date.parse(BACKUPS.lastCopyAt)], ["backup_age_s", BACKUPS.lastCopyAt], ["drill", { age_s: Date.parse(BACKUPS.lastDrillAt), ok: true }], ["drill", { age_s: 5, ok: "yes" }], ["drill", { age_s: 5, ok: true, detail: "x" }]] as const) {
+    const body = build([shop()]).body as { agents: Record<string, unknown>[] };
+    body.agents[0][field] = value;
+    assert.equal(fleet!.checkHeartbeat(body).ok, false, `${field}: ${JSON.stringify(value)}`);
+  }
+});
+
 test("a failed tripwire, a Guard that is not ready, and one whose admin port cannot be reached are all ready=false", () => {
   const guards = build([shop({ guards: [
     guard("guard-razorpay", { admin: { runtime: { mode: "enforce" }, kill_switch: { on: false }, tripwires: { ran: true, ok: false, passed: 3, of: 4 } } }),
