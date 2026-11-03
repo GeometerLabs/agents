@@ -6,12 +6,12 @@
 // bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Everything it creates is named
 // geometer-proof-* and is removed at the end (volumes, networks, containers); it never deletes an image.
 import { spawn, spawnSync } from "node:child_process";
-import { createHmac, createHash, generateKeyPairSync } from "node:crypto";
+import { createHmac, generateKeyPairSync } from "node:crypto";
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main } from "../../geometer.ts";
-import { Refused, compose as composeCmd, deploy, ops } from "../../deploy.ts";
+import { Refused, deploy } from "../../deploy.ts";
 import type { Context } from "../../deploy.ts";
 import { dockerGuardTool } from "../../generate/verify.ts";
 import type { GuardTool } from "../../generate/verify.ts";
@@ -458,7 +458,6 @@ async function stopPersists() {
 
 async function dataDuties() {
   say("\n== continuous copy, nightly snapshot, drill, restore ==");
-  const bucket = (b: string) => nodeEval("ops", `const c=require('crypto');void c;fetch('http://minio:9000/${b}/').then(r=>console.log(r.status))`).out.trim(); void bucket;
   const objects = (dir: string) => sh("find", [join(SCRATCH, "minio", dir), "-type", "f", "-not", "-name", "xl.meta.tmp"]).out.trim().split("\n").filter(Boolean).length;
   await waitFor("Litestream to copy", () => objects("geo-stream") > 0, 60);
   check("Litestream is streaming the runtime database to the bucket", objects("geo-stream") > 0, { objects: objects("geo-stream") });
@@ -507,7 +506,6 @@ if (import.meta.main) {
       say(`left behind: containers ${dk(["ps", "-a", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean).length}, volumes ${dk(["volume", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean).length}, networks ${dk(["network", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean).length}`);
     }
     say(`\n${JSON.stringify(results.summary)}`);
-    void createHash; void composeCmd; void ops; void readStatus;
     process.exit((results.summary as { failed: string[] }).failed.length === 0 && !results.error ? 0 : 1);
   }
 

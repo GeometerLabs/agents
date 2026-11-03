@@ -20,7 +20,7 @@ import { parseArgs } from "node:util";
 import { applyOnce, watch } from "./apply.ts";
 import { runBackup, runDrill, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
-import { Refused, composeFile, checkShop, compose, deploy, ops } from "./deploy.ts";
+import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { realRunner } from "./lib/runner.ts";
@@ -259,7 +259,6 @@ async function status(ctx: Context): Promise<number> {
     if (s?.tripwires) console.log(`  last deploy: ${s.tripwires.line}`);
     console.log(`  backup: ${s?.backup.lastBackupAt ? `last snapshot ${s.backup.lastBackupAt}` : "no snapshot yet"}; restore drill: ${s?.backup.lastDrill ? `${s.backup.lastDrill.ok ? "passed" : "FAILED"} ${s.backup.lastDrill.at}${s.backup.lastDrill.ok ? "" : ` (${s.backup.lastDrill.detail})`}` : "never run"}`);
   }
-  void composeFile;
   return 0;
 }
 
