@@ -17,8 +17,8 @@ const two = () => build([shop("glow-salon", 1), shop("bright-tuition", 2)]);
 test("a runtime is on ONE internal network, shared with its own Guards and the model Guard, and on no other network", () => {
   const c = two();
   assert.deepEqual(nets(c, "rt-glow-salon"), ["net-glow-salon"]);
-  for (const svc of ["g-glow-salon-razorpay", "g-glow-salon-whatsapp", "g-glow-salon-calendar"]) assert.ok(nets(c, svc).includes("net-glow-salon") && !nets(c, svc).includes("net-bright-tuition"), svc);
-  assert.deepEqual(nets(c, "g-model").sort(), ["admin", "egress", "net-bright-tuition", "net-glow-salon"]);
+  for (const svc of ["fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-glow-salon-calendar"]) assert.ok(nets(c, svc).includes("net-glow-salon") && !nets(c, svc).includes("net-bright-tuition"), svc);
+  assert.deepEqual(nets(c, "fwd-model").sort(), ["admin", "egress", "net-bright-tuition", "net-glow-salon"]);
   const compose = c.compose;
   for (const n of ["net-glow-salon", "net-bright-tuition", "admin"]) assert.match(compose, new RegExp(`\\n  ${n}:\\n    internal: true`), `${n} has no way out`);
   assert.doesNotMatch(compose, /\n  (front|egress):\n    internal/);
@@ -27,7 +27,8 @@ test("a runtime is on ONE internal network, shared with its own Guards and the m
 test("only Guards (and the few services that must call out) are on the egress network; the runtime and Caddy never are", () => {
   const c = two();
   const onEgress = Object.keys(c.services).filter((s) => nets(c, s).includes("egress")).sort();
-  assert.deepEqual(onEgress, ["g-bright-tuition-calendar", "g-bright-tuition-razorpay", "g-bright-tuition-whatsapp", "g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp", "g-model", "litestream", "ops", "panel", "refresher"]);
+  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "litestream", "ops", "panel", "refresher"]);
+  for (const g of ["g-glow-salon-razorpay", "g-model"]) assert.match(String(c.services[g].block.network_mode), /^service:fwd-/, `${g} joins its forwarder's namespace`);
   assert.deepEqual(nets(c, "caddy"), ["front"]);
   assert.deepEqual(nets(c, "inbox").sort(), ["admin", "front"]);
 });
@@ -35,26 +36,27 @@ test("only Guards (and the few services that must call out) are on the egress ne
 test("a runtime's network holds ONLY the runtime, its own three Guards, the model Guard and its door: not the inbox, the relay or ops, which the runtime could otherwise connect to", () => {
   const c = two();
   const members = (net: string) => Object.keys(c.services).filter((s) => nets(c, s).includes(net)).sort();
-  assert.deepEqual(members("net-glow-salon"), ["door-glow-salon", "g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp", "g-model", "rt-glow-salon"]);
-  assert.deepEqual(members("net-bright-tuition"), ["door-bright-tuition", "g-bright-tuition-calendar", "g-bright-tuition-razorpay", "g-bright-tuition-whatsapp", "g-model", "rt-bright-tuition"]);
+  assert.deepEqual(members("net-glow-salon"), ["door-glow-salon", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "rt-glow-salon"]);
+  assert.deepEqual(members("net-bright-tuition"), ["door-bright-tuition", "fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-model", "rt-bright-tuition"]);
+  assert.deepEqual((c.services["fwd-glow-salon-razorpay"].block.networks as Record<string, { aliases?: string[] }>)["net-glow-salon"].aliases, ["g-glow-salon-razorpay"], "the runtime finds its Guard by the Guard's name");
   const door = c.services["door-glow-salon"].block;
   const ip = ((door.networks as Record<string, { ipv4_address?: string }>).admin).ipv4_address!;
   assert.deepEqual(door.command, ["nc", "-ll", "-s", ip, "-p", "8780", "-e", "nc", "rt-glow-salon", "8780"]);
   assert.match(ip, /^10\.231\.24\d\.\d+$/, "the door listens only on the admin network, where the runtime is not");
 });
 
-test("a runtime talks to its Guards by name and reaches the admin network through nothing: the admin forwarders are in the Guards' own namespaces on an address of the admin network", () => {
+test("each Guard shares its forwarder's network namespace; the forwarder listens only on an address of the admin network and passes bytes to the Guard's loopback", () => {
   const c = two();
   const addresses = new Set<string>();
   for (const [name, s] of Object.entries(c.services).filter(([n]) => n.startsWith("fwd-"))) {
-    const target = String(s.block.network_mode).replace("service:", "");
-    assert.ok(c.services[target], `${name} shares ${target}`);
-    const ip = ((c.services[target].block.networks as Record<string, { ipv4_address?: string }>).admin).ipv4_address!;
+    const ip = ((s.block.networks as Record<string, { ipv4_address?: string }>).admin).ipv4_address!;
     assert.match(ip, /^10\.231\.24\d\.\d+$/);
     assert.ok(!addresses.has(ip), `${ip} is used once`); addresses.add(ip);
     assert.deepEqual((s.block.command as string[]).slice(0, 5), ["nc", "-ll", "-s", ip, "-p"]);
     assert.deepEqual((s.block.command as string[]).slice(-3), ["nc", "127.0.0.1", "8082"]);
-    assert.equal(s.block.networks, undefined, "a container that shares a namespace has no networks of its own");
+    const guard = "g-" + name.slice(4);
+    assert.equal(c.services[guard].block.network_mode, `service:${name}`, `${guard} joins ${name}`);
+    assert.equal(c.services[guard].block.networks, undefined, "a container that joins a namespace has no networks of its own");
   }
   assert.equal(addresses.size, 7);
   assert.equal(addressing(serverConfig()).adminIp("x", "razorpay", 1), "10.231.240.20");
@@ -95,7 +97,7 @@ test("the Calendar Guard reads only its own shop's token (a sub-folder of the to
   const c = two();
   const m = JSON.parse(mounts(c, "g-glow-salon-calendar").find((x) => x.startsWith("{"))!);
   assert.deepEqual(m, { type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: "glow-salon" } });
-  assert.deepEqual(c.services["g-glow-salon-calendar"].block.depends_on, { refresher: { condition: "service_healthy" } });
+  assert.deepEqual(c.services["g-glow-salon-calendar"].block.depends_on, { "fwd-glow-salon-calendar": { condition: "service_started" }, refresher: { condition: "service_healthy" } });
   assert.ok(!mounts(c, "g-glow-salon-razorpay").some((x) => x.includes("google")));
 });
 
