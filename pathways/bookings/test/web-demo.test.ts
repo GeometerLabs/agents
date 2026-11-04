@@ -256,6 +256,13 @@ test("web build: every colour is a custom property with a default, nothing else 
   // Outside those default lines (and the comments) no colour is written out: no hex, rgb(), hsl(), or colour name.
   const rest = source.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((line) => !/^\s*--_[a-z0-9-]+: var\(--geo-/.test(line)).join("\n");
   assert.deepEqual(rest.match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|(?<![-\w])(?:white|black|red|green|blue|gray|grey|yellow|orange)(?![-\w])/gi) ?? [], [], "a colour outside the token defaults");
+  // Every text size comes from the base size (--geo-font-size) through the scale, so that one token moves all of it: no size in pixels outside the token block.
+  const body = source.replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.deepEqual(body.match(/font(?:-size)?:\s*[^;}]*\d+(?:\.\d+)?px/g) ?? [], [], "a font size written in pixels");
+  assert.ok(/--_size: var\(--geo-font-size, 15px\)/.test(body) && /--_fs-sm: calc\(var\(--_size\)/.test(body));
+  for (const [, selector, size] of body.matchAll(/(\.geo-demo [^{]+)\{[^}]*font-size: var\(--_fs-(\w+)\)/g)) {
+    if (size === "xs") assert.ok(/geo-(banner|note|clock|step-number|step-badge|bubble-time|record-head|pill|record-refs)/.test(selector), `${selector.trim()} is not meta text, so it is not set in the smallest size (content text is 14px or more at the default base)`);
+  }
   // Every --geo- token the sheet reads is named in the header, for the person theming it; and the sheet reads no --geo- token that has no default.
   const header = /\/\*[\s\S]*?\*\//.exec(source)![0];
   const used = new Set([...source.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/var\((--geo-[a-z0-9-]+)/g)].map((m) => m[1]));
