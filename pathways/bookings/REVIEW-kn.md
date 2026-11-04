@@ -510,6 +510,23 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.caveats.hosting-not-measured` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲನ್ನು ಇನ್ನೂ ಅಳೆದಿಲ್ಲ. | The hosting share has not been measured yet. |  |
 | `cost.caveats.payment-link-fee-conflict` | ಪಾವತಿ ಲಿಂಕ್‌ಗಳ ಶುಲ್ಕದ ಬಗ್ಗೆ Razorpay ಪುಟಗಳೇ ಬೇರೆ ಬೇರೆ ಹೇಳುತ್ತವೆ. ಹೆಚ್ಚಿನದನ್ನು (2%) ಬಳಸಲಾಗಿದೆ. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
 | `cost.caveats.whatsapp-rate-second-hand` | WhatsApp ರೂಪಾಯಿ ದರ Meta ಪುಟದಿಂದ ಬಂದಿಲ್ಲ, ಒಬ್ಬ ರಿಸೆಲ್ಲರ್ ಪುಟದಿಂದ ಬಂದಿದೆ. ಮೊದಲ ಬಿಲ್ ಬಂದಾಗ ಪರಿಶೀಲಿಸಿ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
+| `plan.heading` | ಪ್ಲಾನ್ | Plan |  |
+| `plan.none` | ಈ ಅಂಗಡಿಗೆ ಇನ್ನೂ ಯಾವ ಪ್ಲಾನ್ ಕೂಡ ಹೊಂದಿಸಿಲ್ಲ. | No plan is set for this shop yet. |  |
+| `plan.names.basic` | ಬೇಸಿಕ್ | Basic |  |
+| `plan.names.business` | ಬಿಸಿನೆಸ್ | Business |  |
+| `plan.names.operations` | ಆಪರೇಷನ್ಸ್ | Operations |  |
+| `plan.is` | ಈ ಅಂಗಡಿ Business ಪ್ಲಾನ್‌ನಲ್ಲಿದೆ. | This shop is on the Business plan. |  |
+| `plan.included` | ಪ್ರತಿ ತಿಂಗಳು 3000 ಗ್ರಾಹಕ ಸಂದೇಶಗಳು ಸೇರಿವೆ. | 3000 customer messages a month are included. |  |
+| `plan.price` | ಪ್ರಸ್ತಾವಿತ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, GST ಬಿಟ್ಟು. | Proposed price: ₹299 a month, before GST. |  |
+| `plan.priceInnovator` | ಪ್ರಸ್ತಾವಿತ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, ಇನ್ನೋವೇಟರ್ ರಿಯಾಯಿತಿಯೊಂದಿಗೆ ₹179, GST ಬಿಟ್ಟು. | Proposed price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
+| `plan.proposedNote` | ಬೆಲೆಗಳು ಪ್ರಸ್ತಾವಿತ, ಅಂತಿಮವಲ್ಲ. | Prices are proposed and not final. |  |
+| `plan.innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |
+| `plan.buttons` | ಈ ಅಂಗಡಿಗೆ AI ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ಈಗ ಬಟನ್ ಮೆನು ಸಿಗುತ್ತದೆ. | AI is paused for this shop. Customers get button menus instead. |  |
+| `plan.buttonsWhy.overage_unfunded` | ಈ ಅಂಗಡಿ ಪ್ಲಾನ್‌ನಲ್ಲಿ ಸೇರಿರುವುದಕ್ಕಿಂತ ಹೆಚ್ಚು ಸಂದೇಶಗಳನ್ನು ಬಳಸಿದೆ, ರೀಚಾರ್ಜ್ ಬ್ಯಾಲೆನ್ಸ್ ಇನ್ನು ಸಾಲದು. AI ಮತ್ತೆ ಆನ್ ಮಾಡಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | This shop has used more messages than its plan includes, and the recharge balance cannot cover more. Recharge to turn AI back on. |  |
+| `plan.buttonsWhy.other` | ಈ ಅಂಗಡಿಗೆ ಬಟನ್ ಮೆನು ಬೇಕೆಂದು Geometer ಕೇಳಿದೆ. | Geometer asked for button menus for this shop. |  |
+| `plan.warn.allowance_80` | ಈ ತಿಂಗಳ ಸೇರಿದ ಸಂದೇಶಗಳಲ್ಲಿ 80% ಬಳಕೆಯಾಗಿದೆ. | 80% of this month's included messages are used. |  |
+| `plan.warn.balance_80` | ರೀಚಾರ್ಜ್ ಬ್ಯಾಲೆನ್ಸ್‌ನ 80% ಬಳಕೆಯಾಗಿದೆ. ಮುಗಿಯುವ ಮೊದಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | 80% of the recharge balance is used. Recharge before it runs out. |  |
+| `plan.warn.whatsapp_unsettled` | WhatsApp ನ ಕೆಲವು ವೆಚ್ಚಗಳನ್ನು ಇನ್ನೂ ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಪಾವತಿಸಿಲ್ಲ. ಅವನ್ನು ತೀರಿಸಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
@@ -660,4 +677,3 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
 | `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
 | `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
-

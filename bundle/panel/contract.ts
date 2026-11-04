@@ -11,6 +11,8 @@
 //   <server>/secrets-inbox/<shop>/<name>       written by the panel      razorpay_key ("<key id>:<key secret>"), whatsapp_token, whatsapp_app_secret,
 //                                                                        razorpay_webhook_secret, google_service_account.json. Write-only: never read back.
 //   <server>/status/<shop>.json                written by the deployer   see ShopStatus. A missing or unreadable file is "not confirmed yet", never "live".
+//   <server>/fleet/<shop>.json                 written by ops (read-only here)   fleet's last answer about the shop: its plan, the included messages, the Innovator badge,
+//                                                                        button mode and warnings. See FleetAnswer. A missing or unreadable file is "fleet has said nothing", never "no plan".
 //   <server>/requests/<shop>.stop.json         PROPOSAL, panel           a request to stop; the deployer acts, then shows `stopped` in status/<shop>.json
 //   <server>/exports/<shop>/{record,bookings}.json   PROPOSAL, deployer  what scripts/client-report.ts reads, for the monthly report
 //   <server>/panel/                            the panel's own data (accounts, invites, drafts, receipts, audit trail, documents)
@@ -27,6 +29,7 @@ export function serverPaths(dir: string) {
     secretsInbox: join(root, "secrets-inbox"),
     inbox: (shop: string) => join(root, "secrets-inbox", shop),
     statusFile: (shop: string) => join(root, "status", `${shop}.json`),
+    fleetFile: (shop: string) => join(root, "fleet", `${shop}.json`),
     stopFile: (shop: string) => join(root, "requests", `${shop}.stop.json`),
     exports: (shop: string) => join(root, "exports", shop),
     panel: join(root, "panel"),
@@ -74,6 +77,8 @@ export interface ShopStatus {
   versions?: { pathway?: string; bundle?: string; guard?: string };
   stopped?: { at: string; requestId?: string };
   backups?: { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null };
+  /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
+  usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
 }
 
 const isoDay = (v: unknown): string | undefined => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : undefined);
@@ -103,7 +108,44 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
     const day = (v: unknown) => (v === null ? null : isoDay(v));
     status.backups = { ...(day(raw.backups.lastCopyAt) !== undefined ? { lastCopyAt: day(raw.backups.lastCopyAt) as string | null } : {}), ...(day(raw.backups.lastDrillAt) !== undefined ? { lastDrillAt: day(raw.backups.lastDrillAt) as string | null } : {}), ...(typeof raw.backups.drillOk === "boolean" || raw.backups.drillOk === null ? { drillOk: raw.backups.drillOk as boolean | null } : {}) };
   }
+  const u = raw.usage;
+  if (isObj(u) && isObj(u.byStep) && isObj(u.whatsapp)) {
+    const n = [u.messages, u.byStep.rules, u.byStep.decision, u.byStep.model, u.modelMicroInr, u.whatsapp.service, u.whatsapp.utility, u.whatsapp.marketing, u.whatsapp.estMicroInr].map(whole);
+    if (!n.includes(undefined)) {
+      status.usage = {
+        ...(isoDay(u.at) ? { at: isoDay(u.at) as string } : {}),
+        messages: n[0] as number, byStep: { rules: n[1] as number, decision: n[2] as number, model: n[3] as number }, modelMicroInr: n[4] as number,
+        whatsapp: { service: n[5] as number, utility: n[6] as number, marketing: n[7] as number, estMicroInr: n[8] as number, estimated: u.whatsapp.estimated === true },
+      };
+    }
+  }
   return { ok: true, status };
+}
+
+// ---- fleet's answer ------------------------------------------------------------------------------------------------------------------------------------------------
+
+export const PLAN_NAMES = ["basic", "business", "operations"] as const;
+export type PlanName = (typeof PLAN_NAMES)[number];
+
+/** fleet/<shop>.json, as the panel reads it (the bundle's lib/fleet.ts writes it). Read field by field: a wrong field is dropped, never guessed. */
+export interface FleetAnswer { at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[] }
+
+export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer | undefined {
+  if (textOrNothing === undefined) return undefined;
+  try {
+    const r: unknown = JSON.parse(textOrNothing);
+    if (!isObj(r) || r.schema !== 1 || !isoDay(r.at) || (r.ai !== "normal" && r.ai !== "buttons")) return undefined;
+    const code = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9_]{1,40}$/u.test(v);
+    return {
+      at: r.at as string,
+      plan: (PLAN_NAMES as readonly unknown[]).includes(r.plan) ? (r.plan as PlanName) : null,
+      allowance: whole(r.allowance) ?? null,
+      innovator: r.innovator === true,
+      ai: r.ai,
+      ...(r.ai === "buttons" && code(r.reason) ? { reason: r.reason } : {}),
+      warn: Array.isArray(r.warn) ? r.warn.filter(code).slice(0, 8) : [],
+    };
+  } catch { return undefined; }
 }
 
 export interface StopRequest { schema: 1; requestId: string; shop: string; requestedAt: string; requestedBy: { id: string; name: string; role: string } }
