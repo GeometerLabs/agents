@@ -7,6 +7,7 @@
 // is never read as "fine".
 import { existsSync, readFileSync } from "node:fs";
 import { serverPaths } from "./server.ts";
+import type { UsageTotals } from "./usage.ts";
 import { stableJson, writeAtomic } from "./util.ts";
 import type { Problem } from "./util.ts";
 
@@ -21,6 +22,8 @@ export interface ShopStatus {
   versions?: { pathway: string; bundle: string; guard: string; guards: Record<string, number> };
   stopped?: { at: string; requestId?: string; by?: string; reason?: string };
   backups?: { lastCopyAt: string | null; lastDrillAt: string | null; drillOk: boolean | null; drillDetail?: string };
+  /** The cost meter's cumulative counts over the shop's whole record, as of the last export (every 15 minutes). Counts only (lib/usage.ts). Ops sends the difference to fleet. */
+  usage?: UsageTotals & { at: string };
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */
   webhooks?: { razorpay: string; whatsapp: string };
 }
