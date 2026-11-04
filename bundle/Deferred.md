@@ -14,8 +14,20 @@ Day 0 is the invoice due date. Days 0 to 14 are normal, 15 to 30 are warnings, w
 
 - **The check** is a deployer job beside the others (`runDueJobs` in `apply.ts`: relay credentials, exports, snapshot, drill). It would read a signed lease file from `state/`, compute the day, and call the same `ops stop` the panel's stop request uses for the wind-down.
 - **Guard's side** is one more optional block in `TomlOptions` (`generate/guards.ts`), written into every guard.toml by the same generator and re-verified by `verify-bundle`; a changed lease is a changed file and a Guard restart, as for any config change.
-- **The heartbeat's answer** is read today only for its status (`sendHeartbeat` in `services/heartbeat.ts` returns `accepted`); fleet's 200 body is where a fresh lease would come back, and the same function is where it would be picked up.
+- **The heartbeat's answer** is read for fleet's per-shop entries (`parseFleetAnswer` in `lib/fleet.ts`: plan, allowance, innovator, `ai`); fleet's 200 body is where a fresh lease would come back, and `sendHeartbeat` is where it would be picked up. **No licence code exists yet (checked 5 Nov), so nothing lists a shop's plan in a licence.** When B13 is built, its licence reads each shop's plan from `fleet/<shop>.json` (written by ops from fleet's answer).
 - **What the panel shows** would go in `status/<shop>.json` beside `deploy` and `limits`, which the panel's checker ignores fields it does not know.
+
+## The cost meter, plans and button mode (5 Nov: B45, B48, B56)
+
+- **Align the record's field names at merge.** `lib/usage.ts` `FIELDS` guesses where the `understanding` branch puts a message's step, provider, model, tokens and cost (an `understanding` object on the entry, or the entry itself; `step`, `provider`, `model`, `inputTokens`, `outputTokens`, `costMicroInr`). Until it is aligned every message counts as `rules` with no spend, which is the safe answer. Revisit when: that branch merges.
+- **The runtime does not read `ai` yet.** `validateRuntimeConfig` refuses the key, so the bundle skips fleet's button mode with a note (`generate/shop.ts`, `withFleetAi`). When the button-mode work lands, check that the key it reads is top-level `ai` with the value `"buttons"`, and that its validator accepts it; then nothing here changes. Revisit when: B47 merges.
+- **Counts and button mode lag by up to 15 minutes**, because the export job is the data path. A faster path is a runtime `/status` field, which would touch the pathway. Revisit when: a shop overruns its balance noticeably before the switch.
+- **A lost 200 counts a heartbeat twice.** If fleet stores a heartbeat and its answer is lost, the bundle sends the same difference again (the same rule steps and errors have always had). Fleet cannot tell, because a heartbeat has no sequence number. The amounts are small (a minute of counts). Revisit when: the pilot's cost meter disagrees with the provider's invoices.
+- **The first heartbeat after an upgrade skips history.** A shop with no baseline starts at its current totals, so the messages counted before the meter existed are never sent. By design (see Explanation.md); the baseline file is `fleet/usage-baseline.json`.
+- **The panel's cost line does not read fleet's cost lines yet.** The panel shows the plan and the proposed price, but its running-cost line is still the 4 Nov list (decision 13's flat fee, whose label still names it as the first price) and does not take fleet's AI, WhatsApp, server and support figures. Needs a way for the panel to read fleet (a panel credential, or fleet's answer carrying the month's cost lines). The label changes when the owner says yes to the plans. Revisit when: B32's margin view is built.
+- **The Operations plan has no message bands** above 10,000 and its price is "from INR 999"; the list carries the starting price only.
+- **Marketing messages** are typed but never produced; the estimate would price them from the proposed list's rate.
+- **The deployer's user runs ops** (so it can write `fleet/`). Not run in Docker; the next proof run should check that `fleet/<shop>.json` appears after a heartbeat and that the panel and the deployer can read it.
 
 ## Contract changes the bundle needs from other parts
 
