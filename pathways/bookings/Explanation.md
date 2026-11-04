@@ -32,7 +32,7 @@ Everything here runs against in-memory fakes. That is a stand-in for real servic
 
 ## How the checks were made, and why they should not be vacuous
 
-- **Situations, not only unit tests.** `crash-test/situations.ts` holds 34 situations (27 at v0, then Malayalam and Kannada, then a customer who asks for more back than they paid; see below): the rows of plan 4.4 that fakes can express (1 to 14, with #3, #8 and #9 split into variants and #8 and #9 in both languages), plus a few the plan implies (a normal booking, cancellation inside the window, a refund above the limit, STOP, two customers on one slot, a conflict at the moment of the hold, outside opening hours, reschedule, a reschedule confirmed after the time was taken, reminders). Each one starts a fresh world, makes something go wrong on purpose, and judges **from the fakes' own records**: what the calendar holds, what the payments service holds, what the messaging outbox holds. The agent's return values are never consulted. The same situations back both the tests and `scripts/hand-check.ts`.
+- **Situations, not only unit tests.** `crash-test/situations.ts` holds 37 situations (27 at v0, then Malayalam and Kannada, then a customer who asks for more back than they paid; see below): the rows of plan 4.4 that fakes can express (1 to 14, with #3, #8 and #9 split into variants and #8 and #9 in both languages), plus a few the plan implies (a normal booking, cancellation inside the window, a refund above the limit, STOP, two customers on one slot, a conflict at the moment of the hold, outside opening hours, reschedule, a reschedule confirmed after the time was taken, reminders). Each one starts a fresh world, makes something go wrong on purpose, and judges **from the fakes' own records**: what the calendar holds, what the payments service holds, what the messaging outbox holds. The agent's return values are never consulted. The same situations back both the tests and `scripts/hand-check.ts`.
 - **A mutation check by hand.** To see whether the situations can fail, 17 deliberate bugs were put into a scratch copy, one at a time (trust the calendar's reply, no inbound de-duplication, count every payment as a deposit, no look before creating a link, refunds always allowed, late cancellations refunded automatically, weekday phrases not confirmed, no double-booking check, hours not checked, "booked" without both confirmations, outgoing check switched off, and others). At first 14 were caught. Three were not: removing only the "I can't go lower" sentence (the quote still states ₹450; a check on that sentence was added), letting every message state every service's price (invisible to the situations because the templates never do; a unit test on the facts was added), and switching off only the `opt-out` gate (the `no-message-after-stop` gate still holds the reminders, which is the point of having two; a test that the record shows the opt-out decision was added). A review also found that a reschedule confirmed with "yes" skipped the slot rules; it is fixed, with a situation for it. One test regex had mistaken "is free" (the slot is available) for "free of charge". Checks that read the agent's own record (rather than the fakes) live in `test/record-decisions.test.ts`, apart from the situations.
 - **A type check that is not part of the folder.** Node strips types without checking them. The code was checked once with TypeScript 5.9 borrowed read-only from another project's `node_modules` (`strict`, `erasableSyntaxOnly`, `verbatimModuleSyntax`, `noUnusedLocals`), with no errors. No tsconfig is committed, because it would need `@types/node` installed, and this folder has no dependencies.
 
@@ -560,6 +560,116 @@ The owner asked: if a customer paid ₹100 and says "refund ₹200", we refund �
 **Size.** `src/` grew by about 30 lines in three files (the rule and its reader in `guard-limits.ts`, the check in `guard-model.ts`, one line in `adapters/payments.ts`); `crash-test/situations.ts` by 61 lines; tests by about 150 lines. No dependency.
 
 **Not done.** The monorepo's shipped Razorpay template (`deploy/pathways/bookings/razorpay/spec.json`) does not have the rule, and the monorepo was not touched (Deferred.md). The hand check runs on the model of Guard, not the binary.
+
+## Three-step understanding, buttons and lists, and button mode (B46, B47; added 5 November 2026)
+
+Plan items B46 (how a message is understood, cheapest step first) and B47 (buttons, lists, and what the agent does when the AI is off). The design comes from [Economics and pricing](../../../docs/product/economics-and-pricing.md) section 3 (the AI) and section 8 (credits and button mode).
+
+### The router (B46)
+
+`src/adapters/understanding.ts`. Each customer message goes through up to three steps and stops at the first that is sure.
+
+| Step | What reads it | When it is sure |
+| --- | --- | --- |
+| 0, `rules` | A tapped button or list row (looked up by its id, no words read), then the rule parser | "STOP", yes, no, cancel, a greeting, "talk to the owner", a move that names a day or time, a booking that names a service, a day and a time, and anything that tries to change the rules |
+| 1, `decision` | A System One decision model: Laya on the shop server, or Jev hosted (`src/adapters/system-one.ts`) | It answers three **choice questions** with probabilities: what the customer wants, which of the shop's own services, and which of up to six free times taken from the calendar. The chosen option must reach the threshold (default 0.75) |
+| 2, `model` | DeepSeek V4.1 Flash on DeepInfra (any OpenAI-compatible endpoint), through the existing `model-llm.ts` | Whatever it returns that `coerceIntent` accepts |
+
+- **No model ever writes to a customer.** Every answer becomes an `Intent`, `coerceIntent` checks it, and templates write every reply.
+- **Phone numbers and names are taken out first** (`src/adapters/redact.ts`). Numbers by shape (any run of 8 or more digits, in four scripts), e-mail addresses and links by shape; names by what is known (a profile name, if given) and by "my name is", "मेरा नाम", "എന്റെ പേര്", "ನನ್ನ ಹೆಸರು" and a few others, one word and a capitalised surname. A name written some other way gets through: this is exact for numbers and best effort for names. The sender's own number never reaches the router, only the words.
+- **Prompt caching.** The shop's system prompt for step 2 is the same text for every message and comes first (`model-prompt.ts`); nothing per-message goes into it. DeepInfra's reported cached tokens (`prompt_tokens_details.cached_tokens`) are priced at the cached rate.
+- **Malayalam and Kannada skip step 1 by default** (`decision.languages` defaults to Hindi and English), because the Laya model card does not mention them (economics section 3.2). Add `"ml"`, `"kn"` to `decision.languages` once the eval shows they pass.
+- **Unsure with nothing after it** (no step 2 configured, or it failed): the rules' reading stands, and the agent asks the customer, with a list.
+- **Jev and DeepInfra are paid, so there is no call without a key.** The key is read from the environment variable a config names (`keyEnv`), sent only as `Authorization: Bearer` to that one address, and never logged, stored or put in an error. If the variable is not set the step is off and the start-up line names the variable, not its value. The tests use made-up keys.
+
+### The settings (`runtime.json`)
+
+| Key | Meaning |
+| --- | --- |
+| `ai` | `"auto"` (default) or `"buttons"`. **`"buttons"` turns every model step off.** This is the key the bundle writes from fleet's heartbeat answer |
+| `decision` | Step 1: `{ provider: "laya" \| "jev" \| "system-one", baseUrl, model, keyEnv?, threshold?, languages?, timeoutMs? }`. Jev needs `keyEnv`. Laya (a local address) needs none |
+| `parser` | Step 2, as before, with `provider?` (for the record and the price list, default the host) and `keyEnv?` (the provider's key, from the environment). `keyEnv` and `agentTokenFile` are two ways to authenticate, never both. A key to plain `http://` on another machine is refused |
+| `allowance` | `{ messages?, costInr? }`: this month's most messages read by steps 1 and 2, and their most estimated cost in rupees. Either reached puts the shop in button mode until the month ends |
+| `pauseMinutes` | How long button mode lasts after a model step fails (default 5) |
+
+**For whoever writes the switch (the bundle):** the file is `<client folder>/runtime.json`, the key is `"ai"`, the value is `"buttons"` to switch the AI off and `"auto"` (or no `"ai"` key) to give it back. The runtime looks at the file again whenever its modified time changes, on every customer message and every tick, so no restart is needed. Write it whole to a temporary file and rename it over `runtime.json`; a file caught half written leaves the last answer standing, never switches the AI off by accident. `Status.ai` (below) says what the agent is doing.
+
+### Understanding record fields (for the cost meter)
+
+One `receive_message` entry per customer message, in the existing record format (`refs` is a map of strings). The entry's other fields are as before. These are the exact keys:
+
+| `refs` key | Value |
+| --- | --- |
+| `step` | `rules`, `decision` or `model`: the step that handled the message |
+| `provider` | `rules`, `laya`, `jev`, `system-one` or the language model's `provider` from `runtime.json` (for example `deepinfra`) |
+| `model` | The model id (`rule-parser` for the rules, `laya`, `deepseek-ai/DeepSeek-V4.1-Flash` ...) |
+| `inputTokens`, `outputTokens` | Decimal strings. The total over **every** call made for this message, so a message the decision model was unsure of and the language model then read counts both |
+| `costMicroInr` | Whole micro-rupees (millionths of a rupee), as a decimal string, from the dated rate table (`src/adapters/rates.ts`), rounded up. `"0"` for the rules and for Laya. **Absent** when any call had no price in the table: an unknown price is never written as 0 |
+| `rateDate` | `YYYY-MM-DD`, the day the handling call's price starts. Absent when unpriced. A record dated before the table's first rate is unpriced |
+| `tried` | The steps asked, joined with `+`: `rules`, `rules+decision`, `rules+decision+model` |
+| `failed` | Present only when a step was asked and could not answer, joined with `+`: `decision`, `model`, `decision+model`. The message was then read by the rules |
+| `via` | Present only for a tapped message: `button` or `list` |
+
+`step`, `tried` and `failed` are the shares of the planned 30/60/10 mix. A tapped message is `step: rules` with `via`.
+
+The month's totals are also in the store and in the runtime's `status()`, counts only:
+
+```
+status().ai = { month: "2026-11", messages: { rules, decision, model }, costMicroInr, unpriced,
+                allowance: { messages | null, costMicroInr | null }, mode: "ai" | "buttons", reason: "override" | "allowance" | "fault" | null }
+```
+
+`unpriced` is the number of messages this month whose cost is not in `costMicroInr`. The prices in the table are US dollars per million tokens from the economics note, at ₹87 to the dollar (the rate the note's own examples use); `INR_PER_USD` and each rate carry their date.
+
+### The allowance, and button mode (B46 and B47)
+
+The shop is in **button mode** when any of these holds, checked in this order. In button mode the agent reads with the rules only, answers with buttons and lists, and every limit holds exactly as before; Guard and the template's own checks do not change.
+
+| Trigger | When | Told |
+| --- | --- | --- |
+| `override` | `runtime.json` says `"ai": "buttons"` | The owner, once per switch (switching it off and on again is a new switch). Record: `ai_mode`, `reason: override` |
+| `allowance` | `decision` + `model` messages this month reach `allowance.messages`, or their cost reaches `allowance.costInr` | The owner, once a month. Record: `ai_mode`, `reason: allowance` |
+| `fault` | A step was asked and could not answer (an error, a timeout, an answer it could not use) and the rules had to read the message | The owner, at most once a day. Button mode lasts `pauseMinutes`, then the next message tries the AI again. Record: `ai_mode`, `reason: fault` |
+
+- **Told once.** Three new owner notices, in four languages, each a WhatsApp template (`owner_ai_allowance_used`, `owner_ai_switched_off`, `owner_ai_not_answering`; `whatsapp-templates.json` is rebuilt). The builder or partner has no WhatsApp number in the settings, so they are told by the record (`ai_mode`, with the reason and the month, in plain words in `notes`), by `status().ai` and by a start-up/runtime log line, all of which the heartbeat can carry. The "already told" flags are kept with the store, so a restart or a repeated step does not tell them again.
+- **No customer is ever left without an answer.** A message the rules cannot read gets the list of the shop's services; a time the shop cannot give gets a list of other free times; a model that fails changes nothing about the reply except that the rules read it. A new test and three hand-check situations hold this (below).
+- **A tapped message never asks a model, whatever the mode.** The router is not even called.
+
+### Buttons and lists (B47)
+
+`src/language/interactive.ts` holds the words (four languages, machine-written like the rest, on both REVIEW sheets in the section "The words on the buttons and the lists"), the limits (Meta: 3 reply buttons of up to 20 characters; a list of up to 10 rows, titles up to 24 characters, descriptions up to 72; a body up to 1,024), and the ids. A tap is read by looking the id up: `yes`, `no`, `cancel` (asks "are you sure" first), `cancel_yes`, `keep`, `owner`, `menu`, `svc:<service id>`, `slot:<start in ms>`. A forged or stale id is read as ordinary words; a `slot:` id that is taken or outside the hours is refused like a typed time.
+
+| Turn | What the customer gets |
+| --- | --- |
+| Hello, or something not understood, or "no booking found" | The list of the shop's services with prices, and a last row "Talk to the owner" (a shop with more than 9 services shows nine; the rest are reached by typing the name) |
+| Service known, no time | A list of up to nine free times: the next week, at most three a day spread through it, on the shop's slot grid, inside its hours, clear of the calendar and of every hold, and at least the hold's length from now |
+| A time that cannot be had | The reason, and a list of other free times |
+| A read-back that needs a yes | The read-back with **Yes** and **No** buttons |
+| A quote, "already waiting", "Booked!", "moved" | **Cancel booking** and **Talk to the owner** |
+| Cancel booking | "Do you want to cancel your booking for ...?" with **Yes, cancel** and **No, keep it**. Nothing is cancelled by the first tap |
+| Talk to the owner | The owner is told (a new owner template, at most once an hour for the same customer) and so is the customer; if the owner cannot be told, the customer is told that and not that the owner will write |
+
+- **Attached to the message already being sent**, not an extra one. The reply is one interactive message in place of one text message, so a booking takes no more messages and the customer taps instead of typing.
+- **The checked text is the whole message.** `say()` builds the body from templates and each row from the record, then the outgoing check reads the body plus every row, and `MessageFacts.slotChoices` lets the check accept exactly the offered times. The plain words are checked too, because they may be sent instead.
+- **Where buttons cannot go, the words go as plain text, as before:** the customer's 24-hour window is closed (a template goes, with no buttons), the provider has no `sendInteractive`, the message breaks Meta's limits, or the provider refuses it with a 4xx. A lost reply or a 5xx may have gone out, so it is not sent again.
+- **On the wire.** `src/adapters/live/whatsapp.ts` sends Meta Cloud API interactive payloads (`type: "interactive"`, `button` or `list`); `standins/whatsapp.ts` accepts them, refuses a body Meta would refuse (131009) and keeps them in the fake's outbox (`kind: "interactive"`, `interactive`, `text`); `webhooks.ts` keeps the tapped id and kind; `server/events.ts` passes `reply: { id, kind }` on and checks its shape. `world.tap(id)` in the harness taps an option that was actually offered.
+
+### The System One client and stand-in
+
+`src/adapters/system-one.ts` is a dependency-free `fetch` client for `POST {base}/v1/systemone` (or `{base}/systemone` when the base ends in `/v1`), written from pydantic-ai's `system_one.py`: `instructions` on every question, and an answer is refused unless its names are the questions', its choice is one of the options, its probabilities are for exactly those options, each is between 0 and 1 and they add up to 1 within `1e-6 + 0.005 x options`. `standins/system-one.ts` answers the same shape and enforces the same checks on the request; a test gives it a decider to make the model sure, unsure, wrong, slow or down. `systemOneFetch(standin)` runs it inside the process with no port (the hand check does this). `node standins/main.ts` does not serve it yet (Deferred.md).
+
+### Tests
+
+New: `understanding.test.ts` (client, rate table, redaction, router), `buttons.test.ts` (words and limits, ids, webhook, events, wire, stand-in, agent turns), `ai-mode.test.ts` (record fields, allowance, switch, fault, saved state, settings, keys), more cases in `model-eval.test.ts`. Changed, and why:
+
+- `model-llm.test.ts` expected the note "the model could not be used"; it still does.
+- `demo/session.ts` and `report/example-month.ts` build their world with `interactive: false`: the demo page draws chat bubbles, not buttons yet, and the scripted month is about records and money, so both keep sending plain text exactly as before. Tests for those were not changed.
+- The hand-check counts: Glow Salon 34 to 37 situations and 213 to 242 checks, the equipment-rental example 29 to 32, a shop with no cancellation window 31 to 34 (`hand-check-shops.test.ts`, `report-certificates.test.ts`, `report-cli.test.ts`, `report-go-live.test.ts`). Outside `pathways/bookings`: the root `README.md`, `pathways/SELL-GUIDE.md` (rental 32 of 32) and `.github/DISCUSSION_TEMPLATE/template-bookings.yml` (37 of 37), and the four rental sell guides.
+- `REVIEW-ml.md`, `REVIEW-kn.md` and `whatsapp-templates.json` are rebuilt (`node bundle/panel/review-sheet.ts ml > pathways/bookings/REVIEW-ml.md`: the panel appends its section 7).
+
+**The situations** (hand check, `crash-test/situations.ts`, built per shop, so they run on the rental and on every variant): "AI allowance used up: the agent keeps booking on buttons", "The model is down mid-conversation", "A button reply books without any model call". They run the real router over in-process stand-ins; none uses a port, a key or the network.
+
+**Choices to review.** The default threshold (0.75), the default allowance (none; `allowance` is how the plan's allowance reaches the shop, B48), the five-minute pause, the exchange rate and the DeepInfra model id are placeholders to settle with the eval and the owner. The one-hour limit on "Talk to the owner" and the nine-row cap are mine.
 
 ## Syntax rules used
 
