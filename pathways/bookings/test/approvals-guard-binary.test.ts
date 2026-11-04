@@ -129,6 +129,58 @@ test("the generated spec compiles, and the agent's limit and the real Guard's th
   } finally { await guard.stop(); await standins.close(); }
 });
 
+/** A refund call straight at Guard, as the agent would send it. */
+const refundCall = (g: RealGuard, amount: number, id: string) => fetch(`${g.agentUrl}/v1/payments/${id}/refund`, { method: "POST", headers: { authorization: `Bearer ${g.agentToken}`, "content-type": "application/json" }, body: JSON.stringify({ amount, receipt: `b-1:${id}` }) });
+const pendingApprovals = async (g: RealGuard) => ((await (await admin(g, "/admin/approvals?state=pending")).json()) as any).approvals.length as number;
+
+test("a refund above the deposit is refused by the real Guard even when it is also above the owner's limit: the refusal wins over the hold, and nobody is asked", { skip }, async () => {
+  const settings = limited(100); // the owner's limit (₹100) is below the deposit (₹200), so the deposit itself is held
+  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
+  const guard = await startRealGuard(settings, standins.port);
+  try {
+    assert.deepEqual(guard.spec.rules.find((r: any) => r.id === "refund-at-most-deposit"), { id: "refund-at-most-deposit", kind: "argument_bound", operation: "refund", field: "amount", min: "1", max: "20000", units: { amount: "paise" } });
+    // exactly the deposit is above the limit, so it waits for the owner as before
+    const deposit = await refundCall(guard, 20_000, "pay_a");
+    assert.equal(deposit.status, 202);
+    assert.match(deposit.headers.get("guard-held") ?? "", /^ap-/u);
+    assert.equal(await pendingApprovals(guard), 1);
+    // one paisa more is above the limit AND above the deposit: the bound refuses it (403, not 202), in Guard's own words, and no new approval is made
+    const above = await refundCall(guard, 20_001, "pay_b");
+    assert.equal(above.status, 403);
+    assert.equal(above.headers.get("guard-held"), null);
+    const body = await above.json() as any;
+    assert.equal(body.guard.decision, "deny");
+    assert.equal(body.guard.code, "refused_by_policy");
+    assert.match(body.guard.reason, /^refund-at-most-deposit: amount 20001 is above the highest allowed value, 20000$/u);
+    assert.equal(await pendingApprovals(guard), 1, "the refused refund made no approval, so the owner is not asked about it");
+    // the ₹500 a customer might claim, and nonsense amounts, are refused the same way
+    for (const amount of [50_000, 1_000_000, 0, -100]) assert.equal((await refundCall(guard, amount, "pay_c")).status, 403, `amount ${amount}`);
+    assert.equal(await pendingApprovals(guard), 1);
+    // the refusal on pay_b did not block a valid refund of pay_b later: it is held for the owner like any first call
+    assert.equal((await refundCall(guard, 20_000, "pay_b")).status, 202);
+    assert.equal(await pendingApprovals(guard), 2);
+  } finally { await guard.stop(); await standins.close(); }
+});
+
+test("the deposit was lowered: the real Guard refuses the older, larger refund (the same bound, the new number), lets the new deposit through, and the refused call does not use up the once-only record", { skip }, async () => {
+  const lowered = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), deposit: { ...JSON.parse(JSON.stringify(glowSalon())).deposit, amountInr: 150 }, cancellation: { windowHours: 24, refundLimitInr: 500 } });
+  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
+  const guard = await startRealGuard(lowered, standins.port);
+  try {
+    assert.equal(guard.spec.rules.find((r: any) => r.id === "refund-at-most-deposit").max, "15000");
+    // ₹200 was a deposit before the change: above the new deposit, so refused, though it is well inside the owner's limit (₹500)
+    const older = await refundCall(guard, 20_000, "pay_x");
+    assert.equal(older.status, 403);
+    assert.match(((await older.json()) as any).guard.reason, /^refund-at-most-deposit: amount 20000 is above the highest allowed value, 15000$/u);
+    // exactly the new deposit goes on to the service (which has no such payment, so it answers 400 itself), on the same payment: the refusal did not take its place
+    const sent = await refundCall(guard, 15_000, "pay_x");
+    assert.equal(sent.status, 400, "the stand-in's own answer, passed through");
+    assert.equal(((await sent.json()) as any).guard, undefined);
+    assert.equal((await refundCall(guard, 15_001, "pay_y")).status, 403, "one paisa above the new deposit");
+    assert.equal(await pendingApprovals(guard), 0, "nothing was held: the owner's limit was never reached");
+  } finally { await guard.stop(); await standins.close(); }
+});
+
 test("the longest approval time Guard accepts is 7 days; one second more is refused by the compiler", { skip }, () => {
   const dir = mkdtempSync(join(tmpdir(), "geo-guard-ttl-"));
   try {
