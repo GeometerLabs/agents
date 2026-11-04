@@ -1,7 +1,7 @@
 // The calendar: Google-Calendar-shaped, with an in-memory fake that doubles as the dev harness.
 // The fake's own store is the record the agent must read back before it says "booked".
-import { ApiError, ConflictError, TimeoutError, createFaults } from "./faults.ts";
-import type { FaultOptions } from "./faults.ts";
+import { ApiError, ConflictError, TimeoutError, createFaults } from "../../../../modules/core/faults.ts";
+import type { FaultOptions } from "../../../../modules/core/faults.ts";
 
 export interface CalendarEvent {
   id: string;

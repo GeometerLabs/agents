@@ -1,9 +1,10 @@
 // Scoring for scripts/model-eval.ts: is a parser's answer the labelled one, and the numbers and the plain table built from
 // many answers. Pure functions with no network and no files, so a test can feed them made-up answers.
-import type { Intent, TokenUsage } from "../src/adapters/model.ts";
-import type { TimePhrase } from "../src/language/dates.ts";
-import { LANGUAGES } from "../src/settings.ts";
-import type { Language } from "../src/settings.ts";
+import type { Intent } from "../src/adapters/model.ts";
+import type { TokenUsage } from "../../../modules/understanding/model.ts";
+import type { TimePhrase } from "../../../modules/language/dates.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 
 export interface EvalMessage { id: string; language: Language; text: string; expected: Intent }
 

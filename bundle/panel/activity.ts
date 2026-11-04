@@ -6,7 +6,7 @@ import { buildMonthlyReport, monthRange } from "../../pathways/bookings/report/d
 import type { MonthlyReport } from "../../pathways/bookings/report/data.ts";
 import { readBookings, readEntries } from "../../pathways/bookings/report/cli.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
-import { localParts } from "../../pathways/bookings/src/time.ts";
+import { localParts } from "../../modules/core/time.ts";
 
 export interface Exported { entries: ReturnType<typeof readEntries>; bookings: ReturnType<typeof readBookings> }
 

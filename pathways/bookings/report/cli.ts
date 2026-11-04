@@ -1,15 +1,16 @@
 // Small helpers the report scripts share: read a JSON file or stop with a plain sentence, and read the options.
 import { readFileSync } from "node:fs";
-import { LANGUAGES, validateSettings } from "../src/settings.ts";
+import { validateSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Booking } from "../src/booking.ts";
-import type { RecordEntry } from "../src/record.ts";
+import type { RecordEntry } from "../../../modules/record/record.ts";
 import { SOURCES } from "./data.ts";
 import type { Source } from "./data.ts";
 import { noReading, readGoLiveCertificate, untrustedReading } from "./go-live.ts";
 import type { GoLiveReading } from "./go-live.ts";
-import { loadPrivateKey } from "./sign.ts";
-import type { ReportLanguage } from "./text.ts";
+import { loadPrivateKey } from "../../../modules/report/sign.ts";
+import type { ReportLanguage } from "../../../modules/report/text.ts";
 
 /** Said to the person, then the script stops. */
 export class UsageError extends Error {}

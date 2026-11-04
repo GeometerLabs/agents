@@ -3,8 +3,8 @@
 // runtime; and every way of forging or replaying an answer is refused. See also approvals-guard-binary.test.ts, which runs the real Guard.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CODE_ALPHABET, CODE_LENGTH } from "../src/approval-code.ts";
-import { HOUR, MINUTE } from "../src/time.ts";
+import { CODE_ALPHABET, CODE_LENGTH } from "../../../modules/approvals/code.ts";
+import { HOUR, MINUTE } from "../../../modules/core/time.ts";
 import { CUSTOMER, OTHER_CUSTOMER } from "../src/harness.ts";
 import { OWNER_SECRET, APPROVER_ID, startApprovalsWorld } from "./helpers/approvals-world.ts";
 import type { ApprovalsWorld } from "./helpers/approvals-world.ts";
@@ -367,7 +367,7 @@ run("a message that cannot be sent right now is sent again with the same code; o
   let calls = 0;
   w.whatsapp.sendTemplate = async (to, t) => { calls++; throw Object.assign(new Error("provider says no"), { name: "ApiError", status: 400 }); };
   // ApiError means nothing was sent
-  const { ApiError } = await import("../src/adapters/faults.ts");
+  const { ApiError } = await import("../../../modules/core/faults.ts");
   w.whatsapp.sendTemplate = async () => { calls++; throw new ApiError(400, "no"); };
   await w.relay.poll();
   await w.relay.poll();
@@ -384,7 +384,7 @@ run("a message that cannot be sent right now is sent again with the same code; o
 
   // lost reply: it may have gone out, and sending again could ask twice
   const second = await w.heldRefund(OTHER_CUSTOMER);
-  const { TimeoutError } = await import("../src/adapters/faults.ts");
+  const { TimeoutError } = await import("../../../modules/core/faults.ts");
   w.whatsapp.sendTemplate = async () => { throw new TimeoutError("WhatsApp"); };
   await w.relay.poll();
   w.whatsapp.sendTemplate = send;
@@ -408,7 +408,7 @@ run("the owner's language: the ask and the answers are in it, the commands stay 
 
 test("the relay's server takes the owner's messages from the inbox only with its token, saves them before it answers, and says counts only", async () => {
   const w = await startApprovalsWorld();
-  const { startRelayServer } = await import("../approvals/server.ts");
+  const { startRelayServer } = await import("../../../modules/approvals/server.ts");
   const server = await startRelayServer(w.relay, { token: "relay-token-own-0123456789", port: 0 });
   try {
     await w.heldRefund();

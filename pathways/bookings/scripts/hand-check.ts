@@ -11,7 +11,7 @@ import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { UsageError, main, readSettings } from "../report/cli.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 
 await main(async () => {
   let args;

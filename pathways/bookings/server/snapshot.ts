@@ -2,7 +2,8 @@
 // agent depends on that order: latestBooking looks from the newest booking back, and a tick walks them oldest first.
 // nextBooking is saved too, so a step that runs again after a restart registers the same "b-3" and finds its own
 // calendar event and payment link.
-import type { AiState, Store } from "../src/booking.ts";
+import type { Store } from "../src/booking.ts";
+import type { AiState } from "../../../modules/understanding/ai-state.ts";
 
 const FORMAT = 1;
 

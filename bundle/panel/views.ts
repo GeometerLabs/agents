@@ -3,8 +3,8 @@
 // escapes by default, so a shop named <script> is text everywhere. Words come from words.ts (four languages) and, for the certificate line and
 // "Show what we did", from the report's own strings.
 import { readFileSync } from "node:fs";
-import { LANGUAGES } from "../../pathways/bookings/src/settings.ts";
-import type { Language } from "../../pathways/bookings/src/settings.ts";
+import { LANGUAGES } from "../../modules/language/languages.ts";
+import type { Language } from "../../modules/language/languages.ts";
 import { languageOptions } from "../../pathways/bookings/demo/personalise.ts";
 import type { ShopForm } from "../../pathways/bookings/demo/personalise.ts";
 import { STRINGS } from "../../pathways/bookings/report/strings.ts";

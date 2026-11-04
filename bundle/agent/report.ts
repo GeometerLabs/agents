@@ -3,9 +3,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { writeClientReport } from "../../pathways/bookings/report/run.ts";
 import type { Source } from "../../pathways/bookings/report/data.ts";
-import type { ReportLanguage } from "../../pathways/bookings/report/text.ts";
-import { loadPrivateKey } from "../../pathways/bookings/report/sign.ts";
-import type { RecordEntry } from "../../pathways/bookings/src/record.ts";
+import type { ReportLanguage } from "../../modules/report/text.ts";
+import { loadPrivateKey } from "../../modules/report/sign.ts";
+import type { RecordEntry } from "../../modules/record/record.ts";
 import type { Booking } from "../../pathways/bookings/src/booking.ts";
 import { secretFile } from "../lib/secrets.ts";
 import { serverPaths } from "../lib/server.ts";

@@ -7,20 +7,22 @@
 // (and the live adapter raises TimeoutError), exactly the case the agent must look before it retries.
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { systemClock } from "../src/clock.ts";
-import type { Clock } from "../src/clock.ts";
+import { systemClock } from "../../../modules/core/clock.ts";
+import type { Clock } from "../../../modules/core/clock.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
-import { createFakeMessaging } from "../src/adapters/messaging.ts";
-import { createFakePayments } from "../src/adapters/payments.ts";
+import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
+import { createFakePayments } from "../../../modules/payments/payments.ts";
 import { controlStandin } from "./control.ts";
 import type { Fakes } from "./control.ts";
 import { calendarStandin } from "./google-calendar.ts";
-import { LostReply } from "./http.ts";
-import type { Handler, StandinReply } from "./http.ts";
-import { razorpayStandin } from "./razorpay.ts";
-import { systemOneStandin } from "./system-one.ts";
-import type { SystemOneStandin, SystemOneStandinOptions } from "./system-one.ts";
-import { approveTemplates, whatsappStandin } from "./whatsapp.ts";
+import { LostReply } from "../../../modules/standins/http.ts";
+import type { Handler, StandinReply } from "../../../modules/standins/http.ts";
+import { razorpayStandin } from "../../../modules/standins/razorpay.ts";
+import { ruleDecider } from "./rule-decider.ts";
+import { systemOneStandin } from "../../../modules/standins/system-one.ts";
+import type { SystemOneStandin, SystemOneStandinOptions } from "../../../modules/standins/system-one.ts";
+import { approveTemplates, whatsappStandin } from "../../../modules/standins/whatsapp.ts";
+import { META_CATALOGUE } from "../src/language/meta-templates.ts";
 
 export interface StandinsConfig {
   clock?: Clock;
@@ -75,14 +77,14 @@ export async function startStandins(config: StandinsConfig, listen: { port: numb
     calendar: config.fakes?.calendar ?? createFakeCalendar(),
     messaging: config.fakes?.messaging ?? createFakeMessaging(clock),
   };
-  approveTemplates(fakes.messaging);
+  approveTemplates(fakes.messaging, META_CATALOGUE);
   let authorizationSeen = 0;
-  const systemOne = config.systemOne ? systemOneStandin(config.systemOne === true ? {} : config.systemOne) : undefined;
+  const systemOne = config.systemOne ? systemOneStandin(config.systemOne === true ? { decider: ruleDecider } : config.systemOne) : undefined;
   const handlers: Handler[] = [
     ...(systemOne ? [systemOne.handler] : []),
     razorpayStandin(fakes.payments),
     calendarStandin(fakes.calendar, { pageSize: config.calendarPageSize, calendarId: config.calendarId, accessRole: config.calendarAccessRole }),
-    whatsappStandin(fakes.messaging, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
+    whatsappStandin(fakes.messaging, META_CATALOGUE, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
     controlStandin({ fakes, inboxUrl: config.inboxUrl, razorpayWebhookSecret: config.razorpayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, phoneNumberId: config.phoneNumberId, authorizationSeen: () => authorizationSeen }),
   ];
 

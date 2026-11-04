@@ -5,9 +5,9 @@
 // The Razorpay spec has one source: razorpayLimitsSpec in pathways/bookings/src/guard-limits.ts, which turns the shop's own settings into
 // the deposit bound and the refund threshold. The others are generated here from the shop's runtime.json (the WhatsApp number, the calendar)
 // and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
-import { ANTHROPIC_VERSION } from "../../pathways/bookings/src/adapters/model-llm.ts";
+import { ANTHROPIC_VERSION } from "../../modules/understanding/model-llm.ts";
 import { razorpayLimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
-import type { LimitsSpec, RazorpayCaps } from "../../pathways/bookings/src/guard-limits.ts";
+import type { LimitsSpec, RazorpayCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
 

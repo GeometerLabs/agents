@@ -4,17 +4,14 @@
 // Lines are "label: number", like the product's mock-up, so no number needs a case ending in Malayalam or Kannada.
 // Every number and amount is read from the report (which counted the record); the words come from strings.ts.
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
-import { MONTH_NAMES, formatDate, formatInr } from "../src/language/format.ts";
-import type { Language } from "../src/settings.ts";
-import type { LocalDate } from "../src/time.ts";
+import { MONTH_NAMES, formatDate, formatInr } from "../../../modules/language/format.ts";
+import type { Language } from "../../../modules/language/languages.ts";
+import { languagesOf, oneLine, rupees } from "../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../modules/report/text.ts";
+import type { LocalDate } from "../../../modules/core/time.ts";
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";
-
-/** "both" is Hindi and English, one message after the other. */
-export type ReportLanguage = Language | "both";
-export const BOTH: readonly Language[] = ["hi", "en"];
-export const languagesOf = (language: ReportLanguage): readonly Language[] => (language === "both" ? BOTH : [language]);
 
 /** "Nov 2026" for a whole month, otherwise "Tue 3 Nov – Mon 9 Nov 2026". */
 export function periodLabel(period: MonthlyReport["period"], language: Language): string {
@@ -38,11 +35,6 @@ export function goLiveLines(goLive: GoLiveFinding, language: Language): string[]
     case "different": return [s.goLive.different(when(goLive.issuedOn)), s.goLive.signedWith(goLive.signedBy)];
   }
 }
-
-export const rupees = (paise: number): string => formatInr(paise / 100);
-
-/** Text typed into the settings (a shop's name, who set it up) on one line, so a line break in it cannot make a sixth line. */
-export const oneLine = (text: string): string => text.replace(/\s+/g, " ").trim();
 
 /** The five lines for one language. */
 export function ownerText(report: MonthlyReport, language: Language): string {

@@ -4,8 +4,8 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import type { ScryptOptions } from "node:crypto";
 import type { Store } from "./store.ts";
-import { LANGUAGES } from "../../pathways/bookings/src/settings.ts";
-import type { Language } from "../../pathways/bookings/src/settings.ts";
+import { LANGUAGES } from "../../modules/language/languages.ts";
+import type { Language } from "../../modules/language/languages.ts";
 
 export type Role = "builder" | "partner";
 export const ROLES: readonly Role[] = ["builder", "partner"];

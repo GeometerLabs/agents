@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createAgent } from "../src/agent.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { CUSTOMER, createWorld } from "../src/harness.ts";
-import { createRecord } from "../src/record.ts";
+import { createRecord } from "../../../modules/record/record.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { createKit } from "./runtime-kit.ts";
 

@@ -26,6 +26,7 @@
 // any other address without TLS on the agent port too. fwd-* is a busybox `nc` that owns the Guard's network namespace and listens only on its
 // address on the `admin` network, passing bytes to 127.0.0.1:8082 (the Guard shares that loopback). The runtime is not on that network, so it cannot
 // see the port at all.
+import { dirname, join } from "node:path";
 import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
@@ -50,12 +51,19 @@ export type Slot = GuardKind | "door";
 /** A Guard as the compose file needs to know it. */
 export interface GuardRef { kind: GuardKind; service: string; tenant: string }
 
+/**
+ * The shared modules a pathway imports (agents/modules) sit two folders up from it: <app>/pathways/bookings and <app>/modules, or a kept checkout
+ * <server>/pathways/bookings@0.1.0 and <server>/modules. In the container the pathway is /pathway and the modules are /modules, and the pathway's
+ * relative imports (../../../modules/...) end at the root of the container, so they find /modules.
+ */
+export const modulesOf = (pathwayDir: string): string => join(dirname(dirname(pathwayDir)), "modules");
+
 export interface ShopDeploy {
   name: string;
   /** 1 to 199, fixed for the life of the shop (state.ts): it fixes the shop's network addresses. */
   index: number;
   guards: GuardRef[];
-  /** The folder with the pathway at the version the shop is pinned to. */
+  /** The folder with the pathway at the version the shop is pinned to. The shared modules (agents/modules) are the folder called modules two levels up from it. */
   pathwayDir: string;
 }
 
@@ -205,7 +213,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     const own = shop.guards.map((g) => g.service);
     add(names.runtime(shop.name), node(["node", "/pathway/server/main.ts", "--client", "/client"], {
       environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token" },
-      volumes: [`${shop.pathwayDir}:/pathway:ro`, `${dirs.generated}/shops/${shop.name}/client:/client:ro`, `${secretDir(names.runtime(shop.name))}:/run/secrets:ro`, `${names.dataVolume(shop.name)}:/home/node`],
+      volumes: [`${shop.pathwayDir}:/pathway:ro`, `${modulesOf(shop.pathwayDir)}:/modules:ro`, `${dirs.generated}/shops/${shop.name}/client:/client:ro`, `${secretDir(names.runtime(shop.name))}:/run/secrets:ro`, `${names.dataVolume(shop.name)}:/home/node`],
       networks: { [names.net(shop.name)]: {} },
       healthcheck: healthWget(RUNTIME_PORT, "/readyz"),
       // its own three Guards must be healthy before it starts (fail closed). The model Guard is shared and the runtime reads messages with its built-in rules

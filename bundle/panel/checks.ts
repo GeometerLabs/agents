@@ -8,10 +8,10 @@
 // The functions take base URLs and the ids the shop gave. They never take a provider key: in production the base URL is a Guard that holds the
 // keys, and the panel presents only its own Guard credential (`agentToken`). The calls go through the same createHttp the live adapters use, so
 // Guard's answers (refused, held, unavailable) are told apart in the same one place.
-import { ApiError, GuardError, GuardUnauthenticatedError, NotSentError, TimeoutError } from "../../pathways/bookings/src/adapters/faults.ts";
-import { GRAPH_VERSION } from "../../pathways/bookings/src/adapters/live/whatsapp.ts";
-import { createHttp, isObject, str } from "../../pathways/bookings/src/adapters/live/http.ts";
-import type { Http, HttpReply } from "../../pathways/bookings/src/adapters/live/http.ts";
+import { ApiError, GuardError, GuardUnauthenticatedError, NotSentError, TimeoutError } from "../../modules/core/faults.ts";
+import { GRAPH_VERSION } from "../../modules/messaging/whatsapp.ts";
+import { createHttp, isObject, str } from "../../modules/core/http.ts";
+import type { Http, HttpReply } from "../../modules/core/http.ts";
 
 export type Service = "whatsapp" | "razorpay" | "calendar";
 export type CheckCode =

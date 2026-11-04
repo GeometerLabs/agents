@@ -4,16 +4,17 @@ import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { KeyObject } from "node:crypto";
 import type { Booking } from "../src/booking.ts";
-import type { RecordEntry } from "../src/record.ts";
+import type { RecordEntry } from "../../../modules/record/record.ts";
 import type { Settings } from "../src/settings.ts";
 import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText } from "./certificate.ts";
 import type { HandCheckSummary } from "./certificate.ts";
 import { buildMonthlyReport, monthRange } from "./data.ts";
 import type { GoLiveFinding, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
-import { envelopeFile, seal } from "./sign.ts";
-import { languagesOf, ownerText } from "./text.ts";
-import type { ReportLanguage } from "./text.ts";
+import { envelopeFile, seal } from "../../../modules/report/sign.ts";
+import { ownerText } from "./text.ts";
+import { languagesOf } from "../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../modules/report/text.ts";
 
 function outFolder(out: string): string {
   const dir = resolve(out);

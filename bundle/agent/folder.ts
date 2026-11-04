@@ -8,9 +8,11 @@
 // No code here runs the agent. Geometer never rebuilds or hosts it (plan decision 5): the folder only says what to put in front of the services it calls.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { rupeesToPaise } from "../../pathways/bookings/src/guard-limits.ts";
-import { LANGUAGES, validateSettings } from "../../pathways/bookings/src/settings.ts";
-import type { Language, Settings } from "../../pathways/bookings/src/settings.ts";
+import { rupeesToPaise } from "../../modules/payments/guard-limits.ts";
+import { validateSettings } from "../../pathways/bookings/src/settings.ts";
+import { LANGUAGES } from "../../modules/language/languages.ts";
+import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Language } from "../../modules/language/languages.ts";
 import { serverPaths } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 

@@ -9,15 +9,16 @@ import { SAYS } from "../crash-test/situations.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Intent } from "../src/adapters/model.ts";
 import { glowSalon } from "../src/harness.ts";
-import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatSlot } from "../src/language/format.ts";
+import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatSlot } from "../../../modules/language/format.ts";
 import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
-import { WORDS } from "../src/language/words.ts";
+import { WORDS } from "../../../modules/language/words.ts";
 import { reportStringRows, sampleFloor, sampleOwnerText } from "../report/review.ts";
-import { LANGUAGE_NAMES, serviceName } from "../src/settings.ts";
-import type { Language } from "../src/settings.ts";
-import { zonedToMs } from "../src/time.ts";
+import { serviceName } from "../src/settings.ts";
+import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../modules/language/languages.ts";
+import { zonedToMs } from "../../../modules/core/time.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 

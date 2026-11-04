@@ -19,11 +19,11 @@
 // Times are written as UTC RFC 3339 (the owner's calendar shows them in their own zone); we store epoch milliseconds.
 // Google never refuses an overlapping insert, so the agent's own look at conflicts() before the hold is the only guard, and there is
 // a short race between that look and the insert (see Deferred.md). A 409 can only mean a duplicate id, and is mapped to ConflictError.
-import { ApiError, ConflictError } from "../faults.ts";
+import { ApiError, ConflictError } from "../../../../../modules/core/faults.ts";
 import type { Busy, Calendar, CalendarEvent, NewCalendarEvent } from "../calendar.ts";
-import { zonedToMs } from "../../time.ts";
-import { asArray, createHttp, isObject, str } from "./http.ts";
-import type { Http, HttpReply, Json } from "./http.ts";
+import { zonedToMs } from "../../../../../modules/core/time.ts";
+import { asArray, createHttp, isObject, str } from "../../../../../modules/core/http.ts";
+import type { Http, HttpReply, Json } from "../../../../../modules/core/http.ts";
 
 export interface GoogleCalendarConfig { baseUrl: string; calendarId: string; timeoutMs?: number; /** Guard's credential for this agent (never a Google token). Left out, no Authorization header is sent. */ agentToken?: string }
 

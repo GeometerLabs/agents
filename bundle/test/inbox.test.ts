@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
-import { signMeta, signRazorpay } from "../../pathways/bookings/src/adapters/live/webhooks.ts";
+import { signMeta, signRazorpay } from "../../modules/messaging/webhooks.ts";
 import { createRouter } from "../lib/router.ts";
 import { loadRouter } from "../services/inbox.ts";
 import type { InboxShopConfig } from "../services/inbox.ts";
