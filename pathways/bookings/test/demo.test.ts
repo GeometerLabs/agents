@@ -91,7 +91,8 @@ test("the page is one self-contained document with a strict policy and the demo 
 
 test("the demo makes no network calls of its own", () => {
   const dir = new URL("../demo/", import.meta.url);
-  for (const file of readdirSync(dir)) {
+  // The demo's own files. demo/web/ is the browser build's source and has its own checks (test/web-demo.test.ts); its dist/ is built output.
+  for (const { name: file } of readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile())) {
     const source = readFileSync(new URL(file, dir), "utf8");
     assert.ok(!/node:https|node:net\b|node:tls|node:dgram|node:dns|http\.request|http\.get|XMLHttpRequest|WebSocket/.test(source), `${file} opens no connection out`);
     if (file.endsWith(".ts")) assert.ok(!/\bfetch\(/.test(source), `${file} does not call fetch`);

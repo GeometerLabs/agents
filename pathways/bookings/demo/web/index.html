@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build your first agent</title>
+<!--
+  A manual check of the browser demo. Build it, then serve this folder over http (a browser will not load modules from a file:// address):
+
+    npm run build:web-demo --prefix pathways/bookings
+    python3 -m http.server 8080 --directory pathways/bookings/demo/web
+    open http://localhost:8080/
+
+  The page that really mounts it (the website's /start page) does the same two things: import { mountDemo } and call it on an element.
+-->
+<style>
+  body { margin: 0; padding: 24px 16px 48px; font: 16px/1.5 system-ui, sans-serif; background: #fff; color: #14221b; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  p { margin: 0 0 20px; color: #5a6a61; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Build your first agent</h1>
+  <p>Fill in a shop, then talk to its booking agent as a customer would. Test money; nothing real is sent.</p>
+  <div id="demo"></div>
+</main>
+<script type="module">
+  import { mountDemo } from "./dist/index.js";
+  mountDemo(document.getElementById("demo"));
+</script>
+</body>
+</html>

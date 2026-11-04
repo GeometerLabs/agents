@@ -1,0 +1,22 @@
+/* What changes when the demo sits inside someone else's page instead of being the whole page. The build puts this after page.css,
+   with every rule of page.css moved under .geo-demo, and starts the file with  .geo-demo { all: initial }  so that the host page's
+   text styles stop at the demo's edge. Everything here is already under .geo-demo, so nothing reaches the host page.
+   The demo is a framed app of its own height: the two labels on top, the screens scrolling in the middle, the tabs at the bottom.
+   (page.css fixes the tabs and the shop form to the browser window, which would cover the host page.) */
+
+.geo-demo {
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
+  width: 100%; max-width: 560px; height: clamp(560px, 84dvh, 800px); margin: 0 auto; padding-bottom: 0;
+  border: 1px solid var(--line); border-radius: 16px;
+}
+.geo-demo .geo-notes { flex: none; position: relative; z-index: 70; }
+.geo-demo .banner { position: static; }
+.geo-demo .geo-note { margin: 0; padding: 8px 16px; text-align: center; font-size: 14px; line-height: 1.35; background: var(--green-tint); color: var(--green-dark); border-bottom: 1px solid var(--line); }
+
+.geo-demo > .wrap { flex: 1 1 auto; min-height: 0; width: 100%; overflow-y: auto; }
+.geo-demo > .tabbar { position: static; flex: none; }
+.geo-demo > .sheet { position: static; flex: 1 1 auto; min-height: 0; z-index: auto; }
+/* While the shop form is open it takes the middle and the tabs; the labels above stay. */
+.geo-demo:has(> .sheet:not([hidden])) > .wrap,
+.geo-demo:has(> .sheet:not([hidden])) > .tabbar { display: none; }
+.geo-demo .toast { position: absolute; bottom: 76px; }
