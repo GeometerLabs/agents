@@ -468,8 +468,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const built = buildSettings(d, example);
     const w = r.ctx().w;
     const runtime = runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel);
-    const lock = `${template.id}@${pathwayVersion()}`;
-    const problems = built.ok ? shops.checkFolder(built.settings, runtime, lock).map(w.setup.fallback) : built.errors.map(w.setup.fallback);
+    // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
+    const kept = d.editing ? shops.lock(d.shopId) : undefined;
+    const lock = kept ?? `${template.id}@${pathwayVersion()}`;
+    const problems = built.ok ? shops.checkFolder(built.settings, runtime, lock, kept !== undefined).map(w.setup.fallback) : built.errors.map(w.setup.fallback);
     if (!built.ok || problems.length > 0) return page(r, 400, setupChecksPage(r.ctx(), { ...checksView(r, d, template, problems), saved: false }));
     try { shops.writeFolder(d.shopId, { settings: built.settings, runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id }); } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
