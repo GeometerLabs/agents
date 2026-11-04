@@ -5,6 +5,8 @@
 //   - the HTTP stub Guard (standins/guard.ts, used by the tests and by `npm run stack`) serves it.
 //
 // What it does, as Guard does it:
+//   - a refund below 1 paisa or above one deposit is REFUSED (HTTP 403, rule refund-at-most-deposit) before anything else is looked at:
+//     no hold is made, nobody is asked, and the payment's once-only record is untouched. A refusal wins over a hold;
 //   - a refund above the spec's threshold is HELD (HTTP 202), not sent, with an approval id and an expiry;
 //   - the same call again while it is pending is the same hold (same id), whatever the order or spacing of its fields;
 //     a different value or type (`60000` against `"60000"`), or a different receipt, is a different call and a new hold;
@@ -13,7 +15,7 @@
 //   - a denied hold is final for that approval, and the same call again is held again under a new id;
 //   - an approval can be used only until its expiry less the upstream timeout.
 import type { Clock } from "../clock.ts";
-import { guardHoldsRefund, refundRulesOf } from "../guard-limits.ts";
+import { guardHoldsRefund, guardRefusesRefund, refundRulesOf } from "../guard-limits.ts";
 import type { LimitsSpec } from "../guard-limits.ts";
 
 /** Guard's `upstream_timeout_ms` in the templates. */
@@ -60,7 +62,7 @@ export type RefundDecision =
   | { kind: "hold_uncertain" } // an earlier attempt may have happened: only a person at the server can resolve it
   | { kind: "replay"; reply: unknown } // the first reply, from the record
   | { kind: "conflict"; reason: string }
-  | { kind: "refused"; reason: string };
+  | { kind: "refused"; reason: string; ruleId: string };
 
 export interface GuardModel {
   readonly thresholdPaise: bigint;
@@ -105,7 +107,12 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
 
     decideRefund(paymentId, body) {
       const amount = amountOf(body);
-      if (amount === undefined) return { kind: "refused", reason: "refund-needs-owner: cannot decide: no amount in the call" }; // a missing or non-numeric amount is never read as a pass
+      if (amount === undefined) return { kind: "refused", reason: "refund-needs-owner: cannot decide: no amount in the call", ruleId: "refund-needs-owner" }; // a missing or non-numeric amount is never read as a pass
+      // The bound on the amount is decided first, and a refusal wins over a hold (Guard folds every rule's answer: any refusal refuses, otherwise any hold holds).
+      // So a refund above the deposit is refused even when it is also above the owner's limit: no hold is made, no approval is asked, and the once-only
+      // record of the payment is not touched.
+      const outside = guardRefusesRefund(spec, amount);
+      if (outside !== undefined) return { kind: "refused", reason: outside, ruleId: rules.bound.ruleId };
       const callKey = callKeyOf(paymentId, body);
       if (guardHoldsRefund(spec, amount)) {
         const usable = approvals.find((a) => a.callKey === callKey && a.state === "approved" && !expired(a));

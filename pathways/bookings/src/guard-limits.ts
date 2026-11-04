@@ -98,6 +98,12 @@ export function razorpayLimitsSpec(settings: Settings, identity: LimitsSpecIdent
     rules: [
       // The agent only ever creates a link for the deposit, so that is the only amount the bound lets through.
       { id: "deposit-amount", kind: "argument_bound", operation: "create_link", field: "amount", min: amount(n.depositPaise), max: amount(n.depositPaise), units: { amount: "paise" } },
+      // A refund is never more than one deposit. Every payment this agent can receive is one deposit (the links are bound to it above, and the
+      // second payment of "deposit paid twice" is one deposit too), and the agent refunds the deposit on the booking's own record, never an
+      // amount a customer wrote. This is Guard saying the same thing again, on its own: a refund from 1 paisa up to the deposit passes this
+      // rule, anything else is refused before it is sent. Guard decides this rule and the next one separately and a refusal wins over a hold,
+      // so a refund above the deposit is refused even when it is also above the owner's limit: the owner is never asked about it.
+      { id: "refund-at-most-deposit", kind: "argument_bound", operation: "refund", field: "amount", min: "1", max: amount(n.depositPaise), units: { amount: "paise" } },
       // THE one threshold: above it Guard holds the refund for the owner; the agent's own limit is this number in rupees.
       { id: "refund-needs-owner", kind: "call_bound_approval", operation: "refund", amount_field: "amount", threshold: amount(n.refundThresholdPaise), units: { amount: "paise" } },
       { id: "refund-once", kind: "at_most_once_effect", operation: "refund" },
@@ -114,13 +120,24 @@ export function razorpayLimitsSpec(settings: Settings, identity: LimitsSpecIdent
 }
 
 /** What a spec says about refunds, read back from the spec itself (so a test, and the Guard stand-in, use the numbers Guard will be given). */
-export function refundRulesOf(spec: LimitsSpec): { thresholdPaise: bigint; approvalTtlSeconds: number } {
+export function refundRulesOf(spec: LimitsSpec): { thresholdPaise: bigint; approvalTtlSeconds: number; bound: { ruleId: string; minPaise: bigint; maxPaise: bigint } } {
   const rule = (spec.rules as any[]).find((r) => r.kind === "call_bound_approval" && r.operation === "refund");
   if (!rule || typeof rule.threshold !== "string" || !/^\d+$/u.test(rule.threshold)) throw new Error("The spec has no refund approval threshold in whole paise.");
-  return { thresholdPaise: BigInt(rule.threshold), approvalTtlSeconds: Number(spec.approval_ttl_seconds ?? 900) };
+  const bound = (spec.rules as any[]).find((r) => r.kind === "argument_bound" && r.operation === "refund" && r.field === "amount");
+  if (!bound || typeof bound.min !== "string" || typeof bound.max !== "string" || !/^\d+$/u.test(bound.min) || !/^\d+$/u.test(bound.max)) throw new Error("The spec has no refund amount bound in whole paise.");
+  return { thresholdPaise: BigInt(rule.threshold), approvalTtlSeconds: Number(spec.approval_ttl_seconds ?? 900), bound: { ruleId: bound.id, minPaise: BigInt(bound.min), maxPaise: BigInt(bound.max) } };
 }
 
 /** Would Guard hold a refund of this many paise for the owner, under this spec? "Above the threshold": equal passes. */
 export function guardHoldsRefund(spec: LimitsSpec, amountPaise: number): boolean {
   return BigInt(amountPaise) > refundRulesOf(spec).thresholdPaise;
+}
+
+/** Would Guard refuse a refund of this many paise outright (below 1 paisa, or above the deposit), whatever the owner's limit says? Gives Guard's own words, or nothing if the bound lets it through. */
+export function guardRefusesRefund(spec: LimitsSpec, amountPaise: number): string | undefined {
+  const { bound } = refundRulesOf(spec);
+  const amount = BigInt(amountPaise);
+  if (amount < bound.minPaise) return `${bound.ruleId}: amount ${amount} is below the lowest allowed value, ${bound.minPaise}`;
+  if (amount > bound.maxPaise) return `${bound.ruleId}: amount ${amount} is above the highest allowed value, ${bound.maxPaise}`;
+  return undefined;
 }

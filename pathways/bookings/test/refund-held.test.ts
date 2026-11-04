@@ -4,7 +4,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { GuardHeldError } from "../src/adapters/faults.ts";
-import { createWorld, glowSalon, CUSTOMER } from "../src/harness.ts";
+import { createGuardModel } from "../src/adapters/guard-model.ts";
+import { fakeClock } from "../src/clock.ts";
+import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { createWorld, glowSalon, CUSTOMER, HARNESS_GUARD } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
@@ -318,6 +321,35 @@ test("Guard refuses a refund by a limit (the day's cap): nothing is refunded, it
   assert.equal(w.store.bookings.get("b-1")!.pending.length, 0);
   await w.advance(10);
   assert.equal(refundCalls(w), 0);
+});
+
+// The owner lowers the deposit in the settings (₹200 to ₹150) and Guard is given the new rules, while a booking paid at ₹200 is still open. The agent
+// refunds what is on the booking's own record, ₹200, so Guard's bound (the new deposit) refuses it. The agent reads that like any refusal by a rule:
+// nothing was sent, it is not tried again, and the builder is told, in the record and in the status counts. The customer is not told it is paid.
+test("the deposit was lowered after a booking paid the old one: Guard refuses the older, larger refund, nothing is refunded, and the builder is told", async () => {
+  const lowered = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), deposit: { ...JSON.parse(JSON.stringify(glowSalon())).deposit, amountInr: 150 } });
+  assert.equal(lowered.deposit.amountInr, 150);
+  const w = createWorld({ payments: { guard: createGuardModel(razorpayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)) } });
+  let asked = 0; // a call Guard refuses never reaches the service, so the service's own call list cannot count it
+  const sendRefund = w.payments.refund;
+  w.payments.refund = async (id, request) => { asked++; return sendRefund(id, request); };
+  await w.say(BOOK);
+  w.payments.customerPays(w.linkFor("b-1")!.id);
+  await w.deliverPaymentEvents();
+  assert.equal(w.store.bookings.get("b-1")!.depositInr, 200, "the booking's own record says ₹200");
+  await w.say("cancel my booking");
+  assert.equal(w.payments.refunds().length, 0, "Guard refused it: nothing was refunded");
+  assert.equal(asked, 1);
+  assert.deepEqual(issues(w).map((i) => i.kind), ["refused"]);
+  assert.match(issues(w)[0].note, /Guard refused the refund \(a rule: refund-at-most-deposit\): .*20000 is above the highest allowed value, 15000\. Nothing was refunded\./);
+  assert.equal(entries(w, "refund", "blocked").length, 1, "the record says blocked, with the same note");
+  assert.equal(entries(w, "refund", "confirmed").length, 0);
+  assert.deepEqual(w.heldForOwner(), [], "the owner is not asked about it");
+  assert.deepEqual(w.textsTo(w.owner), []);
+  assert.match(w.lastTextTo(CUSTOMER), /We are checking your ₹200 refund and will message you/, "the customer is told it is being checked, not that it was sent");
+  await w.advance(120);
+  assert.equal(asked, 1, "it is not tried again");
+  assert.equal(w.payments.refunds().length, 0);
 });
 
 test("if Guard sends a refund above the limit without holding it, the builder is told that Guard's threshold does not match the settings", async () => {
