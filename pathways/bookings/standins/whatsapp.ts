@@ -8,9 +8,10 @@ import { ApiError, TimeoutError, WindowClosedError } from "../src/adapters/fault
 import type { FakeMessaging } from "../src/adapters/messaging.ts";
 import { interactiveProblem } from "../src/language/interactive.ts";
 import type { Choice, InteractiveMessage } from "../src/language/interactive.ts";
-import { META_LANGUAGE, META_TEMPLATES, fillBody, metaBody, slotsOf } from "../src/language/meta-templates.ts";
+import { META_LANGUAGE, META_TEMPLATES, fillBody, metaBody } from "../src/language/meta-templates.ts";
 import { LANGUAGES } from "../src/settings.ts";
 import type { Language } from "../src/settings.ts";
+import { REPORT_TEMPLATES } from "../report/whatsapp.ts";
 import { LostReply, ok } from "./http.ts";
 import type { Handler, StandinReply } from "./http.ts";
 
@@ -25,10 +26,13 @@ function fromError(e: unknown): StandinReply {
   throw e;
 }
 
-/** Tell the fake which templates the provider has approved, in every language. */
+/** Tell the fake which templates the provider has approved, in every language: the booking messages and the owner's monthly report. */
 export function approveTemplates(messaging: FakeMessaging): void {
-  for (const t of META_TEMPLATES) for (const language of LANGUAGES) messaging.approve(t.name, language);
+  for (const t of [...META_TEMPLATES, ...REPORT_TEMPLATES]) for (const language of LANGUAGES) messaging.approve(t.name, language);
 }
+
+/** How many {{n}} values a template body takes. */
+const valuesIn = (body: string): number => (metaBody(body).match(/\{\{\d+\}\}/gu) ?? []).length;
 
 /**
  * `displayPhoneNumber` and `verifiedName` are what the read of the number's own details shows (GET /{version}/{phone-number-id}), which is how a
@@ -84,12 +88,16 @@ export function whatsappStandin(messaging: FakeMessaging, options: { phoneNumber
         const problem = typeof message === "string" ? message : interactiveProblem(message);
         if (problem !== null) return metaError(400, 131009, `Parameter value is not valid: ${problem}`);
         id = (await messaging.sendInteractive(body.to, message as InteractiveMessage)).id;
+      } else if (body.type === "document") {
+        const d = body.document;
+        if (typeof d?.link !== "string" || typeof d?.filename !== "string" || (d.caption !== undefined && typeof d.caption !== "string")) return metaError(400, 131009, "Parameter value is not valid: a document needs a link and a filename.");
+        id = (await messaging.sendDocument(body.to, { link: d.link, filename: d.filename, ...(d.caption !== undefined ? { caption: d.caption } : {}) })).id;
       } else if (body.type === "template" && typeof body.template?.name === "string") {
         const language = (Object.keys(META_LANGUAGE) as Language[]).find((l) => META_LANGUAGE[l] === body.template.language?.code);
-        const template = META_TEMPLATES.find((t) => t.name === body.template.name);
+        const template = [...META_TEMPLATES, ...REPORT_TEMPLATES].find((t) => t.name === body.template.name);
         if (!template || !language) return metaError(404, 132001, "Template name does not exist in the translation.");
         const parameters: string[] = (body.template.components ?? []).filter((c: any) => c.type === "body").flatMap((c: any) => (c.parameters ?? []).map((p: any) => String(p.text)));
-        if (parameters.length !== slotsOf(template.bodies[language]).length) return metaError(400, 132000, "Number of parameters does not match the expected number of params.");
+        if (parameters.length !== valuesIn(template.bodies[language])) return metaError(400, 132000, "Number of parameters does not match the expected number of params.");
         if (parameters.some((p) => /[\n\t]| {4}/u.test(p))) return metaError(400, 132018, "Template validation error: parameters may not hold new lines, tabs or four spaces in a row.");
         id = (await messaging.sendTemplate(body.to, { name: template.name, language, text: fillBody(metaBody(template.bodies[language]), parameters) })).id;
       } else {

@@ -20,6 +20,8 @@ export interface Strings {
   monthlyCertificate: string;
   /** The badge for the first 100 builders and partners, as a word. Shown after BADGE_SYMBOL on the report page, the certificate and the WhatsApp message. */
   innovator: string;
+  /** The label before the address of the full report page, in the WhatsApp message. */
+  fullReport: string;
   languageName: Record<Language, string>;
   /** The owner's lines: "label: number". */
   label: {
@@ -71,6 +73,7 @@ export const badgeText = (language: Language): string => `${BADGE_SYMBOL} ${STRI
 const en: Strings = {
   agent: "Bookings agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", monthlyCertificate: "Monthly record certificate",
   innovator: "Innovator",
+  fullReport: "Full report",
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   label: {
     bookingsMade: "Bookings made", cancelled: "Cancelled", moved: "Moved to a new time", depositsCollected: "Deposits collected", givenBack: "Given back",
@@ -147,6 +150,7 @@ const en: Strings = {
 const hi: Strings = {
   agent: "बुकिंग एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", monthlyCertificate: "मासिक रिकॉर्ड प्रमाणपत्र",
   innovator: "इनोवेटर",
+  fullReport: "पूरी रिपोर्ट",
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   label: {
     bookingsMade: "हुई बुकिंग", cancelled: "रद्द हुईं", moved: "समय बदला", depositsCollected: "जमा राशि मिली", givenBack: "वापस किया",
@@ -223,6 +227,7 @@ const hi: Strings = {
 const ml: Strings = {
   agent: "ബുക്കിംഗ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", monthlyCertificate: "പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ്",
   innovator: "ഇന്നൊവേറ്റർ",
+  fullReport: "പൂർണ്ണ റിപ്പോർട്ട്",
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   label: {
     bookingsMade: "ബുക്ക് ആയവ", cancelled: "റദ്ദാക്കിയവ", moved: "സമയം മാറ്റിയവ", depositsCollected: "ലഭിച്ച അഡ്വാൻസ്", givenBack: "തിരികെ നൽകിയത്",
@@ -299,6 +304,7 @@ const ml: Strings = {
 const kn: Strings = {
   agent: "ಬುಕಿಂಗ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", monthlyCertificate: "ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ",
   innovator: "ಇನ್ನೋವೇಟರ್",
+  fullReport: "ಪೂರ್ಣ ವರದಿ",
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   label: {
     bookingsMade: "ಆದ ಬುಕಿಂಗ್", cancelled: "ರದ್ದಾದವು", moved: "ಸಮಯ ಬದಲಾದವು", depositsCollected: "ಬಂದ ಮುಂಗಡ ಹಣ", givenBack: "ಹಿಂತಿರುಗಿಸಿದ್ದು",
