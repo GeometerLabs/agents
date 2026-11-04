@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build your first agent</title>
+<!--
+  A manual check of the browser demo. Build it, then serve this folder over http (a browser will not load modules from a file:// address):
+
+    npm run build:web-demo --prefix pathways/bookings
+    python3 -m http.server 8080 --directory pathways/bookings/demo/web
+    open http://localhost:8080/
+
+  The page that really mounts it (the website's /start page) does the same two things: import { mountDemo } and call it on an element.
+  This page also shows how a host themes it: the demo's colours, radius, font and spacing are custom properties (--geo-*, listed at the top
+  of theme.css) that the host sets on .geo-demo or above it. The "Dark" box below only changes those.
+-->
+<style>
+  body { margin: 0; padding: 24px 16px 48px; font: 16px/1.5 system-ui, sans-serif; background: #f6f8f7; color: #1b2420; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 8px 0 4px; }
+  p { margin: 0 0 20px; color: #66726c; }
+  label.theme { display: inline-block; margin: 0 0 12px; font-size: 14px; color: #66726c; }
+  html[data-theme="dark"] body { background: #0b100e; color: #e8eeec; }
+  html[data-theme="dark"] p, html[data-theme="dark"] label.theme { color: #93a19b; }
+  html[data-theme="dark"] .geo-demo {
+    --geo-surface: #121a17; --geo-text: #e8eeec; --geo-muted: #93a19b; --geo-line: #26312d;
+    --geo-accent: #3fb984; --geo-on-accent: #06140d; --geo-success: #4fc08d; --geo-warning: #e0a64a; --geo-danger: #f0877f;
+    --geo-color-scheme: dark;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Build your first agent</h1>
+  <p>Fill in a shop, then talk to its booking agent as a customer would. Test money; nothing real is sent.</p>
+  <label class="theme"><input type="checkbox" id="dark"> Dark</label>
+  <div id="demo"></div>
+</main>
+<script type="module">
+  import { mountDemo } from "./dist/index.js";
+  mountDemo(document.getElementById("demo"));
+  document.getElementById("dark").addEventListener("change", (e) => {
+    document.documentElement.dataset.theme = e.target.checked ? "dark" : "light";
+  });
+</script>
+</body>
+</html>

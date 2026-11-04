@@ -143,6 +143,22 @@
 | Looking more like WhatsApp (ticks, voice notes, the 30-second voice summary) | The product doc plans a voice note for the owner; the demo shows text only | The voice-note work (W12) exists |
 | Starting on a chosen day or time | The clock starts on the real date at 10:00 shop time; suggestions skip closed days, but typed requests do not | Partners ask |
 
+## The browser demo (`demo/web/`)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| "Try to break it": a free-text mode where a visitor tries to talk the agent into a discount, a refund or a booking outside the hours, with a score or a list of what held | `mountDemo` already lets a visitor type anything and shows the rule that said no ("What we did"), but there is no game around it: no goals, no attempts counted, no share card. `demo/web/local.ts` runs the demo with no page, which is the base for it | The game is designed (what a visitor wins, what "held" means to a non-technical person) |
+| Reviewed words for the second label, the step names and the screens in Hindi, Malayalam and Kannada | The step names ("Your shop", "Try it", "What was checked") and the label "In this demo the template's own code checks the limit. On a live shop, Guard holds it outside the AI." is English only. The screens follow `demo/strings.ts` (English and unreviewed Hindi; Malayalam and Kannada show English screens). The agent's own replies follow the language pack | A native speaker reviews the words (REVIEW-ml.md, REVIEW-kn.md already exist for the agent) |
+| A test that mounts the demo in a real browser | `mountDemo` is checked by hand in a browser; the tests run everything under it (the built modules, the stand-ins, the actions, the markup and the styles) but not the drawing, because there is no DOM in Node without a dependency (jsdom) or a headless browser | A headless browser is allowed in the repository's tooling, or the website's end-to-end tests cover `/start` |
+| A mode for a page that requires Trusted Types | The style is a constructed stylesheet (not inline), but the markup is written with `template.innerHTML`. A page that requires Trusted Types for scripts needs the markup built with `createElement`, or a policy that allows it | The website's policy is chosen |
+| A shadow-root mode | The demo is in the page's own tree so that the page can restyle it by class name; a host rule with two classes can still reach in (`all: revert` at low weight is the guard). A shadow root would stop that and give up the class names | Leaks show up on the real site |
+| One minified file | The build is 35 plain files (about 411 KB, about 113 KB gzipped, each file gzipped alone). Joining and minifying them needs a minifier, which is a dependency, and a bundler for the page to be one request | The size shows up in a page-speed measure on `/start` |
+| Saving the visitor's shop, or a link that opens the demo on it | Nothing is stored on purpose: no cookie, no storage, no request. A visitor who closes the page starts again | Sign-in exists (B43) and the owner wants a shop kept |
+| Starting on a chosen day or time; the hold time and cancellation window in the form | Same as the partner demo: the clock starts on the real date at 10:00 shop time, and the form changes the deposit amount only | Visitors ask |
+| An embed that grows with the page instead of a framed app with its own height | The frame keeps the two labels and the steps in view without script; a host that wants it taller sets `--geo-height` (`auto` for the page's own height, in which case the labels scroll away) | The website's design needs it |
+| Moving the deploy panel to the `geo-` class names | `bundle/panel/views.ts` reads `demo/page.css` as its base style and its pages use the old names (`btn`, `field`, `tab`, `wrap` ...). `page.css` lists both names in every selector so that nothing in the panel changed | The panel is next touched; then the old names can be removed from `page.css` |
+| Putting it on the website | The owner integrates the built folder into `public-web` and deploys; nothing here touches `public-web` or deploys | The owner's go-ahead for the deploy |
+
 ## The monthly report and the certificates (`report/`)
 
 | Left open | Why | Revisit when |
