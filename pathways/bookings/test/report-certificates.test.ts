@@ -80,7 +80,7 @@ test("a certificate made from a run on the shop's own settings has no 'own setti
   assert.notEqual(own.checkedPolicyDigest, checkedGlow(), "and those are not Glow Salon's");
   assert.deepEqual(own.notTested, NOT_TESTED.map((n) => n.id), "nothing is added: the checks ran on this shop");
   assert.equal(own.checks.notRun, undefined);
-  assert.ok(goLiveText(seal(own), "en").includes("Held 28 of 28 situations. 0 failed. 14 not tested."));
+  assert.ok(goLiveText(seal(own), "en").includes("Held 29 of 29 situations. 0 failed. 14 not tested."));
   // situations the shop's settings could not run: they are not in the count, they are named, and they are one more thing not tested
   const left: HandCheckSummary = { ...summary, total: 26, held: 26, notRun: ["Cancellation after the window", "Reschedule a confirmed booking"] };
   const cert = seal(buildGoLiveCertificate({ settings: rental, handCheck: left, issuedAt: ISSUED }));
