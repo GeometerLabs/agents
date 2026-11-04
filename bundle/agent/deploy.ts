@@ -4,14 +4,14 @@
 // builder runs it, and calls the Guards by the addresses printed here.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { Refused, applyModel, bringUp, compileAndVerify, contentHash, ops, prepareModel, proveRunning, renewRelayCredential, serverProblems, writeServer } from "../deploy.ts";
+import { Refused, bringUp, compileAndVerify, contentHash, ops, proveRunning, renewRelayCredential, serverProblems, writeServer } from "../deploy.ts";
 import type { Context, PreparedGuard } from "../deploy.ts";
 import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
 import { names } from "../generate/shop.ts";
 import { noSecretsIn, provenLine } from "../generate/rules.ts";
 import { ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
-import { listShops, loadServer, serverPaths } from "../lib/server.ts";
+import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { loadState, saveState, shopIndex } from "../lib/state.ts";
 import type { State } from "../lib/state.ts";
@@ -180,13 +180,6 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   const kinds = prepared.guards.map((g) => g.plan.kind as Kind);
   const creds = ensureCredentials(ctx.dir, name, kinds);
   for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds)));
-  // a server that has only agents of this kind still has the model Guard in its compose file, so it needs a bundle too
-  let model: PreparedGuard | undefined;
-  if (!state.modelApplied) {
-    const m = await prepareModel(ctx, server, state, listShops(ctx.dir).map((s) => ({ id: names.agentId(s), sha: sha(readSecretFile(secretFile(ctx.dir, names.runtime(s), "agent_model")) ?? "") })));
-    problems.push(...m.problems);
-    model = m.model;
-  }
   if (problems.length > 0) throw new Refused(problems);
 
   // nothing broken: no secret in any file we are about to write, then write
@@ -204,7 +197,6 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
     guards: Object.fromEntries(prepared.guards.map((g) => [g.plan.kind, { kind: g.plan.kind, service: g.plan.service, specText: g.plan.specText, bundleText: g.compiled!.text, tomlText: g.toml! }])),
   };
   s.lastDeployAt = at;
-  if (model) applyModel(state, model);
   const composed = writeServer(ctx, server, state);
   const changed = await bringUp(ctx, state, composed, [name]);
 

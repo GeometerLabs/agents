@@ -185,25 +185,6 @@ export async function compileAndVerify(ctx: Context, server: ServerConfig, shop:
   return [...toolNamesMatch(g.plan, g.toml, compiled.result), ...tripwiresHold(g.plan, g.tripwires)];
 }
 
-/**
- * The server's one model Guard, compiled and verified. Its agents are the runtimes of the shops (an agent someone else wrote does not use the model), so it is checked again whenever a
- * shop is added. A server with agents of the other kind only still has this Guard in its compose file, so it needs a bundle too.
- */
-export async function prepareModel(ctx: Context, server: ServerConfig, state: State, modelAgents: Sha["agents"]): Promise<{ model: PreparedGuard; problems: Problem[] }> {
-  const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
-  const modelPlan = planModelGuard(server, 1);
-  const prevModel = state.model;
-  const modelVersion = prevModel?.contentHash === contentHash(modelPlan.spec) ? prevModel.version : (prevModel?.version ?? 0) + 1;
-  const model: PreparedGuard = { plan: planModelGuard(server, modelVersion), version: modelVersion, contentHash: contentHash(modelPlan.spec) };
-  return { model, problems: await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }) };
-}
-
-/** Remember the model Guard as applied (what the compose file and the next deploy start from). */
-export function applyModel(state: State, model: PreparedGuard): void {
-  state.model = { version: model.version, contentHash: model.contentHash, digest: model.compiled!.digest, tripwires: { passed: model.tripwires!.passed, of: model.tripwires!.of, notSelfTestable: model.tripwires!.notSelfTestable } };
-  state.modelApplied = { kind: "model", service: names.modelGuard, specText: model.plan.specText, bundleText: model.compiled!.text, tomlText: model.toml! };
-}
-
 /** Server-level things every deploy needs: the Guard image on this machine, the model's key, the deployment key. */
 export async function serverProblems(ctx: Context, server: ServerConfig): Promise<Problem[]> {
   const problems: Problem[] = [];
@@ -362,10 +343,13 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled)]));
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
+  const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
+  const modelPlan = planModelGuard(server, 1);
+  const prevModel = state.model;
+  const modelVersion = prevModel?.contentHash === contentHash(modelPlan.spec) ? prevModel.version : (prevModel?.version ?? 0) + 1;
+  const model: PreparedGuard = { plan: planModelGuard(server, modelVersion), version: modelVersion, contentHash: contentHash(modelPlan.spec) };
   const modelAgents = everyShop.map((s) => ({ id: names.agentId(s), sha: sha(creds.get(s)?.agent.model ?? readSecretFile(secretFile(ctx.dir, names.runtime(s), "agent_model")) ?? "") }));
-  const prepModel = await prepareModel(ctx, server, state, modelAgents);
-  const model = prepModel.model;
-  problems.push(...prepModel.problems);
+  problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));
   if (problems.length > 0) throw new Refused(problems);
 
   // 3. nothing broken: no secret in any file we are about to write, then write
@@ -391,7 +375,8 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
     };
     s.lastDeployAt = at;
   }
-  applyModel(state, model);
+  state.model = { version: model.version, contentHash: model.contentHash, digest: model.compiled!.digest, tripwires: { passed: model.tripwires!.passed, of: model.tripwires!.of, notSelfTestable: model.tripwires!.notSelfTestable } };
+  state.modelApplied = { kind: "model", service: names.modelGuard, specText: model.plan.specText, bundleText: model.compiled!.text, tomlText: model.toml! };
   const composed = writeServer(ctx, server, state);
 
   // 4. only what changed: compose recreates a service whose entry changed; a service whose FILES changed (compose cannot see that) is restarted

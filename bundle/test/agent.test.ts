@@ -151,7 +151,8 @@ test("agent deploy: the same checked deploy, the credential in every Guard, the 
     assert.equal(r.proven.line, "12 of 12 limits proven to bite (3 cannot be tested without writing, and are not counted)");
     assert.ok(composeCalls(w).some((c) => c[0] === "up"));
     const compose = read(join(w.paths.generated, "compose.yaml"));
-    for (const svc of ["g-my-agent-razorpay", "g-my-agent-whatsapp", "g-my-agent-calendar", "g-model"]) assert.ok(compose.includes(`${svc}:`), `${svc} is in the compose file`);
+    for (const svc of ["g-my-agent-razorpay", "g-my-agent-whatsapp", "g-my-agent-calendar"]) assert.ok(compose.includes(`${svc}:`), `${svc} is in the compose file`);
+    assert.ok(!compose.includes("g-model:"), "a server that holds only agents someone else wrote has no model Guard: nothing of ours calls a model for them");
     const status = readStatus(w.root, "my-agent")!;
     assert.deepEqual([status.deploy.state, status.limits?.proven, status.limits?.of, status.versions?.pathway], ["applied", 12, 12, "own-agent"]);
     assert.equal(status.own?.baseUrls.razorpay, "https://shops.example.com/g/my-agent/razorpay");
@@ -233,7 +234,8 @@ test("the deployer's loop deploys an agent when its folder or its keys change, l
     assert.equal(loadState(w.root).agents!["my-agent"].guards.razorpay.version, 2);
     assert.equal(loadState(w.root).agents!["my-agent"].guards.whatsapp.version, 1, "a Guard whose spec did not change keeps its version");
     // the record job asks ops for what the Guards and the services say, and keeps it
-    const facts = JSON.parse(readFileSync(new URL("./fixtures/own-agent-facts.json", import.meta.url), "utf8"));
+    // (the captured Guards knew the agent as "demo"; this one is "my-agent")
+    const facts = JSON.parse(readFileSync(new URL("./fixtures/own-agent-facts.json", import.meta.url), "utf8").replaceAll("agent-demo", "agent-my-agent").replaceAll("relay-demo", "relay-my-agent").replaceAll("record-demo", "record-my-agent"));
     const asked: string[][] = [];
     const runner = { run: (command: string, args: string[], options?: Parameters<typeof w.ctx.runner.run>[2]) => { if (args.includes("agent-facts")) { asked.push(args.slice(args.indexOf("agent-facts"))); return Promise.resolve(ok(JSON.stringify(facts))); } return w.ctx.runner.run(command, args, options); } };
     let clock = Date.parse(facts.at);
