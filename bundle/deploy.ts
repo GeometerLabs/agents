@@ -134,7 +134,8 @@ interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]
 
 const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
-export const desiredHashOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText">): string => sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText }));
+// Fleet's button mode is part of what a shop is asked to be, so a flip redeploys it. It is only added to the hash when it is on, so a shop that never had it keeps the hash it has.
+export const desiredHashOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText"> & { fleetAi?: "buttons" }): string => sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}) }));
 
 /** Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. */
 export function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string): { prepared?: Prepared; problems: Problem[]; notes: string[] } {

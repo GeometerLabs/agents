@@ -1,6 +1,7 @@
 // One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
+import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
@@ -104,8 +105,25 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, timeoutMs: timeoutMs as number, parser, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
 }
 
+/** The pathway's own check of a runtime config (server/config.ts). A parameter so a test can stand in for a pathway version that knows more. */
+export type RuntimeValidator = (config: unknown, folder: string) => { ok: boolean };
+
+/**
+ * Fleet's button mode (B48): when fleet said `ai: "buttons"` for this shop, the GENERATED runtime config gets `"ai": "buttons"` (the template's runtime reads that
+ * override and answers from menus with no AI; every limit still holds). It goes into the generated config only, never into the panel's runtime.json, which the
+ * panel rewrites and whose checker refuses a key it does not know. And it goes in ONLY if the pathway's own validator accepts the key: a runtime that does not
+ * know `ai` refuses to start, and a shop that cannot start is worse off than a shop that keeps its AI. Then the override is skipped and a note says so.
+ */
+export function withFleetAi(runtime: Record<string, unknown>, fleetAi: "buttons" | undefined, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (fleetAi !== "buttons" || Object.keys(runtime).length === 0) return runtime;
+  const withIt = { ...runtime, ai: "buttons" };
+  if (validate(withIt, "/").ok) return withIt;
+  if (validate(runtime, "/").ok) notes.push("fleet asked for button mode, but this pathway version does not know the ai setting yet, so the shop keeps its AI. Update the pathway, and the setting is written on the next deploy.");
+  return runtime;
+}
+
 /** Plan one shop. `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). */
-export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}): ShopPlan {
+export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate: RuntimeValidator = validateRuntimeConfig): ShopPlan {
   const problems: Problem[] = shop.problems.map((message) => ({ rule: "shop-folder", message }));
   const notes: string[] = [];
   const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes);
@@ -135,6 +153,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
+    runtime = withFleetAi(runtime, shop.fleetAi, validate, notes);
   }
   return { shop: shop.name, guards, runtime, notes, problems };
 }

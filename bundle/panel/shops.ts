@@ -12,8 +12,8 @@ import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import { SHOP_ID, parseOwner, parseStatus, parseStopRequest, serverPaths } from "./contract.ts";
-import type { OwnerFile, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
+import { SHOP_ID, parseFleetAnswer, parseOwner, parseStatus, parseStopRequest, serverPaths } from "./contract.ts";
+import type { FleetAnswer, OwnerFile, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
 import type { Store } from "./store.ts";
 
 /** What the panel itself remembers about a shop that is not in the shop's folder. The secrets themselves are never here: only that they arrived. */
@@ -76,6 +76,8 @@ export function createShops(config: PanelConfig, store: Store) {
       try { const p = JSON.parse(readText(join(paths.shop(safe(id)), "pins.json")) ?? "null") as PinsFile | null; return p?.schema === 1 ? p : undefined; } catch { return undefined; }
     },
     status(id: string): StatusRead { return parseStatus(readText(paths.statusFile(safe(id)))); },
+    /** Fleet's last answer about the shop (written by ops), or undefined when it has said nothing readable. */
+    fleet(id: string): FleetAnswer | undefined { return parseFleetAnswer(readText(paths.fleetFile(safe(id)))); },
     stopRequest(id: string): StopRequest | undefined { return parseStopRequest(readText(paths.stopFile(safe(id)))); },
     meta(id: string): ShopMeta { return store.read<ShopMeta>(`meta/${safe(id)}.json`) ?? { schema: 1, receipts: {} }; },
     saveMeta(id: string, meta: ShopMeta): void { store.write(`meta/${safe(id)}.json`, meta); },

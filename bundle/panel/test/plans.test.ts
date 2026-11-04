@@ -44,7 +44,7 @@ test("every other rate of the 4 Nov list is carried over unchanged, each with th
     if (id === "geometer.fee") assert.equal(proposed.rates[id], undefined, "a plan replaces the flat fee");
     else assert.deepEqual(proposed.rates[id], r, id);
   }
-  assert.doesNotMatch(readFileSync(proposed.file, "utf8"), /founding/iu);
+  assert.doesNotMatch(readFileSync(proposed.file, "utf8"), new RegExp("found" + "ing", "iu"), "the word is not used for the innovators");
 });
 
 test("a proposed list never prices the running costs: the newest in-force list is still 2026-11-04, and the cost line is the flat fee", () => {

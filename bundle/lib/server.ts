@@ -6,7 +6,8 @@
 //   requests/<shop>.stop.json  a request to stop a shop; the deployer acts, shows `stopped` in status, then removes it (the panel writes these)
 //   exports/<shop>/          record.json and bookings.json for the monthly report, without customers' numbers (the deployer writes these)
 //   panel/                   the panel's own data (accounts, drafts, papers); the panel writes it, the deployer never reads it
-//   status/<shop>.json       RESULTS the deployer writes for the panel: last deploy, "N of M limits proven", versions, last backup and drill.
+//   status/<shop>.json       RESULTS the deployer writes for the panel: last deploy, "N of M limits proven", versions, last backup and drill, the cost meter's counts.
+//   fleet/<shop>.json        fleet's last answer about the shop (plan, allowance, innovator, button mode). Written by ops, the one folder it can write; read by the deployer and the panel.
 //   state/                   the deployer's own memory: Guard bundle versions, stopped shops, lock history, backup times.
 //   generated/               compose.yaml, Caddyfile, per-container config. Rewritten on every deploy; never edited by hand.
 //   secrets/                 one folder per container, mounted into that container only. Parent mode 0700.
@@ -15,6 +16,7 @@ import { join, resolve } from "node:path";
 import { validateSettings } from "../../pathways/bookings/src/settings.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import { parseLock } from "../../pathways/bookings/server/config.ts";
+import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
 
 export const BUNDLE_VERSION = "0.1.0";
@@ -208,6 +210,12 @@ export interface ShopFolder {
   runtime: PanelRuntime;
   lock: { pathway: string; version: string } | undefined;
   lockText: string;
+  /**
+   * Fleet's last word on this shop's AI (fleet/<shop>.json, written by ops): "buttons" only when fleet said so for a shop that has a plan. Anything else (no file,
+   * an unreadable one, "normal", no plan) is undefined, and then nothing is added to the shop's runtime config. It is read from fleet's folder, never from
+   * the panel's runtime.json, which the panel rewrites.
+   */
+  fleetAi?: "buttons";
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
   problems: string[];
 }
@@ -252,5 +260,7 @@ export function readShop(dir: string, name: string): ShopFolder {
   const lockText = read("pathway.lock");
   let lock: { pathway: string; version: string } | undefined;
   if (lockText) { try { lock = parseLock(lockText); } catch (e) { problems.push((e as Error).message); } }
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, problems };
+  const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
+  const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), problems };
 }

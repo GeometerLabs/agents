@@ -14,6 +14,7 @@ import type { CheckResult } from "./checks.ts";
 import type { LiveView, ShopStatus } from "./contract.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
+import type { PlanView } from "./plan.ts";
 import type { Draft } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
@@ -139,6 +140,8 @@ export interface ShopView {
   stopRequestedAt?: string;
   summary: { services: string[]; hours: string[]; deposit: string; cancel: string; languages: string; owner: string } | undefined;
   cost: MonthlyCost;
+  /** Fleet's last word on the shop's plan (plan.ts). Left out when fleet has said nothing. */
+  plan?: PlanView;
   activity?: { made: number; cancelled: number; moved: number; deposits: number; refunds: number; saidNo: number; owner: { asked: number; approved: number; denied: number } };
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
@@ -146,6 +149,21 @@ export interface ShopView {
   details?: { statusJson: string; pins: string; runtimeJson: string };
   limitsText: string[];
   notice?: string;
+}
+
+/** The plan: its name and included messages, the Innovator badge, the proposed price, and what fleet wants the partner to know (button mode, warnings). */
+function planBlock(c: Ctx, p: PlanView): Raw {
+  const w = c.w.plan;
+  const price = p.price ? (p.innovator && p.price.yoursPaise !== p.price.listPaise ? w.priceInnovator(formatRupees(p.price.listPaise), formatRupees(p.price.yoursPaise)) : w.price(formatRupees(p.price.listPaise))) : "";
+  const warns = p.warn.filter((k): k is keyof typeof w.warn => k in w.warn);
+  return html`<h2>${w.heading}</h2>
+${p.plan ? html`<p class="big">${w.is(w.names[p.plan])}${p.innovator ? html` <span class="state live">${w.innovator}</span>` : ""}</p>
+<ul class="plain">
+  ${p.allowance !== null ? html`<li class="info"><span class="mark">·</span><span>${w.included(p.allowance)}</span></li>` : ""}
+  ${price ? html`<li class="info"><span class="mark">·</span><span>${price}<br><small class="note">${w.proposedNote}</small></span></li>` : ""}
+</ul>` : html`<p class="note">${w.none}</p>`}
+${p.buttons ? html`<div class="notice" role="status"><b>${w.buttons}</b><br>${w.buttonsWhy[p.reason === "overage_unfunded" ? "overage_unfunded" : "other"]}</div>` : ""}
+${warns.length > 0 ? html`<ul class="plain">${warns.map((k) => html`<li class="warn"><span class="mark">!</span><span>${w.warn[k]}</span></li>`)}</ul>` : ""}`;
 }
 
 function costTable(c: Ctx, cost: MonthlyCost): Raw {
@@ -199,6 +217,8 @@ ${v.summary ? html`<ul class="plain">
 </ul>` : ""}
 <ul class="plain">${v.limitsText.map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>
 <form method="post" action="/shops/${v.id}/edit">${csrf(c)}<button class="btn" type="submit">${w.settingsEdit}</button></form>
+
+${v.plan ? planBlock(c, v.plan) : ""}
 
 ${costTable(c, v.cost)}
 

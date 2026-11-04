@@ -17,7 +17,7 @@ export function desiredSignature(ctx: Context, shop: string): string {
   const f = readShop(ctx.dir, shop);
   const waiting = join(serverPaths(ctx.dir).secretsInbox, shop);
   const inbox = existsSync(waiting) ? readdirSync(waiting).filter((n) => !n.startsWith(".")).sort() : [];
-  return sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, inbox }));
+  return sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, inbox, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}) }));
 }
 
 const failedFor = new Map<string, string>();
