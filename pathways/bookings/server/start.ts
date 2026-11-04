@@ -84,7 +84,7 @@ export function buildUnderstanding(client: ClientFolder, deps: { clock: Clock; e
   }
   const parser = decision || model ? createRouter({ decision, model, now: () => deps.clock.now() }) : createRuleParser();
   const ai: AiPolicy = {
-    override: aiOverrideReader(client.folder, rt.ai ?? "auto"),
+    override: aiOverrideReader(client.folder, rt.ai === "buttons" ? "buttons" : "auto"),
     ...(rt.allowance ? { allowance: { ...(rt.allowance.messages !== undefined ? { messages: rt.allowance.messages } : {}), ...(rt.allowance.costInr !== undefined ? { costMicroInr: Math.round(rt.allowance.costInr * 1_000_000) } : {}) } } : {}),
     ...(rt.pauseMinutes !== undefined ? { pauseMinutes: rt.pauseMinutes } : {}),
   };

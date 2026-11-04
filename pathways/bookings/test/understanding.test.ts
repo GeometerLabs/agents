@@ -104,6 +104,8 @@ test("the rate table: the economics note's own examples come out, an unknown mod
 test("phone numbers, addresses and links are taken out by their shape; prices, times and dates stay; a named customer and an introduced name go", () => {
   assert.equal(redact("call +91 98110 11111 for a haircut at 6:30 on 11 Nov for 300").text, "call [number] for a haircut at 6:30 on 11 Nov for 300");
   assert.equal(redact("9811111111").text, "[number]");
+  assert.equal(redact("book 15-11-2026 or 15 11 2026 at 6.30pm").text, "book 15-11-2026 or 15 11 2026 at 6.30pm", "a written date is not a phone number");
+  assert.equal(redact("my number is 080-2345 6789").text, "my number is [number]", "a landline is");
   assert.equal(redact("mail a@b.com or www.x.in/a").text, "mail [address] or [link]");
   assert.equal(redact("my name is Ravi Kumar and I want a haircut").text, "my name is [name] and I want a haircut");
   assert.equal(redact("my name is ravi and i want a haircut").text, "my name is [name] and i want a haircut");

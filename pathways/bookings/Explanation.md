@@ -586,17 +586,17 @@ Plan items B46 (how a message is understood, cheapest step first) and B47 (butto
 
 | Key | Meaning |
 | --- | --- |
-| `ai` | `"auto"` (default) or `"buttons"`. **`"buttons"` turns every model step off.** This is the key the bundle writes from fleet's heartbeat answer |
+| `ai` | `"on"` (default) or `"buttons"`. **`"buttons"` turns every model step off.** This is the key the bundle writes from fleet's heartbeat answer |
 | `decision` | Step 1: `{ provider: "laya" \| "jev" \| "system-one", baseUrl, model, keyEnv?, threshold?, languages?, timeoutMs? }`. Jev needs `keyEnv`. Laya (a local address) needs none |
 | `parser` | Step 2, as before, with `provider?` (for the record and the price list, default the host) and `keyEnv?` (the provider's key, from the environment). `keyEnv` and `agentTokenFile` are two ways to authenticate, never both. A key to plain `http://` on another machine is refused |
 | `allowance` | `{ messages?, costInr? }`: this month's most messages read by steps 1 and 2, and their most estimated cost in rupees. Either reached puts the shop in button mode until the month ends |
 | `pauseMinutes` | How long button mode lasts after a model step fails (default 5) |
 
-**For whoever writes the switch (the bundle):** the file is `<client folder>/runtime.json`, the key is `"ai"`, the value is `"buttons"` to switch the AI off and `"auto"` (or no `"ai"` key) to give it back. The runtime looks at the file again whenever its modified time changes, on every customer message and every tick, so no restart is needed. Write it whole to a temporary file and rename it over `runtime.json`; a file caught half written leaves the last answer standing, never switches the AI off by accident. `Status.ai` (below) says what the agent is doing.
+**For whoever writes the switch (the bundle):** the file is `<client folder>/runtime.json`, the key is `"ai"`, the value is `"buttons"` to switch the AI off and `"on"` (or no `"ai"` key) to give it back. The bundle (B48) writes `"buttons"` for fleet's reason `overage_unfunded` and leaves the key out otherwise; the validator accepts both values, so it does not skip the key any more. The runtime looks at the file again whenever its modified time changes, on every customer message and every tick, so no restart is needed. Write it whole to a temporary file and rename it over `runtime.json`; a file caught half written leaves the last answer standing, never switches the AI off by accident. `Status.ai` (below) says what the agent is doing.
 
 ### Understanding record fields (for the cost meter)
 
-One `receive_message` entry per customer message, in the existing record format (`refs` is a map of strings). The entry's other fields are as before. These are the exact keys:
+One `receive_message` entry per customer message, in the existing record format (`refs` is a map of strings). The entry's other fields are as before. The cost meter reads them through `understandingOf` in `bundle/lib/usage.ts`; **the single source of truth for the names is its `FIELDS` constant, which I changed to match this branch** (`container: "refs"`, and a number may be a decimal string, as `refs` holds it); `bundle/test/usage.test.ts` also feeds it a record the agent really wrote. These are the exact keys:
 
 | `refs` key | Value |
 | --- | --- |
@@ -629,7 +629,7 @@ The shop is in **button mode** when any of these holds, checked in this order. I
 | --- | --- | --- |
 | `override` | `runtime.json` says `"ai": "buttons"` | The owner, once per switch (switching it off and on again is a new switch). Record: `ai_mode`, `reason: override` |
 | `allowance` | `decision` + `model` messages this month reach `allowance.messages`, or their cost reaches `allowance.costInr` | The owner, once a month. Record: `ai_mode`, `reason: allowance` |
-| `fault` | A step was asked and could not answer (an error, a timeout, an answer it could not use) and the rules had to read the message | The owner, at most once a day. Button mode lasts `pauseMinutes`, then the next message tries the AI again. Record: `ai_mode`, `reason: fault` |
+| `fault` | A step was asked and could not answer (an error, a timeout, an answer it could not use) and **no other step could**, so the rules had to read the message. A decision model that fails while the language model answers is not a fault (it is `failed: decision` in that message's record; Deferred.md) | The owner, at most once a day. Button mode lasts `pauseMinutes`, then the next message tries the AI again. Record: `ai_mode`, `reason: fault` |
 
 - **Told once.** Three new owner notices, in four languages, each a WhatsApp template (`owner_ai_allowance_used`, `owner_ai_switched_off`, `owner_ai_not_answering`; `whatsapp-templates.json` is rebuilt). The builder or partner has no WhatsApp number in the settings, so they are told by the record (`ai_mode`, with the reason and the month, in plain words in `notes`), by `status().ai` and by a start-up/runtime log line, all of which the heartbeat can carry. The "already told" flags are kept with the store, so a restart or a repeated step does not tell them again.
 - **No customer is ever left without an answer.** A message the rules cannot read gets the list of the shop's services; a time the shop cannot give gets a list of other free times; a model that fails changes nothing about the reply except that the rules read it. A new test and three hand-check situations hold this (below).

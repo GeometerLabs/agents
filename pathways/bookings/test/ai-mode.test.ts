@@ -19,6 +19,7 @@ import type { ClientFolder } from "../server/config.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { buildUnderstanding, parserArguments } from "../server/start.ts";
 import { startStandins } from "../standins/server.ts";
+import { createKit } from "./runtime-kit.ts";
 import { systemOneFetch, systemOneStandin } from "../standins/system-one.ts";
 import type { Decider } from "../standins/system-one.ts";
 import { answer, openaiReply, startStubModel } from "./stub-model-server.ts";
@@ -225,7 +226,9 @@ test("runtime.json takes ai, decision, allowance and a key's NAME, and refuses a
   assert.ok(ok.ok, ok.ok ? "" : ok.errors.join("; "));
   if (ok.ok) assert.deepEqual([ok.config.ai, ok.config.allowance, ok.config.pauseMinutes, ok.config.parser?.keyEnv], ["buttons", { messages: 3000, costInr: 30 }, 3, "DEEPINFRA_API_KEY"]);
   const bad = (change: object) => { const r = validateRuntimeConfig({ mode: "fakes", ...change }, "/x"); return r.ok ? [] : r.errors; };
-  assert.match(bad({ ai: "off" })[0], /"auto".*"buttons"/);
+  assert.match(bad({ ai: "off" })[0], /"on".*"buttons"/);
+  assert.ok(validateRuntimeConfig({ mode: "fakes", ai: "on" }, "/x").ok, 'the bundle may write "on"');
+  assert.ok(!validateRuntimeConfig({ mode: "fakes", ai: "auto" }, "/x").ok, '"auto" is not a value');
   assert.match(bad({ decision: { provider: "jev", baseUrl: "https://j.example", model: "m" } })[0], /needs decision\.keyEnv/);
   assert.match(bad({ decision: { provider: "laya", baseUrl: "http://127.0.0.1:1", model: "m", apiKey: "sk-secret" } })[0], /decision\.apiKey is not allowed/);
   assert.ok(!bad({ decision: { provider: "laya", baseUrl: "http://127.0.0.1:1", model: "m", apiKey: "sk-secret" } }).join().includes("sk-secret"), "a refusal never repeats what was written");
@@ -250,7 +253,7 @@ test("the outside switch is read from runtime.json again whenever the file chang
   assert.equal(read(), "buttons");
   write('{"mode":"fakes","ai":', 3000);
   assert.equal(read(), "buttons", "a file caught in the middle of a write changes nothing");
-  write('{"mode":"fakes","ai":"auto"}', 4000);
+  write('{"mode":"fakes","ai":"on"}', 4000);
   assert.equal(read(), "auto");
   write('{"mode":"fakes"}', 5000);
   assert.equal(read(), "auto");
@@ -296,4 +299,24 @@ test("a Guard-fronted model sends no key from here, as before; and with neither 
   const plain = buildUnderstanding(client({}), { clock: fakeClock(TEN_NOV), env: {}, log: () => undefined });
   assert.equal(plain.parser.parseDetailed, undefined, "the plain rule parser");
   assert.equal(plain.ai.override?.(), "auto");
+});
+
+test("the runtime tells the builder once, in its log, when the agent moves to buttons, and /status counts the month", async () => {
+  const kit = createKit();
+  after(() => kit.cleanup());
+  const lines: string[] = [];
+  let flag: "auto" | "buttons" = "auto";
+  const { runtime } = kit.open({ ai: { override: () => flag, allowance: { messages: 5 } }, log: (l) => lines.push(l) });
+  await kit.say(runtime, "hello");
+  assert.deepEqual(runtime.status().ai.messages, { rules: 1, decision: 0, model: 0 });
+  assert.equal(runtime.status().ai.mode, "ai");
+  assert.equal(lines.filter((l) => l.includes("answers with buttons")).length, 0);
+  flag = "buttons";
+  await kit.say(runtime, "hello again");
+  await kit.say(runtime, "and again");
+  assert.equal(lines.filter((l) => l.includes("answers with buttons")).length, 1, "once, not at every message");
+  assert.ok(lines.some((l) => l.includes("(override)")));
+  const ai = runtime.status().ai;
+  assert.deepEqual([ai.mode, ai.reason, ai.allowance.messages], ["buttons", "override", 5]);
+  assert.ok(!JSON.stringify(runtime.status()).includes("hello"), "counts only: no word of a message is in the status");
 });
