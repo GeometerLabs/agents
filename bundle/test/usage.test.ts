@@ -13,6 +13,8 @@ import { fakeRunner, ok } from "../lib/runner.ts";
 import { readStatus } from "../lib/status.ts";
 import { FIELDS, isCustomerMessage, summarizeUsage, understandingOf, usageRatesFrom, whatsappTypeOf } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
+import { createWorld } from "../../pathways/bookings/src/harness.ts";
+import { parseIntent } from "../../pathways/bookings/src/adapters/rule-parser.ts";
 import { world } from "./world.ts";
 
 const RATES = usageRatesFrom([latestProposedPriceList()!, latestPriceList()]);
@@ -43,7 +45,9 @@ test("absent or malformed fields make no understanding: the message is a rules m
     assert.equal(understandingOf(bad), undefined);
   }
   // a known step with a bad number keeps the step and counts the number as 0 (never NaN, never negative, never a fraction)
-  for (const cost of [-5, 1.5, "9", null, Number.NaN, Infinity]) assert.equal(understandingOf(understood("model", cost as never))!.costMicroInr, 0);
+  for (const cost of [-5, 1.5, "9.5", "-3", "abc", "", null, Number.NaN, Infinity, "1".repeat(16)]) assert.equal(understandingOf(understood("model", cost as never))!.costMicroInr, 0);
+  // the record's refs hold every value as a decimal string: those are read as the numbers they are
+  assert.deepEqual(understandingOf(understood("model", "34104" as never, { [FIELDS.inputTokens]: "2184", [FIELDS.outputTokens]: "150" })), { step: "model", provider: "deepinfra", model: "deepseek-v4.1-flash", inputTokens: 2184, outputTokens: 150, costMicroInr: 34_104 });
   const t = summarizeUsage([entry("receive_message", "confirmed"), understood("telepathy", 99)], RATES);
   assert.deepEqual([t.messages, t.byStep, t.modelMicroInr], [2, { rules: 2, decision: 0, model: 0 }, 0]);
 });
@@ -127,4 +131,23 @@ test("the deployer writes the counts into the shop's status file and leaves the 
     assert.equal(after.updatedAt, before.updatedAt, "a count is not a confirmation of the shop");
     assert.equal(readStatus(w.root, "ghost"), undefined, "a shop the deployer does not run gets no file");
   } finally { w.done(); }
+});
+
+test("the pathway's own record is what the meter reads: a rules message, a decision-model message and a priced language-model message, as the agent writes them", async () => {
+  const understood = (step: "rules" | "decision" | "model", cost: number | null) => ({ step, provider: step === "model" ? "deepinfra" : step === "decision" ? "laya" : "rules", model: step === "model" ? "deepseek-ai/DeepSeek-V4.1-Flash" : step === "decision" ? "laya" : "rule-parser", inputTokens: 2184, outputTokens: 150, costMicroInr: cost, rateDate: cost === null ? null : "2026-11-05", tried: ["rules" as const], failed: [] });
+  const queue = [understood("model", 34_104), understood("decision", 0), understood("model", null)];
+  const parser = { parse: async (t: string, c: never) => parseIntent(t, c), parseDetailed: async (t: string, c: never) => ({ intent: parseIntent(t, c), understood: queue.shift() }) };
+  const w = createWorld({ parser });
+  await w.say("hello");
+  await w.say("hello again", { from: "+919822222222" });
+  await w.say("and again", { from: "+919833333333" });
+  const refs = w.record.entries().filter(isCustomerMessage).map((e) => e.refs);
+  assert.equal(refs[0].costMicroInr, "34104", "the pathway writes strings");
+  const u = understandingOf(w.record.entries().filter(isCustomerMessage)[0]);
+  assert.deepEqual(u, { step: "model", provider: "deepinfra", model: "deepseek-ai/DeepSeek-V4.1-Flash", inputTokens: 2184, outputTokens: 150, costMicroInr: 34_104 });
+  const t = summarizeUsage(w.record.entries(), RATES);
+  assert.deepEqual([t.messages, t.byStep, t.modelMicroInr], [3, { rules: 0, decision: 1, model: 2 }, 34_104]);
+  const plain = createWorld();
+  await plain.say("hello");
+  assert.deepEqual(summarizeUsage(plain.record.entries(), RATES).byStep, { rules: 1, decision: 0, model: 0 }, "a rules-only agent's messages are rules messages");
 });

@@ -63,8 +63,8 @@ export interface RuntimeConfig {
   services?: LiveServicesConfig;
   parser?: ParserConfig;
   decision?: DecisionConfig;
-  /** "buttons" turns every model step off for this shop (written by the bundle from fleet's heartbeat answer). Read again on every message, so it takes effect without a restart. Default "auto". */
-  ai?: "auto" | "buttons";
+  /** "buttons" turns every model step off for this shop (written by the bundle from fleet's heartbeat answer). Read again on every message, so it takes effect without a restart. Default "on". */
+  ai?: "on" | "buttons";
   allowance?: AllowanceConfig;
   /** Minutes of button mode after a model step fails. Default 5. */
   pauseMinutes?: number;
@@ -209,13 +209,13 @@ export function validateRuntimeConfig(input: unknown, folder: string): { ok: tru
 
   const parser = input.parser !== undefined ? readParser(input.parser, folder, errors) : undefined;
   const decision = input.decision !== undefined ? readDecision(input.decision, errors) : undefined;
-  if (input.ai !== undefined && input.ai !== "auto" && input.ai !== "buttons") errors.push('"ai" must be "auto" (the default) or "buttons" (no AI: the agent reads with the rules and answers with buttons and lists).');
+  if (input.ai !== undefined && input.ai !== "on" && input.ai !== "buttons") errors.push('"ai" must be "on" (the default) or "buttons" (no AI: the agent reads with the rules and answers with buttons and lists).');
   const allowance = input.allowance !== undefined ? readAllowance(input.allowance, errors) : undefined;
   if (input.pauseMinutes !== undefined && (!Number.isInteger(input.pauseMinutes) || (input.pauseMinutes as number) < 1 || (input.pauseMinutes as number) > 1440)) errors.push('"pauseMinutes" must be a whole number of minutes from 1 to 1440: how long the agent uses buttons after a model step fails. Default 5.');
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "auto" | "buttons" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */

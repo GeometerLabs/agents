@@ -64,6 +64,8 @@ export interface Status {
   steps: number;
   errors: number;
   startedAt: string;
+  /** This month's understanding: messages read at each step, the estimated cost in micro-rupees, the allowance, and whether the agent is in button mode and why. Counts only. */
+  ai: AiSummary;
 }
 
 /**
@@ -131,9 +133,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     const after = serializeStore(store);
     const all = record.entries();
     if (taskId === undefined && after === snapshot && all.length === entries.length) return; // a quiet tick has nothing to save
-    db.commitStep({ taskId, snapshot: after, entries: all.slice(entries.length), nowMs: clock.now() });
+    const fresh = all.slice(entries.length);
+    db.commitStep({ taskId, snapshot: after, entries: fresh, nowMs: clock.now() });
     snapshot = after;
     entries = all;
+    // The builder or partner is told once, here, when the agent moves to buttons: the agent writes one ai_mode line per episode (its reason is in the line and in /status).
+    for (const e of fresh) if (e.action === "ai_mode") log(`The agent now answers with buttons and lists, no AI (${e.refs.reason}). The record's ai_mode line says why; /status counts the month.`);
     bookings = countByState(store);
     const was = refunds.needBuilder.total;
     refunds = countRefunds(store);
@@ -163,6 +168,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       recordLength: entries.length,
       ...runner.counters(),
       startedAt,
+      ai: summaryOf(parseStore(snapshot), policy, clock.now(), settings.timezone),
     }),
 
     refundContext(receipt) {

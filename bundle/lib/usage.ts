@@ -7,18 +7,20 @@
 // What it reads is deliberately narrow, and the two adapters below are the ONLY places that know the record's field names:
 //   understandingOf(entry)   the fields the `understanding` branch (pathways/bookings) adds to the record for each understood message
 //   whatsappTypeOf(entry)    which of Meta's three message types an outgoing message is, from what the record already holds today
-// When that branch merges, align FIELDS (and nothing else) with its real names.
+// Aligned with that branch's real names (5 Nov, when it merged): the pathway writes them in the record entry's `refs`, as strings, so FIELDS.container is "refs"
+// and the numbers are read from decimal strings. The names are listed in pathways/bookings/Explanation.md, "Understanding record fields (for the cost meter)".
 
 export const STEPS = ["rules", "decision", "model"] as const;
 export type Step = (typeof STEPS)[number];
 
 /**
- * THE ONE PLACE THE RECORD'S NEW FIELD NAMES ARE GUESSED. The `understanding` branch adds, for each understood customer message: the step that read it,
- * the provider and model, the tokens in and out, and the estimated cost in micro-rupees. They are looked for first inside an object called `container`
- * on the entry, and then on the entry itself. Align these names at merge; the tests use them through this constant, so they follow.
+ * THE ONE PLACE THE RECORD'S NEW FIELD NAMES ARE WRITTEN DOWN. The pathway adds, for each understood customer message: the step that read it, the provider and
+ * model, the tokens in and out, and the estimated cost in micro-rupees, in the entry's `refs` (the record's existing map of strings; a cost that has no price in the
+ * pathway's rate table is left out, and is read here as 0 spend). They are looked for first inside the object called `container` on the entry, and then on the
+ * entry itself. The tests use them through this constant, so a rename here is followed by every test.
  */
 export const FIELDS = {
-  container: "understanding",
+  container: "refs",
   step: "step",
   provider: "provider",
   model: "model",
@@ -30,7 +32,11 @@ export const FIELDS = {
 export interface Understanding { step: Step; provider?: string; model?: string; inputTokens: number; outputTokens: number; costMicroInr: number }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-const whole = (v: unknown): number => (typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : 0);
+/** A whole number of 0 or more, as a number or as the decimal string the record's refs hold it in. Anything else is 0 (never NaN, negative or a fraction). */
+const whole = (v: unknown): number => {
+  const n = typeof v === "string" && /^\d{1,15}$/u.test(v) ? Number(v) : v;
+  return typeof n === "number" && Number.isSafeInteger(n) && n >= 0 ? n : 0;
+};
 
 /**
  * What the record says about how one customer message was understood, or undefined when it says nothing usable (an older runtime, a rules-only runtime, a
@@ -40,7 +46,8 @@ const whole = (v: unknown): number => (typeof v === "number" && Number.isSafeInt
 export function understandingOf(entry: unknown): Understanding | undefined {
   if (!isObj(entry)) return undefined;
   const nested = entry[FIELDS.container];
-  const source = isObj(nested) ? nested : entry;
+  const knownStep = (o: Record<string, unknown>) => typeof o[FIELDS.step] === "string" && (STEPS as readonly string[]).includes(o[FIELDS.step] as string);
+  const source = isObj(nested) && knownStep(nested) ? nested : entry; // a record's refs is always an object, and an older entry's has no step: then the entry itself is looked at
   const step = source[FIELDS.step];
   if (typeof step !== "string" || !(STEPS as readonly string[]).includes(step)) return undefined;
   const text = (v: unknown) => (typeof v === "string" && v.length > 0 && v.length <= 80 ? v : undefined);

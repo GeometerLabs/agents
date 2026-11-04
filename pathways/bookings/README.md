@@ -263,7 +263,7 @@ With a `parser` and/or a `decision` in `runtime.json`, each message goes to the 
 "decision":  { "provider": "laya", "baseUrl": "http://127.0.0.1:8080", "model": "laya" },
 "parser":    { "wire": "openai", "baseUrl": "https://api.deepinfra.com/v1/openai", "model": "deepseek-ai/DeepSeek-V4.1-Flash", "provider": "deepinfra", "keyEnv": "DEEPINFRA_API_KEY" },
 "allowance": { "messages": 3000, "costInr": 30 },
-"ai": "auto"
+"ai": "on"
 ```
 
 A key is never in the file: `keyEnv` is the **name** of an environment variable. If it is not set, that step is off and the start-up says so. Jev (`"provider": "jev"`) needs `keyEnv` too. `"ai": "buttons"` (which the bundle writes from fleet's heartbeat answer) turns every model off; so does an `allowance` that is used up, and so, for a few minutes, does a model that fails. The agent then reads with the rules and answers with buttons and lists; every limit still holds, the owner is told once, and no customer is left without an answer. What each message cost is in the record (`step`, `provider`, `model`, `inputTokens`, `outputTokens`, `costMicroInr`): see Explanation.md, "Understanding record fields (for the cost meter)". To try it with no model at all, `node pathways/bookings/standins/main.ts --system-one` answers the decisions API from the rules.

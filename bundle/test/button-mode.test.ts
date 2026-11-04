@@ -45,12 +45,25 @@ test("a pathway that knows `ai`: fleet's buttons go into the generated config, a
   } finally { t.done(); }
 });
 
-test("today's pathway does not know `ai` (its runtime would refuse to start): the override is skipped and a note says why", () => {
+test("today's pathway knows `ai`: with the real validator fleet's buttons are written, the shop's config is still one its runtime accepts, and normal removes it again", () => {
   const t = tempServer(); try {
     putAnswer(t.paths, answer());
     const p = planShop(serverConfig(), t.shop("glow-salon")); // the real validator
+    assert.equal(p.runtime.ai, "buttons");
+    assert.equal(validateRuntimeConfig(p.runtime, "/").ok, true, "so the shop starts");
+    assert.deepEqual(p.notes, []);
+    assert.deepEqual(p.problems, []);
+    putAnswer(t.paths, answer({ ai: "normal", reason: undefined }));
+    assert.equal("ai" in planShop(serverConfig(), t.shop("glow-salon")).runtime, false);
+  } finally { t.done(); }
+});
+
+test("an older pathway that does not know `ai` (its runtime would refuse to start): the override is skipped and a note says why", () => {
+  const t = tempServer(); try {
+    putAnswer(t.paths, answer());
+    const oldPathway = (config: unknown, folder: string) => ("ai" in (config as object) ? { ok: false } : validateRuntimeConfig(config, folder));
+    const p = planShop(serverConfig(), t.shop("glow-salon"), {}, oldPathway);
     assert.equal("ai" in p.runtime, false);
-    assert.equal(validateRuntimeConfig(p.runtime, "/").ok, true, "so the shop still starts");
     assert.equal(p.notes.length, 1);
     assert.match(p.notes[0], /fleet asked for button mode, but this pathway version does not know the ai setting yet/u);
     assert.deepEqual(p.problems, [], "a note, not a refusal");
@@ -96,7 +109,7 @@ test("a flip is part of what the shop is asked to be: it changes the desired has
   } finally { t.done(); }
 });
 
-test("the deployer redeploys a shop when fleet flips it, and says the note when the pathway cannot take the setting", async () => {
+test("the deployer redeploys a shop when fleet flips it, and writes the setting now that the pathway takes it", async () => {
   const w = world();
   try {
     const logs: string[] = [];
@@ -110,8 +123,8 @@ test("the deployer redeploys a shop when fleet flips it, and says the note when 
     assert.deepEqual(r.applied, ["glow-salon"], "fleet's flip is a change");
     assert.notEqual(loadState(w.root).shops["glow-salon"].applied!.desiredHash, first);
     const generated = JSON.parse(readFileSync(join(w.root, "generated", "shops", "glow-salon", "client", "runtime.json"), "utf8"));
-    assert.equal("ai" in generated, false, "today's pathway would refuse a runtime.json with it");
-    assert.ok(logs.some((l) => /note: .*does not know the ai setting yet/u.test(l)), logs.join("\n"));
+    assert.equal(generated.ai, "buttons", "the pathway's own validator takes the key, so it is written");
+    assert.ok(!logs.some((l) => /does not know the ai setting yet/u.test(l)), logs.join("\n"));
     putAnswer(w.paths, answer({ ai: "normal", reason: undefined }));
     assert.deepEqual((await applyOnce(w.ctx)).applied, ["glow-salon"], "and flipping back is a change too");
     assert.equal(loadState(w.root).shops["glow-salon"].applied!.desiredHash, first);
