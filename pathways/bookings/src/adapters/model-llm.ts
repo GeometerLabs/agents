@@ -48,7 +48,8 @@ const asNumber = (v: unknown): number => (typeof v === "number" ? v : 0);
 
 function readOpenAI(body: unknown): Reply {
   if (!isObj(body)) return { problem: "its reply was not what was expected" };
-  const usage = isObj(body.usage) ? { inputTokens: asNumber(body.usage.prompt_tokens), outputTokens: asNumber(body.usage.completion_tokens) } : undefined;
+  const cached = isObj(body.usage) && isObj(body.usage.prompt_tokens_details) ? asNumber(body.usage.prompt_tokens_details.cached_tokens) : 0;
+  const usage = isObj(body.usage) ? { inputTokens: asNumber(body.usage.prompt_tokens), outputTokens: asNumber(body.usage.completion_tokens), ...(cached > 0 ? { cachedInputTokens: cached } : {}) } : undefined;
   const choice = Array.isArray(body.choices) && isObj(body.choices[0]) ? body.choices[0] : undefined;
   const message = isObj(choice?.message) ? choice.message : undefined;
   if (typeof message?.refusal === "string" && message.refusal) return { usage, problem: "the model refused" };

@@ -48,7 +48,7 @@ const fmtLanguage = (language: string): Language => ((LANGUAGES as readonly stri
 export function createDemo(settings: Settings, nowMs: number): Demo {
   const uiLanguage = settings.owner.language;
   const ui = uiFor(uiLanguage);
-  const world = createWorld({ settings, nowMs });
+  const world = createWorld({ settings, nowMs, interactive: false }); // the demo page draws chat bubbles, not buttons yet (Deferred.md): the words go out as plain text
   const customerLog: Bubble[] = [];
   const ownerLog: Bubble[] = [];
   let sentSeen = 0;

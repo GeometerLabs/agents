@@ -5,7 +5,7 @@
 // The model only READS. It answers with an Intent; the dates and times stay phrases, exactly as rule-parser.ts returns them,
 // and dates.ts turns them into real ones. The model is never told today's date, so it cannot resolve one.
 import { LANGUAGES, LANGUAGE_NAMES } from "../settings.ts";
-import { KINDS } from "./model.ts";
+import { MODEL_KINDS } from "./model.ts";
 import type { ParseContext } from "./model.ts";
 
 type Schema = Record<string, unknown>;
@@ -21,7 +21,7 @@ const kindIs = (kind: string): Schema => ({ type: "string", enum: [kind] });
  */
 export function intentSchema(context: ParseContext): Schema {
   return object({
-    kind: { type: "string", enum: [...KINDS] },
+    kind: { type: "string", enum: [...MODEL_KINDS] },
     language: nullable({ type: "string", enum: [...LANGUAGES] }),
     serviceId: nullable({ type: "string", enum: context.services.map((s) => s.id) }),
     offerInr: nullable({ type: "integer" }),
@@ -59,7 +59,7 @@ export function systemPrompt(context: ParseContext): string {
     "Customers write in Hindi, English, Malayalam or Kannada, in their own script or in Latin letters (Hinglish, Manglish, Kanglish), often mixed, with typos. Read all of them the same way.",
     "",
     "JSON fields. Every field must be present; use null for anything the customer did not say. Never invent a value.",
-    `- kind: "book" (wants an appointment, or asks about a service, a price or a time), "cancel", "reschedule" (wants another time or day for a booking they have), "yes" (agrees or confirms), "no" (declines or says it is wrong), "stop" (wants no more messages: STOP, unsubscribe; not a sentence that merely contains the word), "greeting" (only a greeting), "unknown" (anything else).`,
+    `- kind: "book" (wants an appointment, or asks about a service, a price or a time), "cancel", "reschedule" (wants another time or day for a booking they have), "yes" (agrees or confirms), "no" (declines or says it is wrong), "stop" (wants no more messages: STOP, unsubscribe; not a sentence that merely contains the word), "greeting" (only a greeting), "owner" (asks to talk to the owner or a person), "unknown" (anything else).`,
     `- language: the language the message is written in (${languages}); Latin-letter Hindi is hi. null when the message says nothing about it (a bare "ok", "yes", "STOP").`,
     "- serviceId: the id of the service they mean, from the list below; null if none.",
     "- offerInr: a price in whole rupees the customer proposes to pay (\"300 में\", \"for ₹300\", \"300ക്ക്\"); \"free\" and its translations are 0. Not a time, a date, a quantity or a question about the price. null if none.",

@@ -14,22 +14,26 @@ import type { Decision } from "./limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
 import type { Booking, Pending, RefundIssueKind, Store } from "./booking.ts";
 import { RELAY_CODE_REPLY } from "./approval-code.ts";
-import { ApiError, ConflictError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "./adapters/faults.ts";
+import { ApiError, ConflictError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError, WindowClosedError, mayHaveHappened } from "./adapters/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
-import type { InboundMessage, Messaging } from "./adapters/messaging.ts";
+import type { InboundMessage, Messaging, OutboundMessage } from "./adapters/messaging.ts";
 import { coerceIntent } from "./adapters/model.ts";
-import type { Intent, IntentParser } from "./adapters/model.ts";
+import type { CandidateSlot, Intent, IntentParser, ParseOptions, Understood } from "./adapters/model.ts";
+import { DEFAULT_PAUSE_MINUTES, dayLocal, modeOf, stateFor } from "./ai-state.ts";
+import type { AiPolicy, ButtonReason } from "./ai-state.ts";
 import type { PaymentEvent, PaymentLink, Payments } from "./adapters/payments.ts";
 import type { Clock } from "./clock.ts";
 import { resolveDate, resolveTime } from "./language/dates.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
-import type { TemplateId } from "./language/templates.ts";
+import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { Action, ActionRecord, Outcome } from "./record.ts";
-import { formatInr } from "./language/format.ts";
+import { formatInr, formatSlot } from "./language/format.ts";
+import { buttonsFor, intentFromReply, interactiveProblem, interactiveText, serviceList, slotList } from "./language/interactive.ts";
+import type { ButtonId, InteractiveMessage } from "./language/interactive.ts";
 import { hoursOn, serviceName } from "./settings.ts";
 import type { Language, Settings } from "./settings.ts";
-import { HOUR, MINUTE, localParts, weekdayOf, zonedToMs } from "./time.ts";
+import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "./time.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -40,6 +44,8 @@ export interface AgentDeps {
   parser: IntentParser;
   record: ActionRecord;
   store: Store;
+  /** The monthly AI allowance and the outside switch (src/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
+  ai?: AiPolicy;
 }
 
 export type AgentEvent =
@@ -58,6 +64,7 @@ const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, calendar, payments, messaging, parser, record, store } = deps;
+  const policy: AiPolicy = deps.ai ?? {};
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
   const parseContext = { services: settings.services, languages: settings.languages };
@@ -78,17 +85,40 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- saying things -------------------------------------------------------------------------------------------
 
   /**
+   * What goes with a message to a customer as tappable buttons or a list (language/interactive.ts). The words above are still templates, and every row is
+   * filled from the record: the shop's services and prices, or free times the calendar showed. Where buttons cannot be used (the customer's 24-hour window is
+   * closed, the provider has none, or the provider refuses them) the same words go out as plain text instead, so nothing is lost.
+   *  - services: the list of the shop's services (and a row to reach the owner)
+   *  - slots:    the list of free times (and a row to reach the owner)
+   *  - buttons:  up to three buttons
+   * `body` is the templates that make the words above the options; left out, it is the message's own templates.
+   */
+  type Offer =
+    | { kind: "services"; body?: TemplateId[] }
+    | { kind: "slots"; slots: number[]; body?: TemplateId[] }
+    | { kind: "buttons"; buttons: ButtonId[]; body?: TemplateId[] };
+
+  function buildInteractive(offer: Offer, templates: TemplateId[], facts: MessageFacts, language: Language): InteractiveMessage {
+    const body = (offer.body ?? templates).map((id) => render(id, facts)).join(" ");
+    if (offer.kind === "services") return { body, list: serviceList(settings, language) };
+    if (offer.kind === "slots") return { body, list: slotList(offer.slots, tz, language) };
+    return { body, buttons: buttonsFor(language, offer.buttons) };
+  }
+
+  /**
    * The one way a message leaves the agent. It renders the templates from the record, runs the limits on the final text,
    * sends only if none blocks, and reads the message back from the messaging service. Returns whether it went out.
    * `shown` are decisions worth recording alongside the message (for example "price floor held") that do not gate it.
+   * With an `offer`, the text the limits read is the whole message the customer will see: the words, then each option.
    */
-  async function say(a: { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action }): Promise<boolean> {
+  async function say(a: { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer }): Promise<boolean> {
     const toCustomer = a.to === "customer";
     const action = a.action ?? "send_message"; // the record's name for this message: a reply to a voice note is its own action
     const toNumber = toCustomer ? a.phone : owner;
     const language = toCustomer ? languageOf(a.phone, a.booking) : settings.owner.language;
-    const facts = factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") });
-    const inputs = { to: a.to, templates: a.templates, refundInr: a.refundInr, slotMs: a.slotMs };
+    const offer = toCustomer ? a.offer : undefined;
+    const facts = factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || offer?.kind === "services", ...(offer?.kind === "slots" ? { slotChoices: offer.slots } : {}) });
+    const inputs = { to: a.to, templates: a.templates, refundInr: a.refundInr, slotMs: a.slotMs, ...(offer ? { offer: offer.kind } : {}) };
     let text: string;
     try {
       text = a.templates.map((id) => render(id, facts)).join(" ");
@@ -97,11 +127,20 @@ export function createAgent(deps: AgentDeps): Agent {
       return false;
     }
 
+    // Buttons and lists are a session message, like free text: only while the window is open, and only if they fit WhatsApp's limits. Otherwise: the plain words, as before.
+    let interactive: InteractiveMessage | undefined;
+    if (offer && typeof messaging.sendInteractive === "function") {
+      try { interactive = buildInteractive(offer, a.templates, facts, language); } catch { interactive = undefined; }
+      if (interactive && (interactiveProblem(interactive) !== null || !(await messaging.isWindowOpen(toNumber).catch(() => false)))) interactive = undefined;
+    }
+    const shownText = interactive ? interactiveText(interactive) : text;
+
     const optedOut = customerOf(a.phone).optedOut;
     const gates: Decision[] = [
       checkOptOut({ toCustomer, customerOptedOut: optedOut }),
-      checkMessageMatchesRecord({ text, facts }),
+      checkMessageMatchesRecord({ text: shownText, facts }),
     ];
+    if (interactive) gates.push(checkMessageMatchesRecord({ text, facts })); // the plain words may be sent instead, so they must hold too
     if (toCustomer && a.reminder) gates.push(checkNoMessageAfterStop({ isReminder: true, bookingConfirmed: a.booking?.state === "confirmed", customerOptedOut: optedOut }));
     if (a.booking && a.templates.includes("booked")) gates.push(checkConfirmOnlyWhenRecorded({ record, booking: a.booking.id }));
     const decisions = [...(a.shown ?? []), ...gates];
@@ -113,11 +152,24 @@ export function createAgent(deps: AgentDeps): Agent {
     }
 
     try {
-      const sent = (await messaging.isWindowOpen(toNumber))
-        ? await messaging.sendText(toNumber, text)
-        : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
+      let sent: OutboundMessage;
+      let asButtons = false;
+      if (interactive) {
+        try {
+          sent = await messaging.sendInteractive!(toNumber, interactive);
+          asButtons = true;
+        } catch (e) {
+          // Refused outright (a 4xx): nothing went out, so the same words go out as plain text. A lost reply or a 5xx may have gone out and is not sent again.
+          if (mayHaveHappened(e) || e instanceof WindowClosedError || !(e instanceof ApiError) || e.status >= 500) throw e;
+          sent = await messaging.sendText(toNumber, text);
+        }
+      } else {
+        sent = (await messaging.isWindowOpen(toNumber))
+          ? await messaging.sendText(toNumber, text)
+          : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
+      }
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
-      log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: a.templates.join("+"), to: a.to }, language });
+      log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}) }, language });
       return seen !== null;
     } catch (e) {
       // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
@@ -126,10 +178,63 @@ export function createAgent(deps: AgentDeps): Agent {
     }
   }
 
-  const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action } = {}) =>
+  const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer } = {}) =>
     say({ booking: b, phone, to: "customer", templates, ...more });
   const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number } = {}) =>
     say({ booking: b, phone, to: "owner", templates: [template], ...more });
+
+  // ---- what to offer: the shop's services, free times, and a few buttons ----------------------------------------------
+
+  const OFFER_DAYS = 7; // free times are looked for a week ahead
+  const OFFER_ROWS = 9; // a list holds ten rows, and the last is the row that reaches the owner
+
+  /**
+   * Up to nine start times the calendar shows free for this service in the next week, at most three a day (spread through the day), earliest first. Each is
+   * on the shop's slot grid, inside its opening hours and clear of everything in the calendar, holds included: the same two rules a typed time must pass.
+   * Empty when the calendar cannot be read, in which case the customer is asked to type a time, as before.
+   */
+  async function freeSlots(serviceId: string | undefined, limit = OFFER_ROWS): Promise<number[]> {
+    const service = settings.services.find((x) => x.id === serviceId) ?? [...settings.services].sort((x, y) => x.durationMinutes - y.durationMinutes)[0];
+    const now = clock.now();
+    const today = localParts(now, tz);
+    const grid = settings.slotMinutes;
+    let events: CalendarEvent[];
+    try { events = await calendar.conflicts(now - settings.bufferMinutes * MINUTE, now + (OFFER_DAYS + 2) * 24 * HOUR + settings.bufferMinutes * MINUTE); } catch { return []; }
+    const others = events.map((e) => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined }));
+    const out: number[] = [];
+    for (let day = 0; day < OFFER_DAYS && out.length < limit; day++) {
+      const date = addDays(today, day);
+      const hours = hoursOn(settings, weekdayOf(date));
+      if (!hours) continue;
+      const free: number[] = [];
+      for (let m = Math.ceil(hours.open / grid) * grid; m + service.durationMinutes <= hours.close; m += grid) {
+        const startMs = zonedToMs(date, { hour: Math.floor(m / 60), minute: m % 60 }, tz);
+        if (startMs <= now + settings.deposit.holdMinutes * MINUTE) continue; // the customer needs the hold's time to pay before it starts
+        const clash = checkNoDoubleBooking({ startMs, endMs: startMs + service.durationMinutes * MINUTE, bufferMinutes: settings.bufferMinutes, ownBookingRef: "", nowMs: now, others });
+        if (clash.verdict !== "block") free.push(startMs);
+      }
+      if (free.length === 0) continue; // a day that is full
+      for (const i of new Set([0, Math.floor((free.length - 1) / 2), free.length - 1])) if (out.length < limit) out.push(free[i]);
+    }
+    return out.sort((x, y) => x - y);
+  }
+
+  /** The same free times as the decision model may pick from: each as the calendar date and the clock time a customer could have written. */
+  async function candidateSlots(serviceId: string | undefined): Promise<CandidateSlot[]> {
+    return (await freeSlots(serviceId, 6)).map((startMs) => {
+      const p = localParts(startMs, tz);
+      return { startMs, date: { kind: "calendar" as const, day: p.day, month: p.month }, time: { hour: p.hour % 12 === 0 ? 12 : p.hour % 12, minute: p.minute, period: p.hour < 12 ? "am" as const : "pm" as const }, label: formatSlot(startMs, tz, "en") };
+    });
+  }
+
+  /** The list of free times under these words, or nothing when there are none (the customer is then asked to type a time). */
+  async function slotsOffer(serviceId: string | undefined, body: TemplateId[]): Promise<Offer | undefined> {
+    const slots = await freeSlots(serviceId);
+    return slots.length > 0 ? { kind: "slots", slots, body } : undefined;
+  }
+  const servicesOffer = (body: TemplateId[]): Offer => ({ kind: "services", body });
+  const yesNo = (body: TemplateId[]): Offer => ({ kind: "buttons", buttons: ["yes", "no"], body });
+  const cancelOrOwner: Offer = { kind: "buttons", buttons: ["cancel", "owner"] };
 
   // ---- the calendar: look first, write, read back ------------------------------------------------------------------
 
@@ -491,16 +596,67 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- reading a message -------------------------------------------------------------------------------------------
 
-  async function readIntent(text: string): Promise<{ intent: Intent; note?: string }> {
+  /** What it costs to read a message with the rules alone: nothing. A parser that is not a router says nothing about cost, and it is the rules. */
+  const RULES: Understood = { step: "rules", provider: "rules", model: "rule-parser", inputTokens: 0, outputTokens: 0, costMicroInr: 0, rateDate: null, tried: ["rules"], failed: [] };
+
+  async function readIntent(text: string, options: ParseOptions): Promise<{ intent: Intent; note?: string; understood: Understood }> {
     try {
       // A parser that can say why it fell back (the model parser) gets that said in the record.
-      const read = parser.parseDetailed ? await parser.parseDetailed(text, parseContext) : { intent: await parser.parse(text, parseContext), fallbackReason: undefined };
+      const read = parser.parseDetailed ? await parser.parseDetailed(text, parseContext, options) : { intent: await parser.parse(text, parseContext), fallbackReason: undefined, understood: undefined };
       const intent = coerceIntent(read.intent, parseContext);
       const note = read.fallbackReason ? `the model could not be used (${read.fallbackReason}), so the rule parser read the message` : undefined;
-      return intent ? { intent, note } : { intent: { kind: "unknown" }, note: "the parser's answer was not a valid intent, so the message was treated as not understood" };
+      const understood = read.understood ?? RULES;
+      return intent ? { intent, note, understood } : { intent: { kind: "unknown" }, note: "the parser's answer was not a valid intent, so the message was treated as not understood", understood };
     } catch (e) {
-      return { intent: { kind: "unknown" }, note: `the parser failed (${(e as Error).message}), so the message was treated as not understood` };
+      return { intent: { kind: "unknown" }, note: `the parser failed (${(e as Error).message}), so the message was treated as not understood`, understood: RULES };
     }
+  }
+
+  // ---- what understanding cost, the monthly allowance and button mode ---------------------------------------------------
+
+  /** The cost of one message as the record keeps it (every value a string, as the record's refs are). The field names are listed in Explanation.md. */
+  function understandingRefs(u: Understood, via?: "button" | "list"): Record<string, string> {
+    return {
+      step: u.step, provider: u.provider, model: u.model,
+      inputTokens: String(u.inputTokens), outputTokens: String(u.outputTokens),
+      ...(u.costMicroInr !== null ? { costMicroInr: String(u.costMicroInr) } : {}),
+      ...(u.rateDate !== null ? { rateDate: u.rateDate } : {}),
+      tried: u.tried.join("+"),
+      ...(u.failed.length > 0 ? { failed: u.failed.join("+") } : {}),
+      ...(via ? { via } : {}),
+    };
+  }
+
+  /** Count this message in the month's totals. A model step that was asked and could not answer starts a pause: for a few minutes the rules and buttons do the reading. */
+  function countUnderstood(u: Understood): void {
+    const state = stateFor(store, clock.now(), tz);
+    state[u.step] += 1;
+    if (u.costMicroInr === null) state.unpriced += 1; else state.costMicroInr += u.costMicroInr;
+    if (u.step === "rules" && u.failed.length > 0) state.pausedUntilMs = clock.now() + (policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES) * MINUTE;
+  }
+
+  /**
+   * Tell the owner, once, that the agent now answers with buttons and lists, and why; and put a line in the record that the builder or partner reads
+   * (the runtime's status and the heartbeat carry it on). Once means once per month for the allowance, once per switch for the outside switch, and once a day for a
+   * failing model. Customers are never told: they simply get buttons.
+   */
+  async function announceButtonMode(): Promise<void> {
+    const mode = modeOf(store, policy, clock.now(), tz);
+    if (!mode.buttons) return;
+    const state = stateFor(store, clock.now(), tz);
+    const today = dayLocal(clock.now(), tz);
+    const reason: ButtonReason = mode.reason;
+    if (reason === "allowance") { if (state.told.allowance === state.month) return; state.told.allowance = state.month; }
+    else if (reason === "override") { if (state.told.override) return; state.told.override = true; }
+    else { if (state.told.fault === today) return; state.told.fault = today; }
+    const spent = `${state.decision + state.model} messages and about ₹${(state.costMicroInr / 1_000_000).toFixed(2)} so far this month (${state.month})`;
+    const notes = reason === "allowance"
+      ? `This shop's monthly AI allowance is used up (${spent}). The agent reads with the rules only and answers with buttons and lists until the month ends. Every limit still holds. The owner has been told once.`
+      : reason === "override"
+        ? "The shop's config says ai: buttons (set from outside, for example when the plan or the partner's balance has no AI left). The agent reads with the rules only and answers with buttons and lists until that is changed. Every limit still holds. The owner has been told once."
+        : `A model step failed, so for ${policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES} minutes the agent reads with the rules only and answers with buttons and lists, then tries the AI again. Every limit still holds. The owner is told once a day.`;
+    log(null, owner, "ai_mode", "confirmed", { reason, month: state.month }, { notes, refs: { mode: "buttons", reason, month: state.month } });
+    await say({ booking: null, phone: owner, to: "owner", templates: [reason === "allowance" ? "owner_ai_allowance" : reason === "override" ? "owner_ai_off" : "owner_ai_fault"] });
   }
 
   /** Put what the customer said into the draft. False when a date does not exist (31 November). */
@@ -585,7 +741,8 @@ export function createAgent(deps: AgentDeps): Agent {
       if (held.why === "failed") await tellOwner(b, phone, "owner_not_booked");
       const template: TemplateId = held.why === "outside_hours" ? "outside_hours" : held.why === "unavailable" ? "slot_unavailable" : "hold_failed";
       moveTo(b, "enquiry");
-      await tellCustomer(b, phone, [...prefix, template], { slotMs, shown: [...shown, ...held.decisions] });
+      const offer = template === "hold_failed" ? undefined : await slotsOffer(b.serviceId, [...prefix, template]); // another time to tap, when this one cannot be had
+      await tellCustomer(b, phone, [...prefix, template], { slotMs, shown: [...shown, ...held.decisions], offer });
       clearSlot(b);
       return;
     }
@@ -605,7 +762,7 @@ export function createAgent(deps: AgentDeps): Agent {
     b.linkUrl = link.short_url;
     log(b, phone, "create_deposit_link", "confirmed", { amountPaise: depositPaise }, { refs: { linkId: link.id } });
     moveTo(b, "awaiting_deposit");
-    await tellCustomer(b, phone, [...prefix, prefix.includes("price_floor") ? "slot_and_link" : "quote_and_link"], { shown: [...shown, ...held.decisions] });
+    await tellCustomer(b, phone, [...prefix, prefix.includes("price_floor") ? "slot_and_link" : "quote_and_link"], { shown: [...shown, ...held.decisions], offer: cancelOrOwner });
   }
 
   async function onBook(phone: string, intent: Intent): Promise<void> {
@@ -620,7 +777,7 @@ export function createAgent(deps: AgentDeps): Agent {
       Object.assign(probe, { serviceId: waiting.serviceId, date: waiting.date, timePhrase: waiting.timePhrase, dateNeedsConfirmation: waiting.dateNeedsConfirmation });
       if (hasDetails && fill(probe, intent)) settle(probe);
       if (!hasDetails || (probe.serviceId === waiting.serviceId && probe.startMs === waiting.startMs)) {
-        await tellCustomer(waiting, phone, ["already_waiting"]);
+        await tellCustomer(waiting, phone, ["already_waiting"], { offer: cancelOrOwner });
         return;
       }
       await cancelWaiting(waiting, "replaced by a new request from the customer");
@@ -629,7 +786,7 @@ export function createAgent(deps: AgentDeps): Agent {
       b = register(store, newDraft(phone, language));
     }
     b.language = language;
-    if (!fill(b, intent)) { await tellCustomer(b, phone, ["didnt_understand"]); return; }
+    if (!fill(b, intent)) { await tellCustomer(b, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) }); return; }
     settle(b);
 
     // The customer's price is only ever compared with the list; the quote is always the list price.
@@ -642,17 +799,17 @@ export function createAgent(deps: AgentDeps): Agent {
       if (d.verdict === "block") prefix.push("price_floor");
     }
 
-    if (!service) { await tellCustomer(b, phone, ["menu"], { shown }); return; }
-    if (b.startMs === undefined || b.endMs === undefined) { await tellCustomer(b, phone, [...prefix, "ask_when"], { shown }); return; }
+    if (!service) { await tellCustomer(b, phone, ["menu"], { shown, offer: servicesOffer(["pick_service"]) }); return; }
+    if (b.startMs === undefined || b.endMs === undefined) { await tellCustomer(b, phone, [...prefix, "ask_when"], { shown, offer: await slotsOffer(b.serviceId, [...prefix, "pick_slot"]) }); return; }
     if (b.startMs <= clock.now()) {
       const slotMs = b.startMs;
       clearSlot(b);
-      await tellCustomer(b, phone, [...prefix, "slot_unavailable"], { slotMs, shown });
+      await tellCustomer(b, phone, [...prefix, "slot_unavailable"], { slotMs, shown, offer: await slotsOffer(b.serviceId, [...prefix, "slot_unavailable"]) });
       return;
     }
     if (b.dateNeedsConfirmation || b.timeInferred) {
       moveTo(b, "confirming_details");
-      await tellCustomer(b, phone, [...prefix, "confirm_details"], { shown });
+      await tellCustomer(b, phone, [...prefix, "confirm_details"], { shown, offer: yesNo([...prefix, "confirm_buttons"]) });
       return;
     }
     await proceedToHold(b, prefix, shown);
@@ -664,16 +821,16 @@ export function createAgent(deps: AgentDeps): Agent {
     const b = latestBooking(store, phone, ["confirming_details"]);
     if (b) return proceedToHold(b, [], []);
     const waiting = latestBooking(store, phone, ["awaiting_deposit"]);
-    if (waiting) { await tellCustomer(waiting, phone, ["already_waiting"]); return; }
-    await tellCustomer(null, phone, ["didnt_understand"]);
+    if (waiting) { await tellCustomer(waiting, phone, ["already_waiting"], { offer: cancelOrOwner }); return; }
+    await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
   }
 
   async function onNo(phone: string): Promise<void> {
     const moving = latestBooking(store, phone, ["confirmed"]);
     if (moving?.reschedule) { moving.reschedule = undefined; await tellCustomer(moving, phone, ["ask_new_time"]); return; }
     const b = latestBooking(store, phone, ["confirming_details"]);
-    if (b) { clearSlot(b); moveTo(b, "enquiry"); await tellCustomer(b, phone, ["ask_when"]); return; }
-    await tellCustomer(null, phone, ["didnt_understand"]);
+    if (b) { clearSlot(b); moveTo(b, "enquiry"); await tellCustomer(b, phone, ["ask_when"], { offer: await slotsOffer(b.serviceId, ["pick_slot"]) }); return; }
+    await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
   }
 
   // ---- deposits ----------------------------------------------------------------------------------------------------
@@ -722,7 +879,7 @@ export function createAgent(deps: AgentDeps): Agent {
       b.reminders = reminderSchedule(settings, b.startMs!, clock.now());
       log(b, b.customer, "confirm_booking", "confirmed", want, { refs: { eventId: found.event.id } });
       moveTo(b, "confirmed");
-      await tellCustomer(b, b.customer, ["booked"]);
+      await tellCustomer(b, b.customer, ["booked"], { offer: cancelOrOwner });
       return;
     }
     log(b, b.customer, "confirm_booking", found.error ? "failed" : "unconfirmed", want, { notes: found.error ?? "the calendar does not show the booking" });
@@ -780,10 +937,44 @@ export function createAgent(deps: AgentDeps): Agent {
     await tellCustomer(b, b.customer, ["hold_expired"], { slotMs });
   }
 
+  /** The booking a "cancel" means: the paid one first, then one waiting for its owner or its deposit, then a draft. */
+  const cancellable = (phone: string): Booking | undefined => latestBooking(store, phone, ["confirmed"]) ?? latestBooking(store, phone, ["needs_owner"]) ?? latestBooking(store, phone, ["awaiting_deposit"])
+    ?? latestBooking(store, phone, ["confirming_details", "enquiry"]);
+
+  /** The customer tapped "Cancel booking": nothing is cancelled yet. They are asked once, with Yes and No buttons; "Yes, cancel" is the same as typing cancel. */
+  async function onCancelAsk(phone: string): Promise<void> {
+    const b = cancellable(phone);
+    if (!b || b.startMs === undefined) { await tellCustomer(b ?? null, phone, ["no_booking_found"], { offer: servicesOffer(["no_booking_found"]) }); return; }
+    await tellCustomer(b, phone, ["ask_cancel"], { offer: { kind: "buttons", buttons: ["cancelYes", "keep"] } });
+  }
+
+  /** "No, keep it": the booking is left exactly as it was. */
+  async function onKeep(phone: string): Promise<void> {
+    const b = cancellable(phone);
+    if (!b || b.startMs === undefined) { await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) }); return; }
+    await tellCustomer(b, phone, ["kept"]);
+  }
+
+  /**
+   * "Talk to the owner": the owner is told, once an hour for the same customer, and the customer is told the owner will message them. The agent does not reply on the
+   * owner's behalf and decides nothing. If the owner could not be told, the customer is told that, and not that the owner will write.
+   */
+  async function onTalkToOwner(phone: string): Promise<void> {
+    const customer = customerOf(phone);
+    const now = clock.now();
+    const recently = customer.ownerAskedAtMs !== undefined && now - customer.ownerAskedAtMs < HOUR;
+    let told = recently;
+    if (!recently) {
+      told = await tellOwner(null, phone, "owner_wants_to_talk");
+      if (told) customer.ownerAskedAtMs = now;
+    }
+    log(null, phone, "ask_owner", told ? "confirmed" : "failed", { by: "button" }, { refs: { to: "owner" }, notes: recently ? "the owner was already told in the last hour, so not again" : told ? "the customer asked to talk to the owner, and the owner was told" : "the owner could not be told" });
+    await tellCustomer(null, phone, [told ? "told_owner" : "couldnt_tell_owner"]);
+  }
+
   async function onCancel(phone: string): Promise<void> {
-    const b = latestBooking(store, phone, ["confirmed"]) ?? latestBooking(store, phone, ["needs_owner"]) ?? latestBooking(store, phone, ["awaiting_deposit"])
-      ?? latestBooking(store, phone, ["confirming_details", "enquiry"]);
-    if (!b || b.startMs === undefined) { await tellCustomer(b ?? null, phone, ["no_booking_found"]); return; }
+    const b = cancellable(phone);
+    if (!b || b.startMs === undefined) { await tellCustomer(b ?? null, phone, ["no_booking_found"], { offer: servicesOffer(["no_booking_found"]) }); return; }
 
     if (b.state === "enquiry" || b.state === "confirming_details") {
       moveTo(b, "cancelled");
@@ -824,7 +1015,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function onReschedule(phone: string, intent: Intent): Promise<void> {
     const b = latestBooking(store, phone, ["confirmed"]);
-    if (!b || b.startMs === undefined) { await tellCustomer(b ?? null, phone, ["no_booking_found"]); return; }
+    if (!b || b.startMs === undefined) { await tellCustomer(b ?? null, phone, ["no_booking_found"], { offer: servicesOffer(["no_booking_found"]) }); return; }
     if (!intent.date && !intent.time) { await tellCustomer(b, phone, ["ask_new_time"]); return; }
 
     // Build the new slot from the old one, changed by whatever the customer named.
@@ -842,7 +1033,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (probe.dateNeedsConfirmation || probe.timeInferred) {
       // Ask only about a time that is possible right now; it is checked again when the customer says yes.
       if (!(await moveAllowed(b, b.reschedule))) { b.reschedule = undefined; return; }
-      await tellCustomer(b, phone, ["confirm_details"], { slotMs: start });
+      await tellCustomer(b, phone, ["confirm_details"], { slotMs: start, offer: yesNo(["confirm_buttons"]) });
       return;
     }
     await applyReschedule(b);
@@ -870,7 +1061,7 @@ export function createAgent(deps: AgentDeps): Agent {
       b.endMs = move.endMs;
       b.reminders = reminderSchedule(settings, b.startMs, clock.now());
       log(b, b.customer, "reschedule_booking", "confirmed", want, { refs: { eventId: found.event.id } });
-      await tellCustomer(b, b.customer, ["rescheduled"]);
+      await tellCustomer(b, b.customer, ["rescheduled"], { offer: cancelOrOwner });
       return;
     }
     log(b, b.customer, "reschedule_booking", found.error ? "failed" : "unconfirmed", want, { notes: found.error ?? "the calendar does not show the new time" });
@@ -979,22 +1170,34 @@ export function createAgent(deps: AgentDeps): Agent {
 
     const phone = msg.from;
     const customer = customerOf(phone);
-    const { intent, note } = await readIntent(msg.text);
+    const mode = modeOf(store, policy, clock.now(), tz);
+    // A tap on a button or a list row is read by looking its id up: no words are read, so no model is asked, whatever the mode. An id that is none of ours is read as words.
+    const tapped = msg.reply ? intentFromReply(msg.reply.id, settings) : null;
+    const { intent, note, understood } = tapped
+      ? { intent: tapped, note: undefined, understood: RULES }
+      : await readIntent(msg.text, { rulesOnly: mode.buttons || customer.optedOut, slots: () => candidateSlots(latestBooking(store, phone, ["enquiry", "confirming_details"])?.serviceId) }); // an opted-out customer gets no reply, so no model is paid to read it
+    countUnderstood(understood);
     if (intent.language && settings.languages.includes(intent.language)) customer.language = intent.language;
     const notes = [note, intent.overrideAttempt ? "the message asked the agent to ignore its rules; it is treated as ordinary text and changes nothing" : undefined].filter(Boolean).join("; ");
-    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id }, { notes, refs: { messageId: msg.id } });
+    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes, refs: { messageId: msg.id, ...understandingRefs(understood, tapped ? msg.reply!.kind : undefined) } });
 
-    if (intent.kind === "stop") return onStop(phone);
-    if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
+    try {
+      if (intent.kind === "stop") return await onStop(phone);
+      if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
 
-    switch (intent.kind) {
-      case "book": return onBook(phone, intent);
-      case "yes": return onYes(phone);
-      case "no": return onNo(phone);
-      case "cancel": return onCancel(phone);
-      case "reschedule": return onReschedule(phone, intent);
-      case "greeting": await tellCustomer(null, phone, ["menu"]); return;
-      default: await tellCustomer(null, phone, ["didnt_understand"]);
+      switch (intent.kind) {
+        case "book": return await onBook(phone, intent);
+        case "yes": return await onYes(phone);
+        case "no": return await onNo(phone);
+        case "cancel": return await (intent.ask ? onCancelAsk(phone) : onCancel(phone));
+        case "reschedule": return await onReschedule(phone, intent);
+        case "owner": return await onTalkToOwner(phone);
+        case "keep": return await onKeep(phone);
+        case "greeting": await tellCustomer(null, phone, ["menu"], { offer: servicesOffer(["pick_service"]) }); return;
+        default: await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
+      }
+    } finally {
+      await announceButtonMode(); // after the customer has their answer
     }
   }
 
@@ -1030,6 +1233,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function onTick(): Promise<void> {
     const now = clock.now();
+    await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     // Refunds first, whatever state their booking is in. A hold whose approval ran out is over; one the owner approved and that could not be
     // sent yet is sent again; a refund that could not be sent at all is tried again. A hold nobody answered is NOT sent again: it just waits.
     for (const b of [...store.bookings.values()]) {

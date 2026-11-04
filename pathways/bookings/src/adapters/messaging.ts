@@ -3,6 +3,8 @@
 import type { Clock } from "../clock.ts";
 import { HOUR } from "../time.ts";
 import type { Language } from "../settings.ts";
+import { interactiveText } from "../language/interactive.ts";
+import type { InteractiveMessage } from "../language/interactive.ts";
 import { ApiError, TimeoutError, WindowClosedError, createFaults } from "./faults.ts";
 import type { FaultOptions } from "./faults.ts";
 
@@ -16,13 +18,21 @@ export interface InboundMessage {
    * and no media id or link travels with the message. The agent answers it with one plain line asking the customer to type (plan B29 is the real voice module).
    */
   voiceNote?: true;
+  /**
+   * Set when the customer tapped a button or a list row instead of writing: the id that row had when we sent it (language/interactive.ts), and which kind it was.
+   * `text` is the row's title, as WhatsApp sends it. The agent looks the id up and reads no words, so no model is asked.
+   */
+  reply?: { id: string; kind: "button" | "list" };
 }
 
 export interface OutboundMessage {
   id: string;
   to: string;
-  kind: "text" | "template";
+  kind: "text" | "template" | "interactive";
+  /** For an interactive message, the body and then each option on its own line (interactiveText): what the outgoing check read. */
   text: string;
+  /** Interactive only: the buttons or the list that went with the body. */
+  interactive?: InteractiveMessage;
   templateName?: string;
   language?: Language;
   sentAt: number;
@@ -43,6 +53,11 @@ export interface Messaging {
   sendText(to: string, text: string): Promise<OutboundMessage>;
   /** A pre-approved template; the only way to start a conversation after the window has closed. */
   sendTemplate(to: string, template: TemplateMessage): Promise<OutboundMessage>;
+  /**
+   * Reply buttons (up to 3) or a list (up to 10 rows). Like free text, only while the customer's 24-hour window is open. Optional: a provider without it gets the
+   * same message as plain text, with the options written out.
+   */
+  sendInteractive?(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
   /** Did this person message us in the last 24 hours? */
   isWindowOpen(to: string): Promise<boolean>;
   getMessage(id: string): Promise<OutboundMessage | null>;
@@ -50,11 +65,12 @@ export interface Messaging {
 
 /** lostReply: the message goes out, the reply is lost. error: the provider refuses. */
 export type MessagingFault = "lostReply" | "error";
-export type MessagingOp = "sendText" | "sendTemplate";
+export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive";
 
 export interface FakeMessaging extends Messaging {
+  sendInteractive(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
   /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. */
-  receive(from: string, text: string, options?: { id?: string }): InboundMessage;
+  receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" } }): InboundMessage;
   outbox(): OutboundMessage[];
   sentTo(number: string): OutboundMessage[];
   isOptedOut(number: string): boolean;
@@ -93,7 +109,7 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
     receive(from, text, options = {}) {
       lastInbound.set(from, clock.now());
       if (text.trim().toUpperCase() === "STOP") optedOut.add(from);
-      return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now() };
+      return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now(), ...(options.reply ? { reply: options.reply } : {}) };
     },
 
     async sendText(to, text) {
@@ -102,6 +118,15 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
       if (!windowOpen(to)) throw new WindowClosedError();
       const m = store({ to, kind: "text", text });
       if (fault === "lostReply") throw new TimeoutError("send message");
+      return { ...m };
+    },
+
+    async sendInteractive(to, message) {
+      const fault = faults.take("sendInteractive");
+      if (fault === "error") throw new ApiError(500, "The provider could not take the message.");
+      if (!windowOpen(to)) throw new WindowClosedError();
+      const m = store({ to, kind: "interactive", text: interactiveText(message), interactive: structuredClone(message) });
+      if (fault === "lostReply") throw new TimeoutError("send interactive message");
       return { ...m };
     },
 

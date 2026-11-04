@@ -2,7 +2,7 @@
 // agent depends on that order: latestBooking looks from the newest booking back, and a tick walks them oldest first.
 // nextBooking is saved too, so a step that runs again after a restart registers the same "b-3" and finds its own
 // calendar event and payment link.
-import type { Store } from "../src/booking.ts";
+import type { AiState, Store } from "../src/booking.ts";
 
 const FORMAT = 1;
 
@@ -14,6 +14,8 @@ export function serializeStore(store: Store): string {
     seenMessages: [...store.seenMessages],
     seenEvents: [...store.seenEvents],
     nextBooking: store.nextBooking,
+    // Optional: a snapshot written before the AI counts existed has no "ai", and still loads (same format).
+    ...(store.ai ? { ai: store.ai } : {}),
   });
 }
 
@@ -30,5 +32,6 @@ export function parseStore(json: string): Store {
     seenMessages: new Set(raw.seenMessages as []),
     seenEvents: new Set(raw.seenEvents as []),
     nextBooking: raw.nextBooking as number,
+    ...(raw.ai && typeof raw.ai === "object" ? { ai: raw.ai as AiState } : {}),
   };
 }

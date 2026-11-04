@@ -103,6 +103,15 @@ function textOf(message: Record<string, unknown>): string | undefined {
   }
 }
 
+/** The id of the button or list row the customer tapped, and which kind it was. The id is one we made (language/interactive.ts); anything that is not a short plain id is dropped, and the title is read as words. */
+function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
+  if (message.type !== "interactive" || !isObject(message.interactive)) return undefined;
+  const i = message.interactive;
+  const kind = isObject(i.button_reply) ? "button" : isObject(i.list_reply) ? "list" : undefined;
+  const id = str(isObject(i.button_reply) ? i.button_reply.id : isObject(i.list_reply) ? i.list_reply.id : undefined);
+  return kind && id && /^[A-Za-z0-9:_.-]{1,200}$/u.test(id) ? { id, kind } : undefined;
+}
+
 /**
  * The customer messages in a WhatsApp webhook. Delivery statuses (sent, delivered, read, failed) are ignored for now (Deferred.md).
  * Messages with no id, no sender number or no words are left out. The timestamp is epoch seconds as a string; ours is milliseconds.
@@ -124,7 +133,8 @@ export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
         const text = voiceNote ? "" : textOf(m);
         if (!id || !from || text === undefined || (text.length === 0 && !voiceNote)) continue;
         const seconds = Number(str(m.timestamp) ?? m.timestamp);
-        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}) });
+        const reply = replyOf(m);
+        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(reply ? { reply } : {}) });
       }
     }
   }
