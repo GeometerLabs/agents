@@ -4,13 +4,12 @@ import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { networkInterfaces } from "node:os";
-import { settingsFromForm } from "./personalise.ts";
-import { MAX_MESSAGE_LENGTH, createDemo } from "./session.ts";
-import type { Demo, OwnerCommand } from "./session.ts";
+import { HttpError, demoStart, runAction } from "./api.ts";
+import { createDemo } from "./session.ts";
+import type { Demo } from "./session.ts";
 import { renderPage } from "./page.ts";
 import { buildState } from "./view.ts";
 import type { Settings } from "../src/settings.ts";
-import { localParts, zonedToMs } from "../src/time.ts";
 
 export const MAX_BODY_BYTES = 16 * 1024;
 const COOKIE = "geo_demo";
@@ -71,11 +70,6 @@ const HOST_OK = /^(localhost|\[[0-9a-f:.]+\]|\d{1,3}(\.\d{1,3}){3}|[a-z0-9-]+(\.
 
 // ---- small helpers -----------------------------------------------------------------------------------------------------
 
-class HttpError extends Error {
-  status: number;
-  constructor(status: number, message: string) { super(message); this.status = status; }
-}
-
 interface Session { id: string; demo: Demo; shopVersion: number; seen: number }
 
 function send(res: ServerResponse, status: number, body: string, type: string, extra: Record<string, string> = {}): void {
@@ -114,17 +108,12 @@ const cookieOf = (req: IncomingMessage): string | undefined =>
 // ---- the app -----------------------------------------------------------------------------------------------------------
 
 export function createHandler(options: DemoOptions) {
-  let shop = { settings: options.settings, version: 1 };
+  const shop = { settings: options.settings, version: 1 };
   const sessions = new Map<string, Session>();
   const maxSessions = options.maxSessions ?? 20;
   const rate = options.ratePerSecond ?? 10;
   const buckets = new Map<string, { tokens: number; at: number }>();
-  const startMs = () => {
-    if (typeof options.nowMs === "function") return options.nowMs();
-    if (options.nowMs !== undefined) return options.nowMs;
-    const tz = shop.settings.timezone;
-    return zonedToMs(localParts(Date.now(), tz), { hour: 10, minute: 0 }, tz); // the morning of the real date: every suggestion is still ahead
-  };
+  const startMs = () => demoStart(shop.settings.timezone, options.nowMs); // the morning of the real date: every suggestion is still ahead
 
   function allowRequest(who: string): boolean {
     const now = Date.now();
@@ -155,9 +144,6 @@ export function createHandler(options: DemoOptions) {
     sessions.set(session.id, session);
     return { session, created: true };
   }
-
-  const text = (v: unknown, max: number): string =>
-    typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max) : "";
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!isLocalNetworkAddress(req.socket.remoteAddress)) throw new HttpError(403, "The demo only answers devices on your own network.");
@@ -198,55 +184,9 @@ export function createHandler(options: DemoOptions) {
     const cookie: Record<string, string> = created ? { "set-cookie": `${COOKIE}=${session.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${IDLE_MS / 1000}` } : {};
     if (isState) { sendJson(res, 200, buildState(session.demo), cookie); return; }
 
-    // The actions. Each one runs after the ones before it in this session finish.
-    let notice: string | undefined;
-    switch (pathname) {
-      case "/api/say": {
-        const message = text(body.text, MAX_MESSAGE_LENGTH + 1);
-        if (message === "") throw new HttpError(400, "Write a message first.");
-        if (message.length > MAX_MESSAGE_LENGTH) throw new HttpError(400, `Keep it under ${MAX_MESSAGE_LENGTH} characters.`);
-        notice = await session.demo.run(() => session.demo.say(message));
-        break;
-      }
-      case "/api/pay": {
-        if (body.times !== 1 && body.times !== 2) throw new HttpError(400, "Pay once or twice.");
-        const times = body.times;
-        notice = await session.demo.run(() => session.demo.pay(times));
-        break;
-      }
-      case "/api/time": {
-        if (body.minutes !== 15 && body.minutes !== 60 && body.minutes !== 1440) throw new HttpError(400, "Choose 15 minutes, 1 hour or 1 day.");
-        const minutes = body.minutes;
-        notice = await session.demo.run(() => session.demo.advance(minutes));
-        break;
-      }
-      case "/api/cancel":
-        notice = await session.demo.run(() => session.demo.cancel());
-        break;
-      case "/api/owner": {
-        const command = body.command;
-        const ref = text(body.ref, 12);
-        if ((command !== "approve" && command !== "deny" && command !== "retry") || !/^b-\d{1,6}$/.test(ref)) throw new HttpError(400, "Choose approve, deny or retry for a booking.");
-        notice = await session.demo.run(() => session.demo.owner(command as OwnerCommand, ref));
-        break;
-      }
-      case "/api/reset":
-        session.demo = createDemo(shop.settings, startMs());
-        session.shopVersion = shop.version;
-        break;
-      case "/api/shop": {
-        const result = settingsFromForm(body.form, shop.settings);
-        if (!result.ok) { sendJson(res, 422, { errors: result.errors }, cookie); return; }
-        shop = { settings: result.settings, version: shop.version + 1 };
-        session.demo = createDemo(shop.settings, startMs());
-        session.shopVersion = shop.version;
-        notice = session.demo.ui.rebuilt;
-        break;
-      }
-      default:
-        throw new HttpError(404, "Nothing here.");
-    }
-    sendJson(res, 200, buildState(session.demo, notice), cookie);
+    // The actions are shared with the browser build (api.ts); this file adds the cookie.
+    const result = await runAction(pathname, body, session, shop, startMs);
+    sendJson(res, result.status, result.json, cookie);
   }
 
   return {
