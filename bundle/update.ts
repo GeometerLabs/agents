@@ -41,6 +41,15 @@ const lockFile = (ctx: Context, shop: string): string => join(serverPaths(ctx.di
 const currentPin = (ctx: Context, shop: string): string => { try { return pinLine(readFileSync(lockFile(ctx, shop), "utf8")); } catch { return ""; } };
 const counts = (r: { held: number; total: number }) => ({ held: r.held, of: r.total });
 
+/** Below zero when version a is older than b, above zero when newer (the numbers first; a pre-release is older than its release). */
+function compareVersions(a: string, b: string): number {
+  const [coreA, ...preA] = a.split("-"); const [coreB, ...preB] = b.split("-");
+  const [x, y] = [coreA.split(".").map(Number), coreB.split(".").map(Number)];
+  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
+  if (preA.length === 0 || preB.length === 0) return preB.length - preA.length;
+  return preA.join("-") < preB.join("-") ? -1 : preA.join("-") > preB.join("-") ? 1 : 0;
+}
+
 /** The version of a template this server's checkout has: what `update` moves clients to when no version is given. */
 function checkoutVersion(ctx: Context, pathway: string): string | undefined {
   try { return (JSON.parse(readFileSync(join(ctx.appDir, "pathways", pathway, "package.json"), "utf8")) as { version?: string }).version; } catch { return undefined; }
@@ -118,6 +127,8 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
   if (!target) return heldBack(`This server's checkout of ${pathway} has no version to move to. Say which: --to <version>.`, { from: running });
   const to = `${pathway}@${target}`;
   if (to === running) return { step: { status: "unchanged", at, from: running, to, reason: `Already on ${to}.` } };
+  // with no version named, the checkout's is where clients go; a client that already runs a newer one (put beside the server by hand) is left alone, never taken back
+  if (opts.to === undefined && compareVersions(target, versionOfPin(running)) < 0) return { step: { status: "unchanged", at, from: running, reason: `It runs ${running}, which is newer than the ${to} in this checkout, so it is left as it is. Name a version with --to to move it anyway.` } };
 
   const toDir = pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: target });
   if (!toDir) return heldBack(`This server does not have ${to}. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${pathway}@${target}`)}, then run this again. It stays on ${running}.`, { from: running, to });
@@ -145,6 +156,10 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
 
   const layout = { from: await savedDataLayout(ctx, fromDir), to: await savedDataLayout(ctx, toDir) };
   const known = layout.from !== undefined && layout.to !== undefined ? { layout: { from: layout.from, to: layout.to } } : {};
+  // a runtime cannot start on saved data written in a layout newer than it knows, so a move to a version that knows fewer is refused here as a rollback's is
+  if (layout.from !== undefined && layout.to !== undefined && layout.from > layout.to) {
+    return heldBack(`Moving to ${to} is refused. ${running} changed how this client's saved data is laid out (layout ${layout.to} to ${layout.from}), and ${to} cannot read it, so its runtime would not start. It stays on ${running}.`, { ...result, ...known });
+  }
   if (opts.dryRun) return { step: { status: "moved", at, ...result, ...known } };
 
   // written BEFORE the pin is touched: if this stops now, the next run finishes this client and does not check it again
@@ -155,10 +170,15 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
 
 // ---- rollback --------------------------------------------------------------------------------------------------------------------------------------
 
-/** The clients the last update moved that are still on the version it moved them to. */
+/**
+ * The clients the last update left on the version it names, that have an earlier pin to go back to: the ones it moved, and the ones a repeat of it found already there (running
+ * `update` again, to see a held-back client again, must not empty the list of what a rollback undoes).
+ */
 function lastMoved(ctx: Context): string[] {
-  const run = loadState(ctx.dir).update;
-  return run ? run.shops.filter((s) => run.steps[s]?.status === "moved" && run.steps[s].to === currentPin(ctx, s)) : [];
+  const state = loadState(ctx.dir);
+  const run = state.update;
+  const left = (s: string) => run?.steps[s]?.to !== undefined && run.steps[s].to === currentPin(ctx, s);
+  return run ? run.shops.filter((s) => left(s) && (run.steps[s].status === "moved" || (run.steps[s].status === "unchanged" && (state.shops[s]?.lockHistory.length ?? 0) > 0))) : [];
 }
 
 export async function runRollback(ctx: Context, opts: RollbackOptions = {}): Promise<Run> {
@@ -283,7 +303,8 @@ export function summary(run: Run): string {
   lines.push(`${word} ${total.moved}, held back ${total["held-back"]}, unchanged ${total.unchanged}, skipped ${total.skipped}${total.waiting > 0 ? `, not finished ${total.waiting}` : ""}.`);
   if (run.stoppedBecause) lines.push(`Stopped after ${run.stoppedBecause}. The clients not started yet are taken when you run the same command again.`);
   else if (total.waiting > 0 && !dry) lines.push("The run did not finish. Run the same command again to carry on: clients that are done are not checked or deployed a second time.");
-  if (total["held-back"] > 0 && !back) lines.push("A held-back client keeps running the version it runs now. Fix what failed, or its settings, and run `geometer update` again: it checks those clients again.");
+  const again = `geometer update${run.request.to ? ` --to ${run.request.to}` : ""}${run.request.shops ? ` --shops ${run.request.shops.join(",")}` : ""}`;
+  if (total["held-back"] > 0 && !back) lines.push(`A held-back client keeps running the version it runs now. Fix what failed, or its settings, and run \`${again}\` again: it checks those clients again.`);
   if (total.moved > 0 && !back && !dry) lines.push("`geometer rollback` puts the clients this update moved back on their previous version, one command.");
   return lines.join("\n");
 }

@@ -309,6 +309,10 @@ test("rollback puts back the clients the last update moved, with no name; one na
   const w = await threeClients(); try {
     standIn(w, paysTwiceAtNew);
     await update(w, "--to", "0.2.0");
+    // run it again, as the summary says to, to look at the held-back client again: the two it moved are "unchanged" now, and a rollback still undoes them
+    const again = await update(w, "--to", "0.2.0");
+    assert.match(again.out, /Moved 0, held back 1, unchanged 2/);
+    assert.match(again.out, /run `geometer update --to 0\.2\.0` again/, "and the hint repeats the request as it was given");
     w.calls.length = 0;
     const r = await rollback(w);
     assert.equal(r.result, 0, r.err + r.out);
@@ -329,6 +333,26 @@ test("rollback puts back the clients the last update moved, with no name; one na
     const one = await rollback(w, "--shops", "pet-spa");
     assert.equal(one.result, 0, one.err);
     assert.deepEqual([pin(w, "glow-salon"), pin(w, "pet-spa")], ["bookings@0.2.0", "bookings@0.1.0"]);
+  } finally { w.done(); }
+});
+
+test("an update with no version never takes a client back to an older one than it runs, and a move to a version that knows an older saved-data layout is held back", async () => {
+  const w = await threeClients(); try {
+    standIn(w, () => holdsAll(), (version) => (version === "0.2.0" ? 2 : 1));
+    assert.equal((await update(w, "--to", "0.2.0", "--shops", "glow-salon,pet-spa")).result, 0);
+    // this checkout is 0.1.0, which is what a bare `update` aims at: the two that run 0.2.0 are newer than that, and stay
+    w.calls.length = 0;
+    const bare = await update(w);
+    assert.equal(bare.result, 0, bare.out);
+    assert.deepEqual(SHOPS.map((s) => pin(w, s)), ["bookings@0.2.0", "bookings@0.1.0", "bookings@0.2.0"]);
+    assert.match(bare.out, /= glow-salon +unchanged\. It runs bookings@0\.2\.0, which is newer than the bookings@0\.1\.0 in this checkout, so it is left as it is\. Name a version with --to to move it anyway\./);
+    assert.deepEqual(composeCalls(w), []);
+    // asked for by name, an older version is a move like any other, and the layout guard holds it back: 0.2.0 changed the layout and 0.1.0 cannot read it
+    const down = await update(w, "--to", "0.1.0", "--shops", "glow-salon");
+    assert.equal(down.result, 1);
+    assert.match(down.out, /HELD BACK\. Moving to bookings@0\.1\.0 is refused\. bookings@0\.2\.0 changed how this client's saved data is laid out \(layout 1 to 2\), and bookings@0\.1\.0 cannot read it, so its runtime would not start\. It stays on bookings@0\.2\.0\./);
+    assert.equal(pin(w, "glow-salon"), "bookings@0.2.0");
+    assert.deepEqual(composeCalls(w), []);
   } finally { w.done(); }
 });
 
