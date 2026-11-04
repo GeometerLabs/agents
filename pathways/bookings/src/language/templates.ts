@@ -33,7 +33,7 @@ export type TemplateId =
   | "slot_unavailable" | "outside_hours" | "hold_failed" | "link_failed" | "booked" | "couldnt_confirm" | "hold_expired"
   | "slot_gone_refund" | "refund_unbooked" | "reschedule_failed" | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending"
   | "cancelled_late" | "cancelled_no_deposit" | "no_booking_found" | "refund_approved" | "refund_denied" | "rescheduled"
-  | "reminder" | "didnt_understand" | "refund_checking" | "refund_expired"
+  | "reminder" | "didnt_understand" | "refund_checking" | "refund_expired" | "voice_note"
   // to the owner. Every line starts and ends with fixed words, because each one is also a WhatsApp template (meta-templates.ts) and
   // Meta rejects a body that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
   | "owner_refund_needs_approval" | "owner_cant_confirm" | "owner_late_cancellation" | "owner_duplicate_payment"
@@ -90,6 +90,7 @@ const en: TemplateSet = {
   rescheduled: (f) => `Done. Your ${need(f, "serviceName")} is moved to ${slot(f)}.`,
   reminder: (f) => `Reminder: your ${need(f, "serviceName")} at ${f.businessName} is on ${slot(f)}.`,
   didnt_understand: () => "Sorry, I didn't understand. Please tell me the service, day and time you would like.",
+  voice_note: () => "Please type your message; I can't listen to voice notes yet.",
   refund_checking: (f) => `We are checking your ${inr(f, "refundInr")} refund and will message you as soon as it is confirmed.`,
   refund_expired: (f) => `The owner did not answer in time about your ${inr(f, "refundInr")} refund, so it has not been sent. Please contact ${f.businessName} directly.`,
 
@@ -144,6 +145,7 @@ const hi: TemplateSet = {
   refund_checking: (f) => `आपके ${inr(f, "refundInr")} के रिफंड की जाँच हो रही है। पुष्टि होते ही मैं आपको संदेश भेजूँगा।`,
   refund_expired: (f) => `मालिक ने समय पर आपके ${inr(f, "refundInr")} के रिफंड पर जवाब नहीं दिया, इसलिए वह अभी नहीं भेजा गया है। कृपया ${f.businessName} से सीधे संपर्क करें।`,
   didnt_understand: () => "माफ़ कीजिए, मैं समझ नहीं पाया। कृपया सेवा, दिन और समय बताइए।",
+  voice_note: () => "कृपया अपना संदेश लिखकर भेजिए; मैं अभी वॉइस नोट नहीं सुन सकता।",
 
   owner_refund_needs_approval: (f) => `मंज़ूरी चाहिए: ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}) को ${inr(f, "refundInr")} का रिफंड। ${need(f, "approvalHours")} घंटे के अंदर "approve ${need(f, "approvalCode")}" या "deny ${need(f, "approvalCode")}" लिखकर जवाब दें।`,
   owner_cant_confirm: (f) => `ग्राहक ${need(f, "customerPhone")} का ${need(f, "serviceName")}, ${slot(f)} कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग पक्की नहीं है। उनका ${inr(f, "depositInr")} जमा दर्ज है। कैलेंडर फिर जाँचने के लिए "retry ${need(f, "bookingRef")}" लिखें, या बुकिंग रद्द करके जमा लौटाने के लिए "approve ${need(f, "bookingRef")}"।`,
@@ -199,6 +201,7 @@ const ml: TemplateSet = {
   refund_checking: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം.`,
   refund_expired: (f) => `ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
   didnt_understand: () => "ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ.",
+  voice_note: () => "ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല.",
 
   owner_refund_needs_approval: (f) => `അനുമതി വേണം: ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}) എന്നവർക്ക് ${inr(f, "refundInr")} റീഫണ്ട്. ${need(f, "approvalHours")} മണിക്കൂറിനുള്ളിൽ "approve ${need(f, "approvalCode")}" അല്ലെങ്കിൽ "deny ${need(f, "approvalCode")}" എന്ന് മറുപടി അയയ്ക്കൂ.`,
   owner_cant_confirm: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} കലണ്ടറിൽ ഉറപ്പിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ബുക്കിംഗ് ആയിട്ടില്ല. അവരുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് രേഖപ്പെടുത്തിയിട്ടുണ്ട്. കലണ്ടർ വീണ്ടും നോക്കാൻ "retry ${need(f, "bookingRef")}" എന്നും, ബുക്കിംഗ് റദ്ദാക്കി അഡ്വാൻസ് തിരികെ നൽകാൻ "approve ${need(f, "bookingRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
@@ -250,6 +253,7 @@ const kn: TemplateSet = {
   refund_checking: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ. ಖಚಿತವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
   refund_expired: (f) => `ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ${f.businessName} ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.`,
   didnt_understand: () => "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ.",
+  voice_note: () => "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ.",
 
   owner_refund_needs_approval: (f) => `ಅನುಮತಿ ಬೇಕು: ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}) ಅವರಿಗೆ ${inr(f, "refundInr")} ರೀಫಂಡ್. ${need(f, "approvalHours")} ಗಂಟೆಯೊಳಗೆ "approve ${need(f, "approvalCode")}" ಅಥವಾ "deny ${need(f, "approvalCode")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_cant_confirm: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${need(f, "serviceName")}, ${slot(f)} ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಖಚಿತಪಡಿಸಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬುಕಿಂಗ್ ಆಗಿಲ್ಲ. ಅವರ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ದಾಖಲಾಗಿದೆ. ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಲು "retry ${need(f, "bookingRef")}" ಎಂದು, ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗಿಸಲು "approve ${need(f, "bookingRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,

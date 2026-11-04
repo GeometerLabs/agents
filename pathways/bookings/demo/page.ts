@@ -18,65 +18,65 @@ ${css}
 </style>
 </head>
 <body>
-<div class="banner" id="banner" role="status">Demo · test money · nothing real is sent</div>
-<div class="wrap">
-  <header class="top">
-    <div><span class="shop" id="shopName"></span><span class="clock" id="clock"></span></div>
-    <div class="top-actions">
-      <button type="button" class="btn small quiet" id="btnSetup">Set up for this shop</button>
-      <button type="button" class="btn small quiet" id="btnReset">Start again</button>
+<div class="geo-banner" id="banner" role="status">Demo · test money · nothing real is sent</div>
+<div class="geo-body">
+  <header class="geo-header">
+    <div><span class="geo-shop-name" id="shopName"></span><span class="geo-clock" id="clock"></span></div>
+    <div class="geo-header-actions">
+      <button type="button" class="geo-button geo-button--small geo-button--quiet geo-setup" id="btnSetup">Set up for this shop</button>
+      <button type="button" class="geo-button geo-button--small geo-button--quiet geo-reset" id="btnReset">Start again</button>
     </div>
   </header>
   <noscript><p>This demo needs JavaScript. Please turn it on in your browser.</p></noscript>
 
   <main>
-    <section class="panel" id="panel-customer" aria-labelledby="tabCustomer">
-      <div class="chat-head" id="customerName"></div>
-      <div class="chat" id="chat" aria-live="polite"></div>
-      <div class="chips-label" id="chipsLabel"></div>
-      <div class="chips" id="chips"></div>
-      <form class="composer" id="composer" autocomplete="off">
+    <section class="geo-panel geo-panel--chat" id="panel-customer" aria-labelledby="tabCustomer">
+      <div class="geo-chat-head" id="customerName"></div>
+      <div class="geo-chat" id="chat" aria-live="polite"></div>
+      <div class="geo-chips-label" id="chipsLabel"></div>
+      <div class="geo-chips" id="chips"></div>
+      <form class="geo-composer" id="composer" autocomplete="off">
         <input id="msg" type="text" maxlength="300" enterkeyhint="send" dir="auto" aria-label="Message">
-        <button type="submit" class="btn primary" id="btnSend">Send</button>
+        <button type="submit" class="geo-button geo-send" id="btnSend">Send</button>
       </form>
-      <div class="actions">
-        <button type="button" class="btn primary wide" id="btnPay"></button>
-        <button type="button" class="btn" id="btnPay2"></button>
-        <button type="button" class="btn" id="btnCancel"></button>
-        <button type="button" class="btn" id="btnHour"></button>
-        <button type="button" class="btn" id="btnDay"></button>
+      <div class="geo-actions">
+        <button type="button" class="geo-button geo-button--primary geo-button--wide" id="btnPay"></button>
+        <button type="button" class="geo-button" id="btnPay2"></button>
+        <button type="button" class="geo-button" id="btnCancel"></button>
+        <button type="button" class="geo-button" id="btnHour"></button>
+        <button type="button" class="geo-button" id="btnDay"></button>
       </div>
     </section>
 
-    <section class="panel" id="panel-owner" aria-labelledby="tabOwner" hidden>
+    <section class="geo-panel geo-panel--owner" id="panel-owner" aria-labelledby="tabOwner" hidden>
       <div id="waiting"></div>
-      <h2 id="plainHeading"></h2>
-      <ul class="plain" id="plain"></ul>
-      <h2 id="ownerChatHeading"></h2>
-      <div class="chat short" id="ownerChat"></div>
+      <h2 class="geo-heading" id="plainHeading"></h2>
+      <ul class="geo-summary" id="plain"></ul>
+      <h2 class="geo-heading" id="ownerChatHeading"></h2>
+      <div class="geo-chat geo-chat--owner" id="ownerChat"></div>
     </section>
 
-    <section class="panel" id="panel-record" aria-labelledby="tabRecord" hidden>
-      <h2>Show what we did</h2>
-      <div class="box" id="workDone"></div>
-      <div class="box" id="standIns"></div>
-      <div id="rows"></div>
+    <section class="geo-panel geo-panel--record" id="panel-record" aria-labelledby="tabRecord" hidden>
+      <h2 class="geo-heading">Show what we did</h2>
+      <div class="geo-box" id="workDone"></div>
+      <div class="geo-box" id="standIns"></div>
+      <div class="geo-record" id="rows"></div>
     </section>
   </main>
 
-  <div class="foot"><button type="button" class="link" id="btnRecord">Show what we did ▸</button></div>
+  <div class="geo-foot"><button type="button" class="geo-link" id="btnRecord">Show what we did ▸</button></div>
 </div>
 
-<nav class="tabbar" role="tablist">
-  <button type="button" class="tab" role="tab" id="tabCustomer" aria-selected="true">Customer</button>
-  <button type="button" class="tab" role="tab" id="tabOwner" aria-selected="false"><span id="tabOwnerText">Owner</span><span class="badge" id="badge" hidden></span></button>
-  <button type="button" class="tab" role="tab" id="tabRecord" aria-selected="false" hidden>What we did</button>
+<nav class="geo-tabs" role="tablist">
+  <button type="button" class="geo-tab geo-tab--customer" role="tab" id="tabCustomer" aria-selected="true">Customer</button>
+  <button type="button" class="geo-tab geo-tab--owner" role="tab" id="tabOwner" aria-selected="false"><span id="tabOwnerText">Owner</span><span class="geo-badge" id="badge" hidden></span></button>
+  <button type="button" class="geo-tab geo-tab--record" role="tab" id="tabRecord" aria-selected="false" hidden>What we did</button>
 </nav>
 
-<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true">
-  <div class="wrap"><form id="sheetForm" autocomplete="off"><div id="sheetBody"></div></form></div>
+<div class="geo-sheet" id="sheet" hidden role="dialog" aria-modal="true">
+  <div class="geo-body"><form class="geo-form" id="sheetForm" autocomplete="off"><div id="sheetBody"></div></form></div>
 </div>
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="geo-toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script nonce="${nonce}">
 ${script}
 </script>

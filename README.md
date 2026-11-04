@@ -12,7 +12,24 @@ A **pathway** is a ready, tested agent for one job a local business already pays
 
 | Pathway | For | State |
 | --- | --- | --- |
-| [bookings](pathways/bookings) | Salons and studios taking bookings with a deposit on WhatsApp, in Hindi, English, Malayalam and Kannada | Built and checked against stand-in services; not yet live with a real business |
+| [bookings](pathways/bookings) | Salons and studios taking bookings with a deposit on WhatsApp, in Hindi, English, Malayalam and Kannada. Also village equipment hiring (see Community templates) | Built and checked against stand-in services; not yet live with a real business |
+
+## Deploy bundle: run it on a small server (new)
+
+[bundle/](bundle/README.md) turns a folder per shop into one Docker Compose file: the shop's runtime, one Guard per upstream per shop, the server's model Guard, the webhook inbox, owner approvals on WhatsApp, HTTPS, a heartbeat to Geometer and a continuous copy of every record. A deploy is refused, naming the rule, unless every limit is proven to bite on the Guard. A builder runs it on their own VPS; the guide goes from an empty Ubuntu server to the first shop. The Guard image is not in a registry yet, so it is loaded from a file.
+
+## Community templates: money and records that many people share
+
+Villages and community groups often lack one thing: trust in **who handles the money and the records**. These templates answer it with limits that sit outside the AI, and with a signed statement on every member's phone, so a quiet change would not match the other copies. The agent only records and reminds; it never holds, pools, lends or moves money. They're free and open, and the specs are open for comment.
+
+| Template | For | State |
+| --- | --- | --- |
+| [Equipment rental](pathways/bookings/settings/equipment-rental.example.json) (a Bookings variant) | Custom hiring centres and village equipment owners who rent a tractor and its attachments by the half day or the day, with a deposit, in Kannada and Hindi | **Built as settings** on [pathways/bookings](pathways/bookings), with a [sell guide variant](pathways/bookings/sell/variants/) in four languages. Checked on stand-in services (28 of 28 situations); no hiring centre is live. What it can't do yet (several machines at once, per-acre prices, voice notes) is listed in [Deferred.md](pathways/bookings/Deferred.md) |
+| [Self-help group savings and repayments](pathways/planned/self-help-group/README.md) | Women's self-help groups and their book-keepers: monthly savings, the group's own loan repayments, meeting reminders, and a statement every member can read | **Planned** (a spec; comment in GitHub Discussions). Would be built on fee and dues collection |
+| [Community and committee funds](pathways/planned/community-fund/README.md) | Festival and temple committees, borewell and water groups, housing societies: what came in, what went out with whose approval, and the balance, sent to every contributor | **Planned** (a spec). Would be built on fee and dues collection |
+| [Meeting follow-through](pathways/planned/meeting-follow-through/README.md) | Self-help groups, committees and cooperatives: decisions drafted from a voice note, confirmed by a named person, then reminders and evidence that each task got done | **Planned** (a spec). Phase 3, after fee collection and the voice module |
+
+What "planned" means is in [pathways/planned/](pathways/planned/README.md): a spec that anyone can comment on, not something you can run. The signed statements and the public fingerprints are planned too; none of it is claimed until it is built.
 
 ## The example agents
 

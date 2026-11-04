@@ -1,0 +1,11 @@
+{
+  "name": "geometer-bundle",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geometer's deploy bundle: one folder per server, one Docker Compose file generated from it, one Guard per upstream per shop. No dependencies.",
+  "scripts": {
+    "test": "node --test test/",
+    "geometer": "node geometer.ts"
+  }
+}

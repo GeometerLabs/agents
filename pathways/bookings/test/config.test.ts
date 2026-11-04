@@ -106,6 +106,16 @@ test("runtime.json's parser is optional: left out there is none (the rules read 
   assert.deepEqual(slow.config.parser, { ...GOOD_PARSER, wire: "anthropic", timeoutMs: 12000 });
 });
 
+test("parser.agentTokenFile is the credential THIS agent presents to the model's Guard; a relative path is measured from the client folder", () => {
+  const rel = validateRuntimeConfig({ mode: "fakes", parser: { ...GOOD_PARSER, agentTokenFile: "secrets/model" } }, "/clients/glow");
+  assert.ok(rel.ok);
+  assert.equal(rel.config.parser?.agentTokenFile, "/clients/glow/secrets/model");
+  const abs = validateRuntimeConfig({ mode: "fakes", parser: { ...GOOD_PARSER, agentTokenFile: "/run/secrets/agent_model" } }, "/clients/glow");
+  assert.ok(abs.ok && abs.config.parser?.agentTokenFile === "/run/secrets/agent_model");
+  const empty = validateRuntimeConfig({ mode: "fakes", parser: { ...GOOD_PARSER, agentTokenFile: "" } }, "/x");
+  assert.ok(!empty.ok && empty.errors.some((e) => /agentTokenFile/.test(e)));
+});
+
 test("a malformed parser is refused in plain words, all at once; one that carries a credential is refused without repeating it", () => {
   const refuse = (parser: unknown) => {
     const result = validateRuntimeConfig({ mode: "fakes", parser }, "/x");

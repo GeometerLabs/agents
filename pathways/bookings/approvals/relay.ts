@@ -151,13 +151,16 @@ export function createRelay(options: RelayOptions): Relay {
     store.updateAsk(ask.approval, { sendTries: tries }); // the same code goes again next pass: one request, one code
   }
 
+  /** How long the owner has, in whole hours (at least 1): Guard's own expiry less the time of the hold, never a number written here. */
+  const hoursOf = (held: Held): number => Math.max(1, Math.round((held.expiresAtMs - held.requestedAtMs) / HOUR));
+
   /** A held refund Guard shows, and what to do about it. */
   async function consider(held: Held): Promise<void> {
     const now = clock.now();
     let ask = store.ask(held.id);
     if (ask && ask.state !== "waiting_context") return; // already asked, answered, expired or set aside
     if (!ask) {
-      store.insertAsk({ approval: held.id, state: "waiting_context", receipt: held.receipt ?? "", paymentId: held.paymentId, amountPaise: held.amountPaise, firstSeenMs: now, guardExpiresAtMs: held.expiresAtMs });
+      store.insertAsk({ approval: held.id, state: "waiting_context", receipt: held.receipt ?? "", paymentId: held.paymentId, amountPaise: held.amountPaise, firstSeenMs: now, guardExpiresAtMs: held.expiresAtMs, approvalHours: hoursOf(held) });
       ask = store.ask(held.id)!;
     }
     if (held.youMayDecide !== true) return stop(held.id, "cannot_decide", "The reading credential is not an approver who may decide this refund, so an answer from the owner could not be recorded.");
@@ -183,7 +186,7 @@ export function createRelay(options: RelayOptions): Relay {
 
     let code = newCode();
     for (let tries = 0; store.askByCode(code) && tries < 20; tries++) code = newCode();
-    const approvalHours = Math.max(1, Math.round((held.expiresAtMs - held.requestedAtMs) / HOUR));
+    const approvalHours = hoursOf(held);
     const moved = store.moveAsk(held.id, ["waiting_context"], "sending", {
       code, codeHash: hashCode(code), codeExpiresAtMs: held.expiresAtMs - marginMs, guardExpiresAtMs: held.expiresAtMs, booking: c.booking, customerPhone: c.customerPhone,
       language: c.ownerLanguage, context: JSON.stringify(c), approvalHours,

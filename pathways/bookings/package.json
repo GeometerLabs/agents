@@ -9,6 +9,7 @@
     "test": "node --test test/",
     "hand-check": "node scripts/hand-check.ts",
     "demo": "node demo/server.ts",
+    "build:web-demo": "node scripts/build-web-demo.ts",
     "serve": "node server/main.ts",
     "standins": "node standins/main.ts",
     "inbox": "node inbox/main.ts",

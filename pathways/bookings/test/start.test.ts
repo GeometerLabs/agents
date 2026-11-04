@@ -6,7 +6,8 @@ import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ClientError } from "../server/config.ts";
-import { startClient } from "../server/start.ts";
+import { parserArguments, startClient } from "../server/start.ts";
+import { createServer } from "node:http";
 import { openStore } from "../server/store.ts";
 import { answer, openaiReply, startStubModel } from "./stub-model-server.ts";
 
@@ -149,4 +150,21 @@ test("main.ts: runs the example client, serves, and stops cleanly on SIGTERM", a
     r.child.kill("SIGTERM");
     assert.equal(await r.exited, 0);
   } finally { r.child.kill("SIGKILL"); s.done(); }
+});
+
+test("the model parser presents this agent's credential for the model's Guard, and no other header is added", async () => {
+  const root = mkdtempSync(join(tmpdir(), "geo-parser-token-"));
+  const file = join(root, "agent_model");
+  writeFileSync(file, "gg_0123456789abcdef0123456789abcdef\n");
+  const seen: string[] = [];
+  const server = createServer((req, res) => { seen.push(String(req.headers.authorization)); res.end("{}"); });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const [config, fetchWithToken] = parserArguments({ wire: "openai", baseUrl: "http://x", model: "m", agentTokenFile: file });
+    assert.ok(!("agentTokenFile" in config), "the file name is not part of the model config");
+    await fetchWithToken!(`http://127.0.0.1:${(server.address() as { port: number }).port}/v1/chat/completions`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    assert.deepEqual(seen, ["Bearer gg_0123456789abcdef0123456789abcdef"]);
+    assert.equal(parserArguments({ wire: "openai", baseUrl: "http://x", model: "m" })[1], undefined, "without a file nothing is added");
+    assert.throws(() => parserArguments({ wire: "openai", baseUrl: "http://x", model: "m", agentTokenFile: join(root, "missing") }), ClientError);
+  } finally { server.close(); rmSync(root, { recursive: true, force: true }); }
 });

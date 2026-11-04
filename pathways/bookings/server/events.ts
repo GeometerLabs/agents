@@ -47,7 +47,10 @@ function checkOne(raw: unknown): IncomingEvent | string {
     if (!isObj(m) || !isText(m.id) || !isText(m.from) || typeof m.text !== "string" || typeof m.timestamp !== "number" || !Number.isFinite(m.timestamp)) {
       return "a message needs message.id, message.from, message.text and message.timestamp (epoch milliseconds).";
     }
-    return { kind: "message", message: { id: m.id, from: m.from, text: m.text, timestamp: m.timestamp } };
+    // A voice note carries the fact and nothing else: no words, and no audio id or link (the inbox never passes one on). Only the boolean true is accepted.
+    if (m.voiceNote !== undefined && m.voiceNote !== true) return "message.voiceNote, if given, must be true (a voice note or audio file).";
+    if (m.voiceNote === true && m.text !== "") return "a voice note has no words: send message.text as an empty string.";
+    return { kind: "message", message: { id: m.id, from: m.from, text: m.text, timestamp: m.timestamp, ...(m.voiceNote === true ? { voiceNote: true as const } : {}) } };
   }
   if (raw.kind === "payment_event") {
     const e = raw.event;

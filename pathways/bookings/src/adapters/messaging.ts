@@ -9,8 +9,13 @@ import type { FaultOptions } from "./faults.ts";
 export interface InboundMessage {
   id: string; // WhatsApp's message id (wamid...): the same id arriving twice is a duplicate delivery
   from: string; // E.164 number, for example +919811111111
-  text: string;
+  text: string; // empty for a voice note
   timestamp: number; // epoch ms
+  /**
+   * True when the customer sent a voice note or an audio file instead of words. Only the fact is carried: the audio is never fetched or kept,
+   * and no media id or link travels with the message. The agent answers it with one plain line asking the customer to type (plan B29 is the real voice module).
+   */
+  voiceNote?: true;
 }
 
 export interface OutboundMessage {
