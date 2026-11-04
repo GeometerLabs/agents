@@ -103,6 +103,29 @@ export interface Customer {
   phone: string;
   language?: Language;
   optedOut: boolean;
+  /** When this customer last asked to talk to the owner (the owner is told at most once an hour about the same person). */
+  ownerAskedAtMs?: number;
+}
+
+/**
+ * What the shop has spent on understanding messages this month, and whether it is in button mode. Kept in the store, so it survives a restart and a
+ * step that runs again. Counts and amounts only, never a word of a message.
+ */
+export interface AiState {
+  /** The shop's local month these counts are for, "2026-11". They start again at zero in a new month. */
+  month: string;
+  /** Messages understood at each step this month. The allowance counts `decision` + `model`. */
+  rules: number;
+  decision: number;
+  model: number;
+  /** Estimated cost this month in micro-rupees, from the dated rate table: calls with a price only. */
+  costMicroInr: number;
+  /** Calls this month whose provider and model have no price in the table (their cost is not in the total). */
+  unpriced: number;
+  /** A model step failed: until this moment the agent reads with buttons and the rules only. */
+  pausedUntilMs?: number;
+  /** The notices already sent, so each is sent once: the month the allowance notice was sent for; whether the outside switch was announced; the day (local) of the last fault notice. */
+  told: { allowance?: string; override?: boolean; fault?: string };
 }
 
 /** All the conversation state. It is passed in, never global, so every scenario starts clean. */
@@ -112,6 +135,8 @@ export interface Store {
   seenMessages: Set<string>; // WhatsApp message ids already handled
   seenEvents: Set<string>; // payment event ids already handled
   nextBooking: number;
+  /** The month's AI spend and button-mode notices. Left out until the first message. */
+  ai?: AiState;
 }
 
 export function createStore(): Store {
@@ -135,7 +160,7 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 }
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
-export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; menu?: boolean } = {}): MessageFacts {
+export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean } = {}): MessageFacts {
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
     language,
@@ -148,6 +173,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     depositInr: booking?.depositInr ?? settings.deposit.amountInr,
     refundInr: extra.refundInr,
     slotMs: extra.slotMs ?? booking?.startMs,
+    ...(extra.slotChoices ? { slotChoices: extra.slotChoices } : {}),
     link: booking?.linkUrl,
     holdMinutes: settings.deposit.holdMinutes,
     windowHours: settings.cancellation.windowHours,

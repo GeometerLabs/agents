@@ -24,7 +24,6 @@ export interface Rate {
 }
 
 export const RATES: readonly Rate[] = [
-  { provider: "rules", model: "*", from: "2026-11-05", inputUsdPerMillion: 0, outputUsdPerMillion: 0, source: "the rule parser runs inside the agent and costs nothing per message" },
   { provider: "laya", model: "*", from: "2026-11-05", inputUsdPerMillion: 0, outputUsdPerMillion: 0, source: "Laya runs on the shop server's own CPU (economics section 3.2): no price per call, only the server it already uses" },
   { provider: "jev", model: "*", from: "2026-11-05", inputUsdPerMillion: 0.042, outputUsdPerMillion: 0.042, source: "$0.042 per million tokens, as quoted on the Laya page (economics section 3.2)" },
   { provider: "deepinfra", model: /deepseek.*v4\.1.*flash/iu, from: "2026-11-05", inputUsdPerMillion: 0.16, outputUsdPerMillion: 0.48, cachedInputUsdPerMillion: 0.004, source: "DeepSeek V4.1 Flash, DeepInfra Flex tier (economics section 3.2); check deepinfra.com before choosing" },

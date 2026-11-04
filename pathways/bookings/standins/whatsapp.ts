@@ -6,6 +6,8 @@
 // parameters is what lands in the outbox, which is what a customer would read.
 import { ApiError, TimeoutError, WindowClosedError } from "../src/adapters/faults.ts";
 import type { FakeMessaging } from "../src/adapters/messaging.ts";
+import { interactiveProblem } from "../src/language/interactive.ts";
+import type { Choice, InteractiveMessage } from "../src/language/interactive.ts";
 import { META_LANGUAGE, META_TEMPLATES, fillBody, metaBody, slotsOf } from "../src/language/meta-templates.ts";
 import { LANGUAGES } from "../src/settings.ts";
 import type { Language } from "../src/settings.ts";
@@ -32,6 +34,25 @@ export function approveTemplates(messaging: FakeMessaging): void {
  * `displayPhoneNumber` and `verifiedName` are what the read of the number's own details shows (GET /{version}/{phone-number-id}), which is how a
  * connection check confirms whose number an id is. Meta writes the number with spaces and dashes, so the default does too.
  */
+/** Read Meta's interactive body into our message, or say what is wrong with it in Meta's way (131009: a parameter is not valid). */
+function readInteractive(i: any): InteractiveMessage | string {
+  if (typeof i !== "object" || i === null || typeof i.body?.text !== "string" || typeof i.action !== "object" || i.action === null) return "interactive needs a body and an action";
+  const reply = (r: any): Choice | undefined => (typeof r?.id === "string" && typeof r?.title === "string" ? { id: r.id, title: r.title, ...(typeof r.description === "string" ? { description: r.description } : {}) } : undefined);
+  if (i.type === "button") {
+    const buttons = (Array.isArray(i.action.buttons) ? i.action.buttons : []).map((b: any) => (b?.type === "reply" ? reply(b.reply) : undefined));
+    if (buttons.some((b: Choice | undefined) => b === undefined)) return "every button needs type reply and a reply with an id and a title";
+    return { body: i.body.text, buttons };
+  }
+  if (i.type === "list") {
+    const sections: any[] = Array.isArray(i.action.sections) ? i.action.sections : [];
+    if (sections.length > 1 && sections.some((x) => typeof x?.title !== "string")) return "a message with more than one section needs a title on every section";
+    const rows = sections.flatMap((x) => (Array.isArray(x?.rows) ? x.rows : [])).map(reply);
+    if (rows.some((r) => r === undefined) || typeof i.action.button !== "string") return "a list needs a button label and rows with an id and a title";
+    return { body: i.body.text, list: { button: i.action.button, rows: rows as Choice[] } };
+  }
+  return "interactive.type must be button or list";
+}
+
 export function whatsappStandin(messaging: FakeMessaging, options: { phoneNumberId?: string; displayPhoneNumber?: string; verifiedName?: string } = {}): Handler {
   const details = (id: string, fields: string | null) => {
     const all: Record<string, string> = {
@@ -58,6 +79,11 @@ export function whatsappStandin(messaging: FakeMessaging, options: { phoneNumber
       let id: string;
       if (body.type === "text" && typeof body.text?.body === "string") {
         id = (await messaging.sendText(body.to, body.text.body)).id;
+      } else if (body.type === "interactive") {
+        const message = readInteractive(body.interactive);
+        const problem = typeof message === "string" ? message : interactiveProblem(message);
+        if (problem !== null) return metaError(400, 131009, `Parameter value is not valid: ${problem}`);
+        id = (await messaging.sendInteractive(body.to, message as InteractiveMessage)).id;
       } else if (body.type === "template" && typeof body.template?.name === "string") {
         const language = (Object.keys(META_LANGUAGE) as Language[]).find((l) => META_LANGUAGE[l] === body.template.language?.code);
         const template = META_TEMPLATES.find((t) => t.name === body.template.name);

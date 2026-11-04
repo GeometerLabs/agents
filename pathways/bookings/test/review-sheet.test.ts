@@ -8,6 +8,7 @@ import { SAYS } from "../crash-test/situations.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
 import { EXAMPLES, reviewSheet, sampleFacts } from "../scripts/review-sheet.ts";
 import type { ReviewLanguage } from "../scripts/review-sheet.ts";
+import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
 import { WORDS } from "../src/language/words.ts";
@@ -27,6 +28,14 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
       assert.ok(committed.includes(`\`${id}\``), `${id} is not in REVIEW-${language}.md`);
       assert.ok(committed.includes(render(id, sampleFacts(language, id))), `${id} reads differently now: run  node pathways/bookings/scripts/review-sheet.ts ${language} > pathways/bookings/REVIEW-${language}.md  (and keep any reviewer notes)`);
       assert.ok(committed.includes(render(id, sampleFacts("en", id))), `the English meaning of ${id} is missing`);
+    }
+  });
+
+  test(`REVIEW-${language}.md lists every word on a button or a list, and each fits WhatsApp's limits`, () => {
+    for (const [key, text] of Object.entries(LABELS[language])) {
+      assert.ok(committed.includes(text), `the ${key} label "${text}" is not in REVIEW-${language}.md`);
+      assert.ok([...text].length <= (key === "owner" ? 24 : 20), `${key} "${text}" is longer than WhatsApp allows`);
+      assert.ok(!/\d|₹/u.test(text), `${key} "${text}" has a number in it: a label may not carry an amount, a date or a time`);
     }
   });
 

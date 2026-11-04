@@ -65,7 +65,7 @@ async function bookInHindi(s: LocalStack, id = "wamid.hindi-1") {
   assert.equal(sent.length, 1);
   assert.ok(sent[0].text.includes(link.short_url), sent[0].text);
   assert.equal(languageOfScript(sent[0].text), "hi");
-  assert.equal(sent[0].kind, "text", "the customer wrote a moment ago, so a plain message is allowed");
+  assert.notEqual(sent[0].kind, "template", "the customer wrote a moment ago, so a session message is allowed (text, or buttons and a list)");
   return link;
 }
 

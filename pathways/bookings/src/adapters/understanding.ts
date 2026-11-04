@@ -146,6 +146,7 @@ export function createRouter(options: RouterOptions): IntentParser & { parseDeta
     let micro: number | null = 0;
     let rateDate: string | null = null;
     for (const s of spends) {
+      if (s.provider === "rules") continue; // the rule parser runs inside the agent: it costs nothing on any date
       const rate = rateFor(s.provider, s.model, dayOf(now()), table);
       const cost = costMicroInr(rate, s.usage);
       if (cost === null) micro = null; else if (micro !== null) micro += cost;
