@@ -1,0 +1,34 @@
+// The monthly report and certificate of an agent someone else wrote: the template's own report code (pathways/bookings/report/), run on the record this bundle built from the Guards'
+// decisions (agent/record.ts). The report says which agent it is of ("own-agent"), what it was counted from, and, as for a template, what it cannot say.
+import { existsSync, readFileSync } from "node:fs";
+import { writeClientReport } from "../../pathways/bookings/report/run.ts";
+import type { Source } from "../../pathways/bookings/report/data.ts";
+import type { ReportLanguage } from "../../pathways/bookings/report/text.ts";
+import { loadPrivateKey } from "../../pathways/bookings/report/sign.ts";
+import type { RecordEntry } from "../../pathways/bookings/src/record.ts";
+import type { Booking } from "../../pathways/bookings/src/booking.ts";
+import { secretFile } from "../lib/secrets.ts";
+import { serverPaths } from "../lib/server.ts";
+import { BUNDLE_VERSION } from "../lib/server.ts";
+import { readAgent } from "./folder.ts";
+
+export interface AgentReportOptions { month: string; out: string; language: ReportLanguage; source: Source; now: number; preparedBy?: string }
+
+/**
+ * Write the report for one month into `out`. The record is the one the deployer exported (exports/<agent>/record.json), signed with the server's signing key when it has one
+ * (the panel's, secrets/panel/signing_key) and unsigned, with its digest, when it has not.
+ */
+export function writeAgentReport(dir: string, agent: string, o: AgentReportOptions): ReturnType<typeof writeClientReport> {
+  const folder = readAgent(dir, agent);
+  if (!folder.settings) throw new Error(`${agent}'s settings are not usable: ${folder.problems.join(" ")}`);
+  const exported = serverPaths(dir).exportsOf(agent);
+  if (!existsSync(`${exported}/record.json`)) throw new Error(`There is no record for ${agent} yet. It is made from the Guards' decisions: run \`geometer agent record ${agent}\` (the deployer also does it every quarter of an hour).`);
+  const entries = JSON.parse(readFileSync(`${exported}/record.json`, "utf8")) as RecordEntry[];
+  const bookings = JSON.parse(readFileSync(`${exported}/bookings.json`, "utf8")) as Booking[];
+  const keyFile = secretFile(dir, "panel", "signing_key");
+  return writeClientReport({
+    settings: folder.settings, entries, bookings, month: o.month, language: o.language, out: o.out, source: o.source, now: o.now,
+    ...(existsSync(keyFile) ? { key: loadPrivateKey(keyFile) } : {}), ...(o.preparedBy ? { preparedBy: o.preparedBy } : {}),
+    pathway: { name: "own-agent", version: BUNDLE_VERSION },
+  });
+}

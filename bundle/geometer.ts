@@ -34,6 +34,8 @@ import type { Context } from "./deploy.ts";
 import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import type { AgentFlags } from "./agent/folder.ts";
+import { recordAgent } from "./agent/records.ts";
+import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
@@ -345,6 +347,19 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     return 0;
   }
   if (sub === "show") { console.log(connectionText(name, connectionOf(ctx.dir, server, readAgent(ctx.dir, name)), values.credential === true)); return 0; }
+  if (sub === "record") {
+    const r = await recordAgent(ctx, name);
+    console.log(`${name}: ${r.added} added to the record (${r.total} in all), from what its Guards decided and what the services hold.${r.problems.length > 0 ? `\n${r.problems.map((p) => `  - ${p}`).join("\n")}` : ""}`);
+    return r.problems.length > 0 && r.total === 0 ? 1 : 0;
+  }
+  if (sub === "report") {
+    const month = str("month"); const out = str("out");
+    if (!month || !out) throw new Error("Say the month and where to put the files: agent report <name> --month 2026-11 --out <folder> [--language en|hi|ml|kn|all]");
+    const source = (str("source") ?? "live") as "live" | "test-mode" | "stand-in";
+    const r = writeAgentReport(ctx.dir, name, { month, out: resolve(out), language: (str("language") ?? "en") as "en", source, now: ctx.now().getTime() });
+    console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.\n${r.ownerTexts.join("\n\n")}`);
+    return 0;
+  }
   throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report <name>`);
 }
 

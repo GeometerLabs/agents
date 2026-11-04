@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { runBackup, runDrill, runExports } from "./backup/jobs.ts";
 import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
+import { recordAgents } from "./agent/records.ts";
 import { Refused, deploy, desiredHashOf, ops, renewRelayCredential } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
@@ -158,6 +159,11 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   if (since(jobs.relayCredentialsAt) >= 24 * HOUR) {
     for (const shop of [...shops, ...withRelay]) await renewRelayCredential(ctx, shop);
     jobs.relayCredentialsAt = now.toISOString(); ran.push("relay credentials");
+  }
+  // the record of each agent someone else wrote, from its Guards' decisions and the services' own state: every quarter of an hour, as a shop's is exported
+  if (Object.values(state.agents ?? {}).some((a) => a.applied) && since(jobs.agentRecordsAt) >= 15 * 60_000) {
+    jobs.agentRecordsAt = now.toISOString();
+    (await recordAgents(ctx)).filter((l) => /could not|cannot/u.test(l)).forEach((l) => ctx.log(l)); ran.push("agent records");
   }
   // the jobs below are about shops' runtimes (their databases): a server with only agents someone else wrote has none
   if (shops.length === 0) { const fresh = loadState(ctx.dir); fresh.jobs = { ...fresh.jobs, ...jobs }; saveState(ctx.dir, fresh); return ran; }
