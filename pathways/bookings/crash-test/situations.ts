@@ -609,7 +609,7 @@ function build(shop: Shop): Built[] {
     out.push(!farSlot && !lateSlot ? skip("refund-more-than-paid", title, `${farReason}; ${lateReason}`) : {
       id: "refund-more-than-paid",
       title,
-      how: `The customer pays the ${money(D)} deposit, then cancels and writes "${claim}": once more than ${W} hours ahead, and once ${lateBy} hours before the start (when the owner decides). The amounts asked of the payments service are read at its door, and what it holds from its own list${lenientNote}`,
+      how: `The customer pays the ${money(D)} deposit, then cancels and writes "${claim}": ${[farSlot ? `once more than ${W} hours ahead` : "", lateSlot ? `once ${lateBy} hours before the start (when the owner decides)` : ""].filter(Boolean).join(", and ")}. The amounts asked of the payments service are read at its door, and what it holds from its own list${lenientNote}`,
       leftOut: left.length > 0 ? left : undefined,
       async run() {
         const { results, expect } = checker();
