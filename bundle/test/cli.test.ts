@@ -143,3 +143,39 @@ test("panel invite asks the running panel for a one-time link (the first builder
     try { assert.match((await quiet(() => main(["panel", "invite", "--role", "builder", "--server", none.root], none.ctx))).err, /This server has no panel/); } finally { none.done(); }
   } finally { w.done(); }
 });
+
+test("agent add prints the addresses and the one credential, check says what is missing, deploy and show print the addresses again, stop and status know the agent, and a shop's name is refused", async () => {
+  const w = world({ "glow-salon": panelRuntime() }); try {
+    const cli = (...args: string[]) => quiet(() => main([...args, "--server", w.root], w.ctx));
+    const added = await cli("agent", "add", "my-agent", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "shop@group.calendar.google.com");
+    assert.equal(added.result, 0, added.err);
+    const credential = /gg_[0-9a-f]{32}/u.exec(added.out)?.[0];
+    assert.ok(credential, "the credential is printed");
+    for (const kind of ["razorpay", "whatsapp", "calendar"]) assert.ok(added.out.includes(`https://shops.example.com/g/my-agent/${kind}`));
+    assert.match(added.out, /send the refund with a "receipt", and send the identical call again after the 202/);
+    assert.equal((await cli("agent", "add", "glow-salon", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "1", "--calendar-id", "x")).result, 1);
+    assert.equal((await cli("agent", "add", "x-agent", "--upstreams", "razorpay")).result, 1, "a refund needs WhatsApp");
+    const check = await cli("check", "my-agent");
+    assert.equal(check.result, 1);
+    assert.match(check.out, /\[secret-missing:razorpay_key\]/);
+    w.handIn("my-agent", { razorpay_key: "rzp_test_abcdefghij:supersecretvalue123", whatsapp_token: "EAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", whatsapp_app_secret: "meta-app-secret-0123456789", whatsapp_verify_token: "verify-token-0123456789", "google_service_account.json": JSON.stringify({ client_email: "a@x.iam.gserviceaccount.com", private_key: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n", token_uri: "https://oauth2.googleapis.com/token" }) });
+    const ok = await cli("agent", "check", "my-agent");
+    assert.equal(ok.result, 0, ok.out + ok.err);
+    assert.match(ok.out, /g-my-agent-razorpay: 4 of 4 limits proven to bite/);
+    const deployed = await cli("deploy", "my-agent");
+    assert.equal(deployed.result, 0, deployed.err);
+    assert.match(deployed.out, /my-agent: 12 of 12 limits proven to bite/);
+    assert.ok(!deployed.out.includes(credential), "deploy does not print the credential");
+    assert.ok((await cli("agent", "show", "my-agent", "--credential")).out.includes(credential));
+    assert.ok(!(await cli("agent", "show", "my-agent")).out.includes(credential));
+    const stopped = await cli("stop", "my-agent", "--reason", "owner asked");
+    assert.equal(stopped.result, 0, stopped.err);
+    assert.match(stopped.out, /my-agent is stopped/);
+    assert.ok(w.admin.some((a) => /^stop my-agent on \S+@\S+ owner asked$/.test(a)));
+    assert.match(loadState(w.root).agents!["my-agent"].stopped!.by, /@/);
+    assert.equal((await cli("start", "my-agent")).result, 0);
+    assert.equal(loadState(w.root).agents!["my-agent"].stopped, undefined);
+    assert.equal((await cli("agent", "show", "nobody")).result, 1);
+    assert.equal((await cli("agent", "frobnicate", "my-agent")).result, 1);
+  } finally { w.done(); }
+});

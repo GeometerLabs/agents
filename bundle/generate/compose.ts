@@ -28,6 +28,7 @@
 // see the port at all.
 import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
+import { agentNames } from "../agent/plan.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 
@@ -54,6 +55,17 @@ export interface ShopDeploy {
   guards: GuardRef[];
   /** The folder with the pathway at the version the shop is pinned to. */
   pathwayDir: string;
+}
+
+/**
+ * An agent someone else wrote, as the compose file needs to know it: its Guards and nothing else (no runtime, no door). Its Guards' agent ports are on the `gate` network
+ * (internal, with Caddy), where Caddy sends /g/<name>/<service>/... to them; the builder's agent presents its Guard credential there instead of the service's own key.
+ */
+export interface AgentDeploy {
+  name: string;
+  /** From the same pool as the shops' index: it fixes the agent's addresses on the admin network. */
+  index: number;
+  guards: GuardRef[];
 }
 
 export interface Dirs {
@@ -83,7 +95,7 @@ export interface Addressing {
 export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
-    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21` },
+    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24` },
     panelIp(kind, index) {
       const n = 16 + index * 4 + SHOP_GUARD_KINDS.indexOf(kind);
       return `${base}.${224 + (n >> 8)}.${n & 255}`;
@@ -142,7 +154,8 @@ export interface PanelOptions {
   run?: boolean;
 }
 
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean; panel?: PanelOptions }): Composed {
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean; panel?: PanelOptions; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[] }): Composed {
+  const agents = features.agents ?? [];
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
   const net = addressing(server);
   const services: Composed["services"] = {};
@@ -196,7 +209,15 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       depends_on: Object.fromEntries(own.map((s) => [s, { condition: "service_healthy" }])),
     }), [`${dirs.generated}/shops/${shop.name}/client/runtime.json`, `${dirs.generated}/shops/${shop.name}/client/settings.json`, `${dirs.generated}/shops/${shop.name}/client/pathway.lock`]);
   }
-  guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
+  // An agent someone else wrote: the same Guards, on the `gate` network instead of a runtime's. There is no runtime, no door and no model Guard for it.
+  for (const agent of agents) {
+    for (const g of agent.guards) {
+      guard(g, [agentNames.gate], net.adminIp(agent.name, g.kind, agent.index), g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: agent.name } }] : [],
+        g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined);
+    }
+  }
+  // the model Guard serves the shops' runtimes; a server that holds only agents someone else wrote has no use for it
+  if (shops.length > 0) guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;
@@ -250,7 +271,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     image: CADDY_IMAGE, restart: "unless-stopped", security_opt: ["no-new-privileges:true"],
     ports: [`${server.ports.http}:80`, `${server.ports.https}:443`],
     volumes: [`${dirs.generated}/Caddyfile:/etc/caddy/Caddyfile:ro`, "caddy-data:/data", "caddy-config:/config"],
-    networks: { front: {} },
+    networks: { front: {}, ...(agents.length > 0 ? { [agentNames.gate]: {} } : {}) },
   }, [`${dirs.generated}/Caddyfile`]);
 
   // -- networks and volumes
@@ -259,6 +280,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     egress: { ipam: { config: [{ subnet: net.subnets.egress }] } },
     admin: { internal: true, ipam: { config: [{ subnet: net.subnets.admin }] } },
     ...(server.panel.enabled && features.panel ? { panel: { internal: true, ipam: { config: [{ subnet: net.subnets.panel }] } } } : {}),
+    ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
   const volumes: Record<string, Y> = { "google-auth": {}, "relay-state": {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {} };
@@ -266,17 +288,21 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     volumes[names.dataVolume(s.name)] = {};
     for (const g of s.guards) volumes[names.stateVolume(s.name, g.kind as Exclude<GuardKind, "model">)] = {};
   }
+  for (const a of agents) for (const g of a.guards) volumes[names.stateVolume(a.name, g.kind as Exclude<GuardKind, "model">)] = {};
 
   const body: Record<string, Y> = { name: `geometer-${server.id.replace(/_/gu, "-")}`, services: Object.fromEntries(Object.entries(services).map(([n, s]) => [n, s.block as Y])), networks, volumes };
   return {
     compose: `# Written by the Geometer deploy bundle on every deploy. Do not edit: change a shop's files and deploy again.\n${yaml(body)}\n`,
-    caddyfile: caddyfile(server),
+    caddyfile: caddyfile(server, agents),
     services,
   };
 }
 
-/** Caddy: HTTPS for the builder's domain (a local certificate for localhost), and only three places behind it. */
-export function caddyfile(server: ServerConfig): string {
+/** Where the builder's agent calls a service instead of the service itself: https://<domain>/g/<agent>/<service> (the prefix is cut off before the Guard sees the path). */
+export const agentBaseUrl = (server: ServerConfig, agent: string, kind: GuardKind): string => `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}/g/${agent}/${kind}`;
+
+/** Caddy: HTTPS for the builder's domain (a local certificate for localhost), and only three places behind it (plus one path per Guard of an agent someone else wrote). */
+export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = []): string {
   const local = isLocalDomain(server.domain);
   return [
     `# Written by the Geometer deploy bundle. Caddy reaches the inbox, the relay and the panel (the only containers on its network), and routes two places.`,
@@ -284,6 +310,8 @@ export function caddyfile(server: ServerConfig): string {
     `${local ? "https://" : ""}${server.domain} {`,
     ...(local ? [`\ttls internal`] : []),
     `\thandle /c/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`,
+    // an agent someone else wrote calls Guard here, not the service: each of its Guards has its own path, and only that Guard's agent port is behind it
+    ...agents.flatMap((a) => a.guards.flatMap((g) => [`\thandle_path /g/${a.name}/${g.kind}/* {`, `\t\treverse_proxy ${g.service}:${GUARD_PORT}`, `\t}`])),
     // everything else is the panel's, when there is one: it serves from the root of its own address
     ...(server.panel.enabled ? [`\thandle {`, `\t\treverse_proxy panel:${PANEL_PORT}`, `\t}`] : [`\thandle {`, `\t\trespond "Geometer" 404`, `\t}`]), `}`, ``,
   ].join("\n");
