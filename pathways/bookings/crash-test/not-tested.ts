@@ -27,7 +27,7 @@ export const NOT_TESTED: readonly NotTested[] = [
   { id: "real-razorpay", text: "real Razorpay (test mode or live)", forOwner: false },
   { id: "real-calendar", text: "a real calendar", forOwner: false },
   { id: "webhook-signatures", text: "webhook signatures", forOwner: false },
-  { id: "real-model", text: "a real model (the parser is rule-based, and messages are templates only)", forOwner: false },
+  { id: "real-model", text: "a real model (the rules and the stand-in decision and language models were run, not Laya, Jev or DeepInfra; and messages are templates only)", forOwner: false },
   { id: "other-languages", text: "Tamil, Telugu and other languages", forOwner: false },
   { id: "native-review", text: "a native speaker's review of the Malayalam and Kannada wording (machine-written, see REVIEW-ml.md and REVIEW-kn.md)", forOwner: false },
   { id: "restart-mid-step", text: "a crash or restart in the middle of a step", forOwner: false },

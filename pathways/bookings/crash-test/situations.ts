@@ -11,7 +11,12 @@
 // expressed (a shop that is open every day has no closed day to ask for) is named in `leftOut`.
 import { createWorld, glowSalon, CUSTOMER, OTHER_CUSTOMER } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
-import type { Intent } from "../src/adapters/model.ts";
+import type { Intent, IntentParser } from "../src/adapters/model.ts";
+import { createModelParser } from "../src/adapters/model-llm.ts";
+import { createSystemOne } from "../src/adapters/system-one.ts";
+import { createRouter } from "../src/adapters/understanding.ts";
+import { systemOneFetch, systemOneStandin } from "../standins/system-one.ts";
+import type { SystemOneStandin } from "../standins/system-one.ts";
 import { MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatSlot, formatTime } from "../src/language/format.ts";
 import { LANGUAGE_NAMES, hoursOn, parseSettings } from "../src/settings.ts";
 import type { Language, Settings } from "../src/settings.ts";
@@ -95,6 +100,49 @@ async function bookAndPay(w: World, text: string, from = CUSTOMER, ref = "b-1"):
   if (link) w.payments.customerPays(link.id);
   await w.deliverPaymentEvents();
 }
+
+// ---- the AI steps as stand-ins that run inside the process, for the situations about the allowance and a model that is down ------------
+
+interface AiStandins {
+  decision: SystemOneStandin;
+  router: IntentParser;
+  /** Set to true and both models stop answering (the connection fails). */
+  down: boolean;
+  /** How many times the decision model and the language model were asked, answered or not. */
+  decisionAsked: number;
+  modelAsked: number;
+  /** The router dates its prices by the world's clock, which exists only after the router: say which. */
+  useClock(now: () => number): void;
+}
+
+/** The three steps over stand-ins: a System One decision model that is sure every unclear message is a greeting, and a language model that says the same. No port, no network, no key. */
+function aiStandins(): AiStandins {
+  const decision = systemOneStandin({ decider: (name) => ({ choice: name === "intent" ? "greeting" : name === "service" ? "no_service" : "no_slot", p: 0.95 }) });
+  let now: () => number = Date.now;
+  const ai: AiStandins = { decision, down: false, decisionAsked: 0, modelAsked: 0, useClock: (f) => { now = f; }, router: undefined as unknown as IntentParser };
+  const viaStandin = systemOneFetch(decision, { down: () => ai.down });
+  const decisionFetch = (async (...args: Parameters<typeof fetch>) => { ai.decisionAsked += 1; return viaStandin(...args); }) as typeof fetch;
+  const modelFetch = (async () => {
+    ai.modelAsked += 1;
+    if (ai.down) throw new TypeError("the connection failed");
+    const content = JSON.stringify({ kind: "greeting", language: null, serviceId: null, offerInr: null, date: null, time: null, overrideAttempt: false });
+    return new Response(JSON.stringify({ id: "stand-in", choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }], usage: { prompt_tokens: 900, completion_tokens: 60 } }), { status: 200, headers: { "content-type": "application/json" } });
+  }) as unknown as typeof fetch;
+  ai.router = createRouter({
+    decision: { client: createSystemOne({ baseUrl: "http://decision.stand-in", model: "laya", kind: "laya", timeoutMs: 1000 }, decisionFetch) },
+    model: { parser: createModelParser({ wire: "openai", baseUrl: "http://model.stand-in/v1", model: "stand-in-model", timeoutMs: 1000 }, modelFetch), provider: "deepinfra", model: "stand-in-model" },
+    now: () => now(),
+  });
+  return ai;
+}
+
+/** A message nothing can read: the rules do not know it, and a decision model is the next step. */
+const UNCLEAR = "asdf qwer zxcv";
+const lastChoices = (w: World, who = CUSTOMER) => w.messaging.sentTo(who).filter((m) => m.interactive).at(-1)?.interactive;
+const firstTimeRow = (w: World, who = CUSTOMER) => lastChoices(w, who)?.list?.rows.find((r) => r.id.startsWith("slot:"));
+const heard = (w: World, who: string) => w.record.entries().filter((e) => e.action === "receive_message" && e.conversation === who).length;
+const stepsOf = (w: World) => w.record.entries().filter((e) => e.action === "receive_message").map((e) => e.refs.step);
+const latestBookingOf = (w: World, who: string) => [...w.store.bookings.values()].filter((b) => b.customer === who).at(-1)?.id ?? "";
 
 // ---- building the situations for one shop ------------------------------------------------------------------------------------
 
@@ -929,6 +977,132 @@ function build(shop: Shop): Built[] {
           await other.tick();
           expect("No reminder after the cancellation", other.textsTo(CUSTOMER).length === afterCancel, other.lastTextTo(CUSTOMER));
         }
+        return results;
+      },
+    });
+  }
+
+  // 35. The monthly AI allowance is used up: the agent keeps booking on buttons and lists
+  {
+    const id = "ai-allowance-used-up";
+    const title = "AI allowance used up: the agent keeps booking on buttons";
+    out.push(!normalSlot ? skip(id, title, noSlot) : {
+      id,
+      title,
+      how: "The shop's AI allowance is two messages. Two unclear messages use it (a stand-in decision model reads them). Then a customer haggles, and another books only by tapping a service and a free time, and no model is asked again",
+      async run() {
+        const { results, expect } = checker();
+        const ai = aiStandins();
+        const w = world({ parser: ai.router, ai: { allowance: { messages: 2 } } });
+        ai.useClock(() => w.clock.now());
+        await w.say(UNCLEAR, { from: CUSTOMER });
+        await w.say(UNCLEAR, { from: OTHER_CUSTOMER });
+        expect("The decision model read the first two messages", ai.decision.requests.length === 2, `requests: ${ai.decision.requests.length}`);
+        expect("The owner was told once that the agent now answers with buttons", w.textsTo(w.owner).length === 1 && w.record.entries().filter((e) => e.action === "ai_mode").length === 1, w.textsTo(w.owner).join(" | "));
+
+        await w.say(sayings(shop, en, normalSlot).haggle, { from: OTHER_CUSTOMER });
+        await w.say(UNCLEAR, { from: CUSTOMER });
+        expect("A message the rules cannot read is answered with the shop's services to tap, not left unanswered", (lastChoices(w)?.list?.rows ?? []).some((r) => r.id === `svc:${shop.service.id}`), JSON.stringify(lastChoices(w)));
+        await w.tap(`svc:${shop.service.id}`);
+        const row = firstTimeRow(w);
+        expect("After a service is tapped, a list of free times from the calendar comes back", row !== undefined, JSON.stringify(lastChoices(w)));
+        if (row) await w.tap(row.id);
+        const mine = latestBookingOf(w, CUSTOMER);
+        const link = w.linkFor(mine);
+        expect("Tapping a time held that time and made the deposit link, as typing it would", link !== undefined && link.amount === D * 100, JSON.stringify(w.payments.links()));
+        if (link) w.payments.customerPays(link.id);
+        await w.deliverPaymentEvents();
+        expect(`The tapped time is booked: one confirmed calendar event at the time on the row`, row !== undefined && confirmedEvents(w).some((e) => e.bookingRef === mine && e.start === Number(row.id.slice("slot:".length))), JSON.stringify(w.calendar.events()));
+        expect("The customer was told it is booked, once", toldBooked(w) === 1);
+
+        expect("No model was asked after the allowance ran out", ai.decision.requests.length === 2 && ai.decisionAsked === 2 && ai.modelAsked === 0, `decision ${ai.decisionAsked}, model ${ai.modelAsked}`);
+        expect("Every message got an answer", [CUSTOMER, OTHER_CUSTOMER].every((who) => w.messaging.sentTo(who).length >= heard(w, who)), `${w.messaging.sentTo(CUSTOMER).length}/${heard(w, CUSTOMER)}, ${w.messaging.sentTo(OTHER_CUSTOMER).length}/${heard(w, OTHER_CUSTOMER)}`);
+        const prices = w.textsTo(OTHER_CUSTOMER);
+        expect("Every limit held: the haggler was held to the list price, and every amount said is on the price list", prices.every((t) => amountsIn(t).every((n) => shop.listInr.includes(n))) && !prices.some((t) => amountsIn(t).includes(shop.offerInr)) && w.payments.links().every((l) => l.amount === D * 100), prices.join(" | "));
+        expect("The record names the step for each message: the decision model for two, the rules for the rest", stepsOf(w).slice(0, 2).every((x) => x === "decision") && stepsOf(w).slice(2).every((x) => x === "rules"), JSON.stringify(stepsOf(w)));
+        expect("The record has one line for the builder: button mode, because the allowance ran out", w.record.entries().filter((e) => e.action === "ai_mode").map((e) => e.refs.reason).join() === "allowance");
+        return results;
+      },
+    });
+  }
+
+  // 36. The model is down in the middle of a conversation
+  {
+    const id = "ai-model-down";
+    const title = "The model is down mid-conversation";
+    out.push(!normalSlot ? skip(id, title, noSlot) : {
+      id,
+      title,
+      how: "The decision model reads one message; then it and the language model stop answering. The next messages are read by the rules and answered with buttons, a booking is made by tapping, and after the pause the models are asked again",
+      async run() {
+        const { results, expect } = checker();
+        const ai = aiStandins();
+        const w = world({ parser: ai.router });
+        ai.useClock(() => w.clock.now());
+        await w.say(UNCLEAR);
+        expect("While the models answer, the decision model reads the message", ai.decision.requests.length === 1 && stepsOf(w)[0] === "decision");
+        ai.down = true;
+        await w.say(UNCLEAR);
+        const asked = { decision: ai.decisionAsked, model: ai.modelAsked };
+        expect("Both models were tried once and failed, and the message was still answered with the services to tap", asked.model === 1 && (lastChoices(w)?.list?.rows ?? []).some((r) => r.id === `svc:${shop.service.id}`), `decision ${asked.decision}, model ${asked.model}`);
+        expect("The owner was told once that the agent is using buttons", w.textsTo(w.owner).length === 1 && w.record.entries().filter((e) => e.action === "ai_mode").map((e) => e.refs.reason).join() === "fault", w.textsTo(w.owner).join(" | "));
+        expect("The record says why the rules read the message", w.record.entries().filter((e) => e.action === "receive_message")[1]?.notes.includes("could not be used") === true);
+
+        await w.say(UNCLEAR, { from: OTHER_CUSTOMER });
+        await w.tap(`svc:${shop.service.id}`);
+        const row = firstTimeRow(w);
+        if (row) await w.tap(row.id);
+        const mine = latestBookingOf(w, CUSTOMER);
+        const link = w.linkFor(mine);
+        if (link) w.payments.customerPays(link.id);
+        await w.deliverPaymentEvents();
+        expect("The booking was made on taps while the models were down", row !== undefined && toldBooked(w) === 1 && confirmedEvents(w).some((e) => e.bookingRef === mine && e.start === Number(row.id.slice("slot:".length))), JSON.stringify(w.calendar.events()));
+        expect("During the pause no model was tried at all", ai.decisionAsked === asked.decision && ai.modelAsked === asked.model, `decision ${ai.decisionAsked}, model ${ai.modelAsked}`);
+        expect("Every message got an answer", [CUSTOMER, OTHER_CUSTOMER].every((who) => w.messaging.sentTo(who).length >= heard(w, who)));
+
+        ai.down = false;
+        await w.advance(6); // the pause is five minutes
+        await w.say(UNCLEAR, { from: OTHER_CUSTOMER });
+        expect("After the pause the decision model is asked again, and answers", ai.decisionAsked === asked.decision + 1 && stepsOf(w).at(-1) === "decision", `decision ${ai.decisionAsked}`);
+        expect("The owner was not told a second time", w.textsTo(w.owner).length === 1, w.textsTo(w.owner).join(" | "));
+        return results;
+      },
+    });
+  }
+
+  // 37. A button reply books without any model call
+  {
+    const id = "button-reply-no-model";
+    const title = "A button reply books without any model call";
+    out.push(!normalSlot ? skip(id, title, noSlot) : {
+      id,
+      title,
+      how: "Both models are connected. The customer says hello, then taps a service and a free time, pays, and taps Cancel booking and then keep it; neither model is asked once",
+      async run() {
+        const { results, expect } = checker();
+        const ai = aiStandins();
+        const w = world({ parser: ai.router });
+        ai.useClock(() => w.clock.now());
+        await w.say("hello");
+        await w.tap(`svc:${shop.service.id}`);
+        const row = firstTimeRow(w);
+        expect("The service tap was answered with a list of free times", row !== undefined, JSON.stringify(lastChoices(w)));
+        if (row) await w.tap(row.id);
+        const mine = latestBookingOf(w, CUSTOMER);
+        const link = w.linkFor(mine);
+        expect("The time tap held that time and made the deposit link", link !== undefined && link.amount === D * 100, JSON.stringify(w.payments.links()));
+        if (link) w.payments.customerPays(link.id);
+        await w.deliverPaymentEvents();
+        expect("The booking is confirmed in the calendar at the time on the row, and the customer was told once", row !== undefined && toldBooked(w) === 1 && confirmedEvents(w).some((e) => e.bookingRef === mine && e.start === Number(row.id.slice("slot:".length))), JSON.stringify(w.calendar.events()));
+        const before = w.textsTo(CUSTOMER).length;
+        await w.tap("cancel");
+        expect("Cancel booking asks once before it cancels anything: the booking is untouched and the customer got two buttons", confirmedEvents(w).length === 1 && (lastChoices(w)?.buttons ?? []).length === 2 && w.textsTo(CUSTOMER).length === before + 1, JSON.stringify(lastChoices(w)));
+        await w.tap("keep");
+        expect("Keeping it leaves the booking confirmed, with no refund", confirmedEvents(w).length === 1 && w.payments.refunds().length === 0);
+
+        expect("Neither model was asked, not once", ai.decision.requests.length === 0 && ai.decisionAsked === 0 && ai.modelAsked === 0, `decision ${ai.decisionAsked}, model ${ai.modelAsked}`);
+        expect("The record names the rules for every message, with the kind of tap that read it", stepsOf(w).every((x) => x === "rules") && w.record.entries().filter((e) => e.action === "receive_message").map((e) => e.refs.via ?? "typed").join() === "typed,list,list,button,button", w.record.entries().filter((e) => e.action === "receive_message").map((e) => `${e.refs.step}/${e.refs.via ?? "typed"}`).join());
+        expect("Every message got exactly one reply, and the payment one more", w.textsTo(CUSTOMER).length === heard(w, CUSTOMER) + 1, `${w.textsTo(CUSTOMER).length} replies to ${heard(w, CUSTOMER)} messages`);
         return results;
       },
     });
