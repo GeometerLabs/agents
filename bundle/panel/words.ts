@@ -9,7 +9,7 @@
 // The form labels the demo already has (the shop's name, a service, a price, hours) come from the demo's own words (demo/strings.ts) in English and
 // Hindi, so the demo and the panel say the same thing; Malayalam and Kannada say them in their own files.
 import { uiFor } from "../../pathways/bookings/demo/strings.ts";
-import type { Why, LiveCode } from "./contract.ts";
+import type { Why, LiveCode, PlanName } from "./contract.ts";
 import type { CheckCode } from "./checks.ts";
 import type { Caveat, LineId, Payer } from "./cost.ts";
 
@@ -49,6 +49,13 @@ export interface Words {
     lines: Record<LineId, string>; payer: Record<Payer, string>;
     unknown: string; total: string; subtotal(unknownItems: number): string; priceList(date: string): string;
     caveats: Record<Exclude<Caveat, "early-estimate">, string>;
+  };
+  /** The shop's plan (B48): what fleet says about it, with the proposed price. The warning codes are fleet's (apps/fleet/README.md, "What fleet tells each shop"). */
+  plan: {
+    heading: string; none: string; names: Record<PlanName, string>; is(name: string): string; included(n: number): string;
+    price(price: string): string; priceInnovator(price: string, yours: string): string; proposedNote: string; innovator: string;
+    buttons: string; buttonsWhy: Record<"overage_unfunded" | "other", string>;
+    warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled", string>;
   };
   setup: {
     title: string; chooseTemplate: string; templateNames: Record<string, string>; templateElsewhere: string; start: string; progress(n: number, of: number): string;
@@ -93,6 +100,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
   "cost.fromRecord": [38], "cost.assumption": [40], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
+  "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceInnovator": ["₹299", "₹179"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
@@ -175,6 +183,24 @@ export const en: Words = {
       "hosting-not-measured": "The hosting share has not been measured yet.",
       "payment-link-fee-conflict": "Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used.",
       "whatsapp-rate-second-hand": "The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice.",
+    },
+  },
+  plan: {
+    heading: "Plan", none: "No plan is set for this shop yet.",
+    names: { basic: "Basic", business: "Business", operations: "Operations" },
+    is: (name) => `This shop is on the ${name} plan.`, included: (n) => `${n} customer messages a month are included.`,
+    price: (price) => `Proposed price: ${price} a month, before GST.`,
+    priceInnovator: (price, yours) => `Proposed price: ${price} a month, ${yours} with the Innovator discount, before GST.`,
+    proposedNote: "Prices are proposed and not final.", innovator: "Innovator",
+    buttons: "AI is paused for this shop. Customers get button menus instead.",
+    buttonsWhy: {
+      overage_unfunded: "This shop has used more messages than its plan includes, and the recharge balance cannot cover more. Recharge to turn AI back on.",
+      other: "Geometer asked for button menus for this shop.",
+    },
+    warn: {
+      allowance_80: "80% of this month's included messages are used.",
+      balance_80: "80% of the recharge balance is used. Recharge before it runs out.",
+      whatsapp_unsettled: "Some WhatsApp charges are not paid from the balance yet. Recharge to settle them.",
     },
   },
   setup: {
