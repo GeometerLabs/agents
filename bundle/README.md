@@ -135,11 +135,11 @@ You run one template for many clients, and each is pinned to the version it runs
 node bundle/geometer.ts update --dry-run                 # runs the checks and says what would happen; writes and starts nothing
 node bundle/geometer.ts update --to 0.2.0                # every client; without --to, the version in this checkout (pathways/bookings/package.json)
 node bundle/geometer.ts update --shops glow-salon,pet-spa    # just these two, in this order
-node bundle/geometer.ts rollback                         # the clients the last update moved, back to the pin they had
+node bundle/geometer.ts rollback                         # the clients the last update left on its version (moved, or found already there), back to the pin they had
 node bundle/geometer.ts rollback --shops glow-salon      # or just this one (also: rollback glow-salon)
 ```
 
-A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag: `~/geometer-server/pathways/bookings@0.2.0/`. A client whose new version is not there is held back and told where to put it.
+A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag: `~/geometer-server/pathways/bookings@0.2.0/`. A client whose new version is not there is held back and told where to put it. With no `--to`, a client that already runs a version **newer** than this checkout's is left as it is (it is never taken back); name the version with `--to` to move a client to an older one, which is a move like any other: hand-checked, and refused if the older version cannot read the saved data the newer one wrote (below).
 
 For each client, in order:
 
@@ -164,9 +164,9 @@ The exit code is 0 when every client is moved, unchanged or skipped, and 1 when 
 
 **Stopped in the middle.** Each step is written to the state file before the pin is touched. If the run stops (the machine, a deploy that was cut off), run the same command again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished. A deploy that is **refused** puts that client's earlier pin back and stops the rollout there, so one client is affected at most; run the same command again to carry on with the rest. Another request (other `--to` or `--shops`) starts a new run.
 
-**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. That has been shown by killing and restarting a runtime under load (see [Explanation.md](Explanation.md)), not by an update with a live booking in the middle.
+**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. What has been run: the pathway's tests stop a runtime between a payment link and its payment and finish the booking once after the restart, and the Docker proof restarts a runtime and its Guard with a refund held for the owner and finds it still held (see [Explanation.md](Explanation.md)). Not run: an update with a live booking in the middle.
 
-**Rollback** is the same move the other way, through the same checks, and it takes the pin it goes back to off the history, so rolling back twice goes back twice and a rollback never moves a client forward unchecked. One thing stops it: a runtime cannot start on saved data written by a newer layout than it knows. If the new version changed the layout (the update says so in a note), `rollback` is refused before anything is touched, saying why. The way out is a newer version that fixes what went wrong, or `geometer restore` of the record from before the update, which loses what came in since.
+**Rollback** is the same move the other way, through the same checks, and it takes the pin it goes back to off the history, so rolling back twice goes back twice and a rollback never moves a client forward unchecked. One thing stops it: a runtime cannot start on saved data written by a newer layout than it knows. If the new version changed the layout (the update says so in a note), `rollback` is refused before anything is touched, saying why; an `update --to` an older version is refused for the same reason. With no names, `rollback` takes the clients the **last update** left on the version it names and that have an earlier pin to go back to, so running `update` again to look at a held-back client does not empty that list. The way out is a newer version that fixes what went wrong, or `geometer restore` of the record from before the update, which loses what came in since.
 
 **Editing in the panel does not move a client.** A client's settings can be changed in the panel as before; its pin is kept. Only `update` (and `rollback`) change a pin, after the hand check.
 
