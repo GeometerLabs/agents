@@ -18,6 +18,8 @@ export interface Strings {
   monthlyReport: string;
   goLiveCertificate: string;
   monthlyCertificate: string;
+  /** The badge for the first 100 builders and partners, as a word. Shown after BADGE_SYMBOL on the report page, the certificate and the WhatsApp message. */
+  innovator: string;
   languageName: Record<Language, string>;
   /** The owner's lines: "label: number". */
   label: {
@@ -61,8 +63,14 @@ export interface Strings {
 
 const standIn = `(${STAND_IN_SERVICES})`;
 
+/** The mark that goes before the word on the Innovator badge. A plain symbol, not an emoji, so every phone draws it the same way. */
+export const BADGE_SYMBOL = "\u2605";
+/** "★ Innovator" in a language. */
+export const badgeText = (language: Language): string => `${BADGE_SYMBOL} ${STRINGS[language].innovator}`;
+
 const en: Strings = {
   agent: "Bookings agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", monthlyCertificate: "Monthly record certificate",
+  innovator: "Innovator",
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   label: {
     bookingsMade: "Bookings made", cancelled: "Cancelled", moved: "Moved to a new time", depositsCollected: "Deposits collected", givenBack: "Given back",
@@ -138,6 +146,7 @@ const en: Strings = {
 
 const hi: Strings = {
   agent: "बुकिंग एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", monthlyCertificate: "मासिक रिकॉर्ड प्रमाणपत्र",
+  innovator: "इनोवेटर",
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   label: {
     bookingsMade: "हुई बुकिंग", cancelled: "रद्द हुईं", moved: "समय बदला", depositsCollected: "जमा राशि मिली", givenBack: "वापस किया",
@@ -213,6 +222,7 @@ const hi: Strings = {
 
 const ml: Strings = {
   agent: "ബുക്കിംഗ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", monthlyCertificate: "പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ്",
+  innovator: "ഇന്നൊവേറ്റർ",
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   label: {
     bookingsMade: "ബുക്ക് ആയവ", cancelled: "റദ്ദാക്കിയവ", moved: "സമയം മാറ്റിയവ", depositsCollected: "ലഭിച്ച അഡ്വാൻസ്", givenBack: "തിരികെ നൽകിയത്",
@@ -288,6 +298,7 @@ const ml: Strings = {
 
 const kn: Strings = {
   agent: "ಬುಕಿಂಗ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", monthlyCertificate: "ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ",
+  innovator: "ಇನ್ನೋವೇಟರ್",
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   label: {
     bookingsMade: "ಆದ ಬುಕಿಂಗ್", cancelled: "ರದ್ದಾದವು", moved: "ಸಮಯ ಬದಲಾದವು", depositsCollected: "ಬಂದ ಮುಂಗಡ ಹಣ", givenBack: "ಹಿಂತಿರುಗಿಸಿದ್ದು",
@@ -371,7 +382,7 @@ export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
  * is not, so these name the exact words and do not cut them short. The confirm verbs of the packs are not here.
  */
 export const BANNED: Record<Language | "any", RegExp[]> = {
-  any: [/\bsafe/i, /\bsafety\b/i, /guarant/i, /\bcertified\b/i, /\bcertify\b/i, /\bcertifies\b/i, /\bcertification\b/i, /\b100 ?%/, /risk[- ]?free/i, /fool[- ]?proof/i, /\bsecure(d|ly)?\b/i, /\bproven\b/i,
+  any: [/\bfounding\b/i, /\bfounder/i, /\bsafe/i, /\bsafety\b/i, /guarant/i, /\bcertified\b/i, /\bcertify\b/i, /\bcertifies\b/i, /\bcertification\b/i, /\b100 ?%/, /risk[- ]?free/i, /fool[- ]?proof/i, /\bsecure(d|ly)?\b/i, /\bproven\b/i,
     /\bearn/i, /\bincome\b/i, /\bprofit/i, /\brevenue\b/i],
   en: [],
   hi: [/सुरक्षित/u, /सुरक्षा/u, /गारंटी/u, /गारण्टी/u, /प्रमाणित/u, /कमाई/u, /आमदनी/u, /मुनाफ़ा/u, /मुनाफा/u],

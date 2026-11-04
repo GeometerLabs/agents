@@ -8,7 +8,7 @@ const two = (n: number) => String(n).padStart(2, "0");
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import type { Envelope } from "./sign.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, badgeText } from "./strings.ts";
 import type { Strings } from "./strings.ts";
 import { goLiveLines, languagesOf, periodLabel, rupees } from "./text.ts";
 import type { ReportLanguage } from "./text.ts";
@@ -27,6 +27,7 @@ main{max-width:46rem;margin:0 auto;padding:0 16px 40px}
 .head h1{margin:.1rem 0;font-size:1.7rem;line-height:1.2}
 .head .period{margin:0;font-size:1.1rem}
 .head .tag{display:inline-block;margin:.5rem 0 0;padding:.1rem .6rem;border:1px solid #fff;border-radius:99px;font-size:.85rem}
+.head .badge{display:inline-block;margin:.5rem 0 0 .5rem;padding:.1rem .6rem;background:#fff;color:var(--g9);border-radius:99px;font-size:.85rem;font-weight:600}
 h2{font-size:1.1rem;margin:1.6rem 0 .5rem;color:var(--g9)}
 .note{background:var(--g0);border-left:4px solid var(--g7);padding:.6rem .8rem;margin:1rem 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:10px;margin:1rem 0}
@@ -135,7 +136,7 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
     r.record.rows.map((x) => { const t = localParts(Date.parse(x.time), r.shop.timeZone); return [String(x.seq), esc(`${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}`), `<code>${esc(x.action)}</code>`, `<code>${esc(x.outcome)}</code>`, esc(x.booking ?? "–"), `<code>${esc(x.digest.slice(7, 23))}</code>`]; }));
 
   return `<section class="doc" lang="${language}">
-<header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}</header>
+<header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}${r.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.sourceLong[r.source])} ${esc(s.handRun)}</p>
 <div class="cards">
 <div class="card"><b>${r.bookings.made}</b><span>${esc(s.label.bookingsMade)}</span></div>
