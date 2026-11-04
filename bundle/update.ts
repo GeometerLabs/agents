@@ -208,7 +208,7 @@ async function rollbackOne(ctx: Context, shop: string, dryRun: boolean, earlier:
 // ---- moving one client (shared) --------------------------------------------------------------------------------------------------------------------
 
 /**
- * Put the new pin in place and run the checked deploy. Safe to run again on a step that stopped half-way: the pin is written again, and a deploy of what is already applied
+ * Put the new pin in place and run the checked deploy. It can be run again on a step that stopped half-way: the pin is written again, and a deploy of what is already applied
  * changes nothing. A rollback takes the pin it goes back to OFF the history (the deploy puts the version it leaves on the end, and that is taken off again once it has gone
  * through), so rolling back twice goes back twice, and a rollback is never a way to go forward without a check. A deploy that is refused puts the earlier pin back and stops
  * the rollout; any other failure leaves the step "moving", for the same command to finish.
