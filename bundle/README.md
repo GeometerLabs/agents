@@ -121,11 +121,56 @@ node bundle/geometer.ts status                # each shop: running or not, its G
 node bundle/geometer.ts logs glow-salon
 node bundle/geometer.ts stop glow-salon --reason "owner asked"     # the Guard kill switch: nothing goes out; the record says who
 node bundle/geometer.ts start glow-salon
-node bundle/geometer.ts rollback glow-salon   # the previous pathway.lock, deployed through the same checks
+node bundle/geometer.ts update --dry-run     # a new template version for every client: what would move and what would be held back (changes nothing)
+node bundle/geometer.ts update                # do it, each client checked on its own settings first
+node bundle/geometer.ts rollback              # put the clients the last update moved back on their previous version
 node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the record as it was, from the continuous copy
 ```
 
-**Upgrading a shop** is changing its `pathway.lock` after the crash test has passed with that shop's own settings. A version other than the current one needs a checkout beside the server: `~/geometer-server/pathways/bookings@0.2.0/`. `rollback` puts the previous lock back.
+## Update every client at once
+
+You run one template for many clients, and each is pinned to the version it runs. A new version comes out. One command moves every client, and **each client is hand-checked on its own settings first**; a client that does worse on the new version is held back, with the reason, and keeps running the version it runs.
+
+```sh
+node bundle/geometer.ts update --dry-run                 # runs the checks and says what would happen; writes and starts nothing
+node bundle/geometer.ts update --to 0.2.0                # every client; without --to, the version in this checkout (pathways/bookings/package.json)
+node bundle/geometer.ts update --shops glow-salon,pet-spa    # just these two, in this order
+node bundle/geometer.ts rollback                         # the clients the last update moved, back to the pin they had
+node bundle/geometer.ts rollback --shops glow-salon      # or just this one (also: rollback glow-salon)
+```
+
+A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag: `~/geometer-server/pathways/bookings@0.2.0/`. A client whose new version is not there is held back and told where to put it.
+
+For each client, in order:
+
+1. The template's own hand check (`pathways/bookings/scripts/hand-check.ts`, the same one that makes the go-live certificate) is run **on that client's settings** at the version it runs now, and again at the new version. Each says "Held N of M".
+2. A client that holds everything that held before **moves**: its `pathway.lock` is changed and the same checked deploy as `geometer deploy` runs, so only what changed is restarted and the running Guards are asked again ("12 of 12 limits proven to bite").
+3. A client with any situation that held before and now **fails, or is no longer run**, is **held back**: nothing about it is touched. A situation that failed on both versions does not hold it back (it is no worse off). A new situation that fails does.
+
+```
+Update, each client checked on its own settings first:
+  ✗ bright-tuition  HELD BACK. Held 33 of 34 at bookings@0.2.0; 34 of 34 held at bookings@0.1.0. Now failing: Deposit link paid twice. It stays on bookings@0.1.0.
+      - Deposit link paid twice: The customer was charged twice: ...
+  ✓ glow-salon      moved from bookings@0.1.0 to bookings@0.2.0. Held 34 of 34 on its own settings (34 of 34 before). 12 of 12 limits proven to bite.
+  = pet-spa         unchanged. Already on bookings@0.2.0.
+  - my-agent        skipped. Agents you wrote are updated by you; Geometer re-checks them once the self-serve crash test (B52) exists.
+
+Moved 1, held back 1, unchanged 1, skipped 1.
+```
+
+The exit code is 0 when every client is moved, unchanged or skipped, and 1 when any is held back or the run did not finish. Fix what failed (or the client's settings) and run `update` again: it checks the held-back clients again.
+
+**Where the pins are.** A client's version is its pin, the line in `shops/<shop>/pathway.lock`. The pins it had before are `lockHistory` in `state/state.json`; `rollback` takes the last one. `state.update` and `state.rollback` in the same file are the last run of each, client by client (what was decided, the two "Held N of M", the situations that failed, what the Guards proved). `status` and the panel's status file show the version that runs.
+
+**Stopped in the middle.** Each step is written to the state file before the pin is touched. If the run stops (the machine, a deploy that was cut off), run the same command again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished. A deploy that is **refused** puts that client's earlier pin back and stops the rollout there, so one client is affected at most; run the same command again to carry on with the rest. Another request (other `--to` or `--shops`) starts a new run.
+
+**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. That has been shown by killing and restarting a runtime under load (see [Explanation.md](Explanation.md)), not by an update with a live booking in the middle.
+
+**Rollback** is the same move the other way, through the same checks, and it takes the pin it goes back to off the history, so rolling back twice goes back twice and a rollback never moves a client forward unchecked. One thing stops it: a runtime cannot start on saved data written by a newer layout than it knows. If the new version changed the layout (the update says so in a note), `rollback` is refused before anything is touched, saying why. The way out is a newer version that fixes what went wrong, or `geometer restore` of the record from before the update, which loses what came in since.
+
+**Editing in the panel does not move a client.** A client's settings can be changed in the panel as before; its pin is kept. Only `update` (and `rollback`) change a pin, after the hand check.
+
+**Agents you wrote** (see below) have no template and no hand check yet. `update` skips them and says so; you update them yourself.
 
 ## Bring your own agent
 
@@ -200,7 +245,7 @@ Restoring a snapshot needs the secret half of the age key, which is not on the s
 <server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads
 <server>/exports/<shop>/          record.json and bookings.json, without customers' numbers           the deployer writes; the panel's monthly report reads
 <server>/panel/                   the panel's own data
-<server>/state/                   the deployer's memory (Guard bundle versions, who stopped a shop, lock history)
+<server>/state/                   the deployer's memory (Guard bundle versions, who stopped a shop, lock history, the last update and rollback step by step)
 <server>/generated/               compose.yaml, Caddyfile, per-container config: rewritten on every deploy, never edited
 <server>/secrets/                 one folder per container
 ```
