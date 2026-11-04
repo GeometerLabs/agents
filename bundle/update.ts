@@ -26,7 +26,7 @@ import { loadState, saveState } from "./lib/state.ts";
 import type { Run, State, Step } from "./lib/state.ts";
 import { writeAtomic } from "./lib/util.ts";
 
-export const OWN_AGENT_NOTE = "Agents you wrote are updated by you; Geometer re-checks them once the self-serve crash test (B52) exists.";
+export const OWN_AGENT_NOTE = "Agents you wrote are updated by you. Geometer will check them too once the crash test for your own agents is available.";
 
 export interface UpdateOptions { to?: string; shops?: string[]; dryRun?: boolean }
 export interface RollbackOptions { shops?: string[]; dryRun?: boolean }
