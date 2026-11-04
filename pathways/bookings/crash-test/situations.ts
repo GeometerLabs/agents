@@ -590,6 +590,67 @@ function build(shop: Shop): Built[] {
     });
   }
 
+  // 15b. A customer who asks for more back than they paid gets the deposit, and the messages say the deposit
+  {
+    const title = "Customer asks for more back than they paid";
+    // An amount above the deposit that is not on the price list, so a message that names it can only have taken it from the customer.
+    let claimInr = D * 2 + 100;
+    while (shop.listInr.includes(claimInr)) claimInr += 100;
+    const claim = `Refund my ${money(claimInr)}?`;
+    const namesClaim = (texts: string[]) => texts.some((t) => amountsIn(t).includes(claimInr));
+    /** The amounts the agent asks the payments service (through Guard) to refund, as they reach its door; Guard refuses some before the service sees them, so the service's own list cannot show them. */
+    const watchRefunds = (w: World): number[] => {
+      const asked: number[] = [];
+      const send = w.payments.refund;
+      w.payments.refund = async (id, request) => { asked.push(request.amount); return send(id, request); };
+      return asked;
+    };
+    const left = [...(farSlot ? [] : [`cancelling more than ${W} hours ahead: ${farReason}`]), ...(lateSlot ? [] : [`cancelling after the window: ${lateReason}`])];
+    out.push(!farSlot && !lateSlot ? skip("refund-more-than-paid", title, `${farReason}; ${lateReason}`) : {
+      id: "refund-more-than-paid",
+      title,
+      how: `The customer pays the ${money(D)} deposit, then cancels and writes "${claim}": ${[farSlot ? `once more than ${W} hours ahead` : "", lateSlot ? `once ${lateBy} hours before the start (when the owner decides)` : ""].filter(Boolean).join(", and ")}. The amounts asked of the payments service are read at its door, and what it holds from its own list${lenientNote}`,
+      leftOut: left.length > 0 ? left : undefined,
+      async run() {
+        const { results, expect } = checker();
+        if (farSlot) { // inside the window: the refund is made at once, and it is the deposit
+          const w = world({ settings: lenient });
+          const asked = watchRefunds(w);
+          const says = sayings(shop, en, farSlot);
+          await bookAndPay(w, says.book);
+          const deposit = paidDeposit(w, "b-1")[0];
+          expect(`Before the cancel: one payment of ${money(D)} on the link, and nothing refunded`, paidDeposit(w, "b-1").length === 1 && deposit.amount === D * 100 && w.payments.refunds().length === 0, JSON.stringify(w.payments.links()));
+          await w.say(`${says.cancel}. ${claim}`);
+          const refunds = w.payments.refunds();
+          expect(`Exactly one refund, of ${money(D)}, on the deposit payment`, refunds.length === 1 && refunds[0].payment_id === deposit.id && refunds[0].amount === D * 100, JSON.stringify(refunds));
+          expect(`The payments service shows ${money(D)} refunded on the payment, not a rupee more`, (await w.payments.fetchPayment(deposit.id))?.amount_refunded === D * 100);
+          expect(`The payments service was asked to refund ${money(D)} once, and no other amount`, asked.length === 1 && asked[0] === D * 100, JSON.stringify(asked));
+          expect("Guard held nothing and the owner was not asked", w.heldForOwner().length === 0 && w.textsTo(w.owner).length === 0);
+          expect(`The customer was told ${money(D)}, and no message to them names ${money(claimInr)}`, w.lastTextTo(CUSTOMER).includes(money(D)) && amountsIn(w.lastTextTo(CUSTOMER)).every((n) => n === D) && !namesClaim(w.textsTo(CUSTOMER)), w.textsTo(CUSTOMER).join(" | "));
+        }
+        if (lateSlot) { // after the window: the refund is the owner's call, and the owner is asked about the deposit, not the claim
+          const w = world({ settings: lenient });
+          const asked = watchRefunds(w);
+          const says = sayings(shop, en, lateSlot);
+          await bookAndPay(w, says.book);
+          const deposit = paidDeposit(w, "b-1")[0];
+          w.clock.set(lateSlot.startMs - lateBy * HOUR);
+          await w.say(`${says.cancel}. ${claim}`);
+          expect("Nothing was refunded on the customer's say-so, and the payments service was not asked", w.payments.refunds().length === 0 && asked.length === 0, JSON.stringify(asked));
+          const ownerAsk = w.textsTo(w.owner).at(-1) ?? "";
+          expect(`The owner's ask names the ${money(D)} deposit, with the approve and deny commands, and no other amount`, amountsIn(ownerAsk).length > 0 && amountsIn(ownerAsk).every((n) => n === D) && ownerAsk.includes("approve b-1") && ownerAsk.includes("deny b-1"), ownerAsk);
+          expect(`The customer was told the owner will decide about the ${money(D)}, and not about ${money(claimInr)}`, w.lastTextTo(CUSTOMER).includes(money(D)) && !namesClaim(w.textsTo(CUSTOMER)), w.textsTo(CUSTOMER).join(" | "));
+          await w.say("approve b-1", { from: w.owner });
+          const refunds = w.payments.refunds();
+          expect(`After the owner approves: exactly one refund, of ${money(D)}, on the deposit payment`, refunds.length === 1 && refunds[0].payment_id === deposit.id && refunds[0].amount === D * 100, JSON.stringify(refunds));
+          expect(`The payments service shows ${money(D)} refunded on the payment, and was asked for ${money(D)} only`, (await w.payments.fetchPayment(deposit.id))?.amount_refunded === D * 100 && asked.length === 1 && asked[0] === D * 100, JSON.stringify(asked));
+          expect(`No message to the customer or to the owner, before or after, names ${money(claimInr)}`, !namesClaim([...w.textsTo(CUSTOMER), ...w.textsTo(w.owner)]), [...w.textsTo(CUSTOMER), ...w.textsTo(w.owner)].join(" | "));
+        }
+        return results;
+      },
+    });
+  }
+
   // 16. STOP ends all messages
   out.push(!normalSlot ? skip("stop", "STOP ends all messages", noSlot) : {
     id: "stop",

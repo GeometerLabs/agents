@@ -230,9 +230,9 @@ const AGENT_ID_FOR_TEST = "runtime-glow-salon";
 
 run("the runtime's amount is not Guard's: the owner is asked nothing", async (w) => {
   const approval = await w.heldRefund();
-  // Guard holds ₹300 for what the runtime knows as ₹200
+  // Guard holds ₹150 for what the runtime knows as ₹200 (₹150 is within Guard's own bound, one deposit; a hold for more than the deposit cannot exist, because Guard refuses it)
   w.model.decide(approval, false, "operator");
-  w.model.decideRefund(w.model.approvals()[0].paymentId, { amount: 30000, receipt: w.model.approvals()[0].fields.receipt });
+  w.model.decideRefund(w.model.approvals()[0].paymentId, { amount: 15000, receipt: w.model.approvals()[0].fields.receipt });
   await w.relay.poll();
   assert.equal(w.toOwner().length, 0);
   assert.equal(w.relay.status().alerts.byKind.disagree, 1);

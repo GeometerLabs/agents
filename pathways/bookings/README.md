@@ -118,7 +118,7 @@ Hindi, Malayalam and Kannada are machine-written and wait for native review ([De
 
 ## Equipment rental (custom hiring centres and village equipment owners)
 
-The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 28 of 28 situations on its own settings. Run the demo on it:
+The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 29 of 29 situations on its own settings. Run the demo on it:
 
 ```sh
 node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn   # or hi
@@ -166,6 +166,7 @@ In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the s
 
 A refund above `cancellation.refundLimitInr` is held by Guard; the agent does not ask the owner. `approvals/` is its own process (`node pathways/bookings/approvals/main.ts`): it holds the owner's approver secret, reads Guard's held refunds, asks the owner once with a one-use code (`approve K7M2QX`), and carries the answer to Guard (signed) and then to the runtime, which sends the identical refund again.
 Guard's limits spec comes from the same settings: `node pathways/bookings/scripts/guard-spec.ts --client clients/glow-salon.example --tenant glow-salon --reviewed-by <you> > spec.json`, then `geo-guard compile`.
+Guard also refuses any refund above one deposit (rule `refund-at-most-deposit`), whatever the customer wrote and whatever the owner's limit is: a customer who paid ₹200 and asks for ₹500 back gets ₹200. If the owner lowers the deposit, Guard refuses the refunds of older, larger deposits that are still open: lower it once those bookings are over, or refund them by hand in Razorpay ([Deferred.md](Deferred.md), "A refund is never more than one deposit").
 Try it end to end against a stub Guard: `npm run stack -- --refund-limit 100`. Why and how: [Explanation.md](Explanation.md), "Approvals on WhatsApp".
 
 ## The monthly report and the certificates
@@ -359,7 +360,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 ## What is not done yet
 
 - **Real services.** The live adapters, the inbox and the stand-ins are written and tested, but only against the stand-ins and the providers' own sample payloads. Nothing here has talked to a real Razorpay, Google or WhatsApp account yet, and the WhatsApp provider is not chosen.
-- **Guard.** A refund above the limit is held by Guard (the real binary is tested, one case, here; the hand check uses a model of it). The other limits still run in the agent's own process, nothing else is enforced outside the AI yet, and nothing fails closed if the agent is compromised.
+- **Guard.** A refund above the limit is held by Guard, and a refund above one deposit is refused by it (the real binary is tested here; the hand check uses a model of it). The other limits still run in the agent's own process, nothing else is enforced outside the AI yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser only reads a customer's message into an intent. It is built and tested against a local stub server, **not yet run against a real model**, and the agent uses the rule parser unless it is given the model parser.
 - **The builder panel, hosting and sending the report**, and **Tamil, Telugu** and other languages. (Restarts and persistence are built, in `server/`; the report and certificates are built, in `report/`.) Malayalam and Kannada are built but **not yet reviewed by a native speaker**. The demo (see "Show it to a shop") is local only; a hosted demo link is not built.
