@@ -127,6 +127,55 @@ node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the re
 
 **Upgrading a shop** is changing its `pathway.lock` after the crash test has passed with that shop's own settings. A version other than the current one needs a checkout beside the server: `~/geometer-server/pathways/bookings@0.2.0/`. `rollback` puts the previous lock back.
 
+## Bring your own agent
+
+You built an agent with Claude Code, Lovable, n8n or your own code. It takes bookings, collects deposits and refunds them. Geometer puts the same Guards in front of the services it calls, keeps the same record, asks the owner on WhatsApp before a big refund, and writes the same monthly report. **You change three web addresses and one key in your agent. Geometer does not host it, rebuild it or read its code.**
+
+```sh
+node bundle/geometer.ts agent add my-agent \
+  --deposit 200 --refund-limit 100 --owner-whatsapp +919800000001 \
+  --whatsapp-number-id 123456789012345 --calendar-id shop@group.calendar.google.com
+```
+
+`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`pathways/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
+
+```
+Razorpay        https://shops.example.com/g/my-agent/razorpay
+WhatsApp        https://shops.example.com/g/my-agent/whatsapp
+Google Calendar https://shops.example.com/g/my-agent/calendar
+Credential      gg_...   (send it as "Authorization: Bearer gg_..." on every call)
+```
+
+The path after each address is the service's own (`/v1/payment_links`, `/v26.0/<number id>/messages`, `/calendar/v3/...`). The credential replaces Razorpay's, Google's and WhatsApp's own keys, which your agent never holds. Then hand in the shop's own keys (the same names as for a shop, in `secrets-inbox/my-agent/`: `razorpay_key`, `whatsapp_token`, `whatsapp_app_secret`, `whatsapp_verify_token`, `google_service_account.json`), and check and deploy it like a shop:
+
+```sh
+node bundle/geometer.ts agent check my-agent       # starts nothing; says what is wrong, all at once
+node bundle/geometer.ts agent deploy my-agent      # "N of N limits proven to bite", counted on the running Guards (N depends on the limits)
+node bundle/geometer.ts agent show my-agent        # the addresses again (--credential also prints the credential)
+```
+
+A server that holds only agents like this needs steps 1 to 4 above (the model that `init` asks for is not used, so any name will do) and the `google-key` of step 5 if you use it, but **no** `model-key`, no model Guard and no shop. The same server can hold shops too. (The nightly backups and the restore drill cover shops; an agent's Guards are not in them yet: [Deferred.md](Deferred.md).)
+
+In WhatsApp's settings, send the shop's webhooks to `https://shops.example.com/c/my-agent/webhooks/whatsapp`. Geometer's inbox checks each one, keeps the owner's replies to approval requests, and passes the whole webhook on to your agent as it came, signature included, if you gave `--forward-whatsapp-to https://your-agent.example.com/whatsapp`. Your agent keeps taking its own Razorpay webhooks.
+
+**What your agent has to do.** Little, and the example (`bundle/examples/own-agent/agent.js`, plain Node, no dependencies) does all of it:
+
+- A refund above the owner's limit gets **HTTP 202**: Guard is holding it and the owner has been asked on WhatsApp. **Send the refund with a `receipt`** (any reference of yours: it is how the owner's request finds the right payment), and **send the identical call again** every few minutes until it is made (HTTP 200). Nothing else hurries it; only the owner can approve, and a hold lasts `approvalHours` (24 by default) and then runs out. Once it is made, do not send it again: Guard holds a repeat of a refund that was already made as a new request to the owner, and the owner would be asked twice.
+- A refused call gets HTTP 403 and a reason in words. The limits are the template's: a payment link only for the deposit, a refund of at least 1 paisa and at most one deposit, no payouts, a calendar event only on the shop's own calendar, a message only from the shop's own number, and the caps (links, refunds, messages, events).
+
+**What Geometer adds**, the same as for a template:
+
+| | |
+|---|---|
+| The limits | Made from the settings by the templates' own code. The deploy is refused, naming the rule, unless every limit it can test is proven on the Guard (`geometer agent check`). |
+| The owner's approvals | A refund above the limit waits on WhatsApp for the owner's one-use code (the approvals relay, the same one). |
+| The record | Built from what the Guards decided (allowed, held, refused, and the answer the service gave) and what the services themselves hold (the payment, the refund, the calendar event). Never from what the agent says. `geometer agent record my-agent`; the deployer does it every five minutes, and says so if Guard's list of its 500 most recent calls ever ran ahead of it. |
+| The report | `geometer agent report my-agent --month 2026-11 --out ./report` writes the monthly report and certificate the templates' do, from that record. |
+| Alerts | The heartbeat carries the agent's Guards (up, ready, killed, held calls, calls decided, counts only), so Geometer's alerts from outside work; the relay tells you when a request to the owner could not be made. |
+| Stop | `geometer stop my-agent` is the Guard kill switch: nothing new goes out. |
+
+**What it does not do.** It does not host or rebuild your agent, and cannot make it behave: it can only stop what goes through the Guards and say what happened. Guard has no rule for prices or opening hours, so for an agent we did not write they are in the settings file (and in the report's policy digest) but nothing checks them. A call that does not go through the addresses above is not seen. Only Razorpay, WhatsApp and Google Calendar are covered; other services, the Claude Code plugin, n8n and Lovable doors, and a self-serve crash test of your agent are on the list of things not built ([Deferred.md](Deferred.md)). How it is built, and what was and was not run: [Explanation.md](Explanation.md), "Bring your own agent".
+
 ## Backups
 
 | Layer | How often | Where | Encrypted |

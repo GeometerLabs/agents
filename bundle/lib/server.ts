@@ -2,6 +2,7 @@
 //
 //   geometer.json            this server: its id, domain, fleet address, backup target, the model (written by `init`)
 //   shops/<shop>/            DESIRED STATE. settings.json, runtime.json, pathway.lock. The panel (or `shop add`) writes these.
+//   agents/<agent>/          an agent someone else wrote, behind the same Guards: agent.json (which services, which numbers) and settings.json (`agent add` writes these).
 //   secrets-inbox/<shop>/    secrets handed in (razorpay_key, whatsapp_token, ...). The deployer moves each into the one container that needs it and deletes it.
 //   requests/<shop>.stop.json  a request to stop a shop; the deployer acts, shows `stopped` in status, then removes it (the panel writes these)
 //   exports/<shop>/          record.json and bookings.json for the monthly report, without customers' numbers (the deployer writes these)
@@ -85,6 +86,9 @@ export function serverPaths(dir: string) {
     config: join(root, "geometer.json"),
     shops: join(root, "shops"),
     shop: (name: string) => join(root, "shops", name),
+    /** Agents we did not write ("bring your own agent"): agents/<name>/agent.json and settings.json. Beside shops/, not inside it: the panel and the shop loops never see them. */
+    agents: join(root, "agents"),
+    agent: (name: string) => join(root, "agents", name),
     secretsInbox: join(root, "secrets-inbox"),
     inbox: (name: string) => join(root, "secrets-inbox", name),
     status: join(root, "status"),
