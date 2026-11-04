@@ -67,12 +67,13 @@ export async function run(agent, { customer, reference, depositInr, startsAt, pa
 if (import.meta.url === `file://${process.argv[1]}`) {
   const env = (name) => { const v = process.env[name]; if (!v) { console.error(`Set ${name} (see the top of this file).`); process.exit(2); } return v; };
   const agent = createAgent({ razorpay: env("GEOMETER_RAZORPAY_URL"), calendar: env("GEOMETER_CALENDAR_URL"), whatsapp: env("GEOMETER_WHATSAPP_URL"), credential: env("GEOMETER_CREDENTIAL"), calendarId: env("CALENDAR_ID"), phoneNumberId: env("PHONE_NUMBER_ID") });
-  const paidLink = async (id) => { // looking at the link until Razorpay says it is paid
-    for (let i = 0; i < 600; i++) {
+  // Looking at the link until Razorpay says it is paid. Every look is a call through Guard, so not every second; a Razorpay webhook is better still.
+  const paidLink = async (id) => {
+    for (let i = 0; i < 120; i++) {
       const link = await agent.readLink(id);
       const p = link.json?.payments?.[0];
       if (link.json?.status === "paid" && p) return { paymentId: p.payment_id, amountPaise: p.amount };
-      await new Promise((r) => setTimeout(r, 2_000));
+      await new Promise((r) => setTimeout(r, 15_000));
     }
     throw new Error("The deposit was not paid in time.");
   };

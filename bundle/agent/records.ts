@@ -8,7 +8,7 @@ import type { Context } from "../deploy.ts";
 import { serverPaths } from "../lib/server.ts";
 import { loadState } from "../lib/state.ts";
 import { writeAtomic } from "../lib/util.ts";
-import type { Facts } from "./facts.ts";
+import type { Facts, Skip } from "./facts.ts";
 import { readAgent } from "./folder.ts";
 import { emptyRecord, foldFacts, waitingForOwner } from "./record.ts";
 import type { RecordState } from "./record.ts";
@@ -27,19 +27,33 @@ export function loadRecord(dir: string, agent: string): RecordState {
 export async function recordAgent(ctx: Context, agent: string, facts?: Facts): Promise<{ added: number; total: number; problems: string[] }> {
   const folder = readAgent(ctx.dir, agent);
   if (!folder.settings) return { added: 0, total: 0, problems: folder.problems };
+  const before = loadRecord(ctx.dir, agent);
   let seen = facts;
   if (!seen) {
-    const r = await ops(ctx, ["agent-facts", agent]);
+    // what is already settled in the record is not asked of the services again (each question is itself a decision in the list the next pass reads)
+    const r = await ops(ctx, ["agent-facts", agent, JSON.stringify(skipOf(before))]);
     try { seen = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? "") as Facts; } catch { /* handled below */ }
     if (!seen || typeof seen.guards !== "object" || typeof seen.service !== "object") return { added: 0, total: loadRecord(ctx.dir, agent).entries.length, problems: [`The Guards could not be asked (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 200)}). Is the server up?`] };
   }
-  const { state, added } = foldFacts(loadRecord(ctx.dir, agent), seen, { settings: folder.settings, agentId: `agent-${agent}`, relayId: `relay-${agent}`, now: ctx.now().getTime() });
+  const { state, added, gaps } = foldFacts(before, seen, { settings: folder.settings, agentId: `agent-${agent}`, relayId: `relay-${agent}`, now: ctx.now().getTime() });
   const out = serverPaths(ctx.dir).exportsOf(agent);
   mkdirSync(out, { recursive: true });
   writeAtomic(recordFile(ctx.dir, agent), `${JSON.stringify(state)}\n`, 0o600);
   writeAtomic(join(out, "record.json"), JSON.stringify(state.entries));
   writeAtomic(join(out, "bookings.json"), JSON.stringify(waitingForOwner(seen, ctx.now().getTime())));
-  return { added: added.length, total: state.entries.length, problems: seen.problems };
+  return { added: added.length, total: state.entries.length, problems: [...(seen.problems ?? []), ...gaps] };
+}
+
+/** What the services need not be asked about again: decisions whose entry is final, and the references whose deposit is in the record. */
+export function skipOf(state: RecordState): Skip {
+  const final = new Set(["confirmed", "blocked", "failed"]);
+  const settled = new Set<string>();
+  for (const [key, was] of Object.entries(state.seen)) {
+    if (key.startsWith("gap:") || key.startsWith("deposit:") || key.startsWith("approval:") || key.startsWith("hold:")) continue;
+    if (key.endsWith("#confirmed")) settled.add(key.slice(0, -"#confirmed".length));
+    else if (final.has(was.outcome)) settled.add(key);
+  }
+  return { settled: [...settled], paid: state.entries.filter((e) => e.action === "record_deposit" && e.booking).map((e) => e.booking as string) };
 }
 
 /** Every deployed agent's record, one after the other. */

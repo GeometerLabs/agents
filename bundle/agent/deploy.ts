@@ -136,12 +136,15 @@ export function prepareAgent(ctx: Context, server: ServerConfig, state: State, n
   return { prepared: { folder, plan, desiredHash: agentDesiredHash(folder), guards: plan.guards.map((g) => ({ plan: g, version: versions[g.kind], contentHash: contentHash(g.spec) })) }, problems, notes };
 }
 
+/** The model's key is for the model Guard, which serves the shops' runtimes. A server that holds no deployed shop does not run it, and an agent someone else wrote never calls a model. */
+const withoutUnusedModelKey = (problems: Problem[], state: State): Problem[] => (Object.values(state.shops).some((s) => s.applied) ? problems : problems.filter((p) => p.rule !== "secret-missing:model_key"));
+
 /** `check <agent>`: everything a deploy would check, offline. Starts nothing. */
 export async function checkAgent(ctx: Context, name: string): Promise<{ ok: boolean; problems: Problem[]; notes: string[]; lines: string[] }> {
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
   const { prepared, problems, notes } = prepareAgent(ctx, server, state, name);
-  problems.push(...await serverProblems(ctx, server));
+  problems.push(...await serverProblems(ctx, server).then((p) => withoutUnusedModelKey(p, state)));
   const lines: string[] = [];
   if (prepared) {
     const creds = ensureCredentials(ctx.dir, name, prepared.guards.map((g) => g.plan.kind as Kind));
@@ -174,7 +177,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   const state = loadState(ctx.dir);
   const { prepared, problems, notes } = prepareAgent(ctx, server, state, name);
   notes.forEach((n) => ctx.log(`note: ${n}`));
-  problems.push(...await serverProblems(ctx, server));
+  problems.push(...await serverProblems(ctx, server).then((p) => withoutUnusedModelKey(p, state)));
   if (problems.length > 0 || !prepared) throw new Refused(problems);
 
   const kinds = prepared.guards.map((g) => g.plan.kind as Kind);

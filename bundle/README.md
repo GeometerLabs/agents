@@ -150,9 +150,11 @@ The path after each address is the service's own (`/v1/payment_links`, `/v26.0/<
 
 ```sh
 node bundle/geometer.ts agent check my-agent       # starts nothing; says what is wrong, all at once
-node bundle/geometer.ts agent deploy my-agent      # "12 of 12 limits proven to bite", read from the running Guards
+node bundle/geometer.ts agent deploy my-agent      # "N of N limits proven to bite", counted on the running Guards (N depends on the limits)
 node bundle/geometer.ts agent show my-agent        # the addresses again (--credential also prints the credential)
 ```
+
+A server that holds only agents like this needs steps 1 to 4 above (the model that `init` asks for is not used, so any name will do) and the `google-key` of step 5 if you use it, but **no** `model-key`, no model Guard and no shop. The same server can hold shops too. (The nightly backups and the restore drill cover shops; an agent's Guards are not in them yet: [Deferred.md](Deferred.md).)
 
 In WhatsApp's settings, send the shop's webhooks to `https://shops.example.com/c/my-agent/webhooks/whatsapp`. Geometer's inbox checks each one, keeps the owner's replies to approval requests, and passes the whole webhook on to your agent as it came, signature included, if you gave `--forward-whatsapp-to https://your-agent.example.com/whatsapp`. Your agent keeps taking its own Razorpay webhooks.
 
@@ -167,7 +169,7 @@ In WhatsApp's settings, send the shop's webhooks to `https://shops.example.com/c
 |---|---|
 | The limits | Made from the settings by the templates' own code. The deploy is refused, naming the rule, unless every limit it can test is proven on the Guard (`geometer agent check`). |
 | The owner's approvals | A refund above the limit waits on WhatsApp for the owner's one-use code (the approvals relay, the same one). |
-| The record | Built from what the Guards decided (allowed, held, refused, and the answer the service gave) and what the services themselves hold (the payment, the refund, the calendar event). Never from what the agent says. `geometer agent record my-agent`; the deployer does it every quarter of an hour. |
+| The record | Built from what the Guards decided (allowed, held, refused, and the answer the service gave) and what the services themselves hold (the payment, the refund, the calendar event). Never from what the agent says. `geometer agent record my-agent`; the deployer does it every five minutes, and says so if Guard's list of its 500 most recent calls ever ran ahead of it. |
 | The report | `geometer agent report my-agent --month 2026-11 --out ./report` writes the monthly report and certificate the templates' do, from that record. |
 | Alerts | The heartbeat carries the agent's Guards (up, ready, killed, held calls, calls decided, counts only), so Geometer's alerts from outside work; the relay tells you when a request to the owner could not be made. |
 | Stop | `geometer stop my-agent` is the Guard kill switch: nothing new goes out. |
