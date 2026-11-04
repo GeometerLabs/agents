@@ -88,6 +88,9 @@ export function serverPaths(dir: string) {
     secretsInbox: join(root, "secrets-inbox"),
     inbox: (name: string) => join(root, "secrets-inbox", name),
     status: join(root, "status"),
+    /** Fleet's answers, written by ops (the one folder it can write); the deployer and the panel read them. */
+    fleet: join(root, "fleet"),
+    fleetAnswer: (name: string) => join(root, "fleet", `${name}.json`),
     requests: join(root, "requests"),
     stopRequest: (name: string) => join(root, "requests", `${name}.stop.json`),
     exports: join(root, "exports"),

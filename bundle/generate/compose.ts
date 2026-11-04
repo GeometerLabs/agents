@@ -39,6 +39,8 @@ export const REFRESHER_PORT = 8791;
 export const PANEL_PORT = 8790;
 /** Where the ops container sees the deployer's status files (read-only): it reads the backup times from them for the heartbeat. */
 export const OPS_STATUS_DIR = "/server/status";
+/** The one folder ops can WRITE: fleet's answer for each shop (<shop>.json) and the usage baseline. The deployer and the panel read it. */
+export const OPS_FLEET_DIR = "/server/fleet";
 export const HEALTH_PORT = 8081;
 /** A shop's three Guards, in the order that fixes each one's address on the admin network (the shop's door is the fourth). */
 export const SHOP_GUARD_KINDS: readonly Exclude<GuardKind, "model">[] = ["razorpay", "whatsapp", "calendar"];
@@ -62,6 +64,8 @@ export interface Dirs {
   generated: string;
   secrets: string;
   status: string;
+  /** Fleet's answers (<server>/fleet): written by ops, read by the deployer (button mode) and the panel (plan, badge, warnings). */
+  fleet: string;
   shops: string;
   secretsInbox: string;
   requests: string;
@@ -142,7 +146,7 @@ export interface PanelOptions {
   run?: boolean;
 }
 
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean; panel?: PanelOptions }): Composed {
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean; panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string }): Composed {
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
   const net = addressing(server);
   const services: Composed["services"] = {};
@@ -217,7 +221,9 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   }), [`${dirs.generated}/refresher/refresher.json`]);
   add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
     environment: { CONFIG: "/etc/geometer/ops.json" },
-    volumes: [appVolume, `${dirs.generated}/ops:/etc/geometer:ro`, `${secretDir("ops")}:/run/secrets:ro`, `${dirs.status}:${OPS_STATUS_DIR}:ro`],
+    // ops writes only the fleet folder, as the user who runs the deployer (like the panel), so the deployer and the panel can read what it writes
+    volumes: [appVolume, `${dirs.generated}/ops:/etc/geometer:ro`, `${secretDir("ops")}:/run/secrets:ro`, `${dirs.status}:${OPS_STATUS_DIR}:ro`, `${dirs.fleet}:${OPS_FLEET_DIR}`],
+    ...(features.opsUser ? { user: features.opsUser } : {}),
     networks: { admin: {}, egress: {} },
   }), [`${dirs.generated}/ops/ops.json`]);
   if (features.backup) {
@@ -241,7 +247,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
         PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl}/c/{shop}/webhooks/{kind}`,
         ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
       },
-      volumes: [appVolume, `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],
+      volumes: [appVolume, `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.fleet}:/server/fleet:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],
       networks: { front: {}, panel: {} },
       healthcheck: healthWget(PANEL_PORT, "/healthz"),
     });

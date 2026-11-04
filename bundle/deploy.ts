@@ -53,7 +53,7 @@ export const composeFile = (dir: string) => join(serverPaths(dir).generated, "co
 
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
-  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config };
+  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config };
 }
 
 /** `docker compose` on this server's generated file. */
@@ -249,7 +249,11 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const [accessKeyId, ...secret] = (readSecretFile(secretFile(ctx.dir, "backup", "stream")) ?? ":").split(":");
     writeSecretFile(secretFile(ctx.dir, "litestream", "litestream.yml"), litestreamConfig(server.backup, shops.map((s) => s.name), { accessKeyId, secretAccessKey: secret.join(":") }));
   }
-  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}) });
+  // the folder ops writes fleet's answers into: made for the user ops runs as (the one who runs the deployer, like the panel), so both can read and write it
+  ensureDir(p.fleet);
+  const opsUser = panelUser();
+  if (process.getuid?.() === 0) chownSync(p.fleet, opsUser.uid, opsUser.gid);
+  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup, opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;
