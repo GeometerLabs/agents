@@ -54,6 +54,28 @@ export interface DecisionConfig {
 /** The shop's monthly AI allowance for steps 1 and 2. Either one reached puts the shop in button mode until the month ends. */
 export interface AllowanceConfig { messages?: number; costInr?: number }
 
+/**
+ * The monthly report to the owner on WhatsApp (report/monthly-job.ts). The block is what switches it on: without it nothing is made and nothing is sent, so a pathway that
+ * learns to send it never starts messaging owners by itself. Both `preparedBy` and `pageBaseUrl` are needed, because the message names who set the agent up and gives the
+ * address of the full page. Every path is measured from the client folder.
+ */
+export interface ReportConfig {
+  /** Who set the agent up, as the owner should read it ("Divya, local partner"). Read again when it changes, like `ai`. */
+  preparedBy: string;
+  /** Whether this builder or partner has the Innovator badge (fleet's answer for the shop). Read again when it changes. Default false. */
+  innovator?: boolean;
+  /** Where the full page is served from: https, no trailing slash. The runtime writes each month's page into `pagesDir/<random name>/`; whatever serves that folder read-only, with no folder listing, is at this address. */
+  pageBaseUrl: string;
+  /** Default `<dataDir>/reports`. */
+  pagesDir: string;
+  /** What the numbers were counted from. Default: "stand-in" in fakes mode, "test-mode" in live mode (say "live" only when real money moves). */
+  source?: "live" | "test-mode";
+  /** The Ed25519 private key (PEM) that signs the report and its certificate. Left out, they are not signed and say so. */
+  signingKeyFile?: string;
+  /** A go-live certificate (go-live-certificate.json) for the report to read. Left out, the report says none was given. */
+  goLiveFile?: string;
+}
+
 export interface RuntimeConfig {
   mode: "fakes" | "live";
   host: string;
@@ -68,6 +90,7 @@ export interface RuntimeConfig {
   allowance?: AllowanceConfig;
   /** Minutes of button mode after a model step fails. Default 5. */
   pauseMinutes?: number;
+  report?: ReportConfig;
 }
 
 export interface ClientFolder {
@@ -176,11 +199,40 @@ function readAllowance(raw: unknown, errors: string[]): AllowanceConfig | undefi
   return { ...(raw.messages !== undefined ? { messages: raw.messages as number } : {}), ...(raw.costInr !== undefined ? { costInr: raw.costInr as number } : {}) };
 }
 
+const REPORT_KEYS = ["preparedBy", "innovator", "pageBaseUrl", "pagesDir", "source", "signingKeyFile", "goLiveFile"];
+const NAME_LIMIT = 120;
+
+/** What the owner is shown as the name of who set the agent up: some text, one line, not very long. */
+export const validName = (v: unknown): v is string => isText(v) && v.length <= NAME_LIMIT && !/[\n\r\t]/u.test(v);
+
+/** `report`: the monthly report to the owner. */
+function readReport(raw: unknown, folder: string, dataDir: string, errors: string[]): ReportConfig | undefined {
+  if (!isObj(raw)) { errors.push('"report" must be an object like {"preparedBy": "Divya, local partner", "pageBaseUrl": "https://reports.example.com/r"}. Leave it out and no monthly report is sent to the owner.'); return undefined; }
+  const before = errors.length;
+  unknownKeys(raw, REPORT_KEYS, "report", errors);
+  if (!validName(raw.preparedBy)) errors.push(`report.preparedBy must be the name the owner should read for who set the agent up, on one line, up to ${NAME_LIMIT} characters. The monthly message says it.`);
+  if (raw.innovator !== undefined && typeof raw.innovator !== "boolean") errors.push("report.innovator must be true or false.");
+  let url: URL | undefined;
+  try { url = isText(raw.pageBaseUrl) ? new URL(raw.pageBaseUrl) : undefined; } catch { url = undefined; }
+  if (!url || url.protocol !== "https:") errors.push("report.pageBaseUrl must be the https address the report pages are served from, like https://reports.example.com/r. WhatsApp fetches and shows a link only if it is https.");
+  else if (url.username || url.password || url.search || url.hash) errors.push("report.pageBaseUrl must not hold a user name, a password, a query or a #fragment.");
+  else if ((raw.pageBaseUrl as string).endsWith("/")) errors.push("report.pageBaseUrl must not end with a slash.");
+  if (raw.source !== undefined && raw.source !== "live" && raw.source !== "test-mode") errors.push('report.source must be "live" or "test-mode". Left out, it is test-mode (a report that says test money when it was real is a smaller mistake than the other way round).');
+  for (const key of ["pagesDir", "signingKeyFile", "goLiveFile"]) if (raw[key] !== undefined && !isText(raw[key])) errors.push(`report.${key} must be a path.`);
+  if (errors.length > before) return undefined;
+  const at = (p: string) => (isAbsolute(p) ? p : resolve(folder, p));
+  return {
+    preparedBy: (raw.preparedBy as string).trim(), pageBaseUrl: raw.pageBaseUrl as string, pagesDir: raw.pagesDir !== undefined ? at(raw.pagesDir as string) : join(dataDir, "reports"),
+    ...(raw.innovator !== undefined ? { innovator: raw.innovator as boolean } : {}), ...(raw.source !== undefined ? { source: raw.source as "live" | "test-mode" } : {}),
+    ...(raw.signingKeyFile !== undefined ? { signingKeyFile: at(raw.signingKeyFile as string) } : {}), ...(raw.goLiveFile !== undefined ? { goLiveFile: at(raw.goLiveFile as string) } : {}),
+  };
+}
+
 /** Check runtime.json's contents. `folder` is what a relative dataDir is measured from. */
 export function validateRuntimeConfig(input: unknown, folder: string): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "allowance", "pauseMinutes"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "allowance", "pauseMinutes", "report"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -213,9 +265,11 @@ export function validateRuntimeConfig(input: unknown, folder: string): { ok: tru
   const allowance = input.allowance !== undefined ? readAllowance(input.allowance, errors) : undefined;
   if (input.pauseMinutes !== undefined && (!Number.isInteger(input.pauseMinutes) || (input.pauseMinutes as number) < 1 || (input.pauseMinutes as number) > 1440)) errors.push('"pauseMinutes" must be a whole number of minutes from 1 to 1440: how long the agent uses buttons after a model step fails. Default 5.');
 
+  const report = input.report !== undefined && isText(dataDir) ? readReport(input.report, folder, isAbsolute(dataDir) ? dataDir : resolve(folder, dataDir), errors) : undefined;
+
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */
@@ -265,6 +319,28 @@ export function aiOverrideReader(folder: string, initial: "auto" | "buttons" = "
       if (modified !== seen) {
         const ai = (JSON.parse(readFileSync(file, "utf8")) as Obj).ai;
         last = ai === "buttons" ? "buttons" : "auto";
+        seen = modified;
+      }
+    } catch { /* keep the last answer */ }
+    return last;
+  };
+}
+
+/**
+ * The report's two live settings, `preparedBy` and `innovator`: read again whenever runtime.json has changed (by its modified time), like the outside switch, so the bundle can
+ * write fleet's answer for the shop while the agent runs and the next report obeys it. A file that cannot be read for a moment, or that holds something unusable, leaves the
+ * last answer standing; a badge is never granted or taken away by a half-written file.
+ */
+export function reportOptionsReader(folder: string, initial: { preparedBy: string; innovator?: boolean }): () => { preparedBy: string; innovator: boolean } {
+  const file = join(resolve(folder), "runtime.json");
+  let last = { preparedBy: initial.preparedBy, innovator: initial.innovator === true };
+  let seen = -1;
+  return () => {
+    try {
+      const modified = statSync(file).mtimeMs;
+      if (modified !== seen) {
+        const report = (JSON.parse(readFileSync(file, "utf8")) as Obj).report;
+        if (isObj(report)) last = { preparedBy: validName(report.preparedBy) ? report.preparedBy.trim() : last.preparedBy, innovator: typeof report.innovator === "boolean" ? report.innovator : last.innovator };
         seen = modified;
       }
     } catch { /* keep the last answer */ }

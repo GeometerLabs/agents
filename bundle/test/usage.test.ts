@@ -15,6 +15,10 @@ import { FIELDS, isCustomerMessage, summarizeUsage, understandingOf, usageRatesF
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 import { createWorld } from "../../pathways/bookings/src/harness.ts";
 import { parseIntent } from "../../pathways/bookings/src/adapters/rule-parser.ts";
+import { createMonthlyReport } from "../../pathways/bookings/report/monthly-job.ts";
+import { REPORT_TEMPLATE_NAMES } from "../../pathways/bookings/report/whatsapp.ts";
+import { LANGUAGES } from "../../pathways/bookings/src/settings.ts";
+import { zonedToMs } from "../../pathways/bookings/src/time.ts";
 import { world } from "./world.ts";
 
 const RATES = usageRatesFrom([latestProposedPriceList()!, latestPriceList()]);
@@ -150,4 +154,26 @@ test("the pathway's own record is what the meter reads: a rules message, a decis
   const plain = createWorld();
   await plain.say("hello");
   assert.deepEqual(summarizeUsage(plain.record.entries(), RATES).byStep, { rules: 1, decision: 0, model: 0 }, "a rules-only agent's messages are rules messages");
+});
+
+test("the monthly report to the owner (B54) is counted as one utility message, from the entries the job really writes: the claim costs nothing, the ending is utility", async () => {
+  const w = createWorld();
+  for (const name of REPORT_TEMPLATE_NAMES) for (const language of LANGUAGES) w.messaging.approve(name, language);
+  await w.say("haircut tomorrow at 6pm");
+  w.payments.customerPays(w.linkFor("b-1")!.id);
+  await w.deliverPaymentEvents();
+  const before = w.record.entries().length;
+  const dir = mkdtempSync(join(tmpdir(), "geo-usage-report-"));
+  try {
+    w.clock.set(zonedToMs({ year: 2026, month: 12, day: 1 }, { hour: 9, minute: 30 }, w.settings.timezone));
+    const job = createMonthlyReport({ source: "live", pages: { dir, baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local partner", innovator: false }) });
+    await job.run({ settings: w.settings, clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, save: () => undefined });
+    const written = w.record.entries().slice(before);
+    assert.deepEqual(written.map((e) => [e.action, e.outcome, e.refs.to, e.refs.report]), [["send_message", "attempted", "owner", "2026-11"], ["send_message", "confirmed", "owner", "2026-11"]]);
+    assert.deepEqual(written.map(whatsappTypeOf), [undefined, "utility"]);
+    const was = summarizeUsage(w.record.entries().slice(0, before), RATES).whatsapp;
+    const now = summarizeUsage(w.record.entries(), RATES).whatsapp;
+    assert.deepEqual([now.utility - was.utility, now.service - was.service, now.marketing - was.marketing], [1, 0, 0]);
+    assert.ok(now.estMicroInr > was.estMicroInr, "and the estimate counts it");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
