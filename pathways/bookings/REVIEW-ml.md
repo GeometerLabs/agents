@@ -244,6 +244,7 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `monthlyReport` | പ്രതിമാസ റിപ്പോർട്ട് | Monthly report |  |
 | `goLiveCertificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
 | `monthlyCertificate` | പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ് | Monthly record certificate |  |
+| `innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
 | `languageName.hi` | ഹിന്ദി | Hindi |  |
 | `languageName.en` | ഇംഗ്ലീഷ് | English |  |
 | `languageName.ml` | മലയാളം | Malayalam |  |
@@ -703,3 +704,4 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
+

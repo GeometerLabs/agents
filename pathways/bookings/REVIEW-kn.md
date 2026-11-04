@@ -244,6 +244,7 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `monthlyReport` | ಮಾಸಿಕ ವರದಿ | Monthly report |  |
 | `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
 | `monthlyCertificate` | ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ | Monthly record certificate |  |
+| `innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |
 | `languageName.hi` | ಹಿಂದಿ | Hindi |  |
 | `languageName.en` | ಇಂಗ್ಲಿಷ್ | English |  |
 | `languageName.ml` | ಮಲಯಾಳಂ | Malayalam |  |
@@ -703,3 +704,4 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
 | `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
 | `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
+
