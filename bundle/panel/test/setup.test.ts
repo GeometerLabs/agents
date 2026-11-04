@@ -47,10 +47,13 @@ test("five steps write the client folder a builder would: valid settings, the ru
     const client = loadClient(withGuards);
     assert.equal(client.settings.name, "Hosahalli Beauty");
     // The shop belongs to Divya for good: saving again as someone else does not change who set it up.
+    // and an edit does not move the shop to another version: `geometer update` holds a shop back on its pin, and only it moves one
+    writeFileSync(join(folder, "pathway.lock"), "bookings@0.0.9\n");
     const arjun = await b.account("arjun", "builder");
     const edit = await arjun.post(`/shops/${f.shop}/edit`, {}, `/shops/${f.shop}`);
     await arjun.post(`/setup/${edit.location!.split("/")[2]}/save`, {}, `/setup/${edit.location!.split("/")[2]}/5`);
     assert.equal(JSON.parse(readFileSync(join(folder, "owner.json"), "utf8")).accountName, "DIVYA");
+    assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "bookings@0.0.9");
   } finally { await b.close(); }
 });
 
