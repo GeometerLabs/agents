@@ -216,7 +216,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
         g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined);
     }
   }
-  guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
+  // the model Guard serves the shops' runtimes; a server that holds only agents someone else wrote has no use for it
+  if (shops.length > 0) guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;
