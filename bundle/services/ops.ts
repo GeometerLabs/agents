@@ -15,7 +15,9 @@ import type { UsageTotals } from "../lib/usage.ts";
 import { buildHeartbeat, sendHeartbeat } from "./heartbeat.ts";
 import type { AdminStatus, BackupFacts, Baseline, GuardObservation, RuntimeStatus, ShopObservation } from "./heartbeat.ts";
 
-export interface OpsGuard { id: string; service: string; adminUrl: string; healthUrl: string; adminTokenFile: string }
+export interface OpsGuard { id: string; service: string; adminUrl: string; healthUrl: string; adminTokenFile: string; /** The Guard's agent port (an agent someone else wrote: where the reading agent looks at the service's state). */ agentUrl?: string }
+/** An agent someone else wrote: its Guards, and nothing the bundle runs (no runtime). */
+export interface OpsOwnAgent { createdAt: string; recordTokenFile: string; ownerWhatsapp: string; calendarId?: string; guards: OpsGuard[] }
 export interface OpsConfig {
   deploymentId: string;
   bundleVersion: string;
@@ -25,6 +27,7 @@ export interface OpsConfig {
   fleetDir?: string;
   shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }>;
   model: OpsGuard;
+  ownAgents?: Record<string, OpsOwnAgent>;
 }
 
 const readSecret = (path: string): string => (existsSync(path) ? readFileSync(path, "utf8").trim() : "");
@@ -101,17 +104,33 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
   return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}), ...(usage ? { usage } : {}) };
 }
 
-/** Stop or start a shop: nothing new goes out. The reason says who and when; Guard writes it, with its own admin id, into its evidence. */
+type WithCounts = AdminStatus & { counts?: { decisions?: number } };
+
+/**
+ * An agent someone else wrote, seen the way the heartbeat sees a shop. It has no runtime, so "up" and "ready" are about the part Geometer runs, its Guards: up when every one answers,
+ * ready when every one is ready (the fleet alert that says "runtime" then means those Guards). `steps` is the calls its Guards have decided on, from each Guard's own count, so it only
+ * grows; nothing is said about what a call was (counts only). `errors` is 0: Guard's status does not carry the provider's failures as a count (see Deferred.md).
+ */
+export async function observeAgent(c: OpsOwnAgent, version: string, id: string, fetchFn: typeof fetch = fetch): Promise<ShopObservation> {
+  const guards = await Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn)));
+  const up = guards.every((g) => g.admin !== null);
+  const ready = up && guards.every((g) => g.healthReady && g.admin?.tripwires?.ok !== false);
+  const steps = guards.reduce((n, g) => n + ((g.admin as WithCounts | null)?.counts?.decisions ?? 0), 0);
+  return { id, pathway: "own-agent", pathwayVersion: version, up, ready, status: { steps, errors: 0, startedAt: c.createdAt, tasks: { pending: 0, failed: 0 }, bookings: {} }, guards };
+}
+
+/** Stop or start a shop (or an agent someone else wrote): nothing new goes out. The reason says who and when; Guard writes it, with its own admin id, into its evidence. */
 export async function stopShop(config: OpsConfig, shop: string, on: boolean, by: string, reason: string, fetchFn: typeof fetch = fetch) {
-  const c = config.shops[shop];
+  const own = config.ownAgents?.[shop];
+  const c = config.shops[shop] ?? (own ? { guards: own.guards } : undefined);
   if (!c) throw new Error(`no shop ${shop} on this server`);
   // by "-" the reason is used as it is: the deployer re-applying a stop that was already worded must not wrap it in a second "stopped by"
   const why = by === "-" ? reason : on ? `stopped by ${by} at ${new Date().toISOString()}${reason ? `: ${reason}` : ""}` : `released by ${by} at ${new Date().toISOString()}`;
   const results = await Promise.all([
     // the shop's OWN Guards only: the model Guard is listed under every shop for the heartbeat, and its kill switch would stop every shop
     ...c.guards.filter((g) => g.id !== "guard-model").map(async (g) => ({ guard: g.service, ...(await adminCall(g, "POST", "/admin/kill", { on, reason: why }, fetchFn)) })),
-    // The model Guard is shared, so only this shop's agent is stopped there: the other shops keep working.
-    adminCall(config.model, "POST", `/admin/agents/runtime-${shop}/stop`, { on, reason: why }, fetchFn).then((r) => ({ guard: config.model.service, ...r })),
+    // The model Guard is shared, so only this shop's agent is stopped there: the other shops keep working. (An agent someone else wrote does not use the model.)
+    ...(own ? [] : [adminCall(config.model, "POST", `/admin/agents/runtime-${shop}/stop`, { on, reason: why }, fetchFn).then((r) => ({ guard: config.model.service, ...r }))]),
   ]);
   return { shop, on, reason: why, results: results.map((r) => ({ guard: r.guard, status: r.status })) };
 }
@@ -119,7 +138,7 @@ export async function stopShop(config: OpsConfig, shop: string, on: boolean, by:
 async function main(argv: string[], config: OpsConfig): Promise<number> {
   const [command, ...args] = argv;
   const out = (v: unknown) => console.log(JSON.stringify(v));
-  const guardByService = (service: string): OpsGuard | undefined => [config.model, ...Object.values(config.shops).flatMap((s) => s.guards)].find((g) => g.service === service);
+  const guardByService = (service: string): OpsGuard | undefined => [config.model, ...Object.values(config.shops).flatMap((s) => s.guards), ...Object.values(config.ownAgents ?? {}).flatMap((a) => a.guards)].find((g) => g.service === service);
   if (command === "admin") {
     const g = guardByService(args[0]);
     if (!g) { console.error(`no Guard called ${args[0]}`); return 2; }
@@ -127,13 +146,29 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     return 0;
   }
   if (command === "observe") {
-    out({ shops: await Promise.all(Object.entries(config.shops).map(([id, c]) => observeShop(id, c))), model: await observeGuard(config.model, false) });
+    out({
+      shops: await Promise.all(Object.entries(config.shops).map(([id, c]) => observeShop(id, c))), model: await observeGuard(config.model, false),
+      ...(config.ownAgents ? { agents: await Promise.all(Object.entries(config.ownAgents).map(([id, c]) => observeAgent(c, config.bundleVersion, id))) } : {}),
+    });
+    return 0;
+  }
+  if (command === "agent-facts") {
+    // what an agent someone else wrote did, as its Guards and the services say it (agent/facts.ts); the deployer folds it into the record
+    const c = config.ownAgents?.[args[0]];
+    if (!c) { console.error(`no agent ${args[0]}`); return 2; }
+    const { collectFacts } = await import("../agent/facts.ts");
+    let skip: { settled: string[]; paid: string[] } | undefined;
+    try { skip = args[1] ? JSON.parse(args[1]) : undefined; } catch { /* ask about everything */ }
+    out(await collectFacts({
+      agentId: `agent-${args[0]}`, relayId: `relay-${args[0]}`, recordToken: readSecret(c.recordTokenFile), ...(c.calendarId ? { calendarId: c.calendarId } : {}),
+      guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, "") as "razorpay", adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
+    }, new Date(), fetch, skip));
     return 0;
   }
   if (command === "stop") { out(await stopShop(config, args[0], args[1] !== "off", args[2] ?? "someone", args.slice(3).join(" "))); return 0; }
   if (command === "issue-approver") {
-    const c = config.shops[args[0]];
-    if (!c) { console.error(`no shop ${args[0]}`); return 2; }
+    const c = config.shops[args[0]] ?? config.ownAgents?.[args[0]];
+    if (!c) { console.error(`no shop or agent ${args[0]}`); return 2; }
     const g = c.guards.find((x) => x.id === "guard-razorpay")!;
     const r = await adminCall(g, "POST", "/admin/approvers", { id: `relay-${args[0]}`, roles: ["shop-owner"], ttl_seconds: Number(args[1] ?? 604_800), note: "the approvals relay's reading credential" });
     const token = (r.body as { token?: string }).token;
@@ -142,7 +177,7 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     return 0;
   }
   if (command === "run") return await run(config);
-  console.error("usage: ops.ts run | admin <guard> <METHOD> <path> [json] | observe | stop <shop> <on|off> <by> <reason> | issue-approver <shop> <ttl>");
+  console.error("usage: ops.ts run | admin <guard> <METHOD> <path> [json] | observe | stop <shop> <on|off> <by> <reason> | issue-approver <shop> <ttl> | agent-facts <agent> [skip json]");
   return 2;
 }
 
@@ -154,7 +189,11 @@ export interface HeartbeatState { baseline: Baseline; usageBaseline: UsageBaseli
  * baseline on disk. A refused or unreachable fleet changes nothing, so a missed minute is counted in the next one, once.
  */
 export async function heartbeatTick(config: OpsConfig, key: string, state: HeartbeatState, fetchFn: typeof fetch = fetch, now: Date = new Date()): Promise<{ accepted: boolean }> {
-  const shops = await Promise.all(Object.entries(config.shops).map(([id, c]) => observeShop(id, c, fetchFn)));
+  const shops = [
+    ...await Promise.all(Object.entries(config.shops).map(([id, c]) => observeShop(id, c, fetchFn))),
+    // agents someone else wrote are one more entry each in the same heartbeat, with their Guards' counts (they carry no cost-meter counts: their record is not a template's)
+    ...await Promise.all(Object.entries(config.ownAgents ?? {}).map(([id, c]) => observeAgent(c, config.bundleVersion, id, fetchFn))),
+  ];
   for (const s of shops) if (s.status) state.lastKnown[s.id] = s.status;
   const { body, next, nextUsage } = buildHeartbeat({ deploymentId: config.deploymentId, bundleVersion: config.bundleVersion, now, shops, baseline: state.baseline, lastKnown: state.lastKnown, usageBaseline: state.usageBaseline });
   const r = await sendHeartbeat(config.fleet!.url, key, body, fetchFn);
@@ -164,7 +203,7 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
       try {
         writeUsageBaseline(config.fleetDir, state.usageBaseline, Object.keys(config.shops));
         // fleet's answer, for the shops in it; no answer (an older fleet) leaves each shop's file as it was: keep the last mode, never "normal"
-        if (r.answer) writeAnswerFiles(config.fleetDir, Object.keys(config.shops), r.answer, now);
+        if (r.answer) writeAnswerFiles(config.fleetDir, [...Object.keys(config.shops), ...Object.keys(config.ownAgents ?? {})], r.answer, now);
       } catch (e) { console.error(`could not write ${config.fleetDir}: ${(e as Error).message}`); }
     }
   } else if (r.problem !== state.lastProblem) { state.lastProblem = r.problem ?? ""; console.error(`heartbeat not accepted: ${state.lastProblem}`); }

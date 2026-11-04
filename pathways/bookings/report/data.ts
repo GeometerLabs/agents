@@ -144,6 +144,8 @@ export interface ReportInput {
   preparedBy?: string;
   /** What the go-live certificate the caller was given says (report/go-live.ts). Left out, the report says that no go-live certificate was given. */
   goLive?: GoLiveFinding;
+  /** Which agent the record is of. Left out, the bookings pathway. An agent someone else wrote (deploy bundle, `agent report`) says so here, and the page and the certificate repeat it. */
+  pathway?: { name: string; version: string };
 }
 
 /** What governs how the agent behaves and speaks, without contact details. Two shops with the same policy digest have the same limits and words. */
@@ -303,7 +305,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
 
   return {
     format: "geometer-monthly-report/1",
-    pathway: PATHWAY,
+    pathway: input.pathway ?? PATHWAY,
     source,
     shop: { name: settings.name, timeZone: settings.timezone, languages: [...settings.languages], ownerLanguage: settings.owner.language },
     preparedBy: input.preparedBy ?? null,

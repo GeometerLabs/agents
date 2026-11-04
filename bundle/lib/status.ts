@@ -26,6 +26,8 @@ export interface ShopStatus {
   usage?: UsageTotals & { at: string };
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */
   webhooks?: { razorpay: string; whatsapp: string };
+  /** An agent someone else wrote (no runtime, no pathway): where its own agent calls Guard instead of each service, and where WhatsApp sends the shop's webhooks. The panel ignores it. */
+  own?: { baseUrls: Record<string, string>; whatsappWebhook?: string };
 }
 
 export const emptyStatus = (shop: string, now: Date): ShopStatus => ({ shop, updatedAt: now.toISOString(), deploy: { state: "never" }, backups: { lastCopyAt: null, lastDrillAt: null, drillOk: null } });
