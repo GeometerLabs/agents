@@ -8,7 +8,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import type { RecordEntry } from "../src/record.ts";
+import type { RecordEntry } from "../../../modules/record/record.ts";
 import { eventKey } from "./events.ts";
 import type { IncomingEvent } from "./events.ts";
 

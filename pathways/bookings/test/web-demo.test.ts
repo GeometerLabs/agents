@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { buildWebDemo } from "../scripts/build-web-demo.ts";
 import type { BuildResult } from "../scripts/build-web-demo.ts";
@@ -49,16 +49,19 @@ test("web build: the template's code is the code that runs live, only its types 
   let compared = 0;
   for (const file of builtJs()) {
     const source = file.replace(/\.js$/, ".ts");
-    if (!/^(src|demo)\//.test(file) || file.startsWith("demo/web/")) continue;
-    const original = stripTypeScriptTypes(readFileSync(join(ROOT, source), "utf8"), { mode: "strip" });
+    if (!/^(src|demo|modules)\//.test(file) || file.startsWith("demo/web/")) continue;
+    const sourcePath = join(ROOT, file.startsWith("modules/") ? "../../" : "", source); // the shared modules are two folders up
+    const original = stripTypeScriptTypes(readFileSync(sourcePath, "utf8"), { mode: "strip" });
+    // A relative import of a shared module is written from the output's layout (the template's files keep their place, the modules go under modules/).
+    const outputOf = (target: string) => (relative(join(ROOT, "../.."), target).startsWith("modules/") ? relative(join(ROOT, "../.."), target) : relative(ROOT, target));
     const expected = original
       .replace(/(["'])(node:fs|node:crypto)\1/g, (_all, q: string, spec: string) => `${q}${relative(dirname(file), shim(spec)).replace(/^(?!\.)/, "./")}${q}`)
-      .replace(/(["'])(\.{1,2}\/[^"'\n]+)\.ts\1/g, "$1$2.js$1");
+      .replace(/(["'])(\.{1,2}\/[^"'\n]+)\.ts\1/g, (_all, q: string, spec: string) => `${q}${relative(dirname(file), outputOf(resolve(dirname(sourcePath), spec))).replace(/^(?!\.)/, "./")}.js${q}`);
     assert.equal(readFileSync(join(dist, file), "utf8"), expected, `${file} differs from ${source} by more than its types and import names`);
     compared++;
   }
   assert.ok(compared >= 20, `compared ${compared} files`);
-  for (const must of ["src/agent.js", "src/limits.js", "src/guard-limits.js", "src/record.js", "src/harness.js", "demo/session.js", "demo/view.js", "demo/api.js"]) {
+  for (const must of ["src/agent.js", "src/limits.js", "src/guard-limits.js", "modules/record/record.js", "modules/core/clock.js", "src/harness.js", "demo/session.js", "demo/view.js", "demo/api.js"]) {
     assert.ok(built.files.includes(must), `${must} is in the build`);
   }
 });
@@ -92,15 +95,15 @@ test("web build: the SHA-256 stand-in gives the same fingerprints as Node, so a 
   assert.equal(mine.createHash("sha256").update("ab").update("c").digest("hex"), createHash("sha256").update("abc").digest("hex"), "in pieces");
   assert.throws(() => mine.createHash("md5"), /sha256/);
   // The record uses it for real: the built record's fingerprints are the live record's.
-  const record = await load("src/record.js");
-  const live = await import("../src/record.ts");
+  const record = await load("modules/record/record.js");
+  const live = await import("../../../modules/record/record.ts");
   for (const value of [{ b: 1, a: [1, "₹"] }, "text", null, { nested: { z: 1, y: undefined } }]) assert.equal(record.digest(value), live.digest(value));
   const draws = new Set<number>();
   for (let i = 0; i < 200; i++) draws.add(mine.randomInt(10));
   assert.ok([...draws].every((n) => Number.isInteger(n) && n >= 0 && n < 10) && draws.size > 5, "randomInt gives whole numbers in range");
   assert.ok([...Array(50)].every(() => { const n = mine.randomInt(5, 7); return n === 5 || n === 6; }));
   assert.throws(() => mine.randomInt(0), RangeError);
-  const { newCode, CODE_ALPHABET } = await load("src/approval-code.js");
+  const { newCode, CODE_ALPHABET } = await load("modules/approvals/code.js");
   assert.match(newCode(), new RegExp(`^[${CODE_ALPHABET}]{6}$`));
 });
 
@@ -116,7 +119,7 @@ test("web build: the file-reading stand-in serves the example shop and nothing e
 // ---- a session through the built modules ---------------------------------------------------------------------------------
 
 test("web build: a scripted session in the built modules books a slot with a deposit, then refuses a price below the list", async () => {
-  const { zonedToMs } = await load("src/time.js");
+  const { zonedToMs } = await load("modules/core/time.js");
   const { createLocalDemo } = await load("demo/web/local.js");
   const demo = createLocalDemo({ nowMs: zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, "Asia/Kolkata") }); // Tue 3 Nov, 10:00 in India
   const act = async (path: string, body?: unknown) => {

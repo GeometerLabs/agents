@@ -11,7 +11,7 @@ import type { ReviewLanguage } from "../scripts/review-sheet.ts";
 import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
-import { WORDS } from "../src/language/words.ts";
+import { WORDS } from "../../../modules/language/words.ts";
 
 const WARNING = "Machine-written. Must be reviewed by a native speaker before any real shop sees it.";
 

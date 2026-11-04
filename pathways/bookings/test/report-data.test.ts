@@ -4,9 +4,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { glowSalon } from "../src/harness.ts";
-import { languageOfScript } from "../src/language/format.ts";
-import type { Action, Outcome, RecordEntry, RuleDecision } from "../src/record.ts";
-import { LANGUAGES } from "../src/settings.ts";
+import { languageOfScript } from "../../../modules/language/format.ts";
+import type { Action, Outcome, RecordEntry, RuleDecision } from "../../../modules/record/record.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { buildMonthlyReport, monthRange, policyDigest, RULE_IDS } from "../report/data.ts";
 import type { MonthlyReport } from "../report/data.ts";
 import { at, runBusyMonth } from "../report/example-month.ts";

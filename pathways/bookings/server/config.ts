@@ -4,8 +4,10 @@
 // service keys are never in the runtime at all (Guard holds them).
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
-import { LANGUAGES, validateSettings } from "../src/settings.ts";
-import type { Language, Settings } from "../src/settings.ts";
+import { validateSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Settings } from "../src/settings.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import { DEFAULT_PORT } from "./server.ts";
 import { PATHWAY } from "./runtime.ts";
 

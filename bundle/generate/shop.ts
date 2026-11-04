@@ -1,6 +1,6 @@
 // One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
-import type { LimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
+import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
 import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";

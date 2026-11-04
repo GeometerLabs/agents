@@ -3,8 +3,8 @@
 // Then the real agent runs on top of them. The fakes behind the stand-ins are the witnesses.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../src/adapters/faults.ts";
-import { HOUR } from "../src/time.ts";
+import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../modules/core/faults.ts";
+import { HOUR } from "../../../modules/core/time.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
 import { liveWorld, CUSTOMER, PHONE_NUMBER_ID } from "./helpers/live-world.ts";
 import type { LiveWorld } from "./helpers/live-world.ts";

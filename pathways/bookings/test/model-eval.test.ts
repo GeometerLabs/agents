@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import type { Intent } from "../src/adapters/model.ts";
-import { LANGUAGES } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { compareIntent, costPer1000, percentile, summarise } from "../scripts/eval-score.ts";
 import { loadMessages, pickMessages, runEval } from "../scripts/model-eval.ts";
 import { startStandins } from "../standins/server.ts";

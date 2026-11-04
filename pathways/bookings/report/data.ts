@@ -14,14 +14,15 @@ import { readFileSync } from "node:fs";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../src/settings.ts";
-import type { Language, Settings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Settings } from "../src/settings.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import type { Booking } from "../src/booking.ts";
-import type { Action, Outcome, RecordEntry, RuleId } from "../src/record.ts";
-import { canonicalJson } from "../src/record.ts";
-import { localParts, zonedToMs } from "../src/time.ts";
-import type { LocalDate } from "../src/time.ts";
-import { digestOf } from "./digest.ts";
+import type { Action, Outcome, RecordEntry, RuleId } from "../../../modules/record/record.ts";
+import { canonicalJson } from "../../../modules/record/record.ts";
+import { localParts, zonedToMs } from "../../../modules/core/time.ts";
+import type { LocalDate } from "../../../modules/core/time.ts";
+import { digestOf } from "../../../modules/report/digest.ts";
 
 /** What the numbers were counted from. Always stated, never assumed: a report made from stand-ins must say so. */
 export type Source = "stand-in" | "test-mode" | "live";

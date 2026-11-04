@@ -9,8 +9,8 @@
 // no document may contain (safe, guaranteed, certified, earnings and their translations). A test runs every document in
 // every language through it. The confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are not on it.
 import { STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
-import type { RuleId } from "../src/record.ts";
-import type { Language } from "../src/settings.ts";
+import type { RuleId } from "../../../modules/record/record.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, Source } from "./data.ts";
 
 export interface Strings {

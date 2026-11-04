@@ -15,12 +15,12 @@
 // Run:  node pathways/bookings/approvals/main.ts
 // Secrets are files, never arguments or variables; a trailing newline is dropped. Nothing secret, no code and no phone number is ever logged.
 import { readFileSync } from "node:fs";
-import { createWhatsAppMessaging } from "../src/adapters/live/whatsapp.ts";
-import { systemClock } from "../src/clock.ts";
-import { createGuardClient, createRuntimeClient } from "./clients.ts";
+import { createWhatsAppMessaging } from "../../../modules/messaging/whatsapp.ts";
+import { systemClock } from "../../../modules/core/clock.ts";
+import { createGuardClient, createRuntimeClient } from "../../../modules/approvals/clients.ts";
 import { createRelay } from "./relay.ts";
-import { startRelayServer } from "./server.ts";
-import { openRelayStore } from "./store.ts";
+import { startRelayServer } from "../../../modules/approvals/server.ts";
+import { openRelayStore } from "../../../modules/approvals/store.ts";
 
 const need = (name: string): string => { const v = process.env[name]; if (!v) { console.error(`The approvals relay needs ${name}. See the top of pathways/bookings/approvals/main.ts.`); process.exit(2); } return v; };
 function secret(envName: string, optional = false): string | undefined {

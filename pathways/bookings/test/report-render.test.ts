@@ -4,17 +4,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
-import { MONTH_NAMES, formatInr } from "../src/language/format.ts";
+import { MONTH_NAMES, formatInr } from "../../../modules/language/format.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES, parseSettings } from "../src/settings.ts";
+import { parseSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { buildMonthlyReport, monthRange, NOT_COUNTED, RULE_IDS } from "../report/data.ts";
 import type { MonthlyReport, Source } from "../report/data.ts";
 import { at, runBusyMonth } from "../report/example-month.ts";
 import { reportPage } from "../report/html.ts";
-import { seal } from "../report/sign.ts";
+import { seal } from "../../../modules/report/sign.ts";
 import { BANNED, STRINGS, bannedIn } from "../report/strings.ts";
-import { languagesOf, ownerText, ownerTexts } from "../report/text.ts";
-import type { ReportLanguage } from "../report/text.ts";
+import { ownerText, ownerTexts } from "../report/text.ts";
+import { languagesOf } from "../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../modules/report/text.ts";
 
 const settings = glowSalon();
 const ALL: ReportLanguage[] = [...LANGUAGES, "both"];

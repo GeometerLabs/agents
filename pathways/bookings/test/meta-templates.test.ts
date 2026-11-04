@@ -4,10 +4,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createWorld, glowSalon, CUSTOMER } from "../src/harness.ts";
 import { checkMessage } from "../src/language/check.ts";
-import { META_TEMPLATES, exampleFacts, fillBody, metaBody, metaSubmissions, parametersFor, slotsOf, templateMessage } from "../src/language/meta-templates.ts";
+import { fillBody, metaBody } from "../../../modules/language/meta-templates.ts";
+import { META_TEMPLATES, exampleFacts, metaSubmissions, parametersFor, slotsOf, templateMessage } from "../src/language/meta-templates.ts";
 import { render } from "../src/language/templates.ts";
-import { LANGUAGES } from "../src/settings.ts";
-import type { TemplateMessage } from "../src/adapters/messaging.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { TemplateMessage } from "../../../modules/messaging/messaging.ts";
 
 const settings = glowSalon();
 

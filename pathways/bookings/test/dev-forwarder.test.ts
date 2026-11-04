@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BANNER, configFromEnv, parseEnv, startDevForwarder } from "../standins/dev-forwarder.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
-import { fakeClock } from "../src/clock.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 
 const KEYS = { RAZORPAY_KEY_ID: "rzp_test_abc123", RAZORPAY_KEY_SECRET: "rzp-secret-xyz", GOOGLE_ACCESS_TOKEN: "ya29.google-token", WHATSAPP_ACCESS_TOKEN: "wa-token-777" };

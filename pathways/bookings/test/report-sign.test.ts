@@ -9,12 +9,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glowSalon } from "../src/harness.ts";
-import { canonicalJson } from "../src/record.ts";
+import { canonicalJson } from "../../../modules/record/record.ts";
 import { buildGoLiveCertificate } from "../report/certificate.ts";
-import { digestOf, sha256, verificationCode } from "../report/digest.ts";
-import { PRIVATE_KEY_FILE, PUBLIC_KEY_FILE, assertOutsideRepository, generateKeyFiles, gitRootOf } from "../report/keys.ts";
-import { envelopeFile, keyIdOf, loadPrivateKey, publicKeyHex, seal, trustedKeyId, verifyEnvelopeText } from "../report/sign.ts";
-import type { Envelope } from "../report/sign.ts";
+import { digestOf, sha256, verificationCode } from "../../../modules/report/digest.ts";
+import { PRIVATE_KEY_FILE, PUBLIC_KEY_FILE, assertOutsideRepository, generateKeyFiles, gitRootOf } from "../../../modules/report/keys.ts";
+import { envelopeFile, keyIdOf, loadPrivateKey, publicKeyHex, seal, trustedKeyId, verifyEnvelopeText } from "../../../modules/report/sign.ts";
+import type { Envelope } from "../../../modules/report/sign.ts";
 
 const REPOSITORY = fileURLToPath(new URL("../../..", import.meta.url));
 const SCRIPTS = fileURLToPath(new URL("../scripts/", import.meta.url));

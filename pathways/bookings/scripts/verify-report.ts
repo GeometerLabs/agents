@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { UsageError, main } from "../report/cli.ts";
-import { trustedKeyId, verifyEnvelopeText } from "../report/sign.ts";
+import { trustedKeyId, verifyEnvelopeText } from "../../../modules/report/sign.ts";
 
 await main(async () => {
   let args;

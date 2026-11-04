@@ -1,14 +1,14 @@
 // The live adapters, read against the providers' own sample payloads and a scripted local server (no real service is called).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fakeClock } from "../src/clock.ts";
-import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../src/adapters/faults.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
+import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../modules/core/faults.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
-import { createRazorpayPayments, toPayment, toPaymentLink, toRefund } from "../src/adapters/live/razorpay.ts";
+import { createRazorpayPayments, toPayment, toPaymentLink, toRefund } from "../../../modules/payments/razorpay.ts";
 import { toEvent, toRfc3339 } from "../src/adapters/live/google-calendar.ts";
-import { GRAPH_VERSION, templateBody } from "../src/adapters/live/whatsapp.ts";
-import { checkBaseUrl, joinUrl } from "../src/adapters/live/http.ts";
-import { HOUR } from "../src/time.ts";
+import { GRAPH_VERSION, templateBody } from "../../../modules/messaging/whatsapp.ts";
+import { checkBaseUrl, joinUrl } from "../../../modules/core/http.ts";
+import { HOUR } from "../../../modules/core/time.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 
 const T0 = Date.UTC(2026, 10, 3, 4, 30);

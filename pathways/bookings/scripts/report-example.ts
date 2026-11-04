@@ -14,7 +14,7 @@ import { UsageError, main } from "../report/cli.ts";
 import { runBusyMonth, at } from "../report/example-month.ts";
 import { readGoLiveCertificate } from "../report/go-live.ts";
 import { writeClientReport, writeGoLiveCertificate } from "../report/run.ts";
-import { keyIdOf, publicKeyHex } from "../report/sign.ts";
+import { keyIdOf, publicKeyHex } from "../../../modules/report/sign.ts";
 
 await main(async () => {
   let args;

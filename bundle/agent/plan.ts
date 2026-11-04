@@ -1,8 +1,8 @@
 // One agent we did not write, planned: from its folder to the specs of the Guards that go in front of the services it calls. The specs come from the SAME functions the
 // templates use (generate/guards.ts: razorpaySpec, whatsappSpec, calendarSpec, which for Razorpay is pathways/bookings/src/guard-limits.ts), so the same settings give the
 // same bytes whether a template or an agent of someone else's sits behind them. Pure: no files, no Docker, no clock.
-import type { LimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
-import { rupeesToPaise } from "../../pathways/bookings/src/guard-limits.ts";
+import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
+import { rupeesToPaise } from "../../modules/payments/guard-limits.ts";
 import { calendarSpec, guardDef, razorpaySpec, whatsappSpec } from "../generate/guards.ts";
 import type { GuardKind } from "../generate/guards.ts";
 import { names, upstreamOf } from "../generate/shop.ts";
