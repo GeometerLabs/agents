@@ -12,7 +12,7 @@ import { mkdirSync } from "node:fs";
 export interface ExportJob { shops: { name: string; db: string; out: string }[] }
 export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; error?: string }
 
-const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
+export const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
 
 /** One consistent read of the shop's record and state, written as two files, each by writing a temporary file and renaming it. */
 export function exportShop(shop: ExportJob["shops"][number]): Exported {

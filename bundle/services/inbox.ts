@@ -6,11 +6,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { inboxHandler } from "../../pathways/bookings/inbox/server.ts";
 import type { InboxConfig } from "../../pathways/bookings/inbox/server.ts";
+import { agentInboxHandler } from "../agent/inbox.ts";
 import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";
 
 export interface InboxShopConfig {
-  runtimeUrl: string;
+  /** An agent someone else wrote has no runtime: its WhatsApp webhooks are checked here, the owner's replies kept, and the rest passed on to `forwardTo` (agent/inbox.ts). */
+  kind?: "own-agent";
+  forwardTo?: string;
+  runtimeUrl?: string;
   relayUrl: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
@@ -27,8 +31,15 @@ export function shopHandler(name: string, c: InboxShopConfig, read: (path: strin
     if (!v) throw new Error(`${name}: the secret file ${file} is missing or empty in ${c.secretsDir}.`);
     return v;
   };
+  if (c.kind === "own-agent") {
+    return agentInboxHandler({
+      ownerWhatsapp: c.ownerWhatsapp, phoneNumberId: c.phoneNumberId, verification: c.verification, relayUrl: c.relayUrl, relayToken: need("relay_token"), ...(c.forwardTo ? { forwardTo: c.forwardTo } : {}),
+      ...(c.verification === "meta-signature" ? { appSecret: need("whatsapp_app_secret"), verifyToken: need("whatsapp_verify_token") } : { pathToken: need("whatsapp_path_token") }),
+      log: (line) => log(`[${name}] ${line}`),
+    });
+  }
   const config: InboxConfig = {
-    runtimeUrl: c.runtimeUrl, internalToken: need("internal_token"), razorpayWebhookSecret: need("razorpay_webhook_secret"),
+    runtimeUrl: c.runtimeUrl!, internalToken: need("internal_token"), razorpayWebhookSecret: need("razorpay_webhook_secret"),
     whatsappVerification: c.verification,
     ...(c.verification === "meta-signature" ? { whatsappAppSecret: need("whatsapp_app_secret"), whatsappVerifyToken: need("whatsapp_verify_token") } : { whatsappPathToken: need("whatsapp_path_token") }),
     // Several shops can share one Meta app, and so one app secret: a valid signature does not say whose message it is, the phone number does.
