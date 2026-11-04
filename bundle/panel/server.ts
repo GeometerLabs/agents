@@ -28,8 +28,9 @@ import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { LiveView } from "./contract.ts";
-import { latestPriceList, monthlyCost } from "./cost.ts";
+import { latestPriceList, latestProposedPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
+import { planView } from "./plan.ts";
 import { createGoLive } from "./golive.ts";
 import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
@@ -52,7 +53,8 @@ const DOC_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(html|json|txt)$/u;
 const NOTICES = new Set(["report"]);
 
 export interface RunningPanel { host: string; port: number; url: string; close(): Promise<void> }
-export interface PanelDeps { log?: (line: string) => void; prices?: PriceList }
+/** `proposed`: the newest proposed price list, from which a shop's plan price is shown (labelled proposed). Left out: read from bundle/prices; null: none. */
+export interface PanelDeps { log?: (line: string) => void; prices?: PriceList; proposed?: PriceList | null }
 
 interface Req {
   req: IncomingMessage;
@@ -91,6 +93,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const now = () => (config.now ?? Date.now)();
   const { paths, store, secret } = openStores(config);
   const prices = deps.prices ?? latestPriceList();
+  const proposed = deps.proposed !== undefined ? deps.proposed : (() => { try { return latestProposedPriceList(); } catch { return null; } })();
   const accounts = createAccounts(store, now);
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
@@ -275,10 +278,12 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const month = settings ? monthOf(now(), settings.timezone) : "";
     const report = settings && data ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
+    const plan = planView(shops.fleet(id), proposed);
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
       summary: settings ? summaryOf(c, settings) : undefined,
       cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)),
+      ...(plan ? { plan } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
       ...(counts ? { liveCounts: { bookings: counts.bookings ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },

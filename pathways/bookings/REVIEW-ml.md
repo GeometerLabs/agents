@@ -536,6 +536,23 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.caveats.hosting-not-measured` | ഹോസ്റ്റിംഗ് വിഹിതം ഇതുവരെ അളന്നിട്ടില്ല. | The hosting share has not been measured yet. |  |
 | `cost.caveats.payment-link-fee-conflict` | പേയ്മെന്റ് ലിങ്കുകളുടെ ഫീസിനെക്കുറിച്ച് Razorpay-യുടെ സ്വന്തം പേജുകൾ പരസ്പരം യോജിക്കുന്നില്ല. കൂടുതലുള്ളത് (2%) എടുത്തിരിക്കുന്നു. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
 | `cost.caveats.whatsapp-rate-second-hand` | WhatsApp-ന്റെ രൂപ നിരക്ക് Meta-യുടെ പേജിൽ നിന്നല്ല, ഒരു റീസെല്ലറുടെ പേജിൽ നിന്നാണ്. ആദ്യത്തെ ഇൻവോയ്സിൽ ഇത് നോക്കൂ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
+| `plan.heading` | പ്ലാൻ | Plan |  |
+| `plan.none` | ഈ കടയ്ക്ക് ഇതുവരെ പ്ലാൻ ഒന്നും നിശ്ചയിച്ചിട്ടില്ല. | No plan is set for this shop yet. |  |
+| `plan.names.basic` | ബേസിക് | Basic |  |
+| `plan.names.business` | ബിസിനസ് | Business |  |
+| `plan.names.operations` | ഓപ്പറേഷൻസ് | Operations |  |
+| `plan.is` | ഈ കട Business പ്ലാനിലാണ്. | This shop is on the Business plan. |  |
+| `plan.included` | ഓരോ മാസവും 3000 ഉപഭോക്തൃ സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | 3000 customer messages a month are included. |  |
+| `plan.price` | നിർദ്ദേശിച്ച വില: മാസം ₹299, GST ഒഴികെ. | Proposed price: ₹299 a month, before GST. |  |
+| `plan.priceInnovator` | നിർദ്ദേശിച്ച വില: മാസം ₹299, ഇന്നൊവേറ്റർ ഇളവോടെ ₹179, GST ഒഴികെ. | Proposed price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
+| `plan.proposedNote` | വിലകൾ നിർദ്ദേശിച്ചതാണ്, അന്തിമമല്ല. | Prices are proposed and not final. |  |
+| `plan.innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
+| `plan.buttons` | ഈ കടയ്ക്ക് AI നിർത്തിവച്ചിരിക്കുന്നു. ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ബട്ടൺ മെനു ലഭിക്കും. | AI is paused for this shop. Customers get button menus instead. |  |
+| `plan.buttonsWhy.overage_unfunded` | ഈ കട പ്ലാനിൽ ഉൾപ്പെട്ടതിലും കൂടുതൽ സന്ദേശങ്ങൾ ഉപയോഗിച്ചു, റീചാർജ് ബാലൻസ് ഇനി മതിയാകില്ല. AI വീണ്ടും ഓണാക്കാൻ റീചാർജ് ചെയ്യുക. | This shop has used more messages than its plan includes, and the recharge balance cannot cover more. Recharge to turn AI back on. |  |
+| `plan.buttonsWhy.other` | ഈ കടയ്ക്ക് ബട്ടൺ മെനു വേണമെന്ന് Geometer ആവശ്യപ്പെട്ടു. | Geometer asked for button menus for this shop. |  |
+| `plan.warn.allowance_80` | ഈ മാസത്തെ ഉൾപ്പെട്ട സന്ദേശങ്ങളിൽ 80% ഉപയോഗിച്ചു. | 80% of this month's included messages are used. |  |
+| `plan.warn.balance_80` | റീചാർജ് ബാലൻസിന്റെ 80% ഉപയോഗിച്ചു. തീരുന്നതിന് മുമ്പ് റീചാർജ് ചെയ്യുക. | 80% of the recharge balance is used. Recharge before it runs out. |  |
+| `plan.warn.whatsapp_unsettled` | WhatsApp-ന്റെ ചില ചെലവുകൾ ബാലൻസിൽ നിന്ന് ഇതുവരെ അടച്ചിട്ടില്ല. അവ തീർക്കാൻ റീചാർജ് ചെയ്യുക. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
@@ -686,4 +703,3 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
-

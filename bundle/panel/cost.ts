@@ -18,7 +18,10 @@ export interface Rate {
   currency?: Currency;
   /** Whole micro-units of `currency` (1,000,000 = one rupee, dollar or euro) for `per`. */
   micro?: number;
+  /** A share, in basis points (10,000 = 100%). */
   basisPoints?: number;
+  /** A plain whole number (messages a month, shops, places): the one form that is neither money nor a share. */
+  count?: number;
   per: string;
   freePerMonth?: number;
   quality: Quality;
@@ -27,7 +30,9 @@ export interface Rate {
   note: string;
 }
 export interface Exchange { paisePerUnit: number; quality: Quality; source: string; read: string; note: string }
-export interface PriceList { date: string; file: string; sha256: string; rates: Record<string, Rate>; exchange: Partial<Record<Currency, Exchange>> }
+/** "in-force" is what a list without a status means. A "proposed" list waits for the owner's yes: the running-cost line never uses it (latestPriceList), and the panel only shows its plans, labelled proposed. */
+export type ListStatus = "in-force" | "proposed";
+export interface PriceList { date: string; file: string; sha256: string; status: ListStatus; /** Where the proposal is written (a docs/ path or an https address). Only on a proposed list. */ proposal?: string; rates: Record<string, Rate>; exchange: Partial<Record<Currency, Exchange>> }
 
 export const PRICES_DIR = new URL("../prices/", import.meta.url);
 
@@ -54,23 +59,43 @@ export function loadPriceList(file: string): PriceList {
     if (typeof r.note !== "string" || r.note.trim() === "") problems.push(`${id} needs a note`);
     if (exchange) { if (!isWhole(r.paisePerUnit) || r.paisePerUnit === 0) problems.push(`${id} needs paisePerUnit, a whole number above zero`); return; }
     const money = r.currency !== undefined || r.micro !== undefined;
-    if (money === (r.basisPoints !== undefined)) problems.push(`${id} must have either a currency and micro amount or basisPoints, not both and not neither`);
+    if ([money, r.basisPoints !== undefined, r.count !== undefined].filter(Boolean).length !== 1) problems.push(`${id} must have exactly one of: a currency and micro amount, basisPoints, or count`);
     if (money && (!["INR", "USD", "EUR"].includes(r.currency as string) || !isWhole(r.micro))) problems.push(`${id} needs a currency (INR, USD or EUR) and a whole micro amount`);
     if (r.basisPoints !== undefined && !isWhole(r.basisPoints)) problems.push(`${id} needs basisPoints as a whole number`);
+    if (r.count !== undefined && !isWhole(r.count)) problems.push(`${id} needs count as a whole number`);
     if (typeof r.per !== "string") problems.push(`${id} must say what it is per`);
   };
   for (const [id, r] of Object.entries(rates)) checkOne(id, r, false);
   const exchange = isObj(raw.exchange) ? raw.exchange : {};
   for (const [id, r] of Object.entries(exchange)) checkOne(`exchange.${id}`, r, true);
+  if (raw.status !== undefined && raw.status !== "in-force" && raw.status !== "proposed") problems.push('its status must be "in-force" or "proposed" (leave it out for in-force)');
+  if (raw.status === "proposed" && !goodSource(raw.proposal)) problems.push("a proposed list must say where the proposal is written (proposal: an https address, or a docs/ path)");
+  if (raw.status !== "proposed" && raw.proposal !== undefined) problems.push("only a proposed list has a proposal");
   if (problems.length > 0) throw new Error(`The price list ${basename(file)} needs fixing:\n- ${problems.join("\n- ")}`);
-  return { date: raw.date as string, file, sha256: createHash("sha256").update(text).digest("hex"), rates: rates as Record<string, Rate>, exchange: exchange as PriceList["exchange"] };
+  const status: ListStatus = raw.status === "proposed" ? "proposed" : "in-force";
+  return { date: raw.date as string, file, sha256: createHash("sha256").update(text).digest("hex"), status, ...(status === "proposed" ? { proposal: raw.proposal as string } : {}), rates: rates as Record<string, Rate>, exchange: exchange as PriceList["exchange"] };
 }
 
-/** The newest price list in a folder (the file names are dates). */
+const listFiles = (dir: string): string[] => readdirSync(dir).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f)).sort();
+
+/** The newest price list in a folder (the file names are dates) that is NOT proposed. A proposal never prices a shop's running costs until the owner says yes, so decision 13's flat fee stays live. */
 export function latestPriceList(dir: string = PRICES_DIR.pathname): PriceList {
-  const files = readdirSync(dir).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f)).sort();
+  const files = listFiles(dir);
   if (files.length === 0) throw new Error(`There is no price list in ${dir}. Cost lines cannot be worked out without one.`);
-  return loadPriceList(join(dir, files[files.length - 1]));
+  for (const file of files.reverse()) {
+    const list = loadPriceList(join(dir, file));
+    if (list.status !== "proposed") return list;
+  }
+  throw new Error(`Every price list in ${dir} is only proposed. Cost lines need one that is in force.`);
+}
+
+/** The newest proposed list that is dated after the in-force one, or null. The panel shows a shop's plan from it, labelled proposed. */
+export function latestProposedPriceList(dir: string = PRICES_DIR.pathname): PriceList | null {
+  const inForce = latestPriceList(dir);
+  const newest = listFiles(dir).at(-1);
+  if (newest === undefined || newest.slice(0, -".json".length) <= inForce.date) return null;
+  const list = loadPriceList(join(dir, newest));
+  return list.status === "proposed" ? list : null;
 }
 
 // ---- the arithmetic -----------------------------------------------------------------------------------------------------
