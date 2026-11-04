@@ -123,7 +123,7 @@ test("go-live-certificate.ts for settings that cannot run some situations leaves
   writeFileSync(join(dir, "no-window.json"), JSON.stringify(noWindow));
   const r = run("go-live-certificate.ts", "--settings", join(dir, "no-window.json"), "--lang", "en", "--out", join(dir, "no-window"));
   assert.equal(r.status, 0, r.stderr);
-  assert.ok(r.stdout.includes("Held 30 of 30 situations. 0 failed. 15 not tested."), r.stdout);
+  assert.ok(r.stdout.includes("Held 31 of 31 situations. 0 failed. 15 not tested."), r.stdout);
   assert.ok(r.stdout.includes("some of these checks, which this shop's settings cannot run (so they were left out)"));
   assert.ok(r.stdout.includes("3 situation(s) cannot be run on these settings") && r.stdout.includes("Cancellation after the window"));
   assert.ok(!r.stdout.includes("they ran on the example shop"));

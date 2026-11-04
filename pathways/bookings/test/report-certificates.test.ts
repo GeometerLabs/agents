@@ -74,7 +74,7 @@ test("a shop whose settings are not the ones the situations ran on gets one more
 test("a certificate made from a run on the shop's own settings has no 'own settings' caveat; one that left situations out says so, in every language", async () => {
   const rental = parseSettings(JSON.parse(readFileSync(new URL("../settings/equipment-rental.example.json", import.meta.url), "utf8")));
   const summary = summariseRun(await runOn(rental));
-  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length, summary.notRun], [28, 28, 0, undefined]);
+  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length, summary.notRun], [29, 29, 0, undefined]);
   const own = seal(buildGoLiveCertificate({ settings: rental, handCheck: summary, issuedAt: ISSUED })).document;
   assert.equal(own.policyDigest, own.checkedPolicyDigest, "the situations ran on the settings the certificate shows");
   assert.notEqual(own.checkedPolicyDigest, checkedGlow(), "and those are not Glow Salon's");

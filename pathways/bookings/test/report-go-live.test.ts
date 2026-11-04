@@ -217,7 +217,7 @@ test("scripts: go-live-certificate.ts then client-report.ts --go-live on the sam
   assert.equal(certify("glow.json", "glow-cert").status, 0);
   const a = reportFor("glow.json", "glow-a", "--go-live", join(dir, "glow-cert", "go-live-certificate.json"));
   assert.equal(a.status, 0, a.stderr);
-  assert.ok(a.stdout.includes("says its checks ran on this shop's own settings: held 33 of 33, 0 failed") && a.stdout.includes(keys.keyId), a.stdout);
+  assert.ok(a.stdout.includes("says its checks ran on this shop's own settings: held 34 of 34, 0 failed") && a.stdout.includes(keys.keyId), a.stdout);
   assert.deepEqual(tree(join(dir, "glow-a")), SIX);
   assert.equal(doc("glow-a").goLive.status, "own");
   assert.deepEqual(doc("glow-a").notTested, baseList);
@@ -245,7 +245,7 @@ test("scripts: go-live-certificate.ts then client-report.ts --go-live on the sam
 
   // (c) every way a certificate cannot be trusted: a plain sentence, exit 0, and the same six files
   const good = readFileSync(join(dir, "glow-cert", "go-live-certificate.json"), "utf8");
-  writeFileSync(join(dir, "tampered.json"), good.replace('"held":33', '"held":34'));
+  writeFileSync(join(dir, "tampered.json"), good.replace('"held":34', '"held":33'));
   const unsigned = run("go-live-certificate.ts", "--settings", join(dir, "glow.json"), "--lang", "en", "--out", join(dir, "unsigned"));
   assert.equal(unsigned.status, 0);
   const notACertificate = join(dir, "glow-a", "report-2026-11.json"); // signed, valid, but a monthly report
