@@ -85,9 +85,9 @@
       "model": "deepseek-ai/DeepSeek-V4.1-Flash",
       "keyEnv": "DEEPINFRA_API_KEY",
       "responseFormat": "json_schema",
-      "priceInputPerMillion": 0.16,
-      "priceOutputPerMillion": 0.48,
-      "note": "Step 2 of the understanding (economics note, section 3.2): DeepSeek V4.1 Flash on DeepInfra's Flex tier, the owner's pick. DeepInfra is paid: the key goes only in .env. Price from deepinfra.com, read 5 Nov 2026 (the figure is the economics note's, taken from third-party trackers: check the page before choosing). The model id is a best guess at DeepInfra's naming: if every message gets HTTP 404 or 400, copy the id from deepinfra.com, and if 400 try \"responseFormat\": \"json_object\"."
+      "priceInputPerMillion": null,
+      "priceOutputPerMillion": null,
+      "note": "Step 2 of the understanding (economics note, section 3.2): DeepSeek V4.1 Flash on DeepInfra's Flex tier, the owner's pick. DeepInfra is paid: the key goes only in .env. Price: left empty here because the runtime's dated rate table (src/adapters/rates.ts) already holds it ($0.16 in, $0.48 out per million, from the economics note's third-party trackers: check deepinfra.com before choosing), and the price list in bundle/prices must carry the same line before it is filled in here. The model id is a best guess at DeepInfra's naming: if every message gets HTTP 404 or 400, copy the id from deepinfra.com, and if 400 try \"responseFormat\": \"json_object\"."
     },
     {
       "name": "laya",
@@ -95,9 +95,9 @@
       "kind": "laya",
       "urlEnv": "LAYA_BASE_URL",
       "model": "laya",
-      "priceInputPerMillion": 0,
-      "priceOutputPerMillion": 0,
-      "note": "Step 1: Laya (Apache-2.0 open weights) served on this machine by laya-serve, for example LAYA_BASE_URL=http://127.0.0.1:8080 in .env; the steps to run it are in Deferred.md. No key, and nothing leaves the machine. Price from economics-and-pricing.md, read 5 Nov 2026: self-hosted, so no price per call. Malayalam and Kannada are not on the model card: the table is how to find out."
+      "priceInputPerMillion": null,
+      "priceOutputPerMillion": null,
+      "note": "Step 1: Laya (Apache-2.0 open weights) served on this machine by laya-serve, for example LAYA_BASE_URL=http://127.0.0.1:8080 in .env; the steps to run it are in Deferred.md. No key, and nothing leaves the machine. Price: none per call, because it is self-hosted (src/adapters/rates.ts says so, dated). Malayalam and Kannada are not on the model card: the table is how to find out."
     },
     {
       "name": "jev",
@@ -106,9 +106,9 @@
       "urlEnv": "JEV_BASE_URL",
       "keyEnv": "JEV_API_KEY",
       "model": "clm-latest",
-      "priceInputPerMillion": 0.042,
-      "priceOutputPerMillion": 0.042,
-      "note": "Step 1, hosted: Jev (TypeSafe). It is paid: the address and the key go only in .env. Price from economics-and-pricing.md, read 5 Nov 2026 (it quotes the Laya page): about $0.042 per million tokens. The model name clm-latest is the example in pydantic-ai's docs: use the name Jev serves your account's model under."
+      "priceInputPerMillion": null,
+      "priceOutputPerMillion": null,
+      "note": "Step 1, hosted: Jev (TypeSafe). It is paid: the address and the key go only in .env. Price: about $0.042 per million tokens, as the economics note quotes the Laya page, held in src/adapters/rates.ts and not yet in bundle/prices. The model name clm-latest is the example in pydantic-ai's docs: use the name Jev serves your account's model under."
     }
   ]
 }
