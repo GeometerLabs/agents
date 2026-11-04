@@ -15,6 +15,7 @@ import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compos
 import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
 import { PANEL_READS, guardToml } from "./generate/guards.ts";
+import { agentFacts } from "./agent/applied.ts";
 import { litestreamConfig } from "./generate/litestream.ts";
 import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./generate/rules.ts";
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
@@ -129,10 +130,10 @@ const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials) => [
 
 // ---- preparing a shop -----------------------------------------------------------------------------------------------------------------------
 
-interface PreparedGuard { plan: GuardPlan; version: number; contentHash: string; compiled?: CompileResult; toml?: string; tripwires?: TripwireResult }
+export interface PreparedGuard { plan: GuardPlan; version: number; contentHash: string; compiled?: CompileResult; toml?: string; tripwires?: TripwireResult }
 interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]; webhooks: ShopWebhooks; pathwayDir: string; index: number; desiredHash: string }
 
-const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
+export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
 export const desiredHashOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText">): string => sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText }));
 
@@ -172,10 +173,10 @@ export function prepareShop(ctx: Context, server: ServerConfig, state: State, na
   };
 }
 
-type Sha = { admin: string; agents: { id: string; sha: string; operations?: string[] }[] };
+export type Sha = { admin: string; agents: { id: string; sha: string; operations?: string[] }[] };
 
 /** Compile one Guard's spec, render its guard.toml, run the tool-name rule and verify-bundle. Nothing running is touched. */
-async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha): Promise<Problem[]> {
+export async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha): Promise<Problem[]> {
   const compiled = await ctx.tool.compile(g.plan.specText);
   if (!compiled.ok) return compiled.problems.map((p) => ({ ...p, message: `${g.plan.service}: ${p.message}` }));
   g.compiled = compiled.result;
@@ -184,8 +185,27 @@ async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string
   return [...toolNamesMatch(g.plan, g.toml, compiled.result), ...tripwiresHold(g.plan, g.tripwires)];
 }
 
+/**
+ * The server's one model Guard, compiled and verified. Its agents are the runtimes of the shops (an agent someone else wrote does not use the model), so it is checked again whenever a
+ * shop is added. A server with agents of the other kind only still has this Guard in its compose file, so it needs a bundle too.
+ */
+export async function prepareModel(ctx: Context, server: ServerConfig, state: State, modelAgents: Sha["agents"]): Promise<{ model: PreparedGuard; problems: Problem[] }> {
+  const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
+  const modelPlan = planModelGuard(server, 1);
+  const prevModel = state.model;
+  const modelVersion = prevModel?.contentHash === contentHash(modelPlan.spec) ? prevModel.version : (prevModel?.version ?? 0) + 1;
+  const model: PreparedGuard = { plan: planModelGuard(server, modelVersion), version: modelVersion, contentHash: contentHash(modelPlan.spec) };
+  return { model, problems: await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }) };
+}
+
+/** Remember the model Guard as applied (what the compose file and the next deploy start from). */
+export function applyModel(state: State, model: PreparedGuard): void {
+  state.model = { version: model.version, contentHash: model.contentHash, digest: model.compiled!.digest, tripwires: { passed: model.tripwires!.passed, of: model.tripwires!.of, notSelfTestable: model.tripwires!.notSelfTestable } };
+  state.modelApplied = { kind: "model", service: names.modelGuard, specText: model.plan.specText, bundleText: model.compiled!.text, tomlText: model.toml! };
+}
+
 /** Server-level things every deploy needs: the Guard image on this machine, the model's key, the deployment key. */
-async function serverProblems(ctx: Context, server: ServerConfig): Promise<Problem[]> {
+export async function serverProblems(ctx: Context, server: ServerConfig): Promise<Problem[]> {
   const problems: Problem[] = [];
   const image = await ctx.runner.run(ctx.docker, ["image", "inspect", "--format", "{{.Id}}", server.guardImage], { timeoutMs: 30_000 });
   if (image.code !== 0) problems.push({ rule: "guard-image", message: `The Guard image ${server.guardImage} is not on this machine. It is not published to a registry yet, so it cannot be pulled: load it with \`docker load < geo-guard.tar\` (the tarball Geometer gives you), or set "guardImage" in geometer.json to the name it was loaded under.` });
@@ -239,17 +259,20 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     for (const g of Object.values(s.applied!.guards)) writeGuardFiles(ctx.dir, g.service, g);
   }
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
-  writeAtomic(join(p.generated, "inbox", "inbox.json"), inboxConfig(server, shops));
-  writeAtomic(join(p.generated, "relay", "relay.json"), relayConfig(server, shops));
-  writeAtomic(join(p.generated, "refresher", "refresher.json"), refresherConfig(server, shops));
-  writeAtomic(join(p.generated, "ops", "ops.json"), opsConfig(server, shops));
+  // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
+  const agents = agentFacts(ctx.dir, state);
+  for (const a of Object.values(state.agents ?? {})) if (a.applied) for (const g of Object.values(a.applied.guards)) writeGuardFiles(ctx.dir, g.service, g);
+  writeAtomic(join(p.generated, "inbox", "inbox.json"), inboxConfig(server, shops, agents));
+  writeAtomic(join(p.generated, "relay", "relay.json"), relayConfig(server, shops, agents));
+  writeAtomic(join(p.generated, "refresher", "refresher.json"), refresherConfig(server, shops, {}, agents));
+  writeAtomic(join(p.generated, "ops", "ops.json"), opsConfig(server, shops, agents));
   // the deployment key goes to the one container that sends heartbeats
   if (server.fleet) writeSecretFile(secretFile(ctx.dir, "ops", "fleet_key"), readSecretFile(resolve(ctx.dir, server.fleet.keyFile)) ?? "");
   if (server.backup) {
     const [accessKeyId, ...secret] = (readSecretFile(secretFile(ctx.dir, "backup", "stream")) ?? ":").split(":");
     writeSecretFile(secretFile(ctx.dir, "litestream", "litestream.yml"), litestreamConfig(server.backup, shops.map((s) => s.name), { accessKeyId, secretAccessKey: secret.join(":") }));
   }
-  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}) });
+  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;
@@ -339,13 +362,10 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled)]));
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
-  const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
-  const modelPlan = planModelGuard(server, 1);
-  const prevModel = state.model;
-  const modelVersion = prevModel?.contentHash === contentHash(modelPlan.spec) ? prevModel.version : (prevModel?.version ?? 0) + 1;
-  const model: PreparedGuard = { plan: planModelGuard(server, modelVersion), version: modelVersion, contentHash: contentHash(modelPlan.spec) };
   const modelAgents = everyShop.map((s) => ({ id: names.agentId(s), sha: sha(creds.get(s)?.agent.model ?? readSecretFile(secretFile(ctx.dir, names.runtime(s), "agent_model")) ?? "") }));
-  problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));
+  const prepModel = await prepareModel(ctx, server, state, modelAgents);
+  const model = prepModel.model;
+  problems.push(...prepModel.problems);
   if (problems.length > 0) throw new Refused(problems);
 
   // 3. nothing broken: no secret in any file we are about to write, then write
@@ -371,39 +391,11 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
     };
     s.lastDeployAt = at;
   }
-  state.model = { version: model.version, contentHash: model.contentHash, digest: model.compiled!.digest, tripwires: { passed: model.tripwires!.passed, of: model.tripwires!.of, notSelfTestable: model.tripwires!.notSelfTestable } };
-  state.modelApplied = { kind: "model", service: names.modelGuard, specText: model.plan.specText, bundleText: model.compiled!.text, tomlText: model.toml! };
+  applyModel(state, model);
   const composed = writeServer(ctx, server, state);
 
   // 4. only what changed: compose recreates a service whose entry changed; a service whose FILES changed (compose cannot see that) is restarted
-  const hashes = Object.fromEntries(Object.keys(composed.services).map((n) => [n, serviceHashes(composed, n)]));
-  const before = state.serviceHashes ?? {};
-  ctx.log(`Bringing up ${prepared.map((p) => p.folder.name).join(", ")}...`);
-  // A new shop's Calendar Guard mounts its own sub-folder of the token volume, and Docker cannot even create that container before the folder exists. The refresher
-  // makes every shop's folder when it starts, so a refresher that is already running with the old list is restarted FIRST, and waited for.
-  if (before.refresher && before.refresher.block === hashes.refresher.block && before.refresher.files !== hashes.refresher.files) {
-    await compose(ctx, ["restart", "refresher"]);
-    for (let i = 0; i < 40; i++) { const ps = await compose(ctx, ["ps", "refresher"], { timeoutMs: 30_000 }); if (/\(healthy\)/u.test(ps.stdout)) break; await ctx.sleep(3_000); }
-  }
-  const up = await compose(ctx, ["up", "-d", "--remove-orphans"]);
-  if (up.code !== 0) throw new Refused([{ rule: "compose-up", message: `docker compose up failed: ${up.stderr.trim().split("\n").slice(-3).join(" | ")}. ${await whatIsNotUp(ctx)}` }]);
-  // A Guard shares its forwarder's network namespace. If the forwarder was recreated (a shop added changes the model forwarder's networks), the Guard must
-  // be recreated too, or it is left in a namespace that no longer exists. Compose does this for a dependent; this makes sure, and costs one restart at most.
-  const stranded = Object.keys(hashes).filter((n) => n.startsWith("fwd-") && before[n] && before[n].block !== hashes[n].block && before[`g-${n.slice(4)}`]).map((n) => `g-${n.slice(4)}`);
-  if (stranded.length > 0) {
-    ctx.log(`Recreating ${stranded.join(", ")} (their forwarder's networks changed).`);
-    const r = await compose(ctx, ["up", "-d", "--force-recreate", "--no-deps", ...stranded]);
-    if (r.code !== 0) throw new Refused([{ rule: "compose-recreate", message: `docker compose could not recreate ${stranded.join(", ")}: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
-  }
-  const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files && !stranded.includes(n) && n !== "refresher");
-  const changed = Object.keys(hashes).filter((n) => !before[n] || before[n].block !== hashes[n].block || before[n].files !== hashes[n].files);
-  if (restart.length > 0) {
-    ctx.log(`Restarting ${restart.join(", ")} (their files changed).`);
-    const r = await compose(ctx, ["restart", ...restart]);
-    if (r.code !== 0) throw new Refused([{ rule: "compose-restart", message: `docker compose restart failed: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
-  }
-  state.serviceHashes = hashes;
-  saveState(ctx.dir, state);
+  const changed = await bringUp(ctx, state, composed, prepared.map((p) => p.folder.name));
 
   // 5. the RUNNING Guards say what they enforce, the model Guard's among them
   const results: ShopResult[] = [];
@@ -433,6 +425,42 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   return results;
 }
 
+/**
+ * Bring up what changed in the compose file just written, and nothing else: compose recreates a service whose entry changed, and a service whose FILES changed (compose cannot see
+ * that) is restarted. Shared by the deploy of a shop and of an agent someone else wrote, so the two cannot drift apart. Returns the services that changed.
+ */
+export async function bringUp(ctx: Context, state: State, composed: Composed, forWhom: string[]): Promise<string[]> {
+  const hashes = Object.fromEntries(Object.keys(composed.services).map((n) => [n, serviceHashes(composed, n)]));
+  const before = state.serviceHashes ?? {};
+  ctx.log(`Bringing up ${forWhom.join(", ")}...`);
+  // A new shop's Calendar Guard mounts its own sub-folder of the token volume, and Docker cannot even create that container before the folder exists. The refresher
+  // makes every shop's folder when it starts, so a refresher that is already running with the old list is restarted FIRST, and waited for.
+  if (before.refresher && before.refresher.block === hashes.refresher.block && before.refresher.files !== hashes.refresher.files) {
+    await compose(ctx, ["restart", "refresher"]);
+    for (let i = 0; i < 40; i++) { const ps = await compose(ctx, ["ps", "refresher"], { timeoutMs: 30_000 }); if (/\(healthy\)/u.test(ps.stdout)) break; await ctx.sleep(3_000); }
+  }
+  const up = await compose(ctx, ["up", "-d", "--remove-orphans"]);
+  if (up.code !== 0) throw new Refused([{ rule: "compose-up", message: `docker compose up failed: ${up.stderr.trim().split("\n").slice(-3).join(" | ")}. ${await whatIsNotUp(ctx)}` }]);
+  // A Guard shares its forwarder's network namespace. If the forwarder was recreated (a shop added changes the model forwarder's networks), the Guard must
+  // be recreated too, or it is left in a namespace that no longer exists. Compose does this for a dependent; this makes sure, and costs one restart at most.
+  const stranded = Object.keys(hashes).filter((n) => n.startsWith("fwd-") && before[n] && before[n].block !== hashes[n].block && before[`g-${n.slice(4)}`]).map((n) => `g-${n.slice(4)}`);
+  if (stranded.length > 0) {
+    ctx.log(`Recreating ${stranded.join(", ")} (their forwarder's networks changed).`);
+    const r = await compose(ctx, ["up", "-d", "--force-recreate", "--no-deps", ...stranded]);
+    if (r.code !== 0) throw new Refused([{ rule: "compose-recreate", message: `docker compose could not recreate ${stranded.join(", ")}: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
+  }
+  const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files && !stranded.includes(n) && n !== "refresher");
+  const changed = Object.keys(hashes).filter((n) => !before[n] || before[n].block !== hashes[n].block || before[n].files !== hashes[n].files);
+  if (restart.length > 0) {
+    ctx.log(`Restarting ${restart.join(", ")} (their files changed).`);
+    const r = await compose(ctx, ["restart", ...restart]);
+    if (r.code !== 0) throw new Refused([{ rule: "compose-restart", message: `docker compose restart failed: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
+  }
+  state.serviceHashes = hashes;
+  saveState(ctx.dir, state);
+  return changed;
+}
+
 /** After a failed `up`: which services are not running well, and the last lines each one said (they hold no secret: our programs never log one). */
 async function whatIsNotUp(ctx: Context): Promise<string> {
   const ps = await compose(ctx, ["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"], { timeoutMs: 60_000 });
@@ -454,7 +482,7 @@ export async function renewRelayCredential(ctx: Context, shop: string, ttlSecond
 }
 
 /** Wait for the shop's Guards, then read their policy and tripwires from the running processes. */
-async function proveRunning(ctx: Context, guards: PreparedGuard[]): Promise<{ guards: Record<string, GuardProof>; problems: Problem[] }> {
+export async function proveRunning(ctx: Context, guards: PreparedGuard[]): Promise<{ guards: Record<string, GuardProof>; problems: Problem[] }> {
   const out: Record<string, GuardProof> = {};
   const problems: Problem[] = [];
   const tries = Math.max(1, Math.ceil((ctx.waitSeconds ?? 120) / 3));
