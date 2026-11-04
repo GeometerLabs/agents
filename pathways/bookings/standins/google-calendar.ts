@@ -26,9 +26,20 @@ export function wireEvent(e: CalendarEvent): Record<string, unknown> {
 
 const ms = (v: any): number | undefined => (typeof v?.dateTime === "string" && !Number.isNaN(Date.parse(v.dateTime)) ? Date.parse(v.dateTime) : undefined);
 
-export function calendarStandin(calendar: FakeCalendar, options: { pageSize?: number; timeZone?: string } = {}): Handler {
+/**
+ * `calendarId` makes the calendar-metadata read (GET /calendar/v3/calendars/{id}) answer for that one calendar and 404 for any other, as Google does for
+ * a calendar the account cannot see; left out, any id is answered. `accessRole` is what events.list reports about the account's role on it ("owner"
+ * by default; "reader" is how a calendar shared without "Make changes to events" looks).
+ */
+export function calendarStandin(calendar: FakeCalendar, options: { pageSize?: number; timeZone?: string; calendarId?: string; accessRole?: string } = {}): Handler {
   const pageSize = options.pageSize ?? 250;
   return async ({ method, path, query, body }) => {
+    const metadata = /^\/calendar\/v3\/calendars\/([^/]+)$/u.exec(path);
+    if (metadata && method === "GET") {
+      const id = decodeURIComponent(metadata[1]);
+      if (options.calendarId !== undefined && id.toLowerCase() !== options.calendarId.toLowerCase()) return error(404, "Not Found", "notFound");
+      return ok({ kind: "calendar#calendar", etag: '"standin"', id: options.calendarId ?? id, summary: "Stand-in calendar", timeZone: options.timeZone ?? "Asia/Kolkata" });
+    }
     const events = /^\/calendar\/v3\/calendars\/[^/]+\/events(?:\/([^/]+))?$/u.exec(path);
     if (!events && path !== "/calendar/v3/freeBusy") return undefined;
     try {
@@ -58,7 +69,7 @@ export function calendarStandin(calendar: FakeCalendar, options: { pageSize?: nu
         const size = Math.min(Number(query.get("maxResults")) || pageSize, pageSize);
         const offset = Number(query.get("pageToken") ?? 0) || 0;
         const page = all.slice(offset, offset + size);
-        return ok({ kind: "calendar#events", summary: "Stand-in calendar", timeZone: options.timeZone ?? "Asia/Kolkata", accessRole: "owner", items: page.map(wireEvent), ...(offset + size < all.length ? { nextPageToken: String(offset + size) } : {}) });
+        return ok({ kind: "calendar#events", summary: "Stand-in calendar", timeZone: options.timeZone ?? "Asia/Kolkata", accessRole: options.accessRole ?? "owner", items: page.map(wireEvent), ...(offset + size < all.length ? { nextPageToken: String(offset + size) } : {}) });
       }
       if (id && method === "GET") {
         const found = await calendar.get(id);

@@ -49,6 +49,14 @@ export interface Strings {
     floor(items: string): string; deposit(amount: string, minutes: number): string; cancel(hours: number): string; refund(amount: string): string; hours: string;
     notAGrade: string; didNotHold: string; handRunLine: string; countedIntro(period: string): string; checkedOn: string;
   };
+  /**
+   * What the monthly documents say about the go-live checks: whether a go-live certificate was given, whether it could be trusted, and what its
+   * checks ran on. A date is passed in already written by the formatter, and a key as its id; the sentences carry no number or date of their own.
+   */
+  goLive: {
+    heading: string; own(date: string): string; example(date: string): string; different(date: string): string;
+    untrusted: string; none: string; signedWith(key: string): string;
+  };
 }
 
 const standIn = `(${STAND_IN_SERVICES})`;
@@ -80,6 +88,10 @@ const en: Strings = {
     "native-review": "a native speaker's review of the Malayalam and Kannada wording (machine-written)", "restart-mid-step": "a crash or restart in the middle of a step",
     "same-instant": "two customers at the exact same instant", "other-faults": "problems beyond the ones tried",
     "own-settings": "these checks on this shop's own settings (they ran on the example shop, Glow Salon)",
+    "situations-skipped": "some of these checks, which this shop's settings cannot run (so they were left out)",
+    "other-settings": "these checks on this shop's own settings (the go-live certificate says they ran on different settings)",
+    "no-go-live-certificate": "these checks on this shop's own settings (no go-live certificate was given)",
+    "go-live-untrusted": "these checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used)",
   },
   notCounted: {
     "no-shows": "who turned up (a booking is marked finished when its time passes)", "read-receipts": "whether customers read their messages (only that WhatsApp's record held them)",
@@ -113,6 +125,15 @@ const en: Strings = {
     handRunLine: `Checks were run by hand against ${STAND_IN_SERVICES}, not real WhatsApp, payments or a calendar. Test money only.`,
     countedIntro: (period) => `Counted from the agent's record for ${period}:`, checkedOn: "Checks run on",
   },
+  goLive: {
+    heading: "Go-live checks",
+    own: (date) => `The go-live checks ran on this shop's own settings, in the go-live certificate of ${date}.`,
+    example: (date) => `The go-live certificate of ${date} says its checks ran on the example shop, Glow Salon, not on this shop's own settings.`,
+    different: (date) => `The go-live certificate of ${date} says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave.`,
+    untrusted: "A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate), so it was not used.",
+    none: "No go-live certificate was given, so this document does not say what the go-live checks ran on.",
+    signedWith: (key) => `The go-live certificate is signed with ${key}. A key does not show who holds it.`,
+  },
 };
 
 const hi: Strings = {
@@ -142,6 +163,10 @@ const hi: Strings = {
     "native-review": "मलयालम और कन्नड़ शब्दों की किसी मातृभाषी से जाँच (ये मशीन से लिखे हैं)", "restart-mid-step": "किसी कदम के बीच में बंद होना या दोबारा चालू होना",
     "same-instant": "ठीक एक ही पल में दो ग्राहक", "other-faults": "आज़माई गई गड़बड़ियों के अलावा दूसरी गड़बड़ियाँ",
     "own-settings": "ये जाँचें इस दुकान की अपनी सेटिंग पर (ये उदाहरण दुकान Glow Salon पर चली थीं)",
+    "situations-skipped": "इनमें से कुछ जाँचें, जो इस दुकान की सेटिंग पर चल नहीं सकतीं (इसलिए छोड़ दी गईं)",
+    "other-settings": "ये जाँचें इस दुकान की अपनी सेटिंग पर (जाँच प्रमाणपत्र के अनुसार ये किसी और सेटिंग पर चली थीं)",
+    "no-go-live-certificate": "ये जाँचें इस दुकान की अपनी सेटिंग पर (कोई जाँच प्रमाणपत्र दिया ही नहीं गया)",
+    "go-live-untrusted": "ये जाँचें इस दुकान की अपनी सेटिंग पर (जो जाँच प्रमाणपत्र दिया गया उस पर भरोसा नहीं किया जा सका, इसलिए उसे इस्तेमाल नहीं किया गया)",
   },
   notCounted: {
     "no-shows": "कौन आया और कौन नहीं (समय बीतने पर बुकिंग पूरी मान ली जाती है)", "read-receipts": "ग्राहकों ने संदेश पढ़े या नहीं (सिर्फ़ इतना कि WhatsApp के रिकॉर्ड में संदेश है)",
@@ -175,6 +200,15 @@ const hi: Strings = {
     handRunLine: `जाँच हाथ से की गई, असली WhatsApp, पेमेंट या कैलेंडर पर नहीं, बल्कि अभ्यास वाले नकली सिस्टम ${standIn} पर। सिर्फ़ टेस्ट पैसा।`,
     countedIntro: (period) => `एजेंट के रिकॉर्ड से गिना गया, ${period}:`, checkedOn: "जाँच इन पर की गई",
   },
+  goLive: {
+    heading: "चालू करने से पहले की जाँच",
+    own: (date) => `चालू करने से पहले की जाँच इसी दुकान की अपनी सेटिंग पर चली थी, ${date} के जाँच प्रमाणपत्र के अनुसार।`,
+    example: (date) => `${date} का जाँच प्रमाणपत्र कहता है कि उसकी जाँच उदाहरण दुकान Glow Salon पर चली थी, इस दुकान की अपनी सेटिंग पर नहीं।`,
+    different: (date) => `${date} का जाँच प्रमाणपत्र कहता है कि उसकी जाँच इस दुकान से अलग सेटिंग पर चली थी, इसलिए उससे इस दुकान की अपनी सेटिंग का हाल पता नहीं चलता।`,
+    untrusted: "एक जाँच प्रमाणपत्र दिया गया था, पर उस पर भरोसा नहीं किया जा सका (उस पर हस्ताक्षर नहीं है, हस्ताक्षर नहीं बैठता, या वह जाँच प्रमाणपत्र है ही नहीं), इसलिए उसे इस्तेमाल नहीं किया गया।",
+    none: "कोई जाँच प्रमाणपत्र नहीं दिया गया, इसलिए यह दस्तावेज़ नहीं बताता कि चालू करने से पहले की जाँच किस सेटिंग पर चली थी।",
+    signedWith: (key) => `जाँच प्रमाणपत्र पर ${key} कुंजी से हस्ताक्षर हैं। कुंजी यह नहीं बताती कि वह किसके पास है।`,
+  },
 };
 
 const ml: Strings = {
@@ -204,6 +238,10 @@ const ml: Strings = {
     "native-review": "മലയാളം, കന്നഡ വാക്കുകൾ മാതൃഭാഷക്കാരൻ പരിശോധിക്കൽ (ഇവ യന്ത്രം എഴുതിയതാണ്)", "restart-mid-step": "ഒരു ഘട്ടത്തിനിടയിൽ നിൽക്കുകയോ വീണ്ടും തുടങ്ങുകയോ ചെയ്യുന്നത്",
     "same-instant": "ഒരേ നിമിഷത്തിൽ രണ്ട് ഉപഭോക്താക്കൾ", "other-faults": "പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ",
     "own-settings": "ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (ഇവ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത്)",
+    "situations-skipped": "ഈ പരിശോധനകളിൽ ചിലത്, ഈ കടയുടെ ക്രമീകരണങ്ങളിൽ നടത്താൻ കഴിയാത്തതിനാൽ ഒഴിവാക്കി",
+    "other-settings": "ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (സർട്ടിഫിക്കറ്റ് പ്രകാരം ഇവ മറ്റ് ക്രമീകരണങ്ങളിലാണ് നടത്തിയത്)",
+    "no-go-live-certificate": "ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല)",
+    "go-live-untrusted": "ഈ പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (നൽകിയ പരിശോധനാ സർട്ടിഫിക്കറ്റ് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഉപയോഗിച്ചില്ല)",
   },
   notCounted: {
     "no-shows": "ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും)", "read-receipts": "ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം)",
@@ -237,6 +275,15 @@ const ml: Strings = {
     handRunLine: `പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ്, കലണ്ടർ എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് ${standIn}. ടെസ്റ്റ് പണം മാത്രം.`,
     countedIntro: (period) => `ഏജന്റിന്റെ രേഖയിൽ നിന്ന് എണ്ണിയത്, ${period}:`, checkedOn: "പരിശോധിച്ചത്",
   },
+  goLive: {
+    heading: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധന",
+    own: (date) => `തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ തന്നെയാണ് നടത്തിയത്, ${date}-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പ്രകാരം.`,
+    example: (date) => `${date}-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഉദാഹരണ കടയായ Glow Salon-ൽ ആണ് നടത്തിയത് എന്നാണ്, ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങളിൽ അല്ല.`,
+    different: (date) => `${date}-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഈ കടയുടേതിൽ നിന്ന് വ്യത്യസ്തമായ ക്രമീകരണങ്ങളിലാണ് നടത്തിയത് എന്നാണ്, അതിനാൽ ഈ കടയുടെ സ്വന്തം ക്രമീകരണങ്ങൾ എങ്ങനെ പ്രവർത്തിക്കുന്നു എന്ന് അത് കാണിക്കുന്നില്ല.`,
+    untrusted: "ഒരു പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിരുന്നു, പക്ഷേ അത് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല (അതിൽ ഒപ്പില്ല, ഒപ്പ് ചേരുന്നില്ല, അല്ലെങ്കിൽ അത് പരിശോധനാ സർട്ടിഫിക്കറ്റ് അല്ല), അതിനാൽ ഉപയോഗിച്ചില്ല.",
+    none: "പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല, അതിനാൽ തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഏത് ക്രമീകരണങ്ങളിലാണ് നടത്തിയതെന്ന് ഈ രേഖ പറയുന്നില്ല.",
+    signedWith: (key) => `പരിശോധനാ സർട്ടിഫിക്കറ്റിൽ ഒപ്പിട്ടത് ${key} എന്ന കീ ഉപയോഗിച്ചാണ്. ആ കീ ആരുടെ കൈയിലാണെന്ന് കീ കാണിക്കുന്നില്ല.`,
+  },
 };
 
 const kn: Strings = {
@@ -266,6 +313,10 @@ const kn: Strings = {
     "native-review": "ಮಲಯಾಳಂ ಮತ್ತು ಕನ್ನಡ ಪದಗಳನ್ನು ಮಾತೃಭಾಷಿಕರು ಪರಿಶೀಲಿಸುವುದು (ಇವು ಯಂತ್ರ ಬರೆದದ್ದು)", "restart-mid-step": "ಒಂದು ಹಂತದ ಮಧ್ಯದಲ್ಲಿ ನಿಲ್ಲುವುದು ಅಥವಾ ಮತ್ತೆ ಆರಂಭವಾಗುವುದು",
     "same-instant": "ಒಂದೇ ಕ್ಷಣದಲ್ಲಿ ಇಬ್ಬರು ಗ್ರಾಹಕರು", "other-faults": "ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು",
     "own-settings": "ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಇವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು)",
+    "situations-skipped": "ಈ ಪರಿಶೀಲನೆಗಳಲ್ಲಿ ಕೆಲವು, ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಡೆಸಲಾಗದ ಕಾರಣ ಬಿಟ್ಟಿದೆ",
+    "other-settings": "ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ ಇವು ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು)",
+    "no-go-live-certificate": "ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ)",
+    "go-live-untrusted": "ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಕೊಟ್ಟ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ)",
   },
   notCounted: {
     "no-shows": "ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ)", "read-receipts": "ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ)",
@@ -298,6 +349,15 @@ const kn: Strings = {
     notAGrade: "ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ.", didNotHold: "ತಪ್ಪಿದವು",
     handRunLine: `ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp, ಪಾವತಿ, ಕ್ಯಾಲೆಂಡರ್ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ ${standIn}. ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ.`,
     countedIntro: (period) => `ಏಜೆಂಟ್‌ನ ದಾಖಲೆಯಿಂದ ಎಣಿಸಿದ್ದು, ${period}:`, checkedOn: "ಪರಿಶೀಲನೆ ನಡೆದದ್ದು",
+  },
+  goLive: {
+    heading: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆ",
+    own: (date) => `ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆಯೇ ನಡೆದವು, ${date} ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ.`,
+    example: (date) => `${date} ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Salon ಮೇಲೆ ನಡೆದವು, ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಅಲ್ಲ.`,
+    different: (date) => `${date} ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಗಿಂತ ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು, ಆದ್ದರಿಂದ ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.`,
+    untrusted: "ಒಂದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಡಲಾಗಿತ್ತು, ಆದರೆ ಅದನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ (ಅದರಲ್ಲಿ ಸಹಿ ಇಲ್ಲ, ಸಹಿ ಹೊಂದುವುದಿಲ್ಲ, ಅಥವಾ ಅದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವೇ ಅಲ್ಲ), ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ.",
+    none: "ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ, ಆದ್ದರಿಂದ ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಯಾವ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು ಎಂದು ಈ ದಾಖಲೆ ಹೇಳುವುದಿಲ್ಲ.",
+    signedWith: (key) => `ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರಕ್ಕೆ ಸಹಿ ಮಾಡಿದ್ದು ${key} ಎಂಬ ಕೀಲಿಯಿಂದ. ಆ ಕೀಲಿ ಯಾರ ಬಳಿ ಇದೆ ಎಂದು ಕೀಲಿ ತೋರಿಸುವುದಿಲ್ಲ.`,
   },
 };
 

@@ -53,15 +53,15 @@
   }
 
   // ---- drawing ---------------------------------------------------------------------------------------------------------
-  function bubbles(container, messages, emptyText) {
+  function bubbles(container, messages, emptyText, mine) {
     clear(container);
-    if (messages.length === 0) { container.appendChild(el("div", "empty", emptyText)); return; }
+    if (messages.length === 0) { container.appendChild(el("div", "geo-empty", emptyText)); return; }
     messages.forEach(function (m) {
-      var b = el("div", "bubble " + (m.who === "me" ? "me" : "agent"));
-      var p = el("p", null, m.text);
+      var b = el("div", "geo-bubble geo-bubble--" + (m.who === "me" ? mine : "agent"));
+      var p = el("p", "geo-bubble-text", m.text);
       p.setAttribute("dir", "auto");
       b.appendChild(p);
-      b.appendChild(el("time", null, m.time));
+      b.appendChild(el("time", "geo-bubble-time", m.time));
       container.appendChild(b);
     });
     container.scrollTop = container.scrollHeight;
@@ -87,11 +87,11 @@
     $("btnPay").textContent = S.customer.payLabel;
     $("customerName").textContent = S.shop.name + " · " + t("testCustomer");
 
-    bubbles($("chat"), S.customer.messages, t("chatEmpty"));
+    bubbles($("chat"), S.customer.messages, t("chatEmpty"), "customer");
     var chips = $("chips");
     clear(chips);
     S.customer.chips.forEach(function (text) {
-      var c = el("button", "chip", text);
+      var c = el("button", "geo-chip", text);
       c.type = "button";
       c.setAttribute("dir", "auto");
       c.addEventListener("click", function () { send(text); });
@@ -125,15 +125,15 @@
     clear(waiting);
     var cards = S.owner.waiting;
     if (cards.length > 0) {
-      waiting.appendChild(el("h2", null, t("waitingHeading")));
+      waiting.appendChild(el("h2", "geo-heading", t("waitingHeading")));
       cards.forEach(function (card) {
-        var box = el("div", "waiting");
-        box.appendChild(el("div", "title", card.title));
-        box.appendChild(el("div", "detail", card.detail));
-        if (card.reason) box.appendChild(el("div", "reason", card.reason));
-        var row = el("div", "buttons");
+        var box = el("div", "geo-waiting");
+        box.appendChild(el("div", "geo-waiting-title", card.title));
+        box.appendChild(el("div", "geo-waiting-detail", card.detail));
+        if (card.reason) box.appendChild(el("div", "geo-waiting-reason", card.reason));
+        var row = el("div", "geo-waiting-buttons");
         card.buttons.forEach(function (b, i) {
-          var button = el("button", "btn" + (i === 0 ? " primary" : ""), b.label);
+          var button = el("button", "geo-button" + (i === 0 ? " geo-button--primary" : ""), b.label);
           button.type = "button";
           button.addEventListener("click", function () { call("/api/owner", { command: b.command, ref: card.ref }); });
           row.appendChild(button);
@@ -146,13 +146,13 @@
     var list = $("plain");
     clear(list);
     S.owner.summary.forEach(function (line) {
-      var li = el("li", line.kind);
-      li.appendChild(el("span", "mark", line.kind === "ok" ? "✓" : line.kind === "warn" ? "!" : line.kind === "info" ? "•" : ""));
+      var li = el("li", "geo-summary-line geo-summary-line--" + line.kind);
+      li.appendChild(el("span", "geo-summary-mark", line.kind === "ok" ? "✓" : line.kind === "warn" ? "!" : line.kind === "info" ? "•" : ""));
       li.appendChild(el("span", null, line.text));
       list.appendChild(li);
     });
     $("ownerChatHeading").textContent = t("ownerHeading");
-    bubbles($("ownerChat"), S.owner.messages, t("ownerEmpty"));
+    bubbles($("ownerChat"), S.owner.messages, t("ownerEmpty"), "owner");
     var count = cards.length;
     var badge = $("badge");
     badge.hidden = count === 0;
@@ -165,7 +165,7 @@
     var f = S.record.fakes;
     var stand = $("standIns");
     clear(stand);
-    stand.appendChild(el("h3", null, "What the practice services hold right now"));
+    stand.appendChild(el("h3", "geo-box-title", "What the practice services hold right now"));
     var ul = el("ul");
     ul.appendChild(el("li", null, "Calendar: " + f.calendar.length + " entries" + f.calendar.map(function (e) { return " · " + e.bookingRef + " " + e.status + " " + e.start; }).join("")));
     f.payments.forEach(function (p) {
@@ -178,20 +178,20 @@
     var rows = $("rows");
     clear(rows);
     S.record.rows.forEach(function (r) {
-      var card = el("div", "card");
-      var head = el("div", "head");
+      var card = el("div", "geo-record-card");
+      var head = el("div", "geo-record-head");
       head.appendChild(el("span", null, "#" + r.seq + " · " + r.time + " · " + r.who + (r.booking ? " · " + r.booking : "")));
-      head.appendChild(el("span", "pill " + r.outcome, r.outcomeText));
+      head.appendChild(el("span", "geo-pill geo-pill--" + r.outcome, r.outcomeText));
       card.appendChild(head);
-      card.appendChild(el("div", "what", r.action));
-      if (r.notes) card.appendChild(el("div", "decision", r.notes));
+      card.appendChild(el("div", "geo-record-what", r.action));
+      if (r.notes) card.appendChild(el("div", "geo-decision", r.notes));
       r.decisions.forEach(function (d) {
-        var line = el("div", "decision " + d.verdict);
+        var line = el("div", "geo-decision geo-decision--" + d.verdict);
         line.appendChild(el("b", null, d.rule + ": " + (d.verdict === "allow" ? "allowed" : d.verdict === "block" ? "stopped" : "asked the owner") + ". "));
         line.appendChild(document.createTextNode(d.reason));
         card.appendChild(line);
       });
-      if (r.refs.length) card.appendChild(el("div", "refs", r.refs.map(function (kv) { return kv[0] + "=" + kv[1]; }).join("  ")));
+      if (r.refs.length) card.appendChild(el("div", "geo-record-refs", r.refs.map(function (kv) { return kv[0] + "=" + kv[1]; }).join("  ")));
       rows.appendChild(card);
     });
   }
@@ -222,7 +222,7 @@
 
   // ---- the shop form ---------------------------------------------------------------------------------------------------------
   function field(label, input) {
-    var wrap = el("label", "field");
+    var wrap = el("label", "geo-field");
     wrap.appendChild(el("span", null, label));
     wrap.appendChild(input);
     return wrap;
@@ -244,8 +244,8 @@
     var body = $("sheetBody");
     clear(body);
     var parts = { services: [], days: [] };
-    body.appendChild(el("h2", null, t("formTitle")));
-    body.appendChild(el("p", "hint", t("formHint")));
+    body.appendChild(el("h2", "geo-heading", t("formTitle")));
+    body.appendChild(el("p", "geo-hint", t("formHint")));
     parts.name = textInput(f.name);
     body.appendChild(field(t("formName"), parts.name));
     parts.language = el("select");
@@ -256,9 +256,9 @@
       parts.language.appendChild(o);
     });
     body.appendChild(field(t("formLanguage"), parts.language));
-    body.appendChild(el("h2", null, t("formServices")));
+    body.appendChild(el("h2", "geo-heading", t("formServices")));
     f.services.forEach(function (s) {
-      var box = el("div", "svc");
+      var box = el("div", "geo-service");
       var row = {
         id: s.id,
         name: textInput(s.name),
@@ -268,7 +268,7 @@
       };
       box.appendChild(field(t("formServiceName"), row.name));
       box.appendChild(field(t("formAlso"), row.also));
-      var two = el("div", "row");
+      var two = el("div", "geo-row");
       two.appendChild(field(t("formPrice"), row.price));
       two.appendChild(field(t("formMinutes"), row.minutes));
       box.appendChild(two);
@@ -277,13 +277,13 @@
     });
     parts.deposit = textInput(f.deposit, { inputmode: "numeric", maxlength: "9" });
     body.appendChild(field(t("formDeposit"), parts.deposit));
-    var times = el("div", "row");
+    var times = el("div", "geo-row");
     parts.opens = textInput(f.opens, { type: "time" });
     parts.closes = textInput(f.closes, { type: "time" });
     times.appendChild(field(t("formOpens"), parts.opens));
     times.appendChild(field(t("formCloses"), parts.closes));
     body.appendChild(times);
-    var days = el("div", "days");
+    var days = el("div", "geo-days");
     S.ui.dayNames.forEach(function (name, i) {
       var label = el("label");
       var box = el("input");
@@ -294,21 +294,21 @@
       days.appendChild(label);
       parts.days.push(box);
     });
-    var daysField = el("div", "field");
+    var daysField = el("div", "geo-field");
     daysField.appendChild(el("span", null, t("formDays")));
     daysField.appendChild(days);
     body.appendChild(daysField);
-    var errors = el("ul", "errors");
+    var errors = el("ul", "geo-errors");
     errors.hidden = true;
     errors.setAttribute("role", "alert");
     parts.errors = errors;
     body.appendChild(errors);
-    var submit = el("button", "btn primary", t("formSubmit"));
+    var submit = el("button", "geo-button geo-button--primary", t("formSubmit"));
     submit.type = "submit";
-    var cancel = el("button", "btn quiet", t("formCancel"));
+    var cancel = el("button", "geo-button geo-button--quiet", t("formCancel"));
     cancel.type = "button";
     cancel.addEventListener("click", closeSheet);
-    var row2 = el("div", "actions");
+    var row2 = el("div", "geo-actions");
     row2.appendChild(submit);
     row2.appendChild(cancel);
     body.appendChild(row2);

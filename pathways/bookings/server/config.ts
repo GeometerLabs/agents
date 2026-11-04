@@ -26,6 +26,8 @@ export interface ParserConfig {
   baseUrl: string;
   model: string;
   timeoutMs?: number;
+  /** A file holding the credential THIS agent presents to that Guard (as for services.*.agentTokenFile). Guard refuses a call with none. A relative path is measured from the client folder. */
+  agentTokenFile?: string;
 }
 
 export interface RuntimeConfig {
@@ -73,12 +75,13 @@ function readService(raw: unknown, name: string, extra: string | undefined, erro
 const NO_KEY = "No key goes in runtime.json: the base URL is a Guard in front of the model provider, and Guard holds the key.";
 
 /** `parser`: which model reads the messages. Every refusal is in plain words and none repeats what was written, in case it was a key. */
-function readParser(raw: unknown, errors: string[]): ParserConfig | undefined {
+function readParser(raw: unknown, folder: string, errors: string[]): ParserConfig | undefined {
   if (!isObj(raw)) { errors.push('"parser" must be an object like {"wire": "openai", "baseUrl": "https://your-guard.example/model/v1", "model": "<the model\'s name>"}. Leave it out and the built-in rules read the messages.'); return undefined; }
   const before = errors.length;
   const keyLike = Object.keys(raw).filter((k) => /^(api[_-]?key|key|access[_-]?token|auth[_-]?token|token|client[_-]?secret|secret|password|passwd|authorization|bearer)$/iu.test(k)); // whole names: maxTokens is no key
   for (const k of keyLike) errors.push(`parser.${k} is not allowed. ${NO_KEY}`);
-  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs"], "parser", errors);
+  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs", "agentTokenFile"], "parser", errors);
+  if (raw.agentTokenFile !== undefined && !isText(raw.agentTokenFile)) errors.push("parser.agentTokenFile must be the path of a file that holds this agent's credential for the model's Guard.");
   if (raw.wire !== "openai" && raw.wire !== "anthropic") errors.push('parser.wire must be "openai" (OpenAI-compatible chat completions, which Gemini, Groq and Sarvam also speak) or "anthropic" (the Anthropic Messages API).');
   let url: URL | undefined;
   try { url = isText(raw.baseUrl) ? new URL(raw.baseUrl) : undefined; } catch { url = undefined; }
@@ -88,7 +91,8 @@ function readParser(raw: unknown, errors: string[]): ParserConfig | undefined {
   if (!isText(raw.model)) errors.push("parser.model must be the name of the model to ask, as the provider calls it.");
   if (raw.timeoutMs !== undefined && (!Number.isInteger(raw.timeoutMs) || (raw.timeoutMs as number) < 1)) errors.push("parser.timeoutMs must be a whole number of milliseconds. Left out, it waits 8000 before the rules read the message.");
   if (errors.length > before) return undefined;
-  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}) };
+  const agentTokenFile = isText(raw.agentTokenFile) ? (isAbsolute(raw.agentTokenFile) ? raw.agentTokenFile : resolve(folder, raw.agentTokenFile)) : undefined;
+  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}), ...(agentTokenFile ? { agentTokenFile } : {}) };
 }
 
 /** Check runtime.json's contents. `folder` is what a relative dataDir is measured from. */
@@ -122,7 +126,7 @@ export function validateRuntimeConfig(input: unknown, folder: string): { ok: tru
     }
   }
 
-  const parser = input.parser !== undefined ? readParser(input.parser, errors) : undefined;
+  const parser = input.parser !== undefined ? readParser(input.parser, folder, errors) : undefined;
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;

@@ -10,18 +10,18 @@
 // tested. Every number, amount and date is read from the hand check, the settings or the report, and written by the
 // per-language formatters; the words around them are in strings.ts.
 import { HAND_RUN, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
-import type { SituationResult } from "../crash-test/situations.ts";
+import type { HandCheckRun, SituationResult } from "../crash-test/situations.ts";
 import { formatDate, formatInr } from "../src/language/format.ts";
 import { LANGUAGES, serviceName } from "../src/settings.ts";
 import type { Language, Settings } from "../src/settings.ts";
 import { localParts } from "../src/time.ts";
 import type { LocalDate } from "../src/time.ts";
 import { PATHWAY, checkedPolicyDigest, notTestedFor, policyDigest } from "./data.ts";
-import type { MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
-import { esc, list, page, sealBlock, table } from "./html.ts";
+import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
+import { esc, goLiveBlock, list, page, sealBlock, table } from "./html.ts";
 import type { Envelope } from "./sign.ts";
 import { STRINGS } from "./strings.ts";
-import { languagesOf, oneLine, periodLabel, rupees } from "./text.ts";
+import { goLiveLines, languagesOf, oneLine, periodLabel, rupees } from "./text.ts";
 import type { ReportLanguage } from "./text.ts";
 
 // ---- the hand check, summed up -------------------------------------------------------------------------------------------
@@ -33,6 +33,19 @@ export interface HandCheckSummary {
   checks: number;
   /** The titles (English) of the situations that did not hold. */
   failedTitles: string[];
+  /** The digest of the settings the situations ran on, when it is not Glow Salon's (the default). */
+  ranOn?: string;
+  /** The titles (English) of situations that these settings could not run: they are not in `total`. */
+  notRun?: string[];
+}
+
+/** A run on one shop's own settings: the counts, the digest of the settings it ran on, and the situations those settings could not run. */
+export function summariseRun(run: HandCheckRun): HandCheckSummary {
+  return {
+    ...summariseHandCheck(run.results),
+    ranOn: policyDigest(run.settings),
+    ...(run.skipped.length > 0 ? { notRun: run.skipped.map((s) => s.title) } : {}),
+  };
 }
 
 export function summariseHandCheck(results: readonly SituationResult[]): HandCheckSummary {
@@ -57,13 +70,13 @@ export interface GoLiveCertificate {
   preparedBy: string | null;
   issuedAt: string;
   issuedOn: LocalDate;
-  checks: { held: number; total: number; failed: number; failedTitles: string[]; checks: number };
+  checks: { held: number; total: number; failed: number; failedTitles: string[]; checks: number; notRun?: string[] };
   notTested: NotTestedKey[];
   limits: {
     services: { id: string; priceInr: number; name: Record<Language, string> }[];
     depositInr: number; holdMinutes: number; windowHours: number; refundLimitInr: number;
   };
-  /** The shop's settings (without contact details) and the settings the checks actually ran on. They differ for any shop but the example. */
+  /** The shop's settings (without contact details) and the settings the checks actually ran on. They differ only when the checks were not run on this shop's own settings. */
   policyDigest: string;
   checkedPolicyDigest: string;
   anchor: null;
@@ -89,15 +102,15 @@ export function buildGoLiveCertificate(input: GoLiveInput): GoLiveCertificate {
     preparedBy: input.preparedBy ?? null,
     issuedAt: new Date(issuedAt).toISOString(),
     issuedOn: { year: day.year, month: day.month, day: day.day },
-    checks: { held: handCheck.held, total: handCheck.total, failed: handCheck.total - handCheck.held, failedTitles: handCheck.failedTitles, checks: handCheck.checks },
-    notTested: notTestedFor(settings),
+    checks: { held: handCheck.held, total: handCheck.total, failed: handCheck.total - handCheck.held, failedTitles: handCheck.failedTitles, checks: handCheck.checks, ...(handCheck.notRun ? { notRun: handCheck.notRun } : {}) },
+    notTested: notTestedFor(settings, { onPolicyDigest: handCheck.ranOn, notRun: handCheck.notRun?.length }),
     limits: {
       services: settings.services.map((s) => ({ id: s.id, priceInr: s.priceInr, name: Object.fromEntries(LANGUAGES.map((l) => [l, serviceName(s, l)])) as Record<Language, string> })),
       depositInr: settings.deposit.amountInr, holdMinutes: settings.deposit.holdMinutes,
       windowHours: settings.cancellation.windowHours, refundLimitInr: settings.cancellation.refundLimitInr,
     },
     policyDigest: policyDigest(settings),
-    checkedPolicyDigest: checkedPolicyDigest(),
+    checkedPolicyDigest: handCheck.ranOn ?? checkedPolicyDigest(),
     anchor: null,
   };
 }
@@ -175,6 +188,8 @@ export interface MonthlyCertificate {
   policyDigest: string;
   notCounted: NotCountedId[];
   notTested: NotTestedKey[];
+  /** What the report was told about the go-live checks, copied from it: none, untrusted, or what a go-live certificate that was read says they ran on. */
+  goLive: GoLiveFinding;
   anchor: null;
 }
 
@@ -199,6 +214,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     policyDigest: r.policyDigest,
     notCounted: [...r.notCounted],
     notTested: [...r.notTested],
+    goLive: r.goLive,
     anchor: null,
   };
 }
@@ -222,6 +238,7 @@ export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, l
     `${s.cert.countedIntro(periodLabel(cert.period, language))} ${countedPairs(cert, language).join(" · ")}`,
     `${s.page.notCountedHeading}: ${cert.notCounted.map((id) => s.notCounted[id]).join(" · ")}`,
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
+    goLiveLines(cert.goLive, language).join(" "),
     s.handRun,
     `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
   ].join("\n");
@@ -236,6 +253,7 @@ export function monthlySection(envelope: Envelope<MonthlyCertificate>, language:
 <p class="note">${esc(s.sourceLong[cert.source])} ${esc(s.handRun)}</p>
 <h2>${esc(s.cert.countedIntro(periodLabel(cert.period, language)))}</h2>
 ${table([{ text: s.page.item }, { text: s.page.count, n: true }], countedPairs(cert, language).map((p) => { const i = p.lastIndexOf(": "); return [esc(p.slice(0, i)), esc(p.slice(i + 2))]; }))}
+<h2>${esc(s.goLive.heading)}</h2>${goLiveBlock(cert.goLive, language)}
 <div class="warn"><h2>${esc(s.page.notCountedHeading)}</h2>${list(cert.notCounted.map((id) => s.notCounted[id]))}<h2>${esc(s.page.notTestedHeading)}</h2>${list(cert.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(s.page.notAGrade)}</p>
 ${sealBlock(s, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),

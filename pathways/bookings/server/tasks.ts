@@ -26,6 +26,8 @@ export interface TaskRunner {
   health(): { ok: true } | { ok: false; reason: string };
   lastStepAt(): number | null;
   lastFailureAt(): number | null;
+  /** Running totals since this process started: tasks finished, and attempts (of a task or of a tick) that failed. A heartbeat sends the difference. */
+  counters(): { steps: number; errors: number };
   /** Finish the step in hand, leave the rest pending for the next start. */
   stop(): Promise<void>;
 }
@@ -42,6 +44,8 @@ export function createRunner(options: RunnerOptions & { now: () => number }): Ta
   let wake: (() => void) | undefined;
   let lastStep: number | null = null;
   let lastFailure: number | null = null;
+  let steps = 0;
+  let errors = 0;
 
   const oneAtATime = <T>(work: () => Promise<T>): Promise<T> => {
     const result = queue.then(work);
@@ -56,6 +60,7 @@ export function createRunner(options: RunnerOptions & { now: () => number }): Ta
 
   const failed = (what: string, e: unknown) => {
     lastFailure = now();
+    errors++;
     log(`${what}: ${(e as Error)?.message ?? e}`);
   };
 
@@ -65,6 +70,7 @@ export function createRunner(options: RunnerOptions & { now: () => number }): Ta
       try {
         await oneAtATime(() => step(JSON.parse(payload) as AgentEvent, id));
         lastStep = now();
+        steps++;
         return;
       } catch (e) {
         const last = attempt >= maxAttempts;
@@ -127,6 +133,7 @@ export function createRunner(options: RunnerOptions & { now: () => number }): Ta
     health: () => broken ? { ok: false, reason: broken } : stopped ? { ok: false, reason: "The runtime is shutting down." } : { ok: true },
     lastStepAt: () => lastStep,
     lastFailureAt: () => lastFailure,
+    counters: () => ({ steps, errors }),
 
     async stop() {
       stopped = true;

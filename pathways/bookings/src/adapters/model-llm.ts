@@ -36,7 +36,7 @@ export interface ModelConfig {
 
 export const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_MAX_TOKENS = 1024;
-const ANTHROPIC_VERSION = "2026-10-21"; // not a secret: the API version the request shape is written for
+export const ANTHROPIC_VERSION = "2026-10-21"; // not a secret: the API version the request shape is written for (the bundle writes the same value into the model Guard)
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);

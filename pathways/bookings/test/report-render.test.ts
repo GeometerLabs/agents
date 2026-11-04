@@ -124,19 +124,25 @@ test("the not-tested and not-counted lists are always on the page, in the shop's
     const page = words(reportPage(seal(report), language));
     for (const n of NOT_TESTED) assert.ok(page.includes(s.notTested[n.id]), `${language}: ${n.id}`);
     for (const id of NOT_COUNTED) assert.ok(page.includes(s.notCounted[id]), `${language}: ${id}`);
-    assert.ok(page.includes(s.notTested["own-settings"]) === false, "Glow Salon's own settings are what the checks ran on");
+    assert.ok(page.includes(s.notTested["own-settings"]) === false, "nothing says the checks ran on the example shop");
+    assert.ok(page.includes(s.notTested["no-go-live-certificate"]), `${language}: this report was given no go-live certificate, and says so in the list`);
     assert.ok(ownerText(report, language).split("\n")[4].includes(String(report.notTested.length + report.notCounted.length - 2)));
   }
-  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 1);
+  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 5, "the hand check's list, and the five ways the checks on this shop's own settings are or are not shown (test/report-go-live.test.ts)");
 });
 
-test("a shop whose settings are not the ones the checks ran on is told so, in the lists", async () => {
+test("a monthly report that is not told what the go-live checks ran on says so, for Glow Salon and for any other shop; it no longer claims they ran on Glow Salon", async () => {
   const other = parseSettings({ ...JSON.parse(JSON.stringify(settings)), name: "Another Salon", deposit: { amountInr: 100, holdMinutes: 15 } });
-  const { world } = await runBusyMonth();
-  const r = buildMonthlyReport({ settings: other, entries: [], bookings: [], ...monthRange("2026-11", settings.timezone), source: "stand-in", madeAt: 0 });
-  assert.ok(r.notTested.includes("own-settings") && r.notTested.length === NOT_TESTED.length + 1);
-  assert.ok(world);
-  for (const language of LANGUAGES) assert.ok(words(reportPage(seal(r), language)).includes(STRINGS[language].notTested["own-settings"]));
+  for (const shop of [settings, other]) {
+    const r = buildMonthlyReport({ settings: shop, entries: [], bookings: [], ...monthRange("2026-11", settings.timezone), source: "stand-in", madeAt: 0 });
+    assert.deepEqual(r.goLive, { status: "none" });
+    assert.ok(r.notTested.includes("no-go-live-certificate") && !r.notTested.includes("own-settings") && r.notTested.length === NOT_TESTED.length + 1);
+    for (const language of LANGUAGES) {
+      const text = words(reportPage(seal(r), language));
+      assert.ok(text.includes(STRINGS[language].notTested["no-go-live-certificate"]) && text.includes(STRINGS[language].goLive.none), language);
+      assert.ok(!text.includes(STRINGS[language].notTested["own-settings"]));
+    }
+  }
 });
 
 test("every language renders a self-contained page: same numbers, no script, no link, no external file", async () => {

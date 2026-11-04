@@ -9,7 +9,7 @@ import type { Settings } from "../src/settings.ts";
 import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText } from "./certificate.ts";
 import type { HandCheckSummary } from "./certificate.ts";
 import { buildMonthlyReport, monthRange } from "./data.ts";
-import type { Source } from "./data.ts";
+import type { GoLiveFinding, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
 import { envelopeFile, seal } from "./sign.ts";
 import { languagesOf, ownerText } from "./text.ts";
@@ -51,6 +51,8 @@ export interface ReportRun {
   source: Source;
   key?: KeyObject;
   preparedBy?: string;
+  /** What the go-live certificate the shop was given shows (report/go-live.ts). Left out, the report and its certificate say that none was given. */
+  goLive?: GoLiveFinding;
   /** Epoch milliseconds the report is made at. */
   now: number;
 }
@@ -58,7 +60,7 @@ export interface ReportRun {
 /** The monthly report (page, owner text, signed data) and the monthly record certificate (page, text, signed data). */
 export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; certificateCode: string } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
-  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy });
+  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, goLive: run.goLive });
   const sealed = seal(report, run.key);
   const certificate = seal(buildMonthlyCertificate(sealed, run.now), run.key);
   const w = writer(run.out);

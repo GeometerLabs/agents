@@ -2,6 +2,7 @@
 // the clock ticking. main.ts is a thin command line around this; the tests start it directly.
 import { readFileSync } from "node:fs";
 import { createModelParser } from "../src/adapters/model-llm.ts";
+import type { ModelConfig } from "../src/adapters/model-llm.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
 import { systemClock } from "../src/clock.ts";
@@ -38,6 +39,16 @@ export interface RunningClient {
 
 const MIN_TOKEN_LENGTH = 16;
 
+/** The model parser's config and, if runtime.json names a credential file for the model's Guard, a fetch that presents it. */
+export function parserArguments(config: NonNullable<ClientFolder["runtime"]["parser"]>): [ModelConfig, typeof fetch?] {
+  const { agentTokenFile, ...model } = config;
+  if (!agentTokenFile) return [model];
+  let token: string;
+  try { token = readFileSync(agentTokenFile, "utf8").trim(); } catch { throw new ClientError(`I could not read the agent credential file ${agentTokenFile} (parser.agentTokenFile).`); }
+  if (token.length === 0) throw new ClientError(`The agent credential file ${agentTokenFile} is empty.`);
+  return [model, (url, init) => fetch(url, { ...init, headers: { ...(init?.headers as Record<string, string> | undefined), authorization: `Bearer ${token}` } })];
+}
+
 /** The token is a file, never a command-line argument or a value in runtime.json, so it stays out of process lists and git. */
 export function readToken(file: string | undefined): string {
   if (!file) throw new ClientError("Set INTERNAL_TOKEN_FILE to a file that holds the internal token the inbox sends (for example: openssl rand -hex 32 > token.txt).");
@@ -58,8 +69,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   let runtime: Runtime;
   try {
     const services = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
-    // The model parser sends no key and no Authorization header: its base URL is the Guard in front of the model provider.
-    const parser = options.parser ?? (client.runtime.parser ? createModelParser(client.runtime.parser) : createRuleParser());
+    // The model parser sends no provider key: its base URL is the Guard in front of the model provider. With an `agentTokenFile` it
+    // sends this agent's credential for that Guard (as the other adapters do), and nothing else.
+    const parser = options.parser ?? (client.runtime.parser ? createModelParser(...parserArguments(client.runtime.parser)) : createRuleParser());
     runtime = createRuntime({ settings: client.settings, store, clock, services, parser, pathwayVersion: pathwayVersion(), log });
   } catch (e) {
     store.close();
