@@ -7,9 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { addAgent } from "../agent/deploy.ts";
 import { agentFromFlags } from "../agent/folder.ts";
+import { collectFacts } from "../agent/facts.ts";
 import type { Facts } from "../agent/facts.ts";
 import { GRACE_MS, emptyRecord, foldFacts, waitingForOwner } from "../agent/record.ts";
-import { recordAgent } from "../agent/records.ts";
+import { recordAgent, skipOf } from "../agent/records.ts";
 import { writeAgentReport } from "../agent/report.ts";
 import { PHONE_NUMBER_ID, CALENDAR_ID } from "./helpers.ts";
 import { world } from "./world.ts";
@@ -73,6 +74,90 @@ test("the record is only added to: the same facts again add nothing, a thing the
   const none = foldFacts(emptyRecord(), unreadable, options(Date.parse(facts.at) + GRACE_MS + 60_000)).state.entries;
   for (const action of ["create_deposit_link", "refund", "confirm_booking"]) assert.equal(none.filter((e) => e.action === action && e.outcome === "confirmed").length, 0, `${action} is not confirmed by a service that could not be asked`);
   assert.equal(none.filter((e) => e.action === "record_deposit").length, 0, "no payment is shown if the link could not be read");
+});
+
+test("a gap is said, not hidden: when Guard's list of its 500 most recent decisions starts after the newest the record had read, calls fell out unread", () => {
+  const first = foldFacts(emptyRecord(), facts, options());
+  const newest = first.state.marks!.razorpay;
+  assert.equal(newest, Math.max(...facts.guards.razorpay!.decisions.map((d) => Number(d.at_ms))));
+  assert.deepEqual(first.gaps, [], "nothing missed on the first pass, or while the list reaches back far enough");
+  // a later pass: the list is full and its oldest entry is newer than the last one read
+  const later: Facts = JSON.parse(JSON.stringify(facts));
+  later.guards.razorpay = { ...later.guards.razorpay!, decisions: later.guards.razorpay!.decisions.map((d, i) => ({ ...d, id: `later-${i}`, at_ms: String(newest + 10_000 + i) })), windowFull: true, oldestAtMs: newest + 10_000, newestAtMs: newest + 10_020 };
+  const gapped = foldFacts(first.state, later, options(newest + 600_000));
+  assert.equal(gapped.gaps.length, 1);
+  assert.match(gapped.gaps[0], /^razorpay's Guard lists only its \d+ most recent decisions, and the oldest it showed .* is newer than the last this record had read .*missing from the record\.$/u);
+  const entry = gapped.state.entries.find((e) => (e.action as string) === "record_gap")!;
+  assert.equal(entry.outcome, "unconfirmed", "the report lists it among what could not be confirmed");
+  // a full list that still reaches back to what was read is no gap
+  const reaches: Facts = { ...later, guards: { ...later.guards, razorpay: { ...later.guards.razorpay!, oldestAtMs: newest - 1000 } } };
+  assert.deepEqual(foldFacts(first.state, reaches, options(newest + 600_000)).gaps, []);
+});
+
+test("a reference the agent chose that looks like a phone number reaches neither the record nor the exports; it is kept as a short hash", () => {
+  const phoneRef = "+91 98111 11111";
+  const edited: Facts = JSON.parse(JSON.stringify(facts).replaceAll("b-1", phoneRef));
+  const { state } = foldFacts(emptyRecord(), edited, options());
+  const text = JSON.stringify(state.entries);
+  assert.ok(!text.includes(phoneRef) && !text.includes("98111 11111"), "no number in the record");
+  const hashed = state.entries.find((e) => e.action === "create_deposit_link" && e.outcome === "confirmed")!;
+  assert.match(hashed.booking!, /^b-[0-9a-f]{12}$/u);
+  assert.equal(hashed.refs.referenceId, hashed.booking);
+  assert.ok(state.entries.filter((e) => e.booking === hashed.booking).length >= 3, "the same label everywhere, so the report still joins the link, the deposit, the hold and the refund");
+  assert.deepEqual(skipOf(state).paid, [hashed.booking], "and the skip list uses the same label");
+});
+
+test("settled things are not asked of the services again, a calendar is read around the times booked (not its first page), and a changed event is asked for by its id", async () => {
+  const seen: string[] = [];
+  const fetchFn = (async (url: string | URL | Request) => {
+    const u = new URL(String(url)); const kind = u.hostname.split(".")[0];
+    if (u.hostname.endsWith(".admin")) {
+      const g = facts.guards[kind as "razorpay"]!;
+      if (u.pathname === "/admin/decisions") return Response.json({ decisions: g.decisions });
+      if (u.pathname === "/admin/intents") return Response.json({ intents: g.intents });
+      if (u.pathname === "/admin/approvals") return Response.json({ approvals: g.approvals });
+      return Response.json({ counts: g.counts });
+    }
+    seen.push(`${u.pathname}${u.search}`);
+    if (u.pathname.endsWith("/events")) return Response.json({ items: facts.service.events!.map((e) => ({ id: e.id, summary: e.summary, start: { dateTime: e.start }, status: e.status })) });
+    if (/\/events\/ev_9$/u.test(u.pathname)) return Response.json({ error: "gone" }, { status: 404 });
+    return Response.json({});
+  }) as typeof fetch;
+  const cfg = { agentId: "agent-demo", relayId: "relay-demo", recordToken: "gg_reader", calendarId: "c@group.calendar.google.com", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, adminUrl: `http://${kind}.admin`, adminToken: "x", agentUrl: `http://${kind}.agent` })) };
+  const now = new Date(facts.at);
+  // nothing settled yet: the link, the payment's refunds and the calendar are all asked about
+  const all = await collectFacts(cfg, now, fetchFn);
+  assert.ok(seen.some((s) => s.startsWith("/v1/payment_links?reference_id=b-1")) && seen.some((s) => s.endsWith("/refunds")));
+  const range = seen.find((s) => s.includes("/events?"))!;
+  assert.match(range, /timeMin=.*&timeMax=.*&singleEvents=true&maxResults=250/u, "a window around the booked times, with recurring events opened up, not the first page of the whole calendar");
+  assert.deepEqual(all.guards.razorpay!.windowFull, false);
+  // the record has settled it all: the deployer passes that on, and the services are not asked
+  seen.length = 0;
+  const { state } = foldFacts(emptyRecord(), facts, options());
+  const quiet = await collectFacts(cfg, now, fetchFn, skipOf(state));
+  assert.deepEqual(seen, [], "nothing asked");
+  assert.deepEqual(quiet.service.links, {});
+  // a link nobody has paid yet, made a few hours ago, is asked about again; one made two days ago is not
+  const unpaid = { settled: skipOf(state).settled, paid: [] as string[] };
+  seen.length = 0; await collectFacts(cfg, now, fetchFn, unpaid);
+  assert.deepEqual(seen.filter((s) => s.includes("reference_id")).length, 1);
+  seen.length = 0; await collectFacts(cfg, new Date(now.getTime() + 2 * 86_400_000), fetchFn, unpaid);
+  assert.deepEqual(seen.filter((s) => s.includes("reference_id")), []);
+  // an event the agent changed or deleted is asked for by its id
+  const changed: Facts = JSON.parse(JSON.stringify(facts));
+  changed.guards.calendar!.decisions.push({ ...changed.guards.calendar!.decisions[0], id: "gd-del", operation: "delete", outcome: "allow", dispatched: true, principal: { workload: "agent-demo" }, arguments: { calendarId: ["str", "c"], eventId: ["str", "ev_9"] } });
+  const fetchChanged = (async (url: string | URL | Request) => {
+    const u = new URL(String(url));
+    if (u.hostname.endsWith(".admin")) { const g = changed.guards[u.hostname.split(".")[0] as "razorpay"]!; return Response.json(u.pathname === "/admin/decisions" ? { decisions: g.decisions } : u.pathname === "/admin/intents" ? { intents: g.intents } : u.pathname === "/admin/approvals" ? { approvals: g.approvals } : { counts: g.counts }); }
+    return fetchFn(url);
+  }) as typeof fetch;
+  const gone = await collectFacts(cfg, now, fetchChanged, { settled: skipOf(state).settled, paid: skipOf(state).paid });
+  assert.deepEqual(gone.service.eventsById, { ev_9: "gone" });
+  // and the delete is confirmed by the calendar saying there is no such event, not by the agent
+  const cancelled = foldFacts(emptyRecord(), { ...changed, service: { ...changed.service, eventsById: gone.service.eventsById } }, options()).state.entries.filter((e) => e.action === "cancel_booking");
+  assert.deepEqual(cancelled.map((e) => [e.booking, e.outcome]), [["ev_9", "confirmed"]]);
+  const notAsked = foldFacts(emptyRecord(), { ...changed, service: { ...changed.service, eventsById: {} } }, options(Date.parse(facts.at) + GRACE_MS + 60_000)).state.entries.filter((e) => e.action === "cancel_booking");
+  assert.deepEqual(notAsked.map((e) => e.outcome), ["unconfirmed"], "a delete the calendar was not asked about is not confirmed");
 });
 
 test("a provider answer that is not 2xx is 'failed', never 'confirmed', even if the call went out", () => {

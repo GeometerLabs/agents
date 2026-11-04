@@ -10,7 +10,7 @@
 //   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams razorpay,whatsapp,calendar] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
 //                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses and the one credential it must use instead
 //   agent check|deploy|show <name> [--credential]      the same checks and checked deploy as a shop's; show prints the addresses again
-//   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every quarter of an hour)
+//   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every five minutes)
 //   agent report <name> --month 2026-11 --out <folder> [--language en]      the monthly report and certificate from that record
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards

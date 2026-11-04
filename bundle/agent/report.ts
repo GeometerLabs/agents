@@ -22,7 +22,7 @@ export function writeAgentReport(dir: string, agent: string, o: AgentReportOptio
   const folder = readAgent(dir, agent);
   if (!folder.settings) throw new Error(`${agent}'s settings are not usable: ${folder.problems.join(" ")}`);
   const exported = serverPaths(dir).exportsOf(agent);
-  if (!existsSync(`${exported}/record.json`)) throw new Error(`There is no record for ${agent} yet. It is made from the Guards' decisions: run \`geometer agent record ${agent}\` (the deployer also does it every quarter of an hour).`);
+  if (!existsSync(`${exported}/record.json`)) throw new Error(`There is no record for ${agent} yet. It is made from the Guards' decisions: run \`geometer agent record ${agent}\` (the deployer also does it every five minutes).`);
   const entries = JSON.parse(readFileSync(`${exported}/record.json`, "utf8")) as RecordEntry[];
   const bookings = JSON.parse(readFileSync(`${exported}/bookings.json`, "utf8")) as Booking[];
   const keyFile = secretFile(dir, "panel", "signing_key");

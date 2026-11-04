@@ -136,10 +136,12 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     const c = config.ownAgents?.[args[0]];
     if (!c) { console.error(`no agent ${args[0]}`); return 2; }
     const { collectFacts } = await import("../agent/facts.ts");
+    let skip: { settled: string[]; paid: string[] } | undefined;
+    try { skip = args[1] ? JSON.parse(args[1]) : undefined; } catch { /* ask about everything */ }
     out(await collectFacts({
       agentId: `agent-${args[0]}`, relayId: `relay-${args[0]}`, recordToken: readSecret(c.recordTokenFile), ...(c.calendarId ? { calendarId: c.calendarId } : {}),
       guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, "") as "razorpay", adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
-    }, new Date()));
+    }, new Date(), fetch, skip));
     return 0;
   }
   if (command === "stop") { out(await stopShop(config, args[0], args[1] !== "off", args[2] ?? "someone", args.slice(3).join(" "))); return 0; }
@@ -154,7 +156,7 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     return 0;
   }
   if (command === "run") return await run(config);
-  console.error("usage: ops.ts run | admin <guard> <METHOD> <path> [json] | observe | stop <shop> <on|off> <by> <reason> | issue-approver <shop> <ttl>");
+  console.error("usage: ops.ts run | admin <guard> <METHOD> <path> [json] | observe | stop <shop> <on|off> <by> <reason> | issue-approver <shop> <ttl> | agent-facts <agent> [skip json]");
   return 2;
 }
 

@@ -73,6 +73,7 @@ export async function applyOnce(ctx: Context): Promise<{ applied: string[]; fail
 const readdirSafe = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir).filter((n) => !n.startsWith(".")) : []);
 
 const HOUR = 3_600_000;
+export const AGENT_RECORD_EVERY_MS = 5 * 60_000;
 const warned = new Set<string>();
 
 /**
@@ -160,8 +161,9 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
     for (const shop of [...shops, ...withRelay]) await renewRelayCredential(ctx, shop);
     jobs.relayCredentialsAt = now.toISOString(); ran.push("relay credentials");
   }
-  // the record of each agent someone else wrote, from its Guards' decisions and the services' own state: every quarter of an hour, as a shop's is exported
-  if (Object.values(state.agents ?? {}).some((a) => a.applied) && since(jobs.agentRecordsAt) >= 15 * 60_000) {
+  // the record of each agent someone else wrote, from its Guards' decisions and the services' own state: every five minutes. Guard lists only its 500 most recent decisions, so
+  // the record is read well before a busy agent could fill the list (and what is settled is not asked of the services again, so the record's own reads stay few)
+  if (Object.values(state.agents ?? {}).some((a) => a.applied) && since(jobs.agentRecordsAt) >= AGENT_RECORD_EVERY_MS) {
     jobs.agentRecordsAt = now.toISOString();
     (await recordAgents(ctx)).filter((l) => /could not|cannot/u.test(l)).forEach((l) => ctx.log(l)); ran.push("agent records");
   }

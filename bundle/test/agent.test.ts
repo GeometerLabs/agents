@@ -2,14 +2,14 @@
 // the compose file puts the Guards on their own `gate` network with Caddy and nothing else; and a shop's deploy never takes an agent's Guards away.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addAgent, connectionOf, connectionText, deployAgent } from "../agent/deploy.ts";
 import { agentFromFlags, readAgent } from "../agent/folder.ts";
 import type { AgentFlags } from "../agent/folder.ts";
 import { planAgent } from "../agent/plan.ts";
 import { recordAgent } from "../agent/records.ts";
-import { applyOnce, runDueJobs } from "../apply.ts";
+import { AGENT_RECORD_EVERY_MS, applyOnce, runDueJobs } from "../apply.ts";
 import { Refused, deploy } from "../deploy.ts";
 import { ok } from "../lib/runner.ts";
 import { agentBaseUrl, caddyfile, composeServer } from "../generate/compose.ts";
@@ -220,7 +220,7 @@ test("a broken tripwire or a missing key refuses the agent's deploy, names the r
   } finally { w.done(); }
 });
 
-test("the deployer's loop deploys an agent when its folder or its keys change, leaves it alone otherwise, and keeps its record every quarter of an hour", async () => {
+test("the deployer's loop deploys an agent when its folder or its keys change, leaves it alone otherwise, and keeps its record every five minutes", async () => {
   const w = world({}); try {
     addAgent(w.root, "my-agent", flags(), noFiles, NOW);
     w.handIn("my-agent", agentSecrets());
@@ -241,18 +241,40 @@ test("the deployer's loop deploys an agent when its folder or its keys change, l
     let clock = Date.parse(facts.at);
     const ctx = { ...w.ctx, runner, now: () => new Date(clock) };
     assert.ok((await runDueJobs(ctx)).includes("agent records"));
-    assert.deepEqual(asked, [["agent-facts", "my-agent"]]);
+    assert.deepEqual(asked.map((a) => a.slice(0, 2)), [["agent-facts", "my-agent"]]);
+    assert.deepEqual(JSON.parse(asked[0][2]), { settled: [], paid: [] }, "the first time, everything is asked about");
     assert.equal(JSON.parse(readFileSync(join(w.paths.exportsOf("my-agent"), "record.json"), "utf8")).length, 11);
     clock += 60_000;
-    assert.ok(!(await runDueJobs(ctx)).includes("agent records"), "not again within a quarter of an hour");
-    clock += 15 * 60_000;
+    assert.ok(!(await runDueJobs(ctx)).includes("agent records"), "not again within five minutes");
+    clock += AGENT_RECORD_EVERY_MS;
     assert.ok((await runDueJobs(ctx)).includes("agent records"));
     assert.equal(JSON.parse(readFileSync(join(w.paths.exportsOf("my-agent"), "record.json"), "utf8")).length, 11, "the same facts add nothing");
+    // and the services are not asked again about what the record has settled: the confirmed link, refund and event, and the link whose deposit is in
+    const skip = JSON.parse(asked[1][2]) as { settled: string[]; paid: string[] };
+    assert.deepEqual(skip.paid, ["b-1"]);
+    assert.ok(skip.settled.length >= 5 && skip.settled.every((id) => id.startsWith("gd-")), skip.settled.join());
     // an ops that cannot answer leaves the record as it was and says so
     const dead = await recordAgent({ ...ctx, runner: { run: async () => ({ code: 1, stdout: "", stderr: "container not running" }) } }, "my-agent");
     assert.deepEqual([dead.added, dead.total], [0, 11]);
     assert.match(dead.problems[0], /could not be asked \(container not running\)/);
   } finally { w.done(); }
+});
+
+test("a server that holds only agents someone else wrote needs no model key; one with a deployed shop still does", async () => {
+  const w = world({}); try {
+    rmSync(join(w.paths.secrets, "g-model"), { recursive: true, force: true });
+    addAgent(w.root, "my-agent", flags(), noFiles, NOW);
+    w.handIn("my-agent", agentSecrets());
+    assert.equal((await deployAgent(w.ctx, "my-agent")).proven.passed, 12);
+  } finally { w.done(); }
+  const s = world({ "glow-salon": panelRuntime() }); try {
+    s.handIn("glow-salon");
+    await deploy(s.ctx, "glow-salon");
+    rmSync(join(s.paths.secrets, "g-model"), { recursive: true, force: true });
+    addAgent(s.root, "my-agent", flags(), noFiles, NOW);
+    s.handIn("my-agent", agentSecrets());
+    assert.deepEqual((await refusedWith(deployAgent(s.ctx, "my-agent"))).map((p) => p.rule), ["secret-missing:model_key"]);
+  } finally { s.done(); }
 });
 
 test("an agent that calls Razorpay and WhatsApp only needs only their keys", async () => {

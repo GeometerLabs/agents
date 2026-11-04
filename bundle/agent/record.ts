@@ -9,7 +9,7 @@ import { digest } from "../../pathways/bookings/src/record.ts";
 import type { Action, Outcome, RecordEntry, RuleDecision } from "../../pathways/bookings/src/record.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import { hide } from "../backup/export.ts";
-import { typedMap, typedText } from "./facts.ts";
+import { label, typedMap, typedText } from "./facts.ts";
 import type { Approval, Decision, Facts } from "./facts.ts";
 
 export interface RecordState {
@@ -18,6 +18,8 @@ export interface RecordState {
   entries: RecordEntry[];
   /** What has been written, by the thing it was about (a decision, an approval, a payment) and how it stood. */
   seen: Record<string, { seq: number; outcome: Outcome }>;
+  /** The newest decision (its time) read from each Guard so far: what a gap in Guard's list of recent decisions is measured from. */
+  marks?: Record<string, number>;
 }
 export const emptyRecord = (): RecordState => ({ schema: 1, entries: [], seen: {} });
 
@@ -55,15 +57,15 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
       const at = Number(d.at_ms);
       if (d.operation === "create_link") {
         const ref = typedText(d.arguments.reference_id) ?? null;
-        if (d.outcome === "deny") { refused(d, "create_deposit_link", ref); continue; }
+        if (d.outcome === "deny") { refused(d, "create_deposit_link", label(ref)); continue; }
         if (d.outcome !== "allow" || !d.dispatched) continue;
         const link = ref ? facts.service.links[ref] : undefined;
-        mk(d.id, at, { conversation: "agent", booking: ref, action: "create_deposit_link", inputs: { call: d.call }, outcome: failedOrNot(d, !!link), refs: { ...(link ? { linkId: link.id } : {}), ...(ref ? { referenceId: ref } : {}) } });
+        mk(d.id, at, { conversation: "agent", booking: label(ref), action: "create_deposit_link", inputs: { call: d.call }, outcome: failedOrNot(d, !!link), refs: { ...(link ? { linkId: link.id } : {}), ...(ref ? { referenceId: label(ref)! } : {}) } });
       } else if (d.operation === "refund") {
         const paymentId = typedText(d.arguments.payment_id) ?? "";
         const amount = typedText(d.arguments.amount) ?? "";
         const receipt = typedText(d.arguments.receipt);
-        const booking = receipt ?? (paymentId || null);
+        const booking = label(receipt ?? (paymentId || null));
         if (d.outcome === "deny") { refused(d, "refund", booking, "agent", ruleDecisions(d, "block")); continue; }
         if (d.outcome === "hold") {
           // a call held again while it waits is the same hold: one entry for each approval
@@ -80,13 +82,13 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
     }
     // the deposit: a payment on a link the agent made, as Razorpay shows it
     for (const [ref, link] of Object.entries(facts.service.links)) {
-      for (const p of link?.payments ?? []) mk(`deposit:${p.paymentId}`, p.createdAt * 1000, { conversation: "customer", booking: ref, action: "record_deposit", inputs: { link: link!.id, payment: p.paymentId }, outcome: "confirmed", refs: { paymentId: p.paymentId, linkId: link!.id, amountPaise: String(p.amount) } });
+      for (const p of link?.payments ?? []) mk(`deposit:${p.paymentId}`, p.createdAt * 1000, { conversation: "customer", booking: label(ref), action: "record_deposit", inputs: { link: link!.id, payment: p.paymentId }, outcome: "confirmed", refs: { paymentId: p.paymentId, linkId: link!.id, amountPaise: String(p.amount) } });
     }
     // the owner's answer, as Guard holds it: signed by the owner's approver, not a message that says so
     for (const a of rz.approvals as Approval[]) {
       if (!a.approver || !["approved", "consumed", "denied"].includes(a.state) || !a.decided_at_ms) continue;
       const args = a.arguments ?? {};
-      const booking = typedText(args.receipt) ?? typedText(args.payment_id) ?? null;
+      const booking = label(typedText(args.receipt) ?? typedText(args.payment_id) ?? null);
       mk(`approval:${a.id}`, Number(a.decided_at_ms), { conversation: "owner", booking, action: "owner_decision", inputs: { approval: a.id, state: a.state }, outcome: "confirmed", language: o.settings.owner.language, refs: { command: a.state === "denied" ? "deny" : "approve", approval: a.id } });
     }
   }
@@ -110,12 +112,13 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
         if (d.outcome === "deny") { refused(d, "reschedule_booking", eventId); continue; }
         if (d.outcome !== "allow" || !d.dispatched) continue;
         const start = typedText(typedMap(d.arguments.start)?.dateTime);
-        const event = events?.find((e) => e.id === eventId && (start === undefined || (e.start !== null && Date.parse(e.start) === Date.parse(start))));
+        const there = facts.service.eventsById?.[eventId];
+        const event = there && there !== "gone" && (start === undefined || (there.start !== null && Date.parse(there.start) === Date.parse(start))) ? there : undefined;
         mk(d.id, at, { conversation: "agent", booking: eventId, action: "reschedule_booking", inputs: { call: d.call }, outcome: failedOrNot(d, !!event), refs: { eventId } });
       } else if (d.operation === "delete" && eventId) {
         if (d.outcome === "deny") { refused(d, "cancel_booking", eventId); continue; }
         if (d.outcome !== "allow" || !d.dispatched) continue;
-        const gone = events !== null && !events.some((e) => e.id === eventId && e.status !== "cancelled");
+        const gone = facts.service.eventsById?.[eventId] === "gone";
         mk(d.id, at, { conversation: "agent", booking: eventId, action: "cancel_booking", inputs: { call: d.call }, outcome: failedOrNot(d, gone), refs: { eventId } });
       } else if (d.outcome === "deny") {
         refused(d, d.operation, eventId ?? null);
@@ -142,7 +145,7 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
 }
 
 /** One pass: what Guards and services say now, added to the record. Returns the new state and only the entries it added. */
-export function foldFacts(prev: RecordState, facts: Facts, o: FoldOptions): { state: RecordState; added: RecordEntry[] } {
+export function foldFacts(prev: RecordState, facts: Facts, o: FoldOptions): { state: RecordState; added: RecordEntry[]; /** Calls that fell out of a Guard's list before they were read, in words. Empty when the record is whole. */ gaps: string[] } {
   const state: RecordState = { schema: 1, entries: [...prev.entries], seen: { ...prev.seen } };
   const added: RecordEntry[] = [];
   const append = (key: string, c: Candidate) => {
@@ -150,17 +153,32 @@ export function foldFacts(prev: RecordState, facts: Facts, o: FoldOptions): { st
     state.entries.push(entry); added.push(entry);
     state.seen[key] = { seq: entry.seq, outcome: entry.outcome };
   };
-  for (const c of candidates(facts, o)) {
+  // Guard lists only its 500 most recent decisions. If the oldest it shows is newer than the newest this record had already read, calls fell out of the list unread: say so in the
+  // record (an entry the report lists as left unconfirmed) and in what is returned, rather than looking complete.
+  const gaps: string[] = [];
+  const found: Candidate[] = [];
+  state.marks = { ...prev.marks };
+  for (const [kind, g] of Object.entries(facts.guards)) {
+    if (!g) continue;
+    const mark = prev.marks?.[kind];
+    if (g.windowFull && mark !== undefined && g.oldestAtMs !== undefined && g.oldestAtMs > mark) {
+      const message = `${kind}'s Guard lists only its ${g.decisions.length} most recent decisions, and the oldest it showed (${new Date(g.oldestAtMs).toISOString()}) is newer than the last this record had read (${new Date(mark).toISOString()}), so some calls fell out of the list before they were read and are missing from the record.`;
+      gaps.push(message);
+      found.push({ key: `gap:${kind}:${g.oldestAtMs}`, atMs: g.oldestAtMs, entry: { conversation: "agent", booking: null, action: "record_gap" as Action, inputsDigest: digest({ kind, from: mark, to: g.oldestAtMs }), outcome: "unconfirmed", decisions: [], language: o.settings.languages[0], notes: message.slice(0, 300), refs: {} } });
+    }
+    if (g.newestAtMs !== undefined) state.marks[kind] = Math.max(mark ?? 0, g.newestAtMs);
+  }
+  for (const c of [...candidates(facts, o), ...found].sort((a, b) => a.atMs - b.atMs || (a.key < b.key ? -1 : 1))) {
     const was = state.seen[c.key];
     if (!was) {
-      // not shown by the service yet: give it a little time before writing "unconfirmed" into a record that is only ever added to
-      if (c.entry.outcome === "unconfirmed" && o.now - c.atMs < GRACE_MS) continue;
+      // not shown by the service yet: give it a little time before writing "unconfirmed" into a record that is only ever added to (a gap is already a fact)
+      if (c.entry.outcome === "unconfirmed" && !c.key.startsWith("gap:") && o.now - c.atMs < GRACE_MS) continue;
       append(c.key, c);
     } else if ((was.outcome === "unconfirmed" || was.outcome === "attempted") && c.entry.outcome === "confirmed" && !state.seen[`${c.key}#confirmed`]) {
       append(`${c.key}#confirmed`, c);
     }
   }
-  return { state, added };
+  return { state, added, gaps };
 }
 
 /**
