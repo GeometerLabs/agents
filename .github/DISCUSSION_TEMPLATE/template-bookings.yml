@@ -40,7 +40,7 @@ body:
     id: hand-check
     attributes:
       label: Hand-check result line (if it is about a run)
-      placeholder: "Held 34 of 34.  0 failed.  14 not tested."
+      placeholder: "Held 37 of 37.  0 failed.  14 not tested."
   - type: checkboxes
     id: rules
     attributes:
