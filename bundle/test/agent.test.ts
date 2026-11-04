@@ -8,7 +8,10 @@ import { addAgent, connectionOf, connectionText, deployAgent } from "../agent/de
 import { agentFromFlags, readAgent } from "../agent/folder.ts";
 import type { AgentFlags } from "../agent/folder.ts";
 import { planAgent } from "../agent/plan.ts";
+import { recordAgent } from "../agent/records.ts";
+import { applyOnce, runDueJobs } from "../apply.ts";
 import { Refused, deploy } from "../deploy.ts";
+import { ok } from "../lib/runner.ts";
 import { agentBaseUrl, caddyfile, composeServer } from "../generate/compose.ts";
 import type { AgentDeploy, ShopDeploy } from "../generate/compose.ts";
 import { names, planShop } from "../generate/shop.ts";
@@ -213,6 +216,40 @@ test("a broken tripwire or a missing key refuses the agent's deploy, names the r
     assert.deepEqual(composeCalls(w), [], "no docker compose command ran");
     assert.ok(!existsSync(join(w.paths.generated, "compose.yaml")));
     assert.equal(loadState(w.root).agents?.["my-agent"]?.applied, undefined, "nothing was recorded as applied");
+  } finally { w.done(); }
+});
+
+test("the deployer's loop deploys an agent when its folder or its keys change, leaves it alone otherwise, and keeps its record every quarter of an hour", async () => {
+  const w = world({}); try {
+    addAgent(w.root, "my-agent", flags(), noFiles, NOW);
+    w.handIn("my-agent", agentSecrets());
+    assert.deepEqual(await applyOnce(w.ctx), { applied: ["my-agent"], failed: 0, skipped: [] });
+    assert.deepEqual(await applyOnce(w.ctx), { applied: [], failed: 0, skipped: ["my-agent"] }, "nothing changed");
+    // the owner lowers the limit: a new set of Guard bundles, with a higher version
+    const settings = JSON.parse(readFileSync(join(w.paths.agent("my-agent"), "settings.json"), "utf8"));
+    settings.cancellation.refundLimitInr = 50;
+    writeFileSync(join(w.paths.agent("my-agent"), "settings.json"), JSON.stringify(settings));
+    assert.deepEqual((await applyOnce(w.ctx)).applied, ["my-agent"]);
+    assert.equal(loadState(w.root).agents!["my-agent"].guards.razorpay.version, 2);
+    assert.equal(loadState(w.root).agents!["my-agent"].guards.whatsapp.version, 1, "a Guard whose spec did not change keeps its version");
+    // the record job asks ops for what the Guards and the services say, and keeps it
+    const facts = JSON.parse(readFileSync(new URL("./fixtures/own-agent-facts.json", import.meta.url), "utf8"));
+    const asked: string[][] = [];
+    const runner = { run: (command: string, args: string[], options?: Parameters<typeof w.ctx.runner.run>[2]) => { if (args.includes("agent-facts")) { asked.push(args.slice(args.indexOf("agent-facts"))); return Promise.resolve(ok(JSON.stringify(facts))); } return w.ctx.runner.run(command, args, options); } };
+    let clock = Date.parse(facts.at);
+    const ctx = { ...w.ctx, runner, now: () => new Date(clock) };
+    assert.ok((await runDueJobs(ctx)).includes("agent records"));
+    assert.deepEqual(asked, [["agent-facts", "my-agent"]]);
+    assert.equal(JSON.parse(readFileSync(join(w.paths.exportsOf("my-agent"), "record.json"), "utf8")).length, 11);
+    clock += 60_000;
+    assert.ok(!(await runDueJobs(ctx)).includes("agent records"), "not again within a quarter of an hour");
+    clock += 15 * 60_000;
+    assert.ok((await runDueJobs(ctx)).includes("agent records"));
+    assert.equal(JSON.parse(readFileSync(join(w.paths.exportsOf("my-agent"), "record.json"), "utf8")).length, 11, "the same facts add nothing");
+    // an ops that cannot answer leaves the record as it was and says so
+    const dead = await recordAgent({ ...ctx, runner: { run: async () => ({ code: 1, stdout: "", stderr: "container not running" }) } }, "my-agent");
+    assert.deepEqual([dead.added, dead.total], [0, 11]);
+    assert.match(dead.problems[0], /could not be asked \(container not running\)/);
   } finally { w.done(); }
 });
 
