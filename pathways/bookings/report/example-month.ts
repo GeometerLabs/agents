@@ -44,7 +44,7 @@ export interface BusyMonth {
 }
 
 export async function runBusyMonth(): Promise<BusyMonth> {
-  const w = createWorld({ settings, nowMs: at(10, 28, 10) });
+  const w = createWorld({ settings, nowMs: at(10, 28, 10), interactive: false }); // a scripted month of records and money: every message is plain text, as it was written
   const ref = (customer: string) => [...w.store.bookings.values()].filter((b) => b.customer === customer).at(-1)!.id;
   const goTo = async (ms: number) => { while (w.clock.now() < ms) await w.advance(Math.min(30, (ms - w.clock.now()) / MINUTE)); }; // small steps, so no reminder is skipped
   const pay = async (customer: string, times = 1) => {

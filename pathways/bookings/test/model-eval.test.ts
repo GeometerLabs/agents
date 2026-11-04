@@ -8,6 +8,7 @@ import type { Intent } from "../src/adapters/model.ts";
 import { LANGUAGES } from "../src/settings.ts";
 import { compareIntent, costPer1000, percentile, summarise } from "../scripts/eval-score.ts";
 import { loadMessages, pickMessages, runEval } from "../scripts/model-eval.ts";
+import { startStandins } from "../standins/server.ts";
 import type { Candidate } from "../scripts/model-eval.ts";
 import { anthropicReply, openaiReply, startStubModel } from "./stub-model-server.ts";
 import type { StubModel, StubReply, StubRequest } from "./stub-model-server.ts";
@@ -72,9 +73,12 @@ test("models.json: every candidate is complete, every price names its page and d
   const { candidates } = JSON.parse(text) as { candidates: Candidate[] };
   assert.ok(candidates.length >= 2);
   for (const c of candidates) {
-    for (const field of ["name", "wire", "baseUrl", "model", "keyEnv"] as const) assert.equal(typeof c[field], "string", `${c.name} ${field}`);
-    assert.ok(["openai", "anthropic"].includes(c.wire));
-    assert.match(c.keyEnv, /^[A-Z][A-Z0-9_]+$/);
+    for (const field of ["name", "wire", "model"] as const) assert.equal(typeof c[field], "string", `${c.name} ${field}`);
+    assert.ok(["openai", "anthropic", "systemone"].includes(c.wire));
+    // an address is written in the file, or named in .env (a self-hosted or per-account address); a key is named in .env when the service needs one
+    assert.ok(typeof c.baseUrl === "string" || typeof c.urlEnv === "string", `${c.name} needs an address or the name of the .env variable that holds it`);
+    if (c.wire !== "systemone") assert.equal(typeof c.keyEnv, "string", `${c.name} keyEnv`);
+    for (const named of [c.keyEnv, c.urlEnv]) if (named !== undefined) assert.match(named, /^[A-Z][A-Z0-9_]+$/);
     // A price is either not filled in yet, or read from the provider's price page with the page and the date in the note.
     if (c.priceInputPerMillion !== null || c.priceOutputPerMillion !== null) {
       assert.equal(typeof c.priceInputPerMillion, "number", `${c.name}: both prices or neither`);
@@ -180,4 +184,49 @@ test("--only runs just the named candidates", async () => {
   const { summaries } = await run({ env: { STUB_KEY: "k" }, models, maxMessages: 4, only: ["b"] });
   assert.deepEqual(summaries.map((x) => x.name), ["rule parser", "b"]);
   assert.equal(s.requests.length, 4);
+});
+
+// ---- the three steps, scored one at a time -----------------------------------------------------------------------------------------
+
+test("the candidates include a decision model (Laya, Jev) and DeepSeek V4.1 Flash on DeepInfra, and with no address or key every one of them is skipped by name", async () => {
+  const { candidates } = JSON.parse(readFileSync(new URL("../eval/models.json", import.meta.url), "utf8")) as { candidates: Candidate[] };
+  const named = (name: string) => candidates.find((c) => c.name === name)!;
+  assert.deepEqual([named("laya").wire, named("laya").urlEnv, named("laya").keyEnv], ["systemone", "LAYA_BASE_URL", undefined]);
+  assert.deepEqual([named("jev").wire, named("jev").urlEnv, named("jev").keyEnv], ["systemone", "JEV_BASE_URL", "JEV_API_KEY"]);
+  assert.deepEqual([named("deepinfra-deepseek-v4.1-flash").baseUrl, named("deepinfra-deepseek-v4.1-flash").keyEnv], ["https://api.deepinfra.com/v1/openai", "DEEPINFRA_API_KEY"]);
+  const { skipped, summaries } = await run({ env: {}, models: candidates.filter((c) => ["laya", "jev", "deepinfra-deepseek-v4.1-flash"].includes(c.name)), fetchFn: noNetwork });
+  assert.equal(summaries.length, 1);
+  assert.deepEqual(skipped, ["Skipped deepinfra-deepseek-v4.1-flash: no DEEPINFRA_API_KEY in .env.", "Skipped laya: no LAYA_BASE_URL in .env.", "Skipped jev: no JEV_BASE_URL in .env."]);
+  // an address without its key: Jev is still skipped, and the line names the key
+  const keyless = await run({ env: { JEV_BASE_URL: "http://127.0.0.1:1" }, models: [named("jev")], fetchFn: noNetwork });
+  assert.deepEqual(keyless.skipped, ["Skipped jev: no JEV_API_KEY in .env."]);
+});
+
+test("a decision model is scored on its own against the stand-in, with the key sent to it; an unsure answer counts as a fallback and the tokens are priced", async () => {
+  const sure = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y", systemOne: { requireKey: "made-up-jev-key", decider: (name, question) => ({ choice: name === "intent" ? "greeting" : question.type === "choice" && "no_service" in question.criteria ? "no_service" : "no_slot", p: 0.9 }) } }, { port: 0 });
+  stubs.push({ close: sure.close } as StubModel);
+  const models = [candidate({ name: "jev", wire: "systemone" as Candidate["wire"], baseUrl: sure.url, keyEnv: "JEV_API_KEY", model: "clm-latest", priceInputPerMillion: 0.042, priceOutputPerMillion: 0.042 })];
+  const { summaries, output } = await run({ env: { JEV_API_KEY: "made-up-jev-key" }, models });
+  assert.equal(sure.systemOne!.requests.length > 0, true, "the rules were not sure of some of the messages, so the decision model was asked");
+  assert.ok(sure.systemOne!.requests.every((r) => r.authorization === "Bearer made-up-jev-key"));
+  assert.equal(summaries[1].name, "jev");
+  assert.ok(summaries[1].tokensIn > 0);
+  assert.match(output, /Tokens used by this run/);
+
+  const unsure = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y", systemOne: { decider: () => ({ choice: "other", p: 0.1 }) } }, { port: 0 });
+  stubs.push({ close: unsure.close } as StubModel);
+  const second = await run({ env: {}, models: [candidate({ name: "laya", wire: "systemone" as Candidate["wire"], baseUrl: unsure.url, model: "laya", keyEnv: undefined })] });
+  assert.ok(second.summaries[1].fallbacks > 0, "a decision model that is unsure of a message is counted as handing it on");
+  assert.match(second.output, /unsure: below the threshold/);
+});
+
+test("DeepSeek on DeepInfra is asked through the OpenAI wire with the key as a bearer token, and scored with its price", async () => {
+  const s = await startStubModel(perfect("openai"));
+  stubs.push(s);
+  const models = [candidate({ name: "deepinfra-deepseek-v4.1-flash", wire: "openai", baseUrl: s.url, keyEnv: "DEEPINFRA_API_KEY", model: "deepseek-ai/DeepSeek-V4.1-Flash", priceInputPerMillion: 0.16, priceOutputPerMillion: 0.48 })];
+  const { summaries, output } = await run({ env: { DEEPINFRA_API_KEY: "made-up-deepinfra-key" }, models, maxMessages: 8 });
+  assert.equal(s.requests.length, 8);
+  assert.ok(s.requests.every((r) => r.headers.authorization === "Bearer made-up-deepinfra-key" && r.body.model === "deepseek-ai/DeepSeek-V4.1-Flash"));
+  assert.equal(summaries[1].right, 8);
+  assert.match(output, /deepinfra-deepseek-v4\.1-flash/);
 });

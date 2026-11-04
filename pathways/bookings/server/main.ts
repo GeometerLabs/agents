@@ -25,8 +25,12 @@ try {
   const { client, server } = running;
   console.log(`Geometer · Bookings agent · ${client.settings.name} (${client.name}) · ${client.lock.pathway}@${client.lock.version}`);
   console.log(client.runtime.mode === "fakes" ? "Stand-in services: nothing real is contacted." : "Live: every call to a service goes through Guard.");
-  const parser = client.runtime.parser;
-  console.log(parser ? `Messages are read by a model (${parser.wire} wire, ${new URL(parser.baseUrl).origin}); if it cannot answer, the rules read the message.` : "Messages are read by the built-in rules (no model).");
+  const { parser, decision, ai, allowance } = client.runtime;
+  console.log(parser || decision
+    ? `Messages are read by the rules first${decision ? `, then a decision model (${decision.provider}, ${new URL(decision.baseUrl).origin})` : ""}${parser ? `, then a language model (${parser.wire} wire, ${new URL(parser.baseUrl).origin})` : ""}; a tapped button or list row is never read by a model. If a model cannot answer, the rules read the message.`
+    : "Messages are read by the built-in rules (no model).");
+  if (allowance) console.log(`AI allowance this month: ${[allowance.messages !== undefined ? `${allowance.messages} messages` : "", allowance.costInr !== undefined ? `about ₹${allowance.costInr}` : ""].filter(Boolean).join(" or ")}; when it is used up the agent answers with buttons and lists.`);
+  if (ai === "buttons") console.log('runtime.json says "ai": "buttons", so no model is asked: the agent answers with buttons and lists.');
   console.log(`Listening on ${server.url} · data in ${client.runtime.dataDir} · a tick every ${client.runtime.tickSeconds} s`);
   console.log("Press Ctrl+C to stop.");
   for (const signal of ["SIGINT", "SIGTERM"] as const) {

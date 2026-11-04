@@ -15,6 +15,8 @@ import type { RefundIssueKind, Store } from "../src/booking.ts";
 import type { Calendar } from "../src/adapters/calendar.ts";
 import type { Messaging } from "../src/adapters/messaging.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
+import { summaryOf } from "../src/ai-state.ts";
+import type { AiPolicy, AiSummary } from "../src/ai-state.ts";
 import type { Payments } from "../src/adapters/payments.ts";
 import type { Clock } from "../src/clock.ts";
 import { createRecord } from "../src/record.ts";
@@ -39,6 +41,8 @@ export interface RuntimeOptions {
   services: Services;
   parser: IntentParser;
   pathwayVersion: string;
+  /** The monthly AI allowance and the outside switch for this shop (src/ai-state.ts). Left out: no limit and no switch. */
+  ai?: AiPolicy;
   retryDelaysMs?: number[];
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: AgentEvent, run: () => Promise<void>) => Promise<void>;
@@ -60,6 +64,8 @@ export interface Status {
   steps: number;
   errors: number;
   startedAt: string;
+  /** This month's understanding: messages read at each step, the estimated cost in micro-rupees, the allowance, and whether the agent is in button mode and why. Counts only. */
+  ai: AiSummary;
 }
 
 /**
@@ -107,6 +113,7 @@ export interface Runtime {
 
 export function createRuntime(options: RuntimeOptions): Runtime {
   const { settings, store: db, clock, services, parser, pathwayVersion } = options;
+  const policy: AiPolicy = options.ai ?? {};
   const log = options.log ?? (() => undefined);
 
   // What the last saved step left. Replaced only after a save succeeds. The status reads these, never a step in progress.
@@ -119,16 +126,19 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   async function step(event: AgentEvent, taskId?: string): Promise<void> {
     const store = parseStore(snapshot);
     const record = createRecord(clock, entries);
-    const agent = createAgent({ settings, clock, ...services, parser, record, store });
+    const agent = createAgent({ settings, clock, ...services, parser, record, store, ai: policy });
     const run = () => agent.handle(event);
     await (options.aroundStep ? options.aroundStep(event, run) : run());
 
     const after = serializeStore(store);
     const all = record.entries();
     if (taskId === undefined && after === snapshot && all.length === entries.length) return; // a quiet tick has nothing to save
-    db.commitStep({ taskId, snapshot: after, entries: all.slice(entries.length), nowMs: clock.now() });
+    const fresh = all.slice(entries.length);
+    db.commitStep({ taskId, snapshot: after, entries: fresh, nowMs: clock.now() });
     snapshot = after;
     entries = all;
+    // The builder or partner is told once, here, when the agent moves to buttons: the agent writes one ai_mode line per episode (its reason is in the line and in /status).
+    for (const e of fresh) if (e.action === "ai_mode") log(`The agent now answers with buttons and lists, no AI (${e.refs.reason}). The record's ai_mode line says why; /status counts the month.`);
     bookings = countByState(store);
     const was = refunds.needBuilder.total;
     refunds = countRefunds(store);
@@ -158,6 +168,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       recordLength: entries.length,
       ...runner.counters(),
       startedAt,
+      ai: summaryOf(parseStore(snapshot), policy, clock.now(), settings.timezone),
     }),
 
     refundContext(receipt) {

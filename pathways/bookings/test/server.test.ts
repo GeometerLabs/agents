@@ -169,8 +169,9 @@ test("status is counts only: bookings by state, tasks, the last step, the record
     const reply = await t.get("/status", auth);
     assert.equal(reply.status, 200);
     const status = await reply.json() as any;
-    assert.deepEqual(Object.keys(status).sort(), ["bookings", "errors", "lastFailureAt", "lastStepAt", "oldestPendingAt", "pathway", "recordLength", "refunds", "startedAt", "steps", "tasks", "version"]);
+    assert.deepEqual(Object.keys(status).sort(), ["ai", "bookings", "errors", "lastFailureAt", "lastStepAt", "oldestPendingAt", "pathway", "recordLength", "refunds", "startedAt", "steps", "tasks", "version"]);
     assert.deepEqual(status.refunds, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } });
+    assert.deepEqual([status.ai.month, status.ai.messages, status.ai.mode, status.ai.reason], ["2026-11", { rules: 1, decision: 0, model: 0 }, "ai", null], "this month's understanding: counts, never a word");
     assert.equal(status.pathway, "bookings");
     assert.equal(status.version, "0.1.0");
     assert.deepEqual(status.bookings, { awaiting_deposit: 1 });

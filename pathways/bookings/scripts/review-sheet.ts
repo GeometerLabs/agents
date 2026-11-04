@@ -10,6 +10,7 @@ import { parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Intent } from "../src/adapters/model.ts";
 import { glowSalon } from "../src/harness.ts";
 import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatSlot } from "../src/language/format.ts";
+import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
 import { WORDS } from "../src/language/words.ts";
@@ -85,6 +86,17 @@ const WHEN: Record<TemplateId, string> = {
   owner_approval_denied: "The owner denied with the code: nothing is sent",
   owner_approval_expired: "The owner answered after the request had run out: nothing was refunded",
   owner_approval_failed: "The owner's answer could not be recorded just now: send it again",
+  pick_service: "A list of the shop's services is shown (the first hello, or a message that was not understood), so the customer taps instead of typing",
+  pick_slot: "The service is known and the time is not: a list of free times from the calendar is shown",
+  confirm_buttons: "The same read-back as confirm_details, with Yes and No buttons instead of asking the customer to type yes",
+  ask_cancel: "The customer tapped Cancel booking: asked once with Yes and No buttons before anything is cancelled",
+  kept: "The customer tapped No, keep it: the booking stays as it is",
+  told_owner: "The customer tapped Talk to the owner: they are told the owner has been asked to message them",
+  couldnt_tell_owner: "The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write",
+  owner_wants_to_talk: "A customer tapped Talk to the owner (sent at most once an hour for the same customer)",
+  owner_ai_allowance: "Button mode, told once a month: the shop's monthly AI allowance is used up",
+  owner_ai_off: "Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent)",
+  owner_ai_fault: "Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes",
 };
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
@@ -163,6 +175,16 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push(`## 2. Messages to the owner (${ids.filter((id) => id.startsWith("owner_")).length})`, "");
   out.push("Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.", "");
   out.push(table(head, messageRows(true)), "");
+
+  out.push("### The words on the buttons and the lists", "");
+  out.push(`Some of the messages above come with buttons (up to 3, each 20 letters at most) or a list of up to 10 rows (a row's title 24 letters at most) that the customer taps instead of typing. The words on them are below. The rows of the lists are the shop's own service names with their prices, and the free times in the formats of section 3, so only the words below are new. A shorter word is better: WhatsApp cuts what does not fit.`, "");
+  const english = LABELS.en;
+  const labelRows: [keyof typeof english, string][] = [
+    ["yes", "Button under a read-back: yes, that is right"], ["no", "Button under a read-back: no, that is wrong"], ["cancel", "Button under a booking: cancel it (asks once more)"],
+    ["cancelYes", "Button when asked 'cancel your booking?': yes, cancel it"], ["keep", "Button when asked 'cancel your booking?': no, leave it"], ["owner", "Button, and the last row of each list: talk to the shop's owner"],
+    ["pickService", "The button that opens the list of services"], ["pickTime", "The button that opens the list of free times"],
+  ];
+  out.push(table(["Id", "Where it is shown", `Text (${name})`, "Meaning (English)", REVIEWER], labelRows.map(([key, where]) => [`\`${key}\``, where, LABELS[language][key], english[key], ""])), "");
 
   out.push("## 3. Dates and times as the agent writes them", "");
   out.push(table(["Weekday", `Written in ${name}`, REVIEWER], WEEKDAY_NAMES[language].map((w, i) => [WEEKDAYS_EN[i], w, ""])), "");

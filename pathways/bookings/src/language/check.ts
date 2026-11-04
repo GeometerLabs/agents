@@ -56,6 +56,14 @@ function allowedFrom(facts: MessageFacts): Allowed {
       a.times.add(normaliseTime(time));
     }
   }
+  // A list of free times offers several; each one is a time the calendar showed free, taken from the record, and nothing else is allowed.
+  for (const startMs of facts.slotChoices ?? []) {
+    const p = localParts(startMs, facts.timeZone);
+    for (const language of LANGUAGES) {
+      a.dates.add(normaliseDate(formatDate(p, language)));
+      a.times.add(normaliseTime(formatTime(p, language)));
+    }
+  }
   if (facts.link) a.urls.add(facts.link.toLowerCase());
   for (const lit of [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.approvalCode, ...facts.services.map((s) => s.name)]) {
     if (lit) a.literals.push(plain(lit));

@@ -18,6 +18,8 @@ import { calendarStandin } from "./google-calendar.ts";
 import { LostReply } from "./http.ts";
 import type { Handler, StandinReply } from "./http.ts";
 import { razorpayStandin } from "./razorpay.ts";
+import { systemOneStandin } from "./system-one.ts";
+import type { SystemOneStandin, SystemOneStandinOptions } from "./system-one.ts";
 import { approveTemplates, whatsappStandin } from "./whatsapp.ts";
 
 export interface StandinsConfig {
@@ -37,9 +39,11 @@ export interface StandinsConfig {
   fakes?: Partial<Fakes>;
   /** Events per page of a calendar list (default 250, Google's own default). */
   calendarPageSize?: number;
+  /** Also answer the System One decisions API (`POST /v1/systemone`), the way Laya and Jev do. `true` answers from the rule parser. */
+  systemOne?: SystemOneStandinOptions | true;
 }
 
-export interface RunningStandins { server: Server; port: number; url: string; fakes: Fakes; close(): Promise<void> }
+export interface RunningStandins { server: Server; port: number; url: string; fakes: Fakes; /** The System One stand-in, when one was asked for: its `requests` are what the agent asked. */ systemOne?: SystemOneStandin; close(): Promise<void> }
 
 const MAX_BODY = 1024 * 1024;
 
@@ -73,7 +77,9 @@ export async function startStandins(config: StandinsConfig, listen: { port: numb
   };
   approveTemplates(fakes.messaging);
   let authorizationSeen = 0;
+  const systemOne = config.systemOne ? systemOneStandin(config.systemOne === true ? {} : config.systemOne) : undefined;
   const handlers: Handler[] = [
+    ...(systemOne ? [systemOne.handler] : []),
     razorpayStandin(fakes.payments),
     calendarStandin(fakes.calendar, { pageSize: config.calendarPageSize, calendarId: config.calendarId, accessRole: config.calendarAccessRole }),
     whatsappStandin(fakes.messaging, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
@@ -99,5 +105,5 @@ export async function startStandins(config: StandinsConfig, listen: { port: numb
 
   await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(listen.port, listen.host ?? "127.0.0.1", resolve); });
   const port = (server.address() as { port: number }).port;
-  return { server, port, url: `http://127.0.0.1:${port}`, fakes, close: () => new Promise<void>((resolve) => { server.closeAllConnections(); server.close(() => resolve()); }) };
+  return { server, port, url: `http://127.0.0.1:${port}`, fakes, ...(systemOne ? { systemOne } : {}), close: () => new Promise<void>((resolve) => { server.closeAllConnections(); server.close(() => resolve()); }) };
 }

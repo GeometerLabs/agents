@@ -2,10 +2,10 @@
 // pathway.lock (which pathway version it is pinned to). Every problem is said in plain words, all at once, so a builder can
 // fix the folder without a manual. Nothing secret lives here: the internal token is a file named in the environment, and the
 // service keys are never in the runtime at all (Guard holds them).
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
-import { validateSettings } from "../src/settings.ts";
-import type { Settings } from "../src/settings.ts";
+import { LANGUAGES, validateSettings } from "../src/settings.ts";
+import type { Language, Settings } from "../src/settings.ts";
 import { DEFAULT_PORT } from "./server.ts";
 import { PATHWAY } from "./runtime.ts";
 
@@ -19,16 +19,40 @@ export interface LiveServicesConfig {
   timeoutMs?: number;
 }
 
-/** The model that reads customers' messages (the same fields as `ModelConfig` in src/adapters/model-llm.ts). Left out: the rule parser reads them. */
+/**
+ * Step 2 of the understanding: the small language model that reads a message the decision model was unsure of (the same fields as `ModelConfig` in
+ * src/adapters/model-llm.ts). Left out: no language model. A key is never written in runtime.json. Either `baseUrl` is a Guard in front of the provider and
+ * Guard holds the key (with `agentTokenFile` if Guard asks the agent for a credential), or `keyEnv` NAMES an environment variable (for example DEEPINFRA_API_KEY)
+ * that holds the provider's key: it is read once at start, sent as a bearer token only to this one address, and never logged.
+ */
 export interface ParserConfig {
   wire: "openai" | "anthropic";
-  /** The Guard in front of the model provider. No key goes here or anywhere in runtime.json: Guard holds it. */
   baseUrl: string;
   model: string;
   timeoutMs?: number;
   /** A file holding the credential THIS agent presents to that Guard (as for services.*.agentTokenFile). Guard refuses a call with none. A relative path is measured from the client folder. */
   agentTokenFile?: string;
+  /** Who the provider is, for the record and the price list ("deepinfra"). Default: the address's host. */
+  provider?: string;
+  /** The name of the environment variable that holds the provider's key. Left out: no key is sent from here. */
+  keyEnv?: string;
 }
+
+/** Step 1: a System One decision model. Laya runs on the shop's own server (a local address, no key); Jev is hosted (an address, and a key in the named environment variable). */
+export interface DecisionConfig {
+  provider: "laya" | "jev" | "system-one";
+  baseUrl: string;
+  model: string;
+  keyEnv?: string;
+  /** How likely the chosen option must be; below it the message goes to step 2. Default 0.75. */
+  threshold?: number;
+  /** The languages this model is trusted with. Default ["hi", "en"]: Malayalam and Kannada go to step 2 until the eval says otherwise. */
+  languages?: Language[];
+  timeoutMs?: number;
+}
+
+/** The shop's monthly AI allowance for steps 1 and 2. Either one reached puts the shop in button mode until the month ends. */
+export interface AllowanceConfig { messages?: number; costInr?: number }
 
 export interface RuntimeConfig {
   mode: "fakes" | "live";
@@ -38,6 +62,12 @@ export interface RuntimeConfig {
   tickSeconds: number;
   services?: LiveServicesConfig;
   parser?: ParserConfig;
+  decision?: DecisionConfig;
+  /** "buttons" turns every model step off for this shop (written by the bundle from fleet's heartbeat answer). Read again on every message, so it takes effect without a restart. Default "on". */
+  ai?: "on" | "buttons";
+  allowance?: AllowanceConfig;
+  /** Minutes of button mode after a model step fails. Default 5. */
+  pauseMinutes?: number;
 }
 
 export interface ClientFolder {
@@ -80,7 +110,7 @@ function readParser(raw: unknown, folder: string, errors: string[]): ParserConfi
   const before = errors.length;
   const keyLike = Object.keys(raw).filter((k) => /^(api[_-]?key|key|access[_-]?token|auth[_-]?token|token|client[_-]?secret|secret|password|passwd|authorization|bearer)$/iu.test(k)); // whole names: maxTokens is no key
   for (const k of keyLike) errors.push(`parser.${k} is not allowed. ${NO_KEY}`);
-  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs", "agentTokenFile"], "parser", errors);
+  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs", "agentTokenFile", "provider", "keyEnv"], "parser", errors);
   if (raw.agentTokenFile !== undefined && !isText(raw.agentTokenFile)) errors.push("parser.agentTokenFile must be the path of a file that holds this agent's credential for the model's Guard.");
   if (raw.wire !== "openai" && raw.wire !== "anthropic") errors.push('parser.wire must be "openai" (OpenAI-compatible chat completions, which Gemini, Groq and Sarvam also speak) or "anthropic" (the Anthropic Messages API).');
   let url: URL | undefined;
@@ -90,16 +120,67 @@ function readParser(raw: unknown, folder: string, errors: string[]): ParserConfi
   else if (url.search || url.hash) errors.push(`parser.baseUrl must not carry a query or a #fragment, which is where a key hides. ${NO_KEY}`);
   if (!isText(raw.model)) errors.push("parser.model must be the name of the model to ask, as the provider calls it.");
   if (raw.timeoutMs !== undefined && (!Number.isInteger(raw.timeoutMs) || (raw.timeoutMs as number) < 1)) errors.push("parser.timeoutMs must be a whole number of milliseconds. Left out, it waits 8000 before the rules read the message.");
+  if (raw.provider !== undefined && (!isText(raw.provider) || !/^[a-z][a-z0-9-]{0,39}$/u.test(raw.provider))) errors.push('parser.provider must be a short lowercase name for the provider, for example "deepinfra".');
+  readKeyEnv(raw.keyEnv, "parser", url, errors);
+  if (raw.keyEnv !== undefined && raw.agentTokenFile !== undefined) errors.push("parser.keyEnv and parser.agentTokenFile are two ways to authenticate: use keyEnv for a provider reached directly, agentTokenFile for a Guard in front of it, not both.");
   if (errors.length > before) return undefined;
   const agentTokenFile = isText(raw.agentTokenFile) ? (isAbsolute(raw.agentTokenFile) ? raw.agentTokenFile : resolve(folder, raw.agentTokenFile)) : undefined;
-  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}), ...(agentTokenFile ? { agentTokenFile } : {}) };
+  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}), ...(agentTokenFile ? { agentTokenFile } : {}), ...(raw.provider !== undefined ? { provider: raw.provider as string } : {}), ...(raw.keyEnv !== undefined ? { keyEnv: raw.keyEnv as string } : {}) };
+}
+
+const LOOPBACK = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/u;
+
+/** `keyEnv` is the NAME of an environment variable. A key that would travel over plain http to another machine is refused. */
+function readKeyEnv(raw: unknown, where: string, url: URL | undefined, errors: string[]): void {
+  if (raw === undefined) return;
+  if (!isText(raw) || !/^[A-Z][A-Z0-9_]{0,63}$/u.test(raw)) { errors.push(`${where}.keyEnv must be the NAME of an environment variable, like DEEPINFRA_API_KEY. The key itself never goes in runtime.json.`); return; }
+  if (url && url.protocol === "http:" && !LOOPBACK.test(url.hostname)) errors.push(`${where}.keyEnv names a key, and ${where}.baseUrl is plain http to another machine, which would send the key unencrypted. Use https, or leave keyEnv out.`);
+}
+
+const KEY_LIKE = /^(api[_-]?key|key|access[_-]?token|auth[_-]?token|token|client[_-]?secret|secret|password|passwd|authorization|bearer)$/iu;
+
+/** `decision`: step 1, a System One decision model. */
+function readDecision(raw: unknown, errors: string[]): DecisionConfig | undefined {
+  if (!isObj(raw)) { errors.push('"decision" must be an object like {"provider": "laya", "baseUrl": "http://127.0.0.1:8080", "model": "laya"}. Leave it out and no decision model is asked.'); return undefined; }
+  const before = errors.length;
+  const keyLike = Object.keys(raw).filter((k) => KEY_LIKE.test(k));
+  for (const k of keyLike) errors.push(`decision.${k} is not allowed. Name the environment variable that holds the key in decision.keyEnv; the key itself never goes in runtime.json.`);
+  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["provider", "baseUrl", "model", "keyEnv", "threshold", "languages", "timeoutMs"], "decision", errors);
+  if (raw.provider !== "laya" && raw.provider !== "jev" && raw.provider !== "system-one") errors.push('decision.provider must be "laya" (on the shop\'s own server), "jev" (hosted) or "system-one" (any other server that speaks the same API).');
+  let url: URL | undefined;
+  try { url = isText(raw.baseUrl) ? new URL(raw.baseUrl) : undefined; } catch { url = undefined; }
+  if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) errors.push("decision.baseUrl must be the address of the decision model, starting with http:// or https://.");
+  else if (url.username || url.password || url.search || url.hash) errors.push("decision.baseUrl must not hold a user name, a password, a query or a #fragment, which is where a key hides. Use decision.keyEnv.");
+  if (!isText(raw.model)) errors.push("decision.model must be the name the server serves the model under, for example laya.");
+  if (raw.provider === "jev" && !isText(raw.keyEnv)) errors.push('decision.provider "jev" is hosted and needs decision.keyEnv: the name of the environment variable that holds the key. Without the key the step stays off.');
+  readKeyEnv(raw.keyEnv, "decision", url, errors);
+  if (raw.threshold !== undefined && (typeof raw.threshold !== "number" || !(raw.threshold > 0.5 && raw.threshold <= 1))) errors.push("decision.threshold must be a number above 0.5 and up to 1: how likely the chosen option must be. Default 0.75.");
+  if (raw.languages !== undefined && (!Array.isArray(raw.languages) || raw.languages.length === 0 || !raw.languages.every((l) => LANGUAGES.includes(l as Language)))) errors.push(`decision.languages must list languages from ${LANGUAGES.join(", ")}. Default ["hi", "en"].`);
+  if (raw.timeoutMs !== undefined && (!Number.isInteger(raw.timeoutMs) || (raw.timeoutMs as number) < 1)) errors.push("decision.timeoutMs must be a whole number of milliseconds. Default 3000.");
+  if (errors.length > before) return undefined;
+  return {
+    provider: raw.provider as DecisionConfig["provider"], baseUrl: raw.baseUrl as string, model: raw.model as string,
+    ...(raw.keyEnv !== undefined ? { keyEnv: raw.keyEnv as string } : {}), ...(raw.threshold !== undefined ? { threshold: raw.threshold as number } : {}),
+    ...(raw.languages !== undefined ? { languages: raw.languages as Language[] } : {}), ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}),
+  };
+}
+
+function readAllowance(raw: unknown, errors: string[]): AllowanceConfig | undefined {
+  if (!isObj(raw)) { errors.push('"allowance" must be an object like {"messages": 3000, "costInr": 30}: this month\'s most messages the decision and language models may read, and their most estimated cost in rupees.'); return undefined; }
+  const before = errors.length;
+  unknownKeys(raw, ["messages", "costInr"], "allowance", errors);
+  if (raw.messages !== undefined && (!Number.isInteger(raw.messages) || (raw.messages as number) < 0)) errors.push("allowance.messages must be a whole number of messages, 0 or more.");
+  if (raw.costInr !== undefined && (typeof raw.costInr !== "number" || !(raw.costInr >= 0) || !Number.isFinite(raw.costInr))) errors.push("allowance.costInr must be a number of rupees, 0 or more.");
+  if (raw.messages === undefined && raw.costInr === undefined) errors.push('"allowance" needs "messages", "costInr" or both.');
+  if (errors.length > before) return undefined;
+  return { ...(raw.messages !== undefined ? { messages: raw.messages as number } : {}), ...(raw.costInr !== undefined ? { costInr: raw.costInr as number } : {}) };
 }
 
 /** Check runtime.json's contents. `folder` is what a relative dataDir is measured from. */
 export function validateRuntimeConfig(input: unknown, folder: string): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "allowance", "pauseMinutes"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -127,10 +208,14 @@ export function validateRuntimeConfig(input: unknown, folder: string): { ok: tru
   }
 
   const parser = input.parser !== undefined ? readParser(input.parser, folder, errors) : undefined;
+  const decision = input.decision !== undefined ? readDecision(input.decision, errors) : undefined;
+  if (input.ai !== undefined && input.ai !== "on" && input.ai !== "buttons") errors.push('"ai" must be "on" (the default) or "buttons" (no AI: the agent reads with the rules and answers with buttons and lists).');
+  const allowance = input.allowance !== undefined ? readAllowance(input.allowance, errors) : undefined;
+  if (input.pauseMinutes !== undefined && (!Number.isInteger(input.pauseMinutes) || (input.pauseMinutes as number) < 1 || (input.pauseMinutes as number) > 1440)) errors.push('"pauseMinutes" must be a whole number of minutes from 1 to 1440: how long the agent uses buttons after a model step fails. Default 5.');
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */
@@ -163,4 +248,26 @@ export function loadClient(folder: string, running: { pathway: string; version: 
   const runtime = validateRuntimeConfig(json("runtime.json"), dir);
   if (!runtime.ok) throw new ClientError(`runtime.json needs fixing:\n- ${runtime.errors.join("\n- ")}`);
   return { name: basename(dir), folder: dir, settings: settings.settings, runtime: runtime.config, lock };
+}
+
+/**
+ * The outside switch: does this client's runtime.json say `"ai": "buttons"` right now? The file is looked at again whenever it has changed (by its modified time), so the bundle
+ * can write the answer from fleet's heartbeat while the agent runs and the next message obeys it. A file that cannot be read or is not valid JSON for a moment (a write in the
+ * middle) leaves the last answer standing; it never turns the switch off by accident.
+ */
+export function aiOverrideReader(folder: string, initial: "auto" | "buttons" = "auto"): () => "auto" | "buttons" {
+  const file = join(resolve(folder), "runtime.json");
+  let last = initial;
+  let seen = -1;
+  return () => {
+    try {
+      const modified = statSync(file).mtimeMs;
+      if (modified !== seen) {
+        const ai = (JSON.parse(readFileSync(file, "utf8")) as Obj).ai;
+        last = ai === "buttons" ? "buttons" : "auto";
+        seen = modified;
+      }
+    } catch { /* keep the last answer */ }
+    return last;
+  };
 }
