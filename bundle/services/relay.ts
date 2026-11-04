@@ -12,14 +12,19 @@ import { relayHandler } from "../../pathways/bookings/approvals/server.ts";
 import { openRelayStore } from "../../pathways/bookings/approvals/store.ts";
 import { createWhatsAppMessaging } from "../../pathways/bookings/src/adapters/live/whatsapp.ts";
 import { systemClock } from "../../pathways/bookings/src/clock.ts";
+import { ownAgentRuntime } from "../agent/relay-context.ts";
 import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";
 
 export interface RelayShopConfig {
+  /** An agent someone else wrote has no runtime: the context of a held refund is Razorpay's record of the payment (agent/relay-context.ts). */
+  kind?: "own-agent";
   guardAdminUrl: string;
   approverId: string;
   agentId: string;
-  runtimeUrl: string;
+  runtimeUrl?: string;
+  razorpayGuardUrl?: string;
+  business?: { name: string; timeZone: string; ownerLanguage: "en" | "hi" | "ml" | "kn" };
   whatsappGuardUrl: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
@@ -44,10 +49,12 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
     return v;
   };
   const store = openRelayStore(c.stateDir);
+  const guard = rereadingGuardClient(c, read);
   const relay = createRelay({
-    clock: systemClock, store, ownerWhatsapp: c.ownerWhatsapp, expectedAgent: c.agentId,
-    guard: rereadingGuardClient(c, read),
-    runtime: createRuntimeClient({ url: c.runtimeUrl, token: need("internal_token") }),
+    clock: systemClock, store, ownerWhatsapp: c.ownerWhatsapp, expectedAgent: c.agentId, guard,
+    runtime: c.kind === "own-agent"
+      ? ownAgentRuntime({ guard, razorpay: { baseUrl: c.razorpayGuardUrl!, token: () => need("record_token") }, business: c.business! })
+      : createRuntimeClient({ url: c.runtimeUrl!, token: need("internal_token") }),
     messaging: createWhatsAppMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, agentToken: need("agent_whatsapp") },
       { clock: systemClock, window: { lastInboundAt: (phone) => (phone.replace(/\D/gu, "") === c.ownerWhatsapp.replace(/\D/gu, "") ? Number(store.getMeta("owner_last_inbound")) || undefined : undefined) } }),
     log: (line) => log(`[${name}] ${line}`),

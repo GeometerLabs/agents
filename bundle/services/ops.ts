@@ -102,7 +102,7 @@ export async function observeAgent(c: OpsOwnAgent, version: string, id: string, 
 export async function stopShop(config: OpsConfig, shop: string, on: boolean, by: string, reason: string, fetchFn: typeof fetch = fetch) {
   const own = config.ownAgents?.[shop];
   const c = config.shops[shop] ?? (own ? { guards: own.guards } : undefined);
-  if (!c) throw new Error(`no shop or agent ${shop} on this server`);
+  if (!c) throw new Error(`no shop ${shop} on this server`);
   // by "-" the reason is used as it is: the deployer re-applying a stop that was already worded must not wrap it in a second "stopped by"
   const why = by === "-" ? reason : on ? `stopped by ${by} at ${new Date().toISOString()}${reason ? `: ${reason}` : ""}` : `released by ${by} at ${new Date().toISOString()}`;
   const results = await Promise.all([
