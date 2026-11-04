@@ -118,7 +118,7 @@ Hindi, Malayalam and Kannada are machine-written and wait for native review ([De
 
 ## Equipment rental (custom hiring centres and village equipment owners)
 
-The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 29 of 29 situations on its own settings. Run the demo on it:
+The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 32 of 32 situations on its own settings. Run the demo on it:
 
 ```sh
 node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn   # or hi
@@ -143,7 +143,7 @@ A client is a folder (`clients/glow-salon.example/` is a working example that ru
 | File | What it holds |
 | --- | --- |
 | `settings.json` | The business: the same format as `settings/glow-salon.example.json` |
-| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does) |
+| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does), `decision` (a System One decision model, the step before it), `allowance` (this month's most AI messages), `ai` (`"buttons"` turns the AI off), `pauseMinutes` |
 | `pathway.lock` | The pathway version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
 
 What it answers:
@@ -254,6 +254,19 @@ const parser = createModelParser({ wire: "openai", baseUrl: "https://your-guard.
 ```
 
 `runtime.json` takes no key, and refuses a `baseUrl` that carries one (a user name, a password, a query), in plain words. In production `baseUrl` is a Guard instance in front of the model provider, and Guard adds the key. If the model times out (8 seconds unless `timeoutMs` says otherwise), answers with an error, or gives an answer that is not a valid intent, the rule parser reads the message and the record says why.
+
+### Three steps, cheapest first (B46), and button mode (B47)
+
+With a `parser` and/or a `decision` in `runtime.json`, each message goes to the **rules** first (and a tapped button or list row is never read by a model), then to a **System One decision model** (Laya on the shop server, or Jev hosted), and only if that is unsure to the **small language model** (`parser`, for example DeepSeek V4.1 Flash on DeepInfra). Templates still write every reply, and phone numbers and names are taken out before a model sees a message.
+
+```json
+"decision":  { "provider": "laya", "baseUrl": "http://127.0.0.1:8080", "model": "laya" },
+"parser":    { "wire": "openai", "baseUrl": "https://api.deepinfra.com/v1/openai", "model": "deepseek-ai/DeepSeek-V4.1-Flash", "provider": "deepinfra", "keyEnv": "DEEPINFRA_API_KEY" },
+"allowance": { "messages": 3000, "costInr": 30 },
+"ai": "auto"
+```
+
+A key is never in the file: `keyEnv` is the **name** of an environment variable. If it is not set, that step is off and the start-up says so. Jev (`"provider": "jev"`) needs `keyEnv` too. `"ai": "buttons"` (which the bundle writes from fleet's heartbeat answer) turns every model off; so does an `allowance` that is used up, and so, for a few minutes, does a model that fails. The agent then reads with the rules and answers with buttons and lists; every limit still holds, the owner is told once, and no customer is left without an answer. What each message cost is in the record (`step`, `provider`, `model`, `inputTokens`, `outputTokens`, `costMicroInr`): see Explanation.md, "Understanding record fields (for the cost meter)". To try it with no model at all, `node pathways/bookings/standins/main.ts --system-one` answers the decisions API from the rules.
 
 ## Settings: tailoring without code
 
