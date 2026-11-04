@@ -9,6 +9,9 @@
 //     issue-approver <shop> <ttl-seconds>              a fresh reading credential for the shop's relay, printed once on stdout
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
+import { readUsageBaseline, writeAnswerFiles, writeUsageBaseline } from "../lib/fleet.ts";
+import type { UsageBaseline } from "../lib/fleet.ts";
+import type { UsageTotals } from "../lib/usage.ts";
 import { buildHeartbeat, sendHeartbeat } from "./heartbeat.ts";
 import type { AdminStatus, BackupFacts, Baseline, GuardObservation, RuntimeStatus, ShopObservation } from "./heartbeat.ts";
 
@@ -18,6 +21,8 @@ export interface OpsConfig {
   bundleVersion: string;
   heartbeatSeconds?: number;
   fleet?: { url: string; keyFile: string };
+  /** The one folder ops can write (<server>/fleet): fleet's answer for each shop, and the usage baseline. Left out: the baseline is kept in memory only and no answer is written. */
+  fleetDir?: string;
   shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }>;
   model: OpsGuard;
 }
@@ -69,6 +74,21 @@ export function readBackups(statusFile: string | undefined): BackupFacts | undef
   } catch { return undefined; }
 }
 
+/**
+ * The cost meter's cumulative counts the 15-minute export wrote into a shop's status file. Only the numbers are taken, each checked; a file with any of them
+ * missing or wrong has no usable counts, and then nothing is sent for the shop and its baseline stays where it was.
+ */
+export function readUsage(statusFile: string | undefined): UsageTotals | undefined {
+  if (!statusFile) return undefined;
+  try {
+    const u = (JSON.parse(readFileSync(statusFile, "utf8")) as { usage?: Record<string, any> | null }).usage;
+    if (typeof u !== "object" || u === null || typeof u.byStep !== "object" || u.byStep === null || typeof u.whatsapp !== "object" || u.whatsapp === null) return undefined;
+    const n = [u.messages, u.byStep.rules, u.byStep.decision, u.byStep.model, u.modelMicroInr, u.whatsapp.service, u.whatsapp.utility, u.whatsapp.marketing, u.whatsapp.estMicroInr];
+    if (!n.every((v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) return undefined;
+    return { messages: n[0], byStep: { rules: n[1], decision: n[2], model: n[3] }, modelMicroInr: n[4], whatsapp: { service: n[5], utility: n[6], marketing: n[7], estMicroInr: n[8], estimated: u.whatsapp.estimated === true } };
+  } catch { return undefined; }
+}
+
 export async function observeShop(id: string, c: OpsConfig["shops"][string], fetchFn: typeof fetch = fetch): Promise<ShopObservation> {
   const token = readSecret(c.internalTokenFile);
   const [healthz, readyz, status, guards] = await Promise.all([
@@ -77,7 +97,8 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
     Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn))),
   ]);
   const backups = readBackups(c.statusFile);
-  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}) };
+  const usage = readUsage(c.statusFile);
+  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}), ...(usage ? { usage } : {}) };
 }
 
 /** Stop or start a shop: nothing new goes out. The reason says who and when; Guard writes it, with its own admin id, into its evidence. */
@@ -125,21 +146,39 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
   return 2;
 }
 
-/** The heartbeat loop. Totals are only moved forward when fleet answered 200, so a missed minute is counted in the next one, once. */
+/** What the heartbeat loop remembers between minutes. `usageBaseline` also lives on disk (the fleet folder), so a restart of ops does not lose it. */
+export interface HeartbeatState { baseline: Baseline; usageBaseline: UsageBaseline; lastKnown: Record<string, RuntimeStatus>; lastProblem: string }
+
+/**
+ * One heartbeat: observe every shop, send, and, ONLY if fleet answered 200, move the totals forward and keep fleet's answer (<fleetDir>/<shop>.json) and the usage
+ * baseline on disk. A refused or unreachable fleet changes nothing, so a missed minute is counted in the next one, once.
+ */
+export async function heartbeatTick(config: OpsConfig, key: string, state: HeartbeatState, fetchFn: typeof fetch = fetch, now: Date = new Date()): Promise<{ accepted: boolean }> {
+  const shops = await Promise.all(Object.entries(config.shops).map(([id, c]) => observeShop(id, c, fetchFn)));
+  for (const s of shops) if (s.status) state.lastKnown[s.id] = s.status;
+  const { body, next, nextUsage } = buildHeartbeat({ deploymentId: config.deploymentId, bundleVersion: config.bundleVersion, now, shops, baseline: state.baseline, lastKnown: state.lastKnown, usageBaseline: state.usageBaseline });
+  const r = await sendHeartbeat(config.fleet!.url, key, body, fetchFn);
+  if (r.accepted) {
+    state.baseline = next; state.usageBaseline = nextUsage; state.lastProblem = "";
+    if (config.fleetDir) {
+      try {
+        writeUsageBaseline(config.fleetDir, state.usageBaseline, Object.keys(config.shops));
+        // fleet's answer, for the shops in it; no answer (an older fleet) leaves each shop's file as it was: keep the last mode, never "normal"
+        if (r.answer) writeAnswerFiles(config.fleetDir, Object.keys(config.shops), r.answer, now);
+      } catch (e) { console.error(`could not write ${config.fleetDir}: ${(e as Error).message}`); }
+    }
+  } else if (r.problem !== state.lastProblem) { state.lastProblem = r.problem ?? ""; console.error(`heartbeat not accepted: ${state.lastProblem}`); }
+  return { accepted: r.accepted };
+}
+
+/** The heartbeat loop. */
 async function run(config: OpsConfig): Promise<number> {
   if (!config.fleet) { console.error("No fleet address in geometer.json, so no heartbeat is sent. (Alerts from outside the server need one.)"); await new Promise(() => undefined); }
   const key = readSecret(config.fleet!.keyFile);
   if (!key) { console.error("The deployment key file is empty or missing, so no heartbeat can be sent."); return 2; }
-  let baseline: Baseline = {};
-  const lastKnown: Record<string, RuntimeStatus> = {};
-  let lastProblem = "";
-  const tick = async () => {
-    const shops = await Promise.all(Object.entries(config.shops).map(([id, c]) => observeShop(id, c)));
-    for (const s of shops) if (s.status) lastKnown[s.id] = s.status;
-    const { body, next } = buildHeartbeat({ deploymentId: config.deploymentId, bundleVersion: config.bundleVersion, now: new Date(), shops, baseline, lastKnown });
-    const r = await sendHeartbeat(config.fleet!.url, key, body);
-    if (r.accepted) { baseline = next; lastProblem = ""; } else if (r.problem !== lastProblem) { lastProblem = r.problem ?? ""; console.error(`heartbeat not accepted: ${lastProblem}`); }
-  };
+  // The usage baseline survives a restart of ops (a file in the fleet folder), so a restart sends the difference and never replays the whole record.
+  const state: HeartbeatState = { baseline: {}, usageBaseline: config.fleetDir ? readUsageBaseline(config.fleetDir) : {}, lastKnown: {}, lastProblem: "" };
+  const tick = () => heartbeatTick(config, key, state);
   await tick();
   setInterval(() => void tick().catch((e) => console.error(`heartbeat failed: ${(e as Error).message}`)), (config.heartbeatSeconds ?? 60) * 1000);
   await new Promise(() => undefined);

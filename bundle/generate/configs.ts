@@ -2,7 +2,7 @@
 // config files holds a secret: they name the secret FILES. Pure text in, text out; the deployer writes them.
 import { BUNDLE_VERSION } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
+import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { ShopDeploy } from "./compose.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
@@ -67,6 +67,7 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
   return stableJson({
     deploymentId: server.id, bundleVersion: BUNDLE_VERSION, heartbeatSeconds: server.heartbeatSeconds,
     ...(server.fleet ? { fleet: { url: server.fleet.url, keyFile: "/run/secrets/fleet_key" } } : {}),
+    fleetDir: OPS_FLEET_DIR,
     shops: Object.fromEntries(shops.map((s) => [s.name, {
       pathway: "bookings", pathwayVersion: s.pathwayVersion,
       runtimeUrl: runtimeUrl(server, s), internalTokenFile: `/run/secrets/${s.name}/internal_token`,

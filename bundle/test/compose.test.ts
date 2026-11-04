@@ -7,7 +7,7 @@ import type { ShopDeploy } from "../generate/compose.ts";
 import { names } from "../generate/shop.ts";
 import { serverConfig } from "./helpers.ts";
 
-const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json" };
+const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json" };
 const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/pathways/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
 const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}, backup = true) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup, panel: { user: "501:20", shareAddress: "calendar@x.iam.gserviceaccount.com" } });
 const nets = (c: ReturnType<typeof build>, svc: string): string[] => { const n = c.services[svc].block.networks as Record<string, unknown> | string[] | undefined; return n === undefined ? [] : Array.isArray(n) ? n : Object.keys(n); };
@@ -125,10 +125,14 @@ test("the YAML writer quotes every scalar, so a path or an address can never be 
   assert.equal(yaml({ a: "yes", b: "10.231.0.1", c: ["x: y", "- z"], d: { e: true, f: 8080 }, "g-h": null }), 'a: "yes"\nb: "10.231.0.1"\nc:\n  - "x: y"\n  - "- z"\nd:\n  e: true\n  f: 8080\ng-h: null');
 });
 
-test("ops sees the deployer's status files read-only (for the backup times in the heartbeat), and still holds no folder the panel's contract does not name", () => {
+test("ops sees the deployer's status files read-only (for the backup times and the counts in the heartbeat), writes only the fleet folder, and still holds no folder the panel's contract does not name", () => {
   const c = two();
-  assert.deepEqual(mounts(c, "ops"), ["/repo:/app:ro", "/srv/generated/ops:/etc/geometer:ro", "/srv/secrets/ops:/run/secrets:ro", "/srv/status:/server/status:ro"]);
+  assert.deepEqual(mounts(c, "ops"), ["/repo:/app:ro", "/srv/generated/ops:/etc/geometer:ro", "/srv/secrets/ops:/run/secrets:ro", "/srv/status:/server/status:ro", "/srv/fleet:/server/fleet"]);
   assert.doesNotMatch(JSON.stringify(c.services.ops.block), /docker\.sock|\/srv\/state|\/srv\/shops|\/srv\/secrets-inbox/);
+  assert.deepEqual(mounts(c, "ops").filter((m) => !m.endsWith(":ro")), ["/srv/fleet:/server/fleet"], "the only writable bind mount");
+  assert.equal(c.services.ops.block.user, "1000:1000", "the node user unless the deployer says who runs ops");
+  const own = composeServer(serverConfig({ panel: { enabled: true } }), dirs, [], { backup: false, opsUser: "501:20" });
+  assert.equal(own.services.ops.block.user, "501:20", "the user who runs the deployer, as the panel does, so both can read what ops writes");
 });
 
 test("the panel: on front and its own network only, as the user who runs the deployer, with exactly the folders the contract gives it and no others", () => {
@@ -136,7 +140,7 @@ test("the panel: on front and its own network only, as the user who runs the dep
   const p = c.services.panel.block;
   assert.deepEqual(nets(c, "panel").sort(), ["front", "panel"], "no egress, no admin network");
   assert.equal(p.user, "501:20");
-  assert.deepEqual(mounts(c, "panel"), ["/repo:/app:ro", "/srv/secrets/panel:/run/secrets:ro", "/srv/shops:/server/shops", "/srv/secrets-inbox:/server/secrets-inbox", "/srv/requests:/server/requests", "/srv/status:/server/status:ro", "/srv/exports:/server/exports:ro", "/srv/panel:/server/panel", "/srv/geometer.json:/server/geometer.json:ro"]);
+  assert.deepEqual(mounts(c, "panel"), ["/repo:/app:ro", "/srv/secrets/panel:/run/secrets:ro", "/srv/shops:/server/shops", "/srv/secrets-inbox:/server/secrets-inbox", "/srv/requests:/server/requests", "/srv/status:/server/status:ro", "/srv/fleet:/server/fleet:ro", "/srv/exports:/server/exports:ro", "/srv/panel:/server/panel", "/srv/geometer.json:/server/geometer.json:ro"]);
   assert.doesNotMatch(JSON.stringify(p), /docker\.sock|\/srv\/state|\/srv\/generated|"\/srv\/secrets:/);
   const env = p.environment as Record<string, string>;
   assert.deepEqual([env.PANEL_SERVER_DIR, env.PANEL_MODE, env.PANEL_PORT, env.PANEL_TRUST_PROXY, env.PANEL_DATA_KEY_FILE, env.PANEL_SIGNING_KEY_FILE], ["/server", "own", "8790", "1", "/run/secrets/data_key", "/run/secrets/signing_key"]);
