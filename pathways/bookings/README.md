@@ -118,7 +118,7 @@ Hindi, Malayalam and Kannada are machine-written and wait for native review ([De
 
 ## Equipment rental (custom hiring centres and village equipment owners)
 
-The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 32 of 32 situations on its own settings. Run the demo on it:
+The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 33 of 33 situations on its own settings. Run the demo on it:
 
 ```sh
 node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn   # or hi
@@ -143,7 +143,7 @@ A client is a folder (`clients/glow-salon.example/` is a working example that ru
 | File | What it holds |
 | --- | --- |
 | `settings.json` | The business: the same format as `settings/glow-salon.example.json` |
-| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does), `decision` (a System One decision model, the step before it), `allowance` (this month's most AI messages), `ai` (`"buttons"` turns the AI off), `pauseMinutes` |
+| `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does), `decision` (a System One decision model, the step before it), `allowance` (this month's most AI messages), `ai` (`"buttons"` turns the AI off), `pauseMinutes`, and `report` (switches on the monthly report to the owner on WhatsApp: `preparedBy`, `pageBaseUrl`, and optionally `innovator`, `signingKeyFile`, `goLiveFile`, `source`, `pagesDir`; left out, none is sent) |
 | `pathway.lock` | The pathway version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
 
 What it answers:
@@ -182,6 +182,8 @@ node pathways/bookings/scripts/client-report.ts --settings shop.json --record en
      --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./out/go-live-certificate.json --key ~/geometer-keys/report-key.pem
 node pathways/bookings/scripts/verify-report.ts ./out/report-2026-11.json --trust-key ~/geometer-keys/report-key.pub.pem
 ```
+
+**On WhatsApp, by itself.** A shop whose `runtime.json` has a `report` block gets last month's report on the 1st at 09:00 (the shop's time zone), once, even across a restart: as one of two approved templates (`monthly_report`, and `monthly_report_innovator` with the Innovator badge) when the owner has not written in the last day, as plain text with the same words when they have. The message names who set the agent up, gives the check code and the address of the full page; the page is written into `<dataDir>/reports/<random name>/` for whatever serves that folder. A month with nothing in the record sends nothing. How, and what is left open (serving the page, a PDF): [Explanation.md](Explanation.md), "The monthly report on WhatsApp", and [Deferred.md](Deferred.md).
 
 `--source` (stand-in, test-mode or live) is required and printed on every layer. `--go-live` is the go-live certificate: the report checks its signature and says what its checks ran on (this shop's own settings, and when; Glow Salon's example; other settings), and says plainly when no certificate was given or the one given could not be trusted (it is still made). The sentences are in [Explanation.md](Explanation.md), "The monthly report reads the go-live certificate". `--lang both` writes the Hindi and English messages separately and one page with both. A signature shows who issued a document and that it has not changed; it does not show the numbers are true. How it works, and what is not built (the verify page on geometer.dev, a QR code, the Guard anchor): [Explanation.md](Explanation.md) and [Deferred.md](Deferred.md).
 
@@ -355,7 +357,8 @@ crash-test/situations.ts           the crash-test situations, judged from the fa
 crash-test/not-tested.ts           what the hand check does not cover (printed by it, carried by the go-live certificate)
 report/                            the monthly report and the certificates: data.ts (counts), text.ts (owner's five lines), html.ts (the page),
                                    certificate.ts, go-live.ts (reads the go-live certificate a report is given), strings.ts (every word, per language, and the banned words), sign.ts (seal and check),
-                                   keys.ts (the key pair), run.ts and cli.ts (the scripts' work), example-month.ts (a scripted busy month)
+                                   keys.ts (the key pair), run.ts and cli.ts (the scripts' work), example-month.ts (a scripted busy month),
+                                   whatsapp.ts (the report as a message and its two templates), monthly-job.ts (sends it once a month)
 scripts/report-key.ts, client-report.ts, go-live-certificate.ts, verify-report.ts, report-example.ts
 test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints;
                                    the runtime server's tests (runtime, store, server, ticker, config, start) use test/runtime-kit.ts
