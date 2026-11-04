@@ -3,6 +3,10 @@
 //   node pathways/bookings/scripts/model-eval.ts                       the baseline, plus every candidate whose key is in .env
 //   node pathways/bookings/scripts/model-eval.ts --max-messages 40    send only 40 messages (spread over the four languages) to each model
 //   node pathways/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemini-flash-lite
+// The three steps of the understanding (src/adapters/understanding.ts) are scored one at a time, in Hindi, English, Malayalam and Kannada:
+//   the rule parser (always, the baseline), a System One decision model (the "systemone" candidates: Laya on a local address, Jev hosted), and a small
+//   language model (the "openai" candidates, for example DeepSeek V4.1 Flash on DeepInfra). A decision model that is "unsure" counts as a fallback in its
+//   row, so the table shows how often it would hand a message on to the next step.
 // This is the founder's own tooling, run on a laptop. Keys come from a local .env at the repo root and are sent from here
 // only (scripts/eval-keys.ts); the runtime parser sends none. A candidate whose key is not in .env is skipped with a line
 // saying so, and with no keys at all only the baseline runs. Nothing is written outside this pathway except eval/results.json,
@@ -14,6 +18,8 @@ import { coerceIntent } from "../src/adapters/model.ts";
 import { createModelParser } from "../src/adapters/model-llm.ts";
 import type { ModelConfig } from "../src/adapters/model-llm.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
+import { createSystemOne } from "../src/adapters/system-one.ts";
+import { createRouter } from "../src/adapters/understanding.ts";
 import { glowSalon } from "../src/harness.ts";
 import { LANGUAGES } from "../src/settings.ts";
 import { keyedFetch, readEnvFile } from "./eval-keys.ts";
@@ -22,11 +28,18 @@ import { costPer1000, formatTable, scoreRow, summarise } from "./eval-score.ts";
 import type { EvalMessage, Row, Summary } from "./eval-score.ts";
 
 /** One model to try. Prices are per million tokens, in US dollars, filled in from the provider's current price page. */
-export interface Candidate extends Omit<ModelConfig, "wire"> {
+export interface Candidate extends Omit<ModelConfig, "wire" | "baseUrl"> {
   name: string;
-  wire: ModelConfig["wire"];
-  /** The name of the variable in .env that holds this provider's key. */
-  keyEnv: string;
+  /** "openai" and "anthropic" are language models (step 2); "systemone" is a decision model (step 1) over the System One API, scored on its own. */
+  wire: ModelConfig["wire"] | "systemone";
+  /** The provider's address. Left out for a self-hosted or per-account address, which `urlEnv` names instead. */
+  baseUrl?: string;
+  /** The name of the variable in .env that holds the address (Laya's local address, Jev's account address). */
+  urlEnv?: string;
+  /** systemone only: which service this is, for the price and the record. */
+  kind?: "laya" | "jev" | "system-one";
+  /** The name of the variable in .env that holds this provider's key. Left out for a service that needs none (Laya on this machine). */
+  keyEnv?: string;
   /** How the key is sent. Default: x-api-key for the anthropic wire, authorization (Bearer) for the openai wire. */
   authHeader?: AuthHeader;
   /** Wait this long between calls, for providers with a low rate limit. */
@@ -105,17 +118,33 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
 
   for (const candidate of candidates) {
     if (options.baselineOnly || (options.only?.length && !options.only.includes(candidate.name))) continue;
-    const key = env[candidate.keyEnv];
-    if (!key) { skipped.push(`Skipped ${candidate.name}: no ${candidate.keyEnv} in .env.`); continue; }
+    // A candidate with no address or no key in .env is skipped, and the line says which one is missing. Nothing is ever sent to a paid service without its key.
+    const baseUrl = candidate.baseUrl ?? (candidate.urlEnv ? env[candidate.urlEnv] : undefined);
+    if (!baseUrl) { skipped.push(`Skipped ${candidate.name}: no ${candidate.urlEnv ?? "address"} in .env.`); continue; }
+    const key = candidate.keyEnv ? env[candidate.keyEnv] : undefined;
+    if (candidate.keyEnv && !key) { skipped.push(`Skipped ${candidate.name}: no ${candidate.keyEnv} in .env.`); continue; }
     log(`Asking ${candidate.name} (${candidate.model}) about ${count(messages.length, "messages")}, one at a time...`);
-    const header: AuthHeader = candidate.authHeader ?? (candidate.wire === "anthropic" ? "x-api-key" : "authorization");
-    const { name: _name, keyEnv: _keyEnv, authHeader: _auth, pauseMs: _pause, priceInputPerMillion: _pi, priceOutputPerMillion: _po, note: _note, ...config } = candidate;
-    const parser = createModelParser(config, keyedFetch(header, key, options.fetchFn));
     const rows: Row[] = [];
-    for (const m of messages) {
-      const r = await parser.parseDetailed(m.text, context);
-      rows.push(scoreRow(m, r.intent, { fellBack: r.fallbackReason !== undefined, reason: r.fallbackReason, latencyMs: r.latencyMs ?? 0, usage: r.usage }));
-      if (candidate.pauseMs) await sleep(candidate.pauseMs);
+    if (candidate.wire === "systemone") {
+      // The decision model alone, trusted with every language so the table shows how it does in Malayalam and Kannada; the rules fill in dates and times.
+      const router = createRouter({ decision: { client: createSystemOne({ baseUrl, model: candidate.model, kind: candidate.kind, apiKey: key, timeoutMs: candidate.timeoutMs }, options.fetchFn), languages: LANGUAGES } });
+      for (const m of messages) {
+        const started = performance.now();
+        const r = await router.parseDetailed(m.text, context);
+        const u = r.understood!;
+        const unsure = u.step === "rules" && u.tried.includes("decision");
+        rows.push(scoreRow(m, r.intent, { fellBack: unsure, reason: unsure ? (u.failed.length > 0 ? r.fallbackReason : "unsure: below the threshold, so the next step would read it") : undefined, latencyMs: performance.now() - started, usage: { inputTokens: u.inputTokens, outputTokens: u.outputTokens } }));
+        if (candidate.pauseMs) await sleep(candidate.pauseMs);
+      }
+    } else {
+      const header: AuthHeader = candidate.authHeader ?? (candidate.wire === "anthropic" ? "x-api-key" : "authorization");
+      const { name: _name, keyEnv: _keyEnv, urlEnv: _urlEnv, kind: _kind, authHeader: _auth, pauseMs: _pause, priceInputPerMillion: _pi, priceOutputPerMillion: _po, note: _note, ...rest } = candidate;
+      const parser = createModelParser({ ...rest, wire: candidate.wire, baseUrl }, keyedFetch(header, key as string, options.fetchFn));
+      for (const m of messages) {
+        const r = await parser.parseDetailed(m.text, context);
+        rows.push(scoreRow(m, r.intent, { fellBack: r.fallbackReason !== undefined, reason: r.fallbackReason, latencyMs: r.latencyMs ?? 0, usage: r.usage }));
+        if (candidate.pauseMs) await sleep(candidate.pauseMs);
+      }
     }
     columns.push({ name: candidate.name, rows, candidate });
   }
