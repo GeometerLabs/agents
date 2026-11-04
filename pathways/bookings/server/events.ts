@@ -50,7 +50,15 @@ function checkOne(raw: unknown): IncomingEvent | string {
     // A voice note carries the fact and nothing else: no words, and no audio id or link (the inbox never passes one on). Only the boolean true is accepted.
     if (m.voiceNote !== undefined && m.voiceNote !== true) return "message.voiceNote, if given, must be true (a voice note or audio file).";
     if (m.voiceNote === true && m.text !== "") return "a voice note has no words: send message.text as an empty string.";
-    return { kind: "message", message: { id: m.id, from: m.from, text: m.text, timestamp: m.timestamp, ...(m.voiceNote === true ? { voiceNote: true as const } : {}) } };
+    // A tap on a button or a list row: the id we gave that row, and the kind. Nothing else of the interactive payload is passed on.
+    let reply: { id: string; kind: "button" | "list" } | undefined;
+    if (m.reply !== undefined) {
+      const r = m.reply;
+      if (!isObj(r) || typeof r.id !== "string" || !/^[A-Za-z0-9:_.-]{1,200}$/u.test(r.id) || (r.kind !== "button" && r.kind !== "list")) return 'message.reply, if given, must be {"id": the id of the button or row, "kind": "button" or "list"}.';
+      if (m.voiceNote === true) return "a voice note cannot be a button or list reply.";
+      reply = { id: r.id, kind: r.kind };
+    }
+    return { kind: "message", message: { id: m.id, from: m.from, text: m.text, timestamp: m.timestamp, ...(m.voiceNote === true ? { voiceNote: true as const } : {}), ...(reply ? { reply } : {}) } };
   }
   if (raw.kind === "payment_event") {
     const e = raw.event;

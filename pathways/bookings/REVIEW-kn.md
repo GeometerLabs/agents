@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (33)
+## 1. Messages to the customer (40)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -45,8 +45,15 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Glow Salon ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
 | `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I can't listen to voice notes yet. |  |
+| `pick_service` | A list of the shop's services is shown (the first hello, or a message that was not understood), so the customer taps instead of typing | ನಮಸ್ಕಾರ! Glow Salon-ಗೆ ಸ್ವಾಗತ. ಯಾವ ಸೇವೆ ಬೇಕು? | Hello! Welcome to Glow Salon. Which service would you like? |  |
+| `pick_slot` | The service is known and the time is not: a list of free times from the calendar is shown | ಹೇರ್ ಕಟ್ ಯಾವಾಗ ಬೇಕು? ಕೆಳಗಿನಿಂದ ಒಂದು ಸಮಯ ಆಯ್ಕೆಮಾಡಿ, ಅಥವಾ ನಿಮಗೆ ಇಷ್ಟವಾದ ದಿನ ಮತ್ತು ಸಮಯ ಬರೆಯಿರಿ. | When would you like your haircut? Pick a time below, or write the day and time you prefer. |  |
+| `confirm_buttons` | The same read-back as confirm_details, with Yes and No buttons instead of asking the customer to type yes | ಖಚಿತಪಡಿಸಲು: ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. ಇದು ಸರಿಯೇ? | Just to be sure: haircut on Tue 10 Nov, 6:00 pm. Is that right? |  |
+| `ask_cancel` | The customer tapped Cancel booking: asked once with Yes and No buttons before anything is cancelled | ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಬೇಕೇ? | Do you want to cancel your booking for Tue 10 Nov, 6:00 pm? |  |
+| `kept` | The customer tapped No, keep it: the booking stays as it is | ಸರಿ, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. | Okay, your booking for Tue 10 Nov, 6:00 pm stays as it is. |  |
+| `told_owner` | The customer tapped Talk to the owner: they are told the owner has been asked to message them | ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ. | I've told the owner that you would like to talk. They will message you here. |  |
+| `couldnt_tell_owner` | The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ಕ್ಷಮಿಸಿ, ಈಗ ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Sorry, I couldn't reach the owner just now. Please try again in a few minutes. |  |
 
-## 2. Messages to the owner (14)
+## 2. Messages to the owner (18)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -66,6 +73,25 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_approval_denied` | The owner denied with the code: nothing is sent | ಅರ್ಥವಾಯಿತು. ಗ್ರಾಹಕರು +919811111111: ₹200 ರೀಫಂಡ್ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು. | Understood. The ₹200 refund for +919811111111 will not be sent, and they will be told. |  |
 | `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | ನೀವು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಆ ವಿನಂತಿಯ ಸಮಯ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಮರಳಿ ಕೊಟ್ಟಿಲ್ಲ: ಗ್ರಾಹಕರು +919811111111, ₹200. | That request ran out before you answered, so nothing was refunded: ₹200 for +919811111111. |  |
 | `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | ನಿಮ್ಮ ಉತ್ತರವನ್ನು ಈಗ ದಾಖಲಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಕಳುಹಿಸಿ. | I could not record your answer just now. Please send it again in a few minutes. |  |
+| `owner_wants_to_talk` | A customer tapped Talk to the owner (sent at most once an hour for the same customer) | ಗ್ರಾಹಕರು +919811111111 ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. | Customer +919811111111 would like to talk to you. Please message them. |  |
+| `owner_ai_allowance` | Button mode, told once a month: the shop's monthly AI allowance is used up | ಸೂಚನೆ: Glow Salon-ನ ಈ ತಿಂಗಳ AI ಮಿತಿ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಈಗ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳ ಮೂಲಕ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಮುಂದಿನ ತಿಂಗಳು ಸಾಮಾನ್ಯ ಸೇವೆ ಮರಳುತ್ತದೆ. | Notice: this month's AI allowance for Glow Salon is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month. |  |
+| `owner_ai_off` | Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent) | ಸೂಚನೆ: Glow Salon-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಸದ್ಯಕ್ಕೆ ಆಫ್ ಮಾಡಲಾಗಿದೆ. ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳಿಂದ ಬುಕಿಂಗ್ ಮುಂದುವರಿಸುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Notice: the AI that reads messages for Glow Salon has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told. |  |
+| `owner_ai_fault` | Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes | ಸೂಚನೆ: Glow Salon-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ. | Notice: the AI that reads messages for Glow Salon is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes. |  |
+
+### The words on the buttons and the lists
+
+Some of the messages above come with buttons (up to 3, each 20 letters at most) or a list of up to 10 rows (a row's title 24 letters at most) that the customer taps instead of typing. The words on them are below. The rows of the lists are the shop's own service names with their prices, and the free times in the formats of section 3, so only the words below are new. A shorter word is better: WhatsApp cuts what does not fit.
+
+| Id | Where it is shown | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- | --- |
+| `yes` | Button under a read-back: yes, that is right | ಹೌದು | Yes |  |
+| `no` | Button under a read-back: no, that is wrong | ಇಲ್ಲ | No |  |
+| `cancel` | Button under a booking: cancel it (asks once more) | ಬುಕಿಂಗ್ ರದ್ದು | Cancel booking |  |
+| `cancelYes` | Button when asked 'cancel your booking?': yes, cancel it | ಹೌದು, ರದ್ದು | Yes, cancel |  |
+| `keep` | Button when asked 'cancel your booking?': no, leave it | ಹಾಗೇ ಇರಲಿ | No, keep it |  |
+| `owner` | Button, and the last row of each list: talk to the shop's owner | ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತು | Talk to the owner |  |
+| `pickService` | The button that opens the list of services | ಸೇವೆ ಆಯ್ಕೆಮಾಡಿ | Pick a service |  |
+| `pickTime` | The button that opens the list of free times | ಸಮಯ ಆಯ್ಕೆಮಾಡಿ | Pick a time |  |
 
 ## 3. Dates and times as the agent writes them
 

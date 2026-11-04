@@ -185,6 +185,43 @@ export const META_TEMPLATES: readonly MetaTemplate[] = [
       kn: "ಗ್ರಾಹಕರು {phone} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
     },
   },
+  // Button mode and "talk to the owner" (src/ai-state.ts, interactive.ts): the owner is told once why the agent answers with buttons, or that a customer wants to talk.
+  {
+    name: "owner_wants_to_talk", usedFor: "owner_wants_to_talk", audience: "owner",
+    bodies: {
+      en: "Customer {phone} would like to talk to you. Please message them.",
+      hi: "ग्राहक {phone} आपसे बात करना चाहते हैं। कृपया उन्हें संदेश भेजें।",
+      ml: "ഉപഭോക്താവ് {phone} നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+      kn: "ಗ್ರಾಹಕರು {phone} ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+    },
+  },
+  {
+    name: "owner_ai_allowance_used", usedFor: "owner_ai_allowance", audience: "owner",
+    bodies: {
+      en: "Notice: this month's AI allowance for {business} is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month.",
+      hi: "सूचना: {business} के लिए इस महीने का AI कोटा पूरा हो गया है, इसलिए एजेंट अब बटन और सूचियों से जवाब देगा। बुकिंग फिर भी होगी और हर सीमा पहले की तरह लागू रहेगी। जिसने इसे सेट किया है उसे बता दिया गया है। अगले महीने सामान्य सेवा फिर शुरू होगी।",
+      ml: "അറിയിപ്പ്: {business}-ന്റെ ഈ മാസത്തെ AI പരിധി തീർന്നു, അതിനാൽ ഏജന്റ് ഇനി ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് മറുപടി നൽകും. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. അടുത്ത മാസം സാധാരണ സേവനം തിരിച്ചെത്തും.",
+      kn: "ಸೂಚನೆ: {business}-ನ ಈ ತಿಂಗಳ AI ಮಿತಿ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಈಗ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳ ಮೂಲಕ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಮುಂದಿನ ತಿಂಗಳು ಸಾಮಾನ್ಯ ಸೇವೆ ಮರಳುತ್ತದೆ.",
+    },
+  },
+  {
+    name: "owner_ai_switched_off", usedFor: "owner_ai_off", audience: "owner",
+    bodies: {
+      en: "Notice: the AI that reads messages for {business} has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told.",
+      hi: "सूचना: {business} के संदेश पढ़ने वाला AI अभी बंद कर दिया गया है। एजेंट बटन और सूचियों से बुकिंग करता रहेगा और हर सीमा पहले की तरह लागू रहेगी। जिसने इसे सेट किया है उसे बता दिया गया है।",
+      ml: "അറിയിപ്പ്: {business}-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI തൽക്കാലം ഓഫ് ചെയ്തിരിക്കുന്നു. ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് ബുക്കിംഗ് തുടരും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്.",
+      kn: "ಸೂಚನೆ: {business}-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಸದ್ಯಕ್ಕೆ ಆಫ್ ಮಾಡಲಾಗಿದೆ. ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳಿಂದ ಬುಕಿಂಗ್ ಮುಂದುವರಿಸುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ.",
+    },
+  },
+  {
+    name: "owner_ai_not_answering", usedFor: "owner_ai_fault", audience: "owner",
+    bodies: {
+      en: "Notice: the AI that reads messages for {business} is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes.",
+      hi: "सूचना: {business} के संदेश पढ़ने वाला AI अभी जवाब नहीं दे रहा है, इसलिए एजेंट बटन और सूचियों से काम कर रहा है। बुकिंग फिर भी होगी और हर सीमा पहले की तरह लागू रहेगी। कुछ मिनट बाद एजेंट फिर AI आज़माएगा।",
+      ml: "അറിയിപ്പ്: {business}-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI ഇപ്പോൾ മറുപടി നൽകുന്നില്ല, അതിനാൽ ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിക്കുന്നു. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. കുറച്ച് മിനിറ്റിനു ശേഷം ഏജന്റ് വീണ്ടും AI പരീക്ഷിക്കും.",
+      kn: "ಸೂಚನೆ: {business}-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ.",
+    },
+  },
 ];
 
 /** Every template name, for a provider (or the stand-in) to approve. */

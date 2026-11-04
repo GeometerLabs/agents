@@ -101,3 +101,21 @@ export function systemOneStandin(options: SystemOneStandinOptions = {}): SystemO
   };
   return { handler, requests };
 }
+
+/**
+ * The stand-in as a `fetch`, so the client and the router can be run against it inside one process with no port and no network (the hand check does this).
+ * `down`: when it returns true the call fails the way a connection that cannot be made does.
+ */
+export function systemOneFetch(standin: SystemOneStandin, options: { down?: () => boolean } = {}): typeof fetch {
+  return (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+    if (options.down?.()) throw new TypeError("the connection failed");
+    const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+    const reply = await standin.handler({
+      method: init?.method ?? "GET", path: url.pathname, query: url.searchParams,
+      body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+      headers: Object.fromEntries(new Headers(init?.headers).entries()),
+    });
+    if (!reply) return new Response("{}", { status: 404 });
+    return new Response(reply.body === undefined ? null : JSON.stringify(reply.body), { status: reply.status, headers: { "content-type": "application/json" } });
+  }) as typeof fetch;
+}

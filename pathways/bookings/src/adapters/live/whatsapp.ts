@@ -12,6 +12,10 @@
 //  - text:    type "text", text: { body, preview_url }.
 //  - template: type "template", template: { name, language: { code }, components: [{ type: "body", parameters: [{ type: "text", text }] }] }.
 //             https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/overview
+//  - interactive: type "interactive", interactive: { type: "button", body: { text }, action: { buttons: [{ type: "reply", reply: { id, title } }] } } (1 to 3 buttons,
+//             titles up to 20 characters), or { type: "list", body: { text }, action: { button, sections: [{ rows: [{ id, title, description }] }] } } (up to 10 rows in all,
+//             titles up to 24, descriptions up to 72, the button up to 20). Free-form like text: only inside the 24-hour window.
+//             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-reply-buttons-messages.md and interactive-list-messages.md
 //  - reply:   { messaging_product, contacts: [{ input, wa_id }], messages: [{ id: "wamid...", message_status? }] }. It means the API
 //             ACCEPTED the message. Delivery arrives later as a status webhook.
 //  - errors:  { error: { message, type, code, error_data: { details }, fbtrace_id } }. Code 131047: more than 24 hours since the customer
@@ -26,6 +30,8 @@ import type { Clock } from "../../clock.ts";
 import { HOUR } from "../../time.ts";
 import { META_LANGUAGE } from "../../language/meta-templates.ts";
 import { ApiError, WindowClosedError } from "../faults.ts";
+import { interactiveProblem, interactiveText } from "../../language/interactive.ts";
+import type { InteractiveMessage } from "../../language/interactive.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "../messaging.ts";
 import { asArray, createHttp, isObject, num, str } from "./http.ts";
 import type { Http, HttpReply, Json } from "./http.ts";
@@ -62,6 +68,14 @@ export function templateBody(to: string, template: TemplateMessage): Json {
   };
 }
 
+/** The wire body for a reply-buttons or list message. Exported so the tests (and the stand-in) can read it. */
+export function interactiveBody(to: string, message: InteractiveMessage): Json {
+  const action: Json = message.buttons
+    ? { buttons: message.buttons.map((b) => ({ type: "reply", reply: { id: b.id, title: b.title } })) }
+    : { button: message.list!.button, sections: [{ rows: message.list!.rows.map((r) => ({ id: r.id, title: r.title, ...(r.description ? { description: r.description } : {}) })) }] };
+  return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "interactive", interactive: { type: message.buttons ? "button" : "list", body: { text: message.body }, action } };
+}
+
 export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: Clock; window: WindowStore }): Messaging {
   const http: Http = createHttp(config.baseUrl, "WhatsApp", config.timeoutMs, config.agentToken);
   const path = `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}/messages`;
@@ -96,6 +110,13 @@ export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: C
     async sendText(to, text) {
       if (!windowOpen(to)) throw new WindowClosedError(); // WhatsApp would refuse (131047); no need to ask
       return send({ messaging_product: "whatsapp", recipient_type: "individual", to, type: "text", text: { body: text, preview_url: false } }, { to, kind: "text", text });
+    },
+
+    async sendInteractive(to, message) {
+      if (!windowOpen(to)) throw new WindowClosedError(); // like free text, WhatsApp would refuse (131047)
+      const problem = interactiveProblem(message);
+      if (problem) throw new ApiError(400, `The message cannot be sent as buttons or a list: ${problem}.`); // never sent: the agent sends the same words as plain text
+      return send(interactiveBody(to, message), { to, kind: "interactive", text: interactiveText(message), interactive: structuredClone(message) });
     },
 
     async sendTemplate(to, template) {

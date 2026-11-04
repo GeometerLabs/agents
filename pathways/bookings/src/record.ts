@@ -14,7 +14,9 @@ export type Action =
   | "hold_slot" | "release_slot" | "create_deposit_link" | "cancel_deposit_link" | "record_deposit"
   | "confirm_booking" | "reschedule_booking" | "cancel_booking" | "complete_booking" | "refund"
   // the one plain line sent back to a voice note ("please type"); it is a message, so the report counts it as one (report/data.ts MESSAGE_ACTIONS)
-  | "voice_note_reply";
+  | "voice_note_reply"
+  // the agent moved to buttons and lists with no AI (the monthly allowance is used up, it was switched off from outside, or a model failed): the entry the builder or partner reads
+  | "ai_mode";
 
 export type Verdict = "allow" | "block" | "hold_for_owner";
 

@@ -12,6 +12,7 @@ import type { FakeCalendar } from "./adapters/calendar.ts";
 import { createFakeMessaging } from "./adapters/messaging.ts";
 import type { FakeMessaging, InboundMessage } from "./adapters/messaging.ts";
 import type { IntentParser } from "./adapters/model.ts";
+import type { AiPolicy } from "./ai-state.ts";
 import { createGuardModel } from "./adapters/guard-model.ts";
 import type { GuardModel } from "./adapters/guard-model.ts";
 import { createFakePayments } from "./adapters/payments.ts";
@@ -48,6 +49,11 @@ export interface World {
   owner: string;
   /** A customer sends a message and the agent handles it. Pass `id` to reuse a WhatsApp message id. */
   say(text: string, options?: { from?: string; id?: string }): Promise<InboundMessage>;
+  /**
+   * A customer taps a button or a list row of the newest interactive message the agent sent them that has that id, as WhatsApp would report it: the id and the row's
+   * title. Throws if no such option was ever offered, so a test cannot tap something that was never on the screen.
+   */
+  tap(id: string, options?: { from?: string }): Promise<InboundMessage>;
   /** The provider delivers the same inbound message again. */
   redeliver(message: InboundMessage): Promise<void>;
   /** The payment provider's webhooks reach the agent: every event not delivered yet, once (or twice, with `twice`). */
@@ -75,6 +81,13 @@ export interface WorldOptions {
   nowMs?: number;
   parser?: IntentParser;
   payments?: FakePaymentsOptions;
+  /** The monthly AI allowance and the outside switch (src/ai-state.ts). */
+  ai?: AiPolicy;
+  /**
+   * Whether the stand-in WhatsApp takes buttons and lists. Default true. False makes it a provider without them, so the agent sends the same words as plain text: for a
+   * page that cannot draw buttons yet (the demo), and for the scripted month, which is about records and money and not about taps.
+   */
+  interactive?: boolean;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -88,15 +101,26 @@ export function createWorld(options: WorldOptions = {}): World {
   const payments = createFakePayments(clock, { guard, ...options.payments });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
+  if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store });
+  const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}) });
   let deliveredEvents = 0;
 
   const world: World = {
     settings, clock, calendar, payments, guard, messaging, record, store, agent, owner: settings.owner.whatsapp,
     async say(text, o = {}) {
       const message = messaging.receive(o.from ?? CUSTOMER, text, o.id ? { id: o.id } : {});
+      await agent.handle({ kind: "message", message });
+      return message;
+    },
+    async tap(id, o = {}) {
+      const from = o.from ?? CUSTOMER;
+      // the newest message that has this option on it: a customer can scroll up and tap an older button
+      const shown = messaging.sentTo(from).filter((m) => m.interactive).reverse().map((m) => m.interactive!).find((i) => [...(i.buttons ?? []), ...(i.list?.rows ?? [])].some((c) => c.id === id));
+      const option = [...(shown?.buttons ?? []), ...(shown?.list?.rows ?? [])].find((c) => c.id === id);
+      if (!shown || !option) throw new Error(`No buttons or list ${from} was sent have an option with the id "${id}".`);
+      const message = messaging.receive(from, option.title, { reply: { id, kind: shown.buttons ? "button" : "list" } });
       await agent.handle({ kind: "message", message });
       return message;
     },

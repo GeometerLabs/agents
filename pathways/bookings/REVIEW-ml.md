@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (33)
+## 1. Messages to the customer (40)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -45,8 +45,15 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ₹200 റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
 | `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല. | Please type your message; I can't listen to voice notes yet. |  |
+| `pick_service` | A list of the shop's services is shown (the first hello, or a message that was not understood), so the customer taps instead of typing | നമസ്കാരം! Glow Salon-ലേക്ക് സ്വാഗതം. ഏത് സേവനമാണ് വേണ്ടത്? | Hello! Welcome to Glow Salon. Which service would you like? |  |
+| `pick_slot` | The service is known and the time is not: a list of free times from the calendar is shown | ഹെയർകട്ട് എപ്പോൾ വേണം? താഴെ നിന്ന് ഒരു സമയം തിരഞ്ഞെടുക്കൂ, അല്ലെങ്കിൽ ഇഷ്ടമുള്ള ദിവസവും സമയവും എഴുതൂ. | When would you like your haircut? Pick a time below, or write the day and time you prefer. |  |
+| `confirm_buttons` | The same read-back as confirm_details, with Yes and No buttons instead of asking the customer to type yes | ഉറപ്പിക്കാൻ: ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. ഇത് ശരിയാണോ? | Just to be sure: haircut on Tue 10 Nov, 6:00 pm. Is that right? |  |
+| `ask_cancel` | The customer tapped Cancel booking: asked once with Yes and No buttons before anything is cancelled | ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ലെ നിങ്ങളുടെ ബുക്കിംഗ് റദ്ദാക്കണോ? | Do you want to cancel your booking for Tue 10 Nov, 6:00 pm? |  |
+| `kept` | The customer tapped No, keep it: the booking stays as it is | ശരി, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ലെ നിങ്ങളുടെ ബുക്കിംഗ് അതുപോലെ തന്നെ തുടരും. | Okay, your booking for Tue 10 Nov, 6:00 pm stays as it is. |  |
+| `told_owner` | The customer tapped Talk to the owner: they are told the owner has been asked to message them | നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ നിങ്ങൾക്ക് സന്ദേശം അയയ്ക്കും. | I've told the owner that you would like to talk. They will message you here. |  |
+| `couldnt_tell_owner` | The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ക്ഷമിക്കണം, ഇപ്പോൾ ഉടമയെ അറിയിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ. | Sorry, I couldn't reach the owner just now. Please try again in a few minutes. |  |
 
-## 2. Messages to the owner (14)
+## 2. Messages to the owner (18)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -66,6 +73,25 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_approval_denied` | The owner denied with the code: nothing is sent | മനസ്സിലായി. ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | Understood. The ₹200 refund for +919811111111 will not be sent, and they will be told. |  |
 | `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പ് ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയില്ല: ഉപഭോക്താവ് +919811111111, ₹200. | That request ran out before you answered, so nothing was refunded: ₹200 for +919811111111. |  |
 | `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. ദയവായി കുറച്ച് മിനിറ്റുകൾക്ക് ശേഷം വീണ്ടും അയയ്ക്കൂ. | I could not record your answer just now. Please send it again in a few minutes. |  |
+| `owner_wants_to_talk` | A customer tapped Talk to the owner (sent at most once an hour for the same customer) | ഉപഭോക്താവ് +919811111111 നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ. | Customer +919811111111 would like to talk to you. Please message them. |  |
+| `owner_ai_allowance` | Button mode, told once a month: the shop's monthly AI allowance is used up | അറിയിപ്പ്: Glow Salon-ന്റെ ഈ മാസത്തെ AI പരിധി തീർന്നു, അതിനാൽ ഏജന്റ് ഇനി ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് മറുപടി നൽകും. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. അടുത്ത മാസം സാധാരണ സേവനം തിരിച്ചെത്തും. | Notice: this month's AI allowance for Glow Salon is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month. |  |
+| `owner_ai_off` | Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent) | അറിയിപ്പ്: Glow Salon-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI തൽക്കാലം ഓഫ് ചെയ്തിരിക്കുന്നു. ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് ബുക്കിംഗ് തുടരും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. | Notice: the AI that reads messages for Glow Salon has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told. |  |
+| `owner_ai_fault` | Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes | അറിയിപ്പ്: Glow Salon-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI ഇപ്പോൾ മറുപടി നൽകുന്നില്ല, അതിനാൽ ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിക്കുന്നു. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. കുറച്ച് മിനിറ്റിനു ശേഷം ഏജന്റ് വീണ്ടും AI പരീക്ഷിക്കും. | Notice: the AI that reads messages for Glow Salon is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes. |  |
+
+### The words on the buttons and the lists
+
+Some of the messages above come with buttons (up to 3, each 20 letters at most) or a list of up to 10 rows (a row's title 24 letters at most) that the customer taps instead of typing. The words on them are below. The rows of the lists are the shop's own service names with their prices, and the free times in the formats of section 3, so only the words below are new. A shorter word is better: WhatsApp cuts what does not fit.
+
+| Id | Where it is shown | Text (Malayalam) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- | --- |
+| `yes` | Button under a read-back: yes, that is right | ശരി | Yes |  |
+| `no` | Button under a read-back: no, that is wrong | അല്ല | No |  |
+| `cancel` | Button under a booking: cancel it (asks once more) | ബുക്കിംഗ് റദ്ദാക്കൂ | Cancel booking |  |
+| `cancelYes` | Button when asked 'cancel your booking?': yes, cancel it | അതെ, റദ്ദാക്കൂ | Yes, cancel |  |
+| `keep` | Button when asked 'cancel your booking?': no, leave it | ബുക്കിംഗ് നിലനിർത്തൂ | No, keep it |  |
+| `owner` | Button, and the last row of each list: talk to the shop's owner | ഉടമയോട് സംസാരിക്കണം | Talk to the owner |  |
+| `pickService` | The button that opens the list of services | സേവനം തിരഞ്ഞെടുക്കൂ | Pick a service |  |
+| `pickTime` | The button that opens the list of free times | സമയം തിരഞ്ഞെടുക്കൂ | Pick a time |  |
 
 ## 3. Dates and times as the agent writes them
 
