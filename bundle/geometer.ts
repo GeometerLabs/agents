@@ -7,6 +7,11 @@
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
+//   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams razorpay,whatsapp,calendar] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
+//                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses and the one credential it must use instead
+//   agent check|deploy|show <name> [--credential]      the same checks and checked deploy as a shop's; show prints the addresses again
+//   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every five minutes)
+//   agent report <name> --month 2026-11 --out <folder> [--language en]      the monthly report and certificate from that record
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
@@ -26,10 +31,15 @@ import { runBackup, runDrill, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
 import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
+import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from "./agent/deploy.ts";
+import { listAgents, readAgent } from "./agent/folder.ts";
+import type { AgentFlags } from "./agent/folder.ts";
+import { recordAgent } from "./agent/records.ts";
+import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
-import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, loadServer, parseServer, serverPaths } from "./lib/server.ts";
+import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { readStatus, updateStatus } from "./lib/status.ts";
 import { ensureDir, hostId, serverIdProblem, shopNameProblem, stableJson, writeAtomic } from "./lib/util.ts";
@@ -67,6 +77,11 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
+      // agent add / report
+      settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
+      "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
+      "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
+      credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" },
     },
   }) as { values: Record<string, string | boolean | undefined>; positionals: string[] };
   const str = (k: string) => (typeof values[k] === "string" ? values[k] as string : undefined);
@@ -132,6 +147,12 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     const ctx = makeContext(dir, overrides);
     const shop = positionals[0];
 
+    // an agent someone else wrote (agent add / check / deploy / show / record / report), and the shop commands when they are given an agent's name
+    if (command === "agent") return await agentCommand(ctx, positionals[0], positionals[1], values);
+    const isAgent = (n: string | undefined): n is string => n !== undefined && existsSync(serverPaths(dir).agent(n));
+    if (command === "check" && isAgent(shop)) return await agentCommand(ctx, "check", shop, values);
+    if (command === "deploy" && isAgent(shop)) return await agentCommand(ctx, "deploy", shop, values);
+
     if (command === "check") {
       if (!shop) throw new Error("Say which shop: check <shop>");
       const r = await checkShop(ctx, shop);
@@ -155,8 +176,13 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "deploy") {
-      const results = await deploy(ctx, shop);
-      for (const r of results) { console.log(`${r.shop}: ${r.proven.line}`); for (const [k, g] of Object.entries(r.guards)) console.log(`  ${k}: ${g.passed} of ${g.of} tripwires passed on the running Guard${g.notSelfTestable.length ? `, ${g.notSelfTestable.length} not self-testable (not counted)` : ""}`); }
+      // with no name: every shop, then every agent someone else wrote
+      const agents = shop ? [] : listAgents(dir);
+      if (shop || listShops(dir).length > 0 || agents.length === 0) {
+        const results = await deploy(ctx, shop);
+        for (const r of results) { console.log(`${r.shop}: ${r.proven.line}`); for (const [k, g] of Object.entries(r.guards)) console.log(`  ${k}: ${g.passed} of ${g.of} tripwires passed on the running Guard${g.notSelfTestable.length ? `, ${g.notSelfTestable.length} not self-testable (not counted)` : ""}`); }
+      }
+      for (const a of agents) await agentCommand(ctx, "deploy", a, values);
       return 0;
     }
 
@@ -170,7 +196,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (r.code !== 0) throw new Error(`The Guards could not be reached: ${r.stderr.trim().slice(0, 300) || "is the server up?"}`);
       const result = JSON.parse(r.stdout.trim().split("\n").at(-1)!) as { reason: string; results: { guard: string; status: number }[] };
       const state = loadState(ctx.dir);
-      if (state.shops[shop]) { if (on) state.shops[shop].stopped = { by, at: ctx.now().toISOString(), reason: result.reason }; else delete state.shops[shop].stopped; saveState(ctx.dir, state); }
+      const held = state.shops[shop] ?? state.agents?.[shop];
+      if (held) { if (on) held.stopped = { by, at: ctx.now().toISOString(), reason: result.reason }; else delete held.stopped; saveState(ctx.dir, state); }
       updateStatus(ctx.dir, shop, ctx.now(), (s) => { if (on) s.stopped = { at: ctx.now().toISOString(), by, reason: result.reason }; else delete s.stopped; });
       for (const x of result.results) console.log(`${x.guard}: ${x.status === 200 ? (on ? "stopped" : "released") : `HTTP ${x.status} (not confirmed)`}`);
       console.log(on ? `${shop} is stopped: nothing new goes out. ${result.reason}` : `${shop} is released.`);
@@ -285,10 +312,62 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   return 0;
 }
 
+const AGENT_FLAG_NAMES = ["settings", "upstreams", "owner-whatsapp", "owner-language", "business-name", "deposit", "refund-limit", "price-floor", "hours", "timezone", "whatsapp-number-id", "calendar-id", "forward-whatsapp-to",
+  "refund-inr-per-day", "refunds-per-day", "links-per-hour", "messages-per-hour", "events-per-hour", "events-deleted-per-day"] as const;
+
+/** `agent add|check|deploy|show <name>`: an agent someone else wrote, behind the same Guards. */
+export async function agentCommand(ctx: Context, sub: string | undefined, name: string | undefined, values: Record<string, string | boolean | undefined>): Promise<number> {
+  if (!sub || !name) throw new Error("Say what to do and to which agent: agent add|check|deploy|show|record|report <name>");
+  const str = (k: string) => (typeof values[k] === "string" ? values[k] as string : undefined);
+  if (sub === "add") {
+    const flags: Record<string, string> = {};
+    for (const k of AGENT_FLAG_NAMES) if (str(k) !== undefined) flags[k] = str(k)!;
+    const folder = addAgent(ctx.dir, name, flags as AgentFlags, (p) => readFileSync(resolve(p), "utf8"), ctx.now());
+    const server = loadServer(ctx.dir);
+    const kinds = folder.agent!.upstreams;
+    const keys = [...(kinds.includes("razorpay") ? ["razorpay_key (key_id:key_secret)"] : []), ...(kinds.includes("whatsapp") ? ["whatsapp_token", "whatsapp_app_secret", "whatsapp_verify_token"] : []), ...(kinds.includes("calendar") ? ["google_service_account.json"] : [])];
+    console.log(`Added ${name}: Guard's limits are made from its settings (agents/${name}/settings.json), the same way a template's are.\n\n${connectionText(name, connectionOf(ctx.dir, server, folder), true)}\n\nNext: put the shop's own keys in secrets-inbox/${name}/, one file each (${keys.join(", ")}), then \`geometer agent check ${name}\` and \`geometer agent deploy ${name}\`.\nYour agent keeps working as it is; only these addresses and this credential change. A refund above the limit gets HTTP 202 until the owner approves on WhatsApp: send the refund with a "receipt", and send the identical call again after the 202 until it stops being held.`);
+    return 0;
+  }
+  if (!existsSync(serverPaths(ctx.dir).agent(name))) throw new Error(`There is no agent called ${name}. Add one with: geometer agent add ${name} --deposit 200 --refund-limit 200 --owner-whatsapp +919800000001 ...`);
+  const server = loadServer(ctx.dir);
+  if (sub === "check") {
+    const r = await checkAgent(ctx, name);
+    r.notes.forEach((n) => console.log(`note: ${n}`));
+    r.lines.forEach((l) => console.log(l));
+    if (!r.ok) { console.log(refusal(new Refused(r.problems))); return 1; }
+    console.log(`${name} passes the generator's checks. Nothing was started or changed on the Guards.`);
+    return 0;
+  }
+  if (sub === "deploy") {
+    const r = await deployAgent(ctx, name);
+    console.log(`${name}: ${r.proven.line}`);
+    for (const [k, g] of Object.entries(r.guards)) console.log(`  ${k}: ${g.passed} of ${g.of} tripwires passed on the running Guard${g.notSelfTestable.length ? `, ${g.notSelfTestable.length} not self-testable (not counted)` : ""}`);
+    console.log(connectionText(name, r.connection, false));
+    return 0;
+  }
+  if (sub === "show") { console.log(connectionText(name, connectionOf(ctx.dir, server, readAgent(ctx.dir, name)), values.credential === true)); return 0; }
+  if (sub === "record") {
+    const r = await recordAgent(ctx, name);
+    console.log(`${name}: ${r.added} added to the record (${r.total} in all), from what its Guards decided and what the services hold.${r.problems.length > 0 ? `\n${r.problems.map((p) => `  - ${p}`).join("\n")}` : ""}`);
+    return r.problems.length > 0 && r.total === 0 ? 1 : 0;
+  }
+  if (sub === "report") {
+    const month = str("month"); const out = str("out");
+    if (!month || !out) throw new Error("Say the month and where to put the files: agent report <name> --month 2026-11 --out <folder> [--language en|hi|ml|kn|all]");
+    const source = (str("source") ?? "live") as "live" | "test-mode" | "stand-in";
+    const r = writeAgentReport(ctx.dir, name, { month, out: resolve(out), language: (str("language") ?? "en") as "en", source, now: ctx.now().getTime() });
+    console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.\n${r.ownerTexts.join("\n\n")}`);
+    return 0;
+  }
+  throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report <name>`);
+}
+
 async function status(ctx: Context): Promise<number> {
   const state = loadState(ctx.dir);
   const shops = Object.keys(state.shops).sort();
-  if (shops.length === 0) { console.log("No shop has been deployed yet."); return 0; }
+  const agents = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n).sort();
+  if (shops.length === 0 && agents.length === 0) { console.log("No shop has been deployed yet."); return 0; }
   const observed = await ops(ctx, ["observe"]);
   const live = observed.code === 0 ? JSON.parse(observed.stdout.trim().split("\n").at(-1)!) as { shops: { id: string; up: boolean; ready: boolean; guards: { id: string; healthReady: boolean; admin: { kill_switch?: { on?: boolean }; tripwires?: { passed?: number; of?: number; ok?: boolean } } | null }[]; status: { tasks?: { pending?: number }; lastStepAt?: string } | null }[] } : undefined;
   if (!live) console.log("The server is not answering (is it up? `docker compose` could not run `ops`). Showing what was last applied.\n");
@@ -299,6 +378,15 @@ async function status(ctx: Context): Promise<number> {
     if (o) for (const g of o.guards) console.log(`  ${g.id}: ${g.admin === null ? "admin port not reachable" : `${g.healthReady ? "ready" : "NOT READY"}, ${g.admin.kill_switch?.on ? "KILLED" : "open"}, tripwires ${g.admin.tripwires?.passed ?? "?"} of ${g.admin.tripwires?.of ?? "?"}${g.admin.tripwires?.ok === false ? " (FAILED)" : ""}`}`);
     if (s?.limits) console.log(`  ${s.limits.line}${s.deploy.state === "failed" ? `; the last deploy FAILED: ${s.deploy.message}` : ""}`);
     console.log(`  backup: ${s?.backups?.lastCopyAt ? `last snapshot ${s.backups.lastCopyAt}` : "no snapshot yet"}; restore drill: ${s?.backups?.lastDrillAt ? `${s.backups.drillOk ? "passed" : "FAILED"} ${s.backups.lastDrillAt}${s.backups.drillOk ? "" : ` (${s.backups.drillDetail})`}` : "never run"}`);
+  }
+  // agents someone else wrote: their Guards only
+  const seenAgents = (live as { agents?: NonNullable<typeof live>["shops"] } | undefined)?.agents;
+  for (const name of agents) {
+    const s = readStatus(ctx.dir, name);
+    const o = seenAgents?.find((x) => x.id === name);
+    console.log(`${name}  own agent  ${o ? (o.up && o.ready ? "running" : o.up ? "up, not ready" : "DOWN") : "unknown"}${s?.stopped ? `  STOPPED${s.stopped.by ? ` by ${s.stopped.by}` : ""} (${s.stopped.at})` : ""}`);
+    if (o) for (const g of o.guards) console.log(`  ${g.id}: ${g.admin === null ? "admin port not reachable" : `${g.healthReady ? "ready" : "NOT READY"}, ${g.admin.kill_switch?.on ? "KILLED" : "open"}, tripwires ${g.admin.tripwires?.passed ?? "?"} of ${g.admin.tripwires?.of ?? "?"}${g.admin.tripwires?.ok === false ? " (FAILED)" : ""}`}`);
+    if (s?.limits) console.log(`  ${s.limits.line}${s.deploy.state === "failed" ? `; the last deploy FAILED: ${s.deploy.message}` : ""}`);
   }
   return 0;
 }
