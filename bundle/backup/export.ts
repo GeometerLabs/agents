@@ -16,7 +16,7 @@ export interface ExportJob { shops: { name: string; db: string; out: string }[] 
 /** `usage`: the cost meter's cumulative counts over the whole record (lib/usage.ts), which the deployer writes into status/<shop>.json. Counts only. */
 export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; usage?: UsageTotals; error?: string }
 
-const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
+export const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
 
 /** The WhatsApp rates the estimate needs, from the newest price lists that have them (the proposed list adds marketing and GST). A list that cannot be read leaves a rate out; the estimate then says it is not one. */
 function priceRates(): UsageRates {

@@ -37,17 +37,38 @@ export interface ShopState {
   lastDrill?: { at: string; ok: boolean; detail: string };
 }
 
+/** An agent we did not write: Guards only (no runtime). What it needs to be put back in the compose file without reading its folder again. */
+export interface AgentSnapshot {
+  appliedAt: string;
+  settingsText: string;
+  agentText: string;
+  guards: Record<string, GuardFiles>;
+  desiredHash: string;
+}
+
+export interface AgentState {
+  /** From the same pool as the shops' (1 to 199): it fixes the agent's addresses on the admin network. */
+  index: number;
+  guards: Record<string, GuardApplied>;
+  stopped?: { by: string; at: string; reason: string };
+  applied?: AgentSnapshot;
+  lastDeployAt?: string;
+}
+
 export interface GuardFiles { kind: string; service: string; specText: string; bundleText: string; tomlText: string }
 
 export interface State {
   schema: 1;
   shops: Record<string, ShopState>;
+  /** Agents someone else wrote ("bring your own agent"). Absent on a server that has none, so a shop-only state file is unchanged. */
+  agents?: Record<string, AgentState>;
+  /** The record job's memory for each such agent is in state/records/<agent>.json (agent/record.ts), not here. */
   model?: GuardApplied;
   modelApplied?: GuardFiles;
   /** Each compose service as last applied: its entry, and the files it mounts. A changed entry is recreated by compose; changed files need a restart. */
   serviceHashes?: Record<string, { block: string; files: string }>;
   /** When the deployer's scheduled jobs last ran (ISO times), so each runs once when it is due and not again after a restart. */
-  jobs?: { snapshotAt?: string; drillAt?: string; relayCredentialsAt?: string; exportsAt?: string };
+  jobs?: { snapshotAt?: string; drillAt?: string; relayCredentialsAt?: string; exportsAt?: string; agentRecordsAt?: string };
 }
 
 const file = (dir: string) => join(serverPaths(dir).state, "state.json");
@@ -61,11 +82,11 @@ export function saveState(dir: string, state: State): void {
   writeAtomic(file(dir), stableJson(state), 0o600);
 }
 
-/** A shop's network index: the lowest free number from 1 to 199, kept for the life of the shop (never reused, so an address never moves). */
+/** A shop's or an agent's network index: the lowest free number from 1 to 199, kept for its life (never reused, so an address never moves). Shops and agents draw from one pool. */
 export function shopIndex(state: State, shop: string): number {
-  const have = state.shops[shop]?.index;
+  const have = state.shops[shop]?.index ?? state.agents?.[shop]?.index;
   if (have !== undefined) return have;
-  const used = new Set(Object.values(state.shops).map((s) => s.index));
+  const used = new Set([...Object.values(state.shops), ...Object.values(state.agents ?? {})].map((s) => s.index));
   for (let i = 1; i < 200; i++) if (!used.has(i)) return i;
-  throw new Error("This server has 199 shops, the most the network plan has addresses for.");
+  throw new Error("This server has 199 shops and agents, the most the network plan has addresses for.");
 }
