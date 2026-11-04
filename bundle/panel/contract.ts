@@ -74,6 +74,8 @@ export interface ShopStatus {
   versions?: { pathway?: string; bundle?: string; guard?: string };
   stopped?: { at: string; requestId?: string };
   backups?: { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null };
+  /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
+  usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
 }
 
 const isoDay = (v: unknown): string | undefined => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : undefined);
@@ -102,6 +104,17 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
   if (isObj(raw.backups)) {
     const day = (v: unknown) => (v === null ? null : isoDay(v));
     status.backups = { ...(day(raw.backups.lastCopyAt) !== undefined ? { lastCopyAt: day(raw.backups.lastCopyAt) as string | null } : {}), ...(day(raw.backups.lastDrillAt) !== undefined ? { lastDrillAt: day(raw.backups.lastDrillAt) as string | null } : {}), ...(typeof raw.backups.drillOk === "boolean" || raw.backups.drillOk === null ? { drillOk: raw.backups.drillOk as boolean | null } : {}) };
+  }
+  const u = raw.usage;
+  if (isObj(u) && isObj(u.byStep) && isObj(u.whatsapp)) {
+    const n = [u.messages, u.byStep.rules, u.byStep.decision, u.byStep.model, u.modelMicroInr, u.whatsapp.service, u.whatsapp.utility, u.whatsapp.marketing, u.whatsapp.estMicroInr].map(whole);
+    if (!n.includes(undefined)) {
+      status.usage = {
+        ...(isoDay(u.at) ? { at: isoDay(u.at) as string } : {}),
+        messages: n[0] as number, byStep: { rules: n[1] as number, decision: n[2] as number, model: n[3] as number }, modelMicroInr: n[4] as number,
+        whatsapp: { service: n[5] as number, utility: n[6] as number, marketing: n[7] as number, estMicroInr: n[8] as number, estimated: u.whatsapp.estimated === true },
+      };
+    }
   }
   return { ok: true, status };
 }
