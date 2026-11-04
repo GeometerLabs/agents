@@ -10,6 +10,19 @@
 // time as text looks like a phone number to fleet's check. A field is left out when there is nothing to say (no snapshot or drill yet): fleet reads
 // "absent" as "nothing to report", never as a problem. The drill's free-text reason is never sent; it stays in status/<shop>.json for `geometer status`.
 
+// The cost meter's counts (B45) travel as `usage`, per shop, since the last accepted heartbeat. They come from the shop's status file (the 15-minute export counts
+// them from the record, lib/usage.ts) as CUMULATIVE totals, and this file sends the difference against a baseline that ops keeps on disk (lib/fleet.ts):
+//   - a shop with no baseline starts AT its current totals and sends nothing: history from before the meter was never counted by fleet, and replaying it would
+//     put months of messages into one day;
+//   - a total that went DOWN (the record was restored from a copy) restarts the baseline at the new total, and sends nothing;
+//   - each count is capped at 999,999 in one heartbeat (the contract's cap), and the baseline moves only by what was SENT, so the rest goes in the next heartbeat
+//     and nothing is lost to the cap or to an outage;
+//   - the baseline moves on disk only when fleet answered 200 (ops.ts), the same rule as steps and errors.
+// A shop with nothing new gets no `usage` field at all.
+import { COUNTER_FIELDS, parseFleetAnswer } from "../lib/fleet.ts";
+import type { ShopAnswer, UsageBaseline, UsageCounters } from "../lib/fleet.ts";
+import type { UsageTotals } from "../lib/usage.ts";
+
 export interface GuardObservation {
   id: string;
   /** GET /readyz on the Guard's health port answered 200. */
@@ -48,6 +61,8 @@ export interface ShopObservation {
   guards: GuardObservation[];
   /** From the deployer's status file; left out when the file is missing or unreadable (then no backup field is sent, never a wrong one). */
   backups?: BackupFacts;
+  /** The record's cumulative counts, from the same file (`usage`); left out when there are none yet. Then no usage is sent and the baseline stays as it was. */
+  usage?: UsageTotals;
 }
 
 /** Running totals as last ACCEPTED by fleet, per shop. The difference is what a heartbeat sends. */
@@ -70,9 +85,41 @@ export function since(status: RuntimeStatus | null, base: Baseline[string] | und
   return { steps: count(status.steps - (same ? base.steps : 0)), errors: count(status.errors - (same ? base.errors : 0)) };
 }
 
-export function buildHeartbeat(input: { deploymentId: string; bundleVersion: string; now: Date; shops: ShopObservation[]; baseline: Baseline; lastKnown?: Record<string, RuntimeStatus> }): { body: Record<string, unknown>; next: Baseline } {
+const flat = (t: UsageTotals): UsageCounters => ({
+  messages: t.messages, rules: t.byStep.rules, decision: t.byStep.decision, model: t.byStep.model, modelMicroInr: t.modelMicroInr,
+  service: t.whatsapp.service, utility: t.whatsapp.utility, marketing: t.whatsapp.marketing, estMicroInr: t.whatsapp.estMicroInr, estimated: t.whatsapp.estimated,
+});
+
+/** What to send for one shop, and where its baseline goes if fleet accepts it. `send` is undefined when there is nothing to say. */
+export function usageDelta(current: UsageTotals, base: UsageCounters | undefined): { send?: Record<string, unknown>; next: UsageCounters } {
+  const cur = flat(current);
+  // The estimate was 0 because a rate was missing, or is no longer: its totals are not comparable, so it starts again from the current one and sends nothing this time.
+  const comparable = !!base && cur.estimated === base.estimated;
+  const skip = (f: (typeof COUNTER_FIELDS)[number]) => f === "estMicroInr" && !comparable;
+  if (!base || COUNTER_FIELDS.some((f) => !skip(f) && cur[f] < base[f])) return { next: cur };
+  const sent = {} as UsageCounters;
+  const next = { ...cur } as UsageCounters;
+  for (const f of COUNTER_FIELDS) {
+    const take = skip(f) ? 0 : Math.min(cur[f] - base[f], MAX_COUNT);
+    sent[f] = take;
+    next[f] = skip(f) ? cur[f] : base[f] + take;
+  }
+  if (COUNTER_FIELDS.every((f) => sent[f] === 0)) return { next };
+  return {
+    send: {
+      messages: sent.messages, by_step: { rules: sent.rules, decision: sent.decision, model: sent.model }, model_micro_inr: sent.modelMicroInr,
+      whatsapp: { service: sent.service, utility: sent.utility, marketing: sent.marketing, est_micro_inr: sent.estMicroInr },
+    },
+    next,
+  };
+}
+
+export function buildHeartbeat(input: { deploymentId: string; bundleVersion: string; now: Date; shops: ShopObservation[]; baseline: Baseline; lastKnown?: Record<string, RuntimeStatus>; usageBaseline?: UsageBaseline }): { body: Record<string, unknown>; next: Baseline; nextUsage: UsageBaseline } {
   const next: Baseline = { ...input.baseline };
+  const nextUsage: UsageBaseline = { ...input.usageBaseline };
   const agents = input.shops.map((shop) => {
+    const used = shop.usage ? usageDelta(shop.usage, input.usageBaseline?.[shop.id]) : undefined;
+    if (used) nextUsage[shop.id] = used.next;
     const known = shop.status ?? input.lastKnown?.[shop.id] ?? null;
     const s = shop.status;
     const delta = since(s, input.baseline[shop.id]);
@@ -103,21 +150,28 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
       since_last: delta,
       ...(snapshotAge !== undefined ? { backup_age_s: snapshotAge } : {}),
       ...(drillAge !== undefined && typeof drillOk === "boolean" ? { drill: { age_s: drillAge, ok: drillOk } } : {}),
+      ...(used?.send ? { usage: used.send } : {}),
     };
   });
   return {
     body: { deployment_id: input.deploymentId, bundle_version: input.bundleVersion, sent_at: input.now.toISOString().replace(/\.\d{3}Z$/u, "Z"), agents },
-    next,
+    next, nextUsage,
   };
 }
 
-export interface SendResult { accepted: boolean; status: number | null; problem?: string }
+/** `answer`: fleet's entry for each shop it said something about (lib/fleet.ts). Absent when the answer had none, or was not JSON: the caller keeps the last mode. */
+export interface SendResult { accepted: boolean; status: number | null; problem?: string; answer?: Record<string, ShopAnswer> }
 
 /** One try, ten seconds. The next heartbeat replaces this one, so a failure is never retried inside the minute. The key is a header and never logged. */
 export async function sendHeartbeat(url: string, key: string, body: unknown, fetchFn: typeof fetch = fetch): Promise<SendResult> {
   try {
     const r = await fetchFn(`${url.replace(/\/+$/u, "")}/v1/heartbeat`, { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(10_000) });
     const text = await r.text().catch(() => "");
-    return r.status === 200 ? { accepted: true, status: 200 } : { accepted: false, status: r.status, problem: r.status === 400 ? `fleet refused the heartbeat as malformed: ${text.slice(0, 300)}` : `fleet answered ${r.status}` };
+    if (r.status === 200) {
+      let answer: Record<string, ShopAnswer> | undefined;
+      try { answer = parseFleetAnswer(JSON.parse(text)); } catch { /* an answer that is not JSON says nothing: the heartbeat was still accepted */ }
+      return { accepted: true, status: 200, ...(answer ? { answer } : {}) };
+    }
+    return { accepted: false, status: r.status, problem: r.status === 400 ? `fleet refused the heartbeat as malformed: ${text.slice(0, 300)}` : `fleet answered ${r.status}` };
   } catch (e) { return { accepted: false, status: null, problem: `fleet could not be reached (${(e as { cause?: { code?: string } }).cause?.code ?? (e as Error).name})` }; }
 }
