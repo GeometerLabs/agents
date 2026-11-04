@@ -17,7 +17,9 @@
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
 //   restore <shop> [--at TIME]   put the shop's record back from the continuous copy (or --from-snapshot FILE --identity FILE)
-//   rollback <shop>              the previous pathway.lock, deployed
+//   update [--to V] [--shops a,b] [--dry-run]   move clients to a new template version, one at a time, each hand-checked on its own settings first; a client with any situation
+//                                that held before and fails now is held back with the reason. Stopped half-way, the same command again carries on. --dry-run changes nothing.
+//   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
 //   logs <shop> [--tail N]
 //   apply [--watch]              the host-side deployer: applies what the panel writes, running the same checked deploy
 //   backup now | drill           the nightly snapshot and the weekly restore drill, once
@@ -37,6 +39,7 @@ import type { AgentFlags } from "./agent/folder.ts";
 import { recordAgent } from "./agent/records.ts";
 import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
+import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
@@ -82,6 +85,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
       "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
       credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" },
+      // update / rollback
+      to: { type: "string" }, shops: { type: "string" }, "dry-run": { type: "boolean" },
     },
   }) as { values: Record<string, string | boolean | undefined>; positionals: string[] };
   const str = (k: string) => (typeof values[k] === "string" ? values[k] as string : undefined);
@@ -204,17 +209,14 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return result.results.every((x) => x.status === 200) ? 0 : 1;
     }
 
-    if (command === "rollback") {
-      if (!shop) throw new Error("Say which shop: rollback <shop>");
-      const state = loadState(ctx.dir);
-      const previous = state.shops[shop]?.lockHistory.pop();
-      if (previous === undefined) throw new Error(`${shop} has no earlier pathway.lock to go back to.`);
-      saveState(ctx.dir, state);
-      writeAtomic(join(serverPaths(dir).shop(shop), "pathway.lock"), previous);
-      console.log(`Back to ${previous.trim()}.`);
-      const results = await deploy(ctx, shop);
-      results.forEach((r) => console.log(`${r.shop}: ${r.proven.line}`));
-      return 0;
+    if (command === "update" || command === "rollback") {
+      // names come as --shops a,b, or (for rollback) as the one shop named after the command
+      const asked = [str("shops"), ...positionals].filter((x): x is string => !!x).flatMap((x) => x.split(",")).map((x) => x.trim()).filter(Boolean);
+      const shops = asked.length > 0 ? asked : undefined;
+      const dryRun = values["dry-run"] === true;
+      const run = command === "update" ? await runUpdate(ctx, { to: str("to"), shops, dryRun }) : await runRollback(ctx, { shops, dryRun });
+      console.log(summary(run));
+      return exitCodeOf(run);
     }
 
     if (command === "logs") {

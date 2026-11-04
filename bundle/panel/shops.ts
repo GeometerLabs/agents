@@ -72,6 +72,8 @@ export function createShops(config: PanelConfig, store: Store) {
     runtime(id: string): Record<string, any> | undefined {
       try { return JSON.parse(readText(join(paths.shop(safe(id)), "runtime.json")) ?? "null") ?? undefined; } catch { return undefined; }
     },
+    /** The shop's pin as it is on disk (`bookings@0.1.0`), or undefined when there is none. */
+    lock(id: string): string | undefined { const text = readText(join(paths.shop(safe(id)), "pathway.lock")); return text?.split("\n").map((l) => l.trim()).find((l) => l !== "" && !l.startsWith("#")); },
     pins(id: string): PinsFile | undefined {
       try { const p = JSON.parse(readText(join(paths.shop(safe(id)), "pins.json")) ?? "null") as PinsFile | null; return p?.schema === 1 ? p : undefined; } catch { return undefined; }
     },
@@ -83,14 +85,15 @@ export function createShops(config: PanelConfig, store: Store) {
     saveMeta(id: string, meta: ShopMeta): void { store.write(`meta/${safe(id)}.json`, meta); },
 
     /** Is the folder one the deployer and the runtime will accept? The deployer adds the Guard addresses; here stand-in ones stand in for them. */
-    checkFolder(settings: Settings, runtime: Record<string, unknown>, lock: string): string[] {
+    checkFolder(settings: Settings, runtime: Record<string, unknown>, lock: string, keptPin = false): string[] {
       const problems: string[] = [];
       const s = (runtime.services ?? {}) as Record<string, Record<string, unknown>>;
       const withGuards = { ...runtime, services: { ...s, payments: { baseUrl: "http://guard.invalid", ...(s.payments ?? {}) }, calendar: { baseUrl: "http://guard.invalid", ...(s.calendar ?? {}) }, messaging: { baseUrl: "http://guard.invalid", ...(s.messaging ?? {}) } },
         ...(runtime.parser ? { parser: { baseUrl: "http://guard.invalid", ...(runtime.parser as object) } } : {}) };
       const r = validateRuntimeConfig(withGuards, "/tmp");
       if (!r.ok) problems.push(...r.errors);
-      try { const l = parseLock(lock); if (l.pathway !== PATHWAY || l.version !== pathwayVersion()) problems.push(`pathway.lock says ${l.pathway}@${l.version} but this panel builds ${PATHWAY}@${pathwayVersion()}.`); } catch (e) { problems.push((e as Error).message); }
+      // a shop that already has a pin keeps it (`geometer update` moves it, after the hand check on its own settings): only its template has to be this one
+      try { const l = parseLock(lock); if (l.pathway !== PATHWAY || (!keptPin && l.version !== pathwayVersion())) problems.push(`pathway.lock says ${l.pathway}@${l.version} but this panel builds ${PATHWAY}@${pathwayVersion()}.`); } catch (e) { problems.push((e as Error).message); }
       if (!validateSettings(settings).ok) problems.push("the settings do not pass their own check");
       return problems;
     },
