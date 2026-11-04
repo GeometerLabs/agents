@@ -55,11 +55,60 @@ export interface AgentState {
   lastDeployAt?: string;
 }
 
+/**
+ * One client's part in an update or a rollback: what was decided, what was moved, and what a restart needs to finish a move that stopped half-way.
+ * "moving" is written BEFORE the pin is touched and replaced by "moved" (or "held-back") once the deploy has gone through, so a run that was stopped
+ * in the middle can tell the clients it finished from the one it did not.
+ */
+export interface Step {
+  status: "moving" | "moved" | "held-back" | "unchanged" | "skipped";
+  at: string;
+  /** The pins, as `bookings@0.1.0`. */
+  from?: string;
+  to?: string;
+  /** Plain words: why it was held back or skipped, or something to know about the move. */
+  reason?: string;
+  /** "Held N of M" from the hand check on this client's own settings: on the version it ran (before) and on the new one (after). */
+  before?: { held: number; of: number };
+  after?: { held: number; of: number };
+  /** Situations that held before and fail now, each with the first check that failed. */
+  failing?: { title: string; why: string }[];
+  /** Situations that held before and are not run at the new version. */
+  notChecked?: string[];
+  /** What the running Guards proved after the move ("12 of 12 limits proven to bite"). */
+  proven?: string;
+  /** How the runtime lays out its saved data in the two versions, when both could be asked. The older version cannot read what a higher number wrote. */
+  layout?: { from: number; to: number };
+  /** The pin file as it was and as it will be, and the lock history as it was, so a move that stopped half-way can be finished or put back. */
+  fromLock?: string;
+  toLock?: string;
+  historyBefore?: string[];
+}
+
+/** An update or a rollback over several clients, step by step. The last of each kind is kept in `State.update` and `State.rollback`. */
+export interface Run {
+  kind: "update" | "rollback";
+  startedAt: string;
+  finishedAt?: string;
+  /** What was asked, so the same command again after a stop carries on with this run and does not start another. */
+  request: { to: string | null; shops: string[] | null };
+  /** The clients, in the order they are taken. */
+  shops: string[];
+  steps: Record<string, Step>;
+  /** Set when the run stopped on purpose before the end (a deploy was refused), and why. */
+  stoppedBecause?: string;
+  /** A dry run, for the summary only: it is never written to the state file. */
+  dryRun?: boolean;
+}
+
 export interface GuardFiles { kind: string; service: string; specText: string; bundleText: string; tomlText: string }
 
 export interface State {
   schema: 1;
   shops: Record<string, ShopState>;
+  /** The last `geometer update` and the last `geometer rollback`, client by client (update.ts). The pins are shops/<shop>/pathway.lock; the ones before are each shop's `lockHistory`. */
+  update?: Run;
+  rollback?: Run;
   /** Agents someone else wrote ("bring your own agent"). Absent on a server that has none, so a shop-only state file is unchanged. */
   agents?: Record<string, AgentState>;
   /** The record job's memory for each such agent is in state/records/<agent>.json (agent/record.ts), not here. */
