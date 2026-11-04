@@ -29,16 +29,16 @@ const handCheck = () => (hand ??= runAll().then(summariseHandCheck));
 
 test("the go-live certificate says what the hand check says: the same counts, the same list, the same words", async () => {
   const summary = await handCheck();
-  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length], [33, 33, 0]);
+  assert.deepEqual([summary.held, summary.total, summary.failedTitles.length], [34, 34, 0]);
   const env = seal(buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: ISSUED }));
   const cert = env.document;
-  assert.deepEqual(cert.checks, { held: 33, total: 33, failed: 0, failedTitles: [], checks: summary.checks });
+  assert.deepEqual(cert.checks, { held: 34, total: 34, failed: 0, failedTitles: [], checks: summary.checks });
   assert.deepEqual(cert.notTested, NOT_TESTED.map((n) => n.id), "Glow Salon's own settings are what the situations ran on, so nothing is added");
-  assert.ok(goLiveText(env, "en").includes("Held 33 of 33 situations. 0 failed. 14 not tested."));
+  assert.ok(goLiveText(env, "en").includes("Held 34 of 34 situations. 0 failed. 14 not tested."));
   // the hand check's own output, run for real: same counts, same list, same phrase
   const run = spawnSync(process.execPath, [fileURLToPath(new URL("../scripts/hand-check.ts", import.meta.url))], { encoding: "utf8" });
   assert.equal(run.status, 0);
-  assert.ok(run.stdout.includes("Held 33 of 33.  0 failed.  14 not tested."));
+  assert.ok(run.stdout.includes("Held 34 of 34.  0 failed.  14 not tested."));
   assert.ok(run.stdout.includes(STAND_IN_SERVICES) && run.stdout.includes(HAND_RUN));
   assert.ok(run.stdout.includes(NOT_TESTED.map((n) => n.text).join(" · ")));
   assert.ok(goLiveText(env, "en").includes(STAND_IN_SERVICES), `the certificate says "${STAND_IN_SERVICES}" exactly as the hand check does`);
@@ -62,7 +62,7 @@ test("a shop whose settings are not the ones the situations ran on gets one more
   assert.equal(bright.notTested.length, 15);
   assert.equal(bright.notTested.at(-1), "own-settings");
   const env = seal(bright);
-  assert.ok(goLiveText(env, "en").includes("Held 33 of 33 situations. 0 failed. 15 not tested."));
+  assert.ok(goLiveText(env, "en").includes("Held 34 of 34 situations. 0 failed. 15 not tested."));
   assert.ok(goLiveText(env, "en").includes("these checks on this shop's own settings (they ran on the example shop, Glow Salon)"));
   for (const language of LANGUAGES) assert.ok(words(goLivePage(env, language)).includes(STRINGS[language].notTested["own-settings"]));
   // and the limits printed are the other shop's, not Glow Salon's
@@ -120,7 +120,7 @@ test("every language renders both certificates, as a page and as a short text, w
         assert.deepEqual(bannedIn(texts[i], l), [], `${l}: banned word in the text`);
         assert.deepEqual(bannedIn(pages[i], l), [], `${l}: banned word on the page`);
       }
-      assert.ok(texts[0].includes(s.cert.held(33, 33, 0, 14)) && texts[0].includes("Divya, local partner"));
+      assert.ok(texts[0].includes(s.cert.held(34, 34, 0, 14)) && texts[0].includes("Divya, local partner"));
       assert.ok(texts[1].includes(MONTH_NAMES[l][10]) && texts[1].includes(s.handRun) && texts[1].includes(s.sourceTag["stand-in"]));
       for (const id of NOT_COUNTED) assert.ok(texts[1].includes(s.notCounted[id]) && pages[1].includes(s.notCounted[id]), `${l}: not counted "${id}"`);
     }

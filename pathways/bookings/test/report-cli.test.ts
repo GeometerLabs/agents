@@ -87,11 +87,11 @@ test("go-live-certificate.ts runs the hand check and writes the certificate in t
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(tree(out), ["go-live-certificate-ml.html", "go-live-certificate-ml.txt", "go-live-certificate.json"]);
   const text = readFileSync(join(out, "go-live-certificate-ml.txt"), "utf8");
-  assert.ok(text.includes("33 സാഹചര്യങ്ങളിൽ 33 എണ്ണം") && text.includes("stand-in services") && text.includes("പരിശോധനാ സർട്ടിഫിക്കറ്റ്") && text.includes("Divya, local partner"));
+  assert.ok(text.includes("34 സാഹചര്യങ്ങളിൽ 34 എണ്ണം") && text.includes("stand-in services") && text.includes("പരിശോധനാ സർട്ടിഫിക്കറ്റ്") && text.includes("Divya, local partner"));
   const v = verifyEnvelopeText(readFileSync(join(out, "go-live-certificate.json"), "utf8"));
   assert.equal(v.unchanged && v.signed, true);
   const en = run("go-live-certificate.ts", "--settings", join(dir, "settings.json"), "--lang", "en", "--out", join(dir, "golive-en"));
-  assert.ok(en.stdout.includes("Held 33 of 33 situations. 0 failed. 14 not tested.") && en.stdout.includes("NOT signed"));
+  assert.ok(en.stdout.includes("Held 34 of 34 situations. 0 failed. 14 not tested.") && en.stdout.includes("NOT signed"));
 });
 
 test("go-live-certificate.ts for another shop's settings says the situations did not run on them", async () => {
@@ -102,7 +102,7 @@ test("go-live-certificate.ts for another shop's settings says the situations did
   writeFileSync(join(dir, "bright.json"), JSON.stringify(other));
   const r = run("go-live-certificate.ts", "--settings", join(dir, "bright.json"), "--lang", "en", "--out", join(dir, "bright"));
   assert.equal(r.status, 0, r.stderr);
-  assert.ok(r.stdout.includes("Held 33 of 33 situations. 0 failed. 15 not tested.") && r.stdout.includes("they ran on the example shop, Glow Salon"));
+  assert.ok(r.stdout.includes("Held 34 of 34 situations. 0 failed. 15 not tested.") && r.stdout.includes("they ran on the example shop, Glow Salon"));
   assert.ok(r.stdout.includes("Deposit ₹100"));
   const bad = join(dir, "bad.json");
   writeFileSync(bad, JSON.stringify({ name: "" }));

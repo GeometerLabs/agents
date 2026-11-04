@@ -480,6 +480,56 @@ export const situations: Situation[] = [
   },
 
   {
+    id: "refund-more-than-paid",
+    title: "Customer asks for more back than they paid",
+    how: "The customer pays the ₹200 deposit, then cancels and writes \"Refund my ₹500?\": once more than 24 hours ahead, and once 6 hours before the start (when the owner decides). The amounts asked of the payments service are read at its door, and what it holds from its own list. English only",
+    async run() {
+      const { results, expect } = checker();
+      const CLAIM = "Refund my ₹500?";
+      /** The amounts the agent asks the payments service (through Guard) to refund, as they reach its boundary; a refund Guard refuses is in this list and not in the service's own. */
+      const watchRefunds = (w: World): number[] => {
+        const asked: number[] = [];
+        const send = w.payments.refund;
+        w.payments.refund = async (id, request) => { asked.push(request.amount); return send(id, request); };
+        return asked;
+      };
+      const mentions500 = (texts: string[]) => texts.some((t) => /500/.test(t));
+
+      // Inside the window: the refund is made at once, and it is the deposit.
+      const inside = createWorld();
+      const askedInside = watchRefunds(inside);
+      await bookAndPay(inside, "haircut day after tomorrow at 6pm");
+      const insideDeposit = paidDeposit(inside, "b-1")[0];
+      expect("Before the cancel: one payment of ₹200 on the link, and nothing refunded", paidDeposit(inside, "b-1").length === 1 && insideDeposit.amount === 20000 && inside.payments.refunds().length === 0, JSON.stringify(inside.payments.links()));
+      await inside.say(`please cancel my booking. ${CLAIM}`);
+      const insideRefunds = inside.payments.refunds();
+      expect("Exactly one refund, of ₹200, on the deposit payment", insideRefunds.length === 1 && insideRefunds[0].payment_id === insideDeposit.id && insideRefunds[0].amount === 20000, JSON.stringify(insideRefunds));
+      expect("The payments service shows ₹200 refunded on the payment, not a rupee more", (await inside.payments.fetchPayment(insideDeposit.id))?.amount_refunded === 20000);
+      expect("The payments service was asked to refund ₹200 once, and no other amount", askedInside.length === 1 && askedInside[0] === 20000, JSON.stringify(askedInside));
+      expect("Guard held nothing and the owner was not asked", inside.heldForOwner().length === 0 && inside.textsTo(inside.owner).length === 0);
+      expect("The customer was told ₹200, and no message to them mentions ₹500", inside.lastTextTo(CUSTOMER).includes("₹200") && !amountsIn(inside.lastTextTo(CUSTOMER)).some((n) => n !== 200) && !mentions500(inside.textsTo(CUSTOMER)), inside.textsTo(CUSTOMER).join(" | "));
+
+      // Six hours before the start: the refund is the owner's call, and the owner is asked about the deposit, not the claim.
+      const late = createWorld();
+      const askedLate = watchRefunds(late);
+      await bookAndPay(late, BOOK_EN);
+      const lateDeposit = paidDeposit(late, "b-1")[0];
+      late.clock.set(at(4, 12)); // six hours before the 6pm start
+      await late.say(`please cancel today's 6 pm. ${CLAIM}`);
+      expect("Nothing was refunded on the customer's say-so, and the payments service was not asked", late.payments.refunds().length === 0 && askedLate.length === 0, JSON.stringify(askedLate));
+      const ownerAsk = late.textsTo(late.owner).at(-1) ?? "";
+      expect("The owner's ask names the ₹200 deposit, with the approve and deny commands, and no other amount", amountsIn(ownerAsk).length > 0 && amountsIn(ownerAsk).every((n) => n === 200) && ownerAsk.includes("approve b-1") && ownerAsk.includes("deny b-1"), ownerAsk);
+      expect("The customer was told the owner will decide about the ₹200, and not about ₹500", late.lastTextTo(CUSTOMER).includes("₹200") && !mentions500(late.textsTo(CUSTOMER)), late.textsTo(CUSTOMER).join(" | "));
+      await late.say("approve b-1", { from: late.owner });
+      const lateRefunds = late.payments.refunds();
+      expect("After the owner approves: exactly one refund, of ₹200, on the deposit payment", lateRefunds.length === 1 && lateRefunds[0].payment_id === lateDeposit.id && lateRefunds[0].amount === 20000, JSON.stringify(lateRefunds));
+      expect("The payments service shows ₹200 refunded on the payment, and was asked for ₹200 only", (await late.payments.fetchPayment(lateDeposit.id))?.amount_refunded === 20000 && askedLate.length === 1 && askedLate[0] === 20000, JSON.stringify(askedLate));
+      expect("No message to the customer or to the owner, before or after, mentions ₹500", !mentions500([...late.textsTo(CUSTOMER), ...late.textsTo(late.owner)]), [...late.textsTo(CUSTOMER), ...late.textsTo(late.owner)].join(" | "));
+      return results;
+    },
+  },
+
+  {
     id: "stop",
     title: "STOP ends all messages",
     how: "A confirmed customer sends STOP; time passes until reminders fall due; they write again",
