@@ -7,7 +7,7 @@
 // and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
 import { ANTHROPIC_VERSION } from "../../pathways/bookings/src/adapters/model-llm.ts";
 import { razorpayLimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
-import type { LimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
+import type { LimitsSpec, RazorpayCaps } from "../../pathways/bookings/src/guard-limits.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
 
@@ -45,8 +45,10 @@ export interface SpecIdentity { tenant: string; name: string; version: number; r
 const base = (def: GuardDef, id: SpecIdentity, approvalTtlSeconds = 900) => ({ schema: 1, tenant: id.tenant, tool: def.tool, name: id.name, version: id.version, reviewed_by: id.reviewedBy, approval_ttl_seconds: approvalTtlSeconds });
 const count = (id: string, operation: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [], cap: String(cap), window_seconds: windowSeconds });
 
-export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours: number, linksPerHour?: number): LimitsSpec {
-  return razorpayLimitsSpec(settings, { tenant: id.tenant, name: id.name, version: id.version, reviewedBy: id.reviewedBy }, { approvalTtlSeconds: approvalHours * 3600, ...(linksPerHour !== undefined ? { caps: { linksPerHour } } : {}) });
+/** `caps` is for an agent we did not write, whose builder sets the daily refund caps too (agent.json); a shop passes none and gets the template's. */
+export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours: number, linksPerHour?: number, caps?: Partial<RazorpayCaps>): LimitsSpec {
+  const merged = { ...(linksPerHour !== undefined ? { linksPerHour } : {}), ...caps };
+  return razorpayLimitsSpec(settings, { tenant: id.tenant, name: id.name, version: id.version, reviewedBy: id.reviewedBy }, { approvalTtlSeconds: approvalHours * 3600, ...(Object.keys(merged).length > 0 ? { caps: merged } : {}) });
 }
 
 /**
@@ -124,11 +126,17 @@ export interface TomlOptions {
   approver?: { id: string; secretFile: string };
   /** Seconds between tripwire runs; Guard's default is 300. */
   tripwireIntervalS?: number;
+  /** Where this Guard listens and keeps its files. The defaults are the container's; a test that runs the real binary on this computer gives its own. */
+  paths?: Partial<typeof CONTAINER_PATHS>;
 }
+
+/** Inside the Guard's container. A test running the binary directly overrides these (TomlOptions.paths). */
+export const CONTAINER_PATHS = { listen: "0.0.0.0:8080", adminListen: "127.0.0.1:8082", healthListen: "0.0.0.0:8081", state: "/var/lib/geo-guard/state.db", bundle: "/etc/geo-guard/bundle.json" };
 
 /** guard.toml for one Guard, in Guard's production profile. It holds no secret: only hashes, and the names of files. */
 export function guardToml(o: TomlOptions): string {
   const q = (s: string) => JSON.stringify(s);
+  const where = { ...CONTAINER_PATHS, ...o.paths };
   const lines = [
     `# guard.toml for ${o.deployment}. Written by the Geometer deploy bundle: do not edit; change the shop's settings and deploy again.`,
     `# It holds no secret: the credentials are sha256 hashes, and the provider's key is read from a file only this Guard can read.`,
@@ -136,17 +144,17 @@ export function guardToml(o: TomlOptions): string {
     `profile = "production"`,
     `# The runtime reaches the agent port on a network with no way out. The admin port stays on loopback; a forwarder in this Guard's network`,
     `# namespace gives the services that need it (ops, the relay, the token refresher) a way in, on a network the runtime is not on.`,
-    `listen = "0.0.0.0:8080"`,
-    `admin_listen = "127.0.0.1:8082"`,
-    `health_listen = "0.0.0.0:8081"`,
+    `listen = ${q(where.listen)}`,
+    `admin_listen = ${q(where.adminListen)}`,
+    `health_listen = ${q(where.healthListen)}`,
     `deployment = ${q(o.deployment)}`,
     `tenant = ${q(o.tenant)}`,
     `tool = ${q(o.def.tool)}`,
     `mode = "enforce"`,
     `upstream = ${q(o.upstream.host)}`,
     `upstream_timeout_ms = ${GUARD_UPSTREAM_TIMEOUT_MS}`,
-    `state = "/var/lib/geo-guard/state.db"`,
-    `bundle = "/etc/geo-guard/bundle.json"`,
+    `state = ${q(where.state)}`,
+    `bundle = ${q(where.bundle)}`,
     `bundle_digest = ${q(o.bundleDigest)}`,
     `unlisted_tools = "deny"`,
     ...(o.tripwireIntervalS !== undefined ? [`tripwire_interval_s = ${o.tripwireIntervalS}`] : []),

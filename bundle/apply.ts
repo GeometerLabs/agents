@@ -4,6 +4,8 @@
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { runBackup, runDrill, runExports } from "./backup/jobs.ts";
+import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
+import { listAgents, readAgent } from "./agent/folder.ts";
 import { Refused, deploy, desiredHashOf, ops, renewRelayCredential } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
@@ -42,6 +44,26 @@ export async function applyOnce(ctx: Context): Promise<{ applied: string[]; fail
       const problems = e instanceof Refused ? e.problems : [{ rule: "deploy", message: (e as Error).message }];
       if (!(e instanceof Refused)) updateStatus(ctx.dir, shop, ctx.now(), (s) => { s.deploy = { state: "failed", at: ctx.now().toISOString(), message: problems[0].message.slice(0, 480) }; });
       ctx.log(`${shop}: not deployed.\n${problems.map((p) => `  - [${p.rule}] ${p.message}`).join("\n")}`);
+    }
+  }
+  // the agents someone else wrote, the same way: deployed when their folder (or a key handed in for them) differs from what was applied
+  for (const agent of listAgents(ctx.dir)) {
+    const state = loadState(ctx.dir);
+    const folder = readAgent(ctx.dir, agent);
+    const waitingFiles = readdirSafe(join(serverPaths(ctx.dir).secretsInbox, agent));
+    const signature = sha256Hex(stableJson({ desired: agentDesiredHash(folder), inbox: waitingFiles.sort() }));
+    const upToDate = state.agents?.[agent]?.applied?.desiredHash === agentDesiredHash(folder) && waitingFiles.length === 0;
+    if (upToDate || failedFor.get(agent) === signature) { skipped.push(agent); continue; }
+    try {
+      await deployAgent(ctx, agent);
+      failedFor.delete(agent);
+      applied.push(agent);
+    } catch (e) {
+      failed++;
+      failedFor.set(agent, signature);
+      const problems = e instanceof Refused ? e.problems : [{ rule: "deploy", message: (e as Error).message }];
+      if (!(e instanceof Refused)) updateStatus(ctx.dir, agent, ctx.now(), (s) => { s.deploy = { state: "failed", at: ctx.now().toISOString(), message: problems[0].message.slice(0, 480) }; });
+      ctx.log(`${agent}: not deployed.\n${problems.map((p) => `  - [${p.rule}] ${p.message}`).join("\n")}`);
     }
   }
   return { applied, failed, skipped };
@@ -130,11 +152,15 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   const jobs = state.jobs ??= {};
   const since = (iso?: string) => (iso ? now.getTime() - Date.parse(iso) : Infinity);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
-  if (shops.length === 0) return ran;
+  // an agent someone else wrote has a relay credential too, when it calls Razorpay (a held refund is asked about on WhatsApp)
+  const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && a.guards.razorpay).map(([n]) => n);
+  if (shops.length === 0 && withRelay.length === 0) return ran;
   if (since(jobs.relayCredentialsAt) >= 24 * HOUR) {
-    for (const shop of shops) await renewRelayCredential(ctx, shop);
+    for (const shop of [...shops, ...withRelay]) await renewRelayCredential(ctx, shop);
     jobs.relayCredentialsAt = now.toISOString(); ran.push("relay credentials");
   }
+  // the jobs below are about shops' runtimes (their databases): a server with only agents someone else wrote has none
+  if (shops.length === 0) { const fresh = loadState(ctx.dir); fresh.jobs = { ...fresh.jobs, ...jobs }; saveState(ctx.dir, fresh); return ran; }
   // the record and bookings for the panel's monthly report: every quarter of an hour (counts for the report; no customer's number leaves the shop's volume)
   if (since(jobs.exportsAt) >= 15 * 60_000) {
     jobs.exportsAt = now.toISOString();
