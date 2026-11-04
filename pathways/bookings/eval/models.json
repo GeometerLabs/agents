@@ -77,6 +77,38 @@
       "priceInputPerMillion": null,
       "priceOutputPerMillion": null,
       "note": "The model OpenAI's models page describes as the most efficient for focused, high-volume tasks. Its request shape was not tried: newer OpenAI models take max_completion_tokens and refuse a set temperature, so extraBody nulls those two. Price: fill from the provider's current price page."
+    },
+    {
+      "name": "deepinfra-deepseek-v4.1-flash",
+      "wire": "openai",
+      "baseUrl": "https://api.deepinfra.com/v1/openai",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "keyEnv": "DEEPINFRA_API_KEY",
+      "responseFormat": "json_schema",
+      "priceInputPerMillion": 0.16,
+      "priceOutputPerMillion": 0.48,
+      "note": "Step 2 of the understanding (economics note, section 3.2): DeepSeek V4.1 Flash on DeepInfra's Flex tier, the owner's pick. DeepInfra is paid: the key goes only in .env. Price from deepinfra.com, read 5 Nov 2026 (the figure is the economics note's, taken from third-party trackers: check the page before choosing). The model id is a best guess at DeepInfra's naming: if every message gets HTTP 404 or 400, copy the id from deepinfra.com, and if 400 try \"responseFormat\": \"json_object\"."
+    },
+    {
+      "name": "laya",
+      "wire": "systemone",
+      "kind": "laya",
+      "urlEnv": "LAYA_BASE_URL",
+      "model": "laya",
+      "priceInputPerMillion": 0,
+      "priceOutputPerMillion": 0,
+      "note": "Step 1: Laya (Apache-2.0 open weights) served on this machine by laya-serve, for example LAYA_BASE_URL=http://127.0.0.1:8080 in .env; the steps to run it are in Deferred.md. No key, and nothing leaves the machine. Price from economics-and-pricing.md, read 5 Nov 2026: self-hosted, so no price per call. Malayalam and Kannada are not on the model card: the table is how to find out."
+    },
+    {
+      "name": "jev",
+      "wire": "systemone",
+      "kind": "jev",
+      "urlEnv": "JEV_BASE_URL",
+      "keyEnv": "JEV_API_KEY",
+      "model": "clm-latest",
+      "priceInputPerMillion": 0.042,
+      "priceOutputPerMillion": 0.042,
+      "note": "Step 1, hosted: Jev (TypeSafe). It is paid: the address and the key go only in .env. Price from economics-and-pricing.md, read 5 Nov 2026 (it quotes the Laya page): about $0.042 per million tokens. The model name clm-latest is the example in pydantic-ai's docs: use the name Jev serves your account's model under."
     }
   ]
 }
