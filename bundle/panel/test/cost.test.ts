@@ -17,9 +17,10 @@ const line = (c: { lines: CostLine[] }, id: CostLine["id"]) => c.lines.find((l) 
 const PINNED: Record<string, string> = {
   "2026-11-03.json": "0d77094e78500264c426f4e587f61299ad0d8bda7f450631306a6e15fa6db64f",
   "2026-11-04.json": "6c495979cdaf40194c811e6f9716ec1286afc02a8003418c5e68bb913d8a156d",
+  "2026-11-05.json": "3af9b56ca2cfac974e363acf31263b21d437e9c9e28e3575adcfc50a3b88e2b9", // proposed: latestPriceList skips it (see plans.test.ts)
 };
 
-test("the newest price list is the one dated 2026-11-04, and the bytes of every list are pinned: a changed price is a new file", () => {
+test("the newest price list in force is the one dated 2026-11-04, and the bytes of every list are pinned: a changed price is a new file", () => {
   assert.equal(prices.date, "2026-11-04");
   const files = readdirSync(PRICES_DIR).filter((f) => f.endsWith(".json")).sort();
   assert.deepEqual(files, Object.keys(PINNED), "a price list is in bundle/prices that is not pinned here (or the reverse)");
