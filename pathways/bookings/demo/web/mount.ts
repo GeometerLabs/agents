@@ -54,6 +54,20 @@ export function mountDemo(element: HTMLElement, options: MountOptions = {}): Mou
   root.className = ROOT_CLASS;
   const template = doc.createElement("template");
   template.innerHTML = MARKUP.replace(/\b(id|aria-labelledby)="([^"]+)"/g, (_all, attribute: string, value: string) => `${attribute}="${prefix}${value}"`); // fixed markup of our own; no visitor text goes through here
+  // Inside a host page the demo is one part of that page. Its <main> becomes a plain block, because the host has its own main landmark.
+  // The shop form is a modal sheet on the demo's own page, but here it is step 1, so it becomes a named region rather than a modal
+  // that hides the rest of the host page from a screen reader.
+  for (const inner of template.content.querySelectorAll("main")) {
+    const box = doc.createElement("div");
+    for (const { name, value } of [...inner.attributes]) box.setAttribute(name, value);
+    box.append(...inner.childNodes);
+    inner.replaceWith(box);
+  }
+  for (const sheet of template.content.querySelectorAll('[role="dialog"]')) {
+    sheet.removeAttribute("aria-modal");
+    sheet.setAttribute("role", "region");
+    sheet.setAttribute("aria-label", STEPS[0][1]);
+  }
   root.appendChild(template.content);
   const find = (id: string): HTMLElement => {
     const found = root.querySelector<HTMLElement>(`[id="${prefix}${id}"]`);
