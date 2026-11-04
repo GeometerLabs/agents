@@ -165,7 +165,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
           const detail = { approval: null, status: "pending", expires_at_ms: null };
           throw new GuardHeldError(202, "held by the Guard: an earlier attempt has an unknown outcome and the provider could not be asked; the Guard will not repeat it", info("hold", "held_for_approval", "after_approval", undefined, detail), sentCall, null, null);
         }
-        case "refused": throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, info("deny", "refused_by_policy", "no", decision.reason), sentCall, "rule", "refund-needs-owner");
+        case "refused": throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, info("deny", "refused_by_policy", "no", decision.reason), sentCall, "rule", decision.ruleId);
         case "conflict": throw new GuardConflictError(409, `refused by the Guard: ${decision.reason}`, info("deny", "conflict", "no", decision.reason), sentCall);
         case "replay": return { ...(decision.reply as Refund), replayed: true };
         case "pass": break;

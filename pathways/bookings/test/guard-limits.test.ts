@@ -6,7 +6,9 @@ import { execFileSync } from "node:child_process";
 import { parseSettings } from "../src/settings.ts";
 import { glowSalon } from "../src/harness.ts";
 import { checkRefundLimit } from "../src/limits.ts";
-import { APPROVAL_TTL_SECONDS, DEFAULT_CAPS, MAX_APPROVAL_TTL_SECONDS, guardHoldsRefund, razorpayLimitsSpec, razorpayNumbers, refundRulesOf, refundThresholdPaise, rupeesToPaise } from "../src/guard-limits.ts";
+import { createGuardModel } from "../src/adapters/guard-model.ts";
+import { fakeClock } from "../src/clock.ts";
+import { APPROVAL_TTL_SECONDS, DEFAULT_CAPS, MAX_APPROVAL_TTL_SECONDS, guardHoldsRefund, guardRefusesRefund, razorpayLimitsSpec, razorpayNumbers, refundRulesOf, refundThresholdPaise, rupeesToPaise } from "../src/guard-limits.ts";
 
 const withSettings = (changes: { refundLimitInr?: number; depositInr?: number }) => {
   const base = JSON.parse(JSON.stringify(glowSalon()));
@@ -54,6 +56,45 @@ test("the deposit bound is the settings' deposit and nothing else, so a link for
     assert.equal(rule.min, String(depositInr * 100));
     assert.equal(rule.max, String(depositInr * 100));
   }
+});
+
+test("a refund is bounded by the settings' deposit, from 1 paisa: the same number that bounds the payment link", () => {
+  for (const depositInr of [1, 200, 250]) {
+    const spec = razorpayLimitsSpec(withSettings({ depositInr, refundLimitInr: 100 }), IDENTITY);
+    const rule = spec.rules.find((r: any) => r.id === "refund-at-most-deposit");
+    assert.deepEqual(rule, { id: "refund-at-most-deposit", kind: "argument_bound", operation: "refund", field: "amount", min: "1", max: String(depositInr * 100), units: { amount: "paise" } });
+    assert.equal(typeof rule.max, "string", "amounts in a spec are strings");
+    assert.equal(rule.max, spec.rules.find((r: any) => r.id === "deposit-amount").max, "a refund can be as large as the one payment the link allowed, and no larger");
+    assert.equal(refundRulesOf(spec).bound.maxPaise, BigInt(depositInr * 100));
+    // the words are Guard's own: equal to the deposit passes, a paisa either side is refused
+    assert.equal(guardRefusesRefund(spec, depositInr * 100), undefined);
+    assert.equal(guardRefusesRefund(spec, 1), undefined);
+    assert.match(guardRefusesRefund(spec, depositInr * 100 + 1) ?? "", /^refund-at-most-deposit: amount \d+ is above the highest allowed value, \d+$/);
+    assert.match(guardRefusesRefund(spec, 0) ?? "", /below the lowest allowed value, 1$/);
+  }
+});
+
+// Guard decides every rule on a call separately and adds them up: any refusal refuses, otherwise any hold holds (monorepo adapters/boundaries/guard
+// src/engine.rs `fold_evals`). So the bound wins over the owner's hold. The model has to say the same, and the real binary is asked in
+// approvals-guard-binary.test.ts.
+test("the Guard model refuses a refund above the deposit even when it is also above the owner's limit: no hold, nobody asked, and the once-only record is untouched", () => {
+  const spec = razorpayLimitsSpec(withSettings({ depositInr: 200, refundLimitInr: 100 }), IDENTITY); // the owner's limit (₹100) is below the deposit (₹200)
+  const model = createGuardModel(spec, fakeClock(0));
+  const call = (amount: number, payment = "pay_a") => model.decideRefund(payment, { amount, receipt: `b-1:${payment}` });
+  const above = call(20_001);
+  assert.deepEqual(above, { kind: "refused", ruleId: "refund-at-most-deposit", reason: "refund-at-most-deposit: amount 20001 is above the highest allowed value, 20000" });
+  assert.deepEqual(model.approvals(), [], "no approval was made, so the owner is not asked");
+  assert.equal(call(500_000).kind, "refused");
+  assert.equal(call(0).kind, "refused");
+  assert.equal(call(-100).kind, "refused");
+  assert.deepEqual(model.approvals(), []);
+  // the deposit itself is above the owner's limit, so it is held for the owner as before
+  assert.equal(call(20_000).kind, "hold");
+  assert.equal(model.approvals().length, 1);
+  // and with the owner's limit above the deposit, the deposit goes straight through, and a paisa more does not
+  const roomy = createGuardModel(razorpayLimitsSpec(withSettings({ depositInr: 200, refundLimitInr: 500 }), IDENTITY), fakeClock(0));
+  assert.equal(roomy.decideRefund("pay_a", { amount: 20_001, receipt: "b-1:pay_a" }).kind, "refused");
+  assert.equal(roomy.decideRefund("pay_a", { amount: 20_000, receipt: "b-1:pay_a" }).kind, "pass", "the refused call did not use up the once-only record of the payment");
 });
 
 test("the daily refund cap can always cover one deposit; a cap that could not is refused when the spec is made", () => {
