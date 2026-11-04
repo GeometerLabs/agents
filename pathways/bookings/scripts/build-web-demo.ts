@@ -9,8 +9,8 @@
 //   2. changes only the file names in `import ... from "x"`: a relative .ts becomes .js, node:fs and node:crypto become the two small
 //      stand-ins in demo/web/shims/ (the only two Node modules the demo uses; any other `node:` makes the build stop).
 // Then it writes demo/web/generated.js: the page's own script (demo/page.js), markup (the body of demo/page.ts's page) and stylesheet
-// (demo/page.css with every rule moved under .geo-demo, then demo/web/embed.css), and a copy of each file the template reads with
-// readFileSync (the example shop's settings), which the fs stand-in serves.
+// (demo/web/theme.css: its own look for the browser, every rule under .geo-demo and every colour a custom property), and a copy of each
+// file the template reads with readFileSync (the example shop's settings), which the fs stand-in serves.
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
@@ -20,7 +20,6 @@ import { renderPage } from "../demo/page.ts";
 
 const ROOT = resolve(import.meta.dirname, ".."); // pathways/bookings
 export const DEFAULT_OUT = join(ROOT, "demo/web/dist");
-export const ROOT_CLASS = "geo-demo";
 const ENTRY = "demo/web/mount.ts";
 const GENERATED = "demo/web/generated.js";
 const SHIMS: Record<string, string> = { "node:fs": "demo/web/shims/fs.ts", "node:crypto": "demo/web/shims/crypto.ts" };
@@ -31,58 +30,6 @@ const SPECIFIER = /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(["'])([^"'\n]+)\2/g;
 /** True when `offset` is on a line that is a comment (this codebase writes comments as whole lines), so a sentence in one that looks like an import is left alone. */
 const inComment = (code: string, offset: number) => /^\s*(\/\/|\/\*|\*)/.test(code.slice(code.lastIndexOf("\n", offset - 1) + 1, offset + 1));
 const READ_FILE = /\breadFileSync\(\s*new URL\(\s*"([^"\n]+)"\s*,\s*import\.meta\.url\s*\)\s*,/g;
-
-// ---- the stylesheet ------------------------------------------------------------------------------------------------------------
-
-function splitSelectors(list: string): string[] {
-  const parts: string[] = [];
-  let depth = 0;
-  let start = 0;
-  for (let i = 0; i < list.length; i++) {
-    const c = list[i];
-    if (c === "(" || c === "[") depth++;
-    else if (c === ")" || c === "]") depth--;
-    else if (c === "," && depth === 0) { parts.push(list.slice(start, i)); start = i + 1; }
-  }
-  parts.push(list.slice(start));
-  return parts.map((s) => s.trim()).filter(Boolean);
-}
-
-/**
- * Moves every rule of a stylesheet under one root class, so it cannot reach the page around it: `:root`, `html` and `body` become the
- * root itself, `*` becomes the root and everything in it, and every other selector gets the root in front. Handles plain rules and
- * @media blocks (all page.css has); anything else stops the build rather than leaking.
- */
-export function scopeCss(css: string, root = `.${ROOT_CLASS}`): string {
-  const scopeOne = (selector: string): string[] => {
-    if (selector === "*") return [root, `${root} *`];
-    const top = /^(html|body|:root)(?![\w-])/.exec(selector);
-    return top ? [root + selector.slice(top[0].length)] : [`${root} ${selector}`];
-  };
-  const walk = (text: string): string => {
-    let out = "";
-    let at = 0;
-    while (at < text.length) {
-      const open = text.indexOf("{", at);
-      if (open === -1) {
-        if (text.slice(at).trim() !== "") throw new Error(`The stylesheet has text outside any rule: ${text.slice(at).trim().slice(0, 40)}`);
-        break;
-      }
-      let depth = 1;
-      let close = open + 1;
-      for (; close < text.length && depth > 0; close++) depth += text[close] === "{" ? 1 : text[close] === "}" ? -1 : 0;
-      if (depth !== 0) throw new Error("The stylesheet has a { without its }.");
-      const head = text.slice(at, open).trim();
-      const inner = text.slice(open + 1, close - 1);
-      if (head.startsWith("@media")) out += `${head} {\n${walk(inner)}}\n`;
-      else if (head.startsWith("@")) throw new Error(`The stylesheet uses ${head.split(/\s/)[0]}, which the scoping does not handle.`);
-      else out += `${splitSelectors(head).flatMap(scopeOne).join(",\n")} {${inner}}\n`;
-      at = close;
-    }
-    return out;
-  };
-  return walk(css.replace(/\/\*[\s\S]*?\*\//g, ""));
-}
 
 // ---- the page's own parts --------------------------------------------------------------------------------------------------------
 
@@ -173,9 +120,9 @@ export function buildWebDemo(outDir: string = DEFAULT_OUT): BuildResult {
     modules.set(here, code);
   }
 
-  const css = `.${ROOT_CLASS} { all: initial; }\n${scopeCss(readFileSync(join(ROOT, "demo/page.css"), "utf8"))}${readFileSync(join(ROOT, "demo/web/embed.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").trim()}\n`;
+  const css = `${readFileSync(join(ROOT, "demo/web/theme.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n\s*\n/g, "\n").trim()}\n`;
   const generated = [
-    "// Written by scripts/build-web-demo.ts from demo/page.js, demo/page.ts, demo/page.css, demo/web/embed.css and the files the template reads.",
+    "// Written by scripts/build-web-demo.ts from demo/page.js, demo/page.ts, demo/web/theme.css and the files the template reads.",
     "// Do not edit: build again.",
     `export const MARKUP = ${JSON.stringify(pageMarkup())};`,
     `export const CSS = ${JSON.stringify(css)};`,
