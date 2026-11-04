@@ -156,6 +156,7 @@
 | Saving the visitor's shop, or a link that opens the demo on it | Nothing is stored on purpose: no cookie, no storage, no request. A visitor who closes the page starts again | Sign-in exists (B43) and the owner wants a shop kept |
 | Starting on a chosen day or time; the hold time and cancellation window in the form | Same as the partner demo: the clock starts on the real date at 10:00 shop time, and the form changes the deposit amount only | Visitors ask |
 | An embed that grows with the page instead of a framed app with its own height | The frame keeps the two labels and the steps in view without script; a host that wants it taller sets `--geo-height` (`auto` for the page's own height, in which case the labels scroll away) | The website's design needs it |
+| Moving the deploy panel to the `geo-` class names | `bundle/panel/views.ts` reads `demo/page.css` as its base style and its pages use the old names (`btn`, `field`, `tab`, `wrap` ...). `page.css` lists both names in every selector so that nothing in the panel changed | The panel is next touched; then the old names can be removed from `page.css` |
 | Putting it on the website | The owner integrates the built folder into `public-web` and deploys; nothing here touches `public-web` or deploys | The owner's go-ahead for the deploy |
 
 ## The monthly report and the certificates (`report/`)
