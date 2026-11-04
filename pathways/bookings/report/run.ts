@@ -55,12 +55,14 @@ export interface ReportRun {
   goLive?: GoLiveFinding;
   /** Epoch milliseconds the report is made at. */
   now: number;
+  /** Which agent the record is of; left out, the bookings pathway (see ReportInput.pathway). */
+  pathway?: { name: string; version: string };
 }
 
 /** The monthly report (page, owner text, signed data) and the monthly record certificate (page, text, signed data). */
 export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; certificateCode: string } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
-  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, goLive: run.goLive });
+  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, goLive: run.goLive, pathway: run.pathway });
   const sealed = seal(report, run.key);
   const certificate = seal(buildMonthlyCertificate(sealed, run.now), run.key);
   const w = writer(run.out);

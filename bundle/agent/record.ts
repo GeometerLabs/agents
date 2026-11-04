@@ -1,0 +1,175 @@
+// The record of an agent someone else wrote, in the record format the monthly report and the certificates read (pathways/bookings/src/record.ts). It is built from what the Guards
+// and the services say, never from what the agent says:
+//   - every call the agent made is a Guard decision: allowed (and the answer the service gave), held for the owner, or refused (and which rule);
+//   - "done" is what the service itself holds: a payment link by its reference, a payment by its link, a refund against its payment, an event in the calendar;
+//   - "the owner approved" is the approval's state in Guard (decided by the owner's signed answer), not a message anyone sent.
+// A thing the service does not show (yet) is `unconfirmed`, never `confirmed`. It is written only after a short wait, so a service that is a moment behind does not leave a false
+// "unconfirmed" in a record that is append-only; when the service shows it later, a confirmed entry for the same thing is added after it (the report marks the earlier one "settled later").
+import { digest } from "../../pathways/bookings/src/record.ts";
+import type { Action, Outcome, RecordEntry, RuleDecision } from "../../pathways/bookings/src/record.ts";
+import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import { hide } from "../backup/export.ts";
+import { typedMap, typedText } from "./facts.ts";
+import type { Approval, Decision, Facts } from "./facts.ts";
+
+export interface RecordState {
+  schema: 1;
+  /** Append-only. A customer's number is never in it: only a short hash of it. */
+  entries: RecordEntry[];
+  /** What has been written, by the thing it was about (a decision, an approval, a payment) and how it stood. */
+  seen: Record<string, { seq: number; outcome: Outcome }>;
+}
+export const emptyRecord = (): RecordState => ({ schema: 1, entries: [], seen: {} });
+
+/** How long a thing the service does not show yet is given before it is written down as unconfirmed. */
+export const GRACE_MS = 10 * 60_000;
+
+export interface FoldOptions { settings: Settings; agentId: string; relayId: string; now: number }
+interface Candidate { key: string; atMs: number; entry: Omit<RecordEntry, "seq" | "time"> }
+
+const digits = (s: string) => s.replace(/\D/gu, "");
+const answered = (d: Decision): number | undefined => { const m = /the provider answered (\d{3})/u.exec(d.reasons.join(" ")); return m ? Number(m[1]) : undefined; };
+const REFUND_RULES = new Set(["refund-at-most-deposit", "refund-paise-per-day", "refunds-per-day", "refund-needs-owner", "refund-once"]);
+
+/** The rule that said no (or hold), in the report's own list of rules when the report has a rule for it: every refund rule is the refund limit. */
+function ruleDecisions(d: Decision, verdict: "block" | "hold_for_owner"): RuleDecision[] {
+  const hit = d.evaluations.find((e) => e.decision === (verdict === "block" ? "deny" : "hold"));
+  return hit && REFUND_RULES.has(hit.rule) ? [{ ruleId: "refund-limit", verdict, reason: `${hit.rule}: ${hit.reason}`.slice(0, 300) }] : [];
+}
+
+function candidates(facts: Facts, o: FoldOptions): Candidate[] {
+  const out: Candidate[] = [];
+  const language = o.settings.languages[0];
+  const ownerDigits = digits(o.settings.owner.whatsapp);
+  const mk = (key: string, atMs: number, e: { conversation: string; booking: string | null; action: Action | string; inputs: unknown; outcome: Outcome; decisions?: RuleDecision[]; language?: Settings["languages"][number]; notes?: string; refs?: Record<string, string> }) => {
+    out.push({ key, atMs, entry: { conversation: e.conversation, booking: e.booking, action: e.action as Action, inputsDigest: digest(e.inputs), outcome: e.outcome, decisions: e.decisions ?? [], language: e.language ?? language, notes: e.notes ?? "", refs: e.refs ?? {} } });
+  };
+  const failedOrNot = (d: Decision, confirmed: boolean): Outcome => { const s = answered(d); return s !== undefined && (s < 200 || s >= 300) ? "failed" : confirmed ? "confirmed" : "unconfirmed"; };
+  const refused = (d: Decision, action: string, booking: string | null, conversation = "agent", decisions: RuleDecision[] = []) =>
+    mk(d.id, Number(d.at_ms), { conversation, booking, action, inputs: { call: d.call }, outcome: "blocked", decisions, notes: `Guard refused it: ${d.reasons[0] ?? ""}`.slice(0, 300) });
+
+  // ---- Razorpay
+  const rz = facts.guards.razorpay;
+  if (rz) {
+    for (const d of rz.decisions.filter((x) => x.principal?.workload === o.agentId)) {
+      const at = Number(d.at_ms);
+      if (d.operation === "create_link") {
+        const ref = typedText(d.arguments.reference_id) ?? null;
+        if (d.outcome === "deny") { refused(d, "create_deposit_link", ref); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        const link = ref ? facts.service.links[ref] : undefined;
+        mk(d.id, at, { conversation: "agent", booking: ref, action: "create_deposit_link", inputs: { call: d.call }, outcome: failedOrNot(d, !!link), refs: { ...(link ? { linkId: link.id } : {}), ...(ref ? { referenceId: ref } : {}) } });
+      } else if (d.operation === "refund") {
+        const paymentId = typedText(d.arguments.payment_id) ?? "";
+        const amount = typedText(d.arguments.amount) ?? "";
+        const receipt = typedText(d.arguments.receipt);
+        const booking = receipt ?? (paymentId || null);
+        if (d.outcome === "deny") { refused(d, "refund", booking, "agent", ruleDecisions(d, "block")); continue; }
+        if (d.outcome === "hold") {
+          // a call held again while it waits is the same hold: one entry for each approval
+          mk(`hold:${d.approval ?? d.id}`, at, { conversation: "agent", booking, action: "refund", inputs: { call: d.call }, outcome: "held_for_owner", decisions: ruleDecisions(d, "hold_for_owner"), refs: { paymentId, amountPaise: amount, ...(d.approval ? { approval: d.approval } : {}) } });
+          continue;
+        }
+        if (!d.dispatched) continue;
+        const shown = facts.service.refunds[paymentId];
+        const refund = Array.isArray(shown) ? shown.find((r) => String(r.amount) === amount && (receipt === undefined || r.receipt === receipt)) : undefined;
+        mk(d.id, at, { conversation: "agent", booking, action: "refund", inputs: { call: d.call }, outcome: failedOrNot(d, !!refund), refs: { paymentId, amountPaise: amount, ...(refund ? { refundId: refund.id } : {}), ...(d.approval ? { approval: d.approval } : {}) } });
+      } else if (d.outcome === "deny") {
+        refused(d, d.operation, null); // a payout, a route that is not listed: a thing it tried and could not do
+      }
+    }
+    // the deposit: a payment on a link the agent made, as Razorpay shows it
+    for (const [ref, link] of Object.entries(facts.service.links)) {
+      for (const p of link?.payments ?? []) mk(`deposit:${p.paymentId}`, p.createdAt * 1000, { conversation: "customer", booking: ref, action: "record_deposit", inputs: { link: link!.id, payment: p.paymentId }, outcome: "confirmed", refs: { paymentId: p.paymentId, linkId: link!.id, amountPaise: String(p.amount) } });
+    }
+    // the owner's answer, as Guard holds it: signed by the owner's approver, not a message that says so
+    for (const a of rz.approvals as Approval[]) {
+      if (!a.approver || !["approved", "consumed", "denied"].includes(a.state) || !a.decided_at_ms) continue;
+      const args = a.arguments ?? {};
+      const booking = typedText(args.receipt) ?? typedText(args.payment_id) ?? null;
+      mk(`approval:${a.id}`, Number(a.decided_at_ms), { conversation: "owner", booking, action: "owner_decision", inputs: { approval: a.id, state: a.state }, outcome: "confirmed", language: o.settings.owner.language, refs: { command: a.state === "denied" ? "deny" : "approve", approval: a.id } });
+    }
+  }
+
+  // ---- the calendar: an event is booked when the calendar shows it
+  const cal = facts.guards.calendar;
+  if (cal) {
+    const events = facts.service.events;
+    const used = new Set<string>();
+    for (const d of cal.decisions.filter((x) => x.principal?.workload === o.agentId).sort((a, b) => Number(a.at_ms) - Number(b.at_ms))) {
+      const at = Number(d.at_ms);
+      const eventId = typedText(d.arguments.eventId);
+      if (d.operation === "insert") {
+        if (d.outcome === "deny") { refused(d, "confirm_booking", null); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        const summary = typedText(d.arguments.summary); const start = typedText(typedMap(d.arguments.start)?.dateTime);
+        const event = events?.find((e) => !used.has(e.id) && e.summary === summary && e.start !== null && start !== undefined && Date.parse(e.start) === Date.parse(start));
+        if (event) used.add(event.id);
+        mk(d.id, at, { conversation: "agent", booking: event?.id ?? null, action: "confirm_booking", inputs: { call: d.call }, outcome: failedOrNot(d, !!event), refs: event ? { eventId: event.id } : {} });
+      } else if (d.operation === "patch" && eventId) {
+        if (d.outcome === "deny") { refused(d, "reschedule_booking", eventId); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        const start = typedText(typedMap(d.arguments.start)?.dateTime);
+        const event = events?.find((e) => e.id === eventId && (start === undefined || (e.start !== null && Date.parse(e.start) === Date.parse(start))));
+        mk(d.id, at, { conversation: "agent", booking: eventId, action: "reschedule_booking", inputs: { call: d.call }, outcome: failedOrNot(d, !!event), refs: { eventId } });
+      } else if (d.operation === "delete" && eventId) {
+        if (d.outcome === "deny") { refused(d, "cancel_booking", eventId); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        const gone = events !== null && !events.some((e) => e.id === eventId && e.status !== "cancelled");
+        mk(d.id, at, { conversation: "agent", booking: eventId, action: "cancel_booking", inputs: { call: d.call }, outcome: failedOrNot(d, gone), refs: { eventId } });
+      } else if (d.outcome === "deny") {
+        refused(d, d.operation, eventId ?? null);
+      }
+    }
+  }
+
+  // ---- WhatsApp: a message the agent sent, or the approvals relay sent to the owner. WhatsApp offers no way to read a sent message back, so what Guard recorded is what there is:
+  // the service accepted it (it answered 2xx).
+  const wa = facts.guards.whatsapp;
+  if (wa) {
+    for (const d of wa.decisions.filter((x) => x.principal?.workload === o.agentId || x.principal?.workload === o.relayId)) {
+      if (d.operation !== "send") { if (d.outcome === "deny") refused(d, d.operation, null); continue; }
+      const to = typedText(d.arguments.to) ?? "";
+      const toOwner = digits(to) === ownerDigits;
+      const fromRelay = d.principal.workload === o.relayId;
+      const conversation = toOwner ? "owner" : hide("c", to);
+      if (d.outcome === "deny") { refused(d, "send_message", null, conversation); continue; }
+      if (d.outcome !== "allow" || !d.dispatched) continue;
+      mk(d.id, Number(d.at_ms), { conversation, booking: null, action: "send_message", inputs: { call: d.call }, outcome: failedOrNot(d, true), language: fromRelay || toOwner ? o.settings.owner.language : language, refs: { to: toOwner ? "owner" : "customer" } });
+    }
+  }
+  return out.sort((a, b) => a.atMs - b.atMs || (a.key < b.key ? -1 : 1));
+}
+
+/** One pass: what Guards and services say now, added to the record. Returns the new state and only the entries it added. */
+export function foldFacts(prev: RecordState, facts: Facts, o: FoldOptions): { state: RecordState; added: RecordEntry[] } {
+  const state: RecordState = { schema: 1, entries: [...prev.entries], seen: { ...prev.seen } };
+  const added: RecordEntry[] = [];
+  const append = (key: string, c: Candidate) => {
+    const entry: RecordEntry = Object.freeze({ seq: state.entries.length + 1, time: new Date(c.atMs).toISOString(), ...c.entry, decisions: Object.freeze([...c.entry.decisions]), refs: Object.freeze({ ...c.entry.refs }) });
+    state.entries.push(entry); added.push(entry);
+    state.seen[key] = { seq: entry.seq, outcome: entry.outcome };
+  };
+  for (const c of candidates(facts, o)) {
+    const was = state.seen[c.key];
+    if (!was) {
+      // not shown by the service yet: give it a little time before writing "unconfirmed" into a record that is only ever added to
+      if (c.entry.outcome === "unconfirmed" && o.now - c.atMs < GRACE_MS) continue;
+      append(c.key, c);
+    } else if ((was.outcome === "unconfirmed" || was.outcome === "attempted") && c.entry.outcome === "confirmed" && !state.seen[`${c.key}#confirmed`]) {
+      append(`${c.key}#confirmed`, c);
+    }
+  }
+  return { state, added };
+}
+
+/**
+ * The bookings file the monthly report reads for "waiting for the owner right now": one entry for each refund Guard is holding that has not run out. (The report reads only
+ * whether an entry has something pending; the rest is a booking's shape, kept minimal and free of any customer's details.)
+ */
+export function waitingForOwner(facts: Facts, now: number): unknown[] {
+  return (facts.guards.razorpay?.approvals ?? []).filter((a) => a.state === "pending" && Number(a.expires_at_ms) > now).map((a) => ({
+    id: a.id, customer: "agent", language: "en", state: "confirmed", dateNeedsConfirmation: false, timeInferred: false, handledPayments: [], reminders: [],
+    pending: [{ kind: "guard_hold", approval: a.id, paymentId: typedText(a.arguments?.payment_id) ?? "", amountInr: Number(typedText(a.arguments?.amount) ?? 0) / 100, receipt: typedText(a.arguments?.receipt) ?? "", expiresAtMs: Number(a.expires_at_ms), heldAtMs: Number(a.requested_at_ms) }],
+  }));
+}

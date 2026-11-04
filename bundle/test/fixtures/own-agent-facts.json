@@ -1,0 +1,1356 @@
+{
+ "at": "2026-11-04T21:10:15.146Z",
+ "guards": {
+  "razorpay": {
+   "decisions": [
+    {
+     "arguments": {
+      "id": [
+       "str",
+       "pay_2"
+      ]
+     },
+     "at_ms": "1793826610146",
+     "call": "sha256:724aa3f2d18a04d6d5b7636447a0b5ebebedefef797e973f17a56f1a84acf4c7",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1684",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-12",
+     "mode": "enforce",
+     "operation": "list_refunds",
+     "outcome": "allow",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [
+       "list_links",
+       "read_link",
+       "read_payment",
+       "list_refunds"
+      ],
+      "tenant": "demo",
+      "workload": "record-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "arguments": {
+      "amount": [
+       "int",
+       "20001"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826610098",
+     "call": "sha256:f6e6232aee87eaf2fd015fc786df0e540464e471a98d139c5b73fe1cabb16371",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "deny",
+       "reason": "amount 20001 is above the highest allowed value, 20000",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "hold",
+       "reason": "above the threshold: a person must approve this exact call",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1636",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-11",
+     "mode": "enforce",
+     "operation": "refund",
+     "outcome": "deny",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "refund-at-most-deposit: amount 20001 is above the highest allowed value, 20000"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "approval": "ap-demo-razorpay-be4ff64251f4561245677954d3c165e4-10",
+     "arguments": {
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826610048",
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "allow",
+       "reason": "amount 20000 is within its bounds",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "hold",
+       "reason": "above the threshold: a person must approve this exact call",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1586",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-9",
+     "mode": "enforce",
+     "operation": "refund",
+     "outcome": "hold",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "refund-needs-owner: above the threshold: a person must approve this exact call"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "approval": "ap-demo-razorpay-be4ff64251f4561245677954d3c165e4-6",
+     "arguments": {
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826609964",
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "allow",
+       "reason": "amount 20000 is within its bounds",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "allow",
+       "reason": "approved by owner-demo for this exact call",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1502",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-8",
+     "mode": "enforce",
+     "operation": "refund",
+     "outcome": "allow",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [
+      "rv-gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-8-0",
+      "rv-gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-8-1"
+     ],
+     "tool": "razorpay"
+    },
+    {
+     "approval": "ap-demo-razorpay-be4ff64251f4561245677954d3c165e4-6",
+     "arguments": {
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826609840",
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "allow",
+       "reason": "amount 20000 is within its bounds",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "hold",
+       "reason": "above the threshold: a person must approve this exact call",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1378",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-7",
+     "mode": "enforce",
+     "operation": "refund",
+     "outcome": "hold",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "refund-needs-owner: above the threshold: a person must approve this exact call"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "approval": "ap-demo-razorpay-be4ff64251f4561245677954d3c165e4-6",
+     "arguments": {
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826609791",
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "allow",
+       "reason": "amount 20000 is within its bounds",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "hold",
+       "reason": "above the threshold: a person must approve this exact call",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1329",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-5",
+     "mode": "enforce",
+     "operation": "refund",
+     "outcome": "hold",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "refund-needs-owner: above the threshold: a person must approve this exact call"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "arguments": {
+      "amount": [
+       "int",
+       "100"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ]
+     },
+     "at_ms": "1793826609761",
+     "call": "sha256:6dbeeebcba684f50b8f21366c5bd654444e6c40e74385b1a37e6787db112c017",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [],
+     "evidence_age_ms": "1299",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-4",
+     "mode": "enforce",
+     "operation": "refund",
+     "outcome": "deny",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [
+       "list_links",
+       "read_link",
+       "read_payment",
+       "list_refunds"
+      ],
+      "tenant": "demo",
+      "workload": "record-demo"
+     },
+     "reasons": [
+      "agent record-demo is not authorized for refund"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "arguments": {
+      "id": [
+       "str",
+       "plink_1"
+      ]
+     },
+     "at_ms": "1793826609615",
+     "call": "sha256:cacc1f73e60b0cee6e8e0fc2a6f567d7fd996dbf0f7330728fbebb08697ba137",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1153",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-3",
+     "mode": "enforce",
+     "operation": "read_link",
+     "outcome": "allow",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [
+       "list_links",
+       "read_link",
+       "read_payment",
+       "list_refunds"
+      ],
+      "tenant": "demo",
+      "workload": "record-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "arguments": {
+      "reference_id": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826609558",
+     "call": "sha256:90e7abc911524cf18b4e0068dbc6e09c57a89ff50c726c8e20bfd9ccd407352c",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.create_link",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "1096",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-2",
+     "mode": "enforce",
+     "operation": "list_links",
+     "outcome": "allow",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [
+       "list_links",
+       "read_link",
+       "read_payment",
+       "list_refunds"
+      ],
+      "tenant": "demo",
+      "workload": "record-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "arguments": {
+      "accept_partial": [
+       "bool",
+       false
+      ],
+      "amount": [
+       "int",
+       "99999"
+      ],
+      "currency": [
+       "str",
+       "INR"
+      ],
+      "description": [
+       "str",
+       "x"
+      ],
+      "reference_id": [
+       "str",
+       "b-2"
+      ]
+     },
+     "at_ms": "1793826609277",
+     "call": "sha256:058cc02104115c19053074f82d1652bd8d03b323e2088064d3deb2ca2eb5f6a9",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "deny",
+       "reason": "amount 99999 is above the highest allowed value, 20000",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "815",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-1",
+     "mode": "enforce",
+     "operation": "create_link",
+     "outcome": "deny",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "deposit-amount: amount 99999 is above the highest allowed value, 20000"
+     ],
+     "reservations": [],
+     "tool": "razorpay"
+    },
+    {
+     "arguments": {
+      "accept_partial": [
+       "bool",
+       false
+      ],
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "currency": [
+       "str",
+       "INR"
+      ],
+      "description": [
+       "str",
+       "deposit"
+      ],
+      "reference_id": [
+       "str",
+       "b-1"
+      ]
+     },
+     "at_ms": "1793826609159",
+     "call": "sha256:f3ba08a9ac83ad00633c8bfdbc39867a8e6771ae6424452d0bad19519460cdfc",
+     "context": {
+      "deployment": "demo-razorpay",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-razorpay-be4ff64251f4561245677954d3c165e4",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "allow",
+       "reason": "amount 20000 is within its bounds",
+       "rule": "deposit-amount",
+       "rule_digest": "sha256:7aa90eb087a1865c435311bdf07fc93c5062cb9d9586440cc97ea7ccc13ee998"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-at-most-deposit",
+       "rule_digest": "sha256:066addcfa2e51be49e44bae0550d0e527bc91ceb56eee22f05e0af2fd6e2edc5"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.refund",
+       "rule": "refund-needs-owner",
+       "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not razorpay.payout",
+       "rule": "no-payouts",
+       "rule_digest": "sha256:900eb1c875f80b08c627caa99862668edc8190ddb5de9e0318780fb0cadc9c09"
+      }
+     ],
+     "evidence_age_ms": "697",
+     "id": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-0",
+     "mode": "enforce",
+     "operation": "create_link",
+     "outcome": "allow",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-razorpay",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [
+      "rv-gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-0-0"
+     ],
+     "tool": "razorpay"
+    }
+   ],
+   "intents": [
+    {
+     "attempts": 1,
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "decision": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-8",
+     "detail": "the provider answered 200",
+     "first_dispatch_ms": "1793826609964",
+     "idempotency_key": "geo-316450ca005fb7778bb1549aac23eb11-0",
+     "intent": "intent:316450ca005fb7778bb1549aac23eb11c492e5b68355b2dc223d77d84ecbb972",
+     "key_epoch": 0,
+     "operation": "refund",
+     "provider_effect": "rfnd_5",
+     "state": "confirmed",
+     "tenant": "demo",
+     "tool": "razorpay"
+    }
+   ],
+   "approvals": [
+    {
+     "amount": [
+      "int",
+      "20000"
+     ],
+     "arguments": {
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "expires_at_ms": "1793913010048",
+     "id": "ap-demo-razorpay-be4ff64251f4561245677954d3c165e4-10",
+     "operation": "refund",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "principal": "agent-demo",
+     "requested_at_ms": "1793826610048",
+     "role": "shop-owner",
+     "rule": "refund-needs-owner",
+     "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91",
+     "state": "pending",
+     "summary": "refund: amount 20000, payment_id pay_2, receipt b-1 (refund-needs-owner: above the threshold: a person must approve this exact call)",
+     "tenant": "demo",
+     "tool": "razorpay"
+    },
+    {
+     "amount": [
+      "int",
+      "20000"
+     ],
+     "approver": "owner-demo",
+     "arguments": {
+      "amount": [
+       "int",
+       "20000"
+      ],
+      "payment_id": [
+       "str",
+       "pay_2"
+      ],
+      "receipt": [
+       "str",
+       "b-1"
+      ]
+     },
+     "call": "sha256:8de040e5e8b4723f47d4c9c8d576c138156d284ef418dbd3eca5f7dec55f4752",
+     "consumed_by": "gd-demo-razorpay-be4ff64251f4561245677954d3c165e4-8",
+     "decided_at_ms": "1793826609948",
+     "expires_at_ms": "1793913009791",
+     "id": "ap-demo-razorpay-be4ff64251f4561245677954d3c165e4-6",
+     "operation": "refund",
+     "policy": "sha256:7a79542a0dfe3868b708a5112ba54035f39dfad14ae969cb81451f89cfeeb141",
+     "policy_version": "1",
+     "principal": "agent-demo",
+     "requested_at_ms": "1793826609791",
+     "role": "shop-owner",
+     "rule": "refund-needs-owner",
+     "rule_digest": "sha256:7e616b88c0191f797769e7717920a0a265b7664e7572c6308bb922fe6010fb91",
+     "state": "consumed",
+     "summary": "refund: amount 20000, payment_id pay_2, receipt b-1 (refund-needs-owner: above the threshold: a person must approve this exact call)",
+     "tenant": "demo",
+     "tool": "razorpay"
+    }
+   ],
+   "counts": {
+    "acknowledged_intents": 0,
+    "bypasses": 0,
+    "changed_tools": 0,
+    "decisions": 11,
+    "escalated_approvals": 0,
+    "pending_approvals": 1,
+    "stopped_agents": 0,
+    "unknown_intents": 0
+   }
+  },
+  "whatsapp": {
+   "decisions": [
+    {
+     "arguments": {
+      "messaging_product": [
+       "str",
+       "whatsapp"
+      ],
+      "phone_number_id": [
+       "str",
+       "123456789012345"
+      ],
+      "text": [
+       "map",
+       {
+        "body": [
+         "str",
+         "Booked."
+        ]
+       }
+      ],
+      "to": [
+       "str",
+       "+919811111111"
+      ],
+      "type": [
+       "str",
+       "text"
+      ],
+      "version": [
+       "str",
+       "v26.0"
+      ]
+     },
+     "at_ms": "1793826609476",
+     "call": "sha256:2e1c94426a66db757fa2d9ac230b34f69a0d729ac833b7f27acce89d22cf5d78",
+     "context": {
+      "deployment": "demo-whatsapp",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-whatsapp-8014e16464c1b418c6f651b1d9312758",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "exempt by an unless condition",
+       "rule": "own-number-only",
+       "rule_digest": "sha256:2683842c02f9b9f0c0bdd41f48a499049174613bb963f3207979834ae6f4ccf8"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not whatsapp.read_number",
+       "rule": "own-number-read",
+       "rule_digest": "sha256:0b0fe0c9197f56beb96bc43010d40332627eeeea40224cfbd2bcc42f8d66e53e"
+      }
+     ],
+     "evidence_age_ms": "723",
+     "id": "gd-demo-whatsapp-8014e16464c1b418c6f651b1d9312758-0",
+     "mode": "enforce",
+     "operation": "send",
+     "outcome": "allow",
+     "policy": "sha256:1bddeb59cba183812b132ca2342c26c1dea5d78d81d42efc041d8790d5b7e4ad",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-whatsapp",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [
+      "rv-gd-demo-whatsapp-8014e16464c1b418c6f651b1d9312758-0-0"
+     ],
+     "tool": "whatsapp"
+    }
+   ],
+   "intents": [],
+   "approvals": [],
+   "counts": {
+    "acknowledged_intents": 0,
+    "bypasses": 0,
+    "changed_tools": 0,
+    "decisions": 1,
+    "escalated_approvals": 0,
+    "pending_approvals": 0,
+    "stopped_agents": 0,
+    "unknown_intents": 0
+   }
+  },
+  "calendar": {
+   "decisions": [
+    {
+     "arguments": {
+      "calendarId": [
+       "str",
+       "demo@group.calendar.google.com"
+      ]
+     },
+     "at_ms": "1793826609697",
+     "call": "sha256:88d966f7801de4c30fa90c7e751d9ac47aff65c17901495d524642e397893113",
+     "context": {
+      "deployment": "demo-calendar",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.insert",
+       "rule": "own-calendar-insert",
+       "rule_digest": "sha256:7508293f85327fbcabcf70a7bc6565ac6ab030b3ed32e34e0f75873a87c10e8d"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "exempt by an unless condition",
+       "rule": "own-calendar-list",
+       "rule_digest": "sha256:3acfb0a5f1f02351a6e1bca6ed3b4be6e40eb0d9c4cb38767622181faa5047c8"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.get",
+       "rule": "own-calendar-get",
+       "rule_digest": "sha256:380191957218ac7b03b2660c51b7cf5d9a8e0a1a3fe9baeac7449173bb084a6d"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.patch",
+       "rule": "own-calendar-patch",
+       "rule_digest": "sha256:fce2521ba9054776ee75c70d665e621911d64f09e14e75488c495e66f1924ae3"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.delete",
+       "rule": "own-calendar-delete",
+       "rule_digest": "sha256:1cb2bb00bba1f76d34148f5b141f990e4b07e3e343a4e3ed3e9e6fcb92250807"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.get_calendar",
+       "rule": "own-calendar-get-calendar",
+       "rule_digest": "sha256:c07827e4807d0e3af76351fd955507ad8a79f67edd33ebad23e8efcdb80b31d5"
+      }
+     ],
+     "evidence_age_ms": "711",
+     "id": "gd-demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314-2",
+     "mode": "enforce",
+     "operation": "list",
+     "outcome": "allow",
+     "policy": "sha256:a937b317e57d2be211f18980862cdf7b37e17d917944ce7843f6bf90949ff20e",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-calendar",
+      "scopes": [
+       "list",
+       "get"
+      ],
+      "tenant": "demo",
+      "workload": "record-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [],
+     "tool": "google-calendar"
+    },
+    {
+     "arguments": {
+      "calendarId": [
+       "str",
+       "other@group.calendar.google.com"
+      ],
+      "end": [
+       "map",
+       {
+        "dateTime": [
+         "str",
+         "2026-11-05T21:40:09.318Z"
+        ]
+       }
+      ],
+      "start": [
+       "map",
+       {
+        "dateTime": [
+         "str",
+         "2026-11-05T21:10:09.318Z"
+        ]
+       }
+      ],
+      "summary": [
+       "str",
+       "x"
+      ]
+     },
+     "at_ms": "1793826609408",
+     "call": "sha256:edddd7daf749c22482bed80f39a74b89d85da03c8868337ed4f81bb9226feff2",
+     "context": {
+      "deployment": "demo-calendar",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314",
+      "tenant": "demo"
+     },
+     "dispatched": false,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "deny",
+       "reason": "calendarId other@group.calendar.google.com is not one of the allowed values",
+       "rule": "own-calendar-insert",
+       "rule_digest": "sha256:7508293f85327fbcabcf70a7bc6565ac6ab030b3ed32e34e0f75873a87c10e8d"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.list",
+       "rule": "own-calendar-list",
+       "rule_digest": "sha256:3acfb0a5f1f02351a6e1bca6ed3b4be6e40eb0d9c4cb38767622181faa5047c8"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.get",
+       "rule": "own-calendar-get",
+       "rule_digest": "sha256:380191957218ac7b03b2660c51b7cf5d9a8e0a1a3fe9baeac7449173bb084a6d"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.patch",
+       "rule": "own-calendar-patch",
+       "rule_digest": "sha256:fce2521ba9054776ee75c70d665e621911d64f09e14e75488c495e66f1924ae3"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.delete",
+       "rule": "own-calendar-delete",
+       "rule_digest": "sha256:1cb2bb00bba1f76d34148f5b141f990e4b07e3e343a4e3ed3e9e6fcb92250807"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.get_calendar",
+       "rule": "own-calendar-get-calendar",
+       "rule_digest": "sha256:c07827e4807d0e3af76351fd955507ad8a79f67edd33ebad23e8efcdb80b31d5"
+      }
+     ],
+     "evidence_age_ms": "422",
+     "id": "gd-demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314-1",
+     "mode": "enforce",
+     "operation": "insert",
+     "outcome": "deny",
+     "policy": "sha256:a937b317e57d2be211f18980862cdf7b37e17d917944ce7843f6bf90949ff20e",
+     "policy_version": "1",
+     "prevented": true,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-calendar",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "own-calendar-insert: calendarId other@group.calendar.google.com is not one of the allowed values"
+     ],
+     "reservations": [],
+     "tool": "google-calendar"
+    },
+    {
+     "arguments": {
+      "calendarId": [
+       "str",
+       "demo@group.calendar.google.com"
+      ],
+      "end": [
+       "map",
+       {
+        "dateTime": [
+         "str",
+         "2026-11-05T21:40:09.318Z"
+        ]
+       }
+      ],
+      "extendedProperties": [
+       "map",
+       {
+        "private": [
+         "map",
+         {
+          "bookingRef": [
+           "str",
+           "b-1"
+          ]
+         }
+        ]
+       }
+      ],
+      "start": [
+       "map",
+       {
+        "dateTime": [
+         "str",
+         "2026-11-05T21:10:09.318Z"
+        ]
+       }
+      ],
+      "summary": [
+       "str",
+       "Haircut for b-1"
+      ]
+     },
+     "at_ms": "1793826609325",
+     "call": "sha256:ffc9e299a2385d55bd709d7c5a19251420424e92a005310bc842632e602864e1",
+     "context": {
+      "deployment": "demo-calendar",
+      "kind": "production_session",
+      "policy_generation": "1",
+      "session": "demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314",
+      "tenant": "demo"
+     },
+     "dispatched": true,
+     "enforced": true,
+     "evaluations": [
+      {
+       "decision": "not_applicable",
+       "reason": "exempt by an unless condition",
+       "rule": "own-calendar-insert",
+       "rule_digest": "sha256:7508293f85327fbcabcf70a7bc6565ac6ab030b3ed32e34e0f75873a87c10e8d"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.list",
+       "rule": "own-calendar-list",
+       "rule_digest": "sha256:3acfb0a5f1f02351a6e1bca6ed3b4be6e40eb0d9c4cb38767622181faa5047c8"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.get",
+       "rule": "own-calendar-get",
+       "rule_digest": "sha256:380191957218ac7b03b2660c51b7cf5d9a8e0a1a3fe9baeac7449173bb084a6d"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.patch",
+       "rule": "own-calendar-patch",
+       "rule_digest": "sha256:fce2521ba9054776ee75c70d665e621911d64f09e14e75488c495e66f1924ae3"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.delete",
+       "rule": "own-calendar-delete",
+       "rule_digest": "sha256:1cb2bb00bba1f76d34148f5b141f990e4b07e3e343a4e3ed3e9e6fcb92250807"
+      },
+      {
+       "decision": "not_applicable",
+       "reason": "not google-calendar.get_calendar",
+       "rule": "own-calendar-get-calendar",
+       "rule_digest": "sha256:c07827e4807d0e3af76351fd955507ad8a79f67edd33ebad23e8efcdb80b31d5"
+      }
+     ],
+     "evidence_age_ms": "339",
+     "id": "gd-demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314-0",
+     "mode": "enforce",
+     "operation": "insert",
+     "outcome": "allow",
+     "policy": "sha256:a937b317e57d2be211f18980862cdf7b37e17d917944ce7843f6bf90949ff20e",
+     "policy_version": "1",
+     "prevented": false,
+     "principal": {
+      "authentication": "gateway_verified",
+      "issuer": "geo-guard:demo-calendar",
+      "scopes": [],
+      "tenant": "demo",
+      "workload": "agent-demo"
+     },
+     "reasons": [
+      "every applicable rule allows the call",
+      "dispatched once; the provider answered 200"
+     ],
+     "reservations": [
+      "rv-gd-demo-calendar-e0c31559d7caeaf4fa6e9ae7d5c00314-0-0"
+     ],
+     "tool": "google-calendar"
+    }
+   ],
+   "intents": [],
+   "approvals": [],
+   "counts": {
+    "acknowledged_intents": 0,
+    "bypasses": 0,
+    "changed_tools": 0,
+    "decisions": 3,
+    "escalated_approvals": 0,
+    "pending_approvals": 0,
+    "stopped_agents": 0,
+    "unknown_intents": 0
+   }
+  }
+ },
+ "service": {
+  "links": {
+   "b-1": {
+    "id": "plink_1",
+    "status": "paid",
+    "amountPaid": 20000,
+    "payments": [
+     {
+      "paymentId": "pay_2",
+      "amount": 20000,
+      "createdAt": 1793826609
+     }
+    ]
+   }
+  },
+  "refunds": {
+   "pay_2": [
+    {
+     "id": "rfnd_5",
+     "amount": 20000,
+     "receipt": "b-1",
+     "status": "processed",
+     "createdAt": 1793826609
+    }
+   ]
+  },
+  "events": [
+   {
+    "id": "ev_1",
+    "summary": "Haircut for b-1",
+    "start": "2026-11-05T21:10:09.318Z",
+    "status": "confirmed"
+   }
+  ]
+ },
+ "problems": []
+}
