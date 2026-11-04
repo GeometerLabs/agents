@@ -1,0 +1,181 @@
+/* The browser demo's stylesheet. Everything is under .geo-demo, so it cannot reach the page around it, and every colour, size and font comes
+   from the custom properties below, so the page around it can theme it. Set any of them on .geo-demo or on any element above it; none is required.
+
+   Colours   --geo-surface  --geo-text  --geo-muted  --geo-line  --geo-accent  --geo-on-accent  --geo-success  --geo-warning  --geo-danger
+   Shape     --geo-radius   --geo-width  --geo-height
+   Text      --geo-font     --geo-font-size
+   Spacing   --geo-space-1 .. --geo-space-5
+   Native controls (the select, the time fields)   --geo-color-scheme: light | dark
+
+   Dark mode is the page setting the colours, for example  .geo-demo { --geo-surface: #10171a; --geo-text: #e8eeec; --geo-muted: #93a19b; --geo-line: #26312d;
+   --geo-on-accent: #07140e; --geo-color-scheme: dark; }  The tints (a customer's bubble, a warning) are mixed from these, so they follow.
+   The only colours written out below are the defaults in the first rule. Class names are listed in Explanation.md, "The demo in the browser". */
+
+.geo-demo {
+  /* the tokens, with their defaults (the --_ names are this file's own: read the --geo- ones, set the --geo- ones) */
+  --_surface: var(--geo-surface, #ffffff);
+  --_text: var(--geo-text, #1b2420);
+  --_muted: var(--geo-muted, #66726c);
+  --_line: var(--geo-line, #e3e8e5);
+  --_accent: var(--geo-accent, #0f6b45);
+  --_on-accent: var(--geo-on-accent, #ffffff);
+  --_success: var(--geo-success, #1c7c4f);
+  --_warning: var(--geo-warning, #a15c07);
+  --_danger: var(--geo-danger, #b3261e);
+  --_radius: var(--geo-radius, 10px);
+  --_font: var(--geo-font, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", "Noto Sans Malayalam", "Noto Sans Kannada", sans-serif);
+  --_size: var(--geo-font-size, 15px);
+  --_space-1: var(--geo-space-1, 4px);
+  --_space-2: var(--geo-space-2, 8px);
+  --_space-3: var(--geo-space-3, 12px);
+  --_space-4: var(--geo-space-4, 16px);
+  --_space-5: var(--geo-space-5, 24px);
+  --_width: var(--geo-width, 560px);
+  --_height: var(--geo-height, clamp(560px, 82dvh, 760px));
+  /* tints, mixed from the tokens so that they follow a theme */
+  --_sunken: color-mix(in srgb, var(--_text) 4%, var(--_surface));
+  --_hover: color-mix(in srgb, var(--_text) 7%, var(--_surface));
+  --_accent-soft: color-mix(in srgb, var(--_accent) 11%, var(--_surface));
+  --_success-soft: color-mix(in srgb, var(--_success) 12%, var(--_surface));
+  --_warning-soft: color-mix(in srgb, var(--_warning) 12%, var(--_surface));
+  --_danger-soft: color-mix(in srgb, var(--_danger) 11%, var(--_surface));
+  --_accent-strong: color-mix(in srgb, var(--_accent) 86%, var(--_text));
+  --_radius-sm: calc(var(--_radius) * .7);
+}
+
+/* The host page's rules for bare elements (p, ul, button ...) stop at the edge: these elements start from the browser's own look, then the rules below apply.
+   (The class is doubled so that a host rule such as  html[data-theme="dark"] p  is out-ranked too; a host rule with two classes in it still wins.) */
+.geo-demo { all: initial; }
+.geo-demo.geo-demo :where(div, span, p, ul, ol, li, h2, h3, header, main, nav, section, form, label, button, input, select, time, b) { all: revert; }
+.geo-demo.geo-demo :where(button, input, select) { font: inherit; color: inherit; }
+.geo-demo.geo-demo :where(*) { box-sizing: border-box; }
+
+/* ---- the frame ------------------------------------------------------------------------------------------------------------------- */
+.geo-demo {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  width: 100%; max-width: var(--_width); height: var(--_height); margin: 0 auto;
+  background: var(--_surface); color: var(--_text); color-scheme: var(--geo-color-scheme, light);
+  font: var(--_size) / 1.5 var(--_font); -webkit-text-size-adjust: 100%;
+  border: 1px solid var(--_line); border-radius: calc(var(--_radius) + 2px);
+}
+.geo-demo :focus-visible { outline: 2px solid var(--_accent); outline-offset: 2px; }
+
+/* the two labels: one quiet strip, always on top (outside what scrolls) */
+.geo-demo .geo-notes { flex: none; background: var(--_sunken); border-bottom: 1px solid var(--_line); }
+.geo-demo .geo-banner { padding: var(--_space-2) var(--_space-4) 0; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: .01em; color: var(--_warning); }
+.geo-demo .geo-note { margin: 0; padding: 2px var(--_space-4) var(--_space-2); text-align: center; font-size: 12px; line-height: 1.4; color: var(--_muted); }
+
+/* the steps */
+.geo-demo .geo-steps { flex: none; border-bottom: 1px solid var(--_line); }
+.geo-demo .geo-steps-list { display: flex; margin: 0; padding: 0 var(--_space-3); list-style: none; }
+.geo-demo .geo-step-item { flex: 1 1 0; min-width: 0; }
+.geo-demo .geo-step {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; padding: var(--_space-2) var(--_space-1);
+  background: none; border: 0; border-bottom: 2px solid transparent; color: var(--_muted); font-size: 13px; cursor: pointer;
+}
+.geo-demo .geo-step:hover { color: var(--_text); }
+.geo-demo .geo-step[aria-current="step"] { color: var(--_text); font-weight: 600; border-bottom-color: var(--_accent); }
+.geo-demo .geo-step-number { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--_line); border-radius: 50%; font-size: 11px; line-height: 1; }
+.geo-demo .geo-step[aria-current="step"] .geo-step-number { background: var(--_accent); border-color: var(--_accent); color: var(--_on-accent); }
+.geo-demo .geo-step-label { min-width: 0; line-height: 1.25; text-align: left; }
+.geo-demo .geo-step-badge { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--_warning-soft); color: var(--_warning); font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; }
+
+/* the screens scroll in the middle; the navigation at the bottom of the page-sized demo is the steps above, so the tab bar is not used here */
+.geo-demo > .geo-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 var(--_space-4) var(--_space-4); }
+.geo-demo .geo-tabs, .geo-demo .geo-foot { display: none; }
+.geo-demo .geo-header { display: flex; align-items: center; justify-content: space-between; gap: var(--_space-3); padding: var(--_space-3) 0 var(--_space-2); }
+.geo-demo .geo-shop-name { display: block; font-size: 17px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.geo-demo .geo-clock { display: block; margin-top: 2px; font-size: 12px; color: var(--_muted); }
+.geo-demo .geo-header-actions { display: flex; gap: var(--_space-2); flex: none; }
+.geo-demo .geo-button.geo-setup { display: none; } /* step 1 is the way to the shop form here */
+.geo-demo .geo-heading { margin: var(--_space-5) 0 var(--_space-2); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--_muted); }
+.geo-demo .geo-hint { margin: 0 0 var(--_space-3); font-size: 13px; color: var(--_muted); }
+
+/* ---- buttons: one main button per step ------------------------------------------------------------------------------------------------ */
+.geo-demo .geo-button {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 var(--_space-4);
+  background: var(--_surface); color: var(--_text); border: 1px solid var(--_line); border-radius: var(--_radius-sm);
+  font-size: 14px; font-weight: 500; cursor: pointer; text-align: center;
+}
+.geo-demo .geo-button:hover:not(:disabled) { background: var(--_hover); }
+.geo-demo .geo-button:disabled { opacity: .45; cursor: not-allowed; }
+.geo-demo .geo-button--primary { background: var(--_accent); border-color: var(--_accent); color: var(--_on-accent); font-weight: 600; }
+.geo-demo .geo-button--primary:hover:not(:disabled) { background: var(--_accent-strong); }
+.geo-demo .geo-button--quiet { color: var(--_muted); }
+.geo-demo .geo-button--small { min-height: 32px; padding: 0 var(--_space-3); font-size: 13px; }
+.geo-demo .geo-button--wide { grid-column: 1 / -1; }
+.geo-demo .geo-send { background: none; border-color: transparent; color: var(--_accent); font-weight: 600; }
+.geo-demo .geo-send:hover:not(:disabled) { background: var(--_accent-soft); }
+.geo-demo .geo-link { background: none; border: 0; padding: var(--_space-2) 0; color: var(--_accent); text-decoration: underline; text-underline-offset: 3px; font-size: 14px; cursor: pointer; }
+
+/* ---- step 2: the chat, in its frame --------------------------------------------------------------------------------------------------- */
+.geo-demo .geo-chat-head { padding: var(--_space-1) 0 var(--_space-2); font-size: 13px; font-weight: 600; color: var(--_muted); overflow-wrap: anywhere; }
+.geo-demo .geo-chat {
+  display: flex; flex-direction: column; gap: var(--_space-2); min-height: 200px; max-height: 44dvh; overflow-y: auto;
+  padding: var(--_space-3); background: var(--_sunken); border: 1px solid var(--_line); border-radius: var(--_radius);
+}
+.geo-demo .geo-chat--owner { min-height: 0; max-height: 36dvh; }
+.geo-demo .geo-empty { margin: auto; padding: var(--_space-4); text-align: center; font-size: 13px; color: var(--_muted); }
+.geo-demo .geo-bubble { max-width: 84%; padding: var(--_space-2) var(--_space-3) var(--_space-1); border: 1px solid var(--_line); border-radius: var(--_radius); }
+.geo-demo .geo-bubble--agent { align-self: flex-start; background: var(--_surface); border-top-left-radius: 3px; }
+.geo-demo .geo-bubble--customer { align-self: flex-end; background: var(--_accent-soft); border-color: transparent; border-top-right-radius: 3px; }
+.geo-demo .geo-bubble--owner { align-self: flex-end; background: var(--_hover); border-color: transparent; border-top-right-radius: 3px; }
+.geo-demo .geo-bubble-text { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.geo-demo .geo-bubble-time { display: block; margin-top: 2px; text-align: right; font-size: 11px; color: var(--_muted); }
+.geo-demo .geo-chips-label { margin-top: var(--_space-3); font-size: 12px; color: var(--_muted); }
+.geo-demo .geo-chips { display: flex; gap: var(--_space-2); overflow-x: auto; padding: var(--_space-2) 0 var(--_space-1); scroll-snap-type: x proximity; }
+.geo-demo .geo-chip { flex: none; max-width: 80%; min-height: 34px; padding: 6px var(--_space-3); background: var(--_surface); color: var(--_text); border: 1px solid var(--_line); border-radius: 999px; font-size: 13px; text-align: left; cursor: pointer; scroll-snap-align: start; }
+.geo-demo .geo-chip:hover:not(:disabled) { background: var(--_accent-soft); border-color: var(--_accent); }
+.geo-demo .geo-chip:disabled { opacity: .5; cursor: not-allowed; }
+.geo-demo .geo-composer { display: flex; gap: var(--_space-2); align-items: center; margin-top: var(--_space-2); }
+.geo-demo .geo-composer input { flex: 1; min-width: 0; min-height: 40px; padding: 0 var(--_space-3); background: var(--_surface); color: var(--_text); border: 1px solid var(--_line); border-radius: var(--_radius-sm); font-size: 15px; }
+.geo-demo .geo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--_space-2); margin-top: var(--_space-3); }
+
+/* ---- step 3: what was checked: the limits that held (plain words), the owner's side, and the record lines ---------------------------------- */
+.geo-demo[data-step="checked"] .geo-panel--record[hidden] { display: block; }
+.geo-demo .geo-waiting { margin-bottom: var(--_space-3); padding: var(--_space-3) var(--_space-4); background: var(--_warning-soft); border: 1px solid var(--_line); border-radius: var(--_radius); }
+.geo-demo .geo-waiting-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
+.geo-demo .geo-waiting-detail { margin-top: 2px; font-size: 13px; color: var(--_muted); overflow-wrap: anywhere; }
+.geo-demo .geo-waiting-reason { margin-top: var(--_space-2); font-size: 14px; }
+.geo-demo .geo-waiting-buttons { display: flex; flex-wrap: wrap; gap: var(--_space-2); margin-top: var(--_space-3); }
+.geo-demo .geo-summary { margin: 0; padding: 0; list-style: none; }
+.geo-demo .geo-summary-line { display: grid; grid-template-columns: 22px 1fr; gap: var(--_space-2); align-items: start; padding: var(--_space-2) 0; border-bottom: 1px solid var(--_line); font-size: 14px; line-height: 1.45; }
+.geo-demo .geo-summary-mark { font-weight: 700; text-align: center; color: var(--_success); }
+.geo-demo .geo-summary-line--info .geo-summary-mark { color: var(--_muted); }
+.geo-demo .geo-summary-line--warn .geo-summary-mark { color: var(--_warning); }
+.geo-demo .geo-summary-line--warn { background: var(--_warning-soft); }
+.geo-demo .geo-summary-line--muted { display: block; border-bottom: 0; padding: var(--_space-1) 0; font-size: 12px; color: var(--_muted); }
+.geo-demo .geo-box { margin-bottom: var(--_space-3); padding: var(--_space-3); border: 1px solid var(--_line); border-radius: var(--_radius); font-size: 13px; }
+.geo-demo .geo-box-title { margin: 0 0 var(--_space-1); font-size: 13px; font-weight: 600; }
+.geo-demo .geo-box ul { margin: 0; padding-left: var(--_space-4); overflow-wrap: anywhere; }
+.geo-demo .geo-record-card { padding: var(--_space-3) 0; border-bottom: 1px solid var(--_line); font-size: 13px; }
+.geo-demo .geo-record-head { display: flex; justify-content: space-between; gap: var(--_space-2); font-size: 12px; color: var(--_muted); }
+.geo-demo .geo-record-what { margin-top: 2px; font-size: 14px; font-weight: 600; }
+.geo-demo .geo-pill { display: inline-block; padding: 0 var(--_space-2); border-radius: 999px; background: var(--_success-soft); color: var(--_success); font-size: 11px; font-weight: 600; line-height: 18px; }
+.geo-demo .geo-pill--blocked, .geo-demo .geo-pill--held_for_owner, .geo-demo .geo-pill--attempted { background: var(--_warning-soft); color: var(--_warning); }
+.geo-demo .geo-pill--unconfirmed, .geo-demo .geo-pill--failed { background: var(--_danger-soft); color: var(--_danger); }
+.geo-demo .geo-decision { margin-top: var(--_space-1); font-size: 13px; color: var(--_muted); overflow-wrap: anywhere; }
+.geo-demo .geo-decision b { font-weight: 600; color: var(--_text); }
+.geo-demo .geo-decision--block b, .geo-demo .geo-decision--hold_for_owner b { color: var(--_warning); }
+.geo-demo .geo-record-refs { margin-top: var(--_space-1); font: 11px / 1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--_muted); overflow-wrap: anywhere; }
+
+/* ---- step 1: the shop form ------------------------------------------------------------------------------------------------------------ */
+.geo-demo > .geo-sheet { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.geo-demo:has(> .geo-sheet:not([hidden])) > .geo-body { display: none; }
+.geo-demo .geo-sheet .geo-body { padding: 0 var(--_space-4) var(--_space-5); }
+.geo-demo .geo-form .geo-heading:first-child { margin-top: var(--_space-4); }
+.geo-demo .geo-field { display: block; margin: var(--_space-3) 0; }
+.geo-demo .geo-field > span { display: block; margin-bottom: var(--_space-1); font-size: 12px; color: var(--_muted); }
+.geo-demo .geo-field input:not([type="checkbox"]), .geo-demo .geo-field select { display: block; width: 100%; min-height: 40px; padding: 0 var(--_space-3); background: var(--_surface); color: var(--_text); border: 1px solid var(--_line); border-radius: var(--_radius-sm); font-size: 15px; }
+.geo-demo .geo-service { margin: var(--_space-3) 0; padding: var(--_space-1) var(--_space-3) var(--_space-2); border: 1px solid var(--_line); border-radius: var(--_radius); }
+.geo-demo .geo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--_space-3); }
+.geo-demo .geo-days { display: flex; flex-wrap: wrap; gap: var(--_space-2); }
+.geo-demo .geo-days label { display: inline-flex; align-items: center; gap: var(--_space-2); min-height: 34px; padding: 0 var(--_space-3); border: 1px solid var(--_line); border-radius: 999px; font-size: 13px; cursor: pointer; }
+.geo-demo .geo-days input { width: 16px; height: 16px; margin: 0; accent-color: var(--_accent); }
+.geo-demo .geo-errors { margin: var(--_space-3) 0; padding: var(--_space-3) var(--_space-3) var(--_space-3) var(--_space-5); background: var(--_danger-soft); border-radius: var(--_radius-sm); color: var(--_danger); font-size: 13px; }
+.geo-demo .geo-form .geo-actions { grid-template-columns: 1fr; margin-top: var(--_space-4); }
+
+/* ---- the notice, and what stays hidden -------------------------------------------------------------------------------------------------- */
+.geo-demo .geo-toast { position: absolute; left: var(--_space-4); right: var(--_space-4); bottom: var(--_space-4); z-index: 5; max-width: 420px; margin: 0 auto; padding: var(--_space-2) var(--_space-4); background: var(--_text); color: var(--_surface); border-radius: var(--_radius-sm); font-size: 13px; text-align: center; }
+@media (prefers-reduced-motion: no-preference) { .geo-demo .geo-button, .geo-demo .geo-chip, .geo-demo .geo-step { transition: background-color .12s, border-color .12s, color .12s; } }
+.geo-demo [hidden] { display: none; }

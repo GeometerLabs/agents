@@ -10,7 +10,7 @@ import { stripTypeScriptTypes } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { buildWebDemo, scopeCss } from "../scripts/build-web-demo.ts";
+import { buildWebDemo } from "../scripts/build-web-demo.ts";
 import type { BuildResult } from "../scripts/build-web-demo.ts";
 
 const ROOT = new URL("../", import.meta.url).pathname;
@@ -221,35 +221,85 @@ test("web build: both labels are always there, and the markup has every element 
   assert.equal(mount.mountDemo.length, 1, "mountDemo(element, options?)");
 });
 
+/** The selectors of one rule head, split at the commas that are not inside brackets. */
+const selectorsOf = (head: string) => {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < head.length; i++) {
+    if (head[i] === "(" || head[i] === "[") depth++;
+    else if (head[i] === ")" || head[i] === "]") depth--;
+    else if (head[i] === "," && depth === 0) { parts.push(head.slice(start, i).trim()); start = i + 1; }
+  }
+  return [...parts, head.slice(start).trim()];
+};
+/** The classes a style sheet selects (".geo-x"), as opposed to the --geo-x tokens it reads. */
+const cssClasses = (css: string) => new Set([...css.matchAll(/\.(geo-[a-z0-9_]+(?:-{1,2}[a-z0-9_]+)*)/g)].map((m) => m[1]));
+const classesIn = (text: string) => new Set([...text.matchAll(/\bgeo-[a-z0-9_]+(?:-{1,2}[a-z0-9_]+)*/g)].map((m) => m[0]).filter((c) => c !== "geo-demo-1-" && !c.endsWith("-")));
+
 test("web build: every style rule is under the root class, so it cannot reach the host page", async () => {
   const { CSS } = await load("demo/web/generated.js");
   const heads = [...CSS.matchAll(/([^{}]+)\{/g)].map((m) => m[1].trim()).filter((h) => !h.startsWith("@"));
-  assert.ok(heads.length > 80, `${heads.length} rules`);
-  for (const head of heads) for (const selector of head.split(",").map((s) => s.trim())) assert.ok(selector === ".geo-demo" || selector.startsWith(".geo-demo ") || selector.startsWith(".geo-demo:") || selector.startsWith(".geo-demo>"), `a rule outside the root class: ${selector}`);
-  assert.ok(!/(^|[\s,}])(html|body|:root|\*)\s*[,{]/.test(CSS.replace(/\.geo-demo \*/g, "")), "no bare html, body, :root or * is left");
-  assert.match(CSS, /\.geo-demo \{ all: initial; \}/, "the host page's text styles stop at the edge");
-  assert.ok(/\.geo-demo \.banner \{/.test(CSS) && /\.geo-demo \.tabbar \{/.test(CSS) && /\.geo-demo > \.sheet \{[^}]*position: static/.test(CSS), "the page's fixed bars are held inside the frame");
-  // scopeCss on its own, including the shapes in page.css: lists, :root, *, pseudo-classes and @media.
-  const scoped = scopeCss(":root { --a: 1; }\n* { box-sizing: border-box; }\nbody { margin: 0; }\nbutton, input { font: inherit; }\nbutton.btn:hover:not(:disabled) { x: y; }\n@media (min-width: 700px) { body { font-size: 18px; } .a { b: c; } }\n");
-  assert.equal(scoped, [
-    ".geo-demo { --a: 1; }",
-    ".geo-demo,\n.geo-demo * { box-sizing: border-box; }",
-    ".geo-demo { margin: 0; }",
-    ".geo-demo button,\n.geo-demo input { font: inherit; }",
-    ".geo-demo button.btn:hover:not(:disabled) { x: y; }",
-    "@media (min-width: 700px) {\n.geo-demo { font-size: 18px; }\n.geo-demo .a { b: c; }\n}",
-    "",
-  ].join("\n"));
-  assert.throws(() => scopeCss("@font-face { src: url(x); }"), /does not handle/);
-  assert.throws(() => scopeCss(".a { b: c; "), /without its/);
+  assert.ok(heads.length > 100, `${heads.length} rules`);
+  for (const head of heads) for (const selector of selectorsOf(head)) assert.ok(selector === ".geo-demo" || /^\.geo-demo[\s:>\[.]/.test(selector), `a rule outside the root class: ${selector}`);
+  assert.ok(!/(^|[\s,}])(html|body|:root|\*)\s*[,{]/.test(CSS), "no bare html, body, :root or * is left");
+  assert.match(CSS, /\.geo-demo \{ all: initial; \}/, "the host page's inherited text styles stop at the edge");
+  assert.ok(!/position:\s*fixed/.test(CSS), "nothing is fixed to the browser window; the demo is a frame in the page");
+});
+
+test("web build: every colour is a custom property with a default, nothing else is written out, and a host can theme it", () => {
+  const source = readFileSync(join(ROOT, "demo/web/theme.css"), "utf8");
+  const declared = [...source.matchAll(/^\s*(--_[a-z0-9-]+): var\((--geo-[a-z0-9-]+), ([^;]+)\);/gm)];
+  const colours = declared.filter((m) => /^#[0-9a-f]{3,8}$/i.test(m[3].trim())).map((m) => m[2]);
+  assert.deepEqual(colours, ["--geo-surface", "--geo-text", "--geo-muted", "--geo-line", "--geo-accent", "--geo-on-accent", "--geo-success", "--geo-warning", "--geo-danger"], "the colour tokens, with their defaults");
+  for (const token of ["--geo-radius", "--geo-font", "--geo-font-size", "--geo-space-1", "--geo-space-2", "--geo-space-3", "--geo-space-4", "--geo-space-5", "--geo-width", "--geo-height"]) assert.ok(declared.some((m) => m[2] === token), `${token} is a token`);
+  // Outside those default lines (and the comments) no colour is written out: no hex, rgb(), hsl(), or colour name.
+  const rest = source.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((line) => !/^\s*--_[a-z0-9-]+: var\(--geo-/.test(line)).join("\n");
+  assert.deepEqual(rest.match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|(?<![-\w])(?:white|black|red|green|blue|gray|grey|yellow|orange)(?![-\w])/gi) ?? [], [], "a colour outside the token defaults");
+  // Every --geo- token the sheet reads is named in the header, for the person theming it; and the sheet reads no --geo- token that has no default.
+  const header = /\/\*[\s\S]*?\*\//.exec(source)![0];
+  const used = new Set([...source.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/var\((--geo-[a-z0-9-]+)/g)].map((m) => m[1]));
+  for (const token of used) assert.ok(header.includes(token.replace(/-[1-5]$/, "")) || header.includes(token), `${token} is not described in the header of theme.css`);
+  assert.ok(source.replace(/\/\*[\s\S]*?\*\//g, "").match(/var\(--_[a-z-0-9]+/g)!.every((u) => source.includes(`${u.slice(4)}:`)), "every private token the sheet reads is defined");
+});
+
+test("web build: the class names are stable, one set for the page's script, the markup and the style sheets", async () => {
+  const generated = await load("demo/web/generated.js");
+  const mountSource = readFileSync(join(ROOT, "demo/web/mount.ts"), "utf8");
+  const script = readFileSync(join(ROOT, "demo/page.js"), "utf8");
+  const theme = readFileSync(join(ROOT, "demo/web/theme.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const serverCss = readFileSync(join(ROOT, "demo/page.css"), "utf8");
+  // The names the page's script builds from a value.
+  const built = ["customer", "owner", "agent"].map((r) => `geo-bubble--${r}`)
+    .concat(["ok", "info", "warn", "muted"].map((k) => `geo-summary-line--${k}`))
+    .concat(["confirmed", "attempted", "unconfirmed", "failed", "blocked", "held_for_owner"].map((o) => `geo-pill--${o}`))
+    .concat(["allow", "block", "hold_for_owner"].map((v) => `geo-decision--${v}`))
+    .concat(["shop", "try", "checked"].map((k) => `geo-step--${k}`));
+  const used = new Set([...classesIn(generated.MARKUP), ...classesIn(script), ...classesIn(mountSource), ...built]);
+  for (const name of ["geo-demo", "geo-banner", "geo-note", "geo-steps", "geo-step", "geo-field", "geo-chat", "geo-bubble--customer", "geo-bubble--agent", "geo-bubble--owner", "geo-summary", "geo-record-card", "geo-pill", "geo-decision", "geo-button--primary", "geo-sheet", "geo-form"]) assert.ok(used.has(name) || name === "geo-demo", `${name} is a class of the demo`);
+  // Nothing in either style sheet names a class the demo does not have (a typo or a leftover), and nothing is left under an old name.
+  for (const [file, css] of [["theme.css", theme], ["page.css", serverCss]] as const) {
+    for (const name of cssClasses(css)) assert.ok(used.has(name) || name === "geo-demo", `${file} styles .${name}, which nothing uses`);
+  }
+  assert.ok(!/\b(?:class="|el\("[a-z0-9]+", ")(?!geo-)[a-z]/.test(generated.MARKUP + script), "every class in the markup and the script is a geo- class");
+  // The web sheet styles every part a host would restyle; the names listed here are hooks or the plain default (a confirmed pill, an allowing decision), with no rule of their own.
+  const hooks = new Set(["geo-record", "geo-panel", "geo-panel--chat", "geo-panel--owner", "geo-panel--record", "geo-tabs", "geo-tab", "geo-tab--customer", "geo-tab--owner", "geo-tab--record", "geo-badge", "geo-reset", "geo-bubble", "geo-chat-head", "geo-shop-name", "geo-summary-line--ok", "geo-pill--confirmed", "geo-decision--allow", "geo-step--shop", "geo-step--try", "geo-step--checked"]);
+  for (const name of used) assert.ok(cssClasses(theme).has(name) || hooks.has(name) || name.startsWith("geo-demo-"), `${name} has no rule in theme.css and is not listed as a hook`);
+  // A bubble is made for each role: customer and owner say "mine" in their own chat, the agent is always the agent.
+  assert.match(script, /bubbles\(\$\("chat"\), S\.customer\.messages, t\("chatEmpty"\), "customer"\)/);
+  assert.match(script, /bubbles\(\$\("ownerChat"\), S\.owner\.messages, t\("ownerEmpty"\), "owner"\)/);
+  const mount = await load("demo/web/mount.js");
+  assert.deepEqual(mount.STEPS.map(([key]: string[]) => key), ["shop", "try", "checked"]);
+  assert.match(theme, /\[data-step="checked"\]/);
 });
 
 test("web build: the mount code adds no way for typed text to become markup", () => {
   const source = readFileSync(join(ROOT, "demo/web/mount.ts"), "utf8").replace(/\/\/[^\n]*/g, "");
   const uses = [...source.matchAll(/\b(innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\()/g)].map((m) => m[1]);
-  assert.deepEqual(uses, ["innerHTML"], "the only markup written is the build's fixed markup");
-  assert.ok(/template\.innerHTML = MARKUP;/.test(source), "and it is only that");
-  assert.ok(/attachShadow\(\{ mode: "open" \}\)/.test(source) && /host\.remove\(\)/.test(source), "the demo lives in a shadow root of its own, which unmount takes out");
+  assert.deepEqual(uses, ["innerHTML"], "the only markup written is the build's fixed markup, with ids added");
+  assert.ok(/template\.innerHTML = MARKUP\.replace\(/.test(source), "and it is only that");
+  assert.ok(/root\.remove\(\)/.test(source) && /watcher\.disconnect\(\)/.test(source), "unmount takes the demo out and stops watching it");
+  assert.ok(!/attachShadow/.test(source), "the demo is in the page's own tree, so its class names can be restyled by the page");
   const both = source + readFileSync(join(ROOT, "demo/web/local.ts"), "utf8");
   assert.deepEqual([...both.matchAll(/(\w+[. ])fetch\(/g)].map((m) => m[1]).sort(), ["async ", "local."], "the only fetch is the in-page demo's own");
   assert.ok(!/XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage|indexedDB|document\.cookie/.test(both), "no network, no storage, no cookies");
