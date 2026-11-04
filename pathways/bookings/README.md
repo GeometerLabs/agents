@@ -118,7 +118,7 @@ Hindi, Malayalam and Kannada are machine-written and wait for native review ([De
 
 ## Equipment rental (custom hiring centres and village equipment owners)
 
-The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 28 of 28 situations on its own settings. Run the demo on it:
+The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 29 of 29 situations on its own settings. Run the demo on it:
 
 ```sh
 node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn   # or hi
