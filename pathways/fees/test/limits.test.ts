@@ -1,6 +1,7 @@
 // The Fees limits as pure checks, and the Guard spec built from the settings.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { fakeClock } from "../../../modules/core/clock.ts";
 import { createRecord } from "../../../modules/record/record.ts";
 import { guardHoldsRefund, guardRefusesRefund, refundRulesOf } from "../../../modules/payments/guard-limits.ts";
@@ -104,4 +105,12 @@ test("the in-process Guard model uses the same spec: a link outside the range, o
   assert.equal(model.decideLink("1500").kind, "refused", "an amount that is not a number is never a pass");
   const refused = model.decideRefund("pay_1", { amount: 200_000 });
   assert.equal(refused.kind === "refused" && refused.ruleId, "refund-at-most-fee-paid");
+});
+
+test("scripts/guard-spec.ts prints the same spec the code makes for the example centre, and says plainly what it needs", () => {
+  const script = new URL("../scripts/guard-spec.ts", import.meta.url).pathname;
+  const file = new URL("../settings/bright-tuition.example.json", import.meta.url).pathname;
+  const printed = JSON.parse(execFileSync("node", [script, "--settings", file, "--tenant", "bright-tuition", "--reviewed-by", "builder-arjun"], { encoding: "utf8" })) as unknown;
+  assert.deepEqual(printed, JSON.parse(JSON.stringify(razorpayLimitsSpec(settings, { tenant: "bright-tuition", version: 1, reviewedBy: "builder-arjun" }))));
+  assert.throws(() => execFileSync("node", [script, "--settings", file], { encoding: "utf8", stdio: "pipe" }), /Command failed/);
 });
