@@ -13,7 +13,6 @@ import { compare, readHandCheck, runHandCheck, savedDataLayout } from "../handch
 import { realRunner } from "../lib/runner.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
-import { OWN_AGENT_NOTE } from "../update.ts";
 import { EXAMPLE_CLIENT, PHONE_NUMBER_ID, CALENDAR_ID, panelRuntime } from "./helpers.ts";
 import { composeCalls, world } from "./world.ts";
 import type { World } from "./world.ts";
@@ -291,17 +290,17 @@ test("a refused deploy puts that client's earlier pin back and stops the rollout
   } finally { w.done(); }
 });
 
-test("agents you wrote are skipped with a plain note, and the clients beside them are updated", async () => {
+test("an agent you wrote that Geometer has no command to start is skipped with a plain note, and the clients beside it are updated (the agents that can be crash-tested: update-agent.test.ts)", async () => {
   const w = await threeClients(); try {
     standIn(w, () => holdsAll());
     addAgent(w.root, "my-agent", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => { throw new Error("no file"); }, new Date("2026-11-05T09:00:00Z"));
     const r = await update(w, "--to", "0.2.0");
     assert.equal(r.result, 0, r.out);
-    assert.match(r.out, new RegExp(`- my-agent +skipped\\. ${OWN_AGENT_NOTE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+    assert.match(r.out, /- my-agent +skipped\. It has no command to start it with, so it cannot be crash-tested\. Give one: geometer agent set my-agent --run "<command>" --version <version>\. Until then you update it yourself\./);
     assert.match(r.out, /Moved 3, held back 0, unchanged 0, skipped 1\./);
     assert.equal(loadState(w.root).update!.steps["my-agent"].status, "skipped");
     const only = await update(w, "--shops", "my-agent", "--to", "0.2.0");
-    assert.equal(only.result, 0); assert.match(only.out, /skipped\. Agents you wrote are updated by you/);
+    assert.equal(only.result, 0); assert.match(only.out, /skipped\. It has no command to start it with/);
   } finally { w.done(); }
 });
 
