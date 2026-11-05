@@ -19,12 +19,14 @@ import { SOURCES } from "../../../modules/report/text.ts";
 import type { Source } from "../../../modules/report/text.ts";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
+import type { GoLiveFinding } from "../../../modules/report/go-live.ts";
 import { balancePaise, monthKey } from "../src/due.ts";
 import type { Due } from "../src/due.ts";
+import { brightTuition } from "../src/harness.ts";
 import type { Settings } from "../src/settings.ts";
 
 export { SOURCES };
-export type { Source };
+export type { Source, GoLiveFinding };
 
 export const PATHWAY = readPathway();
 function readPathway(): { name: string; version: string } {
@@ -49,6 +51,13 @@ const STOP_SITES: Record<FeeRuleId, readonly string[]> = {
   "message-matches-record": MESSAGES,
   "opt-out": MESSAGES,
 };
+
+/**
+ * What the checks behind an agent do not cover: the hand check's list, plus one more when the checks are not shown to have run on this centre's own settings:
+ * "own-settings" (they ran on the example centre, Bright Tuition Centre), "other-settings" (on some other settings), "no-go-live-certificate" (the monthly report was given
+ * none), "go-live-untrusted" (it was given one it could not trust), or "situations-skipped" when they did run on this centre's settings but some situations could not be run on them.
+ */
+export type NotTestedKey = NotTestedId | "own-settings" | "other-settings" | "no-go-live-certificate" | "go-live-untrusted" | "situations-skipped";
 
 /** Things the record cannot tell us, so the report does not say them. Always listed. */
 export type NotCountedId = "cash-and-transfers" | "read-receipts" | "outside-agent" | "rule-breaks";
@@ -83,7 +92,9 @@ export interface FeesReport {
   messages: { toOwner: number; heldBack: number };
   unconfirmed: { open: number };
   notCounted: NotCountedId[];
-  notTested: NotTestedId[];
+  notTested: NotTestedKey[];
+  /** What the report was told about the go-live checks: no certificate, one it could not trust, or one it read and what that says the checks ran on. */
+  goLive: GoLiveFinding;
   anchor: null;
 }
 
@@ -99,6 +110,8 @@ export interface ReportInput {
   madeAt: number;
   preparedBy?: string;
   innovator?: boolean;
+  /** What the go-live certificate the caller was given says (report/go-live.ts). Left out, the report says that no go-live certificate was given. */
+  goLive?: GoLiveFinding;
 }
 
 /** What governs how the agent behaves and speaks, without contact details. Two centres with the same policy digest have the same limits and words. */
@@ -107,6 +120,31 @@ export function policyOf(settings: Settings): unknown {
   return { ...rest, owner: { language: owner.language }, students: settings.students.length };
 }
 export const policyDigest = (settings: Settings): string => digestOf(policyOf(settings));
+
+/** The example settings the hand check runs on when it is not given others. A go-live certificate whose checks ran on different settings from the centre's has to say so. */
+export const checkedPolicyDigest = (): string => policyDigest(brightTuition());
+
+/**
+ * What the checks behind this centre's agent do not cover. `ran` says what the hand check ran on: the digest of the settings it used (Bright Tuition Centre's, when left out)
+ * and how many situations those settings could not run.
+ */
+export function notTestedFor(settings: Settings, ran: { onPolicyDigest?: string; notRun?: number } = {}): NotTestedKey[] {
+  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+  if (policyDigest(settings) !== (ran.onPolicyDigest ?? checkedPolicyDigest())) return [...ids, "own-settings"];
+  return (ran.notRun ?? 0) > 0 ? [...ids, "situations-skipped"] : ids;
+}
+
+/** What the monthly report lists as not tested: the hand check's list, and one more unless a go-live certificate shows the checks ran on this centre's own settings with nothing left out. */
+export function notTestedForReport(goLive: GoLiveFinding): NotTestedKey[] {
+  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+  switch (goLive.status) {
+    case "own": return goLive.notRun > 0 ? [...ids, "situations-skipped"] : ids;
+    case "example": return [...ids, "own-settings"];
+    case "different": return [...ids, "other-settings"];
+    case "untrusted": return [...ids, "go-live-untrusted"];
+    case "none": return [...ids, "no-go-live-certificate"];
+  }
+}
 
 /** The fingerprint of one record entry. The parent's number is left out: the digest must not carry it. */
 export function entryDigest(entry: RecordEntry): string {
@@ -123,6 +161,7 @@ function add(a: Amount, paise: string | undefined): void {
 
 export function buildFeesReport(input: ReportInput): FeesReport {
   const { settings, from, to, source, madeAt } = input;
+  const goLive: GoLiveFinding = input.goLive ?? { status: "none" };
   if (!(from < to)) throw new Error("The report period must end after it starts.");
   if (!SOURCES.includes(source)) throw new Error(`Say what the numbers were counted from: ${SOURCES.join(", ")}.`);
   const all = [...input.entries].filter((e) => Date.parse(e.time) < to).sort((a, b) => a.seq - b.seq);
@@ -224,7 +263,8 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     messages: { toOwner: month.filter((e) => e.action === "send_message" && e.outcome !== "blocked" && e.refs.to === "owner").length, heldBack: month.filter((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "message-matches-record")).length },
     unconfirmed: { open: month.filter((e) => (e.outcome === "unconfirmed" || e.outcome === "failed") && e.action !== "send_message").length },
     notCounted: [...NOT_COUNTED],
-    notTested: NOT_TESTED.map((n) => n.id),
+    notTested: notTestedForReport(goLive),
+    goLive,
     anchor: null,
   };
 }

@@ -8,7 +8,7 @@ import { createMonthlyJob } from "../../../modules/report/monthly-job.ts";
 import type { MonthlyJobContext, MonthlyResult } from "../../../modules/report/monthly-job.ts";
 import type { Store } from "../src/due.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Source } from "./data.ts";
+import type { GoLiveFinding, Source } from "./data.ts";
 import { writeFeesReport } from "./run.ts";
 import { monthlyReportMessage } from "./whatsapp.ts";
 
@@ -21,6 +21,8 @@ export interface MonthlyReportSetup {
   options: () => { preparedBy: string; innovator: boolean };
   /** Signs the report. Left out, it carries a digest and a code and says it is not signed. */
   key?: KeyObject;
+  /** What the go-live certificate the centre was given shows. Left out, the report says none was given. */
+  goLive?: () => GoLiveFinding;
   /** Test seam: the random part of the folder name. */
   token?: () => string;
 }
@@ -40,7 +42,7 @@ export function createMonthlyReport(setup: MonthlyReportSetup) {
       const folder = join(setup.pages.dir, token);
       const made = writeFeesReport({
         settings: ctx.settings, entries: ctx.record.entries(), dues: [...ctx.store.dues.values()], month, language, out: folder, source: setup.source,
-        preparedBy, innovator, now, ...(setup.key ? { key: setup.key } : {}),
+        preparedBy, innovator, now, ...(setup.key ? { key: setup.key } : {}), ...(setup.goLive ? { goLive: setup.goLive() } : {}),
       });
       const message = monthlyReportMessage(made.report, language, { link: `${setup.pages.baseUrl}/${token}/report-${month}-${language}.html` });
       return { code: made.code, page: token, folder, message };

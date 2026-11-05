@@ -9,7 +9,12 @@ import { STRINGS } from "./strings.ts";
 import { ownerText } from "./text.ts";
 
 /** What each phrase that takes a number is shown with. */
-const SAMPLE: Record<string, unknown[]> = { more: [12] };
+const SAMPLE: Record<string, unknown[]> = {
+  more: [12],
+  "cert.held": [25, 26, 1, 12], "cert.fees": ["class 8 ₹1,200 · class 10 ₹1,800"], "cert.due": [5, 5], "cert.lateFee": ["₹100"], "cert.reminders": ["-3, 0, +5", 10, 3], "cert.partPayments": ["₹300"],
+  "cert.waiver": ["₹100"], "cert.refund": ["₹500"], "cert.students": [44],
+  "goLive.own": ["2 Nov 2026"], "goLive.example": ["2 Nov 2026"], "goLive.different": ["2 Nov 2026"], "goLive.signedWith": ["key-3f9a1c"],
+};
 
 export interface StringRow { id: string; text: string; english: string }
 
