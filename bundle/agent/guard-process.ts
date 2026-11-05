@@ -115,12 +115,13 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
     paths: { listen: `127.0.0.1:${listen}`, adminListen: `127.0.0.1:${adminListen}`, healthListen: `127.0.0.1:${healthListen}`, state: join(dir, "state.db"), bundle: join(dir, "bundle.json") },
   });
   writeFileSync(join(dir, "guard.toml"), toml);
-  const child: ChildProcess = spawn(o.binary, ["run", "--config", join(dir, "guard.toml")], { stdio: ["ignore", "pipe", "pipe"] });
+  // GEO_GUARD_DRAIN_MS: how long Guard keeps taking calls after it is told to stop. Nothing is in flight when a test or a crash test ends, so it does not wait.
+  const child: ChildProcess = spawn(o.binary, ["run", "--config", join(dir, "guard.toml")], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GEO_GUARD_DRAIN_MS: "50" } });
   let output = "";
   child.stdout!.on("data", (c: Buffer) => { output += c; });
   child.stderr!.on("data", (c: Buffer) => { output += c; });
   const stop = async () => {
-    if (child.exitCode === null) { child.kill("SIGTERM"); await new Promise<void>((resolve) => { const t = setTimeout(() => child.kill("SIGKILL"), 3000); child.once("exit", () => { clearTimeout(t); resolve(); }); }); }
+    if (child.exitCode === null && child.signalCode === null) { child.kill("SIGTERM"); await new Promise<void>((resolve) => { const t = setTimeout(() => child.kill("SIGKILL"), 3000); child.once("exit", () => { clearTimeout(t); resolve(); }); }); }
     rmSync(dir, { recursive: true, force: true });
   };
   for (let i = 0; i < 200 && !/geo-guard ready/u.test(output); i++) {
