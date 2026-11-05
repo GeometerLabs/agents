@@ -53,6 +53,11 @@ export interface AgentState {
   stopped?: { by: string; at: string; reason: string };
   applied?: AgentSnapshot;
   lastDeployAt?: string;
+  /**
+   * The version of the agent that Geometer last crash-tested and wrote a go-live certificate for (`geometer agent go-live`, or an `update` that moved it): the version "in service" as far as
+   * Geometer knows. It does not run the agent, so this is the builder's word for what runs, backed by the test. The next `update` compares the version in agent.json with this one.
+   */
+  service?: { version: string | null; at: string; held: number; of: number; code: string };
 }
 
 /**
