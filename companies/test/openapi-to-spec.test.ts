@@ -228,7 +228,7 @@ test("Guard's own compiler accepts the example spec and gives the checked-in bun
 test("build compiles with the real Guard, prints what it cannot test, and writes a starter guard.toml it then checks the bundle against", { skip: skipWithoutGuard }, () => {
   const dir = workFolder();
   const io = captureIo();
-  const args = ["build", "--draft", join(dir, "draft.json"), "--accept", join(dir, "accept.json"), "--out", join(dir, "spec.json"), "--guard-toml", join(dir, "guard.toml"), "--upstream", "refunds.brightside.example:443"];
+  const args = ["build", "--draft", join(dir, "draft.json"), "--accept", join(dir, "accept.json"), "--out", join(dir, "spec.json"), "--guard-toml", join(dir, "guard.toml"), "--upstream", "refunds.brightside.example:443", "--listen", "127.0.0.1:8080", "--agent-id", "support-bot"];
   assert.equal(main(args, io), 0, io.text());
   const text = io.text();
   assert.match(text, /Tripwires: passed 4 of 4/u);
@@ -238,6 +238,8 @@ test("build compiles with the real Guard, prints what it cannot test, and writes
   const toml = readFileSync(join(dir, "guard.toml"), "utf8");
   assert.match(toml, /bundle_digest = "sha256:[0-9a-f]{64}"/u);
   assert.match(toml, /operations = \["create_refund"\]/u);
+  assert.match(toml, /^listen = "127\.0\.0\.1:8080"$/mu, "a sidecar listens on the pod's own loopback");
+  assert.match(toml, /\[\[agents\]\]\nid = "support-bot"/u);
   assert.match(toml, /token_sha256 = "0{64}"/u, "no real credential is written");
   // the starter file is not overwritten a second time
   const again = captureIo();

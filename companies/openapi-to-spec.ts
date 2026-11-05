@@ -420,7 +420,7 @@ const stdio: Io = { out: (l) => console.log(l), err: (l) => console.error(l) };
 const USAGE = `Usage:
   node companies/openapi-to-spec.ts draft <openapi.json> --out draft.json [--tool NAME] [--base-path /v1] [--accept-template accept.template.json]
   node companies/openapi-to-spec.ts build --draft draft.json --accept accept.json --out spec.json [--bundle bundle.json]
-        [--guard-toml guard.toml --upstream host:443 [--plain-http] [--force]] [--no-compile]
+        [--guard-toml guard.toml --upstream host:443 [--listen 127.0.0.1:8080] [--agent-id NAME] [--plain-http] [--force]] [--no-compile]
 
   draft   reads the API and writes a DRAFT with suggested rules (not a Guard spec), plus a template for your accept file.
   build   writes a Guard limits spec from the parts you kept, compiles it with geo-guard, and verifies the result.
@@ -486,7 +486,7 @@ function runDraft(args: string[], io: Io): number {
 }
 
 function runBuild(args: string[], io: Io): number {
-  const { values } = parseArgs({ args, options: { draft: { type: "string" }, accept: { type: "string" }, out: { type: "string" }, bundle: { type: "string" }, "guard-toml": { type: "string" }, upstream: { type: "string" }, "plain-http": { type: "boolean" }, force: { type: "boolean" }, "no-compile": { type: "boolean" } } });
+  const { values } = parseArgs({ args, options: { draft: { type: "string" }, accept: { type: "string" }, out: { type: "string" }, bundle: { type: "string" }, "guard-toml": { type: "string" }, upstream: { type: "string" }, "plain-http": { type: "boolean" }, listen: { type: "string" }, "agent-id": { type: "string" }, force: { type: "boolean" }, "no-compile": { type: "boolean" } } });
   if (!values.accept) {
     io.err("Refused: no --accept file. This tool writes a spec only from a file in which you list what you kept.\nRun `draft` to get accept.template.json, fill it in, and pass it as --accept.");
     return 2;
@@ -521,7 +521,7 @@ function runBuild(args: string[], io: Io): number {
     config = resolve(values["guard-toml"]);
     if (existsSync(config) && !values.force) throw new UsageError(`${config} exists; it may hold your real credentials' hashes. Not overwritten (use --force to replace it).`);
     const approvalOperations = [...new Set((built.spec.rules as Obj[]).filter((r) => r.kind === "call_bound_approval").map((r) => r.operation as string))];
-    writeAtomic(config, guardToml({ tenant: built.spec.tenant, tool: built.spec.tool, deployment: built.spec.name, upstream: values.upstream, tls: !values["plain-http"], bundleDigest: c.summary.digest, agents: [{ id: "agent", sha256: "0".repeat(64) }], approvalOperations }));
+    writeAtomic(config, guardToml({ tenant: built.spec.tenant, tool: built.spec.tool, deployment: built.spec.name, upstream: values.upstream, tls: !values["plain-http"], bundleDigest: c.summary.digest, agents: [{ id: values["agent-id"] ?? "agent", sha256: "0".repeat(64) }], approvalOperations, ...(values.listen ? { paths: { listen: values.listen } } : {}) }));
     io.out(`Wrote a starter guard.toml:  ${config}  (credential hashes are all zeros: put real ones in, see README)`);
   }
   const v = verifyBundle(bin, bundle, config);
