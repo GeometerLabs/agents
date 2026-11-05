@@ -116,7 +116,7 @@ test("Litestream streams only the runtime databases, one replica per shop, with 
 });
 
 test("the runtime never checkpoints by hand: Litestream owns checkpointing of what it streams", () => {
-  const source = readFileSync(new URL("../../pathways/bookings/server/store.ts", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../../modules/runtime/store.ts", import.meta.url), "utf8");
   const code = source.replace(/\/\/.*$/gmu, "");
   assert.ok(!/wal_checkpoint|wal_autocheckpoint/iu.test(code), "store.ts checkpoints by hand");
   assert.deepEqual([...code.matchAll(/journal_mode\s*=\s*(\w+)/gu)].map((m) => m[1]), ["WAL"], "the only journal mode it sets is WAL");
