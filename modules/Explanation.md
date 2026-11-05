@@ -43,7 +43,7 @@ Bookings kept what is about a booking: the calendar and its adapters, the bookin
 
 The old template had to give the same answers after the move. It does:
 
-- The hand check prints the same 333 lines before and after (`Held 37 of 37` for Glow Salon, 32 of 32 for the equipment rental), compared by diff.
+- The hand check printed the same 333 lines before and after the move (`Held 37 of 37` for Glow Salon, 32 of 32 for the equipment rental), compared by diff. That diff was taken before the monthly report (B54) was merged. After the merge, with B54's new situation carried into the moved code, the counts are Held 38 of 38 for Glow Salon, 33 of 33 for the rental and 35 of 35 for a shop with no cancellation window, as on main.
 - The record's fingerprints and the Razorpay limits spec's bytes are unchanged: the entry shape, `canonicalJson` and the spec builder were moved, not edited.
 - The Bookings tests that were green are green (the numbers are in the pathway's `Explanation.md` build log), the bundle's and the panel's too.
 - The browser demo builds from the same files: the build now follows the imports into `modules/` and writes them under `modules/` in its output, so `dist/index.js` and the Bookings paths in it are as they were.
