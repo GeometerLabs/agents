@@ -70,7 +70,8 @@ The shared code is about 900 lines longer than the code it replaced: the hooks (
 ## How the rest of the repository finds the modules
 
 - **Imports** are relative, as everywhere in this repository (`../../../modules/...` from a template).
-- **The browser build** (`pathways/bookings/scripts/build-web-demo.ts`) follows `modules/` and stops with a clear message if a module imports a template.
+- **The browser build** (`pathways/bookings/scripts/build-web-demo.ts`) follows `modules/` and stops with a clear message if a module imports a template. The demo asks no model, so it carries none of the router, the price table (`understanding/rates.ts` and its JSON) or the HTTP code; a template's reading takes `chosenProbability` from `understanding/model.ts` for that reason (the router still exports it, for Fees).
+- **The one table of model prices** is `understanding/rates/<date>.json`. It is data a module owns and three others read: the runtime (to price each message), the evaluation script (its cost column) and the bundle's tests (every model price in a bundle price list must say what it says). `rates-check.ts` checks a file and `modules/test/rates.test.ts` pins each file's bytes, so a changed price is a new file with a new date.
 - **The runtime container** mounts `agents/modules` as `/modules` beside the pathway at `/pathway` (`bundle/generate/compose.ts`). The pathway's relative import runs out at the container's root, which is where `/modules` is.
 - **A kept checkout of an older pathway** (`<server>/pathways/bookings@0.1.0`) imports the modules two folders up, so the server holds a `modules/` folder beside its `pathways/`. Modules are not versioned on their own yet (see Deferred).
 

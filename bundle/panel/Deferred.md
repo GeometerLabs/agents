@@ -24,7 +24,7 @@ Not built, or built only as far as said. The first block needs another part of t
 - Real usage instead of assumptions: counts of messages from the runtime, so "early estimate" becomes "from the record" for those lines too (today only the number of bookings comes from the record).
 - **Which fee this builder pays.** The panel reads one fee from the newest price list (the founding ₹199) and labels it "founding price" for every builder. A builder past the first 100 will pay the later price, which the signed licence (B13) will carry per deployment; then the line should read that and the label should follow it. Until the later price is decided there is no second rate to read.
 - **The monthly model cap in the cost line.** The model is in Geometer's fee up to a cap per shop, and above it the agent falls back to its rule parser and the builder is told. The line says only that the model is included, because the per-shop cap does not exist yet (bundle/Deferred.md, "Per-shop model caps"). When it does, add the cap and where the builder sees that a shop went over it.
-- A warning when the newest price list is more than 90 days old; making `eval/models.json` read `bundle/prices/` instead of carrying its own prices (a test keeps them equal until then); the WhatsApp provider fee once a provider is chosen (`PANEL_WHATSAPP_PROVIDER`); Meta's own INR rate card, read once, replacing the second-hand figure.
+- A warning when the newest price list is more than 90 days old; the WhatsApp provider fee once a provider is chosen (`PANEL_WHATSAPP_PROVIDER`); Meta's own INR rate card, read once, replacing the second-hand figure.
 - The line is not in the sell guide yet (B26 says setup and the sell guide).
 
 ## Accounts and operations
