@@ -127,16 +127,18 @@ test("a pathway whose validator refuses the report key keeps the shop starting: 
 });
 
 /** A version kept beside the server, which is where B53 leaves a client it held back: today's pathway copied (with the shared modules beside it, where a kept checkout finds them), with the report setting taken out of what its runtime knows. */
-function keepOldVersion(w: ReturnType<typeof world>, version: string, edit: (configText: string) => string = (t) => t.replace('"pauseMinutes", "report"]', '"pauseMinutes"]')): string {
+function keepOldVersion(w: ReturnType<typeof world>, version: string, edit?: (configText: string) => string): string {
   const dir = join(w.root, "pathways", `bookings@${version}`);
   cpSync(join(w.ctx.appDir, "pathways", "bookings"), dir, { recursive: true });
   // the shared code a pathway imports sits beside the pathways folder (<server>/modules): a kept checkout finds it there
   if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
   const pkg = join(dir, "package.json");
   writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
-  const config = join(dir, "server", "config.ts");
+  // What a version "from before the report" knows is read by its runtime config check, which since the shared server moved into modules/ is modules/runtime/config.ts (the copy
+  // beside the server): the default edit takes "report" out of the settings that file knows. A test that wants the pathway's own file to fail gives its own edit.
+  const config = edit ? join(dir, "server", "config.ts") : join(w.root, "modules", "runtime", "config.ts");
   const before = readFileSync(config, "utf8");
-  const after = edit(before);
+  const after = (edit ?? ((t: string) => t.replace('"pauseMinutes", "report"]', '"pauseMinutes"]')))(before);
   assert.notEqual(after, before, "the copy was changed, or this test tests nothing");
   writeFileSync(config, after);
   writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), `bookings@${version}\n`);
