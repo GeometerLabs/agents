@@ -162,6 +162,18 @@ test("a kept consequential route with no rule is built, with a warning; a forbid
   assert.ok(built.warnings.some((w) => /create_transfer is forbidden and also has other rules/u.test(w)));
 });
 
+test("a call the reviewer marks off by name is forbidden with a rule that names it, whether or not the draft suggested one; it is never written twice", () => {
+  const a = accept();
+  a.forbid = ["cancel_refund", "create_transfer"]; // the second already has a kept suggestion
+  const ids = specFromAccept(draft(), a, sha256(draftText())).spec.rules.map((r: any) => r.id);
+  assert.deepEqual(ids.filter((i: string) => i.endsWith("-forbidden")), ["create_transfer-forbidden", "cancel_refund-forbidden"]);
+  assert.equal(new Set(ids).size, ids.length);
+  has(refusal((x) => { x.forbid = ["delete_customer"]; }), /"delete_customer", but that route is not kept/u);
+  has(refusal((x) => { x.forbid = ["no_such"]; }), /"no_such", which is not in the draft/u);
+  has(refusal((x) => { x.forbid = "cancel_refund"; }), /"forbid" must be a list/u);
+  assert.deepEqual(acceptTemplate(draft(), "sha256:x").forbid, [], "the template offers the list, empty");
+});
+
 // ---- the command line ----------------------------------------------------------------------------------------------------------------------
 
 function workFolder() {

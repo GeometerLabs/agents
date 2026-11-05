@@ -13,7 +13,7 @@
 | `export-record.ts` | Guard's decisions in plain words, a manifest, and a call for the evidence pack |
 | `deploy/` | Compose and Kubernetes recipes, text only |
 | `examples/refunds-api/` | a made-up refunds API with every file of the path from OpenAPI to bundle, and a fake of the API |
-| `test/` | 48 tests: 28 draft, accept and command line; 7 end to end; 3 export; 2 fake API; 8 deploy |
+| `test/` | 52 tests: 29 draft, accept and command line; 8 end to end; 5 export; 2 fake API; 8 deploy |
 
 Nothing outside `companies/` was touched: no `bundle/`, no `pathways/`, no monorepo, and no cargo.
 
@@ -48,6 +48,7 @@ Seven end-to-end tests, each on a fresh Guard and a fresh fake API. The fake **d
 - **Replay.** A repeat of a refund that went through got the first answer back with `guard-replayed: true`, nothing sent; the same charge with another amount got a 409.
 - **Refusals.** 60000 (above the 50000 max) was refused naming `create_refund-amount-bound`; so were 0, -5, `"60000"` written as a string (Guard reads numeric strings as numbers), `1e5`, and a call with no amount. A refund with no `charge_id` got a 409: Guard cannot tell whether it is a repeat, so it does not send.
 - **Forbidden and unlisted.** The transfer kept as a `forbidden_call` was refused naming `create_transfer-forbidden`. The customer delete, and a customer *read* that was left out of the accept file, were refused as "not a route this policy covers".
+- **`forbid`.** A kept route marked off in the accept file's `forbid` list (a cancel, which the draft would not have suggested forbidding) was refused naming `cancel_refund-forbidden`, while the read of a refund next to it went through.
 - **A daily spend cap.** 22 refunds of 9000 passed (198000 of 200000); the 23rd was refused with `reason_code: limit_exceeded`, the limit's id, and when the window resets.
 - **The key lives only in Guard.** The agent's token was a 401 at the API; the API's own key opened nothing at Guard; through Guard the API saw only its own key.
 
@@ -61,7 +62,11 @@ Things that surprised me, worth a second look by whoever owns Guard's docs:
 
 Guard keeps its decisions, approvals and uncertain calls on the admin port (`/admin/decisions`, `/approvals`, `/intents`) and writes a tamper-evident evidence pack and a signed anchor when asked (`POST /admin/backup {"to": folder}`). The open `geo-verify` (the `geometer-verify` repository) checks the pack against an anchor the company keeps elsewhere: VERIFIED (0) with the anchor, UNVERIFIABLE (3) without one, INVALID (1) when an entry was changed. The tests run all three on a real pack.
 
-`export-record.ts` turns the decisions into `record.jsonl` (sent, refused, held, replayed, unknown), keeps Guard's own files beside it with a manifest of hashes, and says in `summary.txt` what it cannot show. **It is not B51's record.** `bundle/agent/record.ts` is written for the Bookings pathway: it names Razorpay, Calendar and WhatsApp operations, judges "done" from what those services hold, and fits the shop's monthly report. A company's API has none of those names. What does carry over is the idea: the record is built from Guard's decisions, never from what the agent says, and a thing the service does not confirm is not called confirmed (here: `sent` means the API answered). The 500-decision window is stated in the export, as in B51, but the export does not yet keep a mark between runs to detect a gap (Deferred).
+`export-record.ts` turns the decisions into `record.jsonl` (sent, refused, held, replayed, not_sent, unknown), keeps Guard's own files beside it with a manifest of hashes, and says in `summary.txt` what it cannot show. `replayed` is used only when Guard's reason says the first call's recorded reply was returned; a call the rules allowed but Guard could not send (the API was down) is `not_sent` with Guard's reason. An earlier version of mine labelled every allowed-but-unsent call `replayed`, which would have told a reviewer a refund was "answered from the record" when the API had simply been down.
+
+**Guard's backup holds keys, so the export copies two files out of it.** `POST /admin/backup` is a full backup: the store (`state.db`), the evidence keys (`evidence/keys/*.secret`), the pack and the anchor. A first version of the export handed that whole folder to reviewers. Now each run asks for the backup in its own new subfolder (Guard refuses a folder that is not empty), copies only `evidence-pack.json` and `anchor.json` into the review folder, and a test checks that no `.secret` and no `state.db` arrive. The backup stays with the operator. The Compose recipe gives the export a read-only mount of that folder, and a dated output folder per run (the export refuses a non-empty one).
+
+**What an anchor shows is narrower than it looks.** A pack checked against the anchor from the same backup only shows the pack file was not changed after Guard wrote it. A rewrite of Guard's records before that backup is caught only if the reviewer holds an earlier anchor. The README and `summary.txt` say so, and the test verifies a later pack against the first export's anchor. **It is not B51's record.** `bundle/agent/record.ts` is written for the Bookings pathway: it names Razorpay, Calendar and WhatsApp operations, judges "done" from what those services hold, and fits the shop's monthly report. A company's API has none of those names. What does carry over is the idea: the record is built from Guard's decisions, never from what the agent says, and a thing the service does not confirm is not called confirmed (here: `sent` means the API answered). The 500-decision window is stated in the export, as in B51, but the export does not yet keep a mark between runs to detect a gap (Deferred).
 
 ## Where it borrowed, and why it did not import
 

@@ -3,7 +3,12 @@
 // stopped the repeat. Skipped, saying why, when geo-guard is not on this computer.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { skipWithoutGuard } from "./helpers.ts";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { specFromAccept } from "../openapi-to-spec.ts";
+import type { Draft } from "../openapi-to-spec.ts";
+import { sha256 } from "../openapi-read.ts";
+import { exampleJson, exampleText, skipWithoutGuard, tempDir } from "./helpers.ts";
 import { API_KEY, startStack } from "./real-guard.ts";
 import type { Stack } from "./real-guard.ts";
 
@@ -148,6 +153,23 @@ test("a call the reviewer forbade, and calls nobody listed, are refused by name;
   assert.deepEqual([s.api.transfers.length, s.api.deletedCustomers.length], [0, 0]);
   assert.deepEqual(s.api.seen.map((x) => `${x.method} ${x.path}`), ["GET /v1/charges/ch_1"], "only the listed read reached the API");
 }));
+
+test("a call marked off with `forbid` is refused by the rule that names it, while the reads next to it still work", opts, async () => {
+  const dir = tempDir();
+  const draft = JSON.parse(exampleText("draft.json")) as Draft;
+  const a = exampleJson("accept.json");
+  a.forbid = ["cancel_refund"];
+  const spec = join(dir, "spec.json");
+  writeFileSync(spec, JSON.stringify(specFromAccept(draft, a, sha256(exampleText("draft.json"))).spec));
+  const s = await startStack({ spec });
+  try {
+    const cancel = await s.call("POST", "/v1/refunds/re_1/cancel");
+    assert.equal(cancel.status, 403);
+    assert.match(cancel.json.guard.reason, /cancel_refund-forbidden/u);
+    assert.equal((await s.call("GET", "/v1/refunds/re_1")).status, 404, "a read of a refund goes through to the API (which has none)");
+    assert.equal(s.api.seen.filter((x) => x.path.endsWith("/cancel")).length, 0);
+  } finally { await s.stop(); }
+});
 
 test("a daily spend cap refuses the call that would go over it, and says when the counter starts again", opts, () => withStack(async (s) => {
   // 9000 is under the threshold, so no approval is needed; each refund is for another charge, so each is a different action

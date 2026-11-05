@@ -67,7 +67,8 @@ Copy `accept.template.json` to `accept.json`. In it:
 
 - put your name in `reviewed_by` (the tool will not choose one) and your environment's name in `tenant`;
 - set the **routes** the agent may call to `true`; everything else stays refused as unlisted;
-- on each suggestion you want, set `"keep": true` and fill every `null`. The review note is copied beside it as `_review`.
+- on each suggestion you want, set `"keep": true` and fill every `null`. The review note is copied beside it as `_review`;
+- to list a call on purpose and always refuse it, by a rule that names it (`<operation>-forbidden`), put its operation in `forbid` (it must be a kept route). The draft only suggests this for destructive calls; `forbid` works for any.
 
 Anything left false is dropped. `build` refuses, naming every problem at once, when:
 
@@ -87,7 +88,7 @@ node companies/openapi-to-spec.ts build --draft work/draft.json --accept work/ac
   --bundle work/guard/bundle.json --guard-toml work/guard/guard.toml --upstream refunds.brightside.example:443
 ```
 
-This writes `spec.json` (a Guard limits spec, schema 1, see Guard's limits-spec document), then runs the real `geo-guard compile` and `geo-guard verify-bundle` and prints what they say:
+This writes `spec.json` (a Guard limits spec, schema 1; its full definition is Guard's own "limits spec" document, which comes with the licence), then runs the real `geo-guard compile` and `geo-guard verify-bundle` and prints what they say:
 
 ```
 Kept 6 routes, 4 rules, 3 limits.
@@ -151,7 +152,7 @@ The agent must be able to read the answers Guard gives when it does **not** send
 | Guard cannot decide | 503 | Not done; retry later |
 | Anything else | The API's own answer | Use it |
 
-A reply with no `guard` object is the API's own. Guard's full table is in its "Guard for pathways" document.
+A reply with no `guard` object is the API's own. This table is the part of Guard's "Guard for pathways" document an agent's author needs; the document itself, and the limits-spec document named above, are Geometer's and come with the licence.
 
 ## Approvals
 
@@ -190,24 +191,27 @@ Guard repeats an uncertain call on its own only when the spec says your API keep
 
 ```
 node companies/export-record.ts --admin http://127.0.0.1:8082 --token-file secrets/guard_admin_token \
-  --out review/2026-11 --evidence-dir /var/lib/geo-guard/export
+  --out review/2026-11-05 --backup-dir /var/lib/geo-guard/export
 ```
 
-writes, to `review/2026-11/`:
+writes, to `review/2026-11-05/` (a **new folder every time**; it refuses a folder that is not empty):
 
-- `record.jsonl`: one line per decision, oldest first: time, agent, operation, `sent` / `refused` / `held` / `replayed` / `unknown`, the API's status, the rule that said no, the call's digest and its arguments;
+- `record.jsonl`: one line per decision, oldest first: time, agent, operation, `sent` / `refused` / `held` / `replayed` / `not_sent` / `unknown`, the API's status, the rule that said no, the call's digest and its arguments. `replayed` means a repeat was answered from Guard's record of the first call; `not_sent` means the rules allowed the call but Guard could not send it (the API was unreachable), with Guard's reason;
 - `decisions.json`, `approvals.json`, `intents.json`: exactly what Guard said;
 - `summary.txt`: counts, and what the export cannot show;
-- `manifest.json`: the sha256 of each of the files above.
+- `manifest.json`: the sha256 of each of the files above;
+- with `--backup-dir`, `evidence/evidence-pack.json` and `evidence/anchor.json`.
 
-With `--evidence-dir` Guard also writes its **evidence pack** and a signed **anchor** into that folder (a folder Guard can write to: a volume you can also read). The pack is the part that is tamper-evident. A reviewer checks it with the open verifier, [`geo-verify`](https://github.com/GeometerLabs/geometer-verify) (Apache-2.0), using an anchor kept **where your engineers cannot change it**:
+**What reviewers get, and what they do not.** With `--backup-dir`, the export asks Guard for a **backup** in a new subfolder of that folder (the path as Guard sees it; Guard must be able to write there, and `--backup-read-dir` says where this process sees the same folder when that differs). A Guard backup holds Guard's store and its **evidence keys**. It is for restoring Guard and stays with the operator. The export copies only the two files a reviewer needs, the evidence pack and the anchor, and the tests check that no key and no store land in the review folder. Hand reviewers the review folder, never the backup folder.
+
+The pack is the tamper-evident part. A reviewer checks it with the open verifier, [`geo-verify`](https://github.com/GeometerLabs/geometer-verify) (Apache-2.0):
 
 ```
 geo-verify evidence-pack.json --anchor anchor.json     # VERIFIED, exit 0
 geo-verify evidence-pack.json                          # UNVERIFIABLE, exit 3: no anchor, nothing is claimed
 ```
 
-A changed entry makes it INVALID (exit 1); the tests do this. What a pass means, in the verifier's own words: it "shows the record was not changed since the anchor, not that it is true or complete."
+Be exact about what an anchor gives you. **An anchor from the same export as the pack only shows the pack file was not changed after Guard wrote it.** To catch a rewrite of Guard's own records, a reviewer saves each export's anchor somewhere your engineers cannot change it, and later checks a newer pack against an **earlier** anchor. The tests do both: a later pack verifies against the first export's anchor, and a pack with one early entry changed is INVALID (exit 1). What a pass means, in the verifier's own words: it "shows the record was not changed since the anchor, not that it is true or complete."
 
 Three limits to know:
 
@@ -243,7 +247,7 @@ Change the OpenAPI file or your choices, run `draft` again if the API changed, m
 cd companies && npm test          # node --test, one file at a time
 ```
 
-48 tests: 28 on the draft, the accept step and the command line, 7 end to end through the real `geo-guard`, 3 on the export and the evidence pack, 2 on the made-up API, 8 on the deploy recipes. The ones that run the real Guard (12) and the one that runs `geo-verify` are skipped, saying why, when the program is not found. Four of the deploy tests need Docker (they run `docker compose config`; nothing is started) and two need Ruby for its built-in YAML parser; each is skipped, saying so, without it. They were run against a debug build of `geo-guard` on macOS, a made-up API, and no real company.
+52 tests: 29 on the draft, the accept step and the command line, 8 end to end through the real `geo-guard`, 5 on the export and the evidence pack, 2 on the made-up API, 8 on the deploy recipes. The 15 that run the real Guard (and the one of them that also needs `geo-verify`) are skipped, saying why, when the programs are not found. Four of the deploy tests need Docker (they run `docker compose config`; nothing is started) and two need Ruby for its built-in YAML parser; each is skipped, saying so, without it. They were run against a debug build of `geo-guard` on macOS, a made-up API, and no real company.
 
 ## Where things are
 
