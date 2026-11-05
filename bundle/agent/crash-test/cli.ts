@@ -35,6 +35,7 @@ export async function crashCommand(ctx: Context, sub: (typeof CRASH_SUBCOMMANDS)
     return 0;
   }
 
+  if (sub === "go-live" && str("situations") !== undefined) throw new Error("A go-live certificate counts all the situations, so --situations is for `agent crash-test` only.");
   const planned = await planCrashTest(ctx, name, optionsOf(values, false));
   const o = optionsOf(values, true);
   const result = await runCrashTest(planned.plan, o);

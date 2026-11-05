@@ -371,7 +371,7 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     if (!month || !out) throw new Error("Say the month and where to put the files: agent report <name> --month 2026-11 --out <folder> [--language en|hi|ml|kn|all]");
     const source = (str("source") ?? "live") as "live" | "test-mode" | "stand-in";
     const r = writeAgentReport(ctx.dir, name, { month, out: resolve(out), language: (str("language") ?? "en") as "en", source, now: ctx.now().getTime() });
-    console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.\n${r.ownerTexts.join("\n\n")}`);
+    console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.${r.goLiveSaid ? `\n${r.goLiveSaid}` : "\nNo go-live certificate was found, so the report lists the go-live checks as not given. `geometer agent go-live` makes one."}\n${r.ownerTexts.join("\n\n")}`);
     return 0;
   }
   throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report|crash-test|go-live|set <name>`);

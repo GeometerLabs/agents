@@ -286,8 +286,10 @@ export function summary(run: Run): string {
     total[s.status]++;
     if (s.status === "moved") {
       const held = s.after ? ` Held ${s.after.held} of ${s.after.of} on its own settings${s.before ? ` (${s.before.held} of ${s.before.of} before)` : ""}.` : "";
-      const said = back ? (dry ? `would go back to ${s.to} (now ${s.from}).` : `Back to ${s.to} (was ${s.from}).`) : `${dry ? "would move" : "moved"} from ${s.from} to ${s.to}.`;
+      const said = back ? (dry ? `would go back to ${s.to} (now ${s.from}).` : `Back to ${s.to} (was ${s.from}).`)
+        : s.from === undefined ? `${dry ? "would be" : "is"} recorded at ${s.to}: nothing was recorded before.` : `${dry ? "would move" : "moved"} from ${s.from} to ${s.to}.`;
       lines.push(`  ✓ ${name}  ${said}${held}${s.proven ? ` ${s.proven}.` : ""}`);
+      if (s.reason) lines.push(`      ${s.reason}`);
       if (s.layout && s.layout.to > s.layout.from) lines.push(`      Note: ${s.to} changes how saved data is laid out (layout ${s.layout.from} to ${s.layout.to}), so \`geometer rollback\` will refuse to go back across it.`);
     } else if (s.status === "held-back") {
       lines.push(`  ✗ ${name}  HELD BACK. ${s.reason ?? ""}`);
