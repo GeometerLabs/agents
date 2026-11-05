@@ -28,11 +28,13 @@ export interface InboundMessage {
 export interface OutboundMessage {
   id: string;
   to: string;
-  kind: "text" | "template" | "interactive";
+  kind: "text" | "template" | "interactive" | "document";
   /** For an interactive message, the body and then each option on its own line (interactiveText): what the outgoing check read. */
   text: string;
   /** Interactive only: the buttons or the list that went with the body. */
   interactive?: InteractiveMessage;
+  /** Document only: the file WhatsApp was asked to fetch and show (`text` is its caption, or its file name). */
+  document?: DocumentMessage;
   templateName?: string;
   language?: Language;
   sentAt: number;
@@ -48,6 +50,20 @@ export interface OutboundMessage {
  */
 export interface TemplateMessage { name: string; language: Language; text: string; parameters?: string[] }
 
+/**
+ * A file sent by its address: WhatsApp fetches `link` itself (it must be https and reachable from the internet) and shows it under `filename`. WhatsApp accepts only
+ * some file types as documents (PDF, plain text, Word, Excel, PowerPoint; not HTML), so the caller sends a type from that list. A session message, like free text.
+ */
+export interface DocumentMessage { link: string; filename: string; caption?: string }
+
+/** Why a document cannot be sent, in plain words, or null. Checked before anything goes out (WhatsApp: https link, a caption up to 1024 characters). */
+export function documentProblem(doc: DocumentMessage): string | null {
+  if (!/^https:\/\/[^\s]+$/u.test(doc.link)) return "the link must start with https:// and hold no spaces";
+  if (doc.filename.trim() === "" || doc.filename.length > 240 || /[\\/\n\r]/u.test(doc.filename)) return "the file name must be 1 to 240 characters with no slash or line break";
+  if (doc.caption !== undefined && (doc.caption.length > 1024 || doc.caption.trim() === "")) return "the caption must be 1 to 1024 characters, or left out";
+  return null;
+}
+
 export interface Messaging {
   /** Free-form text. Only allowed while the customer's 24-hour window is open. */
   sendText(to: string, text: string): Promise<OutboundMessage>;
@@ -58,6 +74,8 @@ export interface Messaging {
    * same message as plain text, with the options written out.
    */
   sendInteractive?(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
+  /** A file by its address (see DocumentMessage). Like free text, only while the customer's 24-hour window is open. Optional: a provider without it is simply not asked. */
+  sendDocument?(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   /** Did this person message us in the last 24 hours? */
   isWindowOpen(to: string): Promise<boolean>;
   getMessage(id: string): Promise<OutboundMessage | null>;
@@ -65,10 +83,11 @@ export interface Messaging {
 
 /** lostReply: the message goes out, the reply is lost. error: the provider refuses. */
 export type MessagingFault = "lostReply" | "error";
-export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive";
+export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument";
 
 export interface FakeMessaging extends Messaging {
   sendInteractive(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
+  sendDocument(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. */
   receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" } }): InboundMessage;
   outbox(): OutboundMessage[];
@@ -127,6 +146,17 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
       if (!windowOpen(to)) throw new WindowClosedError();
       const m = store({ to, kind: "interactive", text: interactiveText(message), interactive: structuredClone(message) });
       if (fault === "lostReply") throw new TimeoutError("send interactive message");
+      return { ...m };
+    },
+
+    async sendDocument(to, doc) {
+      const fault = faults.take("sendDocument");
+      if (fault === "error") throw new ApiError(500, "The provider could not take the message.");
+      if (!windowOpen(to)) throw new WindowClosedError();
+      const problem = documentProblem(doc);
+      if (problem) throw new ApiError(400, `The document cannot be sent: ${problem}.`);
+      const m = store({ to, kind: "document", text: doc.caption ?? doc.filename, document: { ...doc } });
+      if (fault === "lostReply") throw new TimeoutError("send document");
       return { ...m };
     },
 

@@ -6,6 +6,7 @@ import { createWorld, glowSalon, CUSTOMER } from "../src/harness.ts";
 import { checkMessage } from "../src/language/check.ts";
 import { META_TEMPLATES, exampleFacts, fillBody, metaBody, metaSubmissions, parametersFor, slotsOf, templateMessage } from "../src/language/meta-templates.ts";
 import { render } from "../src/language/templates.ts";
+import { REPORT_TEMPLATES, reportSubmissions } from "../report/whatsapp.ts";
 import { LANGUAGES } from "../src/settings.ts";
 import type { TemplateMessage } from "../src/adapters/messaging.ts";
 
@@ -40,8 +41,8 @@ test("each template follows Meta's rules: a lowercase name, numbered parameters 
 
 test("the list to submit to Meta is checked in, and is the one the code produces", () => {
   const checkedIn = JSON.parse(readFileSync(new URL("../whatsapp-templates.json", import.meta.url), "utf8"));
-  assert.deepEqual(checkedIn, metaSubmissions(settings), "run: node pathways/bookings/scripts/whatsapp-templates.ts --write");
-  assert.equal(checkedIn.length, META_TEMPLATES.length * LANGUAGES.length);
+  assert.deepEqual(checkedIn, [...metaSubmissions(settings), ...reportSubmissions()], "run: node pathways/bookings/scripts/whatsapp-templates.ts --write");
+  assert.equal(checkedIn.length, (META_TEMPLATES.length + REPORT_TEMPLATES.length) * LANGUAGES.length);
   for (const entry of checkedIn) {
     const text: string = entry.components[0].text;
     assert.equal(entry.components[0].example.body_text[0].length, (text.match(/\{\{\d+\}\}/gu) ?? []).length);
