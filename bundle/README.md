@@ -66,11 +66,13 @@ node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
 **6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `pathways/bookings/clients/glow-salon.example`). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and Google calendar; the bundle sets everything about where things are.
 
 ```sh
-node bundle/geometer.ts shop add glow-salon --from ~/clients/glow-salon
+node bundle/geometer.ts shop add glow-salon --from ~/clients/glow-salon --prepared-by "Divya, local partner"
 mkdir -p $GEOMETER_SERVER/secrets-inbox/glow-salon      # then put the secrets in it, one file each (below)
 node bundle/geometer.ts check glow-salon                # starts nothing; says what is wrong, all at once
 node bundle/geometer.ts deploy glow-salon
 ```
+
+`--prepared-by` is the name the owner reads in the monthly report ("Set up by: Divya, local partner"). Leave it out and the message says "your builder"; `deploy` tells you when it had to use that. A shop made in the panel needs no flag: the panel already knows who made it.
 
 `deploy` prints the proof, read from the running Guards: `12 of 12 limits proven to bite`. That line is what the shop's go-live certificate quotes. If a rule cannot be proven, the deploy is refused and **nothing is started**:
 
@@ -221,6 +223,22 @@ In WhatsApp's settings, send the shop's webhooks to `https://shops.example.com/c
 
 **What it does not do.** It does not host or rebuild your agent, and cannot make it behave: it can only stop what goes through the Guards and say what happened. Guard has no rule for prices or opening hours, so for an agent we did not write they are in the settings file (and in the report's policy digest) but nothing checks them. A call that does not go through the addresses above is not seen. Only Razorpay, WhatsApp and Google Calendar are covered; other services, the Claude Code plugin, n8n and Lovable doors, and a self-serve crash test of your agent are on the list of things not built ([Deferred.md](Deferred.md)). How it is built, and what was and was not run: [Explanation.md](Explanation.md), "Bring your own agent".
 
+## The owner's monthly report
+
+On the first morning of the month each shop's agent sends its owner last month's report on WhatsApp, with a link to the full page. The bundle turns this on for every shop it deploys. You do nothing for it. Three things make it work, and all three come from the bundle:
+
+- **The page opens.** Caddy serves each shop's report pages at `https://<your domain>/r/<shop>/<32 random letters and digits>/<file>`. It can read that one folder of the shop's data and nothing else of it, and only to read. The folder itself, the shop's folder, `/r`, and any other address under `/r` answer 404, so nobody can list the pages or guess their way to another shop's. The only secret in an address is the random part, so treat a link like a key: whoever has it can read that month's report.
+- **The name.** "Set up by: Divya, local partner" comes from `shops/<shop>/report.json` if the shop has one (`shop add --prepared-by` writes it), otherwise from the panel's record of who made the shop (`owner.json`: "Divya, local partner" or "Divya, builder"). With neither it says "your builder".
+- **The Innovator badge.** On the message, the page and the certificate when Geometer's fleet service says the shop's builder or partner has it (`fleet/<shop>.json`). It follows what fleet says: a change redeploys the shop. The report you make from the panel carries the same name and badge.
+
+Good to know:
+
+- The first deploy after you update the bundle redeploys every shop once, because that is what writes the report setting into its config. The runtime restarts, as with any deploy.
+- The report says **test money** unless the panel's connection check confirmed a **live** Razorpay account for the shop.
+- A version of the template from before the report existed would refuse the setting and not start. So the bundle asks the version each shop is **pinned to** (its own checkout, beside the server for an older pin) whether it accepts the setting, writes it only if it does, and says so when it skips it. A client that `update` held back on an older version keeps working and gets no report until it moves. The same check now guards fleet's button mode.
+- If you change the domain or the HTTPS port, run `deploy` again for each shop. The links already sent stay on the old address.
+- Nothing has deleted old pages yet. Each month adds one small folder per shop.
+
 ## Backups
 
 | Layer | How often | Where | Encrypted |
@@ -242,6 +260,7 @@ Restoring a snapshot needs the secret half of the age key, which is not on the s
 ```
 <server>/geometer.json            this server (written by init)
 <server>/shops/<shop>/            settings.json, runtime.json, pathway.lock, owner.json, pins.json   the panel writes; the deployer applies
+<server>/shops/<shop>/report.json  {"schema": 1, "preparedBy": "Divya, local partner"}: who the owner's monthly report says set the shop up (optional; wins over owner.json)
 <server>/secrets-inbox/<shop>/    razorpay_key ("<key id>:<key secret>"), whatsapp_token, ...        the panel writes, mode 0600; the deployer moves and deletes
 <server>/requests/<shop>.stop.json  a request to stop a shop                                          the panel writes; the deployer acts, shows it in status, removes it
 <server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads
