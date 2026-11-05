@@ -121,19 +121,28 @@ export function createGuardClient(config: GuardConfig): GuardClient {
 
 // ---- the runtime -----------------------------------------------------------------------------------------------------------------------
 
-/** The booking behind a held refund, as the runtime shows it (server/runtime.ts RefundContext). */
+/**
+ * The booking or fee behind a held refund, as the runtime shows it (each template's server/runtime.ts RefundContext). What every template has is first: `booking` is the
+ * case's own id ("b-3" for a booking, "f-3" for a fee), and the customer is whoever paid. What only some templates know follows, and is there only for them:
+ * Bookings' service and slot, Fees' student, batch and month. A template's voice (approvals/relay.ts) reads the ones it needs and says so if one is missing.
+ */
 export interface RefundContext {
   booking: string;
   customerPhone: string;
   businessName: string;
   timeZone: string;
   ownerLanguage: "en" | "hi" | "ml" | "kn";
-  serviceName: string;
-  slotMs: number;
   paymentId: string;
   amountPaise: number;
   approval: string;
   expiresAtMs: number | null;
+  /** Bookings: the service in the owner's language, and the slot. */
+  serviceName?: string;
+  slotMs?: number;
+  /** Fees: the student, the batch and the month, in the owner's language. */
+  studentName?: string;
+  batchName?: string;
+  monthLabel?: string;
 }
 
 export type Context = { kind: "found"; context: RefundContext } | { kind: "missing" } | { kind: "error"; error: string };
@@ -158,7 +167,8 @@ export function createRuntimeClient(config: { url: string; token: string }): Run
         if (!response.ok) { await response.arrayBuffer().catch(() => undefined); return { kind: "error", error: `the runtime answered ${response.status}` }; }
         const c = await response.json() as Record<string, unknown>;
         const ok = typeof c.booking === "string" && typeof c.customerPhone === "string" && typeof c.businessName === "string" && typeof c.timeZone === "string" && ["en", "hi", "ml", "kn"].includes(c.ownerLanguage as string)
-          && typeof c.serviceName === "string" && Number.isFinite(c.slotMs) && typeof c.paymentId === "string" && Number.isSafeInteger(c.amountPaise) && typeof c.approval === "string";
+          && typeof c.paymentId === "string" && Number.isSafeInteger(c.amountPaise) && typeof c.approval === "string"
+          && ["serviceName", "studentName", "batchName", "monthLabel"].every((k) => c[k] === undefined || typeof c[k] === "string") && (c.slotMs === undefined || Number.isFinite(c.slotMs));
         return ok ? { kind: "found", context: c as unknown as RefundContext } : { kind: "error", error: "the runtime's answer was not in the form expected" };
       } catch (e) {
         return { kind: "error", error: `the runtime could not be reached (${why(e)})` };
