@@ -1,0 +1,78 @@
+# When the network, not just the key, must stop an agent from skipping Guard: run Guard as its OWN pod (the guard container from kubernetes-sidecar.yaml in a
+# Deployment of its own, with listen = "0.0.0.0:8080" in guard.toml), put a Service in front of it, and let only labelled agent pods reach that Service.
+#
+#   - Label the agent pods geo-guard/agent: "true". They may reach Guard's Service and DNS, and nothing else, so a call that skips Guard has nowhere to go.
+#   - Guard's pod accepts the agent port only from those pods, and may reach DNS and HTTPS. A NetworkPolicy cannot match a host name: narrow the HTTPS rule
+#     to your API's addresses where you can.
+#   - Guard's admin port (8082) is not exposed by the Service. Reach it with `kubectl port-forward` from a person you trust.
+#
+# This needs a cluster whose network plugin enforces NetworkPolicy. It has not been applied to a cluster; it is checked as YAML structure only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: guard
+spec:
+  selector:
+    app.kubernetes.io/name: guard
+  ports:
+    - { name: proxy, port: 8080, targetPort: 8080, protocol: TCP }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agents-reach-only-guard
+spec:
+  podSelector:
+    matchLabels:
+      geo-guard/agent: "true"
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: guard
+      ports:
+        - { port: 8080, protocol: TCP }
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { port: 53, protocol: UDP }
+        - { port: 53, protocol: TCP }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: guard
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: guard
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              geo-guard/agent: "true"
+      ports:
+        - { port: 8080, protocol: TCP }
+    # the kubelet's probes on the health port
+    - ports:
+        - { port: 8081, protocol: TCP }
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { port: 53, protocol: UDP }
+        - { port: 53, protocol: TCP }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+      ports:
+        - { port: 443, protocol: TCP }
