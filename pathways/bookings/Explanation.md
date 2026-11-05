@@ -119,13 +119,17 @@ The sheet turns each token into a private `--_` name with `var(--geo-x, default)
 
 **11. Tests** (`test/web-demo.test.ts`, each builds into a temp folder first, so `npm test` needs no earlier build): no file in the build imports a `node:` module, a package or a file that is not there, and none uses `require`, `process` or `Buffer`; every file under `src/` and `demo/` equals its source with only types and import names changed; the SHA-256 and `randomInt` stand-ins; the file stand-in serves the example shop and refuses anything else; a scripted session through the built modules (book a slot with a ₹200 deposit and pay, read the calendar's own list; ask for ₹300 and for free and see the price rule block it, with the link still for the deposit; rebuild the shop and see the same refusal at its own price; a form with a mistake changes nothing); the labels and the markup (every id the script looks for is there); every style rule is under the root class; every colour is a token default and the tokens are documented in the header of `theme.css`; the class names (both style sheets name only classes the demo has, and every class the demo has is styled or listed as a hook); the build refuses to write into a folder it did not make. One existing test changed: "the demo makes no network calls of its own" read every entry of `demo/` as a file, which a `demo/web/` folder breaks, so it now reads files only (`web/` has its own checks).
 
+**12. Reply buttons and lists (5 Nov).** The demo no longer sends plain text. `demo/session.ts` builds its world with the stand-in WhatsApp as it is for the live agent, so the agent's replies come as the real interactive messages. The bubble is the message's **body**, and under it `page.js` draws the options the way WhatsApp does: up to three reply buttons, or a list as one button (its own label, "Pick a service") that opens the rows (title and description, with "Talk to the owner" last). A tap goes to the new `/api/tap` with the option's id (`svc:<id>`, `slot:<ms>`, `yes`, `no`, `cancel`, `cancel_yes`, `keep`, `owner`, `menu`: the ids the rule step maps, so no model is asked). The id is checked to be one the agent put on the screen (a customer can scroll up and tap an older one, as on WhatsApp; the older options are dimmed, not disabled), the customer's bubble shows the option's **title** as WhatsApp does, and the record shows `via=button` or `via=list`. Buttons are real `<button>`s, set with `textContent`, disabled while a tap is being handled, and the list's button says `aria-expanded`. It runs in both demos (the page and `api.ts` are shared). New classes: `geo-choices` (+ `--old`), `geo-choice` (+ `--list`), `geo-choice-title`, `geo-choice-desc`, `geo-rows`, `geo-row`, in `theme.css` and `page.css`. The scripted month keeps plain text. A booking can now be made, held, paid for and cancelled by taps alone (`web-demo.test.ts` does it through the built modules).
+
+**Size, 5 Nov.** The build was 56 files, 559,576 bytes, 156,704 gzipped (each file alone, as the website's audit adds them up; its cap is 160 KiB = 163,840). It is now **52 files, 548,240 bytes, 151,332 gzipped**: the buttons cost about 1,300 gzipped (`page.js` and the style rules in `generated.js`, `session.ts`, `api.ts`), the pause on a failing step about 2,300 (`ai-state.ts`, `reader.ts`; mostly its comments), and Bookings' reading took `chosenProbability` from `modules/understanding/model.ts` instead of the router, so the router, the price table, `redact` and the System One client (about 9,000 gzipped) are no longer in a demo that asks no model.
+
 **Choices to review**
 1. It opens on the shop form, not the chat (decision 9). Pass `startWith: "chat"` on the page if the first thing a visitor should see is a conversation.
 2. Light DOM, not a shadow root (decision 7): the page can restyle by class name and token, and a host rule can in rare cases still reach in. If leaks matter more than restyling, a shadow root is a small change in `mount.ts`, and the token names would stay.
 3. The record lines show under the owner's lines in step 3, where the laptop demo hides them behind a link. They are the "what was checked" evidence, and a visitor should not need to find a link.
 4. The frame has its own height (`--geo-height`) and scrolls inside, so the labels and the steps stay in view. A host that wants the demo to grow with the page sets `--geo-height: auto`.
 5. The theme needs `color-mix()`, `:has()` and `dvh` (any browser since early 2024). The constructed stylesheet should pass a policy that refuses inline styles (checked in Chrome against `style-src 'self'`); `innerHTML` still needs a page that does not require Trusted Types. Neither was checked against the website's own policy.
-6. The build output is about 411 KB (about 113 KB gzipped) in 35 files, loaded as separate modules. One file, minified, would be smaller and one request; it needs a minifier, which is a dependency.
+6. The build output was about 411 KB (about 113 KB gzipped) in 35 files when this was written; it is 548 KB (151 KB gzipped) in 52 files now (point 12), loaded as separate modules. One file, minified, would be smaller and one request; it needs a minifier, which is a dependency.
 
 ## Malayalam and Kannada (added 3 November 2026)
 
@@ -606,10 +610,11 @@ One `receive_message` entry per customer message, in the existing record format 
 | `provider` | `rules`, `laya`, `jev`, `system-one` or the language model's `provider` from `runtime.json` (for example `deepinfra`) |
 | `model` | The model id (`rule-parser` for the rules, `laya`, `deepseek-ai/DeepSeek-V4.1-Flash` ...) |
 | `inputTokens`, `outputTokens` | Decimal strings. The total over **every** call made for this message, so a message the decision model was unsure of and the language model then read counts both |
-| `costMicroInr` | Whole micro-rupees (millionths of a rupee), as a decimal string, from the dated rate table (`modules/understanding/rates.ts`), rounded up. `"0"` for the rules and for Laya. **Absent** when any call had no price in the table: an unknown price is never written as 0 |
+| `costMicroInr` | Whole micro-rupees (millionths of a rupee), as a decimal string, from the one dated table of model prices (`modules/understanding/rates/<date>.json`, read by `rates.ts`), rounded up. `"0"` for the rules and for Laya. **Absent** when any call had no price in the table: an unknown price is never written as 0 |
 | `rateDate` | `YYYY-MM-DD`, the day the handling call's price starts. Absent when unpriced. A record dated before the table's first rate is unpriced |
 | `tried` | The steps asked, joined with `+`: `rules`, `rules+decision`, `rules+decision+model` |
 | `failed` | Present only when a step was asked and could not answer, joined with `+`: `decision`, `model`, `decision+model`. The message was then read by the rules |
+| `skipped` | Present only when a step was left out because it was paused for failing again and again: `decision`. The message was then read by the next step at once |
 | `via` | Present only for a tapped message: `button` or `list` |
 
 `step`, `tried` and `failed` are the shares of the planned 30/60/10 mix. A tapped message is `step: rules` with `via`.
@@ -617,11 +622,15 @@ One `receive_message` entry per customer message, in the existing record format 
 The month's totals are also in the store and in the runtime's `status()`, counts only:
 
 ```
-status().ai = { month: "2026-11", messages: { rules, decision, model }, costMicroInr, unpriced,
+status().ai = { month: "2026-11", messages: { rules, decision, model }, costMicroInr, unpriced, paused: { decision: ISO time | null },
                 allowance: { messages | null, costMicroInr | null }, mode: "ai" | "buttons", reason: "override" | "allowance" | "fault" | null }
 ```
 
-`unpriced` is the number of messages this month whose cost is not in `costMicroInr`. The prices in the table are US dollars per million tokens from the economics note, at ₹87 to the dollar (the rate the note's own examples use); `INR_PER_USD` and each rate carry their date.
+`unpriced` is the number of messages this month whose cost is not in `costMicroInr`; the cost meter (`bundle/lib/usage.ts`) counts the same messages from the record and keeps them apart from the spend. `paused.decision` is the moment the decision model's pause ends, or null when it is being asked (see "A pause on a decision model that keeps failing" below). The prices in the table are US dollars per million tokens, each line with its source and the day it was read, converted at ₹87 to the dollar (the rate the runtime has always used; the economics note says ₹88, which is the owner's to settle in a new dated file); each rate carries the rupee rate of its file and its date.
+
+### The one table of model prices (5 Nov)
+
+There were two: the runtime's (`rates.ts`, three providers, in code) and the bundle's price lists (four other models, plus a copy in `eval/models.json`). There is one now: `modules/understanding/rates/2026-11-05.json` (data, dated, never edited after it is committed; a changed price is a new file). It holds seven lines: Laya (no per-call price), Jev ($0.042 per million), DeepInfra's DeepSeek V4.1 Flash ($0.16 in, $0.48 out, $0.004 cached; any id that names it matches), and Claude Haiku 5.5, Gemini 3.1 and 3.5 Flash-Lite and GPT-6 Luna from the providers' pages of 3 Nov; Sarvam and Groq are listed as not priced, with the reason. A model in no line is unknown. The runtime reads it (`rates.ts`); `scripts/model-eval.ts` reads it by each candidate's `provider` and `model` (`eval/models.json` has no prices); `bundle/panel/test/cost.test.ts` fails if any model price in any committed bundle price list disagrees with it; `modules/test/rates.test.ts` pins its bytes and runs it through `rates-check.ts`. A runtime config names the provider (`parser.provider`, `decision.provider`), so a model reached by its address alone is named after the host and has no line until one is written. The conversion is ₹87 to the dollar, as before, so no stored cost changed; the economics note says ₹88.
 
 ### The allowance, and button mode (B46 and B47)
 
@@ -631,11 +640,27 @@ The shop is in **button mode** when any of these holds, checked in this order. I
 | --- | --- | --- |
 | `override` | `runtime.json` says `"ai": "buttons"` | The owner, once per switch (switching it off and on again is a new switch). Record: `ai_mode`, `reason: override` |
 | `allowance` | `decision` + `model` messages this month reach `allowance.messages`, or their cost reaches `allowance.costInr` | The owner, once a month. Record: `ai_mode`, `reason: allowance` |
-| `fault` | A step was asked and could not answer (an error, a timeout, an answer it could not use) and **no other step could**, so the rules had to read the message. A decision model that fails while the language model answers is not a fault (it is `failed: decision` in that message's record; Deferred.md) | The owner, at most once a day. Button mode lasts `pauseMinutes`, then the next message tries the AI again. Record: `ai_mode`, `reason: fault` |
+| `fault` | A step was asked and could not answer (an error, a timeout, an answer it could not use) and **no other step could**, so the rules had to read the message. A decision model that fails while the language model answers is not a fault: it is `failed: decision` in that message's record, and after a few of those it is paused (below) | The owner, at most once a day. Button mode lasts `pauseMinutes`, then the next message tries the AI again. Record: `ai_mode`, `reason: fault` |
 
 - **Told once.** Three new owner notices, in four languages, each a WhatsApp template (`owner_ai_allowance_used`, `owner_ai_switched_off`, `owner_ai_not_answering`; `whatsapp-templates.json` is rebuilt). The builder or partner has no WhatsApp number in the settings, so they are told by the record (`ai_mode`, with the reason and the month, in plain words in `notes`), by `status().ai` and by a start-up/runtime log line, all of which the heartbeat can carry. The "already told" flags are kept with the store, so a restart or a repeated step does not tell them again.
 - **No customer is ever left without an answer.** A message the rules cannot read gets the list of the shop's services; a time the shop cannot give gets a list of other free times; a model that fails changes nothing about the reply except that the rules read it. A new test and three hand-check situations hold this (below).
 - **A tapped message never asks a model, whatever the mode.** The router is not even called.
+
+### A pause on a decision model that keeps failing (5 Nov)
+
+Button mode is for when **no** step can read a message. The case between: the decision model (step 1) is down but the language model (step 2) answers. Before, every unclear message waited out the decision timeout (3 seconds) and then paid step 2, with no sign anywhere except `failed: decision` in that message's record. Now each step has its own small circuit breaker, kept in the store's `ai.steps` (`modules/understanding/ai-state.ts`; only the decision model has one, the language model has the fault pause above):
+
+| What | Number (a placeholder, `DEFAULT_BREAKER`) |
+| --- | --- |
+| Failures that open it | 3, inside a window of 15 minutes (a success clears the count) |
+| How long the step is left out | 10 minutes |
+| After that | the next message tries the step once: a failure closes it again for 10 minutes at once (no new line in the record), an answer, even "unsure", ends the outage |
+
+- **Only when something can take over.** The reader counts a decision failure only if the language model was asked after it, and the router skips a paused decision model only if it has a language model. With no step 2 a failing decision model is still the fault that moves the shop to buttons, exactly as before.
+- **What the router does.** The reader hands `skipSteps: ["decision"]` to the parser while the pause runs. The message goes straight to step 2 (`tried: rules+model`), pays only step 2's price, and says `skipped: decision` in its record. The router itself still keeps no state.
+- **What is written down, and for whom.** One `ai_mode` line when the pause begins (`mode: step_paused`, `step`, `reason: failures`, `until`, in plain words in `notes`) and one when the step answers again (`mode: step_resumed`); `status().ai.paused.decision` has the end time while it runs (and the runtime logs a line for each, for the builder). **Nobody is messaged**: no customer sees a difference, the owner has nothing to do, and a message costs what it did while the step failed. The state survives a restart (it is in the store) and a new month. A store saved before this has no `steps` and works.
+- **Both models down** is the fault as before. Fees uses the same reader and gets the pause with no change to its agent.
+- **Tests.** `modules/test/breaker.test.ts` (the numbers, the window, the single try, the month, an old store, the status) and `test/step-breaker.test.ts` (a Bookings agent against a decision model that is down and comes back: no wait on the fourth message, the record lines, the fault path unchanged).
 
 ### Buttons and lists (B47)
 
@@ -665,7 +690,7 @@ The shop is in **button mode** when any of these holds, checked in this order. I
 New: `understanding.test.ts` (client, rate table, redaction, router), `buttons.test.ts` (words and limits, ids, webhook, events, wire, stand-in, agent turns), `ai-mode.test.ts` (record fields, allowance, switch, fault, saved state, settings, keys), more cases in `model-eval.test.ts`. Changed, and why:
 
 - `model-llm.test.ts` expected the note "the model could not be used"; it still does.
-- `demo/session.ts` and `report/example-month.ts` build their world with `interactive: false`: the demo page draws chat bubbles, not buttons yet, and the scripted month is about records and money, so both keep sending plain text exactly as before. Tests for those were not changed.
+- `report/example-month.ts` builds its world with `interactive: false`: the scripted month is about records and money, so it keeps sending plain text exactly as before. (`demo/session.ts` did the same until 5 Nov and now sends the real interactive messages: see "The demo in the browser", point 12.)
 - The hand-check counts: Glow Salon 34 to 37 situations and 213 to 242 checks, the equipment-rental example 29 to 32, a shop with no cancellation window 31 to 34 (`hand-check-shops.test.ts`, `report-certificates.test.ts`, `report-cli.test.ts`, `report-go-live.test.ts`). Outside `pathways/bookings`: the root `README.md`, `pathways/SELL-GUIDE.md` (rental 32 of 32) and `.github/DISCUSSION_TEMPLATE/template-bookings.yml` (37 of 37), and the four rental sell guides.
 - `REVIEW-ml.md`, `REVIEW-kn.md` and `whatsapp-templates.json` are rebuilt (`node bundle/panel/review-sheet.ts ml > pathways/bookings/REVIEW-ml.md`: the panel appends its section 7).
 
