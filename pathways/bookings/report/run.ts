@@ -1,14 +1,13 @@
 // Making the files: the scripts and the tests both call these. Everything is written into the one folder the caller names
 // (--out) and nowhere else: file names are fixed here and never contain a path.
-import { mkdirSync, statSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
 import type { KeyObject } from "node:crypto";
 import type { Booking } from "../src/booking.ts";
 import type { RecordEntry } from "../../../modules/record/record.ts";
 import type { Settings } from "../src/settings.ts";
 import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText } from "./certificate.ts";
 import type { HandCheckSummary } from "./certificate.ts";
-import { buildMonthlyReport, monthRange } from "./data.ts";
+import { buildMonthlyReport } from "./data.ts";
+import { monthRange, writer } from "../../../modules/report/months.ts";
 import type { GoLiveFinding, MonthlyReport, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
 import { envelopeFile, seal } from "../../../modules/report/sign.ts";
@@ -16,31 +15,6 @@ import type { Envelope } from "../../../modules/report/sign.ts";
 import { ownerText } from "./text.ts";
 import { languagesOf } from "../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
-
-function outFolder(out: string): string {
-  const dir = resolve(out);
-  try {
-    if (!statSync(dir).isDirectory()) throw new Error(`${out} is a file, not a folder. Name a folder for --out.`);
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
-    mkdirSync(dir, { recursive: true });
-  }
-  return dir;
-}
-
-function writer(out: string) {
-  const dir = outFolder(out);
-  const files: string[] = [];
-  return {
-    files,
-    write(name: string, content: string) {
-      if (name !== name.replace(/[\\/]/g, "") || name.startsWith(".")) throw new Error(`"${name}" is not a plain file name.`);
-      const path = join(dir, name);
-      writeFileSync(path, content, "utf8");
-      files.push(path);
-    },
-  };
-}
 
 export interface ReportRun {
   settings: Settings;

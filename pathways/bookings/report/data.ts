@@ -188,19 +188,6 @@ export function notTestedForReport(goLive: GoLiveFinding): NotTestedKey[] {
   }
 }
 
-/** "2026-11" in a time zone as [from, to) in epoch milliseconds. */
-export function monthRange(month: string, timeZone: string): { from: number; to: number } {
-  const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month);
-  if (!m) throw new Error(`"${month}" is not a month. Write it like 2026-11.`);
-  const year = Number(m[1]);
-  const mon = Number(m[2]);
-  const midnight = { hour: 0, minute: 0 };
-  return {
-    from: zonedToMs({ year, month: mon, day: 1 }, midnight, timeZone),
-    to: zonedToMs(mon === 12 ? { year: year + 1, month: 1, day: 1 } : { year, month: mon + 1, day: 1 }, midnight, timeZone),
-  };
-}
-
 const zeroByLanguage = (): ByLanguage => Object.fromEntries(LANGUAGES.map((l) => [l, 0])) as ByLanguage;
 const bump = (counts: Record<string, number>, key: string) => { counts[key] = (counts[key] ?? 0) + 1; };
 

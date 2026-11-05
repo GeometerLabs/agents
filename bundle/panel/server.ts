@@ -20,7 +20,7 @@ import { readGoLiveCertificate } from "../../pathways/bookings/report/go-live.ts
 import { writeClientReport } from "../../pathways/bookings/report/run.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { validateSettings } from "../../pathways/bookings/src/settings.ts";
-import { monthRange } from "../../pathways/bookings/report/data.ts";
+import { monthRange } from "../../modules/report/months.ts";
 import { createAccounts } from "./accounts.ts";
 import type { Account, Role } from "./accounts.ts";
 import { monthOf, monthlyFromExport, readExport } from "./activity.ts";
