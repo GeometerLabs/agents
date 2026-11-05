@@ -1,0 +1,91 @@
+# Guard as a sidecar next to a company's agent, in Docker Compose. One Guard in front of one API, one replica, SQLite on a volume.
+#
+# What it sets up: the agent can reach Guard and nothing else. Guard can reach the API. The API's key is in Guard's container only.
+#
+#   agent-net   internal: true, so containers on it have no way out. The agent is on this network alone.
+#   egress      Guard is on this one too, and reaches the API from it.
+#
+# Folder layout next to this file (nothing in it is a secret except secrets/, which you create and keep out of git):
+#   guard/guard.toml            from `node companies/openapi-to-spec.ts build ... --guard-toml` (put your real credential hashes in)
+#   guard/bundle.json           the compiled bundle from the same command
+#   secrets/api_authorization   the API's own key, the whole header value on one line (for example: Bearer sk_live_...)
+#   secrets/guard_agent_token   the token you give the agent; guard.toml holds only its sha256
+#   secrets/guard_admin_token   the operator's token, for the export service below; guard.toml holds only its sha256
+#   evidence/                   an empty folder Guard may write to (chown 65532 evidence), for the evidence pack
+#
+# Start:  docker compose --env-file .env up -d
+# Export for reviewers (starts nothing else):  docker compose --profile review run --rm record-export
+#
+# Not run: the Guard image is licensed separately and is not in a public registry, so nothing here has been started with it. The file is checked
+# with `docker compose config` (companies/test/deploy.test.ts). Treat it as a reviewed starting point and test it on your own staging.
+name: guarded-agent
+
+services:
+  guard:
+    image: ${GEO_GUARD_IMAGE:?set GEO_GUARD_IMAGE to the Guard image you were given}
+    restart: unless-stopped
+    read_only: true
+    user: "65532:65532"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # longer than the upstream timeout in guard.toml (15 s) plus the drain
+    stop_grace_period: 30s
+    networks: [agent-net, egress]
+    volumes:
+      - ./guard:/etc/geo-guard:ro
+      - guard-state:/var/lib/geo-guard
+      # where the evidence pack is written when the export asks for it
+      - ./evidence:/var/lib/geo-guard/export
+    secrets:
+      - api_authorization
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/geo-guard", "health", "127.0.0.1:8081/readyz"]
+      interval: 10s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # Your agent, unchanged except for two settings: the API's base URL is Guard's, and the key it sends is Guard's token for it.
+  agent:
+    image: ${AGENT_IMAGE:?set AGENT_IMAGE to your agent's image}
+    restart: unless-stopped
+    networks: [agent-net]
+    environment:
+      API_BASE_URL: http://guard:8080
+      API_TOKEN_FILE: /run/secrets/guard_agent_token
+    secrets:
+      - guard_agent_token
+    depends_on:
+      guard:
+        condition: service_healthy
+
+  # Reviewers' export. It shares Guard's network, so it reaches the admin port, which listens on loopback only. It is not started by `up`.
+  record-export:
+    profiles: ["review"]
+    image: ${NODE_IMAGE:-node:24-alpine}
+    network_mode: "service:guard"
+    working_dir: /export
+    command: ["node", "/tools/export-record.ts", "--admin", "http://127.0.0.1:8082", "--token-file", "/run/secrets/guard_admin_token", "--out", "/export/latest", "--evidence-dir", "/var/lib/geo-guard/export"]
+    volumes:
+      - ../export-record.ts:/tools/export-record.ts:ro
+      - ./review:/export
+    secrets:
+      - guard_admin_token
+    depends_on:
+      - guard
+
+networks:
+  agent-net:
+    internal: true
+  egress: {}
+
+volumes:
+  guard-state:
+
+secrets:
+  api_authorization:
+    file: ./secrets/api_authorization
+  guard_agent_token:
+    file: ./secrets/guard_agent_token
+  guard_admin_token:
+    file: ./secrets/guard_admin_token
