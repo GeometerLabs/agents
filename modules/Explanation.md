@@ -52,14 +52,20 @@ Two tests changed because the code they pin changed on purpose, and nothing else
 
 ## What the cut cost
 
+Measured on 5 November 2026, before (main with the monthly report, B54, merged) and after (this branch, with Fees):
+
 | | Before | After |
 | --- | --- | --- |
-| `pathways/bookings`, code (lines) | 16,923 | 11,663 |
-| `modules/`, code | 0 | 6,072 |
-| the two together | 16,923 | 17,735 (+812) |
-| tests: `pathways/bookings` / `modules/` | 10,773 / 0 | 10,492 / 449 |
+| `pathways/bookings`, code (lines) | 17,610 | 12,050 (-5,560) |
+| `modules/`, code | 0 | 6,456 |
+| Bookings and modules together | 17,610 | 18,506 (+896) |
+| `pathways/fees`, code | 0 | 4,457 |
+| tests: `pathways/bookings` / `modules/` / `pathways/fees` | 11,657 / 0 / 0 | 11,390 / 449 / 1,406 |
+| `bundle`, code | 9,932 | 9,946 (+14, the line that mounts the modules, and its tests) |
 
-The shared code is about 810 lines longer than the code it replaced: the hooks (a `Reading`, a `RelayVoice`, a `RefundCase`, a `CheckFacts`), the thin wrappers that give Bookings its old names, the comments that say what is shared, and the spec builder taking the rule names as arguments. That is what it costs to let a second template in. The Fees template then reused about 6,000 lines instead of writing them again.
+`modules/` by area, in lines of code: payments 1,266; understanding 967; language 831; approvals 815; report 663; messaging 609; standins 531; core 454; record 129; crash-test 112; limits 47; reminders 32.
+
+The shared code is about 900 lines longer than the code it replaced: the hooks (a `Reading`, a `RelayVoice`, a `RefundCase`, a `CheckFacts`, a `MadeReport`), the thin wrappers that give Bookings its old names, the comments that say what is shared, and the spec builder taking the rule names as arguments. That is what it costs to let a second template in. The Fees template then reused about 5,500 lines instead of writing them again: its own code is 4,457 lines: the agent and what it needs (2,228), the crash test (843), the report (922) and the scripts (464).
 
 ## How the rest of the repository finds the modules
 
