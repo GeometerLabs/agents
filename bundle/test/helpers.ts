@@ -31,6 +31,8 @@ export function tempServer(shops: Record<string, PanelRuntime | null> = { "glow-
     cpSync(join(EXAMPLE_CLIENT, "settings.json"), join(paths.shop(name), "settings.json"));
     cpSync(join(EXAMPLE_CLIENT, "pathway.lock"), join(paths.shop(name), "pathway.lock"));
     if (runtime) writeFileSync(join(paths.shop(name), "runtime.json"), JSON.stringify(runtime));
+    // the panel writes owner.json when it makes a shop: the owner's monthly report names this person (a shop made by `shop add` has none, and says so)
+    writeFileSync(join(paths.shop(name), "owner.json"), JSON.stringify({ schema: 1, accountId: "acc_test", accountName: "Divya", role: "partner", createdAt: "2026-11-01T10:00:00Z", template: "bookings" }));
   }
   return { root, paths, shop: (name: string) => readShop(root, name), done: () => rmSync(root, { recursive: true, force: true }) };
 }

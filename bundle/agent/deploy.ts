@@ -11,7 +11,7 @@ import type { GuardKind } from "../generate/guards.ts";
 import { names } from "../generate/shop.ts";
 import { noSecretsIn, provenLine } from "../generate/rules.ts";
 import { ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
-import { loadServer, serverPaths } from "../lib/server.ts";
+import { loadServer, publicUrl, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { loadState, saveState, shopIndex } from "../lib/state.ts";
 import type { State } from "../lib/state.ts";
@@ -44,7 +44,7 @@ export function connectionOf(dir: string, server: ServerConfig, folder: AgentFol
   return {
     baseUrls: Object.fromEntries(agent.upstreams.map((u) => [u, agentBaseUrl(server, folder.name, u)])),
     credential: readSecretFile(secretFile(dir, "agents", folder.name, "agent_token")),
-    ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}/c/${folder.name}/webhooks/whatsapp` } : {}),
+    ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `${publicUrl(server)}/c/${folder.name}/webhooks/whatsapp` } : {}),
   };
 }
 

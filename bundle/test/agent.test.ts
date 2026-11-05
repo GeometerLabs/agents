@@ -126,7 +126,7 @@ test("an agent's Guards are on the gate network with Caddy and nothing else; the
   assert.doesNotMatch(plain.compose, /gate/u);
   assert.doesNotMatch(plain.caddyfile, /\/g\//u);
   assert.deepEqual(nets(plain, "caddy"), ["front"]);
-  assert.equal(plain.caddyfile, caddyfile(server));
+  assert.equal(plain.caddyfile, caddyfile(server, [], ["glow-salon"]), "an agent adds a path for each of its Guards and changes nothing else in the Caddyfile");
   // the Caddyfile sends each Guard its own path, with the prefix cut off, and nothing else
   assert.match(withAgent.caddyfile, /handle_path \/g\/my-agent\/razorpay\/\* \{\n\t\treverse_proxy g-my-agent-razorpay:8080\n\t\}/);
   assert.equal([...withAgent.caddyfile.matchAll(/handle_path/gu)].length, 3);
