@@ -53,14 +53,42 @@
   }
 
   // ---- drawing ---------------------------------------------------------------------------------------------------------
+  // The buttons or the list that came with an agent message, drawn the way WhatsApp draws them under it. A tap sends the option's id back to the agent.
+  function choice(option, cls) {
+    var b = el("button", cls);
+    b.type = "button";
+    b.setAttribute("dir", "auto");
+    b.appendChild(el("span", "geo-choice-title", option.title));
+    if (option.description) b.appendChild(el("span", "geo-choice-desc", option.description));
+    b.addEventListener("click", function () { call("/api/tap", { id: option.id }); });
+    return b;
+  }
+  function choices(c, latest) {
+    var box = el("div", "geo-choices" + (latest ? "" : " geo-choices--old"));
+    (c.buttons || []).forEach(function (o) { box.appendChild(choice(o, "geo-choice")); });
+    if (c.list) {
+      var open = el("button", "geo-choice geo-choice--list", c.list.button);
+      open.type = "button";
+      open.setAttribute("aria-expanded", "false");
+      var rows = el("div", "geo-rows");
+      rows.hidden = true;
+      c.list.rows.forEach(function (o) { rows.appendChild(choice(o, "geo-row")); });
+      open.addEventListener("click", function () { rows.hidden = !rows.hidden; open.setAttribute("aria-expanded", rows.hidden ? "false" : "true"); });
+      box.appendChild(open);
+      box.appendChild(rows);
+    }
+    return box;
+  }
+
   function bubbles(container, messages, emptyText, mine) {
     clear(container);
     if (messages.length === 0) { container.appendChild(el("div", "geo-empty", emptyText)); return; }
-    messages.forEach(function (m) {
+    messages.forEach(function (m, i) {
       var b = el("div", "geo-bubble geo-bubble--" + (m.who === "me" ? mine : "agent"));
       var p = el("p", "geo-bubble-text", m.text);
       p.setAttribute("dir", "auto");
       b.appendChild(p);
+      if (m.choices) b.appendChild(choices(m.choices, i === messages.length - 1));
       b.appendChild(el("time", "geo-bubble-time", m.time));
       container.appendChild(b);
     });
@@ -115,6 +143,8 @@
     $("btnReset").disabled = busy;
     var chips = $("chips").children;
     for (var i = 0; i < chips.length; i++) chips[i].disabled = busy;
+    var taps = $("chat").getElementsByTagName("button"); // the agent's buttons and list rows
+    for (var k = 0; k < taps.length; k++) if (taps[k].className.indexOf("geo-choice--list") < 0) taps[k].disabled = busy; // the button that opens a list only shows it
     var buttons = $("waiting").getElementsByTagName("button");
     for (var j = 0; j < buttons.length; j++) buttons[j].disabled = busy;
     document.body.setAttribute("aria-busy", busy ? "true" : "false");

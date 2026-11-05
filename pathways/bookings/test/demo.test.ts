@@ -271,7 +271,9 @@ test("the shop form rebuilds the demo with the shop's own prices, for every devi
   assert.deepEqual(s.customer.messages, [], "a fresh world");
   const hello = await a.do("/api/say", { text: "hello" });
   const menu = customerSaid(hello)[0];
-  assert.ok(menu.includes("Shiva Salon") && menu.includes("gents cut ₹350") && menu.includes("shave ₹150") && !menu.includes("₹450"), menu);
+  const rows = hello.customer.messages.filter((m: any) => m.who === "agent")[0].choices.list.rows.map((r: any) => `${r.title} ${r.description ?? ""}`.trim());
+  assert.ok(menu.includes("Shiva Salon") && !JSON.stringify(rows).includes("₹450"), menu);
+  assert.deepEqual(rows.slice(0, 2), ["gents cut ₹350", "shave ₹150"], "the shop's own services and prices are the list's rows");
   const booked = await a.do("/api/say", { text: "I want a shave tomorrow at 6pm" });
   assert.equal(linksOf(booked)[0].amountInr, 100, "the link asks for the shop's own deposit");
 
@@ -315,7 +317,9 @@ test("a shop name with digits or Hindi words works like any other", async () => 
   const s = await a.do("/api/shop", { form });
   assert.equal(s.ui.tabCustomer, "ग्राहक", "the screens follow the shop's language");
   const hello = await a.do("/api/say", { text: "नमस्ते" });
-  assert.ok(customerSaid(hello)[0].includes("Studio 24") && customerSaid(hello)[0].includes("हेयरकट ₹300"), customerSaid(hello)[0]);
+  const first = hello.customer.messages.filter((m: any) => m.who === "agent")[0];
+  assert.ok(first.text.includes("Studio 24"), first.text);
+  assert.deepEqual([first.choices.list.rows[0].title, first.choices.list.rows[0].description], ["हेयरकट", "₹300"]);
 });
 
 test("languages come from LANGUAGES, so a new language pack appears on its own", async () => {
@@ -440,8 +444,31 @@ test("escaping: what people type is drawn as text, never as markup", async () =>
   assert.equal(ids.get("shopName")!.textContent, evilShop, "the shop name is on the page as text");
   const chatText = ids.get("chat")!.all().map((e) => e.textContent).join("|");
   assert.ok(chatText.includes(evilMessage), "the customer's words are on the page as text");
+  const drawn = ids.get("chat")!.all();
+  assert.ok(drawn.some((e) => e.tag === "button" && e.className.includes("geo-choice--list")), "the agent's list is drawn as a button that opens its rows");
+  const row = drawn.find((e) => e.tag === "button" && e.className === "geo-row");
+  assert.ok(row && row.textContent.length > 0 && (row.listeners.click ?? []).length === 1, "each row is a button with one tap handler");
   const allowed = new Set(["div", "span", "p", "time", "button", "ul", "li", "h2", "h3", "b", "label", "input", "select", "option", "#text"]);
   assert.deepEqual([...new Set(created)].filter((t) => !allowed.has(t)), [], "the script made no element a person could have typed (no img, script, iframe...)");
+});
+
+test("buttons and lists: the agent's options come with its message, a tap is taken only if the agent sent it, and it reads as the option's title", async () => {
+  const demo = await boot();
+  const a = browser(demo);
+  let s = await a.do("/api/say", { text: "hello" });
+  const menu = s.customer.messages.at(-1);
+  assert.deepEqual(menu.choices.list.rows.map((r: any) => r.id).slice(0, 2), ["svc:haircut", "svc:beard-trim"]);
+  s = await a.do("/api/tap", { id: "svc:haircut" });
+  assert.equal(s.customer.messages.at(-2).who, "me");
+  assert.equal(s.customer.messages.at(-2).text, "haircut", "the customer's message is the row's title, as on WhatsApp");
+  assert.ok(s.customer.messages.at(-1).choices.list.rows.every((r: any) => /^(slot:\d+|owner)$/.test(r.id)));
+  assert.equal(s.record.rows.filter((r: any) => r.refs.some(([k, v]: string[]) => k === "via" && v === "list")).length, 1, "the record says it was a tap on a list");
+  const messages = s.customer.messages.length;
+  for (const id of ["svc:nothing", "has space", "", "x".repeat(300)]) assert.equal((await a.post("/api/tap", { id })).status, 400, id);
+  assert.equal((await a.post("/api/tap", {})).status, 400);
+  assert.equal((await a.state()).customer.messages.length, messages, "a refused tap changes nothing");
+  const host = `127.0.0.1:${demo.port}`;
+  assert.equal((await raw(demo, "POST", "/api/tap", { "content-type": "text/plain", host }, JSON.stringify({ id: "owner" }))).status, 415);
 });
 
 // ---- limits and safety ------------------------------------------------------------------------------------------------------

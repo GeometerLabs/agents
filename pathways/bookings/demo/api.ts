@@ -1,4 +1,4 @@
-// What each tap in the demo does: the actions (say, pay, time, cancel, owner, reset, shop) with their checks, in one place.
+// What each tap in the demo does: the actions (say, tap, pay, time, cancel, owner, reset, shop) with their checks, in one place.
 // The local-network server (app.ts) and the browser build (web/local.ts) both call this, so the two cannot drift apart.
 // Nothing here knows about HTTP, cookies, the network or the page: it takes a body and gives back a status and a JSON value.
 import { settingsFromForm } from "./personalise.ts";
@@ -45,6 +45,16 @@ export async function runAction(pathname: string, body: Record<string, unknown>,
       if (message === "") throw new HttpError(400, "Write a message first.");
       if (message.length > MAX_MESSAGE_LENGTH) throw new HttpError(400, `Keep it under ${MAX_MESSAGE_LENGTH} characters.`);
       notice = await seat.demo.run(() => seat.demo.say(message));
+      break;
+    }
+    case "/api/tap": {
+      // A button or a list row the agent sent: its id, as WhatsApp would send it back. Only an id that is on the screen is taken, and the check runs after the taps before it finish.
+      const id = text(body.id, 200);
+      if (!/^[A-Za-z0-9_:.-]{1,200}$/.test(id)) throw new HttpError(400, "Tap one of the buttons or list rows on the screen.");
+      notice = await seat.demo.run(async () => {
+        if (!seat.demo.offers(id)) throw new HttpError(400, "That button is no longer on the screen. Tap one of the ones that are.");
+        return seat.demo.tap(id);
+      });
       break;
     }
     case "/api/pay": {
