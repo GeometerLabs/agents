@@ -4,9 +4,9 @@ Market: Commerce and support (collections).
 
 A WhatsApp agent for tuition and coaching centres, music and dance classes, hobby schools and small private schools that collect a monthly fee from parents. Each month it sends the parent of every student a reminder, with a Razorpay payment link, in that parent's language (Hindi, English, Malayalam or Kannada). The agent works inside limits the owner sets. Its main limit is **"never a reminder once paid"**, and paid is judged from Razorpay's own payment record, never from what a parent says.
 
-**What this folder is, and is not.** It is the Fees template, built and checked against **stand-in services in memory** (a stand-in WhatsApp, a stand-in Razorpay and a model of Guard). It is **not the Geometer engine**, it talks to no real WhatsApp or Razorpay, and **no centre is live on it**. It has no server of its own yet, so `geometer shop add` cannot start a Fees centre (see Deferred.md). Nothing here is a claim about real services.
+**What this folder is, and is not.** It is the Fees template, built and checked against **stand-in services** (a stand-in WhatsApp, a stand-in Razorpay, a model of Guard, and for the approval the real `geo-guard` binary in front of the Razorpay stand-in). It **runs as a server** the way Bookings does (one SQLite file per centre, a signed-webhook inbox, an approvals relay), and `geometer shop add --template fees` starts a centre on a Geometer server. It is **not the Geometer engine**, it has been run against no real WhatsApp or Razorpay account, and **no centre is live on it**. Nothing here is a claim about real services.
 
-It has no dependencies. The agent and its tests make no network call. Most of the code is not in this folder: it is in [`agents/modules/`](../../modules/README.md), shared with Bookings. What is here is Fees: a student's fee for a month, its states, its words, its limits and its checks.
+It has no dependencies. The agent and its tests make no call outside the computer. Most of the code is not in this folder: it is in [`agents/modules/`](../../modules/README.md), shared with Bookings (the runtime server, the inbox, the approvals relay, the payment and refund code, the report frame). What is here is Fees: a student's fee for a month, its states, its words, its limits, its checks, and the thin files that give the shared code those.
 
 ## Run it
 
@@ -20,6 +20,9 @@ node pathways/fees/scripts/hand-check.ts --settings pathways/fees/settings/maths
 node pathways/fees/scripts/walkthrough.ts --lang hi   # one parent's month, printed (en, hi, ml, kn)
 node pathways/fees/scripts/report-example.ts    # a sample monthly report, signed with a throwaway key, into pathways/fees/report-sample/
 node pathways/fees/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
+node pathways/fees/scripts/local-stack.ts       # the whole chain on this computer: stand-ins, inbox, runtime, a stub Guard and the approvals relay (npm run stack)
+node pathways/fees/scripts/go-live-certificate.ts --settings centre.json --lang hi --out ./out   # the go-live certificate from a hand check on the centre's own settings
+node pathways/fees/scripts/client-report.ts --settings centre.json --record entries.json --dues dues.json --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./out/go-live-certificate.json
 node pathways/fees/scripts/guard-spec.ts --settings pathways/fees/settings/bright-tuition.example.json --tenant bright-tuition --reviewed-by builder-arjun   # the Guard limits spec
 node pathways/fees/scripts/whatsapp-templates.ts  # rewrites whatsapp-templates.json, the list to submit to Meta
 ```
@@ -27,6 +30,22 @@ node pathways/fees/scripts/whatsapp-templates.ts  # rewrites whatsapp-templates.
 The hand check prints a count in the product's words: `Held N of M. K failed. J not tested.`, a line for each situation, and the list of what was not tested. For Bright Tuition Centre it is **Held 26 of 26** (209 checks), with 12 listed as not tested. For Gauss Maths Circle (a second example: no late fee, no waivers, no part payments, English and Kannada) it is **Held 23 of 23**, with 3 situations named as not run, because that centre's settings cannot express them. The bundle reads this output (`bundle/handcheck.ts`), so its shape is shared (`modules/crash-test/print.ts`).
 
 Every situation is judged from the stand-ins' own records (what the payments service, Guard's model and the WhatsApp outbox hold), never from what the agent said. The count is a count of those situations, not a verdict on the agent.
+
+## Run it as a server (a live centre)
+
+A centre is a folder like [`clients/bright-tuition.example`](clients/bright-tuition.example) (`settings.json`, `runtime.json`, `pathway.lock`). On a Geometer server the deploy bundle makes it for you and runs it; by hand:
+
+```sh
+INTERNAL_TOKEN_FILE=token.txt node pathways/fees/server/main.ts --client pathways/fees/clients/bright-tuition.example   # npm run serve
+node pathways/fees/inbox/main.ts        # the inbox: Razorpay's and WhatsApp's signed webhooks in, the owner's replies to the relay (modules/inbox/main.ts lists the environment)
+node pathways/fees/approvals/main.ts    # the approvals relay: asks the owner about a refund Guard is holding (modules/approvals/main.ts lists the environment)
+```
+
+- **The runtime** (`server/`) keeps one SQLite file per centre (`agent.db` in its data folder). Every event the inbox hands it is saved before it is acknowledged, a step is saved whole or not at all, and a restart carries on from what was saved. **All of the store is saved**, including the day the agent first ran (without it a restart would make the agent believe it had just started, and no month would be chased) and the counters that make the next `f-3` and `q-2`. `runtime.json` takes the same settings as Bookings' (`parser`, `decision`, `ai`, `allowance`, `report`, ...) with `services` for **payments and messaging only: there is no calendar**.
+- **Reminders and the report** run on the runtime's own beat (`tickSeconds`): the month is opened and the first reminder goes at the centre's hour on its first reminder day, and last month's report goes to the owner on the 1st from 09:00 (`report/monthly-job.ts`, once, even across a crash).
+- **Refunds Guard holds.** A refund above `refund.limitInr` is held by Guard. The approvals relay then asks the owner **once**, in the owner's language: "Approval needed: refund ₹1,800 for +919844444444 (Rohan Mehta, Nov 2026). Reply "approve K7M2QX" or "deny K7M2QX" within 24 hours." The amount is Guard's own; the parent and the student come from the fee the runtime holds (`/internal/refund-context`, read-only, matched to Guard's held call). The owner's reply releases the refund once or denies it. `test/approvals-guard-binary.test.ts` runs this against the real `geo-guard` (skipped, with its reason, when the binary is not built). **A waiver is not held by Guard** (a smaller link is not a refund): above the waiver limit it is the agent's own question to the owner ("approve q-2"), in the ordinary conversation.
+- **Go-live certificate and monthly report from files.** `scripts/go-live-certificate.ts` runs the hand check on the centre's own settings and writes a signed certificate (the limits in plain words, "Held N of M", what was not tested); `scripts/client-report.ts` makes the monthly report from the saved record and fees (`--dues`), reads the certificate back and says what its checks ran on: this centre's own settings, the example centre, other settings, or that none was given. There is no monthly record certificate for Fees yet.
+- **Start one on a server.** `node bundle/geometer.ts shop add bright --template fees --whatsapp-number-id <id> --prepared-by "Divya, local partner"` makes the shop from this template's example (change the settings to the real centre's, or give `--settings <file>`). The bundle gives a Fees centre two Guards (Razorpay, WhatsApp), no calendar Guard and no Google key, and runs this runtime, this inbox and this relay's words for it. **The panel's phone setup, shop page and papers for Fees are not built yet** (Deferred.md): the panel lists Fees but says a builder sets it up.
 
 ## What the parent sees
 
@@ -101,8 +120,13 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 | `src/adapters/` | The rule parser (words about fees), the intent type, the reader that uses the shared understanding steps |
 | `src/harness.ts` | The agent on the stand-ins, with a clock you can move, and the parent, the payment provider and the owner as helpers |
 | `crash-test/` | The 26 situations (`situations.ts`), what the scripted parents write (`says.ts`), the plan for running them on any centre's settings (`shop.ts`), and the not-tested list |
-| `report/` | The monthly report: data, owner text, page, WhatsApp message, signing, the monthly job, the example month |
-| `scripts/` | Hand check, walkthrough, report example, review sheet, Guard spec, Meta template list |
+| `report/` | The monthly report and the go-live certificate: data, owner text, page, WhatsApp message, signing, the monthly job, the example month, the certificate, reading it back |
+| `server/` | The runtime: config, store, snapshot (every field of the store), services, start, main. The code is shared (`modules/runtime/`); these files give it Fees |
+| `inbox/`, `approvals/` | The inbox's and the approvals relay's entry points; the relay's Fees voice (`approvals/relay.ts`) |
+| `standins/` | The Razorpay and WhatsApp stand-ins over HTTP, for the local stack and the end-to-end test |
+| `clients/` | An example centre's folder (`bright-tuition.example`) |
+| `template.json` | What the bundle and the panel read to offer Fees: its id, its steps, the accounts it uses (WhatsApp and Razorpay; no calendar) |
+| `scripts/` | Hand check, walkthrough, report example, review sheet, Guard spec, Meta template list, local stack, go-live certificate, client report |
 | `settings/` | Two example centres |
 | `sell/` | The sell guide and the owner's one-page sheet, in four languages |
 | `whatsapp-templates.json` | The list to submit to Meta: 15 fee and owner templates and the 2 report templates, each in four languages (68 entries) |
@@ -110,7 +134,7 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 
 ## What is not done yet
 
-See [Deferred.md](Deferred.md). The ones to know first: no runtime server, so no live centre; the approvals relay has no Fees voice, so on a live centre nothing would yet ask the owner about a refund Guard is holding; no go-live certificate; no UPI; cash and bank transfers are not handled; the Malayalam and Kannada wording is not yet read by a native speaker.
+See [Deferred.md](Deferred.md). The ones to know first: nothing has been run against a real WhatsApp or Razorpay account, so no centre is live; a waiver is not held by Guard (it is the agent's question to the owner); no monthly record certificate; no phone demo; no UPI; cash and bank transfers are not handled; the Malayalam and Kannada wording is not yet read by a native speaker.
 
 ## Not a claim
 

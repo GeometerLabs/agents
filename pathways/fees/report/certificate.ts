@@ -94,6 +94,20 @@ export interface GoLiveInput {
   preparedBy?: string;
 }
 
+export type Limits = GoLiveCertificate["limits"];
+
+/** The centre's limits, as the certificate states them. The panel uses it to show them before a certificate exists. */
+export function limitsOf(settings: Settings): Limits {
+  return {
+    batches: settings.batches.map((b) => ({ id: b.id, monthlyFeeInr: b.monthlyFeeInr, name: Object.fromEntries(LANGUAGES.map((l) => [l, batchName(b, l)])) as Record<Language, string> })),
+    students: settings.students.length,
+    dueDay: settings.due.day, graceDays: settings.due.graceDays, lateFeeInr: settings.lateFeeInr,
+    reminders: { daysFromDue: [...settings.reminders.daysFromDue], hour: settings.reminders.hour, maxPerMonth: settings.reminders.maxPerMonth },
+    partPayments: { allowed: settings.partPayments.allowed, minInr: settings.partPayments.minInr },
+    waiverLimitInr: settings.waiver.limitInr, refundLimitInr: settings.refund.limitInr,
+  };
+}
+
 export function buildGoLiveCertificate(input: GoLiveInput): GoLiveCertificate {
   const { settings, handCheck, issuedAt } = input;
   const day = localParts(issuedAt, settings.timezone);
@@ -108,14 +122,7 @@ export function buildGoLiveCertificate(input: GoLiveInput): GoLiveCertificate {
     issuedOn: { year: day.year, month: day.month, day: day.day },
     checks: { held: handCheck.held, total: handCheck.total, failed: handCheck.total - handCheck.held, failedTitles: handCheck.failedTitles, checks: handCheck.checks, ...(handCheck.notRun ? { notRun: handCheck.notRun } : {}) },
     notTested: notTestedFor(settings, { onPolicyDigest: handCheck.ranOn, notRun: handCheck.notRun?.length }),
-    limits: {
-      batches: settings.batches.map((b) => ({ id: b.id, monthlyFeeInr: b.monthlyFeeInr, name: Object.fromEntries(LANGUAGES.map((l) => [l, batchName(b, l)])) as Record<Language, string> })),
-      students: settings.students.length,
-      dueDay: settings.due.day, graceDays: settings.due.graceDays, lateFeeInr: settings.lateFeeInr,
-      reminders: { daysFromDue: [...settings.reminders.daysFromDue], hour: settings.reminders.hour, maxPerMonth: settings.reminders.maxPerMonth },
-      partPayments: { allowed: settings.partPayments.allowed, minInr: settings.partPayments.minInr },
-      waiverLimitInr: settings.waiver.limitInr, refundLimitInr: settings.refund.limitInr,
-    },
+    limits: limitsOf(settings),
     policyDigest: policyDigest(settings),
     checkedPolicyDigest: handCheck.ranOn ?? checkedPolicyDigest(),
     anchor: null,
@@ -126,8 +133,12 @@ const dateText = (d: LocalDate, language: Language): string => `${formatDate(d, 
 
 /** The centre's limits in plain words, one phrase each, in the centre's language. */
 export function limitLines(cert: GoLiveCertificate, language: Language): string[] {
+  return limitLinesOf(cert.limits, language);
+}
+
+/** The same phrases from the limits alone (the panel shows them before any certificate exists). */
+export function limitLinesOf(l: Limits, language: Language): string[] {
   const c = STRINGS[language].cert;
-  const l = cert.limits;
   const days = l.reminders.daysFromDue.map((d) => (d > 0 ? `+${d}` : String(d))).join(", ");
   return [
     c.paidRule,

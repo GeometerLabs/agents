@@ -1,6 +1,6 @@
 # Geometer deploy bundle
 
-One folder per server, one Docker Compose file generated from it. Every shop gets its own runtime and its own Guards (Razorpay, WhatsApp, Calendar); the server adds one model Guard, one inbox, one approvals relay, one Google token refresher, a continuous copy of every record (Litestream), HTTPS (Caddy) and a heartbeat to Geometer. Builders run it on their own small server. Geometer runs it on one server for the partners' shops.
+One folder per server, one Docker Compose file generated from it. Every shop gets its own runtime and its own Guards (Razorpay, WhatsApp, and Calendar for a template that has one: Bookings does, **Fees does not**); the server adds one model Guard, one inbox, one approvals relay, one Google token refresher, a continuous copy of every record (Litestream), HTTPS (Caddy) and a heartbeat to Geometer. Builders run it on their own small server. Geometer runs it on one server for the partners' shops.
 
 The runtime holds no key, and the only things it can connect to are its own Guards and the model Guard. If a Guard is down, nothing goes out. Before anything starts, every Guard's limits are compiled and **every tripwire is proven on the Guard** (a forbidden call, derived from each rule, must be refused); a deploy that cannot prove them is refused, and says which rule.
 
@@ -63,7 +63,7 @@ node bundle/geometer.ts backup-key stream ~/stream-key.txt           # access-ke
 node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
 ```
 
-**6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `pathways/bookings/clients/glow-salon.example`). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and Google calendar; the bundle sets everything about where things are.
+**6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `pathways/bookings/clients/glow-salon.example`, or `pathways/fees/clients/bright-tuition.example` for a tuition centre). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and, for a template with a calendar, the Google calendar; the bundle sets everything about where things are. The `pathway.lock` names the **template** (`bookings@0.1.0`, `fees@0.1.0`): the shop's settings are checked by that template, its Guards are the ones that template calls (Fees has no calendar Guard, asks for no Google key and has nothing for the token refresher), and its runtime, inbox and approvals relay are that template's (`lib/kinds.ts` is the one place that lists them). Or start from a template: `node bundle/geometer.ts shop add bright --template fees --whatsapp-number-id <id> --prepared-by "Divya, local partner"` (`--template bookings` takes `--calendar-id` too; `--settings <file>` replaces the template's made-up example, and is checked first).
 
 ```sh
 node bundle/geometer.ts shop add glow-salon --from ~/clients/glow-salon --prepared-by "Divya, local partner"

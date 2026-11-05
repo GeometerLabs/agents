@@ -5,6 +5,9 @@
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner"]      copy a client folder in (settings.json, runtime.json, pathway.lock); --prepared-by is the name the
 //                                owner's monthly report message says set the shop up (written to report.json; without it the message says "your builder")
+//   shop add <name> --template bookings|fees [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ...]      start a shop from a template of this checkout: its example
+//                                settings (or the file --settings names, checked first), a pin to the template's version here, and a runtime.json that names the WhatsApp number (and, for
+//                                a template with a calendar, the calendar). The settings start as the template's made-up example: change them to the real ones.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
@@ -44,7 +47,9 @@ import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
+import { kindFor } from "./lib/kinds.ts";
 import { parseReportFile } from "./panel/contract.ts";
+import { discoverTemplates } from "./panel/templates.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { readStatus, updateStatus } from "./lib/status.ts";
 import { ensureDir, hostId, serverIdProblem, shopNameProblem, stableJson, writeAtomic } from "./lib/util.ts";
@@ -78,7 +83,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     args: rest, allowPositionals: true, strict: false,
     options: {
       server: { type: "string" }, domain: { type: "string" }, id: { type: "string" }, "reviewed-by": { type: "string" }, "model-wire": { type: "string" }, model: { type: "string" },
-      "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
+      "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       "prepared-by": { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
@@ -135,7 +140,9 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       const problem = shopNameProblem(name);
       if (problem) throw new Error(problem);
       const from = str("from");
-      if (!from) throw new Error("Say which client folder to copy in: shop add <name> --from <folder>");
+      const template = str("template");
+      if (from && template) throw new Error("Say where the shop starts, once: --from <client folder> or --template <id>, not both.");
+      if (!from && !template) throw new Error("Say where the shop starts: shop add <name> --from <client folder> (a folder with settings.json and pathway.lock), or shop add <name> --template <id> (a template of this checkout).");
       const preparedBy = str("prepared-by");
       if (preparedBy !== undefined && !parseReportFile(JSON.stringify({ schema: 1, preparedBy }))) throw new Error('--prepared-by must be the name the owner reads for who set the shop up, on one line with single spaces, up to 120 characters: for example --prepared-by "Divya, local partner".');
       const target = serverPaths(dir).shop(name);
@@ -143,9 +150,39 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       // a name whose secrets inbox already holds files belongs to a setup someone else started (the panel makes the inbox first): never adopt it
       const waiting = serverPaths(dir).inbox(name);
       if (existsSync(waiting) && readdirSync(waiting).length > 0) throw new Error(`The secrets inbox for ${name} already holds files, so that name is taken by a setup in progress. Choose another name.`);
+      // A shop that starts from a template is made from that template's own files: its example settings (or the file --settings names), the pin to the version in this
+      // checkout, and a runtime.json that says who things are (the WhatsApp number's id, a calendar's id where the template has one). Everything is checked before a folder is made.
+      let fromTemplate: { settings: string; runtime: Record<string, unknown>; lock: string; where: string } | undefined;
+      if (template) {
+        const found = discoverTemplates(join(APP_DIR, "pathways")).find((t) => t.id === template);
+        const kind = kindFor(found?.id);
+        if (!found || !kind) throw new Error(`There is no template called "${template}" in this checkout that the bundle can run. It has: ${discoverTemplates(join(APP_DIR, "pathways")).filter((t) => kindFor(t.id)).map((t) => t.id).join(", ") || "none"}.`);
+        const settingsFile = str("settings") ?? join(found.folder, found.settingsExample);
+        let settingsText: string;
+        try { settingsText = readFileSync(resolve(settingsFile), "utf8"); } catch { throw new Error(`I could not read the settings file ${settingsFile}.`); }
+        let parsed: unknown;
+        try { parsed = JSON.parse(settingsText); } catch (e) { throw new Error(`${settingsFile} is not valid JSON: ${(e as Error).message}`); }
+        const checked = kind.validateSettings(parsed);
+        if (!checked.ok) throw new Error(`These ${found.id} settings need fixing (${settingsFile}):\n- ${checked.errors.join("\n- ")}`);
+        const numberId = str("whatsapp-number-id");
+        const calendarId = str("calendar-id");
+        if (calendarId !== undefined && !kind.guards.includes("calendar")) throw new Error(`The ${found.id} template has no calendar, so --calendar-id means nothing for it.`);
+        if (numberId !== undefined && !/^\d{6,20}$/u.test(numberId)) throw new Error("--whatsapp-number-id must be the shop's WhatsApp phone number id: digits only.");
+        fromTemplate = {
+          settings: settingsText.endsWith("\n") ? settingsText : `${settingsText}\n`,
+          runtime: { mode: "live", tickSeconds: 30, services: { payments: {}, ...(kind.guards.includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
+          lock: `${found.id}@${found.version}\n`,
+          where: str("settings") ? "the settings file you gave" : `the ${found.id} template's example (${found.settingsExample}), which is somebody else's made-up centre: change it to the real one`,
+        };
+      }
       mkdirSync(target, { recursive: true });
-      for (const file of ["settings.json", "runtime.json", "pathway.lock"]) {
-        const src = join(resolve(from), file);
+      if (fromTemplate) {
+        writeFileSync(join(target, "settings.json"), fromTemplate.settings);
+        writeFileSync(join(target, "runtime.json"), `${JSON.stringify(fromTemplate.runtime, null, 2)}\n`);
+        writeFileSync(join(target, "pathway.lock"), fromTemplate.lock);
+        console.log(`The settings are ${fromTemplate.where}. They are in shops/${name}/settings.json.`);
+      } else for (const file of ["settings.json", "runtime.json", "pathway.lock"]) {
+        const src = join(resolve(from as string), file);
         if (!existsSync(src)) { if (file === "runtime.json") continue; throw new Error(`${src} is missing: a client folder needs settings.json and pathway.lock (and runtime.json).`); }
         cpSync(src, join(target, file));
       }

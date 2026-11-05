@@ -511,6 +511,11 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `shop.bookingStates.expired` | മാറ്റിവച്ച സമയം കഴിഞ്ഞു | Hold ran out |  |
 | `shop.bookingStates.cancelled` | റദ്ദാക്കി | Cancelled |  |
 | `shop.bookingStates.completed` | പൂർത്തിയായി | Done |  |
+| `shop.feeStates.open` | ഇനിയും തുറന്നിരിക്കുന്ന ഫീസുകൾ | Fees still open |  |
+| `shop.feeStates.paid` | അടച്ച ഫീസുകൾ | Fees paid |  |
+| `shop.feeStates.closed` | നിങ്ങൾ അവസാനിപ്പിച്ച ഫീസുകൾ | Fees closed by you |  |
+| `shop.summaryFees` | പ്രതിമാസ ഫീസ് | Monthly fees |  |
+| `shop.summaryRules` | അവസാന തീയതികളും പരിധികളും | Due dates and limits |  |
 | `shop.papers` | ഉടമയ്ക്കുള്ള രേഖകൾ | Papers for the owner |  |
 | `shop.goLive` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
 | `shop.goLiveNone` | ഇതുവരെ ഉണ്ടാക്കിയിട്ടില്ല. സെറ്റ് അപ്പിലെ പരിശോധനകൾ ശരിയായാൽ ഇത് ഉണ്ടാകും. | Not made yet. It is made when the checks pass in setup. |  |
@@ -574,6 +579,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
+| `setup.templateNames.fees` | ക്ലാസുകളുടെ ഫീസ് പിരിവ് | Fee collection for classes |  |
 | `setup.templateElsewhere` | ഇത് ഒരു ബിൽഡർ പ്ലഗിൻ ഉപയോഗിച്ച് സെറ്റ് അപ്പ് ചെയ്യും. ഫോണിലെ സെറ്റ് അപ്പിൽ ഇത് ഇതുവരെ ഇല്ല. | A builder sets this one up with the plugin. The phone setup does not have it yet. |  |
 | `setup.start` | തുടങ്ങൂ | Start |  |
 | `setup.progress` | ഘട്ടം 2 (ആകെ 5) | Step 2 of 5 |  |
@@ -612,6 +618,46 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.limits.booked` | ഇത് "ബുക്ക് ആയി" എന്ന് പറയുമ്പോൾ, സ്ലോട്ട് നിങ്ങളുടെ കലണ്ടറിലും ഡെപ്പോസിറ്റ് നിങ്ങളുടെ അക്കൗണ്ടിലും ഉണ്ടാകും. | When it says booked, the slot is in your calendar and the deposit is in your account. |  |
 | `setup.limits.language` | നിങ്ങളുടെ ഉപഭോക്താക്കൾക്ക് അവരുടെ ഭാഷയിൽ, ശരിയായ വിലയും തീയതിയും സഹിതം മറുപടി കിട്ടും. | Your customers are answered in their language, with the right price and date. |  |
 | `setup.limits.charge` | നിങ്ങളുടെ ഫോണിലൂടെ, തീരുമാനം എപ്പോഴും നിങ്ങളുടേതാണ്. | You stay in charge from your phone. |  |
+| `setup.fees.steps.business` | സെന്ററും അതിന്റെ ഫീസും | The centre and its fees |  |
+| `setup.fees.steps.rules` | അവസാന തീയതി, വൈകിയ ഫീസ്, പരിധികൾ | Due dates, late fee and limits |  |
+| `setup.fees.business.name` | സെന്ററിന്റെ പേര് | The centre's name |  |
+| `setup.fees.business.address` | വിലാസം (വേണമെങ്കിൽ) | Address (optional) |  |
+| `setup.fees.business.batches` | ബാച്ചുകൾ അല്ലെങ്കിൽ ക്ലാസുകൾ | Batches or classes |  |
+| `setup.fees.business.batchesHint` | ഓരോ ബാച്ചിനും ഒരു വരി. ഫീസ് ഒരു മാസത്തേതാണ്, പൂർണ്ണ രൂപയിൽ. | One row for each batch. The fee is for one month, in whole rupees. |  |
+| `setup.fees.business.batchName` | ബാച്ചിന്റെ പേര് | Name of the batch |  |
+| `setup.fees.business.batchFee` | പ്രതിമാസ ഫീസ് (₹) | Monthly fee (₹) |  |
+| `setup.fees.business.students` | വിദ്യാർത്ഥികൾ | Students |  |
+| `setup.fees.business.studentsHelp` | ഓരോ വരിയിലും ഒരു വിദ്യാർത്ഥി: വിദ്യാർത്ഥിയുടെ പേര്, രക്ഷിതാവിന്റെ WhatsApp നമ്പർ, പിന്നെ ബാച്ചിന്റെ പേര്. ഉദാഹരണം: Rohan Mehta, 98765 43210, Class 10 | One student on each line: the student's name, the parent's WhatsApp number, then the batch's name. For example: Rohan Mehta, 98765 43210, Class 10 |  |
+| `setup.fees.rules.dueDay` | ഫീസ് അടയ്ക്കേണ്ട മാസത്തിലെ ദിവസം (1 മുതൽ 28 വരെ) | Day of the month the fee is due (1 to 28) |  |
+| `setup.fees.rules.graceDays` | വൈകിയ ഫീസിന് മുമ്പുള്ള ഇളവ് ദിവസങ്ങൾ | Grace days before a late fee |  |
+| `setup.fees.rules.lateFee` | വൈകിയ ഫീസ് രൂപയിൽ (ഇല്ലെങ്കിൽ 0) | Late fee in rupees (0 for none) |  |
+| `setup.fees.rules.reminderDays` | അവസാന തീയതിയിൽ നിന്നുള്ള ഓർമ്മപ്പെടുത്തൽ ദിവസങ്ങൾ | Reminder days from the due day |  |
+| `setup.fees.rules.reminderDaysHelp` | കോമ ഉപയോഗിച്ച് വേർതിരിക്കുക. മൈനസ് എന്നാൽ അവസാന തീയതിക്ക് മുമ്പ്: -3, 0, 5 എന്നാൽ മൂന്ന് ദിവസം മുമ്പ്, അതേ ദിവസം, അഞ്ച് ദിവസം കഴിഞ്ഞ്. | Separate them with commas. A minus means before the due day: -3, 0, 5 is three days before, on the day, and five days after. |  |
+| `setup.fees.rules.reminderHour` | ഓർമ്മപ്പെടുത്തൽ പോകുന്ന മണിക്കൂർ (6 മുതൽ 21 വരെ) | Hour of the day reminders go (6 to 21) |  |
+| `setup.fees.rules.reminderMost` | ഒരു ഫീസിന് ഒരു മാസത്തിൽ പരമാവധി ഓർമ്മപ്പെടുത്തലുകൾ | Most reminders for one fee in a month |  |
+| `setup.fees.rules.partAllowed` | രക്ഷിതാവിന് ഫീസിന്റെ ഒരു ഭാഗം അടയ്ക്കാം | A parent may pay part of a fee |  |
+| `setup.fees.rules.partMin` | ആദ്യ ഭാഗിക പേയ്മെന്റ് കുറഞ്ഞത് എത്ര ആകണം (₹) | The least a first part payment may be (₹) |  |
+| `setup.fees.rules.waiver` | ഒരു വിദ്യാർത്ഥിയുടെ മാസത്തിൽ ഏജന്റിന് സ്വയം കുറയ്ക്കാവുന്ന പരമാവധി തുക (₹, ഇല്ലെങ്കിൽ 0) | Most the agent may take off a student's month by itself (₹, 0 for none) |  |
+| `setup.fees.rules.waiverHelp` | ഇതിൽ കൂടുതൽ എപ്പോഴും ആദ്യം നിങ്ങളുടെ അടുത്തേക്ക് വരും. | More than this always comes to you first. |  |
+| `setup.fees.rules.refund` | ഏജന്റിന് സ്വയം റീഫണ്ട് ചെയ്യാവുന്ന പരമാവധി തുക (₹) | Most the agent may refund by itself (₹) |  |
+| `setup.fees.rules.refundHelp` | ഇതിന് മുകളിലുള്ള റീഫണ്ട് WhatsApp-ൽ നിങ്ങളുടെ സമ്മതത്തിനായി കാത്തിരിക്കും. | A refund above this waits for your OK on WhatsApp. |  |
+| `setup.fees.problems.noBatch` | ഒരു പേരും പ്രതിമാസ ഫീസും സഹിതം ഒരു ബാച്ചെങ്കിലും ചേർക്കൂ. | Add at least one batch, with a name and a monthly fee. |  |
+| `setup.fees.problems.batchNameEmpty` | ബാച്ച് 2-ന് പേരില്ല. | Batch 2 has no name. |  |
+| `setup.fees.problems.feeBad` | ബാച്ച് 2: പ്രതിമാസ ഫീസ് പൂർണ്ണ രൂപയിൽ എഴുതൂ, ഉദാഹരണം 1500. | Batch 2: write the monthly fee as a whole number of rupees, like 1500. |  |
+| `setup.fees.problems.noStudents` | ഒരു വിദ്യാർത്ഥിയെങ്കിലും ചേർക്കൂ. | Add at least one student. |  |
+| `setup.fees.problems.studentBad` | വരി 3: വിദ്യാർത്ഥിയുടെ പേര്, രക്ഷിതാവിന്റെ നമ്പർ, ബാച്ച് എന്നിവ കോമ ഇട്ട് എഴുതൂ. | Line 3: write the student's name, the parent's number and the batch, with commas between them. |  |
+| `setup.fees.problems.studentNumber` | വരി 3: ആ രക്ഷിതാവിന്റെ WhatsApp നമ്പറിലേക്ക് ഞങ്ങൾക്ക് സന്ദേശം അയയ്ക്കാൻ കഴിയില്ല. ഇങ്ങനെ എഴുതൂ: 98765 43210. | Line 3: that parent's WhatsApp number is not one we can message. Write it like 98765 43210. |  |
+| `setup.fees.problems.studentBatch` | വരി 3: മുകളിൽ "Class 11" എന്ന പേരിൽ ബാച്ച് ഇല്ല. | Line 3: there is no batch called "Class 11" above. |  |
+| `setup.fees.problems.tooMany` | ഇത് 300 വിദ്യാർത്ഥികളിൽ കൂടുതലാണ്. കൂടുതൽ ചേർക്കാൻ സെർവർ നടത്തുന്ന ആളോട് ചോദിക്കൂ. | That is more than 300 students. Ask the person who runs the server how to add more. |  |
+| `setup.fees.problems.dueBad` | അവസാന ദിവസം 1 മുതൽ 28 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The due day must be a whole number from 1 to 28. |  |
+| `setup.fees.problems.graceBad` | ഇളവ് ദിവസങ്ങൾ 0 മുതൽ 30 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | Grace days must be a whole number from 0 to 30. |  |
+| `setup.fees.problems.lateBad` | വൈകിയ ഫീസ് പൂർണ്ണ രൂപയിൽ, 0 മുതൽ ₹1,200 വരെ (ഏറ്റവും കുറഞ്ഞ പ്രതിമാസ ഫീസ്) ആയിരിക്കണം. | The late fee must be a whole number of rupees, from 0 to ₹1,200 (the cheapest monthly fee). |  |
+| `setup.fees.problems.daysBad` | ഓർമ്മപ്പെടുത്തൽ ദിവസങ്ങൾ പൂർണ്ണ സംഖ്യകളായി, കോമ ഇട്ട്, -14 നും 60 നും ഇടയിൽ എഴുതൂ, ഉദാഹരണം -3, 0, 5. | Write the reminder days as whole numbers separated by commas, each between -14 and 60, like -3, 0, 5. |  |
+| `setup.fees.problems.hourBad` | ഓർമ്മപ്പെടുത്തൽ മണിക്കൂർ 6 മുതൽ 21 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The reminder hour must be a whole number from 6 to 21. |  |
+| `setup.fees.problems.mostBad` | പരമാവധി ഓർമ്മപ്പെടുത്തലുകൾ 1 മുതൽ 12 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The most reminders must be a whole number from 1 to 12. |  |
+| `setup.fees.problems.partBad` | ഏറ്റവും കുറഞ്ഞ ഭാഗിക പേയ്മെന്റ് പൂർണ്ണ രൂപയിൽ, 1 മുതൽ ₹1,200 വരെ (ഏറ്റവും കുറഞ്ഞ പ്രതിമാസ ഫീസ്) ആയിരിക്കണം. | The least part payment must be a whole number of rupees from 1 to ₹1,200 (the cheapest monthly fee). |  |
+| `setup.fees.problems.waiverBad` | ഇളവ് പരിധി പൂർണ്ണ രൂപയിൽ, 0 മുതൽ ₹1,200 വരെ (ഏറ്റവും കുറഞ്ഞ പ്രതിമാസ ഫീസ്) ആയിരിക്കണം. | The waiver limit must be a whole number of rupees from 0 to ₹1,200 (the cheapest monthly fee). |  |
+| `setup.fees.problems.refundBad` | റീഫണ്ട് പരിധി പൂർണ്ണ രൂപയിൽ, 0 അല്ലെങ്കിൽ കൂടുതൽ ആയിരിക്കണം. | The refund limit must be a whole number of rupees, 0 or more. |  |
 | `setup.languagesStep.main` | ഉപഭോക്താക്കളുടെ പ്രധാന ഭാഷ | Main language of your customers |  |
 | `setup.languagesStep.also` | ഉപഭോക്താക്കൾ എഴുതാറുള്ള മറ്റ് ഭാഷകളും ടിക്ക് ചെയ്യൂ | Also tick any others your customers write in |  |
 | `setup.languagesStep.hint` | ഏജന്റ് പ്രധാന ഭാഷയിൽ തുടങ്ങും, ഓരോ ഉപഭോക്താവും എഴുതുന്ന ഭാഷയിൽ മറുപടി നൽകും. | The agent starts in the main language and answers each customer in the one they write in. |  |

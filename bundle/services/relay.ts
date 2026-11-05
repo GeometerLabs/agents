@@ -6,8 +6,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { createGuardClient, createRuntimeClient } from "../../modules/approvals/clients.ts";
 import type { GuardClient } from "../../modules/approvals/clients.ts";
-import { createRelay } from "../../pathways/bookings/approvals/relay.ts";
-import type { Relay } from "../../modules/approvals/relay.ts";
+import { createRelay as bookingsRelay } from "../../pathways/bookings/approvals/relay.ts";
+import { createRelay as feesRelay } from "../../pathways/fees/approvals/relay.ts";
+import type { Relay, RelayOptions } from "../../modules/approvals/relay.ts";
 import { relayHandler } from "../../modules/approvals/server.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";
 import { createWhatsAppMessaging } from "../../modules/messaging/whatsapp.ts";
@@ -16,7 +17,12 @@ import { ownAgentRuntime } from "../agent/relay-context.ts";
 import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";
 
+/** The words each template's relay asks the owner in. An agent someone else wrote has none of its own, and is asked in Bookings' words. */
+const RELAYS: Record<string, (options: Omit<RelayOptions, "voice">) => Relay> = { bookings: bookingsRelay, fees: feesRelay };
+
 export interface RelayShopConfig {
+  /** Which template's words the owner is asked in ("bookings" when left out). */
+  pathway?: string;
   /** An agent someone else wrote has no runtime: the context of a held refund is Razorpay's record of the payment (agent/relay-context.ts). */
   kind?: "own-agent";
   guardAdminUrl: string;
@@ -50,7 +56,9 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
   };
   const store = openRelayStore(c.stateDir);
   const guard = rereadingGuardClient(c, read);
-  const relay = createRelay({
+  const pathway = c.pathway ?? "bookings";
+  if (!Object.hasOwn(RELAYS, pathway)) throw new Error(`${name}: the approvals relay has no words for the pathway "${pathway}".`);
+  const relay = RELAYS[pathway]({
     clock: systemClock, store, ownerWhatsapp: c.ownerWhatsapp, expectedAgent: c.agentId, guard,
     runtime: c.kind === "own-agent"
       ? ownAgentRuntime({ guard, razorpay: { baseUrl: c.razorpayGuardUrl!, token: () => need("record_token") }, business: c.business! })
