@@ -41,7 +41,7 @@ A pathway can be sold to more than one kind of business (Bookings to a salon, or
 - **It keeps the main guide's section numbers**, in order, so "section 5" means the same thing in both. Section titles may be adapted. Sections 1, 3, 4, 5, 6 and 8 are required.
 - **It points to the main guide** for everything else, in the first lines: a link to `../guide.<lang>.md`, and which sections are the same.
 - **It follows every rule below:** the claim rules and banned words, `₹` amounts in Western digits, the same amounts and numbers in every language, the machine-written banner with the date on Hindi, Malayalam and Kannada, and the demo words and taps checked against the demo itself.
-- **It is checked against the business it describes.** Anything it says about the example settings or the hand check ("32 of 32 situations held") is compared with the real run, so it cannot drift.
+- **It is checked against the business it describes.** Anything it says about the example settings or the hand check ("33 of 33 situations held") is compared with the real run, so it cannot drift.
 - **It adds a Deferred row** for what the business needs that the pathway cannot do yet, so section 1 and section 11 stay honest.
 - **The one-page sheet is the main guide's** until the variant has its own. Say so at the top, and list the missing sheet in Deferred.
 

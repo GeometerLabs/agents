@@ -64,7 +64,9 @@ export type WhatsappType = "service" | "utility" | "marketing";
 
 /**
  * Meta's type of an outgoing message, from what the record holds today (`refs.to`, `refs.templates`): a notice to the owner, or a reminder, is a utility
- * template (charged even inside the 24-hour window); every other reply is a service message (free up to 1,000 a month per number). The record does not say
+ * template (charged even inside the 24-hour window); every other reply is a service message (free up to 1,000 a month per number). The monthly report to the
+ * owner (B54, `refs.report` = the month) is a message to the owner like any other: its ending entry is counted here as utility, and the claim written before it
+ * (outcome `attempted`) is not counted; a test feeds this the entries the job really writes. The record does not say
  * whether the window was open, so an owner's notice sent as plain text inside the owner's window is counted as utility: the estimate leans high, not low.
  * The agent sends no marketing message, so "marketing" is only here for the day a template does. Only a message that was sent counts: `confirmed`, or
  * `unconfirmed` (it left, and the provider's outbox could not be read back); a blocked, failed or held one cost nothing.

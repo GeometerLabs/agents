@@ -236,6 +236,22 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 ```
 
+### The monthly report on WhatsApp, with sample numbers
+
+Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and partners; the other template is the same without it. The labels are the ones above; the new words are "Full report", the name of the badge and the code line.
+
+```text
+പ്രതിമാസ റിപ്പോർട്ട്: Glow Salon · ഫെബ്രുവരി 2027
+ബുക്ക് ആയവ: 38 · ലഭിച്ച അഡ്വാൻസ്: ₹17,600
+നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 5 (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: 3 · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: 1)
+നിങ്ങളോട് ചോദിച്ചത്: 3 · നിങ്ങൾ അംഗീകരിച്ചത്: 2 · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: 1
+ഉറപ്പിക്കാൻ കഴിയാത്തത്: 1
+പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
+കോഡ്: 7K2M-9QXD · പൂർണ്ണ റിപ്പോർട്ട്: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html
+തയ്യാറാക്കിയത്: Divya, local partner · Geometer
+★ ഇന്നൊവേറ്റർ
+```
+
 ### Every word and phrase of the report and the certificates
 
 | Id | Text (Malayalam) | Meaning (English) | Native reviewer: OK / change to … |
@@ -244,6 +260,8 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 | `monthlyReport` | പ്രതിമാസ റിപ്പോർട്ട് | Monthly report |  |
 | `goLiveCertificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
 | `monthlyCertificate` | പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ് | Monthly record certificate |  |
+| `innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
+| `fullReport` | പൂർണ്ണ റിപ്പോർട്ട് | Full report |  |
 | `languageName.hi` | ഹിന്ദി | Hindi |  |
 | `languageName.en` | ഇംഗ്ലീഷ് | English |  |
 | `languageName.ml` | മലയാളം | Malayalam |  |
@@ -703,3 +721,4 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
+

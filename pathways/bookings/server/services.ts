@@ -10,6 +10,7 @@ import { createFakePayments } from "../src/adapters/payments.ts";
 import type { Clock } from "../src/clock.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { LANGUAGES } from "../src/settings.ts";
+import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
 import { ClientError } from "./config.ts";
 import type { RuntimeConfig } from "./config.ts";
 import type { Services } from "./runtime.ts";
@@ -68,7 +69,7 @@ export async function buildServices(config: Pick<RuntimeConfig, "mode" | "servic
   }
 
   const fake = createFakeMessaging(deps.clock);
-  for (const name of Object.values(TEMPLATE_NAMES)) for (const language of LANGUAGES) fake.approve(name, language);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...REPORT_TEMPLATE_NAMES]) for (const language of LANGUAGES) fake.approve(name, language);
   const say = deps.say ?? (() => undefined);
   const messaging: Messaging = {
     // The stand-in never hears that a customer wrote (nobody calls its receive), so its window is closed and replies go as templates.

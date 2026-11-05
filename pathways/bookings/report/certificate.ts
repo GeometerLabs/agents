@@ -20,7 +20,7 @@ import { PATHWAY, checkedPolicyDigest, notTestedFor, policyDigest } from "./data
 import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
 import { esc, goLiveBlock, list, page, sealBlock, table } from "./html.ts";
 import type { Envelope } from "./sign.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, badgeText } from "./strings.ts";
 import { goLiveLines, languagesOf, oneLine, periodLabel, rupees } from "./text.ts";
 import type { ReportLanguage } from "./text.ts";
 
@@ -190,6 +190,8 @@ export interface MonthlyCertificate {
   notTested: NotTestedKey[];
   /** What the report was told about the go-live checks, copied from it: none, untrusted, or what a go-live certificate that was read says they ran on. */
   goLive: GoLiveFinding;
+  /** Copied from the report: present, and true, only when the report carries the Innovator badge. */
+  innovator?: true;
   anchor: null;
 }
 
@@ -215,6 +217,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     notCounted: [...r.notCounted],
     notTested: [...r.notTested],
     goLive: r.goLive,
+    ...(r.innovator ? { innovator: true as const } : {}),
     anchor: null,
   };
 }
@@ -240,7 +243,7 @@ export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, l
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     goLiveLines(cert.goLive, language).join(" "),
     s.handRun,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${cert.innovator ? `${badgeText(language)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
   ].join("\n");
 }
 
@@ -249,7 +252,7 @@ export function monthlySection(envelope: Envelope<MonthlyCertificate>, language:
   const cert = envelope.document;
   const tag = s.sourceTag[cert.source];
   return `<section class="doc" lang="${language}">
-<header class="head"><p class="kicker">${esc(s.agent)}</p><h1>${esc(cert.shop.name)}</h1><p class="period">${esc(s.monthlyCertificate)} · ${esc(periodLabel(cert.period, language))}</p>${tag ? `<p class="tag">${esc(tag)}</p>` : ""}</header>
+<header class="head"><p class="kicker">${esc(s.agent)}</p><h1>${esc(cert.shop.name)}</h1><p class="period">${esc(s.monthlyCertificate)} · ${esc(periodLabel(cert.period, language))}</p>${tag ? `<p class="tag">${esc(tag)}</p>` : ""}${cert.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.sourceLong[cert.source])} ${esc(s.handRun)}</p>
 <h2>${esc(s.cert.countedIntro(periodLabel(cert.period, language)))}</h2>
 ${table([{ text: s.page.item }, { text: s.page.count, n: true }], countedPairs(cert, language).map((p) => { const i = p.lastIndexOf(": "); return [esc(p.slice(0, i)), esc(p.slice(i + 2))]; }))}

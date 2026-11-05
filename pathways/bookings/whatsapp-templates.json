@@ -1578,5 +1578,261 @@
         }
       }
     ]
+  },
+  {
+    "name": "monthly_report",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nहुई बुकिंग: {{2}} · जमा राशि मिली: {{3}}\nआपकी सीमाओं ने रोका: {{4}} (कीमत-सूची से कम की माँग: {{5}} · एक ही समय की दूसरी बुकिंग: {{6}})\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nपक्का नहीं हो पाया: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · फरवरी 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nBookings made: {{2}} · Deposits collected: {{3}}\nStopped by your limits: {{4}} (Prices below your list: {{5}} · Double bookings: {{6}})\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nCould not confirm: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · Feb 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "phone calls · walk-ins · and 17 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nബുക്ക് ആയവ: {{2}} · ലഭിച്ച അഡ്വാൻസ്: {{3}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{4}} (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: {{5}} · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: {{6}})\nനിങ്ങളോട് ചോദിച്ചത്: {{7}} · നിങ്ങൾ അംഗീകരിച്ചത്: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: {{9}}\nഉറപ്പിക്കാൻ കഴിയാത്തത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ഫെബ്രുവരി 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಆದ ಬುಕಿಂಗ್: {{2}} · ಬಂದ ಮುಂಗಡ ಹಣ: {{3}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{4}} (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: {{5}} · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: {{6}})\nನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ಫೆಬ್ರವರಿ 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nहुई बुकिंग: {{2}} · जमा राशि मिली: {{3}}\nआपकी सीमाओं ने रोका: {{4}} (कीमत-सूची से कम की माँग: {{5}} · एक ही समय की दूसरी बुकिंग: {{6}})\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nपक्का नहीं हो पाया: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · फरवरी 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nBookings made: {{2}} · Deposits collected: {{3}}\nStopped by your limits: {{4}} (Prices below your list: {{5}} · Double bookings: {{6}})\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nCould not confirm: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · Feb 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "phone calls · walk-ins · and 17 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nബുക്ക് ആയവ: {{2}} · ലഭിച്ച അഡ്വാൻസ്: {{3}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{4}} (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: {{5}} · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: {{6}})\nനിങ്ങളോട് ചോദിച്ചത്: {{7}} · നിങ്ങൾ അംഗീകരിച്ചത്: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: {{9}}\nഉറപ്പിക്കാൻ കഴിയാത്തത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ഫെബ്രുവരി 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಆದ ಬುಕಿಂಗ್: {{2}} · ಬಂದ ಮುಂಗಡ ಹಣ: {{3}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{4}} (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: {{5}} · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: {{6}})\nನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ಫೆಬ್ರವರಿ 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
   }
 ]

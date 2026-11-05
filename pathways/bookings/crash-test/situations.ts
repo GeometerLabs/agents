@@ -18,10 +18,17 @@ import { createRouter } from "../src/adapters/understanding.ts";
 import { systemOneFetch, systemOneStandin } from "../standins/system-one.ts";
 import type { SystemOneStandin } from "../standins/system-one.ts";
 import { MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatSlot, formatTime } from "../src/language/format.ts";
-import { LANGUAGE_NAMES, hoursOn, parseSettings } from "../src/settings.ts";
+import { LANGUAGES, LANGUAGE_NAMES, hoursOn, parseSettings } from "../src/settings.ts";
 import type { Language, Settings } from "../src/settings.ts";
 import { languageOfScript } from "../src/language/format.ts";
-import { HOUR, MINUTE, daysBetween, localParts, timeFromMinutes } from "../src/time.ts";
+import { createRecord } from "../src/record.ts";
+import { HOUR, MINUTE, daysBetween, localParts, timeFromMinutes, zonedToMs } from "../src/time.ts";
+import { createMonthlyReport } from "../report/monthly-job.ts";
+import { STRINGS } from "../report/strings.ts";
+import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { EN_WEEKDAYS, MARKERS, SAYS, atWords, dayWords, languageList, nextWeekdayWords, rescheduleWords, sayingsFor, whenWords } from "./says.ts";
 import type { Says } from "./says.ts";
 import { planShop } from "./shop.ts";
@@ -1103,6 +1110,79 @@ function build(shop: Shop): Built[] {
         expect("Neither model was asked, not once", ai.decision.requests.length === 0 && ai.decisionAsked === 0 && ai.modelAsked === 0, `decision ${ai.decisionAsked}, model ${ai.modelAsked}`);
         expect("The record names the rules for every message, with the kind of tap that read it", stepsOf(w).every((x) => x === "rules") && w.record.entries().filter((e) => e.action === "receive_message").map((e) => e.refs.via ?? "typed").join() === "typed,list,list,button,button", w.record.entries().filter((e) => e.action === "receive_message").map((e) => `${e.refs.step}/${e.refs.via ?? "typed"}`).join());
         expect("Every message got exactly one reply, and the payment one more", w.textsTo(CUSTOMER).length === heard(w, CUSTOMER) + 1, `${w.textsTo(CUSTOMER).length} replies to ${heard(w, CUSTOMER)} messages`);
+        return results;
+      },
+    });
+  }
+
+  // 38. The monthly report reaches the owner once
+  {
+    const id = "monthly-report-once";
+    const title = "The monthly report reaches the owner once";
+    out.push(!normalSlot ? skip(id, title, noSlot) : {
+      id,
+      title,
+      how: "A customer books and pays in November. At 09:00 on 1 December the monthly job runs, and runs again after a restart and on later days; once more on a shop where the process dies after the send, and on a shop that did nothing in November",
+      async run() {
+        const { results, expect } = checker();
+        const dir = mkdtempSync(join(tmpdir(), "geo-hand-check-report-"));
+        const ownerWords = STRINGS[ownerLanguage];
+        const firstOfDecember = zonedToMs({ year: 2026, month: 12, day: 1 }, { hour: 9, minute: 0 }, tz);
+        const newJob = () => createMonthlyReport({ source: "stand-in", pages: { dir, baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "the hand check", innovator: false }) });
+        const approveReports = (w: World) => { for (const name of REPORT_TEMPLATE_NAMES) for (const language of LANGUAGES) w.messaging.approve(name, language); };
+        const context = (w: World, record = w.record, save: () => void = () => undefined) => ({ settings, clock: w.clock, messaging: w.messaging, record, store: w.store, save });
+        const reportsFor = (w: World) => w.record.entries().filter((e) => e.action === "send_message" && e.refs.report === "2026-11");
+        try {
+          const w = world();
+          approveReports(w);
+          await bookAndPay(w, sayings(shop, en, normalSlot).book);
+          const ownerBefore = w.messaging.sentTo(owner).length;
+          const customerBefore = w.messaging.sentTo(CUSTOMER).length;
+          const job = newJob();
+          w.clock.set(firstOfDecember - 30 * MINUTE);
+          await job.run(context(w));
+          expect("Nothing goes out before 09:00 on the 1st", w.messaging.sentTo(owner).length === ownerBefore);
+          w.clock.set(firstOfDecember);
+          await job.run(context(w));
+          const sent = w.messaging.sentTo(owner).slice(ownerBefore);
+          const paidPaise = w.payments.links().flatMap((l) => l.payments).reduce((sum, p) => sum + p.amount, 0);
+          expect("The owner got exactly one message, the monthly report, as an approved template (the owner has not written today)", sent.length === 1 && sent[0].kind === "template" && sent[0].templateName === "monthly_report", JSON.stringify(sent.map((m) => [m.kind, m.templateName])));
+          expect("It is in the owner's language and names the shop", sent[0]?.text.startsWith(`${ownerWords.monthlyReport}: ${settings.name}`) === true, sent[0]?.text);
+          expect(`It counts the bookings the calendar holds (${confirmedEvents(w).length}) and the deposit the payments service holds (${money(paidPaise / 100)})`, sent[0]?.text.includes(`${ownerWords.label.bookingsMade}: ${confirmedEvents(w).length} ·`) === true && sent[0]?.text.includes(`${ownerWords.label.depositsCollected}: ${money(paidPaise / 100)}`) === true, sent[0]?.text);
+          expect("No customer was sent the report", w.messaging.sentTo(CUSTOMER).length === customerBefore);
+          expect("The record holds the claim and then the ending, for this month", reportsFor(w).map((e) => e.outcome).join() === "attempted,confirmed", reportsFor(w).map((e) => e.outcome).join());
+
+          const restarted = newJob(); // a new process: it remembers only the record
+          for (const when of [firstOfDecember + 10 * MINUTE, firstOfDecember + 24 * HOUR, firstOfDecember + 14 * 24 * HOUR]) {
+            w.clock.set(when);
+            await job.run(context(w));
+            await restarted.run(context(w, createRecord(w.clock, w.record.entries())));
+          }
+          expect("A restart and every later day sent nothing more", w.messaging.sentTo(owner).length === ownerBefore + 1, `${w.messaging.sentTo(owner).length - ownerBefore} sent`);
+
+          // The process dies after the message went out and before the ending was saved.
+          const crashed = world();
+          approveReports(crashed);
+          await bookAndPay(crashed, sayings(shop, en, normalSlot).book);
+          crashed.clock.set(firstOfDecember);
+          let saves = 0;
+          let onDisk = crashed.record.entries();
+          await newJob().run(context(crashed, crashed.record, () => { if (++saves === 2) throw new Error("power cut"); onDisk = crashed.record.entries(); })).catch(() => undefined);
+          expect("The message went out and only the claim was saved", crashed.messaging.sentTo(owner).length === 1 && onDisk.filter((e) => e.refs.report === "2026-11").map((e) => e.outcome).join() === "attempted");
+          const afterRestart = createRecord(crashed.clock, onDisk);
+          crashed.clock.set(firstOfDecember + 5 * MINUTE);
+          await newJob().run(context(crashed, afterRestart));
+          crashed.clock.set(firstOfDecember + 3 * 24 * HOUR);
+          await newJob().run(context(crashed, afterRestart));
+          expect("After the restart it is not sent again, and the record says it may or may not have arrived", crashed.messaging.sentTo(owner).length === 1 && afterRestart.entries().filter((e) => e.refs.report === "2026-11").map((e) => e.outcome).join() === "attempted,unconfirmed", afterRestart.entries().map((e) => `${e.action}/${e.outcome}`).join());
+
+          // A shop that did nothing in November has nothing to report.
+          const quiet = world();
+          approveReports(quiet);
+          quiet.clock.set(firstOfDecember);
+          await newJob().run(context(quiet));
+          expect("A month with nothing in the record sends nothing and writes nothing", quiet.messaging.sentTo(owner).length === 0 && quiet.record.entries().length === 0);
+        } finally { rmSync(dir, { recursive: true, force: true }); }
         return results;
       },
     });
