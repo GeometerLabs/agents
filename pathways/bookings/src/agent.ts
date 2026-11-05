@@ -31,6 +31,7 @@ import type { PaymentEvent, PaymentLink, Payments } from "../../../modules/payme
 import { ATTEMPTS, ensureLink as makeLink } from "../../../modules/payments/links.ts";
 import { createRefunds } from "../../../modules/payments/refunds.ts";
 import type { Clock } from "../../../modules/core/clock.ts";
+import { takeDue } from "../../../modules/reminders/reminders.ts";
 import { resolveDate, resolveTime } from "../../../modules/language/dates.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
@@ -55,7 +56,7 @@ export interface AgentDeps {
   parser: IntentParser;
   record: ActionRecord;
   store: Store;
-  /** The monthly AI allowance and the outside switch (src/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
+  /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
   ai?: AiPolicy;
 }
 
@@ -861,9 +862,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (b.state !== "confirmed" || b.startMs === undefined || b.endMs === undefined) continue;
 
       // Reminders: if several fell due while nothing was running, send one, the latest. Whether it may go is the limits' call.
-      const due = b.reminders.filter((r) => !r.sent && r.atMs <= now);
-      for (const r of due) r.sent = true;
-      if (due.length > 0 && b.startMs > now) await tellCustomer(b, b.customer, ["reminder"], { reminder: true });
+      if (takeDue(b.reminders, now).due && b.startMs > now) await tellCustomer(b, b.customer, ["reminder"], { reminder: true });
 
       if (b.endMs <= now) {
         moveTo(b, "completed");

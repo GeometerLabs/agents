@@ -270,7 +270,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
  */
 function preparePanel(ctx: Context): PanelOptions {
   const p = serverPaths(ctx.dir);
-  // data_key: 32 bytes as hex (vault.ts). signing_key: an Ed25519 private key in PEM, as the pathway's report key is (report/sign.ts loadPrivateKey); it signs go-live certificates.
+  // data_key: 32 bytes as hex (vault.ts). signing_key: an Ed25519 private key in PEM, as the pathway's report key is (modules/report/sign.ts loadPrivateKey); it signs go-live certificates.
   for (const [name, make] of [["data_key", mintSecret], ["signing_key", mintSigningKey]] as const) {
     const path = secretFile(ctx.dir, "panel", name);
     if (!readSecretFile(path)) writeSecretFile(path, make(), 0o600);

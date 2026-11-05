@@ -3,7 +3,7 @@
 // by the agent, and answered through the live adapters, which call the stand-ins back.
 //
 // In production a real Guard sits between the runtime and each service. Here the calendar and WhatsApp URLs point straight at the stand-ins, and
-// the refunds go through a STUB Guard (standins/guard.ts: Guard's documented refund behaviour, built from the same generated spec) so that a refund
+// the refunds go through a STUB Guard (modules/standins/guard.ts: Guard's documented refund behaviour, built from the same generated spec) so that a refund
 // above the shop's limit is held, and the approvals relay (approvals/) runs beside it: it reads the held refunds, asks the owner on the stand-in
 // WhatsApp with a code, and carries the owner's "approve <code>" to the stub Guard as a signed answer. The real Guard is not here.
 //

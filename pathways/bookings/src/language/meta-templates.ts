@@ -177,7 +177,7 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
       kn: "ಗ್ರಾಹಕರು {phone} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
     },
   },
-  // Button mode and "talk to the owner" (src/ai-state.ts, interactive.ts): the owner is told once why the agent answers with buttons, or that a customer wants to talk.
+  // Button mode and "talk to the owner" (modules/understanding/ai-state.ts, interactive.ts): the owner is told once why the agent answers with buttons, or that a customer wants to talk.
   {
     name: "owner_wants_to_talk", usedFor: "owner_wants_to_talk", audience: "owner",
     bodies: {

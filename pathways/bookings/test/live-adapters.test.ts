@@ -50,7 +50,7 @@ test("razorpay: a payment link entity becomes ours, and its embedded payments ar
   const link = toPaymentLink(fixture("razorpay-payment-link-fetch.json"), []);
   assert.deepEqual({ id: link.id, reference_id: link.reference_id, amount: link.amount, status: link.status, short_url: link.short_url, amount_paid: link.amount_paid }, { id: "plink_KBnb7I424Rc1R9", reference_id: "111", amount: 10000, status: "paid", short_url: "https://rzp.io/i/alaBxs0i", amount_paid: 10000 });
   assert.equal(toPaymentLink(fixture("razorpay-payment-link-create.json"), []).payments.length, 0); // `payments: null` before any payment
-  for (const [wire, ours] of [["created", "created"], ["paid", "paid"], ["partially_paid", "paid"], ["cancelled", "cancelled"], ["expired", "cancelled"]] as const) {
+  for (const [wire, ours] of [["created", "created"], ["paid", "paid"], ["partially_paid", "partially_paid"], ["cancelled", "cancelled"], ["expired", "cancelled"]] as const) {
     assert.equal(toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), status: wire }, []).status, ours);
   }
   assert.throws(() => toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), status: "weird" }, []), ApiError);

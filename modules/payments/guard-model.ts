@@ -2,7 +2,7 @@
 // it is the part of Guard's behaviour that this pathway depends on, written once from monorepo docs/guard-for-pathways.md and checked
 // against the real binary (test/approvals-guard-binary.test.ts), so that every stand-in uses the same behaviour:
 //   - the in-memory payments fake (fakes mode, the harness, the hand check, the demo) wraps it;
-//   - the HTTP stub Guard (standins/guard.ts, used by the tests and by `npm run stack`) serves it.
+//   - the HTTP stub Guard (modules/standins/guard.ts, used by the tests and by `npm run stack`) serves it.
 //
 // What it does, as Guard does it:
 //   - a refund below 1 paisa or above one deposit is REFUSED (HTTP 403, rule refund-at-most-deposit) before anything else is looked at:
@@ -15,7 +15,7 @@
 //   - a denied hold is final for that approval, and the same call again is held again under a new id;
 //   - an approval can be used only until its expiry less the upstream timeout.
 import type { Clock } from "../core/clock.ts";
-import { guardHoldsRefund, guardRefusesRefund, refundRulesOf } from "./guard-limits.ts";
+import { guardHoldsRefund, guardRefusesLink, guardRefusesRefund, linkBoundOf, refundRulesOf } from "./guard-limits.ts";
 import type { LimitsSpec } from "./guard-limits.ts";
 
 /** Guard's `upstream_timeout_ms` in the templates. */
@@ -67,6 +67,8 @@ export type RefundDecision =
 export interface GuardModel {
   readonly thresholdPaise: bigint;
   readonly ttlMs: number;
+  /** Decide creating a payment link for this many paise: the spec's bound on the amount (HTTP 403, the rule's own id) or a pass. A spec with no such bound lets any amount through. */
+  decideLink(amountPaise: unknown): { kind: "pass" } | { kind: "refused"; reason: string; ruleId: string };
   /** Decide a refund call: its payment id and the JSON body exactly as it was sent. */
   decideRefund(paymentId: string, body: unknown): RefundDecision;
   /** The service answered the call that `decideRefund` let through. */
@@ -104,6 +106,15 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
   return {
     thresholdPaise: rules.thresholdPaise,
     ttlMs,
+
+    decideLink(amountPaise) {
+      const bound = linkBoundOf(spec);
+      if (!bound) return { kind: "pass" };
+      // A missing or non-numeric amount is never read as a pass.
+      if (typeof amountPaise !== "number" || !Number.isSafeInteger(amountPaise)) return { kind: "refused", reason: `${bound.ruleId}: cannot decide: no amount in the call`, ruleId: bound.ruleId };
+      const outside = guardRefusesLink(spec, amountPaise);
+      return outside === undefined ? { kind: "pass" } : { kind: "refused", reason: outside, ruleId: bound.ruleId };
+    },
 
     decideRefund(paymentId, body) {
       const amount = amountOf(body);

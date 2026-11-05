@@ -52,7 +52,7 @@ test("each Guard has the panel's own agent, allowed its connection-check reads a
       const hit = readdirSync(join(w.paths.secrets, other), { recursive: true, encoding: "utf8" }).filter((f) => statSync(join(w.paths.secrets, other, f)).isFile()).some((f) => read(join(w.paths.secrets, other, f)).includes(token));
       assert.ok(!hit, `the panel's token is also in secrets/${other}`);
     }
-    // the keys, in the formats the panel reads (vault.ts: 32 bytes as hex; report/sign.ts loadPrivateKey: an Ed25519 key it can open, mode 0600)
+    // the keys, in the formats the panel reads (vault.ts: 32 bytes as hex; modules/report/sign.ts loadPrivateKey: an Ed25519 key it can open, mode 0600)
     assert.match(read(join(w.paths.secrets, "panel", "data_key")).trim(), /^[0-9a-f]{64}$/);
     const { createPrivateKey } = await import("node:crypto");
     assert.equal(createPrivateKey(readFileSync(join(w.paths.secrets, "panel", "signing_key"))).asymmetricKeyType, "ed25519");

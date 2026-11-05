@@ -22,11 +22,15 @@ export interface PaymentLink {
   amount: number; // paise
   currency: "INR";
   description: string;
-  status: "created" | "paid" | "cancelled";
+  /** Razorpay's: "partially_paid" is a link that accepts part payments and has had some, not all. A link that does not accept them goes from created to paid on its first payment. */
+  status: "created" | "partially_paid" | "paid" | "cancelled";
   short_url: string;
   amount_paid: number;
   payments: Payment[];
   created_at: number;
+  /** Set on a link that takes part payments (Razorpay's `accept_partial` and `first_min_partial_amount`, in paise). Left out on any other link. */
+  accept_partial?: boolean;
+  first_min_partial_amount?: number;
 }
 
 export interface Refund {
@@ -55,7 +59,7 @@ export interface PaymentEvent {
   payload: { payment_link?: { id: string; reference_id: string }; payment?: { id: string; link_id?: string }; refund?: { id: string; payment_id: string } };
 }
 
-export interface NewPaymentLink { amount: number; reference_id: string; description: string }
+export interface NewPaymentLink { amount: number; reference_id: string; description: string; accept_partial?: boolean; first_min_partial_amount?: number }
 
 export interface Payments {
   createPaymentLink(request: NewPaymentLink): Promise<PaymentLink>;
@@ -94,6 +98,11 @@ export interface FakePaymentsOptions {
    * with GuardHeldError, and the identical call is sent again only after an approval (see guard-model.ts). Without it, every refund goes through.
    */
   guard?: GuardModel;
+  /**
+   * Whether that Guard also bounds the amount of a link (default true, as the real one does). Off for a test that makes a link under the old rules and then gives
+   * Guard the new ones, which a Guard given at the start cannot be.
+   */
+  guardLinks?: boolean;
 }
 
 export interface FakePayments extends Payments {
@@ -201,6 +210,14 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     refunds: () => refundStore.map((r) => ({ ...r })),
 
     async createPaymentLink(request) {
+      if (guard && options.guardLinks !== false) {
+        // Guard bounds the amount of a link before anything is sent: the agent only ever asks for an amount its record asks for, so this is Guard saying the same on its own.
+        const decision = guard.decideLink(request.amount);
+        if (decision.kind === "refused") {
+          const body = JSON.stringify(request);
+          throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, { decision: "deny", code: "refused_by_policy", sent: "no", retry: "no", reason: decision.reason, detail: null }, { method: "POST", path: "/v1/payment_links", body }, "rule", decision.ruleId);
+        }
+      }
       const fault = begin("createPaymentLink");
       if (enforceUnique && [...linkStore.values()].some((l) => l.reference_id === request.reference_id)) {
         throw new ApiError(400, `A payment link with reference_id ${request.reference_id} already exists.`);
@@ -209,6 +226,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       const link: PaymentLink = {
         id, reference_id: request.reference_id, amount: request.amount, currency: "INR", description: request.description,
         status: "created", short_url: `https://rzp.io/l/${id.replace("_", "")}`, amount_paid: 0, payments: [], created_at: seconds(),
+        ...(request.accept_partial ? { accept_partial: true, first_min_partial_amount: request.first_min_partial_amount ?? 100 } : {}),
       };
       linkStore.set(id, link);
       if (fault === "lostReply") throw new TimeoutError("payment link create");
@@ -261,14 +279,25 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       const l = linkStore.get(linkId);
       if (!l) throw new ApiError(404, "No such payment link.");
       if (l.status === "cancelled") throw new ApiError(400, "This payment link is cancelled.");
+      if (l.accept_partial) {
+        // A link that takes part payments, as Razorpay's does: a payment is at least the link's minimum (the first one) and at most what is left.
+        const left = l.amount - l.amount_paid;
+        const amount = opts.amount ?? left;
+        if (left <= 0) throw new ApiError(400, "This payment link is already paid.");
+        if (!Number.isInteger(amount) || amount < Math.min(l.first_min_partial_amount ?? 0, left) || amount > left) throw new ApiError(400, "The amount is not allowed for this payment link.");
+      }
       const payment: Payment = {
-        id: nextId("pay"), link_id: linkId, amount: opts.amount ?? l.amount, currency: "INR",
+        id: nextId("pay"), link_id: linkId, amount: opts.amount ?? (l.accept_partial ? l.amount - l.amount_paid : l.amount), currency: "INR",
         status: "captured", amount_refunded: 0, created_at: seconds(),
       };
       l.payments.push(payment);
       l.amount_paid += payment.amount;
       emit("payment.captured", { payment: { id: payment.id, link_id: linkId } });
-      if (l.status === "created") {
+      if (l.accept_partial) {
+        const was = l.status;
+        l.status = l.amount_paid >= l.amount ? "paid" : "partially_paid";
+        if (l.status === "paid" && was !== "paid") emit("payment_link.paid", { payment_link: { id: l.id, reference_id: l.reference_id }, payment: { id: payment.id, link_id: linkId } });
+      } else if (l.status === "created") {
         l.status = "paid"; // the link counts as paid on the first payment; a second payment still lands (two phones)
         emit("payment_link.paid", { payment_link: { id: l.id, reference_id: l.reference_id }, payment: { id: payment.id, link_id: linkId } });
       }

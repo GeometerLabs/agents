@@ -1,5 +1,5 @@
 // Every word the monthly report and the certificates say, per language. Nothing numeric is typed here: counts, amounts and
-// dates are filled in from the record by the per-language formatters in src/language/format.ts, and these are the fixed
+// dates are filled in from the record by the per-language formatters in modules/language/format.ts, and these are the fixed
 // words around them. The type makes sure no language is missing a string.
 //
 // Machine-written Hindi, Malayalam and Kannada. The Malayalam and Kannada strings are listed in REVIEW-ml.md and

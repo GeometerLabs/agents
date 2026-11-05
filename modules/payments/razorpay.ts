@@ -81,11 +81,12 @@ function embeddedPayment(raw: Json, linkId: string): Payment | null {
   };
 }
 
-/** Razorpay's link statuses: created, partially_paid, expired, cancelled, paid. We never accept partial payments; an expired link can no longer be paid, so it reads as cancelled. */
+/** Razorpay's link statuses: created, partially_paid, expired, cancelled, paid. An expired link can no longer be paid, so it reads as cancelled. */
 function linkStatus(raw: unknown): PaymentLink["status"] {
   switch (raw) {
     case "created": return "created";
-    case "paid": case "partially_paid": return "paid";
+    case "partially_paid": return "partially_paid";
+    case "paid": return "paid";
     case "cancelled": case "expired": return "cancelled";
     default: throw new ApiError(502, `Razorpay's record has a link status this code does not know: ${String(raw)}.`);
   }
@@ -96,6 +97,7 @@ export function toPaymentLink(raw: Json, payments: Payment[]): PaymentLink {
     id: needStr(raw.id, "link id"), reference_id: str(raw.reference_id) ?? "", amount: needNum(raw.amount, "link amount"), currency: needInr(raw.currency),
     description: str(raw.description) ?? "", status: linkStatus(raw.status), short_url: needStr(raw.short_url, "short_url"),
     amount_paid: num(raw.amount_paid) ?? 0, payments, created_at: needNum(raw.created_at, "link time"),
+    ...(raw.accept_partial === true ? { accept_partial: true, first_min_partial_amount: num(raw.first_min_partial_amount) ?? 0 } : {}),
   };
 }
 
@@ -145,7 +147,7 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
   return {
     async createPaymentLink(request: NewPaymentLink) {
       const reply = await http.request("POST", "/v1/payment_links", {
-        body: { amount: request.amount, currency: "INR", reference_id: request.reference_id, description: request.description, accept_partial: false, notify: { sms: false, email: false }, reminder_enable: false },
+        body: { amount: request.amount, currency: "INR", reference_id: request.reference_id, description: request.description, accept_partial: request.accept_partial === true, ...(request.accept_partial ? { first_min_partial_amount: request.first_min_partial_amount ?? 100 } : {}), notify: { sms: false, email: false }, reminder_enable: false },
       });
       // A reference_id used before answers 400 "payment link creation with reference ID already attempted": an ApiError, and the agent looks the link up before it tries again.
       const raw = expectOk(reply);

@@ -1,5 +1,5 @@
 // Razorpay's wire format in front of createFakePayments(). The paths and bodies are the ones the live adapter speaks
-// (see src/adapters/live/razorpay.ts for the docs they come from).
+// (see modules/payments/razorpay.ts for the docs they come from).
 //
 // Where this stand-in is deliberately as awkward as the real thing, so the agent is tested against that:
 //  - the payment link list shows `payments: []` even on a paid link (the docs' own examples do), the single fetch has the payments;
@@ -41,8 +41,8 @@ export function wirePayment(p: Payment): Record<string, unknown> {
 /** A payment link. `payments` is what the single fetch shows; a list and a create show less (see the top of this file). */
 export function wireLink(l: PaymentLink, payments: "full" | "empty" | "null"): Record<string, unknown> {
   return {
-    accept_partial: false, amount: l.amount, amount_paid: l.amount_paid, cancelled_at: l.status === "cancelled" ? l.created_at : 0, created_at: l.created_at, currency: l.currency,
-    customer: [], description: l.description, expire_by: 0, expired_at: 0, first_min_partial_amount: 0, id: l.id, notes: null, notify: { email: false, sms: false },
+    accept_partial: l.accept_partial === true, amount: l.amount, amount_paid: l.amount_paid, cancelled_at: l.status === "cancelled" ? l.created_at : 0, created_at: l.created_at, currency: l.currency,
+    customer: [], description: l.description, expire_by: 0, expired_at: 0, first_min_partial_amount: l.first_min_partial_amount ?? 0, id: l.id, notes: null, notify: { email: false, sms: false },
     order_id: `order_${l.id.replace("plink_", "")}`,
     payments: payments === "null" ? null : payments === "empty" ? [] : l.payments.map((p) => ({ amount: p.amount, created_at: p.created_at, method: "upi", payment_id: p.id, plink_id: l.id, status: "captured" })),
     reference_id: l.reference_id, reminder_enable: false, reminders: [], short_url: l.short_url, status: l.status, updated_at: l.created_at, upi_link: false, user_id: "",
@@ -58,7 +58,7 @@ export function razorpayStandin(payments: FakePayments): Handler {
     if (!path.startsWith("/v1/payment_links") && !path.startsWith("/v1/payments/")) return undefined;
     try {
       if (path === "/v1/payment_links" && method === "POST") {
-        const link = await payments.createPaymentLink({ amount: body?.amount, reference_id: body?.reference_id, description: body?.description ?? "" });
+        const link = await payments.createPaymentLink({ amount: body?.amount, reference_id: body?.reference_id, description: body?.description ?? "", ...(body?.accept_partial === true ? { accept_partial: true, first_min_partial_amount: body?.first_min_partial_amount } : {}) });
         return ok(wireLink(link, "null"));
       }
       if (path === "/v1/payment_links" && method === "GET") {

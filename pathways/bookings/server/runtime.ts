@@ -43,7 +43,7 @@ export interface RuntimeOptions {
   services: Services;
   parser: IntentParser;
   pathwayVersion: string;
-  /** The monthly AI allowance and the outside switch for this shop (src/ai-state.ts). Left out: no limit and no switch. */
+  /** The monthly AI allowance and the outside switch for this shop (modules/understanding/ai-state.ts). Left out: no limit and no switch. */
   ai?: AiPolicy;
   retryDelaysMs?: number[];
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */

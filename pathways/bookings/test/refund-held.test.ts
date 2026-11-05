@@ -329,7 +329,7 @@ test("Guard refuses a refund by a limit (the day's cap): nothing is refunded, it
 test("the deposit was lowered after a booking paid the old one: Guard refuses the older, larger refund, nothing is refunded, and the builder is told", async () => {
   const lowered = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), deposit: { ...JSON.parse(JSON.stringify(glowSalon())).deposit, amountInr: 150 } });
   assert.equal(lowered.deposit.amountInr, 150);
-  const w = createWorld({ payments: { guard: createGuardModel(razorpayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)) } });
+  const w = createWorld({ payments: { guard: createGuardModel(razorpayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)), guardLinks: false } }); // the ₹200 link was made before Guard had the new rules
   let asked = 0; // a call Guard refuses never reaches the service, so the service's own call list cannot count it
   const sendRefund = w.payments.refund;
   w.payments.refund = async (id, request) => { asked++; return sendRefund(id, request); };

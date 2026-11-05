@@ -1,5 +1,5 @@
 // The WhatsApp Cloud API's send call in front of createFakeMessaging(). Paths and bodies are the ones the live adapter speaks
-// (see src/adapters/live/whatsapp.ts for the docs they come from).
+// (see modules/messaging/whatsapp.ts for the docs they come from).
 //
 // Like the real thing it has NO endpoint to read a sent message back. A template is accepted only if it is one of the approved templates
 // (the template's own list, given as `catalogue`), in the language asked for, with the right number of parameters; its approved wording filled with the
