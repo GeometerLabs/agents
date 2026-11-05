@@ -1,4 +1,4 @@
-// The record of an agent someone else wrote, in the record format the monthly report and the certificates read (pathways/bookings/src/record.ts). It is built from what the Guards
+// The record of an agent someone else wrote, in the record format the monthly report and the certificates read (modules/record/record.ts). It is built from what the Guards
 // and the services say, never from what the agent says:
 //   - every call the agent made is a Guard decision: allowed (and the answer the service gave), held for the owner, or refused (and which rule);
 //   - "done" is what the service itself holds: a payment link by its reference, a payment by its link, a refund against its payment, an event in the calendar;

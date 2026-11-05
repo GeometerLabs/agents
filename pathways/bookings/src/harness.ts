@@ -82,7 +82,7 @@ export interface WorldOptions {
   nowMs?: number;
   parser?: IntentParser;
   payments?: FakePaymentsOptions;
-  /** The monthly AI allowance and the outside switch (src/ai-state.ts). */
+  /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). */
   ai?: AiPolicy;
   /**
    * Whether the stand-in WhatsApp takes buttons and lists. Default true. False makes it a provider without them, so the agent sends the same words as plain text: for a

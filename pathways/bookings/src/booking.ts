@@ -14,7 +14,8 @@ import type { Settings } from "./settings.ts";
 import type { Language } from "../../../modules/language/languages.ts";
 import { serviceName } from "./settings.ts";
 import type { LocalDate, LocalTime } from "../../../modules/core/time.ts";
-import { HOUR } from "../../../modules/core/time.ts";
+import { hoursBefore, scheduleAround } from "../../../modules/reminders/reminders.ts";
+import type { Reminder } from "../../../modules/reminders/reminders.ts";
 import type { TimePhrase } from "../../../modules/language/dates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { AiState } from "../../../modules/understanding/ai-state.ts";
@@ -83,7 +84,7 @@ export interface Booking {
   depositPaymentId?: string;
   depositInr?: number;
   handledPayments: string[]; // payments already dealt with (the deposit, or an extra one that was refunded or sent to the owner)
-  reminders: { atMs: number; sent: boolean }[];
+  reminders: Reminder[];
   pending: Pending[];
   /** Refunds that need the builder (never the owner): see RefundIssueKind. Counted in the runtime's status. */
   refundIssues?: RefundIssue[];
@@ -155,7 +156,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
   };
 }
 
-/** When the reminders are due: each configured number of hours before the start, skipping any that is already past. */
-export function reminderSchedule(settings: Settings, startMs: number, nowMs: number): { atMs: number; sent: boolean }[] {
-  return settings.reminders.hoursBefore.map((h) => startMs - h * HOUR).filter((at) => at > nowMs).map((atMs) => ({ atMs, sent: false }));
+/** When the reminders are due: each configured number of hours before the start, skipping any that is already past (modules/reminders/reminders.ts). */
+export function reminderSchedule(settings: Settings, startMs: number, nowMs: number): Reminder[] {
+  return scheduleAround(startMs, hoursBefore(settings.reminders.hoursBefore), nowMs);
 }

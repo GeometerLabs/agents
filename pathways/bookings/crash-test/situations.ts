@@ -26,64 +26,24 @@ import { languageOfScript } from "../../../modules/language/format.ts";
 import { HOUR, MINUTE, daysBetween, localParts, timeFromMinutes } from "../../../modules/core/time.ts";
 import { EN_WEEKDAYS, MARKERS, SAYS, atWords, dayWords, languageList, nextWeekdayWords, rescheduleWords, sayingsFor, whenWords } from "./says.ts";
 import type { Says } from "./says.ts";
+import { checker, runAllSituations, runSituation } from "../../../modules/crash-test/situations.ts";
+import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../modules/crash-test/situations.ts";
 import { planShop } from "./shop.ts";
 import type { Shop, Slot } from "./shop.ts";
 
 export { SAYS } from "./says.ts";
 export type { Says } from "./says.ts";
 
-export interface CheckResult { label: string; passed: boolean; detail: string }
-
-export interface Situation {
-  id: string;
-  /** The row in implementation plan 4.4, when it has one. */
-  planNumber?: number;
-  title: string;
-  /** How the fakes make it happen. */
-  how: string;
-  /** Parts of this situation that this shop's settings cannot express, so they were not run (for example "a closed day: the shop is open every day"). */
-  leftOut?: string[];
-  run(): Promise<CheckResult[]>;
-}
-
-/** A situation that was not run on these settings, and why. */
-export interface Skipped { id: string; title: string; reason: string }
-
-export interface SituationResult {
-  situation: Situation;
-  held: boolean;
-  checks: CheckResult[];
-}
-
-/** Run one situation. An exception inside the agent counts as a failure, not a crash of the check. */
-export async function runSituation(situation: Situation): Promise<SituationResult> {
-  let checks: CheckResult[];
-  try {
-    checks = await situation.run();
-  } catch (e) {
-    checks = [{ label: "The agent kept going without an error", passed: false, detail: (e as Error).stack?.split("\n").slice(0, 3).join(" ") ?? String(e) }];
-  }
-  return { situation, held: checks.length > 0 && checks.every((c) => c.passed), checks };
-}
-
-/** What a run on one shop's settings did: the situations that ran, and the ones that could not be run on these settings. */
-export interface HandCheckRun { results: SituationResult[]; skipped: Skipped[]; settings: Settings }
+export { runSituation } from "../../../modules/crash-test/situations.ts";
+export type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../modules/crash-test/situations.ts";
 
 /** Run every situation that these settings can express (Glow Salon's, when none are given). */
-export async function runOn(settings: Settings = glowSalon()): Promise<HandCheckRun> {
-  const { situations: built, skipped } = buildSituations(settings);
-  const results: SituationResult[] = [];
-  for (const s of built) results.push(await runSituation(s));
-  return { results, skipped, settings };
+export async function runOn(settings: Settings = glowSalon()): Promise<HandCheckRun<Settings>> {
+  return runAllSituations(buildSituations(settings), settings);
 }
 
 export async function runAll(settings?: Settings): Promise<SituationResult[]> {
   return (await runOn(settings)).results;
-}
-
-function checker() {
-  const results: CheckResult[] = [];
-  return { results, expect(label: string, ok: boolean, detail = "") { results.push({ label, passed: ok, detail: ok ? "" : detail }); } };
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

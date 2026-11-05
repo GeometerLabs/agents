@@ -1,6 +1,6 @@
 // A stub Guard in front of the Razorpay stand-in: it speaks Guard's documented shapes (monorepo docs/guard-for-pathways.md) for the
 // refund route, so the runtime, the approvals relay and the tests can be run end to end without the real Guard. It is not Guard:
-// the behaviour it has is the model in src/adapters/guard-model.ts (built from the generated spec), which is checked against the
+// the behaviour it has is the model in modules/payments/guard-model.ts (built from the generated spec), which is checked against the
 // real binary in test/approvals-guard-binary.test.ts. Every other route is passed through to the stand-in unchanged.
 //
 // Two ports, as in a real deployment:
