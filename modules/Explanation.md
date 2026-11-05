@@ -28,6 +28,9 @@ A module imports nothing from a template or the bundle. `test/boundary.test.ts` 
 | `say` in `agent.ts` | `messaging/say.ts` | its templates, facts, offers and two gates |
 | `record.ts` | `record/record.ts`; `Action` and `RuleId` are open, so a template adds its own names | the names |
 | `report/sign.ts`, `keys.ts`, `digest.ts`, the page and the small text helpers | `report/` | the report's numbers and words |
+| the monthly job (B54): when it may go, the claim saved before the send and the ending after, the retries, the quiet month | `report/monthly-job.ts` (`createMonthlyJob`) | `make`: the template's report, its page and its message; a `MadeReport` |
+| `monthRange`, the folder a report is written into | `report/months.ts` | nothing |
+| the banned-words lists, the badge words, `periodLabel`, `Source`, the page's verification block, `UsageError` and `main` | `report/claims.ts`, `text.ts`, `page.ts`, `cli.ts` | nothing (each template's strings carry the words the block needs under `page`) |
 | `approvals/` (the relay, its store, its server, its clients, the code) | `approvals/` | `approvals/relay.ts`: the owner's words and facts (a `RelayVoice`); `main.ts` |
 | `limits.ts`: STOP, the refund limit, message-matches-record | `limits/limits.ts` | the other six rules, and the three wrappers that give the shared ones Bookings' words |
 | the reminder schedule and "send one, the latest" | `reminders/reminders.ts` | the hours before a booking |
