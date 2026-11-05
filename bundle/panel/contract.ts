@@ -8,6 +8,7 @@
 //   <server>/shops/<shop>/pathway.lock         written by the panel      bookings@<version>
 //   <server>/shops/<shop>/owner.json           PROPOSAL, panel, once     who set the shop up (permanent attribution), written with flag wx
 //   <server>/shops/<shop>/pins.json            PROPOSAL, panel           the ids the connection checks confirmed (none of them secret)
+//   <server>/shops/<shop>/report.json          optional, by hand         who the owner's monthly report says set the shop up (`shop add --prepared-by`); wins over owner.json. See ReportFile.
 //   <server>/secrets-inbox/<shop>/<name>       written by the panel      razorpay_key ("<key id>:<key secret>"), whatsapp_token, whatsapp_app_secret,
 //                                                                        razorpay_webhook_secret, google_service_account.json. Write-only: never read back.
 //   <server>/status/<shop>.json                written by the deployer   see ShopStatus. A missing or unreadable file is "not confirmed yet", never "live".
@@ -201,6 +202,40 @@ export function parseOwner(textOrNothing: string | undefined): OwnerFile | undef
     const r: unknown = JSON.parse(textOrNothing);
     if (isObj(r) && r.schema === 1 && text(r.accountId, 80) && text(r.accountName, 120) && (r.role === "builder" || r.role === "partner") && isoDay(r.createdAt)) return r as unknown as OwnerFile;
   } catch { /* no attribution is readable: only a builder sees the shop */ }
+  return undefined;
+}
+
+/** The longest name the runtime accepts for who set the agent up (validName in the pathway's server/config.ts); the owner reads it in the monthly message. */
+export const PREPARED_BY_LIMIT = 120;
+const oneLine = (v: string): string => v.replace(/\s+/gu, " ").trim();
+
+/** "Divya, local partner" or "Divya, builder": the one way the owner is told who set the shop up, cut to what the runtime accepts, on one line. */
+export function preparedByOf(owner: Pick<OwnerFile, "accountName" | "role">): string {
+  const role = owner.role === "partner" ? "local partner" : "builder";
+  let name = oneLine(owner.accountName);
+  while (name !== "" && `${name}, ${role}`.length > PREPARED_BY_LIMIT) name = [...name].slice(0, -1).join("").trim();
+  return name === "" ? role : `${name}, ${role}`;
+}
+
+/**
+ * shops/<shop>/report.json: what a shop's monthly report says that only a person can say. Today that is who set the shop up, for a shop that has no owner.json (one made with
+ * `geometer shop add`), or one whose builder wants another name on it. Optional. It wins over owner.json. The deployer reads it; nothing in the panel writes it.
+ */
+export interface ReportFile { schema: 1; preparedBy: string }
+
+export function parseReportFile(textOrNothing: string | undefined): ReportFile | undefined {
+  if (textOrNothing === undefined) return undefined;
+  try {
+    const r: unknown = JSON.parse(textOrNothing);
+    if (isObj(r) && r.schema === 1 && typeof r.preparedBy === "string" && r.preparedBy === oneLine(r.preparedBy) && text(r.preparedBy, PREPARED_BY_LIMIT)) return { schema: 1, preparedBy: r.preparedBy };
+  } catch { /* unreadable: the caller says so */ }
+  return undefined;
+}
+
+/** Who set the shop up, for the monthly report: report.json first, then the shop's attribution. Undefined when neither says. */
+export function resolvePreparedBy(files: { report?: ReportFile; owner?: OwnerFile }): { name: string; source: "report.json" | "owner.json" } | undefined {
+  if (files.report) return { name: files.report.preparedBy, source: "report.json" };
+  if (files.owner) return { name: preparedByOf(files.owner), source: "owner.json" };
   return undefined;
 }
 

@@ -2,6 +2,7 @@
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
 import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
+import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
@@ -11,6 +12,16 @@ import type { GuardDef, GuardKind } from "./guards.ts";
 /** What the runtime waits for a call when runtime.json says nothing: longer than Guard's own wait for the provider. */
 export const DEFAULT_RUNTIME_TIMEOUT_MS = 20_000;
 
+/** In the runtime's container: its home (the data volume is mounted here), the folder it keeps its data in, and where its monthly report pages go. */
+export const HOME_DIR = "/home/node";
+export const DATA_DIR = `${HOME_DIR}/data`;
+export const REPORTS_DIR = `${DATA_DIR}/reports`;
+/** The reports folder as a path inside the data volume (which is mounted at HOME_DIR): what Caddy mounts, read-only, and nothing else of the volume. */
+export const REPORTS_SUBPATH = REPORTS_DIR.slice(HOME_DIR.length + 1);
+/** The public address of a shop's report pages: https://<domain>/r/<shop>/<32 hex digits>/<file>. Caddy serves exactly that shape (generate/compose.ts, reportsMatcher). */
+export const REPORTS_ROUTE = "/r";
+export const reportBaseUrl = (server: Pick<ServerConfig, "domain" | "ports">, shop: string): string => `${publicUrl(server)}${REPORTS_ROUTE}/${shop}`;
+
 /** Names of everything a shop owns, in one place. */
 export const names = {
   net: (shop: string) => `net-${shop}`,
@@ -19,6 +30,8 @@ export const names = {
   forwarder: (shop: string, kind: GuardKind) => `fwd-${shop}-${kind}`,
   door: (shop: string) => `door-${shop}`,
   dataVolume: (shop: string) => `rt-data-${shop}`,
+  /** The one-shot that makes the shop's reports folder in its data volume, so Caddy can mount it before the runtime has ever written a report. */
+  reportsDir: (shop: string) => `rd-${shop}`,
   stateVolume: (shop: string, kind: GuardKind) => `gs-${shop}-${kind}`,
   /** The model Guard is one per server. */
   modelGuard: "g-model",
@@ -106,7 +119,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
 }
 
 /** The pathway's own check of a runtime config (server/config.ts). A parameter so a test can stand in for a pathway version that knows more. */
-export type RuntimeValidator = (config: unknown, folder: string) => { ok: boolean };
+export type RuntimeValidator = (config: unknown, folder: string) => { ok: boolean; errors?: string[] };
 
 /**
  * Fleet's button mode (B48): when fleet said `ai: "buttons"` for this shop, the GENERATED runtime config gets `"ai": "buttons"` (the template's runtime reads that
@@ -119,6 +132,33 @@ export function withFleetAi(runtime: Record<string, unknown>, fleetAi: "buttons"
   const withIt = { ...runtime, ai: "buttons" };
   if (validate(withIt, "/").ok) return withIt;
   if (validate(runtime, "/").ok) notes.push("fleet asked for button mode, but this pathway version does not know the ai setting yet, so the shop keeps its AI. Update the pathway, and the setting is written on the next deploy.");
+  return runtime;
+}
+
+/** What the monthly report block is made from. */
+export interface ReportFacts {
+  /** "Divya, local partner": who the owner is told set the agent up (the shop's report.json, else the panel's attribution). */
+  preparedBy: string;
+  /** Fleet's answer: the Innovator badge on the message, the page and the certificate. */
+  innovator: boolean;
+  /** Where Caddy serves this shop's pages (reportBaseUrl). */
+  pageBaseUrl: string;
+  /** What the numbers were counted from: "live" only when the connection checks confirmed a live Razorpay account, otherwise test money. */
+  source: "live" | "test-mode";
+}
+
+/**
+ * The monthly report to the owner on WhatsApp (B54): the GENERATED runtime config gets a `report` block, and the job (report/monthly-job.ts) is on for every shop the bundle
+ * deploys, now that the link in the message opens (Caddy serves the shop's reports folder, generate/compose.ts). Like `ai` above it goes into the generated config only, and ONLY if
+ * the pathway's own validator accepts it: a runtime from before the report refuses a `report` key as an unknown setting and would not start, and a shop that cannot start is worse
+ * off than one that sends no report. Then the block is skipped and a note says so. The runtime reads `preparedBy` and `innovator` again whenever runtime.json changes.
+ */
+export function withReport(runtime: Record<string, unknown>, facts: ReportFacts, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (Object.keys(runtime).length === 0) return runtime;
+  const withIt = { ...runtime, report: { preparedBy: facts.preparedBy, innovator: facts.innovator, pageBaseUrl: facts.pageBaseUrl, pagesDir: REPORTS_DIR, source: facts.source } };
+  const checked = validate(withIt, "/");
+  if (checked.ok) return withIt;
+  if (validate(runtime, "/").ok) notes.push(`the monthly report to the owner is not switched on for this shop: this pathway version did not accept the report setting${checked.errors?.[0] ? ` (${checked.errors[0]})` : ""}, so the shop starts without it. Update the pathway, and it is written on the next deploy.`);
   return runtime;
 }
 
@@ -143,7 +183,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       guards.push({ kind, service: names.guard(shop.name, kind), tenant: shop.name, deployment: `${shop.name}-${kind}`, def, upstream: upstreamOf(server, kind, def), spec, specText: stableJson(spec) });
     }
     runtime = {
-      mode: "live", host: "0.0.0.0", port: RUNTIME_PORT, dataDir: "/home/node/data",
+      mode: "live", host: "0.0.0.0", port: RUNTIME_PORT, dataDir: DATA_DIR,
       ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}),
       services: {
         payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` },
@@ -154,6 +194,8 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
     runtime = withFleetAi(runtime, shop.fleetAi, validate, notes);
+    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: shop.pins.razorpay?.mode === "live" ? "live" : "test-mode" }, validate, notes);
+    if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };
 }

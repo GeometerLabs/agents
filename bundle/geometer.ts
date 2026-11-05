@@ -3,7 +3,8 @@
 //   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [backup options]
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
-//   shop add <name> --from <client folder>      copy a client folder in (settings.json, runtime.json, pathway.lock)
+//   shop add <name> --from <client folder> [--prepared-by "Divya, local partner"]      copy a client folder in (settings.json, runtime.json, pathway.lock); --prepared-by is the name the
+//                                owner's monthly report message says set the shop up (written to report.json; without it the message says "your builder")
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
@@ -42,7 +43,8 @@ import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
-import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
+import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
+import { parseReportFile } from "./panel/contract.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { readStatus, updateStatus } from "./lib/status.ts";
 import { ensureDir, hostId, serverIdProblem, shopNameProblem, stableJson, writeAtomic } from "./lib/util.ts";
@@ -79,7 +81,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
-      role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
+      "prepared-by": { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
@@ -134,6 +136,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (problem) throw new Error(problem);
       const from = str("from");
       if (!from) throw new Error("Say which client folder to copy in: shop add <name> --from <folder>");
+      const preparedBy = str("prepared-by");
+      if (preparedBy !== undefined && !parseReportFile(JSON.stringify({ schema: 1, preparedBy }))) throw new Error('--prepared-by must be the name the owner reads for who set the shop up, on one line with single spaces, up to 120 characters: for example --prepared-by "Divya, local partner".');
       const target = serverPaths(dir).shop(name);
       if (existsSync(target)) throw new Error(`There is already a shop called ${name}.`);
       // a name whose secrets inbox already holds files belongs to a setup someone else started (the panel makes the inbox first): never adopt it
@@ -145,7 +149,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         if (!existsSync(src)) { if (file === "runtime.json") continue; throw new Error(`${src} is missing: a client folder needs settings.json and pathway.lock (and runtime.json).`); }
         cpSync(src, join(target, file));
       }
-      console.log(`Added ${name}. Next: hand in its secrets (the panel does this), then \`geometer check ${name}\`.`);
+      if (preparedBy !== undefined) writeFileSync(join(target, "report.json"), `${JSON.stringify({ schema: 1, preparedBy }, null, 2)}\n`);
+      console.log(`Added ${name}. Next: hand in its secrets (the panel does this), then \`geometer check ${name}\`.${preparedBy === undefined ? ` The owner's monthly report will say "${DEFAULT_PREPARED_BY}" set it up; \`--prepared-by "Divya, local partner"\` (or shops/${name}/report.json) names a person.` : ""}`);
       return 0;
     }
 
