@@ -21,6 +21,7 @@ import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./genera
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
+import { KINDS, kindFor } from "./lib/kinds.ts";
 import { pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { ensureSecret, panelUser, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
@@ -76,13 +77,17 @@ export async function adminCall(ctx: Context, service: string, method: string, p
 const pathOf = (dir: string, container: string, file: string) => secretFile(dir, container, ...file.split("/"));
 const have = (dir: string, container: string, file: string) => !!readSecretFile(pathOf(dir, container, file));
 
-function webhooksFor(dir: string, shop: string): ShopWebhooks {
+/** `calendar`: whether the shop's template has a calendar. One that has none has no Google key to hand in and nothing for the token refresher to look after, however many keys the server holds. */
+function webhooksFor(dir: string, shop: string, calendar = true): ShopWebhooks {
   const meta = have(dir, "inbox", `${shop}/whatsapp_app_secret`);
-  return { verification: !meta && have(dir, "inbox", `${shop}/whatsapp_path_token`) ? "path-token" : "meta-signature", hasGoogle: have(dir, "refresher", `${shop}/google_service_account.json`) || have(dir, "refresher", "_server/google_service_account.json"), ownGoogleKey: have(dir, "refresher", `${shop}/google_service_account.json`) };
+  return { verification: !meta && have(dir, "inbox", `${shop}/whatsapp_path_token`) ? "path-token" : "meta-signature", hasGoogle: calendar && (have(dir, "refresher", `${shop}/google_service_account.json`) || have(dir, "refresher", "_server/google_service_account.json")), ownGoogleKey: calendar && have(dir, "refresher", `${shop}/google_service_account.json`) };
 }
 
-/** What a shop needs before it can run, said by the name the panel hands it in under. */
-function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks): Problem[] {
+/** Does this shop's template have a calendar? (Its Guards are what it was planned with.) */
+const hasCalendar = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "calendar");
+
+/** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
+function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, file) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${shop}: ${handIn} has not been handed in. Put it in secrets-inbox/${shop}/${handIn} (the panel does this); it is moved to where only the right container can read it.` }];
   return [
     ...need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key"),
@@ -90,30 +95,35 @@ function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks): Prob
     ...need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret"),
     ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
-    ...(have(dir, "refresher", "_server/google_service_account.json") ? [] : need("refresher", `${shop}/google_service_account.json`, "google_service_account.json")),
+    ...(!calendar || have(dir, "refresher", "_server/google_service_account.json") ? [] : need("refresher", `${shop}/google_service_account.json`, "google_service_account.json")),
   ];
 }
 
 type Three = "razorpay" | "whatsapp" | "calendar";
-interface Credentials { agent: Record<Three | "model" | "relay", string>; admin: Record<Three, string>; /** the panel's own agent at each Guard (only when the panel is on): the connection checks' reads, nothing else. One token: the panel reads ONE token file (golive.ts) and presents it to every Guard. */ panel?: string }
+interface Credentials { agent: Partial<Record<Three, string>> & Record<"model" | "relay", string>; admin: Partial<Record<Three, string>>; /** the panel's own agent at each Guard (only when the panel is on): the connection checks' reads, nothing else. One token: the panel reads ONE token file (golive.ts) and presents it to every Guard. */ panel?: string }
 
-/** Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. */
-function ensureCredentials(dir: string, shop: string, panelOn: boolean): Credentials {
+/**
+ * Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. `calendar`: whether the shop's
+ * template has a calendar. One that has none gets no calendar credentials, no folder for a calendar Guard, and nothing in the token refresher's folder.
+ */
+function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true): Credentials {
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
     razorpay: ensureSecret(secretFile(dir, rt, "agent_razorpay"), mintGuardToken),
     whatsapp: ensureSecret(secretFile(dir, rt, "agent_whatsapp"), mintGuardToken),
-    calendar: ensureSecret(secretFile(dir, rt, "agent_calendar"), mintGuardToken),
+    ...(calendar ? { calendar: ensureSecret(secretFile(dir, rt, "agent_calendar"), mintGuardToken) } : {}),
     model: ensureSecret(secretFile(dir, rt, "agent_model"), mintGuardToken),
     relay: ensureSecret(secretFile(dir, "relay", shop, "agent_whatsapp"), mintGuardToken),
   };
-  const admin = Object.fromEntries((["razorpay", "whatsapp", "calendar"] as const).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
+  const admin = Object.fromEntries((calendar ? ["razorpay", "whatsapp", "calendar"] as const : ["razorpay", "whatsapp"] as const).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
   for (const container of ["ops", "inbox", "relay"]) writeSecretFile(secretFile(dir, container, shop, "internal_token"), internal);
   writeSecretFile(secretFile(dir, "inbox", shop, "relay_token"), ensureSecret(secretFile(dir, "relay", shop, "relay_token"), mintSecret));
   writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
-  writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar);
-  ensureDir(secretFile(dir, `g-${shop}-calendar`));
+  if (calendar) {
+    writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar as string);
+    ensureDir(secretFile(dir, `g-${shop}-calendar`));
+  }
   // The panel's agent token lives ONLY in the panel's folder (every Guard keeps its hash, under the agent `panel-<shop>`, allowed the reads and nothing else). 0600: the
   // panel runs as the user who wrote it. One token for the panel, not one per Guard: the panel reads a single token file and presents it to each Guard it checks.
   const panel = panelOn ? ensureSecret(secretFile(dir, "panel", names.panelGuardToken), mintGuardToken, 0o600) : undefined;
@@ -149,7 +159,8 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const taken = takeSecrets(ctx.dir, name);
   const problems: Problem[] = [...taken.problems];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
-  const webhooks = webhooksFor(ctx.dir, name);
+  const calendar = (kindFor(folder.lock?.pathway) ?? KINDS.bookings).guards.includes("calendar");
+  const webhooks = webhooksFor(ctx.dir, name, calendar);
   const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
   // The settings the bundle adds to the generated config (`ai`, `report`) are judged by the check of the version the shop is PINNED to, not by this checkout's: a client held back
   // on an older version has a runtime that refuses a key it does not know.
@@ -158,7 +169,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${folder.lock.pathway}@${folder.lock.version}`)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks));
+  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch.
   const pinned = folder.pins.razorpay;
   const authorization = pinned ? readSecretFile(secretFile(ctx.dir, `g-${name}-razorpay`, "razorpay_authorization")) : undefined;
@@ -215,7 +226,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled);
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)));
     for (const g of prepared.guards) {
       problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
@@ -239,7 +250,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const snap = s.applied!;
     const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string } };
     const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string } } };
-    return { ...deployOf(name, s), webhooks: webhooksFor(ctx.dir, name), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathwayVersion: snap.pathway.split("@")[1] };
+    return { ...deployOf(name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1] };
   });
   for (const [name, s] of applied) {
     const client = join(p.generated, "shops", name, "client");
@@ -353,7 +364,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled)]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)))]));
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);

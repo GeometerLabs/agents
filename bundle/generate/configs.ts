@@ -63,10 +63,12 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
   });
 }
 
-export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string })[], agents: AgentFacts[] = []): string {
+export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string })[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
       ...shops.map((s) => [s.name, {
+        // which template's words the relay asks the owner in (services/relay.ts); left out for Bookings, as it always was
+        ...(s.pathway && s.pathway !== "bookings" ? { pathway: s.pathway } : {}),
         guardAdminUrl: guardAdmin(server, s, "razorpay").adminUrl,
         approverId: names.approverId(s.name), agentId: names.agentId(s.name),
         runtimeUrl: runtimeUrl(server, s),
@@ -101,7 +103,7 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
   });
 }
 
-export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string })[], agents: AgentFacts[] = []): string {
+export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string; pathway?: string })[], agents: AgentFacts[] = []): string {
   const net = addressing(server);
   const modelGuard = { id: "guard-model", service: names.modelGuard, adminUrl: url(net.adminIp(undefined, "model"), ADMIN_FORWARD_PORT), healthUrl: url(net.adminIp(undefined, "model"), HEALTH_PORT), adminTokenFile: "/run/secrets/_model/admin_token" };
   return stableJson({
@@ -109,12 +111,12 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
     ...(server.fleet ? { fleet: { url: server.fleet.url, keyFile: "/run/secrets/fleet_key" } } : {}),
     fleetDir: OPS_FLEET_DIR,
     shops: Object.fromEntries(shops.map((s) => [s.name, {
-      pathway: "bookings", pathwayVersion: s.pathwayVersion,
+      pathway: s.pathway ?? "bookings", pathwayVersion: s.pathwayVersion,
       runtimeUrl: runtimeUrl(server, s), internalTokenFile: `/run/secrets/${s.name}/internal_token`,
       // where the deployer records the shop's backup times (the heartbeat reports their ages)
       statusFile: `${OPS_STATUS_DIR}/${s.name}.json`,
       // the shop's three Guards, and the server's model Guard (shared, so it is listed under every shop: if it is not ready, every shop says so)
-      guards: [...SHOP_GUARD_KINDS.map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })), modelGuard],
+      guards: [...SHOP_GUARD_KINDS.filter((kind) => s.guards.some((g) => g.kind === kind)).map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })), modelGuard],
     }])),
     model: modelGuard,
     // Agents someone else wrote: their Guards only. `agentUrl` is where the reading agent (record-<name>) looks at the service's own state through the Guard.

@@ -1,6 +1,9 @@
-// The record and the bookings, exported for the monthly report, inside a short-lived container (like snapshot.ts). The panel's report reads
-// exports/<shop>/record.json and bookings.json, and they leave the shop's volume, so they carry no customer's number: the customer field of a booking and the
-// conversation of a record entry become a short hash of themselves (the report's own digest of an entry already leaves the conversation out, so nothing in it changes).
+// The record and the bookings (for a Fees centre, the fees), exported for the monthly report, inside a short-lived container (like snapshot.ts). The panel's report reads
+// exports/<shop>/record.json and bookings.json (dues.json for Fees), and they leave the shop's volume, so they carry no customer's number: the customer field of a booking
+// (the parent's number on a fee) and the conversation of a record entry become a short hash of themselves (the report's own digest of an entry already leaves the
+// conversation out, so nothing in it changes). A fee also carries a CHILD's name, which the report never needs (it counts fees): the name on a fee is hashed too, and so is
+// the name in a record note that names the student ("the fee for Rohan Mehta, ..."). That changes the note, so the digest of an exported Fees record is of the exported
+// notes, not of the shop's own; nothing compares the two.
 //
 //   node bundle/backup/export.ts /job/job.json
 import { createHash } from "node:crypto";
@@ -14,7 +17,7 @@ import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string }[] }
 /** `usage`: the cost meter's cumulative counts over the whole record (lib/usage.ts), which the deployer writes into status/<shop>.json. Counts only. */
-export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; usage?: UsageTotals; error?: string }
+export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; error?: string }
 
 export const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
 
@@ -38,16 +41,22 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   } finally { db.close(); }
   const raw = rows.map((r) => JSON.parse(r.entry) as Record<string, unknown>);
   const usage = summarizeUsage(raw, rates); // counted before the conversation is hidden, and it reads no text
-  const entries = raw.map((e) => ({ ...e, conversation: hide("c", e.conversation) }));
-  const pairs = state ? (JSON.parse(state.snapshot) as { bookings: [string, Record<string, unknown>][] }).bookings : [];
-  const bookings = pairs.map(([, b]) => ({ ...b, customer: hide("p", b.customer) }));
+  // A Bookings snapshot holds `bookings`, a Fees one holds `dues`: whichever the shop's store has is exported, under its own file name.
+  const saved = state ? (JSON.parse(state.snapshot) as { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][] }) : {};
+  const isFees = saved.dues !== undefined && saved.bookings === undefined;
+  const students = isFees ? [...new Set((saved.dues ?? []).map(([, d]) => String(d.studentName ?? "")).filter((n) => n.length >= 2))].sort((a, b) => b.length - a.length) : [];
+  const scrub = (text: unknown): unknown => (typeof text === "string" ? students.reduce((t, name) => t.split(name).join(hide("s", name)), text) : text);
+  const entries = raw.map((e) => ({ ...e, conversation: hide("c", e.conversation), ...(isFees && "notes" in e ? { notes: scrub(e.notes) } : {}) }));
+  const cases = isFees
+    ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
+    : (saved.bookings ?? []).map(([, b]) => ({ ...b, customer: hide("p", b.customer) }));
   mkdirSync(shop.out, { recursive: true });
-  for (const [file, value] of [["record.json", entries], ["bookings.json", bookings]] as const) {
+  for (const [file, value] of [["record.json", entries], [isFees ? "dues.json" : "bookings.json", cases]] as const) {
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
   }
-  return { name: shop.name, ok: true, entries: entries.length, bookings: bookings.length, usage };
+  return { name: shop.name, ok: true, entries: entries.length, ...(isFees ? { dues: cases.length } : { bookings: cases.length }), usage };
 }
 
 if (import.meta.main) {

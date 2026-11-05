@@ -40,6 +40,8 @@ export interface Words {
     made: string; cancelled: string; moved: string; deposits: string; refunds: string; saidNo: string;
     approvals: string; approvalsLine(asked: number, approved: number, denied: number): string;
     bookingStates: Record<string, string>;
+    /** A Fees centre's fees by state, and the two headings of its settings (its limits are the certificate's lines, in plain words). */
+    feeStates: Record<string, string>; summaryFees: string; summaryRules: string;
     papers: string; goLive: string; goLiveNone: string; monthly: string; makeReport(month: string): string; reportNoRecord: string; reportMade: string;
     stop: string; stopTitle(name: string): string; stopText: string; stopConfirm: string; stopAsked(at: string): string; stopOnly: string;
     details: string; detailsDeploy: string; detailsPins: string; detailsPrices(date: string): string; detailsNothing: string; detailsStatusFile: string;
@@ -65,6 +67,24 @@ export interface Words {
     depositStep: { amount: string; window: string; windowHint: string; whatThisMeans: string };
     limits: {
       price: string; hours: string; deposit(amount: string, minutes: number): string; refund(hours: number, limit: string): string; booked: string; language: string; charge: string;
+    };
+    /**
+     * The Fees template's own form (a centre, its batches and fees, its students, and the rules of the month). The same five steps, so the steps' titles for it are here.
+     * Everything else the phone setup says (languages, accounts, checks) is shared, and the centre's limits in plain words are the Fees certificate's own lines
+     * (pathways/fees/report/strings.ts), so they are said once.
+     */
+    fees: {
+      steps: { business: string; rules: string };
+      business: { name: string; address: string; batches: string; batchesHint: string; batchName: string; batchFee: string; students: string; studentsHelp: string };
+      rules: {
+        dueDay: string; graceDays: string; lateFee: string; reminderDays: string; reminderDaysHelp: string; reminderHour: string; reminderMost: string; partAllowed: string; partMin: string;
+        waiver: string; waiverHelp: string; refund: string; refundHelp: string;
+      };
+      problems: {
+        noBatch: string; batchNameEmpty(row: number): string; feeBad(row: number): string; noStudents: string; studentBad(row: number): string; studentNumber(row: number): string;
+        studentBatch(row: number, batch: string): string; tooMany(max: number): string; dueBad: string; graceBad: string; lateBad(max: string): string; daysBad: string; hourBad: string;
+        mostBad: string; partBad(max: string): string; waiverBad(max: string): string; refundBad: string;
+      };
     };
     languagesStep: { main: string; also: string; hint: string; ownerLanguage: string; ownerNumber: string; ownerNumberHelp: string };
     problems: {
@@ -103,6 +123,8 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceInnovator": ["₹299", "₹179"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
+  "setup.fees.problems.batchNameEmpty": [2], "setup.fees.problems.feeBad": [2], "setup.fees.problems.studentBad": [3], "setup.fees.problems.studentNumber": [3], "setup.fees.problems.studentBatch": [3, "Class 11"],
+  "setup.fees.problems.tooMany": [300], "setup.fees.problems.lateBad": ["₹1,200"], "setup.fees.problems.partBad": ["₹1,200"], "setup.fees.problems.waiverBad": ["₹1,200"],
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
   "setup.accounts.received": ["4 Nov 2026, 10:30"], "setup.accounts.razorpay.webhookUrl": ["https://shops.example.com/hooks/glow-salon/razorpay"],
   "setup.checks.deployApplied": ["4 Nov 2026, 10:30"], "setup.checks.limitsProven": [9, 9], "setup.checks.guardWords": ["the route is not listed"], "setup.checks.notReady": [2],
@@ -161,6 +183,7 @@ export const en: Words = {
     bookingStates: {
       enquiry: "Asking", confirming_details: "Checking details", awaiting_deposit: "Waiting for the deposit", needs_owner: "Waiting for the owner", confirmed: "Booked", expired: "Hold ran out", cancelled: "Cancelled", completed: "Done",
     },
+    feeStates: { open: "Fees still open", paid: "Fees paid", closed: "Fees closed by you" }, summaryFees: "Monthly fees", summaryRules: "Due dates and limits",
     papers: "Papers for the owner", goLive: "Go-live certificate", goLiveNone: "Not made yet. It is made when the checks pass in setup.", monthly: "Monthly report", makeReport: (m) => `Make the report for ${m}`,
     reportNoRecord: "The record has not been shared with the panel yet, so a monthly report cannot be made.", reportMade: "The report is ready.",
     stop: "Stop this shop", stopTitle: (n) => `Stop ${n}?`, stopText: "This asks the server to stop the agent. Nothing more goes out once the server has stopped it. It can take a minute, and the server starts it again only when you ask.",
@@ -204,7 +227,7 @@ export const en: Words = {
     },
   },
   setup: {
-    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit" },
+    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes" },
     templateElsewhere: "A builder sets this one up with the plugin. The phone setup does not have it yet.", start: "Start", progress: (n, o) => `Step ${n} of ${o}`,
     steps: { business: "The business", deposit: "Deposit and cancellation", languages: "Languages and your number", accounts: "Connect the shop's accounts", checks: "Checks" },
     problemsTitle: "Please fix this:", fallback: (e) => `One thing needs fixing: ${e}`,
@@ -221,6 +244,31 @@ export const en: Words = {
       booked: "When it says booked, the slot is in your calendar and the deposit is in your account.",
       language: "Your customers are answered in their language, with the right price and date.",
       charge: "You stay in charge from your phone.",
+    },
+    fees: {
+      steps: { business: "The centre and its fees", rules: "Due dates, late fee and limits" },
+      business: {
+        name: "The centre's name", address: "Address (optional)", batches: "Batches or classes", batchesHint: "One row for each batch. The fee is for one month, in whole rupees.",
+        batchName: "Name of the batch", batchFee: "Monthly fee (₹)", students: "Students",
+        studentsHelp: "One student on each line: the student's name, the parent's WhatsApp number, then the batch's name. For example: Rohan Mehta, 98765 43210, Class 10",
+      },
+      rules: {
+        dueDay: "Day of the month the fee is due (1 to 28)", graceDays: "Grace days before a late fee", lateFee: "Late fee in rupees (0 for none)",
+        reminderDays: "Reminder days from the due day", reminderDaysHelp: "Separate them with commas. A minus means before the due day: -3, 0, 5 is three days before, on the day, and five days after.",
+        reminderHour: "Hour of the day reminders go (6 to 21)", reminderMost: "Most reminders for one fee in a month", partAllowed: "A parent may pay part of a fee", partMin: "The least a first part payment may be (₹)",
+        waiver: "Most the agent may take off a student's month by itself (₹, 0 for none)", waiverHelp: "More than this always comes to you first.",
+        refund: "Most the agent may refund by itself (₹)", refundHelp: "A refund above this waits for your OK on WhatsApp.",
+      },
+      problems: {
+        noBatch: "Add at least one batch, with a name and a monthly fee.", batchNameEmpty: (n) => `Batch ${n} has no name.`, feeBad: (n) => `Batch ${n}: write the monthly fee as a whole number of rupees, like 1500.`,
+        noStudents: "Add at least one student.", studentBad: (n) => `Line ${n}: write the student's name, the parent's number and the batch, with commas between them.`,
+        studentNumber: (n) => `Line ${n}: that parent's WhatsApp number is not one we can message. Write it like 98765 43210.`, studentBatch: (n, b) => `Line ${n}: there is no batch called "${b}" above.`,
+        tooMany: (max) => `That is more than ${max} students. Ask the person who runs the server how to add more.`,
+        dueBad: "The due day must be a whole number from 1 to 28.", graceBad: "Grace days must be a whole number from 0 to 30.", lateBad: (max) => `The late fee must be a whole number of rupees, from 0 to ${max} (the cheapest monthly fee).`,
+        daysBad: "Write the reminder days as whole numbers separated by commas, each between -14 and 60, like -3, 0, 5.", hourBad: "The reminder hour must be a whole number from 6 to 21.",
+        mostBad: "The most reminders must be a whole number from 1 to 12.", partBad: (max) => `The least part payment must be a whole number of rupees from 1 to ${max} (the cheapest monthly fee).`,
+        waiverBad: (max) => `The waiver limit must be a whole number of rupees from 0 to ${max} (the cheapest monthly fee).`, refundBad: "The refund limit must be a whole number of rupees, 0 or more.",
+      },
     },
     languagesStep: {
       main: "Main language of your customers", also: "Also tick any others your customers write in", hint: "The agent starts in the main language and answers each customer in the one they write in.", ownerLanguage: "Your language for messages to you",

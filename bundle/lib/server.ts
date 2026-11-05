@@ -15,9 +15,8 @@
 //   secrets/                 one folder per container, mounted into that container only. Parent mode 0700.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { validateSettings } from "../../pathways/bookings/src/settings.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
-import { parseLock } from "../../pathways/bookings/server/config.ts";
+import { parseLock } from "../../modules/runtime/config.ts";
+import { KINDS, kindFor, kindNames } from "./kinds.ts";
 import { parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
@@ -218,7 +217,8 @@ export interface ShopFolder {
   settingsText: string;
   pinsText: string;
   pins: Pins;
-  settings: Settings | undefined;
+  /** The settings, checked by the template the shop's pathway.lock names, and in that template's own shape. */
+  settings: any;
   runtime: PanelRuntime;
   lock: { pathway: string; version: string } | undefined;
   lockText: string;
@@ -252,10 +252,14 @@ export function readShop(dir: string, name: string): ShopFolder {
     return readFileSync(path, "utf8");
   };
   const settingsText = read("settings.json");
-  let settings: Settings | undefined;
-  if (settingsText) {
+  // The template is the one the lock names. A lock that is missing or unreadable is said below, in its place; until then the settings are judged as Bookings' have always been.
+  let named: string | undefined;
+  try { named = parseLock(readFileSync(join(folder, "pathway.lock"), "utf8")).pathway; } catch { /* said below */ }
+  const kind = named === undefined ? KINDS.bookings : kindFor(named);
+  let settings: any;
+  if (settingsText && kind) {
     try {
-      const checked = validateSettings(JSON.parse(settingsText));
+      const checked = kind.validateSettings(JSON.parse(settingsText));
       if (checked.ok) settings = checked.settings; else problems.push(...checked.errors.map((e) => `settings.json: ${e}`));
     } catch (e) { problems.push(`settings.json is not valid JSON: ${(e as Error).message}`); }
   }
@@ -287,6 +291,7 @@ export function readShop(dir: string, name: string): ShopFolder {
   const lockText = read("pathway.lock");
   let lock: { pathway: string; version: string } | undefined;
   if (lockText) { try { lock = parseLock(lockText); } catch (e) { problems.push((e as Error).message); } }
+  if (lock && !kind) problems.push(`pathway.lock is pinned to "${lock.pathway}", which this bundle does not run. It runs: ${kindNames()}.`);
   const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
   const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
   return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
