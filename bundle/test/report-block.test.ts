@@ -3,11 +3,11 @@
 // of the report (the panel) carries the same name and badge.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
 import { applyOnce } from "../apply.ts";
-import { deploy, desiredHashOf } from "../deploy.ts";
+import { checkShop, deploy, desiredHashOf } from "../deploy.ts";
 import { main } from "../geometer.ts";
 import { withReport, planShop } from "../generate/shop.ts";
 import type { ReportFacts } from "../generate/shop.ts";
@@ -124,6 +124,61 @@ test("a pathway whose validator refuses the report key keeps the shop starting: 
     assert.equal(both.runtime.ai, "buttons");
     assert.equal("report" in both.runtime, false);
   } finally { t.done(); }
+});
+
+/** A version kept beside the server, which is where B53 leaves a client it held back: today's pathway copied, with the report setting taken out of what its runtime knows. */
+function keepOldVersion(w: ReturnType<typeof world>, version: string, edit: (configText: string) => string = (t) => t.replace('"pauseMinutes", "report"]', '"pauseMinutes"]')): string {
+  const dir = join(w.root, "pathways", `bookings@${version}`);
+  cpSync(join(w.ctx.appDir, "pathways", "bookings"), dir, { recursive: true });
+  const pkg = join(dir, "package.json");
+  writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
+  const config = join(dir, "server", "config.ts");
+  const before = readFileSync(config, "utf8");
+  const after = edit(before);
+  assert.notEqual(after, before, "the copy was changed, or this test tests nothing");
+  writeFileSync(config, after);
+  writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), `bookings@${version}\n`);
+  return dir;
+}
+const generatedRuntime = (w: ReturnType<typeof world>) => JSON.parse(readFileSync(join(w.root, "generated", "shops", "glow-salon", "client", "runtime.json"), "utf8")) as Record<string, unknown>;
+
+test("a client held back on a version from before the report is judged by THAT version's check: no block, one note, and it starts; moved to today's version it gets the block", async () => {
+  const w = world();
+  try {
+    keepOldVersion(w, "0.0.9");
+    putAnswer(w.paths, answer({ ai: "buttons", reason: "overage_unfunded", innovator: true }));
+    w.handIn("glow-salon");
+    const checked = await checkShop(w.ctx, "glow-salon");
+    assert.deepEqual(checked.problems, [], "a note, not a refusal");
+    const noted = checked.notes.filter((n) => /monthly report to the owner is not switched on/u.test(n));
+    assert.equal(noted.length, 1, checked.notes.join("\n"));
+    assert.match(noted[0], /did not accept the report setting \(I don't know what "report" means in runtime\.json\./u, "in that version's own words");
+    await deploy(w.ctx);
+    const old = generatedRuntime(w);
+    assert.equal("report" in old, false, "the older runtime would refuse the key and not start");
+    assert.equal(old.ai, "buttons", "while a setting that version does know is still written");
+    assert.equal(loadState(w.root).shops["glow-salon"].applied!.pathway, "bookings@0.0.9");
+    // the same client, moved to today's version
+    writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), "bookings@0.1.0\n");
+    await deploy(w.ctx);
+    assert.equal((generatedRuntime(w).report as Record<string, unknown>).innovator, true);
+  } finally { w.done(); }
+});
+
+test("a pinned version whose runtime-config check cannot be read gets neither optional setting, and the note says why", async () => {
+  const w = world();
+  try {
+    keepOldVersion(w, "0.0.8", () => 'throw new Error("this file does not load");\n');
+    putAnswer(w.paths, answer({ ai: "buttons", reason: "overage_unfunded" }));
+    w.handIn("glow-salon");
+    const checked = await checkShop(w.ctx, "glow-salon");
+    assert.deepEqual(checked.problems, []);
+    assert.ok(checked.notes.some((n) => /monthly report .* not switched on .*\(I could not read the runtime-config check of the pathway in .*bookings@0\.0\.8 \(this file does not load\)\)/u.test(n)), checked.notes.join("\n"));
+    assert.ok(checked.notes.some((n) => /fleet asked for button mode, but this pathway version does not know the ai setting yet/u.test(n)), "button mode is skipped the same way");
+    await deploy(w.ctx);
+    const generated = generatedRuntime(w);
+    assert.equal("report" in generated || "ai" in generated, false);
+  } finally { w.done(); }
 });
 
 test("withReport adds nothing to nothing, or to a config that was broken before the block was added", () => {

@@ -235,7 +235,7 @@ Good to know:
 
 - The first deploy after you update the bundle redeploys every shop once, because that is what writes the report setting into its config. The runtime restarts, as with any deploy.
 - The report says **test money** unless the panel's connection check confirmed a **live** Razorpay account for the shop.
-- A pathway version from before the report existed would refuse the setting and not start, so the bundle writes it only if the pathway accepts it, and says so when it skips it.
+- A version of the template from before the report existed would refuse the setting and not start. So the bundle asks the version each shop is **pinned to** (its own checkout, beside the server for an older pin) whether it accepts the setting, writes it only if it does, and says so when it skips it. A client that `update` held back on an older version keeps working and gets no report until it moves. The same check now guards fleet's button mode.
 - If you change the domain or the HTTPS port, run `deploy` again for each shop. The links already sent stay on the old address.
 - Nothing has deleted old pages yet. Each month adds one small folder per shop.
 
