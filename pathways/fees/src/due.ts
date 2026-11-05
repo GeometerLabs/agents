@@ -71,12 +71,15 @@ export interface Due {
   reminders: Reminder[];
   remindersSent: number;
   pending: Pending[];
-  /** A parent has asked the owner to take something off this fee, and the owner has been asked (or decided). Only one ask per fee. */
-  waiverAsked: boolean;
+  /** The owner said no to a waiver on this fee. The parent asking again is told that, and the owner is not asked again. (A yes, or a request that went stale, leaves the parent free to ask.) */
+  waiverDenied: boolean;
   refundIssues?: RefundIssue[];
   stoppedRefunds?: string[];
-  /** When this fee's parent was last told a payment could not be found (so the owner is not told again within the hour). */
-  claimTellAtMs?: number;
+  /** Each of these keeps one kind of notice from being sent again within its time, so one kind never keeps another quiet. */
+  claimTellAtMs?: number; // the owner was told a parent says the fee is paid and the record shows nothing
+  discountTellAtMs?: number; // the owner was told a parent asked for a discount without an amount
+  linkFailTellAtMs?: number; // the owner was told the payment link could not be made
+  readNoteAtMs?: number; // the record says a reminder is waiting because the payments service could not be read
 }
 
 export interface Customer {
@@ -94,6 +97,8 @@ export interface Store {
   seenEvents: Set<string>;
   nextDue: number;
   nextRequest: number;
+  /** When the agent first ran. A month whose first reminder day was before that is not chased: the centre may have collected it already. */
+  startedAtMs?: number;
   /** The month's AI spend and button-mode notices. Left out until the first message. */
   ai?: AiState;
 }
@@ -171,7 +176,7 @@ export function newDue(settings: Settings, student: Student, language: Language,
   const batch = batchOf(settings, student);
   return {
     id: "", studentName: student.name, batchId: batch.id, customer: student.parent, language, month, dueDate, dueMs,
-    feeInr: batch.monthlyFeeInr, lateFeeInr: 0, waivedInr: 0, state: "open", links: [], linkSeq: 0, payments: [], reminders: [], remindersSent: 0, pending: [], waiverAsked: false,
+    feeInr: batch.monthlyFeeInr, lateFeeInr: 0, waivedInr: 0, state: "open", links: [], linkSeq: 0, payments: [], reminders: [], remindersSent: 0, pending: [], waiverDenied: false,
   };
 }
 

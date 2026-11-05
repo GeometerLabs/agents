@@ -77,6 +77,7 @@ export function createAgent(deps: AgentDeps): Agent {
   const owner = settings.owner.whatsapp;
   const parseContext = { languages: settings.languages };
   const highestInr = highestDueInr(settings);
+  store.startedAtMs ??= clock.now(); // the day this agent first ran: a month whose first reminder day was before it is not chased
 
   const customerOf = (phone: string): Customer => {
     let c = store.customers.get(phone);
@@ -288,6 +289,7 @@ export function createAgent(deps: AgentDeps): Agent {
         const date = dueDateOf(m.year, m.month);
         const moments = reminderMoments(date);
         if (now < Math.min(...moments)) continue;
+        if (Math.min(...moments) < store.startedAtMs) continue; // its first reminder day came before the agent first ran: that month is not chased
         const due = register(store, newDue(settings, student, student.language ?? store.customers.get(student.parent)?.language ?? settings.languages[0], key, date, dueMsOf(date)));
         // Every reminder day is kept, the ones that have passed too: opened on the first reminder's day, or later, the ones already due go as ONE message (the shared rule).
         due.reminders = moments.map((atMs) => ({ atMs, sent: false }));
@@ -322,16 +324,16 @@ export function createAgent(deps: AgentDeps): Agent {
     if (due.state !== "open") { takeDue(due.reminders, now); return; } // paid or waived: the reminder is not sent, and the ones to come are over
     if (customerOf(due.customer).optedOut) { takeDue(due.reminders, now); return; }
     if (!ok) {
-      if (due.claimTellAtMs === undefined || now - due.claimTellAtMs >= 30 * MINUTE) {
-        due.claimTellAtMs = now;
+      if (due.readNoteAtMs === undefined || now - due.readNoteAtMs >= 30 * MINUTE) {
+        due.readNoteAtMs = now;
         log(due, due.customer, "send_message", "blocked", { reminder: true }, { decisions: [checkNoReminderOncePaid({ record, dueId: due.id, owedPaise: owedPaise(due), readOk: false })], notes: "the reminder waits until the payment record can be read", refs: { to: "customer" } });
       }
       return;
     }
     const link = await currentLink(due);
     if (!link.ok) {
-      if (due.claimTellAtMs === undefined || now - due.claimTellAtMs >= HOURLY) {
-        due.claimTellAtMs = now;
+      if (due.linkFailTellAtMs === undefined || now - due.linkFailTellAtMs >= HOURLY) {
+        due.linkFailTellAtMs = now;
         await tellOwner(due, due.customer, "owner_link_failed");
       }
       return; // the reminder stays due and is tried again
@@ -394,15 +396,14 @@ export function createAgent(deps: AgentDeps): Agent {
     await settle(due, fresh);
     if (due.state !== "open") { await tellCustomer(due, phone, ["fee_already_paid"]); return; }
     if (due.pending.some((p) => p.kind === "waiver")) { await tellCustomer(due, phone, ["fee_request_waiting"], { offer: ownerButton }); return; }
-    if (due.waiverAsked) { const link = await currentLink(due); if (link.ok) await tellCustomer(due, phone, ["fee_waiver_denied"], { offer: feeButtons(due, ["pay", "owner"]) }); return; }
+    if (due.waiverDenied) { const link = await currentLink(due); if (link.ok) await tellCustomer(due, phone, ["fee_waiver_denied"], { offer: feeButtons(due, ["pay", "owner"]) }); return; }
     const amountInr = intent.amountInr;
     const decision = amountInr === undefined ? undefined : checkWaiver({ amountInr, balanceInr: balanceInr(due), alreadyWaivedInr: due.waivedInr, limitInr: settings.waiver.limitInr });
     if (amountInr === undefined || decision!.verdict === "block") {
       // no usable amount: nothing to apply and nothing to approve, so the owner is told and decides what to say
-      const customer = customerOf(phone);
       const now = clock.now();
-      let told = customer.ownerAskedAtMs !== undefined && now - customer.ownerAskedAtMs < HOURLY;
-      if (!told) { told = await tellOwner(due, phone, "owner_discount_note"); if (told) customer.ownerAskedAtMs = now; }
+      let told = due.discountTellAtMs !== undefined && now - due.discountTellAtMs < HOURLY; // this kind of notice only: "talk to the owner" does not keep it quiet
+      if (!told) { told = await tellOwner(due, phone, "owner_discount_note"); if (told) due.discountTellAtMs = now; }
       log(due, phone, "ask_owner", told ? "confirmed" : "failed", { claim: "discount" }, { decisions: decision ? [decision] : undefined, refs: { to: "owner" }, notes: "a discount was asked for without a usable amount; nothing was changed" });
       await tellCustomer(due, phone, [told ? "fee_discount_to_owner" : "fee_couldnt_tell_owner"], { offer: feeButtons(due, ["pay", "owner"]) });
       return;
@@ -411,7 +412,6 @@ export function createAgent(deps: AgentDeps): Agent {
     // above the limit: the owner is asked, for this amount, on this fee, at this balance
     const request: Pending = { kind: "waiver", id: newRequestId(store), amountInr, balanceAtAskInr: balanceInr(due), askedAtMs: clock.now() };
     due.pending.push(request);
-    due.waiverAsked = true;
     log(due, phone, "waiver_request", "held_for_owner", { amountInr, balanceInr: request.balanceAtAskInr }, { decisions: [decision!], refs: { request: request.id, amountPaise: String(amountInr * 100) } });
     await tellOwner(due, phone, "owner_waiver_request", { waiverInr: amountInr, requestRef: request.id });
     await tellCustomer(due, phone, ["fee_waiver_asked"], { waiverInr: amountInr, offer: feeButtons(due, ["pay", "owner"]) });
@@ -546,6 +546,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (pending.kind === "waiver") {
       if (command === "deny") {
         log(due, owner, "owner_decision", "confirmed", { command }, { notes: "the owner declined the waiver", refs: said });
+        due.waiverDenied = true;
         const link = await currentLink(due);
         if (link.ok) await tellCustomer(due, due.customer, ["fee_waiver_denied"], { offer: feeButtons(due, ["pay", "owner"]) });
         return;
@@ -606,7 +607,7 @@ export function createAgent(deps: AgentDeps): Agent {
     countUnderstood(understood);
     if (intent.language && settings.languages.includes(intent.language)) {
       customer.language = intent.language;
-      for (const due of duesOf(store, phone)) if (due.state === "open") due.language = intent.language;
+      for (const due of duesOf(store, phone)) due.language = intent.language; // every fee of the parent, paid ones too: a refund is asked about a paid fee
     }
     const notes = [note, intent.overrideAttempt ? "the message asked the agent to ignore its rules; it is treated as ordinary text and changes nothing" : undefined].filter(Boolean).join("; ");
     log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes, refs: { messageId: msg.id, ...understandingRefs(understood, tapped ? msg.reply!.kind : undefined) } });
