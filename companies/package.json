@@ -1,0 +1,13 @@
+{
+  "name": "geometer-companies-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Guard for companies: a draft limits spec from an OpenAPI file, a reviewer's accept step, the real geo-guard compile, and sidecar recipes. No dependencies.",
+  "scripts": {
+    "test": "node --test test/",
+    "draft": "node openapi-to-spec.ts draft",
+    "build": "node openapi-to-spec.ts build",
+    "fake-api": "node examples/refunds-api/fake-api.ts"
+  }
+}

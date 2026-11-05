@@ -1,0 +1,139 @@
+{
+  "accept": 1,
+  "_help": "Copy this file to accept.json and fill it in. Set \"keep\": true on a suggestion to keep it, and fill every blank (null) in the ones you keep. Set a route to true to list it. Anything left false is dropped. Fields that start with _ are notes and are ignored.",
+  "draft_sha256": "sha256:0e3077c7da3172616f9eb4d5c990383e354f53d318ae5aede2e4802052b90d9e",
+  "reviewed_by": "priya.nair",
+  "tenant": "brightside",
+  "name": "brightside-refunds",
+  "version": 1,
+  "approval_ttl_seconds": 3600,
+  "routes": {
+    "get_charge": true,
+    "list_refunds": true,
+    "get_customer": false,
+    "delete_customer": false,
+    "add_customer_note": false,
+    "create_refund": true,
+    "get_refund": true,
+    "cancel_refund": true,
+    "create_transfer": true
+  },
+  "_routes": {
+    "get_charge": "GET /v1/charges/{charge_id}",
+    "list_refunds": "GET /v1/charges/{charge_id}/refunds",
+    "get_customer": "GET /v1/customers/{customer_id}",
+    "delete_customer": "DELETE /v1/customers/{customer_id} (consequential)",
+    "add_customer_note": "POST /v1/customers/{customer_id}/notes",
+    "create_refund": "POST /v1/refunds (consequential)",
+    "get_refund": "GET /v1/refunds/{refund_id}",
+    "cancel_refund": "POST /v1/refunds/{refund_id}/cancel (consequential)",
+    "create_transfer": "POST /v1/transfers (consequential)"
+  },
+  "suggestions": {
+    "delete_customer-once": {
+      "_review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the path field that look like ids: \"customer_id\". Check the guess against how your API names things. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "keep": false,
+      "key_fields": [
+        "customer_id"
+      ]
+    },
+    "delete_customer-forbidden": {
+      "_review": "Always refused, whatever the call says. Keep this if your agent should never make this call. Keep the route as well, so the refusal names this rule; a route you leave out is refused as \"unlisted\" instead.",
+      "keep": false
+    },
+    "delete_customer-count-per-day": {
+      "_review": "Caps how many delete_customer calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "keep": false,
+      "cap": null,
+      "window_seconds": 86400,
+      "scope": []
+    },
+    "create_refund-amount-bound": {
+      "_review": "Refuses a create_refund call whose \"amount\" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out. The API's own schema says minimum 1, maximum 100000000; that is the API's limit, not yours. A call with no \"amount\" is refused, never passed.",
+      "keep": true,
+      "min": "1",
+      "max": "50000",
+      "unit": "cents"
+    },
+    "create_refund-needs-approval": {
+      "_review": "Holds a create_refund call whose \"amount\" is above the threshold, until a named person approves THAT exact call. The agent sends the identical call again after the approval. Fill in the threshold. It must be below the bound's max, or no call can ever be held.",
+      "keep": true,
+      "threshold": "10000",
+      "unit": "cents"
+    },
+    "create_refund-once": {
+      "_review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the body field that look like ids: \"charge_id\". Check the guess against how your API names things. Two different create_refund calls with the same key fields count as the same action, and the second is refused (409). If several partial amounts against one id are normal, choose fields that tell them apart. The call declares the Idempotency-Key header, so Guard sends its own key in it and replaces any key the agent sent. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "keep": true,
+      "key_fields": [
+        "charge_id"
+      ]
+    },
+    "create_refund-spend-per-day": {
+      "_review": "Caps the total \"amount\" that create_refund calls may move in a window (a day by default). A call that would take the total over the cap is refused before it is sent. Days start at midnight UTC (05:30 in India). It counts only calls that go through this Guard. Fill in the cap.",
+      "keep": true,
+      "cap": "200000",
+      "window_seconds": 86400,
+      "scope": []
+    },
+    "create_refund-count-per-day": {
+      "_review": "Caps how many create_refund calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "keep": true,
+      "cap": "100",
+      "window_seconds": 86400,
+      "scope": []
+    },
+    "cancel_refund-once": {
+      "_review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the path field that look like ids: \"refund_id\". Check the guess against how your API names things. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "keep": false,
+      "key_fields": [
+        "refund_id"
+      ]
+    },
+    "cancel_refund-count-per-day": {
+      "_review": "Caps how many cancel_refund calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "keep": true,
+      "cap": "20",
+      "window_seconds": 86400,
+      "scope": []
+    },
+    "create_transfer-amount-bound": {
+      "_review": "Refuses a create_transfer call whose \"amount\" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out. The API's own schema says minimum 1; that is the API's limit, not yours. A call with no \"amount\" is refused, never passed.",
+      "keep": false,
+      "min": null,
+      "max": null,
+      "unit": null
+    },
+    "create_transfer-needs-approval": {
+      "_review": "Holds a create_transfer call whose \"amount\" is above the threshold, until a named person approves THAT exact call. The agent sends the identical call again after the approval. Fill in the threshold. It must be below the bound's max, or no call can ever be held.",
+      "keep": false,
+      "threshold": null,
+      "unit": null
+    },
+    "create_transfer-once": {
+      "_review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the body fields that look like ids: \"from_account_id\", \"to_account_id\". Check the guess against how your API names things. Two different create_transfer calls with the same key fields count as the same action, and the second is refused (409). If several partial amounts against one id are normal, choose fields that tell them apart. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "keep": false,
+      "key_fields": [
+        "from_account_id",
+        "to_account_id"
+      ]
+    },
+    "create_transfer-forbidden": {
+      "_review": "Always refused, whatever the call says. Keep this if your agent should never make this call. Keep the route as well, so the refusal names this rule; a route you leave out is refused as \"unlisted\" instead.",
+      "keep": true
+    },
+    "create_transfer-spend-per-day": {
+      "_review": "Caps the total \"amount\" that create_transfer calls may move in a window (a day by default). A call that would take the total over the cap is refused before it is sent. Days start at midnight UTC (05:30 in India). It counts only calls that go through this Guard. Fill in the cap.",
+      "keep": false,
+      "cap": null,
+      "window_seconds": 86400,
+      "scope": []
+    },
+    "create_transfer-count-per-day": {
+      "_review": "Caps how many create_transfer calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "keep": false,
+      "cap": null,
+      "window_seconds": 86400,
+      "scope": []
+    }
+  }
+}
