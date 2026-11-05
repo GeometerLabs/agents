@@ -228,14 +228,14 @@ test("Guard's own compiler accepts the example spec and gives the checked-in bun
 test("build compiles with the real Guard, prints what it cannot test, and writes a starter guard.toml it then checks the bundle against", { skip: skipWithoutGuard }, () => {
   const dir = workFolder();
   const io = captureIo();
-  const args = ["build", "--draft", join(dir, "draft.json"), "--accept", join(dir, "accept.json"), "--out", join(dir, "spec.json"), "--guard-toml", join(dir, "guard.toml"), "--upstream", "refunds.brightside.example:443", "--listen", "127.0.0.1:8080", "--agent-id", "support-bot"];
+  const args = ["build", "--draft", join(dir, "draft.json"), "--accept", join(dir, "accept.json"), "--out", join(dir, "spec.json"), "--bundle", join(dir, "guard", "bundle.json"), "--guard-toml", join(dir, "guard", "guard.toml"), "--upstream", "refunds.brightside.example:443", "--listen", "127.0.0.1:8080", "--agent-id", "support-bot"];
   assert.equal(main(args, io), 0, io.text());
   const text = io.text();
   assert.match(text, /Tripwires: passed 4 of 4/u);
   assert.match(text, /rule create_refund-once: whether a repeat is stopped depends on the intent ledger/u);
   assert.match(text, /only the provider's receipt lookup or idempotency key can show whether it happened/u);
   assert.match(text, /checked against guard\.toml/u);
-  const toml = readFileSync(join(dir, "guard.toml"), "utf8");
+  const toml = readFileSync(join(dir, "guard", "guard.toml"), "utf8");
   assert.match(toml, /bundle_digest = "sha256:[0-9a-f]{64}"/u);
   assert.match(toml, /operations = \["create_refund"\]/u);
   assert.match(toml, /^listen = "127\.0\.0\.1:8080"$/mu, "a sidecar listens on the pod's own loopback");
