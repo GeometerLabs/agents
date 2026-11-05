@@ -10,9 +10,10 @@ import { runExports } from "../backup/jobs.ts";
 import { exportShop } from "../backup/export.ts";
 import { deploy } from "../deploy.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
-import { readStatus } from "../lib/status.ts";
+import { readStatus, updateStatus } from "../lib/status.ts";
 import { FIELDS, isCustomerMessage, summarizeUsage, understandingOf, usageRatesFrom, whatsappTypeOf } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
+import { parseStatus } from "../panel/contract.ts";
 import { createWorld } from "../../pathways/bookings/src/harness.ts";
 import { parseIntent } from "../../pathways/bookings/src/adapters/rule-parser.ts";
 import { createMonthlyReport } from "../../pathways/bookings/report/monthly-job.ts";
@@ -48,8 +49,10 @@ test("absent or malformed fields make no understanding: the message is a rules m
   for (const bad of [entry("receive_message", "confirmed"), understood("telepathy"), understood(""), { ...entry("receive_message", "confirmed"), [FIELDS.container]: "x" }, { ...entry("receive_message", "confirmed"), [FIELDS.container]: { [FIELDS.step]: 3 } }, null, 7, []]) {
     assert.equal(understandingOf(bad), undefined);
   }
-  // a known step with a bad number keeps the step and counts the number as 0 (never NaN, never negative, never a fraction)
-  for (const cost of [-5, 1.5, "9.5", "-3", "abc", "", null, Number.NaN, Infinity, "1".repeat(16)]) assert.equal(understandingOf(understood("model", cost as never))!.costMicroInr, 0);
+  // a known step with a bad cost keeps the step, and the cost is UNKNOWN (null): never 0, NaN, a negative or a fraction
+  for (const cost of [-5, 1.5, "9.5", "-3", "abc", "", null, Number.NaN, Infinity, "1".repeat(16)]) assert.equal(understandingOf(understood("model", cost as never))!.costMicroInr, null);
+  assert.equal(understandingOf(understood("model", 0, { [FIELDS.costMicroInr]: undefined }))!.costMicroInr, null, "a record with no cost at all (the pathway leaves it out when there was no price)");
+  assert.equal(understandingOf(understood("model", "0" as never))!.costMicroInr, 0, "a price of nothing (Laya, the rules) is 0, and is not unknown");
   // the record's refs hold every value as a decimal string: those are read as the numbers they are
   assert.deepEqual(understandingOf(understood("model", "34104" as never, { [FIELDS.inputTokens]: "2184", [FIELDS.outputTokens]: "150" })), { step: "model", provider: "deepinfra", model: "deepseek-v4.1-flash", inputTokens: 2184, outputTokens: 150, costMicroInr: 34_104 });
   const t = summarizeUsage([entry("receive_message", "confirmed"), understood("telepathy", 99)], RATES);
@@ -64,6 +67,31 @@ test("messages are counted by the step that read them, and the model spend is th
   ], RATES);
   assert.deepEqual([t.messages, t.byStep, t.modelMicroInr], [6, { rules: 3, decision: 2, model: 1 }, 14_012]);
   assert.equal(t.byStep.rules + t.byStep.decision + t.byStep.model, t.messages);
+});
+
+test("unpriced is unknown, never zero: a call with no price is counted apart, so the spend is a floor and says how many calls it leaves out", () => {
+  const noPrice = (step: string) => understood(step, 0, { [FIELDS.costMicroInr]: undefined });
+  const t = summarizeUsage([
+    understood("decision", 6), understood("model", 14_000), // priced
+    noPrice("model"), noPrice("decision"), // a step answered and its call has no price
+    noPrice("rules"), // a message the rules read after a language-model call that failed and had no price: still unknown, as the pathway's own count says
+    understood("decision", 0), // Laya: priced at nothing, which is a price
+    entry("receive_message", "confirmed"), // no understanding fields at all: the rules read it, for free
+  ], RATES);
+  assert.deepEqual([t.messages, t.modelMicroInr, t.unpriced], [7, 14_006, 3]);
+  assert.deepEqual(t.byStep, { rules: 2, decision: 3, model: 2 });
+  // the totals go through the status file as JSON: the count survives, and an older file without it is read as "not counted", never as 0
+  assert.equal(JSON.parse(JSON.stringify(t)).unpriced, 3);
+  assert.equal(summarizeUsage([], RATES).unpriced, 0);
+});
+
+test("the panel's reader of the status file keeps the count of unpriced calls when it is a whole number, and reads an older file without it", () => {
+  const usage = { messages: 5, byStep: { rules: 1, decision: 2, model: 2 }, modelMicroInr: 9, whatsapp: { service: 1, utility: 0, marketing: 0, estMicroInr: 0, estimated: true } };
+  const read = (u: unknown) => (parseStatus(JSON.stringify({ usage: u })) as { status: { usage?: { unpriced?: number } } }).status.usage;
+  assert.equal(read({ ...usage, unpriced: 2 })?.unpriced, 2);
+  assert.equal(read(usage)?.unpriced, undefined, "an older file: not counted, which is not the same as none");
+  assert.equal(read({ ...usage, unpriced: -1 })?.unpriced, undefined);
+  assert.equal(read({ ...usage, unpriced: "2" })?.unpriced, undefined);
 });
 
 test("outgoing messages are typed from what the record holds: owner notices and reminders are utility, every other reply is service", () => {
@@ -125,13 +153,16 @@ test("the deployer writes the counts into the shop's status file and leaves the 
     await deploy(w.ctx);
     const before = readStatus(w.root, "glow-salon")!;
     assert.equal(before.usage, undefined);
-    const totals = { messages: 40, byStep: { rules: 12, decision: 25, model: 3 }, modelMicroInr: 51_000, whatsapp: { service: 120, utility: 30, marketing: 0, estMicroInr: 20_000, estimated: true } };
+    const totals = { messages: 40, byStep: { rules: 12, decision: 25, model: 3 }, modelMicroInr: 51_000, unpriced: 3, whatsapp: { service: 120, utility: 30, marketing: 0, estMicroInr: 20_000, estimated: true } };
     w.ctx.now = () => new Date("2026-11-04T10:15:00Z");
     w.ctx.runner = fakeRunner(() => ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, entries: 9, bookings: 1, usage: totals }, { name: "ghost", ok: true, entries: 1, bookings: 0, usage: totals }] })));
     const r = await runExports(w.ctx);
     assert.equal(r.ok, true);
     const after = readStatus(w.root, "glow-salon")!;
     assert.deepEqual(after.usage, { ...totals, at: "2026-11-04T10:15:00.000Z" });
+    assert.equal(after.usage?.unpriced, 3, "the count of calls with no price travels export, job and the deployer's status file");
+    updateStatus(w.root, "glow-salon", new Date("2026-11-04T10:16:00Z"), (s) => { s.deploy.message = "refreshed"; }); // what the deployer's own refresh does
+    assert.equal(readStatus(w.root, "glow-salon")!.usage?.unpriced, 3, "and a later change to the status keeps it");
     assert.equal(after.updatedAt, before.updatedAt, "a count is not a confirmation of the shop");
     assert.equal(readStatus(w.root, "ghost"), undefined, "a shop the deployer does not run gets no file");
   } finally { w.done(); }
@@ -151,6 +182,8 @@ test("the pathway's own record is what the meter reads: a rules message, a decis
   assert.deepEqual(u, { step: "model", provider: "deepinfra", model: "deepseek-ai/DeepSeek-V4.1-Flash", inputTokens: 2184, outputTokens: 150, costMicroInr: 34_104 });
   const t = summarizeUsage(w.record.entries(), RATES);
   assert.deepEqual([t.messages, t.byStep, t.modelMicroInr], [3, { rules: 0, decision: 1, model: 2 }, 34_104]);
+  assert.equal(t.unpriced, 1, "the language-model message with no price is counted apart, not as a free one");
+  assert.equal(understandingOf(w.record.entries().filter(isCustomerMessage)[2])!.costMicroInr, null);
   const plain = createWorld();
   await plain.say("hello");
   assert.deepEqual(summarizeUsage(plain.record.entries(), RATES).byStep, { rules: 1, decision: 0, model: 0 }, "a rules-only agent's messages are rules messages");

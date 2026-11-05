@@ -186,6 +186,54 @@ test("web build: a scripted session in the built modules books a slot with a dep
   assert.equal((await demo.request("/api/say", { text: "" })).status, 400);
 });
 
+test("web build: the agent's reply buttons and list reach the page, and tapping them books and cancels with the ids the agent maps, without typing a word", async () => {
+  const { zonedToMs } = await load("modules/core/time.js");
+  const { createLocalDemo } = await load("demo/web/local.js");
+  const demo = createLocalDemo({ nowMs: zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, "Asia/Kolkata") });
+  const act = async (path: string, body?: unknown) => {
+    const answer = await demo.request(path, body);
+    assert.equal(answer.status, 200, JSON.stringify(answer.json));
+    return answer.json as any;
+  };
+  const last = (s: any) => s.customer.messages.at(-1);
+
+  let s = await act("/api/say", { text: "hello" });
+  const menu = last(s);
+  assert.match(menu.text, /Which service would you like\?/);
+  assert.ok(!menu.text.includes("₹450"), "the bubble is the message's body; the prices are on the rows under it");
+  assert.deepEqual(menu.choices.list.rows.map((r: any) => r.id), ["svc:haircut", "svc:beard-trim", "svc:facial", "svc:hair-colour", "owner"], "the ids the rule step maps");
+  assert.deepEqual(menu.choices.list.rows[0], { id: "svc:haircut", title: "haircut", description: "₹450" });
+  assert.ok(menu.choices.list.button.length > 0 && menu.choices.list.button.length <= 20, "the list's own button, within Meta's limit");
+
+  s = await act("/api/tap", { id: "svc:haircut" });
+  assert.deepEqual(s.customer.messages.at(-2).who + ":" + s.customer.messages.at(-2).text, "me:haircut", "WhatsApp shows the option's title as what the customer said");
+  const times = last(s).choices.list.rows;
+  assert.ok(times.length > 3 && times.slice(0, -1).every((r: any) => /^slot:\d+$/.test(r.id)) && times.at(-1).id === "owner", "a list of free times, and a last row to talk to the owner");
+
+  s = await act("/api/tap", { id: times[0].id });
+  assert.equal(s.record.fakes.payments.length, 1);
+  assert.equal(s.record.fakes.calendar[0].status, "tentative", "a tapped time is held, not booked: the deposit books it");
+  assert.deepEqual(last(s).choices.buttons.map((b: any) => b.id), ["cancel", "owner"]);
+  s = await act("/api/pay", { times: 1 });
+  assert.equal(s.record.fakes.calendar[0].status, "confirmed");
+
+  s = await act("/api/tap", { id: "cancel" });
+  assert.deepEqual(last(s).choices.buttons.map((b: any) => b.id), ["cancel_yes", "keep"], "the first tap only asks");
+  assert.equal(s.record.fakes.calendar[0].status, "confirmed", "nothing was cancelled by the first tap");
+  s = await act("/api/tap", { id: "keep" });
+  assert.equal(s.record.fakes.calendar[0].status, "confirmed");
+  s = await act("/api/tap", { id: "cancel" });
+  s = await act("/api/tap", { id: "cancel_yes" });
+  assert.deepEqual(s.record.fakes.calendar, [], "the second tap cancels");
+  const via = new Set(s.record.rows.flatMap((r: any) => r.refs.filter(([k]: string[]) => k === "via").map(([, v]: string[]) => v)));
+  assert.deepEqual([...via].sort(), ["button", "list"], "the record says which messages were taps; the rules read them, so no model was asked");
+
+  // What may be tapped is what is on the screen: an id the agent never sent, a malformed one and a missing one are refused, and nothing changes.
+  const before = s.customer.messages.length;
+  for (const id of ["svc:nothing", "has space", "", "x".repeat(201), undefined]) assert.equal((await demo.request("/api/tap", { id })).status, 400, String(id));
+  assert.equal((await act("/api/state")).customer.messages.length, before);
+});
+
 test("web build: the page's own script gets the answers it expects, shaped like fetch", async () => {
   const { createLocalDemo } = await load("demo/web/local.js");
   const demo = createLocalDemo();

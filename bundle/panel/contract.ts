@@ -79,7 +79,7 @@ export interface ShopStatus {
   stopped?: { at: string; requestId?: string };
   backups?: { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null };
   /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
-  usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
+  usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; /** Calls with no price: their cost is unknown, so `modelMicroInr` is a floor when this is above 0. Absent in an older file. */ unpriced?: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
 }
 
 const isoDay = (v: unknown): string | undefined => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : undefined);
@@ -116,6 +116,7 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
       status.usage = {
         ...(isoDay(u.at) ? { at: isoDay(u.at) as string } : {}),
         messages: n[0] as number, byStep: { rules: n[1] as number, decision: n[2] as number, model: n[3] as number }, modelMicroInr: n[4] as number,
+        ...(whole(u.unpriced) !== undefined ? { unpriced: u.unpriced as number } : {}),
         whatsapp: { service: n[5] as number, utility: n[6] as number, marketing: n[7] as number, estMicroInr: n[8] as number, estimated: u.whatsapp.estimated === true },
       };
     }

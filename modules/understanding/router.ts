@@ -14,8 +14,9 @@
 //
 // What each message cost is returned with the intent (`understood`), and the agent writes it to the record. The router keeps no state between messages,
 // so a restart forgets nothing that matters; whether a shop may still spend (the monthly allowance, button mode) is the agent's decision, passed in
-// as `options.rulesOnly`.
+// as `options.rulesOnly`; so is a decision model paused for failing again and again (`options.skipSteps`, set by the reader from ai-state.ts).
 import type { Language } from "../language/languages.ts";
+import { chosenProbability } from "./model.ts";
 import type { IntentBase, IntentParser, ParseOptionsBase, ParseResult, Reading, Step, TokenUsage, Understood } from "./model.ts";
 import type { ModelParser } from "./model-llm.ts";
 import { costMicroInr, dayOf, rateFor } from "./rates.ts";
@@ -59,7 +60,7 @@ export const DEFAULT_DECISION_LANGUAGES: readonly Language[] = ["hi", "en"];
 
 interface Spend { step: Step; provider: string; model: string; usage: TokenUsage }
 
-export const chosenProbability = (a: ChoiceAnswer): number => a.probabilities[a.choice] ?? 0;
+export { chosenProbability }; // it lives in model.ts; Fees' reading still imports it from here
 
 export function createRouter<I extends IntentBase, C, O extends ParseOptionsBase>(options: RouterOptions<I, C, O>): IntentParser<I, C, O> & { parseDetailed(text: string, context: C, options?: O): Promise<ParseResult<I>> } {
   const { reading } = options;
@@ -67,7 +68,7 @@ export function createRouter<I extends IntentBase, C, O extends ParseOptionsBase
   const table = options.rates;
 
   /** Add up what was spent. A call with no price makes the total unknown (null): a missing price is never a free call. */
-  function understood(handled: Spend, spends: Spend[], tried: Step[], failed: Step[]): Understood {
+  function understood(handled: Spend, spends: Spend[], tried: Step[], failed: Step[], skipped: Step[]): Understood {
     let micro: number | null = 0;
     let rateDate: string | null = null;
     for (const s of spends) {
@@ -80,7 +81,7 @@ export function createRouter<I extends IntentBase, C, O extends ParseOptionsBase
     return {
       step: handled.step, provider: handled.provider, model: handled.model,
       inputTokens: spends.reduce((n, s) => n + s.usage.inputTokens, 0), outputTokens: spends.reduce((n, s) => n + s.usage.outputTokens, 0),
-      costMicroInr: micro, rateDate: micro === null ? null : rateDate, tried, failed,
+      costMicroInr: micro, rateDate: micro === null ? null : rateDate, tried, failed, ...(skipped.length > 0 ? { skipped } : {}),
     };
   }
 
@@ -89,8 +90,9 @@ export function createRouter<I extends IntentBase, C, O extends ParseOptionsBase
     const rules: Spend = { step: "rules", provider: "rules", model: "rule-parser", usage: { inputTokens: 0, outputTokens: 0 } };
     const tried: Step[] = ["rules"];
     const failed: Step[] = [];
+    const skipped: Step[] = [];
     const spends: Spend[] = [];
-    const finish = (intent: I, handled: Spend, reason?: string): ParseResult<I> => ({ intent, ...(reason ? { fallbackReason: reason } : {}), understood: understood(handled, handled === rules ? [rules, ...spends] : [...spends], tried, failed) });
+    const finish = (intent: I, handled: Spend, reason?: string): ParseResult<I> => ({ intent, ...(reason ? { fallbackReason: reason } : {}), understood: understood(handled, handled === rules ? [rules, ...spends] : [...spends], tried, failed, skipped) });
 
     if (parseOptions.rulesOnly || reading.sure(ruled) || (!options.decision && !options.model)) return finish(ruled, rules);
 
@@ -100,7 +102,10 @@ export function createRouter<I extends IntentBase, C, O extends ParseOptionsBase
     // ---- step 1: a decision model ----
     const step1 = options.decision;
     const trusted = step1 && reading.decision && (ruled.language === undefined || (step1.languages ?? DEFAULT_DECISION_LANGUAGES).includes(ruled.language));
-    if (step1 && trusted) {
+    // A decision model that keeps failing is paused (ai-state.ts): the language model reads the message at once, without waiting for it to fail again. Only when a
+    // language model is there to take over; with none, the decision model is asked as ever and a failure is the fault that moves the shop to buttons.
+    if (step1 && trusted && parseOptions.skipSteps?.includes("decision") && options.model) skipped.push("decision");
+    else if (step1 && trusted) {
       tried.push("decision");
       const spend: Spend = { step: "decision", provider: step1.client.kind, model: step1.client.model, usage: { inputTokens: 0, outputTokens: 0 } };
       try {

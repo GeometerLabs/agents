@@ -123,6 +123,8 @@ const ACTION_WORDS: Record<RecordEntry["action"], string> = {
   voice_note_reply: "Answered a voice note (asked the customer to type)",
   ai_mode: "Moved to buttons and lists, with no AI",
 };
+/** The other two `ai_mode` lines: a step of the AI that kept failing is left out for a while, and is asked again. The shop stays in AI mode. */
+const STEP_WORDS = { step_paused: "Left out a failing step of the AI for a while", step_resumed: "Asked that step of the AI again" } as const;
 const OUTCOME_WORDS: Record<Outcome, string> = {
   confirmed: "confirmed (read back from the service's own record)", attempted: "tried (checked in the next step)", unconfirmed: "NOT confirmed",
   failed: "failed", blocked: "stopped", held_for_owner: "waiting for the owner",
@@ -139,7 +141,7 @@ export function recordRows(demo: Demo, limit = 250): RecordRow[] {
     seq: e.seq,
     time: formatSlot(Date.parse(e.time), settings.timezone, "en"),
     who: e.action === "receive_payment_event" ? "Payments" : e.conversation === world.owner ? "Owner" : "Customer",
-    action: ACTION_WORDS[e.action] ?? e.action,
+    action: e.action === "ai_mode" && (e.refs.mode === "step_paused" || e.refs.mode === "step_resumed") ? STEP_WORDS[e.refs.mode] : ACTION_WORDS[e.action] ?? e.action,
     outcome: e.outcome,
     outcomeText: OUTCOME_WORDS[e.outcome],
     booking: e.booking,

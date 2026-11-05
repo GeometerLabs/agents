@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 import type { Intent } from "../src/adapters/model.ts";
 import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { compareIntent, costPer1000, percentile, summarise } from "../scripts/eval-score.ts";
-import { loadMessages, pickMessages, runEval } from "../scripts/model-eval.ts";
+import { loadMessages, pickMessages, pricesOf, runEval } from "../scripts/model-eval.ts";
+import { RATE_LISTS, rateFor } from "../../../modules/understanding/rates.ts";
 import { startStandins } from "../standins/server.ts";
 import type { Candidate } from "../scripts/model-eval.ts";
 import { anthropicReply, openaiReply, startStubModel } from "./stub-model-server.ts";
@@ -21,7 +22,7 @@ const stubs: StubModel[] = [];
 after(async () => { for (const s of stubs) await s.close(); });
 
 const candidate = (more: Partial<Candidate> & Pick<Candidate, "name" | "wire" | "baseUrl">): Candidate => ({
-  model: "stub-model", keyEnv: "STUB_KEY", priceInputPerMillion: null, priceOutputPerMillion: null, ...more,
+  model: "stub-model", keyEnv: "STUB_KEY", ...more,
 });
 /** The model's answer for an Intent: every field present, null for what is not there. */
 function fullAnswer(e: Intent): string {
@@ -79,12 +80,12 @@ test("models.json: every candidate is complete, every price names its page and d
     assert.ok(typeof c.baseUrl === "string" || typeof c.urlEnv === "string", `${c.name} needs an address or the name of the .env variable that holds it`);
     if (c.wire !== "systemone") assert.equal(typeof c.keyEnv, "string", `${c.name} keyEnv`);
     for (const named of [c.keyEnv, c.urlEnv]) if (named !== undefined) assert.match(named, /^[A-Z][A-Z0-9_]+$/);
-    // A price is either not filled in yet, or read from the provider's price page with the page and the date in the note.
-    if (c.priceInputPerMillion !== null || c.priceOutputPerMillion !== null) {
-      assert.equal(typeof c.priceInputPerMillion, "number", `${c.name}: both prices or neither`);
-      assert.equal(typeof c.priceOutputPerMillion, "number", `${c.name}: both prices or neither`);
-      assert.match(c.note ?? "", /Price from \S+, read \d{1,2} [A-Z][a-z]{2} \d{4}/, `${c.name}: say which price page, and when it was read`);
-    }
+    // The price is not in this file: it is in the one dated table (modules/understanding/rates/), found by provider and model.
+    assert.ok(!("priceInputPerMillion" in c) && !("priceOutputPerMillion" in c), `${c.name}: a price in models.json would be a second table; put it in modules/understanding/rates/`);
+    assert.match(c.provider ?? "", /^[a-z][a-z0-9-]*$/, `${c.name}: name the provider, as runtime.json would`);
+    const [priceIn, priceOut] = pricesOf(c);
+    const listed = (priceIn !== null && priceOut !== null) || c.provider + "/" + c.model in Object.assign({}, ...RATE_LISTS.map((l) => l.notPriced));
+    assert.ok(listed, `${c.name}: neither a rate-table line nor a notPriced reason for ${c.provider}/${c.model}`);
     assert.match(c.note ?? "", /price/i);
   }
   assert.ok(!/sk-[A-Za-z0-9]{10}|AIza[0-9A-Za-z_-]{20}|Bearer [A-Za-z0-9]{20}/.test(text), "a key must never be in models.json");
@@ -205,12 +206,14 @@ test("the candidates include a decision model (Laya, Jev) and DeepSeek V4.1 Flas
 test("a decision model is scored on its own against the stand-in, with the key sent to it; an unsure answer counts as a fallback and the tokens are priced", async () => {
   const sure = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y", systemOne: { requireKey: "made-up-jev-key", decider: (name, question) => ({ choice: name === "intent" ? "greeting" : question.type === "choice" && "no_service" in question.criteria ? "no_service" : "no_slot", p: 0.9 }) } }, { port: 0 });
   stubs.push({ close: sure.close } as StubModel);
-  const models = [candidate({ name: "jev", wire: "systemone" as Candidate["wire"], baseUrl: sure.url, keyEnv: "JEV_API_KEY", model: "clm-latest", priceInputPerMillion: 0.042, priceOutputPerMillion: 0.042 })];
+  const models = [candidate({ name: "jev", wire: "systemone" as Candidate["wire"], baseUrl: sure.url, keyEnv: "JEV_API_KEY", model: "clm-latest", provider: "jev" })];
   const { summaries, output } = await run({ env: { JEV_API_KEY: "made-up-jev-key" }, models });
   assert.equal(sure.systemOne!.requests.length > 0, true, "the rules were not sure of some of the messages, so the decision model was asked");
   assert.ok(sure.systemOne!.requests.every((r) => r.authorization === "Bearer made-up-jev-key"));
   assert.equal(summaries[1].name, "jev");
   assert.ok(summaries[1].tokensIn > 0);
+  assert.deepEqual(pricesOf(models[0]), [0.042, 0.042], "Jev's price is read from the rate table, not from the candidate");
+  assert.doesNotMatch(output, /no price set/);
   assert.match(output, /Tokens used by this run/);
 
   const unsure = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y", systemOne: { decider: () => ({ choice: "other", p: 0.1 }) } }, { port: 0 });
@@ -223,10 +226,13 @@ test("a decision model is scored on its own against the stand-in, with the key s
 test("DeepSeek on DeepInfra is asked through the OpenAI wire with the key as a bearer token, and scored with its price", async () => {
   const s = await startStubModel(perfect("openai"));
   stubs.push(s);
-  const models = [candidate({ name: "deepinfra-deepseek-v4.1-flash", wire: "openai", baseUrl: s.url, keyEnv: "DEEPINFRA_API_KEY", model: "deepseek-ai/DeepSeek-V4.1-Flash", priceInputPerMillion: 0.16, priceOutputPerMillion: 0.48 })];
+  const models = [candidate({ name: "deepinfra-deepseek-v4.1-flash", wire: "openai", baseUrl: s.url, keyEnv: "DEEPINFRA_API_KEY", model: "deepseek-ai/DeepSeek-V4.1-Flash", provider: "deepinfra" })];
   const { summaries, output } = await run({ env: { DEEPINFRA_API_KEY: "made-up-deepinfra-key" }, models, maxMessages: 8 });
   assert.equal(s.requests.length, 8);
   assert.ok(s.requests.every((r) => r.headers.authorization === "Bearer made-up-deepinfra-key" && r.body.model === "deepseek-ai/DeepSeek-V4.1-Flash"));
   assert.equal(summaries[1].right, 8);
   assert.match(output, /deepinfra-deepseek-v4\.1-flash/);
+  assert.deepEqual(pricesOf(models[0]), [0.16, 0.48], "the price is the rate table's line for DeepInfra");
+  assert.doesNotMatch(output, /no price set/);
+  assert.equal(rateFor("deepinfra", "deepseek-ai/DeepSeek-V4.1-Flash", "2026-11-05")?.cachedInputUsdPerMillion, 0.004);
 });

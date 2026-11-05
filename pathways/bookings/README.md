@@ -234,8 +234,8 @@ Geometer bundles one model (decision 6 in the implementation plan). The eval pic
 #      SARVAM_API_KEY=...
 #      GROQ_API_KEY=...
 #      OPENAI_API_KEY=...
-# 2. Check the candidates in pathways/bookings/eval/models.json (name, wire, base URL, model id, the key's name, and the price
-#    per million input and output tokens, left empty until you fill it in from the provider's current price page).
+# 2. Check the candidates in pathways/bookings/eval/models.json (name, provider, wire, base URL, model id and the key's name). The price
+#    is not in that file: it comes from the one table of model prices, modules/understanding/rates/<date>.json, by provider and model.
 # 3. Run the eval from the root of this repository:
 node pathways/bookings/scripts/model-eval.ts --max-messages 40      # a cheap first look: 40 messages, spread over the four languages
 node pathways/bookings/scripts/model-eval.ts                        # all 136 messages

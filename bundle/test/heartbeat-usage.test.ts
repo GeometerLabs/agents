@@ -42,6 +42,18 @@ test("the heartbeat sends the difference against the baseline, in the contract's
   assert.deepEqual(Object.keys((r.body.agents as Record<string, unknown>[])[0]).slice(-1), ["usage"], "after the contract's required fields and the optional backups");
 });
 
+test("the count of calls with no price stays out of the heartbeat: fleet refuses a field it does not know, so the body and the baseline are exactly what they are without it", () => {
+  const base = { "glow-salon": flatOf(totals()) };
+  const plain = beat([shop(totals({ messages: 109, model: 11 }))], base);
+  const withCount = beat([shop({ ...totals({ messages: 109, model: 11 }), unpriced: 7 })], base);
+  assert.deepEqual(withCount.body, plain.body);
+  assert.deepEqual(withCount.nextUsage, plain.nextUsage);
+  assert.doesNotMatch(JSON.stringify(withCount.body), /unpriced/);
+  // and a shop whose only news is more unpriced calls has nothing to send: no usage field, never a body fleet would refuse
+  const onlyUnpriced = beat([shop({ ...totals(), unpriced: 9 })], base);
+  assert.equal(usageOf(onlyUnpriced), undefined);
+});
+
 test("nothing new, nothing sent: no usage field, and the baseline stays", () => {
   const base = { "glow-salon": flatOf(totals()) };
   const r = beat([shop(totals())], base);
@@ -114,7 +126,7 @@ const fleet = await fleetChecker();
 const fleetKnowsUsage = fleet ? fleet.checkHeartbeat((() => { const b = beat([shop(totals({ messages: 101 }))], { "glow-salon": flatOf(totals()) }).body; return b; })()).ok : false;
 test("fleet's own validator accepts the usage block, the capped one and a heartbeat without one", { skip: fleet ? (fleetKnowsUsage ? false : "the fleet validator found does not know `usage` yet (merge apps/fleet's usage block first, or set GEOMETER_MONOREPO)") : "the monorepo's apps/fleet is not at a sibling path (set GEOMETER_MONOREPO)" }, () => {
   const base = { "glow-salon": flatOf(totals({ messages: 0, rules: 0, decision: 0, model: 0, modelMicroInr: 0 })) };
-  for (const shops of [[shop(totals())], [shop(totals({ messages: 5_000_000, modelMicroInr: 9_000_000 }))], [shop()], [shop(totals({ messages: 0, rules: 0, decision: 0, model: 0, modelMicroInr: 0, service: 0, utility: 0, estMicroInr: 0 }))]]) {
+  for (const shops of [[shop(totals())], [shop({ ...totals(), unpriced: 9 })], [shop(totals({ messages: 5_000_000, modelMicroInr: 9_000_000 }))], [shop()], [shop(totals({ messages: 0, rules: 0, decision: 0, model: 0, modelMicroInr: 0, service: 0, utility: 0, estMicroInr: 0 }))]]) {
     const r = fleet!.checkHeartbeat(beat(shops, base).body);
     assert.equal(r.ok, true, JSON.stringify(r));
   }
@@ -241,6 +253,10 @@ test("readUsage takes only numbers from the status file and nothing else", () =>
     write({ ...totals(), at: NOW.toISOString(), note: "I want to book for Priya" });
     assert.deepEqual(readUsage(file), totals());
     assert.doesNotMatch(JSON.stringify(readUsage(file)), /Priya|secret/u);
+    // the count of calls with no price is optional: kept when it is a whole number, and an older file without it is read as having none counted
+    write({ ...totals(), unpriced: 4 });
+    assert.deepEqual(readUsage(file), { ...totals(), unpriced: 4 });
+    for (const odd of [-1, 1.5, "4", null]) { write({ ...totals(), unpriced: odd }); assert.deepEqual(readUsage(file), totals(), `unpriced ${JSON.stringify(odd)} is dropped, and the rest still reads`); }
     write({ ...totals(), messages: "100" });
     assert.equal(readUsage(file), undefined);
     write({ ...totals(), messages: -1 });

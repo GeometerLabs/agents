@@ -132,6 +132,17 @@
 .geo-demo .geo-chip { flex: none; max-width: 80%; min-height: 34px; padding: 6px var(--_space-3); background: var(--_surface); color: var(--_text); border: 1px solid var(--_line); border-radius: 999px; font-size: var(--_fs-sm); text-align: left; cursor: pointer; scroll-snap-align: start; }
 .geo-demo .geo-chip:hover:not(:disabled) { background: var(--_accent-soft); border-color: var(--_accent); }
 .geo-demo .geo-chip:disabled { opacity: .5; cursor: not-allowed; }
+/* The agent's reply buttons and list, under its message as WhatsApp draws them (the page's script makes them from the message's own options). */
+.geo-demo .geo-choices { display: flex; flex-direction: column; gap: var(--_space-1); margin-top: var(--_space-2); padding-top: var(--_space-2); border-top: 1px solid var(--_line); }
+.geo-demo .geo-choice, .geo-demo .geo-row { display: block; width: 100%; min-height: 36px; padding: 6px var(--_space-3); background: transparent; color: var(--_accent); border: 0; border-radius: var(--_radius-sm); font-size: var(--_fs-sm); font-weight: 600; text-align: center; cursor: pointer; }
+.geo-demo .geo-row { background: var(--_sunken); color: var(--_text); font-weight: 400; text-align: left; }
+.geo-demo .geo-choice:hover:not(:disabled), .geo-demo .geo-row:hover:not(:disabled) { background: var(--_accent-soft); }
+.geo-demo .geo-choice:disabled, .geo-demo .geo-row:disabled { opacity: .5; cursor: not-allowed; }
+.geo-demo .geo-choices--old { opacity: .7; }
+.geo-demo .geo-rows { display: flex; flex-direction: column; gap: var(--_space-1); }
+.geo-demo .geo-choice-title, .geo-demo .geo-choice-desc { display: block; overflow-wrap: anywhere; }
+.geo-demo .geo-choice-desc { font-weight: 400; color: var(--_muted); }
+.geo-demo .geo-choice--list::before { content: "≡ "; }
 .geo-demo .geo-composer { display: flex; gap: var(--_space-2); align-items: center; margin-top: var(--_space-2); }
 .geo-demo .geo-composer input { flex: 1; min-width: 0; min-height: 40px; padding: 0 var(--_space-3); background: var(--_surface); color: var(--_text); border: 1px solid var(--_line); border-radius: var(--_radius-sm); font-size: var(--_fs-md); }
 .geo-demo .geo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--_space-2); margin-top: var(--_space-3); }
