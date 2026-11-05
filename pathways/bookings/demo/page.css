@@ -61,6 +61,18 @@ button.link, button.geo-link { background: none; border: 0; padding: 12px 4px; c
 .chip:hover:not(:disabled), .geo-chip:hover:not(:disabled) { background: var(--green-tint); }
 .chip:disabled, .geo-chip:disabled { opacity: .5; }
 
+/* The agent's reply buttons and list, under its message as WhatsApp draws them (the page's script makes them from the message's own options). */
+.geo-choices { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.geo-choice, .geo-row { display: block; width: 100%; min-height: 44px; padding: 8px 12px; background: transparent; color: var(--green-dark); border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; }
+.geo-row { background: var(--bg); color: var(--ink); font-weight: 400; text-align: left; }
+.geo-choice:hover:not(:disabled), .geo-row:hover:not(:disabled) { background: var(--green-tint); }
+.geo-choice:disabled, .geo-row:disabled { opacity: .5; }
+.geo-choices--old { opacity: .7; }
+.geo-rows { display: flex; flex-direction: column; gap: 4px; }
+.geo-choice-title, .geo-choice-desc { display: block; overflow-wrap: anywhere; }
+.geo-choice-desc { font-weight: 400; font-size: 14px; color: var(--muted); }
+.geo-choice--list::before { content: "≡ "; }
+
 .composer, .geo-composer { display: flex; gap: 8px; margin-top: 8px; }
 .composer input, .geo-composer input { flex: 1; min-width: 0; min-height: 50px; padding: 10px 14px; border-radius: 25px; border: 1.5px solid var(--line); background: var(--card); font-size: 16px; }
 .actions, .geo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
