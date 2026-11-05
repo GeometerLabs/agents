@@ -510,6 +510,7 @@ function runBuild(args: string[], io: Io): number {
   const bin = findGuard();
   if (!bin) { io.err(`The spec was written but NOT compiled or checked: ${NO_GUARD_REASON}. Run \`geo-guard compile --spec ${out} --out bundle.json\` where Guard is installed.`); return 3; }
   const bundle = resolve(values.bundle ?? join(dirname(out), "bundle.json"));
+  mkdirSync(dirname(bundle), { recursive: true }); // geo-guard writes the file but does not make the folder
   const c = compileSpec(bin, out, bundle);
   if (!c.ok) { io.err("Guard's compiler refused the spec:\n" + c.problems.map((p) => `  ${p}`).join("\n")); return 1; }
   for (const l of summaryLines(c.summary)) io.out(l);
