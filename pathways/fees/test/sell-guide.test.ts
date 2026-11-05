@@ -118,8 +118,9 @@ test("sell guide: the English headings are the ones SELL-GUIDE.md names", () => 
   const spec = readFileSync(SPEC, "utf8");
   const rows = [...spec.matchAll(/^\| (\d+) \| ([^|]+?) \| /gm)].map((m) => [Number(m[1]), m[2]] as const);
   assert.equal(rows.length, 11);
-  // The one word that changes is "shop" in section 1: this guide writes "centre" for the place a parent's child goes to.
-  const titles = sections(guide("en")).map((s) => [s.n, s.title.replace("centre", "shop")] as const);
+  // Two titles change, on purpose: "shop" in section 1 (this guide writes "centre" for the place a parent's child goes to), and section 4, which says
+  // "to the owner" because Fees has no demo on the owner's phone, only a walkthrough on the partner's laptop (the heading must not claim more than is true today).
+  const titles = sections(guide("en")).map((s) => [s.n, s.title.replace("centre", "shop").replace("Show it to the owner", "Show it on the owner's own phone")] as const);
   assert.deepEqual(titles, rows);
 });
 

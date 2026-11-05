@@ -51,7 +51,7 @@ Then stop talking. If they say yes, go to section 4. If they say no, say "Thank 
 
 Don't open with "AI", with technology, or with the price. If they ask "Is this AI?", say yes (section 5).
 
-## 4. Show it on the owner's own phone
+## 4. Show it to the owner
 
 Fees has no phone demo yet (Bookings has one). What you show today is a printed conversation, on your laptop: one parent's month at Bright Tuition Centre, run on stand-in services with test money. Nothing real is sent to anyone.
 
