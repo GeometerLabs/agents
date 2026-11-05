@@ -21,7 +21,7 @@ import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./genera
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
-import { pathwayDirFor } from "./lib/pathways.ts";
+import { pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { ensureSecret, panelUser, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
@@ -144,16 +144,19 @@ export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lock
 export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
 
 /** Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. */
-export function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string): { prepared?: Prepared; problems: Problem[]; notes: string[] } {
+export async function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string): Promise<{ prepared?: Prepared; problems: Problem[]; notes: string[] }> {
   const folder = readShop(ctx.dir, name);
   const taken = takeSecrets(ctx.dir, name);
   const problems: Problem[] = [...taken.problems];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
   const webhooks = webhooksFor(ctx.dir, name);
-  const first = planShop(server, folder);
+  const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
+  // The settings the bundle adds to the generated config (`ai`, `report`) are judged by the check of the version the shop is PINNED to, not by this checkout's: a client held back
+  // on an older version has a runtime that refuses a key it does not know.
+  const check = pathwayDir ? await pinnedRuntimeCheck(pathwayDir) : undefined;
+  const first = planShop(server, folder, {}, check);
   problems.push(...first.problems);
   notes.push(...first.notes);
-  const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${folder.lock.pathway}@${folder.lock.version}`)}, or change the pin once that version has passed the crash test with this shop's settings.` });
   problems.push(...missingSecrets(ctx.dir, name, webhooks));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch.
@@ -170,7 +173,7 @@ export function prepareShop(ctx: Context, server: ServerConfig, state: State, na
   const prev = state.shops[name]?.guards ?? {};
   const versions: Record<string, number> = {};
   for (const g of first.guards) versions[g.kind] = prev[g.kind]?.contentHash === contentHash(g.spec) ? prev[g.kind].version : (prev[g.kind]?.version ?? 0) + 1;
-  const plan = planShop(server, folder, versions);
+  const plan = planShop(server, folder, versions, check);
   // reserve the network index now, so two shops added together never share one (it is saved only when the deploy goes through)
   const index = (state.shops[name] ??= { index: shopIndex(state, name), guards: {}, lockHistory: [] }).index;
   return {
@@ -208,7 +211,7 @@ export async function serverProblems(ctx: Context, server: ServerConfig): Promis
 export async function checkShop(ctx: Context, name: string): Promise<{ ok: boolean; problems: Problem[]; notes: string[]; lines: string[] }> {
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
-  const { prepared, problems, notes } = prepareShop(ctx, server, state, name);
+  const { prepared, problems, notes } = await prepareShop(ctx, server, state, name);
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
@@ -342,7 +345,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const prepared: Prepared[] = [];
   const problems: Problem[] = await serverProblems(ctx, server);
   for (const name of targets) {
-    const r = prepareShop(ctx, server, state, name);
+    const r = await prepareShop(ctx, server, state, name);
     problems.push(...r.problems);
     r.notes.forEach((n) => ctx.log(`note: ${n}`));
     if (r.prepared) prepared.push(r.prepared);
