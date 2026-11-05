@@ -23,8 +23,10 @@ import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source }
 import { goLiveBlock, sealBlock } from "./html.ts";
 import { esc, list, page, table } from "../../../modules/report/page.ts";
 import type { Envelope } from "../../../modules/report/sign.ts";
-import { STRINGS, badgeText } from "./strings.ts";
-import { goLiveLines, periodLabel } from "./text.ts";
+import { STRINGS } from "./strings.ts";
+import { badgeText } from "../../../modules/report/text.ts";
+import { goLiveLines } from "./text.ts";
+import { periodLabel } from "../../../modules/report/text.ts";
 import { languagesOf, oneLine, rupees } from "../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
 

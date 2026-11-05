@@ -1,6 +1,7 @@
 // The page every report and certificate is printed on, for every template: a printable page, self-contained (one file, inline CSS, no script, no external
 // font, image or link), green and white with amber for what was not tested. Every value that reaches the page is escaped by the caller with `esc`.
 import type { Language } from "../language/languages.ts";
+import type { Envelope } from "./sign.ts";
 
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
@@ -65,3 +66,16 @@ export const table = (head: { text: string; n?: boolean }[], rows: string[][]): 
   `<div class="tablewrap"><table><thead><tr>${head.map((h) => `<th${h.n ? ' class="n"' : ""}>${esc(h.text)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td${head[i]?.n ? ' class="n"' : ""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 
 export const list = (items: string[]): string => `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
+
+/** The words the verification block needs; every template's strings carry them under `page`. */
+export interface SealWords { checkHeading: string; code: string; digest: string; signedBy: string; notSigned: string; signatureNote: string }
+
+/** The verification block every report and certificate carries: the code, the full digest, and what a signature does and does not show. */
+export function sealBlock(words: SealWords, envelope: Envelope, extra: [string, string][] = []): string {
+  const rows: [string, string][] = [...extra, [words.digest, envelope.digest]];
+  const where = `/verify/${envelope.code}`;
+  return `<h2>${esc(words.checkHeading)}</h2>
+<div class="seal"><div class="small">${esc(words.code)}</div><div class="code">${esc(envelope.code)}</div><div class="mono">${esc(where)}</div></div>
+<dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd class="mono">${esc(v)}</dd>`).join("")}<dt>${esc(words.signedBy)}</dt><dd class="mono">${esc(envelope.signature ? envelope.signature.keyId : words.notSigned)}</dd></dl>
+<p class="small">${esc(words.signatureNote)}</p>`;
+}

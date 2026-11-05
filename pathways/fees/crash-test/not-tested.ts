@@ -6,7 +6,7 @@ export const STAND_IN_SERVICES = "stand-in services";
 export const HAND_RUN = "hand-run";
 
 export type NotTestedId =
-  | "cash-and-bank-transfers" | "payments-outside-razorpay" | "upi-module" | "real-whatsapp" | "real-razorpay" | "webhook-signatures" | "real-model"
+  | "cash-and-bank-transfers" | "payments-outside-razorpay" | "real-whatsapp" | "real-razorpay" | "webhook-signatures" | "real-model"
   | "other-languages" | "native-review" | "restart-mid-step" | "same-instant" | "other-faults" | "two-children-one-message";
 
 export interface NotTested {

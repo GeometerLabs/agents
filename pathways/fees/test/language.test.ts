@@ -10,6 +10,7 @@ import { createWorld } from "../src/harness.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import { checkMessage } from "../src/language/check.ts";
 import { LABELS, buttonsFor, intentFromReply } from "../src/language/interactive.ts";
+import { reportSubmissions } from "../report/whatsapp.ts";
 import { META_TEMPLATES, exampleFacts, fillBody, metaBody, metaSubmissions, parametersFor, slotsOf, templateMessage } from "../src/language/meta-templates.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
@@ -113,7 +114,7 @@ test("the WhatsApp templates are the messages themselves: each starts and ends w
 
 test("the list to submit to Meta (whatsapp-templates.json) is the one the code makes", () => {
   const committed = JSON.parse(readFileSync(new URL("../whatsapp-templates.json", import.meta.url), "utf8")) as unknown;
-  assert.deepEqual(committed, metaSubmissions(settings), "run: node pathways/fees/scripts/whatsapp-templates.ts");
+  assert.deepEqual(committed, [...metaSubmissions(settings), ...reportSubmissions()], "run: node pathways/fees/scripts/whatsapp-templates.ts");
 });
 
 test("each reminder reaches the parent in their own language, and the check read it", async () => {

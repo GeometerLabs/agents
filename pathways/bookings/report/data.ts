@@ -23,10 +23,12 @@ import { canonicalJson } from "../../../modules/record/record.ts";
 import { localParts, zonedToMs } from "../../../modules/core/time.ts";
 import type { LocalDate } from "../../../modules/core/time.ts";
 import { digestOf } from "../../../modules/report/digest.ts";
+import { SOURCES } from "../../../modules/report/text.ts";
+import type { Source } from "../../../modules/report/text.ts";
 
 /** What the numbers were counted from. Always stated, never assumed: a report made from stand-ins must say so. */
-export type Source = "stand-in" | "test-mode" | "live";
-export const SOURCES: readonly Source[] = ["stand-in", "test-mode", "live"];
+export { SOURCES };
+export type { Source };
 
 export const PATHWAY = readPathway();
 

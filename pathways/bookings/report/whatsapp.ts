@@ -25,9 +25,10 @@ import type { Language } from "../../../modules/language/languages.ts";
 import type { MonthlyReport } from "./data.ts";
 import { sampleReport } from "./review.ts";
 import type { Envelope } from "../../../modules/report/sign.ts";
-import { STRINGS, badgeText } from "./strings.ts";
-import { notCheckedList, periodLabel } from "./text.ts";
-import { oneLine, rupees } from "../../../modules/report/text.ts";
+import { STRINGS } from "./strings.ts";
+import { badgeText } from "../../../modules/report/text.ts";
+import { notCheckedList } from "./text.ts";
+import { oneLine, periodLabel, rupees } from "../../../modules/report/text.ts";
 
 export interface ReportTemplate {
   /** The name registered with Meta (lowercase, underscores). */
