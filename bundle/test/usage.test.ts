@@ -10,7 +10,7 @@ import { runExports } from "../backup/jobs.ts";
 import { exportShop } from "../backup/export.ts";
 import { deploy } from "../deploy.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
-import { readStatus } from "../lib/status.ts";
+import { readStatus, updateStatus } from "../lib/status.ts";
 import { FIELDS, isCustomerMessage, summarizeUsage, understandingOf, usageRatesFrom, whatsappTypeOf } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 import { parseStatus } from "../panel/contract.ts";
@@ -153,13 +153,16 @@ test("the deployer writes the counts into the shop's status file and leaves the 
     await deploy(w.ctx);
     const before = readStatus(w.root, "glow-salon")!;
     assert.equal(before.usage, undefined);
-    const totals = { messages: 40, byStep: { rules: 12, decision: 25, model: 3 }, modelMicroInr: 51_000, whatsapp: { service: 120, utility: 30, marketing: 0, estMicroInr: 20_000, estimated: true } };
+    const totals = { messages: 40, byStep: { rules: 12, decision: 25, model: 3 }, modelMicroInr: 51_000, unpriced: 3, whatsapp: { service: 120, utility: 30, marketing: 0, estMicroInr: 20_000, estimated: true } };
     w.ctx.now = () => new Date("2026-11-04T10:15:00Z");
     w.ctx.runner = fakeRunner(() => ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, entries: 9, bookings: 1, usage: totals }, { name: "ghost", ok: true, entries: 1, bookings: 0, usage: totals }] })));
     const r = await runExports(w.ctx);
     assert.equal(r.ok, true);
     const after = readStatus(w.root, "glow-salon")!;
     assert.deepEqual(after.usage, { ...totals, at: "2026-11-04T10:15:00.000Z" });
+    assert.equal(after.usage?.unpriced, 3, "the count of calls with no price travels export, job and the deployer's status file");
+    updateStatus(w.root, "glow-salon", new Date("2026-11-04T10:16:00Z"), (s) => { s.deploy.message = "refreshed"; }); // what the deployer's own refresh does
+    assert.equal(readStatus(w.root, "glow-salon")!.usage?.unpriced, 3, "and a later change to the status keeps it");
     assert.equal(after.updatedAt, before.updatedAt, "a count is not a confirmation of the shop");
     assert.equal(readStatus(w.root, "ghost"), undefined, "a shop the deployer does not run gets no file");
   } finally { w.done(); }
