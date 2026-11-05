@@ -7,7 +7,7 @@
 
 भाग 2 (जाने से पहले), 9 (पहला महीना) और 10 (जब कुछ गड़बड़ हो) बिल्कुल मुख्य गाइड जैसे हैं। भाग 7 में मुख्य तालिका के साथ नीचे की पंक्तियाँ भी जोड़िए। एक पन्ने वाली शीट मुख्य गाइड वाली ही है; किराये की अपनी शीट अभी नहीं बनी है।
 
-उदाहरण वाली दुकान काल्पनिक है: Hosahalli Farm Hiring Centre, जो `pathways/bookings/settings/equipment-rental.example.json` में है। वह कन्नड़ और हिंदी बोलती है।
+उदाहरण वाली दुकान काल्पनिक है: Hosahalli Farm Hiring Centre, जो `templates/commerce/bookings/settings/equipment-rental.example.json` में है। वह कन्नड़ और हिंदी बोलती है।
 
 ## 1. क्या यह दुकान ठीक बैठती है?
 
@@ -42,7 +42,7 @@
 लैपटॉप और फ़ोन वैसे ही तैयार कीजिए जैसे मुख्य गाइड के भाग 4 में है (एक ही Wi-Fi, जो पता छपे वही, "डेमो · टेस्ट पैसा · कुछ भी असली नहीं भेजा जाता")। डेमो को किराये वाले उदाहरण पर, मालिक की भाषा में चलाइए:
 
 ```sh
-node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang hi  # Hindi (or kn)
+node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang hi  # Hindi (or kn)
 ```
 
 उदाहरण कन्नड़ और हिंदी बोलता है। जिस सेंटर के किसान कोई और भाषा लिखते हैं, वहाँ इसकी जगह "इस दुकान के लिए सेट करें" दबाइए: सेंटर का नाम, किसानों के अपने शब्दों में काम, मालिक की कीमतें, जमा राशि, खुलने का समय और भाषा। इसमें करीब 30 सेकंड लगते हैं।
@@ -134,7 +134,7 @@ node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equi
 - [ ] **हर काम के लिए एक जमा राशि,** सबसे सस्ते काम से ज़्यादा कभी नहीं। इसे 30 मिनट रोकिए, क्योंकि किसानों को अपना UPI ऐप ढूँढने में समय लग सकता है।
 - [ ] **याद दिलाना।** एक याद दिलाना, 24 घंटे पहले, ताकि वह बुकिंग वाले समय पर ही पहुँचे। याद दिलाना शुरू होने से कितने घंटे पहले, इसी हिसाब से चलता है, इसलिए सुबह 6 बजे की बुकिंग के लिए 2 घंटे पहले वाला रिमाइंडर सुबह 4 बजे पहुँचेगा।
 - [ ] **बाक़ी भुगतान।** तय कीजिए कि किसान बाक़ी पैसा कैसे देगा (नकद या UPI, मालिक को)। हेल्पर इसका हिसाब नहीं रखता।
-- [ ] **इस दुकान की अपनी सेटिंग पर जाँच चलाइए।** agents फ़ोल्डर से: `node pathways/bookings/scripts/hand-check.ts --settings <दुकान की फ़ाइल>`। "Held N of M" ज़ोर से पढ़िए, और अगर "NOT RUN" की सूची हो तो उसे भी पढ़िए।
+- [ ] **इस दुकान की अपनी सेटिंग पर जाँच चलाइए।** agents फ़ोल्डर से: `node templates/commerce/bookings/scripts/hand-check.ts --settings <दुकान की फ़ाइल>`। "Held N of M" ज़ोर से पढ़िए, और अगर "NOT RUN" की सूची हो तो उसे भी पढ़िए।
 
   | सीमा | पूछिए | उदाहरण (Hosahalli Farm Hiring Centre) |
   | --- | --- | --- |

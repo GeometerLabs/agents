@@ -3,10 +3,10 @@
 // language/words.ts, so they can be read and reviewed in one place. It reads a message and returns an Intent. It never
 // decides anything: prices, hours and slots are decided by the limits, so a smarter (or fooled) parser changes nothing
 // about what is allowed.
-import { canon } from "../../../../modules/language/format.ts";
-import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop, nfc } from "../../../../modules/understanding/rules.ts";
-import { findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../../../../modules/language/dates.ts";
-import { inBoth } from "../../../../modules/language/words.ts";
+import { canon } from "../../../../../modules/language/format.ts";
+import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop, nfc } from "../../../../../modules/understanding/rules.ts";
+import { findDatePhrase, findTimePhrase, phraseRe, wordRe } from "../../../../../modules/language/dates.ts";
+import { inBoth } from "../../../../../modules/language/words.ts";
 import type { Intent, IntentParser, ParseContext } from "./model.ts";
 
 const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);

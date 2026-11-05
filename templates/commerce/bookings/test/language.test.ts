@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { checkMessage } from "../src/language/check.ts";
-import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, languageOfScript, plain } from "../../../modules/language/format.ts";
+import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, languageOfScript, plain } from "../../../../modules/language/format.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 
 const TZ = "Asia/Kolkata";
 const SLOT = zonedToMs({ year: 2026, month: 11, day: 10 }, { hour: 18, minute: 0 }, TZ); // Tue 10 Nov, 6:00 pm

@@ -1,8 +1,8 @@
 // What a native reader sees of the panel's words: every line, with its English meaning beside it, in the same style as sections 1 to 6 of
 // REVIEW-ml.md and REVIEW-kn.md. The section is APPENDED to those sheets (section 7). scripts/review-sheet.ts in the pathway writes sections 1 to 6; the
 // whole sheet is made by:
-//   node bundle/panel/review-sheet.ts ml > pathways/bookings/REVIEW-ml.md
-//   node bundle/panel/review-sheet.ts kn > pathways/bookings/REVIEW-kn.md
+//   node bundle/panel/review-sheet.ts ml > templates/commerce/bookings/REVIEW-ml.md
+//   node bundle/panel/review-sheet.ts kn > templates/commerce/bookings/REVIEW-kn.md
 // and test/words.test.ts fails when a committed sheet is behind the words.
 import { LANGUAGE_NAMES } from "../../modules/language/languages.ts";
 import { WORDS } from "./languages.ts";

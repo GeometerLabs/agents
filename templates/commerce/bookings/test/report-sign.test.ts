@@ -9,14 +9,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glowSalon } from "../src/harness.ts";
-import { canonicalJson } from "../../../modules/record/record.ts";
+import { canonicalJson } from "../../../../modules/record/record.ts";
 import { buildGoLiveCertificate } from "../report/certificate.ts";
-import { digestOf, sha256, verificationCode } from "../../../modules/report/digest.ts";
-import { PRIVATE_KEY_FILE, PUBLIC_KEY_FILE, assertOutsideRepository, generateKeyFiles, gitRootOf } from "../../../modules/report/keys.ts";
-import { envelopeFile, keyIdOf, loadPrivateKey, publicKeyHex, seal, trustedKeyId, verifyEnvelopeText } from "../../../modules/report/sign.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
+import { digestOf, sha256, verificationCode } from "../../../../modules/report/digest.ts";
+import { PRIVATE_KEY_FILE, PUBLIC_KEY_FILE, assertOutsideRepository, generateKeyFiles, gitRootOf } from "../../../../modules/report/keys.ts";
+import { envelopeFile, keyIdOf, loadPrivateKey, publicKeyHex, seal, trustedKeyId, verifyEnvelopeText } from "../../../../modules/report/sign.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
 
-const REPOSITORY = fileURLToPath(new URL("../../..", import.meta.url));
+const REPOSITORY = fileURLToPath(new URL("../../../..", import.meta.url));
 const SCRIPTS = fileURLToPath(new URL("../scripts/", import.meta.url));
 const scratch = () => mkdtempSync(join(tmpdir(), "geometer-report-test-"));
 const run = (script: string, ...args: string[]) => spawnSync(process.execPath, [join(SCRIPTS, script), ...args], { encoding: "utf8" });
@@ -180,10 +180,10 @@ test("the key pair is made outside any repository, with the private half readabl
 
 test("the key pair is refused inside a repository: this one, a worktree (whose .git is a file), a link into it, and a folder not made yet", () => {
   const dir = scratch();
-  assert.throws(() => generateKeyFiles(join(REPOSITORY, "pathways", "bookings", "keys")), /inside the git repository/);
+  assert.throws(() => generateKeyFiles(join(REPOSITORY, "templates", "commerce", "bookings", "keys")), /inside the git repository/);
   assert.throws(() => generateKeyFiles(join(REPOSITORY, "a", "b", "c", "does-not-exist-yet")), /inside the git repository|inside/);
   assert.throws(() => generateKeyFiles(REPOSITORY), /inside the git repository/);
-  assert.ok(!existsSync(join(REPOSITORY, "pathways", "bookings", "keys")));
+  assert.ok(!existsSync(join(REPOSITORY, "templates", "commerce", "bookings", "keys")));
   // a worktree: .git is a file
   const tree = join(dir, "worktree");
   mkdirSync(tree);
@@ -191,9 +191,9 @@ test("the key pair is refused inside a repository: this one, a worktree (whose .
   assert.equal(gitRootOf(join(tree, "deep", "er")), tree.startsWith("/var/") ? `/private${tree}` : tree);
   assert.throws(() => generateKeyFiles(join(tree, "keys")), /inside the git repository/);
   // a link from outside into a repository
-  symlinkSync(join(REPOSITORY, "pathways"), join(dir, "link"));
+  symlinkSync(join(REPOSITORY, "templates"), join(dir, "link"));
   assert.throws(() => generateKeyFiles(join(dir, "link", "keys")), /inside the git repository/);
-  assert.ok(!existsSync(join(REPOSITORY, "pathways", "keys")));
+  assert.ok(!existsSync(join(REPOSITORY, "templates", "keys")));
   // outside everything is fine
   assert.doesNotThrow(() => assertOutsideRepository(join(dir, "fresh", "folder")));
   assert.equal(gitRootOf(dir), null);
@@ -207,9 +207,9 @@ test("scripts/report-key.ts makes a key outside the repository and refuses one i
   const again = run("report-key.ts", join(dir, "keys"));
   assert.equal(again.status, 1);
   assert.ok(again.stderr.includes("not overwritten"));
-  const inside = run("report-key.ts", join(REPOSITORY, "pathways", "bookings", "keys-test"));
+  const inside = run("report-key.ts", join(REPOSITORY, "templates", "commerce", "bookings", "keys-test"));
   assert.equal(inside.status, 1);
-  assert.ok(inside.stderr.includes("inside the git repository") && !existsSync(join(REPOSITORY, "pathways", "bookings", "keys-test")));
+  assert.ok(inside.stderr.includes("inside the git repository") && !existsSync(join(REPOSITORY, "templates", "commerce", "bookings", "keys-test")));
   assert.equal(run("report-key.ts").status, 64);
 });
 

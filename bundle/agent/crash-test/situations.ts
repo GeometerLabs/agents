@@ -12,7 +12,7 @@ import { formatInr } from "../../../modules/language/format.ts";
 import { checker } from "../../../modules/crash-test/situations.ts";
 import type { CheckResult, Situation, Skipped } from "../../../modules/crash-test/situations.ts";
 import type { PaymentLink } from "../../../modules/payments/payments.ts";
-import { haggleOffer } from "../../../pathways/bookings/crash-test/shop.ts";
+import { haggleOffer } from "../../../templates/commerce/bookings/crash-test/shop.ts";
 import { NotDrivable } from "./driver.ts";
 import { buildWorld, sleep } from "./world.ts";
 import type { CrashPlan, GuardCall, World, WorldOptions } from "./world.ts";

@@ -11,8 +11,8 @@ import { applyLanguage, languageOptions } from "../demo/personalise.ts";
 import { MAX_CUSTOMER_MESSAGES, chipsFor, createDemo } from "../demo/session.ts";
 import { glowSalon } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
 
 const NOW = zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, "Asia/Kolkata"); // Tue 3 Nov, 10:00 in India
 const running: RunningDemo[] = [];

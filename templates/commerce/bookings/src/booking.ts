@@ -11,15 +11,15 @@
 // "confirmed" is only ever reached through confirmed read-backs in the record: the agent moves a booking there after
 // the calendar shows the event AND the payments record shows the deposit.
 import type { Settings } from "./settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import { serviceName } from "./settings.ts";
-import type { LocalDate, LocalTime } from "../../../modules/core/time.ts";
-import { hoursBefore, scheduleAround } from "../../../modules/reminders/reminders.ts";
-import type { Reminder } from "../../../modules/reminders/reminders.ts";
-import type { TimePhrase } from "../../../modules/language/dates.ts";
+import type { LocalDate, LocalTime } from "../../../../modules/core/time.ts";
+import { hoursBefore, scheduleAround } from "../../../../modules/reminders/reminders.ts";
+import type { Reminder } from "../../../../modules/reminders/reminders.ts";
+import type { TimePhrase } from "../../../../modules/language/dates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
-import type { AiState } from "../../../modules/understanding/ai-state.ts";
-import type { GuardHold, RefundIssue, RefundRetry } from "../../../modules/payments/refunds.ts";
+import type { AiState } from "../../../../modules/understanding/ai-state.ts";
+import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
 
 export type BookingState =
   | "enquiry" | "confirming_details" | "awaiting_deposit" | "needs_owner" | "confirmed" | "expired" | "cancelled" | "completed";

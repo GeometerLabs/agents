@@ -1,4 +1,4 @@
-# Pitch and sell the Fees pathway
+# Pitch and sell the Fees template
 
 For local partners (18 and over) and builders. Written 5 November 2026, in the pilot phase. The centre owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks.
 
@@ -58,8 +58,8 @@ Fees has no phone demo yet (Bookings has one). What you show today is a printed 
 **Before you go in.** On your laptop, in the agents folder, run it twice: once in English, and once in the owner's language.
 
 ```sh
-node pathways/fees/scripts/walkthrough.ts --lang en
-node pathways/fees/scripts/walkthrough.ts --lang hi  # Hindi (also ml, kn)
+node templates/education/fees/scripts/walkthrough.ts --lang en
+node templates/education/fees/scripts/walkthrough.ts --lang hi  # Hindi (also ml, kn)
 ```
 
 It prints five numbered steps. Read them to the owner, or turn the laptop towards them and scroll. Each step is what the parent, the agent and the owner really wrote; none of it is typed in advance.
@@ -254,7 +254,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
   - It must be the WhatsApp Business app, and the centre keeps its number and its app.
   - Ask how old the account is. If it is too new, the helper can't connect yet: agree a date to check again, and take no money.
   - Tell the owner: open the app at least once a week, don't uninstall it, and link the other devices again afterwards.
-- [ ] **Meta's approval of the messages.** Every reminder and every notice to the owner goes out as a message wording that Meta must approve first. The list is in `pathways/fees/whatsapp-templates.json`, in all four languages. Approval can take days, and Meta can ask for changes. Say so, and give no date.
+- [ ] **Meta's approval of the messages.** Every reminder and every notice to the owner goes out as a message wording that Meta must approve first. The list is in `templates/education/fees/whatsapp-templates.json`, in all four languages. Approval can take days, and Meta can ask for changes. Say so, and give no date.
 - [ ] **The centre's own Razorpay account.** Payments go straight to the centre, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. The helper then needs access to the account: a Razorpay key ID, a key secret and a webhook secret, made by the owner in the Razorpay dashboard. Never write them in a chat or on paper. The account may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes the time Razorpay takes: minutes, or up to 4 working days in the cases we know of.
 - [ ] **The students and their parents.** For each child: the name, the class, the parent's WhatsApp number and the parent's language (Hindi, English, Malayalam or Kannada). Ask the owner to read the list back. The list is the owner's: don't keep a copy on your own phone.
 - [ ] **The fees and the limits, in the owner's words.** Ask, write down, read back:
@@ -271,7 +271,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
   | Refund limit | "From which amount do you want a one-use code before a refund goes?" | "₹500. A refund is never more than the payment on record." |
 
 - [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Approval needed". The owner answers "approve q-1" or "deny q-1". For a refund above the refund limit the reply uses a one-use code instead of q-1. Practise one reply together. A large refund on a live centre needs a part of the approvals relay that is not built for Fees yet (section 11).
-- [ ] **The checks on this centre's settings.** Copy `pathways/fees/settings/bright-tuition.example.json`, put in the centre's numbers from the list above, and run `node pathways/fees/scripts/hand-check.ts --settings <your file>` (ask the founder if you are unsure). A check that these settings can't express, for example a late fee when the centre has none, is named as not run and is not counted.
+- [ ] **The checks on this centre's settings.** Copy `templates/education/fees/settings/bright-tuition.example.json`, put in the centre's numbers from the list above, and run `node templates/education/fees/scripts/hand-check.ts --settings <your file>` (ask the founder if you are unsure). A check that these settings can't express, for example a late fee when the centre has none, is named as not run and is not counted.
 - [ ] **The go-live certificate, read together.** The Fees go-live certificate does not exist yet, so this item cannot be done today and no Fees centre goes live without it. When it exists, read every line aloud in the owner's language, including "Not checked". Until then, read the owner the "NOT TESTED" line at the end of the hand check. Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
 - [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, WhatsApp's message fees, cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet.
 

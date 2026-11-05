@@ -6,11 +6,11 @@ __pycache__/
 geometer-report.json
 geometer-junit.xml
 
-# sample monthly reports and certificates made by pathways/bookings/scripts/report-example.ts
-pathways/bookings/report-sample/
+# sample monthly reports and certificates made by templates/commerce/bookings/scripts/report-example.ts
+templates/commerce/bookings/report-sample/
 
-# sample monthly reports made by pathways/fees/scripts/report-example.ts
-pathways/fees/report-sample/
+# sample monthly reports made by templates/education/fees/scripts/report-example.ts
+templates/education/fees/report-sample/
 
-# the browser build of the Bookings demo, made by pathways/bookings/scripts/build-web-demo.ts (npm run build:web-demo)
-pathways/bookings/demo/web/dist/
+# the browser build of the Bookings demo, made by templates/commerce/bookings/scripts/build-web-demo.ts (npm run build:web-demo)
+templates/commerce/bookings/demo/web/dist/

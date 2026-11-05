@@ -11,8 +11,8 @@
 //    is the agent's own check (`checkRefundLimit` with the payment's amount, read from the payments service), and the payments service refuses a refund above the payment.
 import type { Settings } from "./settings.ts";
 import { highestDueInr, LOWEST_LINK_INR } from "./settings.ts";
-import { approvalTtlFrom, capsFrom, razorpayLimitsSpecFrom, rupeesToPaise } from "../../../modules/payments/guard-limits.ts";
-import type { LimitsSpec, LimitsSpecIdentity, RazorpayCaps } from "../../../modules/payments/guard-limits.ts";
+import { approvalTtlFrom, capsFrom, razorpayLimitsSpecFrom, rupeesToPaise } from "../../../../modules/payments/guard-limits.ts";
+import type { LimitsSpec, LimitsSpecIdentity, RazorpayCaps } from "../../../../modules/payments/guard-limits.ts";
 
 /** The refund amount (paise) above which Guard holds the call for the owner. The agent holds above `refund.limitInr`; the two are this one value. */
 export const refundThresholdPaise = (settings: Settings): number => rupeesToPaise(settings.refund.limitInr);

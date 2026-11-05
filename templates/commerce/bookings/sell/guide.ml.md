@@ -55,8 +55,8 @@
 **അകത്തേക്ക് കയറുന്നതിന് മുമ്പ്.** നിങ്ങളുടെ ലാപ്ടോപ്പിൽ, agents ഫോൾഡറിൽ:
 
 ```sh
-node pathways/bookings/demo/server.ts            # English
-node pathways/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
+node templates/commerce/bookings/demo/server.ts            # English
+node templates/commerce/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
 ```
 
 ഇത് `On a phone, same Wi-Fi:  http://192.168.1.23:8787` പോലൊരു വരി കാണിക്കും. ആ വിലാസം ഉടമയുടെ ഫോണിൽ തുറക്കൂ. രണ്ട് ഉപകരണവും ഒരേ Wi-Fi-യിൽ വേണം. ഫോണിൽ തുറക്കുന്നില്ലെങ്കിൽ നിങ്ങളുടെ ഫോണിലെ ഹോട്ട്സ്പോട്ട് ഓൺ ചെയ്ത് ലാപ്ടോപ്പ് അതിൽ കണക്ട് ചെയ്യൂ. ഡെമോയ്ക്ക് ലോഗിൻ ഇല്ല: ഇന്റർനെറ്റിലേക്ക് ഒരിക്കലും തുറന്നിടരുത്.

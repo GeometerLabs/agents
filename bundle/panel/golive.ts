@@ -5,13 +5,13 @@
 //     are still the ones that were checked. It writes the go-live certificate (report/), signed when the panel has a key.
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
 import { readFileSync } from "node:fs";
-import { runOn } from "../../pathways/bookings/crash-test/situations.ts";
-import { buildGoLiveCertificate, summariseRun } from "../../pathways/bookings/report/certificate.ts";
-import type { HandCheckSummary } from "../../pathways/bookings/report/certificate.ts";
-import { policyDigest } from "../../pathways/bookings/report/data.ts";
+import { runOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
+import { buildGoLiveCertificate, summariseRun } from "../../templates/commerce/bookings/report/certificate.ts";
+import type { HandCheckSummary } from "../../templates/commerce/bookings/report/certificate.ts";
+import { policyDigest } from "../../templates/commerce/bookings/report/data.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
-import { writeGoLiveCertificate } from "../../pathways/bookings/report/run.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import { writeGoLiveCertificate } from "../../templates/commerce/bookings/report/run.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
 import { guardUrlFor } from "./config.ts";

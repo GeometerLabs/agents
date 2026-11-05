@@ -1,6 +1,6 @@
 // The Bookings sell guide (sell/): a guide and a one-page sheet in every language the pathway speaks, the same 11 sections in
 // the same order, the same amounts and numbers everywhere, none of the words the claim rules ban, and the screen words and the
-// demo steps it teaches checked against the demo itself. The spec every pathway copies is ../../SELL-GUIDE.md.
+// demo steps it teaches checked against the demo itself. The spec every pathway copies is ../../../SELL-GUIDE.md.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -8,17 +8,17 @@ import { applyLanguage } from "../demo/personalise.ts";
 import { createDemo } from "../demo/session.ts";
 import { uiFor } from "../demo/strings.ts";
 import { recordRows, summaryLines, waitingCards, workDone } from "../demo/view.ts";
-import { bannedIn } from "../../../modules/report/claims.ts";
+import { bannedIn } from "../../../../modules/report/claims.ts";
 import { glowSalon } from "../src/harness.ts";
 import { hoursOn, validateSettings } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import { runOn } from "../crash-test/situations.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
 
 const SELL = new URL("../sell/", import.meta.url);
-const SPEC = new URL("../../SELL-GUIDE.md", import.meta.url);
+const SPEC = new URL("../../../SELL-GUIDE.md", import.meta.url);
 const NOW = zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, "Asia/Kolkata"); // Tue 3 Nov, 10:00 in India
 const guide = (l: Language) => readFileSync(new URL(`guide.${l}.md`, SELL), "utf8");
 const sheet = (l: Language) => readFileSync(new URL(`one-pager.${l}.html`, SELL), "utf8");
@@ -242,7 +242,7 @@ test("sell guide: the demo command in the guide is a real one", () => {
   const server = readFileSync(new URL("../demo/server.ts", import.meta.url), "utf8");
   assert.ok(server.includes('"--lang"'));
   for (const l of LANGUAGES) {
-    assert.ok(guide(l).includes("node pathways/bookings/demo/server.ts"), `${l}: the guide gives the command`);
+    assert.ok(guide(l).includes("node templates/commerce/bookings/demo/server.ts"), `${l}: the guide gives the command`);
     assert.ok(guide(l).includes("--lang"), `${l}: the guide shows how to start the demo in the owner's language`);
     assert.ok(/http:\/\/192\.168\.\d+\.\d+:8787/.test(guide(l)), `${l}: the guide shows what the Wi-Fi address looks like`);
   }
@@ -312,14 +312,14 @@ test("one-pagers: the same layout in every language, and the same amounts and nu
   same(rupees(visible(sheet("en"))), new Set(["₹200", "₹300", "₹450"]));
 });
 
-// ---- variants: a guide that changes only what differs (../../SELL-GUIDE.md, "Variants") --------------------------------------
+// ---- variants: a guide that changes only what differs (../../../SELL-GUIDE.md, "Variants") --------------------------------------
 // The equipment-rental variant of the Bookings guide: sell/variants/equipment-rental.<lang>.md. It keeps the main guide's section
 // numbers, covers only the sections that differ, points to the main guide for the rest, and is held to the same rules.
 
 const VARIANT_SECTIONS_ALLOWED = [1, 3, 4, 5, 6, 7, 8, 11];
 const VARIANT_SECTIONS_REQUIRED = [1, 3, 4, 5, 6, 8];
 const variant = (l: Language) => readFileSync(new URL(`variants/equipment-rental.${l}.md`, SELL), "utf8");
-const RENTAL_FILE = "pathways/bookings/settings/equipment-rental.example.json";
+const RENTAL_FILE = "templates/commerce/bookings/settings/equipment-rental.example.json";
 const rentalSettings = () => {
   const result = validateSettings(JSON.parse(readFileSync(new URL("../settings/equipment-rental.example.json", import.meta.url), "utf8")));
   assert.ok(result.ok);
@@ -417,12 +417,12 @@ test("variant guide: what it says about the example shop and the check is what t
   assert.ok(WEEKDAYS_ALL_OPEN(shop), "the example is open every day, which is why the closed-day request is left out");
   assert.ok(variant("en").includes(`${run.results.length} of ${run.results.length} situations held`));
   // the same count is quoted in two READMEs: they must not drift from the real run either
-  for (const readme of ["../../../README.md", "../README.md"]) {
+  for (const readme of ["../../../../README.md", "../README.md"]) {
     assert.ok(readFileSync(new URL(readme, import.meta.url), "utf8").includes(`${run.results.length} of ${run.results.length} situations`), `${readme} quotes the example's count`);
   }
   for (const l of LANGUAGES) {
     const text = variant(l);
-    assert.ok(text.includes(RENTAL_FILE) && existsSync(new URL(`../${RENTAL_FILE.replace("pathways/bookings/", "")}`, import.meta.url)), `${l}: the example file it names exists`);
+    assert.ok(text.includes(RENTAL_FILE) && existsSync(new URL(`../${RENTAL_FILE.replace("templates/commerce/bookings/", "")}`, import.meta.url)), `${l}: the example file it names exists`);
     assert.ok(text.includes("hand-check.ts --settings"), `${l}: the check on the shop's own settings is the real command`);
     assert.ok(text.includes(String(run.results.length)), `${l}: the count`);
   }

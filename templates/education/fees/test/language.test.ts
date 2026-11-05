@@ -3,9 +3,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { formatInr } from "../../../modules/language/format.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import { LIMITS, interactiveProblem } from "../../../modules/language/interactive.ts";
+import { formatInr } from "../../../../modules/language/format.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import { LIMITS, interactiveProblem } from "../../../../modules/language/interactive.ts";
 import { createWorld } from "../src/harness.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import { checkMessage } from "../src/language/check.ts";
@@ -114,7 +114,7 @@ test("the WhatsApp templates are the messages themselves: each starts and ends w
 
 test("the list to submit to Meta (whatsapp-templates.json) is the one the code makes", () => {
   const committed = JSON.parse(readFileSync(new URL("../whatsapp-templates.json", import.meta.url), "utf8")) as unknown;
-  assert.deepEqual(committed, [...metaSubmissions(settings), ...reportSubmissions()], "run: node pathways/fees/scripts/whatsapp-templates.ts");
+  assert.deepEqual(committed, [...metaSubmissions(settings), ...reportSubmissions()], "run: node templates/education/fees/scripts/whatsapp-templates.ts");
 });
 
 test("each reminder reaches the parent in their own language, and the check read it", async () => {

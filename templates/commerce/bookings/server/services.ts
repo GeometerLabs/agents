@@ -4,12 +4,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
-import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
-import type { Messaging } from "../../../modules/messaging/messaging.ts";
-import { createFakePayments } from "../../../modules/payments/payments.ts";
-import type { Clock } from "../../../modules/core/clock.ts";
+import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
+import type { Messaging } from "../../../../modules/messaging/messaging.ts";
+import { createFakePayments } from "../../../../modules/payments/payments.ts";
+import type { Clock } from "../../../../modules/core/clock.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
 import { ClientError } from "./config.ts";
 import type { RuntimeConfig } from "./config.ts";

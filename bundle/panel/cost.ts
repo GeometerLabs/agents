@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 
 export const QUALITIES = ["assumed", "conflicting", "second-hand", "official-undated", "official"] as const; // weakest first
 export type Quality = (typeof QUALITIES)[number];

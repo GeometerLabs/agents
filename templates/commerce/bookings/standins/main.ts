@@ -1,6 +1,6 @@
 // The stand-in services as their own process:
 //
-//   node pathways/bookings/standins/main.ts [--port 8790] [--inbox http://127.0.0.1:8788] [--system-one]
+//   node templates/commerce/bookings/standins/main.ts [--port 8790] [--inbox http://127.0.0.1:8788] [--system-one]
 //
 // Razorpay, Google Calendar and WhatsApp wire formats over HTTP, in front of the in-memory fakes. Test money, practice messages, nothing real.
 // With --system-one it also answers the System One decisions API (POST /v1/systemone) like Laya or Jev would, from the rule parser, so the three steps can be tried with no model.
@@ -18,7 +18,7 @@ const option = (name: string): string | undefined => {
   return v;
 };
 for (const a of args.filter((x) => x.startsWith("--"))) if (!["--port", "--inbox", "--system-one", "--help"].includes(a)) { console.error(`I don't know ${a}. Use --port, --inbox or --system-one.`); process.exit(2); }
-if (args.includes("--help")) { console.log("Usage: node pathways/bookings/standins/main.ts [--port 8790] [--inbox http://127.0.0.1:8788] [--system-one]"); process.exit(0); }
+if (args.includes("--help")) { console.log("Usage: node templates/commerce/bookings/standins/main.ts [--port 8790] [--inbox http://127.0.0.1:8788] [--system-one]"); process.exit(0); }
 
 const port = Number(option("port") ?? 8790);
 if (!Number.isInteger(port) || port < 0 || port > 65535) { console.error("--port must be a whole number between 0 and 65535."); process.exit(2); }

@@ -1,8 +1,8 @@
 // A sample set of reports and certificates, made from a busy month scripted on the demo world (src/harness.ts, stand-in
-// services, test money). It writes into pathways/bookings/report-sample/ (ignored by git) unless --out names another folder.
-//   node pathways/bookings/scripts/report-example.ts [--out <folder>]
+// services, test money). It writes into templates/commerce/bookings/report-sample/ (ignored by git) unless --out names another folder.
+//   node templates/commerce/bookings/scripts/report-example.ts [--out <folder>]
 // The files are signed with a throwaway key made in memory and thrown away: the private key is never written anywhere. Check one with
-//   node pathways/bookings/scripts/verify-report.ts <out>/report-2026-11.json --trust-key <out>/example-public-key.pem
+//   node templates/commerce/bookings/scripts/verify-report.ts <out>/report-2026-11.json --trust-key <out>/example-public-key.pem
 import { generateKeyPairSync } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -14,7 +14,7 @@ import { UsageError, main } from "../report/cli.ts";
 import { runBusyMonth, at } from "../report/example-month.ts";
 import { readGoLiveCertificate } from "../report/go-live.ts";
 import { writeClientReport, writeGoLiveCertificate } from "../report/run.ts";
-import { keyIdOf, publicKeyHex } from "../../../modules/report/sign.ts";
+import { keyIdOf, publicKeyHex } from "../../../../modules/report/sign.ts";
 
 await main(async () => {
   let args;
@@ -37,5 +37,5 @@ await main(async () => {
   console.log(`An example month (Glow Salon, November 2026) on stand-in services and test money. ${new Set(files).size} files in ${out}.`);
   console.log(goLive.said);
   console.log(`Signed with a throwaway key (${keyIdOf(publicKeyHex(privateKey))}); its private half was never written down.`);
-  console.log(`Open ${join(out, "report-2026-11-both.html")} in a browser. Check the data with:\n  node pathways/bookings/scripts/verify-report.ts ${join(out, "report-2026-11.json")} --trust-key ${join(out, "example-public-key.pem")}`);
+  console.log(`Open ${join(out, "report-2026-11-both.html")} in a browser. Check the data with:\n  node templates/commerce/bookings/scripts/verify-report.ts ${join(out, "report-2026-11.json")} --trust-key ${join(out, "example-public-key.pem")}`);
 });

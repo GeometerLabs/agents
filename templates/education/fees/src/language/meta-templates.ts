@@ -6,12 +6,12 @@
 // stand-ins into {slots}. So what the parent receives is always what the outgoing check read, and the Hindi, Malayalam and Kannada wording that a native
 // speaker reviews exists in one place. The mechanism is shared (modules/language/meta-templates.ts); a test checks every body starts and ends with fixed words
 // (Meta rejects a body that starts or ends with a parameter) and fills back into the very text.
-import { formatDate, formatInr } from "../../../../modules/language/format.ts";
-import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import type { Language } from "../../../../modules/language/languages.ts";
-import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
-import type { MetaTemplate } from "../../../../modules/language/meta-templates.ts";
-import { localParts } from "../../../../modules/core/time.ts";
+import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
+import { LANGUAGES } from "../../../../../modules/language/languages.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../../modules/language/meta-templates.ts";
+import type { MetaTemplate } from "../../../../../modules/language/meta-templates.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 import { monthLabel } from "../due.ts";
 import { batchName } from "../settings.ts";
 import type { Settings } from "../settings.ts";

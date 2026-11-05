@@ -1,8 +1,8 @@
 // Every message the agent sends, per language. v0 has NO model-written text: each message is one of these templates,
 // and every amount, date, time, service and link in it is rendered from the record (the facts), never typed by hand
 // and never translated. Adding a language means adding one more object below; the type makes sure none is missing.
-import type { Language } from "../../../../modules/language/languages.ts";
-import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import { formatInr, formatSlot } from "../../../../../modules/language/format.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {

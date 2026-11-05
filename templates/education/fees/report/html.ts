@@ -1,14 +1,14 @@
 // The builder layer: a printable page, self-contained (one file, inline CSS, no script, no external font, image or link), built with the shared page frame
 // (modules/report/page.ts). It shows the same numbers as the owner's text, a table per limit, and a "Show what we did" section with the counts by action and
 // outcome and the digests. Every value that reaches the page is escaped; the centre's name comes from the settings file.
-import { formatDate } from "../../../modules/language/format.ts";
-import { localParts } from "../../../modules/core/time.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import { esc, list, page, sealBlock, table } from "../../../modules/report/page.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
-import { badgeText, languagesOf, periodLabel, rupees } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
+import { formatDate } from "../../../../modules/language/format.ts";
+import { localParts } from "../../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import { esc, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
+import { badgeText, languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
 import type { FeesReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { canMove, createStore, factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "../src/booking.ts";
 import { glowSalon } from "../src/harness.ts";
-import { HOUR, zonedToMs } from "../../../modules/core/time.ts";
+import { HOUR, zonedToMs } from "../../../../modules/core/time.ts";
 
 const settings = glowSalon();
 

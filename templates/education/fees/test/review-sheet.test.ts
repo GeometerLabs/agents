@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { WORDS } from "../../../modules/language/words.ts";
+import { WORDS } from "../../../../modules/language/words.ts";
 import { SAYS } from "../crash-test/says.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
 import { sampleMessage } from "../report/whatsapp.ts";
@@ -31,7 +31,7 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
   test(`REVIEW-${language}.md lists every template, as the agent really writes it`, () => {
     for (const id of Object.keys(TEMPLATES[language]) as TemplateId[]) {
       assert.ok(committed.includes(`\`${id}\``), `${id} is not in REVIEW-${language}.md`);
-      assert.ok(committed.includes(render(id, exampleFacts(centre, language))), `${id} reads differently now: run  node pathways/fees/scripts/review-sheet.ts ${language} > pathways/fees/REVIEW-${language}.md`);
+      assert.ok(committed.includes(render(id, exampleFacts(centre, language))), `${id} reads differently now: run  node templates/education/fees/scripts/review-sheet.ts ${language} > templates/education/fees/REVIEW-${language}.md`);
       assert.ok(committed.includes(render(id, exampleFacts(centre, "en"))), `the English meaning of ${id} is missing`);
     }
   });
@@ -60,7 +60,7 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
     const rows = reportStringRows(language);
     assert.ok(rows.length > 90, "the report strings were found");
     for (const row of rows) {
-      assert.ok(committed.includes(`\`${row.id}\``) && committed.includes(row.text), `${row.id} is missing from REVIEW-${language}.md: run  node pathways/fees/scripts/review-sheet.ts ${language} > pathways/fees/REVIEW-${language}.md`);
+      assert.ok(committed.includes(`\`${row.id}\``) && committed.includes(row.text), `${row.id} is missing from REVIEW-${language}.md: run  node templates/education/fees/scripts/review-sheet.ts ${language} > templates/education/fees/REVIEW-${language}.md`);
       assert.ok(row.english !== "", `${row.id} has no English meaning`);
     }
     assert.ok(committed.includes(sampleOwnerText(language)));

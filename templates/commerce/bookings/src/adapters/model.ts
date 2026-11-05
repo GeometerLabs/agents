@@ -1,11 +1,11 @@
 // The Bookings intents: what a customer can mean in a booking conversation, and the check that something a parser returned is really one of them.
 // The seam itself (the cost of reading a message, the parser types, what a template tells the shared readers) is modules/understanding/model.ts.
 // The deterministic parser in rule-parser.ts is what the tests and the hand check use; model-llm.ts asks a real model over HTTP and falls back to the rule parser.
-import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import type { Language } from "../../../../modules/language/languages.ts";
-import type { DatePhrase, TimePhrase } from "../../../../modules/language/dates.ts";
-import { isObj } from "../../../../modules/understanding/model.ts";
-import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../modules/understanding/model.ts";
+import { LANGUAGES } from "../../../../../modules/language/languages.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import type { DatePhrase, TimePhrase } from "../../../../../modules/language/dates.ts";
+import { isObj } from "../../../../../modules/understanding/model.ts";
+import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../../modules/understanding/model.ts";
 import type { Service } from "../settings.ts";
 
 export type IntentKind = "book" | "cancel" | "reschedule" | "yes" | "no" | "stop" | "greeting" | "owner" | "keep" | "unknown";

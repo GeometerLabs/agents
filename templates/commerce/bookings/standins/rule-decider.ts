@@ -1,8 +1,8 @@
 // The decider the Bookings stand-ins give the System One stand-in, so a local run of the whole stack has a decision model to talk to: it answers from
 // the rule parser's reading of the state, at 0.9. Good enough to run the stack; it is not a model.
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { Decider } from "../../../modules/standins/system-one.ts";
-import type { Question } from "../../../modules/understanding/system-one.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { Decider } from "../../../../modules/standins/system-one.ts";
+import type { Question } from "../../../../modules/understanding/system-one.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Service } from "../src/settings.ts";
 

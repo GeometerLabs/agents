@@ -1,7 +1,7 @@
 // Writes the review sheet a native speaker fills in: every message the agent sends in a language, with what it is meant to
 // say, and every word and phrase the agent understands from a customer in that language.
-//   node pathways/bookings/scripts/review-sheet.ts ml > pathways/bookings/REVIEW-ml.md
-//   node pathways/bookings/scripts/review-sheet.ts kn > pathways/bookings/REVIEW-kn.md
+//   node templates/commerce/bookings/scripts/review-sheet.ts ml > templates/commerce/bookings/REVIEW-ml.md
+//   node templates/commerce/bookings/scripts/review-sheet.ts kn > templates/commerce/bookings/REVIEW-kn.md
 // The sheet is made from the templates, the formatters and the word lists themselves, so it cannot drift from what the
 // agent really says; a test (test/review-sheet.test.ts) fails when a committed sheet is missing a line.
 import { pathToFileURL } from "node:url";
@@ -9,17 +9,17 @@ import { SAYS } from "../crash-test/situations.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Intent } from "../src/adapters/model.ts";
 import { glowSalon } from "../src/harness.ts";
-import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatSlot } from "../../../modules/language/format.ts";
+import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatSlot } from "../../../../modules/language/format.ts";
 import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
-import { WORDS } from "../../../modules/language/words.ts";
+import { WORDS } from "../../../../modules/language/words.ts";
 import { reportStringRows, sampleFloor, sampleOwnerText } from "../report/review.ts";
 import { sampleMessage } from "../report/whatsapp.ts";
 import { serviceName } from "../src/settings.ts";
-import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
+import { LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 
@@ -175,7 +175,7 @@ export function reviewSheet(language: ReviewLanguage): string {
 
   out.push(`## 1. Messages to the customer (${ids.filter((id) => !id.startsWith("owner_")).length})`, "", table(head, messageRows(false)), "");
   out.push(`## 2. Messages to the owner (${ids.filter((id) => id.startsWith("owner_")).length})`, "");
-  out.push("Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.", "");
+  out.push("Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.", "");
   out.push(table(head, messageRows(true)), "");
 
   out.push("### The words on the buttons and the lists", "");
@@ -230,7 +230,7 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push("### Whole sentences, and what the agent reads from them", "");
   out.push(table(["Customer writes", "Meaning", "The agent reads", REVIEWER], EXAMPLES[language].map(([text, meaning]) => [text, meaning, describeIntent(parseIntent(text, ctx)), ""])), "");
   out.push("### Sentences the hand check types as a customer", "");
-  out.push("These are the exact sentences the crash-test situations send (`pathways/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.", "");
+  out.push("These are the exact sentences the crash-test situations send (`templates/commerce/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.", "");
   out.push(table(["Customer writes", "What it is", "The agent reads", REVIEWER], HAND_CHECK_ROLES.map(([key, role]) => [SAYS[language][key], role, describeIntent(parseIntent(SAYS[language][key], ctx)), ""])), "");
 
   // 6. The monthly report and the certificates (report/strings.ts). The owner's lines are "label: number", so no number takes an ending.
@@ -249,7 +249,7 @@ export function reviewSheet(language: ReviewLanguage): string {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const language = process.argv[2];
   if (language !== "ml" && language !== "kn") {
-    console.error("Say which language: node pathways/bookings/scripts/review-sheet.ts ml   (or kn)");
+    console.error("Say which language: node templates/commerce/bookings/scripts/review-sheet.ts ml   (or kn)");
     process.exitCode = 1;
   } else {
     console.log(reviewSheet(language));

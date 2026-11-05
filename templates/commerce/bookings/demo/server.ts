@@ -1,12 +1,12 @@
 // Show the Bookings agent to a shop owner, on the owner's own phone.
 //
-//   node pathways/bookings/demo/server.ts [--settings path/to/shop.json] [--lang hi|en|...] [--port 8787]
+//   node templates/commerce/bookings/demo/server.ts [--settings path/to/shop.json] [--lang hi|en|...] [--port 8787]
 //
 // The REAL agent runs against in-memory stand-ins for WhatsApp, payments and the calendar, with a fake clock.
 // Test money only. Nothing real is contacted, nothing is saved, and the server answers only devices on your own network.
 import { readFileSync } from "node:fs";
 import { validateSettings } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { glowSalon } from "../src/harness.ts";
 import { applyLanguage } from "./personalise.ts";
 import { startDemo } from "./app.ts";
@@ -23,7 +23,7 @@ for (const a of args.filter((x) => x.startsWith("--"))) {
   if (!["--settings", "--lang", "--port", "--host", "--help"].includes(a)) { console.error(`I don't know ${a}. Use --settings, --lang, --port or --host.`); process.exit(2); }
 }
 if (args.includes("--help")) {
-  console.log(`Usage: node pathways/bookings/demo/server.ts [--settings shop.json] [--lang ${LANGUAGES.join("|")}] [--port 8787] [--host 192.168.x.x]`);
+  console.log(`Usage: node templates/commerce/bookings/demo/server.ts [--settings shop.json] [--lang ${LANGUAGES.join("|")}] [--port 8787] [--host 192.168.x.x]`);
   process.exit(0);
 }
 

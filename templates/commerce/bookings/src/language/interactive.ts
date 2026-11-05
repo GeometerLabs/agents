@@ -8,11 +8,11 @@
 //   slot:<epoch ms>    a row of the list of free times
 // A forged or old id changes nothing the typed word would not: a slot is checked against the opening hours and the calendar like any typed time, and an id
 // that names no service of the shop is read as ordinary text.
-import type { Language } from "../../../../modules/language/languages.ts";
-import { COMMON_ID, COMMON_LABELS, LIMITS, clip } from "../../../../modules/language/interactive.ts";
-import type { Choice, CommonLabels, InteractiveMessage } from "../../../../modules/language/interactive.ts";
-import { formatDate, formatInr, formatTime } from "../../../../modules/language/format.ts";
-import { localParts } from "../../../../modules/core/time.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import { COMMON_ID, COMMON_LABELS, LIMITS, clip } from "../../../../../modules/language/interactive.ts";
+import type { Choice, CommonLabels, InteractiveMessage } from "../../../../../modules/language/interactive.ts";
+import { formatDate, formatInr, formatTime } from "../../../../../modules/language/format.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 import { serviceName } from "../settings.ts";
 import type { Service, Settings } from "../settings.ts";
 import type { Intent } from "../adapters/model.ts";

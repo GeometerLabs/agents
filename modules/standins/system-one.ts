@@ -3,7 +3,7 @@
 // stand-in fills in the rest (the other options share what is left, rounded to two decimals the way Jev shows them, adding up to 1).
 //
 // Tests give it a decider to make the model sure, unsure, wrong, slow or broken. A template can give one that answers from its own rule parser, so a
-// local run of the whole stack has something to talk to (Bookings: pathways/bookings/standins/rule-decider.ts). Left out, it picks the last option of every
+// local run of the whole stack has something to talk to (Bookings: templates/commerce/bookings/standins/rule-decider.ts). Left out, it picks the last option of every
 // choice at 0.9. Every request is kept (`requests`) so a test can read what was asked, and see that no phone number or name was in it.
 import type { Question } from "../understanding/system-one.ts";
 import { ok } from "./http.ts";

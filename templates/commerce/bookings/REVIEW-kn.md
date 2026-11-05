@@ -55,7 +55,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 
 ## 2. Messages to the owner (18)
 
-Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.
+Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -207,7 +207,7 @@ A price is also read from "₹300" or "300 rs"; the number is taken as the custo
 
 ### Sentences the hand check types as a customer
 
-These are the exact sentences the crash-test situations send (`pathways/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.
+These are the exact sentences the crash-test situations send (`templates/commerce/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.
 
 | Customer writes | What it is | The agent reads | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |
@@ -470,7 +470,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `why.runtime-not-ready` | ಏಜೆಂಟ್ ತಾನು ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ ಎನ್ನುತ್ತಿದೆ. | The agent says it is not ready. |  |
 | `why.refunds-need-builder` | ರೀಫಂಡ್‌ಗೆ ಬಿಲ್ಡರ್ ಬೇಕು, ಮಾಲೀಕರಲ್ಲ. | A refund needs the builder, not the owner. |  |
 | `shop.status` | ಸ್ಥಿತಿ | Status |  |
-| `shop.versions` | ಪಾತ್‌ವೇ 0.1.0, ಬಂಡಲ್ 0.1.0 | Pathway 0.1.0, bundle 0.1.0 |  |
+| `shop.versions` | ಟೆಂಪ್ಲೇಟ್ 0.1.0, ಬಂಡಲ್ 0.1.0 | Template 0.1.0, bundle 0.1.0 |  |
 | `shop.lastDeploy` | ಕೊನೆಯ ಅಪ್‌ಡೇಟ್: 4 Nov 2026, 10:30 | Last update: 4 Nov 2026, 10:30 |  |
 | `shop.neverDeployed` | ಇನ್ನೂ ಅಪ್‌ಡೇಟ್ ಆಗಿಲ್ಲ. | Not updated yet. |  |
 | `shop.limitsHeading` | ಮಿತಿಗಳು | Limits |  |

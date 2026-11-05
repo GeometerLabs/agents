@@ -1,13 +1,13 @@
 // What is particular to Fees in understanding a message (the shared readers are in modules/understanding/): its rules, its intents, the checks on a model's
 // answer, the prompt, and the questions a System One decision model is asked. The router and the language-model parser take this as their `reading`.
-import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
-import { chosenProbability, createRouter } from "../../../../modules/understanding/router.ts";
-import type { RouterOptions } from "../../../../modules/understanding/router.ts";
-import { createModelParser } from "../../../../modules/understanding/model-llm.ts";
-import type { ModelConfig } from "../../../../modules/understanding/model-llm.ts";
-import type { ChoiceAnswer, ChoiceQuestion } from "../../../../modules/understanding/system-one.ts";
-import type { DecisionPlan, Reading } from "../../../../modules/understanding/model.ts";
-import { isObj } from "../../../../modules/understanding/model.ts";
+import { LANGUAGES, LANGUAGE_NAMES } from "../../../../../modules/language/languages.ts";
+import { chosenProbability, createRouter } from "../../../../../modules/understanding/router.ts";
+import type { RouterOptions } from "../../../../../modules/understanding/router.ts";
+import { createModelParser } from "../../../../../modules/understanding/model-llm.ts";
+import type { ModelConfig } from "../../../../../modules/understanding/model-llm.ts";
+import type { ChoiceAnswer, ChoiceQuestion } from "../../../../../modules/understanding/system-one.ts";
+import type { DecisionPlan, Reading } from "../../../../../modules/understanding/model.ts";
+import { isObj } from "../../../../../modules/understanding/model.ts";
 import { MODEL_KINDS, coerceIntent } from "./model.ts";
 import type { Intent, IntentKind, IntentParser, ParseContext, ParseOptions, ParseResult } from "./model.ts";
 import { parseIntent } from "./rule-parser.ts";

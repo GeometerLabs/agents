@@ -1,19 +1,19 @@
 // The dev harness: the Fees agent wired to the in-memory fakes, with a clock you can move and helpers that play the part of the parent, the payment provider's
 // webhooks and the owner. The crash-test situations, the hand check and the walkthrough build on this.
 import { readFileSync } from "node:fs";
-import { fakeClock } from "../../../modules/core/clock.ts";
-import type { FakeClock } from "../../../modules/core/clock.ts";
-import { MINUTE, zonedToMs } from "../../../modules/core/time.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
-import type { FakeMessaging, InboundMessage } from "../../../modules/messaging/messaging.ts";
-import { createGuardModel } from "../../../modules/payments/guard-model.ts";
-import type { GuardModel } from "../../../modules/payments/guard-model.ts";
-import { createFakePayments } from "../../../modules/payments/payments.ts";
-import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../modules/payments/payments.ts";
-import { createRecord } from "../../../modules/record/record.ts";
-import type { ActionRecord } from "../../../modules/record/record.ts";
-import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
+import type { FakeClock } from "../../../../modules/core/clock.ts";
+import { MINUTE, zonedToMs } from "../../../../modules/core/time.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
+import type { FakeMessaging, InboundMessage } from "../../../../modules/messaging/messaging.ts";
+import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
+import type { GuardModel } from "../../../../modules/payments/guard-model.ts";
+import { createFakePayments } from "../../../../modules/payments/payments.ts";
+import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../../modules/payments/payments.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
+import type { ActionRecord } from "../../../../modules/record/record.ts";
+import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
 import { createAgent } from "./agent.ts";
 import type { Agent } from "./agent.ts";
 import { createRuleParser } from "./adapters/rule-parser.ts";

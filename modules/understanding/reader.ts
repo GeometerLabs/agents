@@ -47,7 +47,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     }
   }
 
-  /** The cost of one message as the record keeps it (every value a string, as the record's refs are). The field names are listed in pathways/bookings/Explanation.md. */
+  /** The cost of one message as the record keeps it (every value a string, as the record's refs are). The field names are listed in templates/commerce/bookings/Explanation.md. */
   function understandingRefs(u: Understood, via?: "button" | "list"): Record<string, string> {
     return {
       step: u.step, provider: u.provider, model: u.model,

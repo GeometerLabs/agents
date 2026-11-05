@@ -1,8 +1,8 @@
 // A business's settings: everything a builder changes to tailor the Bookings pathway. No code, only this file.
 // Validation is written by hand and says what is wrong in plain words, so a builder can fix it without a manual.
-import { isValidTimeZone, parseClock } from "../../../modules/core/time.ts";
-import { LANGUAGES, LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
+import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 

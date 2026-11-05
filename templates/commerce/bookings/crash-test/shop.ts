@@ -9,9 +9,9 @@ import { isDeepStrictEqual } from "node:util";
 import { glowSalon } from "../src/harness.ts";
 import { hoursOn } from "../src/settings.ts";
 import type { Service, Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../modules/core/time.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { WhenFacts } from "./says.ts";
 
 /** A day and a time the shop could be booked for, and the instants they come to. */

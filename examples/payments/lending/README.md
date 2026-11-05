@@ -21,7 +21,7 @@ You need your own model key and a service that answers the calls below. The agen
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env            # then fill in the model key and your service's address
-set -a; . ./.env; set +a
+set -a; . .env; set +a
 python -m app "Please disburse the approved loan for application id a-1."
 ```
 
@@ -38,7 +38,7 @@ Your service must answer these calls (JSON bodies):
 | `GET /v1/applications/{id}/disbursements` | a list of the disbursements already made for the application |
 | `POST /v1/applications/{id}/disbursements` | makes one: `account`, `amount` |
 
-If your service has other paths or field names, change the one file that makes the calls (`app/tools.py`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../LIMITS.md).
+If your service has other paths or field names, change the one file that makes the calls (`app/tools.py`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../../../LIMITS.md).
 
 ## Check it with Geometer
 
@@ -68,7 +68,7 @@ Then `geo replay <problem id>` shows the problem happening again, step by step.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh lending forgets-to-look
+../../../scripts/try-broken.sh lending forgets-to-look
 ```
 
 | Patch | One line that changes | The rule it should break |
@@ -91,7 +91,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | 9 | Keeps a record of what it did | Not checked |
 | 10 | Lets people decide how much it may do alone | Set in Geometer, not in this folder |
 
-What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
+What is not checked is also listed in the top-level [LIMITS.md](../../../LIMITS.md).
 
 ## Tests of its own
 

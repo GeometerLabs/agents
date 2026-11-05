@@ -8,10 +8,10 @@
 // Claim rules, kept in code: a document counts and states facts; it never grades. BANNED lists, per language, the words
 // no document may contain (safe, guaranteed, certified, earnings and their translations). A test runs every document in
 // every language through it. The confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are not on it.
-import { INNOVATOR } from "../../../modules/report/text.ts";
+import { INNOVATOR } from "../../../../modules/report/text.ts";
 import { STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
-import type { RuleId } from "../../../modules/record/record.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { RuleId } from "../../../../modules/record/record.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, Source } from "./data.ts";
 
 export interface Strings {

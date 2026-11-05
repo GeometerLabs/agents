@@ -13,39 +13,39 @@
 // refund and following it through Guard's hold (payments/refunds.ts), and reading a message with the month's AI allowance (understanding/reader.ts).
 // What is left here is Bookings: the calendar, the slot, the booking's states and its words.
 import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours } from "./limits.ts";
-import type { Decision } from "../../../modules/limits/limits.ts";
+import type { Decision } from "../../../../modules/limits/limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
 import type { Booking, Store } from "./booking.ts";
-import { RELAY_CODE_REPLY } from "../../../modules/approvals/code.ts";
-import { ApiError, ConflictError, TimeoutError } from "../../../modules/core/faults.ts";
+import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { ApiError, ConflictError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
-import type { InboundMessage, Messaging } from "../../../modules/messaging/messaging.ts";
-import { createSay } from "../../../modules/messaging/say.ts";
+import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
+import { createSay } from "../../../../modules/messaging/say.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { CandidateSlot, Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
 import { bookingsReading } from "./adapters/reading.ts";
-import { RULES } from "../../../modules/understanding/model.ts";
-import { createReader } from "../../../modules/understanding/reader.ts";
-import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
-import type { PaymentEvent, PaymentLink, Payments } from "../../../modules/payments/payments.ts";
-import { ATTEMPTS, ensureLink as makeLink } from "../../../modules/payments/links.ts";
-import { createRefunds } from "../../../modules/payments/refunds.ts";
-import type { Clock } from "../../../modules/core/clock.ts";
-import { takeDue } from "../../../modules/reminders/reminders.ts";
-import { resolveDate, resolveTime } from "../../../modules/language/dates.ts";
+import { RULES } from "../../../../modules/understanding/model.ts";
+import { createReader } from "../../../../modules/understanding/reader.ts";
+import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
+import type { PaymentEvent, PaymentLink, Payments } from "../../../../modules/payments/payments.ts";
+import { ATTEMPTS, ensureLink as makeLink } from "../../../../modules/payments/links.ts";
+import { createRefunds } from "../../../../modules/payments/refunds.ts";
+import type { Clock } from "../../../../modules/core/clock.ts";
+import { takeDue } from "../../../../modules/reminders/reminders.ts";
+import { resolveDate, resolveTime } from "../../../../modules/language/dates.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
-import type { Action, ActionRecord, Outcome } from "../../../modules/record/record.ts";
-import { formatSlot } from "../../../modules/language/format.ts";
+import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
+import { formatSlot } from "../../../../modules/language/format.ts";
 import { checkFactsOf } from "./language/check.ts";
 import { buttonsFor, intentFromReply, serviceList, slotList } from "./language/interactive.ts";
 import type { ButtonId } from "./language/interactive.ts";
-import type { InteractiveMessage } from "../../../modules/language/interactive.ts";
+import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
 import { hoursOn, serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
 
 export interface AgentDeps {
   settings: Settings;

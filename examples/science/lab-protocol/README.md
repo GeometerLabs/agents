@@ -38,7 +38,7 @@ Your service must answer these calls (JSON bodies):
 | `POST /v1/samples/{id}/discards` | discards the sample: `volume_ml`, `approval` |
 | `GET /v1/samples/{id}/discards` | a list of the discards already made (optional) |
 
-If your service has other paths or field names, change the one file that makes the calls (`src/lab.ts`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../LIMITS.md).
+If your service has other paths or field names, change the one file that makes the calls (`src/lab.ts`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../../../LIMITS.md).
 
 ## Check it with Geometer
 
@@ -52,7 +52,7 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 
 Faults tried: a lost reply at the lab service's calls and at the agent's own tool calls, on every task, up to three at a time. The model is a stand-in; the services are simulated from `.geometer/tools.toml`. Geometer found the agent through Mastra and ran it from `.geometer/tasks.toml`. The Mastra version here (1.79.0) is newer than the one Geometer's hook was tested with (1.67.0).
 
-`geo check .` on the agent as written: exit 0, "No problems found in what was tried" (52 fault runs, search not finished). Rule checked: `one-run-per-sample-and-step`. Rule not reached: `discards-need-a-scientist` (the agent holds the discard in its code before the call, so the check had no call to judge; this is not a pass, see [LIMITS.md](../LIMITS.md)). The tools are listed in their natural order (`get_sample`, `run_step`, `discard_sample`). The project's own tests ran (`npm test`) and passed.
+`geo check .` on the agent as written: exit 0, "No problems found in what was tried" (52 fault runs, search not finished). Rule checked: `one-run-per-sample-and-step`. Rule not reached: `discards-need-a-scientist` (the agent holds the discard in its code before the call, so the check had no call to judge; this is not a pass, see [LIMITS.md](../../../LIMITS.md)). The tools are listed in their natural order (`get_sample`, `run_step`, `discard_sample`). The project's own tests ran (`npm test`) and passed.
 
 With the patch from [`broken/`](broken) applied:
 
@@ -68,7 +68,7 @@ Then `geo replay <problem id>` shows the problem happening again, step by step.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh lab-protocol retries-blind
+../../../scripts/try-broken.sh lab-protocol retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
@@ -91,7 +91,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | 9 | Keeps a record of what it did | Not checked |
 | 10 | Lets people decide how much it may do alone | Set in Geometer, not in this folder |
 
-What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
+What is not checked is also listed in the top-level [LIMITS.md](../../../LIMITS.md).
 
 ## Tests of its own
 

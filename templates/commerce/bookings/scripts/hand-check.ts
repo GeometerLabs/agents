@@ -1,5 +1,5 @@
 // The hand check: run every crash-test situation against the in-memory fakes and say plainly what held, what failed
-// and what was not tested. Run it from anywhere: node pathways/bookings/scripts/hand-check.ts
+// and what was not tested. Run it from anywhere: node templates/commerce/bookings/scripts/hand-check.ts
 // It runs on Glow Salon's example settings, or on any shop's own: add --settings <file>. A situation that a shop's settings
 // cannot express (a shop with no cancellation window has nothing to be "late" for) is not run and is named, so the count
 // never includes it.
@@ -9,16 +9,16 @@ import { parseArgs } from "node:util";
 import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
-import { handCheckText } from "../../../modules/crash-test/print.ts";
+import { handCheckText } from "../../../../modules/crash-test/print.ts";
 import { UsageError, main, readSettings } from "../report/cli.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 
 await main(async () => {
   let args;
   try {
     args = parseArgs({ args: process.argv.slice(2), options: { settings: { type: "string" }, details: { type: "boolean" }, all: { type: "boolean" } } });
-  } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of pathways/bookings/scripts/hand-check.ts for the options.`); }
+  } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of templates/commerce/bookings/scripts/hand-check.ts for the options.`); }
   const showAll = args.values.details === true || args.values.all === true;
   const settings = args.values.settings ? readSettings(args.values.settings) : glowSalon();
   const started = performance.now();

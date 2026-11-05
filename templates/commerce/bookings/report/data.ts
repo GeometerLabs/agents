@@ -14,17 +14,17 @@ import { readFileSync } from "node:fs";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import type { Booking } from "../src/booking.ts";
-import type { Action, Outcome, RecordEntry, RuleId } from "../../../modules/record/record.ts";
-import { canonicalJson } from "../../../modules/record/record.ts";
-import { localParts, zonedToMs } from "../../../modules/core/time.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
-import { digestOf } from "../../../modules/report/digest.ts";
-import { SOURCES } from "../../../modules/report/text.ts";
-import type { Source } from "../../../modules/report/text.ts";
+import type { Action, Outcome, RecordEntry, RuleId } from "../../../../modules/record/record.ts";
+import { canonicalJson } from "../../../../modules/record/record.ts";
+import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
+import { digestOf } from "../../../../modules/report/digest.ts";
+import { SOURCES } from "../../../../modules/report/text.ts";
+import type { Source } from "../../../../modules/report/text.ts";
 
 /** What the numbers were counted from. Always stated, never assumed: a report made from stand-ins must say so. */
 export { SOURCES };
@@ -34,7 +34,7 @@ export const PATHWAY = readPathway();
 
 function readPathway(): { name: string; version: string } {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version?: string };
-  if (!pkg.version) throw new Error("pathways/bookings/package.json has no version.");
+  if (!pkg.version) throw new Error("templates/commerce/bookings/package.json has no version.");
   return { name: "bookings", version: pkg.version };
 }
 

@@ -5,11 +5,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createWorld, OTHER_CUSTOMER } from "../src/harness.ts";
 import { createModelParser } from "../src/adapters/model-llm.ts";
-import { createSystemOne } from "../../../modules/understanding/system-one.ts";
+import { createSystemOne } from "../../../../modules/understanding/system-one.ts";
 import { createRouter } from "../src/adapters/understanding.ts";
-import { stateFor, summaryOf } from "../../../modules/understanding/ai-state.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
-import { systemOneFetch, systemOneStandin } from "../../../modules/standins/system-one.ts";
+import { stateFor, summaryOf } from "../../../../modules/understanding/ai-state.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
+import { systemOneFetch, systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import { answer, openaiReply } from "./stub-model-server.ts";
 
 const IST = "Asia/Kolkata";

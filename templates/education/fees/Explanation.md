@@ -1,16 +1,16 @@
-# Explanation: how the Fees pathway was built, and why
+# Explanation: how the Fees template was built, and why
 
-5 November 2026. This explains the choices in `pathways/fees/`. It builds plan item B16 (fee and dues collection) on the shared modules that item B30 moved out of Bookings (see [modules/Explanation.md](../../modules/Explanation.md)). Read [README.md](README.md) first for what it does; [Deferred.md](Deferred.md) lists what it leaves open.
+5 November 2026. This explains the choices in `templates/education/fees/`. It builds plan item B16 (fee and dues collection) on the shared modules that item B30 moved out of Bookings (see [modules/Explanation.md](../../../modules/Explanation.md)). Read [README.md](README.md) first for what it does; [Deferred.md](Deferred.md) lists what it leaves open.
 
 ## What was asked, and what this is
 
-A pathway for tuition and coaching centres: a monthly reminder with a payment link in the parent's language, "never a reminder once paid" judged from the payment record and never from what a parent says, part payments, waivers and refunds that go to the owner above a limit, STOP, a monthly report for the owner, and a check you can run on any centre's settings. It reuses what Bookings had (payment links, refunds, reminders, record, language, limits, approvals, report) and adds only what is about fees.
+A template for tuition and coaching centres: a monthly reminder with a payment link in the parent's language, "never a reminder once paid" judged from the payment record and never from what a parent says, part payments, waivers and refunds that go to the owner above a limit, STOP, a monthly report for the owner, and a check you can run on any centre's settings. It reuses what Bookings had (payment links, refunds, reminders, record, language, limits, approvals, report) and adds only what is about fees.
 
 It runs against in-memory stand-ins. That is a stand-in for real services, not a claim about them.
 
 ## What the move to `modules/` did for it
 
-Fees is 4,457 lines of code in this folder (`src/`, `crash-test/`, `report/`, `scripts/`) and 1,406 lines of tests. Bookings went from 17,610 lines of code to 12,050; `modules/` holds 6,456 lines of code and 449 of tests. Had Fees been written by copying Bookings, the code that moved (Bookings is 5,560 lines smaller) would have existed twice. It exists once, and Bookings and Fees import it. The sizes before and after, and what each module is, are in [modules/README.md](../../modules/README.md).
+Fees is 4,457 lines of code in this folder (`src/`, `crash-test/`, `report/`, `scripts/`) and 1,406 lines of tests. Bookings went from 17,610 lines of code to 12,050; `modules/` holds 6,456 lines of code and 449 of tests. Had Fees been written by copying Bookings, the code that moved (Bookings is 5,560 lines smaller) would have existed twice. It exists once, and Bookings and Fees import it. The sizes before and after, and what each module is, are in [modules/README.md](../../../modules/README.md).
 
 ## The decisions that matter
 

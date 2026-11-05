@@ -3,7 +3,7 @@
 // stand-ins' own records, not from the text it printed.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { MARKERS } from "../crash-test/says.ts";
 import { WALK, WALK_DISCOUNT_INR, printed, walk } from "../scripts/walkthrough.ts";
 import { balancePaise } from "../src/due.ts";

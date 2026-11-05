@@ -1,4 +1,4 @@
-# Pitch and sell the Bookings pathway
+# Pitch and sell the Bookings template
 
 For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks.
 
@@ -15,7 +15,7 @@ practise with a friend → a friendly shop → a stranger's shop → quote → f
 | Home services | Pharmacies |
 | Anyone who takes bookings on WhatsApp and has no-shows, or wants deposits | Clinics (health data is the wrong place to learn first) |
 
-Tuition and coaching centres: wait for the fee and dues pathway.
+Tuition and coaching centres: wait for the fee and dues template.
 
 ### Ask yourself
 
@@ -52,8 +52,8 @@ Don't open with "AI", with technology, or with the price. If they ask "Is this A
 **Before you go in.** On your laptop, in the agents folder:
 
 ```sh
-node pathways/bookings/demo/server.ts            # English
-node pathways/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
+node templates/commerce/bookings/demo/server.ts            # English
+node templates/commerce/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
 ```
 
 It prints a line like `On a phone, same Wi-Fi:  http://192.168.1.23:8787`. Open that address on the owner's phone. Both devices need the same Wi-Fi. If the phone can't open it, turn on your phone's hotspot and join your laptop to it. The demo has no login: never open it to the internet.

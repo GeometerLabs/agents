@@ -1,5 +1,5 @@
 // The hand check: run every crash-test situation against the in-memory stand-ins and say plainly what held, what failed and what was not tested.
-// Run it from anywhere: node pathways/fees/scripts/hand-check.ts
+// Run it from anywhere: node templates/education/fees/scripts/hand-check.ts
 // It runs on Bright Tuition Centre's example settings, or on any centre's own: add --settings <file>. A situation that a centre's settings cannot express (a
 // centre with no late fee has no late fee to add) is not run and is named, so the count never includes it.
 // It reads in three layers: the result line and the work done by default, and "--details" (or --all) shows what was done in each situation: how the stand-ins made
@@ -7,8 +7,8 @@
 // The deploy bundle reads this output (bundle/handcheck.ts): "Held N of M" and the tick and cross lines. Their shape is shared (modules/crash-test/print.ts).
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { handCheckText } from "../../../modules/crash-test/print.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { handCheckText } from "../../../../modules/crash-test/print.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
@@ -30,7 +30,7 @@ async function main(): Promise<number> {
   let args;
   try {
     args = parseArgs({ args: process.argv.slice(2), options: { settings: { type: "string" }, details: { type: "boolean" }, all: { type: "boolean" } } });
-  } catch (e) { throw new Error(`${(e as Error).message}\nSee the first lines of pathways/fees/scripts/hand-check.ts for the options.`); }
+  } catch (e) { throw new Error(`${(e as Error).message}\nSee the first lines of templates/education/fees/scripts/hand-check.ts for the options.`); }
   const showAll = args.values.details === true || args.values.all === true;
   const settings = args.values.settings ? readSettings(args.values.settings) : brightTuition();
   const started = performance.now();

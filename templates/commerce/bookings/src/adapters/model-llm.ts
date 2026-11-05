@@ -1,6 +1,6 @@
 // The language-model parser for Bookings: the shared parser (modules/understanding/model-llm.ts) with Bookings' reading (reading.ts) given to it.
-import { createModelParser as createParser } from "../../../../modules/understanding/model-llm.ts";
-import type { ModelConfig, ModelParser } from "../../../../modules/understanding/model-llm.ts";
+import { createModelParser as createParser } from "../../../../../modules/understanding/model-llm.ts";
+import type { ModelConfig, ModelParser } from "../../../../../modules/understanding/model-llm.ts";
 import type { Intent, ParseContext } from "./model.ts";
 import { bookingsReading } from "./reading.ts";
 

@@ -2,15 +2,15 @@
 // no side effects and read nothing but their arguments, so in v0 the agent calls them in-process, and later Guard can run the very same functions outside
 // the AI, in front of every real service. Three of the nine are every template's and live in modules/limits/limits.ts (opt-out, the refund limit and
 // message-matches-record); the wrappers below give them Bookings' words and facts.
-import { formatInr } from "../../../modules/language/format.ts";
-import { allow, block, checkRefund, checkRecordMatch } from "../../../modules/limits/limits.ts";
-import type { Decision } from "../../../modules/limits/limits.ts";
-import type { RecordView } from "../../../modules/record/record.ts";
+import { formatInr } from "../../../../modules/language/format.ts";
+import { allow, block, checkRefund, checkRecordMatch } from "../../../../modules/limits/limits.ts";
+import type { Decision } from "../../../../modules/limits/limits.ts";
+import type { RecordView } from "../../../../modules/record/record.ts";
 import { checkFactsOf } from "./language/check.ts";
 import type { MessageFacts } from "./language/templates.ts";
 import { hoursOn } from "./settings.ts";
 import type { Service, Settings } from "./settings.ts";
-import { MINUTE, localParts, minutesOfDay, sameDate } from "../../../modules/core/time.ts";
+import { MINUTE, localParts, minutesOfDay, sameDate } from "../../../../modules/core/time.ts";
 
 // price-at-or-above-list: never quote or agree below the price list
 export function checkPriceAtOrAboveList(input: { serviceName: string; listInr: number; proposedInr: number }): Decision {

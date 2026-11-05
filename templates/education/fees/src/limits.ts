@@ -10,10 +10,10 @@
 //   paid-only-when-recorded     "received" and "nothing more is due" go out only when the payment record shows the money
 //   one-refund-per-payment      a payment is refunded once
 //   refund-limit, opt-out, message-matches-record      the shared three
-import { formatInr } from "../../../modules/language/format.ts";
-import { allow, block, checkRecordMatch, checkRefund, hold } from "../../../modules/limits/limits.ts";
-import type { Decision } from "../../../modules/limits/limits.ts";
-import type { RecordView } from "../../../modules/record/record.ts";
+import { formatInr } from "../../../../modules/language/format.ts";
+import { allow, block, checkRecordMatch, checkRefund, hold } from "../../../../modules/limits/limits.ts";
+import type { Decision } from "../../../../modules/limits/limits.ts";
+import type { RecordView } from "../../../../modules/record/record.ts";
 import { checkFactsOf } from "./language/check.ts";
 import type { MessageFacts } from "./language/templates.ts";
 

@@ -1,9 +1,9 @@
 // The Fees intents: what a parent can mean when they write about a fee, and the check that something a parser returned is really one of them.
 // The seam itself (the cost of reading a message, the parser types, what a template tells the shared readers) is modules/understanding/model.ts.
-import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import type { Language } from "../../../../modules/language/languages.ts";
-import { isObj } from "../../../../modules/understanding/model.ts";
-import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../modules/understanding/model.ts";
+import { LANGUAGES } from "../../../../../modules/language/languages.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import { isObj } from "../../../../../modules/understanding/model.ts";
+import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../../modules/understanding/model.ts";
 
 /**
  *  - pay:      wants the payment link (or the way to pay)

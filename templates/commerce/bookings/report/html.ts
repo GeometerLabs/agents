@@ -2,20 +2,20 @@
 // green and white with amber for what was not tested. It shows the same numbers as the owner's text, a table per limit,
 // and a "Show what we did ▸" section with the counts by action and outcome, the record's entries (fingerprints only) and
 // the digests. Every value that reaches the page is escaped; shop and service names come from the settings file.
-import { formatDate } from "../../../modules/language/format.ts";
-import { localParts } from "../../../modules/core/time.ts";
+import { formatDate } from "../../../../modules/language/format.ts";
+import { localParts } from "../../../../modules/core/time.ts";
 const two = (n: number) => String(n).padStart(2, "0");
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
 import { STRINGS } from "./strings.ts";
-import { badgeText } from "../../../modules/report/text.ts";
+import { badgeText } from "../../../../modules/report/text.ts";
 import type { Strings } from "./strings.ts";
 import { goLiveLines } from "./text.ts";
-import { languagesOf, periodLabel, rupees } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { esc, list, page, sealBlock as sharedSealBlock, table } from "../../../modules/report/page.ts";
+import { languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { esc, list, page, sealBlock as sharedSealBlock, table } from "../../../../modules/report/page.ts";
 
 /** The verification block (modules/report/page.ts) with this template's words. */
 export const sealBlock = (s: Strings, envelope: Envelope, extra: [string, string][] = []): string => sharedSealBlock(s.page, envelope, extra);

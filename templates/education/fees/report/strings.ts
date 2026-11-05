@@ -3,7 +3,7 @@
 //
 // Machine-written Hindi, Malayalam and Kannada. They are listed in REVIEW-ml.md and REVIEW-kn.md for a native speaker, and no real centre should be given them before
 // that review. The claim rules (modules/report/claims.ts) apply: a document counts and states facts; it never grades.
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import type { NotCountedId, Source } from "./data.ts";
 

@@ -11,24 +11,24 @@
 // The care that is the same for every template is in modules/: sending a message (messaging/say.ts), making a payment link (payments/links.ts), asking for a refund and
 // following Guard's hold (payments/refunds.ts), reading a message with the month's AI allowance (understanding/reader.ts) and reminders (reminders/reminders.ts).
 // What is left here is Fees: the student's fee for a month, its states and its words.
-import { RELAY_CODE_REPLY } from "../../../modules/approvals/code.ts";
-import { ApiError, TimeoutError } from "../../../modules/core/faults.ts";
-import type { Clock } from "../../../modules/core/clock.ts";
-import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../modules/core/time.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import type { InteractiveMessage } from "../../../modules/language/interactive.ts";
-import type { Decision } from "../../../modules/limits/limits.ts";
-import type { InboundMessage, Messaging } from "../../../modules/messaging/messaging.ts";
-import { createSay } from "../../../modules/messaging/say.ts";
-import { ensureLink as makeLink } from "../../../modules/payments/links.ts";
-import type { Payment, PaymentEvent, PaymentLink, Payments } from "../../../modules/payments/payments.ts";
-import { createRefunds } from "../../../modules/payments/refunds.ts";
-import type { Action, ActionRecord, Outcome } from "../../../modules/record/record.ts";
-import { takeDue } from "../../../modules/reminders/reminders.ts";
-import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
-import { RULES } from "../../../modules/understanding/model.ts";
-import { createReader } from "../../../modules/understanding/reader.ts";
+import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
+import type { Clock } from "../../../../modules/core/clock.ts";
+import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
+import type { Decision } from "../../../../modules/limits/limits.ts";
+import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
+import { createSay } from "../../../../modules/messaging/say.ts";
+import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
+import type { Payment, PaymentEvent, PaymentLink, Payments } from "../../../../modules/payments/payments.ts";
+import { createRefunds } from "../../../../modules/payments/refunds.ts";
+import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
+import { takeDue } from "../../../../modules/reminders/reminders.ts";
+import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
+import { RULES } from "../../../../modules/understanding/model.ts";
+import { createReader } from "../../../../modules/understanding/reader.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
 import { balanceInr, balancePaise, duesOf, factsFor, monthKey, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";

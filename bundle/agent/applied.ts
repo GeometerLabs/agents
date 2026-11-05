@@ -1,7 +1,7 @@
 // The agents someone else wrote that have been deployed, as the compose file and the shared services' configs need to know them. Read from what was APPLIED (the state file), not
 // from the agent's folder, so a shop's deploy puts every agent back exactly as it was (and never takes its Guards away with `up --remove-orphans`). Kept apart from the agent's own
 // deploy (agent/deploy.ts) because deploy.ts needs this and agent/deploy.ts needs deploy.ts.
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { AgentFacts } from "../generate/configs.ts";
 import { readSecretFile, secretFile } from "../lib/secrets.ts";
 import type { State } from "../lib/state.ts";

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { runBusyMonth } from "../../../pathways/bookings/report/example-month.ts";
+import { runBusyMonth } from "../../../templates/commerce/bookings/report/example-month.ts";
 import { WORDS } from "../languages.ts";
 import { formatRupees } from "../cost.ts";
 import { M, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";

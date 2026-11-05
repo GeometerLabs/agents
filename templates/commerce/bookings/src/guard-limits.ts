@@ -2,8 +2,8 @@
 // `call_bound_approval` threshold (paise) must be the same number (modules/payments/guard-limits.ts says why). This file turns the Bookings settings into the
 // numbers of the Razorpay limits spec; the spec itself is built by modules/payments/guard-limits.ts.
 import type { Settings } from "./settings.ts";
-import { approvalTtlFrom, capsFrom, razorpayLimitsSpecFrom, rupeesToPaise } from "../../../modules/payments/guard-limits.ts";
-import type { LimitsSpec, LimitsSpecIdentity, RazorpayCaps } from "../../../modules/payments/guard-limits.ts";
+import { approvalTtlFrom, capsFrom, razorpayLimitsSpecFrom, rupeesToPaise } from "../../../../modules/payments/guard-limits.ts";
+import type { LimitsSpec, LimitsSpecIdentity, RazorpayCaps } from "../../../../modules/payments/guard-limits.ts";
 
 /** The refund amount (paise) above which Guard holds the call for the owner. The agent holds above `refundLimitInr`; the two are this one value. */
 export const refundThresholdPaise = (settings: Settings): number => rupeesToPaise(settings.cancellation.refundLimitInr);

@@ -53,7 +53,7 @@ function publicKeyObject(hex: string): KeyObject {
 
 /** Read a private key from a PEM file the caller names. A key other people can read is refused, as ssh does. */
 export function loadPrivateKey(path: string): KeyObject {
-  if (!existsSync(path)) throw new Error(`There is no key file at ${path}. Make one with: node pathways/bookings/scripts/report-key.ts <a folder outside the repository>`);
+  if (!existsSync(path)) throw new Error(`There is no key file at ${path}. Make one with: node templates/commerce/bookings/scripts/report-key.ts <a folder outside the repository>`);
   const mode = statSync(path).mode & 0o777;
   if ((mode & 0o077) !== 0) throw new Error(`The key file ${path} can be read by other people (mode ${mode.toString(8)}). Run: chmod 600 ${path}`);
   const key = createPrivateKey(readFileSync(path));

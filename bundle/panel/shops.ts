@@ -5,10 +5,10 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
-import { validateRuntimeConfig, parseLock, pathwayVersion } from "../../pathways/bookings/server/config.ts";
-import { PATHWAY } from "../../pathways/bookings/server/runtime.ts";
-import { validateSettings } from "../../pathways/bookings/src/settings.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import { validateRuntimeConfig, parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
+import { PATHWAY } from "../../templates/commerce/bookings/server/runtime.ts";
+import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";

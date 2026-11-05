@@ -5,9 +5,9 @@
 //
 // The world starts an hour before the first reminder of November 2026, as the example centre's does.
 import { isDeepStrictEqual } from "node:util";
-import { addDays, zonedToMs } from "../../../modules/core/time.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { addDays, zonedToMs } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import { brightTuition } from "../src/harness.ts";
 import { batchOf } from "../src/settings.ts";
 import type { Batch, Settings, Student } from "../src/settings.ts";

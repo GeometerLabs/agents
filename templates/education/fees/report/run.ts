@@ -1,12 +1,12 @@
 // Making the files: the scripts and the tests both call this. Everything is written into the one folder the caller names (--out) and nowhere else: file names are
 // fixed here and never contain a path.
 import type { KeyObject } from "node:crypto";
-import type { RecordEntry } from "../../../modules/record/record.ts";
-import { monthRange, writer } from "../../../modules/report/months.ts";
-import { envelopeFile, seal } from "../../../modules/report/sign.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
-import { languagesOf } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
+import type { RecordEntry } from "../../../../modules/record/record.ts";
+import { monthRange, writer } from "../../../../modules/report/months.ts";
+import { envelopeFile, seal } from "../../../../modules/report/sign.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
+import { languagesOf } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import type { Due } from "../src/due.ts";
 import type { Settings } from "../src/settings.ts";
 import { buildFeesReport } from "./data.ts";

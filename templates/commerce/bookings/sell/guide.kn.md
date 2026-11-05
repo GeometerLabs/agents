@@ -55,8 +55,8 @@
 **ಒಳಗೆ ಹೋಗುವ ಮೊದಲು.** ನಿಮ್ಮ ಲ್ಯಾಪ್‌ಟಾಪ್‌ನಲ್ಲಿ, agents ಫೋಲ್ಡರ್‌ನಲ್ಲಿ:
 
 ```sh
-node pathways/bookings/demo/server.ts            # English
-node pathways/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
+node templates/commerce/bookings/demo/server.ts            # English
+node templates/commerce/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
 ```
 
 ಇದು `On a phone, same Wi-Fi:  http://192.168.1.23:8787` ತರಹದ ಒಂದು ಸಾಲನ್ನು ತೋರಿಸುತ್ತದೆ. ಆ ವಿಳಾಸವನ್ನು ಮಾಲೀಕರ ಫೋನ್‌ನಲ್ಲಿ ತೆರೆಯಿರಿ. ಎರಡೂ ಸಾಧನಗಳು ಒಂದೇ Wi-Fi ನಲ್ಲಿ ಇರಬೇಕು. ಫೋನ್‌ನಲ್ಲಿ ತೆರೆಯದಿದ್ದರೆ, ನಿಮ್ಮ ಫೋನ್‌ನ ಹಾಟ್‌ಸ್ಪಾಟ್ ಆನ್ ಮಾಡಿ ಲ್ಯಾಪ್‌ಟಾಪ್ ಅನ್ನು ಅದಕ್ಕೆ ಜೋಡಿಸಿ. ಡೆಮೊಗೆ ಲಾಗಿನ್ ಇಲ್ಲ: ಅದನ್ನು ಎಂದಿಗೂ ಇಂಟರ್ನೆಟ್‌ಗೆ ತೆರೆದಿಡಬೇಡಿ.

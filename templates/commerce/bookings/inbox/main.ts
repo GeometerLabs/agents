@@ -2,7 +2,7 @@
 //
 //   RUNTIME_URL=http://runtime:8787 INTERNAL_TOKEN_FILE=/run/secrets/internal_token \
 //   RAZORPAY_WEBHOOK_SECRET_FILE=/run/secrets/razorpay_webhook WHATSAPP_APP_SECRET_FILE=/run/secrets/whatsapp_app_secret \
-//   WHATSAPP_VERIFY_TOKEN_FILE=/run/secrets/whatsapp_verify PORT=8788 node pathways/bookings/inbox/main.ts
+//   WHATSAPP_VERIFY_TOKEN_FILE=/run/secrets/whatsapp_verify PORT=8788 node templates/commerce/bookings/inbox/main.ts
 //
 // WhatsApp webhooks are verified one of two ways, chosen by WHATSAPP_VERIFICATION (default meta-signature):
 //   meta-signature  Meta's X-Hub-Signature-256. Needs WHATSAPP_APP_SECRET_FILE and WHATSAPP_VERIFY_TOKEN_FILE. Callback: POST /webhooks/whatsapp
@@ -11,7 +11,7 @@
 // Either way, WHATSAPP_ALLOWED_SOURCES (comma-separated IPs or CIDRs) refuses every other source, and WHATSAPP_SOURCE_IP_HEADER (for example
 // x-forwarded-for) says which header your reverse proxy sets with the real address (the last one in it is used).
 //
-// The owner's replies also go to the approvals relay (pathways/bookings/approvals/), straight from here and never through the runtime:
+// The owner's replies also go to the approvals relay (templates/commerce/bookings/approvals/), straight from here and never through the runtime:
 //   OWNER_WHATSAPP=+919800000001 RELAY_URL=http://relay:8795 RELAY_TOKEN_FILE=/run/secrets/relay_token   (all three, or none)
 // The relay's token is its own, not the runtime's: the inbox is the only thing that holds both.
 //
@@ -22,7 +22,7 @@ import { startInbox } from "./server.ts";
 
 function needEnv(name: string): string {
   const v = process.env[name];
-  if (!v) { console.error(`The inbox needs ${name}. See the top of pathways/bookings/inbox/main.ts.`); process.exit(2); }
+  if (!v) { console.error(`The inbox needs ${name}. See the top of templates/commerce/bookings/inbox/main.ts.`); process.exit(2); }
   return v;
 }
 /** A secret from a file, without its trailing newline. Only the file's name is ever mentioned in an error. */

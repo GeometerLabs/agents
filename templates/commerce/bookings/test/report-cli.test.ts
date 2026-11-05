@@ -7,10 +7,10 @@ import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, write
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateKeyFiles } from "../../../modules/report/keys.ts";
-import { verifyEnvelopeText } from "../../../modules/report/sign.ts";
+import { generateKeyFiles } from "../../../../modules/report/keys.ts";
+import { verifyEnvelopeText } from "../../../../modules/report/sign.ts";
 import { runBusyMonth } from "../report/example-month.ts";
-import { bannedIn } from "../../../modules/report/claims.ts";
+import { bannedIn } from "../../../../modules/report/claims.ts";
 
 const SCRIPTS = fileURLToPath(new URL("../scripts/", import.meta.url));
 const SETTINGS = fileURLToPath(new URL("../settings/glow-salon.example.json", import.meta.url));
@@ -152,6 +152,6 @@ test("report-example.ts makes a sample of everything, in all four languages and 
 });
 
 test("the default sample folder is ignored by git, so a sample never lands in a commit", () => {
-  const ignore = readFileSync(fileURLToPath(new URL("../../../.gitignore", import.meta.url)), "utf8");
-  assert.ok(ignore.split("\n").includes("pathways/bookings/report-sample/"));
+  const ignore = readFileSync(fileURLToPath(new URL("../../../../.gitignore", import.meta.url)), "utf8");
+  assert.ok(ignore.split("\n").includes("templates/commerce/bookings/report-sample/"));
 });

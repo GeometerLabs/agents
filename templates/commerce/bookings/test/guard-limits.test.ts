@@ -6,10 +6,10 @@ import { execFileSync } from "node:child_process";
 import { parseSettings } from "../src/settings.ts";
 import { glowSalon } from "../src/harness.ts";
 import { checkRefundLimit } from "../src/limits.ts";
-import { createGuardModel } from "../../../modules/payments/guard-model.ts";
-import { fakeClock } from "../../../modules/core/clock.ts";
+import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
 import { razorpayLimitsSpec, razorpayNumbers, refundThresholdPaise } from "../src/guard-limits.ts";
-import { APPROVAL_TTL_SECONDS, DEFAULT_CAPS, MAX_APPROVAL_TTL_SECONDS, guardHoldsRefund, guardRefusesRefund, refundRulesOf, rupeesToPaise } from "../../../modules/payments/guard-limits.ts";
+import { APPROVAL_TTL_SECONDS, DEFAULT_CAPS, MAX_APPROVAL_TTL_SECONDS, guardHoldsRefund, guardRefusesRefund, refundRulesOf, rupeesToPaise } from "../../../../modules/payments/guard-limits.ts";
 
 const withSettings = (changes: { refundLimitInr?: number; depositInr?: number }) => {
   const base = JSON.parse(JSON.stringify(glowSalon()));

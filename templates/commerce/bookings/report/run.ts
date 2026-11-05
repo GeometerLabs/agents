@@ -2,19 +2,19 @@
 // (--out) and nowhere else: file names are fixed here and never contain a path.
 import type { KeyObject } from "node:crypto";
 import type { Booking } from "../src/booking.ts";
-import type { RecordEntry } from "../../../modules/record/record.ts";
+import type { RecordEntry } from "../../../../modules/record/record.ts";
 import type { Settings } from "../src/settings.ts";
 import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText } from "./certificate.ts";
 import type { HandCheckSummary } from "./certificate.ts";
 import { buildMonthlyReport } from "./data.ts";
-import { monthRange, writer } from "../../../modules/report/months.ts";
+import { monthRange, writer } from "../../../../modules/report/months.ts";
 import type { GoLiveFinding, MonthlyReport, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
-import { envelopeFile, seal } from "../../../modules/report/sign.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
+import { envelopeFile, seal } from "../../../../modules/report/sign.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
 import { ownerText } from "./text.ts";
-import { languagesOf } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
+import { languagesOf } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
 
 export interface ReportRun {
   settings: Settings;

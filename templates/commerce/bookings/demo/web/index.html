@@ -7,8 +7,8 @@
 <!--
   A manual check of the browser demo. Build it, then serve this folder over http (a browser will not load modules from a file:// address):
 
-    npm run build:web-demo --prefix pathways/bookings
-    python3 -m http.server 8080 --directory pathways/bookings/demo/web
+    npm run build:web-demo --prefix templates/commerce/bookings
+    python3 -m http.server 8080 --directory templates/commerce/bookings/demo/web
     open http://localhost:8080/
 
   The page that really mounts it (the website's /start page) does the same two things: import { mountDemo } and call it on an element.

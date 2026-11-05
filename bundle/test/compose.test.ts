@@ -8,7 +8,7 @@ import { names } from "../generate/shop.ts";
 import { serverConfig } from "./helpers.ts";
 
 const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json" };
-const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/pathways/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
+const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/templates/commerce/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
 const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}, backup = true) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup, panel: { user: "501:20", shareAddress: "calendar@x.iam.gserviceaccount.com" } });
 const nets = (c: ReturnType<typeof build>, svc: string): string[] => { const n = c.services[svc].block.networks as Record<string, unknown> | string[] | undefined; return n === undefined ? [] : Array.isArray(n) ? n : Object.keys(n); };
 const mounts = (c: ReturnType<typeof build>, svc: string): string[] => ((c.services[svc].block.volumes as unknown[]) ?? []).map((v) => typeof v === "string" ? v : JSON.stringify(v));
@@ -88,9 +88,24 @@ test("nothing mounts the Docker socket, nothing is privileged, every program of 
 
 test("the runtime mounts its folder, the pathway, the shared modules, its data volume and its own credentials, and waits for its own three Guards to be healthy (not the shared model Guard)", () => {
   const c = two();
-  assert.deepEqual(mounts(c, "rt-glow-salon"), ["/repo/pathways/bookings:/pathway:ro", "/repo/modules:/modules:ro", "/srv/generated/shops/glow-salon/client:/client:ro", "/srv/secrets/rt-glow-salon:/run/secrets:ro", "rt-data-glow-salon:/home/node"]);
+  assert.deepEqual(mounts(c, "rt-glow-salon"), ["/repo/templates/commerce/bookings:/pathway:ro", "/repo/modules:/modules:ro", "/srv/generated/shops/glow-salon/client:/client:ro", "/srv/secrets/rt-glow-salon:/run/secrets:ro", "rt-data-glow-salon:/home/node"]);
   assert.deepEqual(Object.keys(c.services["rt-glow-salon"].block.depends_on as object).sort(), ["g-glow-salon-calendar", "g-glow-salon-razorpay", "g-glow-salon-whatsapp"]);
   assert.deepEqual(c.services["rt-glow-salon"].block.command, ["node", "/pathway/server/main.ts", "--client", "/client"]);
+});
+
+test("a runtime mounts its template and the shared modules from the folders of whichever shape the version was kept in: this repository's, a kept checkout laid out the same way, or one from before the templates were grouped by domain", () => {
+  const mountsOf = (pathwayDir: string) => mounts(build([{ ...shop("glow-salon", 1), pathwayDir }]), "rt-glow-salon").slice(0, 2);
+  assert.deepEqual(mountsOf("/repo/templates/commerce/bookings"), ["/repo/templates/commerce/bookings:/pathway:ro", "/repo/modules:/modules:ro"]);
+  assert.deepEqual(mountsOf("/srv/server/templates/commerce/bookings@0.2.0"), ["/srv/server/templates/commerce/bookings@0.2.0:/pathway:ro", "/srv/server/modules:/modules:ro"]);
+  assert.deepEqual(mountsOf("/srv/server/pathways/bookings@0.1.0"), ["/srv/server/pathways/bookings@0.1.0:/pathway:ro", "/srv/server/modules:/modules:ro"]);
+});
+
+test("the panel is told where the domain folders of the templates are, in the app folder it mounts", () => {
+  const c = two();
+  const env = c.services.panel.block.environment as Record<string, string>;
+  assert.equal(env.PANEL_TEMPLATES_DIR, "/app/templates");
+  assert.equal(env.PANEL_PATHWAYS_DIR, undefined);
+  assert.ok(mounts(c, "panel").includes("/repo:/app:ro"));
 });
 
 test("the Calendar Guard reads only its own shop's token (a sub-folder of the token volume), after the refresher has made one", () => {

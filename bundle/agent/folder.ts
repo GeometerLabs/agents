@@ -1,7 +1,7 @@
 // An agent someone else wrote ("bring your own agent"): its folder on the server, and how `geometer agent add` makes one from flags or a settings file.
 //
 //   agents/<name>/agent.json      which of Razorpay, WhatsApp and Calendar the agent calls, the shop's own WhatsApp number id and calendar id, and the caps that settings do not carry
-//   agents/<name>/settings.json   the SAME settings file the templates use (pathways/bookings/src/settings.ts), checked by the same validator. Guard's limits come from it exactly as
+//   agents/<name>/settings.json   the SAME settings file the templates use (templates/commerce/bookings/src/settings.ts), checked by the same validator. Guard's limits come from it exactly as
 //                                 they do for a template: the deposit, the refund limit. Guard has no rule for prices or opening hours, so those two are kept in the file (the report's
 //                                 policy digest covers them) but nothing in Guard checks them for an agent we did not write.
 //
@@ -9,9 +9,9 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { rupeesToPaise } from "../../modules/payments/guard-limits.ts";
-import { validateSettings } from "../../pathways/bookings/src/settings.ts";
+import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { serverPaths } from "../lib/server.ts";
 import { stableJson, writeAtomic } from "../lib/util.ts";

@@ -4,7 +4,7 @@
 //
 // The model only READS. It answers with an Intent; the dates and times stay phrases, exactly as rule-parser.ts returns them,
 // and dates.ts turns them into real ones. The model is never told today's date, so it cannot resolve one.
-import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import { LANGUAGES, LANGUAGE_NAMES } from "../../../../../modules/language/languages.ts";
 import { MODEL_KINDS } from "./model.ts";
 import type { ParseContext } from "./model.ts";
 

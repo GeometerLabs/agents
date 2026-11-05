@@ -1,5 +1,5 @@
 // Makes a shop's go-live certificate from one run of the hand check, in the shop's language.
-//   node pathways/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"]
+//   node templates/commerce/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"]
 // The hand check (the same situations scripts/hand-check.ts runs) is run now, on this shop's own settings, against stand-in
 // services. The certificate says "Held N of M situations. K failed. J not tested", lists what was not tested, shows the shop's
 // limits from the settings, and says the checks were run by hand against stand-in services. A situation these settings cannot
@@ -15,7 +15,7 @@ await main(async () => {
   let args;
   try {
     args = parseArgs({ args: process.argv.slice(2), options: { settings: { type: "string" }, lang: { type: "string" }, out: { type: "string" }, key: { type: "string" }, "prepared-by": { type: "string" }, now: { type: "string" } } });
-  } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of pathways/bookings/scripts/go-live-certificate.ts for the options.`); }
+  } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of templates/commerce/bookings/scripts/go-live-certificate.ts for the options.`); }
   const o = args.values;
   if (!o.out) throw new UsageError("Say which folder to write into: --out <folder>.");
   const settings = readSettings(o.settings);

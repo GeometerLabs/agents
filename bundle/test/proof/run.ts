@@ -23,7 +23,7 @@ import { decrypt, encrypt, generateIdentity } from "../../backup/age.ts";
 import { loadState } from "../../lib/state.ts";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
-const EXAMPLE = join(APP, "pathways/bookings/clients/glow-salon.example");
+const EXAMPLE = join(APP, "templates/commerce/bookings/clients/glow-salon.example");
 const MONOREPO = process.env.GEOMETER_MONOREPO ?? "/Users/navaltharun/Work/geometer/monorepo";
 const SCRATCH = process.env.PROOF_DIR ?? mkdtempSync(join(tmpdir(), "geometer-proof-"));
 const GUARD_IMAGE = process.env.GUARD_IMAGE ?? "geo-guard:0.1.0-alpha.2-pathways.1";

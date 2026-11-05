@@ -1,13 +1,13 @@
 // A walkthrough a partner can run before a visit, and read out to a centre owner: one parent's month at Bright Tuition Centre, on the stand-in services (test money,
 // nothing real is sent), printed as the conversation the parent and the owner would see.
-//   node pathways/fees/scripts/walkthrough.ts [--lang hi|en|ml|kn]        (default: hi)
+//   node templates/education/fees/scripts/walkthrough.ts [--lang hi|en|ml|kn]        (default: hi)
 // The five steps are the ones the sell guide teaches (sell/guide.en.md, section 4): the reminder with its payment link, "I already paid" when the record shows
 // nothing, a discount that goes to the owner, the payment and the receipt, and no reminder once paid. The words are what the agent really sends; none is typed in advance.
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { LANGUAGES, LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { UsageError, main } from "../../../modules/report/cli.ts";
+import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { UsageError, main } from "../../../../modules/report/cli.ts";
 import { SAYS } from "../crash-test/says.ts";
 import { KIRAN_PARENT, MEERA_PARENT, ROHAN_PARENT, SHARMA_PARENT, createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
