@@ -7,7 +7,7 @@ import { runBackup, runDrill, runExports } from "./backup/jobs.ts";
 import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import { recordAgents } from "./agent/records.ts";
-import { Refused, deploy, desiredHashOf, ops, renewRelayCredential } from "./deploy.ts";
+import { Refused, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import { parseStopRequest } from "./lib/requests.ts";
@@ -20,7 +20,7 @@ export function desiredSignature(ctx: Context, shop: string): string {
   const f = readShop(ctx.dir, shop);
   const waiting = join(serverPaths(ctx.dir).secretsInbox, shop);
   const inbox = existsSync(waiting) ? readdirSync(waiting).filter((n) => !n.startsWith(".")).sort() : [];
-  return sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, inbox, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}) }));
+  return sha256Hex(stableJson({ ...desiredOf(f), inbox }));
 }
 
 const failedFor = new Map<string, string>();
