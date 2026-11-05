@@ -96,6 +96,17 @@ export interface RealGuardOptions {
   approver?: { id: string };
 }
 
+// A Guard that is still running when this program ends (Ctrl-C reaches it, but a kill of this program does not) is ended with it.
+const live = new Set<ChildProcess>();
+let hooked = false;
+function endWithMe(child: ChildProcess): void {
+  live.add(child);
+  child.once("exit", () => live.delete(child));
+  if (hooked) return;
+  hooked = true;
+  process.on("exit", () => { for (const c of live) c.kill("SIGKILL"); });
+}
+
 /** compile, then run, on a temp folder. Resolves when the Guard says it is ready. */
 export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
   const dir = mkdtempSync(join(tmpdir(), "geo-bundle-guard-"));
@@ -117,6 +128,7 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
   writeFileSync(join(dir, "guard.toml"), toml);
   // GEO_GUARD_DRAIN_MS: how long Guard keeps taking calls after it is told to stop. Nothing is in flight when a test or a crash test ends, so it does not wait.
   const child: ChildProcess = spawn(o.binary, ["run", "--config", join(dir, "guard.toml")], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GEO_GUARD_DRAIN_MS: "50" } });
+  endWithMe(child);
   let output = "";
   child.stdout!.on("data", (c: Buffer) => { output += c; });
   child.stderr!.on("data", (c: Buffer) => { output += c; });
