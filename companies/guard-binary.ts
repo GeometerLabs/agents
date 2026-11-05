@@ -23,6 +23,15 @@ export function findGuard(from: string = import.meta.dirname ?? process.cwd()): 
   }
 }
 
+/** The open verifier (`geo-verify`, Apache-2.0, from the geometer-verify repository) that checks an evidence pack against an anchor. GEO_VERIFY_BIN, a copy beside geo-guard, or one on your PATH. */
+export function findVerifier(guard: string | undefined = findGuard()): string | undefined {
+  const named = process.env.GEO_VERIFY_BIN;
+  if (named) return existsSync(named) ? named : undefined;
+  if (guard && existsSync(join(dirname(guard), "geo-verify"))) return join(dirname(guard), "geo-verify");
+  for (const dir of (process.env.PATH ?? "").split(delimiter)) if (dir && existsSync(join(dir, "geo-verify"))) return join(dir, "geo-verify");
+  return undefined;
+}
+
 /** Why a test or a command did not run Guard, in words. */
 export const NO_GUARD_REASON = "the geo-guard program was not found (set GEO_GUARD_BIN to its path, put it on your PATH, or build the monorepo); Guard is licensed separately";
 
