@@ -21,13 +21,13 @@ const PAY_RE = wordRe([
   "ಪಾವತಿಸಬೇಕು", "ಲಿಂಕ್", "ಕಟ್ಟಬೇಕು", "link kalisi", "link kodi",
 ]);
 const DISCOUNT_RE = wordRe([
-  "discount", "concession", "waive", "waiver", "reduce", "reduction", "less fee", "off", "cheaper", "lower the fee", "take off",
+  "discount", "discounts", "concession", "waive", "waived", "waiver", "reduce", "reduced", "reduction", "less fee", "off", "cheaper", "lower the fee", "take off",
   "छूट", "डिस्काउंट", "कम कर", "कम करो", "माफ़", "माफ", "रियायत", "कंसेशन", "chhoot", "chhut", "kam kar do", "kam karo", "maaf",
   "ഇളവ്", "ഡിസ്കൗണ്ട്", "കുറയ്ക്ക", "ഒഴിവാക്ക", "ilavu", "kuraykkamo", "kurakkamo",
   "ರಿಯಾಯಿತಿ", "ಡಿಸ್ಕೌಂಟ್", "ಕಡಿಮೆ ಮಾಡ", "ಮನ್ನಾ", "riyayiti", "kadime madi",
 ]);
 const REFUND_RE = wordRe([
-  "refund", "money back", "give back", "return the money", "return my money", "get back",
+  "refund", "refunded", "refunding", "refunds", "money back", "give back", "return the money", "return my money", "get back",
   "रिफंड", "वापस", "लौटा", "paise wapas", "wapas",
   "റീഫണ്ട്", "തിരികെ", "തിരിച്ച് തരൂ", "thirike",
   "ರೀಫಂಡ್", "ಮರುಪಾವತಿ", "ವಾಪಸ್", "ಹಿಂತಿರುಗಿಸ", "vapas",
