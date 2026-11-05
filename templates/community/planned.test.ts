@@ -1,6 +1,6 @@
 // The planned templates (specs, not runnable). These tests keep them honest and comparable: every folder has the same headings, the
 // lists in planned/README.md and the root README match the folders, nothing claims a built thing that is not built, and no spec uses
-// a word the claim rules ban. Run it with: node --test pathways/planned/
+// a word the claim rules ban. Run it with: node --test templates/community/
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -45,7 +45,7 @@ test("planned: every spec's sell-guide outline has the 11 headings, in order, an
     assert.equal(rows.length, 11, `${name}: expected 11 rows in the outline`);
     assert.deepEqual(rows.map((r) => r[0]), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], `${name}: out of order`);
     rows.forEach(([, title], i) => assert.ok(title.includes(SELL_GUIDE_HEADINGS[i]), `${name}: row ${i + 1} should be "${SELL_GUIDE_HEADINGS[i]}", not "${title}"`));
-    const sellSpec = read(new URL("pathways/SELL-GUIDE.md", ROOT));
+    const sellSpec = read(new URL("templates/SELL-GUIDE.md", ROOT));
     const specTitles = [...sellSpec.matchAll(/^\| (\d+) \| ([^|]+?) \| /gm)].map((m) => m[2]);
     assert.equal(specTitles.length, 11);
     assert.ok(outline.includes("SELL-GUIDE.md"), `${name}: the outline names the spec it follows`);
@@ -95,11 +95,11 @@ test("planned: planned/README.md and the root README list exactly these specs, a
   assert.ok(section.length > 0 && root.includes("## Community templates"), "the root README has a Community templates section");
   for (const name of specs) {
     assert.ok(planned.includes(`](${name}/README.md)`), `planned/README.md must link ${name}`);
-    assert.ok(section.includes(`pathways/planned/${name}`), `the root README must link ${name}`);
+    assert.ok(section.includes(`templates/community/${name}`), `the root README must link ${name}`);
   }
-  assert.ok(section.includes("equipment-rental") && section.includes("pathways/bookings"), "the root README lists equipment rental, built as a Bookings variant");
+  assert.ok(section.includes("equipment-rental") && section.includes("templates/commerce/bookings"), "the root README lists equipment rental, built as a Bookings variant");
   assert.ok(planned.includes("not runnable") || planned.includes("It is not runnable"), "planned/README.md says a planned template is not runnable");
-  assert.ok(planned.includes("node --test pathways/planned/"));
+  assert.ok(planned.includes("node --test templates/community/"));
   for (const word of ["B28 is not built"]) assert.ok(planned.includes(word));
 });
 

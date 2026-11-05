@@ -1,13 +1,13 @@
-// Every page the panel shows, as a function from a small view model to HTML. The shell and the style are the demo's (pathways/bookings/demo/page.css,
+// Every page the panel shows, as a function from a small view model to HTML. The shell and the style are the demo's (templates/commerce/bookings/demo/page.css,
 // read, not copied) plus panel.css. No page needs JavaScript: a cheap phone loads plain forms and links. Every value goes through html``, which
 // escapes by default, so a shop named <script> is text everywhere. Words come from words.ts (four languages) and, for the certificate line and
 // "Show what we did", from the report's own strings.
 import { readFileSync } from "node:fs";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
-import { languageOptions } from "../../pathways/bookings/demo/personalise.ts";
-import type { ShopForm } from "../../pathways/bookings/demo/personalise.ts";
-import { STRINGS } from "../../pathways/bookings/report/strings.ts";
+import { languageOptions } from "../../templates/commerce/bookings/demo/personalise.ts";
+import type { ShopForm } from "../../templates/commerce/bookings/demo/personalise.ts";
+import { STRINGS } from "../../templates/commerce/bookings/report/strings.ts";
 import { formatRupees } from "./cost.ts";
 import type { CostLine, MonthlyCost } from "./cost.ts";
 import type { CheckResult } from "./checks.ts";
@@ -20,7 +20,7 @@ import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
 
-const css = readFileSync(new URL("../../pathways/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
+const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
 
 export interface Ctx {
   w: Words;

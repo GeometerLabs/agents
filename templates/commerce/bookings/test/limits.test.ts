@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { fakeClock } from "../../../modules/core/clock.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
 import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours } from "../src/limits.ts";
-import { checkOptOut, strictest } from "../../../modules/limits/limits.ts";
-import { createRecord } from "../../../modules/record/record.ts";
+import { checkOptOut, strictest } from "../../../../modules/limits/limits.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
 import { parseSettings } from "../src/settings.ts";
-import { MINUTE, zonedToMs } from "../../../modules/core/time.ts";
+import { MINUTE, zonedToMs } from "../../../../modules/core/time.ts";
 
 const settings = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon.example.json", import.meta.url), "utf8")));
 const haircut = settings.services[0]; // 45 minutes, ₹450

@@ -55,4 +55,4 @@ Every number in a statement or a table in these specs is made up. The laws named
 
 ## What was checked
 
-`planned.test.ts` checks the shape (the same headings, the 11-row sell-guide outline in order, the shared limits in every spec), the links, that the lists in `planned/README.md` and the root README match the folders, and that no spec uses a banned word outside its "Never say" row. It checks nothing about whether the design is right. That needs people who know these groups.
+`planned.test.ts` checks the shape (the same headings, the 11-row sell-guide outline in order, the shared limits in every spec), the links, that the lists in this folder's README.md and the root README match the folders, and that no spec uses a banned word outside its "Never say" row. It checks nothing about whether the design is right. That needs people who know these groups.

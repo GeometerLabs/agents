@@ -3,19 +3,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { glowSalon } from "../src/harness.ts";
-import { ApiError, WindowClosedError } from "../../../modules/core/faults.ts";
-import { documentBody } from "../../../modules/messaging/whatsapp.ts";
-import { documentProblem } from "../../../modules/messaging/messaging.ts";
+import { ApiError, WindowClosedError } from "../../../../modules/core/faults.ts";
+import { documentBody } from "../../../../modules/messaging/whatsapp.ts";
+import { documentProblem } from "../../../../modules/messaging/messaging.ts";
 import { fillBody, metaBody } from "../src/language/meta-templates.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import type { MonthlyReport } from "../report/data.ts";
 import { sampleReport } from "../report/review.ts";
-import { seal } from "../../../modules/report/sign.ts";
+import { seal } from "../../../../modules/report/sign.ts";
 import { STRINGS } from "../report/strings.ts";
-import { bannedIn } from "../../../modules/report/claims.ts";
-import { badgeText } from "../../../modules/report/text.ts";
-import { MONTH_NAMES } from "../../../modules/language/format.ts";
+import { bannedIn } from "../../../../modules/report/claims.ts";
+import { badgeText } from "../../../../modules/report/text.ts";
+import { MONTH_NAMES } from "../../../../modules/language/format.ts";
 import { REPORT_SLOTS, REPORT_TEMPLATES, REPORT_TEMPLATE_NAMES, monthlyReportMessage, reportParameters, reportSlotsOf, reportSubmissions, reportValues } from "../report/whatsapp.ts";
 import { liveWorld, PHONE_NUMBER_ID } from "./helpers/live-world.ts";
 

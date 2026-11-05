@@ -1,8 +1,8 @@
 // What is particular to Bookings in understanding a message (the shared readers are in modules/understanding/): its rules, its intents, the checks on a
 // model's answer, the prompt, and the questions a System One decision model is asked. The router and the language-model parser take this as their `reading`.
-import { chosenProbability } from "../../../../modules/understanding/model.ts";
-import type { ChoiceAnswer, ChoiceQuestion } from "../../../../modules/understanding/system-one.ts";
-import type { DecisionPlan, Reading } from "../../../../modules/understanding/model.ts";
+import { chosenProbability } from "../../../../../modules/understanding/model.ts";
+import type { ChoiceAnswer, ChoiceQuestion } from "../../../../../modules/understanding/system-one.ts";
+import type { DecisionPlan, Reading } from "../../../../../modules/understanding/model.ts";
 import { coerceIntent } from "./model.ts";
 import type { CandidateSlot, Intent, IntentKind, ParseContext, ParseOptions } from "./model.ts";
 import { intentSchema, systemPrompt, toIntentShape } from "./model-prompt.ts";

@@ -50,10 +50,10 @@ test("web build: the template's code is the code that runs live, only its types 
   for (const file of builtJs()) {
     const source = file.replace(/\.js$/, ".ts");
     if (!/^(src|demo|modules)\//.test(file) || file.startsWith("demo/web/")) continue;
-    const sourcePath = join(ROOT, file.startsWith("modules/") ? "../../" : "", source); // the shared modules are two folders up
+    const sourcePath = join(ROOT, file.startsWith("modules/") ? "../../../" : "", source); // the shared modules are three folders up
     const original = stripTypeScriptTypes(readFileSync(sourcePath, "utf8"), { mode: "strip" });
     // A relative import of a shared module is written from the output's layout (the template's files keep their place, the modules go under modules/).
-    const outputOf = (target: string) => (relative(join(ROOT, "../.."), target).startsWith("modules/") ? relative(join(ROOT, "../.."), target) : relative(ROOT, target));
+    const outputOf = (target: string) => (relative(join(ROOT, "../../.."), target).startsWith("modules/") ? relative(join(ROOT, "../../.."), target) : relative(ROOT, target));
     const expected = original
       .replace(/(["'])(node:fs|node:crypto)\1/g, (_all, q: string, spec: string) => `${q}${relative(dirname(file), shim(spec)).replace(/^(?!\.)/, "./")}${q}`)
       .replace(/(["'])(\.{1,2}\/[^"'\n]+)\.ts\1/g, (_all, q: string, spec: string) => `${q}${relative(dirname(file), outputOf(resolve(dirname(sourcePath), spec))).replace(/^(?!\.)/, "./")}.js${q}`);
@@ -96,7 +96,7 @@ test("web build: the SHA-256 stand-in gives the same fingerprints as Node, so a 
   assert.throws(() => mine.createHash("md5"), /sha256/);
   // The record uses it for real: the built record's fingerprints are the live record's.
   const record = await load("modules/record/record.js");
-  const live = await import("../../../modules/record/record.ts");
+  const live = await import("../../../../modules/record/record.ts");
   for (const value of [{ b: 1, a: [1, "₹"] }, "text", null, { nested: { z: 1, y: undefined } }]) assert.equal(record.digest(value), live.digest(value));
   const draws = new Set<number>();
   for (let i = 0; i < 200; i++) draws.add(mine.randomInt(10));

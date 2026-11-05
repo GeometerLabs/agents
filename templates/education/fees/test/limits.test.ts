@@ -2,10 +2,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { fakeClock } from "../../../modules/core/clock.ts";
-import { createRecord } from "../../../modules/record/record.ts";
-import { guardHoldsRefund, guardRefusesRefund, refundRulesOf } from "../../../modules/payments/guard-limits.ts";
-import { createGuardModel } from "../../../modules/payments/guard-model.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
+import { guardHoldsRefund, guardRefusesRefund, refundRulesOf } from "../../../../modules/payments/guard-limits.ts";
+import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { brightTuition } from "../src/harness.ts";
 import { razorpayLimitsSpec, razorpayNumbers } from "../src/guard-limits.ts";
 import { checkFeeLink, checkNoReminderOncePaid, checkOneRefundPerPayment, checkPaidOnlyWhenRecorded, checkReminderCap, checkWaiver, recordedPaidPaise } from "../src/limits.ts";

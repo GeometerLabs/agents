@@ -3,10 +3,10 @@
 //
 // One difference from the fake, on purpose: the live adapter cannot tell conflicts() from list() (both are events.list over a time range),
 // so the fake's separate "conflicts" operation, and any fault planned on it, is not reachable over HTTP. Plan faults on "list" instead.
-import { ApiError, ConflictError, TimeoutError } from "../../../modules/core/faults.ts";
+import { ApiError, ConflictError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { CalendarEvent, CalendarPatch, FakeCalendar } from "../src/adapters/calendar.ts";
-import { LostReply, ok } from "../../../modules/standins/http.ts";
-import type { Handler, StandinReply } from "../../../modules/standins/http.ts";
+import { LostReply, ok } from "../../../../modules/standins/http.ts";
+import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
 
 const error = (status: number, message: string, reason: string): StandinReply => ({ status, body: { error: { errors: [{ domain: "global", reason, message }], code: status, message } } });
 

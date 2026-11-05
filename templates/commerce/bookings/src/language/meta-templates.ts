@@ -14,9 +14,9 @@
 // Hindi, Malayalam and Kannada wording is machine-written like the rest of those packs. A native speaker must read it before it is submitted.
 //
 // The mechanism is shared (modules/language/meta-templates.ts); this file holds Bookings' templates and the record values they use.
-import type { Language } from "../../../../modules/language/languages.ts";
-import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
-import type { MetaTemplate } from "../../../../modules/language/meta-templates.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../../modules/language/meta-templates.ts";
+import type { MetaTemplate } from "../../../../../modules/language/meta-templates.ts";
 import { serviceName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { inr, need, slot } from "./templates.ts";

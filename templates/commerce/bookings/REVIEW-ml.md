@@ -55,7 +55,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 
 ## 2. Messages to the owner (18)
 
-Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node pathways/bookings/scripts/whatsapp-templates.ts` prints them.
+Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -207,7 +207,7 @@ A price is also read from "₹300" or "300 rs"; the number is taken as the custo
 
 ### Sentences the hand check types as a customer
 
-These are the exact sentences the crash-test situations send (`pathways/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.
+These are the exact sentences the crash-test situations send (`templates/commerce/bookings/crash-test/situations.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please mark them too.
 
 | Customer writes | What it is | The agent reads | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |
@@ -470,7 +470,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `why.runtime-not-ready` | ഏജന്റ് പറയുന്നു, അത് തയ്യാറായിട്ടില്ലെന്ന്. | The agent says it is not ready. |  |
 | `why.refunds-need-builder` | റീഫണ്ടിന് ഉടമയുടെയല്ല, ബിൽഡറുടെ നടപടി വേണം. | A refund needs the builder, not the owner. |  |
 | `shop.status` | സ്ഥിതി | Status |  |
-| `shop.versions` | പാത്ത്വേ 0.1.0, ബണ്ടിൽ 0.1.0 | Pathway 0.1.0, bundle 0.1.0 |  |
+| `shop.versions` | ടെംപ്ലേറ്റ് 0.1.0, ബണ്ടിൽ 0.1.0 | Template 0.1.0, bundle 0.1.0 |  |
 | `shop.lastDeploy` | അവസാന അപ്ഡേറ്റ്: 4 Nov 2026, 10:30 | Last update: 4 Nov 2026, 10:30 |  |
 | `shop.neverDeployed` | ഇതുവരെ അപ്ഡേറ്റ് ചെയ്തിട്ടില്ല. | Not updated yet. |  |
 | `shop.limitsHeading` | പരിധികൾ | Limits |  |

@@ -1,6 +1,6 @@
 // Builds the Bookings demo for the browser: a folder of plain ES modules that a page loads as they are. No bundler, no dependency.
-//   npm run build:web-demo --prefix pathways/bookings       (writes pathways/bookings/demo/web/dist/, which git ignores)
-//   node pathways/bookings/scripts/build-web-demo.ts [outDir]
+//   npm run build:web-demo --prefix templates/commerce/bookings       (writes templates/commerce/bookings/demo/web/dist/, which git ignores)
+//   node templates/commerce/bookings/scripts/build-web-demo.ts [outDir]
 //
 // The demo's code is NOT copied or rewritten. The same .ts files that run the live agent and the local-network demo are read from where
 // they are, and for each one the build
@@ -12,7 +12,7 @@
 // (demo/web/theme.css: its own look for the browser, every rule under .geo-demo and every colour a custom property), and a copy of each
 // file the template reads with readFileSync (the example shop's settings), which the fs stand-in serves.
 // The template's code imports the shared modules (agents/modules/). The build follows those imports too, and writes them under modules/ in the output, so the
-// output has the same two parts: the template's own folders (src/, demo/) and modules/. Nothing else outside pathways/bookings is followed.
+// output has the same two parts: the template's own folders (src/, demo/) and modules/. Nothing else outside templates/commerce/bookings is followed.
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
@@ -20,7 +20,7 @@ import { pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
 import { renderPage } from "../demo/page.ts";
 
-const ROOT = resolve(import.meta.dirname, ".."); // pathways/bookings
+const ROOT = resolve(import.meta.dirname, ".."); // templates/commerce/bookings
 export const DEFAULT_OUT = join(ROOT, "demo/web/dist");
 const ENTRY = "demo/web/mount.ts";
 const GENERATED = "demo/web/generated.js";
@@ -48,10 +48,10 @@ function pageMarkup(): string {
 
 // ---- the modules ---------------------------------------------------------------------------------------------------------------------
 
-/** A file of the shared modules, as the build names its source: relative to pathways/bookings, so it starts with ../../modules/. */
-const MODULES_PREFIX = "../../modules/";
+/** A file of the shared modules, as the build names its source: relative to templates/commerce/bookings, so it starts with ../../../modules */
+const MODULES_PREFIX = "../../../modules/";
 /** Where a source file lands in the output: the template's own files keep their place, the shared modules go under modules/. */
-const outPath = (source: string) => (source.startsWith(MODULES_PREFIX) ? source.slice("../../".length) : source).replace(/\.ts$/, ".js");
+const outPath = (source: string) => (source.startsWith(MODULES_PREFIX) ? source.slice(MODULES_PREFIX.length - "modules/".length) : source).replace(/\.ts$/, ".js");
 const specifierBetween = (fromOut: string, toOut: string): string => {
   const rel = posix.relative(posix.dirname(fromOut), toOut);
   return rel.startsWith(".") ? rel : `./${rel}`;
@@ -102,7 +102,7 @@ export function buildWebDemo(outDir: string = DEFAULT_OUT): BuildResult {
         target = posix.normalize(posix.join(posix.dirname(source), specifier));
         if (target === GENERATED) return all.replace(specifier, specifierBetween(here, GENERATED));
         if (!target.endsWith(".ts")) throw new Error(`${source} imports ${specifier}: the browser build follows only .ts files (and ${GENERATED}).`);
-        if (target.startsWith("..") && !target.startsWith(MODULES_PREFIX)) throw new Error(`${source} imports ${specifier}, which is outside pathways/bookings and the shared modules.`);
+        if (target.startsWith("..") && !target.startsWith(MODULES_PREFIX)) throw new Error(`${source} imports ${specifier}, which is outside templates/commerce/bookings and the shared modules.`);
         if (source.startsWith(MODULES_PREFIX) && !target.startsWith(MODULES_PREFIX)) throw new Error(`${source} imports ${specifier}: the shared modules must not import a template.`);
         // The template's files keep their place in the output and the modules go under modules/, so a template's import of a module is written from the output's layout.
         if (target.startsWith(MODULES_PREFIX) && !source.startsWith(MODULES_PREFIX)) written = specifierBetween(here, outPath(target));
@@ -121,7 +121,7 @@ export function buildWebDemo(outDir: string = DEFAULT_OUT): BuildResult {
       if (named.length !== calls) throw new Error(`${source} calls readFileSync in a way the build cannot copy: use readFileSync(new URL("relative/path", import.meta.url), "utf8").`);
       for (const m of named) {
         const target = relative(ROOT, resolve(dirname(file), m[1]));
-        if (target.startsWith("..")) throw new Error(`${source} reads ${m[1]}, which is outside pathways/bookings.`);
+        if (target.startsWith("..")) throw new Error(`${source} reads ${m[1]}, which is outside templates/commerce/bookings.`);
         inlined.set(target.split(sep).join("/"), readFileSync(join(ROOT, target), "utf8"));
       }
     }
@@ -161,5 +161,5 @@ export function buildWebDemo(outDir: string = DEFAULT_OUT): BuildResult {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = buildWebDemo(process.argv[2]);
   console.log(`Built the browser demo: ${result.files.length} files, ${result.bytes} bytes (${result.gzipBytes} gzipped) in ${result.outDir}`);
-  console.log("Open demo/web/index.html over http (for example  python3 -m http.server --directory pathways/bookings/demo/web ), not from a file:// address.");
+  console.log("Open demo/web/index.html over http (for example  python3 -m http.server --directory templates/commerce/bookings/demo/web ), not from a file:// address.");
 }

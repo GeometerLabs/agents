@@ -6,10 +6,10 @@
 //    name in the customer's language, a day and a time that are on the shop's slot grid, and a lower price to haggle for.
 //    They are built from the same word lists the formatters use, and a test shows that for Glow Salon they are read the
 //    same way as SAYS. Like every Malayalam and Kannada line here they are machine-written, not yet read by a native speaker.
-import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, dayPartOf } from "../../../modules/language/format.ts";
-import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
+import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, dayPartOf } from "../../../../modules/language/format.ts";
+import { LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Service } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 
 const BOOK_EN = "I want a haircut tomorrow at 6pm";
 const BOOK_HI = "कल शाम 6 बजे हेयरकट चाहिए";

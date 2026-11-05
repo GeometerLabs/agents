@@ -159,7 +159,7 @@ An amount is read from "₹200", "200 rs", "200 रुपये" or a plain numb
 
 ### Sentences the hand check types as a parent
 
-These are the exact sentences the crash-test situations send (`pathways/fees/crash-test/says.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please change them.
+These are the exact sentences the crash-test situations send (`templates/education/fees/crash-test/says.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please change them.
 
 | Parent writes | What it is | The agent reads | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |

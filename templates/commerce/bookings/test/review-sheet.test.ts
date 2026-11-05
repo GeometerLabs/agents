@@ -12,7 +12,7 @@ import type { ReviewLanguage } from "../scripts/review-sheet.ts";
 import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
-import { WORDS } from "../../../modules/language/words.ts";
+import { WORDS } from "../../../../modules/language/words.ts";
 
 const WARNING = "Machine-written. Must be reviewed by a native speaker before any real shop sees it.";
 
@@ -27,7 +27,7 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
   test(`REVIEW-${language}.md lists every template, as the agent really writes it`, () => {
     for (const id of Object.keys(TEMPLATES[language]) as TemplateId[]) {
       assert.ok(committed.includes(`\`${id}\``), `${id} is not in REVIEW-${language}.md`);
-      assert.ok(committed.includes(render(id, sampleFacts(language, id))), `${id} reads differently now: run  node pathways/bookings/scripts/review-sheet.ts ${language} > pathways/bookings/REVIEW-${language}.md  (and keep any reviewer notes)`);
+      assert.ok(committed.includes(render(id, sampleFacts(language, id))), `${id} reads differently now: run  node templates/commerce/bookings/scripts/review-sheet.ts ${language} > templates/commerce/bookings/REVIEW-${language}.md  (and keep any reviewer notes)`);
       assert.ok(committed.includes(render(id, sampleFacts("en", id))), `the English meaning of ${id} is missing`);
     }
   });
@@ -54,7 +54,7 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
     const rows = reportStringRows(language);
     assert.ok(rows.length > 100, "the report strings were found");
     for (const row of rows) {
-      assert.ok(committed.includes(`\`${row.id}\``) && committed.includes(row.text), `${row.id} is missing from REVIEW-${language}.md: run  node pathways/bookings/scripts/review-sheet.ts ${language} > pathways/bookings/REVIEW-${language}.md`);
+      assert.ok(committed.includes(`\`${row.id}\``) && committed.includes(row.text), `${row.id} is missing from REVIEW-${language}.md: run  node templates/commerce/bookings/scripts/review-sheet.ts ${language} > templates/commerce/bookings/REVIEW-${language}.md`);
       assert.ok(row.english !== "", `${row.id} has no English meaning`);
     }
     assert.ok(committed.includes(sampleOwnerText(language)));

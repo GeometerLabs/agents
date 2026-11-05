@@ -3,12 +3,12 @@
 // webhook follows), a fault is planned, and the outbox, events, links and calendar can be read. These routes exist only here, never on a real
 // service, and the stand-ins listen on 127.0.0.1 only.
 import type { FakeCalendar } from "../src/adapters/calendar.ts";
-import type { FakeMessaging } from "../../../modules/messaging/messaging.ts";
-import type { FakePayments, PaymentEvent } from "../../../modules/payments/payments.ts";
-import { signMeta, signRazorpay } from "../../../modules/messaging/webhooks.ts";
-import { ok } from "../../../modules/standins/http.ts";
-import type { Handler, StandinReply } from "../../../modules/standins/http.ts";
-import { wireLink, wirePayment, wireRefund } from "../../../modules/standins/razorpay.ts";
+import type { FakeMessaging } from "../../../../modules/messaging/messaging.ts";
+import type { FakePayments, PaymentEvent } from "../../../../modules/payments/payments.ts";
+import { signMeta, signRazorpay } from "../../../../modules/messaging/webhooks.ts";
+import { ok } from "../../../../modules/standins/http.ts";
+import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
+import { wireLink, wirePayment, wireRefund } from "../../../../modules/standins/razorpay.ts";
 
 export interface Fakes { payments: FakePayments; calendar: FakeCalendar; messaging: FakeMessaging }
 

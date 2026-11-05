@@ -3,9 +3,9 @@
 // (modules/understanding/rules.ts); this file adds the words that are about fees. It reads a message and returns an Intent. It never decides anything:
 // amounts, waivers and refunds are decided by the limits, so a smarter (or fooled) parser changes nothing about what is allowed.
 // Machine-written lists for Malayalam and Kannada: not yet read by a native speaker (REVIEW-ml.md, REVIEW-kn.md).
-import { canon } from "../../../../modules/language/format.ts";
-import { blankWrittenDate, wordRe } from "../../../../modules/language/dates.ts";
-import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../../../modules/understanding/rules.ts";
+import { canon } from "../../../../../modules/language/format.ts";
+import { blankWrittenDate, wordRe } from "../../../../../modules/language/dates.ts";
+import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../../../../modules/understanding/rules.ts";
 import type { Intent, IntentParser, ParseContext } from "./model.ts";
 
 const PAID_WORDS = [

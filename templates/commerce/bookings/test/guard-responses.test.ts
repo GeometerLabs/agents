@@ -3,11 +3,11 @@
 // told apart in ONE place (http.ts `classify`), before any adapter parses a body.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fakeClock } from "../../../modules/core/clock.ts";
-import { ApiError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../modules/core/faults.ts";
-import { classify, createHttp } from "../../../modules/core/http.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
+import { ApiError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
+import { classify, createHttp } from "../../../../modules/core/http.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
-import { createRazorpayPayments } from "../../../modules/payments/razorpay.ts";
+import { createRazorpayPayments } from "../../../../modules/payments/razorpay.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 
 interface Wire { status: number; headers: Record<string, string>; body: unknown }

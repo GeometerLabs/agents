@@ -5,29 +5,29 @@
 // They run on any centre's own settings: buildSituations(settings) picks the student, the language, the moments of the month and the amounts from the settings
 // (crash-test/shop.ts, crash-test/says.ts). A situation that a centre's settings cannot express (a centre with no late fee has no late fee to add; one whose waiver
 // limit is as big as the fee has nothing above it to ask for) is not run and is named in `skipped` with the reason, so a count never includes it.
-import { DAY, HOUR, MINUTE } from "../../../modules/core/time.ts";
-import { checker, runAllSituations, runSituation } from "../../../modules/crash-test/situations.ts";
-import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../modules/crash-test/situations.ts";
-import { GuardRefusedError } from "../../../modules/core/faults.ts";
-import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import type { OutboundMessage } from "../../../modules/messaging/messaging.ts";
-import { createSystemOne } from "../../../modules/understanding/system-one.ts";
+import { DAY, HOUR, MINUTE } from "../../../../modules/core/time.ts";
+import { checker, runAllSituations, runSituation } from "../../../../modules/crash-test/situations.ts";
+import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
+import { GuardRefusedError } from "../../../../modules/core/faults.ts";
+import { LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import type { OutboundMessage } from "../../../../modules/messaging/messaging.ts";
+import { createSystemOne } from "../../../../modules/understanding/system-one.ts";
 import { createFeesModelParser, createFeesRouter } from "../src/adapters/reading.ts";
 import { balancePaise, paidPaise } from "../src/due.ts";
 import { brightTuition, createWorld } from "../src/harness.ts";
 import type { World, WorldOptions } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
-import { systemOneFetch, systemOneStandin } from "../../../modules/standins/system-one.ts";
+import { systemOneFetch, systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import { MARKERS, SAYS } from "./says.ts";
 import type { Markers, Says } from "./says.ts";
 import { planShop } from "./shop.ts";
 import type { Shop } from "./shop.ts";
 
 export { SAYS } from "./says.ts";
-export { runSituation } from "../../../modules/crash-test/situations.ts";
-export type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../modules/crash-test/situations.ts";
+export { runSituation } from "../../../../modules/crash-test/situations.ts";
+export type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
 
 /** Run every situation that these settings can express (the example centre's, when none are given). */
 export async function runOn(settings: Settings = brightTuition()): Promise<HandCheckRun<Settings>> {

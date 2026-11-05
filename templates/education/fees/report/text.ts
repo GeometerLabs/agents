@@ -2,9 +2,9 @@
 // Money first (collected, still to collect, given back), then reminders and what was taken off, then what the owner was asked, what the limits stopped, and what was
 // not checked. Lines are "label: number", so no number needs a case ending in Malayalam or Kannada.
 // Every number and amount is read from the report (which counted the record); the words come from strings.ts.
-import type { Language } from "../../../modules/language/languages.ts";
-import { languagesOf, oneLine, periodLabel, rupees } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { languagesOf, oneLine, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
 import type { FeesReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";

@@ -1,6 +1,6 @@
 # Explanation: how the modules were cut
 
-The plan said: when the second template arrives, move what the two share out of `pathways/bookings` into `agents/modules/`, and report the size before and after (items B30 and B16). The second template is Fees. This file says how the cut was made, so the third template can do the same.
+The plan said: when the second template arrives, move what the two share out of `templates/commerce/bookings` into `agents/modules/`, and report the size before and after (items B30 and B16). The second template is Fees. This file says how the cut was made, so the third template can do the same.
 
 ## The rule, and the test that keeps it
 
@@ -45,7 +45,7 @@ The old template had to give the same answers after the move. It does:
 
 - The hand check printed the same 333 lines before and after the move (`Held 37 of 37` for Glow Salon, 32 of 32 for the equipment rental), compared by diff. That diff was taken before the monthly report (B54) was merged. After the merge, with B54's new situation carried into the moved code, the counts are Held 38 of 38 for Glow Salon, 33 of 33 for the rental and 35 of 35 for a shop with no cancellation window, as on main.
 - The record's fingerprints and the Razorpay limits spec's bytes are unchanged: the entry shape, `canonicalJson` and the spec builder were moved, not edited.
-- The Bookings tests that were green are green (the numbers are in the pathway's `Explanation.md` build log), the bundle's and the panel's too.
+- The Bookings tests that were green are green (the numbers are in the template's `Explanation.md` build log), the bundle's and the panel's too.
 - The browser demo builds from the same files: the build now follows the imports into `modules/` and writes them under `modules/` in its output, so `dist/index.js` and the Bookings paths in it are as they were.
 
 Two tests changed because the code they pin changed on purpose, and nothing else: the live adapter reads Razorpay's `partially_paid` as itself (it was read as `paid`, because Bookings never took part payments), and one test that lowers the deposit after a booking paid it now says that Guard's new rules arrived after the link was made (`guardLinks: false`).
@@ -56,11 +56,11 @@ Measured on 5 November 2026, before (main with the monthly report, B54, merged) 
 
 | | Before | After |
 | --- | --- | --- |
-| `pathways/bookings`, code (lines) | 17,610 | 12,050 (-5,560) |
+| `templates/commerce/bookings`, code (lines) | 17,610 | 12,050 (-5,560) |
 | `modules/`, code | 0 | 6,456 |
 | Bookings and modules together | 17,610 | 18,506 (+896) |
-| `pathways/fees`, code | 0 | 4,457 |
-| tests: `pathways/bookings` / `modules/` / `pathways/fees` | 11,657 / 0 / 0 | 11,390 / 449 / 1,406 |
+| `templates/education/fees`, code | 0 | 4,457 |
+| tests: `templates/commerce/bookings` / `modules/` / `templates/education/fees` | 11,657 / 0 / 0 | 11,390 / 449 / 1,406 |
 | `bundle`, code | 9,932 | 9,946 (+14, the line that mounts the modules, and its tests) |
 
 `modules/` by area, in lines of code: payments 1,266; understanding 967; language 831; approvals 815; report 663; messaging 609; standins 531; core 454; record 129; crash-test 112; limits 47; reminders 32.
@@ -70,10 +70,10 @@ The shared code is about 900 lines longer than the code it replaced: the hooks (
 ## How the rest of the repository finds the modules
 
 - **Imports** are relative, as everywhere in this repository (`../../../modules/...` from a template).
-- **The browser build** (`pathways/bookings/scripts/build-web-demo.ts`) follows `modules/` and stops with a clear message if a module imports a template. The demo asks no model, so it carries none of the router, the price table (`understanding/rates.ts` and its JSON) or the HTTP code; a template's reading takes `chosenProbability` from `understanding/model.ts` for that reason (the router still exports it, for Fees).
+- **The browser build** (`templates/commerce/bookings/scripts/build-web-demo.ts`) follows `modules/` and stops with a clear message if a module imports a template. The demo asks no model, so it carries none of the router, the price table (`understanding/rates.ts` and its JSON) or the HTTP code; a template's reading takes `chosenProbability` from `understanding/model.ts` for that reason (the router still exports it, for Fees).
 - **The one table of model prices** is `understanding/rates/<date>.json`. It is data a module owns and three others read: the runtime (to price each message), the evaluation script (its cost column) and the bundle's tests (every model price in a bundle price list must say what it says). `rates-check.ts` checks a file and `modules/test/rates.test.ts` pins each file's bytes, so a changed price is a new file with a new date.
-- **The runtime container** mounts `agents/modules` as `/modules` beside the pathway at `/pathway` (`bundle/generate/compose.ts`). The pathway's relative import runs out at the container's root, which is where `/modules` is.
-- **A kept checkout of an older pathway** (`<server>/pathways/bookings@0.1.0`) imports the modules two folders up, so the server holds a `modules/` folder beside its `pathways/`. Modules are not versioned on their own yet (see Deferred).
+- **The runtime container** mounts `agents/modules` as `/modules` beside the template at `/pathway` (`bundle/generate/compose.ts`). The template's relative import (`../../../../modules/...`) runs out at the container's root, which is where `/modules` is; the old layout's shorter chain ends there too.
+- **A kept checkout of an older template** (`<server>/templates/commerce/bookings@0.1.0`, laid out like this repository) imports the modules three folders up, so the server holds a `modules/` folder beside its `templates/`. A checkout from before the templates were grouped by domain (`<server>/pathways/bookings@0.1.0`) has them two folders up, in the same `<server>/modules`; `modulesOf` in `bundle/generate/compose.ts` knows both. Modules are not versioned on their own yet (see Deferred).
 
 ## Adding to a module later
 

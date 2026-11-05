@@ -10,7 +10,7 @@
 // Nothing is written to the repository: the secrets (generated here) and a copy of the client folder, with the runtime's data, live in a
 // temp folder that `stop()` removes. Used by test/full-chain.test.ts and by the command line (the end of this file):
 //
-//   node pathways/bookings/scripts/local-stack.ts [--client <folder>] [--free-ports]        (npm run stack, inside pathways/bookings)
+//   node templates/commerce/bookings/scripts/local-stack.ts [--client <folder>] [--free-ports]        (npm run stack, inside templates/commerce/bookings)
 import { randomBytes } from "node:crypto";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
@@ -20,26 +20,26 @@ import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { startInbox } from "../inbox/server.ts";
 import type { RunningInbox } from "../inbox/server.ts";
-import { createGuardClient, createRuntimeClient } from "../../../modules/approvals/clients.ts";
+import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";
 import { createRelay } from "../approvals/relay.ts";
-import type { Relay } from "../../../modules/approvals/relay.ts";
-import { startRelayServer } from "../../../modules/approvals/server.ts";
-import type { RunningRelayServer } from "../../../modules/approvals/server.ts";
-import { openRelayStore } from "../../../modules/approvals/store.ts";
-import { createWhatsAppMessaging } from "../../../modules/messaging/whatsapp.ts";
+import type { Relay } from "../../../../modules/approvals/relay.ts";
+import { startRelayServer } from "../../../../modules/approvals/server.ts";
+import type { RunningRelayServer } from "../../../../modules/approvals/server.ts";
+import { openRelayStore } from "../../../../modules/approvals/store.ts";
+import { createWhatsAppMessaging } from "../../../../modules/messaging/whatsapp.ts";
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
-import { startStubGuard } from "../../../modules/standins/guard.ts";
-import type { RunningStubGuard } from "../../../modules/standins/guard.ts";
+import { startStubGuard } from "../../../../modules/standins/guard.ts";
+import type { RunningStubGuard } from "../../../../modules/standins/guard.ts";
 import { startClient } from "../server/start.ts";
 import type { RunningClient } from "../server/start.ts";
 import { startStandins } from "../standins/server.ts";
 import type { RunningStandins } from "../standins/server.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
-import { systemClock } from "../../../modules/core/clock.ts";
-import type { Clock } from "../../../modules/core/clock.ts";
+import { systemClock } from "../../../../modules/core/clock.ts";
+import type { Clock } from "../../../../modules/core/clock.ts";
 import { hoursOn } from "../src/settings.ts";
-import { DAY, localParts } from "../../../modules/core/time.ts";
+import { DAY, localParts } from "../../../../modules/core/time.ts";
 
 const EXAMPLE_CLIENT = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 
@@ -195,7 +195,7 @@ const DEFAULT_PORTS = { standins: 8790, inbox: 8788, runtime: 8780, relay: 8795 
 
 async function main(args: string[]): Promise<void> {
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: node pathways/bookings/scripts/local-stack.ts [--client <folder>] [--free-ports] [--refund-limit <rupees>]\n  --client        a client folder to copy (default: the Glow Salon example)\n  --refund-limit  the copy's refund limit; below the deposit, a refund is held for the owner's approval (try 100 with the example's ₹200 deposit)\n  --free-ports   let the system pick the ports (default: 8790 stand-ins, 8788 inbox, 8780 runtime)");
+    console.log("Usage: node templates/commerce/bookings/scripts/local-stack.ts [--client <folder>] [--free-ports] [--refund-limit <rupees>]\n  --client        a client folder to copy (default: the Glow Salon example)\n  --refund-limit  the copy's refund limit; below the deposit, a refund is held for the owner's approval (try 100 with the example's ₹200 deposit)\n  --free-ports   let the system pick the ports (default: 8790 stand-ins, 8788 inbox, 8780 runtime)");
     return;
   }
   const at = args.indexOf("--client");

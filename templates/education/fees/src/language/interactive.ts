@@ -6,9 +6,9 @@
 //   yes, no      the shared Yes / No
 // <fee> is the fee's reference ("f-3"), so a parent with two children is not asked "which one?". A forged or old id changes nothing the typed word would
 // not: the agent looks the fee up among the parent's own, and an id that names none of them is read as ordinary text.
-import type { Language } from "../../../../modules/language/languages.ts";
-import { COMMON_ID, COMMON_LABELS, LIMITS, clip } from "../../../../modules/language/interactive.ts";
-import type { Choice, CommonLabels } from "../../../../modules/language/interactive.ts";
+import type { Language } from "../../../../../modules/language/languages.ts";
+import { COMMON_ID, COMMON_LABELS, LIMITS, clip } from "../../../../../modules/language/interactive.ts";
+import type { Choice, CommonLabels } from "../../../../../modules/language/interactive.ts";
 import type { Intent } from "../adapters/model.ts";
 
 export interface Labels extends CommonLabels { pay: string; paid: string }

@@ -1,10 +1,10 @@
-# Bookings pathway (v0 core)
+# Bookings template (v0 core)
 
 Market: Commerce and support (bookings).
 
 A WhatsApp agent for businesses that take bookings with a deposit and a cancellation rule: salons, tuition centres, fitness studios and home services. A customer writes in Hindi, English, Malayalam or Kannada; the agent holds a slot, sends a deposit link, books only when the calendar and the payment record both agree, reminds the customer, and handles cancellations, refunds and rescheduling, asking the owner when a decision is theirs.
 
-**What this folder is, and is not.** It is the v0 core of the pathway, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
+**What this folder is, and is not.** It is the v0 core of the template, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
 
 It has no dependencies. The agent and its tests make no network call outside this computer: the server, the live adapters, the inbox and the stand-ins talk HTTP, but only to each other on ports you choose, and only the dev forwarder can reach a real service. The rule parser reads the messages; a model parser exists too (see "Choose the model"), but nothing uses it until you point it at a model. TypeScript is run directly by Node's built-in type stripping.
 
@@ -14,11 +14,11 @@ You need Node 26 (any Node with built-in TypeScript type stripping works). There
 
 ```sh
 # from the root of this repository
-node --test pathways/bookings/test/            # the unit and situation tests
-node pathways/bookings/scripts/hand-check.ts   # the hand check; add --details to see what was done in each situation
-node pathways/bookings/scripts/hand-check.ts --settings pathways/bookings/settings/equipment-rental.example.json   # the same situations on any shop's own settings
-node pathways/bookings/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
-node pathways/bookings/scripts/model-eval.ts        # the model eval: the rule parser baseline, plus any model whose key is in .env (see Choose the model)
+node --test templates/commerce/bookings/test/            # the unit and situation tests
+node templates/commerce/bookings/scripts/hand-check.ts   # the hand check; add --details to see what was done in each situation
+node templates/commerce/bookings/scripts/hand-check.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json   # the same situations on any shop's own settings
+node templates/commerce/bookings/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
+node templates/commerce/bookings/scripts/model-eval.ts        # the model eval: the rule parser baseline, plus any model whose key is in .env (see Choose the model)
 ```
 
 The hand check opens with "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype." and then prints a count in the product's words: `Held N of M. K failed. J not tested.`, the checks that failed, and what was not tested. It counts situations; it does not grade the agent.
@@ -37,7 +37,7 @@ const { payments, calendar, messaging } = createLiveAdapters(
 );
 ```
 
-**One command for the whole local stack.** From `pathways/bookings`, `npm run stack` starts the stand-ins, the inbox, a stub Guard in front of the refunds, the approvals relay and a runtime in live mode against them, on a temp copy of the example client (`-- --client <folder>` for another, `-- --free-ports` if 8790, 8788, 8780 or 8795 are taken, `-- --refund-limit 100` to make a refund wait for the owner).
+**One command for the whole local stack.** From `templates/commerce/bookings`, `npm run stack` starts the stand-ins, the inbox, a stub Guard in front of the refunds, the approvals relay and a runtime in live mode against them, on a temp copy of the example client (`-- --client <folder>` for another, `-- --free-ports` if 8790, 8788, 8780 or 8795 are taken, `-- --refund-limit 100` to make a refund wait for the owner).
 It prints the URLs and three `curl`s: a customer writes, they pay the deposit link, read what the stand-ins hold. The secrets are generated into a temp folder, never into the repository, and Ctrl+C removes it with everything else. `test/full-chain.test.ts` runs the same chain.
 
 **Against stand-ins** (nothing real, no keys, no network beyond this computer). The stand-ins speak the three wire formats over HTTP in front of the same in-memory fakes the tests use, and deliver signed webhooks like the providers do:
@@ -50,10 +50,10 @@ printf 'standin-whatsapp-app-secret'     > /tmp/geometer-dev/app
 printf 'any-verify-token'                > /tmp/geometer-dev/verify
 printf 'any-internal-token'              > /tmp/geometer-dev/token
 
-node pathways/bookings/standins/main.ts --port 8790 --inbox http://127.0.0.1:8788      # the stand-in services
+node templates/commerce/bookings/standins/main.ts --port 8790 --inbox http://127.0.0.1:8788      # the stand-in services
 RUNTIME_URL=http://127.0.0.1:8787 INTERNAL_TOKEN_FILE=/tmp/geometer-dev/token RAZORPAY_WEBHOOK_SECRET_FILE=/tmp/geometer-dev/rzp \
   WHATSAPP_APP_SECRET_FILE=/tmp/geometer-dev/app WHATSAPP_VERIFY_TOKEN_FILE=/tmp/geometer-dev/verify PORT=8788 \
-  node pathways/bookings/inbox/main.ts                                                  # the inbox, in another terminal
+  node templates/commerce/bookings/inbox/main.ts                                                  # the inbox, in another terminal
 
 # a customer writes (the stand-in delivers a signed webhook to the inbox, which hands it to the runtime at RUNTIME_URL):
 curl -s -X POST localhost:8790/_standin/whatsapp/inbound -d '{"from":"+919811111111","text":"haircut tomorrow at 6pm"}'
@@ -62,13 +62,13 @@ curl -s -X POST localhost:8790/_standin/razorpay/pay -d '{"link_id":"plink_1"}' 
 curl -s -X POST localhost:8790/_standin/fault -d '{"service":"calendar","op":"insert","mode":"silentFailure"}'   # make the next calendar save do nothing
 ```
 
-The scripts are `npm run standins` and `npm run inbox` (inside `pathways/bookings`). The inbox is its own process because it holds the webhook secrets, so the agent runtime never does. WhatsApp webhooks are verified by Meta's signature (the default), or, for a provider that does not sign (Gupshup), by a token in the URL (`WHATSAPP_VERIFICATION=path-token`, `WHATSAPP_PATH_TOKEN_FILE`, optionally `WHATSAPP_ALLOWED_SOURCES`); the second is weaker, see Explanation.md 7b. The tests start both on free ports (`test/standins.test.ts` runs the adapters and the agent against the stand-ins over real HTTP, `test/e2e.test.ts` goes from a stand-in WhatsApp message through a signed webhook and the inbox to a runtime).
+The scripts are `npm run standins` and `npm run inbox` (inside `templates/commerce/bookings`). The inbox is its own process because it holds the webhook secrets, so the agent runtime never does. WhatsApp webhooks are verified by Meta's signature (the default), or, for a provider that does not sign (Gupshup), by a token in the URL (`WHATSAPP_VERIFICATION=path-token`, `WHATSAPP_PATH_TOKEN_FILE`, optionally `WHATSAPP_ALLOWED_SOURCES`); the second is weaker, see Explanation.md 7b. The tests start both on free ports (`test/standins.test.ts` runs the adapters and the agent against the stand-ins over real HTTP, `test/e2e.test.ts` goes from a stand-in WhatsApp message through a signed webhook and the inbox to a runtime).
 
 **Against real test-mode services, before Guard is configured** (Phase 0 only): the dev forwarder adds the credential and passes each call on to the real host. It has no limits and no record, refuses any Razorpay key that does not start with `rzp_test_`, and prints that in a banner.
 
 ```sh
 cp .env.example .env        # at the repository root; git ignores .env. Fill in what you want to try; names only are in the example.
-node pathways/bookings/standins/dev-forwarder.ts --port 8791     # npm run dev-forwarder
+node templates/commerce/bookings/standins/dev-forwarder.ts --port 8791     # npm run dev-forwarder
 # base URLs for createLiveAdapters:  http://127.0.0.1:8791/razorpay   /google   /whatsapp
 ```
 
@@ -80,9 +80,9 @@ A demo mode a partner runs on a laptop and opens on the shop owner's own phone. 
 
 ```sh
 # from the root of this repository; both devices on the same Wi-Fi
-node pathways/bookings/demo/server.ts                      # Glow Salon, English
-node pathways/bookings/demo/server.ts --lang hi            # start in Hindi (any language in LANGUAGES)
-node pathways/bookings/demo/server.ts --settings my-shop.json --port 8787
+node templates/commerce/bookings/demo/server.ts                      # Glow Salon, English
+node templates/commerce/bookings/demo/server.ts --lang hi            # start in Hindi (any language in LANGUAGES)
+node templates/commerce/bookings/demo/server.ts --settings my-shop.json --port 8787
 ```
 
 It prints the addresses to open, for example `http://192.168.1.23:8787` for the phone. If the phone cannot open it: put both on the same Wi-Fi (a guest network that separates devices will not work), or turn on the phone's hotspot and join the laptop to it. It listens only on this computer and your private network addresses, and answers nothing that comes from the internet. There is no login, so **never open the port to the internet**.
@@ -106,22 +106,22 @@ It prints the addresses to open, for example `http://192.168.1.23:8787` for the 
 5. *(optional, 15 s)* **It asks first.** Book, pay, tap **1 day passes**, tap **Cancel the booking**. Owner: "Give back ₹200?" with Approve and Deny. (The agent asks only when the cancellation is less than 24 hours before the start. If the suggestion said "the day after tomorrow" because tomorrow is a closed day, tap **1 day passes** twice first; for a later weekday, until it is the day before.)
 6. If the owner (or a friend who codes) wants proof, tap **Show what we did ▸**.
 
-**What this is not.** A demo of the pathway on stand-ins. The owner's lines are counted from the stand-ins' records, so they show what happened in the demo, not a claim about a live shop. The "We didn't check" line is always shown. The clock is a fake clock that starts on today's real date at 10:00 in the shop's time zone and moves only when you tap.
+**What this is not.** A demo of the template on stand-ins. The owner's lines are counted from the stand-ins' records, so they show what happened in the demo, not a claim about a live shop. The "We didn't check" line is always shown. The clock is a fake clock that starts on today's real date at 10:00 in the shop's time zone and moves only when you tap.
 
-**In the browser, with no server.** The same demo runs entirely inside a web page, for a website's "Build your first agent" page: `npm run build:web-demo` (inside `pathways/bookings`) writes plain ES modules to `demo/web/dist/` (git ignores it), and a page calls `mountDemo(element)` from `dist/index.js`. It is the same agent template code on the same stand-ins, in three steps (your shop, try it with test money, what was checked), with two labels always on screen ("Demo · test money · nothing real is sent" and "In this demo the template's own code checks the limit. On a live shop, Guard holds it outside the AI."). Nothing is sent, saved or signed in. The page around it themes it with custom properties (`--geo-surface`, `--geo-text`, `--geo-accent`, `--geo-radius`, `--geo-font` and the rest, listed at the top of `demo/web/theme.css`), dark mode included. To try it: build it, then `python3 -m http.server 8080 --directory pathways/bookings/demo/web` and open `http://localhost:8080/` (a browser will not load the modules from a file). How it is built, the class names and what is left: Explanation.md, "The demo in the browser", and Deferred.md.
+**In the browser, with no server.** The same demo runs entirely inside a web page, for a website's "Build your first agent" page: `npm run build:web-demo` (inside `templates/commerce/bookings`) writes plain ES modules to `demo/web/dist/` (git ignores it), and a page calls `mountDemo(element)` from `dist/index.js`. It is the same agent template code on the same stand-ins, in three steps (your shop, try it with test money, what was checked), with two labels always on screen ("Demo · test money · nothing real is sent" and "In this demo the template's own code checks the limit. On a live shop, Guard holds it outside the AI."). Nothing is sent, saved or signed in. The page around it themes it with custom properties (`--geo-surface`, `--geo-text`, `--geo-accent`, `--geo-radius`, `--geo-font` and the rest, listed at the top of `demo/web/theme.css`), dark mode included. To try it: build it, then `python3 -m http.server 8080 --directory templates/commerce/bookings/demo/web` and open `http://localhost:8080/` (a browser will not load the modules from a file). How it is built, the class names and what is left: Explanation.md, "The demo in the browser", and Deferred.md.
 
 ## Sell it
 
-A pathway isn't ready to sell until its guide is. [`sell/`](sell/) has the pitch-and-sell guide for local partners and builders in English, Hindi, Malayalam and Kannada (`guide.<lang>.md`, from "is this shop a fit" to the first month, built on the demo above) and the one-page sheet the partner leaves with the owner (`one-pager.<lang>.html`, printable on A4).
-A business that is a different kind of customer for the same pathway gets a **variant** that covers only what differs and points here for the rest: [`sell/variants/equipment-rental.<lang>.md`](sell/variants/) (rules: [../SELL-GUIDE.md](../SELL-GUIDE.md), "Variants").
-Hindi, Malayalam and Kannada are machine-written and wait for native review ([Deferred.md](Deferred.md)). What every pathway's guide must cover: [../SELL-GUIDE.md](../SELL-GUIDE.md). `test/sell-guide.test.ts` checks the sections, the banned words, the amounts and the demo steps.
+A template isn't ready to sell until its guide is. [`sell/`](sell/) has the pitch-and-sell guide for local partners and builders in English, Hindi, Malayalam and Kannada (`guide.<lang>.md`, from "is this shop a fit" to the first month, built on the demo above) and the one-page sheet the partner leaves with the owner (`one-pager.<lang>.html`, printable on A4).
+A business that is a different kind of customer for the same template gets a **variant** that covers only what differs and points here for the rest: [`sell/variants/equipment-rental.<lang>.md`](sell/variants/) (rules: [../../SELL-GUIDE.md](../../SELL-GUIDE.md), "Variants").
+Hindi, Malayalam and Kannada are machine-written and wait for native review ([Deferred.md](Deferred.md)). What every template's guide must cover: [../../SELL-GUIDE.md](../../SELL-GUIDE.md). `test/sell-guide.test.ts` checks the sections, the banned words, the amounts and the demo steps.
 
 ## Equipment rental (custom hiring centres and village equipment owners)
 
-The same pathway, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 33 of 33 situations on its own settings. Run the demo on it:
+The same template, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 33 of 33 situations on its own settings. Run the demo on it:
 
 ```sh
-node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn   # or hi
+node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang kn   # or hi
 ```
 
 **What it can do:** book one machine (with its attachments) by the half day or the day at fixed prices, take a deposit, refund an early cancellation alone and ask the owner about a late one, remind the day before, and answer in Kannada and Hindi (and Malayalam and English if the file lists them).
@@ -135,7 +135,7 @@ node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equi
 ```sh
 # from the root of this repository
 openssl rand -hex 32 > /tmp/inbox-token                                 # the secret the inbox sends as a bearer token
-INTERNAL_TOKEN_FILE=/tmp/inbox-token npm run serve --prefix pathways/bookings -- --client clients/glow-salon.example
+INTERNAL_TOKEN_FILE=/tmp/inbox-token npm run serve --prefix templates/commerce/bookings -- --client clients/glow-salon.example
 ```
 
 A client is a folder (`clients/glow-salon.example/` is a working example that runs on the stand-in services):
@@ -144,7 +144,7 @@ A client is a folder (`clients/glow-salon.example/` is a working example that ru
 | --- | --- |
 | `settings.json` | The business: the same format as `settings/glow-salon.example.json` |
 | `runtime.json` | `mode` (`"fakes"` for a local run, `"live"` for real services through Guard), `host` (default 127.0.0.1), `port` (default 8780), `dataDir` (default `data`, inside the client folder, never commit it), `tickSeconds` (default 30), for live `services`: the base URL of the Guard in front of payments, the calendar and messaging, and optionally `parser`: the model that reads messages, see "Choose the model" (left out, the rule parser does), `decision` (a System One decision model, the step before it), `allowance` (this month's most AI messages), `ai` (`"buttons"` turns the AI off), `pauseMinutes`, and `report` (switches on the monthly report to the owner on WhatsApp: `preparedBy`, `pageBaseUrl`, and optionally `innovator`, `signingKeyFile`, `goLiveFile`, `source`, `pagesDir`; left out, none is sent) |
-| `pathway.lock` | The pathway version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
+| `pathway.lock` | The template version this client is pinned to, for example `bookings@0.1.0`. The runtime refuses to start if it is not the version it is (`package.json`), and prints both |
 
 What it answers:
 
@@ -153,7 +153,7 @@ What it answers:
 | `POST /internal/events` with `Authorization: Bearer <token>` and `{"events": [{"kind": "message", "message": {...}}, {"kind": "payment_event", "event": {...}}]}` | `200 {"saved": n, "duplicates": m}` once the events are on disk. An event id seen before is a no-op. Anything else (401, 400, 413, 500) means "not saved, send it again" |
 | `GET /healthz` | The process is up |
 | `GET /readyz` | 200 if the store can be read and the queue is going, otherwise 503 |
-| `GET /status` with the token | Counts only, never message content: bookings by state, tasks pending, done and failed, the last step, the record length, the pathway version |
+| `GET /status` with the token | Counts only, never message content: bookings by state, tasks pending, done and failed, the last step, the record length, the template version |
 
 ```sh
 curl -s localhost:8780/internal/events -H "Authorization: Bearer $(cat /tmp/inbox-token)" \
@@ -164,8 +164,8 @@ In `fakes` mode the stand-in WhatsApp prints what it is asked to send, and the s
 
 ## Owner approvals on WhatsApp
 
-A refund above `cancellation.refundLimitInr` is held by Guard; the agent does not ask the owner. `approvals/` is its own process (`node pathways/bookings/approvals/main.ts`): it holds the owner's approver secret, reads Guard's held refunds, asks the owner once with a one-use code (`approve K7M2QX`), and carries the answer to Guard (signed) and then to the runtime, which sends the identical refund again.
-Guard's limits spec comes from the same settings: `node pathways/bookings/scripts/guard-spec.ts --client clients/glow-salon.example --tenant glow-salon --reviewed-by <you> > spec.json`, then `geo-guard compile`.
+A refund above `cancellation.refundLimitInr` is held by Guard; the agent does not ask the owner. `approvals/` is its own process (`node templates/commerce/bookings/approvals/main.ts`): it holds the owner's approver secret, reads Guard's held refunds, asks the owner once with a one-use code (`approve K7M2QX`), and carries the answer to Guard (signed) and then to the runtime, which sends the identical refund again.
+Guard's limits spec comes from the same settings: `node templates/commerce/bookings/scripts/guard-spec.ts --client clients/glow-salon.example --tenant glow-salon --reviewed-by <you> > spec.json`, then `geo-guard compile`.
 Guard also refuses any refund above one deposit (rule `refund-at-most-deposit`), whatever the customer wrote and whatever the owner's limit is: a customer who paid ₹200 and asks for ₹500 back gets ₹200. If the owner lowers the deposit, Guard refuses the refunds of older, larger deposits that are still open: lower it once those bookings are over, or refund them by hand in Razorpay ([Deferred.md](Deferred.md), "A refund is never more than one deposit").
 Try it end to end against a stub Guard: `npm run stack -- --refund-limit 100`. Why and how: [Explanation.md](Explanation.md), "Approvals on WhatsApp".
 
@@ -175,12 +175,12 @@ What a shop is given, in its language (Hindi, English, Malayalam, Kannada, or Hi
 
 ```sh
 # from the root of this repository
-node pathways/bookings/scripts/report-example.ts                 # a sample of everything, from a scripted busy month, into pathways/bookings/report-sample/ (git-ignored)
-node pathways/bookings/scripts/report-key.ts ~/geometer-keys     # make the signing key, outside any repository
-node pathways/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out --key ~/geometer-keys/report-key.pem
-node pathways/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
+node templates/commerce/bookings/scripts/report-example.ts                 # a sample of everything, from a scripted busy month, into templates/commerce/bookings/report-sample/ (git-ignored)
+node templates/commerce/bookings/scripts/report-key.ts ~/geometer-keys     # make the signing key, outside any repository
+node templates/commerce/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out --key ~/geometer-keys/report-key.pem
+node templates/commerce/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
      --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./out/go-live-certificate.json --key ~/geometer-keys/report-key.pem
-node pathways/bookings/scripts/verify-report.ts ./out/report-2026-11.json --trust-key ~/geometer-keys/report-key.pub.pem
+node templates/commerce/bookings/scripts/verify-report.ts ./out/report-2026-11.json --trust-key ~/geometer-keys/report-key.pub.pem
 ```
 
 **On WhatsApp, by itself.** A shop whose `runtime.json` has a `report` block gets last month's report on the 1st at 09:00 (the shop's time zone), once, even across a restart: as one of two approved templates (`monthly_report`, and `monthly_report_innovator` with the Innovator badge) when the owner has not written in the last day, as plain text with the same words when they have. The message names who set the agent up, gives the check code and the address of the full page; the page is written into `<dataDir>/reports/<random name>/` for whatever serves that folder. A month with nothing in the record sends nothing. How, and what is left open (serving the page, a PDF): [Explanation.md](Explanation.md), "The monthly report on WhatsApp", and [Deferred.md](Deferred.md).
@@ -220,8 +220,8 @@ Agent:    ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450. ಕ್ಷಮಿಸಿ, ಇ
 - **Amounts, dates, times, service names and links are always filled in from the record**, never translated. Amounts are written with Western digits (₹450) in every language. The outgoing check knows the Malayalam and Kannada weekday, month and part-of-the-day words, so a wrong date, time or amount in any of the four languages is blocked, and anything it cannot explain is blocked too.
 - The agent never glues an ending onto a shop's service name or business name (Malayalam and Kannada endings change with the last letter of the word), so a message reads right for any shop's names.
 - Owner commands stay `approve b-1`, `deny b-1`, `retry b-1` in Latin letters, explained in the owner's language (set `owner.language`).
-- **Machine-written, not yet read by a native speaker.** [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every Malayalam and Kannada message and every word the agent understands, with a column for the native reviewer. No real shop should use these two languages before that review. The sheets are made by `node pathways/bookings/scripts/review-sheet.ts ml` (or `kn`), and a test fails if a sheet falls behind the templates.
-- Adding another language (Tamil and Telugu are next) means adding its entry to each per-language table: the type system refuses to build without a template for every message and a name for every weekday and month. Its customer words go in [`modules/language/words.ts`](modules/language/words.ts).
+- **Machine-written, not yet read by a native speaker.** [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every Malayalam and Kannada message and every word the agent understands, with a column for the native reviewer. No real shop should use these two languages before that review. The sheets are made by `node templates/commerce/bookings/scripts/review-sheet.ts ml` (or `kn`), and a test fails if a sheet falls behind the templates.
+- Adding another language (Tamil and Telugu are next) means adding its entry to each per-language table: the type system refuses to build without a template for every message and a name for every weekday and month. Its customer words go in [`modules/language/words.ts`](../../../modules/language/words.ts).
 
 ## Choose the model
 
@@ -234,15 +234,15 @@ Geometer bundles one model (decision 6 in the implementation plan). The eval pic
 #      SARVAM_API_KEY=...
 #      GROQ_API_KEY=...
 #      OPENAI_API_KEY=...
-# 2. Check the candidates in pathways/bookings/eval/models.json (name, provider, wire, base URL, model id and the key's name). The price
+# 2. Check the candidates in templates/commerce/bookings/eval/models.json (name, provider, wire, base URL, model id and the key's name). The price
 #    is not in that file: it comes from the one table of model prices, modules/understanding/rates/<date>.json, by provider and model.
 # 3. Run the eval from the root of this repository:
-node pathways/bookings/scripts/model-eval.ts --max-messages 40      # a cheap first look: 40 messages, spread over the four languages
-node pathways/bookings/scripts/model-eval.ts                        # all 136 messages
-node pathways/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemini-3.5-flash-lite
+node templates/commerce/bookings/scripts/model-eval.ts --max-messages 40      # a cheap first look: 40 messages, spread over the four languages
+node templates/commerce/bookings/scripts/model-eval.ts                        # all 136 messages
+node templates/commerce/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemini-3.5-flash-lite
 ```
 
-It prints one table with a column for the rule parser (the baseline) and one for each model that has a key: how often all six fields were right (kind, service, date, time, offered price, and the trick flag), by language and by field; how often the model could not be used and the rule parser read the message instead; p50 and p95 latency; the tokens used; and the cost of 1,000 messages from the tokens the API reported. A candidate with no key in `.env` is skipped with a line saying so; with no keys at all only the baseline runs. Each model call costs a little, so `--max-messages` caps how many are sent, and the token totals are printed. The full results go to `eval/results.json`, which git ignores. Keys are read and sent by the eval script only (`scripts/eval-keys.ts`); the pathway's own model parser holds no key.
+It prints one table with a column for the rule parser (the baseline) and one for each model that has a key: how often all six fields were right (kind, service, date, time, offered price, and the trick flag), by language and by field; how often the model could not be used and the rule parser read the message instead; p50 and p95 latency; the tokens used; and the cost of 1,000 messages from the tokens the API reported. A candidate with no key in `.env` is skipped with a line saying so; with no keys at all only the baseline runs. Each model call costs a little, so `--max-messages` caps how many are sent, and the token totals are printed. The full results go to `eval/results.json`, which git ignores. Keys are read and sent by the eval script only (`scripts/eval-keys.ts`); the template's own model parser holds no key.
 
 To use a model, give the client a `parser` in its `runtime.json` (the rule parser stays the default everywhere), or build it in code:
 
@@ -268,7 +268,7 @@ With a `parser` and/or a `decision` in `runtime.json`, each message goes to the 
 "ai": "on"
 ```
 
-A key is never in the file: `keyEnv` is the **name** of an environment variable. If it is not set, that step is off and the start-up says so. Jev (`"provider": "jev"`) needs `keyEnv` too. `"ai": "buttons"` (which the bundle writes from fleet's heartbeat answer) turns every model off; so does an `allowance` that is used up, and so, for a few minutes, does a model that fails. The agent then reads with the rules and answers with buttons and lists; every limit still holds, the owner is told once, and no customer is left without an answer. What each message cost is in the record (`step`, `provider`, `model`, `inputTokens`, `outputTokens`, `costMicroInr`): see Explanation.md, "Understanding record fields (for the cost meter)". To try it with no model at all, `node pathways/bookings/standins/main.ts --system-one` answers the decisions API from the rules.
+A key is never in the file: `keyEnv` is the **name** of an environment variable. If it is not set, that step is off and the start-up says so. Jev (`"provider": "jev"`) needs `keyEnv` too. `"ai": "buttons"` (which the bundle writes from fleet's heartbeat answer) turns every model off; so does an `allowance` that is used up, and so, for a few minutes, does a model that fails. The agent then reads with the rules and answers with buttons and lists; every limit still holds, the owner is told once, and no customer is left without an answer. What each message cost is in the record (`step`, `provider`, `model`, `inputTokens`, `outputTokens`, `costMicroInr`): see Explanation.md, "Understanding record fields (for the cost meter)". To try it with no model at all, `node templates/commerce/bookings/standins/main.ts --system-one` answers the decisions API from the rules.
 
 ## Settings: tailoring without code
 
@@ -316,7 +316,7 @@ enquiry -> confirming_details -> awaiting_deposit -> confirmed -> completed
 
 ## How "done" is decided
 
-Every write to a service is followed by a read from that service's own store. Only the read is recorded as `confirmed`; a reply that says "ok" is only `attempted`. After a lost reply the agent looks (by booking id) before it retries. Payment events only tell the agent to look: it reconciles from the payments service's record, so a late, duplicated or missing event cannot change what it believes. The record ([`modules/record/record.ts`](modules/record/record.ts)) is append-only and keeps customer text as a digest only.
+Every write to a service is followed by a read from that service's own store. Only the read is recorded as `confirmed`; a reply that says "ok" is only `attempted`. After a lost reply the agent looks (by booking id) before it retries. Payment events only tell the agent to look: it reconciles from the payments service's record, so a late, duplicated or missing event cannot change what it believes. The record ([`modules/record/record.ts`](../../../modules/record/record.ts)) is append-only and keeps customer text as a digest only.
 
 ## Loose dates and times
 
@@ -332,7 +332,7 @@ For any weekday phrase or guessed am/pm, the agent writes back the full date and
 
 ## What is in the folder
 
-What both templates need (language, understanding, payments, messaging, the record, the approvals relay, report signing, the stand-ins) is in [`modules/`](../../modules/README.md), outside this folder, and this template imports it. What is left here is about bookings.
+What both templates need (language, understanding, payments, messaging, the record, the approvals relay, report signing, the stand-ins) is in [`modules/`](../../../modules/README.md), outside this folder, and this template imports it. What is left here is about bookings.
 
 ```text
 settings/glow-salon.example.json   a complete example business
@@ -369,7 +369,7 @@ scripts/review-sheet.ts            writes REVIEW-ml.md and REVIEW-kn.md from the
 scripts/model-eval.ts              the model eval (eval-score.ts scores it, eval-keys.ts reads the keys: laptop only)
 eval/                              messages.jsonl (the labelled messages), models.json (the candidates); results.json is git-ignored
 REVIEW-ml.md, REVIEW-kn.md         every Malayalam and Kannada line, for a native speaker to mark OK or change
-sell/                              the sell guide: guide.<lang>.md and one-pager.<lang>.html for en, hi, ml, kn (spec: ../SELL-GUIDE.md)
+sell/                              the sell guide: guide.<lang>.md and one-pager.<lang>.html for en, hi, ml, kn (spec: ../../SELL-GUIDE.md)
 Explanation.md, Deferred.md        how it was built and why; what is left open and why
 ```
 
@@ -385,4 +385,4 @@ The full list, with a reason and a trigger for each, is in [Deferred.md](Deferre
 
 ## Not a claim
 
-A pathway core checked against stand-in services and a rule-based parser. A result says that these situations held within what was tried, nothing more. Licence: Apache-2.0 (see [../../LICENSE](../../LICENSE)).
+A template core checked against stand-in services and a rule-based parser. A result says that these situations held within what was tried, nothing more. Licence: Apache-2.0 (see [../../../LICENSE](../../../LICENSE)).

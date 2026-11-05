@@ -1,5 +1,5 @@
 // Makes a shop's monthly report and monthly record certificate from the agent's record, in the shop's language.
-//   node pathways/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
+//   node templates/commerce/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
 //        --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./go-live-certificate.json [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"] [--innovator]
 // --record is the whole action record (a list of entries, oldest first); --bookings is the conversation store's bookings.
 // --lang is hi, en, ml, kn, or both (Hindi and English, as two messages and one page). --source says what the numbers
@@ -21,7 +21,7 @@ await main(async () => {
       settings: { type: "string" }, record: { type: "string" }, bookings: { type: "string" }, month: { type: "string" }, lang: { type: "string" }, out: { type: "string" },
       key: { type: "string" }, source: { type: "string" }, "prepared-by": { type: "string" }, innovator: { type: "boolean" }, now: { type: "string" }, "go-live": { type: "string" },
     } });
-  } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of pathways/bookings/scripts/client-report.ts for the options.`); }
+  } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of templates/commerce/bookings/scripts/client-report.ts for the options.`); }
   const o = args.values;
   if (!o.month) throw new UsageError("Say which month: --month 2026-11.");
   if (!o.out) throw new UsageError("Say which folder to write into: --out <folder>.");

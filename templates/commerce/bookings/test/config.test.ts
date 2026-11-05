@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, cpSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fakeClock } from "../../../modules/core/clock.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { ClientError, loadClient, parseLock, pathwayVersion, validateRuntimeConfig } from "../server/config.ts";
 import { loadLiveModule, buildServices } from "../server/services.ts";

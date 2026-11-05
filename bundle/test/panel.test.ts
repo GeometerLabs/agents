@@ -14,17 +14,17 @@ import { main } from "../geometer.ts";
 import { sha256Hex } from "../lib/util.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
-import { openStore } from "../../pathways/bookings/server/store.ts";
+import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 import { CALENDAR_ID, EXAMPLE_CLIENT, PHONE_NUMBER_ID, panelRuntime } from "./helpers.ts";
 import { read, secretsFor, world } from "./world.ts";
 
 const CONTRACT = [process.env.GEOMETER_PANEL_CONTRACT, new URL("../panel/contract.ts", import.meta.url).pathname].find((p) => p && existsSync(p));
 const contract = CONTRACT ? await import(CONTRACT) as { parseStatus(text: string | undefined): { ok: boolean; status?: any; reason?: string }; parseStopRequest(text: string | undefined): unknown } : undefined;
 const withPanel = { panel: { enabled: true } };
-/** A stand-in app folder: the real pathways, and a panel program only when asked (so a test does not depend on whether THIS checkout has bundle/panel/main.ts). */
+/** A stand-in app folder: the real templates, and a panel program only when asked (so a test does not depend on whether THIS checkout has bundle/panel/main.ts). */
 function standInApp(w: ReturnType<typeof world>, panelProgram: boolean): string {
   const app = mkdtempSync(join(tmpdir(), "geo-app-"));
-  symlinkSync(join(w.ctx.appDir, "pathways"), join(app, "pathways"));
+  symlinkSync(join(w.ctx.appDir, "templates"), join(app, "templates"));
   if (panelProgram) { mkdirSync(join(app, "bundle", "panel"), { recursive: true }); writeFileSync(join(app, "bundle", "panel", "main.ts"), "// the panel\n"); }
   return app;
 }
@@ -117,7 +117,7 @@ test("with no Google key in a shop's inbox the server-wide key is used (hosted m
     const key = join(tmpdir(), `geo-sa-${Math.random()}.json`);
     writeFileSync(key, JSON.stringify({ client_email: "hosted@project.iam.gserviceaccount.com", private_key: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n", token_uri: "https://oauth2.googleapis.com/token" }));
     assert.equal(await main(["google-key", key, "--server", w.root], w.ctx), 0); rmSync(key);
-    // a checkout that has the panel program: a stand-in app folder with the real pathways and a bundle/panel/main.ts
+    // a checkout that has the panel program: a stand-in app folder with the real templates and a bundle/panel/main.ts
     const app = standInApp(w, true);
     w.ctx.appDir = app;
     await deploy(w.ctx);

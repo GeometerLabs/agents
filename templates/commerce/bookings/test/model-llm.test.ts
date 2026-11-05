@@ -3,11 +3,11 @@ import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { SAYS } from "../crash-test/situations.ts";
 import { createModelParser } from "../src/adapters/model-llm.ts";
-import type { ModelConfig } from "../../../modules/understanding/model-llm.ts";
+import type { ModelConfig } from "../../../../modules/understanding/model-llm.ts";
 import { intentSchema, systemPrompt } from "../src/adapters/model-prompt.ts";
 import { parseIntent } from "../src/adapters/rule-parser.ts";
 import { CUSTOMER, createWorld, glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { anthropicReply, answer, openaiReply, startStubModel } from "./stub-model-server.ts";
 import type { StubModel, StubReply, StubRequest } from "./stub-model-server.ts";
 

@@ -1,6 +1,6 @@
 // The Fees sell guide (sell/): a guide and a one-page sheet in every language the pathway speaks, the same 11 sections in the same order, the same amounts and
 // numbers everywhere, none of the words the claim rules ban, the walkthrough it teaches quoted exactly as the script prints it, and every number it gives about the
-// example centre and about the hand check compared with the real thing. The spec every pathway copies is ../../SELL-GUIDE.md.
+// example centre and about the hand check compared with the real thing. The spec every pathway copies is ../../../SELL-GUIDE.md.
 //
 // One deliberate difference from Bookings: the walkthrough shows a different child in each language (Rohan Mehta in English, Anaya Sharma in Hindi, and so on), so the
 // quoted printout in section 4 differs in names and amounts from language to language. The quotes sit in ```text blocks, and the "same amounts and numbers" checks
@@ -8,9 +8,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { bannedIn } from "../../../modules/report/claims.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { bannedIn } from "../../../../modules/report/claims.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import { MARKERS, SAYS } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
@@ -20,7 +20,7 @@ import { brightTuition } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 
 const SELL = new URL("../sell/", import.meta.url);
-const SPEC = new URL("../../SELL-GUIDE.md", import.meta.url);
+const SPEC = new URL("../../../SELL-GUIDE.md", import.meta.url);
 const guide = (l: Language) => readFileSync(new URL(`guide.${l}.md`, SELL), "utf8");
 const sheet = (l: Language) => readFileSync(new URL(`one-pager.${l}.html`, SELL), "utf8");
 const TRANSLATED = LANGUAGES.filter((l) => l !== "en");
@@ -245,9 +245,9 @@ test("sell guide: the walkthrough command in the guide is a real one", () => {
   assert.ok(script.includes('lang: { type: "string" }'));
   for (const l of LANGUAGES) {
     const commands = fencedLines(section(l, 4), "sh");
-    assert.ok(commands.some((c) => c.startsWith("node pathways/fees/scripts/walkthrough.ts --lang en")), `${l}: the guide gives the English command`);
-    assert.ok(commands.some((c) => c.startsWith("node pathways/fees/scripts/walkthrough.ts --lang hi")), `${l}: the guide gives the command for the owner's language`);
-    assert.ok(commands.every((c) => /^node pathways\/fees\/scripts\/walkthrough\.ts --lang (en|hi)( |$)/.test(c)));
+    assert.ok(commands.some((c) => c.startsWith("node templates/education/fees/scripts/walkthrough.ts --lang en")), `${l}: the guide gives the English command`);
+    assert.ok(commands.some((c) => c.startsWith("node templates/education/fees/scripts/walkthrough.ts --lang hi")), `${l}: the guide gives the command for the owner's language`);
+    assert.ok(commands.every((c) => /^node templates\/education\/fees\/scripts\/walkthrough\.ts --lang (en|hi)( |$)/.test(c)));
     assert.ok(commands.some((c) => c.includes("also ml, kn")), `${l}: the guide says ml and kn are there too`);
   }
   assert.ok(existsSync(new URL("../scripts/walkthrough.ts", import.meta.url)));
@@ -257,14 +257,14 @@ test("sell guide: the walkthrough command in the guide is a real one", () => {
 
 test("sell guide: what the guide says is not built yet is still not built (build it, then change sections 4, 8, 10 and 11)", () => {
   for (const missing of ["demo", "server", "approvals", "scripts/go-live-certificate.ts"]) {
-    assert.ok(!existsSync(new URL(`../${missing}`, import.meta.url)), `pathways/fees/${missing} exists now: the guide still says there is no phone demo, no runtime server, no approvals relay and no go-live certificate for Fees`);
+    assert.ok(!existsSync(new URL(`../${missing}`, import.meta.url)), `templates/education/fees/${missing} exists now: the guide still says there is no phone demo, no runtime server, no approvals relay and no go-live certificate for Fees`);
   }
   const script = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the centre's own settings file");
   for (const l of LANGUAGES) {
     assert.ok(section(l, 8).includes("hand-check.ts --settings"), `${l}: the real command for the check on a centre's own settings`);
-    assert.ok(section(l, 8).includes("pathways/fees/whatsapp-templates.json") && existsSync(new URL("../whatsapp-templates.json", import.meta.url)), `${l}: the list of messages Meta must approve exists`);
-    assert.ok(section(l, 8).includes("pathways/fees/settings/bright-tuition.example.json") && existsSync(new URL("../settings/bright-tuition.example.json", import.meta.url)));
+    assert.ok(section(l, 8).includes("templates/education/fees/whatsapp-templates.json") && existsSync(new URL("../whatsapp-templates.json", import.meta.url)), `${l}: the list of messages Meta must approve exists`);
+    assert.ok(section(l, 8).includes("templates/education/fees/settings/bright-tuition.example.json") && existsSync(new URL("../settings/bright-tuition.example.json", import.meta.url)));
     assert.ok(section(l, 11).includes("REVIEW-ml.md") && section(l, 11).includes("REVIEW-kn.md"), `${l}: section 11 names the review sheets`);
   }
   for (const file of ["REVIEW-ml.md", "REVIEW-kn.md"]) assert.ok(existsSync(new URL(`../${file}`, import.meta.url)), file);

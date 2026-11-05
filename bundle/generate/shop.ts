@@ -1,7 +1,7 @@
 // One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
-import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
+import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
 import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
@@ -131,7 +131,7 @@ export function withFleetAi(runtime: Record<string, unknown>, fleetAi: "buttons"
   if (fleetAi !== "buttons" || Object.keys(runtime).length === 0) return runtime;
   const withIt = { ...runtime, ai: "buttons" };
   if (validate(withIt, "/").ok) return withIt;
-  if (validate(runtime, "/").ok) notes.push("fleet asked for button mode, but this pathway version does not know the ai setting yet, so the shop keeps its AI. Update the pathway, and the setting is written on the next deploy.");
+  if (validate(runtime, "/").ok) notes.push("fleet asked for button mode, but this template version does not know the ai setting yet, so the shop keeps its AI. Update the template, and the setting is written on the next deploy.");
   return runtime;
 }
 
@@ -158,7 +158,7 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
   const withIt = { ...runtime, report: { preparedBy: facts.preparedBy, innovator: facts.innovator, pageBaseUrl: facts.pageBaseUrl, pagesDir: REPORTS_DIR, source: facts.source } };
   const checked = validate(withIt, "/");
   if (checked.ok) return withIt;
-  if (validate(runtime, "/").ok) notes.push(`the monthly report to the owner is not switched on for this shop: this pathway version did not accept the report setting${checked.errors?.[0] ? ` (${checked.errors[0]})` : ""}, so the shop starts without it. Update the pathway, and it is written on the next deploy.`);
+  if (validate(runtime, "/").ok) notes.push(`the monthly report to the owner is not switched on for this shop: this template version did not accept the report setting${checked.errors?.[0] ? ` (${checked.errors[0]})` : ""}, so the shop starts without it. Update the pathway, and it is written on the next deploy.`);
   return runtime;
 }
 

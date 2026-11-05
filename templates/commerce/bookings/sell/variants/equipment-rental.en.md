@@ -1,10 +1,10 @@
-# Pitch and sell the Bookings pathway: equipment rental
+# Pitch and sell the Bookings template: equipment rental
 
 A variant for custom hiring centres and village equipment owners who rent a tractor and its attachments, a pump set or a tent by the half day or the day. Written 3 November 2026. **Read the main guide first ([guide.en.md](../guide.en.md)).** This page changes only what is different. The same variant exists in Hindi, Malayalam and Kannada. The shop owner never reads it.
 
 Sections 2 (before you go), 9 (the first month) and 10 (when something goes wrong) are exactly as in the main guide. Section 7 is the main table plus the rows below. The one-page sheet is the main guide's; a rental sheet is not made yet.
 
-The example shop is made up: Hosahalli Farm Hiring Centre, in `pathways/bookings/settings/equipment-rental.example.json`. It speaks Kannada and Hindi.
+The example shop is made up: Hosahalli Farm Hiring Centre, in `templates/commerce/bookings/settings/equipment-rental.example.json`. It speaks Kannada and Hindi.
 
 ## 1. Is this a fit?
 
@@ -39,7 +39,7 @@ Then stop talking, as in the main guide. Don't open with "AI", with technology o
 Set up the laptop and the phone as in section 4 of the main guide (same Wi-Fi, the address it prints, "Demo · test money · nothing real is sent"). Start the demo on the rental example, in the owner's language:
 
 ```sh
-node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn  # Kannada (or hi)
+node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang kn  # Kannada (or hi)
 ```
 
 The example speaks Kannada and Hindi. For a centre whose farmers write another language, tap "Set up for this shop" instead: the centre's name, the jobs in the farmers' own words with the owner's prices, the deposit, the opening hours and the language. It takes about 30 seconds.
@@ -131,7 +131,7 @@ Do the checklist in section 8 of the main guide (the WhatsApp check, the shared 
 - [ ] **One deposit for every job,** never more than the cheapest job. Hold it for 30 minutes, because farmers may need time to find their UPI app.
 - [ ] **The reminder.** One reminder, 24 hours before, so it arrives at the same time of day as the booking. Reminders count hours before the start, so a 2-hour reminder for a 6 am booking would arrive at 4 am.
 - [ ] **The rest of the payment.** Agree how the farmer pays the rest (cash or UPI, to the owner). The helper doesn't record it.
-- [ ] **Run the check on this shop's own settings.** From the agents folder: `node pathways/bookings/scripts/hand-check.ts --settings <the shop's file>`. Read "Held N of M" aloud, and read the "NOT RUN" list if there is one.
+- [ ] **Run the check on this shop's own settings.** From the agents folder: `node templates/commerce/bookings/scripts/hand-check.ts --settings <the shop's file>`. Read "Held N of M" aloud, and read the "NOT RUN" list if there is one.
 
   | Limit | Ask | Example (Hosahalli Farm Hiring Centre) |
   | --- | --- | --- |

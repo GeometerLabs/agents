@@ -1,6 +1,6 @@
 // The outgoing check for Bookings: the shared check (modules/language/check.ts) given the values a booking's record holds.
-import { checkText } from "../../../../modules/language/check.ts";
-import type { CheckFacts, CheckResult } from "../../../../modules/language/check.ts";
+import { checkText } from "../../../../../modules/language/check.ts";
+import type { CheckFacts, CheckResult } from "../../../../../modules/language/check.ts";
 import type { MessageFacts } from "./templates.ts";
 
 /** The lists the check reads, made from a booking conversation's facts. */

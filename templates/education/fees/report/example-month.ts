@@ -11,7 +11,7 @@
 import { MEERA_PARENT, ROHAN_PARENT, SHARMA_PARENT, KIRAN_PARENT, createWorld, brightTuition } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { SAYS } from "../crash-test/says.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
 
 const TZ = "Asia/Kolkata";
 export const at = (month: number, day: number, hour: number, minute = 0): number => zonedToMs({ year: 2026, month, day }, { hour, minute }, TZ);

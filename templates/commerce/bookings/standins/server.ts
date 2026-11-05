@@ -7,21 +7,21 @@
 // (and the live adapter raises TimeoutError), exactly the case the agent must look before it retries.
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { systemClock } from "../../../modules/core/clock.ts";
-import type { Clock } from "../../../modules/core/clock.ts";
+import { systemClock } from "../../../../modules/core/clock.ts";
+import type { Clock } from "../../../../modules/core/clock.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
-import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
-import { createFakePayments } from "../../../modules/payments/payments.ts";
+import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
+import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import { controlStandin } from "./control.ts";
 import type { Fakes } from "./control.ts";
 import { calendarStandin } from "./google-calendar.ts";
-import { LostReply } from "../../../modules/standins/http.ts";
-import type { Handler, StandinReply } from "../../../modules/standins/http.ts";
-import { razorpayStandin } from "../../../modules/standins/razorpay.ts";
+import { LostReply } from "../../../../modules/standins/http.ts";
+import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
+import { razorpayStandin } from "../../../../modules/standins/razorpay.ts";
 import { ruleDecider } from "./rule-decider.ts";
-import { systemOneStandin } from "../../../modules/standins/system-one.ts";
-import type { SystemOneStandin, SystemOneStandinOptions } from "../../../modules/standins/system-one.ts";
-import { approveTemplates, whatsappStandin } from "../../../modules/standins/whatsapp.ts";
+import { systemOneStandin } from "../../../../modules/standins/system-one.ts";
+import type { SystemOneStandin, SystemOneStandinOptions } from "../../../../modules/standins/system-one.ts";
+import { approveTemplates, whatsappStandin } from "../../../../modules/standins/whatsapp.ts";
 import { META_TEMPLATES } from "../src/language/meta-templates.ts";
 import { REPORT_TEMPLATES } from "../report/whatsapp.ts";
 

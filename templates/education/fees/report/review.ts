@@ -1,8 +1,8 @@
 // What a native reader sees of the report words: every string in strings.ts with the English beside it, and a sample of the owner's five lines.
 // scripts/review-sheet.ts puts this in the report section of REVIEW-ml.md and REVIEW-kn.md.
 import { brightTuition } from "../src/harness.ts";
-import { monthRange } from "../../../modules/report/months.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { monthRange } from "../../../../modules/report/months.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import { buildFeesReport } from "./data.ts";
 import type { FeesReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";

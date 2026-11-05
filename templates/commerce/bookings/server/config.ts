@@ -5,9 +5,9 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { validateSettings } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import { DEFAULT_PORT } from "./server.ts";
 import { PATHWAY } from "./runtime.ts";
 

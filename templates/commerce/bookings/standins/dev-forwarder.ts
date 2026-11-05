@@ -2,7 +2,7 @@
 // a WhatsApp provider's sandbox, a test Google Calendar) before Guard is configured. It reads keys from a local .env (git ignores it), adds
 // the credential, and passes each call on to the real host. It has NO limits, NO approvals and NO record: that is what Guard is for.
 //
-//   node pathways/bookings/standins/dev-forwarder.ts [--port 8791] [--env path/to/.env]
+//   node templates/commerce/bookings/standins/dev-forwarder.ts [--port 8791] [--env path/to/.env]
 //
 // The adapters' base URLs are then  http://127.0.0.1:8791/razorpay ,  .../google  and  .../whatsapp  (it routes by that first path part
 // and sends the rest on unchanged). It listens on 127.0.0.1 only, replaces any Authorization header a caller sends, and never prints a key.
@@ -138,9 +138,9 @@ if (import.meta.main) {
     return v;
   };
   for (const a of args.filter((x) => x.startsWith("--"))) if (!["--port", "--env", "--help"].includes(a)) { console.error(`I don't know ${a}. Use --port or --env.`); process.exit(2); }
-  if (args.includes("--help")) { console.log("Usage: node pathways/bookings/standins/dev-forwarder.ts [--port 8791] [--env path/to/.env]"); process.exit(0); }
+  if (args.includes("--help")) { console.log("Usage: node templates/commerce/bookings/standins/dev-forwarder.ts [--port 8791] [--env path/to/.env]"); process.exit(0); }
 
-  const envPath = option("env") ?? new URL("../../../.env", import.meta.url).pathname; // the repository root
+  const envPath = option("env") ?? new URL("../../../../.env", import.meta.url).pathname; // the repository root
   if (!existsSync(envPath)) { console.error(`There is no .env at ${envPath}. Copy .env.example to .env and fill it in.`); process.exit(2); }
   const port = Number(option("port") ?? 8791);
   if (!Number.isInteger(port) || port < 0 || port > 65535) { console.error("--port must be a whole number between 0 and 65535."); process.exit(2); }

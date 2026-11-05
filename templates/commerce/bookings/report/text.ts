@@ -4,11 +4,11 @@
 // Lines are "label: number", like the product's mock-up, so no number needs a case ending in Malayalam or Kannada.
 // Every number and amount is read from the report (which counted the record); the words come from strings.ts.
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
-import { formatDate } from "../../../modules/language/format.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { languagesOf, oneLine, periodLabel, rupees } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
+import { formatDate } from "../../../../modules/language/format.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { languagesOf, oneLine, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";

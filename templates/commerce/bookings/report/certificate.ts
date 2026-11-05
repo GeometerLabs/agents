@@ -11,24 +11,24 @@
 // per-language formatters; the words around them are in strings.ts.
 import { HAND_RUN, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import type { HandCheckRun, SituationResult } from "../crash-test/situations.ts";
-import { formatDate, formatInr } from "../../../modules/language/format.ts";
+import { formatDate, formatInr } from "../../../../modules/language/format.ts";
 import { serviceName } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { localParts } from "../../../modules/core/time.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { localParts } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
 import { PATHWAY, checkedPolicyDigest, notTestedFor, policyDigest } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
 import { goLiveBlock, sealBlock } from "./html.ts";
-import { esc, list, page, table } from "../../../modules/report/page.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
+import { esc, list, page, table } from "../../../../modules/report/page.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
 import { STRINGS } from "./strings.ts";
-import { badgeText } from "../../../modules/report/text.ts";
+import { badgeText } from "../../../../modules/report/text.ts";
 import { goLiveLines } from "./text.ts";
-import { periodLabel } from "../../../modules/report/text.ts";
-import { languagesOf, oneLine, rupees } from "../../../modules/report/text.ts";
-import type { ReportLanguage } from "../../../modules/report/text.ts";
+import { periodLabel } from "../../../../modules/report/text.ts";
+import { languagesOf, oneLine, rupees } from "../../../../modules/report/text.ts";
+import type { ReportLanguage } from "../../../../modules/report/text.ts";
 
 // ---- the hand check, summed up -------------------------------------------------------------------------------------------
 

@@ -3,12 +3,12 @@ import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync 
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakeCalendar } from "../../../pathways/bookings/src/adapters/calendar.ts";
+import { createFakeCalendar } from "../../../templates/commerce/bookings/src/adapters/calendar.ts";
 import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
 import { createFakePayments } from "../../../modules/payments/payments.ts";
 import { fakeClock } from "../../../modules/core/clock.ts";
-import { startStandins } from "../../../pathways/bookings/standins/server.ts";
-import type { RunningStandins } from "../../../pathways/bookings/standins/server.ts";
+import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
+import type { RunningStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { PanelConfig } from "../config.ts";
 import { makeInviteLink, openStores, startPanel } from "../server.ts";
 import { createDocuments } from "../documents.ts";
@@ -16,7 +16,7 @@ import type { RunningPanel } from "../server.ts";
 import type { Role } from "../accounts.ts";
 
 export const NOW = Date.parse("2026-11-04T10:00:00+05:30");
-export const EXAMPLE = new URL("../../../pathways/bookings/clients/glow-salon.example/", import.meta.url).pathname;
+export const EXAMPLE = new URL("../../../templates/commerce/bookings/clients/glow-salon.example/", import.meta.url).pathname;
 export const CALENDAR_ID = "glowsalon@group.calendar.google.com";
 export const SHARE_ADDRESS = "geometer-calendar@geometer-bookings.iam.gserviceaccount.com";
 export const PHONE_ID = "100000000000001";
@@ -58,7 +58,7 @@ export async function boot(change: Partial<PanelConfig> = {}, o: { standins?: bo
     chmodSync(signingKeyFile, 0o600);
   }
   const config: PanelConfig = {
-    serverDir: dir, mode: o.mode ?? "own", host: "127.0.0.1", port: 0, trustProxy: false, pathwaysDir: new URL("../../../pathways/", import.meta.url).pathname, staleMinutes: 30, now: () => NOW,
+    serverDir: dir, mode: o.mode ?? "own", host: "127.0.0.1", port: 0, trustProxy: false, templatesDir: new URL("../../../templates/", import.meta.url).pathname, staleMinutes: 30, now: () => NOW,
     calendarShareAddress: SHARE_ADDRESS, ...(dataKeyFile ? { dataKeyFile } : {}), ...(signingKeyFile ? { signingKeyFile } : {}),
     ...(standins ? { guardUrl: standins.url } : {}), ...change,
   };

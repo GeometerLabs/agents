@@ -5,14 +5,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CUSTOMER, OTHER_CUSTOMER, createWorld, glowSalon } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
-import type { TemplateMessage } from "../../../modules/messaging/messaging.ts";
+import type { TemplateMessage } from "../../../../modules/messaging/messaging.ts";
 import { checkMessage } from "../src/language/check.ts";
-import { fillBody, metaBody } from "../../../modules/language/meta-templates.ts";
+import { fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
 import { META_TEMPLATES, exampleFacts, templateMessage } from "../src/language/meta-templates.ts";
 import { TEMPLATES, TEMPLATE_NAMES, render } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
 import { parseSettings } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 
 const BOOK = "haircut tomorrow at 6pm"; // Wed 4 Nov, 6:00 pm, as the world's clock starts on Tue 3 Nov
 const WHEN = "Wed 4 Nov, 6:00 pm";

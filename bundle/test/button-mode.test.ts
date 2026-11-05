@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
+import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
 import { applyOnce } from "../apply.ts";
 import { deploy, desiredHashOf } from "../deploy.ts";
 import { planShop, withFleetAi } from "../generate/shop.ts";
@@ -65,7 +65,7 @@ test("an older pathway that does not know `ai` (its runtime would refuse to star
     const p = planShop(serverConfig(), t.shop("glow-salon"), {}, oldPathway);
     assert.equal("ai" in p.runtime, false);
     assert.equal(p.notes.length, 1);
-    assert.match(p.notes[0], /fleet asked for button mode, but this pathway version does not know the ai setting yet/u);
+    assert.match(p.notes[0], /fleet asked for button mode, but this template version does not know the ai setting yet/u);
     assert.deepEqual(p.problems, [], "a note, not a refusal");
   } finally { t.done(); }
 });

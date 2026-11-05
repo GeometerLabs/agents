@@ -1,7 +1,7 @@
 // Writes the review sheet a native speaker fills in: every message the Fees agent sends in a language, with what it is meant to say, and every word and phrase it
 // understands from a parent in that language.
-//   node pathways/fees/scripts/review-sheet.ts ml > pathways/fees/REVIEW-ml.md
-//   node pathways/fees/scripts/review-sheet.ts kn > pathways/fees/REVIEW-kn.md
+//   node templates/education/fees/scripts/review-sheet.ts ml > templates/education/fees/REVIEW-ml.md
+//   node templates/education/fees/scripts/review-sheet.ts kn > templates/education/fees/REVIEW-kn.md
 // The sheet is made from the templates, the formatters and the word lists themselves, so it cannot drift from what the agent really says; a test
 // (test/review-sheet.test.ts) fails when a committed sheet is missing a line.
 import { pathToFileURL } from "node:url";
@@ -14,9 +14,9 @@ import { exampleFacts } from "../src/language/meta-templates.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
 import { batchName } from "../src/settings.ts";
-import { MONTH_NAMES, WEEKDAY_NAMES, formatDate } from "../../../modules/language/format.ts";
-import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
-import { WORDS } from "../../../modules/language/words.ts";
+import { MONTH_NAMES, WEEKDAY_NAMES, formatDate } from "../../../../modules/language/format.ts";
+import { LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import { WORDS } from "../../../../modules/language/words.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
 import { sampleMessage } from "../report/whatsapp.ts";
 
@@ -194,7 +194,7 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push("### Whole sentences, and what the agent reads from them", "");
   out.push(table(["Parent writes", "Meaning", "The agent reads", REVIEWER], EXAMPLES[language].map(([text, meaning]) => [text, meaning, describeIntent(parseIntent(text, context)), ""])), "");
   out.push("### Sentences the hand check types as a parent", "");
-  out.push("These are the exact sentences the crash-test situations send (`pathways/fees/crash-test/says.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please change them.", "");
+  out.push("These are the exact sentences the crash-test situations send (`templates/education/fees/crash-test/says.ts`). If a native reader says nobody writes it this way, the evidence is weaker than it looks, so please change them.", "");
   out.push(table(["Parent writes", "What it is", "The agent reads", REVIEWER], HAND_CHECK_ROLES.map(([key, role]) => [SAYS[language][key], role, describeIntent(parseIntent(SAYS[language][key], context)), ""])), "");
   out.push("Two more sentences are typed with an amount: a request to take money off (`discountOff`) and a request for money back (`refund`). They are listed with ₹200 as the amount.", "");
   out.push(table(["Parent writes", "What it is", "The agent reads", REVIEWER], (["discountOff", "refund"] as const).map((key) => {
@@ -218,7 +218,7 @@ export function reviewSheet(language: ReviewLanguage): string {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const language = process.argv[2];
   if (language !== "ml" && language !== "kn") {
-    console.error("Say which language: node pathways/fees/scripts/review-sheet.ts ml   (or kn)");
+    console.error("Say which language: node templates/education/fees/scripts/review-sheet.ts ml   (or kn)");
     process.exitCode = 1;
   } else {
     console.log(reviewSheet(language));

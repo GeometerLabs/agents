@@ -17,18 +17,18 @@
 //   what was not checked                          the owner's short form (text.ts), and "checks were run by hand"
 // The check code and the address of the full page close the message, then who set it up. Rules for the words: informational only, no promotion (Meta moves a
 // promotional template to the marketing price), numbers and labels only, nothing graded.
-import type { TemplateMessage } from "../../../modules/messaging/messaging.ts";
+import type { TemplateMessage } from "../../../../modules/messaging/messaging.ts";
 import { META_LANGUAGE, fillBody, metaBody } from "../src/language/meta-templates.ts";
 import type { MetaSubmission } from "../src/language/meta-templates.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 import type { MonthlyReport } from "./data.ts";
 import { sampleReport } from "./review.ts";
-import type { Envelope } from "../../../modules/report/sign.ts";
+import type { Envelope } from "../../../../modules/report/sign.ts";
 import { STRINGS } from "./strings.ts";
-import { badgeText } from "../../../modules/report/text.ts";
+import { badgeText } from "../../../../modules/report/text.ts";
 import { notCheckedList } from "./text.ts";
-import { oneLine, periodLabel, rupees } from "../../../modules/report/text.ts";
+import { oneLine, periodLabel, rupees } from "../../../../modules/report/text.ts";
 
 export interface ReportTemplate {
   /** The name registered with Meta (lowercase, underscores). */

@@ -40,7 +40,7 @@ Your service must answer these calls (JSON bodies):
 | `POST /v1/campaigns/{id}/codes` | gives one: `campaign`, `viewer`, `quantity`, `value`, `approval` |
 | `POST /v1/admin/exports` | the operator's export of every code (used only by the operator console) |
 
-If your service has other paths or field names, change the one file that makes the calls (`src/tools.ts`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../LIMITS.md).
+If your service has other paths or field names, change the one file that makes the calls (`src/tools.ts`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../../../LIMITS.md).
 
 ## Check it with Geometer
 
@@ -55,7 +55,7 @@ Geometer reads the folder, builds the agent in a container, runs the tasks in `.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh streamer-giveaways retries-blind
+../../../scripts/try-broken.sh streamer-giveaways retries-blind
 ```
 
 | Patch | One line that changes | The rule it should break |
@@ -79,7 +79,7 @@ Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 | 9 | Keeps a record of what it did | Not checked |
 | 10 | Lets people decide how much it may do alone | Set in Geometer, not in this folder |
 
-What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
+What is not checked is also listed in the top-level [LIMITS.md](../../../LIMITS.md).
 
 ## Tests of its own
 

@@ -8,15 +8,15 @@
 //  - "Still to collect" is read from the fees as they are when the report is made: the open fees of the month and what is left on each.
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once.
 import { readFileSync } from "node:fs";
-import type { Language } from "../../../modules/language/languages.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
-import { localParts, zonedToMs } from "../../../modules/core/time.ts";
-import { canonicalJson } from "../../../modules/record/record.ts";
-import type { RecordEntry } from "../../../modules/record/record.ts";
-import { digestOf } from "../../../modules/report/digest.ts";
-import { SOURCES } from "../../../modules/report/text.ts";
-import type { Source } from "../../../modules/report/text.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
+import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import { canonicalJson } from "../../../../modules/record/record.ts";
+import type { RecordEntry } from "../../../../modules/record/record.ts";
+import { digestOf } from "../../../../modules/report/digest.ts";
+import { SOURCES } from "../../../../modules/report/text.ts";
+import type { Source } from "../../../../modules/report/text.ts";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import { balancePaise, monthKey } from "../src/due.ts";
@@ -29,7 +29,7 @@ export type { Source };
 export const PATHWAY = readPathway();
 function readPathway(): { name: string; version: string } {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version?: string };
-  if (!pkg.version) throw new Error("pathways/fees/package.json has no version.");
+  if (!pkg.version) throw new Error("templates/education/fees/package.json has no version.");
   return { name: "fees", version: pkg.version };
 }
 

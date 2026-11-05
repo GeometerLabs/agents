@@ -4,16 +4,16 @@
 // Nothing here talks to a network. Everything is test money in memory.
 import { LIVE_STATES, latestBooking } from "../src/booking.ts";
 import type { Booking } from "../src/booking.ts";
-import { WEEKDAY_NAMES, hindiPeriod } from "../../../modules/language/format.ts";
-import { formatTime } from "../../../modules/language/format.ts";
+import { WEEKDAY_NAMES, hindiPeriod } from "../../../../modules/language/format.ts";
+import { formatTime } from "../../../../modules/language/format.ts";
 import { CUSTOMER, createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { hoursOn, serviceName } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { InteractiveMessage } from "../../../modules/language/interactive.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { addDays, localParts, weekdayOf } from "../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { addDays, localParts, weekdayOf } from "../../../../modules/core/time.ts";
 import { CUSTOMER_WORDS, uiFor } from "./strings.ts";
 import type { Ui } from "./strings.ts";
 

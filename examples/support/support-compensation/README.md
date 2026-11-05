@@ -32,7 +32,7 @@ Held means: no rule broke in these runs. It is a bounded try, not every case.
 Apply a patch from [`broken/`](broken) to a copy and let Geometer check it:
 
 ```sh
-../scripts/try-broken.sh support-compensation checks-only-its-own-kind
+../../../scripts/try-broken.sh support-compensation checks-only-its-own-kind
 ```
 
 | Patch | Lines changed | Geometer's result |
@@ -56,7 +56,7 @@ Then `geo replay <problem id>` shows the problem happening again, step by step.
 | 9 | Keeps a record of what it did | Not checked yet | The agent appends to a memory file; Geometer does not check it |
 | 10 | Lets people decide how much it may do alone | Not checked yet | Set in Geometer, not in this folder |
 
-What is not checked is also listed in the top-level [LIMITS.md](../LIMITS.md).
+What is not checked is also listed in the top-level [LIMITS.md](../../../LIMITS.md).
 
 ## Run it
 

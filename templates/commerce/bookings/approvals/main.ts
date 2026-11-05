@@ -12,17 +12,17 @@
 //   STATE_DIR=/var/lib/approvals                        where the relay keeps what it must not forget
 //   PORT=8795  HOST=127.0.0.1  POLL_SECONDS=5
 //
-// Run:  node pathways/bookings/approvals/main.ts
+// Run:  node templates/commerce/bookings/approvals/main.ts
 // Secrets are files, never arguments or variables; a trailing newline is dropped. Nothing secret, no code and no phone number is ever logged.
 import { readFileSync } from "node:fs";
-import { createWhatsAppMessaging } from "../../../modules/messaging/whatsapp.ts";
-import { systemClock } from "../../../modules/core/clock.ts";
-import { createGuardClient, createRuntimeClient } from "../../../modules/approvals/clients.ts";
+import { createWhatsAppMessaging } from "../../../../modules/messaging/whatsapp.ts";
+import { systemClock } from "../../../../modules/core/clock.ts";
+import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";
 import { createRelay } from "./relay.ts";
-import { startRelayServer } from "../../../modules/approvals/server.ts";
-import { openRelayStore } from "../../../modules/approvals/store.ts";
+import { startRelayServer } from "../../../../modules/approvals/server.ts";
+import { openRelayStore } from "../../../../modules/approvals/store.ts";
 
-const need = (name: string): string => { const v = process.env[name]; if (!v) { console.error(`The approvals relay needs ${name}. See the top of pathways/bookings/approvals/main.ts.`); process.exit(2); } return v; };
+const need = (name: string): string => { const v = process.env[name]; if (!v) { console.error(`The approvals relay needs ${name}. See the top of templates/commerce/bookings/approvals/main.ts.`); process.exit(2); } return v; };
 function secret(envName: string, optional = false): string | undefined {
   const path = optional ? process.env[envName] : need(envName);
   if (!path) return undefined;

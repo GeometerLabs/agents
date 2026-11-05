@@ -1,6 +1,6 @@
 // Run one client's Bookings agent as a server.
 //
-//   INTERNAL_TOKEN_FILE=/run/secrets/inbox-token node pathways/bookings/server/main.ts --client clients/glow-salon
+//   INTERNAL_TOKEN_FILE=/run/secrets/inbox-token node templates/commerce/bookings/server/main.ts --client clients/glow-salon
 //
 // The folder holds settings.json, runtime.json and pathway.lock (see README.md). The token file holds the secret the inbox
 // sends as "Authorization: Bearer ...". Press Ctrl+C (or send SIGTERM) to stop: the step in hand finishes, the rest waits
@@ -10,13 +10,13 @@ import { startClient } from "./start.ts";
 
 const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
-  console.log("Usage: INTERNAL_TOKEN_FILE=<file> node pathways/bookings/server/main.ts --client <folder>");
+  console.log("Usage: INTERNAL_TOKEN_FILE=<file> node templates/commerce/bookings/server/main.ts --client <folder>");
   process.exit(0);
 }
 const at = args.indexOf("--client");
 const folder = at === -1 ? undefined : args[at + 1];
 if (!folder || folder.startsWith("--") || args.length !== 2) {
-  console.error("Say which client to run: --client <folder>   (for example --client pathways/bookings/clients/glow-salon.example)");
+  console.error("Say which client to run: --client <folder>   (for example --client templates/commerce/bookings/clients/glow-salon.example)");
   process.exit(2);
 }
 

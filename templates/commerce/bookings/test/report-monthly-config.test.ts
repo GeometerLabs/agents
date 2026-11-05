@@ -5,12 +5,12 @@ import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fakeClock } from "../../../modules/core/clock.ts";
-import { zonedToMs } from "../../../modules/core/time.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
+import { zonedToMs } from "../../../../modules/core/time.ts";
 import { reportOptionsReader, validateRuntimeConfig } from "../server/config.ts";
 import { startClient } from "../server/start.ts";
-import { generateKeyFiles } from "../../../modules/report/keys.ts";
-import { verifyEnvelopeText } from "../../../modules/report/sign.ts";
+import { generateKeyFiles } from "../../../../modules/report/keys.ts";
+import { verifyEnvelopeText } from "../../../../modules/report/sign.ts";
 
 const EXAMPLE = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 const TOKEN = "0123456789abcdef0123456789abcdef";

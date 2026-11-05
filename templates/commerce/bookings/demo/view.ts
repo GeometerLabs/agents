@@ -1,9 +1,9 @@
 // What the page shows, worked out from the world: the owner's plain-language summary and the action record in plain words.
 // Every line here is counted from the stand-ins' own records and the agent's action record, never from message text.
-import { formatInr, formatSlot } from "../../../modules/language/format.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import type { Outcome, RecordEntry, Verdict } from "../../../modules/record/record.ts";
+import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import type { Outcome, RecordEntry, Verdict } from "../../../../modules/record/record.ts";
 import { languageOptions, formFromSettings } from "./personalise.ts";
 import type { ShopForm } from "./personalise.ts";
 import { labelsOf } from "./strings.ts";

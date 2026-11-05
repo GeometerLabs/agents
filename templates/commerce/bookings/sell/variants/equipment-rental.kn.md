@@ -7,7 +7,7 @@
 
 ಭಾಗ 2 (ಹೋಗುವ ಮೊದಲು), 9 (ಮೊದಲ ತಿಂಗಳು) ಮತ್ತು 10 (ಏನಾದರೂ ತಪ್ಪಾದಾಗ) ಮುಖ್ಯ ಗೈಡ್‌ನಲ್ಲಿರುವಂತೆಯೇ ಇವೆ. ಭಾಗ 7 ರಲ್ಲಿ ಮುಖ್ಯ ಪಟ್ಟಿಯ ಜೊತೆ ಕೆಳಗಿನ ಸಾಲುಗಳನ್ನೂ ಬಳಸಿ. ಒಂದು ಪುಟದ ಶೀಟ್ ಮುಖ್ಯ ಗೈಡ್‌ನದೇ; ಬಾಡಿಗೆಯ ಶೀಟ್ ಇನ್ನೂ ಮಾಡಿಲ್ಲ.
 
-ಉದಾಹರಣೆಯ ಅಂಗಡಿ ಕಾಲ್ಪನಿಕ: Hosahalli Farm Hiring Centre, `pathways/bookings/settings/equipment-rental.example.json` ನಲ್ಲಿದೆ. ಅದು ಕನ್ನಡ ಮತ್ತು ಹಿಂದಿ ಮಾತನಾಡುತ್ತದೆ.
+ಉದಾಹರಣೆಯ ಅಂಗಡಿ ಕಾಲ್ಪನಿಕ: Hosahalli Farm Hiring Centre, `templates/commerce/bookings/settings/equipment-rental.example.json` ನಲ್ಲಿದೆ. ಅದು ಕನ್ನಡ ಮತ್ತು ಹಿಂದಿ ಮಾತನಾಡುತ್ತದೆ.
 
 ## 1. ಈ ಅಂಗಡಿ ಸರಿಹೊಂದುತ್ತದೆಯೇ?
 
@@ -42,7 +42,7 @@
 ಲ್ಯಾಪ್‌ಟಾಪ್ ಮತ್ತು ಫೋನ್ ಅನ್ನು ಮುಖ್ಯ ಗೈಡ್‌ನ ಭಾಗ 4 ರಲ್ಲಿರುವಂತೆ ಸಿದ್ಧಪಡಿಸಿ (ಒಂದೇ Wi-Fi, ಅದು ತೋರಿಸುವ ವಿಳಾಸ, "Demo · test money · nothing real is sent"). ಡೆಮೊವನ್ನು ಬಾಡಿಗೆಯ ಉದಾಹರಣೆಯಲ್ಲಿ, ಮಾಲೀಕರ ಭಾಷೆಯಲ್ಲಿ ಶುರು ಮಾಡಿ:
 
 ```sh
-node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equipment-rental.example.json --lang kn  # Kannada (or hi)
+node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang kn  # Kannada (or hi)
 ```
 
 ಉದಾಹರಣೆ ಕನ್ನಡ ಮತ್ತು ಹಿಂದಿ ಮಾತನಾಡುತ್ತದೆ. ರೈತರು ಬೇರೆ ಭಾಷೆ ಬರೆಯುವ ಸೆಂಟರ್‌ನಲ್ಲಿ ಇದರ ಬದಲು "Set up for this shop" ಒತ್ತಿ: ಸೆಂಟರ್‌ನ ಹೆಸರು, ರೈತರ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಕೆಲಸಗಳು, ಮಾಲೀಕರ ಬೆಲೆಗಳು, ಮುಂಗಡ ಹಣ, ತೆರೆಯುವ ಸಮಯ ಮತ್ತು ಭಾಷೆ. ಇದಕ್ಕೆ ಸುಮಾರು 30 ಸೆಕೆಂಡ್ ಸಾಕು.
@@ -134,7 +134,7 @@ node pathways/bookings/demo/server.ts --settings pathways/bookings/settings/equi
 - [ ] **ಎಲ್ಲ ಕೆಲಸಕ್ಕೂ ಒಂದೇ ಮುಂಗಡ ಹಣ,** ಅತಿ ಕಡಿಮೆ ಬೆಲೆಯ ಕೆಲಸಕ್ಕಿಂತ ಎಂದಿಗೂ ಹೆಚ್ಚಲ್ಲ. 30 ನಿಮಿಷ ಹಿಡಿದಿಡಿ, ಏಕೆಂದರೆ ರೈತರಿಗೆ ತಮ್ಮ UPI ಆ್ಯಪ್ ಹುಡುಕಲು ಸಮಯ ಬೇಕಾಗಬಹುದು.
 - [ ] **ನೆನಪೋಲೆ.** ಒಂದು ನೆನಪೋಲೆ, 24 ಗಂಟೆ ಮೊದಲು, ಅದು ಬುಕಿಂಗ್‌ನ ಅದೇ ಸಮಯಕ್ಕೆ ತಲುಪಲು. ನೆನಪೋಲೆಗಳು ಶುರುವಾಗುವುದಕ್ಕಿಂತ ಎಷ್ಟು ಗಂಟೆ ಮೊದಲು ಎಂದು ಲೆಕ್ಕ ಹಾಕುತ್ತವೆ, ಹಾಗಾಗಿ ಬೆಳಿಗ್ಗೆ 6 ರ ಬುಕಿಂಗ್‌ಗೆ 2 ಗಂಟೆ ಮೊದಲಿನ ನೆನಪೋಲೆ ಬೆಳಗಿನ ಜಾವ 4 ಕ್ಕೆ ತಲುಪುತ್ತದೆ.
 - [ ] **ಉಳಿದ ಪಾವತಿ.** ರೈತ ಉಳಿದ ಹಣವನ್ನು ಹೇಗೆ ಕೊಡುತ್ತಾರೆ (ನಗದು ಅಥವಾ UPI, ಮಾಲೀಕರಿಗೆ) ಎಂದು ಒಪ್ಪಿಕೊಳ್ಳಿ. ಹೆಲ್ಪರ್ ಇದನ್ನು ದಾಖಲಿಸುವುದಿಲ್ಲ.
-- [ ] **ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಪರಿಶೀಲನೆ ನಡೆಸಿ.** agents ಫೋಲ್ಡರ್‌ನಿಂದ: `node pathways/bookings/scripts/hand-check.ts --settings <ಅಂಗಡಿಯ ಫೈಲ್>`. "Held N of M" ಅನ್ನು ಗಟ್ಟಿಯಾಗಿ ಓದಿ, ಮತ್ತು "NOT RUN" ಪಟ್ಟಿ ಇದ್ದರೆ ಅದನ್ನೂ ಓದಿ.
+- [ ] **ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಪರಿಶೀಲನೆ ನಡೆಸಿ.** agents ಫೋಲ್ಡರ್‌ನಿಂದ: `node templates/commerce/bookings/scripts/hand-check.ts --settings <ಅಂಗಡಿಯ ಫೈಲ್>`. "Held N of M" ಅನ್ನು ಗಟ್ಟಿಯಾಗಿ ಓದಿ, ಮತ್ತು "NOT RUN" ಪಟ್ಟಿ ಇದ್ದರೆ ಅದನ್ನೂ ಓದಿ.
 
   | ಮಿತಿ | ಕೇಳಬೇಕಾದದ್ದು | ಉದಾಹರಣೆ (Hosahalli Farm Hiring Centre) |
   | --- | --- | --- |

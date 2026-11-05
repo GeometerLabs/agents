@@ -55,8 +55,8 @@
 **अंदर जाने से पहले।** अपने लैपटॉप पर, agents फ़ोल्डर में:
 
 ```sh
-node pathways/bookings/demo/server.ts            # English
-node pathways/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
+node templates/commerce/bookings/demo/server.ts            # English
+node templates/commerce/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
 ```
 
 यह `On a phone, same Wi-Fi:  http://192.168.1.23:8787` जैसी एक लाइन छापता है। वह पता मालिक के फ़ोन पर खोलिए। दोनों डिवाइस एक ही Wi-Fi पर होने चाहिए। अगर फ़ोन न खोल पाए, तो अपने फ़ोन का हॉटस्पॉट चालू कीजिए और लैपटॉप को उससे जोड़ दीजिए। डेमो में लॉगिन नहीं है: इसे कभी इंटरनेट पर मत खोलिए।

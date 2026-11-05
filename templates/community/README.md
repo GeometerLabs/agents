@@ -18,7 +18,7 @@ Why write the spec first: these templates handle other people's money or decisio
 | [community-fund](community-fund/README.md) | Contributions to a festival, a borewell or a housing society, spending recorded with who approved it, and a statement to every contributor | Fee and dues collection (B16) | After B16 |
 | [meeting-follow-through](meeting-follow-through/README.md) | What happens after a meeting: decisions drafted from a voice note, confirmed by a named person, then reminders and evidence that each task got done | Voice (B29), reminders, approvals, record and statements (B28) | Phase 3, after fee collection and voice |
 
-The built community template, equipment rental, is not here: it runs on the Bookings pathway as settings, in [../bookings/](../bookings/).
+The built community template, equipment rental, is not here: it runs on the Bookings template as settings, in [../commerce/bookings/](../commerce/bookings/).
 
 ## What every planned template promises, and what it does not
 
@@ -34,8 +34,8 @@ The built community template, equipment rental, is not here: it runs on the Book
 
 Every spec has the same headings, so they can be compared: the job, who it is for, settings, limits in plain words, how "done" is judged, the statement, privacy, legal care, the human outcome to count, what it reuses and what is new, the sell-guide outline, and questions for contributors. The sell-guide outline follows [../SELL-GUIDE.md](../SELL-GUIDE.md): the 11 headings, with the key content for each.
 
-`planned.test.ts` checks that every folder here has its headings, that the lists in this file and in the root README match the folders, and that no spec uses a word the claim rules ban. Run it with `node --test pathways/planned/`.
+`planned.test.ts` checks that every folder here has its headings, that the lists in this file and in the root README match the folders, and that no spec uses a word the claim rules ban. Run it with `node --test templates/community/`.
 
 ## When a spec becomes a template
 
-A spec moves out of `planned/` when its code exists, its situations and hand check run, and its sell guide is written in every language it speaks (see [../../CONTRIBUTING.md](../../CONTRIBUTING.md), "What a pathway must have"). Until then this folder is the honest place for it.
+A spec stops being only a spec (and leaves this list) when its code exists, its situations and hand check run, and its sell guide is written in every language it speaks (see [../../CONTRIBUTING.md](../../CONTRIBUTING.md), "What a template must have"). Until then this folder is the honest place for it.

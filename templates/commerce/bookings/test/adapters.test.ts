@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fakeClock } from "../../../modules/core/clock.ts";
+import { fakeClock } from "../../../../modules/core/clock.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
-import { createFakePayments } from "../../../modules/payments/payments.ts";
-import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
-import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../modules/core/faults.ts";
-import { HOUR } from "../../../modules/core/time.ts";
+import { createFakePayments } from "../../../../modules/payments/payments.ts";
+import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
+import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../../modules/core/faults.ts";
+import { HOUR } from "../../../../modules/core/time.ts";
 
 const T0 = Date.UTC(2026, 10, 3, 4, 30);
 const slot = { summary: "Haircut", start: T0 + HOUR, end: T0 + 2 * HOUR, status: "tentative" as const, bookingRef: "b1" };

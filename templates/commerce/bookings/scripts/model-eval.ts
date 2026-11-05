@@ -1,8 +1,8 @@
 // Picks the one model Geometer bundles (decision 6 of the implementation plan): runs the rule parser (the baseline) and every
 // candidate in eval/models.json over the labelled customer messages in eval/messages.jsonl, and prints one plain table.
-//   node pathways/bookings/scripts/model-eval.ts                       the baseline, plus every candidate whose key is in .env
-//   node pathways/bookings/scripts/model-eval.ts --max-messages 40    send only 40 messages (spread over the four languages) to each model
-//   node pathways/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemini-flash-lite
+//   node templates/commerce/bookings/scripts/model-eval.ts                       the baseline, plus every candidate whose key is in .env
+//   node templates/commerce/bookings/scripts/model-eval.ts --max-messages 40    send only 40 messages (spread over the four languages) to each model
+//   node templates/commerce/bookings/scripts/model-eval.ts --only claude-haiku-5-5 --only gemini-flash-lite
 // The three steps of the understanding (src/adapters/understanding.ts) are scored one at a time, in Hindi, English, Malayalam and Kannada:
 //   the rule parser (always, the baseline), a System One decision model (the "systemone" candidates: Laya on a local address, Jev hosted), and a small
 //   language model (the "openai" candidates, for example DeepSeek V4.1 Flash on DeepInfra). A decision model that is "unsure" counts as a fallback in its
@@ -16,13 +16,13 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { coerceIntent } from "../src/adapters/model.ts";
 import { createModelParser } from "../src/adapters/model-llm.ts";
-import type { ModelConfig } from "../../../modules/understanding/model-llm.ts";
+import type { ModelConfig } from "../../../../modules/understanding/model-llm.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
-import { dayOf, rateFor } from "../../../modules/understanding/rates.ts";
-import { createSystemOne } from "../../../modules/understanding/system-one.ts";
+import { dayOf, rateFor } from "../../../../modules/understanding/rates.ts";
+import { createSystemOne } from "../../../../modules/understanding/system-one.ts";
 import { createRouter } from "../src/adapters/understanding.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { keyedFetch, readEnvFile } from "./eval-keys.ts";
 import type { AuthHeader } from "./eval-keys.ts";
 import { costPer1000, formatTable, scoreRow, summarise } from "./eval-score.ts";
@@ -109,7 +109,7 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
   const log = options.log ?? console.log;
   const messages = pickMessages(loadMessages(options.messagesPath), options.maxMessages);
   const candidates = options.models ?? (JSON.parse(readFileSync(options.modelsPath ?? new URL("models.json", EVAL_DIR), "utf8")) as { candidates: Candidate[] }).candidates;
-  const env = options.env ?? readEnvFile(options.envPath ?? new URL("../../../.env", import.meta.url));
+  const env = options.env ?? readEnvFile(options.envPath ?? new URL("../../../../.env", import.meta.url));
   const perLanguage = LANGUAGES.map((l) => `${l} ${messages.filter((m) => m.language === l).length}`).join(", ");
 
   log("Bookings model eval. The labels are machine-written and not yet reviewed by native speakers (eval/messages.jsonl).");
@@ -192,7 +192,7 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { values } = parseArgs({ options: { "max-messages": { type: "string" }, only: { type: "string", multiple: true }, "baseline-only": { type: "boolean" }, "no-results": { type: "boolean" }, help: { type: "boolean" } } });
   if (values.help) {
-    console.log("node pathways/bookings/scripts/model-eval.ts [--max-messages N] [--only NAME]... [--baseline-only] [--no-results]");
+    console.log("node templates/commerce/bookings/scripts/model-eval.ts [--max-messages N] [--only NAME]... [--baseline-only] [--no-results]");
   } else {
     const max = values["max-messages"] === undefined ? undefined : Number(values["max-messages"]);
     if (max !== undefined && (!Number.isInteger(max) || max < 1)) { console.error("--max-messages must be a whole number, 1 or more."); process.exit(1); }

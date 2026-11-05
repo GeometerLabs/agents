@@ -1,6 +1,6 @@
 # Meeting follow-through (planned)
 
-> **Status: a spec, not a template.** Nothing here runs, and no group has used it. Comment on it in this repository's GitHub Discussions. It would be built in Phase 3, after the fee and dues collection pathway (B16) and the voice module (B29). Read [../README.md](../README.md) first.
+> **Status: a spec, not a template.** Nothing here runs, and no group has used it. Comment on it in this repository's GitHub Discussions. It would be built in Phase 3, after the fee and dues collection template (B16) and the voice module (B29). Read [../README.md](../README.md) first.
 
 ## The job
 

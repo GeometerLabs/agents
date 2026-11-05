@@ -2,9 +2,9 @@
 // becomes a settings object, and the existing validation says what is wrong in its own plain words.
 // The form never reaches past the settings: the agent, the rules and the stand-ins are untouched.
 import { WEEKDAY_KEYS, serviceName, validateSettings } from "../src/settings.ts";
-import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Service, Settings, SettingsResult } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 
 export const MAX_SERVICES = 4;
 const MAX_TEXT = 80;

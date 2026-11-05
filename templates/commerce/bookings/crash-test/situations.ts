@@ -13,18 +13,18 @@ import { createWorld, glowSalon, CUSTOMER, OTHER_CUSTOMER } from "../src/harness
 import type { World } from "../src/harness.ts";
 import type { Intent, IntentParser } from "../src/adapters/model.ts";
 import { createModelParser } from "../src/adapters/model-llm.ts";
-import { createSystemOne } from "../../../modules/understanding/system-one.ts";
+import { createSystemOne } from "../../../../modules/understanding/system-one.ts";
 import { createRouter } from "../src/adapters/understanding.ts";
-import { systemOneFetch, systemOneStandin } from "../../../modules/standins/system-one.ts";
-import type { SystemOneStandin } from "../../../modules/standins/system-one.ts";
-import { MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatSlot, formatTime } from "../../../modules/language/format.ts";
+import { systemOneFetch, systemOneStandin } from "../../../../modules/standins/system-one.ts";
+import type { SystemOneStandin } from "../../../../modules/standins/system-one.ts";
+import { MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatSlot, formatTime } from "../../../../modules/language/format.ts";
 import { hoursOn, parseSettings } from "../src/settings.ts";
-import { LANGUAGES, LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
+import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { languageOfScript } from "../../../modules/language/format.ts";
-import { createRecord } from "../../../modules/record/record.ts";
-import { HOUR, MINUTE, daysBetween, localParts, timeFromMinutes, zonedToMs } from "../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { languageOfScript } from "../../../../modules/language/format.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
+import { HOUR, MINUTE, daysBetween, localParts, timeFromMinutes, zonedToMs } from "../../../../modules/core/time.ts";
 import { createMonthlyReport } from "../report/monthly-job.ts";
 import { STRINGS } from "../report/strings.ts";
 import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
@@ -33,16 +33,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { EN_WEEKDAYS, MARKERS, SAYS, atWords, dayWords, languageList, nextWeekdayWords, rescheduleWords, sayingsFor, whenWords } from "./says.ts";
 import type { Says } from "./says.ts";
-import { checker, runAllSituations, runSituation } from "../../../modules/crash-test/situations.ts";
-import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../modules/crash-test/situations.ts";
+import { checker, runAllSituations, runSituation } from "../../../../modules/crash-test/situations.ts";
+import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
 import { planShop } from "./shop.ts";
 import type { Shop, Slot } from "./shop.ts";
 
 export { SAYS } from "./says.ts";
 export type { Says } from "./says.ts";
 
-export { runSituation } from "../../../modules/crash-test/situations.ts";
-export type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../modules/crash-test/situations.ts";
+export { runSituation } from "../../../../modules/crash-test/situations.ts";
+export type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
 
 /** Run every situation that these settings can express (Glow Salon's, when none are given). */
 export async function runOn(settings: Settings = glowSalon()): Promise<HandCheckRun<Settings>> {

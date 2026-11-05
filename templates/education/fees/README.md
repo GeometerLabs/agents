@@ -1,4 +1,4 @@
-# Fees pathway (fee and dues collection)
+# Fees template (fee and dues collection)
 
 Market: Commerce and support (collections).
 
@@ -6,7 +6,7 @@ A WhatsApp agent for tuition and coaching centres, music and dance classes, hobb
 
 **What this folder is, and is not.** It is the Fees template, built and checked against **stand-in services in memory** (a stand-in WhatsApp, a stand-in Razorpay and a model of Guard). It is **not the Geometer engine**, it talks to no real WhatsApp or Razorpay, and **no centre is live on it**. It has no server of its own yet, so `geometer shop add` cannot start a Fees centre (see Deferred.md). Nothing here is a claim about real services.
 
-It has no dependencies. The agent and its tests make no network call. Most of the code is not in this folder: it is in [`agents/modules/`](../../modules/README.md), shared with Bookings. What is here is Fees: a student's fee for a month, its states, its words, its limits and its checks.
+It has no dependencies. The agent and its tests make no network call. Most of the code is not in this folder: it is in [`agents/modules/`](../../../modules/README.md), shared with Bookings. What is here is Fees: a student's fee for a month, its states, its words, its limits and its checks.
 
 ## Run it
 
@@ -14,14 +14,14 @@ You need Node 26 (any Node with built-in TypeScript type stripping works). There
 
 ```sh
 # from the root of this repository
-node --test pathways/fees/test/                 # the tests
-node pathways/fees/scripts/hand-check.ts        # the hand check; add --details to see what was done in each situation
-node pathways/fees/scripts/hand-check.ts --settings pathways/fees/settings/maths-circle.example.json   # the same situations on any centre's own settings
-node pathways/fees/scripts/walkthrough.ts --lang hi   # one parent's month, printed (en, hi, ml, kn)
-node pathways/fees/scripts/report-example.ts    # a sample monthly report, signed with a throwaway key, into pathways/fees/report-sample/
-node pathways/fees/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
-node pathways/fees/scripts/guard-spec.ts --settings pathways/fees/settings/bright-tuition.example.json --tenant bright-tuition --reviewed-by builder-arjun   # the Guard limits spec
-node pathways/fees/scripts/whatsapp-templates.ts  # rewrites whatsapp-templates.json, the list to submit to Meta
+node --test templates/education/fees/test/                 # the tests
+node templates/education/fees/scripts/hand-check.ts        # the hand check; add --details to see what was done in each situation
+node templates/education/fees/scripts/hand-check.ts --settings templates/education/fees/settings/maths-circle.example.json   # the same situations on any centre's own settings
+node templates/education/fees/scripts/walkthrough.ts --lang hi   # one parent's month, printed (en, hi, ml, kn)
+node templates/education/fees/scripts/report-example.ts    # a sample monthly report, signed with a throwaway key, into templates/education/fees/report-sample/
+node templates/education/fees/scripts/review-sheet.ts ml   # the Malayalam review sheet (kn for Kannada), see Languages below
+node templates/education/fees/scripts/guard-spec.ts --settings templates/education/fees/settings/bright-tuition.example.json --tenant bright-tuition --reviewed-by builder-arjun   # the Guard limits spec
+node templates/education/fees/scripts/whatsapp-templates.ts  # rewrites whatsapp-templates.json, the list to submit to Meta
 ```
 
 The hand check prints a count in the product's words: `Held N of M. K failed. J not tested.`, a line for each situation, and the list of what was not tested. For Bright Tuition Centre it is **Held 26 of 26** (209 checks), with 12 listed as not tested. For Gauss Maths Circle (a second example: no late fee, no waivers, no part payments, English and Kannada) it is **Held 23 of 23**, with 3 situations named as not run, because that centre's settings cannot express them. The bundle reads this output (`bundle/handcheck.ts`), so its shape is shared (`modules/crash-test/print.ts`).

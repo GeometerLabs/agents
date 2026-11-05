@@ -12,10 +12,10 @@
 //   left unconfirmed 2    (a "booked" that the calendar never showed, and a message whose reply was lost); one more was settled by a retry
 import { createWorld, glowSalon } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
-import { DAY_PART_WORDS, dayPartOf } from "../../../modules/language/format.ts";
+import { DAY_PART_WORDS, dayPartOf } from "../../../../modules/language/format.ts";
 import { serviceName } from "../src/settings.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { MINUTE, zonedToMs } from "../../../modules/core/time.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { MINUTE, zonedToMs } from "../../../../modules/core/time.ts";
 
 const TZ = "Asia/Kolkata";
 export const at = (month: number, day: number, hour: number, minute = 0): number => zonedToMs({ year: 2026, month, day }, { hour, minute }, TZ);

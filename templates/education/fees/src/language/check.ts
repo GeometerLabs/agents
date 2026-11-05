@@ -1,6 +1,6 @@
 // The outgoing check for Fees: the shared check (modules/language/check.ts) given the values a fee's record holds.
-import { checkText } from "../../../../modules/language/check.ts";
-import type { CheckFacts, CheckResult } from "../../../../modules/language/check.ts";
+import { checkText } from "../../../../../modules/language/check.ts";
+import type { CheckFacts, CheckResult } from "../../../../../modules/language/check.ts";
 import type { MessageFacts } from "./templates.ts";
 
 /** The lists the check reads, made from a fee conversation's facts. */

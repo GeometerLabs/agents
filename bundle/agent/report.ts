@@ -1,14 +1,14 @@
-// The monthly report and certificate of an agent someone else wrote: the template's own report code (pathways/bookings/report/), run on the record this bundle built from the Guards'
+// The monthly report and certificate of an agent someone else wrote: the template's own report code (templates/commerce/bookings/report/), run on the record this bundle built from the Guards'
 // decisions (agent/record.ts). The report says which agent it is of ("own-agent"), what it was counted from, and, as for a template, what it cannot say. If the agent has a go-live
 // certificate (exports/<agent>/go-live-certificate.json, from `geometer agent go-live`), the report says what its checks ran on; without one it lists the go-live checks as not given.
 import { existsSync, readFileSync } from "node:fs";
-import { writeClientReport } from "../../pathways/bookings/report/run.ts";
-import { readGoLiveCertificate } from "../../pathways/bookings/report/go-live.ts";
-import type { Source } from "../../pathways/bookings/report/data.ts";
+import { writeClientReport } from "../../templates/commerce/bookings/report/run.ts";
+import { readGoLiveCertificate } from "../../templates/commerce/bookings/report/go-live.ts";
+import type { Source } from "../../templates/commerce/bookings/report/data.ts";
 import type { ReportLanguage } from "../../modules/report/text.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import type { RecordEntry } from "../../modules/record/record.ts";
-import type { Booking } from "../../pathways/bookings/src/booking.ts";
+import type { Booking } from "../../templates/commerce/bookings/src/booking.ts";
 import { secretFile } from "../lib/secrets.ts";
 import { serverPaths } from "../lib/server.ts";
 import { BUNDLE_VERSION } from "../lib/server.ts";

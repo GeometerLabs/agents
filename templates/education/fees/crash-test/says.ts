@@ -4,8 +4,8 @@
 //    rule parser reads each one as what it is meant to be.
 //  - MARKERS are words the checks look for in a reply, written here by hand, not read back from the templates, so a check does not agree with a template just
 //    because it uses it.
-import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
-import type { Language } from "../../../modules/language/languages.ts";
+import { LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
 
 export interface Says {
   /** "I already paid." */

@@ -2,7 +2,7 @@
 // twice, a voice note, button mode).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DAY, HOUR, MINUTE, zonedToMs } from "../../../modules/core/time.ts";
+import { DAY, HOUR, MINUTE, zonedToMs } from "../../../../modules/core/time.ts";
 import { KIRAN_PARENT, MEERA_PARENT, ROHAN_PARENT, SHARMA_PARENT, brightTuition, createWorld } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 import { balancePaise, createStore, moveTo } from "../src/due.ts";

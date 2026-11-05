@@ -1,12 +1,12 @@
 // MACHINE-WRITTEN Hindi for the panel (review marker: "machine-written", see REVIEW_STATE in languages.ts). A native Hindi speaker must read every line
 // before a real shop sees it; until then the page says so in a line at the foot (draftNote). The shape is the one in words.ts, line for line.
 //
-// Where a word already exists it is the same word: the report and the certificates (pathways/bookings/report/strings.ts), the customer messages
+// Where a word already exists it is the same word: the report and the certificates (templates/commerce/bookings/report/strings.ts), the customer messages
 // (src/language/templates.ts) and the demo (demo/strings.ts) all say जमा राशि, रिफंड, बुकिंग, कैलेंडर, एजेंट, रिपोर्ट, सीमा, जाँच, so this file does too. The shop's form labels come
 // from the demo's own Hindi (uiFor("hi")), so the demo and the panel say the same thing. Four of the seven limits are the Hindi column of the
 // table in docs/product/gtm-and-revenue.md ("The same lines in Hindi, Malayalam and Kannada"): that table is the one source for them.
 // Numbers, amounts, names, dates and addresses are shown exactly as passed in (Western digits). Nothing here says a shop is safe or guaranteed.
-import { uiFor } from "../../pathways/bookings/demo/strings.ts";
+import { uiFor } from "../../templates/commerce/bookings/demo/strings.ts";
 import type { Words } from "./words.ts";
 
 const demo = uiFor("hi");
@@ -50,7 +50,7 @@ export const hi: Words = {
     "runtime-not-ready": "एजेंट कहता है कि वह अभी तैयार नहीं है।", "refunds-need-builder": "रिफंड के लिए बिल्डर की ज़रूरत है, मालिक की नहीं।",
   },
   shop: {
-    status: "स्थिति", versions: (p, b) => `पाथवे ${p}, बंडल ${b}`, lastDeploy: (at) => `पिछला अपडेट: ${at}`, neverDeployed: "अभी तक अपडेट नहीं हुआ।",
+    status: "स्थिति", versions: (p, b) => `टेम्पलेट ${p}, बंडल ${b}`, lastDeploy: (at) => `पिछला अपडेट: ${at}`, neverDeployed: "अभी तक अपडेट नहीं हुआ।",
     limitsHeading: "सीमाएँ", unprovable: (l) => `इनकी अलग से जाँच नहीं हो सकती: ${l}`,
     backups: "बैकअप", backupCopy: (at) => `सर्वर के बाहर आख़िरी कॉपी: ${at}`, backupNone: "सर्वर के बाहर अभी कोई कॉपी नहीं है।",
     backupDrill: (at, ok) => `आख़िरी बार कॉपी से डेटा वापस लाकर जाँचा: ${at}, ${ok ? "मेल खा गया" : "मेल नहीं खाया"}`, backupDrillNone: "कॉपी से डेटा वापस लाकर जाँचना अभी हुआ नहीं।",

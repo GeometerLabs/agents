@@ -7,13 +7,13 @@
 // "paid" is only ever reached through confirmed read-backs in the record: the agent moves a fee there after it has read the payments service's own list of
 // payments on the fee's links. It is never reached from what a parent says. And it is final: a refund after it does not open the fee again, so no reminder
 // comes after a payment, for any reason.
-import { formatDate, MONTH_NAMES } from "../../../modules/language/format.ts";
-import type { Language } from "../../../modules/language/languages.ts";
-import { localParts } from "../../../modules/core/time.ts";
-import type { LocalDate } from "../../../modules/core/time.ts";
-import type { GuardHold, RefundIssue, RefundRetry } from "../../../modules/payments/refunds.ts";
-import type { Reminder } from "../../../modules/reminders/reminders.ts";
-import type { AiState } from "../../../modules/understanding/ai-state.ts";
+import { formatDate, MONTH_NAMES } from "../../../../modules/language/format.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { localParts } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
+import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
+import type { Reminder } from "../../../../modules/reminders/reminders.ts";
+import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import { batchName, batchOf } from "./settings.ts";
 import type { Batch, Settings, Student } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";

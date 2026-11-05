@@ -11,7 +11,7 @@ export interface TokenUsage { inputTokens: number; outputTokens: number; cachedI
 export type Step = "rules" | "decision" | "model";
 
 /**
- * What it cost to understand one message. Written to the record (see pathways/bookings/Explanation.md, "Understanding record fields (for the cost meter)").
+ * What it cost to understand one message. Written to the record (see templates/commerce/bookings/Explanation.md, "Understanding record fields (for the cost meter)").
  * `costMicroInr`: millionths of a rupee, from the dated rate table; null when the table has no price for that provider and model (never 0).
  */
 export interface Understood {
