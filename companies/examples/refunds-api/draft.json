@@ -1,0 +1,541 @@
+{
+  "draft": 1,
+  "status": "A DRAFT for a person to review. It is not a Guard limits spec and Guard cannot load it. Nothing in it is in force until you keep parts of it in an accept file and build.",
+  "source": {
+    "openapi": "3.0.3",
+    "title": "Brightside Refunds API",
+    "api_version": "1.4.0",
+    "base_path": "",
+    "file_sha256": "sha256:8cb7979260ad489e2de570f0d829ad54ff6c86fea780587082e0d49e90ca45c8"
+  },
+  "tool": "refunds",
+  "routes": [
+    {
+      "operation": "get_charge",
+      "method": "GET",
+      "path": "/v1/charges/{charge_id}",
+      "operation_id": "getCharge",
+      "summary": "Read one charge",
+      "fields": [
+        {
+          "name": "charge_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": false,
+      "why": "a read",
+      "review": "A read. Keep the route if the agent needs to look this up; reads get no rules unless you add them by hand."
+    },
+    {
+      "operation": "list_refunds",
+      "method": "GET",
+      "path": "/v1/charges/{charge_id}/refunds",
+      "operation_id": "listRefunds",
+      "summary": "List the refunds made against a charge",
+      "fields": [
+        {
+          "name": "charge_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": false,
+      "why": "a read",
+      "review": "A read. Keep the route if the agent needs to look this up; reads get no rules unless you add them by hand."
+    },
+    {
+      "operation": "get_customer",
+      "method": "GET",
+      "path": "/v1/customers/{customer_id}",
+      "operation_id": "getCustomer",
+      "summary": "Read one customer",
+      "fields": [
+        {
+          "name": "customer_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": false,
+      "why": "a read",
+      "review": "A read. Keep the route if the agent needs to look this up; reads get no rules unless you add them by hand."
+    },
+    {
+      "operation": "delete_customer",
+      "method": "DELETE",
+      "path": "/v1/customers/{customer_id}",
+      "operation_id": "deleteCustomer",
+      "summary": "Delete a customer and their history",
+      "fields": [
+        {
+          "name": "customer_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": true,
+      "why": "DELETE: it removes something; its name says delete",
+      "review": "Looks consequential: DELETE: it removes something; its name says delete. Keep the route if the agent must make this call, then look at the suggestions for it. A route you leave out is refused as unlisted."
+    },
+    {
+      "operation": "add_customer_note",
+      "method": "POST",
+      "path": "/v1/customers/{customer_id}/notes",
+      "operation_id": "addCustomerNote",
+      "summary": "Add a note to a customer",
+      "fields": [
+        {
+          "name": "customer_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        },
+        {
+          "name": "text",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": false,
+      "why": "POST, but nothing in it looked like money or a destructive action",
+      "review": "Changes something, but POST, but nothing in it looked like money or a destructive action. Read it yourself before keeping it: a kept route with no rule is let through as it is."
+    },
+    {
+      "operation": "create_refund",
+      "method": "POST",
+      "path": "/v1/refunds",
+      "operation_id": "createRefund",
+      "summary": "Refund some or all of a charge",
+      "fields": [
+        {
+          "name": "charge_id",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "nested": false
+        },
+        {
+          "name": "amount",
+          "in": "body",
+          "type": "integer",
+          "required": true,
+          "nested": false
+        },
+        {
+          "name": "reason",
+          "in": "body",
+          "type": "string",
+          "required": false,
+          "nested": false
+        }
+      ],
+      "consequential": true,
+      "why": "POST: it carries a money field (amount); its name says refund",
+      "review": "Looks consequential: POST: it carries a money field (amount); its name says refund. Keep the route if the agent must make this call, then look at the suggestions for it. A route you leave out is refused as unlisted."
+    },
+    {
+      "operation": "get_refund",
+      "method": "GET",
+      "path": "/v1/refunds/{refund_id}",
+      "operation_id": "getRefund",
+      "summary": "Read one refund",
+      "fields": [
+        {
+          "name": "refund_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": false,
+      "why": "a read",
+      "review": "A read. Keep the route if the agent needs to look this up; reads get no rules unless you add them by hand."
+    },
+    {
+      "operation": "cancel_refund",
+      "method": "POST",
+      "path": "/v1/refunds/{refund_id}/cancel",
+      "operation_id": "cancelRefund",
+      "summary": "Cancel a refund that has not been paid out yet",
+      "fields": [
+        {
+          "name": "refund_id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": true,
+      "why": "POST: its name says cancel, refund",
+      "review": "Looks consequential: POST: its name says cancel, refund. Keep the route if the agent must make this call, then look at the suggestions for it. A route you leave out is refused as unlisted."
+    },
+    {
+      "operation": "create_transfer",
+      "method": "POST",
+      "path": "/v1/transfers",
+      "operation_id": "createTransfer",
+      "summary": "Move money between Brightside's own accounts",
+      "fields": [
+        {
+          "name": "from_account_id",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "nested": false
+        },
+        {
+          "name": "to_account_id",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "nested": false
+        },
+        {
+          "name": "amount",
+          "in": "body",
+          "type": "integer",
+          "required": true,
+          "nested": false
+        }
+      ],
+      "consequential": true,
+      "why": "POST: it carries a money field (amount); its name says transfer",
+      "review": "Looks consequential: POST: it carries a money field (amount); its name says transfer. Keep the route if the agent must make this call, then look at the suggestions for it. A route you leave out is refused as unlisted."
+    }
+  ],
+  "suggestions": [
+    {
+      "id": "delete_customer-once",
+      "kind": "at_most_once_effect",
+      "operation": "delete_customer",
+      "review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the path field that look like ids: \"customer_id\". Check the guess against how your API names things. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "fill": [
+        {
+          "name": "key_fields",
+          "required": true,
+          "help": "The call's fields that make two calls 'the same action' (path, query or top-level body names).",
+          "default": [
+            "customer_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "delete_customer-forbidden",
+      "kind": "forbidden_call",
+      "operation": "delete_customer",
+      "review": "Always refused, whatever the call says. Keep this if your agent should never make this call. Keep the route as well, so the refusal names this rule; a route you leave out is refused as \"unlisted\" instead.",
+      "fill": []
+    },
+    {
+      "id": "delete_customer-count-per-day",
+      "kind": "count",
+      "operation": "delete_customer",
+      "review": "Caps how many delete_customer calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "fill": [
+        {
+          "name": "cap",
+          "required": true,
+          "help": "The most calls in one window, as a whole number, for example 100."
+        },
+        {
+          "name": "window_seconds",
+          "required": false,
+          "help": "The window in seconds. 86400 is a day.",
+          "default": 86400
+        },
+        {
+          "name": "scope",
+          "required": false,
+          "help": "Field names that get a counter each, for example [\"customer_id\"]. Empty: one counter for everything.",
+          "default": []
+        }
+      ]
+    },
+    {
+      "id": "create_refund-amount-bound",
+      "kind": "argument_bound",
+      "operation": "create_refund",
+      "field": "amount",
+      "review": "Refuses a create_refund call whose \"amount\" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out. The API's own schema says minimum 1, maximum 100000000; that is the API's limit, not yours. A call with no \"amount\" is refused, never passed.",
+      "fill": [
+        {
+          "name": "min",
+          "required": true,
+          "help": "The lowest amount one call may carry, as a string, for example \"1\"."
+        },
+        {
+          "name": "max",
+          "required": true,
+          "help": "The highest amount one call may carry, as a string, for example \"50000\"."
+        },
+        {
+          "name": "unit",
+          "required": false,
+          "help": "A word for the record, for example \"cents\"."
+        }
+      ]
+    },
+    {
+      "id": "create_refund-needs-approval",
+      "kind": "call_bound_approval",
+      "operation": "create_refund",
+      "field": "amount",
+      "review": "Holds a create_refund call whose \"amount\" is above the threshold, until a named person approves THAT exact call. The agent sends the identical call again after the approval. Fill in the threshold. It must be below the bound's max, or no call can ever be held.",
+      "fill": [
+        {
+          "name": "threshold",
+          "required": true,
+          "help": "Amounts above this wait for a person, as a string, for example \"10000\"."
+        },
+        {
+          "name": "unit",
+          "required": false,
+          "help": "A word for the record, for example \"cents\"."
+        }
+      ]
+    },
+    {
+      "id": "create_refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "create_refund",
+      "idempotency_header": "Idempotency-Key",
+      "review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the body field that look like ids: \"charge_id\". Check the guess against how your API names things. Two different create_refund calls with the same key fields count as the same action, and the second is refused (409). If several partial amounts against one id are normal, choose fields that tell them apart. The call declares the Idempotency-Key header, so Guard sends its own key in it and replaces any key the agent sent. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "fill": [
+        {
+          "name": "key_fields",
+          "required": true,
+          "help": "The call's fields that make two calls 'the same action' (path, query or top-level body names).",
+          "default": [
+            "charge_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "create_refund-spend-per-day",
+      "kind": "spend",
+      "operation": "create_refund",
+      "field": "amount",
+      "review": "Caps the total \"amount\" that create_refund calls may move in a window (a day by default). A call that would take the total over the cap is refused before it is sent. Days start at midnight UTC (05:30 in India). It counts only calls that go through this Guard. Fill in the cap.",
+      "fill": [
+        {
+          "name": "cap",
+          "required": true,
+          "help": "The most that may be moved in one window, as a string, for example \"200000\"."
+        },
+        {
+          "name": "window_seconds",
+          "required": false,
+          "help": "The window in seconds. 86400 is a day.",
+          "default": 86400
+        },
+        {
+          "name": "scope",
+          "required": false,
+          "help": "Field names that get a counter each, for example [\"customer_id\"]. Empty: one counter for everything.",
+          "default": []
+        }
+      ]
+    },
+    {
+      "id": "create_refund-count-per-day",
+      "kind": "count",
+      "operation": "create_refund",
+      "review": "Caps how many create_refund calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "fill": [
+        {
+          "name": "cap",
+          "required": true,
+          "help": "The most calls in one window, as a whole number, for example 100."
+        },
+        {
+          "name": "window_seconds",
+          "required": false,
+          "help": "The window in seconds. 86400 is a day.",
+          "default": 86400
+        },
+        {
+          "name": "scope",
+          "required": false,
+          "help": "Field names that get a counter each, for example [\"customer_id\"]. Empty: one counter for everything.",
+          "default": []
+        }
+      ]
+    },
+    {
+      "id": "cancel_refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "cancel_refund",
+      "review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the path field that look like ids: \"refund_id\". Check the guess against how your API names things. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "fill": [
+        {
+          "name": "key_fields",
+          "required": true,
+          "help": "The call's fields that make two calls 'the same action' (path, query or top-level body names).",
+          "default": [
+            "refund_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cancel_refund-count-per-day",
+      "kind": "count",
+      "operation": "cancel_refund",
+      "review": "Caps how many cancel_refund calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "fill": [
+        {
+          "name": "cap",
+          "required": true,
+          "help": "The most calls in one window, as a whole number, for example 100."
+        },
+        {
+          "name": "window_seconds",
+          "required": false,
+          "help": "The window in seconds. 86400 is a day.",
+          "default": 86400
+        },
+        {
+          "name": "scope",
+          "required": false,
+          "help": "Field names that get a counter each, for example [\"customer_id\"]. Empty: one counter for everything.",
+          "default": []
+        }
+      ]
+    },
+    {
+      "id": "create_transfer-amount-bound",
+      "kind": "argument_bound",
+      "operation": "create_transfer",
+      "field": "amount",
+      "review": "Refuses a create_transfer call whose \"amount\" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out. The API's own schema says minimum 1; that is the API's limit, not yours. A call with no \"amount\" is refused, never passed.",
+      "fill": [
+        {
+          "name": "min",
+          "required": true,
+          "help": "The lowest amount one call may carry, as a string, for example \"1\"."
+        },
+        {
+          "name": "max",
+          "required": true,
+          "help": "The highest amount one call may carry, as a string, for example \"50000\"."
+        },
+        {
+          "name": "unit",
+          "required": false,
+          "help": "A word for the record, for example \"cents\"."
+        }
+      ]
+    },
+    {
+      "id": "create_transfer-needs-approval",
+      "kind": "call_bound_approval",
+      "operation": "create_transfer",
+      "field": "amount",
+      "review": "Holds a create_transfer call whose \"amount\" is above the threshold, until a named person approves THAT exact call. The agent sends the identical call again after the approval. Fill in the threshold. It must be below the bound's max, or no call can ever be held.",
+      "fill": [
+        {
+          "name": "threshold",
+          "required": true,
+          "help": "Amounts above this wait for a person, as a string, for example \"10000\"."
+        },
+        {
+          "name": "unit",
+          "required": false,
+          "help": "A word for the record, for example \"cents\"."
+        }
+      ]
+    },
+    {
+      "id": "create_transfer-once",
+      "kind": "at_most_once_effect",
+      "operation": "create_transfer",
+      "review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the body fields that look like ids: \"from_account_id\", \"to_account_id\". Check the guess against how your API names things. Two different create_transfer calls with the same key fields count as the same action, and the second is refused (409). If several partial amounts against one id are normal, choose fields that tell them apart. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
+      "fill": [
+        {
+          "name": "key_fields",
+          "required": true,
+          "help": "The call's fields that make two calls 'the same action' (path, query or top-level body names).",
+          "default": [
+            "from_account_id",
+            "to_account_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "create_transfer-forbidden",
+      "kind": "forbidden_call",
+      "operation": "create_transfer",
+      "review": "Always refused, whatever the call says. Keep this if your agent should never make this call. Keep the route as well, so the refusal names this rule; a route you leave out is refused as \"unlisted\" instead.",
+      "fill": []
+    },
+    {
+      "id": "create_transfer-spend-per-day",
+      "kind": "spend",
+      "operation": "create_transfer",
+      "field": "amount",
+      "review": "Caps the total \"amount\" that create_transfer calls may move in a window (a day by default). A call that would take the total over the cap is refused before it is sent. Days start at midnight UTC (05:30 in India). It counts only calls that go through this Guard. Fill in the cap.",
+      "fill": [
+        {
+          "name": "cap",
+          "required": true,
+          "help": "The most that may be moved in one window, as a string, for example \"200000\"."
+        },
+        {
+          "name": "window_seconds",
+          "required": false,
+          "help": "The window in seconds. 86400 is a day.",
+          "default": 86400
+        },
+        {
+          "name": "scope",
+          "required": false,
+          "help": "Field names that get a counter each, for example [\"customer_id\"]. Empty: one counter for everything.",
+          "default": []
+        }
+      ]
+    },
+    {
+      "id": "create_transfer-count-per-day",
+      "kind": "count",
+      "operation": "create_transfer",
+      "review": "Caps how many create_transfer calls may go through in a window (a day by default). The cap is a whole number. It counts only calls that go through this Guard. Fill in the cap.",
+      "fill": [
+        {
+          "name": "cap",
+          "required": true,
+          "help": "The most calls in one window, as a whole number, for example 100."
+        },
+        {
+          "name": "window_seconds",
+          "required": false,
+          "help": "The window in seconds. 86400 is a day.",
+          "default": 86400
+        },
+        {
+          "name": "scope",
+          "required": false,
+          "help": "Field names that get a counter each, for example [\"customer_id\"]. Empty: one counter for everything.",
+          "default": []
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

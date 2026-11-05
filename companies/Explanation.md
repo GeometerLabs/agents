@@ -1,0 +1,81 @@
+# Explanation: Guard for companies, the kit
+
+5 November 2026. Plan item B58, first slice ("Guard for companies, the professional door kit"), with pieces of B19 (one Guard per upstream), B41 (payment rails, deferred), B51 (the record from Guard's decisions) and B52 (self-serve crash test, deferred). How to use it is in [README.md](README.md); what is missing is in [Deferred.md](Deferred.md). **Nothing here has met a real company's API, a real cluster or the Guard container image.** It has met the real `geo-guard` program (a debug build, macOS) and a made-up API.
+
+## What is where
+
+| File | What it is |
+|---|---|
+| `openapi-to-spec.ts` | `draft` and `build`. The draft (suggestions), the accept template, the accept step (`specFromAccept`), the command line |
+| `openapi-read.ts` | the OpenAPI 3.x JSON reader: calls, what each carries, local `$ref`s, names Guard accepts |
+| `guard-binary.ts` | finds `geo-guard` (and `geo-verify`) and runs `compile`, `verify-bundle`, `credential` |
+| `guard-config.ts` | the `guard.toml` writer: production profile, hashes only, the key read from a file |
+| `export-record.ts` | Guard's decisions in plain words, a manifest, and a call for the evidence pack |
+| `deploy/` | Compose and Kubernetes recipes, text only |
+| `examples/refunds-api/` | a made-up refunds API with every file of the path from OpenAPI to bundle, and a fake of the API |
+| `test/` | 52 tests: 29 draft, accept and command line; 8 end to end; 5 export; 2 fake API; 8 deploy |
+
+Nothing outside `companies/` was touched: no `bundle/`, no `pathways/`, no monorepo, and no cargo.
+
+## Why two files between the API and the spec: draft, then accept
+
+The brief was a *draft for review*, so the tool never writes a Guard spec from the OpenAPI file alone.
+
+- **The draft is its own format**, not a spec. Guard's compiler refuses unknown fields at every level, so a draft carrying review notes and blanks could not compile even by mistake. It says it is a draft in its first lines.
+- **The accept file is what a person kept.** It is the only input `build` takes besides the draft, and `build` refuses to run without it. It lists the routes kept (the calls the agent may make) and, for each suggestion, `keep` and the filled blanks.
+- **Fail closed, every problem at once.** The accept step collects all its objections before refusing, so a reviewer fixes the file once. It refuses: no accept file; a draft that changed since the accept file was made (the accept file pins the draft's sha256); a blank in something kept; an amount that is not a string of digits (Guard's own rule: amounts are strings, no exponent, at most six decimals); a cap that is not a whole number; a rule kept for a route that was not; key fields or a scope naming something the call does not carry; a threshold at or above the bound's max; an empty `reviewed_by` or `tenant`; nothing kept. `reviewed_by` is never defaulted. Guard records its reviews under that name, and the compiler itself says it cannot know a person looked.
+- **The threshold check came from thinking about Guard's tripwires.** Guard derives a call at the threshold plus one unit and expects a *hold*. If the bound's max is not higher, that call is *refused*, so the tripwire (and in effect the approval) could never work. The accept step refuses that before the compiler does.
+- **`retry_safe` is never written.** The spec lets Guard repeat an uncertain call by itself if the API keeps its idempotency keys. That is a promise only the API's documentation can make. The draft's review note for the at-most-once rule says so.
+
+## How the draft guesses, and where it is weakest
+
+- **Money fields:** a numeric field whose name has a money word (amount, price, total, fee, cost, cents, paise, balance, credit, debit, payout, refund, charge, tip, discount, subtotal, budget, deposit, withdrawal) and no "not money" word (count, quantity, limit, offset, page, size, rate, percent, version, id...). Nested fields count (`amount.value`); a string-typed `amount` does not, because Guard's bound reads a number. Weakest: a differently named money field is missed. The README tells the reviewer to read the whole route list.
+- **Consequential calls:** every `DELETE`, and any `POST`, `PUT`, `PATCH` with a money field or a consequential word in its operation id, the generated name or the literal path segments. Words are compared as whole words, so "discharge" does not match "charge".
+- **What a rule can read:** only path parameters, query parameters and top-level body fields. Only `argument_bound` follows a dotted name. So a nested amount gets a bound and *no* approval or spend suggestion; the review note says why.
+- **Key fields for "the same action":** an idempotency-looking field if the call carries one; otherwise the id-like fields (last word id, ref, reference, key, uuid), required ones first. For a refund by `charge_id` the review note warns that two partial refunds of one charge become "the same action". That is Guard's real behaviour (see below), and it is the first thing a reviewer should think about.
+- **Idempotency header:** a declared header parameter whose name says "idempotent". It goes in `idempotency_header` with `derive_key`, never in `key_fields` (a header is not a call argument Guard's rules can read).
+- **Paths:** the first server's base path is put in front (the agent will call Guard with it). Guard's routes allow `{name}` or `{name}suffix` per segment and no trailing slash, so `/file-{id}` and `/` are skipped with the reason. Operation names are made lower-case with `_`, never `mcp`, never repeated. `HEAD`, `OPTIONS`, `TRACE` are skipped with a note: Guard refuses them as unlisted.
+- **Not read:** YAML, Swagger 2, outside `$ref`s, form bodies (noted on the route), arrays in a body (a rule cannot read inside one), security schemes (the auth header is `Authorization` unless you edit `guard.toml`).
+
+Two bugs the tests found in my first draft, kept here because they are the kind a company's file will hit: a nested object was never walked (my cycle guard stopped it at its own entrance), and `bundle.json` into a folder that did not exist failed in the compiler, which does not make folders.
+
+## What the real Guard did
+
+Seven end-to-end tests, each on a fresh Guard and a fresh fake API. The fake **does not honour `Idempotency-Key`** (a control test shows it makes two refunds when asked twice with the same key), so every "one refund" is Guard's doing.
+
+- **Held, then approved, then once.** A 20000-cent refund (threshold 10000) came back 202 `held_for_approval` with an approval id; nothing reached the API. Asking again returned the same approval. A refund with one cent more was a different call with a different approval. Guard's admin credential alone got 403; an approver with the `approver` role approved. Approving sent nothing. The agent's identical call then went through (201) with **Guard's own idempotency key** (`geo-...`), not the one the agent chose. The same call after that was held again under a new approval, and the API still had one refund.
+- **Lost reply.** The fake made the refund and dropped the connection. Guard answered 504 `outcome_unknown` (`guard-outcome: unknown`). The identical repeat was a 202 hold with `detail.approval == null` (nothing to approve; a person settles it), and the same action with another amount was a 409. The API was asked once in all. `/admin/intents` listed the uncertain refund; resolving it `happened` ended it.
+- **Replay.** A repeat of a refund that went through got the first answer back with `guard-replayed: true`, nothing sent; the same charge with another amount got a 409.
+- **Refusals.** 60000 (above the 50000 max) was refused naming `create_refund-amount-bound`; so were 0, -5, `"60000"` written as a string (Guard reads numeric strings as numbers), `1e5`, and a call with no amount. A refund with no `charge_id` got a 409: Guard cannot tell whether it is a repeat, so it does not send.
+- **Forbidden and unlisted.** The transfer kept as a `forbidden_call` was refused naming `create_transfer-forbidden`. The customer delete, and a customer *read* that was left out of the accept file, were refused as "not a route this policy covers".
+- **`forbid`.** A kept route marked off in the accept file's `forbid` list (a cancel, which the draft would not have suggested forbidding) was refused naming `cancel_refund-forbidden`, while the read of a refund next to it went through.
+- **A daily spend cap.** 22 refunds of 9000 passed (198000 of 200000); the 23rd was refused with `reason_code: limit_exceeded`, the limit's id, and when the window resets.
+- **The key lives only in Guard.** The agent's token was a 401 at the API; the API's own key opened nothing at Guard; through Guard the API saw only its own key.
+
+Things that surprised me, worth a second look by whoever owns Guard's docs:
+
+1. After a person resolves an uncertain call as `happened`, Guard's guide says "a repeat is then answered with the recorded outcome". In the run, the repeat was a **409 conflict** ("already reconciled; nothing is sent again"). Nothing was sent either way, which is what the kit's test asserts; the wording differs.
+2. A string amount such as `"500"` passes the bound (it is read as 500). The API behind it then decides what to do with a string. The fake rejects it with a 422. A real API might accept it. Bounds are only as strict as the number Guard reads.
+3. An approved call, once used, is spent: the same call again is held again with a new approval, although the refund was already made. Guard's guide says this too. A runtime that retries after a 2xx would ask the approver a second time.
+
+## The record
+
+Guard keeps its decisions, approvals and uncertain calls on the admin port (`/admin/decisions`, `/approvals`, `/intents`) and writes a tamper-evident evidence pack and a signed anchor when asked (`POST /admin/backup {"to": folder}`). The open `geo-verify` (the `geometer-verify` repository) checks the pack against an anchor the company keeps elsewhere: VERIFIED (0) with the anchor, UNVERIFIABLE (3) without one, INVALID (1) when an entry was changed. The tests run all three on a real pack.
+
+`export-record.ts` turns the decisions into `record.jsonl` (sent, refused, held, replayed, not_sent, unknown), keeps Guard's own files beside it with a manifest of hashes, and says in `summary.txt` what it cannot show. `replayed` is used only when Guard's reason says the first call's recorded reply was returned; a call the rules allowed but Guard could not send (the API was down) is `not_sent` with Guard's reason. An earlier version of mine labelled every allowed-but-unsent call `replayed`, which would have told a reviewer a refund was "answered from the record" when the API had simply been down.
+
+**Guard's backup holds keys, so the export copies two files out of it.** `POST /admin/backup` is a full backup: the store (`state.db`), the evidence keys (`evidence/keys/*.secret`), the pack and the anchor. A first version of the export handed that whole folder to reviewers. Now each run asks for the backup in its own new subfolder (Guard refuses a folder that is not empty), copies only `evidence-pack.json` and `anchor.json` into the review folder, and a test checks that no `.secret` and no `state.db` arrive. The backup stays with the operator. The Compose recipe gives the export a read-only mount of that folder, and a dated output folder per run (the export refuses a non-empty one).
+
+**What an anchor shows is narrower than it looks.** A pack checked against the anchor from the same backup only shows the pack file was not changed after Guard wrote it. A rewrite of Guard's records before that backup is caught only if the reviewer holds an earlier anchor. The README and `summary.txt` say so, and the test verifies a later pack against the first export's anchor. **It is not B51's record.** `bundle/agent/record.ts` is written for the Bookings pathway: it names Razorpay, Calendar and WhatsApp operations, judges "done" from what those services hold, and fits the shop's monthly report. A company's API has none of those names. What does carry over is the idea: the record is built from Guard's decisions, never from what the agent says, and a thing the service does not confirm is not called confirmed (here: `sent` means the API answered). The 500-decision window is stated in the export, as in B51, but the export does not yet keep a mark between runs to detect a gap (Deferred).
+
+## Where it borrowed, and why it did not import
+
+- The pattern of starting the real binary on temp ports, with a `guard.toml` written for the test, is `bundle/test/real-guard.ts`. This kit has its own copy because `bundle/generate/guards.ts` writes a *shop's* `guard.toml` (a `shop-owner` role on an operation named `refund`) and imports from `pathways/bookings`, which is being moved. Importing it would have tied a company's tool to a template's layout. `guard-config.ts` is a smaller writer with the same shape: production profile, hashes only, the key from a file, one role for the operations that hold.
+- A test ties the recipes to that writer: the Compose file and the Kubernetes sidecar use the ports and paths `guard-config.ts` writes, so editing one without the other fails a test.
+- The Compose and Kubernetes recipes follow `monorepo/deploy/compose` and `deploy/k8s` (read-only root, user 65532, all capabilities dropped, `Recreate` for one SQLite replica, the health port for probes, the NetworkPolicy shape). They differ in having the agent on an `internal: true` network, so the only way out is Guard.
+
+## What was checked and what was not
+
+Checked: the converter and accept step by 28 tests; the example's spec compiled by the real binary to the checked-in bundle, and `verify-bundle` against a `guard.toml` the kit wrote; seven end-to-end behaviours through a running Guard; the export and the evidence pack with `geo-verify`; the Compose file by `docker compose config` (with and without the review profile, and with variables missing); the Kubernetes files parsed as YAML by Ruby and checked for structure.
+
+Not checked: the Guard container image (it is licensed separately and is not here), so nothing was started in Docker and nothing was applied to a cluster; a real company API, its auth, or its idempotency behaviour; the `scope` option of limits against a running Guard (the accept step validates it; no test runs it); `fail_policy`; a rollout (`POST /admin/policy`); signed notify approvals; Guard on Linux or as a release build; anything under load.

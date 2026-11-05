@@ -1,0 +1,125 @@
+# Guard as a sidecar container in the same pod as a company's agent. One replica, SQLite on a claim.
+#
+# What this separates, and what it does not:
+#   - The API's key is mounted into the guard container only. The agent container never holds it.
+#   - The agent calls Guard on 127.0.0.1:8080 (the pod's own network) with Guard's token for it.
+#   - It does NOT stop the agent container from calling the API directly. Containers in a pod share one network, so a NetworkPolicy cannot tell them
+#     apart. With only this file, a call that skips Guard has nowhere to find the key, but it is not blocked by the network. If you need the network to
+#     block it, run Guard as its own pod and use kubernetes-network-policy.yaml.
+#
+# Create these first (the values are yours; nothing secret is in this repository):
+#   kubectl create configmap guard-config --from-file=guard/guard.toml --from-file=guard/bundle.json
+#       (guard.toml: listen = "127.0.0.1:8080" for a sidecar, so no other pod reaches the agent port)
+#   kubectl create secret generic api-key --from-file=authorization=secrets/api_authorization
+#   kubectl create secret generic guard-agent-token --from-file=token=secrets/guard_agent_token
+#
+# Reach Guard's admin port (it listens on the pod's loopback only) for approvals and the reviewers' export:
+#   kubectl port-forward deploy/guarded-agent 8082:8082
+#   node companies/export-record.ts --admin http://127.0.0.1:8082 --token-file secrets/guard_admin_token --out review/latest
+#
+# Not run: the Guard image is licensed separately, so this has not been applied to a cluster. It is checked as YAML structure only
+# (companies/test/deploy.test.ts). Test it on your own staging cluster.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: guard-state
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guarded-agent
+  labels:
+    app.kubernetes.io/name: guarded-agent
+spec:
+  replicas: 1
+  # two pods must not share the SQLite volume, so the old pod stops before the new one starts
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: guarded-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: guarded-agent
+    spec:
+      # longer than the upstream timeout in guard.toml (15 s) plus the drain
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: agent
+          # your agent's image, with its API base URL set to Guard
+          image: registry.example.com/your-team/your-agent:1.0.0
+          env:
+            - name: API_BASE_URL
+              value: http://127.0.0.1:8080
+            - name: API_TOKEN_FILE
+              value: /run/secrets/guard/token
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - { name: guard-agent-token, mountPath: /run/secrets/guard, readOnly: true }
+        - name: guard
+          image: geo-guard:replace-with-your-version
+          imagePullPolicy: IfNotPresent
+          args: ["run", "--config", "/etc/geo-guard/guard.toml"]
+          ports:
+            - { name: health, containerPort: 8081 }
+          startupProbe:
+            httpGet: { path: /readyz, port: health }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /readyz, port: health }
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: health }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - { name: guard-config, mountPath: /etc/geo-guard, readOnly: true }
+            # guard.toml reads the API's key from this file: ${file:/run/secrets/api_authorization}
+            - { name: api-key, mountPath: /run/secrets, readOnly: true }
+            - { name: guard-state, mountPath: /var/lib/geo-guard }
+      volumes:
+        - name: guard-config
+          configMap:
+            name: guard-config
+        - name: api-key
+          secret:
+            secretName: api-key
+            defaultMode: 0440
+            items:
+              - { key: authorization, path: api_authorization }
+        - name: guard-agent-token
+          secret:
+            secretName: guard-agent-token
+            defaultMode: 0440
+        - name: guard-state
+          persistentVolumeClaim:
+            claimName: guard-state
