@@ -4,14 +4,14 @@
 //   CONFIG=/etc/geometer/relay.json PORT=8795 HOST=0.0.0.0 node bundle/services/relay.ts
 import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { createGuardClient, createRuntimeClient } from "../../pathways/bookings/approvals/clients.ts";
-import type { GuardClient } from "../../pathways/bookings/approvals/clients.ts";
+import { createGuardClient, createRuntimeClient } from "../../modules/approvals/clients.ts";
+import type { GuardClient } from "../../modules/approvals/clients.ts";
 import { createRelay } from "../../pathways/bookings/approvals/relay.ts";
-import type { Relay } from "../../pathways/bookings/approvals/relay.ts";
-import { relayHandler } from "../../pathways/bookings/approvals/server.ts";
-import { openRelayStore } from "../../pathways/bookings/approvals/store.ts";
-import { createWhatsAppMessaging } from "../../pathways/bookings/src/adapters/live/whatsapp.ts";
-import { systemClock } from "../../pathways/bookings/src/clock.ts";
+import type { Relay } from "../../modules/approvals/relay.ts";
+import { relayHandler } from "../../modules/approvals/server.ts";
+import { openRelayStore } from "../../modules/approvals/store.ts";
+import { createWhatsAppMessaging } from "../../modules/messaging/whatsapp.ts";
+import { systemClock } from "../../modules/core/clock.ts";
 import { ownAgentRuntime } from "../agent/relay-context.ts";
 import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";

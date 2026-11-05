@@ -3,7 +3,7 @@
 //
 // Languages are looked up by code in a plain object, so a language pack added to LANGUAGES works at once with the
 // English words here until someone adds a reviewed set. Nothing below touches src/.
-import { formatInr } from "../src/language/format.ts";
+import { formatInr } from "../../../modules/language/format.ts";
 
 export interface Ui {
   // labels

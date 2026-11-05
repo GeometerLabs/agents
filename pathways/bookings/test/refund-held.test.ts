@@ -3,15 +3,15 @@
 // after "approved" the same bytes are sent again, once. These tests play the relay's part with `ownerAnswers`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GuardHeldError } from "../src/adapters/faults.ts";
-import { createGuardModel } from "../src/adapters/guard-model.ts";
-import { fakeClock } from "../src/clock.ts";
+import { GuardHeldError } from "../../../modules/core/faults.ts";
+import { createGuardModel } from "../../../modules/payments/guard-model.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
 import { createWorld, glowSalon, CUSTOMER, HARNESS_GUARD } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
-import { HOUR } from "../src/time.ts";
+import { HOUR } from "../../../modules/core/time.ts";
 
 const limited = (refundLimitInr: number) => parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), cancellation: { windowHours: 24, refundLimitInr } });
 const BOOK = "haircut day after tomorrow at 6pm";
@@ -329,7 +329,7 @@ test("Guard refuses a refund by a limit (the day's cap): nothing is refunded, it
 test("the deposit was lowered after a booking paid the old one: Guard refuses the older, larger refund, nothing is refunded, and the builder is told", async () => {
   const lowered = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), deposit: { ...JSON.parse(JSON.stringify(glowSalon())).deposit, amountInr: 150 } });
   assert.equal(lowered.deposit.amountInr, 150);
-  const w = createWorld({ payments: { guard: createGuardModel(razorpayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)) } });
+  const w = createWorld({ payments: { guard: createGuardModel(razorpayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)), guardLinks: false } }); // the ₹200 link was made before Guard had the new rules
   let asked = 0; // a call Guard refuses never reaches the service, so the service's own call list cannot count it
   const sendRefund = w.payments.refund;
   w.payments.refund = async (id, request) => { asked++; return sendRefund(id, request); };

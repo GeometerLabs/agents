@@ -9,9 +9,10 @@ import { parseArgs } from "node:util";
 import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
+import { handCheckText } from "../../../modules/crash-test/print.ts";
 import { UsageError, main, readSettings } from "../report/cli.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 
 await main(async () => {
   let args;
@@ -24,53 +25,29 @@ await main(async () => {
   const { results, skipped } = await runOn(settings);
   if (results.length === 0) throw new Error(`No situation could be run on these settings: ${skipped.map((s) => s.reason).join(" ")}`);
   const tookMs = Math.round(performance.now() - started);
-  const held = results.filter((r) => r.held);
-  const failed = results.filter((r) => !r.held);
-  const checkCount = results.reduce((n, r) => n + r.checks.length, 0);
   const speaks = LANGUAGES.filter((l) => settings.languages.includes(l));
   const names = languageList(speaks);
-
-  const lines: string[] = [];
-  lines.push("Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype.");
-  lines.push("");
-  lines.push(`CRASH TEST   ${settings.name} · Bookings · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`);
-  lines.push("");
-  lines.push(`  Held ${held.length} of ${results.length}.  ${failed.length} failed.  ${NOT_TESTED.length} not tested.${skipped.length > 0 ? `  ${skipped.length} not run on these settings.` : ""}`);
-  lines.push("");
-  lines.push(`  Work done for you: ${results.length} situations and ${checkCount} checks in ${tookMs} ms, against stand-in WhatsApp,`);
-  lines.push("  calendar and payments: lost replies, duplicate messages and payments, silent calendar failures, late payments,");
-  lines.push(`  an expired key, and customers haggling or trying to trick the agent in ${names}.`);
-  if (!showAll) lines.push("  Show what was done in each situation: add --details");
-  lines.push("");
-  for (const r of results) {
-    const number = r.situation.planNumber ? `#${String(r.situation.planNumber).padStart(2, " ")}` : "   ";
-    lines.push(`  ${r.held ? "✓" : "✗"} ${number}  ${r.situation.title}`);
-    if (showAll && r.situation.how) lines.push(`        how: ${r.situation.how}`);
-    if (r.situation.leftOut) for (const part of r.situation.leftOut) lines.push(`        left out: ${part}`);
-    for (const c of r.checks) {
-      if (!c.passed) lines.push(`        ✗ ${c.label}${c.detail ? `\n            ${c.detail}` : ""}`);
-      else if (showAll) lines.push(`        ✓ ${c.label}`);
-    }
-  }
-  lines.push("");
-  lines.push(`  Each situation was judged from the fakes' own records (what the calendar, the payments service and the`);
-  lines.push(`  WhatsApp outbox hold), never from what the agent said. ${checkCount} checks in all.`);
-  lines.push("");
-  lines.push(failed.length === 0
-    ? `  Held ${held.length} of ${results.length} within what was tried. That is a count of these situations, not a verdict on the agent.`
-    : `  ${failed.length} failed: ${failed.map((r) => r.situation.title).join("; ")}.`);
-  if (skipped.length > 0) {
-    lines.push("");
-    lines.push(`  NOT RUN on ${settings.name}'s settings (${skipped.length}), and not counted above:`);
-    for (const s of skipped) lines.push(`    - ${s.title}: ${s.reason}.`);
-  }
-  const leftOut = results.filter((r) => r.situation.leftOut);
-  if (leftOut.length > 0 && !showAll) {
-    lines.push("");
-    lines.push(`  Parts left out of ${leftOut.length} situation(s) because these settings cannot express them: add --details to see which.`);
-  }
-  lines.push("");
-  lines.push(`  NOT TESTED   ${NOT_TESTED.map((n) => n.text).join(" · ")}`);
-  console.log(lines.join("\n"));
-  return failed.length === 0 ? 0 : 1;
+  const out = handCheckText({
+    results, skipped, showAll, tookMs,
+    text: {
+      heading: [
+        "Stand-ins, not the Geometer engine. Hand-run check for the Phase 0 prototype.",
+        "",
+        `CRASH TEST   ${settings.name} · Bookings · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
+      ],
+      workDone: ({ situations, checks, tookMs: ms }) => [
+        `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp,`,
+        "  calendar and payments: lost replies, duplicate messages and payments, silent calendar failures, late payments,",
+        `  an expired key, and customers haggling or trying to trick the agent in ${names}.`,
+      ],
+      shopName: settings.name,
+      judged: (checks) => [
+        `  Each situation was judged from the fakes' own records (what the calendar, the payments service and the`,
+        `  WhatsApp outbox hold), never from what the agent said. ${checks} checks in all.`,
+      ],
+      notTested: NOT_TESTED.map((n) => n.text),
+    },
+  });
+  console.log(out.text);
+  return out.failed === 0 ? 0 : 1;
 });

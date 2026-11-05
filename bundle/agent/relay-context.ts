@@ -2,8 +2,8 @@
 // template: the payment and the amount, from Guard's held call and nowhere else. The rest of the message (who paid, and when) is Razorpay's own record of that payment, read through
 // the reading agent, which each Guard allows to look and not to change. The business is the settings'. Nothing comes from the agent's own say-so but the `receipt` it put on the
 // refund, which only finds the held call. The owner's answer is not passed on to the agent: the agent sends the identical call again, and Guard releases it.
-import { readHeld } from "../../pathways/bookings/approvals/clients.ts";
-import type { Context, GuardClient, RuntimeClient } from "../../pathways/bookings/approvals/clients.ts";
+import { readHeld } from "../../modules/approvals/clients.ts";
+import type { Context, GuardClient, RuntimeClient } from "../../modules/approvals/clients.ts";
 
 export interface OwnAgentContextOptions {
   /** Guard's held calls (the relay's reading credential). */

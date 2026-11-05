@@ -1,5 +1,5 @@
 // The four word sets, by language code, and which of them are machine-written and still waiting for a native reader.
-import type { Language } from "../../pathways/bookings/src/settings.ts";
+import type { Language } from "../../modules/language/languages.ts";
 import { en } from "./words.ts";
 import type { Words } from "./words.ts";
 import { hi } from "./words.hi.ts";

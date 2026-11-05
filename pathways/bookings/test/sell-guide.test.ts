@@ -8,12 +8,14 @@ import { applyLanguage } from "../demo/personalise.ts";
 import { createDemo } from "../demo/session.ts";
 import { uiFor } from "../demo/strings.ts";
 import { recordRows, summaryLines, waitingCards, workDone } from "../demo/view.ts";
-import { bannedIn } from "../report/strings.ts";
+import { bannedIn } from "../../../modules/report/claims.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES, hoursOn, validateSettings } from "../src/settings.ts";
-import type { Language, Settings } from "../src/settings.ts";
+import { hoursOn, validateSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Settings } from "../src/settings.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import { runOn } from "../crash-test/situations.ts";
-import { zonedToMs } from "../src/time.ts";
+import { zonedToMs } from "../../../modules/core/time.ts";
 
 const SELL = new URL("../sell/", import.meta.url);
 const SPEC = new URL("../../SELL-GUIDE.md", import.meta.url);

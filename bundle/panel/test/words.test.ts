@@ -3,8 +3,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { LANGUAGES } from "../../../pathways/bookings/src/settings.ts";
-import type { Language } from "../../../pathways/bookings/src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import { REVIEW_STATE, WORDS, isDraftLanguage } from "../languages.ts";
 import { flatWords, panelReviewSection } from "../review.ts";
 import { SAMPLE_ARGS } from "../words.ts";

@@ -1,14 +1,14 @@
 // The live adapters, read against the providers' own sample payloads and a scripted local server (no real service is called).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fakeClock } from "../src/clock.ts";
-import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../src/adapters/faults.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
+import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../modules/core/faults.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
-import { createRazorpayPayments, toPayment, toPaymentLink, toRefund } from "../src/adapters/live/razorpay.ts";
+import { createRazorpayPayments, toPayment, toPaymentLink, toRefund } from "../../../modules/payments/razorpay.ts";
 import { toEvent, toRfc3339 } from "../src/adapters/live/google-calendar.ts";
-import { GRAPH_VERSION, templateBody } from "../src/adapters/live/whatsapp.ts";
-import { checkBaseUrl, joinUrl } from "../src/adapters/live/http.ts";
-import { HOUR } from "../src/time.ts";
+import { GRAPH_VERSION, templateBody } from "../../../modules/messaging/whatsapp.ts";
+import { checkBaseUrl, joinUrl } from "../../../modules/core/http.ts";
+import { HOUR } from "../../../modules/core/time.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 
 const T0 = Date.UTC(2026, 10, 3, 4, 30);
@@ -50,7 +50,7 @@ test("razorpay: a payment link entity becomes ours, and its embedded payments ar
   const link = toPaymentLink(fixture("razorpay-payment-link-fetch.json"), []);
   assert.deepEqual({ id: link.id, reference_id: link.reference_id, amount: link.amount, status: link.status, short_url: link.short_url, amount_paid: link.amount_paid }, { id: "plink_KBnb7I424Rc1R9", reference_id: "111", amount: 10000, status: "paid", short_url: "https://rzp.io/i/alaBxs0i", amount_paid: 10000 });
   assert.equal(toPaymentLink(fixture("razorpay-payment-link-create.json"), []).payments.length, 0); // `payments: null` before any payment
-  for (const [wire, ours] of [["created", "created"], ["paid", "paid"], ["partially_paid", "paid"], ["cancelled", "cancelled"], ["expired", "cancelled"]] as const) {
+  for (const [wire, ours] of [["created", "created"], ["paid", "paid"], ["partially_paid", "partially_paid"], ["cancelled", "cancelled"], ["expired", "cancelled"]] as const) {
     assert.equal(toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), status: wire }, []).status, ours);
   }
   assert.throws(() => toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), status: "weird" }, []), ApiError);

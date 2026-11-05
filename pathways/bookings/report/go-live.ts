@@ -10,10 +10,10 @@
 // A signature shows that whoever holds the key signed exactly these bytes and that they have not changed. It does not show who holds the key
 // (anyone can sign a made-up certificate with their own key), so the key is named in the report and the reader decides whether it is the issuer's.
 import type { Settings } from "../src/settings.ts";
-import type { LocalDate } from "../src/time.ts";
+import type { LocalDate } from "../../../modules/core/time.ts";
 import { checkedPolicyDigest, policyDigest } from "./data.ts";
 import type { GoLiveFinding } from "./data.ts";
-import { verifyEnvelopeText } from "./sign.ts";
+import { verifyEnvelopeText } from "../../../modules/report/sign.ts";
 
 const GO_LIVE_FORMAT = "geometer-go-live-certificate/1";
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);

@@ -5,7 +5,8 @@
 // The REAL agent runs against in-memory stand-ins for WhatsApp, payments and the calendar, with a fake clock.
 // Test money only. Nothing real is contacted, nothing is saved, and the server answers only devices on your own network.
 import { readFileSync } from "node:fs";
-import { LANGUAGES, validateSettings } from "../src/settings.ts";
+import { validateSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { glowSalon } from "../src/harness.ts";
 import { applyLanguage } from "./personalise.ts";
 import { startDemo } from "./app.ts";

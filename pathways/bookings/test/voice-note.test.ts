@@ -3,14 +3,16 @@
 // the customer's chat and the record -> the monthly report. The audio itself is never fetched, kept or recorded.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWhatsAppWebhook } from "../src/adapters/live/webhooks.ts";
-import type { InboundMessage } from "../src/adapters/messaging.ts";
+import { parseWhatsAppWebhook } from "../../../modules/messaging/webhooks.ts";
+import type { InboundMessage } from "../../../modules/messaging/messaging.ts";
 import { CUSTOMER, OTHER_CUSTOMER, createWorld } from "../src/harness.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
-import { WORDS } from "../src/language/words.ts";
-import { LANGUAGES, parseSettings } from "../src/settings.ts";
-import type { Language } from "../src/settings.ts";
-import { buildMonthlyReport, monthRange } from "../report/data.ts";
+import { WORDS } from "../../../modules/language/words.ts";
+import { parseSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../modules/language/languages.ts";
+import { buildMonthlyReport } from "../report/data.ts";
+import { monthRange } from "../../../modules/report/months.ts";
 import { ownerText } from "../report/text.ts";
 import { checkEvents, eventKey } from "../server/events.ts";
 import { startServer } from "../server/server.ts";

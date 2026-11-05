@@ -1,0 +1,10 @@
+{
+  "name": "geometer-modules",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The features agent templates share: language, understanding, payments, messaging, the record, reports, approvals, limits, reminders and the stand-ins. No dependencies.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

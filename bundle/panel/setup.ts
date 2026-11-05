@@ -1,9 +1,11 @@
 // The phone setup for a shop, as plain functions: what each step takes from the form, what it refuses (in the person's language), and how the steps
 // become the same client folder a builder would write. The shop form is the demo's (pathways/bookings/demo/personalise.ts), grown into five steps; it is
 // not copied. It asks only for what the template's manifest says the template uses, and `validateSettings` is the last gate on everything.
-import { LANGUAGES, validateSettings } from "../../pathways/bookings/src/settings.ts";
-import type { Language, Settings } from "../../pathways/bookings/src/settings.ts";
-import { formatInr } from "../../pathways/bookings/src/language/format.ts";
+import { validateSettings } from "../../pathways/bookings/src/settings.ts";
+import { LANGUAGES } from "../../modules/language/languages.ts";
+import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Language } from "../../modules/language/languages.ts";
+import { formatInr } from "../../modules/language/format.ts";
 import { MAX_SERVICES, formFromSettings, settingsFromForm } from "../../pathways/bookings/demo/personalise.ts";
 import type { ShopForm } from "../../pathways/bookings/demo/personalise.ts";
 import { KEY_ID, checkSecret } from "./secrets.ts";

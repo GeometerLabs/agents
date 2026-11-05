@@ -4,14 +4,16 @@
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { createWorld, CUSTOMER, glowSalon, OTHER_CUSTOMER } from "../src/harness.ts";
-import { fakeClock } from "../src/clock.ts";
-import { ApiError } from "../src/adapters/faults.ts";
-import { createWhatsAppMessaging, interactiveBody } from "../src/adapters/live/whatsapp.ts";
-import { parseWhatsAppWebhook } from "../src/adapters/live/webhooks.ts";
-import { ID, LABELS, buttonsFor, clip, intentFromReply, interactiveProblem, interactiveText, serviceList, slotList } from "../src/language/interactive.ts";
-import type { InteractiveMessage } from "../src/language/interactive.ts";
-import { LANGUAGES, parseSettings } from "../src/settings.ts";
-import { zonedToMs } from "../src/time.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
+import { ApiError } from "../../../modules/core/faults.ts";
+import { createWhatsAppMessaging, interactiveBody } from "../../../modules/messaging/whatsapp.ts";
+import { parseWhatsAppWebhook } from "../../../modules/messaging/webhooks.ts";
+import { clip, interactiveProblem, interactiveText } from "../../../modules/language/interactive.ts";
+import { ID, LABELS, buttonsFor, intentFromReply, serviceList, slotList } from "../src/language/interactive.ts";
+import type { InteractiveMessage } from "../../../modules/language/interactive.ts";
+import { parseSettings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import { zonedToMs } from "../../../modules/core/time.ts";
 import { checkEvents } from "../server/events.ts";
 import { startStandins } from "../standins/server.ts";
 

@@ -12,14 +12,15 @@
 // review: a body neither starts nor ends with a parameter. Every body below starts and ends with fixed words.
 //
 // Hindi, Malayalam and Kannada wording is machine-written like the rest of those packs. A native speaker must read it before it is submitted.
-import { LANGUAGES, serviceName } from "../settings.ts";
-import type { Language, Settings } from "../settings.ts";
-import type { TemplateMessage } from "../adapters/messaging.ts";
+//
+// The mechanism is shared (modules/language/meta-templates.ts); this file holds Bookings' templates and the record values they use.
+import type { Language } from "../../../../modules/language/languages.ts";
+import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
+import type { MetaTemplate } from "../../../../modules/language/meta-templates.ts";
+import { serviceName } from "../settings.ts";
+import type { Settings } from "../settings.ts";
 import { inr, need, slot } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
-
-/** Our languages as Meta's template language codes. */
-export const META_LANGUAGE: Record<Language, string> = { en: "en", hi: "hi", ml: "ml", kn: "kn" };
 
 /** The record values a template can use, and where each comes from. */
 export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours";
@@ -36,17 +37,8 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   approvalHours: (f) => String(need(f, "approvalHours")),
 };
 
-export interface MetaTemplate {
-  /** The name registered with Meta (lowercase, underscores). */
-  name: string;
-  /** The message in language/templates.ts whose wording this carries. */
-  usedFor: TemplateId;
-  audience: "customer" | "owner";
-  /** The wording per language, with {slot} where a record value goes (see Slot). Turned into {{n}} for Meta. */
-  bodies: Record<Language, string>;
-}
 
-export const META_TEMPLATES: readonly MetaTemplate[] = [
+export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   {
     name: "booking_reminder", usedFor: "reminder", audience: "customer",
     bodies: {
@@ -185,7 +177,7 @@ export const META_TEMPLATES: readonly MetaTemplate[] = [
       kn: "ಗ್ರಾಹಕರು {phone} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
     },
   },
-  // Button mode and "talk to the owner" (src/ai-state.ts, interactive.ts): the owner is told once why the agent answers with buttons, or that a customer wants to talk.
+  // Button mode and "talk to the owner" (modules/understanding/ai-state.ts, interactive.ts): the owner is told once why the agent answers with buttons, or that a customer wants to talk.
   {
     name: "owner_wants_to_talk", usedFor: "owner_wants_to_talk", audience: "owner",
     bodies: {
@@ -224,52 +216,16 @@ export const META_TEMPLATES: readonly MetaTemplate[] = [
   },
 ];
 
+const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
+
 /** Every template name, for a provider (or the stand-in) to approve. */
-export const META_TEMPLATE_NAMES: readonly string[] = META_TEMPLATES.map((t) => t.name);
+export const META_TEMPLATE_NAMES: readonly string[] = catalogue.names;
 
-const SLOT_RE = /\{([A-Za-z]+)\}/gu;
-
-/** The slots of a body in the order they appear. The same value twice is two parameters, because a Meta parameter number is used once. */
-export function slotsOf(body: string): Slot[] {
-  return [...body.matchAll(SLOT_RE)].map((m) => {
-    if (!(m[1] in VALUE)) throw new Error(`The template body has an unknown value {${m[1]}}.`);
-    return m[1] as Slot;
-  });
-}
-
-/** The body as Meta wants it: {slot} turned into {{1}}, {{2}} ... in order. */
-export function metaBody(body: string): string {
-  let n = 0;
-  return body.replace(SLOT_RE, () => `{{${++n}}}`);
-}
-
-/** Fill a Meta body ({{1}} ...) with parameters: what the customer will read. */
-export function fillBody(metaText: string, parameters: string[]): string {
-  return metaText.replace(/\{\{(\d+)\}\}/gu, (_m, n: string) => parameters[Number(n) - 1] ?? "");
-}
-
-/** The parameter values for a template in a language, read from the record's facts. Throws if the record lacks one. */
-export function parametersFor(template: MetaTemplate, language: Language, facts: MessageFacts): string[] {
-  return slotsOf(template.bodies[language]).map((s) => VALUE[s](facts));
-}
-
-const BY_MESSAGE = new Map<TemplateId, MetaTemplate>(META_TEMPLATES.map((t) => [t.usedFor, t]));
-
-/**
- * The template message for text that must go out as a template. A message that is exactly one of the templates above goes as that
- * template with its parameters, but only if filling it gives back the very text the outgoing check read. Anything else goes as the
- * generic name with no parameters, as before (a provider that knows only the real templates then refuses it).
- */
-export function templateMessage(a: { ids: TemplateId[]; language: Language; facts: MessageFacts; text: string; generic: string }): TemplateMessage {
-  const found = a.ids.length === 1 ? BY_MESSAGE.get(a.ids[0]) : undefined;
-  if (found) {
-    try {
-      const parameters = parametersFor(found, a.language, a.facts);
-      if (fillBody(metaBody(found.bodies[a.language]), parameters) === a.text) return { name: found.name, language: a.language, text: a.text, parameters };
-    } catch { /* the record lacks a value: the message would not have been written either */ }
-  }
-  return { name: a.generic, language: a.language, text: a.text };
-}
+export const slotsOf = catalogue.slotsOf;
+export const parametersFor = catalogue.parametersFor;
+export const templateMessage = catalogue.templateMessage;
+export { META_LANGUAGE, fillBody, metaBody };
+export type { MetaTemplate };
 
 // ---- the list to submit ------------------------------------------------------------------------------------------------------
 
@@ -286,15 +242,5 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
   };
 }
 
-export interface MetaSubmission {
-  name: string; language: string; category: "UTILITY"; parameter_format: "positional";
-  components: { type: "BODY"; text: string; example: { body_text: string[][] } }[];
-}
-
 /** One entry per template and language, in the body Meta's create-template call takes (POST /{waba-id}/message_templates). */
-export function metaSubmissions(settings: Settings): MetaSubmission[] {
-  return META_TEMPLATES.flatMap((t) => LANGUAGES.map((language) => ({
-    name: t.name, language: META_LANGUAGE[language], category: "UTILITY", parameter_format: "positional",
-    components: [{ type: "BODY", text: metaBody(t.bodies[language]), example: { body_text: [parametersFor(t, language, exampleFacts(settings, language))] } }],
-  })));
-}
+export const metaSubmissions = (settings: Settings) => catalogue.submissions((language) => exampleFacts(settings, language));

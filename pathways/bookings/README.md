@@ -221,7 +221,7 @@ Agent:    ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450. ಕ್ಷಮಿಸಿ, ಇ
 - The agent never glues an ending onto a shop's service name or business name (Malayalam and Kannada endings change with the last letter of the word), so a message reads right for any shop's names.
 - Owner commands stay `approve b-1`, `deny b-1`, `retry b-1` in Latin letters, explained in the owner's language (set `owner.language`).
 - **Machine-written, not yet read by a native speaker.** [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every Malayalam and Kannada message and every word the agent understands, with a column for the native reviewer. No real shop should use these two languages before that review. The sheets are made by `node pathways/bookings/scripts/review-sheet.ts ml` (or `kn`), and a test fails if a sheet falls behind the templates.
-- Adding another language (Tamil and Telugu are next) means adding its entry to each per-language table: the type system refuses to build without a template for every message and a name for every weekday and month. Its customer words go in [`src/language/words.ts`](src/language/words.ts).
+- Adding another language (Tamil and Telugu are next) means adding its entry to each per-language table: the type system refuses to build without a template for every message and a name for every weekday and month. Its customer words go in [`modules/language/words.ts`](modules/language/words.ts).
 
 ## Choose the model
 
@@ -316,7 +316,7 @@ enquiry -> confirming_details -> awaiting_deposit -> confirmed -> completed
 
 ## How "done" is decided
 
-Every write to a service is followed by a read from that service's own store. Only the read is recorded as `confirmed`; a reply that says "ok" is only `attempted`. After a lost reply the agent looks (by booking id) before it retries. Payment events only tell the agent to look: it reconciles from the payments service's record, so a late, duplicated or missing event cannot change what it believes. The record ([`src/record.ts`](src/record.ts)) is append-only and keeps customer text as a digest only.
+Every write to a service is followed by a read from that service's own store. Only the read is recorded as `confirmed`; a reply that says "ok" is only `attempted`. After a lost reply the agent looks (by booking id) before it retries. Payment events only tell the agent to look: it reconciles from the payments service's record, so a late, duplicated or missing event cannot change what it believes. The record ([`modules/record/record.ts`](modules/record/record.ts)) is append-only and keeps customer text as a digest only.
 
 ## Loose dates and times
 
@@ -332,22 +332,22 @@ For any weekday phrase or guessed am/pm, the agent writes back the full date and
 
 ## What is in the folder
 
+What both templates need (language, understanding, payments, messaging, the record, the approvals relay, report signing, the stand-ins) is in [`modules/`](../../modules/README.md), outside this folder, and this template imports it. What is left here is about bookings.
+
 ```text
 settings/glow-salon.example.json   a complete example business
 src/settings.ts                    settings types and hand-written validation
-src/record.ts                      the append-only action record
 src/limits.ts                      the nine rules as pure checks
 src/booking.ts, src/agent.ts       the state machine and the agent
-src/adapters/                      calendar, payments, messaging fakes; the intent parser seam (model.ts), the rule parser, and the model
-                                   parser over HTTP (model-llm.ts, with its prompt and answer schema in model-prompt.ts)
-src/adapters/live/                 the same three over Razorpay, Google Calendar and WhatsApp wire formats (no keys), and webhooks.ts
-src/language/meta-templates.ts     the WhatsApp templates in Meta's form; whatsapp-templates.json is the list to submit
+src/adapters/                      the calendar fake; the Bookings intents (model.ts), its rule parser, and its reading for the shared readers (reading.ts,
+                                   with its prompt and answer schema in model-prompt.ts; model-llm.ts and understanding.ts give them to the shared parser and router)
+src/adapters/live/                 the Google Calendar adapter over its wire format (no keys), and index.ts that picks fakes or live
+src/language/meta-templates.ts     Bookings' WhatsApp templates in Meta's form; whatsapp-templates.json is the list to submit
 inbox/                             the webhook inbox: its own process, holds the webhook secrets, verifies, forwards to the runtime (and the owner's messages to the relay)
-approvals/                         the approvals relay: its own process, holds the owner's approver secret, asks the owner once with a code (main.ts, relay.ts, clients.ts, store.ts, server.ts)
-standins/                          the three wire formats over HTTP in front of the fakes; guard.ts (a stub Guard over the refunds); dev-forwarder.ts for real test-mode services
-src/guard-limits.ts                the Razorpay limits spec from the settings (the one refund threshold); src/adapters/guard-model.ts is Guard's refund behaviour, built from it
-src/language/                      templates (hi, en, ml, kn), the outgoing check, date and time phrases;
-                                   words.ts: the Malayalam and Kannada words customers use, as plain lists
+approvals/                         the approvals relay as Bookings runs it (main.ts, relay.ts gives the shared relay Bookings' words); the relay itself is modules/approvals/
+standins/                          the stand-ins together (server.ts puts the calendar in with the shared Razorpay, WhatsApp and System One ones), the rule-based decider, dev-forwarder.ts
+src/guard-limits.ts                the settings turned into the numbers of the Razorpay limits spec (the one refund threshold); modules/payments/guard-limits.ts builds the spec
+src/language/                      Bookings' templates (hi, en, ml, kn), its facts for the outgoing check, its buttons and lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
 server/                            the runtime server: main.ts (command line), start.ts (read the client folder, wire, listen), config.ts,
                                    runtime.ts (a step is saved whole), tasks.ts (one at a time, retries), store.ts (SQLite), snapshot.ts,

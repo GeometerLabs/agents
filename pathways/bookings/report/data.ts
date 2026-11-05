@@ -14,18 +14,21 @@ import { readFileSync } from "node:fs";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import { glowSalon } from "../src/harness.ts";
-import { LANGUAGES } from "../src/settings.ts";
-import type { Language, Settings } from "../src/settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { Settings } from "../src/settings.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import type { Booking } from "../src/booking.ts";
-import type { Action, Outcome, RecordEntry, RuleId } from "../src/record.ts";
-import { canonicalJson } from "../src/record.ts";
-import { localParts, zonedToMs } from "../src/time.ts";
-import type { LocalDate } from "../src/time.ts";
-import { digestOf } from "./digest.ts";
+import type { Action, Outcome, RecordEntry, RuleId } from "../../../modules/record/record.ts";
+import { canonicalJson } from "../../../modules/record/record.ts";
+import { localParts, zonedToMs } from "../../../modules/core/time.ts";
+import type { LocalDate } from "../../../modules/core/time.ts";
+import { digestOf } from "../../../modules/report/digest.ts";
+import { SOURCES } from "../../../modules/report/text.ts";
+import type { Source } from "../../../modules/report/text.ts";
 
 /** What the numbers were counted from. Always stated, never assumed: a report made from stand-ins must say so. */
-export type Source = "stand-in" | "test-mode" | "live";
-export const SOURCES: readonly Source[] = ["stand-in", "test-mode", "live"];
+export { SOURCES };
+export type { Source };
 
 export const PATHWAY = readPathway();
 
@@ -185,19 +188,6 @@ export function notTestedForReport(goLive: GoLiveFinding): NotTestedKey[] {
     case "untrusted": return [...ids, "go-live-untrusted"];
     case "none": return [...ids, "no-go-live-certificate"];
   }
-}
-
-/** "2026-11" in a time zone as [from, to) in epoch milliseconds. */
-export function monthRange(month: string, timeZone: string): { from: number; to: number } {
-  const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month);
-  if (!m) throw new Error(`"${month}" is not a month. Write it like 2026-11.`);
-  const year = Number(m[1]);
-  const mon = Number(m[2]);
-  const midnight = { hour: 0, minute: 0 };
-  return {
-    from: zonedToMs({ year, month: mon, day: 1 }, midnight, timeZone),
-    to: zonedToMs(mon === 12 ? { year: year + 1, month: 1, day: 1 } : { year, month: mon + 1, day: 1 }, midnight, timeZone),
-  };
 }
 
 const zeroByLanguage = (): ByLanguage => Object.fromEntries(LANGUAGES.map((l) => [l, 0])) as ByLanguage;

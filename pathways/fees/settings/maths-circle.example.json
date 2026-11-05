@@ -1,0 +1,31 @@
+{
+  "name": "Gauss Maths Circle",
+  "address": "21 Church Street, Bengaluru",
+  "timezone": "Asia/Kolkata",
+  "languages": ["en", "kn"],
+  "batches": [
+    {
+      "id": "olympiad",
+      "names": { "en": ["olympiad batch", "olympiad"], "kn": ["ಒಲಿಂಪಿಯಾಡ್ ಬ್ಯಾಚ್", "ಒಲಿಂಪಿಯಾಡ್"] },
+      "monthlyFeeInr": 2500
+    },
+    {
+      "id": "foundation",
+      "names": { "en": ["foundation batch", "foundation"], "kn": ["ಫೌಂಡೇಶನ್ ಬ್ಯಾಚ್", "ಫೌಂಡೇಶನ್"] },
+      "monthlyFeeInr": 1800
+    }
+  ],
+  "students": [
+    { "name": "Ishaan Rao", "parent": "+919855555551", "batch": "olympiad", "language": "en" },
+    { "name": "Diya Hegde", "parent": "+919855555552", "batch": "foundation", "language": "kn" },
+    { "name": "Tara Pillai", "parent": "+919855555553", "batch": "foundation" }
+  ],
+  "due": { "day": 2, "graceDays": 0 },
+  "lateFeeInr": 0,
+  "reminders": { "daysFromDue": [-3, 2], "hour": 9, "maxPerMonth": 2 },
+  "partPayments": { "allowed": false, "minInr": 1 },
+  "waiver": { "limitInr": 0 },
+  "refund": { "limitInr": 200 },
+  "payment": { "module": "razorpay" },
+  "owner": { "whatsapp": "+919000000001", "language": "kn" }
+}

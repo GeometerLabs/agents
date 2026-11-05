@@ -3,7 +3,7 @@
 // of the report (the panel) carries the same name and badge.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
 import { applyOnce } from "../apply.ts";
@@ -126,10 +126,12 @@ test("a pathway whose validator refuses the report key keeps the shop starting: 
   } finally { t.done(); }
 });
 
-/** A version kept beside the server, which is where B53 leaves a client it held back: today's pathway copied, with the report setting taken out of what its runtime knows. */
+/** A version kept beside the server, which is where B53 leaves a client it held back: today's pathway copied (with the shared modules beside it, where a kept checkout finds them), with the report setting taken out of what its runtime knows. */
 function keepOldVersion(w: ReturnType<typeof world>, version: string, edit: (configText: string) => string = (t) => t.replace('"pauseMinutes", "report"]', '"pauseMinutes"]')): string {
   const dir = join(w.root, "pathways", `bookings@${version}`);
   cpSync(join(w.ctx.appDir, "pathways", "bookings"), dir, { recursive: true });
+  // the shared code a pathway imports sits beside the pathways folder (<server>/modules): a kept checkout finds it there
+  if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
   const pkg = join(dir, "package.json");
   writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
   const config = join(dir, "server", "config.ts");
