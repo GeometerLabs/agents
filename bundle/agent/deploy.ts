@@ -19,7 +19,7 @@ import { readStatus, refusalMessage, updateStatus } from "../lib/status.ts";
 import type { GuardProof } from "../lib/status.ts";
 import { ensureDir, mintGuardToken, mintSecret, sha256Hex, shopNameProblem, stableJson, writeAtomic } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { agentFromFlags, readAgent } from "./folder.ts";
+import { agentFromFlags, agentGuardPart, readAgent } from "./folder.ts";
 import type { AgentFlags, AgentFolder } from "./folder.ts";
 import { RECORD_READS, agentNames, planAgent } from "./plan.ts";
 import type { AgentPlan } from "./plan.ts";
@@ -100,7 +100,7 @@ function whoOf(name: string, kind: Kind, c: Credentials) {
 export interface PreparedAgent { folder: AgentFolder; plan: AgentPlan; guards: PreparedGuard[]; desiredHash: string }
 
 /** What an agent is asked to be: its two files. */
-export const agentDesiredHash = (f: Pick<AgentFolder, "agentText" | "settingsText">): string => sha256Hex(stableJson({ agent: f.agentText, settings: f.settingsText }));
+export const agentDesiredHash = (f: Pick<AgentFolder, "agentText" | "settingsText">): string => sha256Hex(stableJson({ agent: agentGuardPart(f.agentText), settings: f.settingsText }));
 
 /** What an agent needs before it can run, said by the name `agent add` printed it under. */
 function missingSecrets(dir: string, name: string, f: AgentFolder): Problem[] {

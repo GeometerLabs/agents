@@ -17,6 +17,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { listAgents } from "./agent/folder.ts";
+import { updateAgent } from "./agent/update.ts";
 import { Refused, deploy } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { compare, runHandCheck, savedDataLayout } from "./handcheck.ts";
@@ -25,8 +26,6 @@ import { listShops, readShop, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import type { Run, State, Step } from "./lib/state.ts";
 import { writeAtomic } from "./lib/util.ts";
-
-export const OWN_AGENT_NOTE = "Agents you wrote are updated by you. Geometer will check them too once the crash test for your own agents is available.";
 
 export interface UpdateOptions { to?: string; shops?: string[]; dryRun?: boolean }
 export interface RollbackOptions { shops?: string[]; dryRun?: boolean }
@@ -111,7 +110,8 @@ export async function runUpdate(ctx: Context, opts: UpdateOptions = {}): Promise
 async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlier: Step | undefined, save: Save): Promise<Outcome> {
   const at = ctx.now().toISOString();
   const heldBack = (reason: string, more: Partial<Step> = {}): Outcome => ({ step: { status: "held-back", at, reason, ...more } });
-  if (listAgents(ctx.dir).includes(shop)) return { step: { status: "skipped", at, reason: OWN_AGENT_NOTE } };
+  // an agent someone else wrote: the crash test at the version it was last checked at and at the one in agent.json (agent/update.ts), not a deploy
+  if (listAgents(ctx.dir).includes(shop)) return { step: await updateAgent(ctx, shop, opts.dryRun === true) };
   if (earlier?.status === "moving") return finishMove(ctx, shop, earlier, "update");
 
   const folder = readShop(ctx.dir, shop);
@@ -199,7 +199,7 @@ export async function runRollback(ctx: Context, opts: RollbackOptions = {}): Pro
 async function rollbackOne(ctx: Context, shop: string, dryRun: boolean, earlier: Step | undefined, save: Save): Promise<Outcome> {
   const at = ctx.now().toISOString();
   const heldBack = (reason: string, more: Partial<Step> = {}): Outcome => ({ step: { status: "held-back", at, reason, ...more } });
-  if (listAgents(ctx.dir).includes(shop)) return { step: { status: "skipped", at, reason: "An agent you wrote has no template version to go back to." } };
+  if (listAgents(ctx.dir).includes(shop)) return { step: { status: "skipped", at, reason: "Geometer does not run an agent you wrote, so there is nothing for it to roll back. Put the version you want back in service yourself, then `geometer agent set <name> --version <it>` and `geometer update`." } };
   if (earlier?.status === "moving") return finishMove(ctx, shop, earlier, "rollback");
 
   const folder = readShop(ctx.dir, shop);
@@ -286,8 +286,10 @@ export function summary(run: Run): string {
     total[s.status]++;
     if (s.status === "moved") {
       const held = s.after ? ` Held ${s.after.held} of ${s.after.of} on its own settings${s.before ? ` (${s.before.held} of ${s.before.of} before)` : ""}.` : "";
-      const said = back ? (dry ? `would go back to ${s.to} (now ${s.from}).` : `Back to ${s.to} (was ${s.from}).`) : `${dry ? "would move" : "moved"} from ${s.from} to ${s.to}.`;
+      const said = back ? (dry ? `would go back to ${s.to} (now ${s.from}).` : `Back to ${s.to} (was ${s.from}).`)
+        : s.from === undefined ? `${dry ? "would be" : "is"} recorded at ${s.to}: nothing was recorded before.` : `${dry ? "would move" : "moved"} from ${s.from} to ${s.to}.`;
       lines.push(`  ✓ ${name}  ${said}${held}${s.proven ? ` ${s.proven}.` : ""}`);
+      if (s.reason) lines.push(`      ${s.reason}`);
       if (s.layout && s.layout.to > s.layout.from) lines.push(`      Note: ${s.to} changes how saved data is laid out (layout ${s.layout.from} to ${s.layout.to}), so \`geometer rollback\` will refuse to go back across it.`);
     } else if (s.status === "held-back") {
       lines.push(`  ✗ ${name}  HELD BACK. ${s.reason ?? ""}`);
