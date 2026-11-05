@@ -10,6 +10,7 @@ import { CUSTOMER, createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { hoursOn, serviceName } from "../src/settings.ts";
 import { LANGUAGES } from "../../../modules/language/languages.ts";
+import type { InteractiveMessage } from "../../../modules/language/interactive.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../modules/language/languages.ts";
 import { addDays, localParts, weekdayOf } from "../../../modules/core/time.ts";
@@ -21,7 +22,9 @@ export const MAX_TAPS = 600; // every other tap together: the world is in memory
 export const MAX_MESSAGE_LENGTH = 300;
 const TICK_MINUTES = 15; // time passes in steps: one big jump would skip reminders the agent sends one tick at a time
 
-export interface Bubble { who: "me" | "agent"; text: string; time: string; template: boolean }
+/** The buttons or the list that came with an agent message, as WhatsApp shows them under it. A tap sends the option's id back (`tap`). */
+export type Choices = Pick<InteractiveMessage, "buttons" | "list">;
+export interface Bubble { who: "me" | "agent"; text: string; time: string; template: boolean; choices?: Choices }
 export interface Chip { text: string }
 export type OwnerCommand = "approve" | "deny" | "retry";
 
@@ -36,6 +39,10 @@ export interface Demo {
   /** Run one action after the ones before it finish. */
   run<T>(action: () => Promise<T>): Promise<T>;
   say(text: string): Promise<string | undefined>;
+  /** The customer taps a button or a list row the agent sent: the agent gets its id, as it would from WhatsApp. */
+  tap(id: string): Promise<string | undefined>;
+  /** Is there a button or list row with this id on the screen? */
+  offers(id: string): boolean;
   pay(times: 1 | 2): Promise<string | undefined>;
   advance(minutes: number): Promise<string | undefined>;
   cancel(): Promise<string | undefined>;
@@ -50,7 +57,7 @@ const fmtLanguage = (language: string): Language => ((LANGUAGES as readonly stri
 export function createDemo(settings: Settings, nowMs: number): Demo {
   const uiLanguage = settings.owner.language;
   const ui = uiFor(uiLanguage);
-  const world = createWorld({ settings, nowMs, interactive: false }); // the demo page draws chat bubbles, not buttons yet (Deferred.md): the words go out as plain text
+  const world = createWorld({ settings, nowMs }); // the stand-in WhatsApp takes buttons and lists, as the live one does, and the page draws them
   const customerLog: Bubble[] = [];
   const ownerLog: Bubble[] = [];
   let sentSeen = 0;
@@ -68,10 +75,22 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
     const outbox = world.messaging.outbox();
     for (; sentSeen < outbox.length; sentSeen++) {
       const m = outbox[sentSeen];
-      const bubble: Bubble = { who: "agent", text: m.text, time: clockText(m.sentAt), template: m.kind === "template" };
+      // A message with buttons or a list shows its body as the bubble, and the options come under it. (The outbox's own `text` has every row on a line, for the outgoing check.)
+      const i = m.interactive;
+      const bubble: Bubble = { who: "agent", text: i ? i.body : m.text, time: clockText(m.sentAt), template: m.kind === "template", ...(i ? { choices: { ...(i.buttons ? { buttons: i.buttons } : {}), ...(i.list ? { list: i.list } : {}) } } : {}) };
       if (m.to === CUSTOMER) customerLog.push(bubble);
       else if (m.to === world.owner) ownerLog.push(bubble);
     }
+  }
+
+  /** The newest option with this id on a message the agent sent the customer (a customer can scroll up and tap an older one). */
+  function optionFor(id: string): { id: string; title: string } | undefined {
+    for (let n = customerLog.length - 1; n >= 0; n--) {
+      const c = customerLog[n].choices;
+      const found = [...(c?.buttons ?? []), ...(c?.list?.rows ?? [])].find((o) => o.id === id);
+      if (found) return found;
+    }
+    return undefined;
   }
 
   /** After every tap: the payment provider's webhooks reach the agent (once each), then the chats are brought up to date. */
@@ -94,6 +113,18 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
       customerMessages++;
       customerLog.push({ who: "me", text, time: clockText(world.clock.now()), template: false });
       await world.say(text);
+      await settle();
+      return undefined;
+    },
+
+    offers: (id) => optionFor(id) !== undefined,
+
+    async tap(id) {
+      const option = optionFor(id);
+      if (!option || customerMessages >= MAX_CUSTOMER_MESSAGES || taps >= MAX_TAPS) return ui.demoFull; // a tap on nothing is a stale one: the page and the API only offer what is there
+      customerMessages++;
+      customerLog.push({ who: "me", text: option.title, time: clockText(world.clock.now()), template: false }); // WhatsApp shows the chosen option's title as the customer's message
+      await world.tap(id);
       await settle();
       return undefined;
     },

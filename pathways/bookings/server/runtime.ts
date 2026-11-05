@@ -163,7 +163,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     snapshot = after;
     entries = all;
     // The builder or partner is told once, here, when the agent moves to buttons: the agent writes one ai_mode line per episode (its reason is in the line and in /status).
-    for (const e of fresh) if (e.action === "ai_mode") log(`The agent now answers with buttons and lists, no AI (${e.refs.reason}). The record's ai_mode line says why; /status counts the month.`);
+    for (const e of fresh) {
+      if (e.action !== "ai_mode") continue;
+      if (e.refs.mode === "step_paused") log(`The ${e.refs.step} model kept failing, so the agent skips it until ${e.refs.until} and the language model reads each message meanwhile. The record's ai_mode line says why; /status shows when the pause ends.`);
+      else if (e.refs.mode === "step_resumed") log(`The ${e.refs.step} model answered again, so the agent asks it first again.`);
+      else log(`The agent now answers with buttons and lists, no AI (${e.refs.reason}). The record's ai_mode line says why; /status counts the month.`);
+    }
     bookings = countByState(store);
     const was = refunds.needBuilder.total;
     refunds = countRefunds(store);

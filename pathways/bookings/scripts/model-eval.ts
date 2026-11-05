@@ -18,6 +18,7 @@ import { coerceIntent } from "../src/adapters/model.ts";
 import { createModelParser } from "../src/adapters/model-llm.ts";
 import type { ModelConfig } from "../../../modules/understanding/model-llm.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
+import { dayOf, rateFor } from "../../../modules/understanding/rates.ts";
 import { createSystemOne } from "../../../modules/understanding/system-one.ts";
 import { createRouter } from "../src/adapters/understanding.ts";
 import { glowSalon } from "../src/harness.ts";
@@ -27,7 +28,7 @@ import type { AuthHeader } from "./eval-keys.ts";
 import { costPer1000, formatTable, scoreRow, summarise } from "./eval-score.ts";
 import type { EvalMessage, Row, Summary } from "./eval-score.ts";
 
-/** One model to try. Prices are per million tokens, in US dollars, filled in from the provider's current price page. */
+/** One model to try. Its price comes from the one dated table of model prices (modules/understanding/rates/), by `provider` and `model`. */
 export interface Candidate extends Omit<ModelConfig, "wire" | "baseUrl"> {
   name: string;
   /** "openai" and "anthropic" are language models (step 2); "systemone" is a decision model (step 1) over the System One API, scored on its own. */
@@ -44,9 +45,19 @@ export interface Candidate extends Omit<ModelConfig, "wire" | "baseUrl"> {
   authHeader?: AuthHeader;
   /** Wait this long between calls, for providers with a low rate limit. */
   pauseMs?: number;
-  priceInputPerMillion: number | null;
-  priceOutputPerMillion: number | null;
+  /** The provider's name as runtime.json would give it ("deepinfra"): with the model id, the key to its line in the rate table. */
+  provider?: string;
+  /** Dollars per million tokens, for a model that is in no rate table (the tests). Left out, the table's line is used; with neither, the cost row says "no price set". */
+  priceInputPerMillion?: number | null;
+  priceOutputPerMillion?: number | null;
   note?: string;
+}
+
+/** Dollars per million tokens, in and out, for a candidate: its own prices if it carries them, else the rate table's line for its provider and model today. */
+export function pricesOf(c: Candidate, day: string = dayOf(Date.now())): [number | null, number | null] {
+  if (typeof c.priceInputPerMillion === "number" && typeof c.priceOutputPerMillion === "number") return [c.priceInputPerMillion, c.priceOutputPerMillion];
+  const rate = c.provider ? rateFor(c.provider, c.model, day) : null;
+  return rate ? [rate.inputUsdPerMillion, rate.outputUsdPerMillion] : [null, null];
 }
 
 export interface EvalOptions {
@@ -138,7 +149,7 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
       }
     } else {
       const header: AuthHeader = candidate.authHeader ?? (candidate.wire === "anthropic" ? "x-api-key" : "authorization");
-      const { name: _name, keyEnv: _keyEnv, urlEnv: _urlEnv, kind: _kind, authHeader: _auth, pauseMs: _pause, priceInputPerMillion: _pi, priceOutputPerMillion: _po, note: _note, ...rest } = candidate;
+      const { name: _name, keyEnv: _keyEnv, urlEnv: _urlEnv, kind: _kind, authHeader: _auth, pauseMs: _pause, provider: _provider, priceInputPerMillion: _pi, priceOutputPerMillion: _po, note: _note, ...rest } = candidate;
       const parser = createModelParser({ ...rest, wire: candidate.wire, baseUrl }, keyedFetch(header, key as string, options.fetchFn));
       for (const m of messages) {
         const r = await parser.parseDetailed(m.text, context);
@@ -150,7 +161,7 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
   }
 
   const summaries = columns.map((c) => summarise(c.name, c.rows));
-  const costs = columns.map((c, i) => (c.candidate ? costPer1000(summaries[i], c.candidate.priceInputPerMillion, c.candidate.priceOutputPerMillion) : 0));
+  const costs = columns.map((c, i) => (c.candidate ? costPer1000(summaries[i], ...pricesOf(c.candidate)) : 0));
   const table = formatTable(summaries, costs);
   log("");
   for (const line of skipped) log(line);
@@ -167,7 +178,7 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
     log("");
     log(`Tokens used by this run: ${used.reduce((n, s) => n + s.tokensIn, 0)} in, ${used.reduce((n, s) => n + s.tokensOut, 0)} out, over ${count(messages.length * used.length, "calls")}. Use --max-messages to send fewer.`);
     const unpriced = columns.filter((c) => c.candidate && costs[columns.indexOf(c)] === null).map((c) => c.name);
-    if (unpriced.length > 0) log(`No price filled in for ${unpriced.join(", ")}: fill from the provider's current price page in eval/models.json.`);
+    if (unpriced.length > 0) log(`No price filled in for ${unpriced.join(", ")}: add the model to the rate table (modules/understanding/rates/), from the provider's current price page.`);
   }
 
   const resultsPath = options.resultsPath === undefined ? new URL("results.json", EVAL_DIR) : options.resultsPath;
