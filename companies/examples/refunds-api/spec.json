@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "tenant": "brightside",
+  "tool": "refunds",
+  "name": "brightside-refunds",
+  "version": 1,
+  "reviewed_by": "priya.nair",
+  "approval_ttl_seconds": 3600,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/v1/charges/{charge_id}",
+      "operation": "get_charge"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/charges/{charge_id}/refunds",
+      "operation": "list_refunds"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/refunds",
+      "operation": "create_refund"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/refunds/{refund_id}",
+      "operation": "get_refund"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/refunds/{refund_id}/cancel",
+      "operation": "cancel_refund"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/transfers",
+      "operation": "create_transfer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "create_refund-amount-bound",
+      "kind": "argument_bound",
+      "operation": "create_refund",
+      "field": "amount",
+      "min": "1",
+      "max": "50000",
+      "units": {
+        "amount": "cents"
+      }
+    },
+    {
+      "id": "create_refund-needs-approval",
+      "kind": "call_bound_approval",
+      "operation": "create_refund",
+      "amount_field": "amount",
+      "threshold": "10000",
+      "units": {
+        "amount": "cents"
+      }
+    },
+    {
+      "id": "create_refund-once",
+      "kind": "at_most_once_effect",
+      "operation": "create_refund"
+    },
+    {
+      "id": "create_transfer-forbidden",
+      "kind": "forbidden_call",
+      "operation": "create_transfer"
+    }
+  ],
+  "limits": [
+    {
+      "id": "create_refund-spend-per-day",
+      "kind": "spend",
+      "operation": "create_refund",
+      "amount_field": "amount",
+      "scope": [],
+      "cap": "200000",
+      "window_seconds": 86400
+    },
+    {
+      "id": "create_refund-count-per-day",
+      "kind": "count",
+      "operation": "create_refund",
+      "scope": [],
+      "cap": "100",
+      "window_seconds": 86400
+    },
+    {
+      "id": "cancel_refund-count-per-day",
+      "kind": "count",
+      "operation": "cancel_refund",
+      "scope": [],
+      "cap": "20",
+      "window_seconds": 86400
+    }
+  ],
+  "intents": [
+    {
+      "operation": "create_refund",
+      "key_fields": [
+        "charge_id"
+      ],
+      "idempotency_header": "Idempotency-Key",
+      "derive_key": true
+    }
+  ],
+  "fail_policy": []
+}

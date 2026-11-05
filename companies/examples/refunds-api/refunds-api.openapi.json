@@ -1,0 +1,129 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Brightside Refunds API",
+    "version": "1.4.0",
+    "description": "A made-up refunds API for a made-up shop, Brightside. Amounts are whole cents."
+  },
+  "servers": [{ "url": "https://refunds.brightside.example" }],
+  "paths": {
+    "/v1/charges/{charge_id}": {
+      "get": {
+        "operationId": "getCharge",
+        "summary": "Read one charge",
+        "parameters": [{ "$ref": "#/components/parameters/ChargeId" }],
+        "responses": { "200": { "description": "The charge" } }
+      }
+    },
+    "/v1/charges/{charge_id}/refunds": {
+      "get": {
+        "operationId": "listRefunds",
+        "summary": "List the refunds made against a charge",
+        "parameters": [{ "$ref": "#/components/parameters/ChargeId" }],
+        "responses": { "200": { "description": "The refunds" } }
+      }
+    },
+    "/v1/refunds": {
+      "post": {
+        "operationId": "createRefund",
+        "summary": "Refund some or all of a charge",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Repeat a request with the same key and the API returns the first answer. Keys are kept for 24 hours."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewRefund" } } }
+        },
+        "responses": { "201": { "description": "The refund" } }
+      }
+    },
+    "/v1/refunds/{refund_id}": {
+      "get": {
+        "operationId": "getRefund",
+        "summary": "Read one refund",
+        "parameters": [{ "$ref": "#/components/parameters/RefundId" }],
+        "responses": { "200": { "description": "The refund" } }
+      }
+    },
+    "/v1/refunds/{refund_id}/cancel": {
+      "post": {
+        "operationId": "cancelRefund",
+        "summary": "Cancel a refund that has not been paid out yet",
+        "parameters": [{ "$ref": "#/components/parameters/RefundId" }],
+        "responses": { "200": { "description": "The cancelled refund" } }
+      }
+    },
+    "/v1/transfers": {
+      "post": {
+        "operationId": "createTransfer",
+        "summary": "Move money between Brightside's own accounts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["from_account_id", "to_account_id", "amount"],
+                "properties": {
+                  "from_account_id": { "type": "string" },
+                  "to_account_id": { "type": "string" },
+                  "amount": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "The transfer" } }
+      }
+    },
+    "/v1/customers/{customer_id}": {
+      "get": {
+        "operationId": "getCustomer",
+        "summary": "Read one customer",
+        "parameters": [{ "name": "customer_id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "The customer" } }
+      },
+      "delete": {
+        "operationId": "deleteCustomer",
+        "summary": "Delete a customer and their history",
+        "parameters": [{ "name": "customer_id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "Deleted" } }
+      }
+    },
+    "/v1/customers/{customer_id}/notes": {
+      "post": {
+        "operationId": "addCustomerNote",
+        "summary": "Add a note to a customer",
+        "parameters": [{ "name": "customer_id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "The note" } }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ChargeId": { "name": "charge_id", "in": "path", "required": true, "schema": { "type": "string" } },
+      "RefundId": { "name": "refund_id", "in": "path", "required": true, "schema": { "type": "string" } }
+    },
+    "schemas": {
+      "NewRefund": {
+        "type": "object",
+        "required": ["charge_id", "amount"],
+        "properties": {
+          "charge_id": { "type": "string", "description": "The charge to refund." },
+          "amount": { "type": "integer", "minimum": 1, "maximum": 100000000, "description": "Cents to give back." },
+          "reason": { "type": "string", "enum": ["damaged", "late", "not_as_described", "other"] }
+        }
+      }
+    }
+  }
+}
