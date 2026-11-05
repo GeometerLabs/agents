@@ -88,7 +88,8 @@ export function readUsage(statusFile: string | undefined): UsageTotals | undefin
     if (typeof u !== "object" || u === null || typeof u.byStep !== "object" || u.byStep === null || typeof u.whatsapp !== "object" || u.whatsapp === null) return undefined;
     const n = [u.messages, u.byStep.rules, u.byStep.decision, u.byStep.model, u.modelMicroInr, u.whatsapp.service, u.whatsapp.utility, u.whatsapp.marketing, u.whatsapp.estMicroInr];
     if (!n.every((v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) return undefined;
-    return { messages: n[0], byStep: { rules: n[1], decision: n[2], model: n[3] }, modelMicroInr: n[4], whatsapp: { service: n[5], utility: n[6], marketing: n[7], estMicroInr: n[8], estimated: u.whatsapp.estimated === true } };
+    const unpriced = typeof u.unpriced === "number" && Number.isSafeInteger(u.unpriced) && u.unpriced >= 0 ? { unpriced: u.unpriced as number } : {}; // optional: an older status file has none
+    return { messages: n[0], byStep: { rules: n[1], decision: n[2], model: n[3] }, modelMicroInr: n[4], ...unpriced, whatsapp: { service: n[5], utility: n[6], marketing: n[7], estMicroInr: n[8], estimated: u.whatsapp.estimated === true } };
   } catch { return undefined; }
 }
 
