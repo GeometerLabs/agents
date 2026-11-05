@@ -64,14 +64,21 @@ test("the Compose file and the guard.toml the kit writes agree on ports and path
   const agentPort = port(CONTAINER_PATHS.listen), adminPort = port(CONTAINER_PATHS.adminListen), healthPort = port(CONTAINER_PATHS.healthListen);
   assert.equal(c.services.agent.environment.API_BASE_URL, `http://guard:${agentPort}`);
   assert.ok(c.services.guard.healthcheck.test.includes(`127.0.0.1:${healthPort}/readyz`));
-  assert.ok(c.services["record-export"].command.includes(`http://127.0.0.1:${adminPort}`));
+  assert.ok(c.services["record-export"].command.join(" ").includes(`--admin http://127.0.0.1:${adminPort} `));
   const mounts = c.services.guard.volumes.map((v: any) => v.target);
   assert.ok(mounts.includes("/etc/geo-guard"), "bundle and config folder");
   assert.ok(CONTAINER_PATHS.bundle.startsWith("/etc/geo-guard/"));
   assert.ok(mounts.includes(CONTAINER_PATHS.state.slice(0, CONTAINER_PATHS.state.lastIndexOf("/"))), "the folder the store lives in");
   assert.ok(toml.includes(`\${file:/run/secrets/api_authorization}`), "the key is read from the file Compose mounts");
-  assert.ok(c.services["record-export"].command.includes("/var/lib/geo-guard/export"));
-  assert.ok(mounts.includes("/var/lib/geo-guard/export"), "where the evidence pack goes");
+  const exporter = c.services["record-export"];
+  assert.ok(exporter.command.join(" ").includes("/var/lib/geo-guard/export"), "the folder, as Guard sees it, that the backup goes to");
+  assert.ok(mounts.includes("/var/lib/geo-guard/export"), "and Guard has it mounted");
+  // the export reads that same folder, read-only, and copies only the two files reviewers need: it never gets the keys by a writable path
+  const backups = exporter.volumes.find((v: any) => v.target === "/backups");
+  assert.equal(backups.read_only, true);
+  assert.equal(backups.source, c.services.guard.volumes.find((v: any) => v.target === "/var/lib/geo-guard/export").source, "the same folder");
+  assert.ok(exporter.command.join(" ").includes("--backup-read-dir /backups"));
+  assert.match(exporter.command.join(" "), /--out \/export\/\$+\(date -u/u, "every run makes a new dated folder");
 });
 
 test("the Kubernetes sidecar: two containers, the API's key in Guard's alone, probes on the health port, one replica that does not overlap itself", { skip: skipWithoutRuby }, () => {

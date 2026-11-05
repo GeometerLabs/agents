@@ -238,6 +238,8 @@ export function acceptTemplate(draft: Draft, draftSha256: string): Obj {
     approval_ttl_seconds: 3600,
     routes: Object.fromEntries(draft.routes.map((r) => [r.operation, false])),
     _routes: Object.fromEntries(draft.routes.map((r) => [r.operation, `${r.method} ${r.path}${r.consequential ? " (consequential)" : ""}`])),
+    _forbid: "Any call you list here (it must also be a kept route) is always refused, and the refusal names a rule: <operation>-forbidden. For a call you want listed on purpose and never made.",
+    forbid: [],
     suggestions,
   };
 }
@@ -278,7 +280,7 @@ export function specFromAccept(draft: Draft, accept: unknown, draftSha256: strin
   const a = accept as Obj;
   if (a.accept !== 1) bad('The accept file must say "accept": 1.');
   if (a.draft_sha256 !== draftSha256) bad(`The accept file was made for a different draft (it names ${String(a.draft_sha256)}, this draft is ${draftSha256}). The API file changed since: read the new draft, then make a new accept file.`);
-  const known = new Set(["accept", "draft_sha256", "reviewed_by", "tenant", "name", "version", "approval_ttl_seconds", "routes", "suggestions"]);
+  const known = new Set(["accept", "draft_sha256", "reviewed_by", "tenant", "name", "version", "approval_ttl_seconds", "routes", "forbid", "suggestions"]);
   for (const k of Object.keys(a)) if (!known.has(k) && !k.startsWith("_")) bad(`The accept file has a field this tool does not know: "${k}".`);
 
   const idField = (k: string, v: unknown, why: string) => { if (typeof v !== "string" || !ID.test(v)) bad(`"${k}" is ${present(v) ? JSON.stringify(v) : "empty"}: ${why}`); };
@@ -390,6 +392,16 @@ export function specFromAccept(draft: Draft, accept: unknown, draftSha256: strin
   for (const t of thresholds) {
     const max = maxOf.get(t.key);
     if (max !== undefined && t.value >= max) bad(`${t.id}: the threshold is not below the bound's max for the same field. A call above the max is refused before it can be held, so no call could ever wait for a person. Lower the threshold or raise the max.`);
+  }
+  // calls the reviewer marks off by name, whether or not the draft suggested a forbidden_call for them
+  const forbid = a.forbid ?? [];
+  if (!Array.isArray(forbid) || forbid.some((x) => typeof x !== "string")) bad('"forbid" must be a list of operation names.');
+  else {
+    for (const op of forbid as string[]) {
+      if (!routeByName.has(op)) bad(`"forbid" names ${JSON.stringify(op)}, which is not in the draft.`);
+      else if (!keptRoutes.has(op)) bad(`"forbid" names ${JSON.stringify(op)}, but that route is not kept. A route you leave out is already refused as unlisted; keep it as well if you want the refusal to name a rule.`);
+      else if (!rules.some((r) => r.id === `${op}-forbidden`)) { rules.push({ id: `${op}-forbidden`, kind: "forbidden_call", operation: op }); keptIds.rules.push(`${op}-forbidden`); }
+    }
   }
   if (rules.length === 0) bad("No rule is kept. Guard will not run a bundle with no reviewed rule. Keep at least one suggestion (set \"keep\": true and fill its blanks).");
   for (const op of keptRoutes) {

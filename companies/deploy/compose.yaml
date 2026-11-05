@@ -11,7 +11,8 @@
 #   secrets/api_authorization   the API's own key, the whole header value on one line (for example: Bearer sk_live_...)
 #   secrets/guard_agent_token   the token you give the agent; guard.toml holds only its sha256
 #   secrets/guard_admin_token   the operator's token, for the export service below; guard.toml holds only its sha256
-#   evidence/                   an empty folder Guard may write to (chown 65532 evidence), for the evidence pack
+#   evidence/                   a folder Guard may write to (chown 65532 evidence): its backups go here, one new subfolder per export. Operator only: a
+#                               backup holds Guard's store and evidence keys. Reviewers get a copy of two files from it (see record-export).
 #
 # Start:  docker compose --env-file .env up -d
 # Export for reviewers (starts nothing else):  docker compose --profile review run --rm record-export
@@ -34,7 +35,7 @@ services:
     volumes:
       - ./guard:/etc/geo-guard:ro
       - guard-state:/var/lib/geo-guard
-      # where the evidence pack is written when the export asks for it
+      # where Guard's backups are written when the export asks for one (operator only: the backup holds the store and the evidence keys)
       - ./evidence:/var/lib/geo-guard/export
     secrets:
       - api_authorization
@@ -65,9 +66,13 @@ services:
     image: ${NODE_IMAGE:-node:24-alpine}
     network_mode: "service:guard"
     working_dir: /export
-    command: ["node", "/tools/export-record.ts", "--admin", "http://127.0.0.1:8082", "--token-file", "/run/secrets/guard_admin_token", "--out", "/export/latest", "--evidence-dir", "/var/lib/geo-guard/export"]
+    # Guard writes its full backup (its store and its evidence keys) to a new subfolder of /var/lib/geo-guard/export, which is ./evidence on the host: that
+    # folder is the OPERATOR's. The export copies only evidence-pack.json and anchor.json from it into ./review/<date>/evidence, which is what reviewers get.
+    # Every run makes a new dated folder: keep the old ones, because an old export's anchor is what a later pack is checked against ($$ is how Compose writes $).
+    command: ["sh", "-c", "exec node /tools/export-record.ts --admin http://127.0.0.1:8082 --token-file /run/secrets/guard_admin_token --out /export/$$(date -u +%Y-%m-%dT%H-%M-%SZ) --backup-dir /var/lib/geo-guard/export --backup-read-dir /backups"]
     volumes:
       - ../export-record.ts:/tools/export-record.ts:ro
+      - ./evidence:/backups:ro
       - ./review:/export
     secrets:
       - guard_admin_token

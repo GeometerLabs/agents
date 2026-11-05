@@ -29,6 +29,8 @@
     "cancel_refund": "POST /v1/refunds/{refund_id}/cancel (consequential)",
     "create_transfer": "POST /v1/transfers (consequential)"
   },
+  "_forbid": "Any call you list here (it must also be a kept route) is always refused, and the refusal names a rule: <operation>-forbidden. For a call you want listed on purpose and never made.",
+  "forbid": [],
   "suggestions": {
     "delete_customer-once": {
       "_review": "Money moves, or the action happens, at most once for the same action. \"The same action\" is decided by the fields in key_fields. Guessed from the path field that look like ids: \"customer_id\". Check the guess against how your API names things. No idempotency header is declared for this call, so Guard cannot ask the API to ignore a repeat. If a reply is lost, Guard does not send the call again: it holds it for a person, who checks with the API whether it happened. Guard repeats an uncertain call by itself only when the spec says the API keeps its keys (retry_safe), and this draft never says that.",
