@@ -1,9 +1,9 @@
 // Stand-in for the two things the template takes from node:crypto, for the browser build. The build points `node:crypto` here.
 //
-//  - createHash("sha256").update(text).digest("hex"): the action record fingerprints its inputs (src/record.ts), and it does so
+//  - createHash("sha256").update(text).digest("hex"): the action record fingerprints its inputs (modules/record/record.ts), and it does so
 //    synchronously, so WebCrypto (which answers later) cannot be used without changing the record. This is plain SHA-256 in JavaScript.
 //    The tests compare it with Node's own on text in several scripts, so a browser's fingerprints equal a live shop's.
-//  - randomInt(max): the approvals relay's one-use codes (src/approval-code.ts), from the browser's own random numbers.
+//  - randomInt(max): the approvals relay's one-use codes (modules/approvals/code.ts), from the browser's own random numbers.
 
 const primes: number[] = [];
 for (let n = 2; primes.length < 64; n++) if (primes.every((p) => n % p !== 0)) primes.push(n);

@@ -2,16 +2,16 @@
 // the clock ticking. main.ts is a thin command line around this; the tests start it directly.
 import { readFileSync } from "node:fs";
 import { createModelParser } from "../src/adapters/model-llm.ts";
-import type { ModelConfig } from "../src/adapters/model-llm.ts";
+import type { ModelConfig } from "../../../modules/understanding/model-llm.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
-import { systemOneFromEnv } from "../src/adapters/system-one.ts";
+import { systemOneFromEnv } from "../../../modules/understanding/system-one.ts";
 import { createRouter } from "../src/adapters/understanding.ts";
-import type { DecisionStep, ModelStep } from "../src/adapters/understanding.ts";
-import type { AiPolicy } from "../src/ai-state.ts";
-import { systemClock } from "../src/clock.ts";
-import type { Clock } from "../src/clock.ts";
-import { loadPrivateKey } from "../report/sign.ts";
+import type { DecisionStep, ModelStep } from "../../../modules/understanding/router.ts";
+import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
+import { systemClock } from "../../../modules/core/clock.ts";
+import type { Clock } from "../../../modules/core/clock.ts";
+import { loadPrivateKey } from "../../../modules/report/sign.ts";
 import { readGoLive } from "../report/cli.ts";
 import type { MonthlyReportSetup } from "../report/monthly-job.ts";
 import { ClientError, aiOverrideReader, loadClient, pathwayVersion, reportOptionsReader } from "./config.ts";

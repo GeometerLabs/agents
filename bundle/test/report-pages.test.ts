@@ -95,7 +95,7 @@ test("Caddy mounts each shop's reports folder, read-only, and nothing else of it
   assert.equal(`/home/node/${REPORTS_SUBPATH}`, REPORTS_DIR, "the folder Caddy mounts is the folder the runtime is told to write to");
   assert.ok(!mounts(c, "caddy").some((m) => typeof m === "string" && m.includes("/srv/secrets/")), "Caddy still sees no secrets folder");
   assert.deepEqual(Object.keys(c.services.caddy.block.networks as object), ["front"], "no new network");
-  assert.deepEqual(mounts(c, "rt-glow-salon"), ["/repo/pathways/bookings:/pathway:ro", "/srv/generated/shops/glow-salon/client:/client:ro", "/srv/secrets/rt-glow-salon:/run/secrets:ro", "rt-data-glow-salon:/home/node"], "the runtime's mounts are as they were");
+  assert.deepEqual(mounts(c, "rt-glow-salon"), ["/repo/pathways/bookings:/pathway:ro", "/repo/modules:/modules:ro", "/srv/generated/shops/glow-salon/client:/client:ro", "/srv/secrets/rt-glow-salon:/run/secrets:ro", "rt-data-glow-salon:/home/node"], "the runtime's mounts are as they were");
   assert.doesNotMatch(c.compose, /docker\.sock/u);
 });
 

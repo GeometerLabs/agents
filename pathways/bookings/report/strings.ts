@@ -1,5 +1,5 @@
 // Every word the monthly report and the certificates say, per language. Nothing numeric is typed here: counts, amounts and
-// dates are filled in from the record by the per-language formatters in src/language/format.ts, and these are the fixed
+// dates are filled in from the record by the per-language formatters in modules/language/format.ts, and these are the fixed
 // words around them. The type makes sure no language is missing a string.
 //
 // Machine-written Hindi, Malayalam and Kannada. The Malayalam and Kannada strings are listed in REVIEW-ml.md and
@@ -8,9 +8,10 @@
 // Claim rules, kept in code: a document counts and states facts; it never grades. BANNED lists, per language, the words
 // no document may contain (safe, guaranteed, certified, earnings and their translations). A test runs every document in
 // every language through it. The confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are not on it.
+import { INNOVATOR } from "../../../modules/report/text.ts";
 import { STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
-import type { RuleId } from "../src/record.ts";
-import type { Language } from "../src/settings.ts";
+import type { RuleId } from "../../../modules/record/record.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, Source } from "./data.ts";
 
 export interface Strings {
@@ -65,14 +66,10 @@ export interface Strings {
 
 const standIn = `(${STAND_IN_SERVICES})`;
 
-/** The mark that goes before the word on the Innovator badge. A plain symbol, not an emoji, so every phone draws it the same way. */
-export const BADGE_SYMBOL = "\u2605";
-/** "★ Innovator" in a language. */
-export const badgeText = (language: Language): string => `${BADGE_SYMBOL} ${STRINGS[language].innovator}`;
 
 const en: Strings = {
   agent: "Bookings agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", monthlyCertificate: "Monthly record certificate",
-  innovator: "Innovator",
+  innovator: INNOVATOR.en,
   fullReport: "Full report",
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   label: {
@@ -149,7 +146,7 @@ const en: Strings = {
 
 const hi: Strings = {
   agent: "बुकिंग एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", monthlyCertificate: "मासिक रिकॉर्ड प्रमाणपत्र",
-  innovator: "इनोवेटर",
+  innovator: INNOVATOR.hi,
   fullReport: "पूरी रिपोर्ट",
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   label: {
@@ -226,7 +223,7 @@ const hi: Strings = {
 
 const ml: Strings = {
   agent: "ബുക്കിംഗ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", monthlyCertificate: "പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ്",
-  innovator: "ഇന്നൊവേറ്റർ",
+  innovator: INNOVATOR.ml,
   fullReport: "പൂർണ്ണ റിപ്പോർട്ട്",
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   label: {
@@ -303,7 +300,7 @@ const ml: Strings = {
 
 const kn: Strings = {
   agent: "ಬುಕಿಂಗ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", monthlyCertificate: "ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ",
-  innovator: "ಇನ್ನೋವೇಟರ್",
+  innovator: INNOVATOR.kn,
   fullReport: "ಪೂರ್ಣ ವರದಿ",
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   label: {
@@ -379,24 +376,3 @@ const kn: Strings = {
 };
 
 export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
-
-// ---- the words no document may contain ------------------------------------------------------------------------------
-
-/**
- * Claim rules 3 and 7: never "safe", "guaranteed", "certified", and no earnings claims. English words are checked in
- * every language (an English word can sit in any text); each language adds its own. "certificate" is fine; "certified"
- * is not, so these name the exact words and do not cut them short. The confirm verbs of the packs are not here.
- */
-export const BANNED: Record<Language | "any", RegExp[]> = {
-  any: [/\bsafe/i, /\bsafety\b/i, /guarant/i, /\bcertified\b/i, /\bcertify\b/i, /\bcertifies\b/i, /\bcertification\b/i, /\b100 ?%/, /risk[- ]?free/i, /fool[- ]?proof/i, /\bsecure(d|ly)?\b/i, /\bproven\b/i,
-    /\bearn/i, /\bincome\b/i, /\bprofit/i, /\brevenue\b/i],
-  en: [],
-  hi: [/सुरक्षित/u, /सुरक्षा/u, /गारंटी/u, /गारण्टी/u, /प्रमाणित/u, /कमाई/u, /आमदनी/u, /मुनाफ़ा/u, /मुनाफा/u],
-  ml: [/സുരക്ഷിത/u, /ഗ്യാരണ്ടി/u, /ഗ്യാരന്റി/u, /സർട്ടിഫൈഡ്/u, /വരുമാനം/u, /ലാഭം/u, /സമ്പാദി/u, /ഉറപ്പ് ?നൽകു/u, /ഉറപ്പുനൽകു/u],
-  kn: [/ಸುರಕ್ಷಿತ/u, /ಗ್ಯಾರಂಟಿ/u, /ಖಾತರಿ/u, /ಖಾತ್ರಿ/u, /ಪ್ರಮಾಣೀಕೃತ/u, /ಪ್ರಮಾಣೀಕರಿಸ/u, /ಆದಾಯ/u, /ಲಾಭ/u, /ಗಳಿಕೆ/u, /ಸಂಪಾದ/u],
-};
-
-/** The banned words found in a text written in a language (and "both" languages: pass each). Empty means none. */
-export function bannedIn(text: string, language: Language): string[] {
-  return [...BANNED.any, ...BANNED[language]].filter((re) => re.test(text)).map((re) => re.source);
-}

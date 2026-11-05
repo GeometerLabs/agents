@@ -1,0 +1,1682 @@
+[
+  {
+    "name": "fee_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। {{2}} की {{3}} की {{4}} की फीस {{5}} है, देय तारीख {{6}}। यहाँ भुगतान करें: {{7}} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200",
+              "गुरुवार, 5 नवंबर",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. {{2}}'s {{3}} fee for {{4}} is {{5}}, due on {{6}}. Pay here: {{7}} Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "₹1,200",
+              "Thu 5 Nov",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} {{4}} ഫീസ് {{5}} ആണ്, അടയ്ക്കേണ്ട തീയതി {{6}}. ഇവിടെ അടയ്ക്കാം: {{7}} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200",
+              "വ്യാഴം, 5 നവംബർ",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕ {{5}}, ಕೊನೆಯ ದಿನಾಂಕ {{6}}. ಇಲ್ಲಿ ಪಾವತಿಸಿ: {{7}} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "ಗುರುವಾರ, 5 ನವೆಂಬರ್",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। {{2}} की {{3}} की {{4}} की फीस {{5}} तक देनी थी। {{6}} अभी बाकी है: {{7}} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "गुरुवार, 5 नवंबर",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. {{2}}'s {{3}} fee for {{4}} was due on {{5}}. {{6}} is still to pay: {{7}} Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "Thu 5 Nov",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} {{4}} ഫീസ് {{5}}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. {{6}} ഇനിയും അടയ്ക്കാനുണ്ട്: {{7}} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "വ്യാഴം, 5 നവംബർ",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕವನ್ನು {{5}}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. {{6}} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: {{7}} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "ಗುರುವಾರ, 5 ನವೆಂಬರ್",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। {{2}} की {{3}} की {{4}} की फीस {{5}} तक देनी थी। {{6}} की देर की फीस जुड़ गई है, इसलिए {{7}} अभी बाकी है: {{8}} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "गुरुवार, 5 नवंबर",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. {{2}}'s {{3}} fee for {{4}} was due on {{5}}. A late fee of {{6}} has been added, so {{7}} is still to pay: {{8}} Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "Thu 5 Nov",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} {{4}} ഫീസ് {{5}}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. {{6}} വൈകിയ ഫീസ് ചേർത്തിട്ടുണ്ട്, അതിനാൽ {{7}} ഇനിയും അടയ്ക്കാനുണ്ട്: {{8}} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "വ്യാഴം, 5 നവംബർ",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕವನ್ನು {{5}}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. {{6}} ತಡ ಶುಲ್ಕ ಸೇರಿಸಲಾಗಿದೆ, ಆದ್ದರಿಂದ {{7}} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: {{8}} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "ಗುರುವಾರ, 5 ನವೆಂಬರ್",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_received",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "धन्यवाद! {{1}} को {{2}} की {{3}} की {{4}} की फीस के {{5}} मिल गए। अब कुछ बाकी नहीं है। आपकी रसीद संख्या {{6}} है।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_received",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Thank you! {{1}} has received {{2}} for {{3}}'s {{4}} fee for {{5}}. Nothing more is due. Your receipt number is {{6}}.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "₹1,200",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_received",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നന്ദി! {{1}}-ന്റെ {{2}} {{3}} ഫീസിന്റെ {{4}} {{5}}-ന് ലഭിച്ചു. ഇനി ഒന്നും അടയ്ക്കാനില്ല. നിങ്ങളുടെ രസീത് നമ്പർ {{6}} ആണ്.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200",
+              "Bright Tuition Centre",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_received",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಧನ್ಯವಾದ! {{1}} ಅವರ {{2}} {{3}} ಶುಲ್ಕದ {{4}} {{5}}-ಗೆ ಸಿಕ್ಕಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ. ನಿಮ್ಮ ರಸೀದಿ ಸಂಖ್ಯೆ {{6}}.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "Bright Tuition Centre",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_part_received",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "धन्यवाद! {{1}} को {{2}} की {{3}} की {{4}} की फीस के {{5}} मिल गए। {{6}} अभी बाकी है। बाकी यहाँ भरें: {{7}} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_part_received",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Thank you! {{1}} has received {{2}} for {{3}}'s {{4}} fee for {{5}}. {{6}} is still to pay. Pay the rest here: {{7}} Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "₹1,200",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_part_received",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നന്ദി! {{1}}-ന്റെ {{2}} {{3}} ഫീസിന്റെ {{4}} {{5}}-ന് ലഭിച്ചു. {{6}} ഇനിയും അടയ്ക്കാനുണ്ട്. ബാക്കി ഇവിടെ അടയ്ക്കാം: {{7}} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_part_received",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಧನ್ಯವಾದ! {{1}} ಅವರ {{2}} {{3}} ಶುಲ್ಕದ {{4}} {{5}}-ಗೆ ಸಿಕ್ಕಿದೆ. {{6}} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: {{7}} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "Bright Tuition Centre",
+              "₹1,200",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_asks",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} ने {{2}} की {{3}} की {{4}} की फीस से {{5}} कम करने को कहा है। फीस {{6}} है और अभी {{7}} भरने हैं। \"approve {{8}}\" या \"deny {{9}}\" लिखकर जवाब दें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹100",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_asks",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: {{1}} asks to take {{2}} off {{3}}'s {{4}} fee for {{5}}. The fee is {{6}} and {{7}} is to pay now. Reply \"approve {{8}}\" or \"deny {{9}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹100",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_asks",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}} {{2}}-ന്റെ {{3}} {{4}} ഫീസിൽ നിന്ന് {{5}} കുറയ്ക്കാൻ ആവശ്യപ്പെടുന്നു. ഫീസ് {{6}} ആണ്, ഇപ്പോൾ {{7}} അടയ്ക്കാനുണ്ട്. \"approve {{8}}\" അല്ലെങ്കിൽ \"deny {{9}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹100",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_asks",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮತಿ ಬೇಕು: {{1}} ಅವರು {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕದಿಂದ {{5}} ಕಡಿಮೆ ಮಾಡಲು ಕೇಳಿದ್ದಾರೆ. ಶುಲ್ಕ {{6}}, ಈಗ {{7}} ಪಾವತಿಸಬೇಕು. \"approve {{8}}\" ಅಥವಾ \"deny {{9}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹100",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_done",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपकी {{1}} की सीमा के अंदर हो गया: {{2}} की {{3}} की {{4}} की फीस से {{5}} कम किए ({{6}})। अब {{7}} भरने हैं।",
+        "example": {
+          "body_text": [
+            [
+              "₹100",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹100",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_done",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Done within your {{1}} limit: {{2}} taken off {{3}}'s {{4}} fee for {{5}} ({{6}}). {{7}} is now to pay.",
+        "example": {
+          "body_text": [
+            [
+              "₹100",
+              "₹100",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_done",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പരിധിക്കുള്ളിൽ ചെയ്തു: {{2}}-ന്റെ {{3}} {{4}} ഫീസിൽ നിന്ന് {{5}} കുറച്ചു ({{6}}). ഇനി {{7}} അടയ്ക്കണം.",
+        "example": {
+          "body_text": [
+            [
+              "₹100",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹100",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_waiver_done",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಮಿತಿಯೊಳಗೆ ಮಾಡಲಾಗಿದೆ: {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕದಿಂದ {{5}} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ ({{6}}). ಈಗ {{7}} ಪಾವತಿಸಬೇಕು.",
+        "example": {
+          "body_text": [
+            [
+              "₹100",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹100",
+              "+919811111111",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_refund_asks",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} ने {{2}} की {{3}} की {{4}} की फीस के भरे {{5}} में से {{6}} वापस माँगे हैं। \"approve {{7}}\" या \"deny {{8}}\" लिखकर जवाब दें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_refund_asks",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: {{1}} asks for {{2}} back of the {{3}} paid for {{4}}'s {{5}} fee for {{6}}. Reply \"approve {{7}}\" or \"deny {{8}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹1,200",
+              "₹1,200",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_refund_asks",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}} {{2}}-ന്റെ {{3}} {{4}} ഫീസായി അടച്ച {{5}}-ൽ നിന്ന് {{6}} തിരികെ ചോദിക്കുന്നു. \"approve {{7}}\" അല്ലെങ്കിൽ \"deny {{8}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_refund_asks",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮತಿ ಬೇಕು: {{1}} ಅವರು {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕವಾಗಿ ಪಾವತಿಸಿದ {{5}}ರಲ್ಲಿ {{6}} ಹಿಂತಿರುಗಿ ಕೇಳಿದ್ದಾರೆ. \"approve {{7}}\" ಅಥವಾ \"deny {{8}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "₹1,200",
+              "q-2",
+              "q-2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_asked",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "अभिभावक {{1}} ने {{2}} की {{3}} की {{4}} की फीस ({{5}}) पर छूट माँगी, पर कितनी यह नहीं बताया। कृपया उन्हें संदेश भेजें। कुछ बदला नहीं गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_asked",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Parent {{1}} asked for a discount on {{2}}'s {{3}} fee for {{4}} ({{5}}) without saying how much. Please message them. Nothing was changed.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_asked",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രക്ഷിതാവ് {{1}} {{2}}-ന്റെ {{3}} {{4}} ഫീസിൽ ({{5}}) ഇളവ് ചോദിച്ചു, എത്രയെന്ന് പറഞ്ഞില്ല. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ. ഒന്നും മാറ്റിയിട്ടില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_discount_asked",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೋಷಕರು {{1}} ಅವರು {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕದ ({{5}}) ಮೇಲೆ ರಿಯಾಯಿತಿ ಕೇಳಿದ್ದಾರೆ, ಎಷ್ಟು ಎಂದು ಹೇಳಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_claimed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "अभिभावक {{1}} कहते हैं कि उन्होंने {{2}} की {{3}} की {{4}} की फीस ({{5}}) भर दी है, पर भुगतान रिकॉर्ड में {{6}} दिख रहे हैं। कृपया जाँचकर उन्हें संदेश भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_claimed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Parent {{1}} says they paid {{2}}'s {{3}} fee for {{4}} ({{5}}), but the payment record shows {{6}}. Please check and message them.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "₹1,200",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_claimed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രക്ഷിതാവ് {{1}} {{2}}-ന്റെ {{3}} {{4}} ഫീസ് ({{5}}) അടച്ചു എന്ന് പറയുന്നു, പക്ഷേ പേയ്മെന്റ് രേഖയിൽ {{6}} മാത്രമാണ് കാണുന്നത്. ദയവായി പരിശോധിച്ച് അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_payment_claimed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೋಷಕರು {{1}} ಅವರು {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕ ({{5}}) ಪಾವತಿಸಿದ್ದೇನೆ ಎನ್ನುತ್ತಾರೆ, ಆದರೆ ಪಾವತಿ ದಾಖಲೆಯಲ್ಲಿ {{6}} ಮಾತ್ರ ಕಾಣಿಸುತ್ತಿದೆ. ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_overpaid",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "अभिभावक {{1}} ने {{2}} की {{3}} की फीस से ज़्यादा भर दिया। फालतू {{4}} लौटाए जा रहे हैं।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "नवंबर 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_overpaid",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Parent {{1}} paid more than was due for {{2}}'s fee for {{3}}. The extra {{4}} is being refunded.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "Nov 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_overpaid",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രക്ഷിതാവ് {{1}} {{2}}-ന്റെ {{3}} ഫീസിനേക്കാൾ കൂടുതൽ അടച്ചു. അധികമായ {{4}} തിരികെ നൽകുന്നു.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "നവംബർ 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_overpaid",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೋಷಕರು {{1}} ಅವರು {{2}} ಅವರ {{3}} ಶುಲ್ಕಕ್ಕಿಂತ ಹೆಚ್ಚು ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚುವರಿ {{4}} ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_link_failed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "भुगतान लिंक नहीं बन पाया: {{1}} की {{2}} की फीस ({{3}})। कोई याद दिलाने वाला संदेश नहीं गया। कृपया Razorpay देख लें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "नवंबर 2026",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_link_failed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Could not make the payment link for {{1}}'s fee for {{2}} ({{3}}). No reminder went out. Please check Razorpay.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "Nov 2026",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_link_failed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല: {{1}}-ന്റെ {{2}} ഫീസ് ({{3}}). ഓർമ്മപ്പെടുത്തൽ പോയിട്ടില്ല. ദയവായി Razorpay പരിശോധിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "നവംബർ 2026",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_link_failed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ: {{1}} ಅವರ {{2}} ಶುಲ್ಕ ({{3}}). ಯಾವುದೇ ನೆನಪು ಹೋಗಿಲ್ಲ. ದಯವಿಟ್ಟು Razorpay ಪರಿಶೀಲಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "ನವೆಂಬರ್ 2026",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_wants_you",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "अभिभावक {{1}} आपसे बात करना चाहते हैं। कृपया उन्हें संदेश भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_wants_you",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Parent {{1}} would like to talk to you. Please message them.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_wants_you",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രക്ഷിതാവ് {{1}} നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_wants_you",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೋಷಕರು {{1}} ಅವರು ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "अभिभावक {{1}} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Parent {{1}} sent STOP. No more messages will go to them.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രക്ഷിതാവ് {{1}} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_parent_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೋಷಕರು {{1}} ಅವರು STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_approval_request",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} ({{2}}, {{3}}) को {{4}} का रिफंड। {{5}} घंटे के अंदर \"approve {{6}}\" या \"deny {{7}}\" लिखकर जवाब दें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "नवंबर 2026",
+              "₹1,200",
+              "24",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_approval_request",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: refund {{1}} for {{2}} ({{3}}, {{4}}). Reply \"approve {{5}}\" or \"deny {{6}}\" within {{7}} hours.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "+919811111111",
+              "Aarav Sharma",
+              "Nov 2026",
+              "K7M2QX",
+              "K7M2QX",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_approval_request",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}} ({{2}}, {{3}}) എന്നവർക്ക് {{4}} റീഫണ്ട്. {{5}} മണിക്കൂറിനുള്ളിൽ \"approve {{6}}\" അല്ലെങ്കിൽ \"deny {{7}}\" എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "നവംബർ 2026",
+              "₹1,200",
+              "24",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_approval_request",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮತಿ ಬೇಕು: {{1}} ({{2}}, {{3}}) ಅವರಿಗೆ {{4}} ರೀಫಂಡ್. {{5}} ಗಂಟೆಯೊಳಗೆ \"approve {{6}}\" ಅಥವಾ \"deny {{7}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "24",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · फरवरी 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 विद्यार्थी)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 11 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · Feb 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 students)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 11 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ഫെബ്രുവരി 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 വിദ്യാർത്ഥികൾ)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 11 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 11 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · फरवरी 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 विद्यार्थी)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 11 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · Feb 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 students)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 11 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ഫെബ്രുവരി 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 വിദ്യാർത്ഥികൾ)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 11 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 11 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]

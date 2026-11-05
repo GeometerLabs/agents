@@ -9,31 +9,43 @@
 //    duplicated or missing event cannot change what the agent believes.
 //  - Every customer message is one of the templates, checked against the record before it is sent, and "booked" goes
 //    out only when the record holds both the calendar confirmation and the deposit.
-import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkOptOut, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours, strictest } from "./limits.ts";
-import type { Decision } from "./limits.ts";
+// The care that is the same for every template is in modules/: sending a message (messaging/say.ts), making a payment link (payments/links.ts), asking for a
+// refund and following it through Guard's hold (payments/refunds.ts), and reading a message with the month's AI allowance (understanding/reader.ts).
+// What is left here is Bookings: the calendar, the slot, the booking's states and its words.
+import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours } from "./limits.ts";
+import type { Decision } from "../../../modules/limits/limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
-import type { Booking, Pending, RefundIssueKind, Store } from "./booking.ts";
-import { RELAY_CODE_REPLY } from "./approval-code.ts";
-import { ApiError, ConflictError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError, WindowClosedError, mayHaveHappened } from "./adapters/faults.ts";
+import type { Booking, Store } from "./booking.ts";
+import { RELAY_CODE_REPLY } from "../../../modules/approvals/code.ts";
+import { ApiError, ConflictError, TimeoutError } from "../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
-import type { InboundMessage, Messaging, OutboundMessage } from "./adapters/messaging.ts";
+import type { InboundMessage, Messaging } from "../../../modules/messaging/messaging.ts";
+import { createSay } from "../../../modules/messaging/say.ts";
 import { coerceIntent } from "./adapters/model.ts";
-import type { CandidateSlot, Intent, IntentParser, ParseOptions, Understood } from "./adapters/model.ts";
-import { DEFAULT_PAUSE_MINUTES, dayLocal, modeOf, stateFor } from "./ai-state.ts";
-import type { AiPolicy, ButtonReason } from "./ai-state.ts";
-import type { PaymentEvent, PaymentLink, Payments } from "./adapters/payments.ts";
-import type { Clock } from "./clock.ts";
-import { resolveDate, resolveTime } from "./language/dates.ts";
+import type { CandidateSlot, Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
+import { bookingsReading } from "./adapters/reading.ts";
+import { RULES } from "../../../modules/understanding/model.ts";
+import { createReader } from "../../../modules/understanding/reader.ts";
+import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
+import type { PaymentEvent, PaymentLink, Payments } from "../../../modules/payments/payments.ts";
+import { ATTEMPTS, ensureLink as makeLink } from "../../../modules/payments/links.ts";
+import { createRefunds } from "../../../modules/payments/refunds.ts";
+import type { Clock } from "../../../modules/core/clock.ts";
+import { takeDue } from "../../../modules/reminders/reminders.ts";
+import { resolveDate, resolveTime } from "../../../modules/language/dates.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
-import type { Action, ActionRecord, Outcome } from "./record.ts";
-import { formatInr, formatSlot } from "./language/format.ts";
-import { buttonsFor, intentFromReply, interactiveProblem, interactiveText, serviceList, slotList } from "./language/interactive.ts";
-import type { ButtonId, InteractiveMessage } from "./language/interactive.ts";
+import type { Action, ActionRecord, Outcome } from "../../../modules/record/record.ts";
+import { formatSlot } from "../../../modules/language/format.ts";
+import { checkFactsOf } from "./language/check.ts";
+import { buttonsFor, intentFromReply, serviceList, slotList } from "./language/interactive.ts";
+import type { ButtonId } from "./language/interactive.ts";
+import type { InteractiveMessage } from "../../../modules/language/interactive.ts";
 import { hoursOn, serviceName } from "./settings.ts";
-import type { Language, Settings } from "./settings.ts";
-import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "./time.ts";
+import type { Settings } from "./settings.ts";
+import type { Language } from "../../../modules/language/languages.ts";
+import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../modules/core/time.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -44,7 +56,7 @@ export interface AgentDeps {
   parser: IntentParser;
   record: ActionRecord;
   store: Store;
-  /** The monthly AI allowance and the outside switch (src/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
+  /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
   ai?: AiPolicy;
 }
 
@@ -58,9 +70,6 @@ export type AgentEvent =
 
 export interface Agent { handle(event: AgentEvent): Promise<void> }
 
-const ATTEMPTS = 2; // look, try, read back; and once more if that did not settle it
-/** After a refund could not be sent at all, or an approved one could not be sent again: minutes before each next try, then the builder is told. */
-const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, calendar, payments, messaging, parser, record, store } = deps;
@@ -106,77 +115,34 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /**
-   * The one way a message leaves the agent. It renders the templates from the record, runs the limits on the final text,
+   * The one way a message leaves the agent (modules/messaging/say.ts): it renders the templates from the record, runs the limits on the final text,
    * sends only if none blocks, and reads the message back from the messaging service. Returns whether it went out.
    * `shown` are decisions worth recording alongside the message (for example "price floor held") that do not gate it.
    * With an `offer`, the text the limits read is the whole message the customer will see: the words, then each option.
+   * What is Bookings' own is given here: the facts, the offers, and the two gates (no reminder after a cancellation, "booked" only when recorded).
    */
-  async function say(a: { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer }): Promise<boolean> {
-    const toCustomer = a.to === "customer";
-    const action = a.action ?? "send_message"; // the record's name for this message: a reply to a voice note is its own action
-    const toNumber = toCustomer ? a.phone : owner;
-    const language = toCustomer ? languageOf(a.phone, a.booking) : settings.owner.language;
-    const offer = toCustomer ? a.offer : undefined;
-    const facts = factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || offer?.kind === "services", ...(offer?.kind === "slots" ? { slotChoices: offer.slots } : {}) });
-    const inputs = { to: a.to, templates: a.templates, refundInr: a.refundInr, slotMs: a.slotMs, ...(offer ? { offer: offer.kind } : {}) };
-    let text: string;
-    try {
-      text = a.templates.map((id) => render(id, facts)).join(" ");
-    } catch (e) {
-      log(a.booking, a.phone, action, "blocked", inputs, { notes: (e as Error).message, decisions: a.shown, refs: { to: a.to }, language });
-      return false;
-    }
-
-    // Buttons and lists are a session message, like free text: only while the window is open, and only if they fit WhatsApp's limits. Otherwise: the plain words, as before.
-    let interactive: InteractiveMessage | undefined;
-    if (offer && typeof messaging.sendInteractive === "function") {
-      try { interactive = buildInteractive(offer, a.templates, facts, language); } catch { interactive = undefined; }
-      if (interactive && (interactiveProblem(interactive) !== null || !(await messaging.isWindowOpen(toNumber).catch(() => false)))) interactive = undefined;
-    }
-    const shownText = interactive ? interactiveText(interactive) : text;
-
-    const optedOut = customerOf(a.phone).optedOut;
-    const gates: Decision[] = [
-      checkOptOut({ toCustomer, customerOptedOut: optedOut }),
-      checkMessageMatchesRecord({ text: shownText, facts }),
-    ];
-    if (interactive) gates.push(checkMessageMatchesRecord({ text, facts })); // the plain words may be sent instead, so they must hold too
-    if (toCustomer && a.reminder) gates.push(checkNoMessageAfterStop({ isReminder: true, bookingConfirmed: a.booking?.state === "confirmed", customerOptedOut: optedOut }));
-    if (a.booking && a.templates.includes("booked")) gates.push(checkConfirmOnlyWhenRecorded({ record, booking: a.booking.id }));
-    const decisions = [...(a.shown ?? []), ...gates];
-    const worst = strictest(gates);
-    if (worst.verdict !== "allow") {
-      log(a.booking, a.phone, action, "blocked", inputs, { decisions, notes: worst.reason, refs: { to: a.to }, language });
-      if (toCustomer && worst.ruleId === "message-matches-record") await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] });
-      return false;
-    }
-
-    try {
-      let sent: OutboundMessage;
-      let asButtons = false;
-      if (interactive) {
-        try {
-          sent = await messaging.sendInteractive!(toNumber, interactive);
-          asButtons = true;
-        } catch (e) {
-          // Refused outright (a 4xx): nothing went out, so the same words go out as plain text. A lost reply or a 5xx may have gone out and is not sent again.
-          if (mayHaveHappened(e) || e instanceof WindowClosedError || !(e instanceof ApiError) || e.status >= 500) throw e;
-          sent = await messaging.sendText(toNumber, text);
-        }
-      } else {
-        sent = (await messaging.isWindowOpen(toNumber))
-          ? await messaging.sendText(toNumber, text)
-          : await messaging.sendTemplate(toNumber, templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? TEMPLATE_NAMES.owner : a.reminder ? TEMPLATE_NAMES.reminder : TEMPLATE_NAMES.customer }));
-      }
-      const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
-      log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}) }, language });
-      return seen !== null;
-    } catch (e) {
-      // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
-      log(a.booking, a.phone, action, mayHaveHappened(e) ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
-      return false;
-    }
-  }
+  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer }
+  const say = createSay<SayArgs, MessageFacts>({
+    messaging,
+    voice: {
+      render: (id, facts) => render(id as TemplateId, facts),
+      templateMessage: (a) => templateMessage({ ...a, ids: a.ids as TemplateId[] }),
+      genericNames: TEMPLATE_NAMES,
+      matches: (text, facts) => checkMessageMatchesRecord({ text, facts }),
+    },
+    owner: { whatsapp: owner, language: settings.owner.language },
+    languageOf: (phone, booking) => languageOf(phone, booking),
+    optedOut: (phone) => customerOf(phone).optedOut,
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}) }),
+    interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
+    inputsOf: (a) => ({ refundInr: a.refundInr, slotMs: a.slotMs }),
+    gates: (a, optedOut) => [
+      ...(a.to === "customer" && a.reminder ? [checkNoMessageAfterStop({ isReminder: true, bookingConfirmed: a.booking?.state === "confirmed", customerOptedOut: optedOut })] : []),
+      ...(a.booking && a.templates.includes("booked") ? [checkConfirmOnlyWhenRecorded({ record, booking: a.booking.id })] : []),
+    ],
+    log: (booking, phone, action, outcome, inputs, more) => log(booking, phone, action, outcome, inputs, more),
+    heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
+  });
 
   const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer } = {}) =>
     say({ booking: b, phone, to: "customer", templates, ...more });
@@ -286,378 +252,34 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- payments: look first, write, read back ----------------------------------------------------------------------
 
-  async function ensureLink(b: Booking): Promise<{ link: PaymentLink | null; error?: string }> {
-    const live = (links: PaymentLink[]) => links.find((l) => l.status !== "cancelled" && l.amount === depositPaise);
-    let error: string | undefined;
-    for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-      try {
-        const existing = live(await payments.listPaymentLinks({ reference_id: b.id })); // look first: a lost reply may have created it
-        if (existing) return { link: existing };
-        await payments.createPaymentLink({ amount: depositPaise, reference_id: b.id, description: `${settings.name} deposit` });
-        const after = live(await payments.listPaymentLinks({ reference_id: b.id })); // read back from the payments service's own list
-        if (after) return { link: after };
-      } catch (e) {
-        if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
-        error = (e as Error).message;
-      }
-    }
-    const last = await payments.listPaymentLinks({ reference_id: b.id }).then(live).catch(() => undefined);
-    return last ? { link: last } : { link: null, error };
-  }
+  const ensureLink = (b: Booking) => makeLink(payments, { reference: b.id, amountPaise: depositPaise, description: `${settings.name} deposit` });
 
-  // ---- refunds: look first, send once, never send again what may have gone out ------------------------------------------------
+  // ---- refunds (modules/payments/refunds.ts) ---------------------------------------------------------------------------------
   //
   // A refund above the owner's limit is not decided here. The agent sends it like any other; Guard holds it (HTTP 202) and the approvals
   // relay asks the owner, once, with a code. The agent keeps the approval id and the exact bytes of the held call, and sends those same
-  // bytes again only when the relay says the owner approved: Guard releases a call only if it is the identical call, and `60000` is not
-  // `"60000"`. Between the hold and the answer the agent does nothing: no timer sends a held refund again.
-  //
-  // Whatever Guard or the service answered, a refund that may have gone out is never sent again: Guard's own record makes the second one a
-  // new hold, which would ask the owner about money already paid.
+  // bytes again only when the relay says the owner approved. Whatever Guard or the service answered, a refund that may have gone out is never sent again.
 
-  type RefundResult = "done" | "held" | "retry" | "stopped";
+  const refunds = createRefunds<Booking>({
+    payments, clock, owner,
+    limitInr: () => settings.cancellation.refundLimitInr,
+    log: (b, phone, action, outcome, inputs, more) => log(b, phone, action, outcome, inputs, more),
+    tellCustomer: (b, phone, templates, more) => tellCustomer(b, phone, templates as TemplateId[], more),
+    tellOwner: (b, phone, template, more) => tellOwner(b, phone, template as TemplateId, more),
+    cases: () => store.bookings.values(),
+    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired" },
+  });
+  const { requestRefund, overLimit } = refunds;
+  const afterRefund = (b: Booking, result: Parameters<typeof refunds.afterRefund>[1], a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }) => refunds.afterRefund(b, result, a);
 
-  const issuesOf = (b: Booking) => (b.refundIssues ??= []);
-  const stoppedOf = (b: Booking) => (b.stoppedRefunds ??= []);
-  /** The builder must look at this refund, not the owner. It is in the record (the entry's notes) and counted in the runtime's status. */
-  function raise(b: Booking, paymentId: string, kind: RefundIssueKind, note: string): void {
-    issuesOf(b).push({ paymentId, kind, note, atMs: clock.now() });
-    if (kind !== "unheld") stoppedOf(b).push(paymentId); // asking Guard again could only ask the owner about the same money again
-  }
+  // ---- reading a message, what it cost, the monthly allowance and button mode (modules/understanding/reader.ts) -------------------
 
-  type Sorted =
-    | { is: "held"; error: GuardHeldError }
-    | { is: "may_have_happened"; why: string } // look once, never send again
-    | { is: "refused"; error: GuardRefusedError }
-    | { is: "no_good"; why: string } // Guard said no and trying again will not change it
-    | { is: "lost"; why: string } // no reply: the next look says whether it landed
-    | { is: "not_sent"; why: string }; // nothing went out: Guard could not decide or reach the service, or the service refused this call
-
-  /** What an error from a refund call means for the refund. Anything that is not one of the service errors is the agent's own bug, and is thrown. */
-  function sortRefundError(e: unknown): Sorted {
-    if (e instanceof GuardHeldError) return { is: "held", error: e };
-    if (e instanceof GuardOutcomeUnknownError) return { is: "may_have_happened", why: "Guard says the outcome is unknown" };
-    if (e instanceof GuardRefusedError) return { is: "refused", error: e };
-    if (e instanceof GuardUnavailableError) return { is: "not_sent", why: e.message };
-    if (e instanceof GuardConflictError || e instanceof GuardError) return { is: "no_good", why: e.message };
-    if (e instanceof NotSentError) return { is: "not_sent", why: e.message };
-    if (e instanceof TimeoutError) return { is: "lost", why: e.message };
-    // the service's own answer, as it came through Guard: a 5xx may have happened (Guard will not repeat it either); a 4xx did not
-    if (e instanceof ApiError) return e.status >= 500 ? { is: "may_have_happened", why: `the payments service answered ${e.status}` } : { is: "not_sent", why: e.message };
-    throw e;
-  }
-
-  const findRefund = async (paymentId: string, receipt: string) => (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt);
-
-  /**
-   * Ask for a refund of a deposit payment, once. `expectHold`: the amount is above the owner's limit, so Guard should hold it.
-   * "done": the payments service's own list shows the refund. "held": Guard is holding it for the owner. "retry": nothing went out, it will
-   * be tried again by itself. "stopped": the builder has been told, and nothing more is done for this payment.
-   */
-  async function requestRefund(b: Booking, paymentId: string, amountInr: number, decisions: Decision[], expectHold: boolean): Promise<RefundResult> {
-    const receipt = `${b.id}:${paymentId}`; // the booking id travels in the receipt: the relay finds the booking from it
-    const amountPaise = amountInr * 100;
-    const refs = { paymentId, amountPaise: String(amountPaise) };
-    if (stoppedOf(b).includes(paymentId)) {
-      log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: "an earlier try at this refund ended with a no, an unclear outcome, or a failure, so Guard is not asked again" });
-      return "stopped";
-    }
-    log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs });
-
-    /** The refund may have gone out and cannot be sent again: read the payments service's own list once, and stop. */
-    async function maybeDone(why: string): Promise<RefundResult> {
-      const found = await findRefund(paymentId, receipt).catch(() => undefined);
-      if (found) { log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, notes: `${why}; the payments service's own list shows the refund, and it is not sent again` }); return "done"; }
-      const note = `${why}. The refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`;
-      log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
-      raise(b, paymentId, "unknown", note);
-      return "stopped";
-    }
-
-    /** The service took the refund (2xx): read it back once. Never send again, whatever the list shows. */
-    async function readBack(note?: string): Promise<RefundResult> {
-      const found = await findRefund(paymentId, receipt).catch(() => undefined);
-      if (found) {
-        log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, ...(note ? { notes: note } : {}) });
-        if (expectHold) {
-          const why = `A refund of ${formatInr(amountInr)} is above the ${formatInr(settings.cancellation.refundLimitInr)} limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the Razorpay limits spec.`;
-          log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
-          raise(b, paymentId, "unheld", why);
-        }
-        return "done";
-      }
-      const why = "the payments service accepted the refund, but its own list does not show it yet. It is NOT sent again";
-      log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
-      raise(b, paymentId, "unconfirmed", why);
-      return "stopped";
-    }
-
-    let error: string | undefined;
-    for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-      try {
-        const done = await findRefund(paymentId, receipt); // look first: an earlier try, or a lost reply, may have landed
-        if (done) {
-          log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: done.id } });
-          return "done";
-        }
-      } catch (e) {
-        if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
-        error = `could not look at the existing refunds first (${(e as Error).message}), so nothing was sent`;
-        break; // what cannot be looked at is not sent blind
-      }
-      try {
-        const sent = await payments.refund(paymentId, { amount: amountPaise, receipt });
-        return await readBack(sent.replayed ? "Guard answered from its record; nothing was sent again" : undefined);
-      } catch (e) {
-        const sorted = sortRefundError(e);
-        switch (sorted.is) {
-          case "held": {
-            if (sorted.error.approval === null || sorted.error.call.body === undefined) {
-              const note = `Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`;
-              log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
-              raise(b, paymentId, "uncertain", note);
-              return "stopped";
-            }
-            b.pending.push({ kind: "guard_hold", amountInr, paymentId, receipt, approval: sorted.error.approval, body: sorted.error.call.body, expiresAtMs: sorted.error.expiresAtMs, heldAtMs: clock.now() });
-            log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { decisions, refs: { ...refs, approval: sorted.error.approval }, notes: "Guard is holding this refund for the owner. The approvals relay asks the owner, once; the agent does not." });
-            return "held";
-          }
-          case "may_have_happened": return await maybeDone(sorted.why);
-          case "refused": {
-            const note = `Guard refused the refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${sorted.error.guard.reason ?? sorted.error.message}. Nothing was refunded.`;
-            log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: note });
-            raise(b, paymentId, "refused", note);
-            return "stopped";
-          }
-          case "no_good": {
-            const note = `Guard did not take the refund and will not on a retry: ${sorted.why}. Nothing was refunded.`;
-            log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
-            raise(b, paymentId, "failed", note);
-            return "stopped";
-          }
-          case "lost": case "not_sent": error = sorted.why; break; // look again, and try once more
-        }
-      }
-    }
-    log(b, b.customer, "refund", error ? "failed" : "unconfirmed", { paymentId, amountInr }, { refs, notes: `${error ?? "the refund could not be sent"}; it will be tried again` });
-    return "retry";
-  }
-
-  /** What the customer is told after a refund was asked for, and what is kept to try again. */
-  async function afterRefund(b: Booking, result: RefundResult, a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }): Promise<void> {
-    if (result === "done") {
-      await tellCustomer(b, b.customer, [a.done.customer], { refundInr: a.amountInr });
-      if (a.done.owner) await tellOwner(b, b.customer, a.done.owner, { refundInr: a.amountInr });
-      return;
-    }
-    if (result === "held") { await tellCustomer(b, b.customer, [a.held], { refundInr: a.amountInr }); return; }
-    if (result === "retry") b.pending.push({ kind: "refund_retry", amountInr: a.amountInr, paymentId: a.paymentId, tries: 0, retryAtMs: clock.now() + RETRY_MINUTES[0] * MINUTE, then: { ...a.done, held: a.held } });
-    await tellCustomer(b, b.customer, ["refund_checking"], { refundInr: a.amountInr });
-  }
-
-  const overLimit = (amountInr: number) => amountInr > settings.cancellation.refundLimitInr;
-
-  /** A refund that could not be sent at all is tried again by the clock, a few times; then the builder is told. */
-  async function retryRefund(b: Booking, p: Extract<Pending, { kind: "refund_retry" }>): Promise<void> {
-    b.pending = b.pending.filter((x) => x !== p);
-    const result = await requestRefund(b, p.paymentId, p.amountInr, [], overLimit(p.amountInr));
-    if (result === "retry") {
-      const tries = p.tries + 1;
-      if (tries >= RETRY_MINUTES.length) {
-        const note = `The refund of ${formatInr(p.amountInr)} for payment ${p.paymentId} could not be sent after ${tries + 1} tries. Nothing was refunded.`;
-        log(b, b.customer, "refund", "failed", { paymentId: p.paymentId, amountInr: p.amountInr }, { notes: note, refs: { paymentId: p.paymentId } });
-        raise(b, p.paymentId, "failed", note);
-        return;
-      }
-      b.pending.push({ ...p, tries, retryAtMs: clock.now() + RETRY_MINUTES[tries] * MINUTE });
-      return;
-    }
-    if (result === "done") { await tellCustomer(b, b.customer, [p.then.customer], { refundInr: p.amountInr }); if (p.then.owner) await tellOwner(b, b.customer, p.then.owner, { refundInr: p.amountInr }); }
-    else if (result === "held") await tellCustomer(b, b.customer, [p.then.held], { refundInr: p.amountInr });
-  }
-
-  // ---- a refund Guard held: the relay says the owner decided ---------------------------------------------------------------------
-
-  type Hold = Extract<Pending, { kind: "guard_hold" }>;
-  const holdFor = (approval: string): { b: Booking; hold: Hold } | undefined => {
-    for (const b of store.bookings.values()) for (const hold of b.pending) if (hold.kind === "guard_hold" && hold.approval === approval) return { b, hold };
-    return undefined;
-  };
-  const dropHold = (b: Booking, hold: Hold) => { b.pending = b.pending.filter((x) => x !== hold); };
-
-  async function onApprovalDecision(event: Extract<AgentEvent, { kind: "approval_decision" }>): Promise<void> {
-    const found = holdFor(event.approval);
-    if (!found) {
-      log(null, owner, "owner_decision", "blocked", { approval: event.approval, decision: event.decision }, { notes: "no refund is waiting on this approval, so nothing is done (it may be answered already, expired, or not ours)", refs: { approval: event.approval } });
-      return;
-    }
-    const { b, hold } = found;
-    const command = event.decision;
-    // What the relay said is not yet a fact: the agent cannot see Guard's record. An approval is counted as the owner's (owner_decision, confirmed) only
-    // when Guard has RELEASED the held call (see releaseHeld), so a forged "approve" event leaves nothing false in the record or the monthly report.
-    log(b, owner, "owner_decision", "attempted", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay says the owner decided" });
-    if (command === "deny") {
-      // A deny cannot be checked from here (a refund Guard did not send leaves no trace to read). It is the safe direction for the money, and it is final.
-      log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay reported that the owner denied the refund" });
-      dropHold(b, hold);
-      stoppedOf(b).push(hold.paymentId); // Guard would hold the same call again under a new approval: the agent must not ask again
-      log(b, b.customer, "refund", "blocked", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: "the owner declined the refund" });
-      await tellCustomer(b, b.customer, ["refund_denied"]);
-      return;
-    }
-    hold.approved = true;
-    await releaseHeld(b, hold);
-  }
-
-  /** Send the held call again, with the very bytes it was held with. Only after the relay said the owner approved. */
-  async function releaseHeld(b: Booking, hold: Hold): Promise<void> {
-    const { paymentId, amountInr } = hold;
-    const refs = { paymentId, amountPaise: String(amountInr * 100), approval: hold.approval };
-    const later = (why: string) => {
-      hold.tries = (hold.tries ?? 0) + 1;
-      if (hold.tries >= RETRY_MINUTES.length) {
-        dropHold(b, hold);
-        const note = `The owner approved the refund, but it could not be sent after ${hold.tries} tries (${why}). Nothing was refunded.`;
-        log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
-        raise(b, paymentId, "failed", note);
-        return tellCustomer(b, b.customer, ["refund_checking"], { refundInr: amountInr }).then(() => undefined);
-      }
-      hold.retryAtMs = clock.now() + RETRY_MINUTES[hold.tries - 1] * MINUTE;
-      log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: `the approved refund could not be sent yet (${why}); it is tried again` });
-    };
-    /** Guard let the held call go, which it does only for an approved one: now the owner's approval is a fact the report may count. */
-    const released = () => log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: "approve" }, { refs: { command: "approve", approval: hold.approval }, notes: "Guard released the held refund, so the owner's approval is on Guard's record" });
-    const finish = async (refundId: string, note?: string) => {
-      dropHold(b, hold);
-      log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId }, ...(note ? { notes: note } : {}) });
-      await tellCustomer(b, b.customer, ["refund_approved"], { refundInr: amountInr });
-    };
-    const stop = async (kind: RefundIssueKind, note: string, outcome: "failed" | "unconfirmed" | "blocked") => {
-      dropHold(b, hold);
-      log(b, b.customer, "refund", outcome, { paymentId, amountInr }, { refs, notes: note });
-      raise(b, paymentId, kind, note);
-      await tellCustomer(b, b.customer, ["refund_checking"], { refundInr: amountInr });
-    };
-
-    // look before retrying: the refund may exist already
-    let listed;
-    try { listed = await findRefund(paymentId, hold.receipt); } catch (e) {
-      if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
-      return later(`could not look at the existing refunds first: ${(e as Error).message}`);
-    }
-    if (listed) return finish(listed.id, "the refund was already on the payments service's own list, so it was not sent again");
-
-    try {
-      await payments.resendRefund(paymentId, hold.body);
-    } catch (e) {
-      const sorted = sortRefundError(e);
-      switch (sorted.is) {
-        case "held":
-          if (sorted.error.approval === null) return stop("uncertain", `After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`, "unconfirmed");
-          hold.approved = false;
-          if (sorted.error.approval === hold.approval) { // Guard has no approval on record for this call: the owner's answer was not recorded there, and the owner was already asked
-            log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { refs, notes: "Guard still holds the refund: its record does not show the owner's approval. It waits; the owner is not asked again" });
-            return;
-          }
-          hold.approval = sorted.error.approval;
-          hold.expiresAtMs = sorted.error.expiresAtMs;
-          log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { refs: { ...refs, approval: sorted.error.approval }, notes: "Guard held the call again under a new approval (the first was used up or no longer valid). The relay will ask the owner about the new one" });
-          return;
-        case "refused": {
-          const reason = sorted.error.guard.reason ?? sorted.error.message;
-          if (/expire/iu.test(reason)) return expireGuardHold(b, hold, reason);
-          return stop("refused", `Guard refused the approved refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${reason}. Nothing was refunded.`, "blocked");
-        }
-        case "no_good": return stop("failed", `Guard did not take the approved refund and will not on a retry: ${sorted.why}. Nothing was refunded.`, "failed");
-        case "may_have_happened": case "lost": {
-          released(); // the call went out: Guard does not send an unapproved one
-          const found = await findRefund(paymentId, hold.receipt).catch(() => undefined);
-          if (found) return finish(found.id, `${sorted.why}; the payments service's own list shows the refund, and it is not sent again`);
-          return stop("unknown", `${sorted.why}. The approved refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`, "unconfirmed");
-        }
-        case "not_sent": return later(sorted.why);
-      }
-    }
-    // the service took it: read back once; whatever the list shows, it is not sent again
-    released();
-    const after = await findRefund(paymentId, hold.receipt).catch(() => undefined);
-    if (after) return finish(after.id);
-    return stop("unconfirmed", "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again", "unconfirmed");
-  }
-
-  /** Guard's approval ran out before the owner answered (or before the approved call could be used). Nothing was refunded; the customer is told. */
-  async function expireGuardHold(b: Booking, hold: Hold, why = "the owner did not answer before Guard's approval ran out"): Promise<void> {
-    dropHold(b, hold);
-    const note = `${why}. Nothing was refunded. A new request for payment ${hold.paymentId} has to be made by the builder.`;
-    log(b, b.customer, "refund", "failed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: note });
-    raise(b, hold.paymentId, "expired", note);
-    await tellCustomer(b, b.customer, ["refund_expired"], { refundInr: hold.amountInr });
-  }
-
-  // ---- reading a message -------------------------------------------------------------------------------------------
-
-  /** What it costs to read a message with the rules alone: nothing. A parser that is not a router says nothing about cost, and it is the rules. */
-  const RULES: Understood = { step: "rules", provider: "rules", model: "rule-parser", inputTokens: 0, outputTokens: 0, costMicroInr: 0, rateDate: null, tried: ["rules"], failed: [] };
-
-  async function readIntent(text: string, options: ParseOptions): Promise<{ intent: Intent; note?: string; understood: Understood }> {
-    try {
-      // A parser that can say why it fell back (the model parser) gets that said in the record.
-      const read = parser.parseDetailed ? await parser.parseDetailed(text, parseContext, options) : { intent: await parser.parse(text, parseContext), fallbackReason: undefined, understood: undefined };
-      const intent = coerceIntent(read.intent, parseContext);
-      const note = read.fallbackReason ? `the model could not be used (${read.fallbackReason}), so the rule parser read the message` : undefined;
-      const understood = read.understood ?? RULES;
-      return intent ? { intent, note, understood } : { intent: { kind: "unknown" }, note: "the parser's answer was not a valid intent, so the message was treated as not understood", understood };
-    } catch (e) {
-      return { intent: { kind: "unknown" }, note: `the parser failed (${(e as Error).message}), so the message was treated as not understood`, understood: RULES };
-    }
-  }
-
-  // ---- what understanding cost, the monthly allowance and button mode ---------------------------------------------------
-
-  /** The cost of one message as the record keeps it (every value a string, as the record's refs are). The field names are listed in Explanation.md. */
-  function understandingRefs(u: Understood, via?: "button" | "list"): Record<string, string> {
-    return {
-      step: u.step, provider: u.provider, model: u.model,
-      inputTokens: String(u.inputTokens), outputTokens: String(u.outputTokens),
-      ...(u.costMicroInr !== null ? { costMicroInr: String(u.costMicroInr) } : {}),
-      ...(u.rateDate !== null ? { rateDate: u.rateDate } : {}),
-      tried: u.tried.join("+"),
-      ...(u.failed.length > 0 ? { failed: u.failed.join("+") } : {}),
-      ...(via ? { via } : {}),
-    };
-  }
-
-  /** Count this message in the month's totals. A model step that was asked and could not answer starts a pause: for a few minutes the rules and buttons do the reading. */
-  function countUnderstood(u: Understood): void {
-    const state = stateFor(store, clock.now(), tz);
-    state[u.step] += 1;
-    if (u.costMicroInr === null) state.unpriced += 1; else state.costMicroInr += u.costMicroInr;
-    if (u.step === "rules" && u.failed.length > 0) state.pausedUntilMs = clock.now() + (policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES) * MINUTE;
-  }
-
-  /**
-   * Tell the owner, once, that the agent now answers with buttons and lists, and why; and put a line in the record that the builder or partner reads
-   * (the runtime's status and the heartbeat carry it on). Once means once per month for the allowance, once per switch for the outside switch, and once a day for a
-   * failing model. Customers are never told: they simply get buttons.
-   */
-  async function announceButtonMode(): Promise<void> {
-    const mode = modeOf(store, policy, clock.now(), tz);
-    if (!mode.buttons) return;
-    const state = stateFor(store, clock.now(), tz);
-    const today = dayLocal(clock.now(), tz);
-    const reason: ButtonReason = mode.reason;
-    if (reason === "allowance") { if (state.told.allowance === state.month) return; state.told.allowance = state.month; }
-    else if (reason === "override") { if (state.told.override) return; state.told.override = true; }
-    else { if (state.told.fault === today) return; state.told.fault = today; }
-    const spent = `${state.decision + state.model} messages and about ₹${(state.costMicroInr / 1_000_000).toFixed(2)} so far this month (${state.month})`;
-    const notes = reason === "allowance"
-      ? `This shop's monthly AI allowance is used up (${spent}). The agent reads with the rules only and answers with buttons and lists until the month ends. Every limit still holds. The owner has been told once.`
-      : reason === "override"
-        ? "The shop's config says ai: buttons (set from outside, for example when the plan or the partner's balance has no AI left). The agent reads with the rules only and answers with buttons and lists until that is changed. Every limit still holds. The owner has been told once."
-        : `A model step failed, so for ${policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES} minutes the agent reads with the rules only and answers with buttons and lists, then tries the AI again. Every limit still holds. The owner is told once a day.`;
-    log(null, owner, "ai_mode", "confirmed", { reason, month: state.month }, { notes, refs: { mode: "buttons", reason, month: state.month } });
-    await say({ booking: null, phone: owner, to: "owner", templates: [reason === "allowance" ? "owner_ai_allowance" : reason === "override" ? "owner_ai_off" : "owner_ai_fault"] });
-  }
+  const reader = createReader<Intent, { services: Settings["services"]; languages: Language[] }, ParseOptions>({
+    parser, context: parseContext, coerce: coerceIntent, policy, store, clock, timeZone: tz,
+    log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more),
+    tellOwner: async (notice) => { await say({ booking: null, phone: owner, to: "owner", templates: [notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"] }); },
+  });
+  const { readIntent, understandingRefs, countUnderstood, announceButtonMode } = reader;
 
   /** Put what the customer said into the draft. False when a date does not exist (31 November). */
   function fill(b: Booking, intent: Intent): boolean {
@@ -1170,7 +792,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
     const phone = msg.from;
     const customer = customerOf(phone);
-    const mode = modeOf(store, policy, clock.now(), tz);
+    const mode = reader.mode();
     // A tap on a button or a list row is read by looking its id up: no words are read, so no model is asked, whatever the mode. An id that is none of ours is read as words.
     const tapped = msg.reply ? intentFromReply(msg.reply.id, settings) : null;
     const { intent, note, understood } = tapped
@@ -1234,24 +856,13 @@ export function createAgent(deps: AgentDeps): Agent {
   async function onTick(): Promise<void> {
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
-    // Refunds first, whatever state their booking is in. A hold whose approval ran out is over; one the owner approved and that could not be
-    // sent yet is sent again; a refund that could not be sent at all is tried again. A hold nobody answered is NOT sent again: it just waits.
-    for (const b of [...store.bookings.values()]) {
-      for (const p of [...b.pending]) {
-        if (p.kind === "guard_hold") {
-          if (p.expiresAtMs !== null && p.expiresAtMs <= now) await expireGuardHold(b, p);
-          else if (p.approved && p.retryAtMs !== undefined && p.retryAtMs <= now) await releaseHeld(b, p);
-        } else if (p.kind === "refund_retry" && p.retryAtMs <= now) await retryRefund(b, p);
-      }
-    }
+    await refunds.sweep(now); // refunds first, whatever state their booking is in (modules/payments/refunds.ts)
     for (const b of [...store.bookings.values()]) {
       if (b.state === "awaiting_deposit" && b.holdExpiresAt !== undefined && b.holdExpiresAt <= now) await expireHold(b);
       if (b.state !== "confirmed" || b.startMs === undefined || b.endMs === undefined) continue;
 
       // Reminders: if several fell due while nothing was running, send one, the latest. Whether it may go is the limits' call.
-      const due = b.reminders.filter((r) => !r.sent && r.atMs <= now);
-      for (const r of due) r.sent = true;
-      if (due.length > 0 && b.startMs > now) await tellCustomer(b, b.customer, ["reminder"], { reminder: true });
+      if (takeDue(b.reminders, now).due && b.startMs > now) await tellCustomer(b, b.customer, ["reminder"], { reminder: true });
 
       if (b.endMs <= now) {
         moveTo(b, "completed");
@@ -1264,7 +875,7 @@ export function createAgent(deps: AgentDeps): Agent {
   async function handle(event: AgentEvent): Promise<void> {
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
-    if (event.kind === "approval_decision") return onApprovalDecision(event);
+    if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);
     return onTick();
   }
 

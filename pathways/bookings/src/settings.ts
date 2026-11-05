@@ -1,11 +1,9 @@
 // A business's settings: everything a builder changes to tailor the Bookings pathway. No code, only this file.
 // Validation is written by hand and says what is wrong in plain words, so a builder can fix it without a manual.
-import { isValidTimeZone, parseClock } from "./time.ts";
+import { isValidTimeZone, parseClock } from "../../../modules/core/time.ts";
+import { LANGUAGES, LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 
-export type Language = "hi" | "en" | "ml" | "kn";
-export const LANGUAGES: readonly Language[] = ["hi", "en", "ml", "kn"];
-/** What each language is called in plain words (for the messages that tell a builder what to fix). Every language must have one. */
-export const LANGUAGE_NAMES: Record<Language, string> = { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" };
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
 export type WeekdayKey = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"; // same order as Date#getDay()

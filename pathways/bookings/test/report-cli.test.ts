@@ -7,10 +7,10 @@ import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, write
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateKeyFiles } from "../report/keys.ts";
-import { verifyEnvelopeText } from "../report/sign.ts";
+import { generateKeyFiles } from "../../../modules/report/keys.ts";
+import { verifyEnvelopeText } from "../../../modules/report/sign.ts";
 import { runBusyMonth } from "../report/example-month.ts";
-import { bannedIn } from "../report/strings.ts";
+import { bannedIn } from "../../../modules/report/claims.ts";
 
 const SCRIPTS = fileURLToPath(new URL("../scripts/", import.meta.url));
 const SETTINGS = fileURLToPath(new URL("../settings/glow-salon.example.json", import.meta.url));

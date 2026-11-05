@@ -5,27 +5,28 @@ import { createAgent } from "./agent.ts";
 import type { Agent } from "./agent.ts";
 import { createStore } from "./booking.ts";
 import type { Store } from "./booking.ts";
-import { fakeClock } from "./clock.ts";
-import type { FakeClock } from "./clock.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
+import type { FakeClock } from "../../../modules/core/clock.ts";
 import { createFakeCalendar } from "./adapters/calendar.ts";
 import type { FakeCalendar } from "./adapters/calendar.ts";
-import { createFakeMessaging } from "./adapters/messaging.ts";
-import type { FakeMessaging, InboundMessage } from "./adapters/messaging.ts";
+import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
+import type { FakeMessaging, InboundMessage } from "../../../modules/messaging/messaging.ts";
 import type { IntentParser } from "./adapters/model.ts";
-import type { AiPolicy } from "./ai-state.ts";
-import { createGuardModel } from "./adapters/guard-model.ts";
-import type { GuardModel } from "./adapters/guard-model.ts";
-import { createFakePayments } from "./adapters/payments.ts";
-import type { FakePayments, FakePaymentsOptions, PaymentLink } from "./adapters/payments.ts";
+import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
+import { createGuardModel } from "../../../modules/payments/guard-model.ts";
+import type { GuardModel } from "../../../modules/payments/guard-model.ts";
+import { createFakePayments } from "../../../modules/payments/payments.ts";
+import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../modules/payments/payments.ts";
 import { createRuleParser } from "./adapters/rule-parser.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
 import { razorpayLimitsSpec } from "./guard-limits.ts";
-import { createRecord } from "./record.ts";
-import type { ActionRecord } from "./record.ts";
-import { LANGUAGES, parseSettings } from "./settings.ts";
+import { createRecord } from "../../../modules/record/record.ts";
+import type { ActionRecord } from "../../../modules/record/record.ts";
+import { parseSettings } from "./settings.ts";
+import { LANGUAGES } from "../../../modules/language/languages.ts";
 import type { Settings } from "./settings.ts";
-import { zonedToMs } from "./time.ts";
+import { zonedToMs } from "../../../modules/core/time.ts";
 
 /** Glow Salon, the example business. */
 export function glowSalon(): Settings {
@@ -81,7 +82,7 @@ export interface WorldOptions {
   nowMs?: number;
   parser?: IntentParser;
   payments?: FakePaymentsOptions;
-  /** The monthly AI allowance and the outside switch (src/ai-state.ts). */
+  /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). */
   ai?: AiPolicy;
   /**
    * Whether the stand-in WhatsApp takes buttons and lists. Default true. False makes it a provider without them, so the agent sends the same words as plain text: for a

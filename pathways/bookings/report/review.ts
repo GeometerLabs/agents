@@ -1,10 +1,11 @@
 // What a native reader sees of the report and certificate words: every string in strings.ts with the English beside it, and
 // a sample of the owner's five lines. scripts/review-sheet.ts puts this in section 6 of REVIEW-ml.md and REVIEW-kn.md.
 import { glowSalon } from "../src/harness.ts";
-import { formatInr } from "../src/language/format.ts";
+import { formatInr } from "../../../modules/language/format.ts";
 import { serviceName } from "../src/settings.ts";
-import type { Language } from "../src/settings.ts";
-import { buildMonthlyReport, monthRange } from "./data.ts";
+import type { Language } from "../../../modules/language/languages.ts";
+import { buildMonthlyReport } from "./data.ts";
+import { monthRange } from "../../../modules/report/months.ts";
 import type { MonthlyReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";
 import { ownerText } from "./text.ts";

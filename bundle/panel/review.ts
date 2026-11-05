@@ -4,7 +4,7 @@
 //   node bundle/panel/review-sheet.ts ml > pathways/bookings/REVIEW-ml.md
 //   node bundle/panel/review-sheet.ts kn > pathways/bookings/REVIEW-kn.md
 // and test/words.test.ts fails when a committed sheet is behind the words.
-import { LANGUAGE_NAMES } from "../../pathways/bookings/src/settings.ts";
+import { LANGUAGE_NAMES } from "../../modules/language/languages.ts";
 import { WORDS } from "./languages.ts";
 import { SAMPLE_ARGS } from "./words.ts";
 import type { Words } from "./words.ts";

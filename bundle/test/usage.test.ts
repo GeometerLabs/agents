@@ -17,8 +17,8 @@ import { createWorld } from "../../pathways/bookings/src/harness.ts";
 import { parseIntent } from "../../pathways/bookings/src/adapters/rule-parser.ts";
 import { createMonthlyReport } from "../../pathways/bookings/report/monthly-job.ts";
 import { REPORT_TEMPLATE_NAMES } from "../../pathways/bookings/report/whatsapp.ts";
-import { LANGUAGES } from "../../pathways/bookings/src/settings.ts";
-import { zonedToMs } from "../../pathways/bookings/src/time.ts";
+import { LANGUAGES } from "../../modules/language/languages.ts";
+import { zonedToMs } from "../../modules/core/time.ts";
 import { world } from "./world.ts";
 
 const RATES = usageRatesFrom([latestProposedPriceList()!, latestPriceList()]);

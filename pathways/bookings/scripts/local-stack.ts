@@ -3,7 +3,7 @@
 // by the agent, and answered through the live adapters, which call the stand-ins back.
 //
 // In production a real Guard sits between the runtime and each service. Here the calendar and WhatsApp URLs point straight at the stand-ins, and
-// the refunds go through a STUB Guard (standins/guard.ts: Guard's documented refund behaviour, built from the same generated spec) so that a refund
+// the refunds go through a STUB Guard (modules/standins/guard.ts: Guard's documented refund behaviour, built from the same generated spec) so that a refund
 // above the shop's limit is held, and the approvals relay (approvals/) runs beside it: it reads the held refunds, asks the owner on the stand-in
 // WhatsApp with a code, and carries the owner's "approve <code>" to the stub Guard as a signed answer. The real Guard is not here.
 //
@@ -20,26 +20,26 @@ import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { startInbox } from "../inbox/server.ts";
 import type { RunningInbox } from "../inbox/server.ts";
-import { createGuardClient, createRuntimeClient } from "../approvals/clients.ts";
+import { createGuardClient, createRuntimeClient } from "../../../modules/approvals/clients.ts";
 import { createRelay } from "../approvals/relay.ts";
-import type { Relay } from "../approvals/relay.ts";
-import { startRelayServer } from "../approvals/server.ts";
-import type { RunningRelayServer } from "../approvals/server.ts";
-import { openRelayStore } from "../approvals/store.ts";
-import { createWhatsAppMessaging } from "../src/adapters/live/whatsapp.ts";
+import type { Relay } from "../../../modules/approvals/relay.ts";
+import { startRelayServer } from "../../../modules/approvals/server.ts";
+import type { RunningRelayServer } from "../../../modules/approvals/server.ts";
+import { openRelayStore } from "../../../modules/approvals/store.ts";
+import { createWhatsAppMessaging } from "../../../modules/messaging/whatsapp.ts";
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
-import { startStubGuard } from "../standins/guard.ts";
-import type { RunningStubGuard } from "../standins/guard.ts";
+import { startStubGuard } from "../../../modules/standins/guard.ts";
+import type { RunningStubGuard } from "../../../modules/standins/guard.ts";
 import { startClient } from "../server/start.ts";
 import type { RunningClient } from "../server/start.ts";
 import { startStandins } from "../standins/server.ts";
 import type { RunningStandins } from "../standins/server.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
-import { systemClock } from "../src/clock.ts";
-import type { Clock } from "../src/clock.ts";
+import { systemClock } from "../../../modules/core/clock.ts";
+import type { Clock } from "../../../modules/core/clock.ts";
 import { hoursOn } from "../src/settings.ts";
-import { DAY, localParts } from "../src/time.ts";
+import { DAY, localParts } from "../../../modules/core/time.ts";
 
 const EXAMPLE_CLIENT = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 

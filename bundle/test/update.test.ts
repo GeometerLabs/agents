@@ -4,7 +4,7 @@
 // the two tests that run the real one (one, and a whole update with it) so the reading of its lines is held to what it really prints.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { addAgent } from "../agent/deploy.ts";
 import { deploy } from "../deploy.ts";
@@ -89,6 +89,8 @@ function setSettings(w: World, shop: string, edit: (x: any) => void): void {
 function addVersion(w: World, version: string): void {
   const dir = join(w.root, "pathways", `bookings@${version}`);
   cpSync(join(w.ctx.appDir, "pathways", "bookings"), dir, { recursive: true });
+  // a kept checkout imports the shared modules two folders up from itself (../../../modules), so the server holds them beside its kept pathways
+  if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
   const pkg = join(dir, "package.json");
   writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
 }

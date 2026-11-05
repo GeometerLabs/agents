@@ -7,7 +7,7 @@
 // Nothing secret, no message text and no phone number is ever logged.
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { parseWhatsAppWebhook, verifyMetaSignature } from "../../pathways/bookings/src/adapters/live/webhooks.ts";
+import { parseWhatsAppWebhook, verifyMetaSignature } from "../../modules/messaging/webhooks.ts";
 
 export interface AgentInboxConfig {
   ownerWhatsapp: string;

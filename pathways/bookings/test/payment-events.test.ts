@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createWorld } from "../src/harness.ts";
-import type { PaymentEvent } from "../src/adapters/payments.ts";
+import type { PaymentEvent } from "../../../modules/payments/payments.ts";
 
 test("a payment.captured with no link id still reaches its booking (and a second payment on a paid link is refunded)", async () => {
   const w = createWorld();

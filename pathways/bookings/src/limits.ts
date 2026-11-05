@@ -1,26 +1,16 @@
-// The limits: nine rules, in plain words, as pure checks. Each takes the facts it needs and returns a decision
-// { verdict, ruleId, reason }. They have no side effects and read nothing but their arguments, so in v0 the agent calls
-// them in-process, and later Guard can run the very same functions outside the AI, in front of every real service.
-import { formatInr } from "./language/format.ts";
-import { checkMessage } from "./language/check.ts";
+// The Bookings limits: nine rules, in plain words, as pure checks. Each takes the facts it needs and returns a decision { verdict, ruleId, reason }. They have
+// no side effects and read nothing but their arguments, so in v0 the agent calls them in-process, and later Guard can run the very same functions outside
+// the AI, in front of every real service. Three of the nine are every template's and live in modules/limits/limits.ts (opt-out, the refund limit and
+// message-matches-record); the wrappers below give them Bookings' words and facts.
+import { formatInr } from "../../../modules/language/format.ts";
+import { allow, block, checkRefund, checkRecordMatch } from "../../../modules/limits/limits.ts";
+import type { Decision } from "../../../modules/limits/limits.ts";
+import type { RecordView } from "../../../modules/record/record.ts";
+import { checkFactsOf } from "./language/check.ts";
 import type { MessageFacts } from "./language/templates.ts";
-import type { RecordView, RuleDecision, Verdict } from "./record.ts";
 import { hoursOn } from "./settings.ts";
 import type { Service, Settings } from "./settings.ts";
-import { MINUTE, localParts, minutesOfDay, sameDate } from "./time.ts";
-
-export type Decision = RuleDecision; // { ruleId, verdict, reason }
-
-const allow = (ruleId: Decision["ruleId"], reason: string): Decision => ({ ruleId, verdict: "allow", reason });
-const block = (ruleId: Decision["ruleId"], reason: string): Decision => ({ ruleId, verdict: "block", reason });
-const hold = (ruleId: Decision["ruleId"], reason: string): Decision => ({ ruleId, verdict: "hold_for_owner", reason });
-
-const RANK: Record<Verdict, number> = { allow: 0, hold_for_owner: 1, block: 2 };
-
-/** The strictest of several decisions: a block beats a hold for the owner, which beats an allow. */
-export function strictest(decisions: Decision[]): Decision {
-  return decisions.reduce((worst, d) => (RANK[d.verdict] > RANK[worst.verdict] ? d : worst));
-}
+import { MINUTE, localParts, minutesOfDay, sameDate } from "../../../modules/core/time.ts";
 
 // price-at-or-above-list: never quote or agree below the price list
 export function checkPriceAtOrAboveList(input: { serviceName: string; listInr: number; proposedInr: number }): Decision {
@@ -84,13 +74,8 @@ export function checkOneDepositPerBooking(input: { record: RecordView; booking: 
 // refund-limit: refunds above the limit need the owner's approval; so does any refund that is not owed automatically.
 // "Within the limit" includes the limit itself.
 export function checkRefundLimit(input: { amountInr: number; limitInr: number; paidInr?: number; ownerApproved?: boolean; inCancellationWindow?: boolean }): Decision {
-  const { amountInr, limitInr, paidInr, ownerApproved = false, inCancellationWindow = true } = input;
-  if (amountInr <= 0) return block("refund-limit", "A refund must be more than zero.");
-  if (paidInr !== undefined && amountInr > paidInr) return block("refund-limit", `A refund of ${formatInr(amountInr)} is more than the ${formatInr(paidInr)} that was paid.`);
-  if (ownerApproved) return allow("refund-limit", `The owner approved this refund of ${formatInr(amountInr)}.`);
-  if (!inCancellationWindow) return hold("refund-limit", "The booking was cancelled too late for an automatic refund, so the owner decides.");
-  if (amountInr > limitInr) return hold("refund-limit", `${formatInr(amountInr)} is above your ${formatInr(limitInr)} refund limit, so the owner has to approve it.`);
-  return allow("refund-limit", `${formatInr(amountInr)} is within your ${formatInr(limitInr)} refund limit.`);
+  const { inCancellationWindow = true, ...rest } = input;
+  return checkRefund({ ...rest, owedAutomatically: inCancellationWindow, notAutomaticReason: "The booking was cancelled too late for an automatic refund, so the owner decides." });
 }
 
 // no-message-after-stop: no reminder after a cancellation, completion or STOP
@@ -102,15 +87,7 @@ export function checkNoMessageAfterStop(input: { isReminder: boolean; bookingCon
   return allow("no-message-after-stop", "The booking is live and the customer has not opted out.");
 }
 
-// opt-out: STOP ends all messages to the customer. (Messages to the owner are not messages to the customer.)
-export function checkOptOut(input: { toCustomer: boolean; customerOptedOut: boolean }): Decision {
-  if (input.toCustomer && input.customerOptedOut) return block("opt-out", "The customer sent STOP, so nothing more is sent to them.");
-  return allow("opt-out", input.toCustomer ? "The customer has not opted out." : "This message is for the owner.");
-}
-
 // message-matches-record: every amount, date and time in a message equals the record (language/check.ts does the reading)
 export function checkMessageMatchesRecord(input: { text: string; facts: MessageFacts }): Decision {
-  const result = checkMessage(input.text, input.facts);
-  if (result.ok) return allow("message-matches-record", "Every amount, date, time and link in the message is in the record.");
-  return block("message-matches-record", `The message does not match the record. ${result.problems.join(" ")}`);
+  return checkRecordMatch({ text: input.text, facts: checkFactsOf(input.facts) });
 }

@@ -1,8 +1,8 @@
 // Every message the agent sends, per language. v0 has NO model-written text: each message is one of these templates,
 // and every amount, date, time, service and link in it is rendered from the record (the facts), never typed by hand
 // and never translated. Adding a language means adding one more object below; the type makes sure none is missing.
-import type { Language } from "../settings.ts";
-import { formatInr, formatSlot } from "./format.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -43,7 +43,7 @@ export type TemplateId =
   | "owner_refund_needs_approval" | "owner_cant_confirm" | "owner_late_cancellation" | "owner_duplicate_payment"
   | "owner_payment_unused" | "owner_not_booked" | "owner_reschedule_failed"
   | "owner_message_held" | "owner_opted_out" | "owner_unknown_command" | "owner_wants_to_talk"
-  // button mode: the agent reads with the rules only and answers with buttons and lists (src/ai-state.ts). Each says why, and that every limit still holds.
+  // button mode: the agent reads with the rules only and answers with buttons and lists (modules/understanding/ai-state.ts). Each says why, and that every limit still holds.
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
   // sent by the approvals relay, not by the agent: the ask for a refund Guard is holding, and the answers to the owner's reply
   | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed";

@@ -2,8 +2,8 @@
 // cross-checks against Guard, and the counts in /status (a refund that needs the builder is counted and logged, never sent to the owner).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePayments } from "../src/adapters/payments.ts";
-import { createGuardModel } from "../src/adapters/guard-model.ts";
+import { createFakePayments } from "../../../modules/payments/payments.ts";
+import { createGuardModel } from "../../../modules/payments/guard-model.ts";
 import { CUSTOMER, glowSalon, HARNESS_GUARD } from "../src/harness.ts";
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";

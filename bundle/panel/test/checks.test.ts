@@ -6,9 +6,9 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createFakeCalendar } from "../../../pathways/bookings/src/adapters/calendar.ts";
-import { createFakeMessaging } from "../../../pathways/bookings/src/adapters/messaging.ts";
-import { createFakePayments } from "../../../pathways/bookings/src/adapters/payments.ts";
-import { fakeClock } from "../../../pathways/bookings/src/clock.ts";
+import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
+import { createFakePayments } from "../../../modules/payments/payments.ts";
+import { fakeClock } from "../../../modules/core/clock.ts";
 import { startStandins } from "../../../pathways/bookings/standins/server.ts";
 import { checkCalendar, checkConnections, checkRazorpay, checkWhatsApp } from "../checks.ts";
 

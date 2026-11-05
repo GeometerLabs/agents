@@ -1,12 +1,12 @@
-// The record of an agent someone else wrote, in the record format the monthly report and the certificates read (pathways/bookings/src/record.ts). It is built from what the Guards
+// The record of an agent someone else wrote, in the record format the monthly report and the certificates read (modules/record/record.ts). It is built from what the Guards
 // and the services say, never from what the agent says:
 //   - every call the agent made is a Guard decision: allowed (and the answer the service gave), held for the owner, or refused (and which rule);
 //   - "done" is what the service itself holds: a payment link by its reference, a payment by its link, a refund against its payment, an event in the calendar;
 //   - "the owner approved" is the approval's state in Guard (decided by the owner's signed answer), not a message anyone sent.
 // A thing the service does not show (yet) is `unconfirmed`, never `confirmed`. It is written only after a short wait, so a service that is a moment behind does not leave a false
 // "unconfirmed" in a record that is append-only; when the service shows it later, a confirmed entry for the same thing is added after it (the report marks the earlier one "settled later").
-import { digest } from "../../pathways/bookings/src/record.ts";
-import type { Action, Outcome, RecordEntry, RuleDecision } from "../../pathways/bookings/src/record.ts";
+import { digest } from "../../modules/record/record.ts";
+import type { Action, Outcome, RecordEntry, RuleDecision } from "../../modules/record/record.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import { hide } from "../backup/export.ts";
 import { label, typedMap, typedText } from "./facts.ts";

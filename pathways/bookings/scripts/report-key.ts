@@ -3,7 +3,7 @@
 // It refuses a folder inside a repository, and never overwrites a key. Keep report-key.pem secret and backed up: it is
 // the only thing that proves a document came from you. Share report-key.pub.pem (or the key id) so people can check it.
 import { UsageError, main } from "../report/cli.ts";
-import { PRIVATE_KEY_FILE, PUBLIC_KEY_FILE, generateKeyFiles } from "../report/keys.ts";
+import { PRIVATE_KEY_FILE, PUBLIC_KEY_FILE, generateKeyFiles } from "../../../modules/report/keys.ts";
 
 await main(async () => {
   const folder = process.argv[2];

@@ -10,12 +10,16 @@
 //
 // "confirmed" is only ever reached through confirmed read-backs in the record: the agent moves a booking there after
 // the calendar shows the event AND the payments record shows the deposit.
-import type { Language, Settings } from "./settings.ts";
+import type { Settings } from "./settings.ts";
+import type { Language } from "../../../modules/language/languages.ts";
 import { serviceName } from "./settings.ts";
-import type { LocalDate, LocalTime } from "./time.ts";
-import { HOUR } from "./time.ts";
-import type { TimePhrase } from "./language/dates.ts";
+import type { LocalDate, LocalTime } from "../../../modules/core/time.ts";
+import { hoursBefore, scheduleAround } from "../../../modules/reminders/reminders.ts";
+import type { Reminder } from "../../../modules/reminders/reminders.ts";
+import type { TimePhrase } from "../../../modules/language/dates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
+import type { AiState } from "../../../modules/understanding/ai-state.ts";
+import type { GuardHold, RefundIssue, RefundRetry } from "../../../modules/payments/refunds.ts";
 
 export type BookingState =
   | "enquiry" | "confirming_details" | "awaiting_deposit" | "needs_owner" | "confirmed" | "expired" | "cancelled" | "completed";
@@ -47,25 +51,16 @@ export function moveTo(booking: Booking, to: BookingState): void {
  * Something waiting for an answer, or for another try.
  *  - refund: the owner's own call about a refund WITHIN the limit (a late cancellation), asked by the agent as "approve b-3".
  *    A refund ABOVE the limit is not asked by the agent at all: Guard holds it, and the approvals relay asks the owner, once.
- *  - guard_hold: a refund Guard is holding for the owner. It keeps the approval id and the EXACT bytes of the call that was held:
+ *  - guard_hold: a refund Guard is holding for the owner (modules/payments/refunds.ts). It keeps the approval id and the EXACT bytes of the call that was held:
  *    after the relay says the owner approved, those same bytes are sent again, once. It is never sent again on a timer.
  *  - refund_retry: a refund that could not be sent at all (nothing went out). The agent tries again by itself, a few times.
  *  - calendar: the calendar would not confirm a paid booking; the owner can retry or cancel and refund.
  */
 export type Pending =
   | { kind: "refund"; amountInr: number; paymentId: string; reason: "late_cancellation" }
-  | {
-    kind: "guard_hold"; amountInr: number; paymentId: string; receipt: string;
-    approval: string; body: string; expiresAtMs: number | null; heldAtMs: number;
-    /** The relay has said the owner approved. Set before the call is sent again, so a send that could not be made is tried again. */
-    approved?: boolean; tries?: number; retryAtMs?: number;
-  }
-  | { kind: "refund_retry"; amountInr: number; paymentId: string; tries: number; retryAtMs: number; then: { customer: TemplateId; owner?: TemplateId; held: TemplateId } }
+  | GuardHold
+  | RefundRetry
   | { kind: "calendar" };
-
-/** Why a refund needs the builder, not the owner. "unheld": a refund above the limit was sent without Guard holding it (Guard's threshold does not match the settings). */
-export type RefundIssueKind = "unknown" | "uncertain" | "refused" | "failed" | "unconfirmed" | "expired" | "unheld";
-export interface RefundIssue { paymentId: string; kind: RefundIssueKind; note: string; atMs: number }
 
 export interface Booking {
   id: string; // "b-1": also the calendar event's bookingRef and the payment link's reference_id
@@ -89,7 +84,7 @@ export interface Booking {
   depositPaymentId?: string;
   depositInr?: number;
   handledPayments: string[]; // payments already dealt with (the deposit, or an extra one that was refunded or sent to the owner)
-  reminders: { atMs: number; sent: boolean }[];
+  reminders: Reminder[];
   pending: Pending[];
   /** Refunds that need the builder (never the owner): see RefundIssueKind. Counted in the runtime's status. */
   refundIssues?: RefundIssue[];
@@ -105,27 +100,6 @@ export interface Customer {
   optedOut: boolean;
   /** When this customer last asked to talk to the owner (the owner is told at most once an hour about the same person). */
   ownerAskedAtMs?: number;
-}
-
-/**
- * What the shop has spent on understanding messages this month, and whether it is in button mode. Kept in the store, so it survives a restart and a
- * step that runs again. Counts and amounts only, never a word of a message.
- */
-export interface AiState {
-  /** The shop's local month these counts are for, "2026-11". They start again at zero in a new month. */
-  month: string;
-  /** Messages understood at each step this month. The allowance counts `decision` + `model`. */
-  rules: number;
-  decision: number;
-  model: number;
-  /** Estimated cost this month in micro-rupees, from the dated rate table: calls with a price only. */
-  costMicroInr: number;
-  /** Calls this month whose provider and model have no price in the table (their cost is not in the total). */
-  unpriced: number;
-  /** A model step failed: until this moment the agent reads with buttons and the rules only. */
-  pausedUntilMs?: number;
-  /** The notices already sent, so each is sent once: the month the allowance notice was sent for; whether the outside switch was announced; the day (local) of the last fault notice. */
-  told: { allowance?: string; override?: boolean; fault?: string };
 }
 
 /** All the conversation state. It is passed in, never global, so every scenario starts clean. */
@@ -182,7 +156,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
   };
 }
 
-/** When the reminders are due: each configured number of hours before the start, skipping any that is already past. */
-export function reminderSchedule(settings: Settings, startMs: number, nowMs: number): { atMs: number; sent: boolean }[] {
-  return settings.reminders.hoursBefore.map((h) => startMs - h * HOUR).filter((at) => at > nowMs).map((atMs) => ({ atMs, sent: false }));
+/** When the reminders are due: each configured number of hours before the start, skipping any that is already past (modules/reminders/reminders.ts). */
+export function reminderSchedule(settings: Settings, startMs: number, nowMs: number): Reminder[] {
+  return scheduleAround(startMs, hoursBefore(settings.reminders.hoursBefore), nowMs);
 }

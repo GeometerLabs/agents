@@ -11,6 +11,8 @@
 // Then it writes demo/web/generated.js: the page's own script (demo/page.js), markup (the body of demo/page.ts's page) and stylesheet
 // (demo/web/theme.css: its own look for the browser, every rule under .geo-demo and every colour a custom property), and a copy of each
 // file the template reads with readFileSync (the example shop's settings), which the fs stand-in serves.
+// The template's code imports the shared modules (agents/modules/). The build follows those imports too, and writes them under modules/ in the output, so the
+// output has the same two parts: the template's own folders (src/, demo/) and modules/. Nothing else outside pathways/bookings is followed.
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
@@ -46,7 +48,10 @@ function pageMarkup(): string {
 
 // ---- the modules ---------------------------------------------------------------------------------------------------------------------
 
-const outPath = (source: string) => source.replace(/\.ts$/, ".js");
+/** A file of the shared modules, as the build names its source: relative to pathways/bookings, so it starts with ../../modules/. */
+const MODULES_PREFIX = "../../modules/";
+/** Where a source file lands in the output: the template's own files keep their place, the shared modules go under modules/. */
+const outPath = (source: string) => (source.startsWith(MODULES_PREFIX) ? source.slice("../../".length) : source).replace(/\.ts$/, ".js");
 const specifierBetween = (fromOut: string, toOut: string): string => {
   const rel = posix.relative(posix.dirname(fromOut), toOut);
   return rel.startsWith(".") ? rel : `./${rel}`;
@@ -97,7 +102,10 @@ export function buildWebDemo(outDir: string = DEFAULT_OUT): BuildResult {
         target = posix.normalize(posix.join(posix.dirname(source), specifier));
         if (target === GENERATED) return all.replace(specifier, specifierBetween(here, GENERATED));
         if (!target.endsWith(".ts")) throw new Error(`${source} imports ${specifier}: the browser build follows only .ts files (and ${GENERATED}).`);
-        if (target.startsWith("..")) throw new Error(`${source} imports ${specifier}, which is outside pathways/bookings.`);
+        if (target.startsWith("..") && !target.startsWith(MODULES_PREFIX)) throw new Error(`${source} imports ${specifier}, which is outside pathways/bookings and the shared modules.`);
+        if (source.startsWith(MODULES_PREFIX) && !target.startsWith(MODULES_PREFIX)) throw new Error(`${source} imports ${specifier}: the shared modules must not import a template.`);
+        // The template's files keep their place in the output and the modules go under modules/, so a template's import of a module is written from the output's layout.
+        if (target.startsWith(MODULES_PREFIX) && !source.startsWith(MODULES_PREFIX)) written = specifierBetween(here, outPath(target));
       } else {
         throw new Error(`${source} imports "${specifier}": the demo has no dependencies, so there is nothing to bundle.`);
       }

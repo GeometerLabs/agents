@@ -6,7 +6,7 @@ import { MAX_MESSAGE_LENGTH, createDemo } from "./session.ts";
 import type { Demo, OwnerCommand } from "./session.ts";
 import { buildState } from "./view.ts";
 import type { Settings } from "../src/settings.ts";
-import { localParts, zonedToMs } from "../src/time.ts";
+import { localParts, zonedToMs } from "../../../modules/core/time.ts";
 
 export class HttpError extends Error {
   status: number;
