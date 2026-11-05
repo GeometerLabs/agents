@@ -8,7 +8,7 @@ const two = (n: number) => String(n).padStart(2, "0");
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import type { Envelope } from "../../../modules/report/sign.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, badgeText } from "./strings.ts";
 import type { Strings } from "./strings.ts";
 import { goLiveLines, periodLabel } from "./text.ts";
 import { languagesOf, rupees } from "../../../modules/report/text.ts";
@@ -74,7 +74,7 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
     r.record.rows.map((x) => { const t = localParts(Date.parse(x.time), r.shop.timeZone); return [String(x.seq), esc(`${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}`), `<code>${esc(x.action)}</code>`, `<code>${esc(x.outcome)}</code>`, esc(x.booking ?? "–"), `<code>${esc(x.digest.slice(7, 23))}</code>`]; }));
 
   return `<section class="doc" lang="${language}">
-<header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}</header>
+<header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}${r.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.sourceLong[r.source])} ${esc(s.handRun)}</p>
 <div class="cards">
 <div class="card"><b>${r.bookings.made}</b><span>${esc(s.label.bookingsMade)}</span></div>

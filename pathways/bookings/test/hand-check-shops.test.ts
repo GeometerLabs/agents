@@ -68,13 +68,13 @@ test("the sentences written for a shop are read the way the reviewed Glow Salon 
   }
 });
 
-test("Glow Salon still holds 37 of 37 with nothing left out, and the same run names no situation as not run", async () => {
+test("Glow Salon still holds 38 of 38 with nothing left out, and the same run names no situation as not run", async () => {
   const run = await runOn();
-  assert.equal(run.results.length, 37);
+  assert.equal(run.results.length, 38);
   assert.ok(run.results.every((r) => r.held));
   assert.deepEqual(run.skipped, []);
   assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), []);
-  assert.equal(run.results.reduce((n, r) => n + r.checks.length, 0), 242);
+  assert.equal(run.results.reduce((n, r) => n + r.checks.length, 0), 252);
 });
 
 test("the equipment-rental example is valid settings, and its situations hold on its own settings", async () => {
@@ -82,7 +82,7 @@ test("the equipment-rental example is valid settings, and its situations hold on
   assert.ok(result.ok, result.ok ? "" : result.errors.join("; "));
   const run = await runOn(rental());
   assert.deepEqual(run.skipped, []);
-  assert.equal(run.results.length, 32);
+  assert.equal(run.results.length, 33);
   const failed = run.results.filter((r) => !r.held).map((r) => `${r.situation.title}: ${r.checks.filter((c) => !c.passed).map((c) => c.label).join("; ")}`);
   assert.deepEqual(failed, []);
   // a shop that is open every day has no closed day to ask for; the situation says so
@@ -132,7 +132,7 @@ for (const [name, file, change] of VARIANTS) {
 test("settings with no cancellation window cannot be 'late': those three situations are named as not run, with the reason, and are not counted", async () => {
   const settings = parseSettings((() => { const r = clone(raw("glow-salon.example.json")); r.cancellation.windowHours = 0; return r; })());
   const { situations, skipped } = buildSituations(settings);
-  assert.equal(situations.length, 34);
+  assert.equal(situations.length, 35);
   assert.deepEqual(skipped.map((s) => s.id), ["cancel-after-window", "cancel-after-window-owner-ml", "cancel-after-window-owner-kn"]);
   assert.ok(skipped.every((s) => s.reason.includes("window is 0 hours")));
   // the customer who asks for more back than they paid still runs where it can: only its late half is left out, and it says so
@@ -158,7 +158,7 @@ test("hand-check.ts --settings runs the situations on that shop, names the langu
   const r = run("--settings", rentalFile);
   assert.equal(r.status, 0, r.stderr);
   assert.ok(r.stdout.includes("CRASH TEST   Hosahalli Farm Hiring Centre · Bookings · Hindi + Kannada"));
-  assert.ok(r.stdout.includes("Held 32 of 32.  0 failed.  14 not tested."));
+  assert.ok(r.stdout.includes("Held 33 of 33.  0 failed.  14 not tested."));
   assert.ok(r.stdout.includes("Parts left out of 1 situation(s)"));
   assert.ok(run("--settings", rentalFile, "--details").stdout.includes("left out: a closed day: the shop is open every day"));
   const noWindow = clone(raw("glow-salon.example.json"));
@@ -166,7 +166,7 @@ test("hand-check.ts --settings runs the situations on that shop, names the langu
   writeFileSync(join(dir, "no-window.json"), JSON.stringify(noWindow));
   const skipped = run("--settings", join(dir, "no-window.json"));
   assert.equal(skipped.status, 0, skipped.stderr);
-  assert.ok(skipped.stdout.includes("Held 34 of 34.  0 failed.  14 not tested.  3 not run on these settings."));
+  assert.ok(skipped.stdout.includes("Held 35 of 35.  0 failed.  14 not tested.  3 not run on these settings."));
   assert.ok(skipped.stdout.includes("NOT RUN on Glow Salon's settings (3), and not counted above:") && skipped.stdout.includes("- Cancellation after the window:"));
   writeFileSync(join(dir, "bad.json"), JSON.stringify({ name: "" }));
   const bad = run("--settings", join(dir, "bad.json"));
@@ -174,7 +174,7 @@ test("hand-check.ts --settings runs the situations on that shop, names the langu
   assert.ok(bad.stderr.includes("The settings need fixing"));
   const plain = run();
   assert.equal(plain.status, 0);
-  assert.ok(plain.stdout.includes("Held 37 of 37.  0 failed.  14 not tested.") && !plain.stdout.includes("not run on these settings"));
+  assert.ok(plain.stdout.includes("Held 38 of 38.  0 failed.  14 not tested.") && !plain.stdout.includes("not run on these settings"));
 });
 
 test("every language the rental speaks is one the situations can write in", () => {

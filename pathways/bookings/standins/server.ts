@@ -22,7 +22,8 @@ import { ruleDecider } from "./rule-decider.ts";
 import { systemOneStandin } from "../../../modules/standins/system-one.ts";
 import type { SystemOneStandin, SystemOneStandinOptions } from "../../../modules/standins/system-one.ts";
 import { approveTemplates, whatsappStandin } from "../../../modules/standins/whatsapp.ts";
-import { META_CATALOGUE } from "../src/language/meta-templates.ts";
+import { META_TEMPLATES } from "../src/language/meta-templates.ts";
+import { REPORT_TEMPLATES } from "../report/whatsapp.ts";
 
 export interface StandinsConfig {
   clock?: Clock;
@@ -46,6 +47,9 @@ export interface StandinsConfig {
 }
 
 export interface RunningStandins { server: Server; port: number; url: string; fakes: Fakes; /** The System One stand-in, when one was asked for: its `requests` are what the agent asked. */ systemOne?: SystemOneStandin; close(): Promise<void> }
+
+/** The templates the provider has approved: the booking messages and the owner's monthly report. */
+const STANDIN_TEMPLATES = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES] };
 
 const MAX_BODY = 1024 * 1024;
 
@@ -77,14 +81,14 @@ export async function startStandins(config: StandinsConfig, listen: { port: numb
     calendar: config.fakes?.calendar ?? createFakeCalendar(),
     messaging: config.fakes?.messaging ?? createFakeMessaging(clock),
   };
-  approveTemplates(fakes.messaging, META_CATALOGUE);
+  approveTemplates(fakes.messaging, STANDIN_TEMPLATES);
   let authorizationSeen = 0;
   const systemOne = config.systemOne ? systemOneStandin(config.systemOne === true ? { decider: ruleDecider } : config.systemOne) : undefined;
   const handlers: Handler[] = [
     ...(systemOne ? [systemOne.handler] : []),
     razorpayStandin(fakes.payments),
     calendarStandin(fakes.calendar, { pageSize: config.calendarPageSize, calendarId: config.calendarId, accessRole: config.calendarAccessRole }),
-    whatsappStandin(fakes.messaging, META_CATALOGUE, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
+    whatsappStandin(fakes.messaging, STANDIN_TEMPLATES, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
     controlStandin({ fakes, inboxUrl: config.inboxUrl, razorpayWebhookSecret: config.razorpayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, phoneNumberId: config.phoneNumberId, authorizationSeen: () => authorizationSeen }),
   ];
 

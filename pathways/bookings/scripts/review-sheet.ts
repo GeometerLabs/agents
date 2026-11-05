@@ -15,6 +15,7 @@ import { TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
 import { WORDS } from "../../../modules/language/words.ts";
 import { reportStringRows, sampleFloor, sampleOwnerText } from "../report/review.ts";
+import { sampleMessage } from "../report/whatsapp.ts";
 import { serviceName } from "../src/settings.ts";
 import { LANGUAGE_NAMES } from "../../../modules/language/languages.ts";
 import type { Language } from "../../../modules/language/languages.ts";
@@ -237,6 +238,9 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push(`The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below. The sample is a made-up month (Glow Salon, ${MONTH_NAMES[language][1]} 2027). The certificate lists the shop's price list like this: ${sampleFloor(language)}.`, "");
   out.push("What to look for first: (1) is every line something a shop owner would understand in ten seconds; (2) is each label short and never an exaggeration (these documents count and state facts: they never say a shop is safe, guaranteed or approved, and a native reader should flag any word that sounds like it does); (3) is \"deposit\" the everyday word here, as in section 1; (4) is the word for \"limits\" (the rules the shop set) the one a shopkeeper would use; (5) the technical words kept in Latin letters on purpose (STOP, WhatsApp, Razorpay, webhook signatures, stand-in services).", "");
   out.push("### The five lines, with sample numbers", "", "```text", sampleOwnerText(language), "```", "");
+  out.push("### The monthly report on WhatsApp, with sample numbers", "");
+  out.push("Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and partners; the other template is the same without it. The labels are the ones above; the new words are \"Full report\", the name of the badge and the code line.", "");
+  out.push("```text", sampleMessage(language), "```", "");
   out.push("### Every word and phrase of the report and the certificates", "");
   out.push(table(["Id", `Text (${name})`, "Meaning (English)", REVIEWER], reportStringRows(language).map((r) => [`\`${r.id}\``, r.text, r.english, ""])), "");
   return out.join("\n");

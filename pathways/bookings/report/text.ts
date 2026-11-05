@@ -36,6 +36,14 @@ export function goLiveLines(goLive: GoLiveFinding, language: Language): string[]
   }
 }
 
+/** What was not checked, as the owner's short form names it: the items an owner would expect, then how many more the full report lists. */
+export function notCheckedList(report: MonthlyReport, language: Language): string {
+  const s = STRINGS[language];
+  const named = NOT_TESTED.filter((n) => n.forOwner).map((n) => s.notTested[n.id]);
+  const others = report.notTested.length + report.notCounted.length - named.length;
+  return [...named, s.more(others)].join(" · ");
+}
+
 /** The five lines for one language. */
 export function ownerText(report: MonthlyReport, language: Language): string {
   const s = STRINGS[language];
@@ -60,9 +68,7 @@ export function ownerText(report: MonthlyReport, language: Language): string {
   const stoppedLine = stopped.total === 0 ? pair(s.label.stoppedByLimits, 0)
     : `${pair(s.label.stoppedByLimits, stopped.total)} (${shown.join(" · ")}${byCount.length > 3 ? " · …" : ""})`;
 
-  const named = NOT_TESTED.filter((n) => n.forOwner).map((n) => s.notTested[n.id]);
-  const others = report.notTested.length + report.notCounted.length - named.length;
-  const notChecked = `${pair(s.label.notChecked, [...named, s.more(others)].join(" · "))}${language === "hi" ? "।" : "."} ${s.handRun}`;
+  const notChecked = `${pair(s.label.notChecked, notCheckedList(report, language))}${language === "hi" ? "।" : "."} ${s.handRun}`;
 
   return [title, moneyAndBookings, asked, stoppedLine, notChecked].join("\n");
 }
