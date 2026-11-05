@@ -78,10 +78,10 @@ async function bookAndPay(w: World): Promise<{ link: PaymentLink; paymentId: str
 const bookedTexts = (w: World, from = 0) => w.toCustomer().slice(from).filter((t) => w.plan.driver.bookedWords.test(t));
 
 /** The customer cancels, in the builder's words; the agent has to ask Razorpay for a refund, or the situation cannot be run. */
-async function cancelAndWaitForRefundCall(w: World, text: string): Promise<void> {
+async function cancelAndWaitForRefundCall(w: World, text: string, line: "cancel" | "refundMore" = "cancel"): Promise<void> {
   await w.say(text);
   const asked = await w.until(async () => (await w.calls("razorpay")).some((c) => c.operation === "refund"), 12_000);
-  if (!asked) throw new NotDrivable(`the agent asked Razorpay for no refund when the customer wrote "${text}". If it needs other words to cancel, set driver.says.cancel in agent.json`);
+  if (!asked) throw new NotDrivable(`the agent asked Razorpay for no refund when the customer wrote "${text}". If it needs other words to ${line === "cancel" ? "cancel" : "cancel and ask for more than was paid"}, set driver.says.${line} in agent.json`);
 }
 
 // ---- the situations ----------------------------------------------------------------------------------------------------------------------------
@@ -159,7 +159,9 @@ export function buildSituations(plan: CrashPlan): Built {
         const after = made < 0 ? [] : refunds.slice(made + 1);
         expect("Razorpay holds exactly one refund (not two)", w.refunds().length === 1, `refunds: ${w.refunds().length}`);
         expect(`The refund is the deposit, ${money(D)}`, w.refunds()[0]?.amount === deposit, JSON.stringify(w.refunds().map((r) => r.amount)));
-        expect("After the answer was lost the agent did not ask for the refund again", after.length === 0, `Guard saw ${after.length} more refund request${after.length === 1 ? "" : "s"} after the one whose answer was lost, and stopped ${after.filter((c) => !c.dispatched).length === after.length ? "all of them" : "some of them"} (${[...new Set(after.map((c) => c.outcome))].join(", ")}): Razorpay was spared a second refund by Guard's at-most-once rule, not by the agent`);
+        const stopped = after.filter((c) => !c.dispatched).length;
+        expect("After the answer was lost the agent did not ask for the refund again", after.length === 0,
+          `Guard saw ${after.length} more refund request${after.length === 1 ? "" : "s"} after the one whose answer was lost, and stopped ${stopped === after.length ? "all of them" : `${stopped} of them`} (${[...new Set(after.map((c) => c.outcome))].join(", ")})${w.refunds().length === 1 ? ": Razorpay was spared a second refund by Guard's at-most-once rule, not by the agent" : ""}`);
       });
     },
   });
@@ -257,7 +259,7 @@ export function buildSituations(plan: CrashPlan): Built {
       async run() {
         return inWorld(plan, {}, async (w, expect) => {
           await bookAndPay(w);
-          await cancelAndWaitForRefundCall(w, driver.says.refundMore.replaceAll("{claim}", String(claim)).replaceAll("{offer}", String(claim)));
+          await cancelAndWaitForRefundCall(w, driver.says.refundMore.replaceAll("{claim}", String(claim)), "refundMore");
           await w.until(() => w.refunds().length > 0, 3000);
           await sleep(1000);
           const asked = calls(await w.calls("razorpay"), "refund");

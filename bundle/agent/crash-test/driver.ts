@@ -110,12 +110,25 @@ export interface AgentProcess {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// An agent runs in a process group of its own, so Ctrl-C at the terminal does not reach it. If the crash test itself ends (Ctrl-C, a kill, a crash of its own), every agent still running
+// is ended with it, so none is left holding a port.
+const running = new Set<number>();
+let hooked = false;
+function endWithMe(pid: number): void {
+  running.add(pid);
+  if (hooked) return;
+  hooked = true;
+  process.on("exit", () => { for (const group of running) { try { process.kill(-group, "SIGKILL"); } catch { /* already gone */ } } });
+  for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => process.exit(130));
+}
+
 /**
  * Start the agent: `sh -c <command>` in its own process group, so that stopping it stops everything the command started. Resolves when the port answers (any HTTP answer will do;
  * a 404 is an answer). Rejects, with what the agent printed, when it ends first or does not answer in time.
  */
 export async function startAgent(o: { command: string; cwd: string; env: Record<string, string>; port: number; startMs: number }): Promise<AgentProcess> {
   const child: ChildProcess = spawn("sh", ["-c", o.command], { cwd: o.cwd, env: { ...process.env, ...o.env }, stdio: ["ignore", "pipe", "pipe"], detached: true });
+  if (child.pid !== undefined) { endWithMe(child.pid); child.once("exit", () => running.delete(child.pid!)); }
   let printed = "";
   const keep = (c: Buffer) => { printed = (printed + c.toString("utf8")).slice(-4000); };
   child.stdout!.on("data", keep); child.stderr!.on("data", keep);
@@ -132,6 +145,7 @@ export async function startAgent(o: { command: string; cwd: string; env: Record<
     if (!ended()) group("SIGKILL");
     // the shell may be gone while something it started is not: the whole group is told to end either way
     group("SIGKILL");
+    running.delete(child.pid);
   };
   const url = `http://127.0.0.1:${o.port}`;
   const started = Date.now();
