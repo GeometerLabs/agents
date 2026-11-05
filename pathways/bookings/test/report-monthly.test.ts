@@ -7,9 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
+import { ApiError, NotSentError, TimeoutError } from "../src/adapters/faults.ts";
 import { createRecord } from "../src/record.ts";
 import { zonedToMs } from "../src/time.ts";
-import { MAX_TRIES, RETRY_AFTER_MS, createMonthlyReport, lastMonth, sendFrom } from "../report/monthly-job.ts";
+import { MAX_TRIES, RETRY_AFTER_MS, createMonthlyReport, lastMonth, nothingWasSent, sendFrom } from "../report/monthly-job.ts";
 import type { MonthlyReportContext, MonthlyReportSetup } from "../report/monthly-job.ts";
 import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
 import { LANGUAGES } from "../src/settings.ts";
@@ -39,6 +40,15 @@ async function novemberWorld(): Promise<World> {
   await w.deliverPaymentEvents();
   return w;
 }
+
+/** The next `times` sends of a template fail with this error and send nothing; after that the real one works. `calls` counts every try. */
+function refuse(w: World, times: number, error: () => Error): { calls: number } {
+  const real = w.messaging.sendTemplate.bind(w.messaging);
+  const seen = { calls: 0 };
+  w.messaging.sendTemplate = async (to, template) => { if (seen.calls++ < times) throw error(); return real(to, template); };
+  return seen;
+}
+const refused = () => new ApiError(400, "Template name does not exist in the translation.");
 
 const context = (w: World, log: string[] = [], save: () => void = () => undefined): MonthlyReportContext => ({ settings: w.settings, clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, save, log: (l) => log.push(l) });
 const toOwner = (w: World) => w.messaging.sentTo(w.owner);
@@ -154,7 +164,7 @@ test("a refusal sent nothing, so it is tried again after an hour, three times at
   const w = await novemberWorld();
   const job = createMonthlyReport(setup());
   const log: string[] = [];
-  w.messaging.inject("sendTemplate", "error", { times: 5 });
+  refuse(w, 5, refused);
   w.clock.set(at(12, 1, 9));
   assert.deepEqual(await job.run(context(w, log)), { done: true, month: "2026-11", outcome: "failed", via: "template" });
   assert.equal(toOwner(w).length, 0);
@@ -174,10 +184,46 @@ test("a refusal sent nothing, so it is tried again after an hour, three times at
   assert.deepEqual(await createMonthlyReport(setup()).run(context(w, log)), { done: false, why: "gave-up" });
 });
 
+test("only an answer that says nothing was sent is tried again: a 5xx, a reply with no message id, a timeout or a surprise might come after WhatsApp took the message, so they are never sent twice", async () => {
+  assert.deepEqual([new ApiError(400, "x"), new ApiError(404, "x"), new NotSentError("connection refused")].map(nothingWasSent), [true, true, true]);
+  assert.deepEqual([new ApiError(500, "x"), new ApiError(502, "WhatsApp accepted the call but gave no message id."), new ApiError(503, "paused"), new TimeoutError("send"), new Error("surprise")].map(nothingWasSent), [false, false, false, false, false]);
+  for (const error of [() => new ApiError(500, "The provider could not take the message."), () => new ApiError(502, "WhatsApp accepted the call but gave no message id."), () => new ApiError(503, "WhatsApp has paused sending."), () => new TimeoutError("send template"), () => new Error("surprise")]) {
+    const w = await novemberWorld();
+    const tries = refuse(w, 1, error);
+    const job = createMonthlyReport(setup());
+    w.clock.set(at(12, 1, 9));
+    assert.equal((await job.run(context(w)) as { outcome: string }).outcome, "unconfirmed", error().message);
+    for (const later of [RETRY_AFTER_MS + MINUTE, 5 * RETRY_AFTER_MS, 24 * RETRY_AFTER_MS]) { w.clock.advance(later); await job.run(context(w)); await createMonthlyReport(setup()).run(context(w)); }
+    assert.equal(tries.calls, 1, `${error().message}: the send was tried once and never again`);
+    assert.deepEqual(mine(w).map((e) => e.outcome), ["attempted", "unconfirmed"]);
+  }
+  // and a connection that was refused sent nothing, so it is tried again like any clean refusal
+  const w = await novemberWorld();
+  const tries = refuse(w, 1, () => new NotSentError("connect ECONNREFUSED"));
+  const job = createMonthlyReport(setup());
+  w.clock.set(at(12, 1, 9));
+  assert.equal((await job.run(context(w)) as { outcome: string }).outcome, "failed");
+  w.clock.advance(RETRY_AFTER_MS);
+  assert.equal((await job.run(context(w)) as { outcome: string }).outcome, "confirmed");
+  assert.equal(tries.calls, 2);
+  assert.equal(toOwner(w).length, 1);
+});
+
+test("once WhatsApp has taken the message, an error reading it back (even a 4xx) is not a refusal: it went out, so it is unconfirmed and not sent again", async () => {
+  const w = await novemberWorld();
+  w.messaging.getMessage = async () => { throw new ApiError(404, "no such message"); };
+  const job = createMonthlyReport(setup());
+  w.clock.set(at(12, 1, 9));
+  assert.equal((await job.run(context(w)) as { outcome: string }).outcome, "unconfirmed");
+  w.clock.advance(3 * RETRY_AFTER_MS);
+  await job.run(context(w));
+  assert.equal(toOwner(w).length, 1);
+});
+
 test("a refusal that clears is tried again an hour later and then sent once", async () => {
   const w = await novemberWorld();
   const job = createMonthlyReport(setup());
-  w.messaging.inject("sendTemplate", "error");
+  refuse(w, 1, refused);
   w.clock.set(at(12, 1, 9));
   assert.equal((await job.run(context(w)) as { outcome: string }).outcome, "failed");
   w.clock.advance(RETRY_AFTER_MS);
@@ -221,7 +267,7 @@ test("a document that WhatsApp refuses costs nothing: the report itself has alre
   const job = createMonthlyReport(setup());
   assert.equal((await job.run(context(w)) as { outcome: string }).outcome, "confirmed");
   assert.deepEqual(toOwner(w).map((m) => m.kind), ["text"]);
-  assert.deepEqual(w.record.entries().filter((e) => e.refs.reportFile).map((e) => e.outcome), ["attempted", "failed"]);
+  assert.deepEqual(w.record.entries().filter((e) => e.refs.reportFile).map((e) => e.outcome), ["attempted", "unconfirmed"]);
   w.clock.set(at(12, 2, 9));
   await job.run(context(w));
   assert.deepEqual(toOwner(w).map((m) => m.kind), ["text"]);

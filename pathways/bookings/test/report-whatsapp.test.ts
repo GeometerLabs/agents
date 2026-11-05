@@ -116,6 +116,18 @@ test("each report template follows Meta's rules: a lowercase name, numbered valu
   }
 });
 
+test("the worst message still fits what WhatsApp takes once the values are in: the longest wording (Malayalam), a 120-character name, a 60-character shop name, big numbers, the stand-in tag and a real 32-digit folder name", () => {
+  const base = sampleReport();
+  const worst: MonthlyReport = {
+    ...base, source: "stand-in", preparedBy: "B".repeat(120), innovator: true, shop: { ...base.shop, name: "N".repeat(60) },
+    bookings: { ...base.bookings, made: 99999 }, money: { ...base.money, deposits: { count: 99999, paise: 9_999_999_900 } },
+    stopped: { ...base.stopped, total: 99999 }, owner: { asked: 99999, approved: 99999, denied: 99999, retried: 0 }, unconfirmed: { ...base.unconfirmed, openOnBookings: 99999 },
+  };
+  const link = `https://reports.example.com/r/${"a".repeat(32)}/report-2026-11-en.html`;
+  const lengths = LANGUAGES.map((language) => [language, [...monthlyReportMessage(seal(worst), language, { link }).text].length] as const);
+  for (const [language, length] of lengths) assert.ok(length <= 900, `${language}: ${length} characters, and the limit WhatsApp checks after the values are in is 1024`);
+});
+
 test("the examples Meta reviews are a believable month, one line each, in the template's own language, and the checked-in list holds them", () => {
   const submissions = reportSubmissions();
   assert.equal(submissions.length, REPORT_TEMPLATES.length * LANGUAGES.length);
