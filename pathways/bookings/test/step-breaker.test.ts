@@ -122,3 +122,18 @@ test("both models down is still the fault: button mode, as before; the pause on 
   assert.equal(summaryOf(w.store, {}, w.clock.now(), IST).mode, "buttons");
   assert.equal(summaryOf(w.store, {}, w.clock.now(), IST).reason, "fault");
 });
+
+test("a full outage over several fault cycles never writes a step pause: it would say the language model reads each message while it is down too", async () => {
+  const { w, state } = steps();
+  state.decisionDown = true;
+  state.modelDown = true;
+  for (let cycle = 0; cycle < 4; cycle++) {
+    await w.say(UNCLEAR); // asks both, both fail: the fault pause (5 minutes of buttons) starts
+    await w.advance(6); // the fault pause is over, so the next message tries both again: failures at 0, 6, 12 and 18 minutes
+  }
+  assert.equal(state.decisionCalls, 4, "each cycle asked the decision model, and none of them was skipped");
+  assert.equal(lines(w).filter((e) => e.refs.mode === "step_paused" || e.refs.mode === "step_resumed").length, 0);
+  assert.ok(received(w).every((e) => e.refs.skipped === undefined));
+  assert.deepEqual(summaryOf(w.store, {}, w.clock.now(), IST).paused, { decision: null });
+  assert.equal(lines(w).filter((e) => e.refs.reason === "fault").length, 1, "only the fault line, once a day");
+});

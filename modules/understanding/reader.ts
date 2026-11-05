@@ -67,11 +67,11 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     state[u.step] += 1;
     if (u.costMicroInr === null) state.unpriced += 1; else state.costMicroInr += u.costMicroInr;
     if (u.step === "rules" && u.failed.length > 0) state.pausedUntilMs = clock.now() + (policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES) * MINUTE;
-    // The decision model's pause: it answering (even "unsure") ends an outage; it failing counts only when the language model was asked after it, because then there
-    // was something to take over, and the router skips a paused decision model only in that case. With nothing after it, a failure is the fault above.
+    // The decision model's pause: it answering (even "unsure") ends an outage; it failing counts only when the language model was asked after it AND answered, because
+    // only then did something take over, and the pause says the language model reads each message. With nothing after it, or with that down too, a failure is the fault above.
     if (u.tried.includes("decision")) {
       const failed = u.failed.includes("decision");
-      if (!failed || u.tried.includes("model")) noteStep(store, "decision", !failed, clock.now(), timeZone, policy.breaker);
+      if (!failed || (u.tried.includes("model") && !u.failed.includes("model"))) noteStep(store, "decision", !failed, clock.now(), timeZone, policy.breaker);
     }
   }
 
