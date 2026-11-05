@@ -136,7 +136,12 @@ interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]
 export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
 // Fleet's button mode is part of what a shop is asked to be, so a flip redeploys it. It is only added to the hash when it is on, so a shop that never had it keeps the hash it has.
-export const desiredHashOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText"> & { fleetAi?: "buttons" }): string => sha256Hex(stableJson({ settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}) }));
+// The monthly report's two live facts (who set the shop up, the Innovator badge) are part of it too, so a change of either redeploys the shop and rewrites its runtime config. They are
+// always in the hash, so every shop deployed before the report existed is redeployed once, which is what writes its `report` block.
+export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons" }) => ({
+  settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
+});
+export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
 
 /** Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. */
 export function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string): { prepared?: Prepared; problems: Problem[]; notes: string[] } {
@@ -454,7 +459,7 @@ export async function bringUp(ctx: Context, state: State, composed: Composed, fo
 /** After a failed `up`: which services are not running well, and the last lines each one said (they hold no secret: our programs never log one). */
 async function whatIsNotUp(ctx: Context): Promise<string> {
   const ps = await compose(ctx, ["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"], { timeoutMs: 60_000 });
-  const bad = ps.stdout.trim().split("\n").map((l) => l.split("\t")).filter(([, status]) => status !== undefined && !/\((healthy)\)|^Up (?!.*\((unhealthy|health: starting)\))/u.test(status)).map(([service, status]) => `${service}: ${status}`);
+  const bad = ps.stdout.trim().split("\n").map((l) => l.split("\t")).filter(([service, status]) => status !== undefined && !/\((healthy)\)|^Up (?!.*\((unhealthy|health: starting)\))/u.test(status) && !(service.startsWith("rd-") && /^Exited \(0\)/u.test(status))).map(([service, status]) => `${service}: ${status}`);
   if (bad.length === 0) return "";
   const logs = await compose(ctx, ["logs", "--no-color", "--tail", "6", ...bad.slice(0, 4).map((b) => b.split(":")[0])], { timeoutMs: 60_000 });
   return `Not running well: ${bad.slice(0, 6).join("; ")}. Their last lines: ${logs.stdout.trim().split("\n").slice(-12).join(" | ").slice(0, 900)}`;

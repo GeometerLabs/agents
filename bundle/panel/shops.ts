@@ -12,7 +12,7 @@ import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import { SHOP_ID, parseFleetAnswer, parseOwner, parseStatus, parseStopRequest, serverPaths } from "./contract.ts";
+import { SHOP_ID, parseFleetAnswer, parseOwner, parseReportFile, parseStatus, parseStopRequest, resolvePreparedBy, serverPaths } from "./contract.ts";
 import type { FleetAnswer, OwnerFile, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
 import type { Store } from "./store.ts";
 
@@ -51,6 +51,12 @@ export function createShops(config: PanelConfig, store: Store) {
       return readdirSync(paths.shops, { withFileTypes: true }).filter((e) => e.isDirectory() && SHOP_ID.test(e.name)).map((e) => e.name).sort();
     },
     owner(id: string): OwnerFile | undefined { return parseOwner(readText(join(paths.shop(safe(id)), "owner.json"))); },
+    /** Who the owner's monthly report says set the shop up ("Divya, local partner"): the shop's report.json if it has one, else the attribution. The deployer reads the same two files. */
+    preparedBy(id: string): string | undefined {
+      const report = parseReportFile(readText(join(paths.shop(safe(id)), "report.json")));
+      const owner = api.owner(id);
+      return resolvePreparedBy({ ...(report ? { report } : {}), ...(owner ? { owner } : {}) })?.name;
+    },
     /** The shops this person may see. */
     visibleTo(account: Account): ShopRef[] {
       const all = api.ids().map((id) => ({ id, owner: api.owner(id) }));

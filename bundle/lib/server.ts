@@ -9,6 +9,7 @@
 //   panel/                   the panel's own data (accounts, drafts, papers); the panel writes it, the deployer never reads it
 //   status/<shop>.json       RESULTS the deployer writes for the panel: last deploy, "N of M limits proven", versions, last backup and drill, the cost meter's counts.
 //   fleet/<shop>.json        fleet's last answer about the shop (plan, allowance, innovator, button mode). Written by ops, the one folder it can write; read by the deployer and the panel.
+//   shops/<shop>/report.json  optional: who the owner's monthly report says set the shop up (see readShop). owner.json, the panel's attribution, is read for the same.
 //   state/                   the deployer's own memory: Guard bundle versions, stopped shops, lock history, backup times.
 //   generated/               compose.yaml, Caddyfile, per-container config. Rewritten on every deploy; never edited by hand.
 //   secrets/                 one folder per container, mounted into that container only. Parent mode 0700.
@@ -17,10 +18,14 @@ import { join, resolve } from "node:path";
 import { validateSettings } from "../../pathways/bookings/src/settings.ts";
 import type { Settings } from "../../pathways/bookings/src/settings.ts";
 import { parseLock } from "../../pathways/bookings/server/config.ts";
+import { parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
 
 export const BUNDLE_VERSION = "0.1.0";
+
+/** What the monthly message says for who set the shop up when nothing says: no report.json and no owner.json (a shop made by `shop add` with no `--prepared-by`). */
+export const DEFAULT_PREPARED_BY = "your builder";
 
 /** Where a Guard's upstream is. `tls: false` is for the stand-ins in a test: a real deploy always talks TLS to the provider. */
 export interface Upstream { host: string; tls: boolean }
@@ -178,6 +183,9 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
 /** Is this domain one a public certificate authority could never give a certificate to? Then Caddy makes its own (`tls internal`). */
 export const isLocalDomain = (domain: string): boolean => domain === "localhost" || domain.endsWith(".localhost") || domain.endsWith(".local") || domain.endsWith(".internal") || /^\d{1,3}(\.\d{1,3}){3}$/u.test(domain);
 
+/** The address the world reaches this server at: https, the builder's domain, and the port only when it is not 443. */
+export const publicUrl = (server: Pick<ServerConfig, "domain" | "ports">): string => `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}`;
+
 export function listShops(dir: string): string[] {
   const shops = serverPaths(dir).shops;
   if (!existsSync(shops)) return [];
@@ -220,6 +228,14 @@ export interface ShopFolder {
    * the panel's runtime.json, which the panel rewrites.
    */
   fleetAi?: "buttons";
+  /**
+   * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local partner"), else
+   * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
+   */
+  preparedBy: string;
+  preparedBySource: "report.json" | "owner.json" | "default";
+  /** Fleet's last word on whether this shop's builder or partner has the Innovator badge (fleet/<shop>.json). False when fleet has said nothing readable. */
+  innovator: boolean;
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
   problems: string[];
 }
@@ -261,10 +277,17 @@ export function readShop(dir: string, name: string): ShopFolder {
       if (isObj(p.razorpay) && typeof p.razorpay.keyId === "string" && (p.razorpay.mode === "test" || p.razorpay.mode === "live")) pins.razorpay = { keyId: p.razorpay.keyId, mode: p.razorpay.mode };
     } catch (e) { problems.push(`pins.json is not usable: ${(e as Error).message}`); }
   }
+  // who set the shop up, for the owner's monthly report: report.json (a person's word), else owner.json (the panel's attribution), else a plain default
+  const optional = (file: string): string | undefined => { const path = join(folder, file); return existsSync(path) ? readFileSync(path, "utf8") : undefined; };
+  const reportText = optional("report.json");
+  const reportFile = parseReportFile(reportText);
+  if (reportText !== undefined && !reportFile) problems.push('report.json is not usable: it must be {"schema": 1, "preparedBy": "Divya, local partner"}, the name on one line, up to 120 characters.');
+  const ownerFile = parseOwner(optional("owner.json"));
+  const by = resolvePreparedBy({ ...(reportFile ? { report: reportFile } : {}), ...(ownerFile ? { owner: ownerFile } : {}) });
   const lockText = read("pathway.lock");
   let lock: { pathway: string; version: string } | undefined;
   if (lockText) { try { lock = parseLock(lockText); } catch (e) { problems.push((e as Error).message); } }
   const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
   const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), problems };
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }

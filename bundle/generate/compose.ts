@@ -16,6 +16,11 @@
 // ops for the heartbeat, the refresher for Google, litestream for the bucket) are on egress. Caddy is on front with the inbox, the relay and the panel, so
 // it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call).
 //
+// The monthly report pages. The runtime writes them into <data volume>/data/reports/<32 random hex digits>/. Caddy mounts that one folder of each shop's data volume,
+// read-only, at /srv/r/<shop> (and nothing else of the volume: the database and the record are not in Caddy's reach), and serves https://<domain>/r/<shop>/<hex>/<file>
+// from it. rd-<shop> is a one-shot that makes the folder first (a volume sub-folder must exist before Docker can start the container that mounts it, and the runtime
+// makes it only when it writes its first report). Every other address under /r answers 404, so there is no folder listing and no way out of the folder (reportsMatcher).
+//
 // The runtime's network, net-<shop>, holds ONLY the runtime, its own three Guards, the model Guard and its door. Docker has no one-way network, so a
 // service that is on the runtime's network can be connected to by the runtime: the inbox, the relay and ops are therefore NOT on it. They reach the
 // runtime through its door, which listens only on its address on the `admin` network (the runtime is not on that network and cannot connect to it),
@@ -26,11 +31,11 @@
 // any other address without TLS on the agent port too. fwd-* is a busybox `nc` that owns the Guard's network namespace and listens only on its
 // address on the `admin` network, passing bytes to 127.0.0.1:8082 (the Guard shares that loopback). The runtime is not on that network, so it cannot
 // see the port at all.
-import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain } from "../lib/server.ts";
+import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
 import type { GuardKind } from "./guards.ts";
-import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
+import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
 
 export const FORWARDER_IMAGE = "busybox:1.37.0";
 export const ADMIN_FORWARD_PORT = 8190;
@@ -202,6 +207,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       command: ["nc", "-ll", "-s", doorIp, "-p", String(RUNTIME_PORT), "-e", "nc", names.runtime(shop.name), String(RUNTIME_PORT)],
       networks: { [names.net(shop.name)]: {}, admin: { ipv4_address: doorIp } },
     });
+    // makes <data volume>/data/reports as the runtime's own user, in the runtime's own image, so a fresh volume gets the same owner the runtime would give it. No network, no Guard, no secret.
+    add(names.reportsDir(shop.name), node(["mkdir", "-p", REPORTS_DIR], { restart: "no", network_mode: "none", volumes: [`${names.dataVolume(shop.name)}:${HOME_DIR}`] }));
     const own = shop.guards.map((g) => g.service);
     add(names.runtime(shop.name), node(["node", "/pathway/server/main.ts", "--client", "/client"], {
       environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token" },
@@ -256,16 +263,15 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     }, [`${secretDir("litestream")}/litestream.yml`]);
   }
   if (server.panel.enabled && features.panel && features.panel.run !== false) {
-    const publicUrl = `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}`;
     // The panel writes the desired state, the secrets inbox and stop requests; it reads the results and the exports; it keeps its own data. It sees NONE of the
     // server's other folders (not secrets/, not state/, not generated/), has no Docker socket, and its network holds only the Guards' agent ports, where it
     // presents its own agent (`panel-<shop>`: three reads and nothing else). Its keys are in secrets/panel/, 0600, readable by the user it runs as.
     add("panel", {
       image: server.appImage, user: features.panel.user, init: true, ...hardened, command: ["node", "/app/bundle/panel/main.ts"],
       environment: {
-        PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl, PANEL_TRUST_PROXY: "1",
+        PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl(server), PANEL_TRUST_PROXY: "1",
         PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_PATHWAYS_DIR: "/app/pathways",
-        PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl}/c/{shop}/webhooks/{kind}`,
+        PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl(server)}/c/{shop}/webhooks/{kind}`,
         ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
       },
       volumes: [appVolume, `${secretDir("panel")}:/run/secrets:ro`, `${dirs.shops}:/server/shops`, `${dirs.secretsInbox}:/server/secrets-inbox`, `${dirs.requests}:/server/requests`, `${dirs.status}:/server/status:ro`, `${dirs.fleet}:/server/fleet:ro`, `${dirs.exports}:/server/exports:ro`, `${dirs.panelData}:/server/panel`, `${dirs.config}:/server/geometer.json:ro`],
@@ -276,8 +282,10 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   add("caddy", {
     image: CADDY_IMAGE, restart: "unless-stopped", security_opt: ["no-new-privileges:true"],
     ports: [`${server.ports.http}:80`, `${server.ports.https}:443`],
-    volumes: [`${dirs.generated}/Caddyfile:/etc/caddy/Caddyfile:ro`, "caddy-data:/data", "caddy-config:/config"],
+    // each shop's reports folder, and only that folder of its data volume, read-only
+    volumes: [`${dirs.generated}/Caddyfile:/etc/caddy/Caddyfile:ro`, "caddy-data:/data", "caddy-config:/config", ...shops.map((s): Y => ({ type: "volume", source: names.dataVolume(s.name), target: `${REPORTS_MOUNT}/${s.name}`, read_only: true, volume: { subpath: REPORTS_SUBPATH } }))],
     networks: { front: {}, ...(agents.length > 0 ? { [agentNames.gate]: {} } : {}) },
+    ...(shops.length > 0 ? { depends_on: Object.fromEntries(shops.map((s) => [names.reportsDir(s.name), { condition: "service_completed_successfully" }])) } : {}),
   }, [`${dirs.generated}/Caddyfile`]);
 
   // -- networks and volumes
@@ -299,23 +307,61 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   const body: Record<string, Y> = { name: `geometer-${server.id.replace(/_/gu, "-")}`, services: Object.fromEntries(Object.entries(services).map(([n, s]) => [n, s.block as Y])), networks, volumes };
   return {
     compose: `# Written by the Geometer deploy bundle on every deploy. Do not edit: change a shop's files and deploy again.\n${yaml(body)}\n`,
-    caddyfile: caddyfile(server, agents),
+    caddyfile: caddyfile(server, agents, shops.map((s) => s.name)),
     services,
   };
 }
 
 /** Where the builder's agent calls a service instead of the service itself: https://<domain>/g/<agent>/<service> (the prefix is cut off before the Guard sees the path). */
-export const agentBaseUrl = (server: ServerConfig, agent: string, kind: GuardKind): string => `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}/g/${agent}/${kind}`;
+export const agentBaseUrl = (server: ServerConfig, agent: string, kind: GuardKind): string => `${publicUrl(server)}/g/${agent}/${kind}`;
 
-/** Caddy: HTTPS for the builder's domain (a local certificate for localhost), and only three places behind it (plus one path per Guard of an agent someone else wrote). */
-export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = []): string {
+/** In Caddy's container: its file root, and where each shop's reports folder is mounted (/srv/r/<shop>), so the address /r/<shop>/<hex>/<file> is the path of the file. */
+export const CADDY_FILE_ROOT = "/srv";
+const REPORTS_MOUNT = `${CADDY_FILE_ROOT}${REPORTS_ROUTE}`;
+/** The headers a report page is served with: private, not stored or indexed, and the same policy the panel gives the same pages (no script, nothing external, no frame). */
+export const REPORT_HEADERS: readonly (readonly [string, string])[] = [
+  ["Cache-Control", "private, no-store"], ["X-Content-Type-Options", "nosniff"], ["X-Robots-Tag", "noindex"], ["Referrer-Policy", "no-referrer"],
+  ["Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"],
+];
+
+/**
+ * The ONE address shape Caddy serves under /r: /r/<a shop of this server>/<32 hex digits>/<a plain file name ending .html, .json or .txt>, which is what the runtime
+ * writes and nothing else. The folder itself, the shop's folder, a name with a slash or `..` in it, a hidden file, any other extension and any other shop do not match,
+ * and Caddy answers 404 for everything under /r that does not (reportsHandlers). The 32 digits are written out, not `{32}`, so no curly brace sits in a Caddyfile word.
+ */
+export function reportsMatcher(shops: readonly string[]): string {
+  return `^${REPORTS_ROUTE}/(?:${shops.join("|")})/${"[0-9a-f]".repeat(32)}/[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|json|txt)$`;
+}
+
+/**
+ * Caddy's lines for /r. One `handle` takes the whole area. Inside it, a request that is exactly a report file is served from the shops' read-only mounts by `file_server`
+ * (no `browse`, so a folder is never listed; a folder with no index file is a 404 even if one did match), and anything else in the area is a 404. The inner catch-all has no
+ * matcher, which Caddy always evaluates last, so the order does not depend on Caddy's sorting of handles.
+ */
+function reportsHandlers(shops: readonly string[]): string[] {
+  return [
+    `\t# monthly report pages: only the exact file shape below is served, from each shop's reports folder (read-only); everything else under /r is a 404`,
+    `\t@report-area path ${REPORTS_ROUTE} ${REPORTS_ROUTE}/*`,
+    `\thandle @report-area {`,
+    ...(shops.length > 0 ? [
+      `\t\t@report-file path_regexp ${reportsMatcher(shops)}`,
+      `\t\thandle @report-file {`, `\t\t\troot * ${CADDY_FILE_ROOT}`, `\t\t\theader {`, ...REPORT_HEADERS.map(([k, v]) => `\t\t\t\t${k} "${v}"`), `\t\t\t}`, `\t\t\tfile_server`, `\t\t}`,
+    ] : []),
+    `\t\thandle {`, `\t\t\trespond 404`, `\t\t}`,
+    `\t}`,
+  ];
+}
+
+/** Caddy: HTTPS for the builder's domain (a local certificate for localhost), and only a few places behind it: the inbox, the shops' report pages, a Guard of an agent someone else wrote, and the panel. */
+export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shops: readonly string[] = []): string {
   const local = isLocalDomain(server.domain);
   return [
-    `# Written by the Geometer deploy bundle. Caddy reaches the inbox, the relay and the panel (the only containers on its network), and routes two places.`,
+    `# Written by the Geometer deploy bundle. Caddy reaches the inbox, the relay and the panel (the only containers on its network), and serves each shop's report pages from a read-only folder.`,
     `{`, `\tadmin off`, ...(local ? [`\tauto_https disable_redirects`] : []), `}`, ``,
     `${local ? "https://" : ""}${server.domain} {`,
     ...(local ? [`\ttls internal`] : []),
     `\thandle /c/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`,
+    ...reportsHandlers([...shops].sort()),
     // an agent someone else wrote calls Guard here, not the service: each of its Guards has its own path, and only that Guard's agent port is behind it
     ...agents.flatMap((a) => a.guards.flatMap((g) => [`\thandle_path /g/${a.name}/${g.kind}/* {`, `\t\treverse_proxy ${g.service}:${GUARD_PORT}`, `\t}`])),
     // everything else is the panel's, when there is one: it serves from the root of its own address

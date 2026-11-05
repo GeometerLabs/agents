@@ -25,7 +25,7 @@ import type { Account, Role } from "./accounts.ts";
 import { monthOf, monthlyFromExport, readExport } from "./activity.ts";
 import { ConfigError, isSecure, webhookUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import { SECRET_NAMES, liveView, serverPaths, shopIdFromName } from "./contract.ts";
+import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { LiveView } from "./contract.ts";
 import { latestPriceList, latestProposedPriceList, monthlyCost } from "./cost.ts";
@@ -333,7 +333,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const pins = shops.pins(ref.id);
     goLive.docs.make(ref.id, `monthly/${month}`, (scratch) => writeClientReport({
       settings, entries: data.entries, bookings: data.bookings, month, language: settings.owner.language, out: scratch,
-      source: pins?.razorpay?.mode === "live" ? "live" : "test-mode", ...(signingKey ? { key: signingKey } : {}), preparedBy: ref.owner ? `${ref.owner.accountName}, ${ref.owner.role === "partner" ? "local partner" : "builder"}` : undefined,
+      source: pins?.razorpay?.mode === "live" ? "live" : "test-mode", ...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
+      // the Innovator badge is fleet's answer for the shop (fleet/<shop>.json, written by ops): the same file the owner's monthly message reads, so the builder's copy and the owner's agree
+      innovator: shops.fleet(ref.id)?.innovator === true,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
     }));
     redirect(r, `/shops/${ref.id}?notice=report`);
@@ -504,7 +506,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       } else return page(r, 400, setupChecksPage(r.ctx(), checksView(r, d, template, [r.ctx().w.setup.problems.expectedBad])));
     } else {
       const owner = shops.owner(d.shopId);
-      const result = goLive.ready(d.shopId, owner ? `${owner.accountName}, ${owner.role === "partner" ? "local partner" : "builder"}` : r.account!.name);
+      const result = goLive.ready(d.shopId, owner ? preparedByOf(owner) : r.account!.name);
       if (!result.ok) return page(r, 409, setupChecksPage(r.ctx(), checksView(r, d, template, [])));
     }
     redirect(r, here);
