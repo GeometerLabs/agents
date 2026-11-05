@@ -15,6 +15,7 @@ main{max-width:46rem;margin:0 auto;padding:0 16px 40px}
 .head h1{margin:.1rem 0;font-size:1.7rem;line-height:1.2}
 .head .period{margin:0;font-size:1.1rem}
 .head .tag{display:inline-block;margin:.5rem 0 0;padding:.1rem .6rem;border:1px solid #fff;border-radius:99px;font-size:.85rem}
+.head .badge{display:inline-block;margin:.5rem 0 0 .5rem;padding:.1rem .6rem;background:#fff;color:var(--g9);border-radius:99px;font-size:.85rem;font-weight:600}
 h2{font-size:1.1rem;margin:1.6rem 0 .5rem;color:var(--g9)}
 .note{background:var(--g0);border-left:4px solid var(--g7);padding:.6rem .8rem;margin:1rem 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:10px;margin:1rem 0}

@@ -9,9 +9,10 @@ import type { Settings } from "../src/settings.ts";
 import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText, monthlyCertificatePage, monthlyCertificateText } from "./certificate.ts";
 import type { HandCheckSummary } from "./certificate.ts";
 import { buildMonthlyReport, monthRange } from "./data.ts";
-import type { GoLiveFinding, Source } from "./data.ts";
+import type { GoLiveFinding, MonthlyReport, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
 import { envelopeFile, seal } from "../../../modules/report/sign.ts";
+import type { Envelope } from "../../../modules/report/sign.ts";
 import { ownerText } from "./text.ts";
 import { languagesOf } from "../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
@@ -52,6 +53,8 @@ export interface ReportRun {
   source: Source;
   key?: KeyObject;
   preparedBy?: string;
+  /** The builder or partner has the Innovator badge: the report and its certificate carry it (report/data.ts). */
+  innovator?: boolean;
   /** What the go-live certificate the shop was given shows (report/go-live.ts). Left out, the report and its certificate say that none was given. */
   goLive?: GoLiveFinding;
   /** Epoch milliseconds the report is made at. */
@@ -61,9 +64,9 @@ export interface ReportRun {
 }
 
 /** The monthly report (page, owner text, signed data) and the monthly record certificate (page, text, signed data). */
-export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; certificateCode: string } {
+export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; certificateCode: string; report: Envelope<MonthlyReport> } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
-  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, goLive: run.goLive, pathway: run.pathway });
+  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, pathway: run.pathway });
   const sealed = seal(report, run.key);
   const certificate = seal(buildMonthlyCertificate(sealed, run.now), run.key);
   const w = writer(run.out);
@@ -75,7 +78,7 @@ export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts
   w.write(`certificate-${run.month}.json`, envelopeFile(certificate));
   w.write(`certificate-${run.month}-${suffix}.html`, monthlyCertificatePage(certificate, run.language));
   for (const l of langs) w.write(`certificate-${run.month}-${l}.txt`, `${monthlyCertificateText(certificate, l)}\n`);
-  return { files: w.files, ownerTexts: langs.map((l) => ownerText(report, l)), code: sealed.code, certificateCode: certificate.code };
+  return { files: w.files, ownerTexts: langs.map((l) => ownerText(report, l)), code: sealed.code, certificateCode: certificate.code, report: sealed };
 }
 
 export interface GoLiveRun {

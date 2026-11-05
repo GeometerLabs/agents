@@ -21,8 +21,11 @@ import type { AiPolicy, AiSummary } from "../../../modules/understanding/ai-stat
 import type { Payments } from "../../../modules/payments/payments.ts";
 import type { Clock } from "../../../modules/core/clock.ts";
 import { createRecord } from "../../../modules/record/record.ts";
-import type { RecordEntry } from "../../../modules/record/record.ts";
+import type { ActionRecord, RecordEntry } from "../../../modules/record/record.ts";
+import { createMonthlyReport } from "../report/monthly-job.ts";
+import type { MonthlyReportSetup } from "../report/monthly-job.ts";
 import { serviceName } from "../src/settings.ts";
+import { HOUR } from "../../../modules/core/time.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../modules/language/languages.ts";
 import type { IncomingEvent } from "./events.ts";
@@ -45,6 +48,8 @@ export interface RuntimeOptions {
   pathwayVersion: string;
   /** The monthly AI allowance and the outside switch for this shop (modules/understanding/ai-state.ts). Left out: no limit and no switch. */
   ai?: AiPolicy;
+  /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
+  report?: MonthlyReportSetup;
   retryDelaysMs?: number[];
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: AgentEvent, run: () => Promise<void>) => Promise<void>;
@@ -125,6 +130,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   let bookings = countByState(parseStore(snapshot));
   let refunds = countRefunds(parseStore(snapshot));
 
+  const monthly = options.report ? createMonthlyReport(options.report) : undefined;
+  let lastReportError = { same: "", at: 0 };
+
   async function step(event: AgentEvent, taskId?: string): Promise<void> {
     const store = parseStore(snapshot);
     const record = createRecord(clock, entries);
@@ -132,6 +140,21 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     const run = () => agent.handle(event);
     await (options.aroundStep ? options.aroundStep(event, run) : run());
 
+    // The monthly report rides on the clock's beat, after the agent's own work. It saves twice itself (before it sends, and after), through `save`. A report that cannot be
+    // made is said once and never holds up the beat: holds still expire and reminders still go.
+    if (event.kind === "tick" && monthly) {
+      try { await monthly.run({ settings, clock, messaging: services.messaging, record, store, log, save: () => save(store, record) }); }
+      catch (e) {
+        // said once, and again each hour it goes on: the paths in the message (a new random folder each time) are left out of the comparison
+        const same = (e as NodeJS.ErrnoException).code ?? (e as Error).message.replace(/\S*[\\/]\S*/gu, "…");
+        if (same !== lastReportError.same || clock.now() - lastReportError.at >= HOUR) { log(`The monthly report could not be made: ${(e as Error).message}`); lastReportError = { same, at: clock.now() }; }
+      }
+    }
+    save(store, record, taskId);
+  }
+
+  /** Save what the step has done so far, whole or not at all, and only then treat it as the saved state. */
+  function save(store: Store, record: ActionRecord, taskId?: string): void {
     const after = serializeStore(store);
     const all = record.entries();
     if (taskId === undefined && after === snapshot && all.length === entries.length) return; // a quiet tick has nothing to save

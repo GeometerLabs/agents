@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { SAYS } from "../crash-test/situations.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
+import { sampleMessage } from "../report/whatsapp.ts";
 import { EXAMPLES, reviewSheet, sampleFacts } from "../scripts/review-sheet.ts";
 import type { ReviewLanguage } from "../scripts/review-sheet.ts";
 import { LABELS } from "../src/language/interactive.ts";
@@ -57,6 +58,7 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
       assert.ok(row.english !== "", `${row.id} has no English meaning`);
     }
     assert.ok(committed.includes(sampleOwnerText(language)));
+    assert.ok(committed.includes(sampleMessage(language)), "the WhatsApp message is on the sheet");
     assert.ok(sampleOwnerText(language).split("\n").length <= 5);
   });
 

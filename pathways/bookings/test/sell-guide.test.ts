@@ -408,7 +408,7 @@ test("variant guide: the Hindi, Malayalam and Kannada variants carry the machine
 test("variant guide: what it says about the example shop and the check is what the settings and the hand check say today", async () => {
   const shop = rentalSettings();
   const run = await runOn(shop);
-  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [32, 32, 0]);
+  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [33, 33, 0]);
   assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), ["outside-hours"]);
   const [job] = shop.services;
   assert.deepEqual([job.priceInr, shop.deposit.amountInr, shop.cancellation.refundLimitInr, shop.deposit.holdMinutes, shop.cancellation.windowHours, shop.slotMinutes], [3200, 1000, 1000, 30, 24, 120]);
@@ -424,7 +424,7 @@ test("variant guide: what it says about the example shop and the check is what t
     const text = variant(l);
     assert.ok(text.includes(RENTAL_FILE) && existsSync(new URL(`../${RENTAL_FILE.replace("pathways/bookings/", "")}`, import.meta.url)), `${l}: the example file it names exists`);
     assert.ok(text.includes("hand-check.ts --settings"), `${l}: the check on the shop's own settings is the real command`);
-    assert.ok(text.includes("32"), `${l}: the count`);
+    assert.ok(text.includes(String(run.results.length)), `${l}: the count`);
   }
   const server = readFileSync(new URL("../demo/server.ts", import.meta.url), "utf8");
   assert.ok(server.includes('"--settings"') && server.includes('"--lang"'));

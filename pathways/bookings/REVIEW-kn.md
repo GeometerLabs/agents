@@ -236,6 +236,22 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ```
 
+### The monthly report on WhatsApp, with sample numbers
+
+Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and partners; the other template is the same without it. The labels are the ones above; the new words are "Full report", the name of the badge and the code line.
+
+```text
+ಮಾಸಿಕ ವರದಿ: Glow Salon · ಫೆಬ್ರವರಿ 2027
+ಆದ ಬುಕಿಂಗ್: 38 · ಬಂದ ಮುಂಗಡ ಹಣ: ₹17,600
+ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5 (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: 3 · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: 1)
+ನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: 3 · ನೀವು ಒಪ್ಪಿದ್ದು: 2 · ನೀವು ಬೇಡ ಎಂದದ್ದು: 1
+ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: 1
+ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+ಕೋಡ್: 7K2M-9QXD · ಪೂರ್ಣ ವರದಿ: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html
+ಸಿದ್ಧಪಡಿಸಿದವರು: Divya, local partner · Geometer
+★ ಇನ್ನೋವೇಟರ್
+```
+
 ### Every word and phrase of the report and the certificates
 
 | Id | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
@@ -244,6 +260,8 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 | `monthlyReport` | ಮಾಸಿಕ ವರದಿ | Monthly report |  |
 | `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
 | `monthlyCertificate` | ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ | Monthly record certificate |  |
+| `innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |
+| `fullReport` | ಪೂರ್ಣ ವರದಿ | Full report |  |
 | `languageName.hi` | ಹಿಂದಿ | Hindi |  |
 | `languageName.en` | ಇಂಗ್ಲಿಷ್ | English |  |
 | `languageName.ml` | ಮಲಯಾಳಂ | Malayalam |  |
@@ -703,3 +721,4 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
 | `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
 | `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
+

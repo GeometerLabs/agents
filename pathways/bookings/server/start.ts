@@ -11,7 +11,10 @@ import type { DecisionStep, ModelStep } from "../../../modules/understanding/rou
 import type { AiPolicy } from "../../../modules/understanding/ai-state.ts";
 import { systemClock } from "../../../modules/core/clock.ts";
 import type { Clock } from "../../../modules/core/clock.ts";
-import { ClientError, aiOverrideReader, loadClient, pathwayVersion } from "./config.ts";
+import { loadPrivateKey } from "../../../modules/report/sign.ts";
+import { readGoLive } from "../report/cli.ts";
+import type { MonthlyReportSetup } from "../report/monthly-job.ts";
+import { ClientError, aiOverrideReader, loadClient, pathwayVersion, reportOptionsReader } from "./config.ts";
 import type { ClientFolder } from "./config.ts";
 import { createRuntime } from "./runtime.ts";
 import type { Runtime } from "./runtime.ts";
@@ -91,6 +94,25 @@ export function buildUnderstanding(client: ClientFolder, deps: { clock: Clock; e
   return { parser, ai };
 }
 
+/**
+ * The monthly report to the owner (report/monthly-job.ts), from the `report` block of runtime.json. Without the block there is none, and nothing is sent. The signing key and
+ * the go-live certificate are read here, so a path that cannot be read stops the start with a plain sentence rather than failing on the 1st of the month.
+ */
+export function monthlyReportSetup(client: ClientFolder, log: (line: string) => void): MonthlyReportSetup | undefined {
+  const r = client.runtime.report;
+  if (!r) return undefined;
+  let key: MonthlyReportSetup["key"];
+  if (r.signingKeyFile) {
+    try { key = loadPrivateKey(r.signingKeyFile); } catch (e) { throw new ClientError(`I could not use the report signing key ${r.signingKeyFile} (report.signingKeyFile): ${(e as Error).message}`); }
+  }
+  const source = r.source ?? (client.runtime.mode === "fakes" ? "stand-in" : "test-mode");
+  if (!key) log("The monthly report will not be signed (no report.signingKeyFile): it carries a digest and a code, but nothing shows who issued it.");
+  return {
+    source, pages: { dir: r.pagesDir, baseUrl: r.pageBaseUrl }, options: reportOptionsReader(client.folder, { preparedBy: r.preparedBy, innovator: r.innovator }),
+    ...(key ? { key } : {}), ...(r.goLiveFile ? { goLive: () => readGoLive(r.goLiveFile, client.settings).finding } : {}),
+  };
+}
+
 /** The token is a file, never a command-line argument or a value in runtime.json, so it stays out of process lists and git. */
 export function readToken(file: string | undefined): string {
   if (!file) throw new ClientError("Set INTERNAL_TOKEN_FILE to a file that holds the internal token the inbox sends (for example: openssl rand -hex 32 > token.txt).");
@@ -114,7 +136,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
     // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
     const understanding = buildUnderstanding(client, { clock, log });
-    runtime = createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? understanding.parser, ai: understanding.ai, pathwayVersion: pathwayVersion(), log });
+    runtime = createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? understanding.parser, ai: understanding.ai, report: monthlyReportSetup(client, log), pathwayVersion: pathwayVersion(), log });
   } catch (e) {
     store.close();
     throw e;

@@ -97,8 +97,6 @@ const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ template
 
 /** Every template name, for a provider (or the stand-in) to approve. */
 export const META_TEMPLATE_NAMES: readonly string[] = catalogue.names;
-/** The list as the stand-in WhatsApp needs it. */
-export const META_CATALOGUE = catalogue;
 export const slotsOf = catalogue.slotsOf;
 export const parametersFor = catalogue.parametersFor;
 export const templateMessage = catalogue.templateMessage;
