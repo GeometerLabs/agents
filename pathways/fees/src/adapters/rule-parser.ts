@@ -8,43 +8,52 @@ import { blankWrittenDate, wordRe } from "../../../../modules/language/dates.ts"
 import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttempt, isStop } from "../../../../modules/understanding/rules.ts";
 import type { Intent, IntentParser, ParseContext } from "./model.ts";
 
-const PAID_RE = wordRe([
+const PAID_WORDS = [
   "paid", "already paid", "i paid", "have paid", "payment done", "payment made", "done payment", "fee paid", "fees paid", "transferred", "sent the money", "sent money", "paid it", "bhar diya", "bhar di", "bhar chuke", "pay kar diya", "payment kar diya", "paid kar diya", "de diya", "jama kar diya",
   "भर दिया", "भर दी", "भर चुके", "भुगतान कर दिया", "पेमेंट कर दिया", "पे कर दिया", "जमा कर दिया", "जमा कर दी", "दे दिया", "दे दी", "फीस दे दी", "फीस भर दी",
   "അടച്ചു", "അടച്ചിട്ടുണ്ട്", "അടച്ചിരുന്നു", "പണം അടച്ചു", "ഫീസ് അടച്ചു", "അയച്ചു", "adachu", "adachittund", "payment cheythu", "paid aanu",
   "ಪಾವತಿಸಿದ್ದೇನೆ", "ಪಾವತಿಸಿದೆ", "ಕಟ್ಟಿದ್ದೇನೆ", "ಕಟ್ಟಿದೆ", "ಹಾಕಿದ್ದೇನೆ", "ಕೊಟ್ಟಿದ್ದೇನೆ", "kattide", "kattidini", "paavatisiddene", "payment madide",
-]);
-const PAY_RE = wordRe([
+];
+const PAID_RE = wordRe(PAID_WORDS);
+const PAY_WORDS = [
   "pay", "link", "payment link", "send link", "send the link", "how to pay", "pay now", "qr", "fees link", "fee link",
   "भुगतान", "लिंक", "पेमेंट", "भरना है", "फीस भरनी", "link bhejo", "link bhej do", "kaise bharun", "kaise bhare",
   "അടയ്ക്കണം", "ലിങ്ക്", "പണമടയ്ക്കാൻ", "link ayakku", "link tharamo",
   "ಪಾವತಿಸಬೇಕು", "ಲಿಂಕ್", "ಕಟ್ಟಬೇಕು", "link kalisi", "link kodi",
-]);
-const DISCOUNT_RE = wordRe([
+];
+const PAY_RE = wordRe(PAY_WORDS);
+const DISCOUNT_WORDS = [
   "discount", "discounts", "concession", "waive", "waived", "waiver", "reduce", "reduced", "reduction", "less fee", "off", "cheaper", "lower the fee", "take off",
   "छूट", "डिस्काउंट", "कम कर", "कम करो", "माफ़", "माफ", "रियायत", "कंसेशन", "chhoot", "chhut", "kam kar do", "kam karo", "maaf",
   "ഇളവ്", "ഡിസ്കൗണ്ട്", "കുറയ്ക്ക", "ഒഴിവാക്ക", "ilavu", "kuraykkamo", "kurakkamo",
   "ರಿಯಾಯಿತಿ", "ಡಿಸ್ಕೌಂಟ್", "ಕಡಿಮೆ ಮಾಡ", "ಮನ್ನಾ", "riyayiti", "kadime madi",
-]);
-const REFUND_RE = wordRe([
+];
+const DISCOUNT_RE = wordRe(DISCOUNT_WORDS);
+const REFUND_WORDS = [
   "refund", "refunded", "refunding", "refunds", "money back", "give back", "return the money", "return my money", "get back",
   "रिफंड", "वापस", "लौटा", "paise wapas", "wapas",
   "റീഫണ്ട്", "തിരികെ", "തിരിച്ച് തരൂ", "thirike",
   "ರೀಫಂಡ್", "ಮರುಪಾವತಿ", "ವಾಪಸ್", "ಹಿಂತಿರುಗಿಸ", "vapas",
-]);
-const OWNER_RE = wordRe([
+];
+const REFUND_RE = wordRe(REFUND_WORDS);
+const OWNER_WORDS = [
   "owner", "talk to", "call me", "speak to", "principal", "manager",
   "मालिक", "बात करनी", "बात करना", "फोन करो", "फ़ोन करो", "malik",
   "ഉടമ", "സംസാരിക്കണം", "വിളിക്കൂ", "udama",
   "ಮಾಲೀಕ", "ಮಾತನಾಡ", "ಕರೆ ಮಾಡಿ", "malika",
-]);
+];
+const OWNER_RE = wordRe(OWNER_WORDS);
 // "I have not paid", "not yet": a claim of payment with a no in it is not a claim
-const NEGATION_RE = wordRe([
+const NEGATION_WORDS = [
   "not", "haven't", "havent", "didn't", "didnt", "not yet", "yet", "never", "no",
   "नहीं", "नही", "अभी तक", "अभी नहीं", "nahi", "nahin", "abhi tak", "abhi nahi",
   "ഇല്ല", "ഇതുവരെ", "illa", "ithuvare",
   "ಇಲ್ಲ", "ಇನ್ನೂ", "illa", "innu",
-], "u", true);
+];
+const NEGATION_RE = wordRe(NEGATION_WORDS, "u", true);
+
+/** The words about fees, by what they mean, for the review sheets (REVIEW-ml.md, REVIEW-kn.md). Every language's words are in each list, with the Latin-letter forms people type. */
+export const FEE_WORDS = { paid: PAID_WORDS, pay: PAY_WORDS, discount: DISCOUNT_WORDS, refund: REFUND_WORDS, owner: OWNER_WORDS, not: NEGATION_WORDS } as const;
 
 const toRupees = (digits: string) => Number(digits.replace(/,/g, ""));
 
