@@ -299,6 +299,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** The grace days are over and the fee is not paid: add the late fee once. It is read from the payment record first, so a fee paid on the last day gets none. */
   async function addLateFee(due: Due): Promise<void> {
     if (settings.lateFeeInr <= 0 || due.lateFeeInr > 0 || due.state !== "open") return;
+    if (customerOf(due.customer).optedOut) return; // a parent who has asked for no messages cannot be told of a new charge, so none is added
     const after = zonedToMs(addDays(due.dueDate, settings.due.graceDays + 1), MIDNIGHT, tz);
     if (clock.now() < after) return;
     const { fresh } = await reconcile(due);
