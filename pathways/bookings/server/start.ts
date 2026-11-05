@@ -98,7 +98,7 @@ export function buildUnderstanding(client: ClientFolder, deps: { clock: Clock; e
  * The monthly report to the owner (report/monthly-job.ts), from the `report` block of runtime.json. Without the block there is none, and nothing is sent. The signing key and
  * the go-live certificate are read here, so a path that cannot be read stops the start with a plain sentence rather than failing on the 1st of the month.
  */
-export function buildMonthlyReport(client: ClientFolder, log: (line: string) => void): MonthlyReportSetup | undefined {
+export function monthlyReportSetup(client: ClientFolder, log: (line: string) => void): MonthlyReportSetup | undefined {
   const r = client.runtime.report;
   if (!r) return undefined;
   let key: MonthlyReportSetup["key"];
@@ -136,7 +136,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
     // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
     const understanding = buildUnderstanding(client, { clock, log });
-    runtime = createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? understanding.parser, ai: understanding.ai, report: buildMonthlyReport(client, log), pathwayVersion: pathwayVersion(), log });
+    runtime = createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? understanding.parser, ai: understanding.ai, report: monthlyReportSetup(client, log), pathwayVersion: pathwayVersion(), log });
   } catch (e) {
     store.close();
     throw e;

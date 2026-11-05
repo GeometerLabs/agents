@@ -10,8 +10,10 @@
 //   2. the message is sent;
 //   3. a second entry with the key says how it ended (`confirmed`, `unconfirmed`, or `failed`) and is saved.
 // A month with an entry that is `attempted`, `confirmed` or `unconfirmed` is never sent again: each of those may have gone out. If the process died between 1 and 3 the next
-// tick finds a claim with no ending, writes `unconfirmed` for it ("may or may not have gone out") and does not send. Only `failed` (WhatsApp refused it, so nothing went out)
-// is tried again: after an hour, at most three times. Then the builder is told in the log, and the page and the numbers are still in the report folder.
+// tick finds a claim with no ending, writes `unconfirmed` for it ("may or may not have gone out") and does not send. Only `failed` is tried again, and `failed` is only a
+// refusal that says nothing was sent: an answer with a 4xx status (a template that is not approved, a wrong number of values), the connection refused, or Guard not able to
+// decide. Anything else is `unconfirmed`: a timeout, a lost reply, a 5xx (WhatsApp may have taken the message and failed after it), a reply that gave no message id, or an
+// error nobody expected. A retry is after an hour, at most three times in all. Then the builder is told in the log, and the page and the numbers are still in the report folder.
 //
 // THE RECORD. The entries are `send_message` to the owner, so the report counts them as messages to the owner, and the cost meter (bundle/lib/usage.ts, whatsappTypeOf)
 // already counts a message to the owner as a utility message. Nothing new needs teaching to either.
@@ -22,7 +24,7 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import type { KeyObject } from "node:crypto";
-import { mayHaveHappened, WindowClosedError } from "../src/adapters/faults.ts";
+import { ApiError, GuardUnavailableError, NotSentError, WindowClosedError } from "../src/adapters/faults.ts";
 import type { Messaging, OutboundMessage } from "../src/adapters/messaging.ts";
 import type { Store } from "../src/booking.ts";
 import type { Clock } from "../src/clock.ts";
@@ -77,6 +79,15 @@ const monthKey = (year: number, month: number): string => `${year}-${String(mont
 export function lastMonth(now: number, timeZone: string): string {
   const t = localParts(now, timeZone);
   return t.month === 1 ? monthKey(t.year - 1, 12) : monthKey(t.year, t.month - 1);
+}
+
+/**
+ * Did WhatsApp (or Guard in front of it) say no before anything was sent? Only then is it safe to send the same report again. A 5xx or a reply that is not understood
+ * can come after the message was taken, so those are never "nothing was sent": the report is not sent twice for the sake of a retry.
+ */
+export function nothingWasSent(e: unknown): boolean {
+  if (e instanceof NotSentError || e instanceof GuardUnavailableError) return true;
+  return e instanceof ApiError && e.status >= 400 && e.status < 500;
 }
 
 /** The moment, in the shop's time zone, from which the report for the month before `now`'s may go: 09:00 on the 1st. */
@@ -152,7 +163,7 @@ export function createMonthlyReport(setup: MonthlyReportSetup) {
       if (!sent) sent = await ctx.messaging.sendTemplate(owner, message.template);
       outcome = (await ctx.messaging.getMessage(sent.id)) ? "confirmed" : "unconfirmed";
     } catch (e) {
-      outcome = mayHaveHappened(e) ? "unconfirmed" : "failed";
+      outcome = !sent && nothingWasSent(e) ? "failed" : "unconfirmed"; // once WhatsApp has taken it (`sent`), whatever happens next, it went out
       note = (e as Error).message;
     }
 
@@ -195,7 +206,7 @@ async function sendCertificate(ctx: MonthlyReportContext, a: { month: string; la
     id = sent.id;
     outcome = (await ctx.messaging.getMessage(sent.id)) ? "confirmed" : "unconfirmed";
   } catch (e) {
-    outcome = mayHaveHappened(e) ? "unconfirmed" : "failed";
+    outcome = nothingWasSent(e) ? "failed" : "unconfirmed";
     note = (e as Error).message;
   }
   record.append({ conversation: owner, action: "send_message", outcome, inputs: { to: "owner", reportFile: a.month }, language: a.language, ...(note ? { notes: note } : {}), refs: { ...refs, ...(id ? { messageId: id } : {}) } });

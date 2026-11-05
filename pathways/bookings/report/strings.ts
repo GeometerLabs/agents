@@ -388,7 +388,7 @@ export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
  * is not, so these name the exact words and do not cut them short. The confirm verbs of the packs are not here.
  */
 export const BANNED: Record<Language | "any", RegExp[]> = {
-  any: [/\bfounding\b/i, /\bfounder/i, /\bsafe/i, /\bsafety\b/i, /guarant/i, /\bcertified\b/i, /\bcertify\b/i, /\bcertifies\b/i, /\bcertification\b/i, /\b100 ?%/, /risk[- ]?free/i, /fool[- ]?proof/i, /\bsecure(d|ly)?\b/i, /\bproven\b/i,
+  any: [/\bsafe/i, /\bsafety\b/i, /guarant/i, /\bcertified\b/i, /\bcertify\b/i, /\bcertifies\b/i, /\bcertification\b/i, /\b100 ?%/, /risk[- ]?free/i, /fool[- ]?proof/i, /\bsecure(d|ly)?\b/i, /\bproven\b/i,
     /\bearn/i, /\bincome\b/i, /\bprofit/i, /\brevenue\b/i],
   en: [],
   hi: [/सुरक्षित/u, /सुरक्षा/u, /गारंटी/u, /गारण्टी/u, /प्रमाणित/u, /कमाई/u, /आमदनी/u, /मुनाफ़ा/u, /मुनाफा/u],

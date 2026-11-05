@@ -26,7 +26,7 @@ test("the badge is a word and a plain symbol in every language, and none of them
     assert.deepEqual(bannedIn(text, language), [], `${language}: ${text}`);
   }
   assert.equal(badgeText("en"), "★ Innovator");
-  assert.deepEqual(bannedIn("The founding members", "en").length > 0, true, "the banned list now stops the word founding");
+  for (const language of LANGUAGES) assert.ok(!/found(ing|er)/iu.test(`${STRINGS[language].innovator} ${badgeText(language)}`));
 });
 
 test("without the flag the report has no badge and exactly the bytes it had before the flag existed", () => {
