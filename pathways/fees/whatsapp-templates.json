@@ -1422,5 +1422,261 @@
         }
       }
     ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · फरवरी 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 विद्यार्थी)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 11 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · Feb 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 students)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 11 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ഫെബ്രുവരി 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 വിദ്യാർത്ഥികൾ)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 11 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 11 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · फरवरी 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 विद्यार्थी)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 11 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · Feb 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 students)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 11 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ഫെബ്രുവരി 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 വിദ്യാർത്ഥികൾ)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 11 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 11 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
   }
 ]

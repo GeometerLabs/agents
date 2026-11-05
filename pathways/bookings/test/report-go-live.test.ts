@@ -27,7 +27,8 @@ import { readGoLiveCertificate } from "../report/go-live.ts";
 import { reportPage } from "../report/html.ts";
 import { generateKeyFiles } from "../../../modules/report/keys.ts";
 import { envelopeFile, keyIdOf, publicKeyHex, seal, verifyEnvelopeText } from "../../../modules/report/sign.ts";
-import { STRINGS, bannedIn } from "../report/strings.ts";
+import { STRINGS } from "../report/strings.ts";
+import { bannedIn } from "../../../modules/report/claims.ts";
 import { goLiveLines, ownerText } from "../report/text.ts";
 
 const glow = glowSalon();

@@ -11,9 +11,9 @@ import { noReading, readGoLiveCertificate, untrustedReading } from "./go-live.ts
 import type { GoLiveReading } from "./go-live.ts";
 import { loadPrivateKey } from "../../../modules/report/sign.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
+import { UsageError, main } from "../../../modules/report/cli.ts";
 
-/** Said to the person, then the script stops. */
-export class UsageError extends Error {}
+export { UsageError, main };
 
 export function readJson(path: string | undefined, what: string, option: string): unknown {
   if (!path) throw new UsageError(`Say where ${what} is: ${option} <file>.`);
@@ -73,14 +73,4 @@ export function readNow(value: string | undefined): number {
   const ms = Date.parse(value);
   if (!Number.isFinite(ms)) throw new UsageError(`--now ${value} is not a date and time. Write it like 2026-12-02T10:00:00+05:30.`);
   return ms;
-}
-
-/** Run a script's main function; a UsageError (or any error with a plain message) is printed without a stack. */
-export async function main(run: () => Promise<number | void>): Promise<void> {
-  try {
-    process.exitCode = (await run()) ?? 0;
-  } catch (e) {
-    console.error((e as Error).message);
-    process.exitCode = e instanceof UsageError ? 64 : 1;
-  }
 }

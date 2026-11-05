@@ -4,20 +4,14 @@
 // Lines are "label: number", like the product's mock-up, so no number needs a case ending in Malayalam or Kannada.
 // Every number and amount is read from the report (which counted the record); the words come from strings.ts.
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
-import { MONTH_NAMES, formatDate, formatInr } from "../../../modules/language/format.ts";
+import { formatDate } from "../../../modules/language/format.ts";
 import type { Language } from "../../../modules/language/languages.ts";
-import { languagesOf, oneLine, rupees } from "../../../modules/report/text.ts";
+import { languagesOf, oneLine, periodLabel, rupees } from "../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
 import type { LocalDate } from "../../../modules/core/time.ts";
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import { STRINGS } from "./strings.ts";
-
-/** "Nov 2026" for a whole month, otherwise "Tue 3 Nov – Mon 9 Nov 2026". */
-export function periodLabel(period: MonthlyReport["period"], language: Language): string {
-  if (period.month) return `${MONTH_NAMES[language][period.month.month - 1]} ${period.month.year}`;
-  return `${formatDate(period.firstDay, language)} – ${formatDate(period.lastDay, language)} ${period.lastDay.year}`;
-}
 
 /**
  * What a monthly document says about the go-live checks, as sentences in the shop's language: no certificate was given, one was given and could

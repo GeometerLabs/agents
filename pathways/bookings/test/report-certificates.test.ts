@@ -18,7 +18,8 @@ import { NOT_COUNTED, buildMonthlyReport, checkedPolicyDigest as checkedGlow } f
 import { monthRange } from "../../../modules/report/months.ts";
 import { at, runBusyMonth } from "../report/example-month.ts";
 import { seal } from "../../../modules/report/sign.ts";
-import { STRINGS, bannedIn } from "../report/strings.ts";
+import { STRINGS } from "../report/strings.ts";
+import { bannedIn } from "../../../modules/report/claims.ts";
 import { languagesOf } from "../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
 

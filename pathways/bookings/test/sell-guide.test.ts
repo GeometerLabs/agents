@@ -8,7 +8,7 @@ import { applyLanguage } from "../demo/personalise.ts";
 import { createDemo } from "../demo/session.ts";
 import { uiFor } from "../demo/strings.ts";
 import { recordRows, summaryLines, waitingCards, workDone } from "../demo/view.ts";
-import { bannedIn } from "../report/strings.ts";
+import { bannedIn } from "../../../modules/report/claims.ts";
 import { glowSalon } from "../src/harness.ts";
 import { hoursOn, validateSettings } from "../src/settings.ts";
 import { LANGUAGES } from "../../../modules/language/languages.ts";

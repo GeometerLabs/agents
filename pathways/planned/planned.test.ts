@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { BANNED } from "../bookings/report/strings.ts";
+import { BANNED } from "../../modules/report/claims.ts";
 
 const HERE = new URL("./", import.meta.url);
 const ROOT = new URL("../../", import.meta.url);

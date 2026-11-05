@@ -8,23 +8,17 @@ const two = (n: number) => String(n).padStart(2, "0");
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import type { Envelope } from "../../../modules/report/sign.ts";
-import { STRINGS, badgeText } from "./strings.ts";
+import { STRINGS } from "./strings.ts";
+import { badgeText } from "../../../modules/report/text.ts";
 import type { Strings } from "./strings.ts";
-import { goLiveLines, periodLabel } from "./text.ts";
-import { languagesOf, rupees } from "../../../modules/report/text.ts";
+import { goLiveLines } from "./text.ts";
+import { languagesOf, periodLabel, rupees } from "../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../modules/report/text.ts";
 import type { Language } from "../../../modules/language/languages.ts";
-import { esc, list, page, table } from "../../../modules/report/page.ts";
+import { esc, list, page, sealBlock as sharedSealBlock, table } from "../../../modules/report/page.ts";
 
-/** The verification block every report and certificate carries: the code, the full digest, and what a signature does and does not show. */
-export function sealBlock(s: Strings, envelope: Envelope, extra: [string, string][] = []): string {
-  const rows: [string, string][] = [...extra, [s.page.digest, envelope.digest]];
-  const where = `/verify/${envelope.code}`;
-  return `<h2>${esc(s.page.checkHeading)}</h2>
-<div class="seal"><div class="small">${esc(s.page.code)}</div><div class="code">${esc(envelope.code)}</div><div class="mono">${esc(where)}</div></div>
-<dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd class="mono">${esc(v)}</dd>`).join("")}<dt>${esc(s.page.signedBy)}</dt><dd class="mono">${esc(envelope.signature ? envelope.signature.keyId : s.page.notSigned)}</dd></dl>
-<p class="small">${esc(s.page.signatureNote)}</p>`;
-}
+/** The verification block (modules/report/page.ts) with this template's words. */
+export const sealBlock = (s: Strings, envelope: Envelope, extra: [string, string][] = []): string => sharedSealBlock(s.page, envelope, extra);
 
 /** The go-live checks, in sentences: green when a go-live certificate shows they ran on this shop's own settings, amber for everything else. */
 export function goLiveBlock(goLive: GoLiveFinding, language: Language): string {
