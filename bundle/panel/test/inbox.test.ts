@@ -1,7 +1,7 @@
 // The unfinished-work inbox (B31): one list across the shops a person may see, in plain sentences, built from the exported record.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { WORDS } from "../languages.ts";
 import { sentenceOf } from "../views.ts";
@@ -91,4 +91,40 @@ test("the wait before an answer is 'too long' is the panel's setting (PANEL_APPR
       assert.ok(page.includes(want), `${expect}: ${page.slice(page.indexOf("<main>"), page.indexOf("<main>") + 1200)}`);
     } finally { await b.close(); }
   }
+});
+
+test("an item shows a button for each recovery action it offers; pressing one files a request with a name and an id and nothing else; an action the list does not offer for that case is refused", async () => {
+  const b = await boot();
+  try {
+    const arjun = await b.account("arjun", "builder");
+    const divya = await b.account("divya", "partner");
+    const meera = await b.account("meera", "partner");
+    b.addShop("glow-salon", { name: "Glow Salon", ownerId: accountIdOf(b, "divya"), ownerName: "DIVYA" });
+    exportBookings(b, "glow-salon", [stuckBooking("b-1")], [entry(1, "b-1", "record_deposit", "confirmed", NOW - 2 * HOUR)]);
+    const page = (await divya.get("/inbox")).plain;
+    for (const a of ["retry_booking", "recheck_payment", "ask_owner_again"]) assert.ok(page.includes(`name="action" value="${a}"`) && page.includes(WORDS.en.inbox.actions[a]), a);
+    assert.ok(!page.includes('value="recheck_refund"'), "only what fits this item");
+    assert.ok(page.includes(WORDS.en.inbox.actionNote), "and it says these go through Guard and the same limits");
+    // pressing one
+    const sent = await divya.post("/shops/glow-salon/recover", { case: "b-1", action: "retry_booking" }, "/inbox");
+    assert.equal(sent.status, 303);
+    assert.equal(sent.location, "/inbox?notice=sent");
+    assert.ok((await divya.get("/inbox?notice=sent")).plain.includes(WORDS.en.inbox.recover.sent));
+    const files = readdirSync(join(b.dir, "requests"));
+    assert.equal(files.length, 1);
+    assert.match(files[0], /^glow-salon\.recover\.[0-9a-f]{16}\.json$/u);
+    const body = JSON.parse(readFileSync(join(b.dir, "requests", files[0]), "utf8"));
+    assert.deepEqual(Object.keys(body).sort(), ["action", "case", "requestId", "requestedAt", "requestedBy", "schema", "shop"].sort(), "a name and an id, no message, no number, no amount");
+    assert.deepEqual([body.case, body.action, body.shop, body.requestedBy.name], ["b-1", "retry_booking", "glow-salon", "DIVYA"]);
+    // not offered for this case: refused, nothing filed
+    for (const form of [{ case: "b-1", action: "recheck_refund" }, { case: "b-9", action: "retry_booking" }, { case: "b-1", action: "refund_everything" }, { case: "", action: "" }]) {
+      const r = await divya.post("/shops/glow-salon/recover", form, "/inbox");
+      assert.equal(r.location, "/inbox?notice=refused", JSON.stringify(form));
+    }
+    assert.equal(readdirSync(join(b.dir, "requests")).length, 1);
+    // another partner sees nothing of it; the builder may ask
+    assert.equal((await meera.post("/shops/glow-salon/recover", { case: "b-1", action: "retry_booking" }, "/inbox")).status, 404);
+    assert.equal((await arjun.post("/shops/glow-salon/recover", { case: "b-1", action: "ask_owner_again" }, "/inbox")).location, "/inbox?notice=sent");
+    assert.equal(readdirSync(join(b.dir, "requests")).length, 2);
+  } finally { await b.close(); }
 });

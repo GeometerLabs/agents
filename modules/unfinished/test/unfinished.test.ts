@@ -92,9 +92,10 @@ test("Fees: a payment that came but did not update the fee is listed until a lat
   const bad = entry("f-1", "record_payment", "failed", NOW - 3 * HOUR);
   assert.deepEqual(kinds(detect("fees", [due], [bad]).found), ["payment_unrecorded:f-1"]);
   assert.deepEqual(detect("fees", [due], [bad, entry("f-1", "record_payment", "confirmed", NOW - HOUR)]).found, []);
-  const looked = { ...entry("f-1", "recovery", "confirmed", NOW - HOUR), refs: { action: "recheck_payment", recovery: "r-1" } };
+  const looked = { ...entry("f-1", "recovery", "confirmed", NOW - HOUR), seq: bad.seq + 1, refs: { action: "recheck_payment", recovery: "r-1" } };
   assert.deepEqual(detect("fees", [due], [bad, looked]).found, [], "a look at the payments service that read its list whole settles it");
-  assert.deepEqual(kinds(detect("fees", [due], [looked, bad]).found), ["payment_unrecorded:f-1"], "a look before the failure does not");
+  const early = { ...looked, seq: bad.seq - 1 };
+  assert.deepEqual(kinds(detect("fees", [due], [early, bad]).found), ["payment_unrecorded:f-1"], "a look before the failure does not");
   assert.deepEqual(detect("fees", [{ ...due, state: "paid" }], [bad]).found, [], "a fee that is paid is not unfinished");
   assert.deepEqual(detect("bookings", [due], [bad]).found, [], "the kind is Fees' own");
 });

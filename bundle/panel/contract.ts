@@ -15,6 +15,7 @@
 //   <server>/fleet/<shop>.json                 written by ops (read-only here)   fleet's last answer about the shop: its plan, the included messages, the Innovator badge,
 //                                                                        button mode and warnings. See FleetAnswer. A missing or unreadable file is "fleet has said nothing", never "no plan".
 //   <server>/requests/<shop>.stop.json         PROPOSAL, panel           a request to stop; the deployer acts, then shows `stopped` in status/<shop>.json
+//   <server>/requests/<shop>.recover.<id>.json  panel                    a request that the shop's agent look again or ask again about one booking or fee (the to-do list); the deployer carries it to the runtime, then removes it
 //   <server>/exports/<shop>/{record,bookings}.json   PROPOSAL, deployer  what scripts/client-report.ts reads, for the monthly report
 //   <server>/panel/                            the panel's own data (accounts, invites, drafts, receipts, audit trail, documents)
 import { join, resolve } from "node:path";
@@ -32,6 +33,7 @@ export function serverPaths(dir: string) {
     statusFile: (shop: string) => join(root, "status", `${shop}.json`),
     fleetFile: (shop: string) => join(root, "fleet", `${shop}.json`),
     stopFile: (shop: string) => join(root, "requests", `${shop}.stop.json`),
+    recoverFile: (shop: string, id: string) => join(root, "requests", `${shop}.recover.${id}.json`),
     exports: (shop: string) => join(root, "exports", shop),
     panel: join(root, "panel"),
     documents: (shop: string) => join(root, "panel", "documents", shop),

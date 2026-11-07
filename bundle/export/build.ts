@@ -116,7 +116,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     if (checked.ok) {
       try { policyDigest = kind.papers.policyDigest(checked.settings); } catch { warnings.push("The policy digest could not be worked out."); }
       try {
-        guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: req.shop, version: lock?.split("@")[1] ?? "unknown", reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
+        guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: req.shop, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
       } catch { warnings.push("The limits could not be written in Guard's shape from these settings."); }
     } else warnings.push("The settings do not pass the template's own check any more, so the limits could not be worked out; settings.json is as it is on the server.");
   }

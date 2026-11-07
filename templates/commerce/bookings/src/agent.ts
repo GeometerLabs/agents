@@ -911,9 +911,10 @@ export function createAgent(deps: AgentDeps): Agent {
       return say(told ? "confirmed" : "failed", told ? "the owner was told again" : "the owner could not be told (the limits or the provider said no)");
     }
     if (e.action === "recheck_refund") {
+      if (!(b.refundIssues ?? []).some((i) => ["unknown", "uncertain", "unconfirmed", "failed"].includes(i.kind))) return say("blocked", "no refund here is waiting on an unclear outcome");
       say("attempted", "looking again, read-only, for a refund that may have gone");
       const r = await refunds.recheck(b);
-      return say(r.looked === 0 ? "blocked" : "confirmed", r.looked === 0 ? "no refund here is waiting on an unclear outcome" : `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
+      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
     }
     say("blocked", `the agent has no recovery called "${e.action}"`);
   }

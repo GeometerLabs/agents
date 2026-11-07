@@ -126,7 +126,7 @@ export interface Words {
     fallback(kind: string, id: string): string;
     variants: Record<string, string>;
     actions: Record<string, string>; actionNote: string;
-    recover: { sent: string; unreachable: string; refused: string };
+    recover: { sent: string; refused: string };
     help: string;
   };
   /** Taking a shop's files out (B38): a copy of everything that is the shop's, in plain files, that works even when the plan has lapsed. */
@@ -392,7 +392,7 @@ export const en: Words = {
     variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again" },
     actions: { recheck_payment: "Check the payment again", retry_booking: "Try to confirm the booking again", ask_owner_again: "Ask the owner again", recheck_refund: "Check the refund again" },
     actionNote: "These only look again or ask again. They go through Guard and the same limits as everything else.",
-    recover: { sent: "Asked. The shop's agent will do it within a minute. The list changes after its next record update.", unreachable: "The shop's agent cannot be reached right now, so nothing was sent. Try again later.", refused: "That does not fit this item, so nothing was sent." },
+    recover: { sent: "Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour.", refused: "That does not fit this item, so nothing was sent." },
     help: "Write to support. A person answers.",
   },
   takeOut: {

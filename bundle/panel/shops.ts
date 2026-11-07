@@ -173,18 +173,13 @@ export function createShops(config: PanelConfig, store: Store) {
     },
 
     /**
-     * Ask the shop's runtime to look again or ask again about one booking or fee (POST /internal/recover; modules/unfinished). The runtime saves it like any event and its agent does
-     * it through Guard and the normal limits: the panel sends a name and an id, never a message or an amount. "unreachable" when the runtime is not configured or does not answer.
+     * Ask the shop's agent to look again or ask again about one booking or fee: the panel writes requests/<shop>.recover.<id>.json (a name and an id, nothing else), and the deployer carries it
+     * to the shop's runtime, which holds the token the panel never has. The agent does it through Guard and the normal limits (modules/unfinished). The deployer removes the file when done.
      */
-    async requestRecovery(id: string, caseId: string, action: string): Promise<"sent" | "unreachable"> {
-      const base = runtimeUrlFor(config, safe(id));
-      const tokenFile = runtimeTokenFileFor(config, id);
-      const token = tokenFile ? readText(tokenFile)?.trim() : undefined;
-      if (!base || !token) return "unreachable";
-      try {
-        const r = await fetch(`${base}/internal/recover`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ id: `rc-${randomBytes(8).toString("hex")}`, case: caseId, action }), signal: AbortSignal.timeout(5000) });
-        return r.ok ? "sent" : "unreachable";
-      } catch { return "unreachable"; }
+    requestRecovery(id: string, caseId: string, action: string, account: Account): { requestId: string } {
+      const requestId = randomBytes(8).toString("hex");
+      writeAtomic(paths.recoverFile(safe(id), requestId), `${JSON.stringify({ schema: 1, requestId, shop: id, case: caseId, action, requestedAt: iso(now()), requestedBy: { id: account.id, name: account.name, role: account.role } }, null, 2)}\n`);
+      return { requestId };
     },
 
     /** Ask the runtime itself. Counts only (its /status never holds message text). Not configured, or not answering, is said as such. */
