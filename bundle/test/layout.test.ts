@@ -90,7 +90,7 @@ test("a shop deployed from the old folder is mounted from the new one the next t
     w.handIn("glow-salon"); w.handIn("pet-spa");
     await deploy(w.ctx);
     const current = join(w.ctx.appDir, "templates", "commerce", "bookings");
-    // the state of a server set up before the move: both shops were deployed from <app>/templates/commerce/bookings, which a pull has since removed (only an untracked sample is left)
+    // the state of a server set up before the move: both shops were deployed from <app>/pathways/bookings, which a pull has since removed (only an untracked sample is left)
     const old = join(w.root, "old-app", "pathways", "bookings");
     mkdirSync(join(old, "report-sample"), { recursive: true });
     writeFileSync(join(old, "report-sample", "x.json"), "{}");

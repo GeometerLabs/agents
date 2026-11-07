@@ -109,7 +109,7 @@ export async function runEval(options: EvalOptions = {}): Promise<{ summaries: S
   const log = options.log ?? console.log;
   const messages = pickMessages(loadMessages(options.messagesPath), options.maxMessages);
   const candidates = options.models ?? (JSON.parse(readFileSync(options.modelsPath ?? new URL("models.json", EVAL_DIR), "utf8")) as { candidates: Candidate[] }).candidates;
-  const env = options.env ?? readEnvFile(options.envPath ?? new URL("../../../../../.env", import.meta.url));
+  const env = options.env ?? readEnvFile(options.envPath ?? new URL("../../../../.env", import.meta.url));
   const perLanguage = LANGUAGES.map((l) => `${l} ${messages.filter((m) => m.language === l).length}`).join(", ");
 
   log("Bookings model eval. The labels are machine-written and not yet reviewed by native speakers (eval/messages.jsonl).");
