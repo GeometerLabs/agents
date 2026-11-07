@@ -71,6 +71,16 @@ export const hi: Words = {
     stopConfirm: "हाँ, रोक दीजिए", stopAsked: (at) => `${at} पर रोकने को कहा गया। सर्वर की पुष्टि का इंतज़ार है।`, stopOnly: "रुका है या नहीं, यह सिर्फ़ सर्वर बता सकता है।",
     details: "हमने क्या किया, देखें ▸", detailsDeploy: "सर्वर का आख़िरी संदेश", detailsPins: "जिन आईडी की जाँच में पुष्टि हुई", detailsPrices: (d) => `${d} की कीमत-सूची`, detailsNothing: "अभी कुछ नहीं", detailsStatusFile: "सर्वर ने क्या बताया",
   },
+  feesShop: {
+    studentsIn: (n) => `${n} विद्यार्थी`,
+    activity: { opened: "इस महीने खुली फीस", paidInFull: "पूरी भरी", partlyPaid: "आधी भरी", stillOpen: "अभी खुली", collected: "वसूल हुई", stillToCollect: "अभी वसूलनी है", reminders: "भेजी गई याद दिलाने वाली बातें" },
+    messages: {
+      heading: "संदेश",
+      ceiling: (students, most, total) => `आपके नियमों के हिसाब से महीने में ज़्यादा से ज़्यादा ${total} याद दिलाने वाले और रसीद के संदेश जा सकते हैं: ${students} विद्यार्थी, हर एक के लिए ${most} याद तक, और एक रसीद।`,
+      included: (n) => `आपकी योजना में महीने के ${n} संदेश शामिल हैं।`,
+      note: "अभिभावकों के अपने संदेशों के जवाब इसके ऊपर आते हैं। यह आपके नियमों से निकली ऊपरी सीमा है, बिल नहीं।",
+    },
+  },
   cost: {
     heading: "हर महीने चलाने का ख़र्च", early: "शुरुआती अंदाज़ा: अभी असली बुकिंग गिनी नहीं गई हैं।", fromRecord: (n) => `रिकॉर्ड की ${n} बुकिंग से निकाला गया।`, assumption: (n) => `हमने महीने में ${n} बुकिंग मानी हैं।`,
     lines: { whatsapp: "WhatsApp संदेश (Meta की फ़ीस)", "whatsapp-provider": "WhatsApp प्रोवाइडर की अपनी फ़ीस", razorpay: "Razorpay की फ़ीस", geometer: "Geometer की फ़ीस (शुरुआती कीमत)", hosting: "होस्टिंग का हिस्सा" },
