@@ -6,6 +6,7 @@
 //     admin <guard-service> <METHOD> <path> [json]     one admin call, answered as {"status":200,"body":...}
 //     observe                                          everything the heartbeat reads, as JSON (what `geometer status` shows)
 //     stop <shop> <on|off> <by> <reason>               the kill switch on all three of the shop's Guards, and the shop's agent on the model Guard
+//     recover <shop> <request-id> <case> <action>      ask the shop's runtime to look again or ask again about one booking or fee (POST /internal/recover); answered as {"status":200}
 //     issue-approver <shop> <ttl-seconds>              a fresh reading credential for the shop's relay, printed once on stdout
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
@@ -136,6 +137,16 @@ export async function stopShop(config: OpsConfig, shop: string, on: boolean, by:
   return { shop, on, reason: why, results: results.map((r) => ({ guard: r.guard, status: r.status })) };
 }
 
+/** Ask a shop's runtime to run a recovery step (the to-do list's buttons). The runtime saves it like any event; its agent does it through Guard and the normal limits. */
+export async function recoverCase(config: OpsConfig, shop: string, requestId: string, caseId: string, action: string, fetchFn: typeof fetch = fetch): Promise<{ shop: string; status: number }> {
+  const c = config.shops[shop];
+  if (!c) throw new Error(`no shop ${shop} on this server`);
+  try {
+    const r = await fetchFn(`${c.runtimeUrl.replace(/\/+$/u, "")}/internal/recover`, { method: "POST", headers: { authorization: `Bearer ${readSecret(c.internalTokenFile)}`, "content-type": "application/json" }, body: JSON.stringify({ id: requestId, case: caseId, action }), signal: timeout() });
+    return { shop, status: r.status };
+  } catch { return { shop, status: 0 }; }
+}
+
 async function main(argv: string[], config: OpsConfig): Promise<number> {
   const [command, ...args] = argv;
   const out = (v: unknown) => console.log(JSON.stringify(v));
@@ -165,6 +176,9 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
       guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, "") as "razorpay", adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
     }, new Date(), fetch, skip));
     return 0;
+  }
+  if (command === "recover") {
+    try { out(await recoverCase(config, args[0], args[1], args[2], args[3])); return 0; } catch (e) { console.error((e as Error).message); return 2; }
   }
   if (command === "stop") { out(await stopShop(config, args[0], args[1] !== "off", args[2] ?? "someone", args.slice(3).join(" "))); return 0; }
   if (command === "issue-approver") {

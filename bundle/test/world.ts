@@ -28,6 +28,8 @@ export interface World {
   observe: { shops: unknown[] };
   /** Make `ops stop` answer these Guard statuses (default: all 200). */
   stopStatuses: number[];
+  /** What a shop's runtime answers to `ops recover` (default 200); 0 is "could not be reached". */
+  recover: { status: number };
   done(): void;
 }
 
@@ -45,6 +47,7 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
   const admin: string[] = [];
   const observe: { shops: unknown[] } = { shops: [] };
   const stopStatuses: number[] = [200, 200, 200, 200];
+  const recover = { status: 200 };
   const failing = new Map<string, string[]>();
   const runningDigest = new Map<string, string>();
   const digestByName = new Map<string, string>();
@@ -80,6 +83,7 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
         return ok(JSON.stringify({ status: 200, body: {} }));
       }
       if (verb === "stop") { admin.push(`stop ${rest.join(" ")}`); return ok(JSON.stringify({ shop: rest[0], on: rest[1] === "on", reason: rest[2] === "-" ? rest.slice(3).join(" ") : `stopped by ${rest[2]} at 2026-11-04T10:00:00.000Z: ${rest.slice(3).join(" ")}`, results: stopStatuses.map((status) => ({ guard: "g-x", status })) })); }
+      if (verb === "recover") { admin.push(`recover ${rest.join(" ")}`); return ok(JSON.stringify({ shop: rest[0], status: recover.status })); }
       if (verb === "observe") return ok(JSON.stringify({ ...observe, model: {} }));
       if (verb === "issue-approver") return ok(`gg_${"a".repeat(32)}`);
       return ok("{}");
@@ -88,7 +92,7 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
   });
   const ctx: Context = { dir: t.root, appDir: new URL("../../", import.meta.url).pathname.replace(/\/$/u, ""), runner, tool, log: () => undefined, now: () => new Date("2026-11-04T10:00:00Z"), sleep: async () => undefined, docker: "docker", waitSeconds: 1 };
   return {
-    ctx, root: t.root, paths: t.paths, calls, admin, runningDigest, observe, stopStatuses,
+    ctx, root: t.root, paths: t.paths, calls, admin, runningDigest, observe, stopStatuses, recover,
     failVerify: (service, rules) => failing.set(service, rules),
     handIn(shop, files = secretsFor(shop)) { const dir = join(t.paths.secretsInbox, shop); mkdirSync(dir, { recursive: true }); for (const [n, v] of Object.entries(files)) writeFileSync(join(dir, n), v); },
     done: t.done,
