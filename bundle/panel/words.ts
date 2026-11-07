@@ -46,6 +46,12 @@ export interface Words {
     stop: string; stopTitle(name: string): string; stopText: string; stopConfirm: string; stopAsked(at: string): string; stopOnly: string;
     details: string; detailsDeploy: string; detailsPins: string; detailsPrices(date: string): string; detailsNothing: string; detailsStatusFile: string;
   };
+  /** A Fees centre's shop page: its batches, this month's counts, and the messages its rules allow. The rest of the page is the shop page's. */
+  feesShop: {
+    studentsIn(n: number): string;
+    activity: { opened: string; paidInFull: string; partlyPaid: string; stillOpen: string; collected: string; stillToCollect: string; reminders: string };
+    messages: { heading: string; ceiling(students: number, most: number, total: number): string; included(n: number): string; note: string };
+  };
   cost: {
     heading: string; early: string; fromRecord(n: number): string; assumption(n: number): string;
     lines: Record<LineId, string>; payer: Record<Payer, string>;
@@ -123,6 +129,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceInnovator": ["₹299", "₹179"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
+  "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
   "setup.fees.problems.batchNameEmpty": [2], "setup.fees.problems.feeBad": [2], "setup.fees.problems.studentBad": [3], "setup.fees.problems.studentNumber": [3], "setup.fees.problems.studentBatch": [3, "Class 11"],
   "setup.fees.problems.tooMany": [300], "setup.fees.problems.lateBad": ["₹1,200"], "setup.fees.problems.partBad": ["₹1,200"], "setup.fees.problems.waiverBad": ["₹1,200"],
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
@@ -189,6 +196,16 @@ export const en: Words = {
     stop: "Stop this shop", stopTitle: (n) => `Stop ${n}?`, stopText: "This asks the server to stop the agent. Nothing more goes out once the server has stopped it. It can take a minute, and the server starts it again only when you ask.",
     stopConfirm: "Yes, stop it", stopAsked: (at) => `Stop requested at ${at}. Waiting for the server to confirm.`, stopOnly: "Only the server can say it has stopped.",
     details: "Show what we did ▸", detailsDeploy: "The server's last message", detailsPins: "Ids the checks confirmed", detailsPrices: (d) => `Price list of ${d}`, detailsNothing: "nothing yet", detailsStatusFile: "What the server reported",
+  },
+  feesShop: {
+    studentsIn: (n) => `${n} ${t1(n, "student", "students")}`,
+    activity: { opened: "Fees opened this month", paidInFull: "Paid in full", partlyPaid: "Part paid", stillOpen: "Still open", collected: "Collected", stillToCollect: "Still to collect", reminders: "Reminders sent" },
+    messages: {
+      heading: "Messages",
+      ceiling: (students, most, total) => `Your rules allow at most ${total} reminders and receipts a month: ${students} ${t1(students, "student", "students")}, up to ${most} ${t1(most, "reminder", "reminders")} each, and a receipt.`,
+      included: (n) => `Your plan includes ${n} messages a month.`,
+      note: "Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill.",
+    },
   },
   cost: {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,

@@ -535,6 +535,18 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `shop.detailsPrices` | ಬೆಲೆ ಪಟ್ಟಿ: 2026-11-03 | Price list of 2026-11-03 |  |
 | `shop.detailsNothing` | ಇನ್ನೂ ಏನೂ ಇಲ್ಲ | nothing yet |  |
 | `shop.detailsStatusFile` | ಸರ್ವರ್ ವರದಿ ಮಾಡಿದ್ದು | What the server reported |  |
+| `feesShop.studentsIn` | 12 ವಿದ್ಯಾರ್ಥಿಗಳು | 12 students |  |
+| `feesShop.activity.opened` | ಈ ತಿಂಗಳು ತೆರೆದ ಶುಲ್ಕಗಳು | Fees opened this month |  |
+| `feesShop.activity.paidInFull` | ಪೂರ್ಣ ಪಾವತಿ | Paid in full |  |
+| `feesShop.activity.partlyPaid` | ಭಾಗಶಃ ಪಾವತಿ | Part paid |  |
+| `feesShop.activity.stillOpen` | ಇನ್ನೂ ತೆರೆದಿರುವುದು | Still open |  |
+| `feesShop.activity.collected` | ಸಂಗ್ರಹವಾದದ್ದು | Collected |  |
+| `feesShop.activity.stillToCollect` | ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು | Still to collect |  |
+| `feesShop.activity.reminders` | ಕಳುಹಿಸಿದ ನೆನಪುಗಳು | Reminders sent |  |
+| `feesShop.messages.heading` | ಸಂದೇಶಗಳು | Messages |  |
+| `feesShop.messages.ceiling` | ನಿಮ್ಮ ನಿಯಮಗಳ ಪ್ರಕಾರ ತಿಂಗಳಿಗೆ ಗರಿಷ್ಠ 200 ನೆನಪು ಮತ್ತು ರಸೀದಿ ಸಂದೇಶಗಳು ಹೋಗಬಹುದು: 40 ವಿದ್ಯಾರ್ಥಿಗಳು, ಪ್ರತಿಯೊಬ್ಬರಿಗೂ 4 ನೆನಪಿನವರೆಗೆ, ಮತ್ತು ಒಂದು ರಸೀದಿ. | Your rules allow at most 200 reminders and receipts a month: 40 students, up to 4 reminders each, and a receipt. |  |
+| `feesShop.messages.included` | ನಿಮ್ಮ ಯೋಜನೆಯಲ್ಲಿ ತಿಂಗಳಿಗೆ 3000 ಸಂದೇಶಗಳು ಸೇರಿವೆ. | Your plan includes 3000 messages a month. |  |
+| `feesShop.messages.note` | ಪೋಷಕರ ಸ್ವಂತ ಸಂದೇಶಗಳಿಗೆ ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. ಇದು ನಿಮ್ಮ ನಿಯಮಗಳಿಂದ ಬಂದ ಮೇಲಿನ ಮಿತಿ, ಬಿಲ್ ಅಲ್ಲ. | Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill. |  |
 | `cost.heading` | ಪ್ರತಿ ತಿಂಗಳು ನಡೆಸಲು ಆಗುವ ವೆಚ್ಚ | What it costs to run, each month |  |
 | `cost.early` | ಆರಂಭಿಕ ಅಂದಾಜು: ನಿಜವಾದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ಇನ್ನೂ ಎಣಿಸಿಲ್ಲ. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | ದಾಖಲೆಯಲ್ಲಿರುವ 38 ಬುಕಿಂಗ್ ನೋಡಿ ಲೆಕ್ಕ ಹಾಕಲಾಗಿದೆ. | Worked out from 38 bookings in the record. |  |

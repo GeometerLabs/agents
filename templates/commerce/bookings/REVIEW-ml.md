@@ -535,6 +535,18 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `shop.detailsPrices` | വില ലിസ്റ്റ്: 2026-11-03 | Price list of 2026-11-03 |  |
 | `shop.detailsNothing` | ഇതുവരെ ഒന്നുമില്ല | nothing yet |  |
 | `shop.detailsStatusFile` | സെർവർ അറിയിച്ചത് | What the server reported |  |
+| `feesShop.studentsIn` | 12 വിദ്യാർത്ഥികൾ | 12 students |  |
+| `feesShop.activity.opened` | ഈ മാസം തുറന്ന ഫീസുകൾ | Fees opened this month |  |
+| `feesShop.activity.paidInFull` | പൂർണമായി അടച്ചത് | Paid in full |  |
+| `feesShop.activity.partlyPaid` | ഭാഗികമായി അടച്ചത് | Part paid |  |
+| `feesShop.activity.stillOpen` | ഇനിയും തുറന്നത് | Still open |  |
+| `feesShop.activity.collected` | പിരിഞ്ഞത് | Collected |  |
+| `feesShop.activity.stillToCollect` | ഇനി പിരിക്കാനുള്ളത് | Still to collect |  |
+| `feesShop.activity.reminders` | അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ | Reminders sent |  |
+| `feesShop.messages.heading` | സന്ദേശങ്ങൾ | Messages |  |
+| `feesShop.messages.ceiling` | നിങ്ങളുടെ നിയമങ്ങൾ അനുസരിച്ച് ഒരു മാസം പരമാവധി 200 ഓർമ്മപ്പെടുത്തലുകളും രസീതുകളും പോകാം: 40 വിദ്യാർത്ഥികൾ, ഓരോരുത്തർക്കും 4 ഓർമ്മപ്പെടുത്തൽ വരെ, ഒരു രസീതും. | Your rules allow at most 200 reminders and receipts a month: 40 students, up to 4 reminders each, and a receipt. |  |
+| `feesShop.messages.included` | നിങ്ങളുടെ പ്ലാനിൽ മാസം 3000 സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | Your plan includes 3000 messages a month. |  |
+| `feesShop.messages.note` | രക്ഷിതാക്കളുടെ സ്വന്തം സന്ദേശങ്ങൾക്കുള്ള മറുപടികൾ ഇതിനു പുറമേ വരും. ഇത് നിങ്ങളുടെ നിയമങ്ങളിൽ നിന്നുള്ള പരമാവധി പരിധിയാണ്, ബില്ല് അല്ല. | Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill. |  |
 | `cost.heading` | ഓരോ മാസവും ഇത് പ്രവർത്തിപ്പിക്കാനുള്ള ചെലവ് | What it costs to run, each month |  |
 | `cost.early` | ആദ്യത്തെ കണക്ക്: യഥാർത്ഥ ബുക്കിംഗുകൾ ഇതുവരെ എണ്ണിയിട്ടില്ല. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | രേഖയിലെ 38 ബുക്കിംഗ് നോക്കി കണക്കാക്കിയത്. | Worked out from 38 bookings in the record. |  |

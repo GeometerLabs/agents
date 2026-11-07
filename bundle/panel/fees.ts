@@ -178,11 +178,23 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
   };
   const checked = validateSettings(raw);
-  return checked.ok ? { ok: true, settings: checked.settings as never } : { ok: false, errors: checked.errors };
+  // `raw` is the shape a builder writes (and `shop add --template fees` takes): the checked settings name a student's batch differently.
+  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw } as Built) : { ok: false, errors: checked.errors };
 }
 
 /** The centre's limits as one sentence each, in the person's language: the same lines the go-live certificate prints. From the draft when it builds, nothing when it does not yet. */
 export function feesLimitLines(draft: Draft, example: Settings, language: Language, saved?: Settings): string[] {
-  const settings = saved ?? (() => { const built = buildFeesSettings(draft, example); return built.ok ? (built.settings as unknown as Settings) : undefined; })();
+  // The owner's number comes in a later step than the rules, and the lines do not show it: until it is given, the example's stands in so the lines can be shown with the rules.
+  const asked = draft.ownerNumber === "" ? { ...draft, ownerNumber: example.owner.whatsapp } : draft;
+  const settings = saved ?? (() => { const built = buildFeesSettings(asked, example); return built.ok ? (built.settings as unknown as Settings) : undefined; })();
   return settings ? limitLinesOf(limitsOf(settings), language) : [];
+}
+
+/** runtime.json for a Fees centre: who things are. It has payments and messaging and no calendar (the runtime refuses a calendar it does not use). */
+export function runtimeForFees(phoneNumberId: string, serverModel?: { wire: string; model: string }): Record<string, unknown> {
+  return {
+    mode: "live", tickSeconds: 30,
+    services: { payments: {}, messaging: { phoneNumberId }, timeoutMs: 20_000 },
+    ...(serverModel ? { parser: { wire: serverModel.wire, model: serverModel.model } } : {}),
+  };
 }

@@ -5,13 +5,9 @@
 //     are still the ones that were checked. It writes the go-live certificate (report/), signed when the panel has a key.
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
 import { readFileSync } from "node:fs";
-import { runOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
-import { buildGoLiveCertificate, summariseRun } from "../../templates/commerce/bookings/report/certificate.ts";
-import type { HandCheckSummary } from "../../templates/commerce/bookings/report/certificate.ts";
-import { policyDigest } from "../../templates/commerce/bookings/report/data.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
-import { writeGoLiveCertificate } from "../../templates/commerce/bookings/report/run.ts";
-import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import { kindFor } from "../lib/kinds.ts";
+import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
 import { guardUrlFor } from "./config.ts";
@@ -24,7 +20,7 @@ export interface StoredChecks {
   at: string;
   settingsDigest: string;
   /** The hand check's own summary (counts, the digest of the settings it ran on, what could not run), plus how many things are listed as not tested. */
-  hand: HandCheckSummary & { failed: number; notTested: number };
+  hand: HandCheckSummaryLike & { failed: number; notTested: number };
   /** null: this server has not said where the shop's Guards are, so nothing could be checked. */
   connections: CheckResult[] | null;
 }
@@ -41,6 +37,8 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     try { return readFileSync(config.guardAgentTokenFile, "utf8").trim() || undefined; } catch { return undefined; }
   })();
 
+  /** The template a shop is: its hand check, its certificate and its settings digest (Bookings and Fees each have their own). */
+  const kindOf = (shop: string): Kind => kindFor(shops.kind(shop)) as Kind;
   const docs = createDocuments(store);
   const stored = (shop: string) => store.read<StoredChecks>(`checks/${shop}.json`);
 
@@ -51,12 +49,12 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     const pins = shops.pins(shop);
     const wa = guardUrlFor(config, shop, "whatsapp") as string;
     const rz = guardUrlFor(config, shop, "razorpay") as string;
-    const cal = guardUrlFor(config, shop, "calendar") as string;
+    const hasCalendar = kindOf(shop).guards.includes("calendar");
     return {
       ...(agentToken ? { agentToken } : {}),
       whatsapp: { baseUrl: wa, phoneNumberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" },
       razorpay: { baseUrl: rz, ...(meta.razorpay?.keyId ? { keyId: meta.razorpay.keyId } : {}), expectedMode: meta.razorpay?.mode ?? "live", ...(pins?.razorpay?.keyId ? { pinnedKeyId: pins.razorpay.keyId } : {}) },
-      calendar: { baseUrl: cal, calendarId: String(runtime?.services?.calendar?.calendarId ?? "") },
+      ...(hasCalendar ? { calendar: { baseUrl: guardUrlFor(config, shop, "calendar") as string, calendarId: String(runtime?.services?.calendar?.calendarId ?? "") } } : {}),
     };
   }
 
@@ -65,9 +63,10 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     async run(shop: string): Promise<StoredChecks | undefined> {
       const settings = shops.settings(shop);
       if (!settings) return undefined;
-      const ran = await runOn(settings);
-      const summary = summariseRun(ran);
-      const certificate = buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: now() });
+      const papers = kindOf(shop).papers;
+      const ran = await papers.runOn(settings);
+      const summary = papers.summariseRun(ran);
+      const certificate = papers.buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: now() });
       const targets = targetsFor(shop);
       const report = targets ? await checkConnections(targets) : undefined;
       // What the providers reported replaces what was typed (a calendar id as Google writes it), and is pinned for Guard's exact allowlists.
@@ -79,7 +78,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
         if (runtime && calendarId && runtime.services?.calendar?.calendarId !== calendarId) shops.writeRuntime(shop, { ...runtime, services: { ...runtime.services, calendar: { ...runtime.services.calendar, calendarId } } });
       }
       const result: StoredChecks = {
-        at: iso(now()), settingsDigest: policyDigest(settings),
+        at: iso(now()), settingsDigest: papers.policyDigest(settings),
         hand: { ...summary, failed: certificate.checks.failed, notTested: certificate.notTested.length },
         connections: report ? report.results : null,
       };
@@ -88,11 +87,11 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     },
 
     /** What still stands between this shop and "Ready to go live". Empty when nothing does. */
-    unmet(shop: string, settings: Settings): Unmet[] {
+    unmet(shop: string, settings: any): Unmet[] {
       const checks = stored(shop);
       const out: Unmet[] = [];
       if (!checks || checks.hand.total === 0 || checks.hand.held < checks.hand.total) out.push("hand-check");
-      else if (checks.settingsDigest !== policyDigest(settings)) out.push("settings-changed");
+      else if (checks.settingsDigest !== kindOf(shop).papers.policyDigest(settings)) out.push("settings-changed");
       const read = shops.status(shop);
       if (!read.ok || read.status.deploy?.state !== "applied") out.push("deploy");
       else if (!read.status.limits || read.status.limits.of === 0 || read.status.limits.proven < read.status.limits.of) out.push("limits");
@@ -107,7 +106,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       const unmet = api.unmet(shop, settings);
       if (unmet.length > 0) return { ok: false, unmet };
       const checks = stored(shop) as StoredChecks;
-      const files = docs.make(shop, "go-live", (scratch) => writeGoLiveCertificate({ settings, handCheck: checks.hand, language: settings.owner.language, out: scratch, key, preparedBy, now: now() }).files);
+      const files = docs.make(shop, "go-live", (scratch) => kindOf(shop).papers.writeGoLiveCertificate({ settings, handCheck: checks.hand, language: settings.owner.language, out: scratch, key, preparedBy, now: now() }).files);
       shops.saveMeta(shop, { ...shops.meta(shop), readyAt: iso(now()) });
       return { ok: true, files };
     },
