@@ -801,8 +801,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.actions.ask_owner_again` | ഉടമയോട് വീണ്ടും ചോദിക്കുക | Ask the owner again |  |
 | `inbox.actions.recheck_refund` | റീഫണ്ട് വീണ്ടും പരിശോധിക്കുക | Check the refund again |  |
 | `inbox.actionNote` | ഇവ വീണ്ടും നോക്കുകയോ വീണ്ടും ചോദിക്കുകയോ മാത്രം ചെയ്യുന്നു. മറ്റെല്ലാറ്റിനെയും പോലെ ഇവയും Guard-ലൂടെയും അതേ പരിധികളിലൂടെയും കടന്നുപോകുന്നു. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
-| `inbox.recover.sent` | അയച്ചു. കടയുടെ ഏജന്റ് ഒരു മിനിറ്റിനുള്ളിൽ ഇത് ചെയ്യും. അടുത്ത റെക്കോർഡ് പുതുക്കലിന് ശേഷം പട്ടിക മാറും. | Asked. The shop's agent will do it within a minute. The list changes after its next record update. |  |
-| `inbox.recover.unreachable` | കടയുടെ ഏജന്റിനെ ഇപ്പോൾ ബന്ധപ്പെടാനാവുന്നില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക. | The shop's agent cannot be reached right now, so nothing was sent. Try again later. |  |
+| `inbox.recover.sent` | അയച്ചു. കടയുടെ ഏജന്റ് ഒന്നോ രണ്ടോ മിനിറ്റിനുള്ളിൽ ഇത് ചെയ്യും. അടുത്ത റെക്കോർഡ് പുതുക്കലിന് ശേഷം പട്ടിക മാറും; അതിന് പതിനഞ്ച് മിനിറ്റ് വരെ എടുത്തേക്കാം. | Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour. |  |
 | `inbox.recover.refused` | ഇത് ഈ കാര്യത്തിന് യോജിക്കില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. | That does not fit this item, so nothing was sent. |  |
 | `inbox.help` | സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Write to support. A person answers. |  |
 | `takeOut.heading` | എല്ലാം കൂടെ കൊണ്ടുപോകൂ | Take everything with you |  |
