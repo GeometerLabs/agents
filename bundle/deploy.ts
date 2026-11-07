@@ -21,7 +21,7 @@ import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./genera
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
-import { KINDS, kindFor } from "./lib/kinds.ts";
+import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { ensureSecret, panelUser, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
@@ -85,14 +85,17 @@ function webhooksFor(dir: string, shop: string, calendar = true): ShopWebhooks {
 
 /** Does this shop's template have a calendar? (Its Guards are what it was planned with.) */
 const hasCalendar = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "calendar");
+/** Does this shop take Razorpay? A UPI shop (B33) was planned with no Razorpay Guard, and so has no Razorpay key, webhook or approvals relay. */
+export const hasRazorpay = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "razorpay");
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
-function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true): Problem[] {
+function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, file) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${shop}: ${handIn} has not been handed in. Put it in secrets-inbox/${shop}/${handIn} (the panel does this); it is moved to where only the right container can read it.` }];
   return [
-    ...need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key"),
+    // a UPI shop (B33) has no Razorpay account: no key and no webhook secret are asked for
+    ...(razorpay ? need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key") : []),
     ...need(`g-${shop}-whatsapp`, "whatsapp_authorization", "whatsapp_token"),
-    ...need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret"),
+    ...(razorpay ? need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret") : []),
     ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
     ...(!calendar || have(dir, "refresher", "_server/google_service_account.json") ? [] : need("refresher", `${shop}/google_service_account.json`, "google_service_account.json")),
@@ -106,20 +109,22 @@ interface Credentials { agent: Partial<Record<Three, string>> & Record<"model" |
  * Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. `calendar`: whether the shop's
  * template has a calendar. One that has none gets no calendar credentials, no folder for a calendar Guard, and nothing in the token refresher's folder.
  */
-function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true): Credentials {
+function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true): Credentials {
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
-    razorpay: ensureSecret(secretFile(dir, rt, "agent_razorpay"), mintGuardToken),
+    ...(razorpay ? { razorpay: ensureSecret(secretFile(dir, rt, "agent_razorpay"), mintGuardToken) } : {}),
     whatsapp: ensureSecret(secretFile(dir, rt, "agent_whatsapp"), mintGuardToken),
     ...(calendar ? { calendar: ensureSecret(secretFile(dir, rt, "agent_calendar"), mintGuardToken) } : {}),
     model: ensureSecret(secretFile(dir, rt, "agent_model"), mintGuardToken),
     relay: ensureSecret(secretFile(dir, "relay", shop, "agent_whatsapp"), mintGuardToken),
   };
-  const admin = Object.fromEntries((calendar ? ["razorpay", "whatsapp", "calendar"] as const : ["razorpay", "whatsapp"] as const).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
+  const admin = Object.fromEntries((["razorpay", "whatsapp", "calendar"] as const).filter((k) => (k !== "calendar" || calendar) && (k !== "razorpay" || razorpay)).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
   for (const container of ["ops", "inbox", "relay"]) writeSecretFile(secretFile(dir, container, shop, "internal_token"), internal);
   writeSecretFile(secretFile(dir, "inbox", shop, "relay_token"), ensureSecret(secretFile(dir, "relay", shop, "relay_token"), mintSecret));
-  writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
+  if (razorpay) writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
+  // A UPI shop has no Razorpay webhook: its inbox still holds a secret for that route, made here and given to nobody, so a call to it can never be signed.
+  else ensureSecret(secretFile(dir, "inbox", shop, "razorpay_webhook_secret"), mintSecret);
   if (calendar) {
     writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar as string);
     ensureDir(secretFile(dir, `g-${shop}-calendar`));
@@ -160,6 +165,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const problems: Problem[] = [...taken.problems];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
   const calendar = (kindFor(folder.lock?.pathway) ?? KINDS.bookings).guards.includes("calendar");
+  const razorpay = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("razorpay"); // a UPI shop (B33) has no Razorpay
   const webhooks = webhooksFor(ctx.dir, name, calendar);
   const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
   // The settings the bundle adds to the generated config (`ai`, `report`) are judged by the check of the version the shop is PINNED to, not by this checkout's: a client held back
@@ -169,9 +175,9 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar));
+  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch.
-  const pinned = folder.pins.razorpay;
+  const pinned = razorpay ? folder.pins.razorpay : undefined;
   const authorization = pinned ? readSecretFile(secretFile(ctx.dir, `g-${name}-razorpay`, "razorpay_authorization")) : undefined;
   if (pinned && authorization) {
     const keyId = Buffer.from(authorization.replace(/^Basic /u, ""), "base64").toString("utf8").split(":")[0];
@@ -226,7 +232,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)));
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)));
     for (const g of prepared.guards) {
       problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
@@ -364,7 +370,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)))]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)))]));
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
@@ -412,7 +418,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (modelProof.problems.length > 0) throw new Refused(modelProof.problems);
   for (const p of prepared) {
     const proof = await proveRunning(ctx, p.guards);
-    if (proof.problems.length === 0) await renewRelayCredential(ctx, p.folder.name);
+    if (proof.problems.length === 0 && hasRazorpay(p.guards.map((g) => g.plan))) await renewRelayCredential(ctx, p.folder.name); // no relay for a UPI shop
     const stop = state.shops[p.folder.name].stopped;
     if (stop) await ops(ctx, ["stop", p.folder.name, "on", "-", stop.reason]); // a recreated Guard keeps its kill switch in its store; this makes sure
     const total = Object.values(proof.guards).reduce((t, g) => ({ passed: t.passed + g.passed, of: t.of + g.of }), { passed: 0, of: 0 });
