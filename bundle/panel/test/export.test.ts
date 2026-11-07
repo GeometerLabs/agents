@@ -15,6 +15,10 @@ import { WORDS } from "../languages.ts";
 import { NOW, accountIdOf, boot, papers } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
+// The scripted months are worked out once, before any request: the panel runs inside this process, and a long stretch of work between two requests would let the panel close the
+// browser's idle connection (its keep-alive is five seconds) just as the next request uses it.
+const busyMonth = await runBusyMonth();
+const feesMonth = await runFeesMonth();
 const VERIFY = new URL("../../../templates/commerce/bookings/scripts/verify-report.ts", import.meta.url).pathname;
 const SECRETS = { razorpay_key: "rzp_test_SENTINELKEYID1:SENTINELKEYSECRET2", whatsapp_token: "SENTINELWHATSAPPTOKEN3", whatsapp_app_secret: "SENTINELAPPSECRET4", razorpay_webhook_secret: "SENTINELWEBHOOK5" };
 const applied = () => ({ updatedAt: new Date(NOW - 5 * 60_000).toISOString(), deploy: { state: "applied", at: new Date(NOW - 3600_000).toISOString() }, limits: { proven: 9, of: 9, unprovable: [] }, versions: { pathway: "0.1.0", bundle: "0.1.0" } });
@@ -47,7 +51,7 @@ async function bookingsShop(b: Boot, arjun: Browser) {
   b.status("glow-salon", applied());
   plantSecrets(b, "glow-salon");
   writeFileSync(join(b.dir, "shops", "glow-salon", "pins.json"), JSON.stringify({ schema: 1, checkedAt: new Date(NOW).toISOString(), whatsapp: { phoneNumberId: "100000000000001", displayNumber: "+919000011111" }, calendar: { calendarId: "glowsalon@group.calendar.google.com" }, razorpay: { keyId: "rzp_test_SENTINELKEYID1", mode: "test" } }));
-  const month = await runBusyMonth();
+  const month = busyMonth;
   mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
   writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(month.world.record.entries()));
   writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), JSON.stringify([...month.world.store.bookings.values()]));
@@ -214,7 +218,7 @@ test("a Fees centre exports its fees in place of bookings, and its report verifi
     cpSync(new URL("../../../templates/education/fees/settings/bright-tuition.example.json", import.meta.url).pathname, join(dir, "settings.json"));
     writeFileSync(join(dir, "pathway.lock"), "fees@0.1.0\n");
     writeFileSync(join(dir, "runtime.json"), JSON.stringify({ mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: "100000000000001" }, timeoutMs: 20000 } }));
-    const month = await runFeesMonth();
+    const month = feesMonth;
     mkdirSync(join(b.dir, "exports", "sunrise-tuition"), { recursive: true });
     writeFileSync(join(b.dir, "exports", "sunrise-tuition", "record.json"), JSON.stringify(month.world.record.entries()));
     writeFileSync(join(b.dir, "exports", "sunrise-tuition", "dues.json"), JSON.stringify([...month.world.store.dues.values()]));
