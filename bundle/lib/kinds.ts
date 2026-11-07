@@ -27,6 +27,15 @@ import { validateRuntimeConfig as feesRuntime } from "../../templates/education/
 /** The services a template calls, each of which has a Guard. The order fixes each Guard's address on the admin network (generate/compose.ts). */
 export type ServiceKind = "razorpay" | "whatsapp" | "calendar";
 
+/**
+ * The Guards one shop runs: its template's, without Razorpay when the shop takes UPI (settings "payment": {"module": "upi"}, plan B33). A UPI shop has no Razorpay account,
+ * so it has no Razorpay Guard, no Razorpay key to hand in, no Razorpay webhook and no approvals relay (no refund is ever held for the owner: the owner sends UPI refunds).
+ */
+export function guardsOf(kind: { guards: readonly ServiceKind[] }, settings: unknown): ServiceKind[] {
+  const upi = (settings as { payment?: { module?: string } } | undefined)?.payment?.module === "upi";
+  return kind.guards.filter((g) => !(upi && g === "razorpay"));
+}
+
 /** What the panel needs of a hand check's summary and of a go-live certificate, whichever template made them. */
 export interface HandCheckSummaryLike { held: number; total: number; checks: number; failedTitles: string[]; ranOn?: string; notRun?: string[] }
 export interface GoLiveCertificateLike { checks: { failed: number }; notTested: unknown[] }

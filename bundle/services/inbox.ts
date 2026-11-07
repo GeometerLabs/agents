@@ -15,7 +15,8 @@ export interface InboxShopConfig {
   kind?: "own-agent";
   forwardTo?: string;
   runtimeUrl?: string;
-  relayUrl: string;
+  /** Left out for a shop with no approvals relay (a UPI shop, B33). */
+  relayUrl?: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
   verification: "meta-signature" | "path-token";
@@ -44,7 +45,8 @@ export function shopHandler(name: string, c: InboxShopConfig, read: (path: strin
     ...(c.verification === "meta-signature" ? { whatsappAppSecret: need("whatsapp_app_secret"), whatsappVerifyToken: need("whatsapp_verify_token") } : { whatsappPathToken: need("whatsapp_path_token") }),
     // Several shops can share one Meta app, and so one app secret: a valid signature does not say whose message it is, the phone number does.
     whatsappPhoneNumberId: c.phoneNumberId,
-    relayUrl: c.relayUrl, relayToken: need("relay_token"), ownerWhatsapp: c.ownerWhatsapp,
+    // a shop with no approvals relay (a UPI shop, B33) sends its owner's messages to the runtime only
+    ...(c.relayUrl ? { relayUrl: c.relayUrl, relayToken: need("relay_token"), ownerWhatsapp: c.ownerWhatsapp } : {}),
     log: (line) => log(`[${name}] ${line}`),
   };
   return inboxHandler(config);
