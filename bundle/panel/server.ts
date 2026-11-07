@@ -326,13 +326,13 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   });
 
   // a recovery step from the to-do list: only an action the list itself offers for that case right now, and only as a request to the shop's own agent
-  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/recover$/u, async (r) => {
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/recover$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref) return notFound(r);
     const offered = inboxFor(shops, ref.id, now(), unfinished).items.some((o) => o.caseId === (r.form.case ?? "") && o.actions.includes(r.form.action ?? ""));
-    const result = offered ? await shops.requestRecovery(ref.id, r.form.case, r.form.action) : "refused";
-    log(`recovery ${r.form.action ?? "?"} on ${ref.id} by ${r.account!.id}: ${result}`);
-    redirect(r, `/inbox?notice=${result === "refused" ? "refused" : result}`);
+    if (offered) shops.requestRecovery(ref.id, r.form.case, r.form.action, r.account!);
+    log(`recovery ${r.form.action ?? "?"} on ${ref.id} by ${r.account!.id}: ${offered ? "asked" : "refused"}`);
+    redirect(r, `/inbox?notice=${offered ? "sent" : "refused"}`);
   });
 
   // taking a shop's files out (B38): the same package as `geometer export`, built from files only, so it works for a stopped shop and a lapsed plan
