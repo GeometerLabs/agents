@@ -825,7 +825,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `handover.askTitle` | ഇനി ഉടമ സമ്മതിക്കണം | Now the owner has to agree |  |
 | `handover.ask` | ഉടമ സ്വന്തം ഫോണിൽ നിന്ന് കടയുടെ WhatsApp നമ്പറിലേക്ക് ഈ ഒരൊറ്റ സന്ദേശം അയയ്ക്കാൻ പറയുക: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
 | `handover.askNote` | ഈ കോഡ് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും, 72 മണിക്കൂറിൽ തീരും. ഇപ്പോൾ മാത്രമേ കാണിക്കൂ. സന്ദേശം സ്വീകരിക്കാൻ കട പ്രവർത്തിക്കുന്നുണ്ടാവണം. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
-| `handover.waiting` | ഉടമയെ കാത്തിരിക്കുന്നു. സന്ദേശം വന്നാൽ Meera ചുമതല ഏറ്റെടുക്കും. | Waiting for the owner. When the message arrives, Meera takes over. |  |
+| `handover.waiting` | ഉടമയെ കാത്തിരിക്കുന്നു. സന്ദേശം വന്നാൽ Meera ചുമതല ഏറ്റെടുക്കും. സന്ദേശത്തിന് ശേഷം ഇതിന് പതിനഞ്ച് മിനിറ്റ് വരെ എടുത്തേക്കാം. | Waiting for the owner. When the message arrives, Meera takes over. This can take a quarter of an hour after the message. |  |
 | `handover.check` | വീണ്ടും നോക്കുക | Check again |  |
 | `handover.cancel` | കൈമാറ്റം റദ്ദാക്കുക | Cancel the move |  |
 | `handover.done` | കഴിഞ്ഞു. ഇനി Meera ഈ കട നടത്തും. | Done. Meera now serves this shop. |  |
