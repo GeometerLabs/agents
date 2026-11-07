@@ -11,11 +11,11 @@ Try one: `cd examples/payments/refund-desk`, then `geo check .`, then `../../../
 | | [claims](payments/claims) | Pays out an insurance claim at most once; an adjuster approves big ones |
 | | [creator-payouts](payments/creator-payouts) | Pays creators what they are owed, once per period, to their registered account only |
 | | [purchasing](payments/purchasing) | Buys supplies within a buyer's mandate, one order per request |
-| `commerce/` | [item-shop](commerce/item-shop) | Restores lost items once per ticket and sells items for gems; the ticket decides who gets the item |
-| | [booking-change](commerce/booking-change) | Moves a traveller to another seat and charges the fee, once, even when a reply is lost |
+| `commerce/` | [booking-change](commerce/booking-change) | Moves a traveller to another seat and charges the fee, once, even when a reply is lost |
 | `support/` | [support-compensation](support/support-compensation) | Makes a customer whole with a credit or a refund for a ticket, never both |
 | | [access-grants](support/access-grants) | Grants a role on request, once; admin roles need approval |
-| `games/` | [game-director](games/game-director) | An AI director that spawns resources and adjusts shop prices in a small world economy, each event once, prices within bounds |
+| `games/` | [item-shop](games/item-shop) | Restores lost items once per ticket and sells items for gems; the ticket decides who gets the item |
+| | [game-director](games/game-director) | An AI director that spawns resources and adjusts shop prices in a small world economy, each event once, prices within bounds |
 | | [game-master](games/game-master) | An AI game master that rewards quest completions in a small economy, once per completion |
 | | [liveops-compensation](games/liveops-compensation) | After a server crash eats a raid loadout, restores the items or currency per ticket; big ones wait for a game master |
 | | [streamer-giveaways](games/streamer-giveaways) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never an operator tool |

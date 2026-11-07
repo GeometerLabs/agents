@@ -53,7 +53,7 @@ They are in [examples/](examples/README.md), one folder per domain.
 | [claims](examples/payments/claims) | Money movement (claims) | Strands Agents (Python) | Pays out an insurance claim at most once; an adjuster approves big ones. |
 | [creator-payouts](examples/payments/creator-payouts) | Money movement (payouts) | Node.js, no framework | Pays creators what they are owed, once per period, to their registered account only. |
 | [purchasing](examples/payments/purchasing) | Money movement (purchasing) | CrewAI (Python) | Buys supplies within a buyer's mandate, one order per request. |
-| [item-shop](examples/commerce/item-shop) | Games and live worlds | Node.js, no framework | Restores lost items once per ticket and sells items for gems; the ticket decides who gets the item. |
+| [item-shop](examples/games/item-shop) | Games and live worlds | Node.js, no framework | Restores lost items once per ticket and sells items for gems; the ticket decides who gets the item. |
 | [booking-change](examples/commerce/booking-change) | Commerce and support (bookings) | Node.js, no framework | Moves a traveller to another seat and charges the fee, once, even when a reply is lost. |
 | [support-compensation](examples/support/support-compensation) | Commerce and support (support) | Node.js, no framework | Makes a customer whole with a credit or a refund for a ticket, never both. |
 | [access-grants](examples/support/access-grants) | Operations (access) | Google ADK (Python) | Grants a role on request, once; admin roles need approval. |

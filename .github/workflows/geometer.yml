@@ -14,7 +14,7 @@ jobs:
           - { agent: purchasing, dir: examples/payments/purchasing }
           - { agent: lending, dir: examples/payments/lending }
           - { agent: claims, dir: examples/payments/claims }
-          - { agent: item-shop, dir: examples/commerce/item-shop }
+          - { agent: item-shop, dir: examples/games/item-shop }
           - { agent: booking-change, dir: examples/commerce/booking-change }
           - { agent: support-compensation, dir: examples/support/support-compensation }
           - { agent: access-grants, dir: examples/support/access-grants }
