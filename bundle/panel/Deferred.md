@@ -47,3 +47,13 @@ Not built, or built only as far as said. The first block needs another part of t
 - Hindi, Malayalam and Kannada are machine-written. Nothing can be called reviewed until a named native reader has signed section 7 of the sheets and `REVIEW_STATE` is changed. Tamil and Telugu are not here.
 - Known doubts from the writers: "deposit" is one word in the pricing document's four fixed lines and another in the rest of the same screen in Hindi, Malayalam and Kannada; "passphrase" is written as the everyday "password" in Hindi and Kannada; "builder" in Kannada can read as a building contractor; "the helper" in the WhatsApp steps is read as "the agent".
 - No browser was used. The pages were not looked at on a phone, a screen reader was not tried, and the tab bar's sign-out button is a form styled like a link.
+
+## To do, export and handover (B31, B38; 7 Nov)
+
+- The list is as fresh as the deployer's export of the record (every quarter of an hour). A button's effect shows after the next export. A live read from the runtime would be fresher, but the panel does not reach the runtime (see "The panel's view of the runtime" in `../Deferred.md`).
+- A recovery request that the runtime did not take for an hour is dropped by the deployer (said once in its log). The panel does not show the state of a request it filed.
+- The handover needs the shop to be running, because the owner's message has to reach the agent. A shop pinned to a template version older than this one does not know `move CODE` (the owner's message gets the usual "I did not understand"); update the shop first.
+- The new person does not accept the shop; the person moving it and the owner agree. A partner could be handed a shop they do not want. Add an accept step if that happens.
+- A move is within one server. Moving a shop between two servers (a builder's own server to Geometer's hosted one, or the other way) is an export and a new `shop add` there; the keys are entered again. There is no import.
+- Hindi, Malayalam and Kannada for the new pages (to do, export, handover) are machine-written like the rest, listed in section 7 of the review sheets; the new lines wait for a native reader.
+- The export holds the record as the deployer exports it (customers as short hashes). A copy with the raw numbers, for the owner who asks for it, is the shop's own database (`geometer restore` makes one from the backup); an export mode that reads the database inside the shop's volume and keeps the numbers is not built.

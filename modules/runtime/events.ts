@@ -10,7 +10,10 @@ export type IncomingEvent =
   | { kind: "payment_event"; event: PaymentEvent } // a Razorpay webhook
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund
   // only if its own record says the owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
-  | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string };
+  | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
+  // The panel's to-do list (plan B31) asks the agent to look again or ask again about one booking or fee. It carries no authority either: the agent does it the way it does
+  // the same thing every day, through Guard and the same limits. It does not come in through /internal/events (the inbox cannot send one); it has its own endpoint.
+  | { kind: "recovery"; id: string; case: string; action: string };
 
 /** What a runtime hands its agent: an incoming event, or time passing. */
 export type RuntimeEvent = IncomingEvent | { kind: "tick" };
@@ -23,7 +26,20 @@ export function eventKey(event: IncomingEvent): string {
   // The relay gives every delivery its own `id`, so an earlier event for the same approval (a forged one) cannot shadow the real one as a "repeat".
   // Handling is safe to repeat: the agent looks at the refunds first, and a decision for a hold it no longer has does nothing.
   if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}:${event.id ?? ""}`;
+  if (event.kind === "recovery") return `recovery:${event.id}`; // the panel gives each request its own id, so pressing a button twice is one request
   return `payment_event:${event.event.id}`;
+}
+
+const REQUEST_ID = /^[A-Za-z0-9-]{1,64}$/u;
+const CASE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u;
+const ACTION_NAME = /^[a-z][a-z0-9_]{1,39}$/u;
+
+/** The body of POST /internal/recover: {"id", "case", "action"}. The action is only a name; the agent decides whether it fits the case and refuses what does not. */
+export function checkRecovery(body: unknown): { ok: true; event: Extract<IncomingEvent, { kind: "recovery" }> } | { ok: false; error: string } {
+  if (!isObj(body) || typeof body.id !== "string" || !REQUEST_ID.test(body.id) || typeof body.case !== "string" || !CASE_ID.test(body.case) || typeof body.action !== "string" || !ACTION_NAME.test(body.action)) {
+    return { ok: false, error: 'Send {"id": up to 64 letters, digits and hyphens, "case": the booking or fee ("b-3"), "action": a name like "recheck_payment"}.' };
+  }
+  return { ok: true, event: { kind: "recovery", id: body.id, case: body.case, action: body.action } };
 }
 
 export type CheckedEvents = { ok: true; events: IncomingEvent[] } | { ok: false; error: string };

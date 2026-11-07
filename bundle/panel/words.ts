@@ -116,6 +116,29 @@ export interface Words {
       bookingsExpected: string; readyButton: string; ready: string; notReady(n: number): string; certificate: string; switchOn: string;
     };
   };
+  /**
+   * The unfinished-work inbox (B31). `kinds` holds one sentence for each kind of obligation (modules/unfinished): it is given the case's id, the amount (already written as rupees),
+   * the hours waited and a noun from `variants`, and uses the ones it needs. A kind with no sentence here is still listed, under `fallback`. The UPI module adds its kinds here.
+   */
+  inbox: {
+    nav: string; title: string; intro: string; empty: string; count(n: number): string; asOf(at: string): string; notShared: string; since(at: string): string; failedKinds: string;
+    kinds: Record<string, (id: string, amount: string, hours: number, variant: string) => string>;
+    fallback(kind: string, id: string): string;
+    variants: Record<string, string>;
+    actions: Record<string, string>; actionNote: string;
+    recover: { sent: string; refused: string };
+    help: string;
+  };
+  /** Taking a shop's files out (B38): a copy of everything that is the shop's, in plain files, that works even when the plan has lapsed. */
+  takeOut: { heading: string; text: string; button: string; notIn: string; check: string };
+  /** Moving a shop to another partner or builder (B38), with the owner's agreement from their own phone. */
+  handover: {
+    heading: string; button: string; intro: string; moves: string; stays: string; never: string;
+    who: string; whoHelp: string; why: string; reasons: Record<"stopped_paying" | "stopped_serving" | "owner_request", string>; start: string;
+    askTitle: string; ask(code: string): string; askNote: string; waiting(to: string): string; check: string; cancel: string; done(to: string): string; expired: string; cancelled: string;
+    problems: Record<"who" | "same" | "geometer" | "reason" | "waiting", string>;
+    history: string; historyLine(from: string, to: string, at: string, why: string): string;
+  };
   errors: { notFound: string; notAllowed: string; csrf: string; tooBig: string; wrongMethod: string; tryAgain: string };
 }
 
@@ -135,6 +158,10 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
   "setup.accounts.received": ["4 Nov 2026, 10:30"], "setup.accounts.razorpay.webhookUrl": ["https://shops.example.com/hooks/glow-salon/razorpay"],
   "setup.checks.deployApplied": ["4 Nov 2026, 10:30"], "setup.checks.limitsProven": [9, 9], "setup.checks.guardWords": ["the route is not listed"], "setup.checks.notReady": [2],
+  "inbox.count": [3], "inbox.asOf": ["4 Nov 2026, 10:30"], "inbox.since": ["4 Nov 2026, 10:30"], "inbox.fallback": ["upi_unconfirmed", "b-3"],
+  "inbox.kinds.deposit_no_booking": ["b-3", "₹200"], "inbox.kinds.payment_unrecorded": ["f-3"], "inbox.kinds.approval_waiting_long": ["b-3", "", 14, "[what]"],
+  "inbox.kinds.refund_waiting": ["b-3", "₹200", 0, "[who]"], "inbox.kinds.refund_unknown": ["b-3"], "inbox.kinds.refund_failed": ["b-3"],
+  "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
   "setup.checks.razorpay.confirmed": ["Live"], "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
 };
@@ -348,6 +375,45 @@ export const en: Words = {
       bookingsExpected: "Bookings you expect each month (only used for the cost)", readyButton: "Ready to go live", ready: "Ready to go live. The go-live certificate is made.",
       notReady: (n) => `Not ready yet: ${n} ${t1(n, "thing needs", "things need")} fixing.`, certificate: "Open the go-live certificate", switchOn: "The server switches the shop on when it applies it.",
     },
+  },
+  inbox: {
+    nav: "To do", title: "Unfinished work", intro: "Real jobs that need a person. Each line is worked out from the shop's record; nothing is added by hand.", empty: "Nothing needs a person right now.",
+    count: (n) => `${n} to do`, asOf: (at) => `Read from the record of ${at}.`, notShared: "This shop's record has not been shared yet, so there is nothing to read.", since: (at) => `Since ${at}`,
+    failedKinds: "One of the checks could not be read for this shop, so this list may be short.",
+    kinds: {
+      deposit_no_booking: (id, amount) => `Deposit of ${amount} received, booking ${id} is missing: review recovery`,
+      payment_unrecorded: (id) => `A payment came for fee ${id} but the fee was not updated: check the payment again`,
+      approval_waiting_long: (id, _amount, hours, what) => `Waiting ${hours} hours for the owner's answer on ${id} (${what}): ask again`,
+      refund_waiting: (id, amount, _hours, who) => `The refund of ${amount} for ${id} is waiting ${who}`,
+      refund_unknown: (id) => `Refund for ${id}: not sure it went through. Check it in Razorpay`,
+      refund_failed: (id) => `The refund for ${id} did not go through: review it`,
+    },
+    fallback: (kind, id) => `${id} needs a person (${kind})`,
+    variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again" },
+    actions: { recheck_payment: "Check the payment again", retry_booking: "Try to confirm the booking again", ask_owner_again: "Ask the owner again", recheck_refund: "Check the refund again" },
+    actionNote: "These only look again or ask again. They go through Guard and the same limits as everything else.",
+    recover: { sent: "Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour.", refused: "That does not fit this item, so nothing was sent." },
+    help: "Write to support. A person answers.",
+  },
+  takeOut: {
+    heading: "Take everything with you", text: "A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed.",
+    button: "Download the export", notIn: "No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes.", check: "To check the files, use the README inside.",
+  },
+  handover: {
+    heading: "Move this shop to someone else", button: "Move this shop…",
+    intro: "Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone.",
+    moves: "What moves: who can see and change this shop here, and the name on the owner's monthly report.",
+    stays: "What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again.",
+    never: "A shop can go to another partner or builder. It cannot go to Geometer.",
+    who: "Their sign-in name", whoHelp: "The name they sign in to this panel with.", why: "Why is it moving?",
+    reasons: { stopped_paying: "They stopped paying", stopped_serving: "They stopped serving the shop", owner_request: "The owner asked for it" },
+    start: "Ask the owner to agree", askTitle: "Now the owner has to agree",
+    ask: (code) => `Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move ${code}`,
+    askNote: "The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it.",
+    waiting: (to) => `Waiting for the owner. When the message arrives, ${to} takes over. This can take a quarter of an hour after the message.`, check: "Check again", cancel: "Cancel the move", done: (to) => `Done. ${to} now serves this shop.`,
+    expired: "The code ran out before the owner replied. Start again.", cancelled: "The move was cancelled.",
+    problems: { who: "Nobody signs in with that name on this server.", same: "That person already serves this shop.", geometer: "A shop cannot be moved to Geometer.", reason: "Choose why the shop is moving.", waiting: "A move is already waiting for the owner. Cancel it first to start another." },
+    history: "Who has served this shop", historyLine: (from, to, at, why) => `${from} to ${to}, ${at}: ${why}`,
   },
   errors: { notFound: "There is nothing here.", notAllowed: "You cannot do that.", csrf: "That form was too old or did not come from this page. Go back and try again.", tooBig: "That was too much to send.", wrongMethod: "That is not how this page works.", tryAgain: "Something went wrong. Try again." },
 };
