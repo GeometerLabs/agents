@@ -7,7 +7,7 @@
 //   the rule parser (always, the baseline), a System One decision model (the "systemone" candidates: Laya on a local address, Jev hosted), and a small
 //   language model (the "openai" candidates, for example DeepSeek V4.1 Flash on DeepInfra). A decision model that is "unsure" counts as a fallback in its
 //   row, so the table shows how often it would hand a message on to the next step.
-// This is the founder's own tooling, run on a laptop. Keys come from a local .env at the repo root and are sent from here
+// This is Geometer's own tooling, run on a laptop. Keys come from a local .env at the repo root and are sent from here
 // only (scripts/eval-keys.ts); the runtime parser sends none. A candidate whose key is not in .env is skipped with a line
 // saying so, and with no keys at all only the baseline runs. Nothing is written outside this pathway except eval/results.json,
 // which git ignores. Each model call costs a little: --max-messages caps it, and the token totals are printed.
