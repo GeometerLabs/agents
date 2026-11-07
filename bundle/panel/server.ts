@@ -160,10 +160,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     return liveView(shops.status(id), shops.stopRequest(id), probe, now(), staleMs);
   }
 
-  /** A Fees centre's page pieces: its batches, this month's counts from the export, and the most messages its rules allow (with the plan's allowance from the proposed price list). */
+  /** A Fees centre's page pieces: its batches, this month's counts from the export, and the most messages its rules allow (with the plan's allowance from the price list in force). */
   function feesPieces(c: Ctx, id: string, settings: any, data: ReturnType<typeof readExport>, month: string): NonNullable<ShopView["fees"]> {
     const report = data ? feesMonthlyFromExport(settings, data, month, "live", now()) : undefined;
-    const included = proposed?.rates["plan.business.allowance"]?.count ?? null;
+    const included = prices.rates["plan.business.allowance"]?.count ?? null;
     return { summary: summaryFees(c, settings), ...(report ? { activity: activityFees(report) } : {}), messages: messageCeiling(settings, included) };
   }
 
@@ -428,7 +428,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       settingsOk: Boolean(settings), deployApplied: status?.deploy?.state === "applied" ? { at: status.deploy.at } : undefined, limits: status?.limits,
       guardConfigured: Boolean(config.guardUrl), unmet, ready: Boolean(meta?.readyAt) && unmet.length === 0,
       ...(fees
-        ? { fees: { lines: feesLimitLines(d, exampleOf(template), c.lang, settings), messages: messageCeiling((feesDraftSettings ?? exampleOf(template)) as never, proposed?.rates["plan.business.allowance"]?.count ?? null) } }
+        ? { fees: { lines: feesLimitLines(d, exampleOf(template), c.lang, settings), messages: messageCeiling((feesDraftSettings ?? exampleOf(template)) as never, prices.rates["plan.business.allowance"]?.count ?? null) } }
         : { cost: costFor(d.shopId ?? "", settings ?? exampleOf(template)) }), certificate: d.shopId && files[0] ? `/shops/${d.shopId}/docs/go-live/${files[0]}` : undefined, shopId: d.shopId && shops.exists(d.shopId) ? d.shopId : undefined,
     };
   }
