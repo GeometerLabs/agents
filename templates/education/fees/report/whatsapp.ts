@@ -32,6 +32,8 @@ export interface ReportTemplate {
   audience: "owner";
   /** True for the template that carries the Innovator badge line. */
   badge: boolean;
+  /** True for a UPI centre's (B33): its money is labelled as marked paid by the owner. */
+  upi?: boolean;
   /** The wording per language, with {slot} where a value goes (see REPORT_SLOTS). Turned into {{n}} for Meta. */
   bodies: Record<Language, string>;
 }
@@ -41,12 +43,12 @@ export const REPORT_SLOTS = ["title", "collected", "givenBack", "pending", "remi
 export type ReportSlot = (typeof REPORT_SLOTS)[number];
 
 /** The words for one language. Starts and ends with fixed words, never two values side by side, one line per thing the owner reads. */
-function wording(language: Language, badge: boolean): string {
+function wording(language: Language, badge: boolean, upi = false): string {
   const s = STRINGS[language];
   const dot = language === "hi" ? "।" : ".";
   return [
     `${s.monthlyReport}: {title}`,
-    `${s.label.collected}: {collected} · ${s.label.givenBack}: {givenBack} · ${s.label.stillToCollect}: {pending}`,
+    `${upi ? s.upiLabel.collected : s.label.collected}: {collected} · ${upi ? s.upiLabel.givenBack : s.label.givenBack}: {givenBack} · ${s.label.stillToCollect}: {pending}`,
     `${s.label.remindersSent}: {reminders} · ${s.label.takenOff}: {takenOff}`,
     `${s.label.wasAsked}: {asked} · ${s.label.approved}: {approved} · ${s.label.saidNo}: {saidNo}`,
     `${s.label.stoppedByLimits}: {stopped}`,
@@ -57,11 +59,14 @@ function wording(language: Language, badge: boolean): string {
   ].join("\n");
 }
 
-const bodiesOf = (badge: boolean): Record<Language, string> => Object.fromEntries(LANGUAGES.map((l) => [l, wording(l, badge)])) as Record<Language, string>;
+const bodiesOf = (badge: boolean, upi = false): Record<Language, string> => Object.fromEntries(LANGUAGES.map((l) => [l, wording(l, badge, upi)])) as Record<Language, string>;
 
 export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   { name: "fee_monthly_report", audience: "owner", badge: false, bodies: bodiesOf(false) },
   { name: "fee_monthly_report_innovator", audience: "owner", badge: true, bodies: bodiesOf(true) },
+  // a UPI centre (B33): the same lines, with its money labelled as marked paid by the owner
+  { name: "fee_monthly_report_upi", audience: "owner", badge: false, upi: true, bodies: bodiesOf(false, true) },
+  { name: "fee_monthly_report_upi_innovator", audience: "owner", badge: true, upi: true, bodies: bodiesOf(true, true) },
 ];
 
 /** Every report template name, for a provider (or the stand-in) to approve. */
@@ -127,7 +132,7 @@ export interface ReportMessage {
 export function monthlyReportMessage(report: Envelope<FeesReport>, language: Language, o: { link: string }): ReportMessage {
   const r = report.document;
   if (!r.preparedBy || oneLine(r.preparedBy) === "") throw new Error("The report names no one who set the agent up, and the message says who did.");
-  const template = REPORT_TEMPLATES.find((t) => t.badge === (r.innovator === true))!;
+  const template = REPORT_TEMPLATES.find((t) => t.badge === (r.innovator === true) && (t.upi === true) === (r.paidBy === "owner-marked"))!;
   const parameters = reportParameters(template, language, reportValues(r, language, { code: report.code, link: o.link, builder: r.preparedBy }));
   const text = fillBody(metaBody(template.bodies[language]), parameters);
   return { text, template: { name: template.name, language, text, parameters } };
@@ -143,7 +148,7 @@ function exampleValues(language: Language): Record<ReportSlot, string> {
 
 /** The message as the review sheets show it: the sample month, with the Innovator line, so a native reader sees every word that is sent. */
 export function sampleMessage(language: Language): string {
-  const template = REPORT_TEMPLATES.find((t) => t.badge)!;
+  const template = REPORT_TEMPLATES.find((t) => t.badge && !t.upi)!;
   return fillBody(metaBody(template.bodies[language]), reportParameters(template, language, exampleValues(language)));
 }
 
