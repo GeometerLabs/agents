@@ -788,6 +788,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_waiting` | b-3-ന്റെ ₹200 റീഫണ്ട് [who] കാത്തിരിക്കുന്നു | The refund of ₹200 for b-3 is waiting [who] |  |
 | `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: Razorpay-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in Razorpay |  |
 | `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
+| `inbox.kinds.upi_payment_unconfirmed` | b-3-നുള്ള ₹200 UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
+| `inbox.kinds.upi_refund_owed` | b-3-ന്റെ ₹200 റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3-ൽ ഒരാൾ നോക്കേണ്ടതുണ്ട് (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
 | `inbox.variants.guard_hold` | ഒരു റീഫണ്ട് | a refund |  |
 | `inbox.variants.refund` | ഒരു റീഫണ്ട് | a refund |  |
@@ -838,10 +840,28 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `handover.problems.waiting` | ഒരു കൈമാറ്റം ഇതിനകം ഉടമയുടെ മറുപടിക്കായി കാത്തിരിക്കുന്നു. മറ്റൊന്ന് തുടങ്ങാൻ അത് റദ്ദാക്കുക. | A move is already waiting for the owner. Cancel it first to start another. |  |
 | `handover.history` | ഈ കട ആരൊക്കെ നടത്തി | Who has served this shop |  |
 | `handover.historyLine` | Divya → Meera, 4 Nov 2026, 10:30: [reason] | Divya to Meera, 4 Nov 2026, 10:30: [reason] |  |
+| `upi.setup.heading` | ഉപഭോക്താക്കൾ എങ്ങനെ പണം അടയ്ക്കും | How customers pay |  |
+| `upi.setup.intro` | ഡെപ്പോസിറ്റോ ഫീസോ ഉപഭോക്താക്കൾ എങ്ങനെ അടയ്ക്കണമെന്ന് തിരഞ്ഞെടുക്കുക. UPI ആണ് ഏറ്റവും എളുപ്പം: പേയ്മെന്റ് ഗേറ്റ്‌വേ അക്കൗണ്ട് തുറക്കേണ്ടതില്ല. | Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open. |  |
+| `upi.setup.optionUpi` | UPI: ഉപഭോക്താക്കൾ കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് അടയ്ക്കും | UPI: customers pay the shop's own UPI ID |  |
+| `upi.setup.optionRazorpay` | Razorpay: കടയ്ക്ക് സ്വന്തം Razorpay അക്കൗണ്ട് ഉണ്ട് | Razorpay: the shop has its own Razorpay account |  |
+| `upi.setup.upiTitle` | UPI വഴി പണം അടയ്ക്കൽ | Pay by UPI |  |
+| `upi.setup.upiIntro` | ഉപഭോക്താക്കൾ അവരുടെ UPI ആപ്പിൽ നിന്ന് കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് പണം അയയ്ക്കും. പണം എത്തുമ്പോൾ ഉടമ WhatsApp-ൽ “കിട്ടി” (Received) അമർത്തും. ഗേറ്റ്‌വേ ഫീസ് ഇല്ല, Geometer പണം തൊടുന്നില്ല. | Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money. |  |
+| `upi.setup.upiId` | കടയുടെ UPI ഐഡി | The shop's UPI ID |  |
+| `upi.setup.upiIdHelp` | ഉദാഹരണം glowsalon@okicici | For example glowsalon@okicici |  |
+| `upi.setup.payee` | ഉപഭോക്താവിന് അവരുടെ UPI ആപ്പിൽ കാണുന്ന പേര് | The name customers see in their UPI app |  |
+| `upi.setup.payeeHelp` | ഉദാഹരണം Glow Salon | For example Glow Salon |  |
+| `upi.setup.noCheck` | പണം അയയ്ക്കാതെ ഒരു UPI ഐഡി പരിശോധിക്കാൻ കഴിയില്ല, അതിനാൽ ഇവിടെ പരിശോധന ഇല്ല. സാവധാനം ശ്രദ്ധയോടെ ടൈപ്പ് ചെയ്യുക, എന്നിട്ട് ഉടമയ്ക്ക് വായിച്ചു കേൾപ്പിക്കുക. | A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner. |  |
+| `upi.setup.razorpayOnly` | മുകളിൽ Razorpay തിരഞ്ഞെടുത്തെങ്കിൽ മാത്രം Razorpay കളങ്ങൾ പൂരിപ്പിക്കുക. | Fill in the Razorpay boxes only if you chose Razorpay above. |  |
+| `upi.problems.idEmpty` | കടയുടെ UPI ഐഡി ചേർക്കുക, ഉദാഹരണം glowsalon@okicici. | Add the shop's UPI ID, for example glowsalon@okicici. |  |
+| `upi.problems.idNoAt` | "glowsalon" UPI ഐഡി അല്ല: @ ഉം അതിനു ശേഷം ആപ്പിന്റെയോ ബാങ്കിന്റെയോ പേരും വേണം, ഉദാഹരണം glowsalon@okicici. | "glowsalon" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici. |  |
+| `upi.problems.idShape` | "glow salon@" UPI ഐഡി അല്ല. അക്ഷരത്തെറ്റ് നോക്കുക: @ ന് മുമ്പ് അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട്, ഡാഷ് അല്ലെങ്കിൽ അണ്ടർസ്കോർ, @ ന് ശേഷം ആപ്പിന്റെയോ ബാങ്കിന്റെയോ പേര്. | "glow salon@" is not a UPI ID. Check the spelling: letters, digits, dots, dashes or underscores before the @, and the app's or bank's name after it. |  |
+| `upi.problems.payeeEmpty` | ഉപഭോക്താവിന് അവരുടെ UPI ആപ്പിൽ കാണേണ്ട പേര് ചേർക്കുക, ഉദാഹരണം Glow Salon. | Add the name customers should see in their UPI app, for example Glow Salon. |  |
+| `upi.problems.payeeOneLine` | പേര് ഒറ്റ വരിയിൽ ആയിരിക്കണം. | The name must be on one line. |  |
+| `upi.problems.payeeLong` | ഈ പേര് വളരെ നീളമുള്ളതാണ്. കടയുടെ UPI ആപ്പ് കാണിക്കുന്ന ചെറിയ പേര് ഉപയോഗിക്കുക. | That name is too long. Use the short name the shop's UPI app shows. |  |
+| `upi.noGatewayFee` | ഗേറ്റ്‌വേ ഫീസ് ഇല്ല: ഉപഭോക്താക്കൾ കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് അടയ്ക്കുന്നു. | No gateway fee: customers pay the shop's own UPI ID. |  |
 | `errors.notFound` | ഇവിടെ ഒന്നുമില്ല. | There is nothing here. |  |
 | `errors.notAllowed` | ഇത് ചെയ്യാൻ നിങ്ങൾക്ക് അനുവാദമില്ല. | You cannot do that. |  |
 | `errors.csrf` | ആ ഫോം പഴയതായിരുന്നു, അല്ലെങ്കിൽ ഈ പേജിൽ നിന്നുള്ളതായിരുന്നില്ല. പിന്നോട്ട് പോയി വീണ്ടും ശ്രമിക്കൂ. | That form was too old or did not come from this page. Go back and try again. |  |
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
-

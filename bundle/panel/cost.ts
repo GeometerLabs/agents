@@ -165,7 +165,7 @@ export type LineState = "amount" | "unknown";
 export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-razorpay" | "builder-pays-geometer" | "hosting";
 export type Caveat =
   | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "fee-not-priced" | "hosting-not-measured"
-  | "payment-link-fee-conflict" | "whatsapp-rate-second-hand";
+  | "payment-link-fee-conflict" | "whatsapp-rate-second-hand" | "no-gateway-fee";
 
 export interface CostLine {
   id: LineId;
@@ -247,7 +247,9 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   }
 
   // 3. Razorpay's fee: 2% of each deposit and 18% GST on that fee, paid by the shop to Razorpay, and not returned when the deposit is refunded.
-  {
+  // A UPI shop (B33) pays customers' money straight to its own UPI ID: no gateway, so no line, and a note that says so.
+  if (input.settings.payment?.module === "upi") caveats.add("no-gateway-fee");
+  else {
     const fee = prices.rates["razorpay.platform-fee"];
     const gst = prices.rates["razorpay.gst-on-fee"];
     const deposit = BigInt(input.settings.deposit.amountInr) * 100n; // paise
