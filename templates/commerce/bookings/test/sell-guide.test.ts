@@ -137,9 +137,10 @@ test("sell guide: no banned word in any guide or sheet, in any language (the Nev
 
 test("sell guide: the ₹ amounts are the same set in every guide, section by section, and match the plan's figures", () => {
   const en = guide("en");
-  // GTM plan, section 2: Geometer's founding fee ₹199 (₹199 to ₹499 later), the shop ₹999 to ₹1,999 a month and ₹1,999 to ₹2,999 setup, WhatsApp ₹100 to ₹300 at cost.
+  // The owner's pricing of 5 Nov 2026 (docs/product/economics-and-pricing.md, section 2): Geometer's plans Basic ₹99 and Business ₹299, ₹49 for each 1,000 extra messages,
+  // the Innovators' 40% off (Basic ₹59, Business ₹179); the shop's price as the partner's example, Basic ₹399 to ₹599 and Business ₹999 to ₹1,499 a month, setup ₹999 to ₹1,999 and ₹1,999 to ₹2,999; WhatsApp ₹100 to ₹300 at cost.
   // The example shop is Glow Salon: haircut ₹450, a customer asking ₹300, deposit and refund limit ₹200, Razorpay's fee on that deposit about ₹5.
-  same(rupees(en), new Set(["₹100", "₹199", "₹200", "₹300", "₹450", "₹499", "₹5", "₹999", "₹1999", "₹2999"]));
+  same(rupees(en), new Set(["₹100", "₹179", "₹200", "₹299", "₹300", "₹399", "₹450", "₹49", "₹5", "₹59", "₹599", "₹99", "₹999", "₹1499", "₹1999", "₹2999"]));
   for (const l of TRANSLATED) {
     same(rupees(guide(l)), rupees(en));
     const master = sections(en);
@@ -150,6 +151,18 @@ test("sell guide: the ₹ amounts are the same set in every guide, section by se
     for (const text of [guide(l), visible(sheet(l))]) {
       assert.ok(!/\b(Rs\.?|INR)\s?\d|\d\s?(रुपये|रुपए|रु\.|രൂപ|ರೂಪಾಯಿ|ರೂ\.)/u.test(text), `${l}: write every amount with its own ₹ sign, in Western digits`);
     }
+  }
+});
+
+test("sell guide: it states the owner's pricing of 5 Nov (Basic, Business, the allowance, the Innovators), and the old flat fee and the word 'founding' are gone from every guide and variant", () => {
+  for (const l of LANGUAGES) {
+    for (const [name, text] of [["guide", guide(l)], ["variant", variant(l)]] as const) {
+      assert.ok(!/₹\s?199\b|₹\s?499\b/u.test(text), `${l} ${name}: the 4 Nov flat fee ₹199 and the later ₹199 to ₹499 are out of date`);
+      assert.ok(!/found(ing|er)|संस्थापक|फ़ाउंडिंग|ಸಂಸ್ಥಾಪಕ|ಫೌಂಡಿಂಗ್|സ്ഥാപക|ഫൗണ്ടിംഗ്/iu.test(text), `${l} ${name}: no "founding" and no "founder" in anything we offer`);
+    }
+    const section6 = sections(guide(l))[5].body;
+    for (const figure of ["₹99", "₹299", "₹59", "₹179", "₹49"]) assert.ok(section6.includes(figure), `${l}: section 6 states ${figure}`);
+    for (const n of ["1,000", "3,000", "15", "80%", "40%", "25", "100"]) assert.ok(section6.includes(n), `${l}: section 6 states ${n}`);
   }
 });
 
@@ -379,9 +392,9 @@ test("variant guide: no banned word in any language (the Never say column is the
 
 test("variant guide: the ₹ amounts are the same set in every language, section by section, and are the ones the shop and the plan give", () => {
   const en = variant("en");
-  // The GTM figures the main guide uses (₹199, ₹999 to ₹1,999, ₹1,999 to ₹2,999), the example shop's price ₹3,200, deposit and refund limit ₹1,000,
+  // The pricing figures the main guide uses (Business ₹299 for a shop that takes a deposit, the shop ₹999 to ₹1,499, setup ₹1,999 to ₹2,999, Operations from ₹999), the example shop's price ₹3,200, deposit and refund limit ₹1,000,
   // the demo's haggle ₹2,130, and Razorpay's fee on a ₹1,000 deposit, about ₹24.
-  same(rupees(en), new Set(["₹24", "₹199", "₹999", "₹1000", "₹1999", "₹2130", "₹2999", "₹3200"]));
+  same(rupees(en), new Set(["₹24", "₹299", "₹999", "₹1000", "₹1499", "₹1999", "₹2130", "₹2999", "₹3200"]));
   for (const l of TRANSLATED) {
     same(rupees(variant(l)), rupees(en));
     const master = sections(en);

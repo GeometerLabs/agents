@@ -537,7 +537,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.lines.whatsapp` | WhatsApp സന്ദേശങ്ങൾ (Meta-യുടെ ഫീസ്) | WhatsApp messages (Meta's fee) |  |
 | `cost.lines.whatsapp-provider` | WhatsApp പ്രൊവൈഡറുടെ സ്വന്തം ഫീസ് | WhatsApp provider's own fee |  |
 | `cost.lines.razorpay` | Razorpay-യുടെ ഫീസ് | Razorpay's fee |  |
-| `cost.lines.geometer` | Geometer-ന്റെ ഫീസ് (ആദ്യകാല വില) | Geometer's fee (founding price) |  |
+| `cost.lines.geometer` | Geometer-ന്റെ പ്ലാൻ | Geometer's plan |  |
 | `cost.lines.hosting` | ഹോസ്റ്റിംഗ് വിഹിതം | Hosting share |  |
 | `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or partner to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-razorpay` | കട Razorpay-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to Razorpay |  |
@@ -547,7 +547,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.total` | ആകെ | Total |  |
 | `cost.subtotal` | ഇതുവരെയുള്ള തുക. വില ഇല്ലാത്ത കാര്യങ്ങൾ: 3. അതിനാൽ ഇത് മുഴുവൻ ചെലവല്ല. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
 | `cost.priceList` | വിലകൾ എടുത്തത് ഈ തീയതിയിലെ ലിസ്റ്റിൽ നിന്ന്: 2026-11-03. | Prices from the list of 2026-11-03. |  |
-| `cost.caveats.assumed-exchange-rate` | ഡോളർ, യൂറോ വിലകൾ ഒരു കണക്കാക്കിയ നിരക്കിലാണ് (₹90, ₹100). യഥാർത്ഥ ബില്ലിൽ വ്യത്യാസം വരാം. | Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ. |  |
+| `cost.caveats.assumed-exchange-rate` | ഡോളർ, യൂറോ വിലകൾ ഒരു കണക്കാക്കിയ നിരക്കിലാണ് (₹88, ₹100). യഥാർത്ഥ ബില്ലിൽ വ്യത്യാസം വരാം. | Dollar and euro prices use an assumed rate (₹88 and ₹100). A real bill may differ. |  |
 | `cost.caveats.provider-not-chosen` | WhatsApp പ്രൊവൈഡറെ ഇതുവരെ തിരഞ്ഞെടുത്തിട്ടില്ല, അതിനാൽ അതിന്റെ ഫീസ് അറിയില്ല. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
 | `cost.caveats.provider-not-priced` | വില ലിസ്റ്റിൽ ഈ പ്രൊവൈഡറുടെ വില ഇല്ല. | The price list has no price for this provider. |  |
 | `cost.caveats.fee-not-priced` | വില ലിസ്റ്റിൽ Geometer-ന്റെ ഫീസിന്റെ വില ഇല്ല. | The price list has no price for Geometer's fee. |  |
@@ -561,9 +561,9 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.names.operations` | ഓപ്പറേഷൻസ് | Operations |  |
 | `plan.is` | ഈ കട Business പ്ലാനിലാണ്. | This shop is on the Business plan. |  |
 | `plan.included` | ഓരോ മാസവും 3000 ഉപഭോക്തൃ സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | 3000 customer messages a month are included. |  |
-| `plan.price` | നിർദ്ദേശിച്ച വില: മാസം ₹299, GST ഒഴികെ. | Proposed price: ₹299 a month, before GST. |  |
-| `plan.priceInnovator` | നിർദ്ദേശിച്ച വില: മാസം ₹299, ഇന്നൊവേറ്റർ ഇളവോടെ ₹179, GST ഒഴികെ. | Proposed price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
-| `plan.proposedNote` | വിലകൾ നിർദ്ദേശിച്ചതാണ്, അന്തിമമല്ല. | Prices are proposed and not final. |  |
+| `plan.price` | പ്ലാൻ വില: മാസം ₹299, GST ഒഴികെ. | Plan price: ₹299 a month, before GST. |  |
+| `plan.priceInnovator` | പ്ലാൻ വില: മാസം ₹299, ഇന്നൊവേറ്റർ ഇളവോടെ ₹179, GST ഒഴികെ. | Plan price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
+| `plan.priceNote` | ഒരു കട ആ മാസം കുറഞ്ഞത് 15 ദിവസം പ്രവർത്തിച്ചാൽ ആ മാസം കണക്കിൽ വരും. | A shop counts for a month when it was live on 15 or more days. |  |
 | `plan.innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
 | `plan.buttons` | ഈ കടയ്ക്ക് AI നിർത്തിവച്ചിരിക്കുന്നു. ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ബട്ടൺ മെനു ലഭിക്കും. | AI is paused for this shop. Customers get button menus instead. |  |
 | `plan.buttonsWhy.overage_unfunded` | ഈ കട പ്ലാനിൽ ഉൾപ്പെട്ടതിലും കൂടുതൽ സന്ദേശങ്ങൾ ഉപയോഗിച്ചു, റീചാർജ് ബാലൻസ് ഇനി മതിയാകില്ല. AI വീണ്ടും ഓണാക്കാൻ റീചാർജ് ചെയ്യുക. | This shop has used more messages than its plan includes, and the recharge balance cannot cover more. Recharge to turn AI back on. |  |

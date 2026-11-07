@@ -151,7 +151,7 @@ export interface ShopView {
   notice?: string;
 }
 
-/** The plan: its name and included messages, the Innovator badge, the proposed price, and what fleet wants the partner to know (button mode, warnings). */
+/** The plan: its name and included messages, the Innovator badge, the price, and what fleet wants the partner to know (button mode, warnings). */
 function planBlock(c: Ctx, p: PlanView): Raw {
   const w = c.w.plan;
   const price = p.price ? (p.innovator && p.price.yoursPaise !== p.price.listPaise ? w.priceInnovator(formatRupees(p.price.listPaise), formatRupees(p.price.yoursPaise)) : w.price(formatRupees(p.price.listPaise))) : "";
@@ -160,7 +160,7 @@ function planBlock(c: Ctx, p: PlanView): Raw {
 ${p.plan ? html`<p class="big">${w.is(w.names[p.plan])}${p.innovator ? html` <span class="state live">${w.innovator}</span>` : ""}</p>
 <ul class="plain">
   ${p.allowance !== null ? html`<li class="info"><span class="mark">·</span><span>${w.included(p.allowance)}</span></li>` : ""}
-  ${price ? html`<li class="info"><span class="mark">·</span><span>${price}<br><small class="note">${w.proposedNote}</small></span></li>` : ""}
+  ${price ? html`<li class="info"><span class="mark">·</span><span>${price}<br><small class="note">${w.priceNote}</small></span></li>` : ""}
 </ul>` : html`<p class="note">${w.none}</p>`}
 ${p.buttons ? html`<div class="notice" role="status"><b>${w.buttons}</b><br>${w.buttonsWhy[p.reason === "overage_unfunded" ? "overage_unfunded" : "other"]}</div>` : ""}
 ${warns.length > 0 ? html`<ul class="plain">${warns.map((k) => html`<li class="warn"><span class="mark">!</span><span>${w.warn[k]}</span></li>`)}</ul>` : ""}`;
@@ -171,7 +171,7 @@ function costTable(c: Ctx, cost: MonthlyCost): Raw {
   const amount = (l: CostLine): string => (l.state === "unknown" ? w.unknown : formatRupees(l.paise as number));
   return html`<h2>${w.heading}</h2>
 <table class="cost"><tbody>
-${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
+${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>

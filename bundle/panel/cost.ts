@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import type { PlanName } from "./contract.ts";
 
 export const QUALITIES = ["assumed", "conflicting", "second-hand", "official-undated", "official"] as const; // weakest first
 export type Quality = (typeof QUALITIES)[number];
@@ -140,8 +141,15 @@ export interface Assumptions {
 /** Ours. Said on the page as assumptions. */
 export const DEFAULT_ASSUMPTIONS: Assumptions = { bookingsPerMonth: 40, serviceRepliesPerBooking: 6, ownerNoticesPerBooking: 1 };
 
+/** What the shop's agent does decides the plan: it takes a deposit (and so gives refunds), which is Business; or no money moves, which is Basic. Operations is fleet's call. */
+export function planFromSettings(settings: Settings): "basic" | "business" {
+  return settings.deposit && settings.deposit.amountInr > 0 ? "business" : "basic";
+}
+
 export interface CostInput {
   settings: Settings;
+  /** The plan fleet reports for this shop. Left out: worked out from the settings (planFromSettings). */
+  plan?: PlanName;
   /** Bookings counted from the record this month. Left out: the line is an early estimate from `assumptions.bookingsPerMonth`. */
   observedBookings?: number;
   assumptions?: Partial<Assumptions>;
@@ -153,7 +161,7 @@ export interface CostInput {
 
 export type LineId = "whatsapp" | "whatsapp-provider" | "razorpay" | "geometer" | "hosting";
 export type LineState = "amount" | "unknown";
-/** Who pays whom. Geometer passes nothing through: its own line is its flat fee (the AI model is in it), and it never handles anyone else's money. */
+/** Who pays whom. Geometer passes nothing through: its own line is the shop's plan (the AI model is in it, up to the allowance), and it never handles anyone else's money. */
 export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-razorpay" | "builder-pays-geometer" | "hosting";
 export type Caveat =
   | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "fee-not-priced" | "hosting-not-measured"
@@ -171,6 +179,8 @@ export interface CostLine {
   uses: string[];
   /** The least sure rate it used. */
   quality: Quality | null;
+  /** Only on Geometer's line, when it is priced from a plan. */
+  plan?: PlanName;
 }
 
 export interface MonthlyCost {
@@ -254,13 +264,18 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     }
   }
 
-  // 4. Geometer's own fee: one flat amount for each running shop, with the AI model in it (nothing is metered or passed through). It does not depend on
-  // bookings, and it is read from the price list like every other rate, so a changed fee is a new list. A list without it makes the line unknown, never INR 0.
+  // 4. Geometer's plan for this shop: one monthly amount for each running shop, before GST, with the AI model in it up to the plan's allowance (nothing is
+  // metered here; extra messages and WhatsApp are passed on from the partner's balance and are not in this line). It does not depend on bookings. The plan is
+  // the one fleet reports, or else the one the shop's settings point to: a deposit means Business, no money moving means Basic. It is read from the price list
+  // like every other rate, so a changed price is a new list. A list older than the plans has the flat fee instead. A list with neither makes the line unknown, never INR 0.
   {
-    const fee = microPaise(prices, "geometer.fee");
-    if (!fee) { lines.push(unknown("geometer", "builder-pays-geometer", { shops: 1 }, ["geometer.fee"])); caveats.add("fee-not-priced"); }
+    const plan = input.plan ?? planFromSettings(input.settings);
+    const planId = `plan.${plan}.fee`;
+    const id = prices.rates[planId] ? planId : "geometer.fee";
+    const fee = microPaise(prices, id);
+    if (!fee) { lines.push({ ...unknown("geometer", "builder-pays-geometer", { shops: 1 }, [planId]), plan }); caveats.add("fee-not-priced"); }
     else {
-      lines.push(known("geometer", "builder-pays-geometer", fee.value, { shops: 1 }, ["geometer.fee"], fee.quality));
+      lines.push({ ...known("geometer", "builder-pays-geometer", fee.value, { shops: 1 }, [id], fee.quality), ...(id === planId ? { plan } : {}) });
       if (fee.assumedRate) caveats.add("assumed-exchange-rate");
     }
   }
