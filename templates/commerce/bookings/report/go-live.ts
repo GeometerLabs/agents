@@ -10,7 +10,7 @@ import { checkedPolicyDigest, policyDigest } from "./data.ts";
 
 export type { GoLiveReading };
 
-const subject = (settings: Settings): GoLiveSubject => ({ pathway: "bookings", ownDigest: policyDigest(settings), exampleDigest: checkedPolicyDigest(), noun: "shop", exampleName: "Glow Salon" });
+const subject = (settings: Settings): GoLiveSubject => ({ pathway: ["bookings", "own-agent"], ownDigest: policyDigest(settings), exampleDigest: checkedPolicyDigest(), noun: "shop", exampleName: "Glow Salon" });
 
 /** What the person running the script is told when the certificate could not be trusted. The report itself says it without the reason. */
 export const untrustedReading = (why: string): GoLiveReading => untrustedGoLive(why, { noun: "shop" });
