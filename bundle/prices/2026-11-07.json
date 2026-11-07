@@ -11,11 +11,11 @@
   },
   "exchange": {
     "USD": {
-      "paisePerUnit": 8800,
+      "paisePerUnit": 9400,
       "quality": "assumed",
-      "source": "docs/product/economics-and-pricing.md",
-      "read": "2026-11-05",
-      "note": "The economics document assumes INR 88 to the dollar for every rupee figure from dollars (its introduction), so this list follows it. The 4 Nov list used 90, from the Phase 0 research. Neither was checked against the day's rate."
+      "source": "docs/plans/implementation-plan.md",
+      "read": "2026-11-07",
+      "note": "The owner's rate of 7 Nov 2026: INR 94 to the US dollar (plan, decisions). The 5 Nov list used 88 (the economics document's assumption) and the 4 Nov list 90."
     },
     "EUR": {
       "paisePerUnit": 10000,

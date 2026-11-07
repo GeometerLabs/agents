@@ -12,6 +12,7 @@ const DIR = new URL("../understanding/rates/", import.meta.url);
 // The sha256 of each committed file. A file is never edited after it is committed; a changed price is a new file with a new date, and a new line here.
 const PINNED: Record<string, string> = {
   "2026-11-05.json": "df267f7a4c3c7f357b98289e646832decfa1acfbf810b740da52b7bc735f2242",
+  "2026-11-07.json": "afb5cc01b3d83eb2b968a596a7c17f40f833d8b6c061d4c27920ae2735a578ca", // the owner's rate of 7 Nov: 94 to the dollar
 };
 
 test("every file in rates/ is loaded by rates.ts, is named for its date, and has the bytes it was committed with", () => {
@@ -72,5 +73,5 @@ test("a line carries the rupee rate of its own file, so a later file can change 
   const line = { provider: "p", model: "*", from: "2026-01-01", inputUsdPerMillion: 1, outputUsdPerMillion: 1, source: "docs/x" };
   assert.equal(costMicroInr({ ...line, inrPerUsd: 80 }, usage), 80_000_000);
   assert.equal(costMicroInr({ ...line, inrPerUsd: 90 }, usage), 90_000_000);
-  assert.equal(costMicroInr(line, usage), 87_000_000, "a line with no rate of its own uses the newest file's");
+  assert.equal(costMicroInr(line, usage), 94_000_000, "a line with no rate of its own uses the newest file's");
 });

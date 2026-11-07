@@ -176,7 +176,7 @@ export const en: Words = {
     },
     unknown: "unknown", total: "Total", subtotal: (n) => `Subtotal. ${n} ${t1(n, "item has", "items have")} no price yet, so this is not the whole cost.`, priceList: (d) => `Prices from the list of ${d}.`,
     caveats: {
-      "assumed-exchange-rate": "Dollar and euro prices use an assumed rate (₹88 and ₹100). A real bill may differ.",
+      "assumed-exchange-rate": "Dollar and euro prices use an assumed rate (₹94 and ₹100). A real bill may differ.",
       "provider-not-chosen": "No WhatsApp provider is chosen yet, so its fee is unknown.",
       "provider-not-priced": "The price list has no price for this provider.",
       "fee-not-priced": "The price list has no price for Geometer's fee.",
