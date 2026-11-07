@@ -7,6 +7,15 @@ import { createWorld } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { DEFAULT_OPTIONS, obligations } from "../../../../modules/unfinished/index.ts";
+import { notTestedFor } from "../report/data.ts";
+import { STRINGS } from "../report/strings.ts";
+
+test("a go-live certificate of a UPI centre says that automatic payment checking does not apply, in the centre's words", () => {
+  const ids = notTestedFor(settings);
+  assert.ok(ids.includes("upi-not-automatic") && ids.includes("real-upi") && !ids.includes("real-razorpay") && !ids.includes("payments-outside-razorpay"));
+  for (const language of ["en", "hi", "ml", "kn"] as const) assert.ok(STRINGS[language].notTested["upi-not-automatic"].length > 0);
+  assert.match(STRINGS.en.notTested["upi-not-automatic"], /automatic payment checking/);
+});
 
 const settings = parseSettings(JSON.parse(readFileSync(new URL("../settings/bright-tuition-upi.example.json", import.meta.url), "utf8")));
 

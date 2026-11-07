@@ -10,6 +10,8 @@ import { checkEvents } from "../../../../modules/runtime/events.ts";
 import { parseWhatsAppWebhook } from "../../../../modules/messaging/webhooks.ts";
 import { UPI_ACTIONS, upiObligations } from "../../../../modules/payments/upi/obligations.ts";
 import { DEFAULT_OPTIONS, obligations } from "../../../../modules/unfinished/index.ts";
+import { notTestedFor } from "../report/data.ts";
+import { STRINGS } from "../report/strings.ts";
 
 const settings = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")));
 
@@ -29,6 +31,23 @@ test("a screenshot comes through the webhook and the runtime's event check as a 
   assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.marked).length, 0, "a screenshot marks nothing paid");
   assert.equal(checkEvents({ events: [{ kind: "message", message: { ...message, image: "yes" } }] }).ok, false);
   assert.equal(checkEvents({ events: [{ kind: "message", message: { ...message, text: "hi" } }] }).ok, false, "a picture carries no words");
+});
+
+test("\"I paid\" in words asks the owner to look; \"I have not paid yet\" does not", async () => {
+  const w = createWorld({ settings });
+  await w.say("haircut tomorrow at 6pm");
+  await w.say("I have not paid yet");
+  assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.claim).length, 0);
+  await w.say("I have paid");
+  assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.claim && e.refs.via === "words").length, 1);
+});
+
+test("a go-live certificate of a UPI shop says that automatic payment checking does not apply, in the shop's words", () => {
+  const ids = notTestedFor(settings);
+  assert.ok(ids.includes("upi-not-automatic") && ids.includes("real-upi") && !ids.includes("real-razorpay") && !ids.includes("payments-outside-razorpay"));
+  for (const language of ["en", "hi", "ml", "kn"] as const) assert.ok(STRINGS[language].notTested["upi-not-automatic"].length > 0);
+  assert.match(STRINGS.en.notTested["upi-not-automatic"], /automatic payment checking/);
+  assert.ok(!notTestedFor(parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon.example.json", import.meta.url), "utf8")))).includes("upi-not-automatic"), "a Razorpay shop's list is as it was");
 });
 
 test("a restart keeps the ledger: the live code, the marks and a refund owed come back byte for byte, and the owner's next mark still counts once", async () => {

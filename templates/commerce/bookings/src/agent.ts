@@ -93,6 +93,8 @@ export type AgentEvent =
 export interface Agent { handle(event: AgentEvent): Promise<void> }
 
 /** "I paid", in the shop's four languages: on a UPI shop with a deposit waiting it asks the owner to look. It never marks anything paid. */
+/** A "no" in the same message ("I have not paid yet") makes it not a claim. */
+const NOT_PAID = /\b(?:not|haven'?t|hasn'?t|didn'?t|nahi|nahin|illa)\b|n't\b|नहीं|नही|ഇല്ല|അല്ല|ಇಲ್ಲ|ಆಗಿಲ್ಲ/iu;
 const PAID_CLAIM = /\b(?:paid|i have paid|payment done|sent the money|money sent|transferred)\b|पेमेंट कर दिया|भुगतान कर दिया|पैसे भेज दिए|पैसे भेजे|भेज दिया|പണം അടച്ചു|അടച്ചു|പണം അയച്ചു|ಪಾವತಿಸಿದ್ದೇನೆ|ಹಣ ಕಳುಹಿಸಿದ್ದೇನೆ|ಪಾವತಿ ಮಾಡಿದ್ದೇನೆ/iu;
 
 
@@ -1031,7 +1033,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const customer = customerOf(phone);
     const mode = reader.mode();
     // UPI: "I paid" while a deposit waits is read from a few plain words before any model; it is a claim, and the owner is asked to look. It marks nothing paid.
-    if (upi && !msg.reply && !customer.optedOut && PAID_CLAIM.test(msg.text) && latestBooking(store, phone, ["awaiting_deposit"])) {
+    if (upi && !msg.reply && !customer.optedOut && PAID_CLAIM.test(msg.text) && !NOT_PAID.test(msg.text) && latestBooking(store, phone, ["awaiting_deposit"])) {
       log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id }, { refs: { messageId: msg.id, step: "rules" } });
       return onPaidClaim(phone, "words");
     }
