@@ -17,7 +17,7 @@ export interface PanelConfig {
   signingKeyFile?: string;
   /** The Google address a calendar is shared with (a service account's), when the server has one for every shop. */
   calendarShareAddress?: string;
-  pathwaysDir: string;
+  templatesDir: string;
   /** Where to ask a shop's runtime for /status, and the file holding its bearer token. `{shop}` is filled in. Left out: not asked. */
   runtimeUrl?: string;
   runtimeTokenFile?: string;
@@ -78,7 +78,7 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
     ...(env.PANEL_DATA_KEY_FILE ? { dataKeyFile: env.PANEL_DATA_KEY_FILE } : {}),
     ...(env.PANEL_SIGNING_KEY_FILE ? { signingKeyFile: env.PANEL_SIGNING_KEY_FILE } : {}),
     ...(env.PANEL_CALENDAR_SHARE_ADDRESS ? { calendarShareAddress: env.PANEL_CALENDAR_SHARE_ADDRESS } : {}),
-    pathwaysDir: env.PANEL_PATHWAYS_DIR ? resolve(env.PANEL_PATHWAYS_DIR) : new URL("../../pathways/", import.meta.url).pathname,
+    templatesDir: env.PANEL_TEMPLATES_DIR ? resolve(env.PANEL_TEMPLATES_DIR) : new URL("../../templates/", import.meta.url).pathname,
     ...(env.PANEL_RUNTIME_URL ? { runtimeUrl: env.PANEL_RUNTIME_URL } : {}), ...(env.PANEL_RUNTIME_TOKEN_FILE ? { runtimeTokenFile: env.PANEL_RUNTIME_TOKEN_FILE } : {}),
     ...(env.PANEL_GUARD_URL ? { guardUrl: env.PANEL_GUARD_URL } : {}), ...(env.PANEL_GUARD_AGENT_TOKEN_FILE ? { guardAgentTokenFile: env.PANEL_GUARD_AGENT_TOKEN_FILE } : {}),
     ...(env.PANEL_WEBHOOK_URL ? { webhookUrl: env.PANEL_WEBHOOK_URL } : {}),

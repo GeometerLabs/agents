@@ -2,9 +2,9 @@
 // in the person's own language, and how they become the settings a builder would write. Languages, accounts and checks are the same steps as Bookings' (setup.ts). The form
 // is plain: a few rows for batches, one box with a student on each line, and the numbers. `validateSettings` of the Fees pathway is the last gate on everything.
 import type { Language } from "../../modules/language/languages.ts";
-import { batchName, validateSettings } from "../../pathways/fees/src/settings.ts";
-import type { Settings } from "../../pathways/fees/src/settings.ts";
-import { limitLinesOf, limitsOf } from "../../pathways/fees/report/certificate.ts";
+import { batchName, validateSettings } from "../../templates/education/fees/src/settings.ts";
+import type { Settings } from "../../templates/education/fees/src/settings.ts";
+import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
 import { normalizePhone } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";

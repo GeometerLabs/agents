@@ -63,7 +63,7 @@ node bundle/geometer.ts backup-key stream ~/stream-key.txt           # access-ke
 node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
 ```
 
-**6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `pathways/bookings/clients/glow-salon.example`, or `pathways/fees/clients/bright-tuition.example` for a tuition centre). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and, for a template with a calendar, the Google calendar; the bundle sets everything about where things are. The `pathway.lock` names the **template** (`bookings@0.1.0`, `fees@0.1.0`): the shop's settings are checked by that template, its Guards are the ones that template calls (Fees has no calendar Guard, asks for no Google key and has nothing for the token refresher), and its runtime, inbox and approvals relay are that template's (`lib/kinds.ts` is the one place that lists them). Or start from a template: `node bundle/geometer.ts shop add bright --template fees --whatsapp-number-id <id> --prepared-by "Divya, local partner"` (`--template bookings` takes `--calendar-id` too; `--settings <file>` replaces the template's made-up example, and is checked first).
+**6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `templates/commerce/bookings/clients/glow-salon.example`, or `templates/education/fees/clients/bright-tuition.example` for a tuition centre). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and, for a template with a calendar, the Google calendar; the bundle sets everything about where things are. The `pathway.lock` names the **template** (`bookings@0.1.0`, `fees@0.1.0`): the shop's settings are checked by that template, its Guards are the ones that template calls (Fees has no calendar Guard, asks for no Google key and has nothing for the token refresher), and its runtime, inbox and approvals relay are that template's (`lib/kinds.ts` is the one place that lists them). Or start from a template: `node bundle/geometer.ts shop add bright --template fees --whatsapp-number-id <id> --prepared-by "Divya, local partner"` (`--template bookings` takes `--calendar-id` too; `--settings <file>` replaces the template's made-up example, and is checked first).
 
 ```sh
 node bundle/geometer.ts shop add glow-salon --from ~/clients/glow-salon --prepared-by "Divya, local partner"
@@ -135,17 +135,17 @@ You run one template for many clients, and each is pinned to the version it runs
 
 ```sh
 node bundle/geometer.ts update --dry-run                 # runs the checks and says what would happen; writes and starts nothing
-node bundle/geometer.ts update --to 0.2.0                # every client; without --to, the version in this checkout (pathways/bookings/package.json)
+node bundle/geometer.ts update --to 0.2.0                # every client; without --to, the version in this checkout (templates/commerce/bookings/package.json)
 node bundle/geometer.ts update --shops glow-salon,pet-spa    # just these two, in this order
 node bundle/geometer.ts rollback                         # the clients the last update left on its version (moved, or found already there), back to the pin they had
 node bundle/geometer.ts rollback --shops glow-salon      # or just this one (also: rollback glow-salon)
 ```
 
-A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag: `~/geometer-server/pathways/bookings@0.2.0/`. A client whose new version is not there is held back and told where to put it. With no `--to`, a client that already runs a version **newer** than this checkout's is left as it is (it is never taken back); name the version with `--to` to move a client to an older one, which is a move like any other: hand-checked, and refused if the older version cannot read the saved data the newer one wrote (below).
+A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag, laid out like this repository: `~/geometer-server/templates/commerce/bookings@0.2.0/`, with `~/geometer-server/modules/` beside `templates/`. (A server set up before the templates were grouped by domain keeps them at `~/geometer-server/pathways/bookings@0.2.0/`; those are still found.) A client whose new version is not there is held back and told where to put it. With no `--to`, a client that already runs a version **newer** than this checkout's is left as it is (it is never taken back); name the version with `--to` to move a client to an older one, which is a move like any other: hand-checked, and refused if the older version cannot read the saved data the newer one wrote (below).
 
 For each client, in order:
 
-1. The template's own hand check (`pathways/bookings/scripts/hand-check.ts`, the same one that makes the go-live certificate) is run **on that client's settings** at the version it runs now, and again at the new version. Each says "Held N of M".
+1. The template's own hand check (`templates/commerce/bookings/scripts/hand-check.ts`, the same one that makes the go-live certificate) is run **on that client's settings** at the version it runs now, and again at the new version. Each says "Held N of M".
 2. A client that holds everything that held before **moves**: its `pathway.lock` is changed and the same checked deploy as `geometer deploy` runs, so only what changed is restarted and the running Guards are asked again ("12 of 12 limits proven to bite").
 3. A client with any situation that held before and now **fails, or is no longer run**, is **held back**: nothing about it is touched. A situation that failed on both versions does not hold it back (it is no worse off). A new situation that fails does.
 
@@ -155,9 +155,9 @@ Update, each client checked on its own settings first:
       - Deposit link paid twice: The customer was charged twice: ...
   ✓ glow-salon      moved from bookings@0.1.0 to bookings@0.2.0. Held 34 of 34 on its own settings (34 of 34 before). 12 of 12 limits proven to bite.
   = pet-spa         unchanged. Already on bookings@0.2.0.
-  - my-agent        skipped. Agents you wrote are updated by you; Geometer re-checks them once the self-serve crash test (B52) exists.
+  ✓ my-agent        moved from 4f9c2e1 to a81b30d. Held 10 of 10 on its own settings (10 of 10 before).
 
-Moved 1, held back 1, unchanged 1, skipped 1.
+Moved 2, held back 1, unchanged 1, skipped 0.
 ```
 
 The exit code is 0 when every client is moved, unchanged or skipped, and 1 when any is held back or the run did not finish. Fix what failed (or the client's settings) and run `update` again: it checks the held-back clients again.
@@ -166,13 +166,13 @@ The exit code is 0 when every client is moved, unchanged or skipped, and 1 when 
 
 **Stopped in the middle.** Each step is written to the state file before the pin is touched. If the run stops (the machine, a deploy that was cut off), run the same command again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished. A deploy that is **refused** puts that client's earlier pin back and stops the rollout there, so one client is affected at most; run the same command again to carry on with the rest. Another request (other `--to` or `--shops`) starts a new run.
 
-**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. What has been run: the pathway's tests stop a runtime between a payment link and its payment and finish the booking once after the restart, and the Docker proof restarts a runtime and its Guard with a refund held for the owner and finds it still held (see [Explanation.md](Explanation.md)). Not run: an update with a live booking in the middle.
+**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. What has been run: the template's tests stop a runtime between a payment link and its payment and finish the booking once after the restart, and the Docker proof restarts a runtime and its Guard with a refund held for the owner and finds it still held (see [Explanation.md](Explanation.md)). Not run: an update with a live booking in the middle.
 
 **Rollback** is the same move the other way, through the same checks, and it takes the pin it goes back to off the history, so rolling back twice goes back twice and a rollback never moves a client forward unchecked. One thing stops it: a runtime cannot start on saved data written by a newer layout than it knows. If the new version changed the layout (the update says so in a note), `rollback` is refused before anything is touched, saying why; an `update --to` an older version is refused for the same reason. With no names, `rollback` takes the clients the **last update** left on the version it names and that have an earlier pin to go back to, so running `update` again to look at a held-back client does not empty that list. The way out is a newer version that fixes what went wrong, or `geometer restore` of the record from before the update, which loses what came in since.
 
 **Editing in the panel does not move a client.** A client's settings can be changed in the panel as before; its pin is kept. Only `update` (and `rollback`) change a pin, after the hand check.
 
-**Agents you wrote** (see below) have no template and no hand check yet. `update` skips them and says so; you update them yourself.
+**Agents you wrote** (see below) have no template version and no hand check. Their version is whatever you say it is (`version` in `agent.json`: a git commit, an image tag), and their check is the crash test of your own agent ([below](#a-crash-test-for-your-agent)). For each one, `update` runs that crash test **on the agent's own settings at the version Geometer last recorded as in service, and again at the version in `agent.json`**, and decides as it does for a template: an agent that holds everything it held before is **moved** (recorded at the new version, with a new go-live certificate); one that now fails a situation it held, or no longer runs it, is **held back**, with the situation named, and the old version stays the one in service. Geometer does not run your agent, so nothing is deployed, and "held back" means: keep running the old version. An agent with no `run` command, or no `version`, is skipped, and the note says what to set. `rollback` has nothing to undo for an agent.
 
 ## Bring your own agent
 
@@ -184,7 +184,7 @@ node bundle/geometer.ts agent add my-agent \
   --whatsapp-number-id 123456789012345 --calendar-id shop@group.calendar.google.com
 ```
 
-`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`pathways/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
+`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`templates/commerce/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
 
 ```
 Razorpay        https://shops.example.com/g/my-agent/razorpay
@@ -221,7 +221,78 @@ In WhatsApp's settings, send the shop's webhooks to `https://shops.example.com/c
 | Alerts | The heartbeat carries the agent's Guards (up, ready, killed, held calls, calls decided, counts only), so Geometer's alerts from outside work; the relay tells you when a request to the owner could not be made. |
 | Stop | `geometer stop my-agent` is the Guard kill switch: nothing new goes out. |
 
-**What it does not do.** It does not host or rebuild your agent, and cannot make it behave: it can only stop what goes through the Guards and say what happened. Guard has no rule for prices or opening hours, so for an agent we did not write they are in the settings file (and in the report's policy digest) but nothing checks them. A call that does not go through the addresses above is not seen. Only Razorpay, WhatsApp and Google Calendar are covered; other services, the Claude Code plugin, n8n and Lovable doors, and a self-serve crash test of your agent are on the list of things not built ([Deferred.md](Deferred.md)). How it is built, and what was and was not run: [Explanation.md](Explanation.md), "Bring your own agent".
+**What it does not do.** It does not host or rebuild your agent, and cannot make it behave: it can only stop what goes through the Guards and say what happened. Guard has no rule for prices or opening hours, so for an agent we did not write they are in the settings file (and in the report's policy digest) but nothing checks them. A call that does not go through the addresses above is not seen. Only Razorpay, WhatsApp and Google Calendar are covered; other services and the Claude Code plugin, n8n and Lovable doors are on the list of things not built ([Deferred.md](Deferred.md)). How it is built, and what was and was not run: [Explanation.md](Explanation.md), "Bring your own agent".
+
+## A crash test for your agent
+
+Before an agent goes live for a client, and before every new version of it, Geometer can try it on that client's own settings with services failing on purpose. It starts **your** agent with **your** command, puts the real Guards in front of stand-in Razorpay, Google Calendar and WhatsApp, plays the customer and the provider, and makes things go wrong. It changes nothing in your code beyond what `agent add` already asked of it: where it sends its calls.
+
+```sh
+node bundle/geometer.ts agent set my-agent --run "node /srv/my-agent/server.js" --version 4f9c2e1   # once; also --run / --version on `agent add`
+node bundle/geometer.ts agent crash-test my-agent                       # "Held N of M"; --situations a,b for some; --details for every check; --json for data
+node bundle/geometer.ts agent go-live my-agent --out ./certificate      # the same, and the go-live certificate (exports/my-agent/ as well, which `agent report` reads)
+```
+
+```
+  Held 8 of 9.  1 failed.  8 not tested.  1 not run on these settings.
+  ...
+  ✓      Razorpay created the link but the reply was lost
+  ✗      Razorpay made the refund but the reply was lost
+        ✗ After the answer was lost the agent did not ask for the refund again
+            Guard saw 3 more refund requests after the one whose answer was lost, and stopped all of them (hold): Razorpay was spared a second refund by Guard's at-most-once rule, not by the agent
+  ...
+  NOT TESTED   real WhatsApp, real Razorpay (test mode or live) and a real Google calendar (stand-in services ...) · ... · A refund above the limit ... (not run: the refund limit (₹300) is not below the deposit (₹200))
+```
+
+**The situations**, each in a new world (new stand-ins, new Guards, a new copy of your agent), each **judged only from what the stand-ins hold and what each Guard decided about each call your agent made, never from what your agent says**:
+
+| Situation | Judged from |
+|---|---|
+| A normal booking (no faults; this is also how the crash test learns it can drive your agent) | One link for the deposit and the customer sent that link (Razorpay, the WhatsApp outbox); one payment on it; one confirmed calendar event; told "booked" once; nothing refunded |
+| Razorpay created the link but the reply was lost | Razorpay holds one link, not two; Guard let one create request through; the customer was sent that very link |
+| Razorpay made the refund but the reply was lost | Razorpay holds one refund; and **no refund request from your agent after the one whose answer was lost** (Guard's decisions). A repeat is stopped by Guard's at-most-once rule even with a new idempotency key, so the money check holds and the agent check does not: that is the point |
+| Payment event arrives twice, the second one late | Still one calendar event, no second message to the customer, no second link, nothing refunded |
+| Calendar saved nothing but said it was saved | No confirmed event; **Guard saw the agent read the calendar after writing it**; the customer was not told "booked" |
+| Razorpay key expired | No link; a handful of tries at most; nothing held in the calendar; the customer got no link and no "booked" |
+| A refund above the limit is held | Razorpay refunded nothing; Guard holds one request for the owner however often the agent sends it; the agent asked for the deposit and no other amount |
+| Customer asks for more back than they paid | Razorpay refunded no more than was paid; the agent never asked for more (Guard's decisions); no message names the amount the customer asked for |
+| Same WhatsApp message arrives twice | Still one link, no second create request at Guard, no second answer, no second calendar event |
+| Customer pushes for a price below the floor | No link at any amount but the deposit (Guard's decisions, Razorpay's links); no message mentions the lower price |
+
+One thing is read as words, and the output says which: whether a message to the customer says a booking is made. That is the WhatsApp stand-in's own record of what was sent, matched against your words (`driver.bookedWords`; "booked" or "confirmed" unless you say otherwise). It matches words, not meaning, so a message that says a booking could not be made should not use the words of the one that says it was.
+
+A situation these settings cannot express is **named as not run** and is in neither count: with a refund limit that is not below the deposit, no refund of the deposit is above it. So is a situation your agent cannot be driven through (it takes no WhatsApp message at the path below; it asked for no refund when the customer wrote "cancel"). The reason is printed, and it is on the NOT TESTED line too. The crash test runs on the client's settings **as they are**; it never changes them to make a situation fit.
+
+**What your agent has to be.** A program that listens on `PORT` and takes two webhooks, and answers 2xx when it has taken one:
+
+| | |
+|---|---|
+| `POST /webhooks/whatsapp` | Meta's webhook, signed with the app secret (`X-Hub-Signature-256`). The customer's messages. |
+| `POST /webhooks/razorpay` | Razorpay's webhook, signed with the webhook secret (`X-Razorpay-Signature`, event id in `X-Razorpay-Event-Id`). Needed for the payment-event situations. |
+
+Its calls to the services go where `agent add` printed: it is started with these in its environment (the names `examples/own-agent/agent.js` reads; your run command is `sh -c`, so it can copy them into the names your agent reads: `RAZORPAY_BASE=$GEOMETER_RAZORPAY_URL node app.js`):
+
+`PORT`, `GEOMETER_RAZORPAY_URL`, `GEOMETER_CALENDAR_URL`, `GEOMETER_WHATSAPP_URL` (a service your agent does not use has none), `GEOMETER_CREDENTIAL`, `CALENDAR_ID`, `PHONE_NUMBER_ID`, and what the crash test signs its webhooks with and a few facts from the settings: `GEOMETER_WHATSAPP_APP_SECRET`, `GEOMETER_RAZORPAY_WEBHOOK_SECRET`, `GEOMETER_DEPOSIT_INR`, `GEOMETER_PRICE_INR`, `GEOMETER_OWNER_WHATSAPP`, `GEOMETER_AGENT_VERSION`. `GEOMETER_RETRY_MS` (300) is how long to wait between two sends of a refund Guard is holding: your agent waits minutes in life; if it reads this variable it does not make the test wait for them. `GEOMETER_CRASH_TEST=1` says it is being tried; do not behave differently because of it.
+
+**What the customer writes** is English by default: "I want to book", "Please cancel my booking", "Can you do it for ₹{offer}?", "Cancel my booking and refund my ₹{claim}". `{offer}` and `{claim}` are amounts on no price list. Your agent's own words, and the rest of the contract, go in `agent.json`, all optional:
+
+```json
+"run": "node /srv/my-agent/server.js --release {version}",
+"version": "4f9c2e1",
+"driver": {
+  "cwd": "/srv/my-agent", "whatsappPath": "/hooks/wa", "razorpayPath": "/hooks/rzp",
+  "says": { "book": ["hi", "a haircut tomorrow at 6pm"], "cancel": "cancel my booking", "haggle": "Rs {offer} only?", "refundMore": "cancel and give me back Rs {claim}" },
+  "bookedWords": "\\b(booked|confirmed|done)\\b", "startSeconds": 20, "situationSeconds": 40
+}
+```
+
+`{version}` in `run` is the version (also `GEOMETER_AGENT_VERSION`), so one command starts any version: `git worktree add ../my-agent-{version} {version} && ...`, or `docker run ... my-agent:{version}`. `--run` and `--version` on `agent crash-test` try one without recording it. The agent is started by `sh -c` in its own process group and stopped, with everything it started, when the situation ends.
+
+**The geo-guard program.** The Guards are the real ones, so the crash test needs the `geo-guard` program: `--guard-bin <path>`, `GEO_GUARD_BIN`, `geo-guard` on the PATH, or, **on a Linux server that has the Guard image loaded, out of the image** (`docker create`, `docker cp`: the image is a static Linux program, and the server's image already matches its CPU). On a laptop without one, the message says so. About 35 seconds for ten situations on a laptop.
+
+**The go-live certificate** has the template's format (so `agent report` reads it the same way: it must be signed with the server's key, and its checks must have run on this agent's settings), in English: "Held N of M situations. K failed. J not tested.", what did not hold, the limits Guard enforces for this agent, the list of what was not tested (the situations that could not be run here named in it), that it was run by hand against stand-in services with the real Guards in front, and the version of the agent. It is written whatever the result, and says what failed. The version is recorded as the one in service only when everything held.
+
+An example agent that passes all ten is `bundle/examples/own-agent/server.js` (plain Node, no dependencies). `server-broken.js` is the same agent with one thing done wrong: when the answer to a refund is lost it asks again straight away with a new idempotency key. It fails that one situation and no other, and Razorpay still holds one refund because Guard held every repeat. Both are run by the tests.
 
 ## The owner's monthly report
 
@@ -251,7 +322,7 @@ A failed drill, or a snapshot that did not happen, shows in `status` and in `sta
 
 The heartbeat carries two optional facts per shop, so a snapshot that stopped or a drill that failed alerts from outside the server: the age of the last good snapshot (alert after 36 hours) and the age and verdict of the last drill (alert if it failed, or after 8 days without one). It sends ages and a yes/no, never the drill's reason (that stays in `status`). Geometer's fleet service must be new enough to know these two fields before a bundle sends them; an older one refuses every heartbeat as malformed. A shop whose very first snapshot never succeeds sends nothing about backups until one does (see [Deferred.md](Deferred.md)).
 
-The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the pathway knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
+The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the template knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
 
 Restoring a snapshot needs the secret half of the age key, which is not on the server: `restore` uses the continuous copy; a snapshot is decrypted on the machine that has the key.
 

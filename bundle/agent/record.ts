@@ -7,7 +7,7 @@
 // "unconfirmed" in a record that is append-only; when the service shows it later, a confirmed entry for the same thing is added after it (the report marks the earlier one "settled later").
 import { digest } from "../../modules/record/record.ts";
 import type { Action, Outcome, RecordEntry, RuleDecision } from "../../modules/record/record.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import { hide } from "../backup/export.ts";
 import { label, typedMap, typedText } from "./facts.ts";
 import type { Approval, Decision, Facts } from "./facts.ts";

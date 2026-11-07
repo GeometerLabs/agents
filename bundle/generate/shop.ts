@@ -138,7 +138,7 @@ export function withFleetAi(runtime: Record<string, unknown>, fleetAi: "buttons"
   if (fleetAi !== "buttons" || Object.keys(runtime).length === 0) return runtime;
   const withIt = { ...runtime, ai: "buttons" };
   if (validate(withIt, "/").ok) return withIt;
-  if (validate(runtime, "/").ok) notes.push("fleet asked for button mode, but this pathway version does not know the ai setting yet, so the shop keeps its AI. Update the pathway, and the setting is written on the next deploy.");
+  if (validate(runtime, "/").ok) notes.push("fleet asked for button mode, but this template version does not know the ai setting yet, so the shop keeps its AI. Update the template, and the setting is written on the next deploy.");
   return runtime;
 }
 
@@ -165,7 +165,7 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
   const withIt = { ...runtime, report: { preparedBy: facts.preparedBy, innovator: facts.innovator, pageBaseUrl: facts.pageBaseUrl, pagesDir: REPORTS_DIR, source: facts.source } };
   const checked = validate(withIt, "/");
   if (checked.ok) return withIt;
-  if (validate(runtime, "/").ok) notes.push(`the monthly report to the owner is not switched on for this shop: this pathway version did not accept the report setting${checked.errors?.[0] ? ` (${checked.errors[0]})` : ""}, so the shop starts without it. Update the pathway, and it is written on the next deploy.`);
+  if (validate(runtime, "/").ok) notes.push(`the monthly report to the owner is not switched on for this shop: this template version did not accept the report setting${checked.errors?.[0] ? ` (${checked.errors[0]})` : ""}, so the shop starts without it. Update the pathway, and it is written on the next deploy.`);
   return runtime;
 }
 

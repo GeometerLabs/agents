@@ -18,15 +18,15 @@ import { readShop } from "../lib/server.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { buildHeartbeat } from "../services/heartbeat.ts";
-import { validateRuntimeConfig } from "../../pathways/fees/server/config.ts";
-import { createKit } from "../../pathways/fees/test/runtime-kit.ts";
-import { PARENT } from "../../pathways/fees/test/runtime-kit.ts";
+import { validateRuntimeConfig } from "../../templates/education/fees/server/config.ts";
+import { createKit } from "../../templates/education/fees/test/runtime-kit.ts";
+import { PARENT } from "../../templates/education/fees/test/runtime-kit.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
 import { PHONE_NUMBER_ID, serverConfig } from "./helpers.ts";
 import { secretsFor, world } from "./world.ts";
 import type { World } from "./world.ts";
 
-const FEES_CLIENT = new URL("../../pathways/fees/clients/bright-tuition.example", import.meta.url).pathname;
+const FEES_CLIENT = new URL("../../templates/education/fees/clients/bright-tuition.example", import.meta.url).pathname;
 const feesRuntime = (change: Record<string, unknown> = {}) => ({ mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 }, ...change });
 
 /** Put a Fees centre into a world's server folder, the way `shop add` or the panel would. */
@@ -54,7 +54,7 @@ test("a shop's settings are judged by the template its pathway.lock names; a loc
     assert.equal(shop.settings.owner.language, "en");
 
     // Bookings' settings under a Fees lock are Fees' problem, in Fees' words
-    cpSync(new URL("../../pathways/bookings/clients/glow-salon.example/settings.json", import.meta.url).pathname, join(w.paths.shop("bright"), "settings.json"));
+    cpSync(new URL("../../templates/commerce/bookings/clients/glow-salon.example/settings.json", import.meta.url).pathname, join(w.paths.shop("bright"), "settings.json"));
     assert.ok(readShop(w.root, "bright").problems.some((p) => /Add at least one batch/.test(p)), readShop(w.root, "bright").problems.join("|"));
 
     for (const lock of ["nonesuch@0.1.0", "constructor@0.1.0", "toString@0.1.0".toLowerCase()]) {
@@ -128,7 +128,7 @@ test("the compose file: the centre's runtime waits for its two Guards, runs the 
     const server = serverConfig();
     const p = plan(w);
     const dirs: Dirs = { app: w.ctx.appDir, generated: w.paths.generated, secrets: w.paths.secrets, status: w.paths.status, fleet: w.paths.fleet, shops: w.paths.shops, secretsInbox: w.paths.secretsInbox, requests: w.paths.requests, exports: w.paths.exports, panelData: w.paths.panel, config: w.paths.config };
-    const deploy1 = { name: "bright", index: 1, pathwayDir: join(w.ctx.appDir, "pathways", "fees"), guards: p.guards.map((g) => ({ kind: g.kind, service: g.service, tenant: "bright" })) };
+    const deploy1 = { name: "bright", index: 1, pathwayDir: join(w.ctx.appDir, "templates", "education", "fees"), guards: p.guards.map((g) => ({ kind: g.kind, service: g.service, tenant: "bright" })) };
     const composed = composeServer(server, dirs, [deploy1], { backup: false });
     const names = Object.keys(composed.services);
     assert.ok(names.includes("g-bright-razorpay") && names.includes("g-bright-whatsapp") && names.includes("rt-bright"));
@@ -229,7 +229,7 @@ test("shop add --template fees starts a centre from the template: the example se
     const dir = w.paths.shop("bright");
     assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.1.0\n");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 } });
-    assert.equal(readFileSync(join(dir, "settings.json"), "utf8"), readFileSync(new URL("../../pathways/fees/settings/bright-tuition.example.json", import.meta.url), "utf8"));
+    assert.equal(readFileSync(join(dir, "settings.json"), "utf8"), readFileSync(new URL("../../templates/education/fees/settings/bright-tuition.example.json", import.meta.url), "utf8"));
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local partner" });
     assert.deepEqual(readShop(w.root, "bright").problems, [], "the shop reads cleanly");
     w.handIn("bright", feesSecrets("bright"));

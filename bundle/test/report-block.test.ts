@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { validateRuntimeConfig } from "../../pathways/bookings/server/config.ts";
+import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
 import { applyOnce } from "../apply.ts";
 import { checkShop, deploy, desiredHashOf } from "../deploy.ts";
 import { main } from "../geometer.ts";
@@ -116,7 +116,7 @@ test("a pathway whose validator refuses the report key keeps the shop starting: 
     assert.equal("report" in p.runtime, false);
     assert.equal(validateRuntimeConfig(p.runtime, "/").ok, true, "it is a config that pathway starts with");
     assert.equal(p.notes.length, 1);
-    assert.match(p.notes[0], /monthly report to the owner is not switched on for this shop: this pathway version did not accept the report setting \(runtime\.json: "report" is not a setting I know\.\)/u);
+    assert.match(p.notes[0], /monthly report to the owner is not switched on for this shop: this template version did not accept the report setting \(runtime\.json: "report" is not a setting I know\.\)/u);
     assert.deepEqual(p.problems, [], "a note, not a refusal");
     // the button-mode key and the report key are judged one at a time: a pathway that knows one and not the other keeps the one it knows
     putAnswer(t.paths, answer({ ai: "buttons", reason: "overage_unfunded" }));
@@ -128,9 +128,9 @@ test("a pathway whose validator refuses the report key keeps the shop starting: 
 
 /** A version kept beside the server, which is where B53 leaves a client it held back: today's pathway copied (with the shared modules beside it, where a kept checkout finds them), with the report setting taken out of what its runtime knows. */
 function keepOldVersion(w: ReturnType<typeof world>, version: string, edit?: (configText: string) => string): string {
-  const dir = join(w.root, "pathways", `bookings@${version}`);
-  cpSync(join(w.ctx.appDir, "pathways", "bookings"), dir, { recursive: true });
-  // the shared code a pathway imports sits beside the pathways folder (<server>/modules): a kept checkout finds it there
+  const dir = join(w.root, "templates", "commerce", `bookings@${version}`);
+  cpSync(join(w.ctx.appDir, "templates", "commerce", "bookings"), dir, { recursive: true });
+  // the shared code a template imports sits beside the templates folder (<server>/modules): a kept checkout finds it there
   if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
   const pkg = join(dir, "package.json");
   writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
@@ -177,8 +177,8 @@ test("a pinned version whose runtime-config check cannot be read gets neither op
     w.handIn("glow-salon");
     const checked = await checkShop(w.ctx, "glow-salon");
     assert.deepEqual(checked.problems, []);
-    assert.ok(checked.notes.some((n) => /monthly report .* not switched on .*\(I could not read the runtime-config check of the pathway in .*bookings@0\.0\.8 \(this file does not load\)\)/u.test(n)), checked.notes.join("\n"));
-    assert.ok(checked.notes.some((n) => /fleet asked for button mode, but this pathway version does not know the ai setting yet/u.test(n)), "button mode is skipped the same way");
+    assert.ok(checked.notes.some((n) => /monthly report .* not switched on .*\(I could not read the runtime-config check of the template in .*bookings@0\.0\.8 \(this file does not load\)\)/u.test(n)), checked.notes.join("\n"));
+    assert.ok(checked.notes.some((n) => /fleet asked for button mode, but this template version does not know the ai setting yet/u.test(n)), "button mode is skipped the same way");
     await deploy(w.ctx);
     const generated = generatedRuntime(w);
     assert.equal("report" in generated || "ai" in generated, false);

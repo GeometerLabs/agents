@@ -22,7 +22,7 @@ import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
 import { KINDS, kindFor } from "./lib/kinds.ts";
-import { pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
+import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { ensureSecret, panelUser, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
@@ -168,7 +168,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const first = planShop(server, folder, {}, check);
   problems.push(...first.problems);
   notes.push(...first.notes);
-  if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${folder.lock.pathway}@${folder.lock.version}`)}, or change the pin once that version has passed the crash test with this shop's settings.` });
+  if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
   problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch.
   const pinned = folder.pins.razorpay;
@@ -237,9 +237,9 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
 
 // ---- writing the server and bringing it up ------------------------------------------------------------------------------------------------
 
-function deployOf(name: string, shop: { index: number; applied?: Snapshot }): ShopDeploy {
+function deployOf(ctx: Context, name: string, shop: { index: number; applied?: Snapshot }): ShopDeploy {
   const s = shop.applied!;
-  return { name, index: shop.index, pathwayDir: s.pathwayDir, guards: Object.values(s.guards).map((g) => ({ kind: g.kind as GuardPlan["kind"], service: g.service, tenant: name })) };
+  return { name, index: shop.index, pathwayDir: appliedPathwayDir(ctx.appDir, ctx.dir, s) ?? s.pathwayDir, guards: Object.values(s.guards).map((g) => ({ kind: g.kind as GuardPlan["kind"], service: g.service, tenant: name })) };
 }
 
 /** Write every generated file for the whole server from what has been applied, and return the compose text. */
@@ -250,7 +250,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const snap = s.applied!;
     const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string } };
     const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string } } };
-    return { ...deployOf(name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1] };
+    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1] };
   });
   for (const [name, s] of applied) {
     const client = join(p.generated, "shops", name, "client");

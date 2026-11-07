@@ -87,14 +87,14 @@ test("the benefit lines are the ones in the pricing document, in all four langua
 
 for (const language of ["ml", "kn"] as const) {
   test(`REVIEW-${language}.md carries every line of the panel's ${language} words, as section 7`, () => {
-    const committed = readFileSync(new URL(`../../../pathways/bookings/REVIEW-${language}.md`, import.meta.url), "utf8");
+    const committed = readFileSync(new URL(`../../../templates/commerce/bookings/REVIEW-${language}.md`, import.meta.url), "utf8");
     const section = panelReviewSection(language);
     assert.ok(committed.includes("## 7. The panel and the phone setup"), "section 7 is there");
     // Reviewers fill the last column, so compare the cells before it, row by row.
     const cellsOf = (line: string) => line.split(/(?<!\\)\|/u).slice(1, -1).map((c) => c.trim());
     const tail = committed.slice(committed.indexOf("## 7. The panel and the phone setup")).trimEnd().split("\n");
     const wanted = section.trimEnd().split("\n");
-    assert.equal(tail.length, wanted.length, "section 7 is a different length: run  node bundle/panel/review-sheet.ts " + language + " > pathways/bookings/REVIEW-" + language + ".md  (and keep any reviewer notes)");
+    assert.equal(tail.length, wanted.length, "section 7 is a different length: run  node bundle/panel/review-sheet.ts " + language + " > templates/commerce/bookings/REVIEW-" + language + ".md  (and keep any reviewer notes)");
     wanted.forEach((line, i) => {
       if (!line.startsWith("|")) assert.equal(tail[i], line, `line ${i + 1} of section 7`);
       else assert.deepEqual(cellsOf(tail[i]).slice(0, -1), cellsOf(line).slice(0, -1), `line ${i + 1} of section 7`);

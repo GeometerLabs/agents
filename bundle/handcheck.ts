@@ -1,4 +1,4 @@
-// Running a template's own hand check (pathways/<name>/scripts/hand-check.ts) at one version on one client's own settings, reading its answer, and
+// Running a template's own hand check (templates/<domain>/<name>/scripts/hand-check.ts) at one version on one client's own settings, reading its answer, and
 // comparing two answers. The hand check is run as the program it is, started through the Runner, so each version brings its own situations and the
 // tests can answer for it. The answer is read from the same lines a person reads ("Held N of M", then one line per situation, and under a failed
 // one the checks that failed), so any version that prints them can be asked, and a version that prints something else is held back, not guessed at.

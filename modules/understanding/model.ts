@@ -11,7 +11,7 @@ export interface TokenUsage { inputTokens: number; outputTokens: number; cachedI
 export type Step = "rules" | "decision" | "model";
 
 /**
- * What it cost to understand one message. Written to the record (see pathways/bookings/Explanation.md, "Understanding record fields (for the cost meter)").
+ * What it cost to understand one message. Written to the record (see templates/commerce/bookings/Explanation.md, "Understanding record fields (for the cost meter)").
  * `costMicroInr`: millionths of a rupee, from the dated rate table; null when the table has no price for that provider and model (never 0).
  */
 export interface Understood {
@@ -27,6 +27,8 @@ export interface Understood {
   tried: Step[];
   /** The steps that were asked and could not answer (error, timeout, an answer that was not usable). The rules then read the message. */
   failed: Step[];
+  /** The steps left out on purpose because they were paused after failing again and again (ai-state.ts). Left out of the object when none was. */
+  skipped?: Step[];
 }
 
 /** What it costs to read a message with the rules alone: nothing. A parser that is not a router says nothing about cost, and it is the rules. */
@@ -58,6 +60,11 @@ export interface ParseResult<I extends IntentBase = IntentBase> {
 export interface ParseOptionsBase {
   /** Read it with the rules only: the shop is in button mode (allowance used up, switched off from outside, or a model is down). */
   rulesOnly?: boolean;
+  /**
+   * Steps not to ask this time because they keep failing and are paused (ai-state.ts). The reader sets it. The router honours it only for a step with another step
+   * after it, so a message is never left with nobody to read it except the rules because of a pause.
+   */
+  skipSteps?: readonly Step[];
 }
 
 export interface IntentParser<I extends IntentBase = IntentBase, C = unknown, O extends ParseOptionsBase = ParseOptionsBase> {
@@ -70,6 +77,9 @@ export interface IntentParser<I extends IntentBase = IntentBase, C = unknown, O 
 }
 
 export const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/** How likely the decision model thought the option it chose was, 0 to 1. Here and not in the router, so a template's reading can use it without the router, the price table and the HTTP code coming with it (the browser demo has none of them). */
+export const chosenProbability = (a: ChoiceAnswer): number => a.probabilities[a.choice] ?? 0;
 
 /** What the decision model is asked for one message, and how its answers become an intent. `read` gives null when the model is not sure. */
 export interface DecisionPlan<I extends IntentBase> {

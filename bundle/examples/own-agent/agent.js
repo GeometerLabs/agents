@@ -15,8 +15,8 @@
 
 /** An agent for one shop. `fetchFn` is for a test; everything else is where the three services' addresses are now. */
 export function createAgent({ razorpay, calendar, whatsapp, credential, calendarId, phoneNumberId, fetchFn = fetch }) {
-  const call = async (method, url, body) => {
-    const response = await fetchFn(url, { method, headers: { authorization: `Bearer ${credential}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  const call = async (method, url, body, extraHeaders = {}) => {
+    const response = await fetchFn(url, { method, headers: { authorization: `Bearer ${credential}`, "content-type": "application/json", ...extraHeaders }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
     const text = await response.text();
     let json = null;
     try { json = JSON.parse(text); } catch { /* not JSON */ }
@@ -31,8 +31,14 @@ export function createAgent({ razorpay, calendar, whatsapp, credential, calendar
     readLink: (id) => call("GET", `${razorpay}/v1/payment_links/${encodeURIComponent(id)}`),
     bookSlot: ({ summary, startsAt, minutes = 30 }) => call("POST", events, { summary, start: { dateTime: new Date(startsAt).toISOString() }, end: { dateTime: new Date(startsAt + minutes * 60_000).toISOString() } }),
     tell: ({ to, text }) => call("POST", `${whatsapp}/v26.0/${phoneNumberId}/messages`, { messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
-    /** One try at a refund. 202 means the owner has been asked and the call is waiting; 200 means it was made. */
-    refundOnce: ({ paymentId, amountPaise, receipt }) => call("POST", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refund`, { amount: amountPaise, receipt }),
+    /** One try at a refund. 202 means the owner has been asked and the call is waiting; 200 means it was made. `idempotencyKey` is Razorpay's own header, which Guard replaces with a key it derives. */
+    refundOnce: ({ paymentId, amountPaise, receipt, idempotencyKey }) => call("POST", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refund`, { amount: amountPaise, receipt }, idempotencyKey ? { "X-Refund-Idempotency": idempotencyKey } : {}),
+    /** What Razorpay holds as links with this reference: how to find a link whose creation answer was lost (HTTP 504 from Guard) without making a second one. */
+    findLink: (reference) => call("GET", `${razorpay}/v1/payment_links?reference_id=${encodeURIComponent(reference)}`),
+    /** The calendar's own record of one event: how to know that a booking was really saved. */
+    getEvent: (id) => call("GET", `${events}/${encodeURIComponent(id)}`),
+    /** What Razorpay holds as refunds against a payment: how to know a refund whose answer was lost was made. */
+    listRefunds: (paymentId) => call("GET", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refunds`),
     /** Keep sending the identical refund until it is no longer held, or `timeoutMs` is up. Nothing else is done to hurry it: only the owner can approve. */
     async refundUntilDone(refund, { everyMs = 5_000, timeoutMs = 24 * 3_600_000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now } = {}) {
       const stop = now() + timeoutMs;

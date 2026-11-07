@@ -1,8 +1,8 @@
 // MACHINE-WRITTEN Malayalam for the panel and the phone setup. REVIEW MARKER: "machine-written" (see languages.ts). A native speaker must read every
-// line before a real shop sees it; the lines are on pathways/bookings/REVIEW-ml.md, section 7.
+// line before a real shop sees it; the lines are on templates/commerce/bookings/REVIEW-ml.md, section 7.
 //
 // The same keys, in the same order, with the same function shapes as `en` in words.ts. Everyday spoken Malayalam, polite "നിങ്ങൾ" forms. Words follow
-// what the agent's own Malayalam already says (pathways/bookings/report/strings.ts and src/language/templates.ts): ഡെപ്പോസിറ്റ്, റീഫണ്ട്, ബുക്കിംഗ്,
+// what the agent's own Malayalam already says (templates/commerce/bookings/report/strings.ts and src/language/templates.ts): ഡെപ്പോസിറ്റ്, റീഫണ്ട്, ബുക്കിംഗ്,
 // കലണ്ടർ, ഏജന്റ്, റിപ്പോർട്ട്, പരിധികൾ, ഉടമ, ഉപഭോക്താക്കൾ. Values that are passed in (amounts, numbers, names, dates, addresses) are shown exactly as
 // given, in Western digits, with a space or punctuation after them and no ending glued on. The four benefit lines under setup.limits (price, booked,
 // language, charge) are copied from the Malayalam column of docs/product/gtm-and-revenue.md. Nothing here says a shop is safe or guaranteed.
@@ -44,7 +44,7 @@ export const ml: Words = {
     "runtime-not-ready": "ഏജന്റ് പറയുന്നു, അത് തയ്യാറായിട്ടില്ലെന്ന്.", "refunds-need-builder": "റീഫണ്ടിന് ഉടമയുടെയല്ല, ബിൽഡറുടെ നടപടി വേണം.",
   },
   shop: {
-    status: "സ്ഥിതി", versions: (p, b) => `പാത്ത്വേ ${p}, ബണ്ടിൽ ${b}`, lastDeploy: (at) => `അവസാന അപ്ഡേറ്റ്: ${at}`, neverDeployed: "ഇതുവരെ അപ്ഡേറ്റ് ചെയ്തിട്ടില്ല.",
+    status: "സ്ഥിതി", versions: (p, b) => `ടെംപ്ലേറ്റ് ${p}, ബണ്ടിൽ ${b}`, lastDeploy: (at) => `അവസാന അപ്ഡേറ്റ്: ${at}`, neverDeployed: "ഇതുവരെ അപ്ഡേറ്റ് ചെയ്തിട്ടില്ല.",
     limitsHeading: "പരിധികൾ", unprovable: (l) => `ഇവ ഒറ്റയ്ക്ക് പരീക്ഷിക്കാൻ കഴിയില്ല: ${l}`,
     backups: "ബാക്കപ്പ്", backupCopy: (at) => `സെർവറിന് പുറത്തുള്ള അവസാന കോപ്പി: ${at}`, backupNone: "സെർവറിന് പുറത്ത് ഇതുവരെ കോപ്പി ഇല്ല.", backupDrill: (at, ok) => `ബാക്കപ്പ് തിരിച്ചെടുത്ത് നോക്കിയ അവസാന പരിശോധന: ${at}, ${ok ? "പൊരുത്തപ്പെട്ടു" : "പൊരുത്തപ്പെട്ടില്ല"}`, backupDrillNone: "ബാക്കപ്പ് തിരിച്ചെടുത്ത് ഇതുവരെ നോക്കിയിട്ടില്ല.",
     settings: "ഈ കടയെക്കുറിച്ച് ഏജന്റിന് അറിയാവുന്നത്", settingsEdit: "ക്രമീകരണങ്ങൾ മാറ്റൂ", summaryServices: "സേവനങ്ങൾ", summaryHours: "തുറക്കുന്ന സമയം", hoursRange: (o, c) => `${o} മുതൽ ${c} വരെ`, summaryClosed: "അവധി",

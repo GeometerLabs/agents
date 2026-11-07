@@ -5,8 +5,8 @@ import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { validateSettings } from "../../../pathways/bookings/src/settings.ts";
-import { loadClient } from "../../../pathways/bookings/server/config.ts";
+import { validateSettings } from "../../../templates/commerce/bookings/src/settings.ts";
+import { loadClient } from "../../../templates/commerce/bookings/server/config.ts";
 import { WORDS } from "../languages.ts";
 import { CALENDAR_ID, PHONE_ID, boot } from "./helpers.ts";
 import { M, MARKERS, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
@@ -190,17 +190,17 @@ test("a calendar key file is taken when the server has no shared address; only i
   } finally { await b.close(); }
 });
 
-test("it asks only for what the template uses, and a template added to pathways/ shows up in setup on its own", async () => {
-  const pathways = mkdtempSync(join(tmpdir(), "geo-pathways-"));
-  const mini = join(pathways, "mini");
+test("it asks only for what the template uses, and a template added to templates/<domain>/ shows up in setup on its own", async () => {
+  const templates = mkdtempSync(join(tmpdir(), "geo-templates-"));
+  const mini = join(templates, "somewhere", "mini");
   mkdirSync(join(mini, "settings"), { recursive: true });
-  cpSync(new URL("../../../pathways/bookings/settings/glow-salon.example.json", import.meta.url).pathname, join(mini, "settings", "x.json"));
+  cpSync(new URL("../../../templates/commerce/bookings/settings/glow-salon.example.json", import.meta.url).pathname, join(mini, "settings", "x.json"));
   writeFileSync(join(mini, "package.json"), JSON.stringify({ name: "mini", version: "0.1.0" }));
   writeFileSync(join(mini, "template.json"), JSON.stringify({ schema: 1, id: "mini", setup: "bookings", accounts: ["whatsapp"], steps: ["business", "languages", "accounts", "checks"], settingsExample: "settings/x.json" }));
-  mkdirSync(join(pathways, "elsewhere"));
-  writeFileSync(join(pathways, "elsewhere", "package.json"), JSON.stringify({ name: "elsewhere", version: "0.2.0" }));
-  writeFileSync(join(pathways, "elsewhere", "template.json"), JSON.stringify({ schema: 1, id: "elsewhere", setup: "custom-form", accounts: ["razorpay"] }));
-  const b = await boot({ pathwaysDir: pathways });
+  mkdirSync(join(templates, "somewhere", "elsewhere"));
+  writeFileSync(join(templates, "somewhere", "elsewhere", "package.json"), JSON.stringify({ name: "elsewhere", version: "0.2.0" }));
+  writeFileSync(join(templates, "somewhere", "elsewhere", "template.json"), JSON.stringify({ schema: 1, id: "elsewhere", setup: "custom-form", accounts: ["razorpay"] }));
+  const b = await boot({ templatesDir: templates });
   try {
     const divya = await b.account("divya", "partner");
     const list = await divya.get("/setup");

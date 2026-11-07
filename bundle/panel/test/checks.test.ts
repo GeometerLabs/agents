@@ -5,11 +5,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createFakeCalendar } from "../../../pathways/bookings/src/adapters/calendar.ts";
+import { createFakeCalendar } from "../../../templates/commerce/bookings/src/adapters/calendar.ts";
 import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
 import { createFakePayments } from "../../../modules/payments/payments.ts";
 import { fakeClock } from "../../../modules/core/clock.ts";
-import { startStandins } from "../../../pathways/bookings/standins/server.ts";
+import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import { checkCalendar, checkConnections, checkRazorpay, checkWhatsApp } from "../checks.ts";
 
 const SECRETS = { razorpayWebhookSecret: "standin-rzp-secret", whatsappAppSecret: "standin-wa-secret" };

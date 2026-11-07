@@ -16,6 +16,9 @@
 //   agent check|deploy|show <name> [--credential]      the same checks and checked deploy as a shop's; show prints the addresses again
 //   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every five minutes)
 //   agent report <name> --month 2026-11 --out <folder> [--language en]      the monthly report and certificate from that record
+//   agent crash-test <name> [--situations a,b] [--run "<cmd>"] [--version V] [--details] [--json]      start the agent with its own command and try situations that could go wrong, through the
+//                                real Guards: "Held N of M", judged from the stand-ins' records and Guard's decisions. agent go-live <name> [--out <folder>] does the same and writes the go-live certificate.
+//                                agent set <name> --run "<cmd>" --version V   records how to start the agent ({version} in the command) and which version it is at
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
@@ -40,6 +43,7 @@ import type { Context } from "./deploy.ts";
 import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import type { AgentFlags } from "./agent/folder.ts";
+import { CRASH_SUBCOMMANDS, crashCommand } from "./agent/crash-test/cli.ts";
 import { recordAgent } from "./agent/records.ts";
 import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
@@ -92,6 +96,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
       "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
       credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" },
+      // agent crash-test / go-live / set (and --run, --version on agent add)
+      run: { type: "string" }, version: { type: "string" }, situations: { type: "string" }, "guard-bin": { type: "string" }, json: { type: "boolean" }, details: { type: "boolean" },
       // update / rollback
       to: { type: "string" }, shops: { type: "string" }, "dry-run": { type: "boolean" },
     },
@@ -154,9 +160,9 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       // checkout, and a runtime.json that says who things are (the WhatsApp number's id, a calendar's id where the template has one). Everything is checked before a folder is made.
       let fromTemplate: { settings: string; runtime: Record<string, unknown>; lock: string; where: string } | undefined;
       if (template) {
-        const found = discoverTemplates(join(APP_DIR, "pathways")).find((t) => t.id === template);
+        const found = discoverTemplates(join(APP_DIR, "templates")).find((t) => t.id === template);
         const kind = kindFor(found?.id);
-        if (!found || !kind) throw new Error(`There is no template called "${template}" in this checkout that the bundle can run. It has: ${discoverTemplates(join(APP_DIR, "pathways")).filter((t) => kindFor(t.id)).map((t) => t.id).join(", ") || "none"}.`);
+        if (!found || !kind) throw new Error(`There is no template called "${template}" in this checkout that the bundle can run. It has: ${discoverTemplates(join(APP_DIR, "templates")).filter((t) => kindFor(t.id)).map((t) => t.id).join(", ") || "none"}.`);
         const settingsFile = str("settings") ?? join(found.folder, found.settingsExample);
         let settingsText: string;
         try { settingsText = readFileSync(resolve(settingsFile), "utf8"); } catch { throw new Error(`I could not read the settings file ${settingsFile}.`); }
@@ -357,7 +363,7 @@ async function init(folder: string | undefined, v: Record<string, string | boole
 }
 
 const AGENT_FLAG_NAMES = ["settings", "upstreams", "owner-whatsapp", "owner-language", "business-name", "deposit", "refund-limit", "price-floor", "hours", "timezone", "whatsapp-number-id", "calendar-id", "forward-whatsapp-to",
-  "refund-inr-per-day", "refunds-per-day", "links-per-hour", "messages-per-hour", "events-per-hour", "events-deleted-per-day"] as const;
+  "refund-inr-per-day", "refunds-per-day", "links-per-hour", "messages-per-hour", "events-per-hour", "events-deleted-per-day", "run", "version"] as const;
 
 /** `agent add|check|deploy|show <name>`: an agent someone else wrote, behind the same Guards. */
 export async function agentCommand(ctx: Context, sub: string | undefined, name: string | undefined, values: Record<string, string | boolean | undefined>): Promise<number> {
@@ -391,6 +397,7 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     return 0;
   }
   if (sub === "show") { console.log(connectionText(name, connectionOf(ctx.dir, server, readAgent(ctx.dir, name)), values.credential === true)); return 0; }
+  if ((CRASH_SUBCOMMANDS as readonly string[]).includes(sub)) return await crashCommand(ctx, sub as (typeof CRASH_SUBCOMMANDS)[number], name, values);
   if (sub === "record") {
     const r = await recordAgent(ctx, name);
     console.log(`${name}: ${r.added} added to the record (${r.total} in all), from what its Guards decided and what the services hold.${r.problems.length > 0 ? `\n${r.problems.map((p) => `  - ${p}`).join("\n")}` : ""}`);
@@ -401,10 +408,10 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     if (!month || !out) throw new Error("Say the month and where to put the files: agent report <name> --month 2026-11 --out <folder> [--language en|hi|ml|kn|all]");
     const source = (str("source") ?? "live") as "live" | "test-mode" | "stand-in";
     const r = writeAgentReport(ctx.dir, name, { month, out: resolve(out), language: (str("language") ?? "en") as "en", source, now: ctx.now().getTime() });
-    console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.\n${r.ownerTexts.join("\n\n")}`);
+    console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.${r.goLiveSaid ? `\n${r.goLiveSaid}` : "\nNo go-live certificate was found, so the report lists the go-live checks as not given. `geometer agent go-live` makes one."}\n${r.ownerTexts.join("\n\n")}`);
     return 0;
   }
-  throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report <name>`);
+  throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report|crash-test|go-live|set <name>`);
 }
 
 async function status(ctx: Context): Promise<number> {

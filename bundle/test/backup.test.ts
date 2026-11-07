@@ -15,7 +15,7 @@ import { recordFacts, snapshotShop } from "../backup/snapshot.ts";
 import type { SnapshotJob } from "../backup/snapshot.ts";
 import { folderStore } from "../backup/store.ts";
 import { litestreamConfig } from "../generate/litestream.ts";
-import { openStore } from "../../pathways/bookings/server/store.ts";
+import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 import { deploy } from "../deploy.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";

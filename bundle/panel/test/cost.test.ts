@@ -5,7 +5,8 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { glowSalon } from "../../../pathways/bookings/src/harness.ts";
+import { glowSalon } from "../../../templates/commerce/bookings/src/harness.ts";
+import { RATES } from "../../../modules/understanding/rates.ts";
 import { PRICES_DIR, formatRupees, latestPriceList, loadPriceList, monthlyCost } from "../cost.ts";
 import type { CostLine, PriceList } from "../cost.ts";
 
@@ -145,16 +146,19 @@ test("rupees are written with Indian grouping and two places", () => {
   assert.equal(formatRupees(12_500_000), "₹1,25,000.00");
 });
 
-test("a model price in the eval's models.json is the same as the price list's (the next step is to make the eval read the list)", () => {
-  const models = JSON.parse(readFileSync(new URL("../../../pathways/bookings/eval/models.json", import.meta.url), "utf8")) as { candidates: { name: string; priceInputPerMillion: number | null; priceOutputPerMillion: number | null }[] };
+test("every model price in a bundle price list says what the one model rate table says (modules/understanding/rates/): the lists carry no second copy that could drift", () => {
   let compared = 0;
-  for (const c of models.candidates) {
-    const input = prices.rates[`model.${c.name}.input`];
-    const output = prices.rates[`model.${c.name}.output`];
-    if (c.priceInputPerMillion === null) continue; // models.json is behind the list here; the list is the better source
-    assert.equal(input?.micro, Math.round(c.priceInputPerMillion * 1_000_000), c.name);
-    assert.equal(output?.micro, Math.round((c.priceOutputPerMillion as number) * 1_000_000), c.name);
-    compared++;
+  for (const file of readdirSync(PRICES_DIR).filter((f) => f.endsWith(".json")).sort()) {
+    const list = loadPriceList(new URL(file, PRICES_DIR).pathname);
+    for (const [id, r] of Object.entries(list.rates)) {
+      const m = /^model\.(.+)\.(input|output)$/u.exec(id);
+      if (!m) continue;
+      const rate = RATES.find((x) => x.model === m[1]);
+      assert.ok(rate, `${file} prices ${m[1]}, which the rate table has no line for: the table is the one source for model prices`);
+      assert.equal(r.currency, "USD", `${file} ${id}`);
+      assert.equal(r.micro, Math.round((m[2] === "input" ? rate.inputUsdPerMillion : rate.outputUsdPerMillion) * 1_000_000), `${file} ${id} differs from the rate table`);
+      compared++;
+    }
   }
-  assert.ok(compared >= 2);
+  assert.ok(compared >= 16, `${compared} model prices compared`); // four models, input and output, in the lists of 3, 4 and 5 Nov
 });

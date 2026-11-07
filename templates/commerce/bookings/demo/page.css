@@ -1,0 +1,135 @@
+/* The style of the laptop demo (demo/page.ts), and the base of the deploy panel's pages (bundle/panel reads this file).
+   The demo's markup uses the geo- class names. The old class names stay in every selector below because the panel's pages still use them;
+   when the panel moves to the geo- names the old ones can go (Deferred.md). The browser demo does not use this file: it has demo/web/theme.css. */
+:root {
+  --bg: #f4f7f5; --card: #ffffff; --ink: #14221b; --muted: #5a6a61; --line: #d5ded8;
+  --green: #0f6b45; --green-dark: #0a4d32; --green-tint: #e2f0e7;
+  --chat: #e8efea; --me: #d6eedc; --agent: #ffffff;
+  --amber-bg: #fff0c2; --amber-line: #e3b93c; --amber-ink: #523800; --warn: #8f3a0b; --bad: #9b1c1c;
+  --radius: 12px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", "Noto Sans Malayalam", "Noto Sans Kannada", sans-serif;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid #2b8a5f; outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.banner, .geo-banner {
+  position: sticky; top: 0; z-index: 70; padding: 11px 16px; text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .01em;
+  background: var(--amber-bg); color: var(--amber-ink); border-bottom: 2px solid var(--amber-line);
+}
+.wrap, .geo-body { max-width: 620px; margin: 0 auto; padding: 0 16px; }
+.top, .geo-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0 10px; }
+.shop, .geo-shop-name { font-size: 22px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.clock, .geo-clock { display: block; font-size: 14px; color: var(--muted); margin-top: 2px; }
+.top-actions, .geo-header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+button.btn, button.geo-button {
+  min-height: 48px; padding: 10px 16px; border-radius: 10px; border: 1.5px solid var(--green); background: var(--card); color: var(--green-dark); font-weight: 600;
+}
+button.btn:hover:not(:disabled), button.geo-button:hover:not(:disabled) { background: var(--green-tint); }
+button.btn.primary, button.geo-button.geo-button--primary, button.geo-send { background: var(--green); color: #fff; border-color: var(--green); }
+button.btn.primary:hover:not(:disabled), button.geo-button.geo-button--primary:hover:not(:disabled), button.geo-send:hover:not(:disabled) { background: var(--green-dark); }
+button.btn.quiet, button.geo-button.geo-button--quiet { border-color: var(--line); color: var(--ink); font-weight: 500; }
+button.btn.small, button.geo-button.geo-button--small { min-height: 44px; padding: 8px 12px; font-size: 15px; }
+button.btn:disabled, button.geo-button:disabled { opacity: .45; cursor: not-allowed; }
+button.link, button.geo-link { background: none; border: 0; padding: 12px 4px; color: var(--green-dark); text-decoration: underline; text-underline-offset: 3px; font-size: 16px; }
+
+.panel h2, .geo-panel h2 { font-size: 18px; margin: 22px 0 8px; color: var(--green-dark); }
+.chat, .geo-chat {
+  background: var(--chat); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-height: 36dvh; max-height: 50dvh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.chat.short, .geo-chat.geo-chat--owner { min-height: 0; max-height: 40dvh; }
+.empty, .geo-empty { color: var(--muted); margin: auto; text-align: center; padding: 16px; font-size: 16px; }
+.bubble, .geo-bubble { max-width: 86%; padding: 8px 12px 6px; border-radius: 12px; box-shadow: 0 1px 1px rgba(0,0,0,.08); }
+.bubble.agent, .geo-bubble.geo-bubble--agent { align-self: flex-start; background: var(--agent); border-top-left-radius: 3px; }
+.bubble.me, .geo-bubble--customer, .geo-bubble--owner { align-self: flex-end; background: var(--me); border-top-right-radius: 3px; }
+.bubble p, .geo-bubble p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bubble time, .geo-bubble time { display: block; text-align: right; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.chat-head, .geo-chat-head { font-weight: 600; padding: 4px 2px 8px; color: var(--green-dark); overflow-wrap: anywhere; }
+.chips, .geo-chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 4px; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.chips-label, .geo-chips-label { font-size: 14px; color: var(--muted); margin-top: 10px; }
+.chip, .geo-chip { flex: 0 0 auto; max-width: 78%; text-align: left; padding: 9px 14px; min-height: 44px; border-radius: 22px; border: 1.5px solid var(--green); background: var(--card); color: var(--green-dark); scroll-snap-align: start; }
+.chip:hover:not(:disabled), .geo-chip:hover:not(:disabled) { background: var(--green-tint); }
+.chip:disabled, .geo-chip:disabled { opacity: .5; }
+
+/* The agent's reply buttons and list, under its message as WhatsApp draws them (the page's script makes them from the message's own options). */
+.geo-choices { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.geo-choice, .geo-row { display: block; width: 100%; min-height: 44px; padding: 8px 12px; background: transparent; color: var(--green-dark); border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: center; }
+.geo-row { background: var(--bg); color: var(--ink); font-weight: 400; text-align: left; }
+.geo-choice:hover:not(:disabled), .geo-row:hover:not(:disabled) { background: var(--green-tint); }
+.geo-choice:disabled, .geo-row:disabled { opacity: .5; }
+.geo-choices--old { opacity: .7; }
+.geo-rows { display: flex; flex-direction: column; gap: 4px; }
+.geo-choice-title, .geo-choice-desc { display: block; overflow-wrap: anywhere; }
+.geo-choice-desc { font-weight: 400; font-size: 14px; color: var(--muted); }
+.geo-choice--list::before { content: "≡ "; }
+
+.composer, .geo-composer { display: flex; gap: 8px; margin-top: 8px; }
+.composer input, .geo-composer input { flex: 1; min-width: 0; min-height: 50px; padding: 10px 14px; border-radius: 25px; border: 1.5px solid var(--line); background: var(--card); font-size: 16px; }
+.actions, .geo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.actions .wide, .geo-actions .geo-button--wide { grid-column: 1 / -1; }
+
+.waiting, .geo-waiting { background: var(--card); border: 1px solid var(--line); border-left: 8px solid var(--amber-line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.waiting .title, .geo-waiting .geo-waiting-title { font-size: 24px; font-weight: 700; line-height: 1.25; }
+.waiting .detail, .geo-waiting .geo-waiting-detail { color: var(--muted); font-size: 16px; margin-top: 4px; overflow-wrap: anywhere; }
+.waiting .reason, .geo-waiting .geo-waiting-reason { font-size: 17px; margin-top: 6px; }
+.waiting .buttons, .geo-waiting .geo-waiting-buttons { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.waiting .buttons .btn, .geo-waiting .geo-waiting-buttons .geo-button { flex: 1 1 140px; min-height: 52px; font-size: 18px; }
+
+.plain, .geo-summary { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.plain li, .geo-summary li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 14px; font-size: 21px; line-height: 1.35; }
+.plain .mark, .geo-summary .geo-summary-mark { font-weight: 700; text-align: center; color: var(--green); }
+.plain li.info .mark, .geo-summary li.geo-summary-line--info .geo-summary-mark { color: var(--muted); }
+.plain li.warn, .geo-summary li.geo-summary-line--warn { border-color: var(--amber-line); background: #fffaf0; }
+.plain li.warn .mark, .geo-summary li.geo-summary-line--warn .geo-summary-mark { color: var(--warn); }
+.plain li.muted, .geo-summary li.geo-summary-line--muted { background: transparent; border: 0; padding: 2px 4px; font-size: 16px; color: var(--muted); }
+
+.card, .geo-record-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; font-size: 15px; }
+.card .head, .geo-record-card .geo-record-head { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
+.card .what, .geo-record-card .geo-record-what { font-weight: 600; margin-top: 2px; }
+.pill, .geo-pill { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 13px; font-weight: 600; background: var(--green-tint); color: var(--green-dark); }
+.pill.blocked, .pill.held_for_owner, .pill.attempted, .geo-pill.geo-pill--blocked, .geo-pill.geo-pill--held_for_owner, .geo-pill.geo-pill--attempted { background: var(--amber-bg); color: var(--amber-ink); }
+.pill.unconfirmed, .pill.failed, .geo-pill.geo-pill--unconfirmed, .geo-pill.geo-pill--failed { background: #fbe0e0; color: var(--bad); }
+.decision, .geo-decision { margin-top: 4px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.decision b, .geo-decision b { color: var(--ink); }
+.decision.block b, .decision.hold_for_owner b, .geo-decision.geo-decision--block b, .geo-decision.geo-decision--hold_for_owner b { color: var(--warn); }
+.refs, .geo-record-refs { margin-top: 4px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); overflow-wrap: anywhere; }
+.box, .geo-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; font-size: 15px; }
+.box h3, .geo-box h3 { margin: 0 0 6px; font-size: 15px; color: var(--green-dark); }
+.box ul, .geo-box ul { margin: 0; padding-left: 18px; overflow-wrap: anywhere; }
+.box li, .geo-box li { margin: 2px 0; }
+
+.foot, .geo-foot { text-align: center; padding: 14px 0 6px; }
+.tabbar, .geo-tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; background: var(--card); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab, .geo-tab { flex: 1; min-height: 60px; border: 0; background: none; font-size: 17px; font-weight: 600; color: var(--muted); border-top: 4px solid transparent; position: relative; }
+.tab[aria-selected="true"], .geo-tab[aria-selected="true"] { color: var(--green-dark); border-top-color: var(--green); background: var(--green-tint); }
+.badge, .geo-badge { display: inline-block; min-width: 24px; padding: 0 7px; margin-left: 6px; border-radius: 12px; background: var(--amber-line); color: var(--amber-ink); font-size: 14px; line-height: 24px; }
+
+.sheet, .geo-sheet { position: fixed; inset: 0; z-index: 50; overflow-y: auto; background: var(--bg); padding-bottom: 40px; }
+.sheet h2, .geo-sheet h2 { font-size: 22px; margin: 18px 0 4px; }
+.sheet .hint, .geo-sheet .geo-hint { color: var(--muted); margin: 0 0 12px; font-size: 15px; }
+.field, .geo-field { display: block; margin: 12px 0; }
+.field span, .geo-field span { display: block; font-size: 14px; color: var(--muted); margin-bottom: 3px; }
+.field input, .field select, .geo-field input, .geo-field select { width: 100%; min-height: 48px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); font-size: 16px; }
+.svc, .geo-service { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 12px 8px; margin: 10px 0; }
+.row, .geo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+.days, .geo-days { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.days label, .geo-days label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; min-height: 44px; border: 1.5px solid var(--line); border-radius: 22px; background: var(--card); }
+.days input, .geo-days input { width: 18px; height: 18px; accent-color: var(--green); }
+.errors, .geo-errors { background: #fdeeee; border: 1.5px solid #e4a7a7; color: var(--bad); border-radius: var(--radius); padding: 10px 14px 10px 30px; margin: 12px 0; }
+.errors li, .geo-errors li { margin: 4px 0; }
+.toast, .geo-toast { position: fixed; left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; max-width: 560px; margin: 0 auto; padding: 12px 16px; border-radius: 10px; background: #1d2e25; color: #fff; text-align: center; }
+@media (prefers-reduced-motion: no-preference) { .toast { transition: opacity .2s; } }
+@media (min-width: 700px) { body { font-size: 18px; } }

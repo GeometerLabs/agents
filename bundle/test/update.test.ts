@@ -13,7 +13,6 @@ import { compare, readHandCheck, runHandCheck, savedDataLayout } from "../handch
 import { realRunner } from "../lib/runner.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
-import { OWN_AGENT_NOTE } from "../update.ts";
 import { EXAMPLE_CLIENT, PHONE_NUMBER_ID, CALENDAR_ID, panelRuntime } from "./helpers.ts";
 import { composeCalls, world } from "./world.ts";
 import type { World } from "./world.ts";
@@ -87,9 +86,9 @@ function setSettings(w: World, shop: string, edit: (x: any) => void): void {
 }
 
 function addVersion(w: World, version: string): void {
-  const dir = join(w.root, "pathways", `bookings@${version}`);
-  cpSync(join(w.ctx.appDir, "pathways", "bookings"), dir, { recursive: true });
-  // a kept checkout imports the shared modules two folders up from itself (../../../modules), so the server holds them beside its kept pathways
+  const dir = join(w.root, "templates", "commerce", `bookings@${version}`);
+  cpSync(join(w.ctx.appDir, "templates", "commerce", "bookings"), dir, { recursive: true });
+  // a kept checkout imports the shared modules three folders up from itself (../../../../modules), so the server holds them beside its kept templates
   if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
   const pkg = join(dir, "package.json");
   writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', `"version": "${version}"`));
@@ -112,7 +111,7 @@ function tree(root: string, base = root, into: Record<string, string> = {}): Rec
 
 test("the real hand check's answer is read as it is printed: the count agrees with its lines, and a version compared with itself differs in nothing", async () => {
   const ctx = { runner: realRunner } as Parameters<typeof runHandCheck>[0];
-  const pathway = new URL("../../pathways/bookings", import.meta.url).pathname;
+  const pathway = new URL("../../templates/commerce/bookings", import.meta.url).pathname;
   const r = await runHandCheck(ctx, pathway, join(EXAMPLE_CLIENT, "settings.json"));
   assert.ok(r.ok, r.ok ? "" : r.reason);
   assert.ok(r.read.total > 20 && r.read.held === r.read.total && r.read.situations.length === r.read.total, `${r.read.held} of ${r.read.total}`);
@@ -199,7 +198,7 @@ test("a version this server does not have, a hand check that cannot run, and a p
   const w = await threeClients(); try {
     const missing = await update(w, "--to", "0.9.0", "--shops", "glow-salon");
     assert.equal(missing.result, 1);
-    assert.match(missing.out, /This server does not have bookings@0\.9\.0\. Put a checkout of it in .*pathways\/bookings@0\.9\.0, then run this again\. It stays on bookings@0\.1\.0\./);
+    assert.match(missing.out, /This server does not have bookings@0\.9\.0\. Put a checkout of it in .*templates\/commerce\/bookings@0\.9\.0, then run this again\. It stays on bookings@0\.1\.0\./);
     const next = w.ctx.runner.run.bind(w.ctx.runner);
     w.ctx.runner.run = async (command, args, options) => (command === process.execPath && args[0]?.endsWith("hand-check.ts") ? { code: 1, stdout: "", stderr: "SyntaxError: the new hand check does not start\n   at file" } : next(command, args, options));
     const broken = await update(w, "--to", "0.2.0", "--shops", "pet-spa");
@@ -291,17 +290,17 @@ test("a refused deploy puts that client's earlier pin back and stops the rollout
   } finally { w.done(); }
 });
 
-test("agents you wrote are skipped with a plain note, and the clients beside them are updated", async () => {
+test("an agent you wrote that Geometer has no command to start is skipped with a plain note, and the clients beside it are updated (the agents that can be crash-tested: update-agent.test.ts)", async () => {
   const w = await threeClients(); try {
     standIn(w, () => holdsAll());
     addAgent(w.root, "my-agent", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => { throw new Error("no file"); }, new Date("2026-11-05T09:00:00Z"));
     const r = await update(w, "--to", "0.2.0");
     assert.equal(r.result, 0, r.out);
-    assert.match(r.out, new RegExp(`- my-agent +skipped\\. ${OWN_AGENT_NOTE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+    assert.match(r.out, /- my-agent +skipped\. It has no command to start it with, so it cannot be crash-tested\. Give one: geometer agent set my-agent --run "<command>" --version <version>\. Until then you update it yourself\./);
     assert.match(r.out, /Moved 3, held back 0, unchanged 0, skipped 1\./);
     assert.equal(loadState(w.root).update!.steps["my-agent"].status, "skipped");
     const only = await update(w, "--shops", "my-agent", "--to", "0.2.0");
-    assert.equal(only.result, 0); assert.match(only.out, /skipped\. Agents you wrote are updated by you/);
+    assert.equal(only.result, 0); assert.match(only.out, /skipped\. It has no command to start it with/);
   } finally { w.done(); }
 });
 
@@ -384,7 +383,7 @@ test("with a real fault in the new version that only a client with a 48-hour can
     await deploy(w.ctx);
     addVersion(w, "0.2.0");
     // version 0.2.0 is the pathway with one line changed: a window of more than 24 hours is counted a hundred times too long, so nobody is ever "inside" it
-    const file = join(w.root, "pathways", "bookings@0.2.0", "src", "agent.ts");
+    const file = join(w.root, "templates", "commerce", "bookings@0.2.0", "src", "agent.ts");
     const line = "const inWindow = hoursLeft >= settings.cancellation.windowHours;";
     const text = readFileSync(file, "utf8");
     assert.equal(text.split(line).length, 2, "the line this test changes in its copy of the pathway has moved: pick another line that depends on a setting");

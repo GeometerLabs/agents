@@ -1,14 +1,22 @@
-// What a call costs, from a small dated rate table. Prices are US dollars per million tokens, from the economics note (docs/product/
-// economics-and-pricing.md section 3.2, which took them from third-party trackers and the Laya page: check each provider's own price page before
-// a real invoice). An estimate is not a bill: the provider's own invoice is the truth, and this is for the allowance and the cost meter.
+// What a call costs, from the one dated table of model prices in rates/<date>.json. Prices are US dollars per million tokens, from the economics note
+// (docs/product/economics-and-pricing.md section 3.2, which took them from third-party trackers and the Laya page) and, for the models the evaluation tries,
+// from each provider's own page: check the provider's price page before a real invoice. An estimate is not a bill: the provider's own invoice is the truth, and
+// this is for the allowance and the cost meter.
 //
-// Money is counted in micro-rupees (millionths of a rupee) so small prices stay whole numbers: one DeepSeek call of 2,000 tokens in and 150 out
-// is about 34,000 micro-rupees (3.4 paise). A price that is not in the table is UNKNOWN (null), never 0: a free-looking number would hide a cost.
-// A rate is used from its `from` date until a later rate for the same provider and model replaces it, so an old record keeps the price it had.
+// The table is data, not code, and there is ONE of it: the runtime prices messages from it, the evaluation script prints its cost column from it, and the bundle's
+// tests check every model price in a bundle price list against it. A file in rates/ is never edited after it is committed (a test pins its bytes): a changed price is
+// a new file with a new date, and an old record keeps the price it had.
+//
+// Money is counted in micro-rupees (millionths of a rupee) so small prices stay whole numbers: one DeepSeek call of 2,000 tokens in and 150 out is about 34,000
+// micro-rupees (3.4 paise). A price that is not in the table is UNKNOWN (null), never 0: a free-looking number would hide a cost. A rate is used from its `from`
+// date until a later rate for the same provider and model replaces it.
+//
+// Each file is read with a literal path, one line per file. A test fails if a file in rates/ is not listed here, so a new dated file is added to FILES below in the
+// same commit. The checks on a file are in rates-check.ts, so this file stays small. (The browser demo asks no model, so it does not carry this file or the router:
+// a template's reading takes `chosenProbability` from model.ts for that reason.)
+import { readFileSync } from "node:fs";
+import type { Quality } from "./rates-check.ts";
 import type { TokenUsage } from "./model.ts";
-
-/** Rupees per US dollar, from the economics note's own arithmetic (₹0.0055 for 1,500 tokens at $0.042 a million, ₹0.034 for a 2,000 + 150 token call). */
-export const INR_PER_USD = { rate: 87, from: "2026-11-05", note: "the exchange rate the economics note used; change it here when the owner updates that note" } as const;
 
 export interface Rate {
   provider: string;
@@ -20,14 +28,49 @@ export interface Rate {
   outputUsdPerMillion: number;
   /** The price of input the provider read from its prompt cache, when it has one. */
   cachedInputUsdPerMillion?: number;
+  /** Rupees to the dollar for this line, from its file. Left out: the newest file's. */
+  inrPerUsd?: number;
+  quality?: Quality;
   source: string;
 }
 
-export const RATES: readonly Rate[] = [
-  { provider: "laya", model: "*", from: "2026-11-05", inputUsdPerMillion: 0, outputUsdPerMillion: 0, source: "Laya runs on the shop server's own CPU (economics section 3.2): no price per call, only the server it already uses" },
-  { provider: "jev", model: "*", from: "2026-11-05", inputUsdPerMillion: 0.042, outputUsdPerMillion: 0.042, source: "$0.042 per million tokens, as quoted on the Laya page (economics section 3.2)" },
-  { provider: "deepinfra", model: /deepseek.*v4\.1.*flash/iu, from: "2026-11-05", inputUsdPerMillion: 0.16, outputUsdPerMillion: 0.48, cachedInputUsdPerMillion: 0.004, source: "DeepSeek V4.1 Flash, DeepInfra Flex tier (economics section 3.2); check deepinfra.com before choosing" },
+/** One file of the table, as the runtime holds it. */
+export interface RateList {
+  date: string;
+  inrPerUsd: number;
+  rates: Rate[];
+  /** Models a candidate may use that have no price, and why. They stay unknown. */
+  notPriced: Record<string, string>;
+}
+
+/** One file of the table, as the runtime holds it. A file is checked by rates-check.ts (a test runs every committed file through it), not here. */
+function listOf(text: string): RateList {
+  const raw = JSON.parse(text) as { date: string; inrPerUsd: { rate: number }; rates: Record<string, string | number>[]; notPriced?: Record<string, string> };
+  const rates: Rate[] = raw.rates.map((l) => ({
+    provider: l.provider as string, model: l.modelPattern ? new RegExp(l.modelPattern as string, "iu") : (l.model as string), from: raw.date,
+    inputUsdPerMillion: l.inputUsdPerMillion as number, outputUsdPerMillion: l.outputUsdPerMillion as number,
+    ...(l.cachedInputUsdPerMillion !== undefined ? { cachedInputUsdPerMillion: l.cachedInputUsdPerMillion as number } : {}),
+    inrPerUsd: raw.inrPerUsd.rate, quality: l.quality as Quality, source: l.source as string,
+  }));
+  return { date: raw.date, inrPerUsd: raw.inrPerUsd.rate, rates, notPriced: raw.notPriced ?? {} };
+}
+
+// One literal path per file (the browser build copies exactly these). Oldest first.
+const FILES: readonly [string, string][] = [
+  ["2026-11-05.json", readFileSync(new URL("rates/2026-11-05.json", import.meta.url), "utf8")],
 ];
+
+/** The files of the table, oldest first. */
+export const RATE_LISTS: readonly RateList[] = FILES.map(([name, text]) => {
+  const list = listOf(text);
+  if (name !== `${list.date}.json`) throw new Error(`modules/understanding/rates/${name} says its date is ${list.date}: a file is named for its date.`);
+  return list;
+}).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+/** Rupees per US dollar, from the newest file. */
+export const INR_PER_USD = { rate: RATE_LISTS[RATE_LISTS.length - 1].inrPerUsd, from: RATE_LISTS[RATE_LISTS.length - 1].date, note: "from the newest file in rates/; change it in a new dated file when the owner updates the economics note" } as const;
+
+export const RATES: readonly Rate[] = RATE_LISTS.flatMap((l) => l.rates);
 
 const matches = (rate: Rate, provider: string, model: string): boolean =>
   rate.provider === provider && (rate.model === "*" || (typeof rate.model === "string" ? rate.model === model : rate.model.test(model)));
@@ -47,5 +90,5 @@ export function costMicroInr(rate: Rate | null, usage: TokenUsage): number | nul
   const cached = Math.min(usage.cachedInputTokens ?? 0, usage.inputTokens);
   const cachedPrice = rate.cachedInputUsdPerMillion ?? rate.inputUsdPerMillion;
   const microUsd = (usage.inputTokens - cached) * rate.inputUsdPerMillion + cached * cachedPrice + usage.outputTokens * rate.outputUsdPerMillion; // tokens x dollars per million = millionths of a dollar
-  return Math.max(0, Math.ceil(microUsd * INR_PER_USD.rate - 1e-9));
+  return Math.max(0, Math.ceil(microUsd * (rate.inrPerUsd ?? INR_PER_USD.rate) - 1e-9));
 }
