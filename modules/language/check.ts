@@ -39,6 +39,8 @@ const periodsOf = (language: "hi" | "ml" | "kn") => alternation(Object.values(DA
 const DATE_RE = new RegExp(`(?:${WEEKDAYS})\\s*,?\\s*\\d{1,2}\\s+(?:${MONTHS})`, "giu");
 const TIME_RE = new RegExp(`(?:${periodsOf("hi")})\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:${periodsOf("ml")}|${periodsOf("kn")})\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
 const URL_RE = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s)]*/giu;
+/** A UPI payment request (modules/payments/upi/link.ts). It holds the shop's UPI ID and an amount, so it is read before anything else and must be the record's own, whole. */
+const UPI_RE = /upi:\/\/[^\s)]*/giu;
 const AMOUNT_RE = /₹\s*(\d[\d,]*(?:\.\d+)?)/gu;
 const QUANTITY_WORD_RE = wordRe(["hundred", "thousand", "lakh", "crore", "सौ", "हज़ार", "हजार", "लाख", "करोड़"], "iu");
 // Malayalam and Kannada join number words into one ("ഇരുന്നൂറ്" is 200), so these are looked for inside words, not only as words.
@@ -109,6 +111,14 @@ export function checkText(finalText: string, facts: CheckFacts): CheckResult {
   const allowed = allowedFrom(facts);
   const problems: string[] = [];
   let text = plain(finalText);
+
+  // A UPI link first: its UPI ID and its amount are part of it, so they are not read on their own. Only the record's own link, exactly.
+  const upiLinks = tokens(UPI_RE, text);
+  for (const u of upiLinks) {
+    const cleaned = u.text.replace(/[.,;:!?]+$/u, "");
+    if (!allowed.urls.has(cleaned.toLowerCase())) problems.push(`The message has the UPI link "${cleaned}", which is not the payment request in the record.`);
+  }
+  text = mask(text, upiLinks);
 
   // Names and references the message may repeat (the business, the service, "b-3", the customer's number).
   for (const lit of allowed.literals) text = text.replace(new RegExp(escapeRe(lit), "giu"), (m) => " ".repeat(m.length));

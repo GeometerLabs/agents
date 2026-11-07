@@ -66,14 +66,17 @@ test("whatsapp: a text message, with the number given back its plus and the time
   ]);
 });
 
-test("whatsapp: a tapped button, a list row and a template button count as what the customer said; statuses and other types give nothing", () => {
+test("whatsapp: a tapped button, a list row and a template button count as what the customer said; a picture is only the fact of it; statuses and other types give nothing", () => {
   assert.deepEqual(parseWhatsAppWebhook(fixture("whatsapp-webhook-button-reply.json")).map((m) => m.text), ["Cancel"]);
   assert.deepEqual(parseWhatsAppWebhook(fixture("whatsapp-webhook-list-reply.json")).map((m) => m.text), ["Priority Mail Express"]);
   assert.deepEqual(parseWhatsAppWebhook(fixture("whatsapp-webhook-template-button.json")).map((m) => [m.from, m.text]), [["+16505551234", "Unsubscribe"]]);
   assert.deepEqual(parseWhatsAppWebhook(fixture("whatsapp-webhook-status-delivered.json")), []);
   const image = fixture("whatsapp-webhook-text.json");
-  image.entry[0].changes[0].value.messages[0] = { from: "16505551234", id: "wamid.x", timestamp: "1", type: "image", image: { id: "1" } };
-  assert.deepEqual(parseWhatsAppWebhook(image), []);
+  image.entry[0].changes[0].value.messages[0] = { from: "16505551234", id: "wamid.x", timestamp: "1", type: "image", image: { id: "1", caption: "paid" } };
+  assert.deepEqual(parseWhatsAppWebhook(image), [{ id: "wamid.x", from: "+16505551234", text: "", timestamp: 1000, image: true }], "a picture (a screenshot, B33): no media id, no caption"); // B33: was left out
+  const sticker = fixture("whatsapp-webhook-text.json");
+  sticker.entry[0].changes[0].value.messages[0] = { from: "16505551234", id: "wamid.y", timestamp: "1", type: "sticker", sticker: { id: "1" } };
+  assert.deepEqual(parseWhatsAppWebhook(sticker), []);
   for (const junk of [null, 5, [], {}, { entry: "x" }, { entry: [{ changes: [{ field: "other", value: {} }] }] }]) assert.deepEqual(parseWhatsAppWebhook(junk), []);
 });
 

@@ -97,6 +97,10 @@ export function whatsappStandin(messaging: FakeMessaging, catalogue: TemplateCat
         const d = body.document;
         if (typeof d?.link !== "string" || typeof d?.filename !== "string" || (d.caption !== undefined && typeof d.caption !== "string")) return metaError(400, 131009, "Parameter value is not valid: a document needs a link and a filename.");
         id = (await messaging.sendDocument(body.to, { link: d.link, filename: d.filename, ...(d.caption !== undefined ? { caption: d.caption } : {}) })).id;
+      } else if (body.type === "image") {
+        const img = body.image;
+        if (typeof img?.link !== "string" || (img.caption !== undefined && typeof img.caption !== "string")) return metaError(400, 131009, "Parameter value is not valid: an image needs a link.");
+        id = (await messaging.sendImage(body.to, { link: img.link, ...(img.caption !== undefined ? { caption: img.caption } : {}) })).id;
       } else if (body.type === "template" && typeof body.template?.name === "string") {
         const language = (Object.keys(META_LANGUAGE) as Language[]).find((l) => META_LANGUAGE[l] === body.template.language?.code);
         const template = catalogue.templates.find((t) => t.name === body.template.name);
