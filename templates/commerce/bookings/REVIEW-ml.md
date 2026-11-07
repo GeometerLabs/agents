@@ -116,6 +116,10 @@ Some of the messages above come with buttons (up to 3, each 20 letters at most) 
 | `owner` | Button, and the last row of each list: talk to the shop's owner | ഉടമയോട് സംസാരിക്കണം | Talk to the owner |  |
 | `pickService` | The button that opens the list of services | സേവനം തിരഞ്ഞെടുക്കൂ | Pick a service |  |
 | `pickTime` | The button that opens the list of free times | സമയം തിരഞ്ഞെടുക്കൂ | Pick a time |  |
+| `paid` | UPI shop: button under the payment request: I have paid (the owner is asked to look; nothing is marked paid) | ഞാൻ പണമടച്ചു | I have paid |  |
+| `received` | UPI shop: the owner's button, with the amount after it: the money is in my UPI app | കിട്ടി | Received |  |
+| `refundSent` | UPI shop: the owner's button: I have sent the refund | റീഫണ്ട് അയച്ചു | Refund sent |  |
+| `keptForBooking` | UPI shop: the owner's button: I keep the money for a booking I make myself | ബുക്കിംഗിനായി വെച്ചു | Kept for booking |  |
 
 ## 3. Dates and times as the agent writes them
 

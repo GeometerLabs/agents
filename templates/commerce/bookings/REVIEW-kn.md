@@ -116,6 +116,10 @@ Some of the messages above come with buttons (up to 3, each 20 letters at most) 
 | `owner` | Button, and the last row of each list: talk to the shop's owner | ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತು | Talk to the owner |  |
 | `pickService` | The button that opens the list of services | ಸೇವೆ ಆಯ್ಕೆಮಾಡಿ | Pick a service |  |
 | `pickTime` | The button that opens the list of free times | ಸಮಯ ಆಯ್ಕೆಮಾಡಿ | Pick a time |  |
+| `paid` | UPI shop: button under the payment request: I have paid (the owner is asked to look; nothing is marked paid) | ನಾನು ಪಾವತಿಸಿದ್ದೇನೆ | I have paid |  |
+| `received` | UPI shop: the owner's button, with the amount after it: the money is in my UPI app | ಬಂದಿದೆ | Received |  |
+| `refundSent` | UPI shop: the owner's button: I have sent the refund | ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ | Refund sent |  |
+| `keptForBooking` | UPI shop: the owner's button: I keep the money for a booking I make myself | ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ | Kept for booking |  |
 
 ## 3. Dates and times as the agent writes them
 

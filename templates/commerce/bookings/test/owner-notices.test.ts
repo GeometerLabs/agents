@@ -84,7 +84,10 @@ test("every notice the agent sends the owner on its own has a template in all fo
   const ownerIds = (Object.keys(TEMPLATES.en) as TemplateId[]).filter((id) => id.startsWith("owner_"));
   // The reply to the owner's own message needs none: they have just written, so their window is open. The approvals relay's answers to
   // "approve <code>" / "deny <code>" are such replies; its first ask (owner_refund_needs_approval) is not, and has its template.
-  const repliesToTheOwner = ["owner_unknown_command", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed"];
+  // UPI (B33): the answers to the owner's own "received <code>" / "refunded <code>" are replies too; the notices the agent sends on its own (what to look for,
+  // the customer says they paid, a refund to send and its reminder, the rest of a part) have their templates.
+  const repliesToTheOwner = ["owner_unknown_command", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed",
+    "owner_upi_marked", "owner_upi_already", "owner_upi_unknown", "owner_upi_late", "owner_upi_refund_marked", "owner_upi_refund_kept"];
   const needTemplate = ownerIds.filter((id) => !repliesToTheOwner.includes(id));
   assert.deepEqual(needTemplate.filter((id) => !META_TEMPLATES.some((t) => t.usedFor === id)), [], "an owner notice has no template, so it would be refused outside the window");
   for (const id of needTemplate) {
