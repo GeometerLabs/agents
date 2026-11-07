@@ -15,7 +15,9 @@ export type SnapshotField =
   /** A whole number that is left out until it is first set. */
   | { name: string; kind: "optional-number" }
   /** The month's AI counts: left out until the first message, and a snapshot written before they existed still loads. */
-  | { name: string; kind: "optional-ai" };
+  | { name: string; kind: "optional-ai" }
+  /** A plain JSON object that is left out until it is first set (a UPI shop's ledger), so a snapshot written before it existed still loads, and one without it is unchanged. */
+  | { name: string; kind: "optional-object" };
 
 export interface SnapshotCodec<S> {
   serialize(store: S): string;

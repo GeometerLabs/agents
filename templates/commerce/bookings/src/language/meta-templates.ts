@@ -20,10 +20,11 @@ import type { MetaTemplate } from "../../../../../modules/language/meta-template
 import { serviceName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { inr, need, slot } from "./templates.ts";
+import { formatInr } from "../../../../../modules/language/format.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours";
+export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -35,6 +36,8 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   ref: (f) => need(f, "bookingRef"),
   code: (f) => need(f, "approvalCode"),
   approvalHours: (f) => String(need(f, "approvalHours")),
+  upiCode: (f) => need(f, "upiCode"),
+  marked: (f) => formatInr(need(f, "markedInr")),
 };
 
 
@@ -214,6 +217,81 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
       kn: "ಸೂಚನೆ: {business}-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ.",
     },
   },
+  // UPI shops (B33). The messages that can go when the person has not written today: the customer's "booked", "after the hold", "your refund is coming" and
+  // "your refund was sent"; the owner's "a payment to check", "the customer says they paid", "a refund to send" and its reminder. The owner's answers to their
+  // own replies need none. The owner's code is a value like any other: it is in the message the owner reads, and nowhere a customer sees.
+  {
+    name: "booking_confirmed_upi", usedFor: "upi_booked", audience: "customer",
+    bodies: {
+      en: "Booked! {service} on {slot}. The owner has confirmed your {deposit} deposit. Cancel at least {hours} hours before the start for a refund.",
+      hi: "बुक हो गया! {service}, {slot}। मालिक ने आपका {deposit} जमा पक्का कर दिया है। रिफंड के लिए शुरू होने से कम से कम {hours} घंटे पहले रद्द करें।",
+      ml: "ബുക്ക് ആയി! {service}, {slot}. നിങ്ങളുടെ {deposit} അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് {hours} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.",
+      kn: "ಬುಕ್ ಆಗಿದೆ! {service}, {slot}. ನಿಮ್ಮ {deposit} ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ {hours} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.",
+    },
+  },
+  {
+    name: "booking_upi_after_hold", usedFor: "upi_late_received", audience: "customer",
+    bodies: {
+      en: "The owner confirmed your {marked} payment after the hold on {slot} had ended, so it is not booked. The owner will contact you about booking again or sending the money back.",
+      hi: "मालिक ने आपका {marked} पेमेंट {slot} की रोक खत्म होने के बाद पक्का किया, इसलिए बुकिंग नहीं हुई है। मालिक आपसे दोबारा बुकिंग या पैसे वापस भेजने के बारे में बात करेंगे।",
+      ml: "നിങ്ങളുടെ {marked} ഉടമ ഉറപ്പിച്ചത് {slot}-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ച ശേഷമാണ്, അതിനാൽ ബുക്ക് ആയിട്ടില്ല. വീണ്ടും ബുക്ക് ചെയ്യുന്നതിനെക്കുറിച്ചോ പണം തിരികെ അയക്കുന്നതിനെക്കുറിച്ചോ ഉടമ നിങ്ങളെ ബന്ധപ്പെടും.",
+      kn: "ನಿಮ್ಮ {marked} ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು {slot} ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದ ನಂತರ ಖಚಿತಪಡಿಸಿದರು, ಆದ್ದರಿಂದ ಬುಕ್ ಆಗಿಲ್ಲ. ಮತ್ತೆ ಬುಕ್ ಮಾಡುವ ಅಥವಾ ಹಣ ಮರಳಿ ಕಳುಹಿಸುವ ಬಗ್ಗೆ ಮಾಲೀಕರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+    },
+  },
+  {
+    name: "upi_refund_coming", usedFor: "upi_refund_owed", audience: "customer",
+    bodies: {
+      en: "The owner will send {refund} back to you by UPI. I'll message you when they mark it sent.",
+      hi: "मालिक {refund} UPI से आपको वापस भेजेंगे। जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।",
+      ml: "ഉടമ {refund} UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.",
+      kn: "ಮಾಲೀಕರು {refund} ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.",
+    },
+  },
+  {
+    name: "upi_refund_marked_sent", usedFor: "upi_refund_sent", audience: "customer",
+    bodies: {
+      en: "The owner has marked your {refund} refund for booking {ref} as sent by UPI. Please check your UPI app.",
+      hi: "मालिक ने बुकिंग {ref} का आपका {refund} रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें।",
+      ml: "ബുക്കിംഗ് {ref}-ന്റെ നിങ്ങളുടെ {refund} റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ.",
+      kn: "ಬುಕಿಂಗ್ {ref} ರ ನಿಮ್ಮ {refund} ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.",
+    },
+  },
+  {
+    name: "owner_upi_check", usedFor: "owner_upi_expected", audience: "owner",
+    bodies: {
+      en: 'UPI payment to check: customer {phone} will pay the {deposit} deposit for {service} on {slot} (booking {ref}). When it shows in your UPI app, tap Received or reply "received {upiCode}". If a different amount came, reply "received {upiCode}" and the amount.',
+      hi: 'जाँचने के लिए UPI पेमेंट: ग्राहक {phone} बुकिंग {ref} ({service}, {slot}) के लिए {deposit} जमा भेजेंगे। जब यह आपके UPI ऐप में दिखे, तो "मिल गया" दबाएँ या "received {upiCode}" लिखकर भेजें। अगर कोई और रकम आई है, तो "received {upiCode}" के बाद रकम लिखें।',
+      ml: 'പരിശോധിക്കാനുള്ള UPI പണമടവ്: ഉപഭോക്താവ് {phone}, ബുക്കിംഗ് {ref} ({service}, {slot}) എന്നതിനായി {deposit} അഡ്വാൻസ് അയക്കും. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received {upiCode}" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ "received {upiCode}" എന്നതിന് ശേഷം തുക എഴുതുക.',
+      kn: 'ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಗ್ರಾಹಕರು {phone} ಬುಕಿಂಗ್ {ref} ({service}, {slot}) ಗಾಗಿ {deposit} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received {upiCode}" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ "received {upiCode}" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ.',
+    },
+  },
+  {
+    name: "owner_upi_customer_says_paid", usedFor: "owner_upi_claim", audience: "owner",
+    bodies: {
+      en: 'Customer {phone} says they have paid the {deposit} deposit for booking {ref}. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received {upiCode}".',
+      hi: 'ग्राहक {phone} कह रहे हैं कि उन्होंने बुकिंग {ref} का {deposit} जमा भेज दिया है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो "मिल गया" दबाएँ या "received {upiCode}" लिखकर भेजें।',
+      ml: 'ഉപഭോക്താവ് {phone} ബുക്കിംഗ് {ref}-ന്റെ {deposit} അഡ്വാൻസ് അയച്ചെന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received {upiCode}" എന്ന് മറുപടി അയക്കുക.',
+      kn: 'ಗ್ರಾಹಕರು {phone} ಬುಕಿಂಗ್ {ref} ರ {deposit} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received {upiCode}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
+  {
+    name: "owner_upi_refund_to_send", usedFor: "owner_upi_refund_owed", audience: "owner",
+    bodies: {
+      en: 'Refund to send: {refund} by UPI to customer {phone} (booking {ref}). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded {upiCode}".',
+      hi: 'वापस भेजना है: ग्राहक {phone} (बुकिंग {ref}) को UPI से {refund}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded {upiCode}" लिखकर भेजें।',
+      ml: 'തിരികെ അയക്കേണ്ടത്: ഉപഭോക്താവ് {phone}-ന് (ബുക്കിംഗ് {ref}) UPI വഴി {refund}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded {upiCode}" എന്ന് മറുപടി അയക്കുക.',
+      kn: 'ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಗ್ರಾಹಕರು {phone} (ಬುಕಿಂಗ್ {ref}) ಅವರಿಗೆ UPI ಮೂಲಕ {refund}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded {upiCode}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
+  {
+    name: "owner_upi_refund_reminder", usedFor: "owner_upi_refund_reminder", audience: "owner",
+    bodies: {
+      en: 'Reminder: {refund} is still owed back to customer {phone} (booking {ref}). When you have sent it by UPI, tap Refund sent or reply "refunded {upiCode}".',
+      hi: 'याद दिलाना: ग्राहक {phone} (बुकिंग {ref}) को {refund} अभी भी वापस देना है। UPI से भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded {upiCode}" लिखकर भेजें।',
+      ml: 'ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് {phone}-ന് (ബുക്കിംഗ് {ref}) {refund} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded {upiCode}" എന്ന് മറുപടി അയക്കുക.',
+      kn: 'ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು {phone} (ಬುಕಿಂಗ್ {ref}) ಅವರಿಗೆ {refund} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded {upiCode}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
 ];
 
 const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
@@ -239,6 +317,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     slotMs: Date.UTC(2026, 10, 10, 12, 30), // Tue 10 Nov 2026, 6:00 pm in India
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
+    upiId: "glowsalon@okicici", payee: settings.name, upiCode: "P4XR9T", markedInr: settings.deposit.amountInr, leftInr: settings.deposit.amountInr,
   };
 }
 

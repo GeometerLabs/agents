@@ -27,6 +27,7 @@ import { parseSettings } from "./settings.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "./settings.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
+import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
 
 /** Glow Salon, the example business. */
 export function glowSalon(): Settings {
@@ -49,7 +50,7 @@ export interface World {
   agent: Agent;
   owner: string;
   /** A customer sends a message and the agent handles it. Pass `id` to reuse a WhatsApp message id. */
-  say(text: string, options?: { from?: string; id?: string }): Promise<InboundMessage>;
+  say(text: string, options?: { from?: string; id?: string; image?: boolean }): Promise<InboundMessage>;
   /**
    * A customer taps a button or a list row of the newest interactive message the agent sent them that has that id, as WhatsApp would report it: the id and the row's
    * title. Throws if no such option was ever offered, so a test cannot tap something that was never on the screen.
@@ -74,6 +75,17 @@ export interface World {
   lastTextTo(number: string): string;
   /** The payment link for a booking, as the payments service holds it. */
   linkFor(bookingRef: string): PaymentLink | undefined;
+  /** UPI shops (B33): the booking's request as the agent's own ledger holds it (its code is the owner's, never the customer's). */
+  upiRequest(bookingRef: string): UpiRequest | undefined;
+  /** UPI: the refunds the owner owes for a booking, as the ledger holds them. */
+  upiRefunds(bookingRef: string): OwedRefund[];
+  /**
+   * UPI: the owner marks money received for this booking, from the owner's number: by tapping the newest "Received" button sent to them (`tap`), or by replying
+   * "received <code>" with another amount if `amountInr` is given. `code` replays a code (an old one, or one never issued).
+   */
+  ownerMarksReceived(bookingRef: string, options?: { amountInr?: number; code?: string; tap?: boolean }): Promise<InboundMessage>;
+  /** UPI: the owner marks a refund they owe for this booking as sent ("refunded <code>"), or as kept for a booking made by hand (`kept`). */
+  ownerMarksRefund(bookingRef: string, options?: { kept?: boolean; code?: string; tap?: boolean }): Promise<InboundMessage>;
 }
 
 export interface WorldOptions {
@@ -89,6 +101,8 @@ export interface WorldOptions {
    * page that cannot draw buttons yet (the demo), and for the scripted month, which is about records and money and not about taps.
    */
   interactive?: boolean;
+  /** A UPI shop: where the QR pictures go (modules/payments/upi/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
+  qrImage?: (text: string) => Promise<string | null>;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -105,13 +119,13 @@ export function createWorld(options: WorldOptions = {}): World {
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}) });
+  const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}) });
   let deliveredEvents = 0;
 
   const world: World = {
     settings, clock, calendar, payments, guard, messaging, record, store, agent, owner: settings.owner.whatsapp,
     async say(text, o = {}) {
-      const message = messaging.receive(o.from ?? CUSTOMER, text, o.id ? { id: o.id } : {});
+      const message = messaging.receive(o.from ?? CUSTOMER, text, { ...(o.id ? { id: o.id } : {}), ...(o.image ? { image: true } : {}) });
       await agent.handle({ kind: "message", message });
       return message;
     },
@@ -153,6 +167,22 @@ export function createWorld(options: WorldOptions = {}): World {
     textsTo: (number) => messaging.sentTo(number).map((m) => m.text),
     lastTextTo: (number) => messaging.sentTo(number).at(-1)?.text ?? "",
     linkFor: (ref) => payments.links().find((l) => l.reference_id === ref),
+    upiRequest: (ref) => store.upi?.requests.find((r) => r.reference === ref),
+    upiRefunds: (ref) => store.upi?.refunds.filter((r) => r.caseId === ref) ?? [],
+    async ownerMarksReceived(ref, o = {}) {
+      const request = world.upiRequest(ref);
+      const code = o.code ?? request?.code ?? request?.usedCodes.at(-1);
+      if (!code) throw new Error(`No UPI request for ${ref}.`);
+      if (o.tap) return world.tap(`upi-received:${code}`, { from: world.owner });
+      return world.say(o.amountInr !== undefined ? `received ${code} ${o.amountInr}` : `received ${code}`, { from: world.owner });
+    },
+    async ownerMarksRefund(ref, o = {}) {
+      const refund = world.upiRefunds(ref).find((r) => r.code !== null) ?? world.upiRefunds(ref).at(-1);
+      const code = o.code ?? refund?.code ?? refund?.usedCodes.at(-1);
+      if (!code) throw new Error(`No refund owed for ${ref}.`);
+      if (o.tap) return world.tap(`${o.kept ? "upi-kept" : "upi-refunded"}:${code}`, { from: world.owner });
+      return world.say(`${o.kept ? "kept" : "refunded"} ${code}`, { from: world.owner });
+    },
   };
   return world;
 }
