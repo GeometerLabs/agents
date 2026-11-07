@@ -1,6 +1,6 @@
 // The monthly job (plan B54), for every template: on the first morning of the month, in the shop's time zone, the owner gets last month's report on WhatsApp, once.
 // What is the same for all is here: when it may go, the claim before and the ending after, the retries, the quiet month. What a template gives is `make`: its own report,
-// its page and its message (Bookings: pathways/bookings/report/monthly-job.ts; Fees: pathways/fees/report/monthly-job.ts).
+// its page and its message (Bookings: templates/commerce/bookings/report/monthly-job.ts; Fees: templates/education/fees/report/monthly-job.ts).
 //
 // WHEN. From 09:00 on the 1st, not midnight: the owner is not woken, and a webhook that came in late on the last night has been handled by then. The job reports the month
 // that has just ended and only that one. If the process was down on the 1st, the first tick after it is back sends it (a late report is better than none); a month before

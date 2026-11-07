@@ -14,19 +14,18 @@
 // where it stopped when the same command is run again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished.
 // A deploy that is refused puts that client's earlier pin back and stops the rollout there (one client at most is affected); the rest wait for the next run.
 // Agents someone else wrote have no template and no hand check yet: they are skipped, with a plain note.
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { listAgents } from "./agent/folder.ts";
+import { updateAgent } from "./agent/update.ts";
 import { Refused, deploy } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { compare, runHandCheck, savedDataLayout } from "./handcheck.ts";
-import { pathwayDirFor } from "./lib/pathways.ts";
+import { appliedPathwayDir, checkoutDirOf, keptDirFor, pathwayDirFor } from "./lib/pathways.ts";
 import { listShops, readShop, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import type { Run, State, Step } from "./lib/state.ts";
 import { writeAtomic } from "./lib/util.ts";
-
-export const OWN_AGENT_NOTE = "Agents you wrote are updated by you. Geometer will check them too once the crash test for your own agents is available.";
 
 export interface UpdateOptions { to?: string; shops?: string[]; dryRun?: boolean }
 export interface RollbackOptions { shops?: string[]; dryRun?: boolean }
@@ -52,7 +51,8 @@ function compareVersions(a: string, b: string): number {
 
 /** The version of a template this server's checkout has: what `update` moves clients to when no version is given. */
 function checkoutVersion(ctx: Context, pathway: string): string | undefined {
-  try { return (JSON.parse(readFileSync(join(ctx.appDir, "pathways", pathway, "package.json"), "utf8")) as { version?: string }).version; } catch { return undefined; }
+  const folder = checkoutDirOf(ctx.appDir, pathway);
+  try { return folder ? (JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as { version?: string }).version : undefined; } catch { return undefined; }
 }
 
 /** Change the state file: read it fresh, change one thing, write it. Never hold a State across a deploy, which reads and writes the same file. */
@@ -111,7 +111,8 @@ export async function runUpdate(ctx: Context, opts: UpdateOptions = {}): Promise
 async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlier: Step | undefined, save: Save): Promise<Outcome> {
   const at = ctx.now().toISOString();
   const heldBack = (reason: string, more: Partial<Step> = {}): Outcome => ({ step: { status: "held-back", at, reason, ...more } });
-  if (listAgents(ctx.dir).includes(shop)) return { step: { status: "skipped", at, reason: OWN_AGENT_NOTE } };
+  // an agent someone else wrote: the crash test at the version it was last checked at and at the one in agent.json (agent/update.ts), not a deploy
+  if (listAgents(ctx.dir).includes(shop)) return { step: await updateAgent(ctx, shop, opts.dryRun === true) };
   if (earlier?.status === "moving") return finishMove(ctx, shop, earlier, "update");
 
   const folder = readShop(ctx.dir, shop);
@@ -131,8 +132,8 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
   if (opts.to === undefined && compareVersions(target, versionOfPin(running)) < 0) return { step: { status: "unchanged", at, from: running, reason: `It runs ${running}, which is newer than the ${to} in this checkout, so it is left as it is. Name a version with --to to move it anyway.` } };
 
   const toDir = pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: target });
-  if (!toDir) return heldBack(`This server does not have ${to}. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${pathway}@${target}`)}, then run this again. It stays on ${running}.`, { from: running, to });
-  const fromDir = existsSync(applied.pathwayDir) ? applied.pathwayDir : pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: versionOfPin(running) });
+  if (!toDir) return heldBack(`This server does not have ${to}. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, pathway, target)}, then run this again. It stays on ${running}.`, { from: running, to });
+  const fromDir = appliedPathwayDir(ctx.appDir, ctx.dir, applied);
   if (!fromDir) return heldBack(`This server no longer has ${running}, the version it runs, so there is nothing to compare ${to} with. It stays on ${running}.`, { from: running, to });
 
   // the hand check on this client's own settings: at the version it runs now, and at the new one
@@ -199,7 +200,7 @@ export async function runRollback(ctx: Context, opts: RollbackOptions = {}): Pro
 async function rollbackOne(ctx: Context, shop: string, dryRun: boolean, earlier: Step | undefined, save: Save): Promise<Outcome> {
   const at = ctx.now().toISOString();
   const heldBack = (reason: string, more: Partial<Step> = {}): Outcome => ({ step: { status: "held-back", at, reason, ...more } });
-  if (listAgents(ctx.dir).includes(shop)) return { step: { status: "skipped", at, reason: "An agent you wrote has no template version to go back to." } };
+  if (listAgents(ctx.dir).includes(shop)) return { step: { status: "skipped", at, reason: "Geometer does not run an agent you wrote, so there is nothing for it to roll back. Put the version you want back in service yourself, then `geometer agent set <name> --version <it>` and `geometer update`." } };
   if (earlier?.status === "moving") return finishMove(ctx, shop, earlier, "rollback");
 
   const folder = readShop(ctx.dir, shop);
@@ -212,9 +213,9 @@ async function rollbackOne(ctx: Context, shop: string, dryRun: boolean, earlier:
   const to = pinLine(toLock);
   const pathway = to.split("@")[0];
   const toDir = pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: versionOfPin(to) });
-  if (!toDir) return heldBack(`This server no longer has ${to}. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", to)} to go back to it.`, { from, to });
+  if (!toDir) return heldBack(`This server no longer has ${to}. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, pathway, versionOfPin(to))} to go back to it.`, { from, to });
   // a runtime cannot start on saved data written in a layout newer than it knows: going back across such a change is refused here, before anything is touched
-  const layout = { from: applied ? await savedDataLayout(ctx, applied.pathwayDir) : undefined, to: await savedDataLayout(ctx, toDir) };
+  const layout = { from: applied ? await savedDataLayout(ctx, appliedPathwayDir(ctx.appDir, ctx.dir, applied) ?? applied.pathwayDir) : undefined, to: await savedDataLayout(ctx, toDir) };
   const known = layout.from !== undefined && layout.to !== undefined ? { layout: { from: layout.from, to: layout.to } } : {};
   if (layout.from !== undefined && layout.to !== undefined && layout.from > layout.to) {
     return heldBack(`Going back to ${to} is refused. ${from} changed how this client's saved data is laid out (layout ${layout.to} to ${layout.from}), and ${to} cannot read it, so its runtime would not start. Nothing was changed. Either move forward to a version that fixes what went wrong, or put back the record from before the update with \`geometer restore ${shop} --at <time>\` (that loses what came in since).`, { from, to, ...known });
@@ -286,8 +287,10 @@ export function summary(run: Run): string {
     total[s.status]++;
     if (s.status === "moved") {
       const held = s.after ? ` Held ${s.after.held} of ${s.after.of} on its own settings${s.before ? ` (${s.before.held} of ${s.before.of} before)` : ""}.` : "";
-      const said = back ? (dry ? `would go back to ${s.to} (now ${s.from}).` : `Back to ${s.to} (was ${s.from}).`) : `${dry ? "would move" : "moved"} from ${s.from} to ${s.to}.`;
+      const said = back ? (dry ? `would go back to ${s.to} (now ${s.from}).` : `Back to ${s.to} (was ${s.from}).`)
+        : s.from === undefined ? `${dry ? "would be" : "is"} recorded at ${s.to}: nothing was recorded before.` : `${dry ? "would move" : "moved"} from ${s.from} to ${s.to}.`;
       lines.push(`  ✓ ${name}  ${said}${held}${s.proven ? ` ${s.proven}.` : ""}`);
+      if (s.reason) lines.push(`      ${s.reason}`);
       if (s.layout && s.layout.to > s.layout.from) lines.push(`      Note: ${s.to} changes how saved data is laid out (layout ${s.layout.from} to ${s.layout.to}), so \`geometer rollback\` will refuse to go back across it.`);
     } else if (s.status === "held-back") {
       lines.push(`  ✗ ${name}  HELD BACK. ${s.reason ?? ""}`);

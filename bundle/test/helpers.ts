@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { parseServer, readShop, serverPaths } from "../lib/server.ts";
 import type { PanelRuntime, ServerConfig } from "../lib/server.ts";
 
-export const EXAMPLE_CLIENT = new URL("../../pathways/bookings/clients/glow-salon.example", import.meta.url).pathname;
+export const EXAMPLE_CLIENT = new URL("../../templates/commerce/bookings/clients/glow-salon.example", import.meta.url).pathname;
 export const CALENDAR_ID = "glowsalon@group.calendar.google.com";
 export const PHONE_NUMBER_ID = "123456789012345";
 

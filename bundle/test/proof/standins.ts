@@ -1,7 +1,7 @@
 // What the proof's Guards call instead of the internet: the pathway's Razorpay, WhatsApp and Calendar stand-ins on 8790, plus (8791) a Google token endpoint
 // and a model endpoint. Test money, practice messages, a made-up model. Run in a container on the egress network by test/proof/run.ts.
 import { createServer } from "node:http";
-import { startStandins } from "../../../pathways/bookings/standins/server.ts";
+import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 
 const stand = await startStandins({ razorpayWebhookSecret: "standin-razorpay-webhook-secret", whatsappAppSecret: "standin-whatsapp-app-secret" }, { port: 8790, host: "0.0.0.0" });
 let tokens = 0; const modelCalls: string[] = [];

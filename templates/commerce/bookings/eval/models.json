@@ -1,0 +1,105 @@
+{
+  "about": "The models scripts/model-eval.ts tries, besides the rule parser. A starter list: choosing the candidates is a separate research task. Keys go in the repo-root .env under keyEnv (git ignores it). Prices are NOT in this file: there is one dated table of model prices, modules/understanding/rates/<date>.json, which the runtime also reads. A candidate names its provider (the name runtime.json would give it), and the evaluation looks up (provider, model) in that table and prints the cost of 1,000 messages; a model with no line there shows \"no price set\". Model ids were read from each provider's own docs on 3 Nov 2026 and have not been tried with a key: if every message of a candidate fails with an HTTP error, check the id and extraBody against the provider's docs. The Phase 0 research (docs research/2026-11-phase0-providers-and-accounts.md) recommends testing three first: claude-haiku-5-5, gemini-3.1-flash-lite (paid tier: the free tier's text is used for training, which WhatsApp's terms forbid) and sarvam-105b-conversations. The others are kept in reserve (run them with --only).",
+  "candidates": [
+    {
+      "name": "claude-haiku-5-5",
+      "provider": "anthropic",
+      "wire": "anthropic",
+      "baseUrl": "https://api.anthropic.com",
+      "model": "claude-haiku-5-5",
+      "keyEnv": "ANTHROPIC_API_KEY",
+      "effort": "low",
+      "note": "Anthropic's current fast, low-cost model (the id is from the Claude API model list). Effort low because reading one short message needs no long thinking. Price: from the rate table (provider anthropic)."
+    },
+    {
+      "name": "gemini-3.1-flash-lite",
+      "provider": "google",
+      "wire": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-3.1-flash-lite",
+      "keyEnv": "GEMINI_API_KEY",
+      "responseFormat": "json_schema",
+      "note": "One of the three the Phase 0 research recommends: the best independent evidence on Indian languages among the big labs. Use a paid-tier key; free-tier text is used for training. Reached through Gemini's OpenAI-compatible endpoint (key as a Bearer token). If every message gets HTTP 400, try \"responseFormat\": \"json_object\". Price: from the rate table (provider google)."
+    },
+    {
+      "name": "gemini-3.5-flash-lite",
+      "provider": "google",
+      "wire": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "model": "gemini-3.5-flash-lite",
+      "keyEnv": "GEMINI_API_KEY",
+      "responseFormat": "json_schema",
+      "note": "The newer Flash-Lite, kept in reserve; reached through Gemini's OpenAI-compatible endpoint (key sent as a Bearer token). Free-tier keys are rate limited: add \"pauseMs\": 4000 if messages fail with HTTP 429. If every message gets HTTP 400, try \"responseFormat\": \"json_object\": whether its compatibility layer accepts a closed strict schema is the least certain part. Price: from the rate table (provider google); thinking tokens count as output."
+    },
+    {
+      "name": "sarvam-105b-conversations",
+      "provider": "sarvam",
+      "wire": "openai",
+      "baseUrl": "https://api.sarvam.ai/v1",
+      "model": "sarvam-105b-conversations",
+      "keyEnv": "SARVAM_API_KEY",
+      "responseFormat": "json_schema",
+      "extraBody": {
+        "reasoning_effort": "low"
+      },
+      "note": "An Indian-language model, the variant meant for real-time conversation (the other is sarvam-105b). Its docs list both Authorization: Bearer and api-subscription-key and are not consistent: if every message gets HTTP 401 or 403, set \"authHeader\": \"api-subscription-key\". Reasoning tokens are billed as output tokens. Price: none in the rate table yet (Sarvam's price page shows display names only), so the cost row says no price set."
+    },
+    {
+      "name": "groq-gpt-oss-20b",
+      "provider": "groq",
+      "wire": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "model": "openai/gpt-oss-20b",
+      "keyEnv": "GROQ_API_KEY",
+      "responseFormat": "json_schema",
+      "extraBody": {
+        "reasoning_effort": "low"
+      },
+      "note": "The cheapest production model on Groq's models page with published prices, and one of the models Groq lists for strict JSON-schema output. An open-weight model that may be weaker in Malayalam and Kannada: the eval is how to tell. Price: none in the rate table yet, so the cost row says no price set."
+    },
+    {
+      "name": "openai-gpt-6-luna",
+      "provider": "openai",
+      "wire": "openai",
+      "baseUrl": "https://api.openai.com/v1",
+      "model": "gpt-6-luna",
+      "keyEnv": "OPENAI_API_KEY",
+      "responseFormat": "json_schema",
+      "extraBody": {
+        "temperature": null,
+        "max_tokens": null,
+        "max_completion_tokens": 1024
+      },
+      "note": "The model OpenAI's models page describes as the most efficient for focused, high-volume tasks. Its request shape was not tried: newer OpenAI models take max_completion_tokens and refuse a set temperature, so extraBody nulls those two. Price: from the rate table (provider openai)."
+    },
+    {
+      "name": "deepinfra-deepseek-v4.1-flash",
+      "provider": "deepinfra",
+      "wire": "openai",
+      "baseUrl": "https://api.deepinfra.com/v1/openai",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "keyEnv": "DEEPINFRA_API_KEY",
+      "responseFormat": "json_schema",
+      "note": "Step 2 of the understanding (economics note, section 3.2): DeepSeek V4.1 Flash on DeepInfra's Flex tier, the owner's pick. DeepInfra is paid: the key goes only in .env. Price: from the rate table (provider deepinfra: $0.16 in, $0.48 out per million, from the economics note's third-party trackers: check deepinfra.com before choosing). The model id is a best guess at DeepInfra's naming: if every message gets HTTP 404 or 400, copy the id from deepinfra.com, and if 400 try \"responseFormat\": \"json_object\"."
+    },
+    {
+      "name": "laya",
+      "provider": "laya",
+      "wire": "systemone",
+      "kind": "laya",
+      "urlEnv": "LAYA_BASE_URL",
+      "model": "laya",
+      "note": "Step 1: Laya (Apache-2.0 open weights) served on this machine by laya-serve, for example LAYA_BASE_URL=http://127.0.0.1:8080 in .env; the steps to run it are in Deferred.md. No key, and nothing leaves the machine. Price: none per call, because it is self-hosted (the rate table says so, dated). Malayalam and Kannada are not on the model card: the table is how to find out."
+    },
+    {
+      "name": "jev",
+      "provider": "jev",
+      "wire": "systemone",
+      "kind": "jev",
+      "urlEnv": "JEV_BASE_URL",
+      "keyEnv": "JEV_API_KEY",
+      "model": "clm-latest",
+      "note": "Step 1, hosted: Jev (TypeSafe). It is paid: the address and the key go only in .env. Price: about $0.042 per million tokens, as the economics note quotes the Laya page, from the rate table (provider jev). The model name clm-latest is the example in pydantic-ai's docs: use the name Jev serves your account's model under."
+    }
+  ]
+}

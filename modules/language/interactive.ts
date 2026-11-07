@@ -2,7 +2,7 @@
 //
 // A button or list row has a fixed id. When the customer taps it, WhatsApp sends that id back (webhooks.ts keeps it), and the template turns it into an
 // intent by looking it up: no words are read, so no model is asked and nothing is guessed. A template makes its own ids and labels on top of this file
-// (Bookings: pathways/bookings/src/language/interactive.ts; Fees: pathways/fees/src/language/interactive.ts). A forged or old id changes nothing the
+// (Bookings: templates/commerce/bookings/src/language/interactive.ts; Fees: templates/education/fees/src/language/interactive.ts). A forged or old id changes nothing the
 // typed word would not.
 //
 // The limits are Meta's (Cloud API, interactive messages, read 5 Nov 2026): 3 reply buttons, each title up to 20 characters; a list of up to 10 rows, each

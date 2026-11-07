@@ -5,10 +5,10 @@
 // COUNTS ONLY. Nothing here reads a message's words: an entry's `inputsDigest`, `notes` and `conversation` are never looked at, and the result holds numbers.
 //
 // What it reads is deliberately narrow, and the two adapters below are the ONLY places that know the record's field names:
-//   understandingOf(entry)   the fields the `understanding` branch (pathways/bookings) adds to the record for each understood message
+//   understandingOf(entry)   the fields the `understanding` branch (templates/commerce/bookings) adds to the record for each understood message
 //   whatsappTypeOf(entry)    which of Meta's three message types an outgoing message is, from what the record already holds today
 // Aligned with that branch's real names (5 Nov, when it merged): the pathway writes them in the record entry's `refs`, as strings, so FIELDS.container is "refs"
-// and the numbers are read from decimal strings. The names are listed in pathways/bookings/Explanation.md, "Understanding record fields (for the cost meter)".
+// and the numbers are read from decimal strings. The names are listed in templates/commerce/bookings/Explanation.md, "Understanding record fields (for the cost meter)".
 
 export const STEPS = ["rules", "decision", "model"] as const;
 export type Step = (typeof STEPS)[number];
@@ -16,7 +16,7 @@ export type Step = (typeof STEPS)[number];
 /**
  * THE ONE PLACE THE RECORD'S NEW FIELD NAMES ARE WRITTEN DOWN. The pathway adds, for each understood customer message: the step that read it, the provider and
  * model, the tokens in and out, and the estimated cost in micro-rupees, in the entry's `refs` (the record's existing map of strings; a cost that has no price in the
- * pathway's rate table is left out, and is read here as 0 spend). They are looked for first inside the object called `container` on the entry, and then on the
+ * pathway's rate table is left out, and is counted here as `unpriced`: unknown, never 0). They are looked for first inside the object called `container` on the entry, and then on the
  * entry itself. The tests use them through this constant, so a rename here is followed by every test.
  */
 export const FIELDS = {
@@ -29,19 +29,22 @@ export const FIELDS = {
   costMicroInr: "costMicroInr",
 } as const;
 
-export interface Understanding { step: Step; provider?: string; model?: string; inputTokens: number; outputTokens: number; costMicroInr: number }
+/** `costMicroInr` is null when the record gives no usable cost for the message: the call had no price in the rate table, so what it cost is UNKNOWN (never 0). */
+export interface Understanding { step: Step; provider?: string; model?: string; inputTokens: number; outputTokens: number; costMicroInr: number | null }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-/** A whole number of 0 or more, as a number or as the decimal string the record's refs hold it in. Anything else is 0 (never NaN, negative or a fraction). */
-const whole = (v: unknown): number => {
+/** A whole number of 0 or more, as a number or as the decimal string the record's refs hold it in. Anything else is null (never NaN, negative or a fraction). */
+const wholeOrNull = (v: unknown): number | null => {
   const n = typeof v === "string" && /^\d{1,15}$/u.test(v) ? Number(v) : v;
-  return typeof n === "number" && Number.isSafeInteger(n) && n >= 0 ? n : 0;
+  return typeof n === "number" && Number.isSafeInteger(n) && n >= 0 ? n : null;
 };
+/** A count of tokens: one that is missing or wrong is 0 tokens. (A missing COST is not 0: see costMicroInr.) */
+const whole = (v: unknown): number => wholeOrNull(v) ?? 0;
 
 /**
  * What the record says about how one customer message was understood, or undefined when it says nothing usable (an older runtime, a rules-only runtime, a
  * field of the wrong type). Undefined means "the rules read it, for free": the caller counts the message as `rules`. A step this file does not know is
- * undefined too, never guessed.
+ * undefined too, never guessed. A message with a step but no usable cost has `costMicroInr: null`: unpriced, which the caller counts apart from the spend.
  */
 export function understandingOf(entry: unknown): Understanding | undefined {
   if (!isObj(entry)) return undefined;
@@ -56,7 +59,7 @@ export function understandingOf(entry: unknown): Understanding | undefined {
   return {
     step: step as Step,
     ...(provider ? { provider } : {}), ...(model ? { model } : {}),
-    inputTokens: whole(source[FIELDS.inputTokens]), outputTokens: whole(source[FIELDS.outputTokens]), costMicroInr: whole(source[FIELDS.costMicroInr]),
+    inputTokens: whole(source[FIELDS.inputTokens]), outputTokens: whole(source[FIELDS.outputTokens]), costMicroInr: wholeOrNull(source[FIELDS.costMicroInr]),
   };
 }
 
@@ -101,7 +104,14 @@ export interface UsageTotals {
   /** Cumulative over the whole record. */
   messages: number;
   byStep: Record<Step, number>;
+  /** What the messages with a price cost. It leaves out the `unpriced` ones, so it is a floor, not the whole spend, whenever `unpriced` is above 0. */
   modelMicroInr: number;
+  /**
+   * Messages a step read whose cost the record does not give (the call had no price in the rate table). Their cost is unknown, so they are counted here and not as
+   * spend. Optional because a status file written before this count has none: absent means "not counted", never "none". It stays in the shop's status file and the
+   * panel; the heartbeat does not carry it yet, because fleet refuses a field it does not know (bundle/Deferred.md has the change).
+   */
+  unpriced?: number;
   whatsapp: {
     service: number; utility: number; marketing: number;
     /** Gross, GST included, before the month's free replies; 0 when `estimated` is false. */
@@ -112,13 +122,14 @@ export interface UsageTotals {
 }
 
 export function summarizeUsage(entries: readonly unknown[], rates: UsageRates): UsageTotals {
-  const t: UsageTotals = { messages: 0, byStep: { rules: 0, decision: 0, model: 0 }, modelMicroInr: 0, whatsapp: { service: 0, utility: 0, marketing: 0, estMicroInr: 0, estimated: true } };
+  const t: UsageTotals = { messages: 0, byStep: { rules: 0, decision: 0, model: 0 }, modelMicroInr: 0, unpriced: 0, whatsapp: { service: 0, utility: 0, marketing: 0, estMicroInr: 0, estimated: true } };
   for (const entry of entries) {
     if (isCustomerMessage(entry)) {
       const u = understandingOf(entry);
       t.messages++;
       t.byStep[u?.step ?? "rules"]++;
-      t.modelMicroInr += u?.costMicroInr ?? 0;
+      if (u && u.costMicroInr === null) t.unpriced = (t.unpriced ?? 0) + 1; // unknown, never 0: counted apart, so the meter can say "and N calls with no price"
+      else t.modelMicroInr += u?.costMicroInr ?? 0; // no understanding at all: the rules read it, for free
       continue;
     }
     const type = whatsappTypeOf(entry);

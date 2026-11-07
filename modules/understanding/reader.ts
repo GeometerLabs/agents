@@ -2,12 +2,12 @@
 // button mode (and tell the owner, once) when the allowance is used up, the shop was switched to buttons from outside, or a model failed.
 //
 // The parser is the router (router.ts) or the rule parser alone. Whether a message may spend at all is decided here, from the store's AI state
-// (ai-state.ts): in button mode the parser is asked to read with the rules only.
+// (ai-state.ts): in button mode the parser is asked to read with the rules only, and a decision model that keeps failing is left out for a while (`skipSteps`).
 import type { Language } from "../language/languages.ts";
 import type { Clock } from "../core/clock.ts";
 import { MINUTE } from "../core/time.ts";
 import type { Action, Outcome } from "../record/record.ts";
-import { DEFAULT_PAUSE_MINUTES, dayLocal, modeOf, stateFor } from "./ai-state.ts";
+import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, dayLocal, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
 import type { AiPolicy, AiStore, ButtonReason } from "./ai-state.ts";
 import { RULES } from "./model.ts";
 import type { IntentBase, IntentParser, ParseOptionsBase, Understood } from "./model.ts";
@@ -33,8 +33,11 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
 
   async function readIntent(text: string, options: O): Promise<{ intent: I; note?: string; understood: Understood }> {
     try {
+      // A step that keeps failing is left out for a while: the parser is told, and the next step reads the message at once.
+      const skipSteps = pausedSteps(store, clock.now(), timeZone);
+      const asked = skipSteps.length > 0 ? { ...options, skipSteps } : options;
       // A parser that can say why it fell back (the model parser) gets that said in the record.
-      const read = parser.parseDetailed ? await parser.parseDetailed(text, context, options) : { intent: await parser.parse(text, context), fallbackReason: undefined, understood: undefined };
+      const read = parser.parseDetailed ? await parser.parseDetailed(text, context, asked) : { intent: await parser.parse(text, context), fallbackReason: undefined, understood: undefined };
       const intent = deps.coerce(read.intent, context);
       const note = read.fallbackReason ? `the model could not be used (${read.fallbackReason}), so the rule parser read the message` : undefined;
       const understood = read.understood ?? RULES;
@@ -44,7 +47,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     }
   }
 
-  /** The cost of one message as the record keeps it (every value a string, as the record's refs are). The field names are listed in pathways/bookings/Explanation.md. */
+  /** The cost of one message as the record keeps it (every value a string, as the record's refs are). The field names are listed in templates/commerce/bookings/Explanation.md. */
   function understandingRefs(u: Understood, via?: "button" | "list"): Record<string, string> {
     return {
       step: u.step, provider: u.provider, model: u.model,
@@ -53,6 +56,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
       ...(u.rateDate !== null ? { rateDate: u.rateDate } : {}),
       tried: u.tried.join("+"),
       ...(u.failed.length > 0 ? { failed: u.failed.join("+") } : {}),
+      ...(u.skipped?.length ? { skipped: u.skipped.join("+") } : {}),
       ...(via ? { via } : {}),
     };
   }
@@ -63,6 +67,31 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     state[u.step] += 1;
     if (u.costMicroInr === null) state.unpriced += 1; else state.costMicroInr += u.costMicroInr;
     if (u.step === "rules" && u.failed.length > 0) state.pausedUntilMs = clock.now() + (policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES) * MINUTE;
+    // The decision model's pause: it answering (even "unsure") ends an outage; it failing counts only when the language model was asked after it AND answered, because
+    // only then did something take over, and the pause says the language model reads each message. With nothing after it, or with that down too, a failure is the fault above.
+    if (u.tried.includes("decision")) {
+      const failed = u.failed.includes("decision");
+      if (!failed || (u.tried.includes("model") && !u.failed.includes("model"))) noteStep(store, "decision", !failed, clock.now(), timeZone, policy.breaker);
+    }
+  }
+
+  /** Put the pauses and resumptions of a step in the record, once each. No customer and no owner is told: nothing they see changes, and the builder reads the record. */
+  function announceSteps(): void {
+    const month = stateFor(store, clock.now(), timeZone).month;
+    const b = { ...DEFAULT_BREAKER, ...policy.breaker };
+    for (const e of takeAnnouncements(store, clock.now(), timeZone)) {
+      if (e.event === "paused") {
+        deps.log("ai_mode", "confirmed", { step: e.step, event: "paused", month }, {
+          notes: `The decision model (step 1) failed ${b.failures} times in ${b.windowMinutes} minutes, so for ${b.pauseMinutes} minutes the agent skips it and the language model (step 2) reads each message at once. A message costs the language model's price, as it did while the decision model failed, but does not wait for it. Then one message tries the decision model again. Every limit still holds. No customer or owner is told.`,
+          refs: { mode: "step_paused", step: e.step, reason: "failures", month, ...(e.untilMs !== undefined ? { until: new Date(e.untilMs).toISOString() } : {}) },
+        });
+      } else {
+        deps.log("ai_mode", "confirmed", { step: e.step, event: "resumed", month }, {
+          notes: "The decision model (step 1) answered again, so the agent asks it first again.",
+          refs: { mode: "step_resumed", step: e.step, month },
+        });
+      }
+    }
   }
 
   /** Is the shop in button mode right now, and why? */
@@ -74,6 +103,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
    * failing model. Customers are never told: they simply get buttons.
    */
   async function announceButtonMode(): Promise<void> {
+    announceSteps();
     const now = mode();
     if (!now.buttons) return;
     const state = stateFor(store, clock.now(), timeZone);

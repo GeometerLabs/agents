@@ -1,6 +1,6 @@
 // Run one client's agent as a server: the command line every template's server/main.ts is a few lines around.
 //
-//   INTERNAL_TOKEN_FILE=/run/secrets/inbox-token node pathways/<template>/server/main.ts --client clients/<name>
+//   INTERNAL_TOKEN_FILE=/run/secrets/inbox-token node templates/<domain>/<template>/server/main.ts --client clients/<name>
 //
 // The folder holds settings.json, runtime.json and pathway.lock (see the template's README.md). The token file holds the secret the inbox sends as
 // "Authorization: Bearer ...". Press Ctrl+C (or send SIGTERM) to stop: the step in hand finishes, the rest waits in the store for the next start.

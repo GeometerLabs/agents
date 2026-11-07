@@ -9,20 +9,20 @@
 // pinnedRuntimeCheck); the settings check and the Guard limits here are the current ones, as they have always been.
 import type { LimitsSpec, LimitsSpecIdentity, RazorpayCaps } from "../../modules/payments/guard-limits.ts";
 import type { ReportLanguage } from "../../modules/report/text.ts";
-import { runOn as bookingsRunOn } from "../../pathways/bookings/crash-test/situations.ts";
-import { buildGoLiveCertificate as bookingsCertificate, summariseRun as bookingsSummary } from "../../pathways/bookings/report/certificate.ts";
-import { policyDigest as bookingsDigest } from "../../pathways/bookings/report/data.ts";
-import { writeGoLiveCertificate as bookingsWrite } from "../../pathways/bookings/report/run.ts";
-import { razorpayLimitsSpec as bookingsSpec } from "../../pathways/bookings/src/guard-limits.ts";
-import { validateSettings as bookingsSettings } from "../../pathways/bookings/src/settings.ts";
-import { validateRuntimeConfig as bookingsRuntime } from "../../pathways/bookings/server/config.ts";
-import { runOn as feesRunOn } from "../../pathways/fees/crash-test/situations.ts";
-import { buildGoLiveCertificate as feesCertificate, summariseRun as feesSummary } from "../../pathways/fees/report/certificate.ts";
-import { policyDigest as feesDigest } from "../../pathways/fees/report/data.ts";
-import { writeGoLiveCertificate as feesWrite } from "../../pathways/fees/report/run.ts";
-import { razorpayLimitsSpec as feesSpec } from "../../pathways/fees/src/guard-limits.ts";
-import { validateSettings as feesSettings } from "../../pathways/fees/src/settings.ts";
-import { validateRuntimeConfig as feesRuntime } from "../../pathways/fees/server/config.ts";
+import { runOn as bookingsRunOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
+import { buildGoLiveCertificate as bookingsCertificate, summariseRun as bookingsSummary } from "../../templates/commerce/bookings/report/certificate.ts";
+import { policyDigest as bookingsDigest } from "../../templates/commerce/bookings/report/data.ts";
+import { writeGoLiveCertificate as bookingsWrite } from "../../templates/commerce/bookings/report/run.ts";
+import { razorpayLimitsSpec as bookingsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
+import { validateSettings as bookingsSettings } from "../../templates/commerce/bookings/src/settings.ts";
+import { validateRuntimeConfig as bookingsRuntime } from "../../templates/commerce/bookings/server/config.ts";
+import { runOn as feesRunOn } from "../../templates/education/fees/crash-test/situations.ts";
+import { buildGoLiveCertificate as feesCertificate, summariseRun as feesSummary } from "../../templates/education/fees/report/certificate.ts";
+import { policyDigest as feesDigest } from "../../templates/education/fees/report/data.ts";
+import { writeGoLiveCertificate as feesWrite } from "../../templates/education/fees/report/run.ts";
+import { razorpayLimitsSpec as feesSpec } from "../../templates/education/fees/src/guard-limits.ts";
+import { validateSettings as feesSettings } from "../../templates/education/fees/src/settings.ts";
+import { validateRuntimeConfig as feesRuntime } from "../../templates/education/fees/server/config.ts";
 
 /** The services a template calls, each of which has a Guard. The order fixes each Guard's address on the admin network (generate/compose.ts). */
 export type ServiceKind = "razorpay" | "whatsapp" | "calendar";

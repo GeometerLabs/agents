@@ -3,13 +3,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { validateSettings } from "../../../pathways/fees/src/settings.ts";
-import type { Settings } from "../../../pathways/fees/src/settings.ts";
+import { validateSettings } from "../../../templates/education/fees/src/settings.ts";
+import type { Settings } from "../../../templates/education/fees/src/settings.ts";
 import { applyFeesBusiness, applyFeesRules, buildFeesSettings, feesDraftFromShop, feesLimitLines, MAX_STUDENTS, newFeesDraft } from "../fees.ts";
 import { WORDS } from "../languages.ts";
 import type { Template } from "../templates.ts";
 
-const checked = validateSettings(JSON.parse(readFileSync(new URL("../../../pathways/fees/settings/bright-tuition.example.json", import.meta.url), "utf8")));
+const checked = validateSettings(JSON.parse(readFileSync(new URL("../../../templates/education/fees/settings/bright-tuition.example.json", import.meta.url), "utf8")));
 if (!checked.ok) throw new Error(checked.errors.join("; "));
 const example: Settings = checked.settings;
 const template: Template = { id: "fees", version: "0.1.0", setup: "fees", steps: ["business", "deposit", "languages", "accounts", "checks"], accounts: ["whatsapp", "razorpay"], folder: "", settingsExample: "" };

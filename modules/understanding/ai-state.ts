@@ -6,7 +6,29 @@
 //   allowance  this month's messages handled by the decision and language models, or their estimated cost, have reached the allowance
 //   fault      a model step failed (an error, a timeout, an answer it could not use) in the last few minutes
 // None of this changes a limit. Guard and the template's own checks hold exactly as before; only the reading of free text is done without a model.
-import { localParts } from "../core/time.ts";
+//
+// A STEP PAUSE is smaller than button mode. When only the decision model (step 1) is down and the language model (step 2) answers, every message would wait out
+// the decision model's timeout and then pay step 2 anyway. So after a few failures in a short time the decision model is left out for a while and step 2 reads the
+// message at once; one message after the pause tries it again. The shop stays in AI mode; the record says so (an `ai_mode` line) and so does the status.
+import { MINUTE, localParts } from "../core/time.ts";
+
+/** The steps a pause can be put on: the decision model. (The language model has the fault pause: when it fails with nothing after it, the shop moves to buttons.) */
+export const BREAKER_STEPS = ["decision"] as const;
+export type BreakerStep = (typeof BREAKER_STEPS)[number];
+
+/** When to pause a step: after `failures` failures within `windowMinutes`, for `pauseMinutes`. Placeholders until a real Laya or Jev has been watched. */
+export interface BreakerPolicy { failures?: number; windowMinutes?: number; pauseMinutes?: number }
+export const DEFAULT_BREAKER = { failures: 3, windowMinutes: 15, pauseMinutes: 10 } as const;
+
+/** How one step has been doing. Moments only, never a word of a message. */
+export interface StepHealth {
+  /** When it failed lately (ms), oldest first, only those inside the window. */
+  fails?: number[];
+  /** Set from the moment the step is paused until it answers again. While it is in the future the step is left out; once it has passed, the next message is the try. */
+  pausedUntilMs?: number;
+  /** What the record has not been told yet, once each (reader.ts says it and takes it off). */
+  announce?: ("paused" | "resumed")[];
+}
 
 /**
  * What the shop has spent on understanding messages this month, and whether it is in button mode. Kept in the template's store, so it survives a restart and a
@@ -25,6 +47,8 @@ export interface AiState {
   unpriced: number;
   /** A model step failed: until this moment the agent reads with buttons and the rules only. */
   pausedUntilMs?: number;
+  /** How each paused-able step has been doing. Left out until a step first fails, and in a store saved before this existed. */
+  steps?: Partial<Record<BreakerStep, StepHealth>>;
   /** The notices already sent, so each is sent once: the month the allowance notice was sent for; whether the outside switch was announced; the day (local) of the last fault notice. */
   told: { allowance?: string; override?: boolean; fault?: string };
 }
@@ -44,6 +68,8 @@ export interface AiPolicy {
   allowance?: { messages?: number; costMicroInr?: number };
   /** How long button mode lasts after a model step fails. Default 5 minutes. */
   pauseMinutes?: number;
+  /** When a failing decision model is paused (see DEFAULT_BREAKER). */
+  breaker?: BreakerPolicy;
 }
 
 export const DEFAULT_PAUSE_MINUTES = 5;
@@ -66,8 +92,8 @@ export function stateFor(store: AiStore, nowMs: number, timeZone: string): AiSta
   const now = store.ai;
   if (!now) return (store.ai = { month, rules: 0, decision: 0, model: 0, costMicroInr: 0, unpriced: 0, told: {} });
   if (now.month !== month) {
-    // A new month: the counts and the allowance notice start again. A pause in force, and the switch and fault notices (which are about the outside switch and the day), carry over.
-    store.ai = { month, rules: 0, decision: 0, model: 0, costMicroInr: 0, unpriced: 0, told: { override: now.told.override, fault: now.told.fault }, ...(now.pausedUntilMs !== undefined ? { pausedUntilMs: now.pausedUntilMs } : {}) };
+    // A new month: the counts and the allowance notice start again. A pause in force, a step's pause, and the switch and fault notices (which are about the outside switch and the day), carry over.
+    store.ai = { month, rules: 0, decision: 0, model: 0, costMicroInr: 0, unpriced: 0, told: { override: now.told.override, fault: now.told.fault }, ...(now.pausedUntilMs !== undefined ? { pausedUntilMs: now.pausedUntilMs } : {}), ...(now.steps ? { steps: now.steps } : {}) };
   }
   return store.ai!;
 }
@@ -93,6 +119,55 @@ export function modeOf(store: AiStore, policy: AiPolicy, nowMs: number, timeZone
   return { buttons: false };
 }
 
+// ---- the pause on a step that keeps failing --------------------------------------------------------------------------------------
+
+/** The steps to leave out of the next message because their pause is running. */
+export function pausedSteps(store: AiStore, nowMs: number, timeZone: string): BreakerStep[] {
+  const steps = stateFor(store, nowMs, timeZone).steps;
+  return BREAKER_STEPS.filter((step) => (steps?.[step]?.pausedUntilMs ?? 0) > nowMs);
+}
+
+/**
+ * A step was asked and answered (`ok`, even if it was unsure) or failed. Enough failures close together pause it; after the pause the next message is a try, and a try
+ * that fails pauses it again at once, without a new line in the record, while one that answers ends the outage. The caller counts a failure only when another step
+ * was there to take over (reader.ts).
+ */
+export function noteStep(store: AiStore, step: BreakerStep, ok: boolean, nowMs: number, timeZone: string, policy: BreakerPolicy = {}): void {
+  const s = stateFor(store, nowMs, timeZone);
+  const b = { ...DEFAULT_BREAKER, ...policy };
+  const was = s.steps?.[step] ?? {};
+  const pending = was.announce ?? [];
+  let next: StepHealth;
+  if (ok) {
+    const announce: StepHealth["announce"] = was.pausedUntilMs !== undefined ? [...pending, "resumed"] : pending;
+    next = announce.length > 0 ? { announce } : {};
+  } else {
+    const fails = [...(was.fails ?? []).filter((t) => nowMs - t < b.windowMinutes * MINUTE), nowMs].slice(-20);
+    const tried = was.pausedUntilMs !== undefined; // paused before, so this was the try after the pause
+    if (tried || fails.length >= b.failures) {
+      const announce: StepHealth["announce"] = tried ? pending : [...pending, "paused"];
+      next = { fails, pausedUntilMs: nowMs + b.pauseMinutes * MINUTE, ...(announce.length > 0 ? { announce } : {}) };
+    } else next = { fails, ...(pending.length > 0 ? { announce: pending } : {}) };
+  }
+  s.steps = { ...s.steps, [step]: next };
+}
+
+export interface StepEvent { step: BreakerStep; event: "paused" | "resumed"; /** When the pause ends, for "paused". */ untilMs?: number }
+
+/** What the record has not been told yet about the paused steps. Taking it clears it, so each is said once. */
+export function takeAnnouncements(store: AiStore, nowMs: number, timeZone: string): StepEvent[] {
+  const s = stateFor(store, nowMs, timeZone);
+  const out: StepEvent[] = [];
+  for (const step of BREAKER_STEPS) {
+    const health = s.steps?.[step];
+    if (!health?.announce?.length) continue;
+    for (const event of health.announce) out.push({ step, event, ...(event === "paused" && health.pausedUntilMs !== undefined ? { untilMs: health.pausedUntilMs } : {}) });
+    const { announce: _taken, ...rest } = health;
+    s.steps = { ...s.steps, [step]: rest };
+  }
+  return out;
+}
+
 /** Counts only, for the runtime's status and so for a heartbeat: never a word of a message. */
 export interface AiSummary {
   month: string;
@@ -100,6 +175,8 @@ export interface AiSummary {
   messages: { rules: number; decision: number; model: number };
   costMicroInr: number;
   unpriced: number;
+  /** A step that is being left out because it kept failing, and until when (an ISO time); null when it is being asked. The shop is still in "ai" mode. */
+  paused: Record<BreakerStep, string | null>;
   allowance: { messages: number | null; costMicroInr: number | null };
   mode: "ai" | "buttons";
   reason: ButtonReason | null;
@@ -110,6 +187,7 @@ export function summaryOf(store: AiStore, policy: AiPolicy, nowMs: number, timeZ
   const mode = modeOf(store, policy, nowMs, timeZone);
   return {
     month: s.month, messages: { rules: s.rules, decision: s.decision, model: s.model }, costMicroInr: s.costMicroInr, unpriced: s.unpriced,
+    paused: Object.fromEntries(BREAKER_STEPS.map((step) => { const until = s.steps?.[step]?.pausedUntilMs; return [step, until !== undefined && until > nowMs ? new Date(until).toISOString() : null]; })) as AiSummary["paused"],
     allowance: { messages: policy.allowance?.messages ?? null, costMicroInr: policy.allowance?.costMicroInr ?? null },
     mode: mode.buttons ? "buttons" : "ai", reason: mode.buttons ? mode.reason : null,
   };

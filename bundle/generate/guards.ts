@@ -2,13 +2,13 @@
 // generated from that one definition. The tool name in a spec and the tool name in its guard.toml come from the same line here, so they
 // cannot disagree (Guard refuses a pair that does, and the generator checks it again, see rules.ts).
 //
-// The Razorpay spec has one source: razorpayLimitsSpec in pathways/bookings/src/guard-limits.ts, which turns the shop's own settings into
+// The Razorpay spec has one source: razorpayLimitsSpec in templates/commerce/bookings/src/guard-limits.ts, which turns the shop's own settings into
 // the deposit bound and the refund threshold. The others are generated here from the shop's runtime.json (the WhatsApp number, the calendar)
 // and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
 import { ANTHROPIC_VERSION } from "../../modules/understanding/model-llm.ts";
-import { razorpayLimitsSpec } from "../../pathways/bookings/src/guard-limits.ts";
+import { razorpayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import type { LimitsSpec, RazorpayCaps } from "../../modules/payments/guard-limits.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */

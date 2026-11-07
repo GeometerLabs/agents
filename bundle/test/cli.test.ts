@@ -78,8 +78,8 @@ test("rollback puts the previous pathway.lock back and deploys; with none to go 
     assert.equal(none.result, 1); assert.match(none.err, /no earlier pathway\.lock/);
     // a second version of the pathway exists beside the server, and the shop is moved to it
     const { cpSync } = await import("node:fs");
-    cpSync(join(w.ctx.appDir, "pathways", "bookings"), join(w.root, "pathways", "bookings@0.2.0"), { recursive: true });
-    const pkg = join(w.root, "pathways", "bookings@0.2.0", "package.json");
+    cpSync(join(w.ctx.appDir, "templates", "commerce", "bookings"), join(w.root, "templates", "commerce", "bookings@0.2.0"), { recursive: true });
+    const pkg = join(w.root, "templates", "commerce", "bookings@0.2.0", "package.json");
     writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', '"version": "0.2.0"'));
     writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), "bookings@0.2.0\n");
     await deploy(w.ctx);

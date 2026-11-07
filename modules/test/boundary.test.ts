@@ -1,4 +1,4 @@
-// The one rule of the shared modules: they import nothing from a template (pathways/) or from the bundle. Templates import them, never the other way round.
+// The one rule of the shared modules: they import nothing from a template (templates/) or from the bundle. Templates import them, never the other way round.
 // If this fails, the shared code has grown a taste for one template. Move that part into the template, and give the module a hook instead.
 import { test } from "node:test";
 import assert from "node:assert/strict";

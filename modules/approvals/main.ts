@@ -13,7 +13,7 @@
 //   STATE_DIR=/var/lib/approvals                        where the relay keeps what it must not forget
 //   PORT=8795  HOST=127.0.0.1  POLL_SECONDS=5
 //
-// Run:  node pathways/<template>/approvals/main.ts
+// Run:  node templates/<domain>/<template>/approvals/main.ts
 // Secrets are files, never arguments or variables; a trailing newline is dropped. Nothing secret, no code and no phone number is ever logged.
 import { readFileSync } from "node:fs";
 import { createWhatsAppMessaging } from "../messaging/whatsapp.ts";
@@ -23,7 +23,7 @@ import { startRelayServer } from "./server.ts";
 import { openRelayStore } from "./store.ts";
 import type { Relay, RelayOptions } from "./relay.ts";
 
-/** `createRelay`: the template's relay, the shared one with its words (Bookings: pathways/bookings/approvals/relay.ts; Fees: pathways/fees/approvals/relay.ts). */
+/** `createRelay`: the template's relay, the shared one with its words (Bookings: templates/commerce/bookings/approvals/relay.ts; Fees: templates/education/fees/approvals/relay.ts). */
 export async function runRelayMain(createRelay: (options: Omit<RelayOptions, "voice">) => Relay): Promise<void> {
   const need = (name: string): string => { const v = process.env[name]; if (!v) { console.error(`The approvals relay needs ${name}. See the top of modules/approvals/main.ts.`); process.exit(2); } return v; };
   function secret(envName: string, optional = false): string | undefined {

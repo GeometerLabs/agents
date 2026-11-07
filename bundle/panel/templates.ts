@@ -1,4 +1,4 @@
-// The templates the panel can set up, found on their own: any folder in pathways/ with a template.json. A contributed template appears in setup
+// The templates the panel can set up, found on their own: any folder in templates/<domain>/ with a template.json. A contributed template appears in setup
 // without a change here. The manifest says which accounts the template uses, so setup never asks for a key the template does not need.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -19,12 +19,13 @@ export interface Template {
   settingsExample: string;
 }
 
-export function discoverTemplates(pathwaysDir: string): Template[] {
-  if (!existsSync(pathwaysDir)) return [];
+/** `templatesDir` is the folder with the domain folders in it (templates/), each holding templates: templates/<domain>/<name>/template.json. */
+export function discoverTemplates(templatesDir: string): Template[] {
+  if (!existsSync(templatesDir)) return [];
   const found: Template[] = [];
-  for (const entry of readdirSync(pathwaysDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const folder = join(pathwaysDir, entry.name);
+  const folders = readdirSync(templatesDir, { withFileTypes: true }).filter((d) => d.isDirectory())
+    .flatMap((domain) => readdirSync(join(templatesDir, domain.name), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => join(templatesDir, domain.name, e.name)));
+  for (const folder of folders) {
     try {
       const m: unknown = JSON.parse(readFileSync(join(folder, "template.json"), "utf8"));
       if (!isObj(m) || m.schema !== 1 || typeof m.id !== "string" || !/^[a-z][a-z0-9-]{0,39}$/u.test(m.id) || typeof m.setup !== "string") continue;

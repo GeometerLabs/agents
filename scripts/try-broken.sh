@@ -1,8 +1,11 @@
 #!/bin/sh
-# Try a broken variant: copy a blueprint, apply one of its broken/*.patch files, and let Geometer check it.
-# usage: scripts/try-broken.sh refund-desk blind-retry
+# Try a broken variant: copy an example agent, apply one of its broken/*.patch files, and let Geometer check it.
+# usage: scripts/try-broken.sh refund-desk blind-retry      (the agent's name; it is looked up under examples/<domain>/)
 set -e
-src="$(cd "$(dirname "$0")/.." && pwd)/$1"
+root="$(cd "$(dirname "$0")/.." && pwd)"
+src=""
+for d in "$root"/examples/*/"$1"; do [ -d "$d" ] && src="$d"; done
+[ -n "$src" ] || { echo "no such example agent: $1 (looked in $root/examples/*/)"; exit 2; }
 [ -f "$src/broken/$2.patch" ] || { echo "no such patch: $1/broken/$2.patch"; ls "$src/broken"; exit 2; }
 work="$(mktemp -d)/$1"
 cp -R "$src" "$work"

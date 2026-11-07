@@ -7,7 +7,7 @@
 // The rest of the spec (the routes, the rule names, the intent that makes a refund happen once) is the shipped Razorpay template
 // (monorepo deploy/pathways/bookings/razorpay/spec.json), copied here so that a client's spec is generated, not edited.
 
-/** Guard's own bounds for a hold's lifetime: 60 to 604800 seconds (7 days). Checked against the real binary, see pathways/bookings/Explanation.md. */
+/** Guard's own bounds for a hold's lifetime: 60 to 604800 seconds (7 days). Checked against the real binary, see templates/commerce/bookings/Explanation.md. */
 export const MIN_APPROVAL_TTL_SECONDS = 60;
 export const MAX_APPROVAL_TTL_SECONDS = 604_800;
 /**

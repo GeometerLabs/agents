@@ -2,7 +2,7 @@
 //
 //   RUNTIME_URL=http://runtime:8787 INTERNAL_TOKEN_FILE=/run/secrets/internal_token \
 //   RAZORPAY_WEBHOOK_SECRET_FILE=/run/secrets/razorpay_webhook WHATSAPP_APP_SECRET_FILE=/run/secrets/whatsapp_app_secret \
-//   WHATSAPP_VERIFY_TOKEN_FILE=/run/secrets/whatsapp_verify PORT=8788 node pathways/<template>/inbox/main.ts   (or node modules/inbox/main.ts: it is the same program)
+//   WHATSAPP_VERIFY_TOKEN_FILE=/run/secrets/whatsapp_verify PORT=8788 node templates/<domain>/<template>/inbox/main.ts   (or node modules/inbox/main.ts: it is the same program)
 //
 // WhatsApp webhooks are verified one of two ways, chosen by WHATSAPP_VERIFICATION (default meta-signature):
 //   meta-signature  Meta's X-Hub-Signature-256. Needs WHATSAPP_APP_SECRET_FILE and WHATSAPP_VERIFY_TOKEN_FILE. Callback: POST /webhooks/whatsapp

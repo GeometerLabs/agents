@@ -31,7 +31,7 @@
 // any other address without TLS on the agent port too. fwd-* is a busybox `nc` that owns the Guard's network namespace and listens only on its
 // address on the `admin` network, passing bytes to 127.0.0.1:8082 (the Guard shares that loopback). The runtime is not on that network, so it cannot
 // see the port at all.
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
@@ -57,18 +57,22 @@ export type Slot = GuardKind | "door";
 export interface GuardRef { kind: GuardKind; service: string; tenant: string }
 
 /**
- * The shared modules a pathway imports (agents/modules) sit two folders up from it: <app>/pathways/bookings and <app>/modules, or a kept checkout
- * <server>/pathways/bookings@0.1.0 and <server>/modules. In the container the pathway is /pathway and the modules are /modules, and the pathway's
- * relative imports (../../../modules/...) end at the root of the container, so they find /modules.
+ * The shared modules a template imports (agents/modules) sit three folders up from it: <app>/templates/commerce/bookings and <app>/modules, or a kept checkout laid out the
+ * same way, <server>/templates/commerce/bookings@0.1.0 and <server>/modules. A kept checkout from before the templates were grouped by domain, <server>/pathways/bookings@0.1.0,
+ * has them two folders up (<server>/modules). In the container the template is /pathway and the modules are /modules, and the template's relative imports
+ * (../../../../modules/...) go past the root of the container, where a path stops, so they find /modules whichever layout the folder came from.
  */
-export const modulesOf = (pathwayDir: string): string => join(dirname(dirname(pathwayDir)), "modules");
+export const modulesOf = (pathwayDir: string): string => {
+  const parent = dirname(pathwayDir);
+  return join(basename(parent) === "pathways" ? dirname(parent) : dirname(dirname(parent)), "modules");
+};
 
 export interface ShopDeploy {
   name: string;
   /** 1 to 199, fixed for the life of the shop (state.ts): it fixes the shop's network addresses. */
   index: number;
   guards: GuardRef[];
-  /** The folder with the pathway at the version the shop is pinned to. The shared modules (agents/modules) are the folder called modules two levels up from it. */
+  /** The folder with the template at the version the shop is pinned to. The shared modules (agents/modules) are the folder called modules above it (`modulesOf`). */
   pathwayDir: string;
 }
 
@@ -278,7 +282,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       image: server.appImage, user: features.panel.user, init: true, ...hardened, command: ["node", "/app/bundle/panel/main.ts"],
       environment: {
         PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl(server), PANEL_TRUST_PROXY: "1",
-        PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_PATHWAYS_DIR: "/app/pathways",
+        PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_TEMPLATES_DIR: "/app/templates",
         PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl(server)}/c/{shop}/webhooks/{kind}`,
         ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
       },
