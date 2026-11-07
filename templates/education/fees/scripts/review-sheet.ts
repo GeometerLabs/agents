@@ -75,6 +75,20 @@ const WHEN: Record<TemplateId, string> = {
   owner_approval_denied: "The owner denied with the code: nothing is sent",
   owner_approval_expired: "The owner answered after the request had run out: nothing was refunded",
   owner_approval_failed: "The owner's answer could not be recorded just now: send it again",
+  // UPI centres (B33): the parent pays the centre's own UPI ID; the owner marks it received
+  fee_upi_qr_caption: "UPI centre: the words under the QR picture",
+  fee_upi_claim: "UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid)",
+  fee_upi_refund_owed: "UPI centre: a refund the owner will send (the agent never sends it)",
+  fee_upi_refund_sent: "UPI centre: the owner marked the refund sent (only then is the parent told)",
+  owner_fee_upi_expected: "UPI centre: tells the owner what payment to look for in their UPI app, with the one-use code",
+  owner_fee_upi_claim: "UPI centre: the parent says they paid (a screenshot is not proof): the owner is asked to look",
+  owner_fee_upi_marked: "UPI centre: the answer to the owner's Received, the fee paid",
+  owner_fee_upi_part: "UPI centre: the answer to the owner's Received, part paid, with the code for the rest",
+  owner_fee_upi_already: "UPI centre: the owner used a code that was already used: counted once",
+  owner_fee_upi_unknown: "UPI centre: the owner used a code the agent never gave",
+  owner_fee_upi_refund_owed: "UPI centre: a refund the owner must send from their UPI app, with the code",
+  owner_fee_upi_refund_reminder: "UPI centre: a reminder of a refund still owed (once a day, three times at most)",
+  owner_fee_upi_refund_marked: "UPI centre: the answer to the owner's Refund sent",
 };
 
 /** Parent sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
