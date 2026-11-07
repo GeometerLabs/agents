@@ -17,7 +17,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseLock } from "../../modules/runtime/config.ts";
 import { KINDS, kindFor, kindNames } from "./kinds.ts";
-import { parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
+import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
 
@@ -233,7 +233,7 @@ export interface ShopFolder {
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
   preparedBy: string;
-  preparedBySource: "report.json" | "owner.json" | "default";
+  preparedBySource: "assignment.json" | "report.json" | "owner.json" | "default";
   /** Fleet's last word on whether this shop's builder or partner has the Innovator badge (fleet/<shop>.json). False when fleet has said nothing readable. */
   innovator: boolean;
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
@@ -287,7 +287,8 @@ export function readShop(dir: string, name: string): ShopFolder {
   const reportFile = parseReportFile(reportText);
   if (reportText !== undefined && !reportFile) problems.push('report.json is not usable: it must be {"schema": 1, "preparedBy": "Divya, local partner"}, the name on one line, up to 120 characters.');
   const ownerFile = parseOwner(optional("owner.json"));
-  const by = resolvePreparedBy({ ...(reportFile ? { report: reportFile } : {}), ...(ownerFile ? { owner: ownerFile } : {}) });
+  const assignment = parseAssignmentFile(optional("assignment.json"));
+  const by = resolvePreparedBy({ ...(reportFile ? { report: reportFile } : {}), ...(ownerFile ? { owner: ownerFile } : {}), ...(assignment ? { assignment } : {}) });
   const lockText = read("pathway.lock");
   let lock: { pathway: string; version: string } | undefined;
   if (lockText) { try { lock = parseLock(lockText); } catch (e) { problems.push((e as Error).message); } }

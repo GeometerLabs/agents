@@ -21,8 +21,10 @@
 import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours } from "./limits.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
-import type { Booking, Store } from "./booking.ts";
+import type { Booking, Pending, Store } from "./booking.ts";
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
+import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, ConflictError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
@@ -84,6 +86,8 @@ export type AgentEvent =
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund
   // only if its own record says the owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
+  // The panel's to-do list asks the agent to look again or ask again about one booking (modules/unfinished). It carries no authority: the agent does what it does every day, through Guard.
+  | { kind: "recovery"; id: string; case: string; action: string }
   | { kind: "tick" }; // time has passed: let holds expire and send due reminders
 
 export interface Agent { handle(event: AgentEvent): Promise<void> }
@@ -901,6 +905,9 @@ export function createAgent(deps: AgentDeps): Agent {
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent:
     // no reply and no record, so the owner is not told "I didn't understand" about an answer that was understood elsewhere.
     if (RELAY_CODE_REPLY.test(msg.text)) return;
+    // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
+    const moving = parseHandoverReply(msg.text);
+    if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
     const m = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i.exec(msg.text);
     const b = m ? store.bookings.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
@@ -1086,7 +1093,48 @@ export function createAgent(deps: AgentDeps): Agent {
     }
   }
 
+  // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
+  //   recheck_payment   read the payments service's own list for this booking's link, and record any payment not yet counted (the normal path, with its rules)
+  //   retry_booking     a deposit is in and the calendar would not confirm it: ask the calendar again, and tell the customer "booked" only if it now shows the booking
+  //   ask_owner_again   the owner has not answered: send the owner the same notice again (a calendar clash, or a late cancellation's refund)
+  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again)
+  // Nothing here widens a limit: every call is one the agent already makes, and Guard decides each as it does every day.
+  async function onRecovery(e: { id: string; case: string; action: string }): Promise<void> {
+    const b = store.bookings.get(e.case);
+    const refs = { action: e.action, recovery: e.id };
+    const say = (outcome: Outcome, notes: string) => log(b ?? null, owner, RECOVERY_ENTRY, outcome, { action: e.action, case: e.case }, { notes, refs });
+    if (!b) return say("blocked", "no booking has this id, so nothing was done");
+    if (e.action === "recheck_payment") {
+      if (!b.linkId) return say("blocked", "this booking has no payment link to look at");
+      say("attempted", "looking again at the payments service's list for this booking's link");
+      await reconcilePayments(b);
+      return say("confirmed", "the payments service's list was read; any payment not yet counted was recorded above");
+    }
+    if (e.action === "retry_booking") {
+      if (typeof b.depositPaymentId !== "string" || (b.state !== "needs_owner" && b.state !== "awaiting_deposit")) return say("blocked", "this booking has no deposit waiting on the calendar, so there is nothing to confirm again");
+      say("attempted", "asking the calendar again to confirm the booking the deposit paid for");
+      await completeBooking(b); // sends "booked" only if the calendar now shows it
+      return;
+    }
+    if (e.action === "ask_owner_again") {
+      const calendar = b.pending.find((p) => p.kind === "calendar");
+      const refund = b.pending.find((p): p is Extract<Pending, { kind: "refund" }> => p.kind === "refund");
+      if (!calendar && !refund) return say("blocked", "nothing the agent asked the owner is waiting (a refund Guard holds is asked by the approvals relay)");
+      say("attempted", "telling the owner again");
+      const told = calendar ? await tellOwner(b, b.customer, "owner_cant_confirm") : await tellOwner(b, b.customer, "owner_late_cancellation", { refundInr: refund!.amountInr });
+      return say(told ? "confirmed" : "failed", told ? "the owner was told again" : "the owner could not be told (the limits or the provider said no)");
+    }
+    if (e.action === "recheck_refund") {
+      if (!(b.refundIssues ?? []).some((i) => ["unknown", "uncertain", "unconfirmed", "failed"].includes(i.kind))) return say("blocked", "no refund here is waiting on an unclear outcome");
+      say("attempted", "looking again, read-only, for a refund that may have gone");
+      const r = await refunds.recheck(b);
+      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
+    }
+    say("blocked", `the agent has no recovery called "${e.action}"`);
+  }
+
   async function handle(event: AgentEvent): Promise<void> {
+    if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);

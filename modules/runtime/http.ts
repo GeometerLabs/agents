@@ -2,6 +2,8 @@
 // provider that gets anything else sends the event again later, so nothing is lost and nothing is believed unsaved.
 //
 //   POST /internal/events   {"events": [...]}   the inbox's already-checked events (bearer token)
+//   POST /internal/recover  {"id","case","action"}   the panel's to-do list asks the agent to look again or ask again about one booking or fee (bearer token). It is saved
+//                                                like any event and the agent does it through Guard and the same limits; it is not a way to send a message or move money.
 //   GET  /status                                counts only, never message content (bearer token)
 //   GET  /internal/refund-context?receipt=...   read-only: the booking or fee behind a refund Guard holds, for the approvals relay (bearer token)
 //   GET  /healthz                               the process is up
@@ -12,7 +14,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { checkEvents } from "./events.ts";
+import { checkEvents, checkRecovery } from "./events.ts";
 import type { IncomingEvent } from "./events.ts";
 
 /** What the server needs of a runtime: a template's runtime gives this much, whatever its cases are called. */
@@ -110,6 +112,23 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!receipt || receipt.length > 200) return send(res, 400, { error: "Give the refund's receipt: ?receipt=b-3:pay_..." });
       const context = runtime.refundContext(receipt);
       return context ? send(res, 200, context) : send(res, 404, { error: "No refund is held under that receipt." });
+    }
+    if (path === "/internal/recover") {
+      only("POST");
+      if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
+      let body: unknown;
+      try {
+        body = JSON.parse(await readBody(req, 4096));
+      } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, closing); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const checked = checkRecovery(body);
+      if (!checked.ok) return send(res, 400, { error: checked.error });
+      const counts = runtime.submit([checked.event]); // on disk when this returns
+      send(res, 200, counts);
+      runtime.kick();
+      return;
     }
     if (path === "/internal/events") {
       only("POST");

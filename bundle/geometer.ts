@@ -20,6 +20,9 @@
 //                                real Guards: "Held N of M", judged from the stand-ins' records and Guard's decisions. agent go-live <name> [--out <folder>] does the same and writes the go-live certificate.
 //                                agent set <name> --run "<cmd>" --version V   records how to start the agent ({version} in the command) and which version it is at
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
+//   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
+//                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
+//                                Check one with: node bundle/export/check.ts <folder>
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
@@ -45,6 +48,7 @@ import { listAgents, readAgent } from "./agent/folder.ts";
 import type { AgentFlags } from "./agent/folder.ts";
 import { CRASH_SUBCOMMANDS, crashCommand } from "./agent/crash-test/cli.ts";
 import { recordAgent } from "./agent/records.ts";
+import { exportCommand } from "./export/cli.ts";
 import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
@@ -226,6 +230,15 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (r.code !== 0) throw new Error(`The panel did not make a link (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 300)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
       console.log(r.stdout.trim());
       return 0;
+    }
+
+    if (command === "export") {
+      if (!shop) throw new Error("Say which shop: export <shop> [--out <folder>]");
+      const r = await exportCommand(ctx, shop, str("out") ?? ".");
+      console.log(`Exported ${shop}: ${r.files} files in ${r.folder} and the same as ${r.archive}.`);
+      for (const line of [...r.notes, ...r.warnings]) console.log(`note: ${line}`);
+      console.log(`${r.whole ? "Every file is the one the manifest names." : "A file does not match the manifest: do not rely on this package."} No key or secret is in it. README.txt inside says how to check it: node bundle/export/check.ts <folder>`);
+      return r.whole ? 0 : 1;
     }
 
     if (command === "deploy") {

@@ -767,6 +767,10 @@ The hand-check counts: Glow Salon 37 to 38 situations and 242 to 252 checks, the
 
 **Choices to review.** Sending at 09:00; no message for a quiet month; three tries an hour apart; the message in the owner's language only; the badge line last, as a name and a symbol; the fixed labels (the ones the five-line text already uses); and that the job is off until the `report` block is written.
 
+## Recovery steps and the owner's agreement to a handover (B31, B38; added 7 November 2026)
+
+The agent handles two more things, both small and both through the paths it already has. A **`recovery` event** (the panel's to-do list files a request, the deployer carries it to the runtime's `POST /internal/recover`) names one booking and an action: `recheck_payment` runs `reconcilePayments` (the payments service's own list for the booking's link, the one-deposit rule and all), `retry_booking` runs `completeBooking` for a booking the calendar would not confirm (the customer hears "booked" only if the calendar now shows it), `ask_owner_again` sends the owner the same notice again (`owner_cant_confirm`, or `owner_late_cancellation`), and `recheck_refund` looks, read-only, for a refund whose outcome was unclear and sends nothing. An action that does not fit, or a booking that is not there, is a `recovery` / `blocked` line and changes nothing. The record keeps a `recovery` entry for each (`refs.action`, `refs.recovery`). What the actions are and how the to-do list finds the bookings that need them is in `modules/Explanation.md`. **"move CODE"** from the owner's number writes one `handover_agreed` entry with the code's hash and nothing else (no reply, not an `owner_decision`, so the monthly report does not count it). Tests: `test/recovery.test.ts`.
+
 ## Syntax rules used
 
 Only erasable TypeScript: no enums, namespaces, parameter properties or decorators. Type-only imports use `import type`. Imports carry their `.ts` extension. Files that read the settings JSON use `new URL(…, import.meta.url)`, so they work from any directory.
