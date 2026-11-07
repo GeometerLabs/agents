@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { runBusyMonth } from "../../../pathways/bookings/report/example-month.ts";
+import { runBusyMonth } from "../../../templates/commerce/bookings/report/example-month.ts";
 import { preparedByOf } from "../contract.ts";
 import { boot, papers } from "./helpers.ts";
 

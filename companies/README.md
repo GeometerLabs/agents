@@ -219,7 +219,7 @@ Three limits to know:
 - `record.jsonl` is Guard's word and the API's status. It does not read the API back, so `sent` means the API answered, not that the money moved.
 - The exports hold the calls' arguments (ids, amounts). Treat them like your logs.
 
-This is not the Bookings pathway's record (`bundle/agent/record.ts`); that one judges "done" from what three known services hold. Here, nothing reads your API back (see [Deferred.md](Deferred.md)).
+This is not the Bookings template's record (`bundle/agent/record.ts`); that one judges "done" from what three known services hold. Here, nothing reads your API back (see [Deferred.md](Deferred.md)).
 
 ### Certificates
 

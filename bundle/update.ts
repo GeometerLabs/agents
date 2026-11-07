@@ -14,14 +14,14 @@
 // where it stopped when the same command is run again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished.
 // A deploy that is refused puts that client's earlier pin back and stops the rollout there (one client at most is affected); the rest wait for the next run.
 // Agents someone else wrote have no template and no hand check yet: they are skipped, with a plain note.
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { listAgents } from "./agent/folder.ts";
 import { updateAgent } from "./agent/update.ts";
 import { Refused, deploy } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { compare, runHandCheck, savedDataLayout } from "./handcheck.ts";
-import { pathwayDirFor } from "./lib/pathways.ts";
+import { appliedPathwayDir, checkoutDirOf, keptDirFor, pathwayDirFor } from "./lib/pathways.ts";
 import { listShops, readShop, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import type { Run, State, Step } from "./lib/state.ts";
@@ -51,7 +51,8 @@ function compareVersions(a: string, b: string): number {
 
 /** The version of a template this server's checkout has: what `update` moves clients to when no version is given. */
 function checkoutVersion(ctx: Context, pathway: string): string | undefined {
-  try { return (JSON.parse(readFileSync(join(ctx.appDir, "pathways", pathway, "package.json"), "utf8")) as { version?: string }).version; } catch { return undefined; }
+  const folder = checkoutDirOf(ctx.appDir, pathway);
+  try { return folder ? (JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as { version?: string }).version : undefined; } catch { return undefined; }
 }
 
 /** Change the state file: read it fresh, change one thing, write it. Never hold a State across a deploy, which reads and writes the same file. */
@@ -131,8 +132,8 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
   if (opts.to === undefined && compareVersions(target, versionOfPin(running)) < 0) return { step: { status: "unchanged", at, from: running, reason: `It runs ${running}, which is newer than the ${to} in this checkout, so it is left as it is. Name a version with --to to move it anyway.` } };
 
   const toDir = pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: target });
-  if (!toDir) return heldBack(`This server does not have ${to}. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", `${pathway}@${target}`)}, then run this again. It stays on ${running}.`, { from: running, to });
-  const fromDir = existsSync(applied.pathwayDir) ? applied.pathwayDir : pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: versionOfPin(running) });
+  if (!toDir) return heldBack(`This server does not have ${to}. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, pathway, target)}, then run this again. It stays on ${running}.`, { from: running, to });
+  const fromDir = appliedPathwayDir(ctx.appDir, ctx.dir, applied);
   if (!fromDir) return heldBack(`This server no longer has ${running}, the version it runs, so there is nothing to compare ${to} with. It stays on ${running}.`, { from: running, to });
 
   // the hand check on this client's own settings: at the version it runs now, and at the new one
@@ -212,9 +213,9 @@ async function rollbackOne(ctx: Context, shop: string, dryRun: boolean, earlier:
   const to = pinLine(toLock);
   const pathway = to.split("@")[0];
   const toDir = pathwayDirFor(ctx.appDir, ctx.dir, { pathway, version: versionOfPin(to) });
-  if (!toDir) return heldBack(`This server no longer has ${to}. Put a checkout of it in ${join(serverPaths(ctx.dir).root, "pathways", to)} to go back to it.`, { from, to });
+  if (!toDir) return heldBack(`This server no longer has ${to}. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, pathway, versionOfPin(to))} to go back to it.`, { from, to });
   // a runtime cannot start on saved data written in a layout newer than it knows: going back across such a change is refused here, before anything is touched
-  const layout = { from: applied ? await savedDataLayout(ctx, applied.pathwayDir) : undefined, to: await savedDataLayout(ctx, toDir) };
+  const layout = { from: applied ? await savedDataLayout(ctx, appliedPathwayDir(ctx.appDir, ctx.dir, applied) ?? applied.pathwayDir) : undefined, to: await savedDataLayout(ctx, toDir) };
   const known = layout.from !== undefined && layout.to !== undefined ? { layout: { from: layout.from, to: layout.to } } : {};
   if (layout.from !== undefined && layout.to !== undefined && layout.from > layout.to) {
     return heldBack(`Going back to ${to} is refused. ${from} changed how this client's saved data is laid out (layout ${layout.to} to ${layout.from}), and ${to} cannot read it, so its runtime would not start. Nothing was changed. Either move forward to a version that fixes what went wrong, or put back the record from before the update with \`geometer restore ${shop} --at <time>\` (that loses what came in since).`, { from, to, ...known });

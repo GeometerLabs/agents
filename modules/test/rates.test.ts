@@ -1,5 +1,5 @@
 // The one dated table of model prices (modules/understanding/rates/): every file is listed, pinned and checked, and the lines say what the economics note says. The bundle's price lists and the evaluation's candidates are checked against it in their own tests (bundle/panel/test/cost.test.ts,
-// pathways/bookings/test/model-eval.test.ts).
+// templates/commerce/bookings/test/model-eval.test.ts).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";

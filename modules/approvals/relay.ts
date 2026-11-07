@@ -1,8 +1,8 @@
 // The approvals relay: the owner approves a refund Guard is holding, on WhatsApp, through a process that is not the runtime.
 // It is the same for every template. What differs is the words it says to the owner, and the facts those words are written from: the template gives
-// them as a `voice` (Bookings: pathways/bookings/approvals/relay.ts).
+// them as a `voice` (Bookings: templates/commerce/bookings/approvals/relay.ts).
 //
-// Why it is separate, and what each constraint is for (the longer version is pathways/bookings/Explanation.md, "Approvals on WhatsApp"):
+// Why it is separate, and what each constraint is for (the longer version is templates/commerce/bookings/Explanation.md, "Approvals on WhatsApp"):
 //   1. It holds the owner's approver secret. The runtime never does, so the runtime can never approve anything, even if it is taken over.
 //   2. It finds held refunds by READING GUARD (the held calls an approver may see). What the owner is asked to approve, the payment and the amount,
 //      comes from Guard's held call and from nowhere else. The runtime only adds context (who, which service, which slot), and if its view

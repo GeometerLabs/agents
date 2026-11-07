@@ -63,7 +63,7 @@ node bundle/geometer.ts backup-key stream ~/stream-key.txt           # access-ke
 node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
 ```
 
-**6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `pathways/bookings/clients/glow-salon.example`). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and Google calendar; the bundle sets everything about where things are.
+**6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `templates/commerce/bookings/clients/glow-salon.example`). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and Google calendar; the bundle sets everything about where things are.
 
 ```sh
 node bundle/geometer.ts shop add glow-salon --from ~/clients/glow-salon --prepared-by "Divya, local partner"
@@ -135,17 +135,17 @@ You run one template for many clients, and each is pinned to the version it runs
 
 ```sh
 node bundle/geometer.ts update --dry-run                 # runs the checks and says what would happen; writes and starts nothing
-node bundle/geometer.ts update --to 0.2.0                # every client; without --to, the version in this checkout (pathways/bookings/package.json)
+node bundle/geometer.ts update --to 0.2.0                # every client; without --to, the version in this checkout (templates/commerce/bookings/package.json)
 node bundle/geometer.ts update --shops glow-salon,pet-spa    # just these two, in this order
 node bundle/geometer.ts rollback                         # the clients the last update left on its version (moved, or found already there), back to the pin they had
 node bundle/geometer.ts rollback --shops glow-salon      # or just this one (also: rollback glow-salon)
 ```
 
-A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag: `~/geometer-server/pathways/bookings@0.2.0/`. A client whose new version is not there is held back and told where to put it. With no `--to`, a client that already runs a version **newer** than this checkout's is left as it is (it is never taken back); name the version with `--to` to move a client to an older one, which is a move like any other: hand-checked, and refused if the older version cannot read the saved data the newer one wrote (below).
+A version other than the one in this checkout needs its own folder beside the server, a checkout of its tag, laid out like this repository: `~/geometer-server/templates/commerce/bookings@0.2.0/`, with `~/geometer-server/modules/` beside `templates/`. (A server set up before the templates were grouped by domain keeps them at `~/geometer-server/pathways/bookings@0.2.0/`; those are still found.) A client whose new version is not there is held back and told where to put it. With no `--to`, a client that already runs a version **newer** than this checkout's is left as it is (it is never taken back); name the version with `--to` to move a client to an older one, which is a move like any other: hand-checked, and refused if the older version cannot read the saved data the newer one wrote (below).
 
 For each client, in order:
 
-1. The template's own hand check (`pathways/bookings/scripts/hand-check.ts`, the same one that makes the go-live certificate) is run **on that client's settings** at the version it runs now, and again at the new version. Each says "Held N of M".
+1. The template's own hand check (`templates/commerce/bookings/scripts/hand-check.ts`, the same one that makes the go-live certificate) is run **on that client's settings** at the version it runs now, and again at the new version. Each says "Held N of M".
 2. A client that holds everything that held before **moves**: its `pathway.lock` is changed and the same checked deploy as `geometer deploy` runs, so only what changed is restarted and the running Guards are asked again ("12 of 12 limits proven to bite").
 3. A client with any situation that held before and now **fails, or is no longer run**, is **held back**: nothing about it is touched. A situation that failed on both versions does not hold it back (it is no worse off). A new situation that fails does.
 
@@ -166,7 +166,7 @@ The exit code is 0 when every client is moved, unchanged or skipped, and 1 when 
 
 **Stopped in the middle.** Each step is written to the state file before the pin is touched. If the run stops (the machine, a deploy that was cut off), run the same command again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished. A deploy that is **refused** puts that client's earlier pin back and stops the rollout there, so one client is affected at most; run the same command again to carry on with the rest. Another request (other `--to` or `--shops`) starts a new run.
 
-**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. What has been run: the pathway's tests stop a runtime between a payment link and its payment and finish the booking once after the restart, and the Docker proof restarts a runtime and its Guard with a refund held for the owner and finds it still held (see [Explanation.md](Explanation.md)). Not run: an update with a live booking in the middle.
+**While a booking is in progress.** A move restarts that client's runtime, as any deploy does that changes it. The runtime saves each event before it answers and each step whole, so a booking in the middle picks up where it was; the other clients are not touched. What has been run: the template's tests stop a runtime between a payment link and its payment and finish the booking once after the restart, and the Docker proof restarts a runtime and its Guard with a refund held for the owner and finds it still held (see [Explanation.md](Explanation.md)). Not run: an update with a live booking in the middle.
 
 **Rollback** is the same move the other way, through the same checks, and it takes the pin it goes back to off the history, so rolling back twice goes back twice and a rollback never moves a client forward unchecked. One thing stops it: a runtime cannot start on saved data written by a newer layout than it knows. If the new version changed the layout (the update says so in a note), `rollback` is refused before anything is touched, saying why; an `update --to` an older version is refused for the same reason. With no names, `rollback` takes the clients the **last update** left on the version it names and that have an earlier pin to go back to, so running `update` again to look at a held-back client does not empty that list. The way out is a newer version that fixes what went wrong, or `geometer restore` of the record from before the update, which loses what came in since.
 
@@ -184,7 +184,7 @@ node bundle/geometer.ts agent add my-agent \
   --whatsapp-number-id 123456789012345 --calendar-id shop@group.calendar.google.com
 ```
 
-`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`pathways/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
+`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`templates/commerce/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
 
 ```
 Razorpay        https://shops.example.com/g/my-agent/razorpay
@@ -322,7 +322,7 @@ A failed drill, or a snapshot that did not happen, shows in `status` and in `sta
 
 The heartbeat carries two optional facts per shop, so a snapshot that stopped or a drill that failed alerts from outside the server: the age of the last good snapshot (alert after 36 hours) and the age and verdict of the last drill (alert if it failed, or after 8 days without one). It sends ages and a yes/no, never the drill's reason (that stays in `status`). Geometer's fleet service must be new enough to know these two fields before a bundle sends them; an older one refuses every heartbeat as malformed. A shop whose very first snapshot never succeeds sends nothing about backups until one does (see [Deferred.md](Deferred.md)).
 
-The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the pathway knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
+The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the template knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
 
 Restoring a snapshot needs the secret half of the age key, which is not on the server: `restore` uses the continuous copy; a snapshot is decrypted on the machine that has the key.
 

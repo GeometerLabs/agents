@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { glowSalon } from "../../../pathways/bookings/src/harness.ts";
+import { glowSalon } from "../../../templates/commerce/bookings/src/harness.ts";
 import { RATES } from "../../../modules/understanding/rates.ts";
 import { PRICES_DIR, formatRupees, latestPriceList, loadPriceList, monthlyCost } from "../cost.ts";
 import type { CostLine, PriceList } from "../cost.ts";

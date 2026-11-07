@@ -14,7 +14,7 @@
 // Hindi, Malayalam and Kannada wording is machine-written like the rest of those packs. A native speaker must read it before it is submitted.
 //
 // This file is the mechanism, for every template: the shape of a template, the {slot} to {{n}} conversion, and `createMetaCatalogue`, which a template calls
-// with its own list of templates and its own record values. What the templates SAY is each template's (Bookings: pathways/bookings/src/language/meta-templates.ts).
+// with its own list of templates and its own record values. What the templates SAY is each template's (Bookings: templates/commerce/bookings/src/language/meta-templates.ts).
 import type { TemplateMessage } from "../messaging/messaging.ts";
 import { LANGUAGES } from "./languages.ts";
 import type { Language } from "./languages.ts";

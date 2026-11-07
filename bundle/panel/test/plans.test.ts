@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { glowSalon } from "../../../pathways/bookings/src/harness.ts";
+import { glowSalon } from "../../../templates/commerce/bookings/src/harness.ts";
 import { PRICES_DIR, latestPriceList, latestProposedPriceList, loadPriceList, monthlyCost } from "../cost.ts";
 import { fleetFile } from "../../test/monorepo.ts";
 

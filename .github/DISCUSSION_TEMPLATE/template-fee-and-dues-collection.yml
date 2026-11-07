@@ -3,7 +3,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        About the **Fee and dues collection** pathway (arriving in Phase 2): setting it up for a tuition centre or gym, what you changed in its settings, what owners and parents asked, or what went wrong.
+        About the **Fee and dues collection** template (arriving in Phase 2): setting it up for a tuition centre or gym, what you changed in its settings, what owners and parents asked, or what went wrong.
   - type: dropdown
     id: domain
     attributes:

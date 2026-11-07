@@ -1,4 +1,4 @@
-// The server's one approvals relay: the pathway's own relay (pathways/bookings/approvals/), one instance per shop, each with that shop's owner, that
+// The server's one approvals relay: the pathway's own relay (templates/commerce/bookings/approvals/), one instance per shop, each with that shop's owner, that
 // shop's Guard and its own state folder, behind /c/<shop>. Each owner's approver secret is in its own file and only that shop's relay reads it.
 //
 //   CONFIG=/etc/geometer/relay.json PORT=8795 HOST=0.0.0.0 node bundle/services/relay.ts
@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { createGuardClient, createRuntimeClient } from "../../modules/approvals/clients.ts";
 import type { GuardClient } from "../../modules/approvals/clients.ts";
-import { createRelay } from "../../pathways/bookings/approvals/relay.ts";
+import { createRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
 import type { Relay } from "../../modules/approvals/relay.ts";
 import { relayHandler } from "../../modules/approvals/server.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";

@@ -1,9 +1,9 @@
 import type { Words } from "./words.ts";
 
 // MACHINE-WRITTEN Kannada. Review marker: machine-written. A native Kannada speaker must read every line before a real shop sees it; the lines are on
-// pathways/bookings/REVIEW-kn.md, section 7 (made by bundle/panel/review-sheet.ts). The page says so in `draftNote` for as long as the marker stays.
+// templates/commerce/bookings/REVIEW-kn.md, section 7 (made by bundle/panel/review-sheet.ts). The page says so in `draftNote` for as long as the marker stays.
 //
-// The everyday words are the ones the Kannada agent messages and the report already use (pathways/bookings/src/language/templates.ts and report/strings.ts):
+// The everyday words are the ones the Kannada agent messages and the report already use (templates/commerce/bookings/src/language/templates.ts and report/strings.ts):
 // ಮುಂಗಡ ಹಣ (deposit), ರೀಫಂಡ್, ಬುಕಿಂಗ್, ಕ್ಯಾಲೆಂಡರ್, ಏಜೆಂಟ್, ಮಾಲೀಕರು, ವರದಿ, ಬೆಲೆ ಪಟ್ಟಿ, ಮಿತಿಗಳು. The four benefit lines in setup.limits (price, booked, language,
 // charge) are copied byte for byte from docs/product/gtm-and-revenue.md ("The same lines in Hindi, Malayalam and Kannada"), the one source; that table writes
 // the deposit as ಡೆಪಾಸಿಟ್, so the "booked" line says ಡೆಪಾಸಿಟ್ while the rest of this file says ಮುಂಗಡ ಹಣ, as the agent's own messages do.
@@ -45,7 +45,7 @@ export const kn: Words = {
     "runtime-not-ready": "ಏಜೆಂಟ್ ತಾನು ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ ಎನ್ನುತ್ತಿದೆ.", "refunds-need-builder": "ರೀಫಂಡ್‌ಗೆ ಬಿಲ್ಡರ್ ಬೇಕು, ಮಾಲೀಕರಲ್ಲ.",
   },
   shop: {
-    status: "ಸ್ಥಿತಿ", versions: (p, b) => `ಪಾತ್‌ವೇ ${p}, ಬಂಡಲ್ ${b}`, lastDeploy: (at) => `ಕೊನೆಯ ಅಪ್‌ಡೇಟ್: ${at}`, neverDeployed: "ಇನ್ನೂ ಅಪ್‌ಡೇಟ್ ಆಗಿಲ್ಲ.",
+    status: "ಸ್ಥಿತಿ", versions: (p, b) => `ಟೆಂಪ್ಲೇಟ್ ${p}, ಬಂಡಲ್ ${b}`, lastDeploy: (at) => `ಕೊನೆಯ ಅಪ್‌ಡೇಟ್: ${at}`, neverDeployed: "ಇನ್ನೂ ಅಪ್‌ಡೇಟ್ ಆಗಿಲ್ಲ.",
     limitsHeading: "ಮಿತಿಗಳು", unprovable: (l) => `ಇವುಗಳನ್ನು ಬೇರೆಯಾಗಿ ಪರೀಕ್ಷಿಸಲು ಆಗುವುದಿಲ್ಲ: ${l}`,
     backups: "ಬ್ಯಾಕಪ್‌ಗಳು", backupCopy: (at) => `ಸರ್ವರ್‌ನ ಹೊರಗೆ ಕೊನೆಯ ಪ್ರತಿ: ${at}`, backupNone: "ಸರ್ವರ್‌ನ ಹೊರಗೆ ಇನ್ನೂ ಯಾವುದೇ ಪ್ರತಿ ಇಲ್ಲ.",
     backupDrill: (at, ok) => `ಬ್ಯಾಕಪ್ ಮರಳಿ ತಂದು ನೋಡಿದ ಕೊನೆಯ ಪರೀಕ್ಷೆ: ${at}, ${ok ? "ಮೂಲದ ಜೊತೆ ಹೊಂದಿತು" : "ಮೂಲದ ಜೊತೆ ಹೊಂದಲಿಲ್ಲ"}`, backupDrillNone: "ಬ್ಯಾಕಪ್ ಮರಳಿ ತಂದು ನೋಡುವ ಪರೀಕ್ಷೆ ಇನ್ನೂ ಆಗಿಲ್ಲ.",

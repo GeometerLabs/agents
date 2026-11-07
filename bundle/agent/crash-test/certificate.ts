@@ -1,7 +1,7 @@
 // The go-live certificate of an agent someone else wrote: what the crash test found, on the agent's own settings, in the same document format the templates' go-live certificate has
-// (format `geometer-go-live-certificate/1`), so the monthly report reads it the same way (pathways/bookings/report/go-live.ts: it must be signed, and its checks must have run on the
+// (format `geometer-go-live-certificate/1`), so the monthly report reads it the same way (templates/commerce/bookings/report/go-live.ts: it must be signed, and its checks must have run on the
 // settings the report is for). It is made with the shared sealing and page code (modules/report) and the English words of the template's certificate. What differs from the template's
-// builder (pathways/bookings/report/certificate.ts) is only what is true of the template: its list of what was not tested is Bookings' fixed list of ids in four languages, its limits are a
+// builder (templates/commerce/bookings/report/certificate.ts) is only what is true of the template: its list of what was not tested is Bookings' fixed list of ids in four languages, its limits are a
 // salon's (a cancel window, a hold on the slot), and its pathway is the bookings pathway. Here the not-tested list is this crash test's own, in words, and the limits are the ones Guard enforces.
 import type { KeyObject } from "node:crypto";
 import { localParts } from "../../../modules/core/time.ts";
@@ -12,9 +12,9 @@ import { esc, list, page, sealBlock } from "../../../modules/report/page.ts";
 import { envelopeFile, seal } from "../../../modules/report/sign.ts";
 import type { Envelope } from "../../../modules/report/sign.ts";
 import { oneLine } from "../../../modules/report/text.ts";
-import { policyDigest } from "../../../pathways/bookings/report/data.ts";
-import { STRINGS } from "../../../pathways/bookings/report/strings.ts";
-import type { Settings } from "../../../pathways/bookings/src/settings.ts";
+import { policyDigest } from "../../../templates/commerce/bookings/report/data.ts";
+import { STRINGS } from "../../../templates/commerce/bookings/report/strings.ts";
+import type { Settings } from "../../../templates/commerce/bookings/src/settings.ts";
 import type { CrashResult } from "./run.ts";
 
 export const UNVERSIONED = "unversioned";
