@@ -99,7 +99,7 @@ function textOf(message: Record<string, unknown>): string | undefined {
       return str(reply?.title);
     }
     case "button": return isObject(message.button) ? str(message.button.text) ?? str(message.button.payload) : undefined; // a template's quick-reply button
-    default: return undefined; // images, locations ...: not understood yet (Deferred.md). A voice note is not text, but it is answered: see parseWhatsAppWebhook
+    default: return undefined; // locations, stickers ...: not understood yet (Deferred.md). A voice note and a picture are not text, but they are answered: see parseWhatsAppWebhook
   }
 }
 
@@ -119,6 +119,9 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
  * A voice note or an audio file (`type: "audio"`; Meta marks a recorded voice note with `audio.voice: true`) has no words, but the person
  * is waiting, so it becomes a message with empty text and `voiceNote: true`. Nothing else of it is read: the media id and the file type in
  * the `audio` object are left behind on purpose, so the audio can never reach the agent, the saved events or the record.
+ *
+ * A picture (`type: "image"`, a screenshot of a payment, say) is the same: empty text and `image: true`, and nothing of the picture or its caption is kept. The agent
+ * decides what to say (a screenshot is never proof of a payment: with UPI the owner confirms). Before UPI (B33) pictures were left out here.
  */
 export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
   if (!isObject(body)) return [];
@@ -130,11 +133,12 @@ export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
         const id = str(m.id);
         const from = toE164(m.from);
         const voiceNote = m.type === "audio";
-        const text = voiceNote ? "" : textOf(m);
-        if (!id || !from || text === undefined || (text.length === 0 && !voiceNote)) continue;
+        const image = m.type === "image";
+        const text = voiceNote || image ? "" : textOf(m);
+        if (!id || !from || text === undefined || (text.length === 0 && !voiceNote && !image)) continue;
         const seconds = Number(str(m.timestamp) ?? m.timestamp);
         const reply = replyOf(m);
-        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(reply ? { reply } : {}) });
+        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(image ? { image: true as const } : {}), ...(reply ? { reply } : {}) });
       }
     }
   }
