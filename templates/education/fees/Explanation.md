@@ -6,7 +6,7 @@
 
 A template for tuition and coaching centres: a monthly reminder with a payment link in the parent's language, "never a reminder once paid" judged from the payment record and never from what a parent says, part payments, waivers and refunds that go to the owner above a limit, STOP, a monthly report for the owner, and a check you can run on any centre's settings. It reuses what Bookings had (payment links, refunds, reminders, record, language, limits, approvals, report) and adds only what is about fees.
 
-It runs against in-memory stand-ins. That is a stand-in for real services, not a claim about them.
+It runs against in-memory stand-ins, and as a server against stand-in services (see "Running it live" below). That is a stand-in for real services, not a claim about them.
 
 ## What the move to `modules/` did for it
 
@@ -52,7 +52,18 @@ The report is the Bookings design on the shared parts (page frame, seal block, s
 - **A limit "stopped" something only when it blocked it.** A waiver or refund held for the owner is under "you were asked", not "stopped by your limits". So the line "waivers above your limit" is not used for stops; the stop is "a waiver for more than was owed".
 - **Approvals through Guard's hold are counted under "given back", not "you approved"**, because they are not an owner command the agent saw (Bookings has the same). A refund that went through shows in "given back".
 - **Reminders are counted by the template the record names** (`fee_reminder`, `fee_overdue`, `fee_overdue_late`), by the language the message was sent in, and receipts the same way.
-- **No go-live certificate and no monthly record certificate** (Bookings has both). They would need a Fees runtime to read them (Deferred.md).
+- **A go-live certificate, and no monthly record certificate.** The go-live certificate is made from a hand check on the centre's own settings (`scripts/go-live-certificate.ts`), signed, and the monthly report reads it back and says what the checks ran on (the centre's own settings, the example centre's, other settings, none, or one it could not trust). Bookings also has a monthly record certificate, a second signed paper; Fees does not (Deferred.md).
+
+## Running it live (B16, 7 November 2026)
+
+Fees runs as a server the way Bookings does, because the server was moved into `modules/runtime` first and Fees then gave it four things (see [modules/Explanation.md](../../../modules/Explanation.md), "The second cut"): its store and agent, how it counts its cases (`fees` in `/status`), how a held refund is found from its receipt (`f-N:pay_...`), and its report. What this folder holds for it (352 lines in all): `server/` (config, runtime, services, snapshot, store, start, main), `inbox/main.ts`, `approvals/` (the relay with a Fees voice), `src/adapters/live/index.ts`, and the stand-ins' Fees additions.
+
+- **A restart keeps the day the agent first ran.** The snapshot codec writes only the fields it is given, and `startedAtMs` is one of them. Without it, a restarted agent believes it has just started and no month is chased. A test saves a store with every field set, and a mutation check showed that taking the field out makes it fail.
+- **The runtime imports nothing outside `templates/education/fees` and `modules/`.** The container mounts those two folders. An import of Bookings or the bundle would pass every test and fail at start, so `test/runtime-imports.test.ts` walks the import graph. The stand-ins' control file borrows two webhook-body helpers from Bookings; that is test and dev support only (Deferred.md).
+- **The approval is checked against the real Guard program.** `test/approvals-guard-binary.test.ts` starts the `geo-guard` binary (skipped, with the reason, when it is not installed): a refund at the limit passes, one paisa above it is held, a refund above the dearest fee is refused, a link above the dearest fee with its late fee is refused with a 403, approving gives one refund and denying none, and a forged or stale notification is refused.
+- **A waiver is not held by Guard.** Guard's approval is on the refund operation. A waiver stays the agent's own `approve q-N` conversation with the owner, and the relay says nothing about it.
+- **The bundle and the panel know Fees.** `bundle/lib/kinds.ts` lists what differs by template (the Guards a shop has, how its settings are checked, its hand check and certificate). A Fees shop has Razorpay and WhatsApp Guards and no calendar. `geometer shop add --template fees` and the panel's five-step setup write the same folder, with the settings in the shape a builder writes (a student's `batch`).
+- **What has not run:** none of this has run with a real WhatsApp number, a real Razorpay account or a real centre. The end-to-end test runs the stand-ins, the inbox, the runtime and a restart.
 
 ## Choices to review
 

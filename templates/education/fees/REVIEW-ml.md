@@ -191,7 +191,7 @@ Bright Tuition Centre · ഫെബ്രുവരി 2027 · പരിശീല�
 പിരിഞ്ഞത്: ₹1,20,000 · ഇനിയും പിരിക്കാനുള്ളത്: ₹18,000 (3 വിദ്യാർത്ഥികൾ) · തിരികെ നൽകിയത്: ₹1,500
 അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: 96 · ഫീസിൽ നിന്ന് കുറച്ചത്: ₹2,000 · നിങ്ങളോട് ചോദിച്ചു: 3 · നിങ്ങൾ അംഗീകരിച്ചു: 2 · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: 1
 നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 5 (പണമടച്ചതിനു ശേഷമുള്ള ഓർമ്മപ്പെടുത്തൽ: 2 · STOP-ന് ശേഷമുള്ള സന്ദേശങ്ങൾ: 2 · അടച്ചതിൽ കൂടുതലുള്ള റീഫണ്ട്: 1)
-പരിശോധിക്കാത്തത്: പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 11 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
+പരിശോധിക്കാത്തത്: പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 ```
 
 ### The monthly report on WhatsApp, with sample numbers
@@ -204,7 +204,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: 96 · ഫീസിൽ നിന്ന് കുറച്ചത്: ₹2,000
 നിങ്ങളോട് ചോദിച്ചു: 3 · നിങ്ങൾ അംഗീകരിച്ചു: 2 · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: 1
 നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 5
-പരിശോധിക്കാത്തത്: പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 11 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
+പരിശോധിക്കാത്തത്: പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 കോഡ്: 7K2M-9QXD · പൂർണ്ണ റിപ്പോർട്ട്: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html
 തയ്യാറാക്കിയത്: Divya, local partner · Geometer
 ★ ഇന്നൊവേറ്റർ
@@ -216,6 +216,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | --- | --- | --- | --- |
 | `agent` | ഫീസ് ഏജന്റ് | Fees agent |  |
 | `monthlyReport` | പ്രതിമാസ റിപ്പോർട്ട് | Monthly report |  |
+| `goLiveCertificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
 | `fullReport` | പൂർണ്ണ റിപ്പോർട്ട് | Full report |  |
 | `label.collected` | പിരിഞ്ഞത് | Collected |  |
 | `label.stillToCollect` | ഇനിയും പിരിക്കാനുള്ളത് | Still to collect |  |
@@ -262,10 +263,42 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `notTested.same-instant` | ഒരേ നിമിഷത്തിൽ രണ്ട് രക്ഷിതാക്കൾ | Two parents at the exact same instant |  |
 | `notTested.two-children-one-message` | രണ്ട് കുട്ടികളെക്കുറിച്ച് ഒരൊറ്റ സന്ദേശം (ഏറ്റവും പഴയ തുറന്ന ഫീസിനാണ് മറുപടി) | One message about two children at once (the oldest open fee is the one answered) |  |
 | `notTested.other-faults` | കൈ പരിശോധനയിൽ പറഞ്ഞ തകരാറുകൾക്ക് പുറത്തുള്ള തകരാറുകൾ | Faults beyond the ones the hand check lists |  |
+| `notTested.own-settings` | ഈ പരിശോധനകൾ ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അവ ഉദാഹരണ സെന്ററായ Bright Tuition Centre-ൽ നടത്തി എന്നാണ്) | These checks on this centre's own settings (the go-live certificate says they ran on the example centre, Bright Tuition Centre) |  |
+| `notTested.other-settings` | ഈ പരിശോധനകൾ ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അവ വ്യത്യസ്തമായ ക്രമീകരണങ്ങളിൽ നടത്തി എന്നാണ്) | These checks on this centre's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ഈ പരിശോധനകൾ ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല) | These checks on this centre's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ഈ പരിശോധനകൾ ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങളിൽ (നൽകിയ പരിശോധനാ സർട്ടിഫിക്കറ്റ് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഉപയോഗിച്ചില്ല) | These checks on this centre's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
+| `notTested.situations-skipped` | ഈ ക്രമീകരണങ്ങളിൽ നടത്താൻ കഴിയാത്ത സാഹചര്യങ്ങൾ (പരിശോധനാ സർട്ടിഫിക്കറ്റിൽ അവയുടെ പേരുകളുണ്ട്) | Situations these settings could not run (named in the go-live certificate) |  |
 | `notCounted.cash-and-transfers` | പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്: രേഖയിൽ Razorpay പേയ്മെന്റുകൾ മാത്രമേയുള്ളൂ | Fees paid in cash or by bank transfer: the record only holds Razorpay payments |  |
 | `notCounted.read-receipts` | രക്ഷിതാവ് സന്ദേശം വായിച്ചോ ഇല്ലയോ | Whether a parent read a message |  |
 | `notCounted.outside-agent` | ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ Razorpay-യിലോ WhatsApp-ലോ ചെയ്തത്) | Anything done outside the agent (by you or anyone else, in Razorpay or WhatsApp) |  |
 | `notCounted.rule-breaks` | ഏജന്റ് കാണാത്ത നിയമലംഘനങ്ങൾ: ഏജന്റ് ചെയ്തതും തടഞ്ഞതും മാത്രമാണ് രേഖയിലുള്ളത് | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
+| `cert.date` | തീയതി | Date |  |
+| `cert.held` | 26 സാഹചര്യങ്ങളിൽ 25 എണ്ണം ശരിയായി നിന്നു. 1 എണ്ണം പിഴച്ചു. 12 കാര്യങ്ങൾ പരിശോധിച്ചിട്ടില്ല. | Held 25 of 26 situations. 1 failed. 12 not tested. |  |
+| `cert.intro` | തുടങ്ങുന്നതിന് മുമ്പ് തെറ്റാൻ സാധ്യതയുള്ള സാഹചര്യങ്ങൾ ഞങ്ങൾ പരീക്ഷിച്ചു: നഷ്ടപ്പെട്ട മറുപടികൾ, രണ്ടുതവണ വന്ന പേയ്മെന്റ്, അടയ്ക്കാതെ "അടച്ചു" എന്ന് പറയുന്ന രക്ഷിതാക്കൾ, ഇളവിനോ റീഫണ്ടിനോ ഉള്ള അഭ്യർത്ഥനകൾ, ഏജന്റിനെ കബളിപ്പിക്കാൻ ശ്രമിക്കുന്ന രക്ഷിതാക്കൾ. | Before switching on, we tried situations that could go wrong: lost replies, a payment arriving twice, parents saying they paid when they had not, requests for a waiver or a refund, and parents trying to trick the agent. |  |
+| `cert.yourLimits` | നിങ്ങളുടെ പരിധികൾ | Your limits |  |
+| `cert.paidRule` | Razorpay-യുടെ രേഖയിൽ ഫീസ് അടച്ചതായി കണ്ടാൽ പിന്നെ ഓർമ്മപ്പെടുത്തൽ ഇല്ല | No reminder once Razorpay's record shows a fee paid |  |
+| `cert.fees` | പ്രതിമാസ ഫീസ്: class 8 ₹1,200 · class 10 ₹1,800 | Monthly fees: class 8 ₹1,200 · class 10 ₹1,800 |  |
+| `cert.due` | ഓരോ ഫീസും മാസത്തിലെ 5-ാം തീയതി അടയ്ക്കണം, 5 ദിവസത്തെ ഇളവ് സമയത്തോടെ | Each fee is due on day 5 of the month, with 5 grace days |  |
+| `cert.lateFee` | ഇളവ് സമയത്തിന് ശേഷവും ഫീസ് അടച്ചിട്ടില്ലെങ്കിൽ ₹100 വൈകിയ ഫീസ്, ഒരു തവണ ചേർക്കും | A late fee of ₹100, added once, after the grace days, if the fee is still unpaid |  |
+| `cert.noLateFee` | വൈകിയ ഫീസ് ഇല്ല | No late fee |  |
+| `cert.reminders` | ഓർമ്മപ്പെടുത്തലുകൾ 10:00-ന് പോകും, അവസാന തീയതിയിൽ നിന്നുള്ള ഈ ദിവസങ്ങളിൽ (മൈനസ് എന്നാൽ അതിന് മുമ്പ്): -3, 0, +5; ഒരു ഫീസിന് ഒരു മാസത്തിൽ പരമാവധി 3 | Reminders go at 10:00 on these days from the due day (a minus means before it): -3, 0, +5; at most 3 for one fee in a month |  |
+| `cert.partPayments` | ഭാഗികമായി അടയ്ക്കാം, ₹300 മുതൽ | Part payments are allowed, from ₹300 |  |
+| `cert.noPartPayments` | ഭാഗികമായി അടയ്ക്കാൻ അനുവാദമില്ല | Part payments are not allowed |  |
+| `cert.waiver` | ഒരു വിദ്യാർത്ഥിയുടെ ഒരു മാസത്തിൽ ആകെ ₹100-ൽ കൂടുതൽ കുറയ്ക്കുന്നത് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം | Taking off more than ₹100 in all from one student's month only with your OK |  |
+| `cert.noWaiver` | ഫീസ് കുറയ്ക്കാനുള്ള ഓരോ അഭ്യർത്ഥനയും നിങ്ങളുടെ അടുത്തേക്ക് വരും | Every request to take money off a fee goes to you |  |
+| `cert.refund` | ₹500-ന് മുകളിലുള്ള റീഫണ്ട് നിങ്ങളോട് ചോദിച്ച ശേഷം മാത്രം | Refunds above ₹500 only with your OK |  |
+| `cert.students` | ലിസ്റ്റിൽ 44 വിദ്യാർത്ഥികൾ | 44 students on the list |  |
+| `cert.notAGrade` | ഇത് പരീക്ഷിച്ച സാഹചര്യങ്ങളുടെ എണ്ണം മാത്രമാണ്. ഇത് ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | This counts the situations tried. It does not grade the agent. |  |
+| `cert.didNotHold` | പിഴച്ചവ | Did not hold |  |
+| `cert.handRunLine` | പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തത് യഥാർത്ഥ WhatsApp, പേയ്മെന്റ് എന്നിവയിലല്ല, പരിശീലന സംവിധാനങ്ങളിലാണ് (stand-in services). ടെസ്റ്റ് പണം മാത്രം. | Checks were run by hand against stand-in services, not real WhatsApp or payments. Test money only. |  |
+| `cert.checkedOn` | പരിശോധിച്ചത് | Checks run on |  |
+| `goLive.heading` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധന | Go-live checks |  |
+| `goLive.own` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങളിൽ തന്നെയാണ് നടത്തിയത്, 2 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പ്രകാരം. | The go-live checks ran on this centre's own settings, in the go-live certificate of 2 Nov 2026. |  |
+| `goLive.example` | 2 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഉദാഹരണ സെന്ററായ Bright Tuition Centre-ൽ ആണ് നടത്തിയത് എന്നാണ്, ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങളിൽ അല്ല. | The go-live certificate of 2 Nov 2026 says its checks ran on the example centre, Bright Tuition Centre, not on this centre's own settings. |  |
+| `goLive.different` | 2 Nov 2026-ലെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് പറയുന്നത് അതിലെ പരിശോധനകൾ ഈ സെന്ററിന്റേതിൽ നിന്ന് വ്യത്യസ്തമായ ക്രമീകരണങ്ങളിലാണ് നടത്തിയത് എന്നാണ്, അതിനാൽ ഈ സെന്ററിന്റെ സ്വന്തം ക്രമീകരണങ്ങൾ എങ്ങനെ പ്രവർത്തിക്കുന്നു എന്ന് അത് കാണിക്കുന്നില്ല. | The go-live certificate of 2 Nov 2026 says its checks ran on different settings from this centre's, so it does not show how this centre's own settings behave. |  |
+| `goLive.untrusted` | ഒരു പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിരുന്നു, പക്ഷേ അത് വിശ്വസിക്കാൻ കഴിഞ്ഞില്ല (അതിൽ ഒപ്പില്ല, ഒപ്പ് ചേരുന്നില്ല, അല്ലെങ്കിൽ അത് ഈ ഏജന്റിന്റെ പരിശോധനാ സർട്ടിഫിക്കറ്റ് അല്ല), അതിനാൽ ഉപയോഗിച്ചില്ല. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate of this agent), so it was not used. |  |
+| `goLive.none` | പരിശോധനാ സർട്ടിഫിക്കറ്റ് നൽകിയിട്ടില്ല, അതിനാൽ തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനകൾ ഏത് ക്രമീകരണങ്ങളിലാണ് നടത്തിയതെന്ന് ഈ രേഖ പറയുന്നില്ല. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | പരിശോധനാ സർട്ടിഫിക്കറ്റിൽ ഒപ്പിട്ടത് key-3f9a1c എന്ന കീ ഉപയോഗിച്ചാണ്. ആ കീ ആരുടെ കൈയിലാണെന്ന് കീ കാണിക്കുന്നില്ല. | The go-live certificate is signed with key-3f9a1c. A key does not show who holds it. |  |
 | `page.numbers` | കണക്കുകൾ | The numbers |  |
 | `page.item` | എന്ത് | What |  |
 | `page.count` | എത്ര | How many |  |

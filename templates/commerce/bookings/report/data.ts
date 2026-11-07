@@ -56,18 +56,12 @@ export const NOT_COUNTED: readonly NotCountedId[] = ["no-shows", "read-receipts"
 export type NotTestedKey = NotTestedId | "own-settings" | "other-settings" | "no-go-live-certificate" | "go-live-untrusted" | "situations-skipped";
 
 /**
- * What the monthly report was told about the go-live checks, from the go-live certificate it was given (report/go-live.ts reads and checks one).
- * Only a certificate whose signature is good and whose document is a go-live certificate is ever read; anything else is "untrusted", and
- * no certificate at all is "none". For a certificate that was read, `own` says its checks ran on this shop's own settings (the digest of the
- * settings they ran on is the digest of this shop's), `example` that they ran on Glow Salon's example settings, `different` on any other settings.
- * Counts are carried only for `own`, as the certificate states them: a count from settings that are not this shop's would be read as this shop's.
+ * What the monthly report was told about the go-live checks, from the go-live certificate it was given (report/go-live.ts reads and checks one). The type is the same for
+ * every template (modules/report/go-live.ts, which says what each status means): `own` says the checks ran on this shop's own settings, `example` that they ran on Glow
+ * Salon's example settings, `different` on any other settings.
  */
-export interface GoLiveSeen { code: string; signedBy: string; issuedOn: LocalDate }
-export type GoLiveFinding =
-  | { status: "none" }
-  | { status: "untrusted" }
-  | ({ status: "own"; held: number; total: number; failed: number; notRun: number; notTested: number } & GoLiveSeen)
-  | ({ status: "example" | "different" } & GoLiveSeen);
+export type { GoLiveFinding, GoLiveSeen } from "../../../../modules/report/go-live.ts";
+import type { GoLiveFinding } from "../../../../modules/report/go-live.ts";
 
 /**
  * The actions that are a message going out. A reply to a voice note ("please type") is one too: it is counted in "messages sent" and, when it

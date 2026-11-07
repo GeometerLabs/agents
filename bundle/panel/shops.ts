@@ -5,10 +5,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
-import { validateRuntimeConfig, parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
+import { parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
 import { PATHWAY } from "../../templates/commerce/bookings/server/runtime.ts";
-import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
-import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import { kindFor } from "../lib/kinds.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
@@ -70,11 +69,15 @@ export function createShops(config: PanelConfig, store: Store) {
     },
     exists: (id: string) => SHOP_ID.test(id) && existsSync(paths.shop(id)),
 
-    settings(id: string): Settings | undefined {
+    /** The shop's settings, judged by the template its lock names (Bookings when there is no lock yet), in that template's own shape. */
+    settings(id: string): any | undefined {
       const text = readText(join(paths.shop(safe(id)), "settings.json"));
       if (text === undefined) return undefined;
-      try { const r = validateSettings(JSON.parse(text)); return r.ok ? r.settings : undefined; } catch { return undefined; }
+      const kind = kindFor(api.lock(id)?.split("@")[0]) ?? kindFor("bookings")!;
+      try { const r = kind.validateSettings(JSON.parse(text)); return r.ok ? r.settings : undefined; } catch { return undefined; }
     },
+    /** Which template a shop is, from its lock: "bookings" or "fees". Bookings when the lock is missing or names one this panel does not know. */
+    kind(id: string): string { return kindFor(api.lock(id)?.split("@")[0])?.id ?? "bookings"; },
     runtime(id: string): Record<string, any> | undefined {
       try { return JSON.parse(readText(join(paths.shop(safe(id)), "runtime.json")) ?? "null") ?? undefined; } catch { return undefined; }
     },
@@ -91,21 +94,24 @@ export function createShops(config: PanelConfig, store: Store) {
     saveMeta(id: string, meta: ShopMeta): void { store.write(`meta/${safe(id)}.json`, meta); },
 
     /** Is the folder one the deployer and the runtime will accept? The deployer adds the Guard addresses; here stand-in ones stand in for them. */
-    checkFolder(settings: Settings, runtime: Record<string, unknown>, lock: string, keptPin = false): string[] {
+    checkFolder(settings: any, runtime: Record<string, unknown>, lock: string, keptPin = false, building: { pathway: string; version: string } = { pathway: PATHWAY, version: pathwayVersion() }): string[] {
       const problems: string[] = [];
+      const kind = kindFor(building.pathway) ?? kindFor("bookings")!;
       const s = (runtime.services ?? {}) as Record<string, Record<string, unknown>>;
-      const withGuards = { ...runtime, services: { ...s, payments: { baseUrl: "http://guard.invalid", ...(s.payments ?? {}) }, calendar: { baseUrl: "http://guard.invalid", ...(s.calendar ?? {}) }, messaging: { baseUrl: "http://guard.invalid", ...(s.messaging ?? {}) } },
+      const stand = (o: Record<string, unknown> | undefined) => ({ baseUrl: "http://guard.invalid", ...(o ?? {}) });
+      // only the services the template has: a Fees runtime.json that names a calendar is refused by its own check
+      const withGuards = { ...runtime, services: { ...s, payments: stand(s.payments), ...(kind.guards.includes("calendar") ? { calendar: stand(s.calendar) } : {}), messaging: stand(s.messaging) },
         ...(runtime.parser ? { parser: { baseUrl: "http://guard.invalid", ...(runtime.parser as object) } } : {}) };
-      const r = validateRuntimeConfig(withGuards, "/tmp");
-      if (!r.ok) problems.push(...r.errors);
+      const r = kind.validateRuntimeConfig(withGuards, "/tmp");
+      if (!r.ok) problems.push(...(r.errors ?? []));
       // a shop that already has a pin keeps it (`geometer update` moves it, after the hand check on its own settings): only its template has to be this one
-      try { const l = parseLock(lock); if (l.pathway !== PATHWAY || (!keptPin && l.version !== pathwayVersion())) problems.push(`pathway.lock says ${l.pathway}@${l.version} but this panel builds ${PATHWAY}@${pathwayVersion()}.`); } catch (e) { problems.push((e as Error).message); }
-      if (!validateSettings(settings).ok) problems.push("the settings do not pass their own check");
+      try { const l = parseLock(lock); if (l.pathway !== building.pathway || (!keptPin && l.version !== building.version)) problems.push(`pathway.lock says ${l.pathway}@${l.version} but this panel builds ${building.pathway}@${building.version}.`); } catch (e) { problems.push((e as Error).message); }
+      if (!kind.validateSettings(settings).ok) problems.push("the settings do not pass their own check");
       return problems;
     },
 
     /** Write the shop's desired state. owner.json is written once and never again (flag wx), so the first account to set a shop up stays its attribution. */
-    writeFolder(id: string, parts: { settings: Settings; runtime: Record<string, unknown>; lock: string; pins?: PinsFile }, creator?: { account: Account; template: string }): void {
+    writeFolder(id: string, parts: { settings: unknown; runtime: Record<string, unknown>; lock: string; pins?: PinsFile }, creator?: { account: Account; template: string }): void {
       const dir = paths.shop(safe(id));
       // A new shop's folder is made without `recursive`, so a folder that is already there (another shop with this name) is an error, never shared.
       if (creator) { mkdirSync(paths.shops, { recursive: true }); mkdirSync(dir); } else mkdirSync(dir, { recursive: true });

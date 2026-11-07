@@ -191,7 +191,7 @@ Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ 
 ಸಂಗ್ರಹವಾದದ್ದು: ₹1,20,000 · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: ₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು) · ಮರಳಿ ಕೊಟ್ಟದ್ದು: ₹1,500
 ಕಳುಹಿಸಿದ ನೆನಪುಗಳು: 96 · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: ₹2,000 · ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: 3 · ನೀವು ಒಪ್ಪಿದ್ದು: 2 · ನೀವು ಬೇಡ ಎಂದದ್ದು: 1
 ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5 (ಪಾವತಿಯ ನಂತರದ ನೆನಪು: 2 · STOP ನಂತರದ ಸಂದೇಶಗಳು: 2 · ಪಾವತಿಸಿದ್ದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್: 1)
-ಪರಿಶೀಲಿಸದ್ದು: ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 11 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+ಪರಿಶೀಲಿಸದ್ದು: ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ```
 
 ### The monthly report on WhatsApp, with sample numbers
@@ -204,7 +204,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 ಕಳುಹಿಸಿದ ನೆನಪುಗಳು: 96 · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: ₹2,000
 ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: 3 · ನೀವು ಒಪ್ಪಿದ್ದು: 2 · ನೀವು ಬೇಡ ಎಂದದ್ದು: 1
 ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5
-ಪರಿಶೀಲಿಸದ್ದು: ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 11 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+ಪರಿಶೀಲಿಸದ್ದು: ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ಕೋಡ್: 7K2M-9QXD · ಪೂರ್ಣ ವರದಿ: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html
 ಸಿದ್ಧಪಡಿಸಿದವರು: Divya, local partner · Geometer
 ★ ಇನ್ನೋವೇಟರ್
@@ -216,6 +216,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | --- | --- | --- | --- |
 | `agent` | ಶುಲ್ಕ ಏಜೆಂಟ್ | Fees agent |  |
 | `monthlyReport` | ಮಾಸಿಕ ವರದಿ | Monthly report |  |
+| `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
 | `fullReport` | ಪೂರ್ಣ ವರದಿ | Full report |  |
 | `label.collected` | ಸಂಗ್ರಹವಾದದ್ದು | Collected |  |
 | `label.stillToCollect` | ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು | Still to collect |  |
@@ -262,10 +263,42 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `notTested.same-instant` | ಒಂದೇ ಕ್ಷಣದಲ್ಲಿ ಇಬ್ಬರು ಪೋಷಕರು | Two parents at the exact same instant |  |
 | `notTested.two-children-one-message` | ಇಬ್ಬರು ಮಕ್ಕಳ ಬಗ್ಗೆ ಒಂದೇ ಸಂದೇಶ (ಅತ್ಯಂತ ಹಳೆಯ ತೆರೆದ ಶುಲ್ಕಕ್ಕೆ ಉತ್ತರಿಸಲಾಗುತ್ತದೆ) | One message about two children at once (the oldest open fee is the one answered) |  |
 | `notTested.other-faults` | ಕೈ ಪರಿಶೀಲನೆಯಲ್ಲಿ ಹೇಳಿದ ದೋಷಗಳನ್ನು ಬಿಟ್ಟು ಬೇರೆ ದೋಷಗಳು | Faults beyond the ones the hand check lists |  |
+| `notTested.own-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು ಅವು ಉದಾಹರಣೆ ಸೆಂಟರ್ Bright Tuition Centre ಮೇಲೆ ನಡೆದವು ಎಂದು) | These checks on this centre's own settings (the go-live certificate says they ran on the example centre, Bright Tuition Centre) |  |
+| `notTested.other-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು ಅವು ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು ಎಂದು) | These checks on this centre's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ) | These checks on this centre's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಕೊಟ್ಟ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ) | These checks on this centre's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
+| `notTested.situations-skipped` | ಈ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆಸಲಾಗದ ಸಂದರ್ಭಗಳು (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದಲ್ಲಿ ಅವುಗಳ ಹೆಸರುಗಳಿವೆ) | Situations these settings could not run (named in the go-live certificate) |  |
 | `notCounted.cash-and-transfers` | ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ: ದಾಖಲೆಯಲ್ಲಿ Razorpay ಪಾವತಿಗಳು ಮಾತ್ರ ಇವೆ | Fees paid in cash or by bank transfer: the record only holds Razorpay payments |  |
 | `notCounted.read-receipts` | ಪೋಷಕರು ಸಂದೇಶ ಓದಿದರೇ ಇಲ್ಲವೇ | Whether a parent read a message |  |
 | `notCounted.outside-agent` | ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು Razorpay ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು) | Anything done outside the agent (by you or anyone else, in Razorpay or WhatsApp) |  |
 | `notCounted.rule-breaks` | ಏಜೆಂಟ್ ನೋಡದ ನಿಯಮ ಉಲ್ಲಂಘನೆಗಳು: ದಾಖಲೆಯಲ್ಲಿ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು ಮತ್ತು ಅದನ್ನು ತಡೆದದ್ದು ಮಾತ್ರ ಇದೆ | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
+| `cert.date` | ದಿನಾಂಕ | Date |  |
+| `cert.held` | 26 ಸಂದರ್ಭಗಳಲ್ಲಿ 25 ಸರಿಯಾಗಿ ನಿಂತವು. 1 ತಪ್ಪಿದವು. 12 ವಿಷಯಗಳನ್ನು ಪರಿಶೀಲಿಸಿಲ್ಲ. | Held 25 of 26 situations. 1 failed. 12 not tested. |  |
+| `cert.intro` | ಆರಂಭಿಸುವ ಮೊದಲು ತಪ್ಪಾಗಬಹುದಾದ ಸಂದರ್ಭಗಳನ್ನು ನಾವು ಪ್ರಯತ್ನಿಸಿದೆವು: ಕಳೆದುಹೋದ ಉತ್ತರಗಳು, ಎರಡು ಬಾರಿ ಬಂದ ಪಾವತಿ, ಕಟ್ಟದೆ "ಕಟ್ಟಿದ್ದೇವೆ" ಎನ್ನುವ ಪೋಷಕರು, ರಿಯಾಯಿತಿ ಅಥವಾ ರೀಫಂಡ್ ಕೋರಿಕೆಗಳು, ಏಜೆಂಟ್ ಅನ್ನು ಮೋಸಗೊಳಿಸಲು ಯತ್ನಿಸುವ ಪೋಷಕರು. | Before switching on, we tried situations that could go wrong: lost replies, a payment arriving twice, parents saying they paid when they had not, requests for a waiver or a refund, and parents trying to trick the agent. |  |
+| `cert.yourLimits` | ನಿಮ್ಮ ಮಿತಿಗಳು | Your limits |  |
+| `cert.paidRule` | Razorpay ದಾಖಲೆಯಲ್ಲಿ ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಕಂಡರೆ ಆಮೇಲೆ ನೆನಪಿನ ಸಂದೇಶ ಇಲ್ಲ | No reminder once Razorpay's record shows a fee paid |  |
+| `cert.fees` | ಮಾಸಿಕ ಶುಲ್ಕ: class 8 ₹1,200 · class 10 ₹1,800 | Monthly fees: class 8 ₹1,200 · class 10 ₹1,800 |  |
+| `cert.due` | ಪ್ರತಿ ಶುಲ್ಕವನ್ನು ತಿಂಗಳ 5ನೇ ತಾರೀಖಿಗೆ ಕಟ್ಟಬೇಕು, 5 ದಿನಗಳ ಹೆಚ್ಚುವರಿ ಅವಧಿಯೊಂದಿಗೆ | Each fee is due on day 5 of the month, with 5 grace days |  |
+| `cert.lateFee` | ಹೆಚ್ಚುವರಿ ಅವಧಿಯ ನಂತರವೂ ಶುಲ್ಕ ಕಟ್ಟದಿದ್ದರೆ ₹100 ತಡ ಶುಲ್ಕ, ಒಮ್ಮೆ ಸೇರಿಸಲಾಗುತ್ತದೆ | A late fee of ₹100, added once, after the grace days, if the fee is still unpaid |  |
+| `cert.noLateFee` | ತಡ ಶುಲ್ಕ ಇಲ್ಲ | No late fee |  |
+| `cert.reminders` | ನೆನಪಿನ ಸಂದೇಶಗಳು 10:00 ಕ್ಕೆ ಹೋಗುತ್ತವೆ, ಕೊನೆಯ ದಿನಾಂಕದಿಂದ ಈ ದಿನಗಳಲ್ಲಿ (ಮೈನಸ್ ಎಂದರೆ ಅದಕ್ಕಿಂತ ಮೊದಲು): -3, 0, +5; ಒಂದು ಶುಲ್ಕಕ್ಕೆ ತಿಂಗಳಲ್ಲಿ ಗರಿಷ್ಠ 3 | Reminders go at 10:00 on these days from the due day (a minus means before it): -3, 0, +5; at most 3 for one fee in a month |  |
+| `cert.partPayments` | ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇದೆ, ₹300 ರಿಂದ | Part payments are allowed, from ₹300 |  |
+| `cert.noPartPayments` | ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇಲ್ಲ | Part payments are not allowed |  |
+| `cert.waiver` | ಒಬ್ಬ ವಿದ್ಯಾರ್ಥಿಯ ಒಂದು ತಿಂಗಳಲ್ಲಿ ಒಟ್ಟು ₹100 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಡಿಮೆ ಮಾಡುವುದು ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ | Taking off more than ₹100 in all from one student's month only with your OK |  |
+| `cert.noWaiver` | ಶುಲ್ಕ ಕಡಿಮೆ ಮಾಡುವ ಪ್ರತಿ ಕೋರಿಕೆಯೂ ನಿಮ್ಮ ಬಳಿಗೆ ಬರುತ್ತದೆ | Every request to take money off a fee goes to you |  |
+| `cert.refund` | ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ ನಿಮ್ಮನ್ನು ಕೇಳಿದ ನಂತರ ಮಾತ್ರ | Refunds above ₹500 only with your OK |  |
+| `cert.students` | ಪಟ್ಟಿಯಲ್ಲಿ 44 ವಿದ್ಯಾರ್ಥಿಗಳು | 44 students on the list |  |
+| `cert.notAGrade` | ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ. | This counts the situations tried. It does not grade the agent. |  |
+| `cert.didNotHold` | ತಪ್ಪಿದವು | Did not hold |  |
+| `cert.handRunLine` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp ಅಥವಾ ಪಾವತಿಯ ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಟೆಸ್ಟ್ ಹಣ ಮಾತ್ರ. | Checks were run by hand against stand-in services, not real WhatsApp or payments. Test money only. |  |
+| `cert.checkedOn` | ಪರಿಶೀಲನೆ ನಡೆದದ್ದು | Checks run on |  |
+| `goLive.heading` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆ | Go-live checks |  |
+| `goLive.own` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆಯೇ ನಡೆದವು, 2 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ. | The go-live checks ran on this centre's own settings, in the go-live certificate of 2 Nov 2026. |  |
+| `goLive.example` | 2 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಉದಾಹರಣೆ ಸೆಂಟರ್ Bright Tuition Centre ಮೇಲೆ ನಡೆದವು, ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಅಲ್ಲ. | The go-live certificate of 2 Nov 2026 says its checks ran on the example centre, Bright Tuition Centre, not on this centre's own settings. |  |
+| `goLive.different` | 2 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಈ ಸೆಂಟರ್‌ಗಿಂತ ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು, ಆದ್ದರಿಂದ ಈ ಸೆಂಟರ್‌ನ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate of 2 Nov 2026 says its checks ran on different settings from this centre's, so it does not show how this centre's own settings behave. |  |
+| `goLive.untrusted` | ಒಂದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಡಲಾಗಿತ್ತು, ಆದರೆ ಅದನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ (ಅದರಲ್ಲಿ ಸಹಿ ಇಲ್ಲ, ಸಹಿ ಹೊಂದುವುದಿಲ್ಲ, ಅಥವಾ ಅದು ಈ ಏಜೆಂಟ್‌ನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವೇ ಅಲ್ಲ), ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate of this agent), so it was not used. |  |
+| `goLive.none` | ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ, ಆದ್ದರಿಂದ ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಯಾವ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು ಎಂದು ಈ ದಾಖಲೆ ಹೇಳುವುದಿಲ್ಲ. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರಕ್ಕೆ ಸಹಿ ಮಾಡಿದ್ದು key-3f9a1c ಎಂಬ ಕೀಲಿಯಿಂದ. ಆ ಕೀಲಿ ಯಾರ ಬಳಿ ಇದೆ ಎಂದು ಕೀಲಿ ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate is signed with key-3f9a1c. A key does not show who holds it. |  |
 | `page.numbers` | ಅಂಕಿಅಂಶಗಳು | The numbers |  |
 | `page.item` | ಏನು | What |  |
 | `page.count` | ಎಷ್ಟು | How many |  |
