@@ -39,8 +39,8 @@ export interface GoLiveReading {
 
 /** What a template says about itself. */
 export interface GoLiveSubject {
-  /** The pathway whose certificate this is ("bookings", "fees"): a certificate of another one is not used. */
-  pathway: string;
+  /** The template whose certificate this is ("bookings", "fees"), or the few names it accepts (Bookings also reads the own-agent certificates of "bring your own agent", which are checked against Bookings-shaped settings): a certificate of any other one is not used. */
+  pathway: string | string[];
   /** The digest of this client's own settings, and of the example settings the hand check runs on when it is given none. */
   ownDigest: string;
   exampleDigest: string;
@@ -82,7 +82,8 @@ export function readGoLiveText(text: string, subject: GoLiveSubject): GoLiveRead
   if (!v.signed) return untrustedGoLive("it is not signed, so nothing shows it has not been made up", subject);
   const fields = fieldsOf(v.envelope.document);
   if (!fields) return untrustedGoLive("it is not a go-live certificate", subject);
-  if (fields.pathway !== undefined && fields.pathway !== subject.pathway) return untrustedGoLive(`it is a go-live certificate of the ${fields.pathway} template, not ${subject.pathway}`, subject);
+  const accepted = Array.isArray(subject.pathway) ? subject.pathway : [subject.pathway];
+  if (fields.pathway !== undefined && !accepted.includes(fields.pathway)) return untrustedGoLive(`it is a go-live certificate of the ${fields.pathway} template, not ${accepted[0]}`, subject);
   const seen = { code: v.envelope.code, signedBy: v.keyId as string, issuedOn: fields.issuedOn };
   const signed = `signed with ${seen.signedBy}, which does not show who holds that key`;
   if (fields.checkedPolicyDigest === subject.ownDigest) {

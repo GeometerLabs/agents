@@ -59,7 +59,14 @@ test("a client starts from its folder, answers with its token, keeps its data in
 
 // A message the rule parser cannot read, which a model (here a stub) reads as a haircut tomorrow at 6 pm.
 const HARD = "Could you sort out my hair for the morrow around six in the evening please?";
-const MODEL_READS_AS_BOOKING = answer({ kind: "book", language: "en", serviceId: "haircut", date: { kind: "relative", offsetDays: 1 }, time: { hour: 6, minute: 0, period: "pm" } });
+/** Tomorrow, unless tomorrow is the day Glow Salon is closed (Sunday): the test runs on the real clock, so it asks for the next open day. */
+function nextOpenOffset(): number {
+  const weekday = (offset: number) => new Date(Date.now() + offset * 86_400_000).toLocaleDateString("en-US", { weekday: "short", timeZone: "Asia/Kolkata" });
+  let offset = 1;
+  while (weekday(offset) === "Sun") offset++;
+  return offset;
+}
+const MODEL_READS_AS_BOOKING = answer({ kind: "book", language: "en", serviceId: "haircut", date: { kind: "relative", offsetDays: nextOpenOffset() }, time: { hour: 6, minute: 0, period: "pm" } });
 
 test("with no parser in runtime.json the rules read the messages; with one the model parser is wired to its base URL and sends no key", async () => {
   const stub = await startStubModel(() => ({ json: openaiReply(MODEL_READS_AS_BOOKING) }));
