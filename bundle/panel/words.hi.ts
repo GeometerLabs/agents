@@ -234,6 +234,8 @@ export const hi: Words = {
       refund_waiting: (id, amount, _hours, who) => `${id} का ${amount} का रिफंड ${who} रुका है`,
       refund_unknown: (id) => `${id} का रिफंड हुआ या नहीं, पता नहीं: Razorpay में देखिए`,
       refund_failed: (id) => `${id} का रिफंड नहीं हो पाया: देखिए`,
+      upi_payment_unconfirmed: (id, amount) => `${id} के लिए ${amount} का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए`,
+      upi_refund_owed: (id, amount) => `${id} का ${amount} का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए`,
     },
     fallback: (kind, id) => `${id} पर किसी इंसान को देखना है (${kind})`,
     variants: { guard_hold: "रिफंड", refund: "रिफंड", waiver: "फ़ीस माफ़ी", refund_request: "रिफंड का अनुरोध", calendar: "कैलेंडर की दिक्कत", owner: "मालिक के जवाब के लिए", agent: "दोबारा भेजे जाने के लिए" },
@@ -261,6 +263,24 @@ export const hi: Words = {
     expired: "मालिक के जवाब से पहले कोड खत्म हो गया। फिर से शुरू कीजिए।", cancelled: "सौंपना रद्द कर दिया गया।",
     problems: { who: "इस सर्वर पर इस नाम से कोई साइन इन नहीं करता।", same: "वे पहले से इस दुकान को संभालते हैं।", geometer: "दुकान Geometer को नहीं दी जा सकती।", reason: "चुनिए कि दुकान क्यों जा रही है।", waiting: "एक सौंपना पहले से मालिक के जवाब का इंतज़ार कर रहा है। नया शुरू करने के लिए उसे रद्द कीजिए।" },
     history: "इस दुकान को किसने संभाला", historyLine: (from, to, at, why) => `${from} से ${to} को, ${at}: ${why}`,
+  },
+  // UPI (B33): machine-written, waiting for a native Hindi reader like the rest of this file.
+  upi: {
+    setup: {
+      heading: "ग्राहक कैसे पेमेंट करेंगे", intro: "चुनिए कि ग्राहक जमा राशि या फ़ीस कैसे देंगे। UPI सबसे आसान है: कोई पेमेंट गेटवे अकाउंट नहीं खोलना पड़ता।",
+      optionUpi: "UPI: ग्राहक दुकान की अपनी UPI आईडी पर पेमेंट करते हैं", optionRazorpay: "Razorpay: दुकान का अपना Razorpay अकाउंट है",
+      upiTitle: "UPI से पेमेंट", upiIntro: "ग्राहक अपने UPI ऐप से दुकान की अपनी UPI आईडी पर पैसे भेजते हैं। पैसे आने पर मालिक WhatsApp पर “मिल गया” (Received) दबाते हैं। कोई गेटवे फ़ीस नहीं है, और Geometer पैसे को हाथ नहीं लगाता।",
+      upiId: "दुकान की UPI आईडी", upiIdHelp: "जैसे glowsalon@okicici", payee: "ग्राहक को अपने UPI ऐप में दिखने वाला नाम", payeeHelp: "जैसे Glow Salon",
+      noCheck: "UPI आईडी को बिना पैसे भेजे जाँचा नहीं जा सकता, इसलिए यहाँ कोई जाँच नहीं होती। इसे धीरे-धीरे ध्यान से लिखिए और फिर मालिक को पढ़कर सुनाइए।", razorpayOnly: "Razorpay के खाने तभी भरिए जब आपने ऊपर Razorpay चुना हो।",
+    },
+    problems: {
+      idEmpty: "दुकान की UPI आईडी लिखिए, जैसे glowsalon@okicici।",
+      idNoAt: (id) => `"${id}" UPI आईडी नहीं है: इसमें @ और उसके बाद ऐप या बैंक का नाम चाहिए, जैसे glowsalon@okicici।`,
+      idShape: (id) => `"${id}" UPI आईडी नहीं है। स्पेलिंग देखिए: @ से पहले अक्षर, अंक, बिंदु, डैश या अंडरस्कोर, और @ के बाद ऐप या बैंक का नाम।`,
+      payeeEmpty: "वह नाम लिखिए जो ग्राहक को अपने UPI ऐप में दिखे, जैसे Glow Salon।", payeeOneLine: "नाम एक ही लाइन में होना चाहिए।",
+      payeeLong: "यह नाम बहुत लंबा है। दुकान का UPI ऐप जो छोटा नाम दिखाता है वही लिखिए।",
+    },
+    noGatewayFee: "कोई गेटवे फ़ीस नहीं: ग्राहक दुकान की अपनी UPI आईडी पर पेमेंट करते हैं।",
   },
   errors: { notFound: "यहाँ कुछ नहीं है।", notAllowed: "आप यह नहीं कर सकते।", csrf: "वह फ़ॉर्म बहुत पुराना था या इसी पेज से नहीं आया था। पीछे जाइए और फिर कोशिश कीजिए।", tooBig: "यह भेजने के लिए बहुत बड़ा था।", wrongMethod: "यह पेज इस तरह नहीं चलता।", tryAgain: "कुछ गड़बड़ हो गई। फिर कोशिश कीजिए।" },
 };

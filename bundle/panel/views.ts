@@ -20,6 +20,7 @@ import type { Obligation } from "../../modules/unfinished/index.ts";
 import type { ShopInbox } from "./inbox.ts";
 import type { AssignmentFile } from "./contract.ts";
 import type { Draft } from "./setup.ts";
+import { paymentModuleOf } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
@@ -226,7 +227,7 @@ ${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.plan ? ` (${c.w.plan.na
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>
-<ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${w.caveats[k as keyof typeof w.caveats]}</li>`)}</ul>`;
+<ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${k === "no-gateway-fee" ? c.w.upi.noGatewayFee : w.caveats[k as keyof typeof w.caveats]}</li>`)}</ul>`;
 }
 
 /** The Fees centre's settings in plain words: its batches with their fees, the rules (the certificate's own lines), the languages and the owner. */
@@ -453,7 +454,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   } else {
     const a = w.accounts;
     const t = v.template;
-    const guide = (steps: string[]) => html`<ol class="guide">${steps.map((s) => html`<li>${s}</li>`)}</ol>`;
+    const p = c.w.upi.setup;
+    const paying = paymentModuleOf(d);
+    const guide =(steps: string[]) => html`<ol class="guide">${steps.map((s) => html`<li>${s}</li>`)}</ol>`;
     body = html`<p>${a.intro}</p><form method="post" action="/setup/${d.id}/${v.now + 1}" autocomplete="off">${csrf(c)}
   ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
     ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.numberId, { mode: "numeric", max: 20 })}
@@ -462,7 +465,14 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     ${v.shareAddress ? html`<p>${a.calendar.shareAddress}</p><code class="addr">${v.shareAddress}</code>` : html`<p class="note">${a.calendar.noAddress}</p>`}
     ${text(a.calendar.id, "calId", d.calendar.id, { max: 200 })}
     ${v.shareAddress ? "" : secret(c, a.calendar.json, "calJson", v.receipts["google_service_account.json"], "textarea")}` : ""}
-  ${t.accounts.includes("razorpay") ? html`<h2>${a.razorpay.title}</h2><p>${a.razorpay.intro}</p>${guide(a.razorpay.steps)}
+  ${t.accounts.includes("razorpay") ? html`<h2>${p.heading}</h2><p>${p.intro}</p>
+    <div class="field"><div class="days">
+      <label><input type="radio" name="payMod" value="upi" ${paying === "upi" ? raw("checked") : ""}> ${p.optionUpi}</label>
+      <label><input type="radio" name="payMod" value="razorpay" ${paying === "razorpay" ? raw("checked") : ""}> ${p.optionRazorpay}</label></div></div>
+    <h2>${p.upiTitle}</h2><p>${p.upiIntro}</p>
+    ${text(p.upiId, "upiId", d.payment?.upiId ?? "", { max: 80, help: p.upiIdHelp })}${text(p.payee, "upiPayee", d.payment?.payee ?? "", { max: 80, help: p.payeeHelp })}
+    <p class="note">${p.noCheck}</p>
+    <h2>${a.razorpay.title}</h2><p class="note">${p.razorpayOnly}</p><p>${a.razorpay.intro}</p>${guide(a.razorpay.steps)}
     ${v.webhookUrl ? html`<code class="addr">${a.razorpay.webhookUrl(v.webhookUrl)}</code>` : ""}
     <div class="field"><span>${a.razorpay.mode}</span><div class="days">
       <label><input type="radio" name="rzpMode" value="live" ${d.razorpay.mode === "live" ? raw("checked") : ""}> ${a.razorpay.modeLive}</label>

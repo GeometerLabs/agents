@@ -56,7 +56,7 @@ export interface Words {
     heading: string; early: string; fromRecord(n: number): string; assumption(n: number): string;
     lines: Record<LineId, string>; payer: Record<Payer, string>;
     unknown: string; total: string; subtotal(unknownItems: number): string; priceList(date: string): string;
-    caveats: Record<Exclude<Caveat, "early-estimate">, string>;
+    caveats: Record<Exclude<Caveat, "early-estimate" | "no-gateway-fee">, string>;
   };
   /** The shop's plan (B48): what fleet says about it, with its price. The warning codes are fleet's (apps/fleet/README.md, "What fleet tells each shop"). */
   plan: {
@@ -140,6 +140,12 @@ export interface Words {
     history: string; historyLine(from: string, to: string, at: string, why: string): string;
   };
   errors: { notFound: string; notAllowed: string; csrf: string; tooBig: string; wrongMethod: string; tryAgain: string };
+  /** UPI as the way customers pay (B33): the setup choice, its refusals in plain words, and the cost note. The inbox sentences for UPI are under `inbox.kinds`. */
+  upi: {
+    setup: { heading: string; intro: string; optionUpi: string; optionRazorpay: string; upiTitle: string; upiIntro: string; upiId: string; upiIdHelp: string; payee: string; payeeHelp: string; noCheck: string; razorpayOnly: string };
+    problems: { idEmpty: string; idNoAt(id: string): string; idShape(id: string): string; payeeEmpty: string; payeeOneLine: string; payeeLong: string };
+    noGatewayFee: string;
+  };
 }
 
 /** Sample arguments for the functions in a Words set, so the review sheet can show one real sentence per line. */
@@ -161,6 +167,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "inbox.count": [3], "inbox.asOf": ["4 Nov 2026, 10:30"], "inbox.since": ["4 Nov 2026, 10:30"], "inbox.fallback": ["upi_unconfirmed", "b-3"],
   "inbox.kinds.deposit_no_booking": ["b-3", "₹200"], "inbox.kinds.payment_unrecorded": ["f-3"], "inbox.kinds.approval_waiting_long": ["b-3", "", 14, "[what]"],
   "inbox.kinds.refund_waiting": ["b-3", "₹200", 0, "[who]"], "inbox.kinds.refund_unknown": ["b-3"], "inbox.kinds.refund_failed": ["b-3"],
+  "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
   "setup.checks.razorpay.confirmed": ["Live"], "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
@@ -387,6 +394,8 @@ export const en: Words = {
       refund_waiting: (id, amount, _hours, who) => `The refund of ${amount} for ${id} is waiting ${who}`,
       refund_unknown: (id) => `Refund for ${id}: not sure it went through. Check it in Razorpay`,
       refund_failed: (id) => `The refund for ${id} did not go through: review it`,
+      upi_payment_unconfirmed: (id, amount) => `UPI payment of ${amount} for ${id} is not yet confirmed by the owner: ask the owner to check their UPI app`,
+      upi_refund_owed: (id, amount) => `Refund of ${amount} for ${id} is owed by the owner and not yet marked done: remind the owner`,
     },
     fallback: (kind, id) => `${id} needs a person (${kind})`,
     variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again" },
@@ -416,4 +425,21 @@ export const en: Words = {
     history: "Who has served this shop", historyLine: (from, to, at, why) => `${from} to ${to}, ${at}: ${why}`,
   },
   errors: { notFound: "There is nothing here.", notAllowed: "You cannot do that.", csrf: "That form was too old or did not come from this page. Go back and try again.", tooBig: "That was too much to send.", wrongMethod: "That is not how this page works.", tryAgain: "Something went wrong. Try again." },
+  upi: {
+    setup: {
+      heading: "How customers pay", intro: "Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open.",
+      optionUpi: "UPI: customers pay the shop's own UPI ID", optionRazorpay: "Razorpay: the shop has its own Razorpay account",
+      upiTitle: "Pay by UPI", upiIntro: "Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money.",
+      upiId: "The shop's UPI ID", upiIdHelp: "For example glowsalon@okicici", payee: "The name customers see in their UPI app", payeeHelp: "For example Glow Salon",
+      noCheck: "A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner.", razorpayOnly: "Fill in the Razorpay boxes only if you chose Razorpay above.",
+    },
+    problems: {
+      idEmpty: "Add the shop's UPI ID, for example glowsalon@okicici.",
+      idNoAt: (id) => `"${id}" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici.`,
+      idShape: (id) => `"${id}" is not a UPI ID. Check the spelling: letters, digits, dots, dashes or underscores before the @, and the app's or bank's name after it.`,
+      payeeEmpty: "Add the name customers should see in their UPI app, for example Glow Salon.", payeeOneLine: "The name must be on one line.",
+      payeeLong: "That name is too long. Use the short name the shop's UPI app shows.",
+    },
+    noGatewayFee: "No gateway fee: customers pay the shop's own UPI ID.",
+  },
 };
