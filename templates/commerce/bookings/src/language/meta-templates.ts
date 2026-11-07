@@ -24,7 +24,7 @@ import { formatInr } from "../../../../../modules/language/format.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked";
+export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -38,6 +38,7 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   approvalHours: (f) => String(need(f, "approvalHours")),
   upiCode: (f) => need(f, "upiCode"),
   marked: (f) => formatInr(need(f, "markedInr")),
+  left: (f) => formatInr(need(f, "leftInr")),
 };
 
 
@@ -272,6 +273,16 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
       hi: 'ग्राहक {phone} कह रहे हैं कि उन्होंने बुकिंग {ref} का {deposit} जमा भेज दिया है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो "मिल गया" दबाएँ या "received {upiCode}" लिखकर भेजें।',
       ml: 'ഉപഭോക്താവ് {phone} ബുക്കിംഗ് {ref}-ന്റെ {deposit} അഡ്വാൻസ് അയച്ചെന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received {upiCode}" എന്ന് മറുപടി അയക്കുക.',
       kn: 'ಗ್ರಾಹಕರು {phone} ಬುಕಿಂಗ್ {ref} ರ {deposit} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received {upiCode}" ಎಂದು ಉತ್ತರಿಸಿ.',
+    },
+  },
+  {
+    // asked again from the unfinished-work list (B31) when the owner marked part of a deposit and has not marked the rest: the owner may not have written today
+    name: "owner_upi_part_marked", usedFor: "owner_upi_part", audience: "owner",
+    bodies: {
+      en: 'You marked {marked} for booking {ref}, but the deposit is {deposit}, so it is not booked yet. The slot stays held until the hold ends. When the other {left} arrives, tap Received or reply "received {upiCode}".',
+      hi: 'आपने बुकिंग {ref} के लिए {marked} दर्ज किया, पर जमा {deposit} है, इसलिए अभी बुकिंग नहीं हुई। रोक का समय खत्म होने तक स्लॉट रुका रहेगा। बाकी {left} आने पर "मिल गया" दबाएँ या "received {upiCode}" लिखकर भेजें।',
+      ml: 'ബുക്കിംഗ് {ref}-ന് നിങ്ങൾ {marked} രേഖപ്പെടുത്തി, പക്ഷേ അഡ്വാൻസ് {deposit} ആണ്, അതിനാൽ ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. പിടിച്ചുവെക്കൽ സമയം തീരും വരെ സ്ലോട്ട് പിടിച്ചുവെക്കും. ബാക്കി {left} എത്തുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received {upiCode}" എന്ന് മറുപടി അയക്കുക.',
+      kn: 'ಬುಕಿಂಗ್ {ref} ಗೆ ನೀವು {marked} ದಾಖಲಿಸಿದ್ದೀರಿ, ಆದರೆ ಮುಂಗಡ ಹಣ {deposit}, ಆದ್ದರಿಂದ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರುತ್ತದೆ. ಉಳಿದ {left} ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received {upiCode}" ಎಂದು ಉತ್ತರಿಸಿ.',
     },
   },
   {
