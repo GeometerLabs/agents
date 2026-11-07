@@ -172,3 +172,7 @@ Day 0 is the invoice due date. Days 0 to 14 are normal, 15 to 30 are warnings, w
 - **CI for the bundle's tests.** The repository's workflow does not run `node --test bundle/test/` or the template tests. The proof (`bundle/test/proof/run.ts`) needs Docker and about twenty minutes and is run by hand.
 - **Windows.** The deployer assumes a Linux or macOS host with Docker Engine or Docker Desktop. The plan's Windows route is WSL2, not tested.
 - **Cheaper forwarders.** Each Guard has a 1 MB `busybox nc` forwarder and each shop a door. That keeps the admin port off the runtime's network without TLS on the Guard's agent port. If Guard ever serves its admin port with its own TLS cleanly, the forwarders can go.
+- **A UPI shop's deploy has not run on a real server.** `test/upi-shop.test.ts` deploys one against the test world (no Razorpay Guard, no key, no relay). Revisit when: the
+  first partner shop on UPI goes live.
+- **Switching a live shop between UPI and Razorpay.** The deploy plans the new set of Guards, but a Razorpay Guard left over from before is not taken down by name, and its
+  secrets stay in their folders. Revisit when: a shop switches.
