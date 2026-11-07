@@ -825,7 +825,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `handover.askTitle` | ಈಗ ಮಾಲೀಕರು ಒಪ್ಪಬೇಕು | Now the owner has to agree |  |
 | `handover.ask` | ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಅಂಗಡಿಯ WhatsApp ಸಂಖ್ಯೆಗೆ ಈ ಒಂದೇ ಸಂದೇಶವನ್ನು ಕಳುಹಿಸುವಂತೆ ಹೇಳಿ: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
 | `handover.askNote` | ಈ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಮತ್ತು 72 ಗಂಟೆಯಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಇದನ್ನು ಈಗ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ. ಸಂದೇಶ ಪಡೆಯಲು ಅಂಗಡಿ ಚಾಲನೆಯಲ್ಲಿರಬೇಕು. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
-| `handover.waiting` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ. ಸಂದೇಶ ಬಂದ ತಕ್ಷಣ Meera ಜವಾಬ್ದಾರಿ ವಹಿಸಿಕೊಳ್ಳುತ್ತಾರೆ. | Waiting for the owner. When the message arrives, Meera takes over. |  |
+| `handover.waiting` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ. ಸಂದೇಶ ಬಂದ ನಂತರ Meera ಜವಾಬ್ದಾರಿ ವಹಿಸಿಕೊಳ್ಳುತ್ತಾರೆ. ಸಂದೇಶದ ನಂತರ ಇದಕ್ಕೆ ಹದಿನೈದು ನಿಮಿಷಗಳವರೆಗೆ ಬೇಕಾಗಬಹುದು. | Waiting for the owner. When the message arrives, Meera takes over. This can take a quarter of an hour after the message. |  |
 | `handover.check` | ಮತ್ತೆ ನೋಡಿ | Check again |  |
 | `handover.cancel` | ವರ್ಗಾವಣೆ ರದ್ದುಮಾಡಿ | Cancel the move |  |
 | `handover.done` | ಆಯಿತು. ಈಗ Meera ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಾರೆ. | Done. Meera now serves this shop. |  |
