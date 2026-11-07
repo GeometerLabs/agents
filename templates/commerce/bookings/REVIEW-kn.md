@@ -805,6 +805,40 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.recover.unreachable` | ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಈಗ ಸಿಗುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | The shop's agent cannot be reached right now, so nothing was sent. Try again later. |  |
 | `inbox.recover.refused` | ಇದು ಈ ವಿಷಯಕ್ಕೆ ಹೊಂದುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. | That does not fit this item, so nothing was sent. |  |
 | `inbox.help` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
+| `takeOut.heading` | ಎಲ್ಲವನ್ನೂ ನಿಮ್ಮೊಂದಿಗೆ ತೆಗೆದುಕೊಂಡು ಹೋಗಿ | Take everything with you |  |
+| `takeOut.text` | ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ಮಿತಿಗಳು, ರೆಕಾರ್ಡ್, ವರದಿಗಳು ಮತ್ತು ಪ್ರಮಾಣಪತ್ರಗಳ ಒಂದು ಪ್ರತಿ, Geometer ಇಲ್ಲದೆಯೂ ತೆರೆಯುವ ಸರಳ ಫೈಲ್‌ಗಳಲ್ಲಿ. ಪ್ಲಾನ್ ನಿಂತುಹೋದರೂ ಇದು ಕೆಲಸ ಮಾಡುತ್ತದೆ. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
+| `takeOut.button` | ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ | Download the export |  |
+| `takeOut.notIn` | ಇದರಲ್ಲಿ ಯಾವುದೇ ಕೀ ಅಥವಾ ರಹಸ್ಯ ಇಲ್ಲ; ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp, ಪಾವತಿ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಖಾತೆಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಗ್ರಾಹಕರ ಸಂಖ್ಯೆಗಳು ಚಿಕ್ಕ ಕೋಡ್‌ಗಳು. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.check` | ಫೈಲ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಒಳಗಿರುವ README ನೋಡಿ. | To check the files, use the README inside. |  |
+| `handover.heading` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೊಬ್ಬರಿಗೆ ವರ್ಗಾಯಿಸಿ | Move this shop to someone else |  |
+| `handover.button` | ಈ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ… | Move this shop… |  |
+| `handover.intro` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿರುವ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಈ ಅಂಗಡಿಯ ನಿರ್ವಹಣೆ ನೀಡಿ. ಮೊದಲು ಅಂಗಡಿ ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಒಪ್ಪಬೇಕು. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.moves` | ಬದಲಾಗುವುದು: ಇಲ್ಲಿ ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನೋಡಬಹುದು ಮತ್ತು ಬದಲಿಸಬಹುದು, ಮತ್ತು ಮಾಲೀಕರ ಮಾಸಿಕ ವರದಿಯಲ್ಲಿರುವ ಹೆಸರು. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
+| `handover.stays` | ಬದಲಾಗದ್ದು: ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp ಸಂಖ್ಯೆ, ಪಾವತಿ ಖಾತೆ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಜೊತೆಗೆ ಹೋಗುವುದಿಲ್ಲ. ಕೀಗಳು ಹೋಗುವುದಿಲ್ಲ: ಮುಂದೆ ಅಂಗಡಿಯನ್ನು ನಡೆಸುವವರು ಅವನ್ನು ಮತ್ತೆ ನಮೂದಿಸಬೇಕು. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
+| `handover.never` | ಅಂಗಡಿ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಹೋಗಬಹುದು. Geometer ಗೆ ಹೋಗಲಾರದು. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.who` | ಅವರ ಸೈನ್-ಇನ್ ಹೆಸರು | Their sign-in name |  |
+| `handover.whoHelp` | ಈ ಪ್ಯಾನೆಲ್‌ಗೆ ಅವರು ಸೈನ್ ಇನ್ ಆಗುವ ಹೆಸರು. | The name they sign in to this panel with. |  |
+| `handover.why` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ? | Why is it moving? |  |
+| `handover.reasons.stopped_paying` | ಅವರು ಹಣ ಪಾವತಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿದರು | They stopped paying |  |
+| `handover.reasons.stopped_serving` | ಅವರು ಅಂಗಡಿಗೆ ಸೇವೆ ನೀಡುವುದನ್ನು ನಿಲ್ಲಿಸಿದರು | They stopped serving the shop |  |
+| `handover.reasons.owner_request` | ಮಾಲೀಕರು ಕೇಳಿದರು | The owner asked for it |  |
+| `handover.start` | ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಕೇಳಿ | Ask the owner to agree |  |
+| `handover.askTitle` | ಈಗ ಮಾಲೀಕರು ಒಪ್ಪಬೇಕು | Now the owner has to agree |  |
+| `handover.ask` | ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಅಂಗಡಿಯ WhatsApp ಸಂಖ್ಯೆಗೆ ಈ ಒಂದೇ ಸಂದೇಶವನ್ನು ಕಳುಹಿಸುವಂತೆ ಹೇಳಿ: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
+| `handover.askNote` | ಈ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಮತ್ತು 72 ಗಂಟೆಯಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಇದನ್ನು ಈಗ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ. ಸಂದೇಶ ಪಡೆಯಲು ಅಂಗಡಿ ಚಾಲನೆಯಲ್ಲಿರಬೇಕು. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
+| `handover.waiting` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ. ಸಂದೇಶ ಬಂದ ತಕ್ಷಣ Meera ಜವಾಬ್ದಾರಿ ವಹಿಸಿಕೊಳ್ಳುತ್ತಾರೆ. | Waiting for the owner. When the message arrives, Meera takes over. |  |
+| `handover.check` | ಮತ್ತೆ ನೋಡಿ | Check again |  |
+| `handover.cancel` | ವರ್ಗಾವಣೆ ರದ್ದುಮಾಡಿ | Cancel the move |  |
+| `handover.done` | ಆಯಿತು. ಈಗ Meera ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಾರೆ. | Done. Meera now serves this shop. |  |
+| `handover.expired` | ಮಾಲೀಕರು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಕೋಡ್ ಮುಗಿಯಿತು. ಮತ್ತೆ ಶುರುಮಾಡಿ. | The code ran out before the owner replied. Start again. |  |
+| `handover.cancelled` | ವರ್ಗಾವಣೆ ರದ್ದಾಯಿತು. | The move was cancelled. |  |
+| `handover.problems.who` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಆ ಹೆಸರಿನಿಂದ ಯಾರೂ ಸೈನ್ ಇನ್ ಆಗುವುದಿಲ್ಲ. | Nobody signs in with that name on this server. |  |
+| `handover.problems.same` | ಅವರು ಈಗಾಗಲೇ ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಿದ್ದಾರೆ. | That person already serves this shop. |  |
+| `handover.problems.geometer` | ಅಂಗಡಿಯನ್ನು Geometer ಗೆ ವರ್ಗಾಯಿಸಲಾಗುವುದಿಲ್ಲ. | A shop cannot be moved to Geometer. |  |
+| `handover.problems.reason` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ ಎಂದು ಆರಿಸಿ. | Choose why the shop is moving. |  |
+| `handover.problems.waiting` | ಒಂದು ವರ್ಗಾವಣೆ ಈಗಾಗಲೇ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ. ಬೇರೆಯದನ್ನು ಶುರುಮಾಡಲು ಅದನ್ನು ರದ್ದುಮಾಡಿ. | A move is already waiting for the owner. Cancel it first to start another. |  |
+| `handover.history` | ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನಡೆಸಿದರು | Who has served this shop |  |
+| `handover.historyLine` | Divya → Meera, 4 Nov 2026, 10:30: [reason] | Divya to Meera, 4 Nov 2026, 10:30: [reason] |  |
 | `errors.notFound` | ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ. | There is nothing here. |  |
 | `errors.notAllowed` | ನೀವು ಇದನ್ನು ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ. | You cannot do that. |  |
 | `errors.csrf` | ಆ ಫಾರ್ಮ್ ತುಂಬಾ ಹಳೆಯದಾಗಿತ್ತು ಅಥವಾ ಈ ಪುಟದಿಂದ ಬಂದಿರಲಿಲ್ಲ. ಹಿಂದಕ್ಕೆ ಹೋಗಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That form was too old or did not come from this page. Go back and try again. |  |
