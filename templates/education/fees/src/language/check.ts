@@ -13,7 +13,7 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     shownMs: facts.dueMs,
     momentsMs: [],
     links: facts.link ? [facts.link] : [],
-    literals: [facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode],
+    literals: [facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode],
   };
 }
 
