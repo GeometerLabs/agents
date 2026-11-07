@@ -29,7 +29,7 @@ Three yes: go. Two yes: go, but carefully. One or none: skip it. A polite skip i
 
 1. Practise with a friend who plays the owner. Do sections 3 and 5 out loud, three times.
 2. Run the demo yourself, twice, start to finish (section 4).
-3. Visit a friendly shop first. Ask the founder or your buddy to come on the first visit.
+3. Visit a friendly shop first. Ask your buddy, or Geometer's team, to come on the first visit.
 4. Then visit a shop you don't know. A "no" is normal. Write down what they said.
 5. Know your price before you walk in (section 6). Write it on a card.
 
@@ -145,18 +145,23 @@ Three payments, three different people. Keep them apart.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
-| You | Geometer | Each live shop, each month | ₹199 |
-| The shop | You | The monthly service (a starting point; you decide) | ₹999 to ₹1,999 |
-| The shop | You | Setup, once. You keep all of it. | ₹1,999 to ₹2,999 |
+| You | Geometer | Each live shop, each month, before GST. Basic: no money moves. | ₹99 |
+| You | Geometer | The same, Business: deposits, refunds and the monthly report | ₹299 |
+| The shop | You | The monthly service, Basic (a starting point; you decide) | ₹399 to ₹599 |
+| The shop | You | The monthly service, Business (a starting point; you decide) | ₹999 to ₹1,499 |
+| The shop | You | Setup for Basic, once. You keep all of it. | ₹999 to ₹1,999 |
+| The shop | You | Setup for Business, once. You keep all of it. | ₹1,999 to ₹2,999 |
 | The shop | Razorpay | A fee on each deposit | about 2% plus GST |
-| As you agree with the shop | WhatsApp, at cost | Message fees | about ₹100 to ₹300 per shop per month |
+| As you agree with the shop | WhatsApp, at cost, from your prepaid balance | Message fees | about ₹100 to ₹300 per shop per month |
 
-1. **Geometer's fee: ₹199 per live shop per month.** This is the founding price, locked for life, for the first 100 builders and partners. After the first 100 it is ₹199 to ₹499, and not final. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a shop goes live.
-2. **The shop's price: a starting point; you decide.** Near ₹999 for a one-chair salon or a tutor, near ₹1,999 for a shop with several staff. The setup is ₹1,999 to ₹2,999.
-3. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
-4. **Tell the shop about Razorpay's fee:** "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins.
-5. **When to take money:** until the founder tells you your town is ready, don't take the setup fee or a first month. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
-6. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make, not even as an example. Geometer doesn't either.
+1. **Geometer's plan: Basic ₹99 or Business ₹299 per live shop per month, before GST.** A shop counts for a month when it was live on 15 or more days. Basic holds bookings, reminders, prices and hours, no money moves, and includes 1,000 customer messages a month. Business adds deposits, refunds, the owner's OK on refunds above the limit and the monthly report, and includes 3,000 messages. A Bookings shop that takes a deposit is Business; one where no money moves is Basic. A shop with several workflows or branches is Operations, from ₹999 and 10,000 messages: ask Geometer's support before you quote it. You pay nothing to join: no joining fee, no kit, no paid training. The plan starts when a shop goes live.
+2. **Above the allowance, and WhatsApp.** Extra messages cost ₹49 for each 1,000, from your prepaid balance, and only with your yes; you get a warning at 80%. Or you move the shop up a plan. Meta's and the provider's WhatsApp charges are passed on at cost, from the same balance. Geometer never handles the money of shops or their customers.
+3. **The first 100 builders and partners are Innovators.** They get 40% off any plan, locked for as long as they stay, for up to 25 shops: Basic ₹59, Business ₹179. They also get an Innovator badge and a vote on the next template. Running on your own server, with your own AI key and WhatsApp account, costs half the plan price.
+4. **The shop's price: a starting point; you decide.** For Basic, ₹399 to ₹599 a month and a setup of ₹999 to ₹1,999. For Business, ₹999 to ₹1,499 a month and a setup of ₹1,999 to ₹2,999. The setup is all yours. What is left each month is the shop's price minus Geometer's plan and anything you pass on.
+5. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
+6. **Tell the shop about Razorpay's fee:** "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins.
+7. **When to take money:** until Geometer tells you your town is ready, don't take the setup fee or a first month. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
+8. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make, not even as an example. Geometer doesn't either.
 
 ## 7. Never say
 
@@ -217,10 +222,10 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 2. **Call the owner before they find out.** "Something went wrong with [what]. I have stopped the helper. Here is what happened and what I am doing. Your own WhatsApp works as normal."
 3. **Look at the record.** Find the action, what was confirmed, and which limit said what. "Show what we did" shows it.
 4. **Fix it, check it again, then switch it on.** If a customer was charged wrongly, sit with the owner while they refund it from their own Razorpay account.
-5. **Put it in the report.** It goes in the month's mistakes, and you tell the founder the same day.
+5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's support the same day.
 
 You are the shop's named, accountable person. Your name is on the report and the certificate. Don't blame the software, and don't say "it won't happen again".
 
 ## 11. Be honest about what's true today
 
-As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and the founder tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this.
+As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and Geometer tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this.
