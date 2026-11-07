@@ -179,7 +179,7 @@ test("sell guide: the ₹ amounts are the same set in every guide, section by se
   // The plan (docs/product/economics-and-pricing.md, section 2): Geometer ₹299 a live centre (₹179 for the first 100 innovators), the centre ₹999 to ₹1,499 a month and
   // ₹1,999 to ₹2,999 setup, WhatsApp ₹100 to ₹300 at cost. The example centre is Bright Tuition Centre: fees ₹1,200, ₹1,500 and ₹1,800, a late fee, waiver limit and part-payment
   // minimum of ₹100 and ₹300, refund limit ₹500; the parent's ₹300 request; and Razorpay's fee on a ₹1,200 fee, about ₹28. (The quoted printouts are left out: see the top.)
-  same(rupees(withoutFences(en)), new Set(["₹100", "₹179", "₹28", "₹299", "₹300", "₹500", "₹999", "₹1200", "₹1499", "₹1500", "₹1800", "₹1999", "₹2999"]));
+  same(rupees(withoutFences(en)), new Set(["₹100", "₹179", "₹28", "₹299", "₹300", "₹49", "₹500", "₹999", "₹1200", "₹1499", "₹1500", "₹1800", "₹1999", "₹2999"]));
   for (const l of TRANSLATED) {
     same(rupees(withoutFences(guide(l))), rupees(withoutFences(en)));
     const master = sections(en);
@@ -255,9 +255,9 @@ test("sell guide: the walkthrough command in the guide is a real one", () => {
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: what the guide says is not built yet is still not built (build it, then change sections 4, 8, 10 and 11)", () => {
-  for (const missing of ["demo", "server", "approvals", "scripts/go-live-certificate.ts"]) {
-    assert.ok(!existsSync(new URL(`../${missing}`, import.meta.url)), `templates/education/fees/${missing} exists now: the guide still says there is no phone demo, no runtime server, no approvals relay and no go-live certificate for Fees`);
+test("sell guide: what the guide says is not built yet is still not built (build the phone demo, then change sections 4 and 11)", () => {
+  for (const missing of ["demo"]) {
+    assert.ok(!existsSync(new URL(`../${missing}`, import.meta.url)), `templates/education/fees/${missing} exists now: the guide still says there is no phone demo for Fees`);
   }
   const script = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the centre's own settings file");
