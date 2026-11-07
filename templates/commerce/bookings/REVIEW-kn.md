@@ -773,6 +773,38 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.notReady` | ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ: ಸರಿಪಡಿಸಬೇಕಾದ ವಿಷಯಗಳು 2. | Not ready yet: 2 things need fixing. |  |
 | `setup.checks.certificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ತೆರೆಯಿರಿ | Open the go-live certificate |  |
 | `setup.checks.switchOn` | ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತಂದಾಗ ಅಂಗಡಿಯನ್ನು ಆನ್ ಮಾಡುತ್ತದೆ. | The server switches the shop on when it applies it. |  |
+| `inbox.nav` | ಮಾಡಬೇಕಾದದ್ದು | To do |  |
+| `inbox.title` | ಬಾಕಿ ಕೆಲಸಗಳು | Unfinished work |  |
+| `inbox.intro` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ನೋಡಬೇಕಾದ ನಿಜವಾದ ಕೆಲಸಗಳು. ಪ್ರತಿ ಸಾಲೂ ಅಂಗಡಿಯ ರೆಕಾರ್ಡ್‌ನಿಂದ ಬಂದದ್ದು; ಕೈಯಿಂದ ಏನೂ ಸೇರಿಸಿಲ್ಲ. | Real jobs that need a person. Each line is worked out from the shop's record; nothing is added by hand. |  |
+| `inbox.empty` | ಈಗ ಯಾರೂ ಏನೂ ಮಾಡಬೇಕಾಗಿಲ್ಲ. | Nothing needs a person right now. |  |
+| `inbox.count` | ಮಾಡಬೇಕಾದದ್ದು: 3 | 3 to do |  |
+| `inbox.asOf` | 4 Nov 2026, 10:30 ರ ರೆಕಾರ್ಡ್‌ನಿಂದ ಓದಲಾಗಿದೆ. | Read from the record of 4 Nov 2026, 10:30. |  |
+| `inbox.notShared` | ಈ ಅಂಗಡಿಯ ರೆಕಾರ್ಡ್ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಓದಲು ಏನೂ ಇಲ್ಲ. | This shop's record has not been shared yet, so there is nothing to read. |  |
+| `inbox.since` | 4 Nov 2026, 10:30 ರಿಂದ | Since 4 Nov 2026, 10:30 |  |
+| `inbox.failedKinds` | ಈ ಅಂಗಡಿಯ ಒಂದು ಪರಿಶೀಲನೆಯನ್ನು ಓದಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಈ ಪಟ್ಟಿ ಚಿಕ್ಕದಾಗಿರಬಹುದು. | One of the checks could not be read for this shop, so this list may be short. |  |
+| `inbox.kinds.deposit_no_booking` | ₹200 ಡೆಪಾಸಿಟ್ ಬಂದಿದೆ, ಬುಕಿಂಗ್ b-3 ಖಚಿತವಾಗಿಲ್ಲ: ನೋಡಿ ಸರಿಪಡಿಸಿ | Deposit of ₹200 received, booking b-3 is missing: review recovery |  |
+| `inbox.kinds.payment_unrecorded` | ಶುಲ್ಕ f-3 ಗೆ ಹಣ ಬಂದಿದೆ, ಆದರೆ ಶುಲ್ಕ ನವೀಕರಣವಾಗಿಲ್ಲ: ಹಣವನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
+| `inbox.kinds.approval_waiting_long` | b-3 ನಲ್ಲಿ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ 14 ಗಂಟೆಗಳಿಂದ ಕಾಯುತ್ತಿದೆ ([what]): ಮತ್ತೆ ಕೇಳಿ | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
+| `inbox.kinds.refund_waiting` | b-3 ರ ₹200 ರೀಫಂಡ್ [who] ಕಾಯುತ್ತಿದೆ | The refund of ₹200 for b-3 is waiting [who] |  |
+| `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: Razorpay ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
+| `inbox.fallback` | b-3 ನಲ್ಲಿ ಒಬ್ಬರು ನೋಡಬೇಕಿದೆ (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
+| `inbox.variants.guard_hold` | ಒಂದು ರೀಫಂಡ್ | a refund |  |
+| `inbox.variants.refund` | ಒಂದು ರೀಫಂಡ್ | a refund |  |
+| `inbox.variants.waiver` | ಶುಲ್ಕ ವಿನಾಯಿತಿ | a fee waiver |  |
+| `inbox.variants.refund_request` | ರೀಫಂಡ್ ಕೋರಿಕೆ | a refund request |  |
+| `inbox.variants.calendar` | ಕ್ಯಾಲೆಂಡರ್ ಸಮಸ್ಯೆ | a calendar problem |  |
+| `inbox.variants.owner` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ | for the owner's answer |  |
+| `inbox.variants.agent` | ಮತ್ತೆ ಕಳುಹಿಸಲು | to be sent again |  |
+| `inbox.actions.recheck_payment` | ಹಣವನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the payment again |  |
+| `inbox.actions.retry_booking` | ಬುಕಿಂಗ್ ಅನ್ನು ಮತ್ತೆ ಖಚಿತಪಡಿಸಲು ಪ್ರಯತ್ನಿಸಿ | Try to confirm the booking again |  |
+| `inbox.actions.ask_owner_again` | ಮಾಲೀಕರನ್ನು ಮತ್ತೆ ಕೇಳಿ | Ask the owner again |  |
+| `inbox.actions.recheck_refund` | ರೀಫಂಡ್ ಅನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the refund again |  |
+| `inbox.actionNote` | ಇವು ಮತ್ತೆ ನೋಡುತ್ತವೆ ಅಥವಾ ಮತ್ತೆ ಕೇಳುತ್ತವೆ ಅಷ್ಟೇ. ಬೇರೆಲ್ಲವುಗಳಂತೆ ಇವೂ Guard ಮತ್ತು ಅದೇ ಮಿತಿಗಳ ಮೂಲಕ ಹೋಗುತ್ತವೆ. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
+| `inbox.recover.sent` | ಕಳುಹಿಸಲಾಗಿದೆ. ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಇದನ್ನು ಮಾಡುತ್ತದೆ. ಅದರ ಮುಂದಿನ ರೆಕಾರ್ಡ್ ನವೀಕರಣದ ನಂತರ ಪಟ್ಟಿ ಬದಲಾಗುತ್ತದೆ. | Asked. The shop's agent will do it within a minute. The list changes after its next record update. |  |
+| `inbox.recover.unreachable` | ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಈಗ ಸಿಗುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | The shop's agent cannot be reached right now, so nothing was sent. Try again later. |  |
+| `inbox.recover.refused` | ಇದು ಈ ವಿಷಯಕ್ಕೆ ಹೊಂದುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. | That does not fit this item, so nothing was sent. |  |
+| `inbox.help` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
 | `errors.notFound` | ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ. | There is nothing here. |  |
 | `errors.notAllowed` | ನೀವು ಇದನ್ನು ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ. | You cannot do that. |  |
 | `errors.csrf` | ಆ ಫಾರ್ಮ್ ತುಂಬಾ ಹಳೆಯದಾಗಿತ್ತು ಅಥವಾ ಈ ಪುಟದಿಂದ ಬಂದಿರಲಿಲ್ಲ. ಹಿಂದಕ್ಕೆ ಹೋಗಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That form was too old or did not come from this page. Go back and try again. |  |

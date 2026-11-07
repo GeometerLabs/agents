@@ -35,6 +35,7 @@ import { latestPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { createGoLive } from "./golive.ts";
+import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
@@ -48,7 +49,7 @@ import { createStore } from "./store.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import { errorPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
 import type { ChecksView, Ctx, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
@@ -275,6 +276,14 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards }));
   });
 
+  // the unfinished-work inbox (B31): every shop this person may see, read from each shop's exported record
+  const unfinished = optionsFor(config.approvalWaitHours);
+  on("GET", /^\/inbox$/u, "user", (r) => {
+    const c = r.ctx();
+    const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
+    page(r, 200, inboxPage(c, { shops: inboxAll(shops, r.account!, now(), unfinished), ...(notice && Object.hasOwn(c.w.inbox.recover, notice) ? { notice: c.w.inbox.recover[notice as keyof typeof c.w.inbox.recover] } : {}) }));
+  });
+
   on("GET", /^\/shops\/([a-z0-9-]{1,40})$/u, "user", async (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref) return notFound(r);
@@ -297,6 +306,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(isFees ? (settings ? { fees: feesPieces(c, id, settings, data, month) } : {}) : { cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)) }),
       ...(plan ? { plan } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
+      inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: (isFees ? counts.fees : counts.bookings) ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
@@ -501,7 +511,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const lock = kept ?? `${template.id}@${fees ? template.version : pathwayVersion()}`;
     const problems = built.ok ? shops.checkFolder(written(built), runtime, lock, kept !== undefined, { pathway: template.id, version: template.version }).map(w.setup.fallback) : built.errors.map(w.setup.fallback);
     if (!built.ok || problems.length > 0) return page(r, 400, setupChecksPage(r.ctx(), { ...checksView(r, d, template, problems), saved: false }));
-    try { shops.writeFolder(d.shopId, { settings: written(built), runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id }); } catch (e) {
+    try { shops.writeFolder(d.shopId, { settings: written(built), runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id }, r.account!); } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
       // Another shop took this name after step 1. Nothing of it was touched.
       return page(r, 409, setupChecksPage(r.ctx(), { ...checksView(r, d, template, [w.setup.fallback("A shop with this name already exists on the server, so this one was not saved. Start the setup again with another name.")]), saved: false }));
