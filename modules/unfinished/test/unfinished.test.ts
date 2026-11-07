@@ -60,6 +60,16 @@ test("a cancellation waiting for the owner's call on a refund takes its time fro
   assert.deepEqual([...late[0].actions], ["ask_owner_again"]);
 });
 
+test("asking the owner again starts the wait again", () => {
+  const c = booking({ id: "b-5", state: "cancelled", pending: [{ kind: "refund", amountInr: 200, paymentId: "pay_5" }] });
+  const held = entry("b-5", "refund", "held_for_owner", NOW - 20 * HOUR);
+  assert.deepEqual(kinds(detect("bookings", [c], [held]).found), ["approval_waiting_long:b-5"]);
+  const again = { ...entry("b-5", "recovery", "confirmed", NOW - HOUR), refs: { action: "ask_owner_again", recovery: "r-2" } };
+  const after = detect("bookings", [c], [held, again]).found;
+  assert.deepEqual(kinds(after), ["refund_waiting:b-5"]);
+  assert.equal(after[0].sinceMs, NOW - HOUR);
+});
+
 test("a refund being sent again by the agent is waiting on the agent, not on the owner", () => {
   const c = booking({ id: "b-6", state: "cancelled", pending: [{ kind: "refund_retry", amountInr: 200, paymentId: "p", tries: 1, retryAtMs: NOW + 60_000 }] });
   const { found } = detect("bookings", [c]);
@@ -67,11 +77,14 @@ test("a refund being sent again by the agent is waiting on the agent, not on the
   assert.equal(found[0].facts.holder, "agent");
 });
 
-test("a refund whose outcome is unknown, and one that failed for good, are two kinds, each with the read-only recheck", () => {
+test("a refund whose outcome is unknown, and one that failed for good, are two kinds; only a refund that may have gone can be looked for again", () => {
   const c = booking({ id: "b-7", state: "cancelled", refundIssues: [{ paymentId: "p1", kind: "unknown", note: "n", atMs: NOW - HOUR }, { paymentId: "p2", kind: "refused", note: "n", atMs: NOW - 2 * HOUR }] });
   const { found } = detect("bookings", [c]);
   assert.deepEqual(kinds(found).sort(), ["refund_failed:b-7", "refund_unknown:b-7"]);
-  for (const o of found) assert.deepEqual([...o.actions], ["recheck_refund"]);
+  assert.deepEqual([...found.find((o) => o.kind === "refund_unknown")!.actions], ["recheck_refund"]);
+  assert.deepEqual([...found.find((o) => o.kind === "refund_failed")!.actions], [], "Guard said no: there is nothing to look for");
+  const lost = booking({ id: "b-8", state: "cancelled", refundIssues: [{ paymentId: "p", kind: "failed", note: "n", atMs: NOW - HOUR }] });
+  assert.deepEqual([...detect("bookings", [lost]).found[0].actions], ["recheck_refund"], "a refund that failed after retries may still have landed");
 });
 
 test("Fees: a payment that came but did not update the fee is listed until a later payment line is confirmed", () => {
@@ -79,6 +92,9 @@ test("Fees: a payment that came but did not update the fee is listed until a lat
   const bad = entry("f-1", "record_payment", "failed", NOW - 3 * HOUR);
   assert.deepEqual(kinds(detect("fees", [due], [bad]).found), ["payment_unrecorded:f-1"]);
   assert.deepEqual(detect("fees", [due], [bad, entry("f-1", "record_payment", "confirmed", NOW - HOUR)]).found, []);
+  const looked = { ...entry("f-1", "recovery", "confirmed", NOW - HOUR), refs: { action: "recheck_payment", recovery: "r-1" } };
+  assert.deepEqual(detect("fees", [due], [bad, looked]).found, [], "a look at the payments service that read its list whole settles it");
+  assert.deepEqual(kinds(detect("fees", [due], [looked, bad]).found), ["payment_unrecorded:f-1"], "a look before the failure does not");
   assert.deepEqual(detect("fees", [{ ...due, state: "paid" }], [bad]).found, [], "a fee that is paid is not unfinished");
   assert.deepEqual(detect("bookings", [due], [bad]).found, [], "the kind is Fees' own");
 });

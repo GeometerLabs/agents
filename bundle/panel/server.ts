@@ -36,6 +36,9 @@ import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { createGoLive } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
+import { createHandover } from "./handover.ts";
+import { exportShop } from "./export.ts";
+import { ExportError } from "../export/build.ts";
 import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
@@ -49,8 +52,8 @@ import { createStore } from "./store.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
-import type { ChecksView, Ctx, ShopCardView, ShopView } from "./views.ts";
+import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import type { ChecksView, Ctx, HandoverView, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -103,6 +106,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
+  const handover = createHandover(shops, accounts, store, now);
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
@@ -138,7 +142,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
 
   const redactPath = (path: string) => path.replace(/^\/join\/.+$/u, "/join/[invite]");
 
-  function body(res: ServerResponse, status: number, type: string, content: string, headers: Record<string, string | string[]> = {}) {
+  function body(res: ServerResponse, status: number, type: string, content: string | Buffer, headers: Record<string, string | string[]> = {}) {
     res.writeHead(status, { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "x-frame-options": "DENY", ...(secure ? { "strict-transport-security": "max-age=31536000" } : {}), ...headers });
     res.end(content);
   }
@@ -263,8 +267,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
 
   // shops
   on("GET", /^\/shops$/u, "user", (r) => {
+    handover.sweep();
     const c = r.ctx();
-    const cards: ShopCardView[] = shops.visibleTo(r.account!).map(({ id, owner }) => {
+    const cards: ShopCardView[] = shops.visibleTo(r.account!).map(({ id }) => {
+      const owner = shops.owner(id); // who set it up: it never changes, even when the shop moves to someone else
       const read = shops.status(id);
       const settings = shops.settings(id);
       return {
@@ -279,12 +285,14 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   // the unfinished-work inbox (B31): every shop this person may see, read from each shop's exported record
   const unfinished = optionsFor(config.approvalWaitHours);
   on("GET", /^\/inbox$/u, "user", (r) => {
+    handover.sweep();
     const c = r.ctx();
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
     page(r, 200, inboxPage(c, { shops: inboxAll(shops, r.account!, now(), unfinished), ...(notice && Object.hasOwn(c.w.inbox.recover, notice) ? { notice: c.w.inbox.recover[notice as keyof typeof c.w.inbox.recover] } : {}) }));
   });
 
   on("GET", /^\/shops\/([a-z0-9-]{1,40})$/u, "user", async (r) => {
+    handover.sweep();
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref) return notFound(r);
     const c = r.ctx();
@@ -315,6 +323,63 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(notice && NOTICES.has(notice) ? { notice: c.w.shop.reportMade } : {}),
     };
     page(r, 200, shopPage(c, view));
+  });
+
+  // a recovery step from the to-do list: only an action the list itself offers for that case right now, and only as a request to the shop's own agent
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/recover$/u, async (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const offered = inboxFor(shops, ref.id, now(), unfinished).items.some((o) => o.caseId === (r.form.case ?? "") && o.actions.includes(r.form.action ?? ""));
+    const result = offered ? await shops.requestRecovery(ref.id, r.form.case, r.form.action) : "refused";
+    log(`recovery ${r.form.action ?? "?"} on ${ref.id} by ${r.account!.id}: ${result}`);
+    redirect(r, `/inbox?notice=${result === "refused" ? "refused" : result}`);
+  });
+
+  // taking a shop's files out (B38): the same package as `geometer export`, built from files only, so it works for a stopped shop and a lapsed plan
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/export$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    try {
+      const { built, tgz } = exportShop(config, shops, goLive.docs, ref.id, now(), { name: r.account!.name, role: r.account!.role });
+      log(`export of ${ref.id} downloaded by ${r.account!.id}`);
+      body(r.res, 200, "application/gzip", tgz, { "content-disposition": `attachment; filename="${built.name}.tar.gz"` });
+    } catch (e) {
+      if (!(e instanceof ExportError)) throw e;
+      page(r, 409, errorPage(r.ctx(), 409, e.message));
+    }
+  });
+
+  // moving a shop to another partner or builder (B38), with the owner's agreement from their own number
+  const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
+    const state = handover.check(id);
+    const c = r.ctx();
+    const base = { id, name: shops.settings(id)?.name ?? id, history: shops.assignment(id)?.history ?? [], values: { to: "", reason: "" } };
+    const view: HandoverView =
+      state.state === "done" ? { ...base, stage: "done", to: state.assignment.current.accountName }
+      : state.state === "waiting" ? { ...base, stage: extra.code ? "asked" : "waiting", to: state.move.to.accountName }
+      : state.state === "expired" ? { ...base, stage: "expired" } : { ...base, stage: "form" };
+    page(r, extra.problem ? 400 : 200, handoverPage(c, { ...view, ...extra, history: shops.assignment(id)?.history ?? [] }));
+  };
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/handover$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    handoverPageFor(r, ref.id);
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/handover$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const w = r.ctx().w.handover;
+    const values = { to: (r.form.to ?? "").slice(0, 40), reason: r.form.reason ?? "" };
+    const result = handover.start(ref.id, r.account!, values);
+    if (!result.ok) return handoverPageFor(r, ref.id, { problem: w.problems[result.problem], values });
+    log(`move of ${ref.id} to ${result.move.to.accountId} asked by ${r.account!.id} (${result.move.reason})`);
+    handoverPageFor(r, ref.id, { code: result.code, to: result.move.to.accountName });
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/handover\/cancel$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    handover.cancel(ref.id);
+    redirect(r, `/shops/${ref.id}/handover`);
   });
 
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/stop$/u, "user", (r) => {
@@ -541,7 +606,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
         shops.saveMeta(d.shopId, v === "" ? { ...rest, schema: 1 } : { ...meta, expectedBookings: Number(v) });
       } else return page(r, 400, setupChecksPage(r.ctx(), checksView(r, d, template, [r.ctx().w.setup.problems.expectedBad])));
     } else {
-      const owner = shops.owner(d.shopId);
+      const owner = shops.servedBy(d.shopId);
       const result = goLive.ready(d.shopId, owner ? preparedByOf(owner) : r.account!.name);
       if (!result.ok) return page(r, 409, setupChecksPage(r.ctx(), checksView(r, d, template, [])));
     }

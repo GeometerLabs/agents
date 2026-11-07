@@ -805,6 +805,40 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.recover.unreachable` | കടയുടെ ഏജന്റിനെ ഇപ്പോൾ ബന്ധപ്പെടാനാവുന്നില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക. | The shop's agent cannot be reached right now, so nothing was sent. Try again later. |  |
 | `inbox.recover.refused` | ഇത് ഈ കാര്യത്തിന് യോജിക്കില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. | That does not fit this item, so nothing was sent. |  |
 | `inbox.help` | സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Write to support. A person answers. |  |
+| `takeOut.heading` | എല്ലാം കൂടെ കൊണ്ടുപോകൂ | Take everything with you |  |
+| `takeOut.text` | ഈ കടയുടെ സെറ്റിങ്ങുകൾ, പരിധികൾ, റെക്കോർഡ്, റിപ്പോർട്ടുകൾ, സർട്ടിഫിക്കറ്റുകൾ എന്നിവയുടെ ഒരു പകർപ്പ്, Geometer ഇല്ലാതെയും തുറക്കാവുന്ന സാധാരണ ഫയലുകളായി. പ്ലാൻ നിലച്ചാലും ഇത് പ്രവർത്തിക്കും. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
+| `takeOut.button` | എക്സ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യുക | Download the export |  |
+| `takeOut.notIn` | ഇതിൽ ഒരു കീയോ രഹസ്യമോ ഇല്ല; കടയുടെ സ്വന്തം WhatsApp, പേയ്മെന്റ്, കലണ്ടർ അക്കൗണ്ടുകൾ കടയുടേതായി തന്നെ തുടരും. ഉപഭോക്താക്കളുടെ നമ്പറുകൾ ചെറിയ കോഡുകളാണ്. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.check` | ഫയലുകൾ പരിശോധിക്കാൻ അകത്തെ README നോക്കുക. | To check the files, use the README inside. |  |
+| `handover.heading` | ഈ കട മറ്റൊരാൾക്ക് കൈമാറുക | Move this shop to someone else |  |
+| `handover.button` | ഈ കട കൈമാറുക… | Move this shop… |  |
+| `handover.intro` | ഈ സെർവറിലെ മറ്റൊരു പാർട്ണർക്കോ ബിൽഡർക്കോ ഈ കടയുടെ നടത്തിപ്പ് നൽകുക. ആദ്യം കടയുടമ സ്വന്തം ഫോണിൽ നിന്ന് സമ്മതിക്കണം. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.moves` | മാറുന്നത്: ഇവിടെ ഈ കട ആർക്കൊക്കെ കാണാനും മാറ്റാനും കഴിയും, ഉടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിലെ പേര്. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
+| `handover.stays` | മാറാത്തത്: കടയുടെ സ്വന്തം WhatsApp നമ്പർ, പേയ്മെന്റ് അക്കൗണ്ട്, കലണ്ടർ എന്നിവ കൂടെ പോകില്ല. കീകൾ കൈമാറില്ല: അടുത്തതായി കട നടത്തുന്നയാൾ അവ വീണ്ടും നൽകണം. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
+| `handover.never` | ഒരു കട മറ്റൊരു പാർട്ണർക്കോ ബിൽഡർക്കോ പോകാം. Geometer-ലേക്ക് പോകാൻ പറ്റില്ല. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.who` | അവരുടെ സൈൻ-ഇൻ പേര് | Their sign-in name |  |
+| `handover.whoHelp` | ഈ പാനലിൽ അവർ സൈൻ ഇൻ ചെയ്യുന്ന പേര്. | The name they sign in to this panel with. |  |
+| `handover.why` | എന്തിനാണ് കട മാറ്റുന്നത്? | Why is it moving? |  |
+| `handover.reasons.stopped_paying` | അവർ പണം അടയ്ക്കുന്നത് നിർത്തി | They stopped paying |  |
+| `handover.reasons.stopped_serving` | അവർ കടയ്ക്ക് സേവനം നൽകുന്നത് നിർത്തി | They stopped serving the shop |  |
+| `handover.reasons.owner_request` | ഉടമ ആവശ്യപ്പെട്ടു | The owner asked for it |  |
+| `handover.start` | ഉടമയോട് സമ്മതം ചോദിക്കുക | Ask the owner to agree |  |
+| `handover.askTitle` | ഇനി ഉടമ സമ്മതിക്കണം | Now the owner has to agree |  |
+| `handover.ask` | ഉടമ സ്വന്തം ഫോണിൽ നിന്ന് കടയുടെ WhatsApp നമ്പറിലേക്ക് ഈ ഒരൊറ്റ സന്ദേശം അയയ്ക്കാൻ പറയുക: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
+| `handover.askNote` | ഈ കോഡ് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും, 72 മണിക്കൂറിൽ തീരും. ഇപ്പോൾ മാത്രമേ കാണിക്കൂ. സന്ദേശം സ്വീകരിക്കാൻ കട പ്രവർത്തിക്കുന്നുണ്ടാവണം. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
+| `handover.waiting` | ഉടമയെ കാത്തിരിക്കുന്നു. സന്ദേശം വന്നാൽ Meera ചുമതല ഏറ്റെടുക്കും. | Waiting for the owner. When the message arrives, Meera takes over. |  |
+| `handover.check` | വീണ്ടും നോക്കുക | Check again |  |
+| `handover.cancel` | കൈമാറ്റം റദ്ദാക്കുക | Cancel the move |  |
+| `handover.done` | കഴിഞ്ഞു. ഇനി Meera ഈ കട നടത്തും. | Done. Meera now serves this shop. |  |
+| `handover.expired` | ഉടമ മറുപടി നൽകും മുമ്പ് കോഡ് തീർന്നു. വീണ്ടും തുടങ്ങുക. | The code ran out before the owner replied. Start again. |  |
+| `handover.cancelled` | കൈമാറ്റം റദ്ദാക്കി. | The move was cancelled. |  |
+| `handover.problems.who` | ഈ സെർവറിൽ ആ പേരിൽ ആരും സൈൻ ഇൻ ചെയ്യുന്നില്ല. | Nobody signs in with that name on this server. |  |
+| `handover.problems.same` | അവർ ഇതിനകം ഈ കട നടത്തുന്നു. | That person already serves this shop. |  |
+| `handover.problems.geometer` | കട Geometer-ലേക്ക് മാറ്റാൻ പറ്റില്ല. | A shop cannot be moved to Geometer. |  |
+| `handover.problems.reason` | എന്തിനാണ് കട മാറ്റുന്നതെന്ന് തിരഞ്ഞെടുക്കുക. | Choose why the shop is moving. |  |
+| `handover.problems.waiting` | ഒരു കൈമാറ്റം ഇതിനകം ഉടമയുടെ മറുപടിക്കായി കാത്തിരിക്കുന്നു. മറ്റൊന്ന് തുടങ്ങാൻ അത് റദ്ദാക്കുക. | A move is already waiting for the owner. Cancel it first to start another. |  |
+| `handover.history` | ഈ കട ആരൊക്കെ നടത്തി | Who has served this shop |  |
+| `handover.historyLine` | Divya → Meera, 4 Nov 2026, 10:30: [reason] | Divya to Meera, 4 Nov 2026, 10:30: [reason] |  |
 | `errors.notFound` | ഇവിടെ ഒന്നുമില്ല. | There is nothing here. |  |
 | `errors.notAllowed` | ഇത് ചെയ്യാൻ നിങ്ങൾക്ക് അനുവാദമില്ല. | You cannot do that. |  |
 | `errors.csrf` | ആ ഫോം പഴയതായിരുന്നു, അല്ലെങ്കിൽ ഈ പേജിൽ നിന്നുള്ളതായിരുന്നില്ല. പിന്നോട്ട് പോയി വീണ്ടും ശ്രമിക്കൂ. | That form was too old or did not come from this page. Go back and try again. |  |

@@ -12,6 +12,8 @@
 // following Guard's hold (payments/refunds.ts), reading a message with the month's AI allowance (understanding/reader.ts) and reminders (reminders/reminders.ts).
 // What is left here is Fees: the student's fee for a month, its states and its words.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
+import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
@@ -60,6 +62,8 @@ export type AgentEvent =
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund only if its own record says the
   // owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
+  // The panel's to-do list asks the agent to look again or ask again about one fee (modules/unfinished). It carries no authority: the agent does what it does every day, through Guard.
+  | { kind: "recovery"; id: string; case: string; action: string }
   | { kind: "tick" }; // time has passed: open the month's fees, add late fees and send due reminders
 
 export interface Agent { handle(event: AgentEvent): Promise<void> }
@@ -530,6 +534,9 @@ export function createAgent(deps: AgentDeps): Agent {
   async function onOwnerMessage(msg: InboundMessage): Promise<void> {
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent.
     if (RELAY_CODE_REPLY.test(msg.text)) return;
+    // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
+    const moving = parseHandoverReply(msg.text);
+    if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
     const m = /^\s*(approve|deny)\s+(q-\d+)\s*$/i.exec(msg.text);
     const command = m?.[1].toLowerCase() as "approve" | "deny" | undefined;
     const found = m ? requestOf(m[2].toLowerCase()) : undefined;
@@ -672,7 +679,42 @@ export function createAgent(deps: AgentDeps): Agent {
     }
   }
 
+  // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
+  //   recheck_payment   read the payments service's own list for this fee's links and count any payment not yet counted (the normal path, with its rules)
+  //   ask_owner_again   the owner has not answered a waiver or a refund request: send the owner the same notice again
+  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again)
+  // Nothing here widens a limit: every call is one the agent already makes, and Guard decides each as it does every day.
+  async function onRecovery(e: { id: string; case: string; action: string }): Promise<void> {
+    const due = store.dues.get(e.case);
+    const refs = { action: e.action, recovery: e.id };
+    const say = (outcome: Outcome, notes: string) => log(due ?? null, owner, RECOVERY_ENTRY, outcome, { action: e.action, case: e.case }, { notes, refs });
+    if (!due) return say("blocked", "no fee has this id, so nothing was done");
+    if (e.action === "recheck_payment") {
+      if (due.links.length === 0) return say("blocked", "this fee has no payment link to look at");
+      say("attempted", "looking again at the payments service's list for this fee's links");
+      const { ok, fresh } = await reconcile(due);
+      await settle(due, fresh);
+      return say(ok ? "confirmed" : "failed", ok ? "the payments service's list was read; any payment not yet counted was recorded above" : "the payments service could not be read whole just now; nothing was changed");
+    }
+    if (e.action === "ask_owner_again") {
+      const waiting = due.pending.find((p) => p.kind === "waiver" || p.kind === "refund_request");
+      if (!waiting) return say("blocked", "nothing the agent asked the owner is waiting (a refund Guard holds is asked by the approvals relay)");
+      say("attempted", "telling the owner again");
+      const told = waiting.kind === "waiver"
+        ? await tellOwner(due, due.customer, "owner_waiver_request", { waiverInr: waiting.amountInr, requestRef: waiting.id })
+        : await tellOwner(due, due.customer, "owner_refund_request", { refundInr: waiting.amountInr, paidInr: paidPaise(due) / 100, requestRef: waiting.id });
+      return say(told ? "confirmed" : "failed", told ? "the owner was told again" : "the owner could not be told (the limits or the provider said no)");
+    }
+    if (e.action === "recheck_refund") {
+      say("attempted", "looking again, read-only, for a refund that may have gone");
+      const r = await refunds.recheck(due);
+      return say(r.looked === 0 ? "blocked" : "confirmed", r.looked === 0 ? "no refund here is waiting on an unclear outcome" : `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
+    }
+    say("blocked", `the agent has no recovery called "${e.action}"`);
+  }
+
   async function handle(event: AgentEvent): Promise<void> {
+    if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);

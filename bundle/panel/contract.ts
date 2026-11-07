@@ -233,8 +233,46 @@ export function parseReportFile(textOrNothing: string | undefined): ReportFile |
   return undefined;
 }
 
-/** Who set the shop up, for the monthly report: report.json first, then the shop's attribution. Undefined when neither says. */
-export function resolvePreparedBy(files: { report?: ReportFile; owner?: OwnerFile }): { name: string; source: "report.json" | "owner.json" } | undefined {
+// ---- handover (B38) ----------------------------------------------------------------------------------------------------------------------------
+
+export const HANDOVER_REASONS = ["stopped_paying", "stopped_serving", "owner_request"] as const;
+export type HandoverReason = (typeof HANDOVER_REASONS)[number];
+
+/** Someone who serves a shop: an account of the panel. */
+export interface Person { accountId: string; accountName: string; role: "builder" | "partner" }
+
+/**
+ * shops/<shop>/assignment.json: who serves the shop NOW, once it has been moved to someone else, and every move. owner.json stays as it is (who set the shop up, written once);
+ * this file is written only by a handover, and wins over owner.json and report.json for who may see the shop and whose name the owner's monthly report carries. Each move keeps the
+ * reason and the owner's agreement: the hash of the one-use code and the time the owner's own number sent it (the record has the entry itself).
+ */
+export interface AssignmentFile {
+  schema: 1;
+  current: Person & { since: string };
+  history: { at: string; from: Person; to: Person; reason: HandoverReason; ownerAgreed: { at: string; codeHash: string } }[];
+}
+
+const person = (v: unknown): Person | undefined => (isObj(v) && text(v.accountId, 80) && text(v.accountName, 120) && (v.role === "builder" || v.role === "partner") ? { accountId: v.accountId as string, accountName: v.accountName as string, role: v.role } : undefined);
+
+export function parseAssignmentFile(textOrNothing: string | undefined): AssignmentFile | undefined {
+  if (textOrNothing === undefined) return undefined;
+  try {
+    const r: unknown = JSON.parse(textOrNothing);
+    if (!isObj(r) || r.schema !== 1 || !isObj(r.current) || !person(r.current) || !isoDay(r.current.since) || !Array.isArray(r.history)) return undefined;
+    for (const h of r.history) if (!isObj(h) || !isoDay(h.at) || !person(h.from) || !person(h.to) || !(HANDOVER_REASONS as readonly unknown[]).includes(h.reason) || !isObj(h.ownerAgreed)) return undefined;
+    return r as unknown as AssignmentFile;
+  } catch { return undefined; }
+}
+
+/** Who serves the shop in the panel's terms (an OwnerFile-shaped record): the latest move if there has been one, else who set it up. */
+export function servedByOf(owner: OwnerFile | undefined, assignment: AssignmentFile | undefined): OwnerFile | undefined {
+  if (!assignment) return owner;
+  return { schema: 1, accountId: assignment.current.accountId, accountName: assignment.current.accountName, role: assignment.current.role, createdAt: assignment.current.since, template: owner?.template ?? "bookings" };
+}
+
+/** Who set the shop up, for the monthly report: a handover's new person first (the owner agreed to it), then report.json, then the shop's attribution. Undefined when none says. */
+export function resolvePreparedBy(files: { report?: ReportFile; owner?: OwnerFile; assignment?: AssignmentFile }): { name: string; source: "assignment.json" | "report.json" | "owner.json" } | undefined {
+  if (files.assignment) return { name: preparedByOf(files.assignment.current), source: "assignment.json" };
   if (files.report) return { name: files.report.preparedBy, source: "report.json" };
   if (files.owner) return { name: preparedByOf(files.owner), source: "owner.json" };
   return undefined;

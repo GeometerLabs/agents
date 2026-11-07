@@ -110,4 +110,20 @@ export function latestEntry(entries: readonly RecordEntry[], caseId: string, act
   }
   return undefined;
 }
+/**
+ * The record's name for a recovery step a person asked for from the panel: an entry with this action on the case, `refs.action` the recovery action's name and `refs.recovery`
+ * the request's id. The asking is `attempted`; a look that read the service's own store is `confirmed`; the steps it triggers (a deposit recorded, a booking confirmed, a
+ * message sent) are written by the same code that writes them every day, so they follow the same limits.
+ */
+export const RECOVERY_ENTRY = "recovery";
+
+/** The newest `recovery` entry of this case for this action, with one of these outcomes. */
+export function latestRecovery(entries: readonly RecordEntry[], caseId: string, action: string, outcomes: readonly string[]): RecordEntry | undefined {
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const e = entries[i];
+    if (e.booking === caseId && e.action === RECOVERY_ENTRY && e.refs.action === action && outcomes.includes(e.outcome)) return e;
+  }
+  return undefined;
+}
+
 export const timeOf = (e: RecordEntry | undefined): number | null => (e && Number.isFinite(Date.parse(e.time)) ? Date.parse(e.time) : null);

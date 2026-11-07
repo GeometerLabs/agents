@@ -1,0 +1,255 @@
+// Export a shop (plan B38): everything that is the shop's, in an open format a person can read and a program can check, with no key or secret in it.
+//
+// One builder serves `geometer export <shop>` and the panel's download. It reads only files (the shop's folder, the deployer's export of its record, the papers the panel
+// made) and never talks to the shop's runtime or to any service, so it works for a shop that is stopped, a server whose runtime is down, and a shop whose subscription lapsed.
+// What it leaves out on purpose: every key and secret (the secrets inbox, the panel's accounts, sessions and vault, signing keys), and the shop's own WhatsApp, payment and
+// calendar accounts, which are the shop's and not Geometer's to carry. The record's customer numbers are the short hashes the deployer's export already uses.
+//
+// The package is a folder of plain files (JSON, JSON lines, HTML, text) and, for the download, the same folder as a .tar.gz:
+//   README.txt                       what each file is and how to check it (this file's FORMAT_README)
+//   manifest.json                    the shop, the time, and every other file with its sha256 and size
+//   SHA256SUMS                       the same hashes in the format `sha256sum -c` reads (it covers manifest.json too)
+//   settings.json                    the shop's settings, as they are on the server
+//   limits.json                      the limits the settings give, in the Guard's own shape, and how many were proven to bite at the last deploy
+//   history/settings-history.jsonl   every saved version of the settings, with who saved it (starts when the panel began keeping it)
+//   accounts.json                    which phone number, calendar and payment mode the shop used: names, never keys
+//   record/record.jsonl              the shop's record of what the agent did, one entry per line
+//   record/cases.jsonl               the bookings (or fees), one per line
+//   assignment.json                  who served the shop, and every move to someone else with its reason (when there was one)
+//   status.json                      the deployer's last word on the shop
+//   reports/<month>/...              each monthly report and certificate the panel made, signed (.json) and readable (.html)
+//   certificates/go-live/...         the go-live certificate, signed (.json) and readable (.html)
+import { createHash } from "node:crypto";
+import { canonicalJson } from "../../modules/record/record.ts";
+import { kindFor } from "../lib/kinds.ts";
+import { toTarGz } from "./tar.ts";
+
+export const EXPORT_FORMAT = "geometer-shop-export/1";
+
+/** Where the builder reads from. Every method returns text, or undefined when the thing is not there. */
+export interface ExportSources {
+  /** shops/<shop>/<name>: settings.json, pathway.lock, runtime.json, assignment.json, settings-history.jsonl, status via `status`. */
+  shopFile(name: string): string | undefined;
+  /** exports/<shop>/<name>: record.json, bookings.json, dues.json. */
+  exportFile(name: string): string | undefined;
+  /** When the deployer last wrote the record's export (ISO). */
+  exportedAt(): string | undefined;
+  /** status/<shop>.json as the deployer wrote it. */
+  statusText(): string | undefined;
+  /** The papers the panel made, as it keeps them: `go-live/<file>` or `monthly/<month>/<file>`. */
+  papers(): { path: string; text: string }[];
+  /** The pins the checks confirmed (ids, never keys), and the panel's own memory of the shop's accounts. */
+  pins(): { whatsapp?: { phoneNumberId?: string; displayNumber?: string }; calendar?: { calendarId?: string }; razorpay?: { mode?: string } } | undefined;
+  meta(): { whatsapp?: { businessNumber?: string }; razorpay?: { mode?: string }; calendar?: { shareAddress?: string } } | undefined;
+}
+
+export interface ExportRequest {
+  shop: string;
+  now: number;
+  exportedBy?: { name: string; role: string };
+}
+
+export interface ManifestFile { path: string; sha256: string; bytes: number }
+export interface Manifest {
+  schema: 1;
+  format: typeof EXPORT_FORMAT;
+  shop: string;
+  template: string;
+  pathway: string | null;
+  exportedAt: string;
+  exportedBy?: { name: string; role: string };
+  /** When the deployer last exported the record this package holds. Anything after it is not in the package. */
+  recordAsOf: string | null;
+  counts: { recordEntries: number; cases: number; reports: number; certificates: number; settingsVersions: number };
+  notes: string[];
+  files: ManifestFile[];
+}
+
+export interface BuiltExport { name: string; files: Map<string, Buffer>; manifest: Manifest; warnings: string[] }
+
+export class ExportError extends Error {}
+
+const sha = (data: Buffer | string) => createHash("sha256").update(data).digest("hex");
+const buf = (text: string) => Buffer.from(text, "utf8");
+const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+const dayStamp = (ms: number) => new Date(ms).toISOString().slice(0, 10).replaceAll("-", "");
+
+/** Things that must never be in an export. The builder never reads where they live; this stops a mistake from putting one in anyway. */
+const SECRET_SHAPES: { name: string; pattern: RegExp }[] = [
+  { name: "a private key", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/u },
+  { name: "a service-account key", pattern: /"private_key"\s*:/u },
+  { name: "an access token", pattern: /\b(?:EAA[A-Za-z0-9]{40,}|whatsapp_token|whatsapp_app_secret|razorpay_webhook_secret|razorpay_key)\b/u },
+  { name: "a Razorpay key secret", pattern: /\brzp_(?:live|test)_[A-Za-z0-9]{6,}\b/u },
+];
+
+function jsonLines(text: string | undefined, what: string, warnings: string[]): { lines: string[]; count: number } {
+  if (text === undefined) return { lines: [], count: 0 };
+  let list: unknown;
+  try { list = JSON.parse(text); } catch { warnings.push(`${what} could not be read, so it is not in this package.`); return { lines: [], count: 0 }; }
+  const items = Array.isArray(list) ? list.map((x) => (Array.isArray(x) ? x[1] : x)) : [];
+  return { lines: items.map((x) => JSON.stringify(x)), count: items.length };
+}
+
+export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport {
+  const warnings: string[] = [];
+  const notes: string[] = [];
+  const files = new Map<string, Buffer>();
+  const put = (path: string, text: string | Buffer) => { files.set(path, typeof text === "string" ? buf(text) : text); };
+
+  const settingsText = src.shopFile("settings.json");
+  if (settingsText === undefined) throw new ExportError(`There is no settings.json for ${req.shop}, so there is nothing to export.`);
+  let settings: any;
+  try { settings = JSON.parse(settingsText); } catch { throw new ExportError(`The settings of ${req.shop} cannot be read as JSON, so they are not exported as they are. Fix the file, or restore it from a backup.`); }
+  const lock = src.shopFile("pathway.lock")?.split("\n").map((l) => l.trim()).find((l) => l !== "" && !l.startsWith("#")) ?? null;
+  const kind = kindFor(lock?.split("@")[0]);
+  const template = kind?.id ?? "bookings";
+  put("settings.json", settingsText);
+
+  // ---- limits: what the settings give, in Guard's shape, and how many were proven at the last deploy
+  const statusText = src.statusText();
+  let status: any;
+  try { status = statusText === undefined ? undefined : JSON.parse(statusText); } catch { status = undefined; }
+  let guardSpec: unknown = null;
+  let policyDigest: string | null = null;
+  if (kind) {
+    const checked = kind.validateSettings(settings);
+    if (checked.ok) {
+      try { policyDigest = kind.papers.policyDigest(checked.settings); } catch { warnings.push("The policy digest could not be worked out."); }
+      try {
+        guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: req.shop, version: lock?.split("@")[1] ?? "unknown", reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
+      } catch { warnings.push("The limits could not be written in Guard's shape from these settings."); }
+    } else warnings.push("The settings do not pass the template's own check any more, so the limits could not be worked out; settings.json is as it is on the server.");
+  }
+  put("limits.json", json({
+    schema: 1,
+    note: "The limits the settings give. razorpay is the spec Guard enforces for refunds and payment links (amounts in paise); policyDigest is what the go-live certificate names. history/settings-history.jsonl has every saved version.",
+    policyDigest, razorpay: guardSpec,
+    provenAtLastDeploy: status?.limits && typeof status.limits === "object" ? { proven: status.limits.proven ?? null, of: status.limits.of ?? null, unprovable: Array.isArray(status.limits.unprovable) ? status.limits.unprovable : [] } : null,
+  }));
+
+  // ---- the settings' history
+  const historyText = src.shopFile("settings-history.jsonl");
+  const history = (historyText ?? "").split("\n").filter((l) => l.trim() !== "");
+  put("history/settings-history.jsonl", history.length > 0 ? `${history.join("\n")}\n` : "");
+  if (history.length === 0) notes.push("No earlier versions of the settings were kept for this shop: the panel began keeping them when it first saved the shop's settings after this feature was added. settings.json is the version in force now.");
+  else {
+    let first: { at?: string } = {};
+    try { first = JSON.parse(history[0]); } catch { /* the line is there to be read by a person */ }
+    notes.push(`The settings history starts at ${first.at ?? "its first line"}; changes before that were not kept.`);
+  }
+
+  // ---- accounts: names and ids only
+  const pins = src.pins();
+  const meta = src.meta();
+  put("accounts.json", json({
+    schema: 1,
+    note: "Which accounts the shop used. These are the shop's own accounts, not Geometer's, and they stay the shop's: no key or secret is in this package, and whoever serves the shop next must be given new ones.",
+    whatsapp: { businessNumber: meta?.whatsapp?.businessNumber ?? pins?.whatsapp?.displayNumber ?? null, phoneNumberId: pins?.whatsapp?.phoneNumberId ?? null },
+    calendar: { calendarId: pins?.calendar?.calendarId ?? null },
+    payments: { provider: "Razorpay", mode: pins?.razorpay?.mode ?? meta?.razorpay?.mode ?? null },
+  }));
+
+  // ---- the record and the cases, as JSON lines
+  const record = jsonLines(src.exportFile("record.json"), "The record", warnings);
+  const casesName = template === "fees" ? "dues.json" : "bookings.json";
+  const cases = jsonLines(src.exportFile(casesName), template === "fees" ? "The fees" : "The bookings", warnings);
+  const recordAsOf = src.exportedAt() ?? null;
+  if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
+  else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are short hashes in it, as in the monthly reports.`);
+  put("record/record.jsonl", record.lines.length > 0 ? `${record.lines.join("\n")}\n` : "");
+  put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
+
+  // ---- who served the shop
+  const assignment = src.shopFile("assignment.json");
+  if (assignment !== undefined) put("assignment.json", assignment.endsWith("\n") ? assignment : `${assignment}\n`);
+  if (statusText !== undefined && status !== undefined) put("status.json", json(status));
+
+  // ---- the papers the panel made
+  let reports = 0;
+  let certificates = 0;
+  for (const paper of [...src.papers()].sort((a, b) => a.path.localeCompare(b.path))) {
+    const parts = paper.path.split("/");
+    if (parts[0] === "go-live" && parts.length === 2) { put(`certificates/go-live/${parts[1]}`, paper.text); if (parts[1].endsWith(".json")) certificates++; }
+    else if (parts[0] === "monthly" && parts.length === 3) { put(`reports/${parts[1]}/${parts[2]}`, paper.text); if (parts[2].endsWith(".json")) reports++; }
+  }
+
+  // ---- a last look: nothing secret-shaped in anything we are about to hand over
+  for (const [path, content] of files) {
+    const text = content.toString("utf8");
+    const hit = SECRET_SHAPES.find((s) => s.pattern.test(text));
+    if (hit) throw new ExportError(`${path} looks as if it holds ${hit.name}, so nothing was exported. Keys and secrets are never exported; find out how it got there.`);
+  }
+
+  const manifest: Manifest = {
+    schema: 1, format: EXPORT_FORMAT, shop: req.shop, template, pathway: lock, exportedAt: new Date(req.now).toISOString(),
+    ...(req.exportedBy ? { exportedBy: req.exportedBy } : {}),
+    recordAsOf,
+    counts: { recordEntries: record.count, cases: cases.count, reports, certificates, settingsVersions: history.length },
+    notes,
+    files: [...files].map(([path, content]) => ({ path, sha256: sha(content), bytes: content.length })),
+  };
+  put("README.txt", FORMAT_README(manifest));
+  manifest.files.push({ path: "README.txt", sha256: sha(files.get("README.txt") as Buffer), bytes: (files.get("README.txt") as Buffer).length });
+  manifest.files.sort((a, b) => a.path.localeCompare(b.path));
+  put("manifest.json", json(manifest));
+  put("SHA256SUMS", [...files].filter(([p]) => p !== "SHA256SUMS").map(([p, c]) => `${sha(c)}  ${p}`).sort((a, b) => a.slice(66).localeCompare(b.slice(66))).join("\n") + "\n");
+
+  const name = `geometer-export-${req.shop}-${dayStamp(req.now)}`;
+  return { name, files, manifest, warnings };
+}
+
+/** The package as a .tar.gz whose files sit in one folder named after the export. */
+export function packageTarGz(built: BuiltExport, nowMs: number): Buffer {
+  const inside = new Map<string, Buffer>();
+  for (const [path, content] of built.files) inside.set(`${built.name}/${path}`, content);
+  return toTarGz(inside, nowMs);
+}
+
+export { canonicalJson };
+
+function FORMAT_README(m: Manifest): string {
+  return `GEOMETER SHOP EXPORT (${EXPORT_FORMAT})
+==========================================
+
+This folder is everything that is ${m.shop}'s, taken out of Geometer in plain files, so it can be read, kept, and checked without Geometer.
+Made ${m.exportedAt}${m.exportedBy ? ` for ${m.exportedBy.name} (${m.exportedBy.role})` : ""}. It was made from files only; nothing was sent to anyone, and no service was called.
+
+WHAT IS IN IT
+  manifest.json                 the shop, the time, the counts, and every other file with its sha256 and size
+  SHA256SUMS                    the same sha256 values, in the format "sha256sum -c SHA256SUMS" reads (it covers manifest.json too)
+  settings.json                 the shop's settings as they are on the server
+  limits.json                   the limits the settings give: the refund and payment-link limits in Guard's own shape (amounts in paise),
+                                the policy digest the go-live certificate names, and how many limits were proven to bite at the last deploy
+  history/settings-history.jsonl  every saved version of the settings, one per line: {"at", "by", "digest", "settings"}. "digest" is the sha256 of the settings
+                                written with sorted keys and no spaces. It starts when the panel began keeping it; manifest.json says from when.
+  accounts.json                 which WhatsApp number, calendar and payment mode the shop used. Names and ids, never keys.
+  record/record.jsonl           the record of what the agent did, tried, or was stopped from doing: one JSON entry per line, in order
+                                {"seq","time","conversation","booking","action","inputsDigest","outcome","decisions","language","notes","refs"}.
+                                "booking" holds the id of the booking (or the student's fee) the entry is about. "conversation" and customers are short hashes.
+  record/cases.jsonl            the bookings (or, for a Fees centre, the fees), one per line, as the agent held them. Customers are short hashes.
+  assignment.json               who serves the shop, and every move to another partner or builder with its date and reason (only when there has been one)
+  status.json                   the deployer's last word on the shop (versions, limits proven, backups)
+  reports/<month>/              each monthly report and its certificate: the signed .json and the readable .html
+  certificates/go-live/         the go-live certificate: the signed .json and the readable .html
+
+HOW TO CHECK IT
+  1. Nothing was changed after it was made:   sha256sum -c SHA256SUMS      (on a Mac: shasum -a 256 -c SHA256SUMS)
+  2. The same check, and the signed papers, with the open tool in https://github.com/GeometerLabs/agents:
+        node bundle/export/check.ts <this folder>
+     It re-hashes every file against manifest.json, then checks every signed .json under reports/ and certificates/ the way the report verifier does.
+  3. One signed paper on its own:
+        node templates/commerce/bookings/scripts/verify-report.ts reports/2026-11/<the .json file>
+     A signature shows that the paper has not changed since the key named in it signed it. It does not show who holds that key, and it does not show the numbers are true.
+  geometer-verify (the open Rust verifier of Guard's own receipts) does not read these papers: they are in the report format, not the receipt format.
+
+WHAT IS NOT IN IT, AND WHY
+  - No key and no secret: no WhatsApp token, payment key, webhook secret, calendar key, signing key, passphrase or session. A shop moved to someone new needs new ones, entered by whoever serves it.
+  - The shop's own accounts. The WhatsApp number, the payment account and the calendar belong to the shop; accounts.json only says which ones they were.
+  - Customers' phone numbers and students' names: the record carries short hashes, so the package can be passed around.
+  - Anything after ${m.recordAsOf ?? "the deployer's last export of the record (it had made none)"}: the record is as the deployer last exported it.
+
+${m.notes.map((n) => `NOTE: ${n}`).join("\n")}
+
+Write to support. A person answers.
+`;
+}

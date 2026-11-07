@@ -12,8 +12,8 @@ import { kindFor } from "../lib/kinds.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import { SHOP_ID, parseFleetAnswer, parseOwner, parseReportFile, parseStatus, parseStopRequest, resolvePreparedBy, serverPaths } from "./contract.ts";
-import type { FleetAnswer, OwnerFile, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
+import { SHOP_ID, parseAssignmentFile, parseFleetAnswer, parseOwner, parseReportFile, parseStatus, parseStopRequest, resolvePreparedBy, servedByOf, serverPaths } from "./contract.ts";
+import type { AssignmentFile, FleetAnswer, HandoverReason, OwnerFile, Person, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
 import type { Store } from "./store.ts";
 
 /** What the panel itself remembers about a shop that is not in the shop's folder. The secrets themselves are never here: only that they arrived. */
@@ -50,23 +50,43 @@ export function createShops(config: PanelConfig, store: Store) {
       if (!existsSync(paths.shops)) return [];
       return readdirSync(paths.shops, { withFileTypes: true }).filter((e) => e.isDirectory() && SHOP_ID.test(e.name)).map((e) => e.name).sort();
     },
+    /** Who set the shop up (owner.json, written once). It never changes; who SERVES the shop now is `servedBy`. */
     owner(id: string): OwnerFile | undefined { return parseOwner(readText(join(paths.shop(safe(id)), "owner.json"))); },
-    /** Who the owner's monthly report says set the shop up ("Divya, local partner"): the shop's report.json if it has one, else the attribution. The deployer reads the same two files. */
+    /** Who moved the shop to someone else, if anyone has (assignment.json, written only by a handover). */
+    assignment(id: string): AssignmentFile | undefined { return parseAssignmentFile(readText(join(paths.shop(safe(id)), "assignment.json"))); },
+    /** Who serves the shop now, in the shape of owner.json: the latest handover's new person, else the one who set it up. A partner sees a shop only while this names them. */
+    servedBy(id: string): OwnerFile | undefined { return servedByOf(api.owner(id), api.assignment(id)); },
+    /** Who the owner's monthly report says set the shop up ("Divya, local partner"): a handover's new person, else the shop's report.json, else the attribution. The deployer reads the same three files. */
     preparedBy(id: string): string | undefined {
       const report = parseReportFile(readText(join(paths.shop(safe(id)), "report.json")));
       const owner = api.owner(id);
-      return resolvePreparedBy({ ...(report ? { report } : {}), ...(owner ? { owner } : {}) })?.name;
+      const assignment = api.assignment(id);
+      return resolvePreparedBy({ ...(report ? { report } : {}), ...(owner ? { owner } : {}), ...(assignment ? { assignment } : {}) })?.name;
     },
     /** The shops this person may see. */
     visibleTo(account: Account): ShopRef[] {
-      const all = api.ids().map((id) => ({ id, owner: api.owner(id) }));
+      const all = api.ids().map((id) => ({ id, owner: api.servedBy(id) }));
       return account.role === "builder" ? all : all.filter((s) => s.owner?.accountId === account.id);
     },
     /** The one rule. A shop the account cannot see is undefined: callers answer 404, never 403. */
     find(account: Account, id: string): ShopRef | undefined {
       if (!SHOP_ID.test(id) || !existsSync(paths.shop(id))) return undefined;
-      const owner = api.owner(id);
+      const owner = api.servedBy(id);
       return account.role === "builder" || owner?.accountId === account.id ? { id, owner } : undefined;
+    },
+    /**
+     * Move the shop to someone else: assignment.json is written (atomically) with the new person and the move added to its history. Nothing else changes: owner.json stays, the shop's
+     * accounts and keys are not touched (a key is never carried across), and the next deploy puts the new name on the owner's monthly report.
+     */
+    assign(id: string, to: Person, reason: HandoverReason, agreed: { at: string; codeHash: string }): AssignmentFile {
+      const before = api.assignment(id);
+      const served = api.servedBy(id);
+      if (!served) throw new Error("This shop has nobody it is served by, so there is nobody to move it from.");
+      const from: Person = { accountId: served.accountId, accountName: served.accountName, role: served.role };
+      const at = iso(now());
+      const next: AssignmentFile = { schema: 1, current: { ...to, since: at }, history: [...(before?.history ?? []), { at, from, to, reason, ownerAgreed: agreed }] };
+      writeAtomic(join(paths.shop(safe(id)), "assignment.json"), `${JSON.stringify(next, null, 2)}\n`);
+      return next;
     },
     exists: (id: string) => SHOP_ID.test(id) && existsSync(paths.shop(id)),
 
@@ -150,6 +170,21 @@ export function createShops(config: PanelConfig, store: Store) {
       const request: StopRequest = { schema: 1, requestId: `stop_${randomBytes(8).toString("hex")}`, shop: safe(id), requestedAt: iso(now()), requestedBy: { id: account.id, name: account.name, role: account.role } };
       writeAtomic(paths.stopFile(id), `${JSON.stringify(request, null, 2)}\n`);
       return request;
+    },
+
+    /**
+     * Ask the shop's runtime to look again or ask again about one booking or fee (POST /internal/recover; modules/unfinished). The runtime saves it like any event and its agent does
+     * it through Guard and the normal limits: the panel sends a name and an id, never a message or an amount. "unreachable" when the runtime is not configured or does not answer.
+     */
+    async requestRecovery(id: string, caseId: string, action: string): Promise<"sent" | "unreachable"> {
+      const base = runtimeUrlFor(config, safe(id));
+      const tokenFile = runtimeTokenFileFor(config, id);
+      const token = tokenFile ? readText(tokenFile)?.trim() : undefined;
+      if (!base || !token) return "unreachable";
+      try {
+        const r = await fetch(`${base}/internal/recover`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ id: `rc-${randomBytes(8).toString("hex")}`, case: caseId, action }), signal: AbortSignal.timeout(5000) });
+        return r.ok ? "sent" : "unreachable";
+      } catch { return "unreachable"; }
     },
 
     /** Ask the runtime itself. Counts only (its /status never holds message text). Not configured, or not answering, is said as such. */

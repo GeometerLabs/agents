@@ -132,6 +132,12 @@ export class Browser {
     return { status: res.status, text, plain: text.replace(/&#39;/gu, "'").replace(/&quot;/gu, '"').replace(/&lt;/gu, "<").replace(/&gt;/gu, ">").replace(/&amp;/gu, "&"), headers: res.headers, location: res.headers.get("location") ?? undefined, cookies };
   }
   get(path: string, extra: Record<string, string> = {}) { return this.req("GET", path, undefined, extra); }
+  /** GET a file (a download): the bytes, not text. */
+  async bytes(path: string): Promise<{ status: number; body: Buffer; headers: Headers }> {
+    const cookie = [...this.jar].map(([k, v]) => `${k}=${v}`).join("; ");
+    const res = await fetch(this.base + path, { redirect: "manual", headers: { ...(cookie ? { cookie } : {}), ...this.headers } });
+    return { status: res.status, body: Buffer.from(await res.arrayBuffer()), headers: res.headers };
+  }
   /** POST a form carrying the token found on `from` (a page of this panel that has a form). */
   async post(path: string, form: Record<string, string>, from: string = path): Promise<Reply> {
     const token = tokenOf((await this.get(from)).text);

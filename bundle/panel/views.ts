@@ -18,6 +18,7 @@ import type { PlanView } from "./plan.ts";
 import { formatInr } from "../../modules/language/format.ts";
 import type { Obligation } from "../../modules/unfinished/index.ts";
 import type { ShopInbox } from "./inbox.ts";
+import type { AssignmentFile } from "./contract.ts";
 import type { Draft } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
@@ -158,7 +159,12 @@ ${shop.failed.length > 0 ? html`<p class="note">${w.failedKinds}</p>` : ""}
 ${shop.asOf ? html`<p class="note">${w.asOf(when(shop.asOf, c.lang))}</p>` : ""}`;
 }
 
-function recoveryButtons(_c: Ctx, _shop: string, _o: Obligation): Raw { return raw(""); }
+/** One button for each recovery action the item offers. Each is a form that asks the shop's own agent, which does it through Guard like anything else. */
+function recoveryButtons(c: Ctx, shop: string, o: Obligation): Raw {
+  if (o.actions.length === 0) return raw("");
+  const w = c.w.inbox;
+  return html`<br>${o.actions.map((a) => html`<form method="post" action="/shops/${shop}/recover" style="display:inline">${csrf(c)}<input type="hidden" name="case" value="${o.caseId}"><input type="hidden" name="action" value="${a}"><button class="btn" type="submit">${Object.hasOwn(w.actions, a) ? w.actions[a] : a}</button></form> `)}`;
+}
 
 export function inboxPage(c: Ctx, o: { shops: ShopInbox[]; notice?: string }): string {
   const w = c.w.inbox;
@@ -310,6 +316,12 @@ ${v.cost ? costTable(c, v.cost) : v.fees ? feesMessagesBlock(c, v.fees.messages)
 ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
 
+<h2>${c.w.takeOut.heading}</h2>
+<p>${c.w.takeOut.text}</p>
+<p><a class="btn" href="/shops/${v.id}/export">${c.w.takeOut.button}</a></p>
+<p class="note">${c.w.takeOut.notIn} ${c.w.takeOut.check}</p>
+<p><a class="btn" href="/shops/${v.id}/handover">${c.w.handover.button}</a></p>
+
 ${v.live.code !== "stopped" && v.live.code !== "stopping" ? html`<p><a class="btn danger" href="/shops/${v.id}/stop">${w.stop}</a></p>` : ""}
 
 ${v.isBuilder && v.details ? html`<details class="what"><summary>${STRINGS[c.lang].page.showWhatWeDid}</summary>
@@ -321,6 +333,40 @@ ${v.cost.lines.map((l) => `${l.id}: ${l.uses.join(", ") || "-"} (${l.quality ?? 
   <pre>${v.details.runtimeJson}</pre>
 </details>` : ""}
 `);
+}
+
+// ---- moving a shop to someone else (B38) ---------------------------------------------------------------------------------------------------------------
+
+export interface HandoverView {
+  id: string;
+  name: string;
+  stage: "form" | "asked" | "waiting" | "expired" | "done";
+  problem?: string;
+  /** Shown once, when the request is made; never kept. */
+  code?: string;
+  to?: string;
+  values: { to: string; reason: string };
+  history: AssignmentFile["history"];
+}
+
+export function handoverPage(c: Ctx, v: HandoverView): string {
+  const w = c.w.handover;
+  const form = html`<form method="post" action="/shops/${v.id}/handover" autocomplete="off">${csrf(c)}
+  <label class="field"><span>${w.who}</span><input name="to" value="${v.values.to}" autocapitalize="none" maxlength="40" required><p class="help">${w.whoHelp}</p></label>
+  <label class="field"><span>${w.why}</span><select name="reason" required><option value=""></option>${(["stopped_paying", "stopped_serving", "owner_request"] as const).map((r) => html`<option value="${r}" ${r === v.values.reason ? raw("selected") : ""}>${w.reasons[r]}</option>`)}</select></label>
+  <button class="btn primary" type="submit">${w.start}</button>
+</form>`;
+  const cancel = html`<form method="post" action="/shops/${v.id}/handover/cancel">${csrf(c)}<button class="btn" type="submit">${w.cancel}</button></form>`;
+  return layout(c, w.heading, html`<h1>${w.heading}</h1>
+<p class="big">${v.name}</p>
+${v.problem ? html`<ul class="errors" role="alert"><li>${v.problem}</li></ul>` : ""}
+${v.stage === "done" ? html`<div class="notice" role="status">${w.done(v.to ?? "")}</div>` : ""}
+${v.stage === "asked" ? html`<h2>${w.askTitle}</h2><p>${w.ask(v.code ?? "")}</p><code class="addr">move ${v.code}</code><p class="note">${w.askNote}</p><p>${w.waiting(v.to ?? "")}</p><p><a class="btn" href="/shops/${v.id}/handover">${w.check}</a></p>${cancel}` : ""}
+${v.stage === "waiting" ? html`<h2>${w.askTitle}</h2><p>${w.waiting(v.to ?? "")}</p><p><a class="btn" href="/shops/${v.id}/handover">${w.check}</a></p>${cancel}` : ""}
+${v.stage === "expired" ? html`<div class="notice" role="status">${w.expired}</div>` : ""}
+${v.stage === "form" || v.stage === "expired" ? html`<p>${w.intro}</p><ul class="plain"><li class="info"><span class="mark">·</span><span>${w.moves}</span></li><li class="info"><span class="mark">·</span><span>${w.stays}</span></li><li class="info"><span class="mark">·</span><span>${w.never}</span></li></ul>${form}` : ""}
+${v.history.length > 0 ? html`<h2>${w.history}</h2><ul class="plain">${v.history.map((h) => html`<li class="info"><span class="mark">·</span><span>${w.historyLine(h.from.accountName, h.to.accountName, when(h.at, c.lang), w.reasons[h.reason])}</span></li>`)}</ul>` : ""}
+<p><a href="/shops/${v.id}">${c.w.common.back}</a></p>`);
 }
 
 export function stopPage(c: Ctx, o: { id: string; name: string; already: boolean; at?: string }): string {
