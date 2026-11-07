@@ -35,7 +35,11 @@ await main(async () => {
         "",
         `CRASH TEST   ${settings.name} · Bookings · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
       ],
-      workDone: ({ situations, checks, tookMs: ms }) => [
+      workDone: ({ situations, checks, tookMs: ms }) => settings.payment?.module === "upi" ? [
+        `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp and calendar,`,
+        "  with UPI marked paid by the owner: a screenshot sent as proof, the owner confirming a different amount, never, twice, or after",
+        `  the hold ended, and a refund the owner owes, in ${names}.`,
+      ] : [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp,`,
         "  calendar and payments: lost replies, duplicate messages and payments, silent calendar failures, late payments,",
         `  an expired key, and customers haggling or trying to trick the agent in ${names}.`,
