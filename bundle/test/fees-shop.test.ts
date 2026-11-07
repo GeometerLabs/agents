@@ -15,6 +15,7 @@ import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "../generat
 import { planShop, reportBaseUrl } from "../generate/shop.ts";
 import { KINDS, kindFor } from "../lib/kinds.ts";
 import { readShop } from "../lib/server.ts";
+import { realRunner } from "../lib/runner.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { buildHeartbeat } from "../services/heartbeat.ts";
@@ -300,4 +301,28 @@ test("the heartbeat carries a Fees runtime's fees by state where the fleet contr
   const { body } = buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now, shops: [shop], baseline: {}, lastKnown: {}, usageBaseline: {} } as never);
   const agent = (body as { agents: { id: string; pathway: string; runtime: { bookings: Record<string, number> } }[] }).agents[0];
   assert.deepEqual([agent.pathway, agent.runtime.bookings], ["fees", { open: 4, paid: 1 }]);
+});
+
+// ---- geometer update ------------------------------------------------------------------------------------------------------------
+
+test("geometer update moves a Fees centre: the real Fees hand check runs at both versions on the centre's own settings, and the pin moves only when it holds", async () => {
+  const w = world({}); try {
+    addFees(w);
+    w.handIn("bright", feesSecrets("bright"));
+    await deploy(w.ctx);
+    // version 0.2.0 on the server: a copy of the template, as a checkout of a tag would give, with the modules it imports beside it
+    const kept = join(w.root, "templates", "education", "fees@0.2.0");
+    cpSync(join(w.ctx.appDir, "templates", "education", "fees"), kept, { recursive: true });
+    if (!existsSync(join(w.root, "modules"))) cpSync(join(w.ctx.appDir, "modules"), join(w.root, "modules"), { recursive: true });
+    const pkg = join(kept, "package.json");
+    writeFileSync(pkg, readFileSync(pkg, "utf8").replaceAll('"version": "0.1.0"', '"version": "0.2.0"'));
+    const next = w.ctx.runner.run.bind(w.ctx.runner);
+    w.ctx.runner.run = (command, args, options) => (command === process.execPath ? realRunner.run(command, args, options) : next(command, args, options));
+    const r = await quiet(() => main(["update", "--to", "0.2.0", "--server", w.root], w.ctx));
+    assert.equal(r.result, 0, r.out + r.err);
+    assert.equal(readFileSync(join(w.paths.shop("bright"), "pathway.lock"), "utf8").trim(), "fees@0.2.0");
+    const step = loadState(w.root).update!.steps.bright;
+    assert.ok(step.after && step.after.held === step.after.of && step.after.of >= 20, JSON.stringify(step));
+    assert.ok(step.layout && step.layout.from > 0 && step.layout.from === step.layout.to, "the Fees runtime's saved-data layout was asked of both versions");
+  } finally { w.done(); }
 });
