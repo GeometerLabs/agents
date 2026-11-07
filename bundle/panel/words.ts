@@ -410,7 +410,7 @@ export const en: Words = {
     start: "Ask the owner to agree", askTitle: "Now the owner has to agree",
     ask: (code) => `Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move ${code}`,
     askNote: "The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it.",
-    waiting: (to) => `Waiting for the owner. When the message arrives, ${to} takes over.`, check: "Check again", cancel: "Cancel the move", done: (to) => `Done. ${to} now serves this shop.`,
+    waiting: (to) => `Waiting for the owner. When the message arrives, ${to} takes over. This can take a quarter of an hour after the message.`, check: "Check again", cancel: "Cancel the move", done: (to) => `Done. ${to} now serves this shop.`,
     expired: "The code ran out before the owner replied. Start again.", cancelled: "The move was cancelled.",
     problems: { who: "Nobody signs in with that name on this server.", same: "That person already serves this shop.", geometer: "A shop cannot be moved to Geometer.", reason: "Choose why the shop is moving.", waiting: "A move is already waiting for the owner. Cancel it first to start another." },
     history: "Who has served this shop", historyLine: (from, to, at, why) => `${from} to ${to}, ${at}: ${why}`,

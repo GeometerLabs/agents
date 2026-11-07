@@ -65,6 +65,10 @@ Fees runs as a server the way Bookings does, because the server was moved into `
 - **The bundle and the panel know Fees.** `bundle/lib/kinds.ts` lists what differs by template (the Guards a shop has, how its settings are checked, its hand check and certificate). A Fees shop has Razorpay and WhatsApp Guards and no calendar. `geometer shop add --template fees` and the panel's five-step setup write the same folder, with the settings in the shape a builder writes (a student's `batch`).
 - **What has not run:** none of this has run with a real WhatsApp number, a real Razorpay account or a real centre. The end-to-end test runs the stand-ins, the inbox, the runtime and a restart.
 
+## Recovery steps and the owner's agreement to a handover (B31, B38; 7 November 2026)
+
+The Fees agent handles the same two things as Bookings, for a fee. A **`recovery` event** names one fee and an action: `recheck_payment` runs `reconcile` and `settle` (the payments service's own list for the fee's links; a payment not yet counted is counted by the normal path), `ask_owner_again` sends the owner the waiver request or the refund request again with the same reference (`q-N`), and `recheck_refund` looks, read-only, for a refund whose outcome was unclear and sends nothing. `retry_booking` is Bookings' and is refused here. The Fees kind of unfinished work is `payment_unrecorded`: a payment arrived and the fee was not updated because the payments service could not be read, until a later look reads it. **"move CODE"** from the owner's number writes one `handover_agreed` entry and nothing else. Tests: `test/recovery.test.ts`.
+
 ## Choices to review
 
 - **The English forms and the machine-written ones.** All Hindi, Malayalam and Kannada wording is machine-written; the review sheets are the way to have it read.

@@ -162,3 +162,42 @@ test("the settings' history keeps each saved version once, with who saved it, an
     assert.equal(lines[0].at, new Date(NOW).toISOString());
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("limits.json holds the spec the deployer's own generator makes for this server (its approval hours), and says so when the server's settings could not be read", () => {
+  for (const [change, ttl] of [[{}, 24 * 3600], [{ approvalHours: 48 }, 48 * 3600]] as const) {
+    const w = world({ "glow-salon": panelRuntime() }, change);
+    try {
+      const limits = JSON.parse(buildExport(sourcesFor(w.root, "glow-salon"), { shop: "glow-salon", now: NOW }).files.get("limits.json")!.toString("utf8"));
+      assert.equal(limits.razorpay.approval_ttl_seconds, ttl);
+      assert.equal(limits.razorpay.name, "glow-salon-razorpay");
+      assert.ok(!/could not be read/u.test(limits.note));
+    } finally { w.done(); }
+  }
+  const w = world();
+  try {
+    rmSync(join(w.root, "geometer.json"));
+    const built = buildExport(sourcesFor(w.root, "glow-salon"), { shop: "glow-salon", now: NOW });
+    const limits = JSON.parse(built.files.get("limits.json")!.toString("utf8"));
+    assert.ok(limits.razorpay, "still made, with the defaults");
+    assert.match(limits.note, /could not be read, so it was made with the default approval time and caps/u);
+    assert.ok(built.warnings.some((x) => /could not be read/u.test(x)));
+  } finally { w.done(); }
+});
+
+test("the guard looks for what a secret looks like, never for a secret's name: a failed deploy that says 'razorpay_key is missing' still exports", () => {
+  const w = world();
+  try {
+    exportRecord(w.root, "glow-salon");
+    mkdirSync(join(w.root, "status"), { recursive: true });
+    writeFileSync(join(w.root, "status", "glow-salon.json"), JSON.stringify({ updatedAt: new Date(NOW).toISOString(), deploy: { state: "failed", at: new Date(NOW).toISOString(), message: "razorpay_key is missing for glow-salon; the key id rzp_test_abcdefghij does not match, whatsapp_token too" } }));
+    const built = buildExport(sourcesFor(w.root, "glow-salon"), { shop: "glow-salon", now: NOW });
+    assert.ok(checkPackage(built.files).ok);
+    assert.match(built.files.get("status.json")!.toString("utf8"), /razorpay_key is missing/u);
+    // what a secret looks like is still refused
+    const mistaken = (text: string) => buildExport({ ...sourcesFor(w.root, "glow-salon"), statusText: () => JSON.stringify({ deploy: { state: "failed", message: text } }) }, { shop: "glow-salon", now: NOW });
+    assert.throws(() => mistaken("-----BEGIN PRIVATE KEY-----"), /holds a private key/u);
+    assert.throws(() => mistaken(`key rzp_test_abcdefghij:${"s".repeat(24)}`), /holds a Razorpay key with its secret/u);
+    assert.throws(() => mistaken(`token EAA${"x".repeat(60)}`), /holds an access token/u);
+    assert.throws(() => mistaken(`{"private_key": "${"k".repeat(40)}"}`), /holds a service-account key/u);
+  } finally { w.done(); }
+});
