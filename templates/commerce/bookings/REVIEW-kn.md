@@ -801,8 +801,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.actions.ask_owner_again` | ಮಾಲೀಕರನ್ನು ಮತ್ತೆ ಕೇಳಿ | Ask the owner again |  |
 | `inbox.actions.recheck_refund` | ರೀಫಂಡ್ ಅನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the refund again |  |
 | `inbox.actionNote` | ಇವು ಮತ್ತೆ ನೋಡುತ್ತವೆ ಅಥವಾ ಮತ್ತೆ ಕೇಳುತ್ತವೆ ಅಷ್ಟೇ. ಬೇರೆಲ್ಲವುಗಳಂತೆ ಇವೂ Guard ಮತ್ತು ಅದೇ ಮಿತಿಗಳ ಮೂಲಕ ಹೋಗುತ್ತವೆ. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
-| `inbox.recover.sent` | ಕಳುಹಿಸಲಾಗಿದೆ. ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಇದನ್ನು ಮಾಡುತ್ತದೆ. ಅದರ ಮುಂದಿನ ರೆಕಾರ್ಡ್ ನವೀಕರಣದ ನಂತರ ಪಟ್ಟಿ ಬದಲಾಗುತ್ತದೆ. | Asked. The shop's agent will do it within a minute. The list changes after its next record update. |  |
-| `inbox.recover.unreachable` | ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಈಗ ಸಿಗುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | The shop's agent cannot be reached right now, so nothing was sent. Try again later. |  |
+| `inbox.recover.sent` | ಕಳುಹಿಸಲಾಗಿದೆ. ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಒಂದೆರಡು ನಿಮಿಷಗಳಲ್ಲಿ ಇದನ್ನು ಮಾಡುತ್ತದೆ. ಮುಂದಿನ ರೆಕಾರ್ಡ್ ನವೀಕರಣದ ನಂತರ ಪಟ್ಟಿ ಬದಲಾಗುತ್ತದೆ; ಅದಕ್ಕೆ ಹದಿನೈದು ನಿಮಿಷಗಳವರೆಗೆ ಬೇಕಾಗಬಹುದು. | Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour. |  |
 | `inbox.recover.refused` | ಇದು ಈ ವಿಷಯಕ್ಕೆ ಹೊಂದುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. | That does not fit this item, so nothing was sent. |  |
 | `inbox.help` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
 | `takeOut.heading` | ಎಲ್ಲವನ್ನೂ ನಿಮ್ಮೊಂದಿಗೆ ತೆಗೆದುಕೊಂಡು ಹೋಗಿ | Take everything with you |  |
