@@ -1,5 +1,5 @@
-// The proposed price list of 5 Nov (B48): the plans, the allowances, the extra-message price, the licence, the innovators' discount. It waits for the owner's yes,
-// so it must load, say it is proposed, and never reach the running-cost line.
+// The price list of 5 Nov (B48): the plans, the allowances, the extra-message price, the licence, the innovators' discount. It was written as a proposal; the owner decided it
+// the same day, and the list of 7 Nov puts it in force. The proposal must still load and be skipped by the running-cost line, and the list in force must carry its terms.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
@@ -47,14 +47,28 @@ test("every other rate of the 4 Nov list is carried over unchanged, each with th
   assert.doesNotMatch(readFileSync(proposed.file, "utf8"), new RegExp("found" + "ing", "iu"), "the word is not used for the innovators");
 });
 
-test("a proposed list never prices the running costs: the newest in-force list is still 2026-11-04, and the cost line is the flat fee", () => {
+test("a proposed list never prices the running costs: the 5 Nov proposal is skipped, and the list that puts the owner's decision in force (7 Nov) is the one the cost line reads", () => {
   const live = latestPriceList();
-  assert.equal(live.date, "2026-11-04");
+  assert.equal(live.date, "2026-11-07");
   assert.equal(live.status, "in-force");
+  assert.equal(live.proposal, undefined);
   const c = monthlyCost({ settings: glowSalon() }, live);
-  assert.equal(c.priceList.date, "2026-11-04");
-  assert.equal(c.lines.find((l) => l.id === "geometer")!.paise, 19_900);
-  assert.equal(latestProposedPriceList()?.date, "2026-11-05");
+  assert.equal(c.priceList.date, "2026-11-07");
+  assert.equal(c.lines.find((l) => l.id === "geometer")!.paise, 29_900, "Glow Salon takes a deposit: Business");
+  assert.equal(latestProposedPriceList(), null, "nothing newer than the list in force is waiting");
+  const dir = mkdtempSync(join(tmpdir(), "geo-prices-"));
+  copyFileSync(new URL("2026-11-04.json", PRICES_DIR).pathname, join(dir, "2026-11-04.json"));
+  copyFileSync(new URL("2026-11-05.json", PRICES_DIR).pathname, join(dir, "2026-11-05.json"));
+  assert.equal(latestPriceList(dir).date, "2026-11-04", "while only the proposal is there, the flat fee stays in force");
+  assert.equal(latestProposedPriceList(dir)?.date, "2026-11-05");
+});
+
+test("the list in force carries every plan term of the proposal unchanged, as the owner decided them", () => {
+  const live = latestPriceList();
+  for (const [id, r] of Object.entries(proposed.rates)) {
+    for (const key of ["currency", "micro", "basisPoints", "count", "freePerMonth", "per"] as const) assert.equal((live.rates[id] as unknown as Record<string, unknown>)?.[key], (r as unknown as Record<string, unknown>)[key], `${id}.${key}`);
+  }
+  assert.doesNotMatch(readFileSync(live.file, "utf8"), new RegExp("found" + "ing|found" + "er|proposed", "iu"));
 });
 
 test("with no newer proposal there is none to show, and a folder of proposals alone is refused", () => {

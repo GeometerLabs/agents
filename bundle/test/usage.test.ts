@@ -12,7 +12,7 @@ import { deploy } from "../deploy.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
 import { readStatus, updateStatus } from "../lib/status.ts";
 import { FIELDS, isCustomerMessage, summarizeUsage, understandingOf, usageRatesFrom, whatsappTypeOf } from "../lib/usage.ts";
-import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
+import { latestPriceList } from "../panel/cost.ts";
 import { parseStatus } from "../panel/contract.ts";
 import { createWorld } from "../../templates/commerce/bookings/src/harness.ts";
 import { parseIntent } from "../../templates/commerce/bookings/src/adapters/rule-parser.ts";
@@ -22,7 +22,7 @@ import { LANGUAGES } from "../../modules/language/languages.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
 import { world } from "./world.ts";
 
-const RATES = usageRatesFrom([latestProposedPriceList()!, latestPriceList()]);
+const RATES = usageRatesFrom([latestPriceList()]);
 const entry = (action: string, outcome: string, more: Record<string, unknown> = {}) => ({ seq: 1, time: "2026-11-04T10:00:00Z", conversation: "c-1", booking: null, action, inputsDigest: "d", outcome, decisions: [], language: "en", notes: "", refs: {}, ...more });
 /** A customer message whose record says how it was understood, in the names FIELDS holds (so a rename there is followed by every test). */
 const understood = (step: string, cost = 0, more: Record<string, unknown> = {}) =>

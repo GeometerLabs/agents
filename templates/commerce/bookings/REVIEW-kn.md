@@ -537,7 +537,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.lines.whatsapp` | WhatsApp ಸಂದೇಶಗಳು (Meta ಶುಲ್ಕ) | WhatsApp messages (Meta's fee) |  |
 | `cost.lines.whatsapp-provider` | WhatsApp ಪ್ರೊವೈಡರ್‌ನ ಸ್ವಂತ ಶುಲ್ಕ | WhatsApp provider's own fee |  |
 | `cost.lines.razorpay` | Razorpay ಶುಲ್ಕ | Razorpay's fee |  |
-| `cost.lines.geometer` | Geometer ಶುಲ್ಕ (ಆರಂಭಿಕ ಬೆಲೆ) | Geometer's fee (founding price) |  |
+| `cost.lines.geometer` | Geometer ಪ್ಲಾನ್ | Geometer's plan |  |
 | `cost.lines.hosting` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲು | Hosting share |  |
 | `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or partner to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-razorpay` | ಅಂಗಡಿಯೇ Razorpay ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to Razorpay |  |
@@ -547,7 +547,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.total` | ಒಟ್ಟು | Total |  |
 | `cost.subtotal` | ಉಪಮೊತ್ತ. 3 ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಬೆಲೆ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಇದು ಪೂರ್ಣ ವೆಚ್ಚವಲ್ಲ. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
 | `cost.priceList` | ಬೆಲೆಗಳು ಈ ದಿನಾಂಕದ ಬೆಲೆ ಪಟ್ಟಿಯಿಂದ: 2026-11-03. | Prices from the list of 2026-11-03. |  |
-| `cost.caveats.assumed-exchange-rate` | ಡಾಲರ್ ಮತ್ತು ಯೂರೋ ಬೆಲೆಗಳಿಗೆ ಊಹಿಸಿದ ದರ ಬಳಸಲಾಗಿದೆ (₹90 ಮತ್ತು ₹100). ನಿಜವಾದ ಬಿಲ್ ಬೇರೆ ಇರಬಹುದು. | Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ. |  |
+| `cost.caveats.assumed-exchange-rate` | ಡಾಲರ್ ಮತ್ತು ಯೂರೋ ಬೆಲೆಗಳಿಗೆ ಊಹಿಸಿದ ದರ ಬಳಸಲಾಗಿದೆ (₹88 ಮತ್ತು ₹100). ನಿಜವಾದ ಬಿಲ್ ಬೇರೆ ಇರಬಹುದು. | Dollar and euro prices use an assumed rate (₹88 and ₹100). A real bill may differ. |  |
 | `cost.caveats.provider-not-chosen` | WhatsApp ಪ್ರೊವೈಡರ್ ಅನ್ನು ಇನ್ನೂ ಆರಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದರ ಶುಲ್ಕ ಗೊತ್ತಿಲ್ಲ. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
 | `cost.caveats.provider-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಪ್ರೊವೈಡರ್‌ಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this provider. |  |
 | `cost.caveats.fee-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ Geometer ಶುಲ್ಕಕ್ಕೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for Geometer's fee. |  |
@@ -561,9 +561,9 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.names.operations` | ಆಪರೇಷನ್ಸ್ | Operations |  |
 | `plan.is` | ಈ ಅಂಗಡಿ Business ಪ್ಲಾನ್‌ನಲ್ಲಿದೆ. | This shop is on the Business plan. |  |
 | `plan.included` | ಪ್ರತಿ ತಿಂಗಳು 3000 ಗ್ರಾಹಕ ಸಂದೇಶಗಳು ಸೇರಿವೆ. | 3000 customer messages a month are included. |  |
-| `plan.price` | ಪ್ರಸ್ತಾವಿತ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, GST ಬಿಟ್ಟು. | Proposed price: ₹299 a month, before GST. |  |
-| `plan.priceInnovator` | ಪ್ರಸ್ತಾವಿತ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, ಇನ್ನೋವೇಟರ್ ರಿಯಾಯಿತಿಯೊಂದಿಗೆ ₹179, GST ಬಿಟ್ಟು. | Proposed price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
-| `plan.proposedNote` | ಬೆಲೆಗಳು ಪ್ರಸ್ತಾವಿತ, ಅಂತಿಮವಲ್ಲ. | Prices are proposed and not final. |  |
+| `plan.price` | ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, GST ಬಿಟ್ಟು. | Plan price: ₹299 a month, before GST. |  |
+| `plan.priceInnovator` | ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, ಇನ್ನೋವೇಟರ್ ರಿಯಾಯಿತಿಯೊಂದಿಗೆ ₹179, GST ಬಿಟ್ಟು. | Plan price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
+| `plan.priceNote` | ಒಂದು ಅಂಗಡಿ ತಿಂಗಳಲ್ಲಿ ಕನಿಷ್ಠ 15 ದಿನ ಚಾಲನೆಯಲ್ಲಿದ್ದರೆ ಆ ತಿಂಗಳಿಗೆ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | A shop counts for a month when it was live on 15 or more days. |  |
 | `plan.innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |
 | `plan.buttons` | ಈ ಅಂಗಡಿಗೆ AI ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ಈಗ ಬಟನ್ ಮೆನು ಸಿಗುತ್ತದೆ. | AI is paused for this shop. Customers get button menus instead. |  |
 | `plan.buttonsWhy.overage_unfunded` | ಈ ಅಂಗಡಿ ಪ್ಲಾನ್‌ನಲ್ಲಿ ಸೇರಿರುವುದಕ್ಕಿಂತ ಹೆಚ್ಚು ಸಂದೇಶಗಳನ್ನು ಬಳಸಿದೆ, ರೀಚಾರ್ಜ್ ಬ್ಯಾಲೆನ್ಸ್ ಇನ್ನು ಸಾಲದು. AI ಮತ್ತೆ ಆನ್ ಮಾಡಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | This shop has used more messages than its plan includes, and the recharge balance cannot cover more. Recharge to turn AI back on. |  |
