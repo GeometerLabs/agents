@@ -184,7 +184,8 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
   if (command === "issue-approver") {
     const c = config.shops[args[0]] ?? config.ownAgents?.[args[0]];
     if (!c) { console.error(`no shop or agent ${args[0]}`); return 2; }
-    const g = c.guards.find((x) => x.id === "guard-razorpay")!;
+    const g = c.guards.find((x) => x.id === "guard-razorpay");
+    if (!g) { console.error(`${args[0]} has no Razorpay Guard (a UPI shop has none), so there is no approvals relay to give a credential to`); return 2; }
     const r = await adminCall(g, "POST", "/admin/approvers", { id: `relay-${args[0]}`, roles: ["shop-owner"], ttl_seconds: Number(args[1] ?? 604_800), note: "the approvals relay's reading credential" });
     const token = (r.body as { token?: string }).token;
     if (r.status !== 200 || !token) { console.error(`Guard did not issue a credential (HTTP ${r.status})`); return 1; }

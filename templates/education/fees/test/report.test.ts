@@ -234,12 +234,13 @@ test("the template follows Meta's rules: numbered values used once, fixed words 
       const parameters = reportParameters(template, language, values);
       assert.equal(parameters.length, slots.length);
       for (const p of parameters) assert.ok(!/[\n\t]| {2,}/.test(p), `a value is one line: ${JSON.stringify(p)}`);
-      if (template.badge === false) assert.equal(fillBody(meta, parameters), monthlyReportMessage(sealed, language, { link: "https://x.example.com/a.html" }).text.replace("Divya, local partner", "Divya Nair"));
+      if (template.badge === false && !template.upi) assert.equal(fillBody(meta, parameters), monthlyReportMessage(sealed, language, { link: "https://x.example.com/a.html" }).text.replace("Divya, local partner", "Divya Nair"));
       assert.ok([...meta].length <= 1024);
     }
   }
-  assert.deepEqual([...REPORT_TEMPLATE_NAMES], ["fee_monthly_report", "fee_monthly_report_innovator"]);
-  assert.equal(reportSubmissions().length, 8);
+  // the last two: a UPI centre's (B33), its money labelled as marked paid by the owner
+  assert.deepEqual([...REPORT_TEMPLATE_NAMES], ["fee_monthly_report", "fee_monthly_report_innovator", "fee_monthly_report_upi", "fee_monthly_report_upi_innovator"]);
+  assert.equal(reportSubmissions().length, 16);
   for (const s of reportSubmissions()) {
     assert.equal(s.category, "UTILITY");
     const examples = s.components[0].example.body_text[0];

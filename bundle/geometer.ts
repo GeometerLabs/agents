@@ -282,7 +282,10 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     if (command === "logs") {
       if (!shop) throw new Error("Say which shop: logs <shop>");
-      const r = await compose(ctx, ["logs", "--no-color", "--tail", str("tail") ?? "200", `rt-${shop}`, `g-${shop}-razorpay`, `g-${shop}-whatsapp`, `g-${shop}-calendar`]);
+      // the shop's own Guards, as it was applied: a Fees centre has no calendar Guard and a UPI shop (B33) no Razorpay one
+      const applied = loadState(ctx.dir).shops[shop]?.applied;
+      const guards = applied ? Object.values(applied.guards).map((g) => g.service) : [`g-${shop}-razorpay`, `g-${shop}-whatsapp`, `g-${shop}-calendar`];
+      const r = await compose(ctx, ["logs", "--no-color", "--tail", str("tail") ?? "200", `rt-${shop}`, ...guards]);
       process.stdout.write(r.stdout); process.stderr.write(r.stderr);
       return r.code;
     }

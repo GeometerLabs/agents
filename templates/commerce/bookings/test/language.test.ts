@@ -29,9 +29,11 @@ const ids = Object.keys(TEMPLATES.en) as TemplateId[];
 
 /** The facts a message is checked against: only the menu may state every service's price. */
 function factsFor(language: Language, id: TemplateId): MessageFacts {
+  // a UPI shop's values (B33) go only to the UPI messages, so every other message is checked against exactly the record it always was
+  const upi = id.startsWith("upi_") || id.startsWith("owner_upi_") ? { upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 130, leftInr: 70 } : {};
   return id === "menu"
     ? facts(language, { services: [{ name: HAIRCUT[language], priceInr: 450 }, { name: FACIAL[language], priceInr: 900 }] })
-    : facts(language);
+    : facts(language, upi);
 }
 
 test("every template exists in every language", () => {

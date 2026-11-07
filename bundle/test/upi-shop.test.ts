@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { deploy } from "../deploy.ts";
+import { runDueJobs } from "../apply.ts";
 import { planShop } from "../generate/shop.ts";
 import { loadClient } from "../../templates/commerce/bookings/server/config.ts";
 import { panelRuntime, serverConfig, tempServer } from "./helpers.ts";
@@ -49,6 +50,10 @@ test("deploying a UPI shop asks for no Razorpay key or webhook secret, runs no r
     const client = loadClient(join(w.paths.generated, "shops", "glow-salon", "client"));
     assert.equal(client.settings.payment?.module, "upi");
     assert.equal(client.runtime.services?.payments, undefined);
+    // the daily jobs: no relay credential is asked for a shop that has no relay
+    const before = w.calls.length;
+    await runDueJobs(w.ctx);
+    assert.ok(!w.calls.slice(before).some((c) => c.args.join(" ").includes("issue-approver")), "no approver credential is issued for a UPI shop");
   } finally { w.done(); }
 });
 

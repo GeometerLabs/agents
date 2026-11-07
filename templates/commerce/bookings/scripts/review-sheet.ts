@@ -212,6 +212,9 @@ export function reviewSheet(language: ReviewLanguage): string {
     ["yes", "Button under a read-back: yes, that is right"], ["no", "Button under a read-back: no, that is wrong"], ["cancel", "Button under a booking: cancel it (asks once more)"],
     ["cancelYes", "Button when asked 'cancel your booking?': yes, cancel it"], ["keep", "Button when asked 'cancel your booking?': no, leave it"], ["owner", "Button, and the last row of each list: talk to the shop's owner"],
     ["pickService", "The button that opens the list of services"], ["pickTime", "The button that opens the list of free times"],
+    ["paid", "UPI shop: button under the payment request: I have paid (the owner is asked to look; nothing is marked paid)"],
+    ["received", "UPI shop: the owner's button, with the amount after it: the money is in my UPI app"],
+    ["refundSent", "UPI shop: the owner's button: I have sent the refund"], ["keptForBooking", "UPI shop: the owner's button: I keep the money for a booking I make myself"],
   ];
   out.push(table(["Id", "Where it is shown", `Text (${name})`, "Meaning (English)", REVIEWER], labelRows.map(([key, where]) => [`\`${key}\``, where, LABELS[language][key], english[key], ""])), "");
 
