@@ -3,12 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Fee and dues collection for tuition and coaching centres: a monthly reminder with a payment link in the parent's language, 'never a reminder once paid' judged from the payment record, waivers and refunds that ask the owner, run against stand-in services. No dependencies.",
+  "description": "Fee and dues collection for tuition and coaching centres: a monthly reminder with a payment link in the parent's language, 'never a reminder once paid' judged from the payment record, waivers and refunds that ask the owner. Runs as a server (one SQLite file per centre, a signed-webhook inbox, an approvals relay for refunds Guard holds, a go-live certificate and a monthly report), checked against stand-in services. No dependencies.",
   "scripts": {
     "test": "node --test test/",
     "hand-check": "node scripts/hand-check.ts",
     "walkthrough": "node scripts/walkthrough.ts",
     "report-example": "node scripts/report-example.ts",
-    "whatsapp-templates": "node scripts/whatsapp-templates.ts"
+    "whatsapp-templates": "node scripts/whatsapp-templates.ts",
+    "serve": "node server/main.ts",
+    "inbox": "node inbox/main.ts",
+    "approvals": "node approvals/main.ts",
+    "stack": "node scripts/local-stack.ts",
+    "go-live-certificate": "node scripts/go-live-certificate.ts",
+    "client-report": "node scripts/client-report.ts"
   }
 }

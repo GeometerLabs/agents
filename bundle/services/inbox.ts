@@ -1,11 +1,11 @@
 // The server's one inbox. Webhooks arrive at /c/<shop>/webhooks/..., are checked with THAT shop's own secrets, and are forwarded only to THAT shop's
-// runtime. It is the pathway's own inbox (templates/commerce/bookings/inbox/server.ts), one instance per shop, behind a router: the checks are not rewritten.
+// runtime. It is the inbox every template shares (modules/inbox/server.ts), one instance per shop, behind a router: the checks are not rewritten.
 //
 //   CONFIG=/etc/geometer/inbox.json PORT=8788 HOST=0.0.0.0 node bundle/services/inbox.ts
 import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { inboxHandler } from "../../templates/commerce/bookings/inbox/server.ts";
-import type { InboxConfig } from "../../templates/commerce/bookings/inbox/server.ts";
+import { inboxHandler } from "../../modules/inbox/server.ts";
+import type { InboxConfig } from "../../modules/inbox/server.ts";
 import { agentInboxHandler } from "../agent/inbox.ts";
 import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";

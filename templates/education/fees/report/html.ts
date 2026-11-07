@@ -10,8 +10,14 @@ import type { Envelope } from "../../../../modules/report/sign.ts";
 import { badgeText, languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
-import type { FeesReport } from "./data.ts";
+import type { FeesReport, GoLiveFinding } from "./data.ts";
 import { STRINGS } from "./strings.ts";
+import { goLiveLines } from "./text.ts";
+
+/** What the page says about the go-live checks: a plain note when they ran on this centre's own settings, a warning in every other case. */
+export function goLiveBlock(goLive: GoLiveFinding, language: Language): string {
+  return `<div class="${goLive.status === "own" ? "note" : "warn"}">${goLiveLines(goLive, language).map((line) => `<p>${esc(line)}</p>`).join("")}</div>`;
+}
 
 /** One language's section of the report page. */
 export function reportSection(envelope: Envelope<FeesReport>, language: Language): string {
@@ -62,6 +68,7 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
 <h2>${esc(p.stoppedHeading)}</h2>${rules}
 <h2>${esc(p.messagesHeading)}</h2>${messages}
 <dl><dt>${esc(p.unconfirmed)}</dt><dd>${r.unconfirmed.open}</dd></dl>
+<h2>${esc(s.goLive.heading)}</h2>${goLiveBlock(r.goLive, language)}
 <div class="warn"><h2>${esc(p.notCountedHeading)}</h2>${list(r.notCounted.map((id) => s.notCounted[id]))}<h2>${esc(p.notTestedHeading)}</h2>${list(r.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(p.notAGrade)}</p>
 ${sealBlock(s.page, envelope, [[p.countedFrom, source], [p.period, periodLabel(r.period, language)], [p.agentVersion, `${r.pathway.name} ${r.pathway.version}`], [p.madeOn, madeOn], ...(r.preparedBy ? [[p.setUpBy, r.preparedBy] as [string, string]] : []), [p.limitsDigest, r.policyDigest], [p.recordDigest, r.record.digest]])}

@@ -511,6 +511,11 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `shop.bookingStates.expired` | ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿದೆ | Hold ran out |  |
 | `shop.bookingStates.cancelled` | ರದ್ದಾಗಿದೆ | Cancelled |  |
 | `shop.bookingStates.completed` | ಮುಗಿದಿದೆ | Done |  |
+| `shop.feeStates.open` | ಇನ್ನೂ ತೆರೆದಿರುವ ಶುಲ್ಕಗಳು | Fees still open |  |
+| `shop.feeStates.paid` | ಪಾವತಿಯಾದ ಶುಲ್ಕಗಳು | Fees paid |  |
+| `shop.feeStates.closed` | ನೀವು ಮುಚ್ಚಿದ ಶುಲ್ಕಗಳು | Fees closed by you |  |
+| `shop.summaryFees` | ಮಾಸಿಕ ಶುಲ್ಕ | Monthly fees |  |
+| `shop.summaryRules` | ಕೊನೆಯ ದಿನಾಂಕಗಳು ಮತ್ತು ಮಿತಿಗಳು | Due dates and limits |  |
 | `shop.papers` | ಮಾಲೀಕರಿಗೆ ದಾಖಲೆಗಳು | Papers for the owner |  |
 | `shop.goLive` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
 | `shop.goLiveNone` | ಇನ್ನೂ ಮಾಡಿಲ್ಲ. ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸುವಾಗ ಪರಿಶೀಲನೆಗಳು ಸರಿಹೋದರೆ ಇದು ತಯಾರಾಗುತ್ತದೆ. | Not made yet. It is made when the checks pass in setup. |  |
@@ -530,6 +535,18 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `shop.detailsPrices` | ಬೆಲೆ ಪಟ್ಟಿ: 2026-11-03 | Price list of 2026-11-03 |  |
 | `shop.detailsNothing` | ಇನ್ನೂ ಏನೂ ಇಲ್ಲ | nothing yet |  |
 | `shop.detailsStatusFile` | ಸರ್ವರ್ ವರದಿ ಮಾಡಿದ್ದು | What the server reported |  |
+| `feesShop.studentsIn` | 12 ವಿದ್ಯಾರ್ಥಿಗಳು | 12 students |  |
+| `feesShop.activity.opened` | ಈ ತಿಂಗಳು ತೆರೆದ ಶುಲ್ಕಗಳು | Fees opened this month |  |
+| `feesShop.activity.paidInFull` | ಪೂರ್ಣ ಪಾವತಿ | Paid in full |  |
+| `feesShop.activity.partlyPaid` | ಭಾಗಶಃ ಪಾವತಿ | Part paid |  |
+| `feesShop.activity.stillOpen` | ಇನ್ನೂ ತೆರೆದಿರುವುದು | Still open |  |
+| `feesShop.activity.collected` | ಸಂಗ್ರಹವಾದದ್ದು | Collected |  |
+| `feesShop.activity.stillToCollect` | ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು | Still to collect |  |
+| `feesShop.activity.reminders` | ಕಳುಹಿಸಿದ ನೆನಪುಗಳು | Reminders sent |  |
+| `feesShop.messages.heading` | ಸಂದೇಶಗಳು | Messages |  |
+| `feesShop.messages.ceiling` | ನಿಮ್ಮ ನಿಯಮಗಳ ಪ್ರಕಾರ ತಿಂಗಳಿಗೆ ಗರಿಷ್ಠ 200 ನೆನಪು ಮತ್ತು ರಸೀದಿ ಸಂದೇಶಗಳು ಹೋಗಬಹುದು: 40 ವಿದ್ಯಾರ್ಥಿಗಳು, ಪ್ರತಿಯೊಬ್ಬರಿಗೂ 4 ನೆನಪಿನವರೆಗೆ, ಮತ್ತು ಒಂದು ರಸೀದಿ. | Your rules allow at most 200 reminders and receipts a month: 40 students, up to 4 reminders each, and a receipt. |  |
+| `feesShop.messages.included` | ನಿಮ್ಮ ಯೋಜನೆಯಲ್ಲಿ ತಿಂಗಳಿಗೆ 3000 ಸಂದೇಶಗಳು ಸೇರಿವೆ. | Your plan includes 3000 messages a month. |  |
+| `feesShop.messages.note` | ಪೋಷಕರ ಸ್ವಂತ ಸಂದೇಶಗಳಿಗೆ ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. ಇದು ನಿಮ್ಮ ನಿಯಮಗಳಿಂದ ಬಂದ ಮೇಲಿನ ಮಿತಿ, ಬಿಲ್ ಅಲ್ಲ. | Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill. |  |
 | `cost.heading` | ಪ್ರತಿ ತಿಂಗಳು ನಡೆಸಲು ಆಗುವ ವೆಚ್ಚ | What it costs to run, each month |  |
 | `cost.early` | ಆರಂಭಿಕ ಅಂದಾಜು: ನಿಜವಾದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ಇನ್ನೂ ಎಣಿಸಿಲ್ಲ. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | ದಾಖಲೆಯಲ್ಲಿರುವ 38 ಬುಕಿಂಗ್ ನೋಡಿ ಲೆಕ್ಕ ಹಾಕಲಾಗಿದೆ. | Worked out from 38 bookings in the record. |  |
@@ -574,6 +591,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
+| `setup.templateNames.fees` | ತರಗತಿಗಳ ಶುಲ್ಕ ವಸೂಲಿ | Fee collection for classes |  |
 | `setup.templateElsewhere` | ಇದನ್ನು ಬಿಲ್ಡರ್ ಪ್ಲಗಿನ್ ಮೂಲಕ ಸಿದ್ಧಪಡಿಸುತ್ತಾರೆ. ಫೋನ್ ಸೆಟಪ್‌ನಲ್ಲಿ ಇದು ಇನ್ನೂ ಇಲ್ಲ. | A builder sets this one up with the plugin. The phone setup does not have it yet. |  |
 | `setup.start` | ಆರಂಭಿಸಿ | Start |  |
 | `setup.progress` | ಹಂತ 2 (ಒಟ್ಟು 5) | Step 2 of 5 |  |
@@ -612,6 +630,46 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.limits.booked` | ಇದು "ಬುಕ್ ಆಯಿತು" ಎಂದಾಗ, ಸ್ಲಾಟ್ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಮತ್ತು ಡೆಪಾಸಿಟ್ ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಇರುತ್ತದೆ. | When it says booked, the slot is in your calendar and the deposit is in your account. |  |
 | `setup.limits.language` | ನಿಮ್ಮ ಗ್ರಾಹಕರಿಗೆ ಅವರ ಭಾಷೆಯಲ್ಲಿ, ಸರಿಯಾದ ಬೆಲೆ ಮತ್ತು ದಿನಾಂಕದೊಂದಿಗೆ ಉತ್ತರ ಸಿಗುತ್ತದೆ. | Your customers are answered in their language, with the right price and date. |  |
 | `setup.limits.charge` | ನಿಮ್ಮ ಫೋನ್‌ನಿಂದಲೇ, ತೀರ್ಮಾನ ಯಾವಾಗಲೂ ನಿಮ್ಮ ಕೈಯಲ್ಲಿ. | You stay in charge from your phone. |  |
+| `setup.fees.steps.business` | ಸೆಂಟರ್ ಮತ್ತು ಅದರ ಶುಲ್ಕ | The centre and its fees |  |
+| `setup.fees.steps.rules` | ಕೊನೆಯ ದಿನಾಂಕ, ತಡ ಶುಲ್ಕ ಮತ್ತು ಮಿತಿಗಳು | Due dates, late fee and limits |  |
+| `setup.fees.business.name` | ಸೆಂಟರ್‌ನ ಹೆಸರು | The centre's name |  |
+| `setup.fees.business.address` | ವಿಳಾಸ (ಬೇಕಿದ್ದರೆ) | Address (optional) |  |
+| `setup.fees.business.batches` | ಬ್ಯಾಚ್‌ಗಳು ಅಥವಾ ತರಗತಿಗಳು | Batches or classes |  |
+| `setup.fees.business.batchesHint` | ಪ್ರತಿ ಬ್ಯಾಚ್‌ಗೆ ಒಂದು ಸಾಲು. ಶುಲ್ಕ ಒಂದು ತಿಂಗಳದ್ದು, ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ. | One row for each batch. The fee is for one month, in whole rupees. |  |
+| `setup.fees.business.batchName` | ಬ್ಯಾಚ್‌ನ ಹೆಸರು | Name of the batch |  |
+| `setup.fees.business.batchFee` | ಮಾಸಿಕ ಶುಲ್ಕ (₹) | Monthly fee (₹) |  |
+| `setup.fees.business.students` | ವಿದ್ಯಾರ್ಥಿಗಳು | Students |  |
+| `setup.fees.business.studentsHelp` | ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಬ್ಬ ವಿದ್ಯಾರ್ಥಿ: ವಿದ್ಯಾರ್ಥಿಯ ಹೆಸರು, ಪೋಷಕರ WhatsApp ಸಂಖ್ಯೆ, ನಂತರ ಬ್ಯಾಚ್‌ನ ಹೆಸರು. ಉದಾಹರಣೆ: Rohan Mehta, 98765 43210, Class 10 | One student on each line: the student's name, the parent's WhatsApp number, then the batch's name. For example: Rohan Mehta, 98765 43210, Class 10 |  |
+| `setup.fees.rules.dueDay` | ಶುಲ್ಕ ಕಟ್ಟಬೇಕಾದ ತಿಂಗಳ ದಿನ (1 ರಿಂದ 28) | Day of the month the fee is due (1 to 28) |  |
+| `setup.fees.rules.graceDays` | ತಡ ಶುಲ್ಕಕ್ಕೆ ಮೊದಲಿನ ಹೆಚ್ಚುವರಿ ದಿನಗಳು | Grace days before a late fee |  |
+| `setup.fees.rules.lateFee` | ತಡ ಶುಲ್ಕ ರೂಪಾಯಿಗಳಲ್ಲಿ (ಇಲ್ಲದಿದ್ದರೆ 0) | Late fee in rupees (0 for none) |  |
+| `setup.fees.rules.reminderDays` | ಕೊನೆಯ ದಿನಾಂಕದಿಂದ ನೆನಪಿನ ದಿನಗಳು | Reminder days from the due day |  |
+| `setup.fees.rules.reminderDaysHelp` | ಅವುಗಳನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ. ಮೈನಸ್ ಎಂದರೆ ಕೊನೆಯ ದಿನಾಂಕಕ್ಕಿಂತ ಮೊದಲು: -3, 0, 5 ಎಂದರೆ ಮೂರು ದಿನ ಮೊದಲು, ಅದೇ ದಿನ, ಮತ್ತು ಐದು ದಿನ ನಂತರ. | Separate them with commas. A minus means before the due day: -3, 0, 5 is three days before, on the day, and five days after. |  |
+| `setup.fees.rules.reminderHour` | ನೆನಪಿನ ಸಂದೇಶ ಹೋಗುವ ಗಂಟೆ (6 ರಿಂದ 21) | Hour of the day reminders go (6 to 21) |  |
+| `setup.fees.rules.reminderMost` | ಒಂದು ಶುಲ್ಕಕ್ಕೆ ತಿಂಗಳಲ್ಲಿ ಗರಿಷ್ಠ ನೆನಪುಗಳು | Most reminders for one fee in a month |  |
+| `setup.fees.rules.partAllowed` | ಪೋಷಕರು ಶುಲ್ಕದ ಒಂದು ಭಾಗವನ್ನು ಕಟ್ಟಬಹುದು | A parent may pay part of a fee |  |
+| `setup.fees.rules.partMin` | ಮೊದಲ ಭಾಗಶಃ ಪಾವತಿ ಕನಿಷ್ಠ ಎಷ್ಟಿರಬೇಕು (₹) | The least a first part payment may be (₹) |  |
+| `setup.fees.rules.waiver` | ಒಬ್ಬ ವಿದ್ಯಾರ್ಥಿಯ ತಿಂಗಳಲ್ಲಿ ಏಜೆಂಟ್ ತಾನಾಗಿ ಕಡಿಮೆ ಮಾಡಬಹುದಾದ ಗರಿಷ್ಠ ಮೊತ್ತ (₹, ಇಲ್ಲದಿದ್ದರೆ 0) | Most the agent may take off a student's month by itself (₹, 0 for none) |  |
+| `setup.fees.rules.waiverHelp` | ಇದಕ್ಕಿಂತ ಹೆಚ್ಚಿನದು ಯಾವಾಗಲೂ ಮೊದಲು ನಿಮ್ಮ ಬಳಿಗೆ ಬರುತ್ತದೆ. | More than this always comes to you first. |  |
+| `setup.fees.rules.refund` | ಏಜೆಂಟ್ ತಾನಾಗಿ ರೀಫಂಡ್ ಮಾಡಬಹುದಾದ ಗರಿಷ್ಠ ಮೊತ್ತ (₹) | Most the agent may refund by itself (₹) |  |
+| `setup.fees.rules.refundHelp` | ಇದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತದೆ. | A refund above this waits for your OK on WhatsApp. |  |
+| `setup.fees.problems.noBatch` | ಹೆಸರು ಮತ್ತು ಮಾಸಿಕ ಶುಲ್ಕದೊಂದಿಗೆ ಕನಿಷ್ಠ ಒಂದು ಬ್ಯಾಚ್ ಸೇರಿಸಿ. | Add at least one batch, with a name and a monthly fee. |  |
+| `setup.fees.problems.batchNameEmpty` | ಬ್ಯಾಚ್ 2 ಕ್ಕೆ ಹೆಸರಿಲ್ಲ. | Batch 2 has no name. |  |
+| `setup.fees.problems.feeBad` | ಬ್ಯಾಚ್ 2: ಮಾಸಿಕ ಶುಲ್ಕವನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 1500. | Batch 2: write the monthly fee as a whole number of rupees, like 1500. |  |
+| `setup.fees.problems.noStudents` | ಕನಿಷ್ಠ ಒಬ್ಬ ವಿದ್ಯಾರ್ಥಿಯನ್ನು ಸೇರಿಸಿ. | Add at least one student. |  |
+| `setup.fees.problems.studentBad` | ಸಾಲು 3: ವಿದ್ಯಾರ್ಥಿಯ ಹೆಸರು, ಪೋಷಕರ ಸಂಖ್ಯೆ ಮತ್ತು ಬ್ಯಾಚ್ ಅನ್ನು ಅಲ್ಪವಿರಾಮ ಹಾಕಿ ಬರೆಯಿರಿ. | Line 3: write the student's name, the parent's number and the batch, with commas between them. |  |
+| `setup.fees.problems.studentNumber` | ಸಾಲು 3: ಆ ಪೋಷಕರ WhatsApp ಸಂಖ್ಯೆಗೆ ನಾವು ಸಂದೇಶ ಕಳುಹಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ಹೀಗೆ ಬರೆಯಿರಿ: 98765 43210. | Line 3: that parent's WhatsApp number is not one we can message. Write it like 98765 43210. |  |
+| `setup.fees.problems.studentBatch` | ಸಾಲು 3: ಮೇಲೆ "Class 11" ಎಂಬ ಹೆಸರಿನ ಬ್ಯಾಚ್ ಇಲ್ಲ. | Line 3: there is no batch called "Class 11" above. |  |
+| `setup.fees.problems.tooMany` | ಇದು 300 ವಿದ್ಯಾರ್ಥಿಗಳಿಗಿಂತ ಹೆಚ್ಚು. ಇನ್ನಷ್ಟು ಸೇರಿಸಲು ಸರ್ವರ್ ನಡೆಸುವವರನ್ನು ಕೇಳಿ. | That is more than 300 students. Ask the person who runs the server how to add more. |  |
+| `setup.fees.problems.dueBad` | ಕೊನೆಯ ದಿನ 1 ರಿಂದ 28 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The due day must be a whole number from 1 to 28. |  |
+| `setup.fees.problems.graceBad` | ಹೆಚ್ಚುವರಿ ದಿನಗಳು 0 ರಿಂದ 30 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | Grace days must be a whole number from 0 to 30. |  |
+| `setup.fees.problems.lateBad` | ತಡ ಶುಲ್ಕ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ರಿಂದ ₹1,200 ರವರೆಗೆ (ಅತಿ ಕಡಿಮೆ ಮಾಸಿಕ ಶುಲ್ಕ) ಇರಬೇಕು. | The late fee must be a whole number of rupees, from 0 to ₹1,200 (the cheapest monthly fee). |  |
+| `setup.fees.problems.daysBad` | ನೆನಪಿನ ದಿನಗಳನ್ನು ಪೂರ್ಣ ಸಂಖ್ಯೆಗಳಲ್ಲಿ, ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ, -14 ರಿಂದ 60 ರ ನಡುವೆ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ -3, 0, 5. | Write the reminder days as whole numbers separated by commas, each between -14 and 60, like -3, 0, 5. |  |
+| `setup.fees.problems.hourBad` | ನೆನಪಿನ ಗಂಟೆ 6 ರಿಂದ 21 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The reminder hour must be a whole number from 6 to 21. |  |
+| `setup.fees.problems.mostBad` | ಗರಿಷ್ಠ ನೆನಪುಗಳು 1 ರಿಂದ 12 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The most reminders must be a whole number from 1 to 12. |  |
+| `setup.fees.problems.partBad` | ಕನಿಷ್ಠ ಭಾಗಶಃ ಪಾವತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 1 ರಿಂದ ₹1,200 ರವರೆಗೆ (ಅತಿ ಕಡಿಮೆ ಮಾಸಿಕ ಶುಲ್ಕ) ಇರಬೇಕು. | The least part payment must be a whole number of rupees from 1 to ₹1,200 (the cheapest monthly fee). |  |
+| `setup.fees.problems.waiverBad` | ರಿಯಾಯಿತಿ ಮಿತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ರಿಂದ ₹1,200 ರವರೆಗೆ (ಅತಿ ಕಡಿಮೆ ಮಾಸಿಕ ಶುಲ್ಕ) ಇರಬೇಕು. | The waiver limit must be a whole number of rupees from 0 to ₹1,200 (the cheapest monthly fee). |  |
+| `setup.fees.problems.refundBad` | ರೀಫಂಡ್ ಮಿತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ಅಥವಾ ಹೆಚ್ಚು ಇರಬೇಕು. | The refund limit must be a whole number of rupees, 0 or more. |  |
 | `setup.languagesStep.main` | ನಿಮ್ಮ ಗ್ರಾಹಕರ ಮುಖ್ಯ ಭಾಷೆ | Main language of your customers |  |
 | `setup.languagesStep.also` | ನಿಮ್ಮ ಗ್ರಾಹಕರು ಬರೆಯುವ ಬೇರೆ ಭಾಷೆಗಳನ್ನೂ ಟಿಕ್ ಮಾಡಿ | Also tick any others your customers write in |  |
 | `setup.languagesStep.hint` | ಏಜೆಂಟ್ ಮುಖ್ಯ ಭಾಷೆಯಲ್ಲಿ ಶುರು ಮಾಡುತ್ತದೆ, ಮತ್ತು ಪ್ರತಿ ಗ್ರಾಹಕರಿಗೆ ಅವರು ಬರೆದ ಭಾಷೆಯಲ್ಲೇ ಉತ್ತರಿಸುತ್ತದೆ. | The agent starts in the main language and answers each customer in the one they write in. |  |

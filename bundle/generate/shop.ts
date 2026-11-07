@@ -1,7 +1,8 @@
 // One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
-import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
+import { KINDS, kindFor } from "../lib/kinds.ts";
+import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
@@ -84,7 +85,8 @@ export function modelBaseUrl(model: ModelConfig): string {
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** The pieces of runtime.json the generator needs, checked. */
-function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[]) {
+function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[], kind: Kind) {
+  const hasCalendar = kind.guards.includes("calendar");
   const services = isObj(panel.services) ? panel.services : {};
   // The ids the providers CONFIRMED (pins.json, written after the panel's connection checks) win over what runtime.json says, for the Guards AND for the
   // runtime, so the two always agree. A runtime.json that differs is said so.
@@ -93,7 +95,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   const phoneNumberId = pins.whatsapp?.phoneNumberId ?? written.whatsapp;
   if (pins.calendar && written.calendar !== undefined && written.calendar !== pins.calendar.calendarId) notes.push("runtime.json names another calendar than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (pins.whatsapp && written.whatsapp !== undefined && written.whatsapp !== pins.whatsapp.phoneNumberId) notes.push("runtime.json names another WhatsApp number id than the one the connection check confirmed (pins.json); the confirmed one is used.");
-  if (typeof calendarId !== "string" || calendarId.trim() === "") problems.push({ rule: "calendar-id", message: 'runtime.json needs services.calendar.calendarId: the shop\'s own Google calendar. The calendar Guard allows exactly that one and refuses every other.' });
+  if (hasCalendar && (typeof calendarId !== "string" || calendarId.trim() === "")) problems.push({ rule: "calendar-id", message: 'runtime.json needs services.calendar.calendarId: the shop\'s own Google calendar. The calendar Guard allows exactly that one and refuses every other.' });
   if (typeof phoneNumberId !== "string" || !/^\d{6,20}$/u.test(phoneNumberId)) problems.push({ rule: "whatsapp-number-id", message: 'runtime.json needs services.messaging.phoneNumberId: the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.' });
 
   // The runtime waits longer than Guard, or it gives up on a call Guard is still making and sends the same thing again.
@@ -104,6 +106,11 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   if (panel.mode !== undefined && panel.mode !== "live") problems.push({ rule: "runtime-mode-live", message: `runtime.json says mode "${String(panel.mode)}". A deployed shop runs in "live" mode: every call goes through its Guards. ("fakes" runs the stand-ins inside the runtime, with no Guard in the way.)` });
 
   for (const [what, v] of [["payments", services.payments], ["calendar", services.calendar], ["messaging", services.messaging]] as const) {
+    if (what === "calendar" && !hasCalendar) {
+      // a template with no calendar has no calendar Guard and no calendar in its runtime: whatever runtime.json says about one (an old file, the panel's) is left out, and said
+      if (v !== undefined) notes.push(`services.calendar: the ${kind.id} template has no calendar, so what runtime.json says there is left out of the generated config.`);
+      continue;
+    }
     if (isObj(v) && (v.baseUrl !== undefined || v.agentTokenFile !== undefined)) notes.push(`services.${what}: the bundle sets baseUrl and agentTokenFile itself (the shop's own Guard), so what runtime.json says there is not used.`);
   }
 
@@ -163,20 +170,23 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
 }
 
 /** Plan one shop. `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). */
-export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate: RuntimeValidator = validateRuntimeConfig): ShopPlan {
+export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator): ShopPlan {
+  // The template is the one the shop's pathway.lock names (a lock that is missing is a problem readShop already said; Bookings is assumed until it is fixed).
+  const template: Kind = kindFor(shop.lock?.pathway) ?? KINDS.bookings;
+  const check: RuntimeValidator = validate ?? template.validateRuntimeConfig;
   const problems: Problem[] = shop.problems.map((message) => ({ rule: "shop-folder", message }));
   const notes: string[] = [];
-  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes);
+  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes, template);
   const guards: GuardPlan[] = [];
   let runtime: Record<string, unknown> = {};
 
   if (shop.settings && problems.length === 0) {
     const identity = (kind: GuardKind) => ({ tenant: shop.name, name: `${shop.name}-${kind}`, version: versions[kind] ?? 1, reviewedBy: server.reviewedBy });
     const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined };
-    try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); }
+    try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.razorpaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); }
     specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour });
-    specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
-    for (const kind of ["razorpay", "whatsapp", "calendar"] as const) {
+    if (template.guards.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
+    for (const kind of template.guards) {
       const spec = specs[kind];
       if (!spec) continue;
       const def = guardDef(kind);
@@ -187,14 +197,14 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}),
       services: {
         payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` },
-        calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` },
+        ...(template.guards.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
         messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, agentTokenFile: `${SECRETS}/agent_whatsapp` },
         timeoutMs: facts.timeoutMs,
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
-    runtime = withFleetAi(runtime, shop.fleetAi, validate, notes);
-    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: shop.pins.razorpay?.mode === "live" ? "live" : "test-mode" }, validate, notes);
+    runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
+    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: shop.pins.razorpay?.mode === "live" ? "live" : "test-mode" }, check, notes);
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };

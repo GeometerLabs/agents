@@ -1,38 +1,19 @@
-// The agent's store as one piece of JSON, and back. Maps and Sets are written as lists in their own order, because the
-// agent depends on that order: latestBooking looks from the newest booking back, and a tick walks them oldest first.
-// nextBooking is saved too, so a step that runs again after a restart registers the same "b-3" and finds its own
-// calendar event and payment link.
+// The agent's store as one piece of JSON, and back. Maps and Sets are written as lists in their own order, because the agent depends on that order: latestBooking looks
+// from the newest booking back, and a tick walks them oldest first. nextBooking is saved too, so a step that runs again after a restart registers the same "b-3" and
+// finds its own calendar event and payment link. The way of writing it is shared (modules/runtime/snapshot.ts); this file says which fields Bookings' store has.
 import type { Store } from "../src/booking.ts";
-import type { AiState } from "../../../../modules/understanding/ai-state.ts";
+import { snapshotCodec } from "../../../../modules/runtime/snapshot.ts";
 
-const FORMAT = 1;
+const codec = snapshotCodec<Store>(1, [
+  { name: "bookings", kind: "map" },
+  { name: "customers", kind: "map" },
+  { name: "seenMessages", kind: "set" },
+  { name: "seenEvents", kind: "set" },
+  { name: "nextBooking", kind: "count" },
+  // Optional: a snapshot written before the AI counts existed has no "ai", and still loads (same format).
+  { name: "ai", kind: "optional-ai" },
+]);
 
-export function serializeStore(store: Store): string {
-  return JSON.stringify({
-    format: FORMAT,
-    bookings: [...store.bookings],
-    customers: [...store.customers],
-    seenMessages: [...store.seenMessages],
-    seenEvents: [...store.seenEvents],
-    nextBooking: store.nextBooking,
-    // Optional: a snapshot written before the AI counts existed has no "ai", and still loads (same format).
-    ...(store.ai ? { ai: store.ai } : {}),
-  });
-}
-
+export const serializeStore: (store: Store) => string = codec.serialize;
 /** A fresh Store from saved JSON. Never shares anything with the store it was saved from. */
-export function parseStore(json: string): Store {
-  const raw = JSON.parse(json) as Record<string, unknown>;
-  const lists = ["bookings", "customers", "seenMessages", "seenEvents"];
-  if (raw.format !== FORMAT || !lists.every((k) => Array.isArray(raw[k])) || !Number.isInteger(raw.nextBooking)) {
-    throw new Error("The saved state is not in a format this version can read. It was probably written by another version of the pathway.");
-  }
-  return {
-    bookings: new Map(raw.bookings as []),
-    customers: new Map(raw.customers as []),
-    seenMessages: new Set(raw.seenMessages as []),
-    seenEvents: new Set(raw.seenEvents as []),
-    nextBooking: raw.nextBooking as number,
-    ...(raw.ai && typeof raw.ai === "object" ? { ai: raw.ai as AiState } : {}),
-  };
-}
+export const parseStore: (json: string) => Store = codec.parse;

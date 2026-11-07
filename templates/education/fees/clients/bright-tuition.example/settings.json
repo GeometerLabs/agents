@@ -1,0 +1,53 @@
+{
+  "name": "Bright Tuition Centre",
+  "address": "4 Temple Road, Thrissur",
+  "timezone": "Asia/Kolkata",
+  "languages": ["hi", "en", "ml", "kn"],
+  "batches": [
+    {
+      "id": "class-8",
+      "names": {
+        "en": ["class 8", "8th"],
+        "hi": ["कक्षा 8", "आठवीं"],
+        "ml": ["എട്ടാം ക്ലാസ്"],
+        "kn": ["8ನೇ ತರಗತಿ", "ಎಂಟನೇ ತರಗತಿ"]
+      },
+      "monthlyFeeInr": 1200
+    },
+    {
+      "id": "class-9",
+      "names": {
+        "en": ["class 9", "9th"],
+        "hi": ["कक्षा 9", "नौवीं"],
+        "ml": ["ഒമ്പതാം ക്ലാസ്"],
+        "kn": ["9ನೇ ತರಗತಿ", "ಒಂಬತ್ತನೇ ತರಗತಿ"]
+      },
+      "monthlyFeeInr": 1500
+    },
+    {
+      "id": "class-10",
+      "names": {
+        "en": ["class 10", "10th"],
+        "hi": ["कक्षा 10", "दसवीं"],
+        "ml": ["പത്താം ക്ലാസ്"],
+        "kn": ["10ನೇ ತರಗತಿ", "ಹತ್ತನೇ ತರಗತಿ"]
+      },
+      "monthlyFeeInr": 1800
+    }
+  ],
+  "students": [
+    { "name": "Aarav Sharma", "parent": "+919811111111", "batch": "class-10", "language": "hi" },
+    { "name": "Anaya Sharma", "parent": "+919811111111", "batch": "class-8", "language": "hi" },
+    { "name": "Meera Nair", "parent": "+919822222222", "batch": "class-9", "language": "ml" },
+    { "name": "Kiran Gowda", "parent": "+919833333333", "batch": "class-8", "language": "kn" },
+    { "name": "Rohan Mehta", "parent": "+919844444444", "batch": "class-10", "language": "en" }
+  ],
+  "due": { "day": 5, "graceDays": 5 },
+  "lateFeeInr": 100,
+  "reminders": { "daysFromDue": [-3, 0, 5, 10], "hour": 10, "maxPerMonth": 4 },
+  "partPayments": { "allowed": true, "minInr": 300 },
+  "waiver": { "limitInr": 100 },
+  "refund": { "limitInr": 500 },
+  "payment": { "module": "razorpay" },
+  "owner": { "whatsapp": "+919000000000", "language": "en" }
+}
