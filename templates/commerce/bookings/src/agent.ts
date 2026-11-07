@@ -440,7 +440,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const b = latestBooking(store, phone, ["awaiting_deposit"]);
     const request = b ? requestOf(b) : undefined;
     if (!b || !request) {
-      log(null, phone, "ask_owner", "blocked", { claim: "paid", via }, { notes: "the customer says they paid, and no UPI deposit is waiting for them; nothing is marked paid", refs: { to: "owner" } });
+      log(null, phone, UPI_ACTIONS.claim, "blocked", { claim: "paid", via }, { notes: "the customer says they paid, and no UPI deposit is waiting for them; nothing is marked paid", refs: { to: "owner", via } });
       await tellCustomer(null, phone, ["upi_nothing_waiting"], { offer: { kind: "buttons", buttons: ["owner"] } });
       return;
     }
@@ -449,7 +449,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const recently = b.claimTellAtMs !== undefined && now - b.claimTellAtMs < HOUR;
     let told = recently;
     if (!recently && request.code) { told = await tellOwner(b, phone, "owner_upi_claim", { upiCode: request.code, offer: receivedButtons(request, depositPaise - request.marks.reduce((n, m) => n + m.amountPaise, 0)) }); if (told) b.claimTellAtMs = now; }
-    log(b, phone, "ask_owner", told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner" }, notes: `the customer says they paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
+    log(b, phone, UPI_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, requestId: request.id }, notes: `the customer says they paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
   }
 
   /** A picture from a customer. It is never looked at or kept. On a UPI shop it is read as "I paid" (a screenshot is not proof); a Razorpay shop answers nothing, as before. */
@@ -491,6 +491,29 @@ export function createAgent(deps: AgentDeps): Agent {
     log(b, r.customer, UPI_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs, notes: "the owner marked the refund sent from their UPI app; only now is the customer told it was sent" });
     await tellCustomer(b, r.customer, ["upi_refund_sent"], { refundInr: r.amountPaise / 100 });
     await tellOwner(b, r.customer, "owner_upi_refund_marked", { refundInr: r.amountPaise / 100 });
+  }
+
+  /**
+   * The unfinished-work list (B31) asks the owner again about a UPI booking: each refund still owed (the reminder, with its code and button), and a deposit the owner
+   * has not finished confirming (the part still to come, or the customer's "I paid"). False when there is nothing UPI to ask about, so the usual asks are tried.
+   */
+  async function upiAskAgain(b: Booking, note: (outcome: Outcome, notes: string) => unknown): Promise<boolean> {
+    const owed = upiState!.refunds.filter((r) => r.caseId === b.id && r.state === "owed" && r.code);
+    const request = requestOf(b);
+    const open = request && request.code && (request.status === "created" || request.status === "partially_paid") && b.state === "awaiting_deposit" ? request : undefined;
+    if (owed.length === 0 && !open) return false;
+    note("attempted", "telling the owner again about a UPI payment or refund");
+    let told = true;
+    for (const r of owed) told = (await tellOwner(b, b.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code!, offer: refundButtons(r) })) && told;
+    if (open) {
+      const markedPaise = open.marks.reduce((n, m) => n + m.amountPaise, 0);
+      const left = depositPaise - markedPaise;
+      told = (markedPaise > 0
+        ? await tellOwner(b, b.customer, "owner_upi_part", { markedInr: markedPaise / 100, leftInr: left / 100, upiCode: open.code!, offer: receivedButtons(open, left) })
+        : await tellOwner(b, b.customer, "owner_upi_claim", { upiCode: open.code!, offer: receivedButtons(open, left) })) && told;
+    }
+    note(told ? "confirmed" : "failed", told ? "the owner was told again" : "the owner could not be told (the limits or the provider said no)");
+    return true;
   }
 
   /** Refunds still owed: remind the owner, once a day, at most three times; after that they stay in the record's unfinished work. */
@@ -1116,6 +1139,7 @@ export function createAgent(deps: AgentDeps): Agent {
       await completeBooking(b); // sends "booked" only if the calendar now shows it
       return;
     }
+    if (e.action === "ask_owner_again" && upi && (await upiAskAgain(b, say))) return;
     if (e.action === "ask_owner_again") {
       const calendar = b.pending.find((p) => p.kind === "calendar");
       const refund = b.pending.find((p): p is Extract<Pending, { kind: "refund" }> => p.kind === "refund");

@@ -8,6 +8,7 @@ import { amountText, payeeProblem, readUpiLink, upiPayLink, vpaProblem } from ".
 import { closeRequest, emptyUpiState, markReceived, markRefund, noRazorpay, oweRefund, reminded, remindersDue, upiPayments, REFUND_REMINDERS_MAX, REFUND_REMINDER_EVERY_MS } from "../ledger.ts";
 import { parseUpiReply, upiButtonId } from "../owner.ts";
 import { UPI_ACTIONS, upiObligations } from "../obligations.ts";
+import { DEFAULT_OPTIONS, obligations } from "../../../unfinished/index.ts";
 
 const payee = { id: "glowsalon@okicici", payee: "Glow Salon" };
 
@@ -124,24 +125,37 @@ test("the owner's replies: a button carries its code; typed words with a code an
   assert.equal(parseUpiReply({ text: "x", reply: { id: "pay:f-1" } }), undefined);
 });
 
-test("the obligations come from the record alone: an unconfirmed payment until it is marked in full or closed, a refund until it is marked done or kept", () => {
+test("the obligations come from the record alone: a payment the customer says they made (or the owner marked part of) until marked in full or closed; a refund until marked done or kept", () => {
   const clock = fakeClock(Date.UTC(2026, 10, 3, 4, 30));
   const record = createRecord(clock);
   const add = (booking: string, action: string, outcome: "confirmed" | "held_for_owner", refs: Record<string, string>) => { record.append({ conversation: "+919811111111", booking, action, inputs: {}, outcome, language: "en", refs }); clock.advanceMinutes(1); };
   add("b-1", UPI_ACTIONS.request, "confirmed", { requestId: "upi-1", reference: "b-1", amountPaise: "20000" });
   add("b-2", UPI_ACTIONS.request, "confirmed", { requestId: "upi-2", reference: "b-2", amountPaise: "20000" });
   add("b-3", UPI_ACTIONS.request, "confirmed", { requestId: "upi-3", reference: "b-3", amountPaise: "20000" });
+  add("b-4", UPI_ACTIONS.request, "confirmed", { requestId: "upi-7", reference: "b-4", amountPaise: "20000" });
+  add("b-5", UPI_ACTIONS.request, "confirmed", { requestId: "upi-8", reference: "b-5", amountPaise: "20000" });
+  add("b-5", UPI_ACTIONS.claim, "confirmed", { requestId: "upi-8", via: "screenshot" });
   add("b-1", UPI_ACTIONS.marked, "confirmed", { requestId: "upi-1", paymentId: "upi-pay-4", amountPaise: "15000" });
   add("b-2", UPI_ACTIONS.marked, "confirmed", { requestId: "upi-2", paymentId: "upi-pay-5", amountPaise: "20000" });
+  add("b-3", UPI_ACTIONS.claim, "confirmed", { requestId: "upi-3", via: "button" });
   add("b-3", UPI_ACTIONS.closed, "confirmed", { requestId: "upi-3" });
   add("b-2", UPI_ACTIONS.refundOwed, "held_for_owner", { refundId: "upr-6", paymentId: "upi-pay-5", amountPaise: "20000" });
   let open = upiObligations(record.entries());
-  assert.deepEqual(open.map((o) => [o.kind, o.case, o.amountPaise, o.id]), [["upi_payment_unconfirmed", "b-1", 5000, "upi-1"], ["upi_refund_owed", "b-2", 20000, "upr-6"]]);
+  assert.deepEqual(open.map((o) => [o.kind, o.case, o.amountPaise, o.id]), [["upi_payment_unconfirmed", "b-5", 20000, "upi-8"], ["upi_payment_unconfirmed", "b-1", 5000, "upi-1"], ["upi_refund_owed", "b-2", 20000, "upr-6"]], "b-4 is not the owner's business yet: nobody says it was paid");
   assert.equal(open[0].title, "UPI payment not yet confirmed by the owner");
-  assert.equal(open[1].title, "Refund owed by the owner, not yet marked done");
+  assert.equal(open[2].title, "Refund owed by the owner, not yet marked done");
   assert.equal(open[0].customer, "+919811111111");
+
+  // the same, as the unfinished-work registry lists it: no customer's number in the facts, ask_owner_again as the one recovery, nothing younger than the grace
+  const listed = obligations.detect({ template: "bookings", entries: record.entries(), cases: [], nowMs: clock.now() + DEFAULT_OPTIONS.graceMs, options: DEFAULT_OPTIONS }).found.filter((o) => o.kind.startsWith("upi_"));
+  assert.deepEqual(listed.map((o) => [o.kind, o.caseId, o.facts.amountInr, o.actions]), [["upi_payment_unconfirmed", "b-5", 200, ["ask_owner_again"]], ["upi_payment_unconfirmed", "b-1", 50, ["ask_owner_again"]], ["upi_refund_owed", "b-2", 200, ["ask_owner_again"]]]);
+  assert.ok(listed.every((o) => !JSON.stringify(o.facts).includes("9811111111")), "no customer's number in the facts");
+  assert.equal(obligations.detect({ template: "fees", entries: record.entries(), cases: [], nowMs: clock.now(), options: DEFAULT_OPTIONS }).found.filter((o) => o.kind.startsWith("upi_")).length, 0, "within the grace the agent is still on it");
+  assert.ok(obligations.has("upi_payment_unconfirmed") && obligations.has("upi_refund_owed"));
+
   add("b-2", UPI_ACTIONS.refundDone, "confirmed", { refundId: "upr-6", amountPaise: "20000" });
   add("b-1", UPI_ACTIONS.closed, "confirmed", { requestId: "upi-1" });
+  add("b-5", UPI_ACTIONS.marked, "confirmed", { requestId: "upi-8", paymentId: "upi-pay-9", amountPaise: "20000" });
   open = upiObligations(record.entries());
   assert.deepEqual(open, []);
 });
