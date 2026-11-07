@@ -11,7 +11,7 @@ import { badgeText, languagesOf, periodLabel, rupees } from "../../../../modules
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
 import type { FeesReport, GoLiveFinding } from "./data.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 import { goLiveLines } from "./text.ts";
 
 /** What the page says about the go-live checks: a plain note when they ran on this centre's own settings, a warning in every other case. */
@@ -30,8 +30,8 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
   const source = s.sourceTag[r.source] || p.liveServices;
 
   const numbers = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
-    [esc(s.label.collected), ...amount(r.money.collected)],
-    [esc(s.label.givenBack), ...amount(r.money.givenBack)],
+    [esc(moneyLabels(language, r.paidBy).collected), ...amount(r.money.collected)],
+    [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.givenBack)],
     [esc(p.opened), String(r.fees.opened), ""],
     [esc(p.paidInFull), String(r.fees.paidInFull), ""],
     [esc(p.partlyPaid), String(r.fees.partlyPaid), ""],
@@ -59,7 +59,7 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
 <header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}${r.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.handRun)}</p>
 <div class="cards">
-<div class="card"><b>${esc(rupees(r.money.collected.paise))}</b><span>${esc(s.label.collected)}</span></div>
+<div class="card"><b>${esc(rupees(r.money.collected.paise))}</b><span>${esc(moneyLabels(language, r.paidBy).collected)}</span></div>
 <div class="card"><b>${esc(rupees(r.fees.stillToCollect.paise))}</b><span>${esc(s.label.stillToCollect)}</span></div>
 <div class="card"><b>${esc(rupees(r.waivers.total.paise))}</b><span>${esc(s.label.takenOff)}</span></div>
 <div class="card"><b>${r.reminders.sent}</b><span>${esc(s.label.remindersSent)}</span></div>

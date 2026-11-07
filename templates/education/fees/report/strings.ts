@@ -24,6 +24,8 @@ export interface Strings {
   /** Each language's own name for the languages, for the table of messages by language. */
   languageName: Record<Language, string>;
   /** The full lists on the page: what the hand check did not cover, and what the record cannot count. */
+  /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
+  upiLabel: { collected: string; givenBack: string; notChecked: string };
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
   /** The go-live certificate: what the situations tried were, and the centre's limits in plain words. The numbers are filled in by the per-language formatters. */
@@ -62,9 +64,11 @@ export const en: Strings = {
   more: (n) => `and ${n} more (see the full report)`,
   notChecked: { cash: "fees paid in cash or by bank transfer", upi: "payments outside Razorpay", whatsapp: "real WhatsApp", razorpay: "real Razorpay", review: "a native speaker's review of the wording" },
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
+  upiLabel: { collected: "Marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
   notTested: {
+    "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
     "cash-and-bank-transfers": "Fees paid in cash or by bank transfer (a parent who says so is sent to the owner; nothing is marked paid)",
-    "payments-outside-razorpay": "Payments outside Razorpay (the UPI module is not built)",
+    "payments-outside-razorpay": "Payments outside Razorpay (this centre takes Razorpay)",
     "real-whatsapp": "Real WhatsApp",
     "real-razorpay": "Real Razorpay (test mode or live)",
     "webhook-signatures": "Webhook signatures",
@@ -131,9 +135,11 @@ export const hi: Strings = {
   more: (n) => `और ${n} बातें (पूरी रिपोर्ट में)`,
   notChecked: { cash: "नकद या बैंक ट्रांसफर से दी गई फीस", upi: "Razorpay के बाहर के भुगतान", whatsapp: "असली WhatsApp", razorpay: "असली Razorpay", review: "शब्दों की किसी मूल भाषी से जाँच" },
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
+  upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
   notTested: {
+    "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
     "cash-and-bank-transfers": "नकद या बैंक ट्रांसफर से दी गई फीस (जो अभिभावक ऐसा कहे उसे मालिक के पास भेजा जाता है; कुछ भी \"भरा हुआ\" नहीं माना जाता)",
-    "payments-outside-razorpay": "Razorpay के बाहर के भुगतान (UPI मॉड्यूल अभी बना नहीं है)",
+    "payments-outside-razorpay": "Razorpay के बाहर के भुगतान (यह सेंटर Razorpay से लेता है)",
     "real-whatsapp": "असली WhatsApp",
     "real-razorpay": "असली Razorpay (टेस्ट मोड या लाइव)",
     "webhook-signatures": "वेबहुक के हस्ताक्षर",
@@ -200,9 +206,11 @@ export const ml: Strings = {
   more: (n) => `കൂടാതെ ${n} കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)`,
   notChecked: { cash: "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്", upi: "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ", whatsapp: "യഥാർത്ഥ WhatsApp", razorpay: "യഥാർത്ഥ Razorpay", review: "വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
+  upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
   notTested: {
+    "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
     "cash-and-bank-transfers": "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് (അങ്ങനെ പറയുന്ന രക്ഷിതാവിനെ ഉടമയുടെ അടുത്തേക്ക് അയയ്ക്കുന്നു; ഒന്നും \"അടച്ചു\" എന്ന് രേഖപ്പെടുത്തുന്നില്ല)",
-    "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ (UPI മൊഡ്യൂൾ ഇതുവരെ നിർമ്മിച്ചിട്ടില്ല)",
+    "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ (ഈ സെന്റർ Razorpay വഴി വാങ്ങുന്നു)",
     "real-whatsapp": "യഥാർത്ഥ WhatsApp",
     "real-razorpay": "യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡ് അല്ലെങ്കിൽ ലൈവ്)",
     "webhook-signatures": "വെബ്ഹുക്ക് ഒപ്പുകൾ",
@@ -269,9 +277,11 @@ export const kn: Strings = {
   more: (n) => `ಇನ್ನೂ ${n} ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)`,
   notChecked: { cash: "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ", upi: "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು", whatsapp: "ನಿಜವಾದ WhatsApp", razorpay: "ನಿಜವಾದ Razorpay", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
+  upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
   notTested: {
+    "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",
     "cash-and-bank-transfers": "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ (ಹಾಗೆ ಹೇಳಿದ ಪೋಷಕರನ್ನು ಮಾಲೀಕರ ಬಳಿ ಕಳುಹಿಸಲಾಗುತ್ತದೆ; ಏನನ್ನೂ \"ಪಾವತಿಯಾಗಿದೆ\" ಎಂದು ಗುರುತಿಸುವುದಿಲ್ಲ)",
-    "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು (UPI ಮಾಡ್ಯೂಲ್ ಇನ್ನೂ ಮಾಡಿಲ್ಲ)",
+    "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು (ಈ ಸೆಂಟರ್ Razorpay ಮೂಲಕ ಪಡೆಯುತ್ತದೆ)",
     "real-whatsapp": "ನಿಜವಾದ WhatsApp",
     "real-razorpay": "ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್)",
     "webhook-signatures": "ವೆಬ್‌ಹುಕ್ ಸಹಿಗಳು",
@@ -327,3 +337,7 @@ export const kn: Strings = {
 };
 
 export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
+
+/** The money labels of a report: a UPI centre's (B33) say the money was marked by the owner; a Razorpay centre's are as they were. */
+export const moneyLabels = (language: Language, paidBy?: "owner-marked"): { collected: string; givenBack: string } =>
+  paidBy === "owner-marked" ? STRINGS[language].upiLabel : { collected: STRINGS[language].label.collected, givenBack: STRINGS[language].label.givenBack };

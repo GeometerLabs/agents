@@ -23,7 +23,7 @@ import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source }
 import { goLiveBlock, sealBlock } from "./html.ts";
 import { esc, list, page, table } from "../../../../modules/report/page.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 import { badgeText } from "../../../../modules/report/text.ts";
 import { goLiveLines } from "./text.ts";
 import { periodLabel } from "../../../../modules/report/text.ts";
@@ -188,6 +188,8 @@ export interface MonthlyCertificate {
   period: MonthlyReport["period"];
   /** What was counted from the record, copied from the report it was made from. */
   counted: { bookingsMade: number; cancelled: number; depositsPaise: number; refundsPaise: number; stopped: number; unconfirmedOpen: number; asked: number; approved: number; denied: number };
+  /** A UPI shop (B33): the money counted is what the owner marked, and the certificate labels it so. Left out for a Razorpay shop. */
+  paidBy?: "owner-marked";
   /** The record the counts came from, and the sealed report that holds them all. */
   record: { entries: number; digest: string };
   report: { digest: string; code: string };
@@ -224,6 +226,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     notTested: [...r.notTested],
     goLive: r.goLive,
     ...(r.innovator ? { innovator: true as const } : {}),
+    ...(r.paidBy ? { paidBy: r.paidBy } : {}),
     anchor: null,
   };
 }
@@ -233,7 +236,7 @@ function countedPairs(cert: MonthlyCertificate, language: Language): string[] {
   const s = STRINGS[language];
   const c = cert.counted;
   return [
-    `${s.label.bookingsMade}: ${c.bookingsMade}`, `${s.label.cancelled}: ${c.cancelled}`, `${s.label.depositsCollected}: ${rupees(c.depositsPaise)}`, `${s.label.givenBack}: ${rupees(c.refundsPaise)}`,
+    `${s.label.bookingsMade}: ${c.bookingsMade}`, `${s.label.cancelled}: ${c.cancelled}`, `${moneyLabels(language, cert.paidBy).deposits}: ${rupees(c.depositsPaise)}`, `${moneyLabels(language, cert.paidBy).givenBack}: ${rupees(c.refundsPaise)}`,
     `${s.label.wasAsked}: ${c.asked}`, `${s.label.approved}: ${c.approved}`, `${s.label.saidNo}: ${c.denied}`, `${s.label.stoppedByLimits}: ${c.stopped}`, `${s.label.notConfirmed}: ${c.unconfirmedOpen}`,
   ];
 }

@@ -17,7 +17,7 @@ import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
 import { SOURCES } from "../../../../modules/report/text.ts";
 import type { Source } from "../../../../modules/report/text.ts";
-import { NOT_TESTED } from "../crash-test/not-tested.ts";
+import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import type { GoLiveFinding } from "../../../../modules/report/go-live.ts";
 import { balancePaise, monthKey } from "../src/due.ts";
@@ -83,6 +83,8 @@ export interface FeesReport {
   policyDigest: string;
   record: { entries: number; digest: string; byAction: Record<string, Record<string, number>> };
   money: { collected: Amount; givenBack: Amount };
+  /** Present only for a UPI centre (B33): the money is what the owner MARKED, and every document labels it so. Left out for a Razorpay centre, which keeps its bytes. */
+  paidBy?: "owner-marked";
   fees: { opened: number; paidInFull: number; partlyPaid: number; stillOpen: number; stillToCollect: Amount };
   waivers: { total: Amount; byOwner: Amount; withinLimit: Amount; lateFeesAdded: Amount };
   owner: { asked: number; approved: number; denied: number };
@@ -129,14 +131,14 @@ export const checkedPolicyDigest = (): string => policyDigest(brightTuition());
  * and how many situations those settings could not run.
  */
 export function notTestedFor(settings: Settings, ran: { onPolicyDigest?: string; notRun?: number } = {}): NotTestedKey[] {
-  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+  const ids: NotTestedKey[] = notTestedOf(settings).map((n) => n.id);
   if (policyDigest(settings) !== (ran.onPolicyDigest ?? checkedPolicyDigest())) return [...ids, "own-settings"];
   return (ran.notRun ?? 0) > 0 ? [...ids, "situations-skipped"] : ids;
 }
 
 /** What the monthly report lists as not tested: the hand check's list, and one more unless a go-live certificate shows the checks ran on this centre's own settings with nothing left out. */
-export function notTestedForReport(goLive: GoLiveFinding): NotTestedKey[] {
-  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+export function notTestedForReport(goLive: GoLiveFinding, settings?: Settings): NotTestedKey[] {
+  const ids: NotTestedKey[] = (settings ? notTestedOf(settings) : NOT_TESTED).map((n) => n.id);
   switch (goLive.status) {
     case "own": return goLive.notRun > 0 ? [...ids, "situations-skipped"] : ids;
     case "example": return [...ids, "own-settings"];
@@ -170,7 +172,9 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   // ---- money: from entries the payments service's own record confirmed ----
   const collected = emptyAmount();
   const seenPayments = new Set<string>();
-  for (const e of month.filter((x) => x.action === "record_payment" && x.outcome === "confirmed")) {
+  // UPI (B33): the owner's marks are the payment record, and a refund counts once the owner marks it sent
+  const upi = settings.payment?.module === "upi";
+  for (const e of month.filter((x) => (x.action === "record_payment" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
     const key = e.refs.paymentId ?? `seq-${e.seq}`;
     if (seenPayments.has(key)) continue;
     seenPayments.add(key);
@@ -178,7 +182,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   }
   const givenBack = emptyAmount();
   const seenRefunds = new Set<string>();
-  for (const e of month.filter((x) => x.action === "refund" && x.outcome === "confirmed")) {
+  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed")) {
     const key = e.refs.refundId ?? `seq-${e.seq}`;
     if (seenRefunds.has(key)) continue;
     seenRefunds.add(key);
@@ -256,6 +260,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(all.map(entryDigest)), byAction },
     money: { collected, givenBack },
+    ...(upi ? { paidBy: "owner-marked" as const } : {}),
     fees, waivers, owner,
     reminders: { sent: reminders, byLanguage, receipts },
     parents: { stopped: new Set(month.filter((e) => e.action === "opt_out" && e.outcome === "confirmed").map((e) => e.conversation)).size },
@@ -263,7 +268,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     messages: { toOwner: month.filter((e) => e.action === "send_message" && e.outcome !== "blocked" && e.refs.to === "owner").length, heldBack: month.filter((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "message-matches-record")).length },
     unconfirmed: { open: month.filter((e) => (e.outcome === "unconfirmed" || e.outcome === "failed") && e.action !== "send_message").length },
     notCounted: [...NOT_COUNTED],
-    notTested: notTestedForReport(goLive),
+    notTested: notTestedForReport(goLive, settings),
     goLive,
     anchor: null,
   };

@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { handCheckText } from "../../../../modules/crash-test/print.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
+import { HAND_RUN, STAND_IN_SERVICES, notTestedOf } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { brightTuition } from "../src/harness.ts";
@@ -56,7 +56,7 @@ async function main(): Promise<number> {
         "  Each situation was judged from the fakes' own records (what the payments service, Guard's model and the",
         `  WhatsApp outbox hold), never from what the agent said. ${checks} checks in all.`,
       ],
-      notTested: NOT_TESTED.map((n) => n.text),
+      notTested: notTestedOf(settings).map((n) => n.text),
     },
   });
   console.log(out.text);

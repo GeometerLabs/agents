@@ -8,7 +8,7 @@ export const HAND_RUN = "hand-run";
 
 export type NotTestedId =
   | "voice-calls" | "group-bookings" | "walk-ins" | "payments-outside-razorpay" | "real-whatsapp" | "real-razorpay" | "real-calendar"
-  | "webhook-signatures" | "real-model" | "other-languages" | "native-review" | "restart-mid-step" | "same-instant" | "other-faults";
+  | "webhook-signatures" | "real-model" | "other-languages" | "native-review" | "restart-mid-step" | "same-instant" | "other-faults" | "upi-not-automatic" | "real-upi";
 
 export interface NotTested {
   id: NotTestedId;
@@ -34,3 +34,18 @@ export const NOT_TESTED: readonly NotTested[] = [
   { id: "same-instant", text: "two customers at the exact same instant", forOwner: false },
   { id: "other-faults", text: "faults beyond the ones listed above", forOwner: false },
 ];
+
+/**
+ * A UPI shop (B33) has no payment service the agent reads: the owner marks each payment. So its list says that automatic payment checking does not apply, and that no
+ * real UPI payment was made (the owner's marks were what the checks tried), instead of the Razorpay lines.
+ */
+export const UPI_NOT_TESTED: readonly NotTested[] = [
+  { id: "upi-not-automatic", text: "automatic payment checking: it does not apply to UPI, where the owner marks each payment received", forOwner: true },
+  { id: "real-upi", text: "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)", forOwner: false },
+];
+
+/** What the checks do not cover for these settings: the list above, and for a UPI shop the UPI lines in place of the Razorpay ones. */
+export function notTestedOf(settings: { payment?: { module: string } }): readonly NotTested[] {
+  if (settings.payment?.module !== "upi") return NOT_TESTED;
+  return [...NOT_TESTED.filter((n) => n.id !== "payments-outside-razorpay" && n.id !== "real-razorpay"), ...UPI_NOT_TESTED];
+}
