@@ -773,6 +773,38 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.notReady` | ഇതുവരെ തയ്യാറായിട്ടില്ല. ശരിയാക്കാനുള്ള കാര്യങ്ങൾ: 2. | Not ready yet: 2 things need fixing. |  |
 | `setup.checks.certificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് തുറക്കൂ | Open the go-live certificate |  |
 | `setup.checks.switchOn` | സെർവർ ഇത് നടപ്പാക്കുമ്പോൾ കട ഓൺ ആകും. | The server switches the shop on when it applies it. |  |
+| `inbox.nav` | ചെയ്യാനുള്ളത് | To do |  |
+| `inbox.title` | തീരാത്ത കാര്യങ്ങൾ | Unfinished work |  |
+| `inbox.intro` | ഒരാൾ നോക്കേണ്ട യഥാർത്ഥ കാര്യങ്ങൾ. ഓരോ വരിയും കടയുടെ റെക്കോർഡിൽ നിന്ന് എടുത്തതാണ്; കൈകൊണ്ട് ഒന്നും ചേർത്തിട്ടില്ല. | Real jobs that need a person. Each line is worked out from the shop's record; nothing is added by hand. |  |
+| `inbox.empty` | ഇപ്പോൾ ആരും ഒന്നും ചെയ്യേണ്ടതില്ല. | Nothing needs a person right now. |  |
+| `inbox.count` | ചെയ്യാനുള്ളത്: 3 | 3 to do |  |
+| `inbox.asOf` | 4 Nov 2026, 10:30-ലെ റെക്കോർഡിൽ നിന്ന് വായിച്ചത്. | Read from the record of 4 Nov 2026, 10:30. |  |
+| `inbox.notShared` | ഈ കടയുടെ റെക്കോർഡ് ഇതുവരെ പങ്കിട്ടിട്ടില്ല, അതിനാൽ വായിക്കാൻ ഒന്നുമില്ല. | This shop's record has not been shared yet, so there is nothing to read. |  |
+| `inbox.since` | 4 Nov 2026, 10:30 മുതൽ | Since 4 Nov 2026, 10:30 |  |
+| `inbox.failedKinds` | ഈ കടയുടെ ഒരു പരിശോധന വായിക്കാനായില്ല, അതിനാൽ ഈ പട്ടിക ചെറുതായിരിക്കാം. | One of the checks could not be read for this shop, so this list may be short. |  |
+| `inbox.kinds.deposit_no_booking` | ₹200 ഡെപ്പോസിറ്റ് കിട്ടി, ബുക്കിങ് b-3 ഉറപ്പായില്ല: നോക്കി ശരിയാക്കുക | Deposit of ₹200 received, booking b-3 is missing: review recovery |  |
+| `inbox.kinds.payment_unrecorded` | ഫീസ് f-3-ന് പണം വന്നു, പക്ഷേ ഫീസ് പുതുക്കിയില്ല: പണം ഒന്നുകൂടി പരിശോധിക്കുക | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
+| `inbox.kinds.approval_waiting_long` | b-3-ൽ ഉടമയുടെ മറുപടിക്കായി 14 മണിക്കൂറായി കാത്തിരിക്കുന്നു ([what]): വീണ്ടും ചോദിക്കുക | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
+| `inbox.kinds.refund_waiting` | b-3-ന്റെ ₹200 റീഫണ്ട് [who] കാത്തിരിക്കുന്നു | The refund of ₹200 for b-3 is waiting [who] |  |
+| `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: Razorpay-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
+| `inbox.fallback` | b-3-ൽ ഒരാൾ നോക്കേണ്ടതുണ്ട് (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
+| `inbox.variants.guard_hold` | ഒരു റീഫണ്ട് | a refund |  |
+| `inbox.variants.refund` | ഒരു റീഫണ്ട് | a refund |  |
+| `inbox.variants.waiver` | ഫീസ് ഇളവ് | a fee waiver |  |
+| `inbox.variants.refund_request` | റീഫണ്ട് അഭ്യർത്ഥന | a refund request |  |
+| `inbox.variants.calendar` | കലണ്ടർ പ്രശ്നം | a calendar problem |  |
+| `inbox.variants.owner` | ഉടമയുടെ മറുപടിക്കായി | for the owner's answer |  |
+| `inbox.variants.agent` | വീണ്ടും അയയ്ക്കാനായി | to be sent again |  |
+| `inbox.actions.recheck_payment` | പണം വീണ്ടും പരിശോധിക്കുക | Check the payment again |  |
+| `inbox.actions.retry_booking` | ബുക്കിങ് വീണ്ടും ഉറപ്പിക്കാൻ ശ്രമിക്കുക | Try to confirm the booking again |  |
+| `inbox.actions.ask_owner_again` | ഉടമയോട് വീണ്ടും ചോദിക്കുക | Ask the owner again |  |
+| `inbox.actions.recheck_refund` | റീഫണ്ട് വീണ്ടും പരിശോധിക്കുക | Check the refund again |  |
+| `inbox.actionNote` | ഇവ വീണ്ടും നോക്കുകയോ വീണ്ടും ചോദിക്കുകയോ മാത്രം ചെയ്യുന്നു. മറ്റെല്ലാറ്റിനെയും പോലെ ഇവയും Guard-ലൂടെയും അതേ പരിധികളിലൂടെയും കടന്നുപോകുന്നു. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
+| `inbox.recover.sent` | അയച്ചു. കടയുടെ ഏജന്റ് ഒരു മിനിറ്റിനുള്ളിൽ ഇത് ചെയ്യും. അടുത്ത റെക്കോർഡ് പുതുക്കലിന് ശേഷം പട്ടിക മാറും. | Asked. The shop's agent will do it within a minute. The list changes after its next record update. |  |
+| `inbox.recover.unreachable` | കടയുടെ ഏജന്റിനെ ഇപ്പോൾ ബന്ധപ്പെടാനാവുന്നില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക. | The shop's agent cannot be reached right now, so nothing was sent. Try again later. |  |
+| `inbox.recover.refused` | ഇത് ഈ കാര്യത്തിന് യോജിക്കില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. | That does not fit this item, so nothing was sent. |  |
+| `inbox.help` | സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Write to support. A person answers. |  |
 | `errors.notFound` | ഇവിടെ ഒന്നുമില്ല. | There is nothing here. |  |
 | `errors.notAllowed` | ഇത് ചെയ്യാൻ നിങ്ങൾക്ക് അനുവാദമില്ല. | You cannot do that. |  |
 | `errors.csrf` | ആ ഫോം പഴയതായിരുന്നു, അല്ലെങ്കിൽ ഈ പേജിൽ നിന്നുള്ളതായിരുന്നില്ല. പിന്നോട്ട് പോയി വീണ്ടും ശ്രമിക്കൂ. | That form was too old or did not come from this page. Go back and try again. |  |

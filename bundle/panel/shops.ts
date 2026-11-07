@@ -2,9 +2,10 @@
 // (settings.json, runtime.json, pathway.lock, owner.json, pins.json) and a stop request; it reads the deployer's results and each runtime's /status.
 // Who may see a shop is decided here, in one function, and every page and every action goes through it: a builder sees every shop on the server, a
 // partner only the shops whose owner.json names them, and a shop that is not yours looks exactly like a shop that does not exist.
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { canonicalJson } from "../../modules/record/record.ts";
 import { parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
 import { PATHWAY } from "../../templates/commerce/bookings/server/runtime.ts";
 import { kindFor } from "../lib/kinds.ts";
@@ -111,11 +112,12 @@ export function createShops(config: PanelConfig, store: Store) {
     },
 
     /** Write the shop's desired state. owner.json is written once and never again (flag wx), so the first account to set a shop up stays its attribution. */
-    writeFolder(id: string, parts: { settings: unknown; runtime: Record<string, unknown>; lock: string; pins?: PinsFile }, creator?: { account: Account; template: string }): void {
+    writeFolder(id: string, parts: { settings: unknown; runtime: Record<string, unknown>; lock: string; pins?: PinsFile }, creator?: { account: Account; template: string }, by?: Account): void {
       const dir = paths.shop(safe(id));
       // A new shop's folder is made without `recursive`, so a folder that is already there (another shop with this name) is an error, never shared.
       if (creator) { mkdirSync(paths.shops, { recursive: true }); mkdirSync(dir); } else mkdirSync(dir, { recursive: true });
       writeAtomic(join(dir, "settings.json"), `${JSON.stringify(parts.settings, null, 2)}\n`);
+      api.recordSettings(id, parts.settings, creator?.account ?? by);
       writeAtomic(join(dir, "runtime.json"), `${JSON.stringify(parts.runtime, null, 2)}\n`);
       writeAtomic(join(dir, "pathway.lock"), `${parts.lock}\n`);
       if (parts.pins) writeAtomic(join(dir, "pins.json"), `${JSON.stringify(parts.pins, null, 2)}\n`);
@@ -123,6 +125,18 @@ export function createShops(config: PanelConfig, store: Store) {
         const owner: OwnerFile = { schema: 1, accountId: creator.account.id, accountName: creator.account.name, role: creator.account.role, createdAt: iso(now()), template: creator.template };
         try { writeFileSync(join(dir, "owner.json"), `${JSON.stringify(owner, null, 2)}\n`, { flag: "wx", mode: 0o644 }); } catch (e) { if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e; }
       }
+    },
+
+    /**
+     * Keep this version of the settings, with who saved it, in shops/<shop>/settings-history.jsonl (one line each; B38's export carries it as the limits' history). A version
+     * the same as the last one is not written twice. It starts the first time a shop is saved after this was added: nothing is made up for earlier versions.
+     */
+    recordSettings(id: string, settings: unknown, who?: Account): void {
+      const file = join(paths.shop(safe(id)), "settings-history.jsonl");
+      const digest = createHash("sha256").update(canonicalJson(settings)).digest("hex");
+      const last = (readText(file) ?? "").trim().split("\n").filter((l) => l !== "").at(-1);
+      try { if (last && (JSON.parse(last) as { digest?: string }).digest === digest) return; } catch { /* an unreadable last line is not a reason to lose this version */ }
+      appendFileSync(file, `${JSON.stringify({ schema: 1, at: iso(now()), by: who ? { id: who.id, name: who.name, role: who.role } : null, digest, settings })}\n`, { mode: 0o644 });
     },
 
     /** Only the pins: what the providers reported. Settings, runtime and lock are not rewritten, so the deployer sees no change it did not need. */

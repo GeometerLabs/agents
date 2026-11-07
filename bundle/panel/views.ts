@@ -15,6 +15,9 @@ import type { LiveView, ShopStatus } from "./contract.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
+import { formatInr } from "../../modules/language/format.ts";
+import type { Obligation } from "../../modules/unfinished/index.ts";
+import type { ShopInbox } from "./inbox.ts";
 import type { Draft } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
@@ -68,6 +71,7 @@ export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolea
 </div>
 ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
   <a class="tab" href="/shops">${c.w.nav.shops}</a>
+  <a class="tab" href="/inbox">${c.w.inbox.nav}</a>
   <a class="tab" href="/setup">${c.w.nav.setUp}</a>
   ${c.canInvite ? html`<a class="tab" href="/invite">${c.w.nav.invite}</a>` : ""}
   <form method="post" action="/logout" class="tab" style="padding:0"><input type="hidden" name="_csrf" value="${c.csrf}"><button class="tab" type="submit" style="width:100%">${c.w.nav.signOut}</button></form>
@@ -134,6 +138,40 @@ ${o.cards.length === 0 ? html`<p class="big">${w.empty}</p><a class="btn primary
   <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div></a>`)}</div>`}`);
 }
 
+// ---- the unfinished-work inbox (B31) ------------------------------------------------------------------------------------------------------------------
+
+/** One obligation as one plain sentence, in the reader's language. A kind with no words (a module added one) is still said, in the fallback sentence. */
+export function sentenceOf(c: Ctx, o: Obligation): string {
+  const w = c.w.inbox;
+  if (!Object.hasOwn(w.kinds, o.kind)) return w.fallback(o.kind, o.caseId);
+  const f = o.facts;
+  const amount = typeof f.amountInr === "number" ? formatInr(f.amountInr) : "";
+  const noun = String(f.holder ?? f.what ?? "");
+  return w.kinds[o.kind](o.caseId, amount, typeof f.hours === "number" ? f.hours : 0, Object.hasOwn(w.variants, noun) ? w.variants[noun] : "");
+}
+
+function inboxItems(c: Ctx, shop: ShopInbox): Raw {
+  const w = c.w.inbox;
+  if (!shop.asOf && shop.items.length === 0) return html`<p class="note">${w.notShared}</p>`;
+  return html`${shop.items.length === 0 ? html`<p class="note">${w.empty}</p>` : html`<ul class="plain">${shop.items.map((o) => html`<li class="warn"><span class="mark">!</span><span>${sentenceOf(c, o)}${o.sinceMs !== null ? html`<br><small class="note">${w.since(when(new Date(o.sinceMs).toISOString(), c.lang))}</small>` : ""}${recoveryButtons(c, shop.id, o)}</span></li>`)}</ul>`}
+${shop.failed.length > 0 ? html`<p class="note">${w.failedKinds}</p>` : ""}
+${shop.asOf ? html`<p class="note">${w.asOf(when(shop.asOf, c.lang))}</p>` : ""}`;
+}
+
+function recoveryButtons(_c: Ctx, _shop: string, _o: Obligation): Raw { return raw(""); }
+
+export function inboxPage(c: Ctx, o: { shops: ShopInbox[]; notice?: string }): string {
+  const w = c.w.inbox;
+  const total = o.shops.reduce((n, s) => n + s.items.length, 0);
+  return layout(c, w.title, html`<h1>${w.title}</h1>
+<p>${w.intro}</p>
+${o.notice ? html`<div class="notice" role="status">${o.notice}</div>` : ""}
+<p class="big">${total === 0 ? w.empty : w.count(total)}</p>
+${o.shops.map((s) => html`<h2><a href="/shops/${s.id}">${s.name}</a></h2>${inboxItems(c, s)}`)}
+<p class="note">${w.actionNote}</p>
+<p class="note">${w.help}</p>`);
+}
+
 export interface ShopView {
   id: string;
   name: string;
@@ -149,6 +187,8 @@ export interface ShopView {
   plan?: PlanView;
   activity?: { made: number; cancelled: number; moved: number; deposits: number; refunds: number; saidNo: number; owner: { asked: number; approved: number; denied: number } };
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
+  /** This shop's unfinished work (B31), read from its exported record. */
+  inbox?: ShopInbox;
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
   isBuilder: boolean;
   details?: { statusJson: string; pins: string; runtimeJson: string };
@@ -244,6 +284,8 @@ ${v.liveCounts ? html`<ul class="plain">
   ${v.liveCounts.needBuilder > 0 ? html`<li class="warn"><span class="mark">!</span><span>${w.needBuilder(v.liveCounts.needBuilder)}</span></li>` : ""}
 </ul>` : ""}
 <p class="note">${c.w.common.counts}</p>
+
+${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
 
 <h2>${w.settings}</h2>
 ${v.fees ? feesSummaryBlock(c, v) : ""}
