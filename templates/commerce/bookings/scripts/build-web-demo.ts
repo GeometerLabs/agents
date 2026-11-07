@@ -48,8 +48,8 @@ function pageMarkup(): string {
 
 // ---- the modules ---------------------------------------------------------------------------------------------------------------------
 
-/** A file of the shared modules, as the build names its source: relative to templates/commerce/bookings, so it starts with ../../../../modules */
-const MODULES_PREFIX = "../../../../modules/";
+/** A file of the shared modules, as the build names its source: relative to templates/commerce/bookings, so it starts with ../../../modules */
+const MODULES_PREFIX = "../../../modules/";
 /** Where a source file lands in the output: the template's own files keep their place, the shared modules go under modules/. */
 const outPath = (source: string) => (source.startsWith(MODULES_PREFIX) ? source.slice(MODULES_PREFIX.length - "modules/".length) : source).replace(/\.ts$/, ".js");
 const specifierBetween = (fromOut: string, toOut: string): string => {
