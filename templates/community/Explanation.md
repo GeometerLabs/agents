@@ -36,7 +36,7 @@ These templates handle other people's money or decisions, in places where trust 
 
 **14. The human outcome is counted, not graded.** Each spec lists what to count: disputes about who paid, the book-keeper's or treasurer's time, the book-keeper's role and pay as she tells it, questions answered, harm. This is the company's "whose control" rule: the owner's limits govern what the agent may do, but not what happens to the person whose work changes.
 
-**15. Price is left open on purpose.** A shop's price does not fit a group holding a few lakh rupees, or a temple fund. Who pays (the group, a federation, a programme) is an open question, and each sell-guide outline says not to quote a number until the founder decides.
+**15. Price is left open on purpose.** A shop's price does not fit a group holding a few lakh rupees, or a temple fund. Who pays (the group, a federation, a programme) is an open question, and each sell-guide outline says not to quote a number until Geometer decides.
 
 ## What the three have in common, and what differs
 

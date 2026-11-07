@@ -11,7 +11,7 @@
 | **Voice (B29):** read-aloud statements, voice notes | Not built | B29 is built (Phase 2 in the plan) |
 | **Legal review.** Chit funds, money lending, deposit schemes, trusts and societies, FCRA, DPDP | No lawyer has read any spec. The specs name laws to ask about, not conclusions | Before any launch, per state |
 | **A payment provider that gives a group an account and a record the agent can read.** A self-help group or a committee may not be able to open one | If none will, UPI payments to the group's bank account become "marked by" entries too, and the statement says "not checked with the bank" for them | A provider is chosen and tried with a real group |
-| **Price and who pays** | A group is not a shop. Open question for the founder | The founder decides; then the sell guides can name one |
+| **Price and who pays** | A group is not a shop. Open question for Geometer | Geometer decides; then the sell guides can name one |
 | **The sell guides, in every language, and the one-page sheets** | The outlines are in each spec. A template is not ready to sell until its guide is | Each template is built |
 | **The crash-test situations.** For each template: a cash payment marked by someone who is not allowed (refused), a reminder after a payment (never), a payment arriving twice, STOP, an approval by the requester (refused), "paid without a recorded approval" shown, a correction line instead of an erase, a message that shows an amount when the member has not allowed it, a statement opened without the member's code | Needs the code | The template is built; then add them to its hand check |
 | **Native review** of all Hindi, Malayalam and Kannada wording | Machine-written until a native speaker reads it | Wording exists |
