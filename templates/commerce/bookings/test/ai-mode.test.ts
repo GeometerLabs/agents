@@ -69,10 +69,10 @@ test("each understood message records its step, provider, model, tokens, estimat
   assert.equal(model.refs.provider, "deepinfra");
   assert.equal(model.refs.model, "deepseek-ai/DeepSeek-V4.1-Flash");
   assert.equal(model.refs.tried, "rules+decision+model");
-  assert.equal(model.refs.rateDate, "2026-11-05");
+  assert.equal(model.refs.rateDate, "2026-11-07", "the rate file in force on the world's day, 10 Nov");
   assert.equal(model.refs.outputTokens, "150");
   assert.ok(Number(model.refs.inputTokens) > 2000, "the decision call's tokens are in the total");
-  assert.equal(model.refs.costMicroInr, "34104", "2,000 tokens in and 150 out at the DeepSeek V4.1 Flash price: about 3.4 paise");
+  assert.equal(model.refs.costMicroInr, "36848", "2,000 tokens in and 150 out at the DeepSeek V4.1 Flash price, at 94 to the dollar: about 3.7 paise");
   assert.ok(Object.values(model.refs).every((v) => typeof v === "string"), "refs hold strings");
 });
 
@@ -81,7 +81,7 @@ test("a decision model answers at no cost to the shop but still records its toke
   const w = world(s);
   await w.say(UNCLEAR);
   const d = received(w)[0].refs;
-  assert.deepEqual([d.step, d.provider, d.model, d.costMicroInr, d.rateDate, d.tried], ["decision", "laya", "laya", "0", "2026-11-05", "rules+decision"]);
+  assert.deepEqual([d.step, d.provider, d.model, d.costMicroInr, d.rateDate, d.tried], ["decision", "laya", "laya", "0", "2026-11-07", "rules+decision"]);
   assert.ok(Number(d.inputTokens) > 0);
 
   const unpriced = steps({ decider: (name) => ({ choice: name === "intent" ? "greeting" : "no_service", p: 0.5 }), modelId: "some-new-model", modelProvider: "somewhere" });
@@ -142,10 +142,10 @@ test("the allowance can be a cost: priced calls add up in micro-rupees, and the 
   const policy = { allowance: { costMicroInr: 50_000 } };
   const w = world(s, { ai: policy });
   await w.say(UNCLEAR);
-  assert.equal(modeOf(w.store, policy, w.clock.now(), IST).buttons, false, "34,104 is under 50,000");
+  assert.equal(modeOf(w.store, policy, w.clock.now(), IST).buttons, false, "36,848 (a call at 94 to the dollar) is under 50,000");
   await w.say(UNCLEAR, { from: OTHER_CUSTOMER });
   assert.deepEqual(modeOf(w.store, policy, w.clock.now(), IST), { buttons: true, reason: "allowance" });
-  assert.equal(stateFor(w.store, w.clock.now(), IST).costMicroInr, 68_208);
+  assert.equal(stateFor(w.store, w.clock.now(), IST).costMicroInr, 73_696);
   await w.say(UNCLEAR);
   assert.equal(s.state.model, 2);
 });

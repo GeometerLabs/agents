@@ -547,7 +547,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.total` | ಒಟ್ಟು | Total |  |
 | `cost.subtotal` | ಉಪಮೊತ್ತ. 3 ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಬೆಲೆ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಇದು ಪೂರ್ಣ ವೆಚ್ಚವಲ್ಲ. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
 | `cost.priceList` | ಬೆಲೆಗಳು ಈ ದಿನಾಂಕದ ಬೆಲೆ ಪಟ್ಟಿಯಿಂದ: 2026-11-03. | Prices from the list of 2026-11-03. |  |
-| `cost.caveats.assumed-exchange-rate` | ಡಾಲರ್ ಮತ್ತು ಯೂರೋ ಬೆಲೆಗಳಿಗೆ ಊಹಿಸಿದ ದರ ಬಳಸಲಾಗಿದೆ (₹88 ಮತ್ತು ₹100). ನಿಜವಾದ ಬಿಲ್ ಬೇರೆ ಇರಬಹುದು. | Dollar and euro prices use an assumed rate (₹88 and ₹100). A real bill may differ. |  |
+| `cost.caveats.assumed-exchange-rate` | ಡಾಲರ್ ಮತ್ತು ಯೂರೋ ಬೆಲೆಗಳಿಗೆ ಊಹಿಸಿದ ದರ ಬಳಸಲಾಗಿದೆ (₹94 ಮತ್ತು ₹100). ನಿಜವಾದ ಬಿಲ್ ಬೇರೆ ಇರಬಹುದು. | Dollar and euro prices use an assumed rate (₹94 and ₹100). A real bill may differ. |  |
 | `cost.caveats.provider-not-chosen` | WhatsApp ಪ್ರೊವೈಡರ್ ಅನ್ನು ಇನ್ನೂ ಆರಿಸಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದರ ಶುಲ್ಕ ಗೊತ್ತಿಲ್ಲ. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
 | `cost.caveats.provider-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಪ್ರೊವೈಡರ್‌ಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this provider. |  |
 | `cost.caveats.fee-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ Geometer ಶುಲ್ಕಕ್ಕೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for Geometer's fee. |  |

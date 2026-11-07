@@ -547,7 +547,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.total` | ആകെ | Total |  |
 | `cost.subtotal` | ഇതുവരെയുള്ള തുക. വില ഇല്ലാത്ത കാര്യങ്ങൾ: 3. അതിനാൽ ഇത് മുഴുവൻ ചെലവല്ല. | Subtotal. 3 items have no price yet, so this is not the whole cost. |  |
 | `cost.priceList` | വിലകൾ എടുത്തത് ഈ തീയതിയിലെ ലിസ്റ്റിൽ നിന്ന്: 2026-11-03. | Prices from the list of 2026-11-03. |  |
-| `cost.caveats.assumed-exchange-rate` | ഡോളർ, യൂറോ വിലകൾ ഒരു കണക്കാക്കിയ നിരക്കിലാണ് (₹88, ₹100). യഥാർത്ഥ ബില്ലിൽ വ്യത്യാസം വരാം. | Dollar and euro prices use an assumed rate (₹88 and ₹100). A real bill may differ. |  |
+| `cost.caveats.assumed-exchange-rate` | ഡോളർ, യൂറോ വിലകൾ ഒരു കണക്കാക്കിയ നിരക്കിലാണ് (₹94, ₹100). യഥാർത്ഥ ബില്ലിൽ വ്യത്യാസം വരാം. | Dollar and euro prices use an assumed rate (₹94 and ₹100). A real bill may differ. |  |
 | `cost.caveats.provider-not-chosen` | WhatsApp പ്രൊവൈഡറെ ഇതുവരെ തിരഞ്ഞെടുത്തിട്ടില്ല, അതിനാൽ അതിന്റെ ഫീസ് അറിയില്ല. | No WhatsApp provider is chosen yet, so its fee is unknown. |  |
 | `cost.caveats.provider-not-priced` | വില ലിസ്റ്റിൽ ഈ പ്രൊവൈഡറുടെ വില ഇല്ല. | The price list has no price for this provider. |  |
 | `cost.caveats.fee-not-priced` | വില ലിസ്റ്റിൽ Geometer-ന്റെ ഫീസിന്റെ വില ഇല്ല. | The price list has no price for Geometer's fee. |  |

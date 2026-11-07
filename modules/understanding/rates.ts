@@ -58,6 +58,7 @@ function listOf(text: string): RateList {
 // One literal path per file (the browser build copies exactly these). Oldest first.
 const FILES: readonly [string, string][] = [
   ["2026-11-05.json", readFileSync(new URL("rates/2026-11-05.json", import.meta.url), "utf8")],
+  ["2026-11-07.json", readFileSync(new URL("rates/2026-11-07.json", import.meta.url), "utf8")],
 ];
 
 /** The files of the table, oldest first. */

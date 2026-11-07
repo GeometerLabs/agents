@@ -19,7 +19,7 @@ const PINNED: Record<string, string> = {
   "2026-11-03.json": "0d77094e78500264c426f4e587f61299ad0d8bda7f450631306a6e15fa6db64f",
   "2026-11-04.json": "6c495979cdaf40194c811e6f9716ec1286afc02a8003418c5e68bb913d8a156d",
   "2026-11-05.json": "3af9b56ca2cfac974e363acf31263b21d437e9c9e28e3575adcfc50a3b88e2b9", // the proposal: latestPriceList skips it (see plans.test.ts)
-  "2026-11-07.json": "cce19c34bee78ed2e136eeb8c4e1e301dafe0d2c916c75951662f9250f61eea7", // the owner's decision of 5 Nov, in force
+  "2026-11-07.json": "1534f0af36e98c1ca35ee22c9e219e59240248c5396021521a4d90278fb2444a", // the owner's decision of 5 Nov, in force
 };
 
 test("the newest price list in force is the one dated 2026-11-07, and the bytes of every list are pinned: a changed price is a new file", () => {
@@ -90,7 +90,7 @@ test("Geometer's plan comes from the price list and nowhere else: the plan follo
   assert.equal(line(monthlyCost({ settings }, { ...prices, exchange: {} }), "geometer").paise, 29900);
   const inDollars: PriceList = { ...prices, rates: { ...prices.rates, "plan.business.fee": { ...fee, currency: "USD", micro: 3_000_000 } } };
   const usd = monthlyCost({ settings }, inDollars);
-  assert.equal(line(usd, "geometer").paise, 26400); // US$3 at the list's assumed INR 88
+  assert.equal(line(usd, "geometer").paise, 28200); // US$3 at the list's assumed INR 94
   assert.ok(usd.caveats.includes("assumed-exchange-rate"));
   const { "plan.business.fee": _gone, ...without } = prices.rates;
   const unpriced = monthlyCost({ settings }, { ...prices, rates: without });
@@ -115,7 +115,7 @@ test("once more than 1,000 replies a month are sent, the rest cost the same as a
 
 test("a provider that bills in dollars is converted at the list's assumed rate and says so; one in euros the same", () => {
   const g = monthlyCost({ settings, whatsappProvider: "gupshup" }, prices);
-  assert.equal(line(g, "whatsapp-provider").paise, 5280); // 40 x (2x6 + 2 + 1) = 600 messages at US$0.001 = 8.8 paise each at the list's INR 88
+  assert.equal(line(g, "whatsapp-provider").paise, 5640); // 40 x (2x6 + 2 + 1) = 600 messages at US$0.001 = 9.4 paise each at the list's INR 94
   assert.ok(g.caveats.includes("assumed-exchange-rate"));
   assert.ok(!g.caveats.includes("provider-not-chosen"));
   const d = monthlyCost({ settings, whatsappProvider: "360dialog" }, prices);
