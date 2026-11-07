@@ -164,6 +164,11 @@ test("it works for a shop that is stopped, whose plan lapsed, and whose runtime 
     const d = await download(arjun, "glow-salon");
     assert.equal(d.status, 200);
     assert.ok(checkPackage(d.files).ok);
+    // the last deploy failed and its message names a missing secret file: that is a sentence, not a secret, and the shop still gets its files
+    b.status("glow-salon", { ...applied(), deploy: { state: "failed", at: new Date(NOW).toISOString(), message: "razorpay_key is missing for glow-salon; whatsapp_token too" } });
+    const failed = await download(arjun, "glow-salon");
+    assert.equal(failed.status, 200);
+    assert.match(failed.files.get("status.json")!.toString("utf8"), /razorpay_key is missing/u);
     // a shop whose status file is gone and that was never exported still exports what it has, and says what it does not
     rmSync(join(b.dir, "status", "glow-salon.json"));
     rmSync(join(b.dir, "exports", "glow-salon"), { recursive: true, force: true });

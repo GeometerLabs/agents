@@ -22,7 +22,11 @@ test("five steps write the client folder a builder would: valid settings, the ru
     assert.equal(f.shop, "hosahalli-beauty");
     assert.equal((await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`)).location, `/setup/${f.draft}/5`);
     const folder = join(b.dir, "shops", f.shop);
-    assert.deepEqual(readdirSync(folder).sort(), ["owner.json", "pathway.lock", "runtime.json", "settings.json"]);
+    assert.deepEqual(readdirSync(folder).sort(), ["owner.json", "pathway.lock", "runtime.json", "settings-history.jsonl", "settings.json"], "and the history of the settings (B38), which starts with this first save");
+    const history = readFileSync(join(folder, "settings-history.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    assert.equal(history.length, 1);
+    assert.deepEqual(Object.keys(history[0].by).sort(), ["id", "name", "role"]);
+    assert.deepEqual(history[0].settings, JSON.parse(readFileSync(join(folder, "settings.json"), "utf8")));
     const settings = validateSettings(JSON.parse(readFileSync(join(folder, "settings.json"), "utf8")));
     assert.ok(settings.ok, settings.ok ? "" : settings.errors.join("; "));
     if (!settings.ok) return;

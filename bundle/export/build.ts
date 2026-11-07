@@ -36,6 +36,11 @@ export interface ExportSources {
   exportedAt(): string | undefined;
   /** status/<shop>.json as the deployer wrote it. */
   statusText(): string | undefined;
+  /**
+   * The Razorpay limits spec for these settings, made the way the deployer makes the one Guard enforces (the server's approval hours and link cap, the template's own numbers), or
+   * undefined when the server's own settings cannot be read, in which case the export makes it with the generator's defaults and says so.
+   */
+  limitsSpec?(settings: any, template: string): unknown;
   /** The papers the panel made, as it keeps them: `go-live/<file>` or `monthly/<month>/<file>`. */
   papers(): { path: string; text: string }[];
   /** The pins the checks confirmed (ids, never keys), and the panel's own memory of the shop's accounts. */
@@ -74,12 +79,16 @@ const buf = (text: string) => Buffer.from(text, "utf8");
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 const dayStamp = (ms: number) => new Date(ms).toISOString().slice(0, 10).replaceAll("-", "");
 
-/** Things that must never be in an export. The builder never reads where they live; this stops a mistake from putting one in anyway. */
+/**
+ * Things that must never be in an export: the VALUES of keys and secrets. The builder never reads where they live; this stops a mistake from putting one in anyway. It looks for what a
+ * secret looks like (a private-key block, a service-account key, an access token, a Razorpay key id with its secret), never for the NAME of a secret or a key id on its own: a failed
+ * deploy's message in status.json may say "razorpay_key is missing", and that must not stop a shop from taking its files out.
+ */
 const SECRET_SHAPES: { name: string; pattern: RegExp }[] = [
   { name: "a private key", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/u },
-  { name: "a service-account key", pattern: /"private_key"\s*:/u },
-  { name: "an access token", pattern: /\b(?:EAA[A-Za-z0-9]{40,}|whatsapp_token|whatsapp_app_secret|razorpay_webhook_secret|razorpay_key)\b/u },
-  { name: "a Razorpay key secret", pattern: /\brzp_(?:live|test)_[A-Za-z0-9]{6,}\b/u },
+  { name: "a service-account key", pattern: /private_key\\?"\s*:\s*\\?"[^"\\]{20,}/u },
+  { name: "an access token", pattern: /\bEAA[A-Za-z0-9]{40,}\b/u },
+  { name: "a Razorpay key with its secret", pattern: /\brzp_(?:live|test)_[A-Za-z0-9]{6,}:[A-Za-z0-9]{10,}/u },
 ];
 
 function jsonLines(text: string | undefined, what: string, warnings: string[]): { lines: string[]; count: number } {
@@ -110,19 +119,25 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   let status: any;
   try { status = statusText === undefined ? undefined : JSON.parse(statusText); } catch { status = undefined; }
   let guardSpec: unknown = null;
+  let specNote = "";
   let policyDigest: string | null = null;
   if (kind) {
     const checked = kind.validateSettings(settings);
     if (checked.ok) {
       try { policyDigest = kind.papers.policyDigest(checked.settings); } catch { warnings.push("The policy digest could not be worked out."); }
       try {
-        guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: req.shop, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
-      } catch { warnings.push("The limits could not be written in Guard's shape from these settings."); }
+        guardSpec = src.limitsSpec?.(checked.settings, kind.id);
+        if (guardSpec === undefined) {
+          guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-razorpay`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
+          specNote = " This server's own settings (geometer.json) could not be read, so it was made with the default approval time and caps: it may differ from the one Guard enforces.";
+          warnings.push("The server's own settings could not be read, so the limits were made with the defaults.");
+        }
+      } catch { warnings.push("The limits could not be written in Guard's shape from these settings."); guardSpec = null; }
     } else warnings.push("The settings do not pass the template's own check any more, so the limits could not be worked out; settings.json is as it is on the server.");
   }
   put("limits.json", json({
     schema: 1,
-    note: "The limits the settings give. razorpay is the spec Guard enforces for refunds and payment links (amounts in paise); policyDigest is what the go-live certificate names. history/settings-history.jsonl has every saved version.",
+    note: `The limits the settings give. razorpay is the spec made the way the deployer makes the one Guard enforces for refunds and payment links (amounts in paise); policyDigest is what the go-live certificate names. history/settings-history.jsonl has every saved version.${specNote}`,
     policyDigest, razorpay: guardSpec,
     provenAtLastDeploy: status?.limits && typeof status.limits === "object" ? { proven: status.limits.proven ?? null, of: status.limits.of ?? null, unprovable: Array.isArray(status.limits.unprovable) ? status.limits.unprovable : [] } : null,
   }));

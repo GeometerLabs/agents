@@ -2,6 +2,10 @@
 // the panel made and its memory of the shop's accounts. Plain files only; nothing here starts a process or calls a service.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { razorpaySpec } from "../generate/guards.ts";
+import { kindFor } from "../lib/kinds.ts";
+import { loadServer } from "../lib/server.ts";
+import { loadState } from "../lib/state.ts";
 import { SHOP_ID, serverPaths } from "../panel/contract.ts";
 import type { ExportSources } from "./build.ts";
 
@@ -22,6 +26,16 @@ export function sourcesFor(serverDir: string, shop: string, panel?: PanelParts):
     exportFile: (name) => readText(join(exports, name)),
     exportedAt: () => { const f = join(exports, "record.json"); return existsSync(f) ? new Date(statSync(f).mtimeMs).toISOString() : undefined; },
     statusText: () => readText(p.statusFile(shop)),
+    limitsSpec: (settings, template) => {
+      // the deployer's own generator, with this server's approval hours and link cap and the version Guard was last given: the spec Guard enforces, not a look-alike
+      let server;
+      try { server = loadServer(serverDir); } catch { return undefined; }
+      const kind = kindFor(template);
+      if (!kind) return undefined;
+      let version = 1;
+      try { version = loadState(serverDir).shops[shop]?.guards?.razorpay?.version ?? 1; } catch { /* no state yet: version 1, as a first deploy gives */ }
+      return razorpaySpec(settings, { tenant: shop, name: `${shop}-razorpay`, version, reviewedBy: server.reviewedBy }, server.approvalHours, server.limits.razorpayLinksPerHour, undefined, kind.razorpaySpec);
+    },
     papers: () => panel?.papers(shop) ?? [],
     pins: () => { try { return JSON.parse(readText(join(p.shop(shop), "pins.json")) ?? "null") ?? undefined; } catch { return undefined; } },
     meta: () => panel?.meta(shop),
