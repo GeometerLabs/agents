@@ -349,9 +349,9 @@ standins/                          the stand-ins together (server.ts puts the ca
 src/guard-limits.ts                the settings turned into the numbers of the Razorpay limits spec (the one refund threshold); modules/payments/guard-limits.ts builds the spec
 src/language/                      Bookings' templates (hi, en, ml, kn), its facts for the outgoing check, its buttons and lists
 src/harness.ts                     the fakes wired to the agent, for tests and the hand check
-server/                            the runtime server: main.ts (command line), start.ts (read the client folder, wire, listen), config.ts,
+server/                            the runtime server, as Bookings gives it to the shared one in modules/runtime/ (the files keep their names so every import is the same): main.ts (command line), start.ts (read the client folder, wire, listen), config.ts,
                                    runtime.ts (a step is saved whole), tasks.ts (one at a time, retries), store.ts (SQLite), snapshot.ts,
-                                   events.ts, server.ts (HTTP), ticker.ts, services.ts (fakes or live)
+                                   events.ts, server.ts (HTTP), ticker.ts, services.ts (fakes or live). The code is modules/runtime/ and modules/inbox/; what stays here is Bookings' store, agent, how bookings are counted and its report setup (modules/Explanation.md, "The second cut")
 clients/glow-salon.example/        an example client folder: settings.json, runtime.json, pathway.lock
 crash-test/situations.ts           the crash-test situations, judged from the fakes' own records
 crash-test/not-tested.ts           what the hand check does not cover (printed by it, carried by the go-live certificate)
