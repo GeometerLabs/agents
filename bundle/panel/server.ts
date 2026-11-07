@@ -29,7 +29,7 @@ import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { LiveView } from "./contract.ts";
-import { latestPriceList, latestProposedPriceList, monthlyCost } from "./cost.ts";
+import { latestPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { createGoLive } from "./golive.ts";
@@ -54,8 +54,8 @@ const DOC_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(html|json|txt)$/u;
 const NOTICES = new Set(["report"]);
 
 export interface RunningPanel { host: string; port: number; url: string; close(): Promise<void> }
-/** `proposed`: the newest proposed price list, from which a shop's plan price is shown (labelled proposed). Left out: read from bundle/prices; null: none. */
-export interface PanelDeps { log?: (line: string) => void; prices?: PriceList; proposed?: PriceList | null }
+/** `prices`: the price list in force, which prices both a shop's plan and its running-cost line. Left out: the newest in bundle/prices that is not a proposal. */
+export interface PanelDeps { log?: (line: string) => void; prices?: PriceList }
 
 interface Req {
   req: IncomingMessage;
@@ -94,7 +94,6 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const now = () => (config.now ?? Date.now)();
   const { paths, store, secret } = openStores(config);
   const prices = deps.prices ?? latestPriceList();
-  const proposed = deps.proposed !== undefined ? deps.proposed : (() => { try { return latestProposedPriceList(); } catch { return null; } })();
   const accounts = createAccounts(store, now);
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
@@ -162,7 +161,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const data = readExport(shops.paths.exports(id));
     const observed = data ? monthlyFromExport(settings, data, monthOf(now(), settings.timezone), "live", now()).bookings.made : undefined;
     return monthlyCost({
-      settings, ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
+      settings, ...(shops.fleet(id)?.plan ? { plan: shops.fleet(id)!.plan! } : {}), ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
       ...(config.whatsappProvider ? { whatsappProvider: config.whatsappProvider } : {}), ...(config.hostingSharePaise !== undefined ? { hostingSharePaise: config.hostingSharePaise } : {}),
     }, prices);
   }
@@ -279,7 +278,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const month = settings ? monthOf(now(), settings.timezone) : "";
     const report = settings && data ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
-    const plan = planView(shops.fleet(id), proposed);
+    const plan = planView(shops.fleet(id), prices);
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
       summary: settings ? summaryOf(c, settings) : undefined,

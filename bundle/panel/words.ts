@@ -50,10 +50,10 @@ export interface Words {
     unknown: string; total: string; subtotal(unknownItems: number): string; priceList(date: string): string;
     caveats: Record<Exclude<Caveat, "early-estimate">, string>;
   };
-  /** The shop's plan (B48): what fleet says about it, with the proposed price. The warning codes are fleet's (apps/fleet/README.md, "What fleet tells each shop"). */
+  /** The shop's plan (B48): what fleet says about it, with its price. The warning codes are fleet's (apps/fleet/README.md, "What fleet tells each shop"). */
   plan: {
     heading: string; none: string; names: Record<PlanName, string>; is(name: string): string; included(n: number): string;
-    price(price: string): string; priceInnovator(price: string, yours: string): string; proposedNote: string; innovator: string;
+    price(price: string): string; priceInnovator(price: string, yours: string): string; priceNote: string; innovator: string;
     buttons: string; buttonsWhy: Record<"overage_unfunded" | "other", string>;
     warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled", string>;
   };
@@ -169,14 +169,14 @@ export const en: Words = {
   },
   cost: {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,
-    lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", razorpay: "Razorpay's fee", geometer: "Geometer's fee (founding price)", hosting: "Hosting share" },
+    lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", razorpay: "Razorpay's fee", geometer: "Geometer's plan", hosting: "Hosting share" },
     payer: {
       "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-razorpay": "paid by the shop to Razorpay",
       "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included", hosting: "the server's cost, shared",
     },
     unknown: "unknown", total: "Total", subtotal: (n) => `Subtotal. ${n} ${t1(n, "item has", "items have")} no price yet, so this is not the whole cost.`, priceList: (d) => `Prices from the list of ${d}.`,
     caveats: {
-      "assumed-exchange-rate": "Dollar and euro prices use an assumed rate (₹90 and ₹100). A real bill may differ.",
+      "assumed-exchange-rate": "Dollar and euro prices use an assumed rate (₹88 and ₹100). A real bill may differ.",
       "provider-not-chosen": "No WhatsApp provider is chosen yet, so its fee is unknown.",
       "provider-not-priced": "The price list has no price for this provider.",
       "fee-not-priced": "The price list has no price for Geometer's fee.",
@@ -189,9 +189,9 @@ export const en: Words = {
     heading: "Plan", none: "No plan is set for this shop yet.",
     names: { basic: "Basic", business: "Business", operations: "Operations" },
     is: (name) => `This shop is on the ${name} plan.`, included: (n) => `${n} customer messages a month are included.`,
-    price: (price) => `Proposed price: ${price} a month, before GST.`,
-    priceInnovator: (price, yours) => `Proposed price: ${price} a month, ${yours} with the Innovator discount, before GST.`,
-    proposedNote: "Prices are proposed and not final.", innovator: "Innovator",
+    price: (price) => `Plan price: ${price} a month, before GST.`,
+    priceInnovator: (price, yours) => `Plan price: ${price} a month, ${yours} with the Innovator discount, before GST.`,
+    priceNote: "A shop counts for a month when it was live on 15 or more days.", innovator: "Innovator",
     buttons: "AI is paused for this shop. Customers get button menus instead.",
     buttonsWhy: {
       overage_unfunded: "This shop has used more messages than its plan includes, and the recharge balance cannot cover more. Recharge to turn AI back on.",

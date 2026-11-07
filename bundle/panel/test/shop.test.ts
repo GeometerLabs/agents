@@ -122,14 +122,14 @@ test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; 
       const row = rowOf(WORDS.en.cost.lines[line]);
       assert.ok(row.includes(`>${WORDS.en.cost.unknown}<`) && !row.includes(">₹0"), `${line} is unknown, not zero: ${row.slice(0, 200)}`);
     }
-    // Geometer's flat fee, read from the price list, with the AI model in it and nothing passed through.
+    // Geometer's plan (Glow Salon takes a deposit: Business), read from the price list, with the AI model in it and nothing passed through.
     const fee = rowOf(WORDS.en.cost.lines.geometer);
-    assert.ok(fee.includes(formatRupees(19900)) && fee.includes(WORDS.en.cost.payer["builder-pays-geometer"]) && WORDS.en.cost.payer["builder-pays-geometer"].includes("AI model"), fee.slice(0, 300));
+    assert.ok(fee.includes(formatRupees(29900)) && fee.includes(WORDS.en.cost.payer["builder-pays-geometer"]) && WORDS.en.cost.payer["builder-pays-geometer"].includes("AI model"), fee.slice(0, 300));
     assert.ok(rowOf(WORDS.en.cost.lines.whatsapp).includes(WORDS.en.cost.payer["builder-pays-whatsapp-provider"]));
     const totalRow = page.split('<tr class="total">')[1].split("</tr>")[0];
     assert.ok(totalRow.includes(WORDS.en.cost.subtotal(2)) && !totalRow.includes(`<td>${WORDS.en.cost.total}</td>`), "unknown lines make a subtotal");
     assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-razorpay"]) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
-    assert.ok(page.includes(WORDS.en.cost.priceList("2026-11-04")));
+    assert.ok(page.includes(WORDS.en.cost.priceList("2026-11-07")));
     assert.ok(!/unknown\s*₹0/u.test(page));
   } finally { await b.close(); }
   const full = await boot({ whatsappProvider: "gupshup", hostingSharePaise: 5000 });

@@ -1,11 +1,11 @@
-// The shop's plan on its page (B48, B56): what fleet last said (fleet/<shop>.json, written by ops), the Innovator badge, the proposed price labelled as proposed,
+// The shop's plan on its page (B48, B56): what fleet last said (fleet/<shop>.json, written by ops), the Innovator badge, the plan price,
 // button mode in plain words, and the warnings. Fleet saying nothing is not "no plan".
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseFleetAnswer } from "../contract.ts";
-import { latestProposedPriceList } from "../cost.ts";
+import { latestPriceList } from "../cost.ts";
 import { planView } from "../plan.ts";
 import { WORDS } from "../languages.ts";
 import { boot } from "./helpers.ts";
@@ -26,8 +26,8 @@ test("the panel reads fleet's file field by field: a wrong field is dropped, an 
   assert.deepEqual(parseFleetAnswer(JSON.stringify(answer({ ai: "buttons", reason: "overage_unfunded" }))), { at: AT, plan: "business", allowance: 3000, innovator: false, ai: "buttons", reason: "overage_unfunded", warn: [] });
 });
 
-test("the plan view: fleet's facts and the proposed price, with the Innovator discount only for an innovator, and no price when there is no proposed list", () => {
-  const proposed = latestProposedPriceList()!;
+test("the plan view: fleet's facts and the plan price, with the Innovator discount only for an innovator, and no price when there is no list", () => {
+  const proposed = latestPriceList();
   const read = (more: Record<string, unknown>) => parseFleetAnswer(JSON.stringify(answer(more)));
   assert.equal(planView(undefined, proposed), undefined);
   assert.deepEqual(planView(read({}), proposed)!.price, { listPaise: 29_900, yoursPaise: 29_900 });
@@ -41,32 +41,32 @@ test("a shop with no word from fleet shows no plan section at all, and a garbled
   const b = await boot();
   try {
     const arjun = await b.account("arjun", "builder"); b.addShop("glow-salon", { name: "Glow Salon" });
-    assert.ok(!(await arjun.get("/shops/glow-salon")).plain.includes(en.proposedNote));
+    assert.ok(!(await arjun.get("/shops/glow-salon")).plain.includes(en.priceNote));
     fleet(b, "{ garbage");
     const page = (await arjun.get("/shops/glow-salon")).plain;
-    assert.ok(!page.includes(en.proposedNote) && !page.includes(en.none));
+    assert.ok(!page.includes(en.priceNote) && !page.includes(en.none));
   } finally { await b.close(); }
 });
 
-test("a shop on a plan: the plan, the included messages, the proposed price (labelled), and the Innovator badge only when fleet says so", async () => {
+test("a shop on a plan: the plan, the included messages, the plan price, and the Innovator badge only when fleet says so", async () => {
   const b = await boot();
   try {
     const arjun = await b.account("arjun", "builder"); b.addShop("glow-salon", { name: "Glow Salon" });
     fleet(b, answer());
     const plain = (await arjun.get("/shops/glow-salon")).plain;
     assert.ok(plain.includes(en.is("Business")) && plain.includes(en.included(3000)));
-    assert.ok(plain.includes(en.price("₹299.00")) && plain.includes(en.proposedNote), "the price says it is proposed");
+    assert.ok(plain.includes(en.price("₹299.00")) && plain.includes(en.priceNote), "the price says how a shop is counted");
     assert.ok(!plain.includes(en.innovator) && !plain.includes(en.buttons));
     fleet(b, answer({ innovator: true }));
     const badge = (await arjun.get("/shops/glow-salon")).plain;
     assert.ok(badge.includes(en.innovator) && badge.includes(en.priceInnovator("₹299.00", "₹179.40")));
-    // (the cost line below still names the flat fee of decision 13 in its own words; the plan section never uses that word for the innovators)
+    // (the plan section never uses that word for the innovators)
     for (const l of ["en", "hi", "ml", "kn"] as const) assert.doesNotMatch(JSON.stringify(Object.values(WORDS[l].plan).map((v) => (typeof v === "function" ? v("x", "y") : v))), new RegExp("found" + "ing", "iu"));
     fleet(b, answer({ plan: null, allowance: null }));
     const none = (await arjun.get("/shops/glow-salon")).plain;
-    assert.ok(none.includes(en.none) && !none.includes(en.proposedNote));
-    // the running-cost line is untouched: it is still on the list in force, with the flat fee
-    assert.ok(none.includes("2026-11-04"));
+    assert.ok(none.includes(en.none) && !none.includes(en.priceNote));
+    // the running-cost line is on the list in force, and names the plan
+    assert.ok(none.includes("2026-11-07"));
   } finally { await b.close(); }
 });
 
@@ -93,6 +93,6 @@ test("the plan section is in the reader's language", async () => {
     fleet(b, answer({ innovator: true, ai: "buttons", reason: "overage_unfunded", warn: ["balance_80"] }));
     const plain = (await divya.get("/shops/glow-salon")).plain;
     const hi = WORDS.hi.plan;
-    for (const line of [hi.is(hi.names.business), hi.included(3000), hi.innovator, hi.buttons, hi.buttonsWhy.overage_unfunded, hi.warn.balance_80, hi.proposedNote]) assert.ok(plain.includes(line), line);
+    for (const line of [hi.is(hi.names.business), hi.included(3000), hi.innovator, hi.buttons, hi.buttonsWhy.overage_unfunded, hi.warn.balance_80, hi.priceNote]) assert.ok(plain.includes(line), line);
   } finally { await b.close(); }
 });
