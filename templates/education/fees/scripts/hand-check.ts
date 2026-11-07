@@ -46,7 +46,11 @@ async function main(): Promise<number> {
         "",
         `CRASH TEST   ${settings.name} · Fees · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
       ],
-      workDone: ({ situations, checks, tookMs: ms }) => [
+      workDone: ({ situations, checks, tookMs: ms }) => settings.payment.module === "upi" ? [
+        `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp, with UPI marked`,
+        "  paid by the owner: a screenshot sent as proof, the owner confirming a different amount, never, twice, or on a replaced request,",
+        `  and a refund the owner owes, in ${names}.`,
+      ] : [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp and`,
         "  payments: lost replies, payment events twice, payments after the due date, parents saying they paid when they have not",
         `  and when they have, waivers and refunds above the limit, a model that is down, and parents pushing in ${names}.`,
