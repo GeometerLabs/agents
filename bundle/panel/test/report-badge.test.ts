@@ -11,13 +11,16 @@ import { boot, papers } from "./helpers.ts";
 const AT = "2026-11-05T10:00:00.000Z";
 const answer = (more: Record<string, unknown> = {}) => ({ schema: 1, at: AT, plan: "business", allowance: 3000, innovator: false, ai: "normal", warn: [], ...more });
 
+// worked out once, before any request: the panel runs inside this process, and a long stretch of work between two requests lets it close the browser's idle connection (five seconds)
+const busyMonth = await runBusyMonth();
+
 test("the report the panel makes carries the Innovator badge when fleet says so, and the name from report.json or the attribution", async () => {
   const b = await boot();
   try {
     const arjun = await b.account("arjun", "builder");
     const accountId = JSON.parse(readFileSync(join(b.dir, "panel", "data", "accounts.json"), "utf8")).accounts[0].id as string;
     b.addShop("glow-salon", { ownerId: accountId, ownerName: "Divya", ownerRole: "partner" });
-    const month = await runBusyMonth();
+    const month = busyMonth;
     mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
     writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(month.world.record.entries()));
     writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), JSON.stringify([...month.world.store.bookings.values()]));

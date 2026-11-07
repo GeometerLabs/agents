@@ -773,6 +773,71 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.notReady` | ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ: ಸರಿಪಡಿಸಬೇಕಾದ ವಿಷಯಗಳು 2. | Not ready yet: 2 things need fixing. |  |
 | `setup.checks.certificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ತೆರೆಯಿರಿ | Open the go-live certificate |  |
 | `setup.checks.switchOn` | ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತಂದಾಗ ಅಂಗಡಿಯನ್ನು ಆನ್ ಮಾಡುತ್ತದೆ. | The server switches the shop on when it applies it. |  |
+| `inbox.nav` | ಮಾಡಬೇಕಾದದ್ದು | To do |  |
+| `inbox.title` | ಬಾಕಿ ಕೆಲಸಗಳು | Unfinished work |  |
+| `inbox.intro` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ನೋಡಬೇಕಾದ ನಿಜವಾದ ಕೆಲಸಗಳು. ಪ್ರತಿ ಸಾಲೂ ಅಂಗಡಿಯ ರೆಕಾರ್ಡ್‌ನಿಂದ ಬಂದದ್ದು; ಕೈಯಿಂದ ಏನೂ ಸೇರಿಸಿಲ್ಲ. | Real jobs that need a person. Each line is worked out from the shop's record; nothing is added by hand. |  |
+| `inbox.empty` | ಈಗ ಯಾರೂ ಏನೂ ಮಾಡಬೇಕಾಗಿಲ್ಲ. | Nothing needs a person right now. |  |
+| `inbox.count` | ಮಾಡಬೇಕಾದದ್ದು: 3 | 3 to do |  |
+| `inbox.asOf` | 4 Nov 2026, 10:30 ರ ರೆಕಾರ್ಡ್‌ನಿಂದ ಓದಲಾಗಿದೆ. | Read from the record of 4 Nov 2026, 10:30. |  |
+| `inbox.notShared` | ಈ ಅಂಗಡಿಯ ರೆಕಾರ್ಡ್ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಓದಲು ಏನೂ ಇಲ್ಲ. | This shop's record has not been shared yet, so there is nothing to read. |  |
+| `inbox.since` | 4 Nov 2026, 10:30 ರಿಂದ | Since 4 Nov 2026, 10:30 |  |
+| `inbox.failedKinds` | ಈ ಅಂಗಡಿಯ ಒಂದು ಪರಿಶೀಲನೆಯನ್ನು ಓದಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಈ ಪಟ್ಟಿ ಚಿಕ್ಕದಾಗಿರಬಹುದು. | One of the checks could not be read for this shop, so this list may be short. |  |
+| `inbox.kinds.deposit_no_booking` | ₹200 ಡೆಪಾಸಿಟ್ ಬಂದಿದೆ, ಬುಕಿಂಗ್ b-3 ಖಚಿತವಾಗಿಲ್ಲ: ನೋಡಿ ಸರಿಪಡಿಸಿ | Deposit of ₹200 received, booking b-3 is missing: review recovery |  |
+| `inbox.kinds.payment_unrecorded` | ಶುಲ್ಕ f-3 ಗೆ ಹಣ ಬಂದಿದೆ, ಆದರೆ ಶುಲ್ಕ ನವೀಕರಣವಾಗಿಲ್ಲ: ಹಣವನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
+| `inbox.kinds.approval_waiting_long` | b-3 ನಲ್ಲಿ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ 14 ಗಂಟೆಗಳಿಂದ ಕಾಯುತ್ತಿದೆ ([what]): ಮತ್ತೆ ಕೇಳಿ | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
+| `inbox.kinds.refund_waiting` | b-3 ರ ₹200 ರೀಫಂಡ್ [who] ಕಾಯುತ್ತಿದೆ | The refund of ₹200 for b-3 is waiting [who] |  |
+| `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: Razorpay ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
+| `inbox.fallback` | b-3 ನಲ್ಲಿ ಒಬ್ಬರು ನೋಡಬೇಕಿದೆ (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
+| `inbox.variants.guard_hold` | ಒಂದು ರೀಫಂಡ್ | a refund |  |
+| `inbox.variants.refund` | ಒಂದು ರೀಫಂಡ್ | a refund |  |
+| `inbox.variants.waiver` | ಶುಲ್ಕ ವಿನಾಯಿತಿ | a fee waiver |  |
+| `inbox.variants.refund_request` | ರೀಫಂಡ್ ಕೋರಿಕೆ | a refund request |  |
+| `inbox.variants.calendar` | ಕ್ಯಾಲೆಂಡರ್ ಸಮಸ್ಯೆ | a calendar problem |  |
+| `inbox.variants.owner` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ | for the owner's answer |  |
+| `inbox.variants.agent` | ಮತ್ತೆ ಕಳುಹಿಸಲು | to be sent again |  |
+| `inbox.actions.recheck_payment` | ಹಣವನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the payment again |  |
+| `inbox.actions.retry_booking` | ಬುಕಿಂಗ್ ಅನ್ನು ಮತ್ತೆ ಖಚಿತಪಡಿಸಲು ಪ್ರಯತ್ನಿಸಿ | Try to confirm the booking again |  |
+| `inbox.actions.ask_owner_again` | ಮಾಲೀಕರನ್ನು ಮತ್ತೆ ಕೇಳಿ | Ask the owner again |  |
+| `inbox.actions.recheck_refund` | ರೀಫಂಡ್ ಅನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the refund again |  |
+| `inbox.actionNote` | ಇವು ಮತ್ತೆ ನೋಡುತ್ತವೆ ಅಥವಾ ಮತ್ತೆ ಕೇಳುತ್ತವೆ ಅಷ್ಟೇ. ಬೇರೆಲ್ಲವುಗಳಂತೆ ಇವೂ Guard ಮತ್ತು ಅದೇ ಮಿತಿಗಳ ಮೂಲಕ ಹೋಗುತ್ತವೆ. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
+| `inbox.recover.sent` | ಕಳುಹಿಸಲಾಗಿದೆ. ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಒಂದೆರಡು ನಿಮಿಷಗಳಲ್ಲಿ ಇದನ್ನು ಮಾಡುತ್ತದೆ. ಮುಂದಿನ ರೆಕಾರ್ಡ್ ನವೀಕರಣದ ನಂತರ ಪಟ್ಟಿ ಬದಲಾಗುತ್ತದೆ; ಅದಕ್ಕೆ ಹದಿನೈದು ನಿಮಿಷಗಳವರೆಗೆ ಬೇಕಾಗಬಹುದು. | Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour. |  |
+| `inbox.recover.refused` | ಇದು ಈ ವಿಷಯಕ್ಕೆ ಹೊಂದುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. | That does not fit this item, so nothing was sent. |  |
+| `inbox.help` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
+| `takeOut.heading` | ಎಲ್ಲವನ್ನೂ ನಿಮ್ಮೊಂದಿಗೆ ತೆಗೆದುಕೊಂಡು ಹೋಗಿ | Take everything with you |  |
+| `takeOut.text` | ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ಮಿತಿಗಳು, ರೆಕಾರ್ಡ್, ವರದಿಗಳು ಮತ್ತು ಪ್ರಮಾಣಪತ್ರಗಳ ಒಂದು ಪ್ರತಿ, Geometer ಇಲ್ಲದೆಯೂ ತೆರೆಯುವ ಸರಳ ಫೈಲ್‌ಗಳಲ್ಲಿ. ಪ್ಲಾನ್ ನಿಂತುಹೋದರೂ ಇದು ಕೆಲಸ ಮಾಡುತ್ತದೆ. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
+| `takeOut.button` | ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ | Download the export |  |
+| `takeOut.notIn` | ಇದರಲ್ಲಿ ಯಾವುದೇ ಕೀ ಅಥವಾ ರಹಸ್ಯ ಇಲ್ಲ; ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp, ಪಾವತಿ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಖಾತೆಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಗ್ರಾಹಕರ ಸಂಖ್ಯೆಗಳು ಚಿಕ್ಕ ಕೋಡ್‌ಗಳು. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.check` | ಫೈಲ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಒಳಗಿರುವ README ನೋಡಿ. | To check the files, use the README inside. |  |
+| `handover.heading` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೊಬ್ಬರಿಗೆ ವರ್ಗಾಯಿಸಿ | Move this shop to someone else |  |
+| `handover.button` | ಈ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ… | Move this shop… |  |
+| `handover.intro` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿರುವ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಈ ಅಂಗಡಿಯ ನಿರ್ವಹಣೆ ನೀಡಿ. ಮೊದಲು ಅಂಗಡಿ ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಒಪ್ಪಬೇಕು. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.moves` | ಬದಲಾಗುವುದು: ಇಲ್ಲಿ ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನೋಡಬಹುದು ಮತ್ತು ಬದಲಿಸಬಹುದು, ಮತ್ತು ಮಾಲೀಕರ ಮಾಸಿಕ ವರದಿಯಲ್ಲಿರುವ ಹೆಸರು. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
+| `handover.stays` | ಬದಲಾಗದ್ದು: ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp ಸಂಖ್ಯೆ, ಪಾವತಿ ಖಾತೆ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಜೊತೆಗೆ ಹೋಗುವುದಿಲ್ಲ. ಕೀಗಳು ಹೋಗುವುದಿಲ್ಲ: ಮುಂದೆ ಅಂಗಡಿಯನ್ನು ನಡೆಸುವವರು ಅವನ್ನು ಮತ್ತೆ ನಮೂದಿಸಬೇಕು. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
+| `handover.never` | ಅಂಗಡಿ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಹೋಗಬಹುದು. Geometer ಗೆ ಹೋಗಲಾರದು. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.who` | ಅವರ ಸೈನ್-ಇನ್ ಹೆಸರು | Their sign-in name |  |
+| `handover.whoHelp` | ಈ ಪ್ಯಾನೆಲ್‌ಗೆ ಅವರು ಸೈನ್ ಇನ್ ಆಗುವ ಹೆಸರು. | The name they sign in to this panel with. |  |
+| `handover.why` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ? | Why is it moving? |  |
+| `handover.reasons.stopped_paying` | ಅವರು ಹಣ ಪಾವತಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿದರು | They stopped paying |  |
+| `handover.reasons.stopped_serving` | ಅವರು ಅಂಗಡಿಗೆ ಸೇವೆ ನೀಡುವುದನ್ನು ನಿಲ್ಲಿಸಿದರು | They stopped serving the shop |  |
+| `handover.reasons.owner_request` | ಮಾಲೀಕರು ಕೇಳಿದರು | The owner asked for it |  |
+| `handover.start` | ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಕೇಳಿ | Ask the owner to agree |  |
+| `handover.askTitle` | ಈಗ ಮಾಲೀಕರು ಒಪ್ಪಬೇಕು | Now the owner has to agree |  |
+| `handover.ask` | ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಅಂಗಡಿಯ WhatsApp ಸಂಖ್ಯೆಗೆ ಈ ಒಂದೇ ಸಂದೇಶವನ್ನು ಕಳುಹಿಸುವಂತೆ ಹೇಳಿ: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
+| `handover.askNote` | ಈ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಮತ್ತು 72 ಗಂಟೆಯಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಇದನ್ನು ಈಗ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ. ಸಂದೇಶ ಪಡೆಯಲು ಅಂಗಡಿ ಚಾಲನೆಯಲ್ಲಿರಬೇಕು. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
+| `handover.waiting` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ. ಸಂದೇಶ ಬಂದ ನಂತರ Meera ಜವಾಬ್ದಾರಿ ವಹಿಸಿಕೊಳ್ಳುತ್ತಾರೆ. ಸಂದೇಶದ ನಂತರ ಇದಕ್ಕೆ ಹದಿನೈದು ನಿಮಿಷಗಳವರೆಗೆ ಬೇಕಾಗಬಹುದು. | Waiting for the owner. When the message arrives, Meera takes over. This can take a quarter of an hour after the message. |  |
+| `handover.check` | ಮತ್ತೆ ನೋಡಿ | Check again |  |
+| `handover.cancel` | ವರ್ಗಾವಣೆ ರದ್ದುಮಾಡಿ | Cancel the move |  |
+| `handover.done` | ಆಯಿತು. ಈಗ Meera ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಾರೆ. | Done. Meera now serves this shop. |  |
+| `handover.expired` | ಮಾಲೀಕರು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಕೋಡ್ ಮುಗಿಯಿತು. ಮತ್ತೆ ಶುರುಮಾಡಿ. | The code ran out before the owner replied. Start again. |  |
+| `handover.cancelled` | ವರ್ಗಾವಣೆ ರದ್ದಾಯಿತು. | The move was cancelled. |  |
+| `handover.problems.who` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಆ ಹೆಸರಿನಿಂದ ಯಾರೂ ಸೈನ್ ಇನ್ ಆಗುವುದಿಲ್ಲ. | Nobody signs in with that name on this server. |  |
+| `handover.problems.same` | ಅವರು ಈಗಾಗಲೇ ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಿದ್ದಾರೆ. | That person already serves this shop. |  |
+| `handover.problems.geometer` | ಅಂಗಡಿಯನ್ನು Geometer ಗೆ ವರ್ಗಾಯಿಸಲಾಗುವುದಿಲ್ಲ. | A shop cannot be moved to Geometer. |  |
+| `handover.problems.reason` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ ಎಂದು ಆರಿಸಿ. | Choose why the shop is moving. |  |
+| `handover.problems.waiting` | ಒಂದು ವರ್ಗಾವಣೆ ಈಗಾಗಲೇ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ. ಬೇರೆಯದನ್ನು ಶುರುಮಾಡಲು ಅದನ್ನು ರದ್ದುಮಾಡಿ. | A move is already waiting for the owner. Cancel it first to start another. |  |
+| `handover.history` | ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನಡೆಸಿದರು | Who has served this shop |  |
+| `handover.historyLine` | Divya → Meera, 4 Nov 2026, 10:30: [reason] | Divya to Meera, 4 Nov 2026, 10:30: [reason] |  |
 | `errors.notFound` | ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ. | There is nothing here. |  |
 | `errors.notAllowed` | ನೀವು ಇದನ್ನು ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ. | You cannot do that. |  |
 | `errors.csrf` | ಆ ಫಾರ್ಮ್ ತುಂಬಾ ಹಳೆಯದಾಗಿತ್ತು ಅಥವಾ ಈ ಪುಟದಿಂದ ಬಂದಿರಲಿಲ್ಲ. ಹಿಂದಕ್ಕೆ ಹೋಗಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That form was too old or did not come from this page. Go back and try again. |  |
