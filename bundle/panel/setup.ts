@@ -1,13 +1,13 @@
 // The phone setup for a shop, as plain functions: what each step takes from the form, what it refuses (in the person's language), and how the steps
-// become the same client folder a builder would write. The shop form is the demo's (pathways/bookings/demo/personalise.ts), grown into five steps; it is
+// become the same client folder a builder would write. The shop form is the demo's (templates/commerce/bookings/demo/personalise.ts), grown into five steps; it is
 // not copied. It asks only for what the template's manifest says the template uses, and `validateSettings` is the last gate on everything.
-import { validateSettings } from "../../pathways/bookings/src/settings.ts";
+import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { formatInr } from "../../modules/language/format.ts";
-import { MAX_SERVICES, formFromSettings, settingsFromForm } from "../../pathways/bookings/demo/personalise.ts";
-import type { ShopForm } from "../../pathways/bookings/demo/personalise.ts";
+import { MAX_SERVICES, formFromSettings, settingsFromForm } from "../../templates/commerce/bookings/demo/personalise.ts";
+import type { ShopForm } from "../../templates/commerce/bookings/demo/personalise.ts";
 import { KEY_ID, checkSecret } from "./secrets.ts";
 import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";

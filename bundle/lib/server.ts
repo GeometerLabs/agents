@@ -15,9 +15,9 @@
 //   secrets/                 one folder per container, mounted into that container only. Parent mode 0700.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { validateSettings } from "../../pathways/bookings/src/settings.ts";
-import type { Settings } from "../../pathways/bookings/src/settings.ts";
-import { parseLock } from "../../pathways/bookings/server/config.ts";
+import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
+import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import { parseLock } from "../../templates/commerce/bookings/server/config.ts";
 import { parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";

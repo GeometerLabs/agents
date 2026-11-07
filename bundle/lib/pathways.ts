@@ -1,8 +1,10 @@
-// Which folder holds the pathway code a shop is pinned to. The agents repository carries one version of each pathway (the current one). A shop pinned to
-// another version needs that version beside the server: <server>/pathways/<name>@<version>/ (a checkout of the tag). The runtime refuses to start on a
-// version other than its pin, so a wrong folder is caught twice.
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+// Which folder holds the template code a shop is pinned to ("pathway" is still the name in a shop's pin: pathway.lock, `bookings@0.1.0`).
+// The agents repository carries one version of each template (the current one) at templates/<domain>/<name>, for example templates/commerce/bookings. A shop pinned to
+// another version needs that version beside the server, laid out the same way: <server>/templates/<domain>/<name>@<version>/ (a checkout of the tag) with the shared
+// modules at <server>/modules. A server set up before the templates were grouped by domain keeps them at <server>/pathways/<name>@<version>/; those are still found.
+// The runtime refuses to start on a version other than its pin, so a wrong folder is caught twice.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { serverPaths } from "./server.ts";
 
@@ -10,14 +12,45 @@ const versionOf = (folder: string): string | undefined => {
   try { return (JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as { version?: string }).version; } catch { return undefined; }
 };
 
-export function pathwayDirFor(appDir: string, serverDir: string, lock: { pathway: string; version: string }): string | undefined {
-  const current = join(appDir, "pathways", lock.pathway);
-  if (existsSync(current) && versionOf(current) === lock.version) return current;
-  const kept = join(serverPaths(serverDir).root, "pathways", `${lock.pathway}@${lock.version}`);
-  return existsSync(kept) && versionOf(kept) === lock.version ? kept : undefined;
+/** The domain folders under <root>/templates (commerce, education, community, ...), in a fixed order. */
+const domainsUnder = (root: string): string[] => {
+  try { return readdirSync(join(root, "templates"), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort(); } catch { return []; }
+};
+
+/** Every folder <root>/templates/<domain>/<leaf> that exists. */
+const foldersCalled = (root: string, leaf: string): string[] => domainsUnder(root).map((d) => join(root, "templates", d, leaf)).filter((f) => existsSync(f));
+
+/** The current checkout's folder for a template, whatever its domain: templates/<domain>/<name>. */
+export function checkoutDirOf(appDir: string, name: string): string | undefined {
+  return foldersCalled(appDir, name).find((f) => versionOf(f) !== undefined);
 }
 
-/** A pathway version's own check of a runtime config (`validateRuntimeConfig` in its server/config.ts). */
+export function pathwayDirFor(appDir: string, serverDir: string, lock: { pathway: string; version: string }): string | undefined {
+  const current = foldersCalled(appDir, lock.pathway).find((f) => versionOf(f) === lock.version);
+  if (current) return current;
+  const root = serverPaths(serverDir).root;
+  const kept = `${lock.pathway}@${lock.version}`;
+  return [...foldersCalled(root, kept), join(root, "pathways", kept)].find((f) => versionOf(f) === lock.version);
+}
+
+/** Where to put a checkout of a version the server does not have: the domain is the one the current checkout keeps the template in (<domain> when it has none). */
+export function keptDirFor(appDir: string, serverDir: string, name: string, version: string): string {
+  const current = checkoutDirOf(appDir, name);
+  return join(serverPaths(serverDir).root, "templates", current ? basename(dirname(current)) : "<domain>", `${name}@${version}`);
+}
+
+/**
+ * The folder a shop that is already running uses. The state file stores the folder it was deployed from, as an absolute path. That folder may be gone or empty (the checkout was
+ * updated to the layout grouped by domain, a kept version was removed), and a bind mount of a missing folder is made empty by Docker, so the runtime would die with a missing module.
+ * So the stored folder is used only if it still holds the version the shop was applied at; otherwise it is looked up again from the pin, and undefined says the server no longer
+ * has that version at all.
+ */
+export function appliedPathwayDir(appDir: string, serverDir: string, applied: { pathway: string; pathwayDir: string }): string | undefined {
+  const [pathway, version] = applied.pathway.split("@");
+  return versionOf(applied.pathwayDir) === version ? applied.pathwayDir : pathwayDirFor(appDir, serverDir, { pathway, version });
+}
+
+/** A template version's own check of a runtime config (`validateRuntimeConfig` in its server/config.ts). */
 export type RuntimeCheck = (config: unknown, folder: string) => { ok: boolean; errors?: string[] };
 
 /**
@@ -33,7 +66,7 @@ export async function pinnedRuntimeCheck(pathwayDir: string): Promise<RuntimeChe
     if (typeof loaded.validateRuntimeConfig !== "function") throw new Error("it has no validateRuntimeConfig");
     return loaded.validateRuntimeConfig as RuntimeCheck;
   } catch (e) {
-    const why = `I could not read the runtime-config check of the pathway in ${pathwayDir} (${(e as Error).message})`;
+    const why = `I could not read the runtime-config check of the template in ${pathwayDir} (${(e as Error).message})`;
     return (config) => ("report" in (config as object) || "ai" in (config as object) ? { ok: false, errors: [why] } : { ok: true });
   }
 }

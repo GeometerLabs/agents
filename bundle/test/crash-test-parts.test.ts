@@ -23,7 +23,7 @@ import { fakeRunner, ok, failed } from "../lib/runner.ts";
 import { secretFile } from "../lib/secrets.ts";
 import { loadState } from "../lib/state.ts";
 import { sha256Hex, stableJson } from "../lib/util.ts";
-import { readGoLiveCertificate } from "../../pathways/bookings/report/go-live.ts";
+import { readGoLiveCertificate } from "../../templates/commerce/bookings/report/go-live.ts";
 import { CALENDAR_ID, PHONE_NUMBER_ID, tempServer } from "./helpers.ts";
 
 const NOW = new Date("2026-11-05T09:00:00Z");

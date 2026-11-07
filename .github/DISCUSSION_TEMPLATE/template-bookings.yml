@@ -3,7 +3,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        About the **Bookings** pathway: setting it up for a shop, what you changed in its settings, what owners asked, or what went wrong.
+        About the **Bookings** template: setting it up for a shop, what you changed in its settings, what owners asked, or what went wrong.
   - type: dropdown
     id: domain
     attributes:

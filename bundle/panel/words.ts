@@ -5,10 +5,10 @@
 // Two kinds of line are not written here, so each has one source:
 //  - the limits in one benefit sentence each are the lines of docs/product/gtm-and-revenue.md ("Lead with their advantage", the table that is
 //    the one source in four languages);
-//  - the go-live certificate's "Held N of M ..." line and "Show what we did" come from pathways/bookings/report/strings.ts.
+//  - the go-live certificate's "Held N of M ..." line and "Show what we did" come from templates/commerce/bookings/report/strings.ts.
 // The form labels the demo already has (the shop's name, a service, a price, hours) come from the demo's own words (demo/strings.ts) in English and
 // Hindi, so the demo and the panel say the same thing; Malayalam and Kannada say them in their own files.
-import { uiFor } from "../../pathways/bookings/demo/strings.ts";
+import { uiFor } from "../../templates/commerce/bookings/demo/strings.ts";
 import type { Why, LiveCode, PlanName } from "./contract.ts";
 import type { CheckCode } from "./checks.ts";
 import type { Caveat, LineId, Payer } from "./cost.ts";
@@ -148,7 +148,7 @@ export const en: Words = {
     "runtime-not-ready": "The agent says it is not ready.", "refunds-need-builder": "A refund needs the builder, not the owner.",
   },
   shop: {
-    status: "Status", versions: (p, b) => `Pathway ${p}, bundle ${b}`, lastDeploy: (at) => `Last update: ${at}`, neverDeployed: "Not updated yet.",
+    status: "Status", versions: (p, b) => `Template ${p}, bundle ${b}`, lastDeploy: (at) => `Last update: ${at}`, neverDeployed: "Not updated yet.",
     limitsHeading: "Limits", unprovable: (l) => `These cannot be tested on their own: ${l}`,
     backups: "Backups", backupCopy: (at) => `Last copy off the server: ${at}`, backupNone: "No copy off the server yet.", backupDrill: (at, ok) => `Last restore check: ${at}, ${ok ? "it matched" : "it did not match"}`, backupDrillNone: "No restore check yet.",
     settings: "What the agent knows about this shop", settingsEdit: "Change settings", summaryServices: "Services", summaryHours: "Open", hoursRange: (o, c) => `${o} to ${c}`, summaryClosed: "closed",

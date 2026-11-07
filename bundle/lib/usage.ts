@@ -5,10 +5,10 @@
 // COUNTS ONLY. Nothing here reads a message's words: an entry's `inputsDigest`, `notes` and `conversation` are never looked at, and the result holds numbers.
 //
 // What it reads is deliberately narrow, and the two adapters below are the ONLY places that know the record's field names:
-//   understandingOf(entry)   the fields the `understanding` branch (pathways/bookings) adds to the record for each understood message
+//   understandingOf(entry)   the fields the `understanding` branch (templates/commerce/bookings) adds to the record for each understood message
 //   whatsappTypeOf(entry)    which of Meta's three message types an outgoing message is, from what the record already holds today
 // Aligned with that branch's real names (5 Nov, when it merged): the pathway writes them in the record entry's `refs`, as strings, so FIELDS.container is "refs"
-// and the numbers are read from decimal strings. The names are listed in pathways/bookings/Explanation.md, "Understanding record fields (for the cost meter)".
+// and the numbers are read from decimal strings. The names are listed in templates/commerce/bookings/Explanation.md, "Understanding record fields (for the cost meter)".
 
 export const STEPS = ["rules", "decision", "model"] as const;
 export type Step = (typeof STEPS)[number];
