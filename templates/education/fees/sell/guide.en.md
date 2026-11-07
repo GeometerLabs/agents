@@ -33,7 +33,7 @@ Three yes: go. Two yes: go, but carefully. One or none: skip it. A polite skip i
 
 1. Practise with a friend who plays the owner. Do sections 3 and 5 out loud, three times.
 2. Run the walkthrough yourself, twice, start to finish (section 4): once in English and once in the owner's language.
-3. Visit a friendly centre first. Ask the founder or your buddy to come on the first visit.
+3. Visit a friendly centre first. Ask your buddy, or Geometer's team, to come on the first visit.
 4. Then visit a centre you don't know. A "no" is normal. Write down what they said.
 5. Know your price before you walk in (section 6). Write it on a card.
 
@@ -248,7 +248,7 @@ Three payments, three different people. Keep them apart.
 
 ## 8. The setup visit
 
-Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner. No real Fees centre has gone live yet (section 11), so this is the visit as it will be, for you to learn. Until the founder tells you your town is ready, do not start it: show the walkthrough, ask for the letter of intent, and promise no date. When your town is ready, the panel's Set up page does the same list on a phone, in five steps.
+Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner. No real Fees centre has gone live yet (section 11), so this is the visit as it will be, for you to learn. Until Geometer tells you your town is ready, do not start it: show the walkthrough, ask for the letter of intent, and promise no date. When your town is ready, the panel's Set up page does the same list on a phone, in five steps.
 
 - [ ] **The WhatsApp check.** Open the centre's WhatsApp with the owner.
   - It must be the WhatsApp Business app, and the centre keeps its number and its app.
@@ -271,7 +271,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
   | Refund limit | "From which amount do you want a one-use code before a refund goes?" | "₹500. A refund is never more than the payment on record." |
 
 - [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Approval needed". The owner answers "approve q-1" or "deny q-1". For a refund above the refund limit the reply uses a one-use code instead of q-1. Practise one reply together. For a refund above the refund limit, the one-use code comes from the approvals relay. It has been tried against the real Guard program, but not on a live centre (section 11). A fee waiver above the waiver limit is not held that way: the agent asks with the same "approve q-1" reply.
-- [ ] **The checks on this centre's settings.** Copy `templates/education/fees/settings/bright-tuition.example.json`, put in the centre's numbers from the list above, and run `node templates/education/fees/scripts/hand-check.ts --settings <your file>` (ask the founder if you are unsure). A check that these settings can't express, for example a late fee when the centre has none, is named as not run and is not counted.
+- [ ] **The checks on this centre's settings.** Copy `templates/education/fees/settings/bright-tuition.example.json`, put in the centre's numbers from the list above, and run `node templates/education/fees/scripts/hand-check.ts --settings <your file>` (ask Geometer's team if you are unsure). A check that these settings can't express, for example a late fee when the centre has none, is named as not run and is not counted.
 - [ ] **The go-live certificate, read together.** The panel makes it when the checks pass. A builder can also make it with `node templates/education/fees/scripts/go-live-certificate.ts`. It says what was tried, on which settings, and what was not checked. Read every line aloud in the owner's language, including "Not checked". Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
 - [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, WhatsApp's message fees, cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet.
 
@@ -289,11 +289,11 @@ When a centre is live:
 
 ## 10. When something goes wrong
 
-1. **Stop the agent first.** In the panel, open the centre and press the stop button. Nothing more goes out once the server has stopped it, which can take a minute. Ask the founder how it works before your first visit. The owner can also disconnect it from their phone (section 5).
+1. **Stop the agent first.** In the panel, open the centre and press the stop button. Nothing more goes out once the server has stopped it, which can take a minute. Ask Geometer's team how it works before your first visit. The owner can also disconnect it from their phone (section 5).
 2. **Call the owner before they find out.** "Something went wrong with [what]. I have stopped the helper. Here is what happened and what I am doing. Your own WhatsApp works as normal."
 3. **Look at the record.** Find the action, what was confirmed, and which limit said what. The monthly report is made from this record.
 4. **Fix it, check it again, then switch it on.** If a parent was charged wrongly, sit with the owner while they refund it from their own Razorpay account. If a parent got a reminder they should not have, the owner says sorry to them first.
-5. **Put it in the report.** It goes in the month's mistakes, and you tell the founder the same day.
+5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's team the same day.
 
 You are the centre's named, accountable person. Your name is on the report and the certificate. Don't blame the software, and don't say "it won't happen again".
 
