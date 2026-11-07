@@ -11,14 +11,15 @@ import { COMMON_ID, COMMON_LABELS, LIMITS, clip } from "../../../../../modules/l
 import type { Choice, CommonLabels } from "../../../../../modules/language/interactive.ts";
 import type { Intent } from "../adapters/model.ts";
 
-export interface Labels extends CommonLabels { pay: string; paid: string }
+/** `received` and `refundSent` are the owner's UPI buttons (B33): "Received ₹1,500" and "Refund sent". */
+export interface Labels extends CommonLabels { pay: string; paid: string; received: string; refundSent: string }
 
 /** Machine-written; the Malayalam and Kannada must be read by a native speaker before a real centre sees them (REVIEW-ml.md, REVIEW-kn.md). No number appears in any label. */
 export const LABELS: Record<Language, Labels> = {
-  en: { ...COMMON_LABELS.en, pay: "Pay now", paid: "I have paid" },
-  hi: { ...COMMON_LABELS.hi, pay: "अभी भुगतान करें", paid: "मैंने भर दिया" },
-  ml: { ...COMMON_LABELS.ml, pay: "ഇപ്പോൾ അടയ്ക്കാം", paid: "അടച്ചുകഴിഞ്ഞു" },
-  kn: { ...COMMON_LABELS.kn, pay: "ಈಗ ಪಾವತಿಸಿ", paid: "ಪಾವತಿಸಿದ್ದೇನೆ" },
+  en: { ...COMMON_LABELS.en, pay: "Pay now", paid: "I have paid", received: "Received", refundSent: "Refund sent" },
+  hi: { ...COMMON_LABELS.hi, pay: "अभी भुगतान करें", paid: "मैंने भर दिया", received: "मिल गया", refundSent: "रिफंड भेज दिया" },
+  ml: { ...COMMON_LABELS.ml, pay: "ഇപ്പോൾ അടയ്ക്കാം", paid: "അടച്ചുകഴിഞ്ഞു", received: "കിട്ടി", refundSent: "റീഫണ്ട് അയച്ചു" },
+  kn: { ...COMMON_LABELS.kn, pay: "ಈಗ ಪಾವತಿಸಿ", paid: "ಪಾವತಿಸಿದ್ದೇನೆ", received: "ಬಂದಿದೆ", refundSent: "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" },
 };
 
 export const ID = { ...COMMON_ID, pay: "pay", paid: "paid" } as const;
@@ -33,7 +34,7 @@ export function buttonsFor(language: Language, ids: ButtonId[], dueId?: string):
   const make = (id: ButtonId): Choice => {
     if (id === "pay") return { id: dueId ? payRowId(dueId) : ID.pay, title: clip(labels.pay, LIMITS.buttonTitle) };
     if (id === "paid") return { id: dueId ? paidRowId(dueId) : ID.paid, title: clip(labels.paid, LIMITS.buttonTitle) };
-    return { id: ID[id], title: clip(labels[id], LIMITS.buttonTitle) };
+    return { id: ID[id as "yes" | "no" | "owner"], title: clip(labels[id as "yes" | "no" | "owner"], LIMITS.buttonTitle) };
   };
   return ids.map(make);
 }

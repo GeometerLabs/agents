@@ -18,7 +18,7 @@ import { localParts } from "../../../../../modules/core/time.ts";
 import { serviceName } from "../settings.ts";
 import type { Service, Settings } from "../settings.ts";
 import type { Intent } from "../adapters/model.ts";
-import { upiButtonId } from "../../../../../modules/payments/upi/owner.ts";
+import { ownerUpiChoices } from "../../../../../modules/payments/upi/buttons.ts";
 
 // ---- the words ------------------------------------------------------------------------------------------------------------------
 
@@ -53,9 +53,7 @@ export function buttonsFor(language: Language, ids: ButtonId[]): Choice[] {
 
 /** The owner's buttons for a UPI payment ("Received ₹200") or a refund ("Refund sent", and "Kept for booking" where that is offered). Each carries its one-use code. */
 export function ownerUpiButtons(language: Language, a: { kind: "received"; code: string; amountInr: number } | { kind: "refund"; code: string; keepAllowed: boolean }): Choice[] {
-  const labels = LABELS[language];
-  if (a.kind === "received") return [{ id: upiButtonId("received", a.code), title: clip(`${labels.received} ${formatInr(a.amountInr)}`, LIMITS.buttonTitle) }];
-  return [{ id: upiButtonId("refunded", a.code), title: clip(labels.refundSent, LIMITS.buttonTitle) }, ...(a.keepAllowed ? [{ id: upiButtonId("kept", a.code), title: clip(labels.keptForBooking, LIMITS.buttonTitle) }] : [])];
+  return ownerUpiChoices(LABELS[language], a);
 }
 
 /** The list of the shop's services, with the price on each row and, last, a row to reach the owner. At most 9 services fit beside it; a tenth is reached by typing its name. */
