@@ -73,7 +73,7 @@ Never say it understands rain. The only rule is the time before the start.
 
 > "Not at the same time yet. It books one thing at a time for the whole business, so a booking for the sprayer blocks the tractor at that time. One tractor with its attachments works well. We start with the machine that is booked most."
 
-Don't promise a helper for each machine until the founder says it is ready.
+Don't promise a helper for each machine until Geometer says it is ready.
 
 ### "Can it charge by the acre or by the hour?"
 
@@ -101,11 +101,11 @@ Don't promise a helper for each machine until the founder says it is ready.
 
 ## 6. Price
 
-The three payments are as in section 6 of the main guide: Geometer's ₹199 per live shop per month, the shop's price to you, and the setup you keep. What is different:
+The three payments are as in section 6 of the main guide: Geometer's plan (a rental centre takes a deposit, so it is Business, ₹299 per live shop per month before GST), the shop's price to you, and the setup you keep. What is different:
 
-1. **The shop's price: a starting point; you decide.** Near ₹999 for one machine, near ₹1,999 for a bigger centre. The setup is ₹1,999 to ₹2,999.
-2. **Rental is seasonal.** Before you sign, agree with the owner whether the price is every month or only for the months the helper is on, and write it in the shop terms. Ask the founder how a paused shop is counted before you promise.
-3. **One helper books one thing at a time.** For a centre with several machines, ask the founder how two helpers in one centre are counted before you quote.
+1. **The shop's price: a starting point; you decide.** Near ₹999 for one machine, near ₹1,499 for a bigger centre. The setup is ₹1,999 to ₹2,999.
+2. **Rental is seasonal.** Before you sign, agree with the owner whether the price is every month or only for the months the helper is on, and write it in the shop terms. A shop counts for a month when it was live on 15 or more days, so a month with fewer live days is not counted; write that in the shop terms too.
+3. **One helper books one thing at a time.** For a centre with several machines, the price is for the centre, one shop, however many helpers it has. If it runs several workflows or branches together it may be Operations, from ₹999: ask Geometer's support before you quote.
 4. **Razorpay's fee on a bigger deposit:** "Razorpay keeps its fee even when you give a deposit back. On a ₹1,000 deposit that is about ₹24." Check Razorpay's current page.
 5. **Money flow only,** as in the main guide. Never say how much anyone will make.
 

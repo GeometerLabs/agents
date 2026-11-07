@@ -45,7 +45,7 @@ test("the message is the owner's lines in every language: counts and amounts fro
     assert.equal(lines[6], `${s.page.code}: ${env.code} · ${s.fullReport}: ${LINK}`);
     assert.equal(lines[7], `${s.page.setUpBy}: Divya, local partner · Geometer`);
     assert.deepEqual(bannedIn(text, language), [], `${language}: a word no document may use`);
-    assert.ok(!/founding/iu.test(text));
+    assert.ok(!/found(ing|er)/iu.test(text));
   }
 });
 
@@ -168,7 +168,7 @@ test("the stand-in takes both report templates in every language, refuses a wron
     const refused = await fetch(`${w.standins.url}/v26.0/${PHONE_NUMBER_ID}/messages`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(raw) });
     assert.equal(refused.status, 400);
     assert.equal(((await refused.json()) as any).error.code, 132018);
-    await assert.rejects(() => messaging.sendTemplate(owner, { ...message.template, name: "monthly_report_founding" }), (e: any) => e instanceof ApiError && e.status === 404);
+    await assert.rejects(() => messaging.sendTemplate(owner, { ...message.template, name: "monthly_report_unregistered" }), (e: any) => e instanceof ApiError && e.status === 404);
   } finally { await w.close(); }
 });
 
