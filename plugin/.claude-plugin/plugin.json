@@ -1,0 +1,35 @@
+{
+  "name": "geometer",
+  "displayName": "Geometer",
+  "version": "0.1.0",
+  "description": "Set up, check and run shop agents from Claude Code: pick an agent template, tighten its limits, crash test it, go live and make the monthly client report. A person confirms limits and go-live in the panel, outside the chat.",
+  "author": { "name": "Geometer" },
+  "homepage": "https://geometer.dev",
+  "repository": "https://github.com/GeometerLabs/agents",
+  "license": "Apache-2.0",
+  "keywords": ["agents", "guardrails", "whatsapp", "razorpay", "crash-test"],
+  "userConfig": {
+    "agents_dir": {
+      "type": "directory",
+      "title": "Agents checkout",
+      "description": "Your clone of GeometerLabs/agents (the folder with bundle/geometer.ts in it). The plugin runs its code; it does not carry a copy.",
+      "required": true
+    },
+    "server_dir": {
+      "type": "directory",
+      "title": "Server folder",
+      "description": "The folder `geometer init` made on your server (the one with geometer.json). Keys never go in here from the chat.",
+      "required": true
+    }
+  },
+  "mcpServers": {
+    "geometer": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/server.ts"],
+      "env": {
+        "GEOMETER_AGENTS_DIR": "${user_config.agents_dir}",
+        "GEOMETER_SERVER": "${user_config.server_dir}"
+      }
+    }
+  }
+}

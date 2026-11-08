@@ -7,7 +7,7 @@
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner"]      copy a client folder in (settings.json, runtime.json, pathway.lock); --prepared-by is the name the
 //                                owner's monthly report message says set the shop up (written to report.json; without it the message says "your builder")
-//   shop add <name> --template bookings|fees [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ...]      start a shop from a template of this checkout: its example
+//   shop add <name> --template bookings|fees|orders [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ...]      start a shop from a template of this checkout: its example
 //                                settings (or the file --settings names, checked first), a pin to the template's version here, and a runtime.json that names the WhatsApp number (and, for
 //                                a template with a calendar, the calendar). The settings start as the template's made-up example: change them to the real ones.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
@@ -22,6 +22,7 @@
 //                                real Guards: "Held N of M", judged from the stand-ins' records and Guard's decisions. agent go-live <name> [--out <folder>] does the same and writes the go-live certificate.
 //                                agent set <name> --run "<cmd>" --version V   records how to start the agent ({version} in the command) and which version it is at
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
+//   panel confirm-link --kind limits|go-live --shop S [--changes JSON] [--note T]    a one-time link a person opens in the panel to confirm what Claude Code asked for (the plugin, B11); it only asks
 //   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
 //                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
 //                                Check one with: node bundle/export/check.ts <folder>
@@ -108,6 +109,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
+      kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" },
       "prepared-by": { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
@@ -242,6 +244,15 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (role !== "builder" && role !== "partner") throw new Error("Say who the invitation is for: panel invite --role builder|partner [--note TEXT]");
       const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", "invite", "--role", role, ...(str("note") ? ["--note", str("note") as string] : [])], { timeoutMs: 60_000 });
       if (r.code !== 0) throw new Error(`The panel did not make a link (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 300)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
+      console.log(r.stdout.trim());
+      return 0;
+    }
+
+    if (command === "panel" && positionals[0] === "confirm-link") {
+      // asks the running panel for a one-time link a person opens to confirm something Claude Code drafted (the plugin, B11). It only asks: nothing is applied from here.
+      if (!loadServer(dir).panel.enabled) throw new Error('This server has no panel: set "panel": { "enabled": true } in geometer.json and deploy, or `init --panel`.');
+      const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", "confirm-link", "--kind", str("kind") ?? "", "--shop", str("shop") ?? "", ...(str("changes") ? ["--changes", str("changes") as string] : []), ...(str("note") ? ["--note", str("note") as string] : [])], { timeoutMs: 60_000 });
+      if (r.code !== 0) throw new Error(`The panel did not make a link (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 400)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
       console.log(r.stdout.trim());
       return 0;
     }

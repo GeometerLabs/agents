@@ -1,7 +1,7 @@
 // The kinds of unfinished work every shop has, for Bookings and Fees (plan B31). Each reads only the case's own fields and the record. Read registry.ts first.
 //
 //   deposit_no_booking     Bookings: a deposit is in, and the booking is not confirmed (the calendar would not take it, or the hold ran out)
-//   payment_unrecorded     Fees: a payment came, and the fee's balance was not brought up to date (the payments service could not be read)
+//   payment_unrecorded     Fees and Orders: a payment came, and the fee's balance (or the order's advance) was not brought up to date (the payments service could not be read)
 //   approval_waiting_long  an answer from the owner has waited longer than the panel's limit (a refund, a waiver, a calendar clash)
 //   refund_waiting         a refund is on its way: with the owner, held by Guard for the owner, or being sent again
 //   refund_unknown         a refund whose outcome nobody can state: it may or may not have gone
@@ -15,7 +15,7 @@ import { UPI_OBLIGATION_KINDS } from "../payments/upi/obligations.ts";
 import type { CaseLike, DetectInput, Obligation, ObligationKind } from "./registry.ts";
 
 type Pending = CaseLike["pending"][number];
-const OWNER_ANSWERS = new Set(["guard_hold", "refund", "waiver", "refund_request", "calendar"]);
+const OWNER_ANSWERS = new Set(["guard_hold", "refund", "waiver", "refund_request", "calendar", "big_order"]);
 const REFUND_PENDING = new Set(["guard_hold", "refund", "refund_request", "refund_retry"]);
 const UNKNOWN_ISSUES = new Set(["unknown", "uncertain", "unconfirmed"]);
 /** The refund problems a read-only look at the payments service can still settle. */
@@ -50,11 +50,11 @@ const depositNoBooking: ObligationKind = {
 
 const paymentUnrecorded: ObligationKind = {
   id: "payment_unrecorded",
-  templates: ["fees"],
+  templates: ["fees", "orders"],
   detect(input) {
     const out: Obligation[] = [];
     for (const c of input.cases) {
-      if (c.state !== "open") continue;
+      if (c.state !== "open" && c.state !== "awaiting_advance") continue; // a fee that is open, or an order waiting for its advance
       const bad = latestEntry(input.entries, c.id, ["record_payment"], ["failed", "unconfirmed"]);
       if (!bad) continue;
       // settled by a later payment line that was read, or by a look at the payments service's list that read it whole (a recovery step)

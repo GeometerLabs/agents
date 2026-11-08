@@ -25,6 +25,8 @@ export interface ShopMeta {
   calendar?: { shareAddress?: string };
   receipts: Partial<Record<SecretName, string>>;
   readyAt?: string;
+  /** What the person said when they confirmed go-live through a one-time link: written down as their statement, not as something checked. */
+  goLiveStatement?: { at: string; by: string; whatsappTemplatesSeenApproved: boolean; keysHandedInThroughGuard: boolean };
 }
 
 export interface ShopRef { id: string; owner: OwnerFile | undefined }
@@ -97,7 +99,7 @@ export function createShops(config: PanelConfig, store: Store) {
       const kind = kindFor(api.lock(id)?.split("@")[0]) ?? kindFor("bookings")!;
       try { const r = kind.validateSettings(JSON.parse(text)); return r.ok ? r.settings : undefined; } catch { return undefined; }
     },
-    /** Which template a shop is, from its lock: "bookings" or "fees". Bookings when the lock is missing or names one this panel does not know. */
+    /** Which template a shop is, from its lock: "bookings", "fees" or "orders" (lib/kinds.ts). Bookings when the lock is missing or names one this panel does not know. */
     kind(id: string): string { return kindFor(api.lock(id)?.split("@")[0])?.id ?? "bookings"; },
     runtime(id: string): Record<string, any> | undefined {
       try { return JSON.parse(readText(join(paths.shop(safe(id)), "runtime.json")) ?? "null") ?? undefined; } catch { return undefined; }

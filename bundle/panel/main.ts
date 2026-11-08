@@ -13,7 +13,7 @@ import { createDocuments } from "./documents.ts";
 import { exportShop } from "./export.ts";
 import { createShops } from "./shops.ts";
 import { PaperError, createPapers } from "./papers.ts";
-import { makeInviteLink, openStores, startPanel } from "./server.ts";
+import { makeConfirmLink, makeInviteLink, openStores, startPanel } from "./server.ts";
 import { VaultError } from "./vault.ts";
 
 try {
@@ -26,6 +26,17 @@ try {
     if (!Number.isInteger(hours) || hours < 1 || hours > 720) throw new ConfigError("--hours must be a whole number from 1 to 720.");
     console.log(makeInviteLink(config, values.role, values.note ?? "", hours));
     console.log(`\nThis link works once and runs out in ${hours} hours. Send it only to that person. It is not kept anywhere else.`);
+  } else if (command === "confirm-link") {
+    // Asks for a person's yes (plan B11, the Claude Code plugin): prints one JSON line with a one-time link. It only ASKS; there is no command that applies anything.
+    const { values } = parseArgs({ args: rest, options: { kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, note: { type: "string" } } });
+    if (values.kind !== "limits" && values.kind !== "go-live") throw new ConfigError("Say what is asked: --kind limits or --kind go-live.");
+    if (!values.shop) throw new ConfigError("Say which shop: --shop <id>.");
+    let changes;
+    if (values.kind === "limits") {
+      try { changes = JSON.parse(values.changes ?? "") as { path: string; value: number }[]; } catch { throw new ConfigError('--changes must be JSON: [{"path":"cancellation.refundLimitInr","value":100}].'); }
+      if (!Array.isArray(changes)) throw new ConfigError("--changes must be a list.");
+    }
+    console.log(JSON.stringify({ ok: true, ...makeConfirmLink(config, { kind: values.kind, shop: values.shop, ...(changes ? { changes } : {}), ...(values.note ? { note: values.note } : {}) }) }));
   } else if (command === "export") {
     // the panel builds the shop's export (it alone can open the papers it keeps): `--json` prints one line the deployer's CLI reads, `--out FILE` writes the .tar.gz here
     const { values, positionals } = parseArgs({ args: rest, allowPositionals: true, options: { json: { type: "boolean" }, out: { type: "string" } } });
@@ -68,7 +79,7 @@ try {
     const panel = await startPanel(config);
     console.log(`Geometer panel (${config.mode}) is open at ${panel.url}${config.publicUrl ? `, served to people as ${config.publicUrl}` : ""}.`);
     for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { void panel.close().then(() => process.exit(0)); });
-  } else throw new ConfigError(`I don't know "${command}". Use serve (the default), invite, export, anchor or paper.`);
+  } else throw new ConfigError(`I don't know "${command}". Use serve (the default), invite, confirm-link, export, anchor or paper.`);
 } catch (e) {
   if (e instanceof ConfigError || e instanceof VaultError) { console.error(e.message); process.exit(2); }
   throw e;

@@ -65,7 +65,7 @@ test("a shop's settings are judged by the template its pathway.lock names; a loc
       assert.ok(p.some((x) => x.includes(`pinned to "${lock.split("@")[0]}"`) && x.includes("bookings, fees")), `${lock}: ${p.join("|")}`);
     }
     assert.equal(kindFor("constructor"), undefined);
-    assert.deepEqual(Object.keys(KINDS), ["bookings", "fees"]);
+    assert.deepEqual(Object.keys(KINDS), ["bookings", "fees", "orders"]);
   } finally { w.done(); }
 });
 

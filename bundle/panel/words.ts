@@ -52,6 +52,13 @@ export interface Words {
     activity: { opened: string; paidInFull: string; partlyPaid: string; stillOpen: string; collected: string; stillToCollect: string; reminders: string };
     messages: { heading: string; ceiling(students: number, most: number, total: number): string; included(n: number): string; note: string };
   };
+  /** An Orders shop's page: its menu and slots, this month's counts, and the messages its rules allow. The rest of the page is the shop page's. */
+  ordersShop: {
+    summaryMenu: string; summaryRules: string; perDay(n: number): string; pickup: string; delivery: string; noDelivery: string;
+    states: Record<string, string>;
+    activity: { taken: string; completed: string; cancelled: string; holdsRanOut: string; collected: string; toCollect: string; pickup: string; delivery: string };
+    messages: { heading: string; ceiling(perDay: number, perOrder: number, total: number): string; included(n: number): string; note: string };
+  };
   cost: {
     heading: string; early: string; fromRecord(n: number): string; assumption(n: number): string;
     lines: Record<LineId, string>; payer: Record<Payer, string>;
@@ -99,6 +106,22 @@ export interface Words {
         noBatch: string; batchNameEmpty(row: number): string; feeBad(row: number): string; noStudents: string; studentBad(row: number): string; studentNumber(row: number): string;
         studentBatch(row: number, batch: string): string; tooMany(max: number): string; dueBad: string; graceBad: string; lateBad(max: string): string; daysBad: string; hourBad: string;
         mostBad: string; partBad(max: string): string; waiverBad(max: string): string; refundBad: string;
+      };
+    };
+    /** The Orders template's own form (a shop, its menu, and the rules: cut-off, slots, advance and limits). The same five steps. The limits in plain words are the Orders certificate's own lines. */
+    orders: {
+      steps: { business: string; rules: string };
+      business: { name: string; address: string; menu: string; menuHelp: string };
+      rules: {
+        cutoffDays: string; cutoffTime: string; cutoffHelp: string; pickup: string; slotsHelp: string; delivery: string; deliveryHelp: string; area: string; areaHelp: string;
+        advance: string; advancePart: string; advanceFull: string; percent: string; hold: string; perDay: string; perOrder: string; daysAhead: string; window: string;
+        refund: string; refundHelp: string; approveOver: string; approveHelp: string;
+      };
+      problems: {
+        noItems: string; itemBad(row: number): string; priceBad(row: number): string; stockBad(row: number): string; itemTwice(row: number, name: string): string; tooManyItems(max: number): string;
+        cutoffDaysBad: string; cutoffTimeBad: string; noPickup: string; pickupBad(row: number): string; deliveryBad(row: number): string; tooManySlots(max: number): string;
+        deliveryNeedsArea: string; areaNeedsSlots: string; percentBad: string; holdBad: string; perDayBad: string; perOrderBad: string; daysAheadBad: string; windowBad: string;
+        refundBad: string; approveBad: string; orderTooBig(total: string, cap: string): string;
       };
     };
     languagesStep: {
@@ -176,6 +199,9 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
   "setup.fees.problems.batchNameEmpty": [2], "setup.fees.problems.feeBad": [2], "setup.fees.problems.studentBad": [3], "setup.fees.problems.studentNumber": [3], "setup.fees.problems.studentBatch": [3, "Class 11"],
   "setup.fees.problems.tooMany": [300], "setup.fees.problems.lateBad": ["₹1,200"], "setup.fees.problems.partBad": ["₹1,200"], "setup.fees.problems.waiverBad": ["₹1,200"],
+  "ordersShop.perDay": [12], "ordersShop.messages.ceiling": [8, 3, 744], "ordersShop.messages.included": [3000],
+  "setup.orders.problems.itemBad": [2], "setup.orders.problems.priceBad": [2], "setup.orders.problems.stockBad": [2], "setup.orders.problems.itemTwice": [3, "Veg thali"], "setup.orders.problems.tooManyItems": [30],
+  "setup.orders.problems.pickupBad": [2], "setup.orders.problems.deliveryBad": [2], "setup.orders.problems.tooManySlots": [8], "setup.orders.problems.orderTooBig": ["₹12,000", "₹50,000"],
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
   "setup.accounts.received": ["4 Nov 2026, 10:30"], "setup.accounts.razorpay.webhookUrl": ["https://shops.example.com/hooks/glow-salon/razorpay"],
   "setup.checks.deployApplied": ["4 Nov 2026, 10:30"], "setup.checks.limitsProven": [9, 9], "setup.checks.guardWords": ["the route is not listed"], "setup.checks.notReady": [2],
@@ -256,6 +282,17 @@ export const en: Words = {
       note: "Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill.",
     },
   },
+  ordersShop: {
+    summaryMenu: "Menu and daily stock", summaryRules: "Cut-off times and limits", perDay: (n) => `${n} a day`, pickup: "Pickup", delivery: "Delivery", noDelivery: "No delivery",
+    states: { enquiry: "Asking", awaiting_owner: "Waiting for the owner", awaiting_advance: "Waiting for the advance", confirmed: "Confirmed", expired: "Hold ran out", cancelled: "Cancelled", completed: "Done" },
+    activity: { taken: "Orders taken", completed: "Done", cancelled: "Cancelled", holdsRanOut: "Holds that ran out", collected: "Advance received", toCollect: "Still to collect at pickup", pickup: "Pickup orders", delivery: "Delivery orders" },
+    messages: {
+      heading: "Messages",
+      ceiling: (perDay, perOrder, total) => `Your rules allow up to ${perDay} orders a day. At about ${perOrder} messages for each order, plan for up to ${total} messages in a 31-day month.`,
+      included: (n) => `Your plan includes ${n} messages a month.`,
+      note: "Replies to customers' own messages come on top. This is a planning figure from your rules, not a bill.",
+    },
+  },
   cost: {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,
     lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", razorpay: "Razorpay's fee", geometer: "Geometer's plan", hosting: "Hosting share" },
@@ -307,7 +344,7 @@ export const en: Words = {
     renew: "Pay to renew", stale: (day) => `Licence not refreshed since ${day}. Check that this server reaches Geometer. Write to support. A person answers.`,
   },
   setup: {
-    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes" },
+    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
     templateElsewhere: "A builder sets this one up with the plugin. The phone setup does not have it yet.", start: "Start", progress: (n, o) => `Step ${n} of ${o}`,
     steps: { business: "The business", deposit: "Deposit and cancellation", languages: "Languages and your number", accounts: "Connect the shop's accounts", checks: "Checks" },
     problemsTitle: "Please fix this:", fallback: (e) => `One thing needs fixing: ${e}`,
@@ -348,6 +385,37 @@ export const en: Words = {
         daysBad: "Write the reminder days as whole numbers separated by commas, each between -14 and 60, like -3, 0, 5.", hourBad: "The reminder hour must be a whole number from 6 to 21.",
         mostBad: "The most reminders must be a whole number from 1 to 12.", partBad: (max) => `The least part payment must be a whole number of rupees from 1 to ${max} (the cheapest monthly fee).`,
         waiverBad: (max) => `The waiver limit must be a whole number of rupees from 0 to ${max} (the cheapest monthly fee).`, refundBad: "The refund limit must be a whole number of rupees, 0 or more.",
+      },
+    },
+    orders: {
+      steps: { business: "The shop and its menu", rules: "Cut-off, slots and limits" },
+      business: {
+        name: "The shop's name", address: "Address (optional)", menu: "Menu",
+        menuHelp: "One item on each line: its name, its price in rupees, and the most you make in a day. For example: Veg thali, 120, 12",
+      },
+      rules: {
+        cutoffDays: "Orders close this many days before (0 is the same day)", cutoffTime: "Closing time", cutoffHelp: "In 24-hour time, like 20:00.",
+        pickup: "Pickup slots", slotsHelp: "One slot on each line: the times, then a name if you like. For example: 12:00-13:00, lunch",
+        delivery: "Delivery slots (leave empty if you do not deliver)", deliveryHelp: "The same way, for example: 12:30-13:30, lunch",
+        area: "Places you deliver to", areaHelp: "Separate them with commas. An address that names none of them is not delivered to.",
+        advance: "What the customer pays to confirm", advancePart: "A part of the order", advanceFull: "All of the order", percent: "Part to pay (%)", hold: "Minutes an order is held for the advance",
+        perDay: "Most orders for one day", perOrder: "Most items in one order", daysAhead: "How many days ahead an order may be (0 is today only)", window: "Cancel at least this many hours before the slot to get the advance back",
+        refund: "Most the agent may refund by itself (₹)", refundHelp: "A refund above this waits for your OK on WhatsApp.",
+        approveOver: "Orders above this total wait for your OK (₹, 0 for never)", approveHelp: "Such an order comes to you first, and the customer is asked to pay only after your OK.",
+      },
+      problems: {
+        noItems: "Add at least one item to the menu.", itemBad: (n) => `Line ${n}: write the name, the price and the daily stock with commas between them, like Veg thali, 120, 12.`,
+        priceBad: (n) => `Line ${n}: write the price as a whole number of rupees, from 1, like 120.`, stockBad: (n) => `Line ${n}: write the most you make in a day as a whole number, from 1, like 12.`,
+        itemTwice: (n, name) => `Line ${n}: "${name}" is already on the menu above.`, tooManyItems: (max) => `That is more than ${max} items. Write to support. A person answers.`,
+        cutoffDaysBad: "Write how many days before orders close as a whole number from 0 to 7.", cutoffTimeBad: "Write the closing time in 24-hour time, like 20:00.",
+        noPickup: "Add at least one pickup slot.", pickupBad: (n) => `Pickup slot ${n}: write the times like 12:00-13:00, then a name if you like. It must end after it starts.`,
+        deliveryBad: (n) => `Delivery slot ${n}: write the times like 12:30-13:30, then a name if you like. It must end after it starts.`, tooManySlots: (max) => `That is more than ${max} slots in one list.`,
+        deliveryNeedsArea: "You have delivery slots but no places. Write where you deliver, or empty the delivery slots.", areaNeedsSlots: "You have places but no delivery slot. Add a delivery slot, or empty the places.",
+        percentBad: "The part to pay must be a whole number from 1 to 99. To take all of the order, choose \"All of the order\".", holdBad: "The minutes an order is held must be a whole number from 5 to 1440.",
+        perDayBad: "The most orders for one day must be a whole number from 1 to 10000.", perOrderBad: "The most items in one order must be a whole number from 1 to 100.",
+        daysAheadBad: "How many days ahead must be a whole number from 0 to 60.", windowBad: "The cancellation hours must be a whole number from 0 to 336.",
+        refundBad: "The refund limit must be a whole number of rupees, 0 or more.", approveBad: "The order total for your OK must be a whole number of rupees, 0 or more.",
+        orderTooBig: (total, cap) => `One order could come to ${total} (the most items, all of your dearest item), which is more than the ${cap} that can be refunded in a day. Lower the most items in one order, or the price.`,
       },
     },
     languagesStep: {
@@ -433,7 +501,7 @@ export const en: Words = {
       upi_refund_owed: (id, amount) => `Refund of ${amount} for ${id} is owed by the owner and not yet marked done: remind the owner`,
     },
     fallback: (kind, id) => `${id} needs a person (${kind})`,
-    variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again" },
+    variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again", big_order: "a big order" },
     actions: { recheck_payment: "Check the payment again", retry_booking: "Try to confirm the booking again", ask_owner_again: "Ask the owner again", recheck_refund: "Check the refund again" },
     actionNote: "These only look again or ask again. They go through Guard and the same limits as everything else.",
     recover: { sent: "Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour.", refused: "That does not fit this item, so nothing was sent." },

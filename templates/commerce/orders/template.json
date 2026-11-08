@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "orders",
+  "setup": "orders",
+  "steps": ["business", "deposit", "languages", "accounts", "checks"],
+  "accounts": ["whatsapp", "razorpay"],
+  "settingsExample": "settings/annapurna-tiffins.example.json"
+}
