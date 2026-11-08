@@ -283,9 +283,9 @@ export const en: Words = {
     activity: { taken: "Orders taken", completed: "Done", cancelled: "Cancelled", holdsRanOut: "Holds that ran out", collected: "Advance received", toCollect: "Still to collect at pickup", pickup: "Pickup orders", delivery: "Delivery orders" },
     messages: {
       heading: "Messages",
-      ceiling: (perDay, perOrder, total) => `Your rules allow at most ${total} messages a month: up to ${perDay} orders a day, for 31 days, and up to ${perOrder} messages for each order.`,
+      ceiling: (perDay, perOrder, total) => `Your rules allow up to ${perDay} orders a day. At about ${perOrder} messages for each order, plan for up to ${total} messages in a 31-day month.`,
       included: (n) => `Your plan includes ${n} messages a month.`,
-      note: "Replies to customers' own messages come on top. This is a ceiling from your rules, not a bill.",
+      note: "Replies to customers' own messages come on top. This is a planning figure from your rules, not a bill.",
     },
   },
   cost: {

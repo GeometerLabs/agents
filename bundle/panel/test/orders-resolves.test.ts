@@ -47,37 +47,10 @@ test("an orders@ lock is an Orders shop in every place the panel decides by temp
     const { store } = openStores(b.config);
     const shops = createShops(b.config, store);
 
-    // the shop: its kind, its settings read by Orders' own check, its folder accepted by Orders' own check
-    assert.equal(shops.kind("annapurna"), "orders");
-    const settings = shops.settings("annapurna");
-    assert.deepEqual(settings.menu.map((i: { id: string }) => i.id), ["veg-thali", "chicken-meal", "curd"]);
-    assert.deepEqual(shops.checkFolder(settings, shops.runtime("annapurna")!, "orders@0.1.0", true, { pathway: "orders", version: "0.1.0" }), []);
-
-    // the hand check and its digest are Orders'
-    const live = createGoLive(b.config, shops, store);
-    const ran = await live.run("annapurna");
-    assert.ok(ran && ran.hand.total > 0 && ran.hand.held === ran.hand.total, JSON.stringify(ran?.hand));
-    assert.equal(ran.settingsDigest, KINDS.orders.papers.policyDigest(settings));
-    assert.equal(ran.hand.total, KINDS.orders.papers.summariseRun(await KINDS.orders.papers.runOn(settings)).total);
-
-    // the cases of the export: the orders are read, not the (empty) bookings
-    const papers = createPapers(b.config, shops, createDocuments(store), () => NOW);
+    // every request first: the in-process checks below can take seconds on a loaded machine
     const one = orders.find((o) => o.state === "completed")!;
-    const dispute = papers.dispute("annapurna", one.id, "en");
-    assert.ok(dispute.map((p) => p.file).includes(`case-${one.id}.json`), "the record of one order is made");
-    assert.ok(papers.statement("annapurna", one.customer, "en").length === 2, "a customer's statement is made from the orders");
-    assert.ok(papers.identity("annapurna", "en").full.length === 2);
     const cases = (await arjun.get("/shops/annapurna/papers")).plain;
     assert.ok(cases.includes(one.id), "the case list holds the shop's orders");
-
-    // the unfinished-work list reads orders.json: an order waiting for its advance whose payment could not be read
-    addOrdersShop(b, "stuck");
-    const stuck = { id: "o-99", customer: "p-aaaaaaaaaaaa", language: "en", state: "awaiting_advance", lines: [{ itemId: "veg-thali", qty: 1 }], advanceInr: 60, totalInr: 120, handledPayments: [], pending: [], dateNeedsConfirmation: false, awaitingAddress: false };
-    exportOrders(b, "stuck", [stuck], [{ seq: 1, time: new Date(NOW - 5 * 3_600_000).toISOString(), conversation: "c-aaaaaaaaaaaa", booking: "o-99", action: "record_payment", inputsDigest: "0", outcome: "failed", decisions: [], language: "en", notes: "", refs: {} }]);
-    const inbox = inboxFor(shops, "stuck", NOW, optionsFor());
-    assert.deepEqual(inbox.items.map((i) => [i.kind, i.caseId]), [["payment_unrecorded", "o-99"]]);
-    assert.ok(WORDS.en.inbox.kinds.payment_unrecorded("o-99", "", 0, "").length > 0);
-
     // the monthly report is the Orders report, and the shop page is an Orders shop's page
     const made = await divya.post("/shops/annapurna/report", { month: "2026-11" }, "/shops/annapurna");
     assert.equal(made.status, 303, made.text.slice(0, 300));
@@ -94,5 +67,33 @@ test("an orders@ lock is an Orders shop in every place the panel decides by temp
     assert.ok(editPage.includes('name="menu"') && editPage.includes("veg thali, 120, 12") && !editPage.includes("svc_name_0"), "the edit form is the Orders one");
     const draft = (await divya.post("/setup", { template: "orders" }, "/setup")).location!.split("/")[2];
     assert.ok(!openStores(b.config).store.read<Record<string, unknown>>(`drafts/${draft}.json`)!.fees && Boolean(openStores(b.config).store.read<Record<string, unknown>>(`drafts/${draft}.json`)!.orders), "the new draft holds the Orders form");
+    // the shop: its kind, its settings read by Orders' own check, its folder accepted by Orders' own check
+    assert.equal(shops.kind("annapurna"), "orders");
+    const settings = shops.settings("annapurna");
+    assert.deepEqual(settings.menu.map((i: { id: string }) => i.id), ["veg-thali", "chicken-meal", "curd"]);
+    assert.deepEqual(shops.checkFolder(settings, shops.runtime("annapurna")!, "orders@0.1.0", true, { pathway: "orders", version: "0.1.0" }), []);
+
+    // the hand check and its digest are Orders'
+    const live = createGoLive(b.config, shops, store);
+    const ran = await live.run("annapurna");
+    assert.ok(ran && ran.hand.total > 0 && ran.hand.held === ran.hand.total, JSON.stringify(ran?.hand));
+    assert.equal(ran.settingsDigest, KINDS.orders.papers.policyDigest(settings));
+    assert.equal(ran.hand.total, KINDS.orders.papers.summariseRun(await KINDS.orders.papers.runOn(settings)).total);
+
+    // the cases of the export: the orders are read, not the (empty) bookings
+    const papers = createPapers(b.config, shops, createDocuments(store), () => NOW);
+    const dispute = papers.dispute("annapurna", one.id, "en");
+    assert.ok(dispute.map((p) => p.file).includes(`case-${one.id}.json`), "the record of one order is made");
+    assert.ok(papers.statement("annapurna", one.customer, "en").length === 2, "a customer's statement is made from the orders");
+    assert.ok(papers.identity("annapurna", "en").full.length === 2);
+
+    // the unfinished-work list reads orders.json: an order waiting for its advance whose payment could not be read
+    addOrdersShop(b, "stuck");
+    const stuck = { id: "o-99", customer: "p-aaaaaaaaaaaa", language: "en", state: "awaiting_advance", lines: [{ itemId: "veg-thali", qty: 1 }], advanceInr: 60, totalInr: 120, handledPayments: [], pending: [], dateNeedsConfirmation: false, awaitingAddress: false };
+    exportOrders(b, "stuck", [stuck], [{ seq: 1, time: new Date(NOW - 5 * 3_600_000).toISOString(), conversation: "c-aaaaaaaaaaaa", booking: "o-99", action: "record_payment", inputsDigest: "0", outcome: "failed", decisions: [], language: "en", notes: "", refs: {} }]);
+    const inbox = inboxFor(shops, "stuck", NOW, optionsFor());
+    assert.deepEqual(inbox.items.map((i) => [i.kind, i.caseId]), [["payment_unrecorded", "o-99"]]);
+    assert.ok(WORDS.en.inbox.kinds.payment_unrecorded("o-99", "", 0, "").length > 0);
+
   } finally { await b.close(); }
 });

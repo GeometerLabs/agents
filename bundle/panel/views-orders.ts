@@ -81,14 +81,17 @@ export function activityOrders(c: Ctx, r: OrdersReport): TemplateActivity {
   };
 }
 
-/** What each order can cost in messages, at most: the customer's confirmation, the notice to the owner, and one follow-up (a refund, or a hold that ran out). */
+/**
+ * About how many messages the agent sends for one order: the customer's confirmation, the notice to the owner, and one follow-up (a refund, or a hold that ran out). A planning figure, not a
+ * limit: in the template's busy month (report/example-month.ts, 10 orders) the agent started at most 2 messages for any one order, and 62 in all counting its replies inside the 24-hour window.
+ */
 export const MESSAGES_PER_ORDER = 3;
 /** The longest month. */
 export const DAYS_IN_A_MONTH = 31;
 
 /**
- * The most messages a shop's own rules allow in a month, from its settings: most orders a day for a month of 31 days, each with at most three messages. It is a ceiling from the
- * rules, not a forecast, and replies to customers' own messages come on top. `included` is the plan's allowance from the proposed price list, if it has one.
+ * What the shop's own rules suggest to plan for in a month: most orders a day for a month of 31 days, each with about three messages. It is a planning figure from the rules,
+ * not a limit and not a forecast, and replies to customers' own messages come on top. `included` is the plan's allowance from the proposed price list, if it has one.
  */
 export function ordersMessageCeiling(c: Ctx, s: Settings, included: number | null): TemplateMessages {
   const w = c.w.ordersShop.messages;

@@ -605,9 +605,9 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `ordersShop.activity.pickup` | പിക്കപ്പ് ഓർഡറുകൾ | Pickup orders |  |
 | `ordersShop.activity.delivery` | ഡെലിവറി ഓർഡറുകൾ | Delivery orders |  |
 | `ordersShop.messages.heading` | സന്ദേശങ്ങൾ | Messages |  |
-| `ordersShop.messages.ceiling` | നിങ്ങളുടെ നിയമങ്ങൾ അനുസരിച്ച് ഒരു മാസം പരമാവധി 744 സന്ദേശങ്ങൾ പോകാം: ദിവസം 8 ഓർഡർ വരെ, 31 ദിവസം, ഓരോ ഓർഡറിനും 3 സന്ദേശം വരെ. | Your rules allow at most 744 messages a month: up to 8 orders a day, for 31 days, and up to 3 messages for each order. |  |
+| `ordersShop.messages.ceiling` | നിങ്ങളുടെ നിയമങ്ങൾ ദിവസം 8 ഓർഡർ വരെ അനുവദിക്കുന്നു. ഓരോ ഓർഡറിനും ഏകദേശം 3 സന്ദേശം എന്ന് കണക്കാക്കിയാൽ, 31 ദിവസത്തെ മാസത്തിൽ 744 സന്ദേശങ്ങൾ വരെ പ്രതീക്ഷിക്കാം. | Your rules allow up to 8 orders a day. At about 3 messages for each order, plan for up to 744 messages in a 31-day month. |  |
 | `ordersShop.messages.included` | നിങ്ങളുടെ പ്ലാനിൽ മാസം 3000 സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | Your plan includes 3000 messages a month. |  |
-| `ordersShop.messages.note` | ഉപഭോക്താക്കളുടെ സ്വന്തം സന്ദേശങ്ങൾക്കുള്ള മറുപടികൾ ഇതിനു പുറമേ വരും. ഇത് നിങ്ങളുടെ നിയമങ്ങളിൽ നിന്നുള്ള പരമാവധി പരിധിയാണ്, ബില്ല് അല്ല. | Replies to customers' own messages come on top. This is a ceiling from your rules, not a bill. |  |
+| `ordersShop.messages.note` | ഉപഭോക്താക്കളുടെ സ്വന്തം സന്ദേശങ്ങൾക്കുള്ള മറുപടികൾ ഇതിനു പുറമേ വരും. ഇത് നിങ്ങളുടെ നിയമങ്ങളിൽ നിന്നുള്ള ഏകദേശ കണക്കാണ്, ബില്ല് അല്ല. | Replies to customers' own messages come on top. This is a planning figure from your rules, not a bill. |  |
 | `cost.heading` | ഓരോ മാസവും ഇത് പ്രവർത്തിപ്പിക്കാനുള്ള ചെലവ് | What it costs to run, each month |  |
 | `cost.early` | ആദ്യത്തെ കണക്ക്: യഥാർത്ഥ ബുക്കിംഗുകൾ ഇതുവരെ എണ്ണിയിട്ടില്ല. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | രേഖയിലെ 38 ബുക്കിംഗ് നോക്കി കണക്കാക്കിയത്. | Worked out from 38 bookings in the record. |  |
