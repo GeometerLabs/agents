@@ -3,7 +3,7 @@
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
 import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../modules/approvals/people.ts";
-import { KINDS, kindFor } from "../lib/kinds.ts";
+import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
@@ -194,10 +194,12 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
   if (shop.settings && problems.length === 0) {
     const identity = (kind: GuardKind) => ({ tenant: shop.name, name: `${shop.name}-${kind}`, version: versions[kind] ?? 1, reviewedBy: server.reviewedBy });
     const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined };
-    try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.razorpaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); }
+    const kinds = guardsOf(template, shop.settings); // a UPI shop (B33) has no Razorpay Guard
+    const razorpay = kinds.includes("razorpay");
+    if (razorpay) { try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.razorpaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
     specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour });
     if (template.guards.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
-    for (const kind of template.guards) {
+    for (const kind of kinds) {
       const spec = specs[kind];
       if (!spec) continue;
       const def = guardDef(kind);
@@ -208,7 +210,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       mode: "live", host: "0.0.0.0", port: RUNTIME_PORT, dataDir: DATA_DIR,
       ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}),
       services: {
-        payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` },
+        ...(razorpay ? { payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` } } : {}),
         ...(template.guards.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
         messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, agentTokenFile: `${SECRETS}/agent_whatsapp` },
         timeoutMs: facts.timeoutMs,
@@ -216,7 +218,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
-    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: shop.pins.razorpay?.mode === "live" ? "live" : "test-mode" }, check, notes);
+    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.razorpay?.mode === "live" ? "live" : "test-mode" }, check, notes); // a UPI shop's money is the owner's real marks
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };

@@ -8,6 +8,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { serverPaths } from "./server.ts";
 import type { UsageTotals } from "./usage.ts";
+import type { StatusLicence } from "./licence.ts";
 import { stableJson, writeAtomic } from "./util.ts";
 import type { Problem } from "./util.ts";
 
@@ -24,6 +25,10 @@ export interface ShopStatus {
   backups?: { lastCopyAt: string | null; lastDrillAt: string | null; drillOk: boolean | null; drillDetail?: string };
   /** The cost meter's cumulative counts over the shop's whole record, as of the last export (every 15 minutes). Counts only (lib/usage.ts). Ops sends the difference to fleet. */
   usage?: UsageTotals & { at: string };
+  /** The unfinished-work list's counts by kind, as of the last export (modules/unfinished). Ops sends them as `open_obligations`. Kind ids and counts only. */
+  obligations?: { counts: Record<string, number>; at: string };
+  /** The shop's licence (B13), worked out on this server from the signed lease (lib/licence.ts). The panel shows it; the runtime reads its own copy (client/licence.json). */
+  licence?: StatusLicence & { at: string };
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */
   webhooks?: { razorpay: string; whatsapp: string };
   /** An agent someone else wrote (no runtime, no pathway): where its own agent calls Guard instead of each service, and where WhatsApp sends the shop's webhooks. The panel ignores it. */

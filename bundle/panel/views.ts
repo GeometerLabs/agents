@@ -16,7 +16,14 @@ import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
 import { MAX_PANEL_APPROVERS } from "./setup.ts";
+import { formatInr } from "../../modules/language/format.ts";
+import type { Obligation } from "../../modules/unfinished/index.ts";
+import { dayWords } from "./licence.ts";
+import type { LicenceState, LicenceView } from "./licence.ts";
+import type { ShopInbox } from "./inbox.ts";
+import type { AssignmentFile } from "./contract.ts";
 import type { Draft } from "./setup.ts";
+import { paymentModuleOf } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
@@ -69,6 +76,7 @@ export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolea
 </div>
 ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
   <a class="tab" href="/shops">${c.w.nav.shops}</a>
+  <a class="tab" href="/inbox">${c.w.inbox.nav}</a>
   <a class="tab" href="/setup">${c.w.nav.setUp}</a>
   ${c.canInvite ? html`<a class="tab" href="/invite">${c.w.nav.invite}</a>` : ""}
   <form method="post" action="/logout" class="tab" style="padding:0"><input type="hidden" name="_csrf" value="${c.csrf}"><button class="tab" type="submit" style="width:100%">${c.w.nav.signOut}</button></form>
@@ -121,7 +129,7 @@ ${o.link ? html`<div class="notice"><p>${w.made}</p><code class="addr">${o.link}
 
 // ---- the shops --------------------------------------------------------------------------------------------------------------------------
 
-export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string }
+export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string; /** The licence, when the lease lists the shop and it is not in order. */ licence?: LicenceState }
 
 const liveLine = (c: Ctx, live: LiveView): Raw => html`<span class="state ${live.code}">${c.w.live[live.code]}</span>`;
 
@@ -132,7 +140,47 @@ ${o.cards.length === 0 ? html`<p class="big">${w.empty}</p><a class="btn primary
   <div class="name">${s.name}</div>
   <div>${liveLine(c, s.live)}</div>
   <div class="meta">${s.limits ? w.limits(s.limits.proven, s.limits.of) : w.limitsUnknown}${s.version ? html` · ${w.version(s.version)}` : ""}</div>
-  <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div></a>`)}</div>`}`);
+  <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div>${s.licence && s.licence !== "active" ? html`
+  <div class="meta"><b>${c.w.licence.states[s.licence]}</b></div>` : ""}</a>`)}</div>`}`);
+}
+
+// ---- the unfinished-work inbox (B31) ------------------------------------------------------------------------------------------------------------------
+
+/** One obligation as one plain sentence, in the reader's language. A kind with no words (a module added one) is still said, in the fallback sentence. */
+export function sentenceOf(c: Ctx, o: Obligation): string {
+  const w = c.w.inbox;
+  if (!Object.hasOwn(w.kinds, o.kind)) return w.fallback(o.kind, o.caseId);
+  const f = o.facts;
+  const amount = typeof f.amountInr === "number" ? formatInr(f.amountInr) : "";
+  const noun = String(f.holder ?? f.what ?? "");
+  return w.kinds[o.kind](o.caseId, amount, typeof f.hours === "number" ? f.hours : 0, Object.hasOwn(w.variants, noun) ? w.variants[noun] : "");
+}
+
+function inboxItems(c: Ctx, shop: ShopInbox): Raw {
+  const w = c.w.inbox;
+  if (!shop.asOf && shop.items.length === 0) return html`<p class="note">${w.notShared}</p>`;
+  return html`${shop.items.length === 0 ? html`<p class="note">${w.empty}</p>` : html`<ul class="plain">${shop.items.map((o) => html`<li class="warn"><span class="mark">!</span><span>${sentenceOf(c, o)}${o.sinceMs !== null ? html`<br><small class="note">${w.since(when(new Date(o.sinceMs).toISOString(), c.lang))}</small>` : ""}${recoveryButtons(c, shop.id, o)}</span></li>`)}</ul>`}
+${shop.failed.length > 0 ? html`<p class="note">${w.failedKinds}</p>` : ""}
+${shop.asOf ? html`<p class="note">${w.asOf(when(shop.asOf, c.lang))}</p>` : ""}`;
+}
+
+/** One button for each recovery action the item offers. Each is a form that asks the shop's own agent, which does it through Guard like anything else. */
+function recoveryButtons(c: Ctx, shop: string, o: Obligation): Raw {
+  if (o.actions.length === 0) return raw("");
+  const w = c.w.inbox;
+  return html`<br>${o.actions.map((a) => html`<form method="post" action="/shops/${shop}/recover" style="display:inline">${csrf(c)}<input type="hidden" name="case" value="${o.caseId}"><input type="hidden" name="action" value="${a}"><button class="btn" type="submit">${Object.hasOwn(w.actions, a) ? w.actions[a] : a}</button></form> `)}`;
+}
+
+export function inboxPage(c: Ctx, o: { shops: ShopInbox[]; notice?: string }): string {
+  const w = c.w.inbox;
+  const total = o.shops.reduce((n, s) => n + s.items.length, 0);
+  return layout(c, w.title, html`<h1>${w.title}</h1>
+<p>${w.intro}</p>
+${o.notice ? html`<div class="notice" role="status">${o.notice}</div>` : ""}
+<p class="big">${total === 0 ? w.empty : w.count(total)}</p>
+${o.shops.map((s) => html`<h2><a href="/shops/${s.id}">${s.name}</a></h2>${inboxItems(c, s)}`)}
+<p class="note">${w.actionNote}</p>
+<p class="note">${w.help}</p>`);
 }
 
 export interface ShopView {
@@ -148,13 +196,40 @@ export interface ShopView {
   fees?: { summary: ReturnType<typeof summaryFees>; activity?: ReturnType<typeof activityFees>; messages: ReturnType<typeof messageCeiling> };
   /** Fleet's last word on the shop's plan (plan.ts). Left out when fleet has said nothing. */
   plan?: PlanView;
+  /** The shop's licence (B13): shown only when the lease lists the shop. */
+  licence?: LicenceView;
   activity?: { made: number; cancelled: number; moved: number; deposits: number; refunds: number; saidNo: number; owner: { asked: number; approved: number; denied: number } };
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
+  /** This shop's unfinished work (B31), read from its exported record. */
+  inbox?: ShopInbox;
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
   isBuilder: boolean;
   details?: { statusJson: string; pins: string; runtimeJson: string };
   limitsText: string[];
   notice?: string;
+}
+
+/**
+ * The licence (B13): where it stands, in plain words, what that means for customers, the dates, fleet's renew link, and a note when the lease on this server has not been
+ * refreshed for more than 2 days. Fleet's licence warning codes are not repeated in the plan's warnings: this block says them.
+ */
+function licenceBlock(c: Ctx, l: LicenceView): Raw {
+  const w = c.w.licence;
+  const day = (d: string) => dayWords(d, c.lang);
+  const lines = [
+    l.paidThrough && (l.state === "active" || l.state === "reminder" || l.state === "warning") ? w.paidThrough(day(l.paidThrough)) : "",
+    l.windDownOn && (l.state === "reminder" || l.state === "warning") ? w.windDownOn(day(l.windDownOn)) : "",
+    l.extendedUntil && l.state !== "wind_down" && l.state !== "stopped" ? w.extended(day(l.extendedUntil)) : "",
+    l.stopOn && l.state === "wind_down" ? w.stopOn(day(l.stopOn)) : "",
+    l.exportUntil && l.state === "stopped" ? w.exportUntil(day(l.exportUntil)) : "",
+  ].filter(Boolean);
+  const urgent = l.state === "warning" || l.state === "wind_down" || l.state === "stopped";
+  return html`<h2>${w.heading}</h2>
+<p class="big"><span class="state ${urgent ? "stopped" : "live"}">${w.states[l.state]}</span></p>
+<p>${w.means[l.state]}</p>
+${lines.length > 0 ? html`<ul class="plain">${lines.map((t) => html`<li class="info"><span class="mark">·</span><span>${t}</span></li>`)}</ul>` : ""}
+${l.renewUrl ? html`<p><a class="btn primary" href="${l.renewUrl}" rel="noopener noreferrer">${w.renew}</a></p>` : ""}
+${l.staleSince ? html`<div class="notice" role="status">${w.stale(day(l.staleSince))}</div>` : ""}`;
 }
 
 /** The plan: its name and included messages, the Innovator badge, the price, and what fleet wants the partner to know (button mode, warnings). */
@@ -181,7 +256,7 @@ ${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.plan ? ` (${c.w.plan.na
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>
-<ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${w.caveats[k as keyof typeof w.caveats]}</li>`)}</ul>`;
+<ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${k === "no-gateway-fee" ? c.w.upi.noGatewayFee : w.caveats[k as keyof typeof w.caveats]}</li>`)}</ul>`;
 }
 
 /** The Fees centre's settings in plain words: its batches with their fees, the rules (the certificate's own lines), the languages and the owner. */
@@ -246,6 +321,8 @@ ${v.liveCounts ? html`<ul class="plain">
 </ul>` : ""}
 <p class="note">${c.w.common.counts}</p>
 
+${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
+
 <h2>${w.settings}</h2>
 ${v.fees ? feesSummaryBlock(c, v) : ""}
 ${v.summary ? html`<ul class="plain">
@@ -258,6 +335,7 @@ ${v.summary ? html`<ul class="plain">
 <form method="post" action="/shops/${v.id}/edit">${csrf(c)}<button class="btn" type="submit">${w.settingsEdit}</button></form>
 
 ${v.plan ? planBlock(c, v.plan) : ""}
+${v.licence ? licenceBlock(c, v.licence) : ""}
 
 ${v.cost ? costTable(c, v.cost) : v.fees ? feesMessagesBlock(c, v.fees.messages) : ""}
 
@@ -268,6 +346,12 @@ ${v.cost ? costTable(c, v.cost) : v.fees ? feesMessagesBlock(c, v.fees.messages)
 </ul>
 ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
+
+<h2>${c.w.takeOut.heading}</h2>
+<p>${c.w.takeOut.text}</p>
+<p><a class="btn" href="/shops/${v.id}/export">${c.w.takeOut.button}</a></p>
+<p class="note">${c.w.takeOut.notIn} ${c.w.takeOut.check}</p>
+<p><a class="btn" href="/shops/${v.id}/handover">${c.w.handover.button}</a></p>
 
 ${v.live.code !== "stopped" && v.live.code !== "stopping" ? html`<p><a class="btn danger" href="/shops/${v.id}/stop">${w.stop}</a></p>` : ""}
 
@@ -280,6 +364,40 @@ ${v.cost.lines.map((l) => `${l.id}: ${l.uses.join(", ") || "-"} (${l.quality ?? 
   <pre>${v.details.runtimeJson}</pre>
 </details>` : ""}
 `);
+}
+
+// ---- moving a shop to someone else (B38) ---------------------------------------------------------------------------------------------------------------
+
+export interface HandoverView {
+  id: string;
+  name: string;
+  stage: "form" | "asked" | "waiting" | "expired" | "done";
+  problem?: string;
+  /** Shown once, when the request is made; never kept. */
+  code?: string;
+  to?: string;
+  values: { to: string; reason: string };
+  history: AssignmentFile["history"];
+}
+
+export function handoverPage(c: Ctx, v: HandoverView): string {
+  const w = c.w.handover;
+  const form = html`<form method="post" action="/shops/${v.id}/handover" autocomplete="off">${csrf(c)}
+  <label class="field"><span>${w.who}</span><input name="to" value="${v.values.to}" autocapitalize="none" maxlength="40" required><p class="help">${w.whoHelp}</p></label>
+  <label class="field"><span>${w.why}</span><select name="reason" required><option value=""></option>${(["stopped_paying", "stopped_serving", "owner_request"] as const).map((r) => html`<option value="${r}" ${r === v.values.reason ? raw("selected") : ""}>${w.reasons[r]}</option>`)}</select></label>
+  <button class="btn primary" type="submit">${w.start}</button>
+</form>`;
+  const cancel = html`<form method="post" action="/shops/${v.id}/handover/cancel">${csrf(c)}<button class="btn" type="submit">${w.cancel}</button></form>`;
+  return layout(c, w.heading, html`<h1>${w.heading}</h1>
+<p class="big">${v.name}</p>
+${v.problem ? html`<ul class="errors" role="alert"><li>${v.problem}</li></ul>` : ""}
+${v.stage === "done" ? html`<div class="notice" role="status">${w.done(v.to ?? "")}</div>` : ""}
+${v.stage === "asked" ? html`<h2>${w.askTitle}</h2><p>${w.ask(v.code ?? "")}</p><code class="addr">move ${v.code}</code><p class="note">${w.askNote}</p><p>${w.waiting(v.to ?? "")}</p><p><a class="btn" href="/shops/${v.id}/handover">${w.check}</a></p>${cancel}` : ""}
+${v.stage === "waiting" ? html`<h2>${w.askTitle}</h2><p>${w.waiting(v.to ?? "")}</p><p><a class="btn" href="/shops/${v.id}/handover">${w.check}</a></p>${cancel}` : ""}
+${v.stage === "expired" ? html`<div class="notice" role="status">${w.expired}</div>` : ""}
+${v.stage === "form" || v.stage === "expired" ? html`<p>${w.intro}</p><ul class="plain"><li class="info"><span class="mark">·</span><span>${w.moves}</span></li><li class="info"><span class="mark">·</span><span>${w.stays}</span></li><li class="info"><span class="mark">·</span><span>${w.never}</span></li></ul>${form}` : ""}
+${v.history.length > 0 ? html`<h2>${w.history}</h2><ul class="plain">${v.history.map((h) => html`<li class="info"><span class="mark">·</span><span>${w.historyLine(h.from.accountName, h.to.accountName, when(h.at, c.lang), w.reasons[h.reason])}</span></li>`)}</ul>` : ""}
+<p><a href="/shops/${v.id}">${c.w.common.back}</a></p>`);
 }
 
 export function stopPage(c: Ctx, o: { id: string; name: string; already: boolean; at?: string }): string {
@@ -369,7 +487,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   } else {
     const a = w.accounts;
     const t = v.template;
-    const guide = (steps: string[]) => html`<ol class="guide">${steps.map((s) => html`<li>${s}</li>`)}</ol>`;
+    const p = c.w.upi.setup;
+    const paying = paymentModuleOf(d);
+    const guide =(steps: string[]) => html`<ol class="guide">${steps.map((s) => html`<li>${s}</li>`)}</ol>`;
     body = html`<p>${a.intro}</p><form method="post" action="/setup/${d.id}/${v.now + 1}" autocomplete="off">${csrf(c)}
   ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
     ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.numberId, { mode: "numeric", max: 20 })}
@@ -378,7 +498,14 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     ${v.shareAddress ? html`<p>${a.calendar.shareAddress}</p><code class="addr">${v.shareAddress}</code>` : html`<p class="note">${a.calendar.noAddress}</p>`}
     ${text(a.calendar.id, "calId", d.calendar.id, { max: 200 })}
     ${v.shareAddress ? "" : secret(c, a.calendar.json, "calJson", v.receipts["google_service_account.json"], "textarea")}` : ""}
-  ${t.accounts.includes("razorpay") ? html`<h2>${a.razorpay.title}</h2><p>${a.razorpay.intro}</p>${guide(a.razorpay.steps)}
+  ${t.accounts.includes("razorpay") ? html`<h2>${p.heading}</h2><p>${p.intro}</p>
+    <div class="field"><div class="days">
+      <label><input type="radio" name="payMod" value="upi" ${paying === "upi" ? raw("checked") : ""}> ${p.optionUpi}</label>
+      <label><input type="radio" name="payMod" value="razorpay" ${paying === "razorpay" ? raw("checked") : ""}> ${p.optionRazorpay}</label></div></div>
+    <h2>${p.upiTitle}</h2><p>${p.upiIntro}</p>
+    ${text(p.upiId, "upiId", d.payment?.upiId ?? "", { max: 80, help: p.upiIdHelp })}${text(p.payee, "upiPayee", d.payment?.payee ?? "", { max: 80, help: p.payeeHelp })}
+    <p class="note">${p.noCheck}</p>
+    <h2>${a.razorpay.title}</h2><p class="note">${p.razorpayOnly}</p><p>${a.razorpay.intro}</p>${guide(a.razorpay.steps)}
     ${v.webhookUrl ? html`<code class="addr">${a.razorpay.webhookUrl(v.webhookUrl)}</code>` : ""}
     <div class="field"><span>${a.razorpay.mode}</span><div class="days">
       <label><input type="radio" name="rzpMode" value="live" ${d.razorpay.mode === "live" ? raw("checked") : ""}> ${a.razorpay.modeLive}</label>

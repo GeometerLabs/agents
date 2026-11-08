@@ -19,6 +19,9 @@
 //  - document: type "document", document: { link, filename, caption }. WhatsApp fetches the link itself (https, public) and takes PDF, plain text, Word, Excel and
 //             PowerPoint, not HTML. A session message like text: only inside the 24-hour window.
 //             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/document-messages.md
+//  - image:   type "image", image: { link, caption }. Like a document, WhatsApp fetches the link itself (https, public; PNG or JPEG, at most 5 MB) and it is a session
+//             message: only inside the 24-hour window. Sending by `link` keeps the call one JSON body through Guard; an uploaded media id would need a second route.
+//             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/image-messages.md
 //  - reply:   { messaging_product, contacts: [{ input, wa_id }], messages: [{ id: "wamid...", message_status? }] }. It means the API
 //             ACCEPTED the message. Delivery arrives later as a status webhook.
 //  - errors:  { error: { message, type, code, error_data: { details }, fbtrace_id } }. Code 131047: more than 24 hours since the customer
@@ -35,8 +38,8 @@ import { META_LANGUAGE } from "../language/meta-templates.ts";
 import { ApiError, WindowClosedError } from "../core/faults.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
-import { documentProblem } from "./messaging.ts";
-import type { DocumentMessage, Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
+import { documentProblem, imageProblem } from "./messaging.ts";
+import type { DocumentMessage, ImageMessage, Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
 import { asArray, createHttp, isObject, num, str } from "../core/http.ts";
 import type { Http, HttpReply, Json } from "../core/http.ts";
 
@@ -83,6 +86,11 @@ export function interactiveBody(to: string, message: InteractiveMessage): Json {
 /** The wire body for a document sent by its address. Exported so the tests (and the stand-in) can read it. */
 export function documentBody(to: string, doc: DocumentMessage): Json {
   return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "document", document: { link: doc.link, filename: doc.filename, ...(doc.caption ? { caption: doc.caption } : {}) } };
+}
+
+/** The wire body for an image sent by its address. Exported so the tests (and the stand-in) can read it. */
+export function imageBody(to: string, image: ImageMessage): Json {
+  return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "image", image: { link: image.link, ...(image.caption ? { caption: image.caption } : {}) } };
 }
 
 export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: Clock; window: WindowStore }): Messaging {
@@ -133,6 +141,13 @@ export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: C
       const problem = documentProblem(doc);
       if (problem) throw new ApiError(400, `The document cannot be sent: ${problem}.`);
       return send(documentBody(to, doc), { to, kind: "document", text: doc.caption ?? doc.filename, document: { ...doc } });
+    },
+
+    async sendImage(to, image) {
+      if (!windowOpen(to)) throw new WindowClosedError(); // a picture is a session message too (131047 otherwise)
+      const problem = imageProblem(image);
+      if (problem) throw new ApiError(400, `The image cannot be sent: ${problem}.`);
+      return send(imageBody(to, image), { to, kind: "image", text: image.caption ?? "", image: { ...image } });
     },
 
     async sendTemplate(to, template) {

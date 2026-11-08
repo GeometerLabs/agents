@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (40)
+## 1. Messages to the customer (54)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -52,8 +52,22 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `kept` | The customer tapped No, keep it: the booking stays as it is | ಸರಿ, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. | Okay, your booking for Tue 10 Nov, 6:00 pm stays as it is. |  |
 | `told_owner` | The customer tapped Talk to the owner: they are told the owner has been asked to message them | ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ. | I've told the owner that you would like to talk. They will message you here. |  |
 | `couldnt_tell_owner` | The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ಕ್ಷಮಿಸಿ, ಈಗ ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Sorry, I couldn't reach the owner just now. Please try again in a few minutes. |  |
+| `upi_quote_and_link` | UPI shop: normal quote, with the UPI ID and the upi:// link (the QR picture goes just before) | ನಮ್ಮ ಹೇರ್ ಕಟ್ ₹450. ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಖಾಲಿ ಇದೆ. ಖಚಿತಪಡಿಸಲು ₹200 ಮುಂಗಡ ಹಣವನ್ನು UPI ಮೂಲಕ Glow Salon (UPI ID glowsalon@okicici) ಗೆ ಕಳುಹಿಸಿ: upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR ಸ್ಲಾಟ್ ಅನ್ನು 15 ನಿಮಿಷ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ. ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | Our haircut is ₹450. Tue 10 Nov, 6:00 pm is free. To confirm, pay the ₹200 deposit by UPI to Glow Salon (UPI ID glowsalon@okicici): upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR I'll hold the slot for 15 minutes. The owner confirms the payment, then I'll message you. |  |
+| `upi_slot_and_link` | UPI shop: straight after price_floor, the same without the price | ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಖಾಲಿ ಇದೆ. ಖಚಿತಪಡಿಸಲು ₹200 ಮುಂಗಡ ಹಣವನ್ನು UPI ಮೂಲಕ Glow Salon (UPI ID glowsalon@okicici) ಗೆ ಕಳುಹಿಸಿ: upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR ಸ್ಲಾಟ್ ಅನ್ನು 15 ನಿಮಿಷ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ. ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | Tue 10 Nov, 6:00 pm is free. To confirm, pay the ₹200 deposit by UPI to Glow Salon (UPI ID glowsalon@okicici): upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR I'll hold the slot for 15 minutes. The owner confirms the payment, then I'll message you. |  |
+| `upi_already_waiting` | UPI shop: the customer writes again while the slot is held | ನಿಮ್ಮ ಸ್ಲಾಟ್ (ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00) ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ. ₹200 ಮುಂಗಡ ಹಣವನ್ನು UPI ಮೂಲಕ Glow Salon (UPI ID glowsalon@okicici) ಗೆ ಕಳುಹಿಸಿ: upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | Your slot (Tue 10 Nov, 6:00 pm) is held. Pay the ₹200 deposit by UPI to Glow Salon (UPI ID glowsalon@okicici): upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR The owner confirms the payment, then I'll message you. |  |
+| `upi_qr_caption` | UPI shop: the words under the QR picture | ಬುಕಿಂಗ್ b-3 ಗಾಗಿ Glow Salon ಗೆ UPI ಮೂಲಕ ₹200 ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. | Scan to pay ₹200 by UPI to Glow Salon for booking b-3. |  |
+| `upi_booked` | UPI shop: the owner marked the whole deposit received and the calendar shows the booking | ಬುಕ್ ಆಗಿದೆ! ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. ನಿಮ್ಮ ₹200 ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ. | Booked! haircut on Tue 10 Nov, 6:00 pm. The owner has confirmed your ₹200 deposit. Cancel at least 24 hours before the start for a refund. |  |
+| `upi_paid_claim` | UPI shop: the customer says they paid, taps I have paid, or sends a screenshot (nothing is marked paid) | ಧನ್ಯವಾದ. ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನಿಮ್ಮ ₹200 ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ. | Thank you. The owner will look for your ₹200 payment in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
+| `upi_nothing_waiting` | UPI shop: the customer says they paid and no UPI payment is waiting | ಧನ್ಯವಾದ. ಈಗ ನಿಮ್ಮ ಯಾವುದೇ UPI ಪಾವತಿ ಬಾಕಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಲು ಏನೂ ಇಲ್ಲ. ಬೇರೆ ಯಾವುದಕ್ಕಾದರೂ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತನಾಡಿ. | Thank you. No UPI payment is waiting for you just now, so there is nothing for the owner to confirm. If you paid for something else, please talk to the owner. |  |
+| `upi_hold_expired` | UPI shop: the hold ended before the owner confirmed the deposit | ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಮುಂಗಡ ಹಣವನ್ನು ಖಚಿತಪಡಿಸದ ಕಾರಣ ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದಿದೆ. ನೀವು ಈಗಾಗಲೇ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ಮಾಲೀಕರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ. ಇನ್ನೂ ಬುಕ್ ಮಾಡಬೇಕಿದ್ದರೆ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. | The hold on Tue 10 Nov, 6:00 pm has ended because the owner had not confirmed the deposit in time. If you have already paid, the owner will contact you. Message me if you'd still like to book. |  |
+| `upi_late_received` | UPI shop: the owner marked the money after the hold ended: not booked again by itself | ನಿಮ್ಮ ₹150 ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದ ನಂತರ ಖಚಿತಪಡಿಸಿದರು, ಆದ್ದರಿಂದ ಬುಕ್ ಆಗಿಲ್ಲ. ಮತ್ತೆ ಬುಕ್ ಮಾಡುವ ಅಥವಾ ಹಣ ಮರಳಿ ಕಳುಹಿಸುವ ಬಗ್ಗೆ ಮಾಲೀಕರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ. | The owner confirmed your ₹150 payment after the hold on Tue 10 Nov, 6:00 pm had ended, so it is not booked. The owner will contact you about booking again or sending the money back. |  |
+| `upi_refund_owed` | UPI shop: a refund the owner will send (the agent never sends it) | ಮಾಲೀಕರು ₹200 ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | The owner will send ₹200 back to you by UPI. I'll message you when they mark it sent. |  |
+| `upi_cancelled_refund_owed` | UPI shop: the customer cancelled inside the window; the owner will send the deposit back | ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ. ಮಾಲೀಕರು ನಿಮ್ಮ ₹200 ಅನ್ನು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | Your booking for Tue 10 Nov, 6:00 pm is cancelled. The owner will send your ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
+| `upi_extra_refund_owed` | UPI shop: the owner marked more than the deposit; the extra goes back from the owner | ನೀವು ಮುಂಗಡ ಹಣಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಳುಹಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ ₹200 ಅನ್ನು ಮಾಲೀಕರು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | You paid more than the deposit. The owner will send the extra ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
+| `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ಬುಕಿಂಗ್ b-3 ರ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
+| `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Glow Salon ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
 
-## 2. Messages to the owner (22)
+## 2. Messages to the owner (35)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -81,6 +95,19 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_ai_allowance` | Button mode, told once a month: the shop's monthly AI allowance is used up | ಸೂಚನೆ: Glow Salon-ನ ಈ ತಿಂಗಳ AI ಮಿತಿ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಈಗ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳ ಮೂಲಕ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಮುಂದಿನ ತಿಂಗಳು ಸಾಮಾನ್ಯ ಸೇವೆ ಮರಳುತ್ತದೆ. | Notice: this month's AI allowance for Glow Salon is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month. |  |
 | `owner_ai_off` | Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent) | ಸೂಚನೆ: Glow Salon-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಸದ್ಯಕ್ಕೆ ಆಫ್ ಮಾಡಲಾಗಿದೆ. ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳಿಂದ ಬುಕಿಂಗ್ ಮುಂದುವರಿಸುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Notice: the AI that reads messages for Glow Salon has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told. |  |
 | `owner_ai_fault` | Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes | ಸೂಚನೆ: Glow Salon-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ. | Notice: the AI that reads messages for Glow Salon is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes. |  |
+| `owner_upi_expected` | UPI shop: tells the owner what payment to look for in their UPI app, with the one-use code | ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಗ್ರಾಹಕರು +919811111111 ಬುಕಿಂಗ್ b-3 (ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00) ಗಾಗಿ ₹200 ಮುಂಗಡ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ "received P4XR9T" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ. | UPI payment to check: customer +919811111111 will pay the ₹200 deposit for haircut on Tue 10 Nov, 6:00 pm (booking b-3). When it shows in your UPI app, tap Received or reply "received P4XR9T". If a different amount came, reply "received P4XR9T" and the amount. |  |
+| `owner_upi_claim` | UPI shop: the customer says they paid (a screenshot is not proof): the owner is asked to look | ಗ್ರಾಹಕರು +919811111111 ಬುಕಿಂಗ್ b-3 ರ ₹200 ಮುಂಗಡ ಹಣ ಕಳುಹಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Customer +919811111111 says they have paid the ₹200 deposit for booking b-3. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received P4XR9T". |  |
+| `owner_upi_marked` | UPI shop: the answer to the owner's Received | ಧನ್ಯವಾದ. ಬುಕಿಂಗ್ b-3 ರ ₹150 ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ. | Thank you. ₹150 for booking b-3 is marked paid by you. |  |
+| `owner_upi_part` | UPI shop: the owner marked less than the deposit: not booked, the rest is asked for | ಬುಕಿಂಗ್ b-3 ಗೆ ನೀವು ₹150 ದಾಖಲಿಸಿದ್ದೀರಿ, ಆದರೆ ಮುಂಗಡ ಹಣ ₹200, ಆದ್ದರಿಂದ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರುತ್ತದೆ. ಉಳಿದ ₹50 ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | You marked ₹150 for booking b-3, but the deposit is ₹200, so it is not booked yet. The slot stays held until the hold ends. When the other ₹50 arrives, tap Received or reply "received P4XR9T". |  |
+| `owner_upi_already` | UPI shop: the owner used a code that was already used: counted once | ಆ ಪಾವತಿ ಈಗಾಗಲೇ ದಾಖಲಾಗಿದೆ. ಅದನ್ನು ಒಂದೇ ಬಾರಿ ಎಣಿಸಲಾಗುತ್ತದೆ. | That payment is already marked. It is counted once. |  |
+| `owner_upi_unknown` | UPI shop: the owner used a code the agent never gave | ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಆ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಸಂದೇಶದಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ. | I don't know that code. Please use the code in my latest message about the payment. |  |
+| `owner_upi_late` | UPI shop: the owner marked the money after the hold ended: book by hand, or send it back | ಬುಕಿಂಗ್ b-3 ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದ ನಂತರ ನೀವು ₹150 ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದೀರಿ, ಆದ್ದರಿಂದ ಅದು ತಾನಾಗಿ ಮತ್ತೆ ಬುಕ್ ಆಗಲಿಲ್ಲ. ಗ್ರಾಹಕರು +919811111111 ಅವರನ್ನು ನೀವೇ ಮತ್ತೆ ಬುಕ್ ಮಾಡಿ, ಅಥವಾ ₹200 ಅನ್ನು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸಿ. ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಅಥವಾ "ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಅಥವಾ "kept P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | You marked ₹150 received for booking b-3 after its hold had ended, so it was not booked again by itself. Book customer +919811111111 again yourself, or send the ₹200 back by UPI. Then tap Refund sent or Kept for booking, or reply "refunded P4XR9T" or "kept P4XR9T". |  |
+| `owner_upi_refund_owed` | UPI shop: a refund the owner must send from their UPI app, with the code | ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಗ್ರಾಹಕರು +919811111111 (ಬುಕಿಂಗ್ b-3) ಅವರಿಗೆ UPI ಮೂಲಕ ₹200. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Refund to send: ₹200 by UPI to customer +919811111111 (booking b-3). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು +919811111111 (ಬುಕಿಂಗ್ b-3) ಅವರಿಗೆ ₹200 ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Reminder: ₹200 is still owed back to customer +919811111111 (booking b-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | ಧನ್ಯವಾದ. ಬುಕಿಂಗ್ b-3 ರ ₹200 ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Thank you. The ₹200 refund for booking b-3 is marked sent, and the customer has been told. |  |
+| `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ಸರಿ. ಬುಕಿಂಗ್ b-3 ರ ₹200 ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಡಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ. | Noted. The ₹200 for booking b-3 is kept for a booking you make yourself. Nothing more is owed back. |  |
+| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, local partner ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: 3. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: 1. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್ ವರೆಗೆ Divya, local partner ನೀಡುತ್ತಾರೆ. | Notice: online booking for Glow Salon has stopped. Nothing is deleted. Bookings to come: 3. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -96,6 +123,10 @@ Some of the messages above come with buttons (up to 3, each 20 letters at most) 
 | `owner` | Button, and the last row of each list: talk to the shop's owner | ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತು | Talk to the owner |  |
 | `pickService` | The button that opens the list of services | ಸೇವೆ ಆಯ್ಕೆಮಾಡಿ | Pick a service |  |
 | `pickTime` | The button that opens the list of free times | ಸಮಯ ಆಯ್ಕೆಮಾಡಿ | Pick a time |  |
+| `paid` | UPI shop: button under the payment request: I have paid (the owner is asked to look; nothing is marked paid) | ನಾನು ಪಾವತಿಸಿದ್ದೇನೆ | I have paid |  |
+| `received` | UPI shop: the owner's button, with the amount after it: the money is in my UPI app | ಬಂದಿದೆ | Received |  |
+| `refundSent` | UPI shop: the owner's button: I have sent the refund | ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ | Refund sent |  |
+| `keptForBooking` | UPI shop: the owner's button: I keep the money for a booking I make myself | ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ | Kept for booking |  |
 
 ## 3. Dates and times as the agent writes them
 
@@ -297,6 +328,10 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `sourceLong.stand-in` | ಈ ಲೆಕ್ಕಗಳು ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳು ಮತ್ತು ಟೆಸ್ಟ್ ಹಣದಿಂದ ಬಂದವು. ನಿಜವಾದ ಯಾವುದನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ, ಪಾವತಿಸಿಲ್ಲ. | These numbers come from stand-in services and test money. Nothing real was sent or paid. |  |
 | `sourceLong.test-mode` | ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ಟೆಸ್ಟ್ ಮೋಡ್‌ನಿಂದ ಬಂದವು. ಹಣ ಟೆಸ್ಟ್ ಹಣವಾಗಿತ್ತು. | These numbers come from real services in test mode. The money was test money. |  |
 | `sourceLong.live` | ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ನಡೆಯುತ್ತಿರುವ ದಾಖಲೆಯಿಂದ ಬಂದವು. | These numbers come from the live record of real services. |  |
+| `upiLabel.deposits` | ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ | Deposits marked paid by owner |  |
+| `upiLabel.givenBack` | ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್ | Refunds marked sent by owner |  |
+| `notTested.upi-not-automatic` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ | automatic payment checking: with UPI the owner marks each payment received |  |
+| `notTested.real-upi` | ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ) | a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment) |  |
 | `notTested.voice-calls` | ಫೋನ್ ಕರೆಗಳು | phone calls |  |
 | `notTested.group-bookings` | ಗುಂಪು ಬುಕಿಂಗ್ | group bookings |  |
 | `notTested.walk-ins` | ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) | walk-ins |  |
@@ -362,6 +397,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಿ | Check it at |  |
 | `page.signedBy` | ಈ ಕೀಲಿಯಿಂದ ಸಹಿ ಮಾಡಲಾಗಿದೆ | Signed with key |  |
 | `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
+| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸ | Show what we did ▸ |  |
 | `page.byActionHeading` | ಏನು ಮಾಡಲಾಯಿತು, ಕೆಲಸ ಮತ್ತು ಫಲಿತಾಂಶದ ಪ್ರಕಾರ | What was done, by action and outcome |  |
@@ -592,6 +628,24 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ಈ ತಿಂಗಳ ಸೇರಿದ ಸಂದೇಶಗಳಲ್ಲಿ 80% ಬಳಕೆಯಾಗಿದೆ. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | ರೀಚಾರ್ಜ್ ಬ್ಯಾಲೆನ್ಸ್‌ನ 80% ಬಳಕೆಯಾಗಿದೆ. ಮುಗಿಯುವ ಮೊದಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp ನ ಕೆಲವು ವೆಚ್ಚಗಳನ್ನು ಇನ್ನೂ ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಪಾವತಿಸಿಲ್ಲ. ಅವನ್ನು ತೀರಿಸಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `licence.heading` | ಪರವಾನಗಿ | Licence |  |
+| `licence.states.active` | ಪರವಾನಗಿ ಸರಿಯಾಗಿದೆ | Licence in order |  |
+| `licence.states.reminder` | ಪರವಾನಗಿ ಪಾವತಿ ಬಾಕಿ ಇದೆ | Licence payment due |  |
+| `licence.states.warning` | ಪರವಾನಗಿ ಪಾವತಿ ತಡವಾಗಿದೆ | Licence payment overdue |  |
+| `licence.states.wind_down` | ನಿಲ್ಲಿಸಲಾಗಿದೆ: ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ಇಲ್ಲ | Paused: no new bookings or payment requests |  |
+| `licence.states.stopped` | ನಿಂತಿದೆ | Stopped |  |
+| `licence.means.active` | ಗ್ರಾಹಕರಿಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers. |  |
+| `licence.means.reminder` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers yet. |  |
+| `licence.means.warning` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. ಪಾವತಿಸದಿದ್ದರೆ ಅಂಗಡಿ ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
+| `licence.means.wind_down` | ಗ್ರಾಹಕರಿಗೆ ಅಂಗಡಿಯನ್ನು ಸಂಪರ್ಕಿಸಲು ಹೇಳಲಾಗುತ್ತದೆ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಈಗಾಗಲೇ ಬುಕ್ ಅಥವಾ ಪಾವತಿಯಾದ ಕೆಲಸಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಪಾವತಿಸಿದ ಕೂಡಲೇ ಎಲ್ಲವೂ ಮರಳುತ್ತದೆ. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
+| `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಕೆಲಸಗಳನ್ನು ಮಾಲೀಕರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ, ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ಉಚಿತವಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free. |  |
+| `licence.paidThrough` | ಮುಂದಿನ ಪಾವತಿ: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
+| `licence.windDownOn` | ಪಾವತಿಸದಿದ್ದರೆ 7 Jan 2027 ರಿಂದ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
+| `licence.extended` | Geometer-ನ ತುರ್ತು ವಿಸ್ತರಣೆ 21 Dec 2026 ವರೆಗೆ ಇದೆ. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
+| `licence.stopOn` | ಪೂರ್ಣವಾಗಿ ನಿಲ್ಲುವ ದಿನ: 6 Feb 2027. | Final stop planned for 6 Feb 2027. |  |
+| `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು 7 May 2027 ವರೆಗೆ ಉಚಿತವಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ. | Free download of the shop's records until 7 May 2027. |  |
+| `licence.renew` | ಪಾವತಿಸಿ ನವೀಕರಿಸಿ | Pay to renew |  |
+| `licence.stale` | 5 Dec 2026 ರಿಂದ ಪರವಾನಗಿ ನವೀಕರಣಗೊಂಡಿಲ್ಲ. ಈ ಸರ್ವರ್ Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
@@ -787,6 +841,92 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.notReady` | ಇನ್ನೂ ಸಿದ್ಧವಿಲ್ಲ: ಸರಿಪಡಿಸಬೇಕಾದ ವಿಷಯಗಳು 2. | Not ready yet: 2 things need fixing. |  |
 | `setup.checks.certificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ತೆರೆಯಿರಿ | Open the go-live certificate |  |
 | `setup.checks.switchOn` | ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತಂದಾಗ ಅಂಗಡಿಯನ್ನು ಆನ್ ಮಾಡುತ್ತದೆ. | The server switches the shop on when it applies it. |  |
+| `inbox.nav` | ಮಾಡಬೇಕಾದದ್ದು | To do |  |
+| `inbox.title` | ಬಾಕಿ ಕೆಲಸಗಳು | Unfinished work |  |
+| `inbox.intro` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ನೋಡಬೇಕಾದ ನಿಜವಾದ ಕೆಲಸಗಳು. ಪ್ರತಿ ಸಾಲೂ ಅಂಗಡಿಯ ರೆಕಾರ್ಡ್‌ನಿಂದ ಬಂದದ್ದು; ಕೈಯಿಂದ ಏನೂ ಸೇರಿಸಿಲ್ಲ. | Real jobs that need a person. Each line is worked out from the shop's record; nothing is added by hand. |  |
+| `inbox.empty` | ಈಗ ಯಾರೂ ಏನೂ ಮಾಡಬೇಕಾಗಿಲ್ಲ. | Nothing needs a person right now. |  |
+| `inbox.count` | ಮಾಡಬೇಕಾದದ್ದು: 3 | 3 to do |  |
+| `inbox.asOf` | 4 Nov 2026, 10:30 ರ ರೆಕಾರ್ಡ್‌ನಿಂದ ಓದಲಾಗಿದೆ. | Read from the record of 4 Nov 2026, 10:30. |  |
+| `inbox.notShared` | ಈ ಅಂಗಡಿಯ ರೆಕಾರ್ಡ್ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಓದಲು ಏನೂ ಇಲ್ಲ. | This shop's record has not been shared yet, so there is nothing to read. |  |
+| `inbox.since` | 4 Nov 2026, 10:30 ರಿಂದ | Since 4 Nov 2026, 10:30 |  |
+| `inbox.failedKinds` | ಈ ಅಂಗಡಿಯ ಒಂದು ಪರಿಶೀಲನೆಯನ್ನು ಓದಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಈ ಪಟ್ಟಿ ಚಿಕ್ಕದಾಗಿರಬಹುದು. | One of the checks could not be read for this shop, so this list may be short. |  |
+| `inbox.kinds.deposit_no_booking` | ₹200 ಡೆಪಾಸಿಟ್ ಬಂದಿದೆ, ಬುಕಿಂಗ್ b-3 ಖಚಿತವಾಗಿಲ್ಲ: ನೋಡಿ ಸರಿಪಡಿಸಿ | Deposit of ₹200 received, booking b-3 is missing: review recovery |  |
+| `inbox.kinds.payment_unrecorded` | ಶುಲ್ಕ f-3 ಗೆ ಹಣ ಬಂದಿದೆ, ಆದರೆ ಶುಲ್ಕ ನವೀಕರಣವಾಗಿಲ್ಲ: ಹಣವನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
+| `inbox.kinds.approval_waiting_long` | b-3 ನಲ್ಲಿ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ 14 ಗಂಟೆಗಳಿಂದ ಕಾಯುತ್ತಿದೆ ([what]): ಮತ್ತೆ ಕೇಳಿ | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
+| `inbox.kinds.refund_waiting` | b-3 ರ ₹200 ರೀಫಂಡ್ [who] ಕಾಯುತ್ತಿದೆ | The refund of ₹200 for b-3 is waiting [who] |  |
+| `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: Razorpay ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
+| `inbox.kinds.upi_payment_unconfirmed` | b-3 ಗಾಗಿ ₹200 UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
+| `inbox.kinds.upi_refund_owed` | b-3 ಗಾಗಿ ₹200 ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
+| `inbox.fallback` | b-3 ನಲ್ಲಿ ಒಬ್ಬರು ನೋಡಬೇಕಿದೆ (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
+| `inbox.variants.guard_hold` | ಒಂದು ರೀಫಂಡ್ | a refund |  |
+| `inbox.variants.refund` | ಒಂದು ರೀಫಂಡ್ | a refund |  |
+| `inbox.variants.waiver` | ಶುಲ್ಕ ವಿನಾಯಿತಿ | a fee waiver |  |
+| `inbox.variants.refund_request` | ರೀಫಂಡ್ ಕೋರಿಕೆ | a refund request |  |
+| `inbox.variants.calendar` | ಕ್ಯಾಲೆಂಡರ್ ಸಮಸ್ಯೆ | a calendar problem |  |
+| `inbox.variants.owner` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ | for the owner's answer |  |
+| `inbox.variants.agent` | ಮತ್ತೆ ಕಳುಹಿಸಲು | to be sent again |  |
+| `inbox.actions.recheck_payment` | ಹಣವನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the payment again |  |
+| `inbox.actions.retry_booking` | ಬುಕಿಂಗ್ ಅನ್ನು ಮತ್ತೆ ಖಚಿತಪಡಿಸಲು ಪ್ರಯತ್ನಿಸಿ | Try to confirm the booking again |  |
+| `inbox.actions.ask_owner_again` | ಮಾಲೀಕರನ್ನು ಮತ್ತೆ ಕೇಳಿ | Ask the owner again |  |
+| `inbox.actions.recheck_refund` | ರೀಫಂಡ್ ಅನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the refund again |  |
+| `inbox.actionNote` | ಇವು ಮತ್ತೆ ನೋಡುತ್ತವೆ ಅಥವಾ ಮತ್ತೆ ಕೇಳುತ್ತವೆ ಅಷ್ಟೇ. ಬೇರೆಲ್ಲವುಗಳಂತೆ ಇವೂ Guard ಮತ್ತು ಅದೇ ಮಿತಿಗಳ ಮೂಲಕ ಹೋಗುತ್ತವೆ. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
+| `inbox.recover.sent` | ಕಳುಹಿಸಲಾಗಿದೆ. ಅಂಗಡಿಯ ಏಜೆಂಟ್ ಒಂದೆರಡು ನಿಮಿಷಗಳಲ್ಲಿ ಇದನ್ನು ಮಾಡುತ್ತದೆ. ಮುಂದಿನ ರೆಕಾರ್ಡ್ ನವೀಕರಣದ ನಂತರ ಪಟ್ಟಿ ಬದಲಾಗುತ್ತದೆ; ಅದಕ್ಕೆ ಹದಿನೈದು ನಿಮಿಷಗಳವರೆಗೆ ಬೇಕಾಗಬಹುದು. | Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour. |  |
+| `inbox.recover.refused` | ಇದು ಈ ವಿಷಯಕ್ಕೆ ಹೊಂದುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಕಳುಹಿಸಿಲ್ಲ. | That does not fit this item, so nothing was sent. |  |
+| `inbox.help` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
+| `takeOut.heading` | ಎಲ್ಲವನ್ನೂ ನಿಮ್ಮೊಂದಿಗೆ ತೆಗೆದುಕೊಂಡು ಹೋಗಿ | Take everything with you |  |
+| `takeOut.text` | ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ಮಿತಿಗಳು, ರೆಕಾರ್ಡ್, ವರದಿಗಳು ಮತ್ತು ಪ್ರಮಾಣಪತ್ರಗಳ ಒಂದು ಪ್ರತಿ, Geometer ಇಲ್ಲದೆಯೂ ತೆರೆಯುವ ಸರಳ ಫೈಲ್‌ಗಳಲ್ಲಿ. ಪ್ಲಾನ್ ನಿಂತುಹೋದರೂ ಇದು ಕೆಲಸ ಮಾಡುತ್ತದೆ. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
+| `takeOut.button` | ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ | Download the export |  |
+| `takeOut.notIn` | ಇದರಲ್ಲಿ ಯಾವುದೇ ಕೀ ಅಥವಾ ರಹಸ್ಯ ಇಲ್ಲ; ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp, ಪಾವತಿ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಖಾತೆಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಗ್ರಾಹಕರ ಸಂಖ್ಯೆಗಳು ಚಿಕ್ಕ ಕೋಡ್‌ಗಳು. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.check` | ಫೈಲ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಒಳಗಿರುವ README ನೋಡಿ. | To check the files, use the README inside. |  |
+| `handover.heading` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೊಬ್ಬರಿಗೆ ವರ್ಗಾಯಿಸಿ | Move this shop to someone else |  |
+| `handover.button` | ಈ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ… | Move this shop… |  |
+| `handover.intro` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿರುವ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಈ ಅಂಗಡಿಯ ನಿರ್ವಹಣೆ ನೀಡಿ. ಮೊದಲು ಅಂಗಡಿ ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಒಪ್ಪಬೇಕು. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.moves` | ಬದಲಾಗುವುದು: ಇಲ್ಲಿ ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನೋಡಬಹುದು ಮತ್ತು ಬದಲಿಸಬಹುದು, ಮತ್ತು ಮಾಲೀಕರ ಮಾಸಿಕ ವರದಿಯಲ್ಲಿರುವ ಹೆಸರು. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
+| `handover.stays` | ಬದಲಾಗದ್ದು: ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp ಸಂಖ್ಯೆ, ಪಾವತಿ ಖಾತೆ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಜೊತೆಗೆ ಹೋಗುವುದಿಲ್ಲ. ಕೀಗಳು ಹೋಗುವುದಿಲ್ಲ: ಮುಂದೆ ಅಂಗಡಿಯನ್ನು ನಡೆಸುವವರು ಅವನ್ನು ಮತ್ತೆ ನಮೂದಿಸಬೇಕು. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
+| `handover.never` | ಅಂಗಡಿ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಹೋಗಬಹುದು. Geometer ಗೆ ಹೋಗಲಾರದು. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.who` | ಅವರ ಸೈನ್-ಇನ್ ಹೆಸರು | Their sign-in name |  |
+| `handover.whoHelp` | ಈ ಪ್ಯಾನೆಲ್‌ಗೆ ಅವರು ಸೈನ್ ಇನ್ ಆಗುವ ಹೆಸರು. | The name they sign in to this panel with. |  |
+| `handover.why` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ? | Why is it moving? |  |
+| `handover.reasons.stopped_paying` | ಅವರು ಹಣ ಪಾವತಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿದರು | They stopped paying |  |
+| `handover.reasons.stopped_serving` | ಅವರು ಅಂಗಡಿಗೆ ಸೇವೆ ನೀಡುವುದನ್ನು ನಿಲ್ಲಿಸಿದರು | They stopped serving the shop |  |
+| `handover.reasons.owner_request` | ಮಾಲೀಕರು ಕೇಳಿದರು | The owner asked for it |  |
+| `handover.start` | ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಕೇಳಿ | Ask the owner to agree |  |
+| `handover.askTitle` | ಈಗ ಮಾಲೀಕರು ಒಪ್ಪಬೇಕು | Now the owner has to agree |  |
+| `handover.ask` | ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಅಂಗಡಿಯ WhatsApp ಸಂಖ್ಯೆಗೆ ಈ ಒಂದೇ ಸಂದೇಶವನ್ನು ಕಳುಹಿಸುವಂತೆ ಹೇಳಿ: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
+| `handover.askNote` | ಈ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಮತ್ತು 72 ಗಂಟೆಯಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಇದನ್ನು ಈಗ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ. ಸಂದೇಶ ಪಡೆಯಲು ಅಂಗಡಿ ಚಾಲನೆಯಲ್ಲಿರಬೇಕು. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
+| `handover.waiting` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ. ಸಂದೇಶ ಬಂದ ನಂತರ Meera ಜವಾಬ್ದಾರಿ ವಹಿಸಿಕೊಳ್ಳುತ್ತಾರೆ. ಸಂದೇಶದ ನಂತರ ಇದಕ್ಕೆ ಹದಿನೈದು ನಿಮಿಷಗಳವರೆಗೆ ಬೇಕಾಗಬಹುದು. | Waiting for the owner. When the message arrives, Meera takes over. This can take a quarter of an hour after the message. |  |
+| `handover.check` | ಮತ್ತೆ ನೋಡಿ | Check again |  |
+| `handover.cancel` | ವರ್ಗಾವಣೆ ರದ್ದುಮಾಡಿ | Cancel the move |  |
+| `handover.done` | ಆಯಿತು. ಈಗ Meera ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಾರೆ. | Done. Meera now serves this shop. |  |
+| `handover.expired` | ಮಾಲೀಕರು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಕೋಡ್ ಮುಗಿಯಿತು. ಮತ್ತೆ ಶುರುಮಾಡಿ. | The code ran out before the owner replied. Start again. |  |
+| `handover.cancelled` | ವರ್ಗಾವಣೆ ರದ್ದಾಯಿತು. | The move was cancelled. |  |
+| `handover.problems.who` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಆ ಹೆಸರಿನಿಂದ ಯಾರೂ ಸೈನ್ ಇನ್ ಆಗುವುದಿಲ್ಲ. | Nobody signs in with that name on this server. |  |
+| `handover.problems.same` | ಅವರು ಈಗಾಗಲೇ ಈ ಅಂಗಡಿಯನ್ನು ನಡೆಸುತ್ತಿದ್ದಾರೆ. | That person already serves this shop. |  |
+| `handover.problems.geometer` | ಅಂಗಡಿಯನ್ನು Geometer ಗೆ ವರ್ಗಾಯಿಸಲಾಗುವುದಿಲ್ಲ. | A shop cannot be moved to Geometer. |  |
+| `handover.problems.reason` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ ಎಂದು ಆರಿಸಿ. | Choose why the shop is moving. |  |
+| `handover.problems.waiting` | ಒಂದು ವರ್ಗಾವಣೆ ಈಗಾಗಲೇ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ. ಬೇರೆಯದನ್ನು ಶುರುಮಾಡಲು ಅದನ್ನು ರದ್ದುಮಾಡಿ. | A move is already waiting for the owner. Cancel it first to start another. |  |
+| `handover.history` | ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನಡೆಸಿದರು | Who has served this shop |  |
+| `handover.historyLine` | Divya → Meera, 4 Nov 2026, 10:30: [reason] | Divya to Meera, 4 Nov 2026, 10:30: [reason] |  |
+| `upi.setup.heading` | ಗ್ರಾಹಕರು ಹೇಗೆ ಪಾವತಿಸುತ್ತಾರೆ | How customers pay |  |
+| `upi.setup.intro` | ಡೆಪಾಸಿಟ್ ಅಥವಾ ಶುಲ್ಕವನ್ನು ಗ್ರಾಹಕರು ಹೇಗೆ ಪಾವತಿಸಬೇಕೆಂದು ಆರಿಸಿ. UPI ಅತ್ಯಂತ ಸುಲಭ: ಪೇಮೆಂಟ್ ಗೇಟ್‌ವೇ ಖಾತೆ ತೆರೆಯುವ ಅಗತ್ಯವಿಲ್ಲ. | Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open. |  |
+| `upi.setup.optionUpi` | UPI: ಗ್ರಾಹಕರು ಅಂಗಡಿಯ ಸ್ವಂತ UPI ಐಡಿಗೆ ಪಾವತಿಸುತ್ತಾರೆ | UPI: customers pay the shop's own UPI ID |  |
+| `upi.setup.optionRazorpay` | Razorpay: ಅಂಗಡಿಗೆ ಸ್ವಂತ Razorpay ಖಾತೆ ಇದೆ | Razorpay: the shop has its own Razorpay account |  |
+| `upi.setup.upiTitle` | UPI ಮೂಲಕ ಪಾವತಿ | Pay by UPI |  |
+| `upi.setup.upiIntro` | ಗ್ರಾಹಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಿಂದ ಅಂಗಡಿಯ ಸ್ವಂತ UPI ಐಡಿಗೆ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು WhatsApp ನಲ್ಲಿ “ಬಂತು” (Received) ಒತ್ತುತ್ತಾರೆ. ಗೇಟ್‌ವೇ ಶುಲ್ಕ ಇಲ್ಲ, Geometer ಹಣವನ್ನು ಮುಟ್ಟುವುದಿಲ್ಲ. | Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money. |  |
+| `upi.setup.upiId` | ಅಂಗಡಿಯ UPI ಐಡಿ | The shop's UPI ID |  |
+| `upi.setup.upiIdHelp` | ಉದಾಹರಣೆ glowsalon@okicici | For example glowsalon@okicici |  |
+| `upi.setup.payee` | ಗ್ರಾಹಕರಿಗೆ ಅವರ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಾಣುವ ಹೆಸರು | The name customers see in their UPI app |  |
+| `upi.setup.payeeHelp` | ಉದಾಹರಣೆ Glow Salon | For example Glow Salon |  |
+| `upi.setup.noCheck` | ಹಣ ಕಳುಹಿಸದೆ UPI ಐಡಿಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಇಲ್ಲಿ ಪರಿಶೀಲನೆ ಇಲ್ಲ. ನಿಧಾನವಾಗಿ ಎಚ್ಚರಿಕೆಯಿಂದ ಟೈಪ್ ಮಾಡಿ, ನಂತರ ಮಾಲೀಕರಿಗೆ ಓದಿ ಹೇಳಿ. | A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner. |  |
+| `upi.setup.razorpayOnly` | ಮೇಲೆ Razorpay ಆರಿಸಿದರೆ ಮಾತ್ರ Razorpay ಪೆಟ್ಟಿಗೆಗಳನ್ನು ತುಂಬಿ. | Fill in the Razorpay boxes only if you chose Razorpay above. |  |
+| `upi.problems.idEmpty` | ಅಂಗಡಿಯ UPI ಐಡಿ ಸೇರಿಸಿ, ಉದಾಹರಣೆ glowsalon@okicici. | Add the shop's UPI ID, for example glowsalon@okicici. |  |
+| `upi.problems.idNoAt` | "glowsalon" UPI ಐಡಿ ಅಲ್ಲ: @ ಮತ್ತು ಅದರ ನಂತರ ಆ್ಯಪ್ ಅಥವಾ ಬ್ಯಾಂಕ್‌ನ ಹೆಸರು ಬೇಕು, ಉದಾಹರಣೆ glowsalon@okicici. | "glowsalon" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici. |  |
+| `upi.problems.idShape` | "glow salon@" UPI ಐಡಿ ಅಲ್ಲ. ಕಾಗುಣಿತ ನೋಡಿ: @ ಮೊದಲು ಅಕ್ಷರಗಳು, ಅಂಕೆಗಳು, ಚುಕ್ಕೆ, ಡ್ಯಾಶ್ ಅಥವಾ ಅಂಡರ್‌ಸ್ಕೋರ್, @ ನಂತರ ಆ್ಯಪ್ ಅಥವಾ ಬ್ಯಾಂಕ್‌ನ ಹೆಸರು. | "glow salon@" is not a UPI ID. Check the spelling: letters, digits, dots, dashes or underscores before the @, and the app's or bank's name after it. |  |
+| `upi.problems.payeeEmpty` | ಗ್ರಾಹಕರಿಗೆ ಅವರ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಾಣಬೇಕಾದ ಹೆಸರನ್ನು ಸೇರಿಸಿ, ಉದಾಹರಣೆ Glow Salon. | Add the name customers should see in their UPI app, for example Glow Salon. |  |
+| `upi.problems.payeeOneLine` | ಹೆಸರು ಒಂದೇ ಸಾಲಿನಲ್ಲಿ ಇರಬೇಕು. | The name must be on one line. |  |
+| `upi.problems.payeeLong` | ಈ ಹೆಸರು ತುಂಬಾ ಉದ್ದವಾಗಿದೆ. ಅಂಗಡಿಯ UPI ಆ್ಯಪ್ ತೋರಿಸುವ ಚಿಕ್ಕ ಹೆಸರನ್ನು ಬಳಸಿ. | That name is too long. Use the short name the shop's UPI app shows. |  |
+| `upi.noGatewayFee` | ಗೇಟ್‌ವೇ ಶುಲ್ಕ ಇಲ್ಲ: ಗ್ರಾಹಕರು ಅಂಗಡಿಯ ಸ್ವಂತ UPI ಐಡಿಗೆ ಪಾವತಿಸುತ್ತಾರೆ. | No gateway fee: customers pay the shop's own UPI ID. |  |
 | `errors.notFound` | ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ. | There is nothing here. |  |
 | `errors.notAllowed` | ನೀವು ಇದನ್ನು ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ. | You cannot do that. |  |
 | `errors.csrf` | ಆ ಫಾರ್ಮ್ ತುಂಬಾ ಹಳೆಯದಾಗಿತ್ತು ಅಥವಾ ಈ ಪುಟದಿಂದ ಬಂದಿರಲಿಲ್ಲ. ಹಿಂದಕ್ಕೆ ಹೋಗಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That form was too old or did not come from this page. Go back and try again. |  |

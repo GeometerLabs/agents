@@ -301,7 +301,7 @@ All three are made from one `MonthlyReport` object (`report/data.ts`). The owner
 
 ### Signing and checking
 
-The signed bytes are `"geo-document/1\n"` followed by the canonical JSON of the document (keys sorted, no spaces, UTF-8, `canonicalJson` from `record.ts`, now exported). The digest is `sha256:` and the hex of the sha256 of the canonical JSON alone. The short code ("7K2M-9QXD") is the first 40 bits of the digest in Crockford base32, re-derived from the digest every time it is checked; it is for finding a document at `/verify/<code>`, never for trusting one. The file is the canonical JSON of the whole envelope (`format`, `document`, `digest`, `code`, `signature`) and one newline, byte for byte: a pretty-printed or re-ordered or re-escaped copy of the same data is refused, so whitespace edits cannot pass. A test flips two bits of every byte of a signed file (over 4,000 edits) and deletes, inserts and truncates; every one is rejected.
+The signed bytes are `"geo-document/1\n"` followed by the canonical JSON of the document (keys sorted, no spaces, UTF-8, `canonicalJson` from `record.ts`, now exported). The digest is `sha256:` and the hex of the sha256 of the canonical JSON alone. The short code ("7K2M-9QXD") is the first 40 bits of the digest in Crockford base32, re-derived from the digest every time it is checked; it is for finding a document at `/verify/#<code>` (the `#` keeps it in the reader's browser), never for trusting one; the full digest goes in the QR code and the printed link `https://geometer.dev/verify/#<digest>` (`modules/report/verify-link.ts`). The file is the canonical JSON of the whole envelope (`format`, `document`, `digest`, `code`, `signature`) and one newline, byte for byte: a pretty-printed or re-ordered or re-escaped copy of the same data is refused, so whitespace edits cannot pass. A test flips two bits of every byte of a signed file (over 4,000 edits) and deletes, inserts and truncates; every one is rejected.
 
 What `scripts/verify-report.ts` says, and why it is careful: a signature shows that whoever held the key signed exactly these bytes and that they have not changed. It does **not** show the numbers are true (that needs the record and the services' own records), and a public key found inside the file proves nothing about whose it is: anyone can change a document and sign it again with their own key (a test does exactly that and it passes as "unchanged"). So without `--trust-key` the script says only "unchanged since key X signed it, which does not show who holds that key", and it always lists what it did not check. With `--trust-key` (a public key file, 64 hex digits or a `key:` id) it can say "signed by a key you trust". Exit codes: 0 unchanged (and trusted, if a key was named), 1 changed or not a key you named, 3 unchanged but unsigned, 64 bad use.
 
@@ -317,7 +317,25 @@ The key: `scripts/report-key.ts <folder>` makes an Ed25519 pair, refuses any fol
 
 **Size.** `report/` is about 1,720 lines (the strings table, 325, is the largest; the scripted month, 150, is test support), `scripts/` 155, new tests about 1,010. Tests: 183 to 244 (61 new: 17 on the counts, 13 on the owner text and page, 8 on the certificates, 12 on signing and keys, 7 on the scripts, 2 on the record, 2 on the review sheets). `src/` changed by about 40 lines (`agent.ts`) and one word (`export` in `record.ts`). No dependencies.
 
-### Choices to review
+### The licence's wind-down and final stop (B13, 8 November 2026)
+
+The shop's licence comes from fleet's signed lease, which the bundle's deployer checks and hands the runtime as `client/licence.json`; the runtime reads it by its
+modified time and works the state out with its own clock (`modules/licence`). **This is the runtime's own check: Guard does not read the lease yet.**
+
+- **Wind-down: no new work.** `onBook` answers "Online booking is paused for now. Please contact <shop> directly." (`booking_paused`) before any draft is made, so
+  nothing is a promise to book later; a booking waiting for "yes" is cleared the same way in `proceedToHold`, which makes no hold and no link; a greeting or an unclear
+  message gets the same line instead of the menu. Each refusal is a `new_work` entry, `blocked`, with the decision `subscription_suspended`. Everything that finishes
+  money owed goes on: payment events and their reconciling (a deposit paid on a link sent before the wind-down still books), cancellations and their refunds, Guard's
+  held refunds, reschedules of existing bookings, reminders of existing bookings, recovery steps and the owner's commands.
+- **Final stop.** On the clock's beat the open deposit links are closed at Razorpay through Guard, once for each `paid_through` (`cancel_deposit_link` with
+  `refs.licence`; a UPI shop has none to close). Then a gate in `say` holds back every message, and the record says each one. Payments already made are still recorded.
+- **Back in order**: new bookings are taken at once; nothing from the wind-down is done by itself (the customer asks again). One `licence` record line marks each change.
+- **The owner's notice** (`server/licence.ts`, sent by `modules/licence/notice.ts` from the runtime core): `owner_licence_paused` at the wind-down,
+  `owner_licence_stopped` at the final stop (bookings still to come, other to-do items, and until when the partner can give the free copy), once for each
+  `paid_through`, as the utility templates `owner_service_paused` and `owner_service_stopped` when the owner's window is closed. They name the partner and never
+  mention money. Hindi, Malayalam and Kannada are machine-written and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+
+## Choices to review
 
 1. The record now carries amounts, the command and the recipient (decision 1). The runtime server that stores the record should keep `refs` whole.
 2. `package.json` has a version, `0.1.0`, because a certificate states the template version and there was none. Whether v0 should be called 0.1.0 is yours.
@@ -766,6 +784,40 @@ New: `report-badge.test.ts` (4), `report-whatsapp.test.ts` (14: the message in f
 The hand-check counts: Glow Salon 37 to 38 situations and 242 to 252 checks, the equipment-rental example 32 to 33, a shop with no cancellation window 34 to 35 (`hand-check-shops.test.ts`, `report-certificates.test.ts`, `report-cli.test.ts`, `report-go-live.test.ts`), the root `README.md`, `templates/SELL-GUIDE.md` (rental), `templates/commerce/bookings/README.md`, the four rental sell guides and `.github/DISCUSSION_TEMPLATE/template-bookings.yml`. `REVIEW-ml.md`, `REVIEW-kn.md` and `whatsapp-templates.json` are rebuilt.
 
 **Choices to review.** Sending at 09:00; no message for a quiet month; three tries an hour apart; the message in the owner's language only; the badge line last, as a name and a symbol; the fixed labels (the ones the five-line text already uses); and that the job is off until the `report` block is written.
+
+## Recovery steps and the owner's agreement to a handover (B31, B38; added 7 November 2026)
+
+The agent handles two more things, both small and both through the paths it already has. A **`recovery` event** (the panel's to-do list files a request, the deployer carries it to the runtime's `POST /internal/recover`) names one booking and an action: `recheck_payment` runs `reconcilePayments` (the payments service's own list for the booking's link, the one-deposit rule and all), `retry_booking` runs `completeBooking` for a booking the calendar would not confirm (the customer hears "booked" only if the calendar now shows it), `ask_owner_again` sends the owner the same notice again (`owner_cant_confirm`, or `owner_late_cancellation`), and `recheck_refund` looks, read-only, for a refund whose outcome was unclear and sends nothing. An action that does not fit, or a booking that is not there, is a `recovery` / `blocked` line and changes nothing. The record keeps a `recovery` entry for each (`refs.action`, `refs.recovery`). What the actions are and how the to-do list finds the bookings that need them is in `modules/Explanation.md`. **"move CODE"** from the owner's number writes one `handover_agreed` entry with the code's hash and nothing else (no reply, not an `owner_decision`, so the monthly report does not count it). Tests: `test/recovery.test.ts`.
+
+## UPI, marked paid by the owner (B33; added 7 November 2026)
+
+A shop picks how customers pay the deposit: `"payment": {"module": "upi", "upi": {"id": "glowsalon@okicici", "payee": "Glow Salon"}}` (the default the panel offers a
+partner shop: no gateway account, no gateway fee) or `{"module": "razorpay"}`. A settings file with no `payment` is a Razorpay shop, and parses to the same object as
+before, so nothing set up earlier changes. The shared module is `modules/payments/upi` (its Explanation section says why each part is as it is); this is what Bookings
+does with it.
+
+- **The quote.** The slot is held as always; the request is made through the same "look first, write, read back" (`ensureLink`), but the "link" is a `upi://pay` link
+  to the shop's own UPI ID for exactly the deposit, with the booking number as its note. The customer gets the QR picture of that link (inside the window), then the
+  words with the link, the UPI ID and the amount, and the buttons I have paid, Cancel booking and Talk to the owner. The owner gets "UPI payment to check", with the
+  one-use code and a "Received ₹200" button (a WhatsApp template when the owner has not written today, which asks them to reply "received <code>").
+- **Booked** only when the owner has marked the whole deposit received (`owner_marked_paid`), and the calendar shows it: `checkConfirmOnlyWhenRecorded` accepts the
+  owner's marks adding up to the deposit, and nothing a customer sends. The customer's words say the owner confirmed it ("Booked! ... The owner has confirmed your ₹200
+  deposit").
+- **A different amount:** less is not booked; the hold stays; the owner is asked for the rest with a new code (the used one counts nothing again). If the hold runs out,
+  the part is owed back by the owner. More books it, and the extra is owed back.
+- **Never confirmed:** the hold ends at `holdMinutes` (the UPI example shop holds for 60, since the owner looks in their app); the request is closed in the record and the
+  customer is told the owner had not confirmed it in time.
+- **Twice:** one mark; the owner is told it was already counted.
+- **After the hold:** recorded as received, never booked again by itself. The customer is told the owner will contact them; the owner gets Refund sent and Kept for
+  booking (for a booking they make by hand); the builder sees a `late_upi` count in the status, and the money owed back is on the unfinished-work list.
+- **Refunds** are owed by the owner (`upi_refund_owed`): inside the window at once, after it when the owner approves (`approve b-3`, as before; there is no Guard and no
+  refund limit hold, because the owner sends every UPI refund). The customer is told the owner will send it, and "sent" only after the owner's mark.
+- **"I paid", a screenshot, the I have paid button:** thanks, the owner will confirm, a screenshot is not proof; the owner is asked to look, at most once an hour.
+- **Crash test:** on a UPI shop the situations written around a Razorpay link are named as not run, and nine UPI situations run (`crash-test/upi.ts`); Glow Salon (UPI)
+  holds 9 of 9. The Razorpay shops are unchanged: Glow Salon 38 of 38, the equipment rental 33 of 33. The not-tested list of a UPI shop says that automatic payment
+  checking does not apply to UPI and that no real UPI payment was made.
+- **The report** labels a UPI shop's money "Deposits marked paid by owner" and "Refunds marked sent by owner" (the owner's lines, the page, the monthly certificate,
+  and two more WhatsApp report templates, `monthly_report_upi` and `monthly_report_upi_innovator`). A Razorpay shop's report keeps its bytes.
 
 ## Syntax rules used
 

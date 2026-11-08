@@ -54,7 +54,8 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
     shops: Object.fromEntries([
       ...shops.map((s) => [s.name, {
         runtimeUrl: runtimeUrl(server, s),
-        relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}`,
+        // a UPI shop (B33) has no approvals relay (no refund is ever held for its owner): the owner's messages go to the runtime only
+        ...(s.guards.some((g) => g.kind === "razorpay") ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId, verification: s.webhooks.verification,
         // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
@@ -72,7 +73,7 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
 export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
-      ...shops.map((s) => [s.name, {
+      ...shops.filter((s) => s.guards.some((g) => g.kind === "razorpay")).map((s) => [s.name, {
         // which template's words the relay asks the owner in (services/relay.ts); left out for Bookings, as it always was
         ...(s.pathway && s.pathway !== "bookings" ? { pathway: s.pathway } : {}),
         guardAdminUrl: guardAdmin(server, s, "razorpay").adminUrl,

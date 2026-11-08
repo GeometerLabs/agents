@@ -15,6 +15,7 @@
 //   <server>/fleet/<shop>.json                 written by ops (read-only here)   fleet's last answer about the shop: its plan, the included messages, the Innovator badge,
 //                                                                        button mode and warnings. See FleetAnswer. A missing or unreadable file is "fleet has said nothing", never "no plan".
 //   <server>/requests/<shop>.stop.json         PROPOSAL, panel           a request to stop; the deployer acts, then shows `stopped` in status/<shop>.json
+//   <server>/requests/<shop>.recover.<id>.json  panel                    a request that the shop's agent look again or ask again about one booking or fee (the to-do list); the deployer carries it to the runtime, then removes it
 //   <server>/exports/<shop>/{record,bookings}.json   PROPOSAL, deployer  what scripts/client-report.ts reads, for the monthly report
 //   <server>/panel/                            the panel's own data (accounts, invites, drafts, receipts, audit trail, documents)
 import { join, resolve } from "node:path";
@@ -32,6 +33,7 @@ export function serverPaths(dir: string) {
     statusFile: (shop: string) => join(root, "status", `${shop}.json`),
     fleetFile: (shop: string) => join(root, "fleet", `${shop}.json`),
     stopFile: (shop: string) => join(root, "requests", `${shop}.stop.json`),
+    recoverFile: (shop: string, id: string) => join(root, "requests", `${shop}.recover.${id}.json`),
     exports: (shop: string) => join(root, "exports", shop),
     panel: join(root, "panel"),
     documents: (shop: string) => join(root, "panel", "documents", shop),
@@ -80,6 +82,8 @@ export interface ShopStatus {
   backups?: { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null };
   /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
   usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; /** Calls with no price: their cost is unknown, so `modelMicroInr` is a floor when this is above 0. Absent in an older file. */ unpriced?: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
+  /** The shop's licence (B13), worked out on the server from the signed lease (bundle/lib/licence.ts): what the runtime acts on. Times are ISO. */
+  licence?: { state: "active" | "reminder" | "warning" | "wind_down" | "stopped"; listed: boolean; paidThrough: string | null; windDownOn: string | null; stopOn: string | null; exportUntil: string | null; leaseIssuedAt: string | null; extendedUntil: string | null };
 }
 
 const isoDay = (v: unknown): string | undefined => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : undefined);
@@ -121,6 +125,11 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
       };
     }
   }
+  const l = raw.licence;
+  if (isObj(l) && ["active", "reminder", "warning", "wind_down", "stopped"].includes(l.state as string)) {
+    const t = (v: unknown): string | null => isoDay(v) ?? null;
+    status.licence = { state: l.state as "active", listed: l.listed === true, paidThrough: t(l.paidThrough), windDownOn: t(l.windDownOn), stopOn: t(l.stopOn), exportUntil: t(l.exportUntil), leaseIssuedAt: t(l.leaseIssuedAt), extendedUntil: t(l.extendedUntil) };
+  }
   return { ok: true, status };
 }
 
@@ -130,7 +139,11 @@ export const PLAN_NAMES = ["basic", "business", "operations"] as const;
 export type PlanName = (typeof PLAN_NAMES)[number];
 
 /** fleet/<shop>.json, as the panel reads it (the bundle's lib/fleet.ts writes it). Read field by field: a wrong field is dropped, never guessed. */
-export interface FleetAnswer { at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[] }
+export interface FleetAnswer {
+  at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[];
+  /** Fleet's unsigned copy of the licence for the panel (B13): its days and the renew link. The state that restricts the shop is the signed one in the status file. */
+  licence?: { state: string; paid_through: string | null; wind_down_on: string | null; stop_on: string | null; export_until: string | null; renew_url: string | null };
+}
 
 export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer | undefined {
   if (textOrNothing === undefined) return undefined;
@@ -146,8 +159,16 @@ export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer
       ai: r.ai,
       ...(r.ai === "buttons" && code(r.reason) ? { reason: r.reason } : {}),
       warn: Array.isArray(r.warn) ? r.warn.filter(code).slice(0, 8) : [],
+      ...(isObj(r.licence) && typeof r.licence.state === "string" && /^[a-z_]{1,20}$/u.test(r.licence.state) ? { licence: fleetLicence(r.licence) } : {}),
     };
   } catch { return undefined; }
+}
+
+/** The unsigned licence entry, field by field: a day that is not a day is null, and a renew link that is not https is null (it becomes a link on the page). */
+function fleetLicence(l: Record<string, unknown>): NonNullable<FleetAnswer["licence"]> {
+  const day = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(v) ? v : null);
+  const url = typeof l.renew_url === "string" && l.renew_url.length <= 300 && /^https:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:\/[A-Za-z0-9._~!$&'()*+,;=:@%/?#-]*)?$/u.test(l.renew_url) ? l.renew_url : null;
+  return { state: l.state as string, paid_through: day(l.paid_through), wind_down_on: day(l.wind_down_on), stop_on: day(l.stop_on), export_until: day(l.export_until), renew_url: url };
 }
 
 export interface StopRequest { schema: 1; requestId: string; shop: string; requestedAt: string; requestedBy: { id: string; name: string; role: string } }
@@ -233,8 +254,46 @@ export function parseReportFile(textOrNothing: string | undefined): ReportFile |
   return undefined;
 }
 
-/** Who set the shop up, for the monthly report: report.json first, then the shop's attribution. Undefined when neither says. */
-export function resolvePreparedBy(files: { report?: ReportFile; owner?: OwnerFile }): { name: string; source: "report.json" | "owner.json" } | undefined {
+// ---- handover (B38) ----------------------------------------------------------------------------------------------------------------------------
+
+export const HANDOVER_REASONS = ["stopped_paying", "stopped_serving", "owner_request"] as const;
+export type HandoverReason = (typeof HANDOVER_REASONS)[number];
+
+/** Someone who serves a shop: an account of the panel. */
+export interface Person { accountId: string; accountName: string; role: "builder" | "partner" }
+
+/**
+ * shops/<shop>/assignment.json: who serves the shop NOW, once it has been moved to someone else, and every move. owner.json stays as it is (who set the shop up, written once);
+ * this file is written only by a handover, and wins over owner.json and report.json for who may see the shop and whose name the owner's monthly report carries. Each move keeps the
+ * reason and the owner's agreement: the hash of the one-use code and the time the owner's own number sent it (the record has the entry itself).
+ */
+export interface AssignmentFile {
+  schema: 1;
+  current: Person & { since: string };
+  history: { at: string; from: Person; to: Person; reason: HandoverReason; ownerAgreed: { at: string; codeHash: string } }[];
+}
+
+const person = (v: unknown): Person | undefined => (isObj(v) && text(v.accountId, 80) && text(v.accountName, 120) && (v.role === "builder" || v.role === "partner") ? { accountId: v.accountId as string, accountName: v.accountName as string, role: v.role } : undefined);
+
+export function parseAssignmentFile(textOrNothing: string | undefined): AssignmentFile | undefined {
+  if (textOrNothing === undefined) return undefined;
+  try {
+    const r: unknown = JSON.parse(textOrNothing);
+    if (!isObj(r) || r.schema !== 1 || !isObj(r.current) || !person(r.current) || !isoDay(r.current.since) || !Array.isArray(r.history)) return undefined;
+    for (const h of r.history) if (!isObj(h) || !isoDay(h.at) || !person(h.from) || !person(h.to) || !(HANDOVER_REASONS as readonly unknown[]).includes(h.reason) || !isObj(h.ownerAgreed)) return undefined;
+    return r as unknown as AssignmentFile;
+  } catch { return undefined; }
+}
+
+/** Who serves the shop in the panel's terms (an OwnerFile-shaped record): the latest move if there has been one, else who set it up. */
+export function servedByOf(owner: OwnerFile | undefined, assignment: AssignmentFile | undefined): OwnerFile | undefined {
+  if (!assignment) return owner;
+  return { schema: 1, accountId: assignment.current.accountId, accountName: assignment.current.accountName, role: assignment.current.role, createdAt: assignment.current.since, template: owner?.template ?? "bookings" };
+}
+
+/** Who set the shop up, for the monthly report: a handover's new person first (the owner agreed to it), then report.json, then the shop's attribution. Undefined when none says. */
+export function resolvePreparedBy(files: { report?: ReportFile; owner?: OwnerFile; assignment?: AssignmentFile }): { name: string; source: "assignment.json" | "report.json" | "owner.json" } | undefined {
+  if (files.assignment) return { name: preparedByOf(files.assignment.current), source: "assignment.json" };
   if (files.report) return { name: files.report.preparedBy, source: "report.json" };
   if (files.owner) return { name: preparedByOf(files.owner), source: "owner.json" };
   return undefined;

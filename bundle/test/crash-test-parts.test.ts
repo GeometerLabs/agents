@@ -23,6 +23,7 @@ import { fakeRunner, ok, failed } from "../lib/runner.ts";
 import { secretFile } from "../lib/secrets.ts";
 import { loadState } from "../lib/state.ts";
 import { sha256Hex, stableJson } from "../lib/util.ts";
+import { seal } from "../../modules/report/sign.ts";
 import { readGoLiveCertificate } from "../../templates/commerce/bookings/report/go-live.ts";
 import { CALENDAR_ID, PHONE_NUMBER_ID, tempServer } from "./helpers.ts";
 
@@ -247,7 +248,7 @@ test("the go-live certificate: the template's document format, signed and sealed
     assert.equal(readGoLiveCertificate(readFileSync(file, "utf8"), other).finding.status, "different");
 
     const html = readFileSync(join(extra, "go-live-certificate-en.html"), "utf8");
-    for (const text of [html, signed.text, agentCertificateText({ document: cert, format: "geometer-document/1", digest: "", code: "ABC", signature: null }), agentCertificatePage({ document: cert, format: "geometer-document/1", digest: "", code: "ABC", signature: null })]) assert.doesNotMatch(text, BANNED);
+    for (const text of [html, signed.text, agentCertificateText(seal(cert)), agentCertificatePage(seal(cert))]) assert.doesNotMatch(text, BANNED);
     assert.match(signed.text, /Held 2 of 3 situations\. 1 failed\. \d+ not tested\./u);
     assert.match(signed.text, /Did not hold: Razorpay made the refund but the reply was lost/u);
     assert.match(signed.text, /Run by hand against stand-in services .* with your agent's real Guards in front of them/u);

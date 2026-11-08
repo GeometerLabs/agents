@@ -24,6 +24,8 @@ export interface Strings {
   /** Each language's own name for the languages, for the table of messages by language. */
   languageName: Record<Language, string>;
   /** The full lists on the page: what the hand check did not cover, and what the record cannot count. */
+  /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
+  upiLabel: { collected: string; givenBack: string; notChecked: string };
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
   /** The go-live certificate: what the situations tried were, and the centre's limits in plain words. The numbers are filled in by the per-language formatters. */
@@ -46,7 +48,7 @@ export interface Strings {
     waiversHeading: string; byOwner: string; withinLimit: string; lateFees: string; lateFeesAdded: string; messagesHeading: string; remindersToParents: string; receiptsToParents: string; toYou: string; heldBack: string;
     stoppedHeading: string; rule: string; times: string; stoppedParents: string; notCountedHeading: string; notTestedHeading: string; unconfirmed: string;
     showWhatWeDid: string; byActionHeading: string; action: string; agentVersion: string; limitsDigest: string; recordDigest: string; liveServices: string;
-    checkHeading: string; code: string; digest: string; countedFrom: string; setUpBy: string; madeOn: string; signedBy: string; notSigned: string; signatureNote: string; notAGrade: string; period: string;
+    checkHeading: string; code: string; digest: string; countedFrom: string; setUpBy: string; madeOn: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string; notAGrade: string; period: string;
   };
 }
 
@@ -62,9 +64,11 @@ export const en: Strings = {
   more: (n) => `and ${n} more (see the full report)`,
   notChecked: { cash: "fees paid in cash or by bank transfer", upi: "payments outside Razorpay", whatsapp: "real WhatsApp", razorpay: "real Razorpay", review: "a native speaker's review of the wording" },
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
+  upiLabel: { collected: "Marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
   notTested: {
+    "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
     "cash-and-bank-transfers": "Fees paid in cash or by bank transfer (a parent who says so is sent to the owner; nothing is marked paid)",
-    "payments-outside-razorpay": "Payments outside Razorpay (the UPI module is not built)",
+    "payments-outside-razorpay": "Payments outside Razorpay (this centre takes Razorpay)",
     "real-whatsapp": "Real WhatsApp",
     "real-razorpay": "Real Razorpay (test mode or live)",
     "webhook-signatures": "Webhook signatures",
@@ -113,7 +117,7 @@ export const en: Strings = {
     waiversHeading: "What was taken off", byOwner: "Approved by you", withinLimit: "Within your limit, done by the agent", lateFees: "Late fees", lateFeesAdded: "Late fees added",
     messagesHeading: "Messages sent", remindersToParents: "Reminders to parents", receiptsToParents: "Receipts to parents", toYou: "To you, the owner", heldBack: "Held back before sending",
     stoppedHeading: "What your limits stopped", rule: "Limit", times: "Times", stoppedParents: "Parents who sent STOP", notCountedHeading: "Not counted", notTestedHeading: "Not tested", unconfirmed: "Left unconfirmed or failed",
-    checkHeading: "Check this document", code: "Code", digest: "Digest", countedFrom: "Counted from", setUpBy: "Set up by", madeOn: "Made on", signedBy: "Signed by", notSigned: "Not signed", signatureNote: "A signature shows who made this document and that it has not changed. It does not show that what it counts is complete.",
+    checkHeading: "Check this document", code: "Code", digest: "Digest", countedFrom: "Counted from", setUpBy: "Set up by", madeOn: "Made on", signedBy: "Signed by", notSigned: "Not signed", scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you.", signatureNote: "A signature shows who made this document and that it has not changed. It does not show that what it counts is complete.",
     notAGrade: "These are counts of what the record shows. They do not grade the agent.", period: "Period",
     showWhatWeDid: "Show what we did ▸", byActionHeading: "What the agent did, by action", action: "Action", agentVersion: "Agent version", limitsDigest: "Limits digest", recordDigest: "Record digest", liveServices: "Live services",
   },
@@ -131,9 +135,11 @@ export const hi: Strings = {
   more: (n) => `और ${n} बातें (पूरी रिपोर्ट में)`,
   notChecked: { cash: "नकद या बैंक ट्रांसफर से दी गई फीस", upi: "Razorpay के बाहर के भुगतान", whatsapp: "असली WhatsApp", razorpay: "असली Razorpay", review: "शब्दों की किसी मूल भाषी से जाँच" },
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
+  upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
   notTested: {
+    "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
     "cash-and-bank-transfers": "नकद या बैंक ट्रांसफर से दी गई फीस (जो अभिभावक ऐसा कहे उसे मालिक के पास भेजा जाता है; कुछ भी \"भरा हुआ\" नहीं माना जाता)",
-    "payments-outside-razorpay": "Razorpay के बाहर के भुगतान (UPI मॉड्यूल अभी बना नहीं है)",
+    "payments-outside-razorpay": "Razorpay के बाहर के भुगतान (यह सेंटर Razorpay से लेता है)",
     "real-whatsapp": "असली WhatsApp",
     "real-razorpay": "असली Razorpay (टेस्ट मोड या लाइव)",
     "webhook-signatures": "वेबहुक के हस्ताक्षर",
@@ -182,7 +188,7 @@ export const hi: Strings = {
     waiversHeading: "क्या घटाया गया", byOwner: "आपने मंज़ूर की", withinLimit: "आपकी सीमा के अंदर, एजेंट ने की", lateFees: "देर की फीस", lateFeesAdded: "जोड़ी गई देर की फीस",
     messagesHeading: "भेजे गए संदेश", remindersToParents: "अभिभावकों को याद", receiptsToParents: "अभिभावकों को रसीद", toYou: "आपको, मालिक को", heldBack: "भेजने से पहले रोके गए",
     stoppedHeading: "आपकी सीमाओं ने क्या रोका", rule: "सीमा", times: "बार", stoppedParents: "STOP भेजने वाले अभिभावक", notCountedHeading: "गिना नहीं गया", notTestedHeading: "जाँचा नहीं गया", unconfirmed: "जो पक्का नहीं हुआ या नहीं हो पाया",
-    checkHeading: "इस दस्तावेज़ को जाँचें", code: "कोड", digest: "डाइजेस्ट", countedFrom: "कहाँ से गिना", setUpBy: "तैयार किया", madeOn: "बनाया गया", signedBy: "हस्ताक्षर", notSigned: "हस्ताक्षर नहीं", signatureNote: "हस्ताक्षर दिखाता है कि यह दस्तावेज़ किसने बनाया और यह बदला नहीं है। यह नहीं दिखाता कि इसमें गिनी गई बातें पूरी हैं।",
+    checkHeading: "इस दस्तावेज़ को जाँचें", code: "कोड", digest: "डाइजेस्ट", countedFrom: "कहाँ से गिना", setUpBy: "तैयार किया", madeOn: "बनाया गया", signedBy: "हस्ताक्षर", notSigned: "हस्ताक्षर नहीं", scanToCheck: "इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।", signatureNote: "हस्ताक्षर दिखाता है कि यह दस्तावेज़ किसने बनाया और यह बदला नहीं है। यह नहीं दिखाता कि इसमें गिनी गई बातें पूरी हैं।",
     notAGrade: "ये रिकॉर्ड में दिखी बातों की गिनती हैं। ये एजेंट को अंक या दर्जा नहीं देतीं।", period: "अवधि",
     showWhatWeDid: "देखें हमने क्या किया ▸", byActionHeading: "एजेंट ने क्या किया, काम के हिसाब से", action: "काम", agentVersion: "एजेंट का संस्करण", limitsDigest: "सीमाओं का डाइजेस्ट", recordDigest: "रिकॉर्ड का डाइजेस्ट", liveServices: "असली सिस्टम",
   },
@@ -200,9 +206,11 @@ export const ml: Strings = {
   more: (n) => `കൂടാതെ ${n} കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)`,
   notChecked: { cash: "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്", upi: "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ", whatsapp: "യഥാർത്ഥ WhatsApp", razorpay: "യഥാർത്ഥ Razorpay", review: "വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
+  upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
   notTested: {
+    "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
     "cash-and-bank-transfers": "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് (അങ്ങനെ പറയുന്ന രക്ഷിതാവിനെ ഉടമയുടെ അടുത്തേക്ക് അയയ്ക്കുന്നു; ഒന്നും \"അടച്ചു\" എന്ന് രേഖപ്പെടുത്തുന്നില്ല)",
-    "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ (UPI മൊഡ്യൂൾ ഇതുവരെ നിർമ്മിച്ചിട്ടില്ല)",
+    "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ (ഈ സെന്റർ Razorpay വഴി വാങ്ങുന്നു)",
     "real-whatsapp": "യഥാർത്ഥ WhatsApp",
     "real-razorpay": "യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡ് അല്ലെങ്കിൽ ലൈവ്)",
     "webhook-signatures": "വെബ്ഹുക്ക് ഒപ്പുകൾ",
@@ -251,7 +259,7 @@ export const ml: Strings = {
     waiversHeading: "കുറച്ചത്", byOwner: "നിങ്ങൾ അംഗീകരിച്ചത്", withinLimit: "നിങ്ങളുടെ പരിധിക്കുള്ളിൽ ഏജന്റ് ചെയ്തത്", lateFees: "വൈകിയ ഫീസ്", lateFeesAdded: "ചേർത്ത വൈകിയ ഫീസ്",
     messagesHeading: "അയച്ച സന്ദേശങ്ങൾ", remindersToParents: "രക്ഷിതാക്കൾക്കുള്ള ഓർമ്മപ്പെടുത്തലുകൾ", receiptsToParents: "രക്ഷിതാക്കൾക്കുള്ള രസീതുകൾ", toYou: "നിങ്ങൾക്ക്, ഉടമയ്ക്ക്", heldBack: "അയയ്ക്കുന്നതിന് മുമ്പ് തടഞ്ഞത്",
     stoppedHeading: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", rule: "പരിധി", times: "തവണ", stoppedParents: "STOP അയച്ച രക്ഷിതാക്കൾ", notCountedHeading: "എണ്ണാത്തത്", notTestedHeading: "പരിശോധിക്കാത്തത്", unconfirmed: "ഉറപ്പാകാത്തതോ പരാജയപ്പെട്ടതോ",
-    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", code: "കോഡ്", digest: "ഡൈജസ്റ്റ്", countedFrom: "എവിടെ നിന്ന് എണ്ണി", setUpBy: "തയ്യാറാക്കിയത്", madeOn: "ഉണ്ടാക്കിയ തീയതി", signedBy: "ഒപ്പിട്ടത്", notSigned: "ഒപ്പിട്ടിട്ടില്ല", signatureNote: "ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല.",
+    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", code: "കോഡ്", digest: "ഡൈജസ്റ്റ്", countedFrom: "എവിടെ നിന്ന് എണ്ണി", setUpBy: "തയ്യാറാക്കിയത്", madeOn: "ഉണ്ടാക്കിയ തീയതി", signedBy: "ഒപ്പിട്ടത്", notSigned: "ഒപ്പിട്ടിട്ടില്ല", scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക.", signatureNote: "ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല.",
     notAGrade: "ഇവ രേഖയിൽ കാണുന്നതിന്റെ എണ്ണം മാത്രമാണ്. ഇവ ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല.", period: "കാലയളവ്",
     showWhatWeDid: "ഞങ്ങൾ ചെയ്തത് കാണിക്കുക ▸", byActionHeading: "ഏജന്റ് ചെയ്തത്, പ്രവൃത്തി അനുസരിച്ച്", action: "പ്രവൃത്തി", agentVersion: "ഏജന്റ് പതിപ്പ്", limitsDigest: "പരിധികളുടെ ഡൈജസ്റ്റ്", recordDigest: "രേഖയുടെ ഡൈജസ്റ്റ്", liveServices: "യഥാർത്ഥ സംവിധാനങ്ങൾ",
   },
@@ -269,9 +277,11 @@ export const kn: Strings = {
   more: (n) => `ಇನ್ನೂ ${n} ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)`,
   notChecked: { cash: "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ", upi: "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು", whatsapp: "ನಿಜವಾದ WhatsApp", razorpay: "ನಿಜವಾದ Razorpay", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
+  upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
   notTested: {
+    "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",
     "cash-and-bank-transfers": "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ (ಹಾಗೆ ಹೇಳಿದ ಪೋಷಕರನ್ನು ಮಾಲೀಕರ ಬಳಿ ಕಳುಹಿಸಲಾಗುತ್ತದೆ; ಏನನ್ನೂ \"ಪಾವತಿಯಾಗಿದೆ\" ಎಂದು ಗುರುತಿಸುವುದಿಲ್ಲ)",
-    "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು (UPI ಮಾಡ್ಯೂಲ್ ಇನ್ನೂ ಮಾಡಿಲ್ಲ)",
+    "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು (ಈ ಸೆಂಟರ್ Razorpay ಮೂಲಕ ಪಡೆಯುತ್ತದೆ)",
     "real-whatsapp": "ನಿಜವಾದ WhatsApp",
     "real-razorpay": "ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್)",
     "webhook-signatures": "ವೆಬ್‌ಹುಕ್ ಸಹಿಗಳು",
@@ -320,10 +330,14 @@ export const kn: Strings = {
     waiversHeading: "ಏನು ಕಡಿಮೆ ಮಾಡಲಾಯಿತು", byOwner: "ನೀವು ಒಪ್ಪಿದ್ದು", withinLimit: "ನಿಮ್ಮ ಮಿತಿಯೊಳಗೆ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು", lateFees: "ತಡ ಶುಲ್ಕ", lateFeesAdded: "ಸೇರಿಸಿದ ತಡ ಶುಲ್ಕ",
     messagesHeading: "ಕಳುಹಿಸಿದ ಸಂದೇಶಗಳು", remindersToParents: "ಪೋಷಕರಿಗೆ ನೆನಪುಗಳು", receiptsToParents: "ಪೋಷಕರಿಗೆ ರಸೀದಿಗಳು", toYou: "ನಿಮಗೆ, ಮಾಲೀಕರಿಗೆ", heldBack: "ಕಳುಹಿಸುವ ಮೊದಲು ತಡೆದದ್ದು",
     stoppedHeading: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", rule: "ಮಿತಿ", times: "ಬಾರಿ", stoppedParents: "STOP ಕಳುಹಿಸಿದ ಪೋಷಕರು", notCountedHeading: "ಎಣಿಸದ್ದು", notTestedHeading: "ಪರಿಶೀಲಿಸದ್ದು", unconfirmed: "ದೃಢವಾಗದ ಅಥವಾ ವಿಫಲವಾದದ್ದು",
-    checkHeading: "ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ", code: "ಕೋಡ್", digest: "ಡೈಜೆಸ್ಟ್", countedFrom: "ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು", setUpBy: "ಸಿದ್ಧಪಡಿಸಿದವರು", madeOn: "ಮಾಡಿದ ದಿನ", signedBy: "ಸಹಿ ಮಾಡಿದವರು", notSigned: "ಸಹಿ ಇಲ್ಲ", signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
+    checkHeading: "ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ", code: "ಕೋಡ್", digest: "ಡೈಜೆಸ್ಟ್", countedFrom: "ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು", setUpBy: "ಸಿದ್ಧಪಡಿಸಿದವರು", madeOn: "ಮಾಡಿದ ದಿನ", signedBy: "ಸಹಿ ಮಾಡಿದವರು", notSigned: "ಸಹಿ ಇಲ್ಲ", scanToCheck: "ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ.", signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
     notAGrade: "ಇವು ದಾಖಲೆಯಲ್ಲಿ ಕಾಣುವ ವಿಷಯಗಳ ಎಣಿಕೆ. ಇವು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ನೀಡುವುದಿಲ್ಲ.", period: "ಅವಧಿ",
     showWhatWeDid: "ನಾವು ಮಾಡಿದ್ದನ್ನು ತೋರಿಸಿ ▸", byActionHeading: "ಏಜೆಂಟ್ ಮಾಡಿದ್ದು, ಕೆಲಸದ ಪ್ರಕಾರ", action: "ಕೆಲಸ", agentVersion: "ಏಜೆಂಟ್ ಆವೃತ್ತಿ", limitsDigest: "ಮಿತಿಗಳ ಡೈಜೆಸ್ಟ್", recordDigest: "ದಾಖಲೆಯ ಡೈಜೆಸ್ಟ್", liveServices: "ನಿಜವಾದ ವ್ಯವಸ್ಥೆಗಳು",
   },
 };
 
 export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
+
+/** The money labels of a report: a UPI centre's (B33) say the money was marked by the owner; a Razorpay centre's are as they were. */
+export const moneyLabels = (language: Language, paidBy?: "owner-marked"): { collected: string; givenBack: string } =>
+  paidBy === "owner-marked" ? STRINGS[language].upiLabel : { collected: STRINGS[language].label.collected, givenBack: STRINGS[language].label.givenBack };

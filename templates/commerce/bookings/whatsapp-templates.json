@@ -1820,6 +1820,958 @@
     ]
   },
   {
+    "name": "owner_service_paused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} की ऑनलाइन बुकिंग अभी रुकी हुई है। पहले की बुकिंग, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया {{2}} से संपर्क करें।",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_paused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Notice: online booking for {{1}} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact {{2}}.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_paused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി {{2}}-നെ ബന്ധപ്പെടൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_paused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು {{2}} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: {{2}}। बाकी खुले काम: {{3}}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {{4}} तक {{5}} से मिल सकती है।",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "3",
+              "1",
+              "शुक्रवार, 5 मार्च",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Notice: online booking for {{1}} has stopped. Nothing is deleted. Bookings to come: {{2}}. Other open items: {{3}}. {{4}} can give you the full list and a free copy of all your records until {{5}}.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "3",
+              "1",
+              "Divya, local partner",
+              "Fri 5 Mar"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: {{2}}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {{3}}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {{4}} വരെ {{5}} നൽകും.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "3",
+              "1",
+              "വെള്ളി, 5 മാർച്ച്",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_service_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: {{2}}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {{3}}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {{4}} ವರೆಗೆ {{5}} ನೀಡುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "3",
+              "1",
+              "ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed_upi",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "बुक हो गया! {{1}}, {{2}}। मालिक ने आपका {{3}} जमा पक्का कर दिया है। रिफंड के लिए शुरू होने से कम से कम {{4}} घंटे पहले रद्द करें।",
+        "example": {
+          "body_text": [
+            [
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed_upi",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Booked! {{1}} on {{2}}. The owner has confirmed your {{3}} deposit. Cancel at least {{4}} hours before the start for a refund.",
+        "example": {
+          "body_text": [
+            [
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed_upi",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ബുക്ക് ആയി! {{1}}, {{2}}. നിങ്ങളുടെ {{3}} അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് {{4}} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.",
+        "example": {
+          "body_text": [
+            [
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_confirmed_upi",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಬುಕ್ ಆಗಿದೆ! {{1}}, {{2}}. ನಿಮ್ಮ {{3}} ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ {{4}} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_upi_after_hold",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने आपका {{1}} पेमेंट {{2}} की रोक खत्म होने के बाद पक्का किया, इसलिए बुकिंग नहीं हुई है। मालिक आपसे दोबारा बुकिंग या पैसे वापस भेजने के बारे में बात करेंगे।",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_upi_after_hold",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner confirmed your {{1}} payment after the hold on {{2}} had ended, so it is not booked. The owner will contact you about booking again or sending the money back.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "Tue 10 Nov, 6:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_upi_after_hold",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} ഉടമ ഉറപ്പിച്ചത് {{2}}-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ച ശേഷമാണ്, അതിനാൽ ബുക്ക് ആയിട്ടില്ല. വീണ്ടും ബുക്ക് ചെയ്യുന്നതിനെക്കുറിച്ചോ പണം തിരികെ അയക്കുന്നതിനെക്കുറിച്ചോ ഉടമ നിങ്ങളെ ബന്ധപ്പെടും.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "booking_upi_after_hold",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು {{2}} ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದ ನಂತರ ಖಚಿತಪಡಿಸಿದರು, ಆದ್ದರಿಂದ ಬುಕ್ ಆಗಿಲ್ಲ. ಮತ್ತೆ ಬುಕ್ ಮಾಡುವ ಅಥವಾ ಹಣ ಮರಳಿ ಕಳುಹಿಸುವ ಬಗ್ಗೆ ಮಾಲೀಕರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_coming",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक {{1}} UPI से आपको वापस भेजेंगे। जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_coming",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner will send {{1}} back to you by UPI. I'll message you when they mark it sent.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_coming",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉടമ {{1}} UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_coming",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಲೀಕರು {{1}} ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_marked_sent",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने बुकिंग {{1}} का आपका {{2}} रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें।",
+        "example": {
+          "body_text": [
+            [
+              "b-3",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_marked_sent",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner has marked your {{1}} refund for booking {{2}} as sent by UPI. Please check your UPI app.",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "b-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_marked_sent",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ബുക്കിംഗ് {{1}}-ന്റെ നിങ്ങളുടെ {{2}} റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "b-3",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "upi_refund_marked_sent",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಬುಕಿಂಗ್ {{1}} ರ ನಿಮ್ಮ {{2}} ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "b-3",
+              "₹200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_check",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "जाँचने के लिए UPI पेमेंट: ग्राहक {{1}} बुकिंग {{2}} ({{3}}, {{4}}) के लिए {{5}} जमा भेजेंगे। जब यह आपके UPI ऐप में दिखे, तो \"मिल गया\" दबाएँ या \"received {{6}}\" लिखकर भेजें। अगर कोई और रकम आई है, तो \"received {{7}}\" के बाद रकम लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "हेयरकट",
+              "मंगलवार, 10 नवंबर, शाम 6:00 बजे",
+              "₹200",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_check",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "UPI payment to check: customer {{1}} will pay the {{2}} deposit for {{3}} on {{4}} (booking {{5}}). When it shows in your UPI app, tap Received or reply \"received {{6}}\". If a different amount came, reply \"received {{7}}\" and the amount.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹200",
+              "haircut",
+              "Tue 10 Nov, 6:00 pm",
+              "b-3",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_check",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പരിശോധിക്കാനുള്ള UPI പണമടവ്: ഉപഭോക്താവ് {{1}}, ബുക്കിംഗ് {{2}} ({{3}}, {{4}}) എന്നതിനായി {{5}} അഡ്വാൻസ് അയക്കും. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{6}}\" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ \"received {{7}}\" എന്നതിന് ശേഷം തുക എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "ഹെയർകട്ട്",
+              "ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00",
+              "₹200",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_check",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಗ್ರಾಹಕರು {{1}} ಬುಕಿಂಗ್ {{2}} ({{3}}, {{4}}) ಗಾಗಿ {{5}} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ \"received {{7}}\" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "ಹೇರ್ ಕಟ್",
+              "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00",
+              "₹200",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_customer_says_paid",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} कह रहे हैं कि उन्होंने बुकिंग {{2}} का {{3}} जमा भेज दिया है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो \"मिल गया\" दबाएँ या \"received {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_customer_says_paid",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} says they have paid the {{2}} deposit for booking {{3}}. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply \"received {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹200",
+              "b-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_customer_says_paid",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}} ബുക്കിംഗ് {{2}}-ന്റെ {{3}} അഡ്വാൻസ് അയച്ചെന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_customer_says_paid",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} ಬುಕಿಂಗ್ {{2}} ರ {{3}} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_part_marked",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपने बुकिंग {{1}} के लिए {{2}} दर्ज किया, पर जमा {{3}} है, इसलिए अभी बुकिंग नहीं हुई। रोक का समय खत्म होने तक स्लॉट रुका रहेगा। बाकी {{4}} आने पर \"मिल गया\" दबाएँ या \"received {{5}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "b-3",
+              "₹200",
+              "₹200",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_part_marked",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "You marked {{1}} for booking {{2}}, but the deposit is {{3}}, so it is not booked yet. The slot stays held until the hold ends. When the other {{4}} arrives, tap Received or reply \"received {{5}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "b-3",
+              "₹200",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_part_marked",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ബുക്കിംഗ് {{1}}-ന് നിങ്ങൾ {{2}} രേഖപ്പെടുത്തി, പക്ഷേ അഡ്വാൻസ് {{3}} ആണ്, അതിനാൽ ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. പിടിച്ചുവെക്കൽ സമയം തീരും വരെ സ്ലോട്ട് പിടിച്ചുവെക്കും. ബാക്കി {{4}} എത്തുമ്പോൾ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{5}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "b-3",
+              "₹200",
+              "₹200",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_part_marked",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಬುಕಿಂಗ್ {{1}} ಗೆ ನೀವು {{2}} ದಾಖಲಿಸಿದ್ದೀರಿ, ಆದರೆ ಮುಂಗಡ ಹಣ {{3}}, ಆದ್ದರಿಂದ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರುತ್ತದೆ. ಉಳಿದ {{4}} ಬಂದಾಗ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{5}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "b-3",
+              "₹200",
+              "₹200",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_to_send",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "वापस भेजना है: ग्राहक {{1}} (बुकिंग {{2}}) को UPI से {{3}}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद \"रिफंड भेज दिया\" दबाएँ या \"refunded {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_to_send",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Refund to send: {{1}} by UPI to customer {{2}} (booking {{3}}). The agent never sends money. When you have sent it, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "+919811111111",
+              "b-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_to_send",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "തിരികെ അയക്കേണ്ടത്: ഉപഭോക്താവ് {{1}}-ന് (ബുക്കിംഗ് {{2}}) UPI വഴി {{3}}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം \"റീഫണ്ട് അയച്ചു\" അമർത്തുക, അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_to_send",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಗ್ರಾಹಕರು {{1}} (ಬುಕಿಂಗ್ {{2}}) ಅವರಿಗೆ UPI ಮೂಲಕ {{3}}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "याद दिलाना: ग्राहक {{1}} (बुकिंग {{2}}) को {{3}} अभी भी वापस देना है। UPI से भेजने के बाद \"रिफंड भेज दिया\" दबाएँ या \"refunded {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reminder: {{1}} is still owed back to customer {{2}} (booking {{3}}). When you have sent it by UPI, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹200",
+              "+919811111111",
+              "b-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് {{1}}-ന് (ബുക്കിംഗ് {{2}}) {{3}} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം \"റീഫണ്ട് അയച്ചു\" അമർത്തുക, അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_upi_refund_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು {{1}} (ಬುಕಿಂಗ್ {{2}}) ಅವರಿಗೆ {{3}} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "b-3",
+              "₹200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "monthly_report",
     "language": "hi",
     "category": "UTILITY",
@@ -2052,6 +3004,262 @@
       {
         "type": "BODY",
         "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಆದ ಬುಕಿಂಗ್: {{2}} · ಬಂದ ಮುಂಗಡ ಹಣ: {{3}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{4}} (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: {{5}} · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: {{6}})\nನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ಫೆಬ್ರವರಿ 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nहुई बुकिंग: {{2}} · मालिक द्वारा मिला हुआ दर्ज जमा: {{3}}\nआपकी सीमाओं ने रोका: {{4}} (कीमत-सूची से कम की माँग: {{5}} · एक ही समय की दूसरी बुकिंग: {{6}})\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nपक्का नहीं हो पाया: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · फरवरी 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nBookings made: {{2}} · Deposits marked paid by owner: {{3}}\nStopped by your limits: {{4}} (Prices below your list: {{5}} · Double bookings: {{6}})\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nCould not confirm: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · Feb 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "phone calls · walk-ins · and 17 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nബുക്ക് ആയവ: {{2}} · ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്: {{3}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{4}} (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: {{5}} · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: {{6}})\nനിങ്ങളോട് ചോദിച്ചത്: {{7}} · നിങ്ങൾ അംഗീകരിച്ചത്: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: {{9}}\nഉറപ്പിക്കാൻ കഴിയാത്തത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ഫെബ്രുവരി 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಆದ ಬುಕಿಂಗ್: {{2}} · ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ: {{3}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{4}} (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: {{5}} · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: {{6}})\nನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ಫೆಬ್ರವರಿ 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nहुई बुकिंग: {{2}} · मालिक द्वारा मिला हुआ दर्ज जमा: {{3}}\nआपकी सीमाओं ने रोका: {{4}} (कीमत-सूची से कम की माँग: {{5}} · एक ही समय की दूसरी बुकिंग: {{6}})\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nपक्का नहीं हो पाया: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · फरवरी 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nBookings made: {{2}} · Deposits marked paid by owner: {{3}}\nStopped by your limits: {{4}} (Prices below your list: {{5}} · Double bookings: {{6}})\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nCould not confirm: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · Feb 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "phone calls · walk-ins · and 17 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nബുക്ക് ആയവ: {{2}} · ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്: {{3}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{4}} (ലിസ്റ്റ് വിലയിൽ കുറഞ്ഞ ആവശ്യങ്ങൾ: {{5}} · ഒരേ സമയത്തെ രണ്ടാം ബുക്കിംഗ്: {{6}})\nനിങ്ങളോട് ചോദിച്ചത്: {{7}} · നിങ്ങൾ അംഗീകരിച്ചത്: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞത്: {{9}}\nഉറപ്പിക്കാൻ കഴിയാത്തത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon · ഫെബ്രുവരി 2027",
+              "38",
+              "₹17,600",
+              "5",
+              "3",
+              "1",
+              "3",
+              "2",
+              "1",
+              "1",
+              "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "monthly_report_upi_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಆದ ಬುಕಿಂಗ್: {{2}} · ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ: {{3}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{4}} (ಬೆಲೆ ಪಟ್ಟಿಗಿಂತ ಕಡಿಮೆ ಕೇಳಿದ್ದು: {{5}} · ಒಂದೇ ಸಮಯಕ್ಕೆ ಎರಡನೇ ಬುಕಿಂಗ್: {{6}})\nನಿಮ್ಮನ್ನು ಕೇಳಿದ್ದು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
         "example": {
           "body_text": [
             [

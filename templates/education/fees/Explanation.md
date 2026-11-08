@@ -65,6 +65,29 @@ Fees runs as a server the way Bookings does, because the server was moved into `
 - **The bundle and the panel know Fees.** `bundle/lib/kinds.ts` lists what differs by template (the Guards a shop has, how its settings are checked, its hand check and certificate). A Fees shop has Razorpay and WhatsApp Guards and no calendar. `geometer shop add --template fees` and the panel's five-step setup write the same folder, with the settings in the shape a builder writes (a student's `batch`).
 - **What has not run:** none of this has run with a real WhatsApp number, a real Razorpay account or a real centre. The end-to-end test runs the stand-ins, the inbox, the runtime and a restart.
 
+## Recovery steps and the owner's agreement to a handover (B31, B38; 7 November 2026)
+
+The Fees agent handles the same two things as Bookings, for a fee. A **`recovery` event** names one fee and an action: `recheck_payment` runs `reconcile` and `settle` (the payments service's own list for the fee's links; a payment not yet counted is counted by the normal path), `ask_owner_again` sends the owner the waiver request or the refund request again with the same reference (`q-N`), and `recheck_refund` looks, read-only, for a refund whose outcome was unclear and sends nothing. `retry_booking` is Bookings' and is refused here. The Fees kind of unfinished work is `payment_unrecorded`: a payment arrived and the fee was not updated because the payments service could not be read, until a later look reads it. **"move CODE"** from the owner's number writes one `handover_agreed` entry and nothing else. Tests: `test/recovery.test.ts`.
+
+## UPI, marked paid by the owner (B33; 7 November 2026)
+
+A centre picks `"payment": {"module": "upi", "upi": {"id": ..., "payee": ...}}` (the panel's default for a partner's centre) or `{"module": "razorpay"}` (a settings file
+with no block is Razorpay, as before; the old "UPI is not built yet" refusal is gone). The shared module is `modules/payments/upi`; this is what Fees does with it.
+
+- **Every message that asks for money** carries the `upi://pay` request with the centre's UPI ID and name after it (`payTo` in `language/templates.ts`: one value, so the
+  WhatsApp templates say it the same way), and the QR picture goes with the pay link and with a reminder inside the window.
+- **A fee is paid only by the owner's marks** (`owner_marked_paid`, counted by `recordedPaidPaise` beside `record_payment`). The owner is told what to look for once
+  per request (Deferred: a digest). A part marked leaves the rest with a request of its own for exactly the rest, since a UPI app cannot change the amount; the
+  reminders go on until the owner marks the rest. More than owed: the fee is paid and the extra is owed back by the owner.
+- **Never confirmed:** the normal reminders go on, and nothing is marked paid. **Twice:** counted once. **A request replaced** (the late fee changed the amount): a mark on
+  it later still counts toward the fee.
+- **Refunds** are owed by the owner: an overpayment at once; a refund a parent asks for goes to the owner (`approve q-N`) whatever the amount, since the owner sends
+  every UPI refund (no Guard hold). The parent hears "sent" only after the owner's mark; the owner is reminded once a day, three times at most.
+- **A screenshot or "I already paid"**: thanks, the owner will confirm, a screenshot is not proof; the owner is asked, at most once an hour.
+- **Crash test:** on a UPI centre the Razorpay situations are named as not run and seven UPI situations run (`crash-test/upi.ts`): Bright Tuition (UPI) holds 7 of 7.
+  The Razorpay centre is unchanged: 26 of 26.
+- **The report** labels a UPI centre's money "Marked paid by owner" and "Refunds marked sent by owner", with two more WhatsApp report templates.
+
 ## Choices to review
 
 - **The English forms and the machine-written ones.** All Hindi, Malayalam and Kannada wording is machine-written; the review sheets are the way to have it read.
@@ -82,3 +105,19 @@ The same two changes as Bookings, through the shared modules (`modules/Explanati
 - Four new owner lines in four languages; three of them are Meta templates (`owner_fee_refund_settled`, `owner_fee_approval_closed`, `owner_fee_approval_refused`), built from the templates as the others are.
 
 Test: `test/agent.test.ts` ("Guard's 409 already_done ..."); the relay is tested on Bookings and in the bundle.
+
+## The QR code on the papers (B12, 8 Nov)
+
+Fees' go-live certificate, record certificate and monthly report end in the shared seal block (`modules/report/page.ts`): the QR code (inline SVG), the link
+`https://geometer.dev/verify/#<digest>` in text under it, the code, and the sentence `scanToCheck` from `report/strings.ts`. The one-line text of the certificate now says
+`/verify/#<code>`. No WhatsApp template contains a verify link (`whatsapp-templates.json` has none), so nothing needs re-approval. The signed JSON is unchanged: the page is made from it.
+
+## The licence's wind-down and final stop (B13, 8 November 2026)
+
+As in Bookings (`templates/commerce/bookings/Explanation.md`, the same heading), with the centre's work: **in the wind-down** a parent who asks to pay, asks for a
+discount, or writes anything that would get the fee menu is answered "Online fee payment is paused for now. Please contact <centre> directly." (`fee_paused`); no new fee
+link is made (`currentLink` refuses with the decision `subscription_suspended`, and a waiver the owner approves is recorded without a new link); no month's fees are
+opened; no late fee is added; and a reminder that falls due is passed over, never kept to send later. Payments on links sent earlier are still counted and receipted, and
+refunds go on. **In the final stop** each open fee's link is closed through Guard once for each `paid_through` (`cancel_fee_link` with `refs.licence`; a UPI centre has
+none), and every message is held back. The owner's notices are `owner_licence_paused` and `owner_licence_stopped` (fees still open, other to-do items, the free copy's
+last day), as the utility templates `owner_fee_service_paused` and `owner_fee_service_stopped`. This is the runtime's own check: Guard does not read the lease yet.

@@ -127,6 +127,7 @@ node bundle/geometer.ts update --dry-run     # a new template version for every 
 node bundle/geometer.ts update                # do it, each client checked on its own settings first
 node bundle/geometer.ts rollback              # put the clients the last update moved back on their previous version
 node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the record as it was, from the continuous copy
+node bundle/geometer.ts licence extension extension.gx1                  # an emergency extension from Geometer, if fleet cannot renew the licence for a while
 ```
 
 ## Update every client at once
@@ -294,6 +295,42 @@ Its calls to the services go where `agent add` printed: it is started with these
 
 An example agent that passes all ten is `bundle/examples/own-agent/server.js` (plain Node, no dependencies). `server-broken.js` is the same agent with one thing done wrong: when the answer to a refund is lost it asks again straight away with a new idempotency key. It fails that one situation and no other, and Razorpay still holds one refund because Guard held every repeat. Both are run by the tests.
 
+## The licence
+
+Each shop on your server is covered by a **licence lease**: a short signed note from Geometer's fleet service that says which shops are paid for and until when. It comes back with every heartbeat, and your server keeps the newest one. Nothing here talks to Razorpay: fleet decides what is paid.
+
+**Set up once.** Fleet's operator gives you the public half of fleet's licence key (64 letters and digits; fleet prints it with `licence key show`). Pin it when you make the server folder:
+
+```sh
+node bundle/geometer.ts init /srv/geometer --domain shops.example.com ... --licence-key <the 64 characters fleet printed>
+```
+
+`init` prints the key's id; it should be the id fleet printed. A lease is only ever checked with this key, never with one that comes inside a lease. Without it, no lease is kept and no shop is ever paused by one. To add a second key while Geometer changes keys, add it to `"licence": {"keys": [...]}` in `geometer.json`.
+
+**What a shop's owner and customers see.**
+
+| Where the shop stands | Customers | The owner |
+|---|---|---|
+| In order, payment due, or overdue (days 0 to 29) | Nothing changes. | Nothing. The panel shows you the dates and a renew link. |
+| **Wind-down** (from day 30) | A request to book (or to pay a fee) gets "Online booking is paused for now. Please contact the shop directly." Nothing is kept to do later. Refunds, cancellations, existing bookings and payments from links sent earlier still go through. | One plain notice on WhatsApp, in their language, naming the person who set the shop up. |
+| **Final stop** (no earlier than day 60) | Nothing more is sent. Open payment links are closed. Payments already made are still recorded, and refunds still go through. **Nothing is deleted.** | One notice: nothing is deleted, how much is still open, and that you can give them the full list and a free copy of their records (`geometer export`, or the panel's download). |
+
+Paying at any point brings the shop back at once, at the next heartbeat. Nothing a customer asked during the wind-down is done by itself afterwards: they ask again.
+
+**If your server is offline,** a paying shop keeps working: its lease covers it for about a month past its next invoice. A lease that runs out while nothing new arrives pauses new bookings at most; only a lease that says "stopped" stops a shop. Setting the server's clock back does not stretch a lease.
+
+**If Geometer's fleet is down for a long time,** Geometer can send you an emergency extension (a file starting `gx1.`). Hand it in:
+
+```sh
+node bundle/geometer.ts licence extension extension.gx1
+```
+
+It is checked with the same pinned key. Until the date it names, no shop here pauses because its lease could not be renewed. It does not lift a pause or a stop that a lease states.
+
+**Where it is kept:** `state/licence/` (the lease, `seen.json`, `extensions/`). `geometer status` shows each shop's licence line. The panel shows it on the shop's page, with the renew link and a note if the lease has not been refreshed for more than 2 days.
+
+**Today the check is the runtime's own.** The shop's agent reads the lease and stops taking new work; Guard does not check the lease yet. Write to support. A person answers.
+
 ## The owner's monthly report
 
 On the first morning of the month each shop's agent sends its owner last month's report on WhatsApp, with a link to the full page. The bundle turns this on for every shop it deploys. You do nothing for it. Three things make it work, and all three come from the bundle:
@@ -349,6 +386,8 @@ Restoring a snapshot needs the secret half of the age key, which is not on the s
 The panel reaches each shop's Razorpay, WhatsApp and Calendar Guards on a network of its own that carries nothing else (no runtime, no model Guard, no admin port, no inbox). At each Guard it presents its own agent, `panel-<shop>`, which that Guard allows **its connection-check reads and nothing else**: `list_links` at Razorpay, `read_number` at WhatsApp (`GET /{version}/{phone_number_id}`) and, at Calendar, `get_calendar` (`GET /calendar/v3/calendars/{calendarId}`) and `list` (`GET .../events`, which the panel asks for one event of, because that is where Google says whether the account can write). Each is pinned to the shop's own id like the routes beside it. The panel reads **one** token file and presents it to every Guard, so there is one token, `secrets/panel/guard_agent_token`, mounted only into the panel; every Guard keeps its hash under its `panel-<shop>` agent. Without these the panel's "Ready to go live" cannot pass in production.
 
 The first builder's way in is `node bundle/geometer.ts panel invite --role builder` (it asks the running panel for a one-time link; in hosted mode this is the only way to make an invitation). `--role partner` is for a partner's account.
+
+**Unfinished work, handing a shop on, taking its files out (7 Nov).** The panel's "To do" tab lists, across the shops a person can see, the real jobs that need a person (a deposit with no confirmed booking, a refund waiting or of unknown outcome, an answer from the owner that has waited too long; `PANEL_APPROVAL_WAIT_HOURS`, default 12), each as one plain sentence with the recovery buttons that fit it; a button files a request that the deployer carries to the shop's agent, which looks again or asks again through Guard and the normal limits and never sends a refund again. A shop moves to another partner or builder only after the owner sends a one-use code from their own number (the panel's "Move this shop"), with the reason kept and never to Geometer; the shop's WhatsApp, payment and calendar accounts stay the shop's and no key is carried across. `geometer export <shop> [--out <folder>]` (and the shop page's download) writes everything that is the shop's in open files with a manifest of sha256 values, a README, no key or secret, and works for a stopped shop and a lapsed plan; check one with `node bundle/export/check.ts <folder>`. Details: `bundle/panel/Explanation.md`; what is left: `Deferred.md`.
 
 `pins.json` (the ids the panel's connection checks confirmed) is used for the exact allowlists when it is there, and for the runtime too, so the two always agree; a changed pin is a new version of that Guard's bundle. A Razorpay key handed in that is not the key id the check confirmed, or of the other mode, is refused by name. With no `google_service_account.json` in a shop's inbox, the server-wide key (`node bundle/geometer.ts google-key <file>`) is used, which is how Geometer's hosted server works; the panel is told its address so it can say who to share a calendar with.
 

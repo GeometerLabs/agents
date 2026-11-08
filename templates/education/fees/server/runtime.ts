@@ -16,6 +16,8 @@ import { batchName } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/core.ts";
+import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import { createFeesLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
 import { parseStore, serializeStore } from "./snapshot.ts";
 import type { DurableStore } from "./store.ts";
@@ -25,7 +27,7 @@ export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 
 /** Fees calls two services: payments and messaging. It has no calendar. */
-export interface Services { payments: Payments; messaging: Messaging }
+export interface Services { payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/upi/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
   settings: Settings;
@@ -38,6 +40,8 @@ export interface RuntimeOptions {
   ai?: AiPolicy;
   /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
   report?: MonthlyReportSetup;
+  /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
+  licence?: () => LicenceNow;
   retryDelaysMs?: number[];
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: AgentEvent, run: () => Promise<void>) => Promise<void>;
@@ -85,7 +89,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     createStore,
     serialize: serializeStore,
     parse: parseStore,
-    createAgent: ({ store, record }) => createAgent({ settings, clock, ...services, parser, record, store, ai: policy }),
+    createAgent: ({ store, record }) => createAgent({ settings, clock, ...services, parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.dues.values(),
     refundContext(store, _settings, receipt) {
@@ -105,6 +109,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   return createRuntimeCore({
     settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
+    ...(options.licence ? { licence: options.licence, licenceNotice: createFeesLicenceNotice(settings, options.licence) } : {}),
     retryDelaysMs: options.retryDelaysMs, aroundStep: options.aroundStep as never, log: options.log,
   }) as unknown as Runtime;
 }

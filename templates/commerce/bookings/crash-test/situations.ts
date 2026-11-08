@@ -36,6 +36,8 @@ import type { Says } from "./says.ts";
 import { checker, runAllSituations, runSituation } from "../../../../modules/crash-test/situations.ts";
 import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
 import { planShop } from "./shop.ts";
+import { RAZORPAY_ONLY, buildUpiSituations } from "./upi.ts";
+import { upiOf } from "../../../../modules/payments/upi/settings.ts";
 import type { Shop, Slot } from "./shop.ts";
 
 export { SAYS } from "./says.ts";
@@ -1159,7 +1161,11 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   if ("problem" in planned) return { situations: [], skipped: [{ id: "all", title: "Every situation", reason: planned.problem }] };
   const situations: Situation[] = [];
   const skipped: Skipped[] = [];
-  for (const built of build(planned.shop)) {
+  // A UPI shop (B33): the situations written around a Razorpay payment link are named as not run, and the UPI ones run instead (crash-test/upi.ts).
+  const all = upiOf(settings.payment)
+    ? [...build(planned.shop).map((b): Built => ("skip" in b ? b : skip(b.id, b.title, RAZORPAY_ONLY))), ...buildUpiSituations(planned.shop, (language, slot) => sayings(planned.shop, language, slot).book)]
+    : build(planned.shop);
+  for (const built of all) {
     if ("skip" in built) skipped.push({ id: built.id, title: built.title, reason: built.skip });
     else situations.push(built);
   }

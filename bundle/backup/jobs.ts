@@ -84,10 +84,12 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}` })) }), { mode: 0o644 });
   const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
   rmSync(jobFile, { force: true });
-  const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; error?: string }[] } | undefined;
+  const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string }[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
   // The cost meter's counts go into the shop's status file, where ops reads them for the heartbeat. They are not a confirmation of the shop, so `updatedAt` stays where it is.
   for (const x of out.results) if (x.ok && x.usage && shops.includes(x.name)) updateStatus(ctx.dir, x.name, ctx.now(), (s) => { s.usage = { ...x.usage as UsageTotals, at: ctx.now().toISOString() }; }, false);
+  // the unfinished-work counts by kind, for the heartbeat's open_obligations (a gauge: the counts now, replaced at every export)
+  for (const x of out.results) if (x.ok && x.obligations && shops.includes(x.name)) updateStatus(ctx.dir, x.name, ctx.now(), (s) => { s.obligations = { counts: x.obligations!, at: ctx.now().toISOString() }; }, false);
   return { ok: out.results.every((x) => x.ok || x.error === "no database yet"), lines: out.results.map((x) => (x.ok ? `${x.name}: exported ${x.entries} record entries and ${x.dues !== undefined ? `${x.dues} fees` : `${x.bookings} bookings`}` : `${x.name}: not exported (${x.error})`)) };
 }
 

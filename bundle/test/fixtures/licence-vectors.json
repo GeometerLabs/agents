@@ -1,0 +1,319 @@
+{
+  "about": "Test vectors for Geometer's licence lease and emergency extension, version 1 (ADR-0059). Made by apps/fleet/test/lease.test.ts. The key is RFC 8032's published TEST 1 key: never a production key.",
+  "test_key": {
+    "seed_hex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+    "public_hex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    "kid": "21fe31dfa154a261"
+  },
+  "valid": [
+    {
+      "name": "a lease with an active, a wound-down and a stopped shop",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "payload_json": "{\"deployment\":\"acme-vps-1\",\"issued_at\":1796700000,\"kind\":\"lease\",\"serial\":1796700000,\"shops\":[{\"expires\":1799260200,\"export_until\":null,\"grace_days\":30,\"id\":\"chai-point\",\"notice\":null,\"paid_through\":1796668200,\"plan\":\"basic\",\"state\":\"active\",\"stop_at\":null},{\"expires\":1796668200,\"export_until\":null,\"grace_days\":30,\"id\":\"glow-salon\",\"notice\":\"wind_down\",\"paid_through\":1794076200,\"plan\":\"business\",\"state\":\"wind_down\",\"stop_at\":1799260200},{\"expires\":1793989800,\"export_until\":1804357800,\"grace_days\":30,\"id\":\"spa-one\",\"notice\":\"stop\",\"paid_through\":1791397800,\"plan\":\"operations\",\"state\":\"stopped\",\"stop_at\":1796581800}],\"v\":1}",
+      "signing_input": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0"
+    },
+    {
+      "name": "an emergency extension for every deployment",
+      "kind": "extension",
+      "token": "gx1.21fe31dfa154a261.eyJkZXBsb3ltZW50cyI6WyIqIl0sImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImV4dGVuc2lvbiIsInVudGlsIjoxNzk4NzQxODAwLCJ2IjoxfQ.DNWUNa2fTXscPMP-pr-SzWF2_kjkrwCj6sQV5m7zh2NDkHxnLjnRrYoPpblvA6vUl39yVJ3B_Fd3xdz-TSIrDA",
+      "payload_json": "{\"deployments\":[\"*\"],\"issued_at\":1796700000,\"kind\":\"extension\",\"until\":1798741800,\"v\":1}",
+      "signing_input": "gx1.21fe31dfa154a261.eyJkZXBsb3ltZW50cyI6WyIqIl0sImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImV4dGVuc2lvbiIsInVudGlsIjoxNzk4NzQxODAwLCJ2IjoxfQ"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "one character of the payload changed",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZABsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "bad_signature"
+    },
+    {
+      "name": "one character of the signature changed",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cAcnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "bad_signature"
+    },
+    {
+      "name": "signed by a key Guard does not hold",
+      "kind": "lease",
+      "token": "gl1.fe812c12f3ab4ce6.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.F1kGLhBr4gPchjJfeG_iDWasl-3ZENpcsU__musCfx3O0UDw5MF-9yyuZMGDYJYmdLrLqebXLzPh8GJmQMh7Bg",
+      "code": "unknown_key"
+    },
+    {
+      "name": "a lease offered as an extension",
+      "kind": "extension",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "wrong_kind"
+    },
+    {
+      "name": "an extension offered as a lease",
+      "kind": "lease",
+      "token": "gx1.21fe31dfa154a261.eyJkZXBsb3ltZW50cyI6WyIqIl0sImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImV4dGVuc2lvbiIsInVudGlsIjoxNzk4NzQxODAwLCJ2IjoxfQ.DNWUNa2fTXscPMP-pr-SzWF2_kjkrwCj6sQV5m7zh2NDkHxnLjnRrYoPpblvA6vUl39yVJ3B_Fd3xdz-TSIrDA",
+      "code": "wrong_kind"
+    },
+    {
+      "name": "a lease's body and signature under the extension prefix",
+      "kind": "extension",
+      "token": "gx1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "bad_signature"
+    },
+    {
+      "name": "base64 padding added",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0=.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "not_base64url"
+    },
+    {
+      "name": "a character of standard base64 (+), not base64url",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJk+XBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "not_base64url"
+    },
+    {
+      "name": "a fifth part",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA.x",
+      "code": "not_four_parts"
+    },
+    {
+      "name": "the key id in capitals",
+      "kind": "lease",
+      "token": "gl1.21FE31DFA154A261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6MX0.nTN7cscnJMx49YNvIOmZl87tc8yyRe4L9j4ykWe1n0bsSM8sbtzWZpTQ-ld46wEF8HTPsCk84ynq86ppPJbpAA",
+      "code": "unknown_key"
+    },
+    {
+      "name": "version 2 under the version-1 prefix",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoiYWN0aXZlIiwic3RvcF9hdCI6bnVsbH0seyJleHBpcmVzIjoxNzk2NjY4MjAwLCJleHBvcnRfdW50aWwiOm51bGwsImdyYWNlX2RheXMiOjMwLCJpZCI6Imdsb3ctc2Fsb24iLCJub3RpY2UiOiJ3aW5kX2Rvd24iLCJwYWlkX3Rocm91Z2giOjE3OTQwNzYyMDAsInBsYW4iOiJidXNpbmVzcyIsInN0YXRlIjoid2luZF9kb3duIiwic3RvcF9hdCI6MTc5OTI2MDIwMH0seyJleHBpcmVzIjoxNzkzOTg5ODAwLCJleHBvcnRfdW50aWwiOjE4MDQzNTc4MDAsImdyYWNlX2RheXMiOjMwLCJpZCI6InNwYS1vbmUiLCJub3RpY2UiOiJzdG9wIiwicGFpZF90aHJvdWdoIjoxNzkxMzk3ODAwLCJwbGFuIjoib3BlcmF0aW9ucyIsInN0YXRlIjoic3RvcHBlZCIsInN0b3BfYXQiOjE3OTY1ODE4MDB9XSwidiI6Mn0.U6m1iGCjmTSyLX47ttEnsbPmc9Gm_xlSSJubybdXhb8ivVZpVewcM-UvpEMLddeP3bBXhIzzbEtMkOLjre-GAA",
+      "code": "wrong_version"
+    },
+    {
+      "name": "a state version 1 does not have",
+      "kind": "lease",
+      "token": "gl1.21fe31dfa154a261.eyJkZXBsb3ltZW50IjoiYWNtZS12cHMtMSIsImlzc3VlZF9hdCI6MTc5NjcwMDAwMCwia2luZCI6ImxlYXNlIiwic2VyaWFsIjoxNzk2NzAwMDAwLCJzaG9wcyI6W3siZXhwaXJlcyI6MTc5OTI2MDIwMCwiZXhwb3J0X3VudGlsIjpudWxsLCJncmFjZV9kYXlzIjozMCwiaWQiOiJjaGFpLXBvaW50Iiwibm90aWNlIjpudWxsLCJwYWlkX3Rocm91Z2giOjE3OTY2NjgyMDAsInBsYW4iOiJiYXNpYyIsInN0YXRlIjoicGF1c2VkIiwic3RvcF9hdCI6bnVsbH1dLCJ2IjoxfQ.rS5aWeQpa7eNRqZ4-qFsVkRXId-rkV3oxIIu1zHi0EO1i0oBpCqFyJ9h73EvoW4h29_TUXWZ7E7mZzTBNwSwDQ",
+      "code": "wrong_shape"
+    }
+  ],
+  "replay": [
+    {
+      "name": "nothing kept yet",
+      "kept": null,
+      "incoming": {
+        "serial": 5,
+        "issued_at": 100
+      },
+      "take": true
+    },
+    {
+      "name": "a newer lease",
+      "kept": {
+        "serial": 5,
+        "issued_at": 100
+      },
+      "incoming": {
+        "serial": 6,
+        "issued_at": 100
+      },
+      "take": true
+    },
+    {
+      "name": "the same lease again",
+      "kept": {
+        "serial": 5,
+        "issued_at": 100
+      },
+      "incoming": {
+        "serial": 5,
+        "issued_at": 100
+      },
+      "take": false
+    },
+    {
+      "name": "an older lease played back",
+      "kept": {
+        "serial": 5,
+        "issued_at": 100
+      },
+      "incoming": {
+        "serial": 4,
+        "issued_at": 200
+      },
+      "take": false
+    },
+    {
+      "name": "a higher serial signed earlier than the kept one",
+      "kept": {
+        "serial": 5,
+        "issued_at": 100
+      },
+      "incoming": {
+        "serial": 6,
+        "issued_at": 99
+      },
+      "take": false
+    }
+  ],
+  "effective": [
+    {
+      "name": "active, inside its cover",
+      "shop": {
+        "plan": "basic",
+        "state": "active",
+        "paid_through": 1796668200,
+        "grace_days": 30,
+        "expires": 1799260200,
+        "stop_at": null,
+        "export_until": null,
+        "notice": null,
+        "id": "chai-point"
+      },
+      "clock": 1797746400,
+      "newest_issued_at": 1796700000,
+      "extension_until": 0,
+      "state": "active",
+      "new_work": true,
+      "recovery": true
+    },
+    {
+      "name": "active, offline past its cover: the wind-down, never the stop",
+      "shop": {
+        "plan": "basic",
+        "state": "active",
+        "paid_through": 1796668200,
+        "grace_days": 30,
+        "expires": 1799260200,
+        "stop_at": null,
+        "export_until": null,
+        "notice": null,
+        "id": "chai-point"
+      },
+      "clock": 1799260200,
+      "newest_issued_at": 1796700000,
+      "extension_until": 0,
+      "state": "wind_down",
+      "new_work": false,
+      "recovery": true
+    },
+    {
+      "name": "the same, with an extension that covers it",
+      "shop": {
+        "plan": "basic",
+        "state": "active",
+        "paid_through": 1796668200,
+        "grace_days": 30,
+        "expires": 1799260200,
+        "stop_at": null,
+        "export_until": null,
+        "notice": null,
+        "id": "chai-point"
+      },
+      "clock": 1799260200,
+      "newest_issued_at": 1796700000,
+      "extension_until": 1799605800,
+      "state": "active",
+      "new_work": true,
+      "recovery": true
+    },
+    {
+      "name": "the server's clock set back: judged no earlier than the newest lease or extension it took",
+      "shop": {
+        "plan": "basic",
+        "state": "active",
+        "paid_through": 1796668200,
+        "grace_days": 30,
+        "expires": 1799260200,
+        "stop_at": null,
+        "export_until": null,
+        "notice": null,
+        "id": "chai-point"
+      },
+      "clock": 1796083200,
+      "newest_issued_at": 1799260200,
+      "extension_until": 0,
+      "state": "wind_down",
+      "new_work": false,
+      "recovery": true
+    },
+    {
+      "name": "a warning is still normal work",
+      "shop": {
+        "plan": "basic",
+        "state": "warning",
+        "paid_through": 1796668200,
+        "grace_days": 30,
+        "expires": 1799260200,
+        "stop_at": null,
+        "export_until": null,
+        "notice": null,
+        "id": "chai-point"
+      },
+      "clock": 1797746400,
+      "newest_issued_at": 1796700000,
+      "extension_until": 0,
+      "state": "warning",
+      "new_work": true,
+      "recovery": true
+    },
+    {
+      "name": "a stated wind-down holds, and an extension does not lift it",
+      "shop": {
+        "plan": "business",
+        "state": "wind_down",
+        "paid_through": 1794076200,
+        "grace_days": 30,
+        "expires": 1796668200,
+        "stop_at": 1799260200,
+        "export_until": null,
+        "notice": "wind_down",
+        "id": "glow-salon"
+      },
+      "clock": 1797746400,
+      "newest_issued_at": 1796700000,
+      "extension_until": 1799605800,
+      "state": "wind_down",
+      "new_work": false,
+      "recovery": true
+    },
+    {
+      "name": "a stated stop holds, and money owed to customers still goes through",
+      "shop": {
+        "plan": "operations",
+        "state": "stopped",
+        "paid_through": 1791397800,
+        "grace_days": 30,
+        "expires": 1793989800,
+        "stop_at": 1796581800,
+        "export_until": 1804357800,
+        "notice": "stop",
+        "id": "spa-one"
+      },
+      "clock": 1797746400,
+      "newest_issued_at": 1796700000,
+      "extension_until": 0,
+      "state": "stopped",
+      "new_work": false,
+      "recovery": true
+    },
+    {
+      "name": "dates alone never make the stop, years past it",
+      "shop": {
+        "plan": "basic",
+        "state": "active",
+        "paid_through": 1796668200,
+        "grace_days": 30,
+        "expires": 1799260200,
+        "stop_at": null,
+        "export_until": null,
+        "notice": null,
+        "id": "chai-point"
+      },
+      "clock": 1893456000,
+      "newest_issued_at": 1796700000,
+      "extension_until": 0,
+      "state": "wind_down",
+      "new_work": false,
+      "recovery": true
+    }
+  ]
+}

@@ -35,6 +35,8 @@ export interface Strings {
   handRun: string;
   sourceTag: Record<Source, string>;
   sourceLong: Record<Source, string>;
+  /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
+  upiLabel: { deposits: string; givenBack: string };
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
   page: {
@@ -45,7 +47,7 @@ export interface Strings {
     missingHeading: string; missingDepositAmounts: string; missingRefundAmounts: string; missingOwnerCommands: string; missingMessageTargets: string;
     notCountedHeading: string; notTestedHeading: string;
     checkHeading: string; code: string; digest: string; limitsDigest: string; recordDigest: string; countedFrom: string; setUpBy: string; madeOn: string; agentVersion: string;
-    checkAt: string; signedBy: string; notSigned: string; signatureNote: string;
+    checkAt: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string;
     showWhatWeDid: string; byActionHeading: string; entriesHeading: string; colNo: string; colTime: string; colAction: string; colOutcome: string; colBooking: string; colFingerprint: string;
     notAGrade: string; period: string;
   };
@@ -89,7 +91,9 @@ const en: Strings = {
     "test-mode": "These numbers come from real services in test mode. The money was test money.",
     live: "These numbers come from the live record of real services.",
   },
+  upiLabel: { deposits: "Deposits marked paid by owner", givenBack: "Refunds marked sent by owner" },
   notTested: {
+    "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
     "voice-calls": "phone calls", "group-bookings": "group bookings", "walk-ins": "walk-ins", "payments-outside-razorpay": "payments made outside Razorpay",
     "real-whatsapp": "real WhatsApp", "real-razorpay": "real Razorpay, in test mode or live", "real-calendar": "a real calendar", "webhook-signatures": "webhook signatures (proof that a payment notice came from Razorpay)",
     "real-model": "a real AI model (messages are read by fixed rules and answered from fixed templates)", "other-languages": "Tamil, Telugu and other languages",
@@ -117,7 +121,7 @@ const en: Strings = {
     notCountedHeading: "Not counted", notTestedHeading: "Not tested",
     checkHeading: "Check this document", code: "Code", digest: "Digest", limitsDigest: "Limits digest", recordDigest: "Record digest", countedFrom: "Counted from", setUpBy: "Set up by", madeOn: "Made on",
     agentVersion: "Agent version", checkAt: "Check it at", signedBy: "Signed with key", notSigned: "Not signed",
-    signatureNote: "A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true.",
+    scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you.", signatureNote: "A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true.",
     showWhatWeDid: "Show what we did ▸", byActionHeading: "What was done, by action and outcome",
     entriesHeading: "Every entry in the record (fingerprints only: no customer messages and no phone numbers)",
     colNo: "No.", colTime: "Time", colAction: "Action", colOutcome: "Outcome", colBooking: "Booking", colFingerprint: "Fingerprint",
@@ -166,7 +170,9 @@ const hi: Strings = {
     "test-mode": "ये आँकड़े असली सेवाओं के टेस्ट मोड से आए हैं। पैसा टेस्ट पैसा था।",
     live: "ये आँकड़े असली सेवाओं के चालू रिकॉर्ड से आए हैं।",
   },
+  upiLabel: { deposits: "मालिक द्वारा मिला हुआ दर्ज जमा", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड" },
   notTested: {
+    "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
     "voice-calls": "फ़ोन कॉल", "group-bookings": "समूह की बुकिंग", "walk-ins": "वॉक-इन ग्राहक", "payments-outside-razorpay": "Razorpay के बाहर के भुगतान",
     "real-whatsapp": "असली WhatsApp", "real-razorpay": "असली Razorpay (टेस्ट मोड या चालू)", "real-calendar": "असली कैलेंडर", "webhook-signatures": "पेमेंट सूचनाओं के हस्ताक्षर (webhook signatures)",
     "real-model": "असली AI मॉडल (संदेश तय नियमों से पढ़े जाते हैं और जवाब तय साँचों से बनते हैं)", "other-languages": "तमिल, तेलुगु और दूसरी भाषाएँ",
@@ -194,7 +200,7 @@ const hi: Strings = {
     notCountedHeading: "गिना नहीं गया", notTestedHeading: "जाँचा नहीं गया",
     checkHeading: "इस दस्तावेज़ को जाँचें", code: "कोड", digest: "डाइजेस्ट", limitsDigest: "सीमाओं का डाइजेस्ट", recordDigest: "रिकॉर्ड का डाइजेस्ट", countedFrom: "कहाँ से गिना", setUpBy: "तैयार किया", madeOn: "बनाया गया",
     agentVersion: "एजेंट का संस्करण", checkAt: "यहाँ जाँचें", signedBy: "इस कुंजी से हस्ताक्षर", notSigned: "हस्ताक्षर नहीं है",
-    signatureNote: "हस्ताक्षर बताता है कि यह दस्तावेज़ किसने जारी किया और तब से बदला नहीं है। यह नहीं बताता कि आँकड़े सच हैं।",
+    scanToCheck: "इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।", signatureNote: "हस्ताक्षर बताता है कि यह दस्तावेज़ किसने जारी किया और तब से बदला नहीं है। यह नहीं बताता कि आँकड़े सच हैं।",
     showWhatWeDid: "हमने क्या किया, देखें ▸", byActionHeading: "क्या किया गया, काम और नतीजे के हिसाब से",
     entriesHeading: "रिकॉर्ड की हर प्रविष्टि (सिर्फ़ फ़िंगरप्रिंट: कोई ग्राहक संदेश या फ़ोन नंबर नहीं)",
     colNo: "क्र.", colTime: "समय", colAction: "काम", colOutcome: "नतीजा", colBooking: "बुकिंग", colFingerprint: "फ़िंगरप्रिंट",
@@ -243,7 +249,9 @@ const ml: Strings = {
     "test-mode": "ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ ടെസ്റ്റ് മോഡിൽ നിന്നുള്ളതാണ്. പണം ടെസ്റ്റ് പണമായിരുന്നു.",
     live: "ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ പ്രവർത്തിക്കുന്ന രേഖയിൽ നിന്നുള്ളതാണ്.",
   },
+  upiLabel: { deposits: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്" },
   notTested: {
+    "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
     "voice-calls": "ഫോൺ കോളുകൾ", "group-bookings": "ഗ്രൂപ്പ് ബുക്കിംഗ്", "walk-ins": "നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ)", "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ",
     "real-whatsapp": "യഥാർത്ഥ WhatsApp", "real-razorpay": "യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡോ ലൈവോ)", "real-calendar": "യഥാർത്ഥ കലണ്ടർ", "webhook-signatures": "പേയ്മെന്റ് അറിയിപ്പുകളുടെ ഒപ്പ് (webhook signatures)",
     "real-model": "യഥാർത്ഥ AI മോഡൽ (സന്ദേശം വായിക്കുന്നത് നിശ്ചിത നിയമങ്ങളാലാണ്, മറുപടികൾ നിശ്ചിത മാതൃകകളാണ്)", "other-languages": "തമിഴ്, തെലുങ്ക്, മറ്റ് ഭാഷകൾ",
@@ -271,7 +279,7 @@ const ml: Strings = {
     notCountedHeading: "എണ്ണാത്തത്", notTestedHeading: "പരിശോധിക്കാത്തത്",
     checkHeading: "ഈ രേഖ പരിശോധിക്കുക", code: "കോഡ്", digest: "ഡൈജസ്റ്റ്", limitsDigest: "പരിധികളുടെ ഡൈജസ്റ്റ്", recordDigest: "രേഖയുടെ ഡൈജസ്റ്റ്", countedFrom: "എവിടെ നിന്ന് എണ്ണി", setUpBy: "തയ്യാറാക്കിയത്", madeOn: "ഉണ്ടാക്കിയ തീയതി",
     agentVersion: "ഏജന്റ് പതിപ്പ്", checkAt: "ഇവിടെ പരിശോധിക്കുക", signedBy: "ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു", notSigned: "ഒപ്പിട്ടിട്ടില്ല",
-    signatureNote: "ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
+    scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക.", signatureNote: "ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
     showWhatWeDid: "ഞങ്ങൾ ചെയ്തത് കാണുക ▸", byActionHeading: "എന്ത് ചെയ്തു, പ്രവൃത്തിയും ഫലവും അനുസരിച്ച്",
     entriesHeading: "രേഖയിലെ ഓരോ എൻട്രിയും (വിരലടയാളം മാത്രം: ഉപഭോക്തൃ സന്ദേശങ്ങളോ ഫോൺ നമ്പറുകളോ ഇല്ല)",
     colNo: "നം.", colTime: "സമയം", colAction: "പ്രവൃത്തി", colOutcome: "ഫലം", colBooking: "ബുക്കിംഗ്", colFingerprint: "വിരലടയാളം",
@@ -320,7 +328,9 @@ const kn: Strings = {
     "test-mode": "ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ಟೆಸ್ಟ್ ಮೋಡ್‌ನಿಂದ ಬಂದವು. ಹಣ ಟೆಸ್ಟ್ ಹಣವಾಗಿತ್ತು.",
     live: "ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ನಡೆಯುತ್ತಿರುವ ದಾಖಲೆಯಿಂದ ಬಂದವು.",
   },
+  upiLabel: { deposits: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್" },
   notTested: {
+    "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",
     "voice-calls": "ಫೋನ್ ಕರೆಗಳು", "group-bookings": "ಗುಂಪು ಬುಕಿಂಗ್", "walk-ins": "ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್)", "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು",
     "real-whatsapp": "ನಿಜವಾದ WhatsApp", "real-razorpay": "ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್)", "real-calendar": "ನಿಜವಾದ ಕ್ಯಾಲೆಂಡರ್", "webhook-signatures": "ಪಾವತಿ ಸೂಚನೆಗಳ ಸಹಿ (webhook signatures)",
     "real-model": "ನಿಜವಾದ AI ಮಾದರಿ (ಸಂದೇಶ ಓದುವುದು ನಿಗದಿತ ನಿಯಮಗಳಿಂದ, ಉತ್ತರಗಳು ನಿಗದಿತ ಮಾದರಿಗಳಿಂದ)", "other-languages": "ತಮಿಳು, ತೆಲುಗು ಮತ್ತು ಇತರ ಭಾಷೆಗಳು",
@@ -348,7 +358,7 @@ const kn: Strings = {
     notCountedHeading: "ಎಣಿಸದ್ದು", notTestedHeading: "ಪರಿಶೀಲಿಸದ್ದು",
     checkHeading: "ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ", code: "ಕೋಡ್", digest: "ಡೈಜೆಸ್ಟ್", limitsDigest: "ಮಿತಿಗಳ ಡೈಜೆಸ್ಟ್", recordDigest: "ದಾಖಲೆಯ ಡೈಜೆಸ್ಟ್", countedFrom: "ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು", setUpBy: "ಸಿದ್ಧಪಡಿಸಿದವರು", madeOn: "ಮಾಡಿದ ದಿನ",
     agentVersion: "ಏಜೆಂಟ್ ಆವೃತ್ತಿ", checkAt: "ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಿ", signedBy: "ಈ ಕೀಲಿಯಿಂದ ಸಹಿ ಮಾಡಲಾಗಿದೆ", notSigned: "ಸಹಿ ಇಲ್ಲ",
-    signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
+    scanToCheck: "ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ.", signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
     showWhatWeDid: "ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸", byActionHeading: "ಏನು ಮಾಡಲಾಯಿತು, ಕೆಲಸ ಮತ್ತು ಫಲಿತಾಂಶದ ಪ್ರಕಾರ",
     entriesHeading: "ದಾಖಲೆಯ ಪ್ರತಿ ನಮೂದು (ಬೆರಳಚ್ಚು ಮಾತ್ರ: ಗ್ರಾಹಕರ ಸಂದೇಶಗಳಾಗಲಿ ಫೋನ್ ಸಂಖ್ಯೆಗಳಾಗಲಿ ಇಲ್ಲ)",
     colNo: "ಕ್ರ.", colTime: "ಸಮಯ", colAction: "ಕೆಲಸ", colOutcome: "ಫಲಿತಾಂಶ", colBooking: "ಬುಕಿಂಗ್", colFingerprint: "ಬೆರಳಚ್ಚು",
@@ -376,3 +386,7 @@ const kn: Strings = {
 };
 
 export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
+
+/** The money labels of a report: a UPI shop's (B33) say the money was marked by the owner ("Deposits marked paid by owner"); a Razorpay shop's are as they were. */
+export const moneyLabels = (language: Language, paidBy?: "owner-marked"): { deposits: string; givenBack: string } =>
+  paidBy === "owner-marked" ? STRINGS[language].upiLabel : { deposits: STRINGS[language].label.depositsCollected, givenBack: STRINGS[language].label.givenBack };

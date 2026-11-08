@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { handCheckText } from "../../../../modules/crash-test/print.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
+import { HAND_RUN, STAND_IN_SERVICES, notTestedOf } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { brightTuition } from "../src/harness.ts";
@@ -46,7 +46,11 @@ async function main(): Promise<number> {
         "",
         `CRASH TEST   ${settings.name} · Fees · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
       ],
-      workDone: ({ situations, checks, tookMs: ms }) => [
+      workDone: ({ situations, checks, tookMs: ms }) => settings.payment.module === "upi" ? [
+        `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp, with UPI marked`,
+        "  paid by the owner: a screenshot sent as proof, the owner confirming a different amount, never, twice, or on a replaced request,",
+        `  and a refund the owner owes, in ${names}.`,
+      ] : [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp and`,
         "  payments: lost replies, payment events twice, payments after the due date, parents saying they paid when they have not",
         `  and when they have, waivers and refunds above the limit, a model that is down, and parents pushing in ${names}.`,
@@ -56,7 +60,7 @@ async function main(): Promise<number> {
         "  Each situation was judged from the fakes' own records (what the payments service, Guard's model and the",
         `  WhatsApp outbox hold), never from what the agent said. ${checks} checks in all.`,
       ],
-      notTested: NOT_TESTED.map((n) => n.text),
+      notTested: notTestedOf(settings).map((n) => n.text),
     },
   });
   console.log(out.text);

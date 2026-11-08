@@ -6,7 +6,7 @@
 // It reads in three layers: the result line and the work done by default, and "--details" (or --all) shows what was
 // done in each situation: how the stand-ins made it go wrong, and every check read from their records.
 import { parseArgs } from "node:util";
-import { HAND_RUN, NOT_TESTED, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
+import { HAND_RUN, STAND_IN_SERVICES, notTestedOf } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { handCheckText } from "../../../../modules/crash-test/print.ts";
@@ -35,7 +35,11 @@ await main(async () => {
         "",
         `CRASH TEST   ${settings.name} · Bookings · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
       ],
-      workDone: ({ situations, checks, tookMs: ms }) => [
+      workDone: ({ situations, checks, tookMs: ms }) => settings.payment?.module === "upi" ? [
+        `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp and calendar,`,
+        "  with UPI marked paid by the owner: a screenshot sent as proof, the owner confirming a different amount, never, twice, or after",
+        `  the hold ended, and a refund the owner owes, in ${names}.`,
+      ] : [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp,`,
         "  calendar and payments: lost replies, duplicate messages and payments, silent calendar failures, late payments,",
         `  an expired key, and customers haggling or trying to trick the agent in ${names}.`,
@@ -45,7 +49,7 @@ await main(async () => {
         `  Each situation was judged from the fakes' own records (what the calendar, the payments service and the`,
         `  WhatsApp outbox hold), never from what the agent said. ${checks} checks in all.`,
       ],
-      notTested: NOT_TESTED.map((n) => n.text),
+      notTested: notTestedOf(settings).map((n) => n.text),
     },
   });
   console.log(out.text);

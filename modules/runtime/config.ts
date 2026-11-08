@@ -8,6 +8,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { LANGUAGES } from "../language/languages.ts";
+import { licenceNow, parseLicenceFile } from "../licence/rules.ts";
+import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
 import type { Language } from "../language/languages.ts";
 import { DEFAULT_PORT } from "./http.ts";
 
@@ -18,11 +20,15 @@ import { DEFAULT_PORT } from "./http.ts";
  */
 export interface ServiceConfig { baseUrl: string; agentTokenFile?: string; [extra: string]: string | undefined }
 
-/** Which services a template calls, and the one extra field each needs. */
-export type ServiceShape = readonly { name: string; extra?: string }[];
+/**
+ * Which services a template calls, and the one extra field each needs. `payment: true` marks the payment service: a shop that takes UPI (settings "payment": {"module":
+ * "upi"}, plan B33) has none (no Razorpay account, no Razorpay Guard), so runtime.json may leave it out; `loadClientFolder`, which reads the settings too, still asks
+ * a Razorpay shop for it.
+ */
+export type ServiceShape = readonly { name: string; extra?: string; payment?: true }[];
 
-export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments" }, { name: "calendar", extra: "calendarId" }, { name: "messaging", extra: "phoneNumberId" }];
-export const FEES_SERVICES: ServiceShape = [{ name: "payments" }, { name: "messaging", extra: "phoneNumberId" }];
+export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId" }, { name: "messaging", extra: "phoneNumberId" }];
+export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "messaging", extra: "phoneNumberId" }];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */
 export type LiveServicesConfig = { [service: string]: ServiceConfig | number | undefined } & { timeoutMs?: number };
@@ -261,10 +267,12 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
     if (!s) errors.push(`Live mode needs "services": where Guard stands in front of ${wanted.replace("calendar", "the calendar")}.`);
     else {
       unknownKeys(s, [...names, "timeoutMs"], "services", errors);
-      const read = shape.map((x) => readService(s[x.name], x.name, x.extra, errors));
+      // the payment service may be left out (a UPI shop has none); everything else is needed
+      const present = shape.filter((x) => !(x.payment && s[x.name] === undefined));
+      const read = present.map((x) => readService(s[x.name], x.name, x.extra, errors));
       if (s.timeoutMs !== undefined && (!Number.isInteger(s.timeoutMs) || (s.timeoutMs as number) < 1)) errors.push("services.timeoutMs must be a whole number of milliseconds.");
       const where = (o: Obj | undefined) => (o && isText(o.agentTokenFile) ? { ...o, agentTokenFile: isAbsolute(o.agentTokenFile) ? o.agentTokenFile : resolve(folder, o.agentTokenFile) } : o);
-      if (read.every((x) => x !== undefined)) services = { ...Object.fromEntries(shape.map((x, i) => [x.name, where(read[i])])), ...(s.timeoutMs !== undefined ? { timeoutMs: s.timeoutMs as number } : {}) } as unknown as LiveServicesConfig;
+      if (read.every((x) => x !== undefined)) services = { ...Object.fromEntries(present.map((x, i) => [x.name, where(read[i])])), ...(s.timeoutMs !== undefined ? { timeoutMs: s.timeoutMs as number } : {}) } as unknown as LiveServicesConfig;
     }
   }
 
@@ -313,6 +321,12 @@ export function loadClientFolder<Settings>(folder: string, running: { pathway: s
   if (!settings.ok) throw new ClientError(`These settings need fixing (settings.json):\n- ${settings.errors.join("\n- ")}`);
   const runtime = readRuntimeConfig(json("runtime.json"), dir, template.services);
   if (!runtime.ok) throw new ClientError(`runtime.json needs fixing:\n- ${runtime.errors.join("\n- ")}`);
+  // A Razorpay shop in live mode needs its payment service; a UPI shop (B33) has none and any that is named is not used.
+  const upi = (settings.settings as { payment?: { module?: string } }).payment?.module === "upi";
+  const paymentService = template.services.find((x) => x.payment);
+  if (paymentService && runtime.config.mode === "live" && !upi && runtime.config.services?.[paymentService.name] === undefined) {
+    throw new ClientError(`runtime.json needs fixing:\n- In "services", add "${paymentService.name}" with its "baseUrl": this shop takes Razorpay (settings.json), so it needs the Guard in front of it.`);
+  }
   return { name: basename(dir), folder: dir, settings: settings.settings, runtime: runtime.config, lock };
 }
 
@@ -335,6 +349,29 @@ export function aiOverrideReader(folder: string, initial: "auto" | "buttons" = "
       }
     } catch { /* keep the last answer */ }
     return last;
+  };
+}
+
+/**
+ * The shop's licence (plan B13): client/licence.json, which the bundle's deployer writes from the signed lease it keeps (bundle/lib/licence.ts), read again whenever it
+ * changes (by its modified time), and judged with THIS runtime's clock at every call, so a lease that runs out while the deployer is not running still takes effect.
+ * No file is no restriction. A file that cannot be read for a moment, or that does not check, leaves the last good reading standing. This is the runtime's own check of
+ * the lease: Guard's offline check (`subscription_suspended`) is not built yet.
+ */
+export function licenceReader(folder: string, clock: { now(): number }): () => LicenceNow {
+  const file = join(resolve(folder), "licence.json");
+  let last: LicenceFile | undefined;
+  let seen = -1;
+  return () => {
+    try {
+      const modified = statSync(file).mtimeMs;
+      if (modified !== seen) {
+        const parsed = parseLicenceFile(JSON.parse(readFileSync(file, "utf8")));
+        if (parsed) last = parsed;
+        seen = modified;
+      }
+    } catch { /* no file yet, or a moment of change: keep the last answer */ }
+    return licenceNow(last, clock.now());
   };
 }
 

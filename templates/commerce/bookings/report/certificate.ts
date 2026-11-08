@@ -22,8 +22,9 @@ import { PATHWAY, checkedPolicyDigest, notTestedFor, policyDigest } from "./data
 import type { GoLiveFinding, MonthlyReport, NotCountedId, NotTestedKey, Source } from "./data.ts";
 import { goLiveBlock, sealBlock } from "./html.ts";
 import { esc, list, page, table } from "../../../../modules/report/page.ts";
+import { verifyCodePath } from "../../../../modules/report/verify-link.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 import { badgeText } from "../../../../modules/report/text.ts";
 import { goLiveLines } from "./text.ts";
 import { periodLabel } from "../../../../modules/report/text.ts";
@@ -132,7 +133,6 @@ export function limitLines(cert: GoLiveCertificate, language: Language): string[
 }
 
 const heldLine = (cert: GoLiveCertificate, language: Language): string => STRINGS[language].cert.held(cert.checks.held, cert.checks.total, cert.checks.failed, cert.notTested.length);
-const verifyPath = (e: Envelope): string => `/verify/${e.code}`;
 
 /** The short text, ready to paste into WhatsApp: a handful of lines. */
 export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Language): string {
@@ -146,7 +146,7 @@ export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Lang
     ...limitLines(cert, language).map((line) => `• ${line}`),
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.cert.handRunLine,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
   ];
   return lines.join("\n");
 }
@@ -188,6 +188,8 @@ export interface MonthlyCertificate {
   period: MonthlyReport["period"];
   /** What was counted from the record, copied from the report it was made from. */
   counted: { bookingsMade: number; cancelled: number; depositsPaise: number; refundsPaise: number; stopped: number; unconfirmedOpen: number; asked: number; approved: number; denied: number };
+  /** A UPI shop (B33): the money counted is what the owner marked, and the certificate labels it so. Left out for a Razorpay shop. */
+  paidBy?: "owner-marked";
   /** The record the counts came from, and the sealed report that holds them all. */
   record: { entries: number; digest: string };
   report: { digest: string; code: string };
@@ -224,6 +226,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     notTested: [...r.notTested],
     goLive: r.goLive,
     ...(r.innovator ? { innovator: true as const } : {}),
+    ...(r.paidBy ? { paidBy: r.paidBy } : {}),
     anchor: null,
   };
 }
@@ -233,7 +236,7 @@ function countedPairs(cert: MonthlyCertificate, language: Language): string[] {
   const s = STRINGS[language];
   const c = cert.counted;
   return [
-    `${s.label.bookingsMade}: ${c.bookingsMade}`, `${s.label.cancelled}: ${c.cancelled}`, `${s.label.depositsCollected}: ${rupees(c.depositsPaise)}`, `${s.label.givenBack}: ${rupees(c.refundsPaise)}`,
+    `${s.label.bookingsMade}: ${c.bookingsMade}`, `${s.label.cancelled}: ${c.cancelled}`, `${moneyLabels(language, cert.paidBy).deposits}: ${rupees(c.depositsPaise)}`, `${moneyLabels(language, cert.paidBy).givenBack}: ${rupees(c.refundsPaise)}`,
     `${s.label.wasAsked}: ${c.asked}`, `${s.label.approved}: ${c.approved}`, `${s.label.saidNo}: ${c.denied}`, `${s.label.stoppedByLimits}: ${c.stopped}`, `${s.label.notConfirmed}: ${c.unconfirmedOpen}`,
   ];
 }
@@ -249,7 +252,7 @@ export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, l
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     goLiveLines(cert.goLive, language).join(" "),
     s.handRun,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${cert.innovator ? `${badgeText(language)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${cert.innovator ? `${badgeText(language)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
   ].join("\n");
 }
 

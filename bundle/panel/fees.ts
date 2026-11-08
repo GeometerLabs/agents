@@ -5,7 +5,8 @@ import type { Language } from "../../modules/language/languages.ts";
 import { batchName, validateSettings } from "../../templates/education/fees/src/settings.ts";
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
-import { approversDraftOf, approversFromDraft, normalizePhone } from "./setup.ts";
+import { payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
+import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, paymentBlock, paymentFromSettings } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -42,7 +43,7 @@ export function newFeesDraft(id: string, accountId: string, template: Template, 
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false,
     form: emptyShopForm(), windowHours: "", primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
-    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, expectedBookings: "", done: 0,
+    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
     fees: {
       address: "", batches: blankBatches(), students: "",
       dueDay: String(example.due.day), graceDays: String(example.due.graceDays), lateFee: String(example.lateFeeInr),
@@ -63,7 +64,7 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
     ...approversDraftOf(s.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
-    calendar: { id: "" }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" }, expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
+    calendar: { id: "" }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     fees: {
       address: s.address ?? "", batches, students,
       dueDay: String(s.due.day), graceDays: String(s.due.graceDays), lateFee: String(s.lateFeeInr), reminderDays: s.reminders.daysFromDue.join(", "), reminderHour: String(s.reminders.hour), reminderMost: String(s.reminders.maxPerMonth),
@@ -167,6 +168,10 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
     return { name: parts[0], parent: normalizePhone(parts[1] ?? "") ?? parts[1], batch: lookup.get(parts.slice(2).join(",").toLowerCase()) ?? parts.slice(2).join(","), ...(languages.length > 1 ? { language: languages[0] } : {}) };
   });
   const whole = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
+  // The rules step shows the centre's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out as for Razorpay (they do not depend on it).
+  // The save cannot be reached before the accounts step has checked the UPI ID.
+  const upi = draft.payment?.module === "upi";
+  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? { module: "razorpay" } : paymentBlock(draft, true);
   const raw = {
     name: draft.form.name, ...(fees.address !== "" ? { address: fees.address } : {}), timezone: example.timezone, languages,
     batches: rows.map((b, i) => ({ id: ids[i], names: names(b.name), monthlyFeeInr: whole(b.fee) })),
@@ -175,7 +180,7 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
     reminders: { daysFromDue: fees.reminderDays.split(",").map((d) => Number(d.trim())), hour: whole(fees.reminderHour), maxPerMonth: whole(fees.reminderMost) },
     partPayments: { allowed: fees.partAllowed, minInr: fees.partAllowed ? whole(fees.partMin) : Math.min(...rows.map((b) => whole(b.fee)), 100) },
     waiver: { limitInr: whole(fees.waiver) }, refund: { limitInr: whole(fees.refund) },
-    payment: { module: "razorpay" },
+    payment,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
   };

@@ -79,6 +79,23 @@ const WHEN: Record<TemplateId, string> = {
   owner_approval_closed: "A refund that needed two people was approved by the others before this person answered: their code is no longer needed",
   owner_approval_refused: "A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it",
   owner_refund_settled: "A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again",
+  // UPI centres (B33): the parent pays the centre's own UPI ID; the owner marks it received
+  fee_upi_qr_caption: "UPI centre: the words under the QR picture",
+  fee_upi_claim: "UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid)",
+  fee_upi_refund_owed: "UPI centre: a refund the owner will send (the agent never sends it)",
+  fee_upi_refund_sent: "UPI centre: the owner marked the refund sent (only then is the parent told)",
+  owner_fee_upi_expected: "UPI centre: tells the owner what payment to look for in their UPI app, with the one-use code",
+  owner_fee_upi_claim: "UPI centre: the parent says they paid (a screenshot is not proof): the owner is asked to look",
+  owner_fee_upi_marked: "UPI centre: the answer to the owner's Received, the fee paid",
+  owner_fee_upi_part: "UPI centre: the answer to the owner's Received, part paid, with the code for the rest",
+  owner_fee_upi_already: "UPI centre: the owner used a code that was already used: counted once",
+  owner_fee_upi_unknown: "UPI centre: the owner used a code the agent never gave",
+  owner_fee_upi_refund_owed: "UPI centre: a refund the owner must send from their UPI app, with the code",
+  owner_fee_upi_refund_reminder: "UPI centre: a reminder of a refund still owed (once a day, three times at most)",
+  owner_fee_upi_refund_marked: "UPI centre: the answer to the owner's Refund sent",
+  fee_paused: "The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later",
+  owner_licence_paused: "The one notice to the owner when the centre's licence winds down: online fee payment is paused, who to contact. Never about money",
+  owner_licence_stopped: "The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had",
 };
 
 /** Parent sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */

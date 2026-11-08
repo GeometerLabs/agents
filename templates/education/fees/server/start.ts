@@ -1,6 +1,7 @@
 // Start one centre's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep the clock ticking. main.ts is a thin command
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Fees' reading, its report and its runtime.
+import { folderQrImages } from "../../../../modules/payments/upi/qr-image.ts";
 import { createFeesModelParser, createFeesRouter } from "../src/adapters/reading.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
@@ -8,6 +9,7 @@ import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { readGoLive } from "../report/cli.ts";
 import type { MonthlyReportSetup } from "../report/monthly-job.ts";
+import { licenceReader } from "../../../../modules/runtime/config.ts";
 import { buildUnderstanding as understanding, monthlyReportSetup as reportSetup, parserArguments, readToken, startRuntimeClient } from "../../../../modules/runtime/start.ts";
 import type { RunningClient as SharedRunningClient } from "../../../../modules/runtime/start.ts";
 import { loadClient, pathwayVersion } from "./config.ts";
@@ -54,11 +56,14 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     casesName: "fees",
     loadClient,
     async build(client, { store, clock, log }) {
-      const services = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
+      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
+      // A UPI shop's QR pictures go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
+      const report = client.runtime.report;
+      const services = (client.settings as { payment?: { module?: string } }).payment?.module === "upi" && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
-      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), log });
+      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), log });
     },
   }) as RunningClient;
 }

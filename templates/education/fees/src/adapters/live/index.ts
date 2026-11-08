@@ -5,6 +5,7 @@ import type { Clock } from "../../../../../../modules/core/clock.ts";
 import type { Messaging } from "../../../../../../modules/messaging/messaging.ts";
 import type { Payments } from "../../../../../../modules/payments/payments.ts";
 import { DEFAULT_TIMEOUT_MS } from "../../../../../../modules/core/http.ts";
+import { noRazorpay } from "../../../../../../modules/payments/upi/ledger.ts";
 import { createRazorpayPayments } from "../../../../../../modules/payments/razorpay.ts";
 import { createWhatsAppMessaging } from "../../../../../../modules/messaging/whatsapp.ts";
 import type { WindowStore } from "../../../../../../modules/messaging/whatsapp.ts";
@@ -13,7 +14,7 @@ export type { WindowStore } from "../../../../../../modules/messaging/whatsapp.t
 
 export interface LiveServices {
   // Each Guard may ask the agent for its own credential (`agentToken`: what Guard calls the agent's token, never a service key).
-  payments: { baseUrl: string; agentToken?: string }; // Guard in front of Razorpay
+  payments?: { baseUrl: string; agentToken?: string }; // Guard in front of Razorpay; left out for a UPI shop (B33), which has no Razorpay account
   messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string }; // Guard in front of the WhatsApp provider
   /** How long to wait for any one reply before treating it as lost. Default 10 seconds. */
   timeoutMs?: number;
@@ -22,7 +23,8 @@ export interface LiveServices {
 export function createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore }): { payments: Payments; messaging: Messaging } {
   const timeoutMs = services.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   return {
-    payments: createRazorpayPayments({ baseUrl: services.payments.baseUrl, agentToken: services.payments.agentToken, timeoutMs }),
+    // a UPI shop has no payment service: the agent keeps its own ledger of the owner's marks, and any call here would be a mistake, said plainly
+    payments: services.payments ? createRazorpayPayments({ baseUrl: services.payments.baseUrl, agentToken: services.payments.agentToken, timeoutMs }) : noRazorpay,
     messaging: createWhatsAppMessaging({ baseUrl: services.messaging.baseUrl, phoneNumberId: services.messaging.phoneNumberId, agentToken: services.messaging.agentToken, timeoutMs }, deps),
   };
 }

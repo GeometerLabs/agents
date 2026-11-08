@@ -20,6 +20,8 @@ import type { TimePhrase } from "../../../../modules/language/dates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
+import type { UpiState } from "../../../../modules/payments/upi/ledger.ts";
+import { upiOf } from "../../../../modules/payments/upi/settings.ts";
 
 export type BookingState =
   | "enquiry" | "confirming_details" | "awaiting_deposit" | "needs_owner" | "confirmed" | "expired" | "cancelled" | "completed";
@@ -92,6 +94,8 @@ export interface Booking {
   stoppedRefunds?: string[];
   /** A move to a new time that is waiting for the customer's yes. */
   reschedule?: { date: LocalDate; timePhrase: TimePhrase; startMs: number; endMs: number };
+  /** UPI (B33): when the owner was last told that this customer says they paid (at most once an hour). */
+  claimTellAtMs?: number;
 }
 
 export interface Customer {
@@ -111,6 +115,8 @@ export interface Store {
   nextBooking: number;
   /** The month's AI spend and button-mode notices. Left out until the first message. */
   ai?: AiState;
+  /** A UPI shop's requests, the owner's marks and the refunds the owner owes (modules/payments/upi/ledger.ts). Left out until the first request. */
+  upi?: UpiState;
 }
 
 export function createStore(): Store {
@@ -134,7 +140,8 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 }
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
-export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean } = {}): MessageFacts {
+export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number } = {}): MessageFacts {
+  const upi = upiOf(settings.payment);
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
     language,
@@ -153,6 +160,10 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     windowHours: settings.cancellation.windowHours,
     bookingRef: booking?.id || undefined,
     customerPhone: extra.customerPhone ?? booking?.customer,
+    ...(upi ? { upiId: upi.id, payee: upi.payee } : {}),
+    ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
+    ...(extra.markedInr !== undefined ? { markedInr: extra.markedInr } : {}),
+    ...(extra.leftInr !== undefined ? { leftInr: extra.leftInr } : {}),
   };
 }
 

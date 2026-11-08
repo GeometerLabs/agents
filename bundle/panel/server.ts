@@ -34,12 +34,18 @@ import type { LiveView } from "./contract.ts";
 import { latestPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
+import { licenceView } from "./licence.ts";
 import { createGoLive } from "./golive.ts";
+import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
+import { createHandover } from "./handover.ts";
+import { exportShop } from "./export.ts";
+import { ExportError } from "../export/build.ts";
 import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
-import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, runtimeFor } from "./setup.ts";
+import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
+import { moduleOf } from "../../modules/payments/upi/settings.ts";
 import { applyFeesBusiness, applyFeesRules, buildFeesSettings, feesDraftFromShop, feesLimitLines, newFeesDraft, runtimeForFees } from "./fees.ts";
 import { activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
 import type { Body, Draft } from "./setup.ts";
@@ -48,8 +54,8 @@ import { createStore } from "./store.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
-import type { ChecksView, Ctx, ShopCardView, ShopView } from "./views.ts";
+import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import type { ChecksView, Ctx, HandoverView, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -102,6 +108,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
+  const handover = createHandover(shops, accounts, store, now);
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
@@ -137,7 +144,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
 
   const redactPath = (path: string) => path.replace(/^\/join\/.+$/u, "/join/[invite]");
 
-  function body(res: ServerResponse, status: number, type: string, content: string, headers: Record<string, string | string[]> = {}) {
+  function body(res: ServerResponse, status: number, type: string, content: string | Buffer, headers: Record<string, string | string[]> = {}) {
     res.writeHead(status, { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "x-frame-options": "DENY", ...(secure ? { "strict-transport-security": "max-age=31536000" } : {}), ...headers });
     res.end(content);
   }
@@ -262,20 +269,33 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
 
   // shops
   on("GET", /^\/shops$/u, "user", (r) => {
+    handover.sweep();
     const c = r.ctx();
-    const cards: ShopCardView[] = shops.visibleTo(r.account!).map(({ id, owner }) => {
+    const cards: ShopCardView[] = shops.visibleTo(r.account!).map(({ id }) => {
+      const owner = shops.owner(id); // who set it up: it never changes, even when the shop moves to someone else
       const read = shops.status(id);
       const settings = shops.settings(id);
       return {
         id, name: settings?.name ?? id, live: liveOf(id),
         ...(read.ok && read.status.limits ? { limits: { proven: read.status.limits.proven, of: read.status.limits.of } } : {}),
         ...(read.ok && read.status.versions?.pathway ? { version: read.status.versions.pathway } : {}), ...(owner ? { setUpBy: owner.accountName } : {}),
+        ...(read.ok && read.status.licence?.listed ? { licence: read.status.licence.state } : {}),
       };
     });
     page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards }));
   });
 
+  // the unfinished-work inbox (B31): every shop this person may see, read from each shop's exported record
+  const unfinished = optionsFor(config.approvalWaitHours);
+  on("GET", /^\/inbox$/u, "user", (r) => {
+    handover.sweep();
+    const c = r.ctx();
+    const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
+    page(r, 200, inboxPage(c, { shops: inboxAll(shops, r.account!, now(), unfinished), ...(notice && Object.hasOwn(c.w.inbox.recover, notice) ? { notice: c.w.inbox.recover[notice as keyof typeof c.w.inbox.recover] } : {}) }));
+  });
+
   on("GET", /^\/shops\/([a-z0-9-]{1,40})$/u, "user", async (r) => {
+    handover.sweep();
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref) return notFound(r);
     const c = r.ctx();
@@ -291,12 +311,15 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const report = settings && data && !isFees ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
     const plan = planView(shops.fleet(id), prices);
+    const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
       summary: settings && !isFees ? summaryOf(c, settings) : undefined,
       ...(isFees ? (settings ? { fees: feesPieces(c, id, settings, data, month) } : {}) : { cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)) }),
       ...(plan ? { plan } : {}),
+      ...(licence ? { licence } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
+      inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: (isFees ? counts.fees : counts.bookings) ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
@@ -305,6 +328,63 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(notice && NOTICES.has(notice) ? { notice: c.w.shop.reportMade } : {}),
     };
     page(r, 200, shopPage(c, view));
+  });
+
+  // a recovery step from the to-do list: only an action the list itself offers for that case right now, and only as a request to the shop's own agent
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/recover$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const offered = inboxFor(shops, ref.id, now(), unfinished).items.some((o) => o.caseId === (r.form.case ?? "") && o.actions.includes(r.form.action ?? ""));
+    if (offered) shops.requestRecovery(ref.id, r.form.case, r.form.action, r.account!);
+    log(`recovery ${r.form.action ?? "?"} on ${ref.id} by ${r.account!.id}: ${offered ? "asked" : "refused"}`);
+    redirect(r, `/inbox?notice=${offered ? "sent" : "refused"}`);
+  });
+
+  // taking a shop's files out (B38): the same package as `geometer export`, built from files only, so it works for a stopped shop and a lapsed plan
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/export$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    try {
+      const { built, tgz } = exportShop(config, shops, goLive.docs, ref.id, now(), { name: r.account!.name, role: r.account!.role });
+      log(`export of ${ref.id} downloaded by ${r.account!.id}`);
+      body(r.res, 200, "application/gzip", tgz, { "content-disposition": `attachment; filename="${built.name}.tar.gz"` });
+    } catch (e) {
+      if (!(e instanceof ExportError)) throw e;
+      page(r, 409, errorPage(r.ctx(), 409, e.message));
+    }
+  });
+
+  // moving a shop to another partner or builder (B38), with the owner's agreement from their own number
+  const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
+    const state = handover.check(id);
+    const c = r.ctx();
+    const base = { id, name: shops.settings(id)?.name ?? id, history: shops.assignment(id)?.history ?? [], values: { to: "", reason: "" } };
+    const view: HandoverView =
+      state.state === "done" ? { ...base, stage: "done", to: state.assignment.current.accountName }
+      : state.state === "waiting" ? { ...base, stage: extra.code ? "asked" : "waiting", to: state.move.to.accountName }
+      : state.state === "expired" ? { ...base, stage: "expired" } : { ...base, stage: "form" };
+    page(r, extra.problem ? 400 : 200, handoverPage(c, { ...view, ...extra, history: shops.assignment(id)?.history ?? [] }));
+  };
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/handover$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    handoverPageFor(r, ref.id);
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/handover$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const w = r.ctx().w.handover;
+    const values = { to: (r.form.to ?? "").slice(0, 40), reason: r.form.reason ?? "" };
+    const result = handover.start(ref.id, r.account!, values);
+    if (!result.ok) return handoverPageFor(r, ref.id, { problem: w.problems[result.problem], values });
+    log(`move of ${ref.id} to ${result.move.to.accountId} asked by ${r.account!.id} (${result.move.reason})`);
+    handoverPageFor(r, ref.id, { code: result.code, to: result.move.to.accountName });
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/handover\/cancel$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    handover.cancel(ref.id);
+    redirect(r, `/shops/${ref.id}/handover`);
   });
 
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/stop$/u, "user", (r) => {
@@ -346,10 +426,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const certificate = goLive.docs.get(ref.id, "go-live/go-live-certificate.json");
     const fees = shops.kind(ref.id) === "fees";
     const reading = certificate !== undefined ? (fees ? readFeesGoLive : readGoLiveCertificate)(certificate, settings) : undefined;
-    const pins = shops.pins(ref.id);
+    const pins = shops.pins(ref.id); // a UPI shop has no test mode and no Razorpay pin: its report reads "live"
     goLive.docs.make(ref.id, `monthly/${month}`, (scratch) => (fees ? writeFeesReport : writeClientReport)({
       settings, entries: data.entries, ...(fees ? { dues: data.dues ?? [] } : { bookings: data.bookings }), month, language: settings.owner.language, out: scratch,
-      source: pins?.razorpay?.mode === "live" ? "live" : "test-mode", ...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
+      source: pins?.razorpay?.mode === "live" || moduleOf(settings.payment) === "upi" ? "live" : "test-mode",...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
       // the Innovator badge is fleet's answer for the shop (fleet/<shop>.json, written by ops): the same file the owner's monthly message reads, so the builder's copy and the owner's agree
       innovator: shops.fleet(ref.id)?.innovator === true,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
@@ -472,7 +552,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
           problems = [w.setup.fallback("A file for this shop is already waiting in the server's inbox, so nothing was written. Start the setup again.")];
         }
         const after = shops.meta(d.shopId as string);
-        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...after, whatsapp: { businessNumber: d.whatsapp.businessNumber }, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId },
+        // A UPI shop has no Razorpay key to remember (and one it had before is dropped from its notes: the secrets inbox is write-only and is not touched).
+        const { razorpay: _kept, ...withoutRazorpay } = after;
+        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...(paymentModuleOf(d) === "upi" && template.accounts.includes("razorpay") ? withoutRazorpay : { ...after, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId } }), whatsapp: { businessNumber: d.whatsapp.businessNumber },
           calendar: { shareAddress: result.clientEmail ?? after.calendar?.shareAddress }, ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
       }
     }
@@ -501,7 +583,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const lock = kept ?? `${template.id}@${fees ? template.version : pathwayVersion()}`;
     const problems = built.ok ? shops.checkFolder(written(built), runtime, lock, kept !== undefined, { pathway: template.id, version: template.version }).map(w.setup.fallback) : built.errors.map(w.setup.fallback);
     if (!built.ok || problems.length > 0) return page(r, 400, setupChecksPage(r.ctx(), { ...checksView(r, d, template, problems), saved: false }));
-    try { shops.writeFolder(d.shopId, { settings: written(built), runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id }); } catch (e) {
+    try { shops.writeFolder(d.shopId, { settings: written(built), runtime, lock }, d.editing ? undefined : { account: r.account!, template: template.id }, r.account!); } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
       // Another shop took this name after step 1. Nothing of it was touched.
       return page(r, 409, setupChecksPage(r.ctx(), { ...checksView(r, d, template, [w.setup.fallback("A shop with this name already exists on the server, so this one was not saved. Start the setup again with another name.")]), saved: false }));
@@ -531,7 +613,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
         shops.saveMeta(d.shopId, v === "" ? { ...rest, schema: 1 } : { ...meta, expectedBookings: Number(v) });
       } else return page(r, 400, setupChecksPage(r.ctx(), checksView(r, d, template, [r.ctx().w.setup.problems.expectedBad])));
     } else {
-      const owner = shops.owner(d.shopId);
+      const owner = shops.servedBy(d.shopId);
       const result = goLive.ready(d.shopId, owner ? preparedByOf(owner) : r.account!.name);
       if (!result.ok) return page(r, 409, setupChecksPage(r.ctx(), checksView(r, d, template, [])));
     }

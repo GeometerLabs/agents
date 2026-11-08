@@ -53,3 +53,16 @@
 | **Native review of the four new owner lines** (`owner_approval_waiting`, `owner_approval_closed`, `owner_approval_refused`, `owner_refund_settled`; 8 November 2026) | Machine-written in Hindi, Malayalam and Kannada, waiting for native review. Malayalam and Kannada are on the review sheets; Hindi has no sheet. Three are new Meta templates to submit | Before submitting the templates |
 | **No Fees test of a refund that needs two people** | The relay and its words are shared and tested on Bookings (stand-in and real Guard). Fees adds only its words and its settings, which its own tests read | A Fees centre turns on two-person approval |
 | **A crash or restart in the middle of a step, two parents at the exact same instant, faults beyond the listed ones** | The hand check's situations try the faults they list, and its not-tested list still names a restart in the middle of a step. The runtime's own tests do try a restart between steps and a step cut off before it is saved (`test/runtime.test.ts`, `test/full-chain.test.ts`), on the stand-ins. The rest are the engine's crash test (plan items B1 to B5) | The engine's crash test runs these |
+| **On a UPI centre the Razorpay situations do not run** | Twenty-six are named as not run; seven UPI situations run instead (`crash-test/upi.ts`) | A UPI centre goes live: make "the parent pays" mean "the owner marks it" in the world, so every situation runs either way |
+| **The owner gets one "UPI payment to check" per request** | The code ties a mark to a fee, and the owner needs it before the money comes | A centre with many students: a daily digest with one code per open request |
+| **No QR picture with a reminder outside the window** | A template with an image header is a different kind of Meta template | Meta approves a reminder template with an image header |
+- **The QR code on the certificates and the report (B12, 8 Nov)** is the shared block in `modules/report/page.ts` (see `modules/Explanation.md`). Left open here: the Hindi, Malayalam and
+  Kannada `scanToCheck` sentence (`report/strings.ts`) waits for native review (Malayalam and Kannada: the `page.scanToCheck` row of the REVIEW sheets; Hindi has no sheet); the link carries no key on purpose; the website page is not
+  deployed. Revisit when: the owner deploys the website; a native speaker reviews the sheets.
+
+
+## The licence's wind-down (B13, 8 November 2026)
+
+- **Guard does not check the lease**, and no crash-test situation winds a centre down (as in Bookings' Deferred.md). Revisit when: Guard's check lands.
+- **Fees opened late after a wind-down.** No month's fees are opened in the wind-down; once the centre is in order again, the month's fees whose first reminder day has
+  passed are opened then and reminded once (the centre's own schedule, not a parent's request). Revisit when: the owner would rather those months were not chased.

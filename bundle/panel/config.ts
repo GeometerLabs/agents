@@ -31,6 +31,8 @@ export interface PanelConfig {
   /** The model Guard the server runs, from the server's own geometer.json: a shop's runtime.json must ask for exactly this wire and model. */
   serverModel?: { wire: "openai" | "anthropic"; model: string };
   hostingSharePaise?: number;
+  /** How many hours an answer from the owner may wait before the to-do list says it has waited too long (PANEL_APPROVAL_WAIT_HOURS). Left out: 12. */
+  approvalWaitHours?: number;
   staleMinutes: number;
   now?: () => number;
 }
@@ -85,6 +87,7 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
     ...(env.PANEL_WHATSAPP_PROVIDER ? { whatsappProvider: env.PANEL_WHATSAPP_PROVIDER } : {}),
     ...(serverModel ? { serverModel } : {}),
     ...(num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") !== undefined ? { hostingSharePaise: num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") as number } : {}),
+    ...(num(env.PANEL_APPROVAL_WAIT_HOURS, "PANEL_APPROVAL_WAIT_HOURS") !== undefined ? { approvalWaitHours: num(env.PANEL_APPROVAL_WAIT_HOURS, "PANEL_APPROVAL_WAIT_HOURS") as number } : {}),
     staleMinutes: num(env.PANEL_STALE_MINUTES, "PANEL_STALE_MINUTES") ?? 30,
   };
 }

@@ -1,5 +1,7 @@
 // The dev harness: the Fees agent wired to the in-memory fakes, with a clock you can move and helpers that play the part of the parent, the payment provider's
 // webhooks and the owner. The crash-test situations, the hand check and the walkthrough build on this.
+import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
 import { readFileSync } from "node:fs";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import type { FakeClock } from "../../../../modules/core/clock.ts";
@@ -49,7 +51,7 @@ export interface World {
   agent: Agent;
   owner: string;
   /** A parent sends a message and the agent handles it. Pass `id` to reuse a WhatsApp message id. */
-  say(text: string, options?: { from?: string; id?: string }): Promise<InboundMessage>;
+  say(text: string, options?: { from?: string; id?: string; image?: boolean }): Promise<InboundMessage>;
   /** A parent taps a button of the newest interactive message the agent sent them that has that id, as WhatsApp would report it. Throws if no such option was ever offered. */
   tap(id: string, options?: { from?: string }): Promise<InboundMessage>;
   /** The owner sends a message ("approve q-1"). */
@@ -76,6 +78,14 @@ export interface World {
   linkFor(student: string): PaymentLink | undefined;
   /** The parent pays the current link (all of it, or part). */
   pays(student: string, options?: { amountInr?: number }): void;
+  /** UPI centres (B33): the student's fee's current request, as the agent's own ledger holds it (its code is the owner's, never the parent's). */
+  upiRequest(student: string): UpiRequest | undefined;
+  /** UPI: the refunds the owner owes for the student's fee. */
+  upiRefunds(student: string): OwedRefund[];
+  /** UPI: the owner marks money received on the student's current request (by tapping the newest "Received" button with `tap`), or another amount with `amountInr`. `code` replays a code. */
+  ownerMarksReceived(student: string, options?: { amountInr?: number; code?: string; tap?: boolean }): Promise<InboundMessage>;
+  /** UPI: the owner marks a refund they owe for the student's fee as sent. */
+  ownerMarksRefund(student: string, options?: { code?: string; tap?: boolean }): Promise<InboundMessage>;
 }
 
 export interface WorldOptions {
@@ -88,6 +98,10 @@ export interface WorldOptions {
   ai?: AiPolicy;
   /** Whether the stand-in WhatsApp takes buttons. Default true. */
   interactive?: boolean;
+  /** A UPI centre: where the QR pictures go (modules/payments/upi/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
+  qrImage?: (text: string) => Promise<string | null>;
+  /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
+  licence?: () => LicenceNow;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -103,14 +117,14 @@ export function createWorld(options: WorldOptions = {}): World {
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}) });
+  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
   let deliveredEvents = 0;
   const PARENT = ROHAN_PARENT;
 
   const world: World = {
     settings, clock, payments, guard, messaging, record, store, agent, owner: settings.owner.whatsapp,
     async say(text, o = {}) {
-      const message = messaging.receive(o.from ?? PARENT, text, o.id ? { id: o.id } : {});
+      const message = messaging.receive(o.from ?? PARENT, text, { ...(o.id ? { id: o.id } : {}), ...(o.image ? { image: true } : {}) });
       await agent.handle({ kind: "message", message });
       return message;
     },
@@ -168,6 +182,23 @@ export function createWorld(options: WorldOptions = {}): World {
       const link = world.linkFor(student);
       if (!link) throw new Error(`${student} has no payment link to pay.`);
       payments.customerPays(link.id, o.amountInr !== undefined ? { amount: o.amountInr * 100 } : {});
+    },
+    upiRequest: (student) => { const due = world.dueOf(student); return due?.currentLinkId ? store.upi?.requests.find((r) => r.id === due.currentLinkId) : undefined; },
+    upiRefunds: (student) => { const due = world.dueOf(student); return store.upi?.refunds.filter((r) => r.caseId === due?.id) ?? []; },
+    async ownerMarksReceived(student, o = {}) {
+      const request = world.upiRequest(student);
+      const code = o.code ?? request?.code ?? request?.usedCodes.at(-1);
+      if (!code) throw new Error(`No UPI request for ${student}.`);
+      if (o.tap) return world.tap(`upi-received:${code}`, { from: world.owner });
+      return world.ownerSays(o.amountInr !== undefined ? `received ${code} ${o.amountInr}` : `received ${code}`);
+    },
+    async ownerMarksRefund(student, o = {}) {
+      const refunds = world.upiRefunds(student);
+      const refund = refunds.find((r) => r.code !== null) ?? refunds.at(-1);
+      const code = o.code ?? refund?.code ?? refund?.usedCodes.at(-1);
+      if (!code) throw new Error(`No refund owed for ${student}.`);
+      if (o.tap) return world.tap(`upi-refunded:${code}`, { from: world.owner });
+      return world.ownerSays(`refunded ${code}`);
     },
   };
   void MINUTE;
