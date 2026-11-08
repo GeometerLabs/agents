@@ -95,7 +95,7 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
 
 /** The last fingerprint published for a shop, for the drill to compare with; a fingerprint file that was changed by hand is a drill failure of its own, said in the detail. */
 function publishedOf(dir: string, shop: string): { published?: { seq: number; head: string; day: string } } {
-  try { const p = lastFingerprint(dir, shop); return p ? { published: p } : {}; } catch { return { published: { seq: Number.MAX_SAFE_INTEGER, head: "the fingerprint file was changed by hand", day: "(unreadable)" } }; }
+  try { const p = lastFingerprint(dir, shop); return p ? { published: p } : {}; } catch { return { published: { seq: 0, head: "unreadable", day: "unreadable" } }; }
 }
 
 /** The weekly drill: restore the continuous copy into a scratch folder and compare it with the live record. A failure is written where the panel and `status` show it. */

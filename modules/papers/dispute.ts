@@ -106,7 +106,7 @@ export function buildDisputeRecord(input: DisputeInput): DisputeRecord {
     issuedOn: localDay(input.now, input.shop.timeZone),
     case: { id: input.case.id, customer: input.case.customer, label: input.case.label(input.language), state: input.case.state },
     rows,
-    notTested: [d.not.whoIsRight, d.not.providers, d.not.words, ...(guard ? [d.not.guardLog] : []), ...(upi ? [d.not.upi] : []), d.not.outside, d.not.truth, ...(ledger ? [] : [d.not.noLedger])],
+    notTested: [d.not.whoIsRight, d.not.providers, d.not.words, ...(guard ? [d.not.guardLog] : []), ...(upi ? [d.not.upi] : []), d.not.outside, d.not.truth, ledger ? d.not.anchorNotCompared : d.not.noLedger],
     anchor: ledger && ledger.length > 0 ? headOf(input.entries, input.tenant as string) : null,
   };
 }

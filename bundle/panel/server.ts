@@ -369,7 +369,15 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/papers$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref) return notFound(r);
-    page(r, 200, papersPage(r.ctx(), { id: ref.id, name: shops.settings(ref.id)?.name ?? ref.id, cases: caseIds(ref.id) }));
+    page(r, 200, papersPage(r.ctx(), { id: ref.id, name: shops.settings(ref.id)?.name ?? ref.id, cases: caseIds(ref.id), public: papers.publicOf(ref.id), saved: query(r).get("notice") === "public" }));
+  });
+  // the operator's choice of what the public identity paper shows (B36): any of the choosable fields, never customer data (there is none in it to choose)
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/papers\/public$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const chosen = papers.setPublic(ref.id, Object.keys(r.form).filter((k) => k.startsWith("show_") && r.form[k] === "1").map((k) => k.slice(5)));
+    log(`public fields of ${ref.id} set by ${r.account!.id}: ${chosen.join(",") || "none"}`);
+    redirect(r, `/shops/${ref.id}/papers?notice=public`);
   });
   paperRoute(/^\/shops\/([a-z0-9-]{1,40})\/papers\/case$/u, "GET", (r, id) => {
     const caseId = query(r).get("case") ?? "";

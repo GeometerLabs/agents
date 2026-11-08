@@ -65,5 +65,4 @@ Not built, or built only as far as said. The first block needs another part of t
 - The new Hindi, Malayalam and Kannada sentences (the `upi` block and the two inbox kinds) wait for a native reader.
 - A phone-width look at the new step has not been done (no browser).
 - The papers page's sentences and the shop page's link to it (B28, B35, B36) wait for a native reader in Hindi, Malayalam and Kannada, and the page has not been looked at on a phone (no browser).
-- Choosing the identity paper's public fields is by hand in `shops/<shop>/identity.json` (`public`); a form for it on the papers page is not built.
 - A statement's language follows the person's latest case; the page has no language choice yet (the POST takes `lang`, the form does not offer it).

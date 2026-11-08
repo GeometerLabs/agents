@@ -92,7 +92,7 @@ export function buildStatement(input: StatementInput): Statement {
   const paidPaise = items.filter((i) => i.kind === "paid").reduce((n, i) => n + i.amountPaise, 0);
   const refundedPaise = items.filter((i) => i.kind === "refunded").reduce((n, i) => n + i.amountPaise, 0);
   const owed = mine.filter((c) => c.owedPaise !== undefined);
-  const notTested = [w.not.others, w.not.cash, w.not.providers, ...(upi ? [w.not.upi] : []), w.not.truth, ...(input.tenant ? [] : [w.not.noLedger])];
+  const notTested = [w.not.others, w.not.cash, w.not.providers, ...(upi ? [w.not.upi] : []), w.not.truth, input.tenant ? w.not.anchorNotCompared : w.not.noLedger];
   return {
     format: STATEMENT_FORMAT,
     pathway: input.template.pathway,
