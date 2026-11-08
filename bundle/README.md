@@ -404,4 +404,4 @@ The first builder's way in is `node bundle/geometer.ts panel invite --role build
 
 ## Running it on your laptop
 
-Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test that proves the architecture is `bundle/test/proof/run.ts`; it needs the Guard image, `node:26-alpine`, Caddy, Litestream and MinIO, and takes about twenty minutes. The ordinary tests (`cd bundle && npm test`) need no Docker.
+Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test of the whole server on real Docker is `bundle/test/proof/run.ts`. It needs `node:26-alpine`, Caddy, Litestream, MinIO, and a Guard image that reads `[licence]` with RFC 8032's published test key built in (`GUARD_IMAGE`, default `geo-guard:local-b14`; that key is for tests only). It runs every bundle container inside one cgroup capped at 2 CPUs and 4 GiB. At 1, 5, 10 and 25 shops it takes about an hour; `--only <phase,...>` runs some phases. The ordinary tests (`cd bundle && npm test`) need no Docker.

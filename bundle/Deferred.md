@@ -121,8 +121,29 @@ Built: the lease kept on the server, checked with the pinned key; each shop's ru
 - [ ] **The owner's notices are not crash-tested.** They are unit- and runtime-tested (both templates); no crash-test situation winds a shop down. The Docker proof checks that Guard and the runtime refuse the same new work. Revisit when: a crash-test situation for the wind-down is wanted.
 - [ ] **The owner gets counts, not the list.** The final stop's notice says how many bookings (or fees) are still open and how many other items are on the to-do list, and that the partner can give the full list and a free copy of the records. The list itself is the panel's to-do list and the export (`geometer export`, or the panel's download), which a partner hands over; a link the owner can open without signing in is fleet's and the hosted server's part (see "To do, export and handover" below).
 - [ ] **The notices are sent once for each `paid_through`, kept in the record** (the shop's own memory, like the monthly report), not in `state/licence/notices.json` as fleet's README proposes: the runtime is the only part that can send to the owner and it cannot write `state/`. The record is exported and signed, so the notice is part of the shop's history. Revisit when: something outside the runtime needs to know a notice went (it can read the exported record).
-- [ ] **Not run in Docker.** ops writing `fleet/lease`, the deployer reading it, and the runtime reading `/client/licence.json` through its read-only mount are tested on files; the next proof run should check that a lease fleet hands back reaches the runtime and pauses booking. Revisit when: the next proof run.
+- [ ] **ops writing `fleet/lease` from fleet's own answer is not run in Docker.** The proof of 9 Nov writes a lease signed with the test key into `fleet/lease` itself, then runs the deployer's pass. The pass keeps the lease, the runtime reads `/client/licence.json` through its read-only mount, and both the runtime and the three Guards pause new work (Explanation.md). The proof's fleet has no licence key, so it never sends a lease, and ops's half is tested on files only. Revisit when: the proof's fleet is given a licence key.
 - [ ] **Fleet must be deployed with `reports_sent`, `replies_by_language` and `open_obligations` before this bundle.** An older fleet refuses the whole heartbeat for a field it does not know (fleet ADR-0059 decision 12). No fleet is hosted, so nothing breaks today.
+
+## B14 in Docker (9 Nov): what is left
+
+The run and its numbers are in Explanation.md, "The proof run of 9 November". B14 item 5 (Geometer's own demo salon through Guard for two weeks on real services) is the owner's and was not attempted.
+
+- [ ] **A Guard down for more than about half a minute loses a customer's message.**
+  - A step that cannot reach a Guard throws, and the task runner tries it again after 1, 5 and 30 s (`RETRY_DELAYS_MS` in `modules/runtime/core.ts`: four tries, 36 s of waiting). After that the task is marked failed: the customer is never answered, and a payment event's work is left for the to-do list.
+  - Steps run one at a time, so while one step waits, every later message of that shop waits too, even a reply that needs only the WhatsApp Guard.
+  - The proof's outages were 17 s, inside the budget.
+
+  Revisit when: before the first live shop (a longer wait, or the task kept pending while a Guard is not ready).
+- [ ] **Litestream's bucket operations cost about $5 (about ₹410) a shop a month at the proof's load**, at Google Cloud Storage's Class A price. That is about 1 million a month: roughly 800 lists and 550 uploads an hour, and 700 to 800 an hour even when a shop is quiet. The monorepo's `deploy/infrastructure/docs/costs.md` assumes 300,000 in all, so its row 10 and its "the number that moves" paragraph need these numbers (not edited from here).
+  - The sync interval is not the lever: Litestream 0.5.17 ignores a replica's `sync-interval`, so the bundle has no such setting.
+  - The database's `monitor-interval` cut a busy database's uploads from 159 to 21 in 150 s. At salon rates it would save little, because the lists are Litestream's own listing and compaction.
+  - Untested levers: its compaction and retention schedule, and one database for several shops.
+
+  Revisit when: before the partner server's bucket is created.
+- [ ] **The 25-shop health count failed on the proof's side.** Every container it listed was healthy, but it listed fewer than it expected; all 104 were healthy when counted again. The fix (`ps -a`, read again for a minute) is in `test/proof/run.ts` and has not been run. Revisit when: the next proof run.
+- [ ] **Disk writes of 300 to 500 MiB a shop an hour were measured, not explained.** Revisit when: before a server on a small or metered disk.
+- [ ] **Not measured on a real 2 vCPU / 4 GB server.** The proof capped the bundle's containers in one cgroup on Docker Desktop. The Docker daemon, the operating system and a server's slower disk were outside the cap. Revisit when: the partner server (B25) is provisioned.
+- [ ] **The panel's connection check in Docker reported WhatsApp as `not_configured`**, because the proof's shop was added from the command line, not through the panel. Razorpay and Calendar were confirmed through the Guards. Revisit when: the proof makes its shop through the panel.
 
 ## The cost meter, plans and button mode (5 Nov: B45, B48, B56)
 
