@@ -44,6 +44,8 @@ const KEEP = args.includes("--keep");
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
 const runs = (phase: string) => !ONLY || ONLY.has(phase);
 const LOAD_SECONDS = args.includes("--load-seconds") ? Number(args[args.indexOf("--load-seconds") + 1]) : 120;
+/** How long each of Litestream's four windows lasts (idle and under load, at each interval). Its own compaction runs on a schedule of its own, so a short window is noisy. */
+const LITESTREAM_SECONDS = args.includes("--litestream-seconds") ? Number(args[args.indexOf("--litestream-seconds") + 1]) : LOAD_SECONDS;
 const SERVER = join(SCRATCH, "server");
 const PROJECT = "geometer-proof";
 const results: Record<string, unknown> = { startedAt: new Date().toISOString(), guardImage: GUARD_IMAGE, checks: [] as unknown[] };
@@ -305,7 +307,7 @@ async function main_(): Promise<void> {
     measure("1 shop (after the checks above)", 1);
     await phase("load", () => loadStep(1));
 
-    for (const size of SIZES.filter((s) => s > 1 && runs("load"))) {
+    for (const size of SIZES.filter((s) => s > 1 && (runs("load") || runs("litestream")))) {
       say(`\n== scale to ${size} shops ==`);
       const have = Object.keys(loadState(SERVER).shops).length;
       for (let i = have + 1; i <= size; i++) await addShop(i);
@@ -314,10 +316,16 @@ async function main_(): Promise<void> {
       results[`deploy${size}Seconds`] = Math.round((Date.now() - t0) / 1000);
       check(`deploy ${size} shops: every Guard proven`, r.length === size && r.every((x) => x.proven.passed === x.proven.of), r.map((x) => x.proven.line).slice(0, 2));
       await sleep(80_000);
-      const ps = dc(["ps", "--format", "{{.Service}}\t{{.Status}}"]).out.trim().split("\n").map((l) => l.split("\t"));
-      const mustBeHealthy = ps.filter(([n]) => /^(g-|rt-|inbox$|relay$|refresher$)/u.test(n));
-      const notHealthy = mustBeHealthy.filter(([, st]) => !/\(healthy\)/u.test(st)).map(([n, st]) => `${n}: ${st}`);
-      check(`after scaling to ${size} shops every Guard, runtime and shared service is (healthy)`, notHealthy.length === 0 && mustBeHealthy.length >= size * 4 + 4, notHealthy.slice(0, 5));
+      // `ps -a`, so a container that is not running is listed too (and named), not left out of the count; read again for up to a minute
+      let mustBeHealthy: string[][] = []; let notHealthy: string[] = [];
+      for (let i = 0; i < 7; i++) {
+        const ps = dc(["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"]).out.trim().split("\n").map((l) => l.split("\t"));
+        mustBeHealthy = ps.filter(([n]) => /^(g-|rt-|inbox$|relay$|refresher$)/u.test(n));
+        notHealthy = mustBeHealthy.filter(([, st]) => !/\(healthy\)/u.test(st ?? "")).map(([n, st]) => `${n}: ${st}`);
+        if (notHealthy.length === 0 && mustBeHealthy.length >= size * 4 + 4) break;
+        await sleep(10_000);
+      }
+      check(`after scaling to ${size} shops every Guard, runtime and shared service is (healthy)`, notHealthy.length === 0 && mustBeHealthy.length >= size * 4 + 4, { listed: mustBeHealthy.length, expected: size * 4 + 4, notHealthy: notHealthy.slice(0, 5) });
       const newest = shopName(size);
       const viaModel = nodeEval(`rt-${newest}`, `fetch('http://g-model:8080/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer ${readSecret(`rt-${newest}`, "agent_model")}','content-type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'user',content:'hi'}]})}).then(r=>console.log(r.status))`).out.trim();
       check(`the newest shop's runtime reaches the model Guard after the scale step (its namespace was not stranded)`, viaModel === "200", viaModel);
@@ -1091,7 +1099,7 @@ async function loadStep(size: number) {
     diskMiB: { runtimesNow: +(diskAfter.runtimes / MiB).toFixed(2), guardsNow: +(diskAfter.guards / MiB).toFixed(2), growthDuringLoad: +(((diskAfter.runtimes + diskAfter.guards) - (diskBefore.runtimes + diskBefore.guards)) / MiB).toFixed(2) },
     diskWritesMiBPerShopPerHour: capA && capB ? +(((capB.writeBytes - capA.writeBytes) / MiB) / size / hours).toFixed(1) : NaN,
     bucketOpsPerShopPerHour: Object.fromEntries(Object.entries(opsDelta(opsA, opsB)).map(([k, v]) => [k, Math.round((v as number) / size / hours)])),
-    topContainersCpu: load.stats.sort((a, b) => b.cpu - a.cpu).slice(0, 6),
+    topContainersCpu: load.stats.filter((c) => !TEST_SERVICES.has(c.name)).sort((a, b) => b.cpu - a.cpu).slice(0, 6),
     unanswered: answers.unanswered.length,
   };
   loads[size] = r; results.load = loads; save();
@@ -1119,7 +1127,7 @@ async function litestreamOps(size: number) {
   say(`\n== Litestream's bucket operations at ${size} shops: the default sync interval and 10 s ==`);
   const window = async (label: string) => {
     const a = await minioOps(); const t0 = Date.now();
-    await drive(size, LOAD_SECONDS, LOAD_PER_MINUTE, label);
+    await drive(size, LITESTREAM_SECONDS, LOAD_PER_MINUTE, label);
     await sleep(15_000);
     const b = await minioOps();
     const hours = (Date.now() - t0) / 3_600_000;
@@ -1127,7 +1135,7 @@ async function litestreamOps(size: number) {
     const total = Object.values(d).reduce((x, y) => x + y, 0);
     return { perShopPerHour: Math.round(total / size / hours), byApi: Object.fromEntries(Object.entries(d).map(([k, v]) => [k, Math.round(v / size / hours)])) };
   };
-  const idle = async (label: string) => { const a = await minioOps(); const t0 = Date.now(); await sleep(60_000); const b = await minioOps(); const d = opsDelta(a, b) as Record<string, number>; return { label, perShopPerHour: Math.round(Object.values(d).reduce((x, y) => x + y, 0) / size / ((Date.now() - t0) / 3_600_000)) }; };
+  const idle = async (label: string) => { const a = await minioOps(); const t0 = Date.now(); await sleep(LITESTREAM_SECONDS * 1000); const b = await minioOps(); const d = opsDelta(a, b) as Record<string, number>; return { label, perShopPerHour: Math.round(Object.values(d).reduce((x, y) => x + y, 0) / size / ((Date.now() - t0) / 3_600_000)) }; };
   const setInterval_ = async (seconds: number | undefined) => {
     const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
     if (seconds === undefined) delete conf.backup.stream.syncSeconds; else conf.backup.stream.syncSeconds = seconds;
