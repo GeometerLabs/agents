@@ -16,7 +16,7 @@ export interface PaperWords {
   outcome: Record<Outcome, string>;
   /** The actions every template records; a template hands in its own (Bookings: hold_slot ...; Fees: open_fee ...). */
   action: Record<string, string>;
-  common: { shop: string; issued: string; code: string; checkAt: (path: string) => string; notChecked: string; notSigned: string; signedBy: string; digest: string; ledger: string; ledgerNone: string; signatureNote: string; draft: string };
+  common: { shop: string; issued: string; code: string; checkAt: (path: string) => string; notChecked: string; notSigned: string; signedBy: string; digest: string; ledger: string; ledgerNone: string; signatureNote: string; draft: string; checkHeading: string; scanToCheck: string };
   statement: {
     title: string; forNumber: (last4: string) => string; intro: string; heading: string; paid: string; refunded: string; markedPaid: string; markedRefund: string;
     totalPaid: string; totalRefunded: string; net: string; owed: string; none: string; when: string; what: string; amount: string; case: string;
@@ -49,7 +49,8 @@ const en: PaperWords = {
   },
   common: { shop: "Shop", issued: "Made on", code: "Check code", checkAt: (p) => `Check it at geometer.dev${p}`, notChecked: "What this paper did not check", notSigned: "not signed",
     signedBy: "Signed with key", digest: "Digest", ledger: "Record fingerprint (entry and hash)", ledgerNone: "not anchored to the record's fingerprint", draft: "Draft words, waiting for review",
-    signatureNote: "The code and the digest let anyone check this paper has not changed since it was signed. They do not show that what it says is true." },
+    signatureNote: "The code and the digest let anyone check this paper has not changed since it was signed. They do not show that what it says is true.",
+    checkHeading: "Check this paper", scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you." },
   statement: {
     title: "Your payments statement", forNumber: (l) => `For the WhatsApp number ending ${l}`, intro: "Your own payments and refunds, as this shop's agent recorded them. Nothing about anyone else.",
     heading: "Your payments", paid: "Paid", refunded: "Refunded", markedPaid: "Marked paid by owner", markedRefund: "Refund marked sent by owner", totalPaid: "Total paid", totalRefunded: "Total refunded",
@@ -100,7 +101,8 @@ const hi: PaperWords = {
   },
   common: { shop: "दुकान", issued: "बनाया गया", code: "जाँच कोड", checkAt: (p) => `geometer.dev${p} पर जाँचें`, notChecked: "इस काग़ज़ ने क्या नहीं जाँचा", notSigned: "हस्ताक्षर नहीं",
     signedBy: "इस कुंजी से हस्ताक्षर", digest: "डाइजेस्ट", ledger: "रिकॉर्ड की पहचान (एंट्री और हैश)", ledgerNone: "रिकॉर्ड की पहचान से नहीं जुड़ा", draft: "मसौदा शब्द, समीक्षा बाकी",
-    signatureNote: "कोड और डाइजेस्ट से कोई भी देख सकता है कि हस्ताक्षर के बाद यह काग़ज़ बदला नहीं। इससे यह नहीं दिखता कि इसमें लिखी बात सच है।" },
+    signatureNote: "कोड और डाइजेस्ट से कोई भी देख सकता है कि हस्ताक्षर के बाद यह काग़ज़ बदला नहीं। इससे यह नहीं दिखता कि इसमें लिखी बात सच है।",
+    checkHeading: "इस काग़ज़ को जाँचें", scanToCheck: "इस काग़ज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।" },
   statement: {
     title: "आपके भुगतान का विवरण", forNumber: (l) => `${l} पर ख़त्म होने वाले WhatsApp नंबर के लिए`, intro: "सिर्फ़ आपके भुगतान और रिफ़ंड, जैसे इस दुकान के एजेंट ने लिखे। किसी और के बारे में कुछ नहीं।",
     heading: "आपके भुगतान", paid: "भुगतान", refunded: "रिफ़ंड", markedPaid: "मालिक ने भुगतान मिला लिखा", markedRefund: "मालिक ने रिफ़ंड भेजा लिखा", totalPaid: "कुल भुगतान", totalRefunded: "कुल रिफ़ंड",
@@ -151,7 +153,8 @@ const ml: PaperWords = {
   },
   common: { shop: "കട", issued: "തയ്യാറാക്കിയത്", code: "പരിശോധനാ കോഡ്", checkAt: (p) => `geometer.dev${p} ൽ പരിശോധിക്കുക`, notChecked: "ഈ രേഖ എന്തൊക്കെ പരിശോധിച്ചില്ല", notSigned: "ഒപ്പിട്ടിട്ടില്ല",
     signedBy: "ഈ കീ കൊണ്ട് ഒപ്പിട്ടു", digest: "ഡൈജസ്റ്റ്", ledger: "രേഖയുടെ വിരലടയാളം (എൻട്രിയും ഹാഷും)", ledgerNone: "രേഖയുടെ വിരലടയാളവുമായി ബന്ധിപ്പിച്ചിട്ടില്ല", draft: "കരട് വാക്കുകൾ, പരിശോധന ബാക്കി",
-    signatureNote: "ഒപ്പിട്ട ശേഷം ഈ രേഖ മാറിയിട്ടില്ലെന്ന് കോഡും ഡൈജസ്റ്റും കൊണ്ട് ആർക്കും നോക്കാം. ഇതിൽ പറയുന്നത് ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല." },
+    signatureNote: "ഒപ്പിട്ട ശേഷം ഈ രേഖ മാറിയിട്ടില്ലെന്ന് കോഡും ഡൈജസ്റ്റും കൊണ്ട് ആർക്കും നോക്കാം. ഇതിൽ പറയുന്നത് ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
+    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക." },
   statement: {
     title: "നിങ്ങളുടെ പണമടവ് വിവരം", forNumber: (l) => `${l} ൽ അവസാനിക്കുന്ന WhatsApp നമ്പറിന്`, intro: "നിങ്ങളുടെ സ്വന്തം പണമടവുകളും റീഫണ്ടുകളും മാത്രം, ഈ കടയുടെ ഏജന്റ് രേഖപ്പെടുത്തിയതുപോലെ. മറ്റാരെക്കുറിച്ചും ഒന്നുമില്ല.",
     heading: "നിങ്ങളുടെ പണമടവുകൾ", paid: "അടച്ചത്", refunded: "തിരികെ നൽകിയത്", markedPaid: "പണം കിട്ടിയെന്ന് ഉടമ രേഖപ്പെടുത്തി", markedRefund: "റീഫണ്ട് അയച്ചെന്ന് ഉടമ രേഖപ്പെടുത്തി", totalPaid: "ആകെ അടച്ചത്", totalRefunded: "ആകെ തിരികെ നൽകിയത്",
@@ -202,7 +205,8 @@ const kn: PaperWords = {
   },
   common: { shop: "ಅಂಗಡಿ", issued: "ಮಾಡಿದ ದಿನ", code: "ಪರಿಶೀಲನಾ ಕೋಡ್", checkAt: (p) => `geometer.dev${p} ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ`, notChecked: "ಈ ಕಾಗದ ಏನನ್ನು ಪರಿಶೀಲಿಸಲಿಲ್ಲ", notSigned: "ಸಹಿ ಇಲ್ಲ",
     signedBy: "ಈ ಕೀಲಿಯಿಂದ ಸಹಿ", digest: "ಡೈಜೆಸ್ಟ್", ledger: "ದಾಖಲೆಯ ಬೆರಳಚ್ಚು (ನಮೂದು ಮತ್ತು ಹ್ಯಾಶ್)", ledgerNone: "ದಾಖಲೆಯ ಬೆರಳಚ್ಚಿಗೆ ಜೋಡಿಸಿಲ್ಲ", draft: "ಕರಡು ಪದಗಳು, ಪರಿಶೀಲನೆ ಬಾಕಿ",
-    signatureNote: "ಸಹಿ ಮಾಡಿದ ನಂತರ ಈ ಕಾಗದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಕೋಡ್ ಮತ್ತು ಡೈಜೆಸ್ಟ್‌ನಿಂದ ಯಾರಾದರೂ ನೋಡಬಹುದು. ಇದರಲ್ಲಿ ಹೇಳಿದ್ದು ನಿಜ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ." },
+    signatureNote: "ಸಹಿ ಮಾಡಿದ ನಂತರ ಈ ಕಾಗದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಕೋಡ್ ಮತ್ತು ಡೈಜೆಸ್ಟ್‌ನಿಂದ ಯಾರಾದರೂ ನೋಡಬಹುದು. ಇದರಲ್ಲಿ ಹೇಳಿದ್ದು ನಿಜ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
+    checkHeading: "ಈ ಕಾಗದವನ್ನು ಪರಿಶೀಲಿಸಿ", scanToCheck: "ಈ ಕಾಗದವನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ." },
   statement: {
     title: "ನಿಮ್ಮ ಪಾವತಿಗಳ ವಿವರ", forNumber: (l) => `${l} ರಲ್ಲಿ ಮುಗಿಯುವ WhatsApp ಸಂಖ್ಯೆಗೆ`, intro: "ನಿಮ್ಮ ಸ್ವಂತ ಪಾವತಿಗಳು ಮತ್ತು ವಾಪಸುಗಳು ಮಾತ್ರ, ಈ ಅಂಗಡಿಯ ಏಜೆಂಟ್ ದಾಖಲಿಸಿದಂತೆ. ಬೇರೆ ಯಾರ ಬಗ್ಗೆಯೂ ಏನೂ ಇಲ್ಲ.",
     heading: "ನಿಮ್ಮ ಪಾವತಿಗಳು", paid: "ಪಾವತಿ", refunded: "ವಾಪಸ್", markedPaid: "ಹಣ ಬಂತು ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದರು", markedRefund: "ವಾಪಸ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದರು", totalPaid: "ಒಟ್ಟು ಪಾವತಿ", totalRefunded: "ಒಟ್ಟು ವಾಪಸ್",

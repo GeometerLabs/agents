@@ -175,6 +175,16 @@ test("Hindi, Malayalam and Kannada words are marked machine-written and waiting 
   for (const l of LANGUAGES) assert.deepEqual(shape(WORDS[l]), shape(WORDS.en), l);
   const page = statementPage(sealStatement({ template: TOY, shop, number: A, entries: RECORD, cases: CASES, now: t0 }));
   assert.match(page, new RegExp(WORDS.hi.common.draft), "a machine-written language says so on the page");
+  // the shared seal block: the QR of the full link, the link itself, and the short path in the text
+  const sealed = sealStatement({ template: TOY, shop, number: A, entries: RECORD, cases: CASES, now: t0, tenant: "glow-salon" }, privateKey);
+  const html = statementPage(sealed);
+  assert.ok(html.includes("<svg") && html.includes(`https://geometer.dev/verify/#${sealed.digest}`), "the QR and the link to the full digest");
+  assert.ok(html.includes("glow-salon #"), "the ledger anchor as a row of the seal");
+  assert.ok(statementText(sealed).includes(`/verify/#${sealed.code}`));
+  const record = sealDisputeRecord({ template: TOY, shop, case: CASES[0], entries: RECORD, language: "kn", now: t0 }, privateKey);
+  assert.ok(disputePage(record).includes(`https://geometer.dev/verify/#${record.digest}`) && disputeText(record).includes(`/verify/#${record.code}`));
+  const ids = sealIdentity(identityInput(), privateKey);
+  assert.ok(identityPage(ids.public).includes(`https://geometer.dev/verify/#${ids.public.digest}`));
 });
 
 // ---- the site's own checker (public-web/src/shopPaper/check.ts), when that repository is beside this one --------------------------------

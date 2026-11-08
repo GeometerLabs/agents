@@ -7,7 +7,7 @@ import { formatDate, formatTime } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import type { RecordEntry } from "../record/record.ts";
 import type { LedgerHead } from "../record/ledger.ts";
-import { esc, list, page } from "../report/page.ts";
+import { esc, list, page, sealBlock } from "../report/page.ts";
 import type { Envelope } from "../report/sign.ts";
 import { REVIEW_STATUS, WORDS } from "./words.ts";
 
@@ -67,15 +67,11 @@ export const entriesOf = (entries: readonly RecordEntry[], ids: ReadonlySet<stri
 export const notCheckedSection = (lines: readonly string[], language: Language): string =>
   `<h2>${esc(WORDS[language].common.notChecked)}</h2><div class="warn">${list([...lines])}</div>`;
 
-/** The verification block: the code, the path on the site, the digest, the key, the ledger anchor, and what a signature does not show. No QR yet: a plain link (the QR encoder is moving to a shared module). */
+/** The verification block every paper carries, the shared one (modules/report/page.ts): the QR of https://geometer.dev/verify/#<digest>, the code, the link, the digest, the key, and here also the ledger anchor. */
 export function sealSection(envelope: Envelope<{ anchor: LedgerHead | null }>, language: Language): string {
   const c = WORDS[language].common;
   const anchor = envelope.document.anchor;
-  const rows: [string, string][] = [[c.digest, envelope.digest], [c.signedBy, envelope.signature ? envelope.signature.keyId : c.notSigned], [c.ledger, anchor ? `${anchor.tenant} #${anchor.seq} ${anchor.head}` : c.ledgerNone]];
-  return `<h2>${esc(c.code)}</h2>
-<div class="seal"><div class="code">${esc(envelope.code)}</div><div class="mono">${esc(c.checkAt(`/verify/#${envelope.code}`))}</div></div>
-<dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd class="mono">${esc(v)}</dd>`).join("")}</dl>
-<p class="small">${esc(c.signatureNote)}</p>`;
+  return sealBlock(c, envelope as Envelope, [[c.ledger, anchor ? `${anchor.tenant} #${anchor.seq} ${anchor.head}` : c.ledgerNone]]);
 }
 
 /** The head of a paper's page: the kind, the title, the shop, and the draft-words tag for a language no native speaker has read yet. */

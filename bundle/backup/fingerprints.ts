@@ -8,7 +8,7 @@
 // owner's yes (who, when): nothing leaves the server otherwise, and `geometer fingerprints` says which target waits for the yes.
 //   { "git": { "enabled": true, "repo": "/srv/fingerprints-repo", "yes": { "by": "Asha (owner)", "at": "2026-11-08T10:00:00Z" } },
 //     "opentimestamps": { "enabled": true, "calendars": ["https://a.pool.opentimestamps.org"], "yes": { "by": "...", "at": "..." } } }
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { localParts } from "../../modules/core/time.ts";
 import { lastPublished, publishFingerprint } from "../../modules/record/publish.ts";
@@ -47,6 +47,16 @@ async function anchorFromPanel(ctx: Context, shop: string): Promise<{ anchor?: A
   return reply.ok && reply.anchor ? { anchor: reply.anchor, said: "signed by the panel's key" } : { said: `not signed: ${reply.error ?? "the panel could not sign"}` };
 }
 
+/** The shop's fingerprint file, copied beside its exported record (exports/<shop>/fingerprints.jsonl) so the panel, which cannot see state/, puts it in the shop's export (B38). */
+function copyForExport(dir: string, shop: string): void {
+  const from = fingerprintFile(dir, shop);
+  if (!existsSync(from)) return;
+  const to = join(serverPaths(dir).exportsOf(shop), "fingerprints.jsonl");
+  const tmp = `${to}.tmp`;
+  writeFileSync(tmp, readFileSync(from), { mode: 0o644 });
+  renameSync(tmp, to);
+}
+
 export async function runFingerprints(ctx: Context, deps: { fetch?: Fetch } = {}): Promise<{ ok: boolean; lines: string[]; results: Record<string, Published> }> {
   const paths = serverPaths(ctx.dir);
   const state = loadState(ctx.dir);
@@ -72,6 +82,7 @@ export async function runFingerprints(ctx: Context, deps: { fetch?: Fetch } = {}
       });
     } catch (e) { published = { local: "refused", targets: { git: "off", opentimestamps: "off" }, alert: (e as Error).message }; }
     results[shop] = published;
+    copyForExport(ctx.dir, shop);
     if (published.local === "refused") {
       ok = false;
       lines.push(`${shop}: FINGERPRINT REFUSED: ${published.alert}`);

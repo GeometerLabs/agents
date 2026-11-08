@@ -19,10 +19,17 @@
 //   status.json                      the deployer's last word on the shop
 //   reports/<month>/...              each monthly report and certificate the panel made, signed (.json) and readable (.html)
 //   certificates/go-live/...         the go-live certificate, signed (.json) and readable (.html)
+//   identity.json                    the agent's stable id and the fields its operator shows on the public identity paper (B36), when the shop has one
+//   record/ledger/pack.json          the record as geometer-verify's evidence pack (B28), with the key log and a checkpoint when the panel's key signs it
+//   record/ledger/anchor.json        the anchor over the head when the package was made (signed by the same key)
+//   record/ledger/fingerprints.jsonl the shop's daily fingerprints as the server kept them, each line with its own anchor when it was signed
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../../modules/record/record.ts";
 import { kindFor } from "../lib/kinds.ts";
 import { toTarGz } from "./tar.ts";
+import type { KeyObject } from "node:crypto";
+import { anchorOf, evidencePack, ledgerFile } from "../../modules/record/ledger.ts";
+import type { LedgerEntry } from "../../modules/record/ledger.ts";
 
 export const EXPORT_FORMAT = "geometer-shop-export/1";
 
@@ -46,6 +53,8 @@ export interface ExportSources {
   /** The pins the checks confirmed (ids, never keys), and the panel's own memory of the shop's accounts. */
   pins(): { whatsapp?: { phoneNumberId?: string; displayNumber?: string }; calendar?: { calendarId?: string }; razorpay?: { mode?: string } } | undefined;
   meta(): { whatsapp?: { businessNumber?: string }; razorpay?: { mode?: string }; calendar?: { shareAddress?: string } } | undefined;
+  /** The key that signs the record's evidence pack and its anchor (the panel's). Left out, the pack is the chain alone, which geo-verify can check only against an anchor that names a key in a key log: so it is said, not hidden. */
+  signingKey?(): KeyObject | undefined;
 }
 
 export interface ExportRequest {
@@ -174,6 +183,23 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   put("record/record.jsonl", record.lines.length > 0 ? `${record.lines.join("\n")}\n` : "");
   put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
 
+  // ---- the record as geometer-verify's evidence pack (B28), the daily fingerprints, the agent's id (B36)
+  const ledgerText = src.exportFile("ledger.json");
+  if (ledgerText !== undefined) {
+    let ledger: LedgerEntry[] | undefined;
+    try { ledger = JSON.parse(ledgerText) as LedgerEntry[]; } catch { warnings.push("The record's ledger could not be read, so record/ledger/ has no evidence pack."); }
+    if (ledger) {
+      const key = src.signingKey?.();
+      put("record/ledger/pack.json", ledgerFile(evidencePack(ledger, { tenant: req.shop, now: req.now, ...(key ? { key } : {}) })));
+      if (key && ledger.length > 0) put("record/ledger/anchor.json", ledgerFile(anchorOf(ledger, key)));
+      notes.push(key ? "record/ledger/pack.json is the record as geometer-verify's evidence pack, signed with the panel's key; anchor.json is the anchor over its head when this package was made. An anchor you kept from earlier (a fingerprint line) is the stronger check." : "record/ledger/pack.json is the record as geometer-verify's evidence pack, but no signing key made this package, so it has no key log and no anchor: geo-verify can say only that it is unverifiable.");
+    }
+  } else notes.push("The deployer had not yet written the record's ledger, so record/ledger/ has no evidence pack.");
+  const fingerprints = src.exportFile("fingerprints.jsonl");
+  if (fingerprints !== undefined && fingerprints.trim() !== "") put("record/ledger/fingerprints.jsonl", fingerprints.endsWith("\n") ? fingerprints : `${fingerprints}\n`);
+  const identity = src.shopFile("identity.json");
+  if (identity !== undefined) put("identity.json", identity.endsWith("\n") ? identity : `${identity}\n`);
+
   // ---- who served the shop
   const assignment = src.shopFile("assignment.json");
   if (assignment !== undefined) put("assignment.json", assignment.endsWith("\n") ? assignment : `${assignment}\n`);
@@ -246,6 +272,12 @@ WHAT IS IN IT
   status.json                   the deployer's last word on the shop (versions, limits proven, backups)
   reports/<month>/              each monthly report and its certificate: the signed .json and the readable .html
   certificates/go-live/         the go-live certificate: the signed .json and the readable .html
+  identity.json                 the agent's stable id ({"id": "agt_..."}) and which fields its operator shows on the public identity paper (only when it has one)
+  record/ledger/pack.json       the record as an evidence pack in geometer-verify's format: each entry chained to the one before it. The customer's number, the
+                                note and a served page's address are left out of every entry, so they are not chained.
+  record/ledger/anchor.json     the signed anchor over the pack's head when this package was made (only when the panel's key signed it)
+  record/ledger/fingerprints.jsonl  the daily fingerprints the server published (or kept, before any public target was switched on): one line a day, each with
+                                the entry count and the head, and its own signed anchor when the server had a key
 
 HOW TO CHECK IT
   1. Nothing was changed after it was made:   sha256sum -c SHA256SUMS      (on a Mac: shasum -a 256 -c SHA256SUMS)
@@ -255,7 +287,12 @@ HOW TO CHECK IT
   3. One signed paper on its own:
         node templates/commerce/bookings/scripts/verify-report.ts reports/2026-11/<the .json file>
      A signature shows that the paper has not changed since the key named in it signed it. It does not show who holds that key, and it does not show the numbers are true.
-  geometer-verify (the open Rust verifier of Guard's own receipts) does not read these papers: they are in the report format, not the receipt format.
+  4. The record itself, with the open verifier geo-verify (https://github.com/GeometerLabs/geometer-verify):
+        geo-verify record/ledger/pack.json --anchor record/ledger/anchor.json
+     Better: an anchor you kept from earlier, such as a fingerprint line's "anchor" saved to a file, or one from the public fingerprint file.
+     "Verified" means the record was not changed since that anchor. It does not mean the record is true or complete.
+     node bundle/export/check.ts runs it for you when GEO_VERIFY_BIN names the geo-verify program.
+  geo-verify does not read the papers under reports/ and certificates/: they are in the report format; each names the ledger head it was made at ("anchor").
 
 WHAT IS NOT IN IT, AND WHY
   - No key and no secret: no WhatsApp token, payment key, webhook secret, calendar key, signing key, passphrase or session. A shop moved to someone new needs new ones, entered by whoever serves it.

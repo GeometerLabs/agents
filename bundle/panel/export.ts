@@ -3,6 +3,7 @@
 import { buildExport, packageTarGz } from "../export/build.ts";
 import type { BuiltExport } from "../export/build.ts";
 import { sourcesFor } from "../export/sources.ts";
+import { loadPrivateKey } from "../../modules/report/sign.ts";
 import type { PanelConfig } from "./config.ts";
 import type { Documents } from "./documents.ts";
 import type { Shops } from "./shops.ts";
@@ -12,6 +13,7 @@ export function exportShop(config: PanelConfig, shops: Shops, docs: Documents, s
     ...docs.list(id, "go-live").map((f) => ({ path: `go-live/${f}`, text: docs.get(id, `go-live/${f}`) })),
     ...docs.list(id, "monthly").map((rel) => ({ path: `monthly/${rel}`, text: docs.get(id, `monthly/${rel}`) })),
   ].filter((p): p is { path: string; text: string } => typeof p.text === "string");
-  const built = buildExport(sourcesFor(config.serverDir, shop, { papers, meta: (id) => shops.meta(id) }), { shop, now, ...(by ? { exportedBy: by } : {}) });
+  const signingKey = () => (config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined); // signs the record's evidence pack and its anchor (B28)
+  const built = buildExport(sourcesFor(config.serverDir, shop, { papers, meta: (id) => shops.meta(id), signingKey }), { shop, now, ...(by ? { exportedBy: by } : {}) });
   return { built, tgz: packageTarGz(built, now) };
 }

@@ -393,6 +393,8 @@ Lines of code, counted with `wc -l` on the branch (every line, comments and blan
 
 **The weekly restore drill** now also chains the restored record and compares its hash at the last published fingerprint's entry with the published head (`backup/drill-check.ts`): a copy that was rewritten, or that is shorter than what was published, fails the drill; both records empty while a fingerprint was published fails too; a shop with no fingerprint yet passes and says none was compared.
 
+**The shop's export (B38) carries the record anyone can check.** `record/ledger/pack.json` is the evidence pack (signed by the panel's key, with its key log and checkpoint), `record/ledger/anchor.json` the anchor over its head when the package was made, `record/ledger/fingerprints.jsonl` the shop's daily fingerprints (the deployer copies its file beside the exported record, because the panel cannot see `state/`), and `identity.json` the agent's id and its public fields. The manifest and the README list them, and the README says how to run geo-verify. `node bundle/export/check.ts` runs geo-verify on the pack when `GEO_VERIFY_BIN` names it, against the package's anchor and every signed fingerprint line's: a changed record is a problem, no usable anchor is said and is not one.
+
 **`geometer paper dispute|identity|ledger <shop>`** asks the running panel (it holds the signing key, the go-live certificate and the export) for the paper and writes the files here (`backup/papers-cli.ts`), like `geometer export`. A person's statement is made only in the panel, so their number never sits in a command line.
 ## The agent crash test's certificate and the QR (B12, 8 Nov)
 
