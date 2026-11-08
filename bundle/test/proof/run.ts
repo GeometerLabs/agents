@@ -285,21 +285,25 @@ async function main_(): Promise<void> {
 
     check("every bundle container is inside one cgroup capped at 2 CPUs and 4 GiB", setCap(), results.cap);
     say(`   the cap: ${JSON.stringify(results.cap)}`);
-    if (runs("licence-block")) await licenceBlockOnGuards();
-    if (runs("panel")) await panelContainer();
-    if (runs("isolation")) { await isolation(1); await hostileRuntime(); }
-    if (runs("panelAccess")) await panelAccess(1);
-    if (runs("kill")) { await killUnderLoad(); await killEachGuardUnderLoad(); }
-    if (runs("held")) { await heldRefundSurvives(); await heldRefundThroughRuntime(); }
-    if (runs("licence")) await licenceWindDown();
-    if (runs("tripwire")) await tripwireForced(fleetAdmin, fleetLog);
-    if (runs("webhook")) await webhookThroughCaddy();
-    if (runs("stop")) await stopPersists();
-    if (runs("outputs")) await deployerOutputs();
-    if (runs("data")) await dataDuties();
-    if (runs("model")) await modelGuard();
+    const phase = async (name: string, ...steps: (() => Promise<unknown>)[]) => {
+      if (!runs(name)) return;
+      for (const step of steps) { try { await step(); } catch (e) { check(`the ${name} phase ran to its end`, false, (e as Error).stack?.split("\n").slice(0, 3).join(" | ") ?? String(e)); } }
+    };
+    await phase("licence-block", licenceBlockOnGuards);
+    await phase("panel", panelContainer);
+    await phase("isolation", () => isolation(1), hostileRuntime);
+    await phase("panelAccess", () => panelAccess(1));
+    await phase("kill", killUnderLoad, killEachGuardUnderLoad);
+    await phase("held", heldRefundSurvives, heldRefundThroughRuntime);
+    await phase("licence", licenceWindDown);
+    await phase("tripwire", () => tripwireForced(fleetAdmin, fleetLog));
+    await phase("webhook", webhookThroughCaddy);
+    await phase("stop", stopPersists);
+    await phase("outputs", deployerOutputs);
+    await phase("data", dataDuties);
+    await phase("model", modelGuard);
     measure("1 shop (after the checks above)", 1);
-    if (runs("load")) await loadStep(1);
+    await phase("load", () => loadStep(1));
 
     for (const size of SIZES.filter((s) => s > 1 && runs("load"))) {
       say(`\n== scale to ${size} shops ==`);
@@ -319,8 +323,8 @@ async function main_(): Promise<void> {
       check(`the newest shop's runtime reaches the model Guard after the scale step (its namespace was not stranded)`, viaModel === "200", viaModel);
       measure(`${size} shops (idle)`, size);
       if (size === SIZES.filter((s) => s > 1)[0] && runs("isolation")) { await isolation(size); await panelAccess(size); }
-      await loadStep(size);
-      if (size === SIZES.filter((s) => s > 1)[0] && runs("litestream")) await litestreamOps(size);
+      await phase("load", () => loadStep(size));
+      if (size === SIZES.filter((s) => s > 1)[0]) await phase("litestream", () => litestreamOps(size));
     }
     if (runs("load")) loadSummary();
   } finally {
@@ -655,10 +659,16 @@ async function modelGuard() {
 /** The test's way to the stand-ins (published on the host's loopback only): play a shop's customer, pay a link, read what the provider holds. */
 const STANDINS = "http://127.0.0.1:18791";
 async function control(shop: string, path: string, body?: unknown): Promise<any> {
-  try {
-    const r = await fetch(`${STANDINS}/_proof/${shop}${path}`, { method: body === undefined ? "GET" : "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30_000) });
-    return await r.json();
-  } catch (e) { return { error: (e as Error).message }; }
+  // a read is tried three times (a busy stand-in can be slow to hand over a large state); a POST once, since it plays a customer or a payment
+  let last = "";
+  for (let i = 0; i < (body === undefined ? 3 : 1); i++) {
+    try {
+      const r = await fetch(`${STANDINS}/_proof/${shop}${path}`, { method: body === undefined ? "GET" : "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(60_000) });
+      return await r.json();
+    } catch (e) { last = `${(e as Error).message} ${String((e as { cause?: unknown }).cause ?? "")}`.trim(); await sleep(1000); }
+  }
+  say(`(the stand-ins' ${path} for ${shop} did not answer: ${last})`);
+  return { error: last };
 }
 const digits = (n: string) => n.replace(/\D/gu, "");
 const DAY_S = 86_400;
@@ -980,7 +990,8 @@ async function licenceWindDown() {
   check("in the wind-down Guard refuses a new payment link with its own 402 subscription_suspended (not a policy denial), nothing sent", suspended(link), { status: link.status, code: link.body?.guard?.code, reason: String(link.body?.guard?.reason ?? "").slice(0, 120) });
   check("and a new calendar event, the same way", suspended(event), { status: event.status, code: event.body?.guard?.code });
   const counts1 = await st();
-  check("and neither reached the provider", counts1.links.length === counts0.links.length && counts1.calendar.length === counts0.calendar.length, { links: [counts0.links.length, counts1.links.length], events: [counts0.calendar.length, counts1.calendar.length] });
+  const n = (x: any, k: string) => (Array.isArray(x?.[k]) ? x[k].length : -1);
+  check("and neither reached the provider", n(counts1, "links") >= 0 && n(counts1, "links") === n(counts0, "links") && n(counts1, "calendar") === n(counts0, "calendar"), { links: [n(counts0, "links"), n(counts1, "links")], events: [n(counts0, "calendar"), n(counts1, "calendar")] });
   const refund = call("razorpay", "POST", `/v1/payments/${paid.payment?.id}/refund`, { amount: 5000, speed: "normal", receipt: "lic-before:refund" });
   const cancel = call("razorpay", "POST", `/v1/payment_links/${second.body?.id}/cancel`);
   check("a refund owed still goes through in the wind-down (₹50, under the owner's limit), and so does closing a link", refund.status === 200 && cancel.status === 200 && ((await st()).refunds ?? []).length === (counts0.refunds ?? []).length + 1, { refund: refund.status, cancel: cancel.status });
@@ -993,7 +1004,7 @@ async function licenceWindDown() {
   const counts2 = await st();
   const reply = ((counts2.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).at(-1)?.text ?? "";
   const own = recordOf(shop).filter((e) => e.action === "new_work").at(-1);
-  check("the runtime refuses the same new work by its own check: 'paused, contact the shop', nothing held, no link", /paused/iu.test(reply) && counts2.links.length === counts1.links.length && counts2.calendar.length === counts1.calendar.length && own?.outcome === "blocked" && own.rules.includes("subscription_suspended:block"),
+  check("the runtime refuses the same new work by its own check: 'paused, contact the shop', nothing held, no link", /paused/iu.test(reply) && n(counts2, "links") === n(counts1, "links") && n(counts2, "calendar") === n(counts1, "calendar") && own?.outcome === "blocked" && own.rules.includes("subscription_suspended:block"),
     { reply: reply.slice(0, 80), newWork: own?.notes.slice(0, 80) });
   // a builder edits the runtime's licence file to say the shop is in order: Guard still refuses, and the runtime takes Guard's 402 as its own pause, once
   const file = clientLicenceFile(SERVER, shop);
@@ -1009,7 +1020,7 @@ async function licenceWindDown() {
   const reply3 = ((counts3.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(t.from)).at(-1)?.text ?? "";
   const byGuard = recordOf(shop).filter((e) => Date.parse(e.time) >= tamperedAt - 2000 && e.action === "hold_slot" && e.outcome === "blocked" && e.rules.includes("subscription_suspended:block"));
   check("with the runtime's file edited to 'in order', Guard still refuses the hold (402); the runtime records it once as blocked and tells the customer 'paused'; nothing reached the provider",
-    /paused/iu.test(reply3) && counts3.links.length === counts2.links.length && counts3.calendar.length === counts2.calendar.length && byGuard.length === 1,
+    /paused/iu.test(reply3) && n(counts3, "links") === n(counts2, "links") && n(counts3, "calendar") === n(counts2, "calendar") && byGuard.length === 1,
     { reply: reply3.slice(0, 80), blockedByGuard: byGuard.length, calendarCalls: (counts3.calls?.calendar?.length ?? 0) - callsBefore });
   syncLicence(SERVER, loadServer(SERVER), [shop], new Date()); // the deployer puts the runtime's file back
   check("the deployer puts the runtime's licence file back on its next pass", readFileSync(file, "utf8") === kept, "");
