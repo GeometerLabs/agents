@@ -48,7 +48,7 @@ test("the shared services' config files are as they were without agents, and nam
 });
 
 test("nothing of the agent's can reach a shop's runtime, and its Guards' admin ports are not on the gate", () => {
-  const c = composeServer(server, { app: "/repo", generated: "/g", secrets: "/s", status: "/st", shops: "/sh", secretsInbox: "/i", requests: "/r", exports: "/e", panelData: "/p", config: "/c.json" }, [], { backup: false, agents: [deploy] });
+  const c = composeServer(server, { app: "/repo", generated: "/g", secrets: "/s", status: "/st", shops: "/sh", secretsInbox: "/i", requests: "/r", exports: "/e", panelData: "/p", config: "/c.json", licence: "/l" }, [], { backup: false, agents: [deploy] });
   const nets = (svc: string) => Object.keys((c.services[svc].block.networks ?? {}) as Record<string, unknown>);
   for (const k of ["razorpay", "whatsapp", "calendar"]) {
     const fwd = c.services[`fwd-my-agent-${k}`].block.command as string[];

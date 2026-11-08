@@ -193,5 +193,24 @@ export class GuardAlreadyDoneError extends GuardConflictError {
   }
 }
 
+/**
+ * Guard's own licence refusal (HTTP 402, `code` and `reason_code` both `subscription_suspended`; monorepo ADR-0062): the shop's licence is in its wind-down (no new
+ * payment link or calendar event) or its final stop (no send either, except to the owner), as Guard read fleet's signed lease. Nothing was sent. It is the same
+ * refusal as the runtime's own licence check (`LICENCE_RULE`), made outside the runtime: never retried, never kept to do later, and the customer is told to contact
+ * the shop. It stays refused until a newer lease restores the shop. Refunds, cancellations, reads and changes to existing bookings are never refused this way.
+ */
+export class GuardSuspendedError extends GuardError {
+  /** `wind_down` or `stopped`, and the operation Guard held back, when Guard names them. */
+  state?: string;
+  operation?: string;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message, guard, call);
+    this.name = "GuardSuspendedError";
+    const d = typeof guard.detail === "object" && guard.detail !== null ? guard.detail as Record<string, unknown> : {};
+    if (typeof d.state === "string" && d.state.length > 0) this.state = d.state.slice(0, 40);
+    if (typeof d.operation === "string" && d.operation.length > 0) this.operation = d.operation.slice(0, 80);
+  }
+}
+
 /** True for an error that says the call may have gone through: no reply came back, or Guard said the outcome is unknown. */
 export const mayHaveHappened = (e: unknown): boolean => e instanceof TimeoutError || e instanceof GuardOutcomeUnknownError;

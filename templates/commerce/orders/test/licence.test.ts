@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AMIT, annapurnaRazorpay, createWorld } from "../src/harness.ts";
+import { GuardSuspendedError } from "../../../../modules/core/faults.ts";
 import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
@@ -58,4 +59,23 @@ test("the licence messages exist in four languages, name the partner, and are ne
       assert.doesNotMatch(text, /₹|invoice|safe|guarantee/iu, `${language} ${id}`);
     }
   }
+});
+
+test("Guard refuses the advance link for the licence (402) while the runtime's own file says 'in order': asked once, the customer told 'contact the shop', the owner not asked to do anything", async () => {
+  const w = world();
+  let creates = 0;
+  w.payments.createPaymentLink = async () => {
+    creates++;
+    throw new GuardSuspendedError(402, "refused by the Guard: subscription_suspended: the licence for shop annapurna-tiffins is in its wind-down, so create_link (new work) is refused",
+      { decision: "deny", code: "subscription_suspended", reason_code: "subscription_suspended", sent: "no", retry: "no", reason: "subscription_suspended: the licence for shop annapurna-tiffins is in its wind-down, so create_link (new work) is refused" }, { method: "POST", path: "/v1/payment_links" });
+  };
+  const ownerBefore = w.messaging.sentTo(w.owner).length;
+  await w.say(ORDER);
+  assert.equal(creates, 1, "never tried again");
+  assert.equal(w.lastTextTo(AMIT), "Online ordering is paused for now. Please contact Annapurna Tiffins directly.");
+  const link = w.record.entries().filter((e) => e.action === "create_advance_link").at(-1)!;
+  assert.deepEqual([link.outcome, link.decisions[0]?.ruleId], ["blocked", LICENCE_RULE]);
+  assert.match(link.decisions[0].reason, /^Guard refused it for the shop's licence/u);
+  assert.equal(w.messaging.sentTo(w.owner).length, ownerBefore, "no 'link failed' to the owner: the licence held it back");
+  assert.ok(![...w.store.orders.values()].some((o) => o.state === "awaiting_advance" || o.state === "confirmed"), "nothing is kept to do later");
 });

@@ -29,7 +29,7 @@ import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
-import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -447,23 +447,28 @@ export function createAgent(deps: AgentDeps): Agent {
     }
   }
 
-  async function currentLink(due: Due): Promise<{ ok: true } | { ok: false; why: string }> {
+  /** `paused`: no link because of the centre's licence (the runtime's own check, or Guard's 402): nothing is tried again and nothing is kept to do later. */
+  async function currentLink(due: Due): Promise<{ ok: true } | { ok: false; why: string; paused?: true }> {
     const balance = balancePaise(due);
     if (balance <= 0) return { ok: false, why: "nothing is owed" };
     const old = linkOf(due);
     // A UPI request asks for its whole amount (the payer's app cannot change it), so after a part the rest needs a request of its own; a Razorpay link takes the rest.
     if (old && (upi ? old.amountPaise === balance && paidOnLink(due, old.id) === 0 : old.amountPaise - paidOnLink(due, old.id) === balance)) return { ok: true };
-    if (!licence().takesNewWork) { log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance }, { decisions: [pausedDecision()] }); return { ok: false, why: "online fee payment is paused (the centre's licence)" }; }
+    if (!licence().takesNewWork) { log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance }, { decisions: [pausedDecision()] }); return { ok: false, why: "online fee payment is paused (the centre's licence)", paused: true }; }
     if (balance % 100 !== 0) return { ok: false, why: "the balance is not a whole number of rupees" };
     const decision = checkFeeLink({ amountInr: balance / 100, balanceInr: balance / 100, highestInr });
     if (decision.verdict === "block") { log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance }, { decisions: [decision] }); return { ok: false, why: decision.reason }; }
     const sequence = due.linkSeq + 1;
     const reference = `${due.id}.${sequence}`;
     log(due, due.customer, "create_fee_link", "attempted", { amountPaise: balance, reference }, { decisions: [decision] });
-    const { link, error } = await makeLink(payments, {
+    const { link, error, suspended } = await makeLink(payments, {
       reference, amountPaise: balance, description: `${settings.name}: ${due.studentName}, ${due.batchId}, ${due.month}`,
       acceptPartial: settings.partPayments.allowed, minPartialPaise: Math.min(settings.partPayments.minInr * 100, balance),
     });
+    if (!link && suspended) { // Guard held the link back for the licence (ADR-0062): the centre's own pause, said as Guard's. Not tried again, nothing kept for later.
+      log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance, reference }, { decisions: [guardLicenceDecision(suspended.guard.reason)], notes: suspended.message, refs: { reference } });
+      return { ok: false, why: "online fee payment is paused (the centre's licence)", paused: true };
+    }
     if (!link) {
       log(due, due.customer, "create_fee_link", error ? "failed" : "unconfirmed", { amountPaise: balance, reference }, { notes: error ?? "the payments service does not show the link", refs: { reference } });
       return { ok: false, why: error ?? "the payments service does not show the link" };
@@ -541,6 +546,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const link = await currentLink(due);
+    if (!link.ok && link.paused) { takeDue(due.reminders, now); return; } // the licence: passed over, never sent later (as in the wind-down)
     if (!link.ok) {
       if (due.linkFailTellAtMs === undefined || now - due.linkFailTellAtMs >= HOURLY) {
         due.linkFailTellAtMs = now;
@@ -574,6 +580,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const { receipt } = await settle(due, fresh);
     if (due.state !== "open") { if (!receipt) await tellCustomer(due, phone, ["fee_already_paid"]); return; }
     const link = await currentLink(due);
+    if (!link.ok && link.paused) return pausedReply(phone, "pay"); // Guard held the link back for the licence: the centre's own pause
     if (!link.ok) { await tellCustomer(due, phone, ["fee_link_failed"], { offer: ownerButton }); await tellOwner(due, phone, "owner_link_failed"); return; }
     await tellCustomer(due, phone, ["fee_pay_link"], { offer: feeButtons(due, ["paid", "owner"]), image: await qrOf(due) });
   }

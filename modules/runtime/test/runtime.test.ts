@@ -6,6 +6,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fakeClock } from "../../core/clock.ts";
+import { GuardSuspendedError } from "../../core/faults.ts";
 import { createFakeMessaging } from "../../messaging/messaging.ts";
 import { createRecord } from "../../record/record.ts";
 import { BOOKINGS_SERVICES, FEES_SERVICES, readRuntimeConfig } from "../config.ts";
@@ -118,5 +119,34 @@ test("a runtime core over a toy template saves each step whole, runs events one 
     assert.deepEqual(second.runtime.submit([message("one", "m1")]), { saved: 0, duplicates: 1 });
     assert.equal(createRecord(clock, second.db.loadState().record).entries().length, 3);
     await second.runtime.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("a step that Guard refused for the shop's licence (402) is not tried again: it would be refused the same way, and nothing is kept to do later", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-runtime-licence-"));
+  const clock = fakeClock(Date.parse("2026-11-02T04:30:00Z"));
+  let tries = 0;
+  const db = openStore(join(dir, "data"));
+  const runtime = createRuntimeCore<Toy, { timezone: string }, never>({
+    settings: { timezone: "Asia/Kolkata" }, store: db, clock, messaging: createFakeMessaging(clock), pathwayVersion: "0.0.1", retryDelaysMs: [0, 0, 0],
+    kit: {
+      pathway: "toy", casesName: "orders",
+      createStore: () => ({ orders: new Map(), seen: new Set(), next: 1 }), serialize: codec.serialize, parse: codec.parse,
+      createAgent: () => ({
+        async handle() {
+          tries++;
+          throw new GuardSuspendedError(402, "refused by the Guard: subscription_suspended: the licence for shop toy is in its wind-down", { decision: "deny", code: "subscription_suspended", reason_code: "subscription_suspended", sent: "no", retry: "no" }, { method: "POST", path: "/v1/payment_links" });
+        },
+      }),
+      countCases: () => ({}), casesOf: (store) => store.orders.values(), refundContext: () => null,
+    },
+  });
+  try {
+    runtime.submit([{ kind: "message" as const, message: { id: "m1", from: "+919800000000", text: "book", timestamp: clock.now() } }]);
+    runtime.kick();
+    await runtime.idle();
+    assert.equal(tries, 1, "tried once, where anything else would have three more tries");
+    assert.deepEqual(runtime.status().tasks, { pending: 0, done: 0, failed: 1 });
+    await runtime.close();
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

@@ -63,7 +63,9 @@
 
 ## The licence's wind-down (B13, 8 November 2026)
 
-- **Guard does not check the lease**, and no crash-test situation winds a centre down (as in Bookings' Deferred.md). Revisit when: Guard's check lands.
+- **No crash-test situation winds a centre down** (as in Bookings' Deferred.md). Guard checks the lease too since 9 Nov (monorepo ADR-0062): its 402 is taken as the
+  centre's own pause, and a reminder it held back is passed over (`test/licence.test.ts`). A centre that takes UPI asks for a fee by WhatsApp, which Guard holds back
+  only in the final stop, so in the wind-down the runtime's check is the only one there. Revisit when: a crash-test situation for the wind-down is wanted.
 - **Fees opened late after a wind-down.** No month's fees are opened in the wind-down; once the centre is in order again, the month's fees whose first reminder day has
   passed are opened then and reminded once (the centre's own schedule, not a parent's request). Revisit when: the owner would rather those months were not chased.
 

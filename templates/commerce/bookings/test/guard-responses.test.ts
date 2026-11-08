@@ -4,7 +4,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../../../modules/core/clock.ts";
-import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
+import { ensureLink } from "../../../../modules/payments/links.ts";
 import { classify, createHttp } from "../../../../modules/core/http.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
 import { createRazorpayPayments } from "../../../../modules/payments/razorpay.ts";
@@ -96,6 +97,32 @@ test("already_done: the identical call after a person settled it as happened is 
   // a reason_code on any other code changes nothing
   const other = classify(409, { get: () => null }, { guard: { decision: "deny", code: "refused_by_policy", reason_code: "already_done" } }, CALL);
   assert.ok(other instanceof GuardRefusedError && !(other instanceof GuardAlreadyDoneError));
+});
+
+test("suspended: Guard's licence refusal (402) is its own error, the runtime's licence rule said by Guard: not a policy denial, nothing sent, never retried", () => {
+  const e = read("suspended");
+  assert.ok(e instanceof GuardSuspendedError && e instanceof GuardError && e instanceof ApiError);
+  assert.ok(!(e instanceof GuardRefusedError) && !(e instanceof GuardUnavailableError), "not a rule's refusal, and not 'try later'");
+  assert.equal(e.status, 402);
+  assert.deepEqual([e.guard.code, e.guard.reason_code, e.guard.sent, e.guard.retry], ["subscription_suspended", "subscription_suspended", "no", "no"]);
+  assert.deepEqual([e.state, e.operation], ["wind_down", "create_link"]);
+  assert.equal(mayHaveHappened(e), false);
+  // the reason_code alone is enough (a Guard that names the code differently still says what it is)
+  assert.ok(classify(402, { get: () => null }, { guard: { decision: "deny", code: "refused", reason_code: "subscription_suspended" } }, CALL) instanceof GuardSuspendedError);
+});
+
+test("a payment link Guard refuses for the licence is asked for ONCE: no second try, and the caller is told it is the licence", async () => {
+  const s = await serve("suspended");
+  try {
+    const payments = createRazorpayPayments({ baseUrl: s.url });
+    const listed: unknown[] = [];
+    const counting = { ...payments, listPaymentLinks: async (q: { reference_id?: string }) => { listed.push(q); return []; } };
+    const r = await ensureLink(counting, { reference: "b-1", amountPaise: 20000, description: "deposit" });
+    assert.equal(r.link, null);
+    assert.ok(r.suspended instanceof GuardSuspendedError);
+    assert.equal(s.requests.filter((q) => q.method === "POST").length, 1, "one create, never a second");
+    assert.equal(listed.length, 1, "it looked first once, and did not look again after the refusal: nothing was sent");
+  } finally { await s.close(); }
 });
 
 test("a decision this code does not know is still a GuardError: a 2xx with a guard object is never a success", () => {

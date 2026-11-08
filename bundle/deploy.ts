@@ -14,14 +14,16 @@ import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
 import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
-import { PANEL_READS, guardToml } from "./generate/guards.ts";
+import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
+import type { GuardLicence } from "./generate/guards.ts";
 import { agentFacts } from "./agent/applied.ts";
 import { litestreamConfig } from "./generate/litestream.ts";
 import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./generate/rules.ts";
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
-import { syncLicence } from "./lib/licence.ts";
+import { licencePaths, syncLicence } from "./lib/licence.ts";
+import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
@@ -57,7 +59,7 @@ export const composeFile = (dir: string) => join(serverPaths(dir).generated, "co
 
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
-  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config };
+  return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config, licence: licencePaths(ctx.dir).root };
 }
 
 /** `docker compose` on this server's generated file. */
@@ -89,6 +91,16 @@ function webhooksFor(dir: string, shop: string, calendar = true): ShopWebhooks {
 const hasCalendar = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "calendar");
 /** Does this shop take Razorpay? A UPI shop (B33) was planned with no Razorpay Guard, and so has no Razorpay key, webhook or approvals relay. */
 export const hasRazorpay = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "razorpay");
+
+/**
+ * The shop's own people's WhatsApp numbers in its (or an agent's) settings: the owner (Bookings and Fees both keep it at owner.whatsapp) and, B37, each other
+ * person who approves refunds. In the final stop the WhatsApp Guard still lets a send to these through: the owner's notice, and the approvals relay asking any of
+ * them about a refund Guard holds (a refund owed must still go through, and the person who asked for it never approves it).
+ */
+export const ownNumbersOf = (folder: { settings?: unknown }): (string | undefined)[] => {
+  const s = folder.settings as { owner?: { whatsapp?: unknown }; approvers?: { people?: { whatsapp?: unknown }[] } } | undefined;
+  return [s?.owner?.whatsapp, ...(s?.approvers?.people ?? []).map((p) => p?.whatsapp)].map((n) => (typeof n === "string" ? n : undefined));
+};
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
 function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true): Problem[] {
@@ -149,7 +161,11 @@ const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials) => [
 
 // ---- preparing a shop -----------------------------------------------------------------------------------------------------------------------
 
-export interface PreparedGuard { plan: GuardPlan; version: number; contentHash: string; compiled?: CompileResult; toml?: string; tripwires?: TripwireResult }
+export interface PreparedGuard {
+  plan: GuardPlan; version: number; contentHash: string; compiled?: CompileResult; toml?: string; tripwires?: TripwireResult;
+  /** The `[licence]` its guard.toml was given (B13), and the key ids the running Guard must have built in. */
+  licence?: GuardLicence & { kids: string[] };
+}
 interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]; webhooks: ShopWebhooks; pathwayDir: string; index: number; desiredHash: string }
 
 export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
@@ -217,12 +233,30 @@ export function approverOf(shop: string, approvers: ApproversSettings | undefine
 /** B37: the ids of a shop's other approvers, from its Razorpay Guard's plan. */
 const peopleOf = (guards: { plan: GuardPlan }[]): string[] => guards.find((g) => g.plan.kind === "razorpay")?.plan.approvers?.people.map((p) => p.id) ?? [];
 
+/**
+ * Plan B13 (monorepo ADR-0062): does this server's Guard image check fleet's lease? Only when geometer.json pins a key (`licence.keys`) AND the image reads `[licence]`
+ * (asked of the image itself, once: an older one ignores the table, and a block it ignores would read as if it did something). `why` says why not, for the log.
+ */
+export async function guardLicenceOn(ctx: Context, server: ServerConfig): Promise<{ on: boolean; why?: string }> {
+  if (!server.licence?.keys.length) return { on: false };
+  if (!ctx.tool.readsLicence || !(await ctx.tool.readsLicence())) return { on: false, why: `the Guard image ${server.guardImage} does not read the licence lease (it is older than monorepo ADR-0062), so only the runtime refuses new work in the wind-down. Use a Guard image built from that change or later.` };
+  return { on: true };
+}
+
+/** The `[licence]` a per-shop Guard is given (never the model Guard's): the server's id, the shop's (or agent's) id, and its own people's numbers (`ownNumbersOf`). */
+export function licenceFor(server: ServerConfig, on: boolean, kind: GuardPlan["kind"], shop: string | undefined, numbers: readonly (string | undefined)[]): (GuardLicence & { kids: string[] }) | undefined {
+  if (!on || kind === "model" || !shop || !server.licence) return undefined;
+  return { deployment: server.id, shop, ownerNumbers: [...new Set(ownerNumbers(numbers))], kids: server.licence.keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort() };
+}
+
 /** Compile one Guard's spec, render its guard.toml, run the tool-name rule and verify-bundle. Nothing running is touched. */
-export async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha): Promise<Problem[]> {
+export async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha, licence?: GuardLicence & { kids: string[] }): Promise<Problem[]> {
   const compiled = await ctx.tool.compile(g.plan.specText);
   if (!compiled.ok) return compiled.problems.map((p) => ({ ...p, message: `${g.plan.service}: ${p.message}` }));
   g.compiled = compiled.result;
-  g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(g.plan.kind === "razorpay" && shop ? { approver: approverOf(shop, g.plan.approvers) } : {}) });
+  if (licence) g.licence = licence; else delete g.licence;
+  const block = licence ? { deployment: licence.deployment, shop: licence.shop, ownerNumbers: licence.ownerNumbers } : undefined;
+  g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(g.plan.kind === "razorpay" && shop ? { approver: approverOf(shop, g.plan.approvers) } : {}), ...(block ? { licence: block } : {}) });
   g.tripwires = await ctx.tool.verify(compiled.result.text, g.toml);
   return [...toolNamesMatch(g.plan, g.toml, compiled.result), ...tripwiresHold(g.plan, g.tripwires)];
 }
@@ -249,8 +283,10 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   const lines: string[] = [];
   if (prepared) {
     const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards));
+    const licence = await guardLicenceOn(ctx, server);
+    if (licence.why) notes.push(licence.why);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }));
+      problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }, licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -297,6 +333,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const [accessKeyId, ...secret] = (readSecretFile(secretFile(ctx.dir, "backup", "stream")) ?? ":").split(":");
     writeSecretFile(secretFile(ctx.dir, "litestream", "litestream.yml"), litestreamConfig(server.backup, shops.map((s) => s.name), { accessKeyId, secretAccessKey: secret.join(":") }));
   }
+  // the licence folder each per-shop Guard mounts read-only (B13): made here, 0755, before compose up, or Docker would make it as root and the deployer could not write the lease
+  ensureDir(licencePaths(ctx.dir).root); ensureDir(licencePaths(ctx.dir).extensions);
   // the folder ops writes fleet's answers into: made for the user ops runs as (the one who runs the deployer, like the panel), so both can read and write it
   ensureDir(p.fleet);
   const opsUser = panelUser();
@@ -389,7 +427,9 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
   const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards))]));
-  for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
+  const licence = await guardLicenceOn(ctx, server);
+  if (licence.why) ctx.log(`note: ${licence.why}`);
+  for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
   const modelPlan = planModelGuard(server, 1);
@@ -437,12 +477,13 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   for (const p of prepared) {
     const proof = await proveRunning(ctx, p.guards);
     if (proof.problems.length === 0 && hasRazorpay(p.guards.map((g) => g.plan))) await renewRelayCredential(ctx, p.folder.name); // no relay for a UPI shop
+    const failedBy = [...proof.problems, ...proof.licence];
     const stop = state.shops[p.folder.name].stopped;
     if (stop) await ops(ctx, ["stop", p.folder.name, "on", "-", stop.reason]); // a recreated Guard keeps its kill switch in its store; this makes sure
     const total = Object.values(proof.guards).reduce((t, g) => ({ passed: t.passed + g.passed, of: t.of + g.of }), { passed: 0, of: 0 });
     const line = provenLine({ ...total, notSelfTestable: Object.values(proof.guards).flatMap((g) => g.notSelfTestable) });
     updateStatus(ctx.dir, p.folder.name, ctx.now(), (s) => {
-      s.deploy = proof.problems.length === 0 ? { state: "applied", at } : { state: "failed", at, message: refusalMessage(proof.problems), refusal: proof.problems };
+      s.deploy = failedBy.length === 0 ? { state: "applied", at } : { state: "failed", at, message: refusalMessage(failedBy), refusal: failedBy };
       s.limits = { proven: total.passed, of: total.of, unprovable: [...new Set(Object.values(proof.guards).flatMap((g) => g.notSelfTestable))], line, perGuard: proof.guards, model: modelProof.guards.model };
       s.versions = { pathway: state.shops[p.folder.name].applied!.pathway, bundle: opsBundleVersion(), guard: server.guardImage, guards: Object.fromEntries(Object.entries(state.shops[p.folder.name].guards).map(([k, v]) => [k, v.version])) };
       if (stop) s.stopped = { at: stop.at, by: stop.by, reason: stop.reason, ...(stop.requestId ? { requestId: stop.requestId } : {}) }; else delete s.stopped;
@@ -452,6 +493,8 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
       await ops(ctx, ["stop", p.folder.name, "on", "the deployer", "a running Guard did not match what was checked"]);
       throw new Refused(proof.problems);
     }
+    // a Guard that cannot check the lease restricts nothing by it: the deploy is refused, but the kill switch is NOT pulled (it would stop refunds owed too)
+    if (proof.licence.length > 0) throw new Refused(proof.licence);
     results.push({ shop: p.folder.name, proven: { ...total, line }, guards: proof.guards });
   }
   ctx.log(`Changed services: ${changed.length === 0 ? "none" : changed.join(", ")}`);
@@ -515,9 +558,10 @@ export async function renewRelayCredential(ctx: Context, shop: string, ttlSecond
 }
 
 /** Wait for the shop's Guards, then read their policy and tripwires from the running processes. */
-export async function proveRunning(ctx: Context, guards: PreparedGuard[]): Promise<{ guards: Record<string, GuardProof>; problems: Problem[] }> {
+export async function proveRunning(ctx: Context, guards: PreparedGuard[]): Promise<{ guards: Record<string, GuardProof>; problems: Problem[]; /** a Guard given `[licence]` that does not check the lease with the pinned keys */ licence: Problem[] }> {
   const out: Record<string, GuardProof> = {};
   const problems: Problem[] = [];
+  const licence: Problem[] = [];
   const tries = Math.max(1, Math.ceil((ctx.waitSeconds ?? 120) / 3));
   for (const g of guards) {
     let status: { status: number; body: any } = { status: 0, body: null };
@@ -533,8 +577,22 @@ export async function proveRunning(ctx: Context, guards: PreparedGuard[]): Promi
     out[g.plan.kind] = { passed: Number(t.passed), of: Number(t.of), notSelfTestable: (t.not_self_testable_items ?? []).map((i: { item: string }) => i.item), policyDigest: digest ?? "", version: g.version, ready: t.ok === true };
     if (digest !== g.compiled!.digest) problems.push({ rule: `running-guard:${g.plan.service}`, message: `${g.plan.service} is running the policy ${String(digest)}, not the one that was checked (${g.compiled!.digest}). The shop has been stopped.` });
     if (t.ok !== true) problems.push({ rule: `tripwire:${(t.failed ?? []).join(",") || g.plan.service}`, message: `${g.plan.service}'s tripwires failed on the running Guard (${t.passed} of ${t.of}). The shop has been stopped.` });
+    if (g.licence) licence.push(...licenceHeld(g.plan.service, g.licence, b?.licence));
   }
-  return { guards: out, problems };
+  return { guards: out, problems, licence };
+}
+
+/**
+ * The running Guard's own account of the lease (`licence` in /admin/status, ADR-0062 decision 10): it read the block, for this server and shop, and the keys built into
+ * its binary are exactly the keys geometer.json pins. Otherwise it would take no lease fleet signs, and restrict nothing, while the panel shows the shop wound down.
+ */
+export function licenceHeld(service: string, want: GuardLicence & { kids: string[] }, seen: any): Problem[] {
+  const rule = `licence:${service}`;
+  if (!seen || seen.configured !== true) return [{ rule, message: `${service} does not report a licence block, so it does not check the lease (is its image older than monorepo ADR-0062?). Nothing was stopped; the runtime still refuses new work in the wind-down.` }];
+  if (seen.deployment !== want.deployment || seen.shop !== want.shop) return [{ rule, message: `${service} checks the lease for ${String(seen.deployment)}/${String(seen.shop)}, not ${want.deployment}/${want.shop}. Nothing was stopped.` }];
+  const kids = (Array.isArray(seen.keys) ? seen.keys : []).map((k: { kid?: unknown }) => String(k?.kid)).sort();
+  if (kids.join(",") !== want.kids.join(",")) return [{ rule, message: `${service}'s image has the licence key${kids.length === 1 ? "" : "s"} ${kids.join(", ") || "(none)"} built in, but geometer.json pins ${want.kids.join(", ")}: it would take no lease fleet signs, so it would restrict nothing. licence.keys must be the keys built into the Guard image. Nothing was stopped.` }];
+  return [];
 }
 
 export { Refused };

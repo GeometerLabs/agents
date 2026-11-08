@@ -2,7 +2,7 @@
 //
 // A link is "made" only when the payments service's own list shows it. If the reply to a create was lost, the next try looks first, so a retry cannot make a
 // second link. What a template decides is the reference (the booking, the student's fee) and the amount; the care is the same.
-import { ApiError, TimeoutError } from "../core/faults.ts";
+import { ApiError, GuardSuspendedError, TimeoutError } from "../core/faults.ts";
 import type { PaymentLink, Payments } from "./payments.ts";
 
 /** Look, try, read back; and once more if that did not settle it. */
@@ -23,7 +23,11 @@ export interface LinkRequest {
 /** A link for this reference and amount that is still open: the payments service's own list is what counts. */
 const live = (amountPaise: number) => (links: PaymentLink[]) => links.find((l) => l.status !== "cancelled" && l.amount === amountPaise);
 
-export async function ensureLink(payments: Payments, request: LinkRequest): Promise<{ link: PaymentLink | null; error?: string }> {
+/**
+ * `suspended`: Guard refused the link for the shop's licence (402, ADR-0062). Nothing was sent and it is not tried again: the template treats it as its own licence
+ * pause (the customer is told to contact the shop, and nothing is kept to do later).
+ */
+export async function ensureLink(payments: Payments, request: LinkRequest): Promise<{ link: PaymentLink | null; error?: string; suspended?: GuardSuspendedError }> {
   const find = live(request.amountPaise);
   let error: string | undefined;
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
@@ -37,6 +41,7 @@ export async function ensureLink(payments: Payments, request: LinkRequest): Prom
       const after = find(await payments.listPaymentLinks({ reference_id: request.reference })); // read back from the payments service's own list
       if (after) return { link: after };
     } catch (e) {
+      if (e instanceof GuardSuspendedError) return { link: null, error: e.message, suspended: e }; // never tried again: it stays refused until a newer lease
       if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
       error = (e as Error).message;
     }
