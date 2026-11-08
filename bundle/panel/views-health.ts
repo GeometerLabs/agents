@@ -74,7 +74,7 @@ function totalBlock(h: HealthWords, s: Sum): Raw {
   const w = h.all;
   return html`<h2>${w.heading}</h2>
 <p class="big">${w.keep}: ${s.marginPaise === null ? w.unknown : money(s.marginPaise)}</p>
-<p class="note">${w.shops(s.priced, s.shops)}${s.marginPaise !== null && !s.complete && s.priced < s.shops ? html` ${w.partial(s.priced, s.shops)}` : ""}</p>
+<p class="note">${w.shops(s.priced, s.shops)}${s.marginPaise !== null && s.priced < s.shops ? html` ${w.partial(s.priced, s.shops)}` : ""}${s.marginPaise !== null && !s.complete && !s.costsKnown ? html` ${h.margin.notFinal}` : ""}</p>
 ${s.setupPaise > 0 ? html`<p class="note">${w.setup}: ${money(s.setupPaise)}</p>` : ""}`;
 }
 
@@ -89,7 +89,8 @@ ${totalBlock(h, o.sum)}
 <div class="cards">${o.shops.map((s) => html`<a class="shopcard ${s.attention.needs ? "warn" : ""}" href="/health/${s.id}">
   <div class="name">${s.name}</div>
   <div class="meta">${!s.attention.recordShared ? h.attention.notShared : s.attention.unfinishedTotal > 0 ? h.attention.unfinished(s.attention.unfinishedTotal) : h.attention.ok}</div>
-  <div class="meta">${h.margin.keep}: <b>${s.margin.margin === null ? h.cost.unknown : money(s.margin.margin.paise)}</b></div></a>`)}</div>`}
+  <div class="meta">${h.margin.keep}: <b>${s.margin.margin === null ? h.cost.unknown : money(s.margin.margin.paise)}</b></div>${s.margin.margin && !s.margin.margin.complete ? html`
+  <div class="meta">${h.margin.notFinal}</div>` : ""}</a>`)}</div>`}
 ${o.innovator ? html`<p><a class="btn" href="/vote">${h.vote.link}</a></p>` : ""}`);
 }
 

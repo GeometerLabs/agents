@@ -6,7 +6,7 @@ import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { latestPriceList } from "../cost.ts";
-import { entriesFromForm, marginOf, minutesFromText, monthUsage, paiseFromText, planFeePaise, runningCostItems, sumMargins } from "../health.ts";
+import { discountedShops, entriesFromForm, marginOf, minutesFromText, monthUsage, paiseFromText, planFeePaise, runningCostItems, sumMargins } from "../health.ts";
 import type { CostItem } from "../health.ts";
 import { WORDS } from "../languages.ts";
 import { flatWords } from "../review.ts";
@@ -33,12 +33,13 @@ const post = async (br: Browser, path: string, form: Record<string, string>, fro
 
 // ---- the arithmetic, on fixed numbers --------------------------------------------------------------------------------------------------------------------
 
-test("the plan fee: Business is INR 299, half on your own server, 40% off for an innovator, both taken once and rounded up once; no plan or no price is unknown", () => {
+test("the plan fee: Business is INR 299, half on your own server, 40% off for an innovator (the lower of the two, never both), rounded up once; no plan or no price is unknown", () => {
   const fee = (o: { plan?: "basic" | "business" | "operations" | null; selfHost?: boolean; innovator?: boolean }) => planFeePaise({ plan: o.plan === undefined ? "business" : o.plan, prices, selfHost: o.selfHost ?? false, innovator: o.innovator ?? false });
   assert.equal(fee({}).paise, 29_900);
   assert.equal(fee({ selfHost: true }).paise, 14_950);
   assert.equal(fee({ innovator: true }).paise, 17_940);
-  assert.deepEqual(fee({ selfHost: true, innovator: true }), { paise: 8_970, notes: ["self-host", "innovator"] });
+  assert.deepEqual(fee({ selfHost: true, innovator: true }), { paise: 14_950, notes: ["self-host"] }, "they do not stack: the lower of the two, as fleet's invoice charges");
+  assert.deepEqual(fee({ plan: "basic", selfHost: true, innovator: true }), { paise: 4_950, notes: ["self-host"] }, "Basic: half is INR 49.50, the innovator price INR 59.40");
   assert.equal(fee({ plan: "basic", innovator: true }).paise, 5_940);
   assert.deepEqual(fee({ plan: null }), { paise: null, notes: ["no-plan"] });
 });
@@ -90,6 +91,13 @@ test("over several shops: the known margins are added, and the total says it is 
   assert.equal(sumMargins([]).marginPaise, null);
 });
 
+test("the Innovator discount covers 25 shops of one person, the oldest assignments first, as fleet's invoice takes them", () => {
+  const flagged = Array.from({ length: 27 }, (_, i) => ({ id: `shop-${String(i).padStart(2, "0")}`, since: new Date(Date.UTC(2026, 0, 1 + (26 - i))).toISOString() }));
+  const covered = discountedShops(flagged, prices);
+  assert.equal(covered.size, 25);
+  assert.ok(covered.has("shop-26") && covered.has("shop-02") && !covered.has("shop-01") && !covered.has("shop-00"), "shop-26 is the oldest; the two newest pay the full fee");
+});
+
 test("this month's usage reads only this month's entries of the record: a message from October is not counted", () => {
   const data = {
     entries: [
@@ -136,6 +144,10 @@ test("a partner's page: the running cost from the price list, her price and minu
     assert.match(page, /Setup fee you charged once: ₹2,000\.00/u);
     // her figures are in the panel's own store and nowhere that goes to fleet
     assert.ok(readdirSync(join(b.dir, "panel", "data", "health", accountIdOf(b, "divya").replace(/_/gu, "-"))).includes("divya-shop.json"));
+    // the overview does not hide the unknown: the card and the total both say the figure is before the costs not known yet
+    const overview = (await divya.get("/health")).plain;
+    assert.equal(overview.split("Before the costs that are not known yet.").length - 1, 2, "once on the shop's card, once on the total");
+    assert.match(overview, /Price entered for 1 of 1 shops/u);
     // with the record shared, the month's WhatsApp is counted from it
     exportRecord(b, "divya-shop", [entry(1, "2026-11-02T10:01:00+05:30", "send_message", { to: "owner" })]);
     const shared = (await divya.get("/health/divya-shop")).plain;
@@ -255,6 +267,12 @@ test("one vote per innovator, changeable; results are counts only, without names
 // ---- the words ------------------------------------------------------------------------------------------------------------------------------------------------
 
 const BANNED = /\b(earn\w*|income|side hustle|passive|limited seats?|join now|work from home|founder|founding|bots?|leaderboard|streaks?)\b/iu;
+/** The same words in Hindi, Malayalam and Kannada script (the site's own guard, scripts/audit-output.mjs, is English only): the stems of earning, income, side work, limited seats, join now, work from home, founder, leaderboard, streak. */
+const BANNED_NATIVE: Record<string, RegExp> = {
+  hi: /(?<![\p{L}\p{M}])(?:कमाई|कमाएँ|कमाएं|कमाना|कमाओ|आमदनी|आय|साइड हसल|निष्क्रिय आय|सीमित सीट|अभी जुड़ें|घर बैठे|संस्थापक|फ़ाउंडर|फाउंडर|लीडरबोर्ड|स्ट्रीक)(?![\p{L}\p{M}])/u,
+  ml: /(?<![\p{L}\p{M}])(?:വരുമാന|സമ്പാദി|സമ്പാദ്യ|സൈഡ് ഹസിൽ|പരിമിതമായ സീറ്റ|ഇപ്പോൾ ചേരൂ|വീട്ടിലിരുന്ന്|സ്ഥാപക|ഫൗണ്ടർ|ലീഡർബോർഡ്|സ്ട്രീക്ക്)/u,
+  kn: /(?<![\p{L}\p{M}])(?:ಆದಾಯ|ಗಳಿಸ|ಗಳಿಕೆ|ಸಂಪಾದ|ಸೈಡ್ ಹಸಲ್|ಸೀಮಿತ ಸೀಟ್|ಈಗಲೇ ಸೇರಿ|ಮನೆಯಿಂದಲೇ ಕೆಲಸ|ಸಂಸ್ಥಾಪಕ|ಫೌಂಡರ್|ಲೀಡರ್‌ಬೋರ್ಡ್|ಸ್ಟ್ರೀಕ್)/u,
+};
 const NEVER = /\b(safe|safely|guarantee[ds]?|proves?|certified)\b|100%/iu;
 const health = (l: (typeof LANGUAGES)[number]) => new Map([...flatWords({ health: HEALTH_WORDS[l] }, HEALTH_SAMPLE_ARGS), ...loadVoteRound().options.map((o) => [`option.${o.id}`, o.label[l]] as const)]);
 
@@ -268,6 +286,7 @@ test("the new texts have the same lines in all four languages, in their own scri
     for (const [path, text] of mine) {
       assert.ok(!BANNED.test(text), `${l} ${path}: "${text}" has a banned word`);
       assert.ok(!NEVER.test(text), `${l} ${path}: "${text}" promises too much`);
+      if (l !== "en") assert.ok(!BANNED_NATIVE[l].test(text), `${l} ${path}: "${text}" has a banned word in ${l}`);
       if (l !== "en") assert.ok(BLOCK[l].test(text) || /^[A-Z0-9 ()₹.,:-]*$/u.test(text), `${l} ${path}: not in ${l}`);
     }
   }

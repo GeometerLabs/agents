@@ -998,6 +998,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `health.margin.yourPrice` | നിങ്ങളുടെ വില | Your price |  |
 | `health.margin.keep` | മാസം നിങ്ങൾക്ക് ബാക്കി വരുന്നത് | What you keep a month |  |
 | `health.margin.unknownPrice` | നിങ്ങളുടെ വില നൽകുന്നത് വരെ അറിയില്ല. | Unknown until you enter your price. |  |
+| `health.margin.notFinal` | ഇതുവരെ അറിയാത്ത ചെലവുകൾക്ക് മുമ്പുള്ളത്. | Before the costs that are not known yet. |  |
 | `health.margin.before` | ഇവയ്ക്ക് മുമ്പ്: Your support time | before: Your support time |  |
 | `health.margin.setupOnce` | ഒരിക്കൽ ഈടാക്കിയ സെറ്റപ്പ് ഫീസ്: ₹2,000.00 | Setup fee you charged once: ₹2,000.00 |  |
 | `health.margin.negative` | പൂജ്യത്തിന് താഴെ: പ്രവർത്തന ചെലവ് നിങ്ങളുടെ വിലയേക്കാൾ കൂടുതലാണ്. | Below zero: the running cost is more than your price. |  |
