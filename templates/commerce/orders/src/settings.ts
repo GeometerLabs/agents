@@ -3,6 +3,7 @@
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
+import { DEFAULT_CAPS } from "../../../../modules/payments/guard-limits.ts";
 import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
 import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
 
@@ -107,6 +108,9 @@ export function validateSettings(input: unknown): SettingsResult {
   const payment = readPayment(input.payment, errors);
   const owner = readOwner(input.owner, errors);
 
+  if (errors.length === 0 && orders && menu.length > 0 && highestOrderInr({ menu, orders } as Settings) * 100 > DEFAULT_CAPS.refundPaisePerDay) {
+    errors.push(`One order can come to ₹${highestOrderInr({ menu, orders } as Settings).toLocaleString("en-IN")} (the most items in an order, all of your dearest item), which is more than the ₹${(DEFAULT_CAPS.refundPaisePerDay / 100).toLocaleString("en-IN")} that can be refunded in a day. Lower "orders.maxItemsPerOrder" or the price.`);
+  }
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, menu, orders: orders as Settings["orders"], cutoff: cutoff as Cutoff, pickup: { slots: pickup },

@@ -40,7 +40,7 @@
   ],
   "orders": {
     "maxPerDay": 10,
-    "maxItemsPerOrder": 12,
+    "maxItemsPerOrder": 10,
     "daysAhead": 14
   },
   "cutoff": {
