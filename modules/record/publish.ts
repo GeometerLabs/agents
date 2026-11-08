@@ -97,7 +97,9 @@ export async function publishFingerprint(o: {
     }
     if (before.day === o.day) return { local: "same-day", line: before, targets };
   }
-  const line: FingerprintLine = { schema: 1, day: o.day, at: new Date(o.now).toISOString(), tenant, ledger: LEDGER, seq: Number(last.seq), head: last.hash, anchor: o.anchor ?? null, prev: all.length > 0 ? sha256(lineBytes(all.at(-1)!)) : null };
+  // an anchor is kept only if it is over this very head: one signed for another moment would say something the line does not
+  const anchor = o.anchor && o.anchor.checkpoint.tenant === tenant && o.anchor.checkpoint.seq === last.seq && o.anchor.checkpoint.head === last.hash ? o.anchor : null;
+  const line: FingerprintLine = { schema: 1, day: o.day, at: new Date(o.now).toISOString(), tenant, ledger: LEDGER, seq: Number(last.seq), head: last.hash, anchor, prev: all.length > 0 ? sha256(lineBytes(all.at(-1)!)) : null };
   mkdirSync(dirname(o.file), { recursive: true });
   appendFileSync(o.file, lineBytes(line), { mode: 0o644 });
 
