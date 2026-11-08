@@ -1,5 +1,5 @@
 // The unfinished-work inbox (plan B31): one list across the shops this person may see, worked out from each shop's exported record and cases
-// (exports/<shop>/record.json and bookings.json or dues.json, which the deployer writes and which carry no customer's number) by the kinds in
+// (exports/<shop>/record.json and bookings.json, dues.json or orders.json, which the deployer writes and which carry no customer's number) by the kinds in
 // modules/unfinished. Nothing is saved: the list is read again each time, so it can never disagree with the record. A shop that is stopped, or whose
 // subscription lapsed, still has its last export, so it still has its list.
 import { existsSync, statSync } from "node:fs";
@@ -8,7 +8,7 @@ import { obligations } from "../../modules/unfinished/index.ts";
 import type { CaseLike, Obligation, UnfinishedOptions } from "../../modules/unfinished/index.ts";
 import { DEFAULT_OPTIONS } from "../../modules/unfinished/index.ts";
 import type { Account } from "./accounts.ts";
-import { readExport } from "./activity.ts";
+import { casesOf, readExport } from "./activity.ts";
 import type { Shops } from "./shops.ts";
 
 export interface ShopInbox {
@@ -30,7 +30,7 @@ export function inboxFor(shops: Shops, id: string, nowMs: number, options: Unfin
   const data = readExport(dir);
   if (!data) return { id, name, items: [], failed: [] };
   const template = shops.kind(id);
-  const cases = (template === "fees" ? (data.dues ?? []) : data.bookings) as unknown as CaseLike[];
+  const cases = casesOf(data, template) as unknown as CaseLike[];
   const { found, failed } = obligations.detect({ template, entries: data.entries, cases, nowMs, options });
   const file = join(dir, "record.json");
   return { id, name, asOf: existsSync(file) ? new Date(statSync(file).mtimeMs).toISOString() : undefined, items: found, failed } as ShopInbox;

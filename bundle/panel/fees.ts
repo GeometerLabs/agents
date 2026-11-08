@@ -73,11 +73,14 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
   };
 }
 
-/** A batch's id: its name in lowercase letters, digits and dashes (the settings' rule), made unique. */
-function batchIds(names: string[]): string[] {
+/**
+ * An id for each name: its name in lowercase letters, digits and dashes (the settings' rule), made unique. A name with none of those gets `<fallback>-<n>`. `fixed[i]` is an id the
+ * i-th name already had (a shop being changed keeps the ids its orders refer to); it is used again, with a number added if an earlier name took it. Orders' menu and slots use this too.
+ */
+export function idsFrom(names: string[], fallback: string, fixed: (string | undefined)[] = []): string[] {
   const used = new Set<string>();
   return names.map((n, i) => {
-    const base = n.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 30).replace(/-+$/u, "") || `batch-${i + 1}`;
+    const base = fixed[i] ?? (n.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 30).replace(/-+$/u, "") || `${fallback}-${i + 1}`);
     let id = base;
     for (let k = 2; used.has(id); k++) id = `${base}-${k}`;
     used.add(id);
@@ -160,7 +163,7 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
   const fees = feesOf(draft);
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
   const rows = fees.batches.filter((b) => b.name !== "" && b.fee !== "");
-  const ids = batchIds(rows.map((b) => b.name));
+  const ids = idsFrom(rows.map((b) => b.name), "batch");
   const names = (n: string) => Object.fromEntries(languages.map((l) => [l, [n]]));
   const lookup = new Map(rows.map((b, i) => [b.name.toLowerCase(), ids[i]]));
   const students = fees.students.split(/\r?\n/u).map((l) => l.trim()).filter((l) => l !== "").map((line) => {

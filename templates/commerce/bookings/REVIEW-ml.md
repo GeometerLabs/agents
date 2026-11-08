@@ -587,6 +587,31 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `feesShop.messages.ceiling` | നിങ്ങളുടെ നിയമങ്ങൾ അനുസരിച്ച് ഒരു മാസം പരമാവധി 200 ഓർമ്മപ്പെടുത്തലുകളും രസീതുകളും പോകാം: 40 വിദ്യാർത്ഥികൾ, ഓരോരുത്തർക്കും 4 ഓർമ്മപ്പെടുത്തൽ വരെ, ഒരു രസീതും. | Your rules allow at most 200 reminders and receipts a month: 40 students, up to 4 reminders each, and a receipt. |  |
 | `feesShop.messages.included` | നിങ്ങളുടെ പ്ലാനിൽ മാസം 3000 സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | Your plan includes 3000 messages a month. |  |
 | `feesShop.messages.note` | രക്ഷിതാക്കളുടെ സ്വന്തം സന്ദേശങ്ങൾക്കുള്ള മറുപടികൾ ഇതിനു പുറമേ വരും. ഇത് നിങ്ങളുടെ നിയമങ്ങളിൽ നിന്നുള്ള പരമാവധി പരിധിയാണ്, ബില്ല് അല്ല. | Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill. |  |
+| `ordersShop.summaryMenu` | മെനുവും ദിവസത്തെ സ്റ്റോക്കും | Menu and daily stock |  |
+| `ordersShop.summaryRules` | അവസാന സമയങ്ങളും പരിധികളും | Cut-off times and limits |  |
+| `ordersShop.perDay` | ദിവസം 12 | 12 a day |  |
+| `ordersShop.pickup` | പിക്കപ്പ് | Pickup |  |
+| `ordersShop.delivery` | ഡെലിവറി | Delivery |  |
+| `ordersShop.noDelivery` | ഡെലിവറി ഇല്ല | No delivery |  |
+| `ordersShop.states.enquiry` | ചോദിക്കുന്നു | Asking |  |
+| `ordersShop.states.awaiting_owner` | ഉടമയ്ക്കായി കാത്തിരിക്കുന്നു | Waiting for the owner |  |
+| `ordersShop.states.awaiting_advance` | അഡ്വാൻസിനായി കാത്തിരിക്കുന്നു | Waiting for the advance |  |
+| `ordersShop.states.confirmed` | ഉറപ്പായി | Confirmed |  |
+| `ordersShop.states.expired` | കാത്തിരിപ്പ് തീർന്നു | Hold ran out |  |
+| `ordersShop.states.cancelled` | റദ്ദാക്കി | Cancelled |  |
+| `ordersShop.states.completed` | പൂർത്തിയായി | Done |  |
+| `ordersShop.activity.taken` | എടുത്ത ഓർഡറുകൾ | Orders taken |  |
+| `ordersShop.activity.completed` | പൂർത്തിയായവ | Done |  |
+| `ordersShop.activity.cancelled` | റദ്ദാക്കിയവ | Cancelled |  |
+| `ordersShop.activity.holdsRanOut` | കാത്തിരിപ്പ് തീർന്നവ | Holds that ran out |  |
+| `ordersShop.activity.collected` | കിട്ടിയ അഡ്വാൻസ് | Advance received |  |
+| `ordersShop.activity.toCollect` | പിക്കപ്പിൽ വാങ്ങാനുള്ളത് | Still to collect at pickup |  |
+| `ordersShop.activity.pickup` | പിക്കപ്പ് ഓർഡറുകൾ | Pickup orders |  |
+| `ordersShop.activity.delivery` | ഡെലിവറി ഓർഡറുകൾ | Delivery orders |  |
+| `ordersShop.messages.heading` | സന്ദേശങ്ങൾ | Messages |  |
+| `ordersShop.messages.ceiling` | നിങ്ങളുടെ നിയമങ്ങൾ ദിവസം 8 ഓർഡർ വരെ അനുവദിക്കുന്നു. ഓരോ ഓർഡറിനും ഏകദേശം 3 സന്ദേശം എന്ന് കണക്കാക്കിയാൽ, 31 ദിവസത്തെ മാസത്തിൽ 744 സന്ദേശങ്ങൾ വരെ പ്രതീക്ഷിക്കാം. | Your rules allow up to 8 orders a day. At about 3 messages for each order, plan for up to 744 messages in a 31-day month. |  |
+| `ordersShop.messages.included` | നിങ്ങളുടെ പ്ലാനിൽ മാസം 3000 സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | Your plan includes 3000 messages a month. |  |
+| `ordersShop.messages.note` | ഉപഭോക്താക്കളുടെ സ്വന്തം സന്ദേശങ്ങൾക്കുള്ള മറുപടികൾ ഇതിനു പുറമേ വരും. ഇത് നിങ്ങളുടെ നിയമങ്ങളിൽ നിന്നുള്ള ഏകദേശ കണക്കാണ്, ബില്ല് അല്ല. | Replies to customers' own messages come on top. This is a planning figure from your rules, not a bill. |  |
 | `cost.heading` | ഓരോ മാസവും ഇത് പ്രവർത്തിപ്പിക്കാനുള്ള ചെലവ് | What it costs to run, each month |  |
 | `cost.early` | ആദ്യത്തെ കണക്ക്: യഥാർത്ഥ ബുക്കിംഗുകൾ ഇതുവരെ എണ്ണിയിട്ടില്ല. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | രേഖയിലെ 38 ബുക്കിംഗ് നോക്കി കണക്കാക്കിയത്. | Worked out from 38 bookings in the record. |  |
@@ -650,6 +675,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
 | `setup.templateNames.fees` | ക്ലാസുകളുടെ ഫീസ് പിരിവ് | Fee collection for classes |  |
+| `setup.templateNames.orders` | അഡ്വാൻസോടെ പ്രീ-ഓർഡർ | Pre-orders with an advance |  |
 | `setup.templateElsewhere` | ഇത് ഒരു ബിൽഡർ പ്ലഗിൻ ഉപയോഗിച്ച് സെറ്റ് അപ്പ് ചെയ്യും. ഫോണിലെ സെറ്റ് അപ്പിൽ ഇത് ഇതുവരെ ഇല്ല. | A builder sets this one up with the plugin. The phone setup does not have it yet. |  |
 | `setup.start` | തുടങ്ങൂ | Start |  |
 | `setup.progress` | ഘട്ടം 2 (ആകെ 5) | Step 2 of 5 |  |
@@ -728,6 +754,57 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.fees.problems.partBad` | ഏറ്റവും കുറഞ്ഞ ഭാഗിക പേയ്മെന്റ് പൂർണ്ണ രൂപയിൽ, 1 മുതൽ ₹1,200 വരെ (ഏറ്റവും കുറഞ്ഞ പ്രതിമാസ ഫീസ്) ആയിരിക്കണം. | The least part payment must be a whole number of rupees from 1 to ₹1,200 (the cheapest monthly fee). |  |
 | `setup.fees.problems.waiverBad` | ഇളവ് പരിധി പൂർണ്ണ രൂപയിൽ, 0 മുതൽ ₹1,200 വരെ (ഏറ്റവും കുറഞ്ഞ പ്രതിമാസ ഫീസ്) ആയിരിക്കണം. | The waiver limit must be a whole number of rupees from 0 to ₹1,200 (the cheapest monthly fee). |  |
 | `setup.fees.problems.refundBad` | റീഫണ്ട് പരിധി പൂർണ്ണ രൂപയിൽ, 0 അല്ലെങ്കിൽ കൂടുതൽ ആയിരിക്കണം. | The refund limit must be a whole number of rupees, 0 or more. |  |
+| `setup.orders.steps.business` | കടയും അതിന്റെ മെനുവും | The shop and its menu |  |
+| `setup.orders.steps.rules` | അവസാന സമയം, സ്ലോട്ടുകൾ, പരിധികൾ | Cut-off, slots and limits |  |
+| `setup.orders.business.name` | കടയുടെ പേര് | The shop's name |  |
+| `setup.orders.business.address` | വിലാസം (വേണമെങ്കിൽ) | Address (optional) |  |
+| `setup.orders.business.menu` | മെനു | Menu |  |
+| `setup.orders.business.menuHelp` | ഓരോ വരിയിലും ഒരു സാധനം: അതിന്റെ പേര്, രൂപയിൽ വില, ഒരു ദിവസം പരമാവധി എത്ര ഉണ്ടാക്കും. ഉദാഹരണം: Veg thali, 120, 12 | One item on each line: its name, its price in rupees, and the most you make in a day. For example: Veg thali, 120, 12 |  |
+| `setup.orders.rules.cutoffDays` | ഓർഡർ എത്ര ദിവസം മുമ്പ് അടയ്ക്കണം (0 എന്നാൽ അതേ ദിവസം) | Orders close this many days before (0 is the same day) |  |
+| `setup.orders.rules.cutoffTime` | അടയ്ക്കുന്ന സമയം | Closing time |  |
+| `setup.orders.rules.cutoffHelp` | 24 മണിക്കൂർ സമയത്തിൽ, ഉദാഹരണം 20:00. | In 24-hour time, like 20:00. |  |
+| `setup.orders.rules.pickup` | പിക്കപ്പ് സ്ലോട്ടുകൾ | Pickup slots |  |
+| `setup.orders.rules.slotsHelp` | ഓരോ വരിയിലും ഒരു സ്ലോട്ട്: സമയം, വേണമെങ്കിൽ ഒരു പേര്. ഉദാഹരണം: 12:00-13:00, lunch | One slot on each line: the times, then a name if you like. For example: 12:00-13:00, lunch |  |
+| `setup.orders.rules.delivery` | ഡെലിവറി സ്ലോട്ടുകൾ (ഡെലിവറി ഇല്ലെങ്കിൽ ഒഴിച്ചിടുക) | Delivery slots (leave empty if you do not deliver) |  |
+| `setup.orders.rules.deliveryHelp` | അതേ രീതിയിൽ, ഉദാഹരണം: 12:30-13:30, lunch | The same way, for example: 12:30-13:30, lunch |  |
+| `setup.orders.rules.area` | ഡെലിവറി ചെയ്യുന്ന സ്ഥലങ്ങൾ | Places you deliver to |  |
+| `setup.orders.rules.areaHelp` | കോമ ഉപയോഗിച്ച് വേർതിരിക്കുക. ഇതിൽ ഒരു സ്ഥലവും പറയാത്ത വിലാസത്തിലേക്ക് ഡെലിവറി ചെയ്യില്ല. | Separate them with commas. An address that names none of them is not delivered to. |  |
+| `setup.orders.rules.advance` | ഉറപ്പിക്കാൻ ഉപഭോക്താവ് എത്ര നൽകണം | What the customer pays to confirm |  |
+| `setup.orders.rules.advancePart` | ഓർഡറിന്റെ ഒരു ഭാഗം | A part of the order |  |
+| `setup.orders.rules.advanceFull` | ഓർഡർ മുഴുവൻ | All of the order |  |
+| `setup.orders.rules.percent` | ഭാഗം (%) | Part to pay (%) |  |
+| `setup.orders.rules.hold` | അഡ്വാൻസിനായി ഓർഡർ എത്ര മിനിറ്റ് പിടിച്ചുവയ്ക്കണം | Minutes an order is held for the advance |  |
+| `setup.orders.rules.perDay` | ഒരു ദിവസത്തേക്ക് പരമാവധി ഓർഡറുകൾ | Most orders for one day |  |
+| `setup.orders.rules.perOrder` | ഒരു ഓർഡറിൽ പരമാവധി സാധനങ്ങൾ | Most items in one order |  |
+| `setup.orders.rules.daysAhead` | എത്ര ദിവസം മുന്നോട്ടുള്ള ഓർഡർ എടുക്കാം (0 എന്നാൽ ഇന്ന് മാത്രം) | How many days ahead an order may be (0 is today only) |  |
+| `setup.orders.rules.window` | അഡ്വാൻസ് തിരികെ കിട്ടാൻ സ്ലോട്ടിന് കുറഞ്ഞത് എത്ര മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം | Cancel at least this many hours before the slot to get the advance back |  |
+| `setup.orders.rules.refund` | ഏജന്റിന് സ്വയം റീഫണ്ട് ചെയ്യാവുന്ന പരമാവധി തുക (₹) | Most the agent may refund by itself (₹) |  |
+| `setup.orders.rules.refundHelp` | ഇതിന് മുകളിലുള്ള റീഫണ്ട് WhatsApp-ൽ നിങ്ങളുടെ സമ്മതത്തിനായി കാത്തിരിക്കും. | A refund above this waits for your OK on WhatsApp. |  |
+| `setup.orders.rules.approveOver` | ഈ തുകയ്ക്ക് മുകളിലുള്ള ഓർഡറിന് നിങ്ങളുടെ സമ്മതം വേണം (₹, ഒരിക്കലും വേണ്ടെങ്കിൽ 0) | Orders above this total wait for your OK (₹, 0 for never) |  |
+| `setup.orders.rules.approveHelp` | അത്തരം ഓർഡർ ആദ്യം നിങ്ങളുടെ അടുത്തേക്ക് വരും, നിങ്ങളുടെ സമ്മതത്തിന് ശേഷം മാത്രമേ ഉപഭോക്താവിനോട് പണം ചോദിക്കൂ. | Such an order comes to you first, and the customer is asked to pay only after your OK. |  |
+| `setup.orders.problems.noItems` | മെനുവിൽ ഒരു സാധനമെങ്കിലും ചേർക്കൂ. | Add at least one item to the menu. |  |
+| `setup.orders.problems.itemBad` | വരി 2: പേര്, വില, ദിവസത്തെ സ്റ്റോക്ക് എന്നിവ കോമ ഇട്ട് എഴുതൂ, ഉദാഹരണം Veg thali, 120, 12. | Line 2: write the name, the price and the daily stock with commas between them, like Veg thali, 120, 12. |  |
+| `setup.orders.problems.priceBad` | വരി 2: വില പൂർണ്ണ രൂപയിൽ എഴുതൂ, 1 മുതൽ, ഉദാഹരണം 120. | Line 2: write the price as a whole number of rupees, from 1, like 120. |  |
+| `setup.orders.problems.stockBad` | വരി 2: ഒരു ദിവസം പരമാവധി എത്ര ഉണ്ടാക്കും എന്നത് പൂർണ്ണ സംഖ്യയായി എഴുതൂ, 1 മുതൽ, ഉദാഹരണം 12. | Line 2: write the most you make in a day as a whole number, from 1, like 12. |  |
+| `setup.orders.problems.itemTwice` | വരി 3: "Veg thali" മുകളിലെ മെനുവിൽ ഇതിനകം ഉണ്ട്. | Line 3: "Veg thali" is already on the menu above. |  |
+| `setup.orders.problems.tooManyItems` | ഇത് 30 സാധനങ്ങളിൽ കൂടുതലാണ്. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | That is more than 30 items. Write to support. A person answers. |  |
+| `setup.orders.problems.cutoffDaysBad` | ഓർഡർ എത്ര ദിവസം മുമ്പ് അടയ്ക്കണം എന്നത് 0 മുതൽ 7 വരെയുള്ള പൂർണ്ണ സംഖ്യയായി എഴുതൂ. | Write how many days before orders close as a whole number from 0 to 7. |  |
+| `setup.orders.problems.cutoffTimeBad` | അടയ്ക്കുന്ന സമയം 24 മണിക്കൂർ സമയത്തിൽ എഴുതൂ, ഉദാഹരണം 20:00. | Write the closing time in 24-hour time, like 20:00. |  |
+| `setup.orders.problems.noPickup` | ഒരു പിക്കപ്പ് സ്ലോട്ടെങ്കിലും ചേർക്കൂ. | Add at least one pickup slot. |  |
+| `setup.orders.problems.pickupBad` | പിക്കപ്പ് സ്ലോട്ട് 2: സമയം 12:00-13:00 എന്ന രീതിയിൽ എഴുതൂ, വേണമെങ്കിൽ ഒരു പേരും. അത് തുടങ്ങിയതിന് ശേഷം അവസാനിക്കണം. | Pickup slot 2: write the times like 12:00-13:00, then a name if you like. It must end after it starts. |  |
+| `setup.orders.problems.deliveryBad` | ഡെലിവറി സ്ലോട്ട് 2: സമയം 12:30-13:30 എന്ന രീതിയിൽ എഴുതൂ, വേണമെങ്കിൽ ഒരു പേരും. അത് തുടങ്ങിയതിന് ശേഷം അവസാനിക്കണം. | Delivery slot 2: write the times like 12:30-13:30, then a name if you like. It must end after it starts. |  |
+| `setup.orders.problems.tooManySlots` | ഒരു പട്ടികയിൽ 8 സ്ലോട്ടുകളിൽ കൂടുതൽ പാടില്ല. | That is more than 8 slots in one list. |  |
+| `setup.orders.problems.deliveryNeedsArea` | ഡെലിവറി സ്ലോട്ടുകൾ ഉണ്ട്, പക്ഷേ സ്ഥലങ്ങൾ ഇല്ല. ഡെലിവറി ചെയ്യുന്ന സ്ഥലങ്ങൾ എഴുതൂ, അല്ലെങ്കിൽ ഡെലിവറി സ്ലോട്ടുകൾ ഒഴിവാക്കൂ. | You have delivery slots but no places. Write where you deliver, or empty the delivery slots. |  |
+| `setup.orders.problems.areaNeedsSlots` | സ്ഥലങ്ങൾ ഉണ്ട്, പക്ഷേ ഡെലിവറി സ്ലോട്ട് ഇല്ല. ഒരു ഡെലിവറി സ്ലോട്ട് ചേർക്കൂ, അല്ലെങ്കിൽ സ്ഥലങ്ങൾ ഒഴിവാക്കൂ. | You have places but no delivery slot. Add a delivery slot, or empty the places. |  |
+| `setup.orders.problems.percentBad` | അടയ്ക്കേണ്ട ഭാഗം 1 മുതൽ 99 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. ഓർഡർ മുഴുവൻ വേണമെങ്കിൽ "ഓർഡർ മുഴുവൻ" തിരഞ്ഞെടുക്കൂ. | The part to pay must be a whole number from 1 to 99. To take all of the order, choose "All of the order". |  |
+| `setup.orders.problems.holdBad` | ഓർഡർ പിടിച്ചുവയ്ക്കുന്ന മിനിറ്റ് 5 മുതൽ 1440 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The minutes an order is held must be a whole number from 5 to 1440. |  |
+| `setup.orders.problems.perDayBad` | ഒരു ദിവസത്തെ പരമാവധി ഓർഡറുകൾ 1 മുതൽ 10000 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The most orders for one day must be a whole number from 1 to 10000. |  |
+| `setup.orders.problems.perOrderBad` | ഒരു ഓർഡറിലെ പരമാവധി സാധനങ്ങൾ 1 മുതൽ 100 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The most items in one order must be a whole number from 1 to 100. |  |
+| `setup.orders.problems.daysAheadBad` | എത്ര ദിവസം മുന്നോട്ട് എന്നത് 0 മുതൽ 60 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | How many days ahead must be a whole number from 0 to 60. |  |
+| `setup.orders.problems.windowBad` | റദ്ദാക്കാനുള്ള മണിക്കൂർ 0 മുതൽ 336 വരെയുള്ള പൂർണ്ണ സംഖ്യയായിരിക്കണം. | The cancellation hours must be a whole number from 0 to 336. |  |
+| `setup.orders.problems.refundBad` | റീഫണ്ട് പരിധി പൂർണ്ണ രൂപയിൽ, 0 അല്ലെങ്കിൽ കൂടുതൽ ആയിരിക്കണം. | The refund limit must be a whole number of rupees, 0 or more. |  |
+| `setup.orders.problems.approveBad` | നിങ്ങളുടെ സമ്മതം വേണ്ട ഓർഡർ തുക പൂർണ്ണ രൂപയിൽ, 0 അല്ലെങ്കിൽ കൂടുതൽ ആയിരിക്കണം. | The order total for your OK must be a whole number of rupees, 0 or more. |  |
+| `setup.orders.problems.orderTooBig` | ഒരു ഓർഡർ ₹12,000 വരെ ആകാം (ഏറ്റവും കൂടുതൽ സാധനങ്ങൾ, ഏറ്റവും വിലയുള്ളത്), ഇത് ഒരു ദിവസം തിരികെ നൽകാവുന്ന ₹50,000-ൽ കൂടുതലാണ്. ഒരു ഓർഡറിലെ സാധനങ്ങളോ വിലയോ കുറയ്ക്കൂ. | One order could come to ₹12,000 (the most items, all of your dearest item), which is more than the ₹50,000 that can be refunded in a day. Lower the most items in one order, or the price. |  |
 | `setup.languagesStep.main` | ഉപഭോക്താക്കളുടെ പ്രധാന ഭാഷ | Main language of your customers |  |
 | `setup.languagesStep.also` | ഉപഭോക്താക്കൾ എഴുതാറുള്ള മറ്റ് ഭാഷകളും ടിക്ക് ചെയ്യൂ | Also tick any others your customers write in |  |
 | `setup.languagesStep.hint` | ഏജന്റ് പ്രധാന ഭാഷയിൽ തുടങ്ങും, ഓരോ ഉപഭോക്താവും എഴുതുന്ന ഭാഷയിൽ മറുപടി നൽകും. | The agent starts in the main language and answers each customer in the one they write in. |  |
@@ -866,6 +943,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.variants.calendar` | കലണ്ടർ പ്രശ്നം | a calendar problem |  |
 | `inbox.variants.owner` | ഉടമയുടെ മറുപടിക്കായി | for the owner's answer |  |
 | `inbox.variants.agent` | വീണ്ടും അയയ്ക്കാനായി | to be sent again |  |
+| `inbox.variants.big_order` | വലിയ ഓർഡർ | a big order |  |
 | `inbox.actions.recheck_payment` | പണം വീണ്ടും പരിശോധിക്കുക | Check the payment again |  |
 | `inbox.actions.retry_booking` | ബുക്കിങ് വീണ്ടും ഉറപ്പിക്കാൻ ശ്രമിക്കുക | Try to confirm the booking again |  |
 | `inbox.actions.ask_owner_again` | ഉടമയോട് വീണ്ടും ചോദിക്കുക | Ask the owner again |  |

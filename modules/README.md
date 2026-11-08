@@ -1,6 +1,6 @@
 # Modules: what every agent template shares
 
-A template (Bookings, Fees) is a set of settings, a few rules and the words it says. Everything else is the same work: sending a WhatsApp message, making a payment link, asking for a refund through Guard, keeping the record, reading a customer's message. That work lives here once. **Templates import it. It is moved, not copied.**
+A template (Bookings, Fees, Orders) is a set of settings, a few rules and the words it says. Everything else is the same work: sending a WhatsApp message, making a payment link, asking for a refund through Guard, keeping the record, reading a customer's message. That work lives here once. **Templates import it. It is moved, not copied.**
 
 **One rule:** a module imports nothing from a template or from the bundle. A test (`test/boundary.test.ts`) fails if one does. When a module needs something a template knows (its words, its facts, what a booking is), the template hands it in. Those hand-in points are listed under each module.
 

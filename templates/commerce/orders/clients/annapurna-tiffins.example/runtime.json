@@ -1,0 +1,7 @@
+{
+  "mode": "fakes",
+  "host": "127.0.0.1",
+  "port": 8780,
+  "dataDir": "data",
+  "tickSeconds": 30
+}

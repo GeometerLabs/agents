@@ -14,7 +14,7 @@
 //   history/settings-history.jsonl   every saved version of the settings, with who saved it (starts when the panel began keeping it)
 //   accounts.json                    which phone number, calendar and payment mode the shop used: names, never keys
 //   record/record.jsonl              the shop's record of what the agent did, one entry per line
-//   record/cases.jsonl               the bookings (or fees), one per line
+//   record/cases.jsonl               the bookings (or fees, or orders), one per line
 //   assignment.json                  who served the shop, and every move to someone else with its reason (when there was one)
 //   status.json                      the deployer's last word on the shop
 //   reports/<month>/...              each monthly report and certificate the panel made, signed (.json) and readable (.html)
@@ -37,7 +37,7 @@ export const EXPORT_FORMAT = "geometer-shop-export/1";
 export interface ExportSources {
   /** shops/<shop>/<name>: settings.json, pathway.lock, runtime.json, assignment.json, settings-history.jsonl, status via `status`. */
   shopFile(name: string): string | undefined;
-  /** exports/<shop>/<name>: record.json, bookings.json, dues.json. */
+  /** exports/<shop>/<name>: record.json, bookings.json, dues.json, orders.json. */
   exportFile(name: string): string | undefined;
   /** When the deployer last wrote the record's export (ISO). */
   exportedAt(): string | undefined;
@@ -175,8 +175,8 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
 
   // ---- the record and the cases, as JSON lines
   const record = jsonLines(src.exportFile("record.json"), "The record", warnings);
-  const casesName = template === "fees" ? "dues.json" : "bookings.json";
-  const cases = jsonLines(src.exportFile(casesName), template === "fees" ? "The fees" : "The bookings", warnings);
+  const casesName = template === "orders" ? "orders.json" : template === "fees" ? "dues.json" : "bookings.json";
+  const cases = jsonLines(src.exportFile(casesName), template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
   const recordAsOf = src.exportedAt() ?? null;
   if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
   else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are short hashes in it, as in the monthly reports.`);
@@ -267,7 +267,7 @@ WHAT IS IN IT
   record/record.jsonl           the record of what the agent did, tried, or was stopped from doing: one JSON entry per line, in order
                                 {"seq","time","conversation","booking","action","inputsDigest","outcome","decisions","language","notes","refs"}.
                                 "booking" holds the id of the booking (or the student's fee) the entry is about. "conversation" and customers are short hashes.
-  record/cases.jsonl            the bookings (or, for a Fees centre, the fees), one per line, as the agent held them. Customers are short hashes.
+  record/cases.jsonl            the bookings (or, for a Fees centre, the fees, or, for an Orders shop, the orders), one per line, as the agent held them. Customers are short hashes; a delivery address is not in it.
   assignment.json               who serves the shop, and every move to another partner or builder with its date and reason (only when there has been one)
   status.json                   the deployer's last word on the shop (versions, limits proven, backups)
   reports/<month>/              each monthly report and its certificate: the signed .json and the readable .html
