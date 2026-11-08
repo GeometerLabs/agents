@@ -311,7 +311,7 @@ Guard now reads fleet's lease itself (monorepo ADR-0062): a `[licence]` table in
 | `shop` | the shop's id, or the id of an agent someone else wrote | a lease lists both; this closes "an agent someone else wrote is not restricted by the lease" |
 | `wind_down_refuses` | `["create_link", "insert"]` | a new payment link, a new calendar event |
 | `stopped_refuses` | `["create_link", "insert", "send"]` | and a message, in the final stop |
-| `owner_numbers` | the owner's WhatsApp number from the settings | the final stop's one notice to the owner still goes. Only a number Guard reads as one (6 to 15 digits, `+`, spaces, dashes and brackets) is written, because Guard refuses the whole file for one it cannot read |
+| `owner_numbers` | the owner's WhatsApp number from the settings, and the numbers of the shop's other people who approve refunds (B37, `approvers`) | in the final stop, two kinds of message must still go: the owner's one notice, and the approvals relay's question about a refund Guard holds. The relay asks the shop's other people too, and asks only them when the owner asked for the refund. Without their numbers such a refund could never be approved, and money owed must always go through. Only a number Guard reads as one (6 to 15 digits, `+`, spaces, dashes and brackets) is written, because Guard refuses the whole file for one it cannot read |
 | `recipient_field` | `"to"` | Guard's own default, written out so the file says which field the owner's exception reads. The monorepo's templates leave it out; `test/drift.test.ts` knows it as the bundle's own addition |
 
 The model Guard never gets it: it serves every shop on the server.
@@ -342,7 +342,15 @@ Every bundle container ran inside one parent cgroup capped at **2 CPUs and 4 GiB
 
 The stand-ins are now **one set per shop**, picked by the credential each shop's Guard adds. Before this, every shop's booking `b-1` met the same fake Razorpay and calendar, so "look first" could find another shop's link.
 
-The test's own settings: the shops' hourly caps were raised so that the load could not meet them, and the heartbeat ran every 10 s instead of 60. **Result: 224 checks, 223 passed.** The one that failed was the proof's own count (below).
+The test's own settings: the shops' hourly caps were raised so that the load could not meet them, and the heartbeat ran every 10 s instead of 60. **Result: 224 checks, 223 passed.** The one that failed was the proof's own count (below). One that passed showed less than its words say: "the 10 s interval reached Litestream" read only the generated file, and Litestream ignores that key (see Litestream below).
+
+Changed in the proof after this run, and not run since:
+
+- the 25-shop health count (below);
+- each load step's quiet minute, which now counts Litestream's operations too;
+- the CPU top list, which now leaves out the test's own containers;
+- the Litestream comparison, taken out;
+- the approvers' numbers in `owner_numbers` (unit-tested only; this run's shops had no other approvers).
 
 | Claim | Result |
 |---|---|
@@ -370,15 +378,22 @@ How to read the columns:
 - **Disk** is the shop's volumes by `du` (the runtime about 1 MiB, its three Guards' stores and evidence about 12 MiB).
 - **Disk writes** are the cgroup's `io.stat`. The 300 to 500 MiB a shop an hour was measured, not explained: it is more than the records written, and where it comes from (SQLite's own writes, Guard's evidence, Litestream's local copies) was not taken apart.
 
+**Per shop**, from the line through 1 to 25 shops:
+
+- memory, about **77 MiB** a shop on a base of about 265 MiB (cgroup memory, page cache included);
+- CPU, about **0.02 cores** a shop under this load;
+- disk, about **13 MiB** a shop after these runs.
+
 **The bound** is a customer's first answer within 5 s, 95 times in 100, and every message answered. Every count stayed within it, so **the ceiling was not found: the result is at least 25 shops**. At 25 shops, the slowest answer was 1.09 s.
 
 At 25 shops the cap throttled the containers for 38.8 s in all over the 120 s, although they used 0.54 cores on average. The bursts come from ops, which asks every Guard and runtime at each heartbeat, here every 10 s instead of 60. ops was the busiest container (20% of a core).
 
 **Litestream's bucket operations** at its default settings were about **1,350 to 1,750 per shop per hour under this load**, and about 700 to 800 when quiet: roughly 800 `ListObjectsV2` and 550 `PutObject`.
 
-- **The sync interval is not the lever.** Litestream 0.5.17 ignores a replica's `sync-interval`. A database written every 200 ms gave 159 uploads in 150 s at the default, 158 at `sync-interval: 10s`, and 159 at `1s`. Its database-level `monitor-interval: 10s` gave 21. So the bundle has **no interval setting**: the one first written for this did nothing and was taken out. At salon rates, a shop's database changes only every 7 to 15 s, so neither interval limits the uploads.
+- **The sync interval is not the lever.** Litestream 0.5.17 ignores a replica's `sync-interval`. A database written every 200 ms gave 159 uploads in 150 s at the default, 158 at `sync-interval: 10s`, and 159 at `1s`. Its database-level `monitor-interval: 10s` gave 21, and left its other operations about the same. The setting first written for this (`sync-interval`) did nothing and was taken out.
+- **At salon rates a longer interval would save little.** A shop's database changes only every 7 to 15 s. At 10 s its uploads could not pass 360 an hour, against the 540 measured, so the saving is at most about 13% of roughly 1,350 operations an hour. That bound is worked out, not measured at salon load. The interval is not clearly better, so the bundle has **no interval setting** and keeps Litestream's defaults.
 - **Most of the operations are Litestream's own listing and compaction**, which go on even when a shop is quiet.
-- **The cost.** Google Cloud Storage counts both a list and an upload as Class A. At $0.005 per 1,000, that is about 1 million operations, or $5 (about ₹410), for each shop each month. That is far above the 300,000 operations in all that the monorepo's `deploy/infrastructure/docs/costs.md` assumes; Deferred.md has the levers.
+- **The cost**, to be confirmed against Google's pricing page, as `costs.md` says of its own figures. From memory, a list and an upload are both Class A, at about $0.005 per 1,000. That makes about 1 million operations, or about $5 (₹410), for each shop each month. **At 25 shops that is about $125 (roughly ₹10,000) a month: on its own, about twice the ₹5,000 monthly cap.** The monorepo's `deploy/infrastructure/docs/costs.md` assumes 300,000 operations in all. Deferred.md has the levers; the cost decision is the owner's.
 - **What a crash loses** is unchanged: a container or the server can crash and lose nothing, because the database is on the server's disk. Losing the disk itself loses up to about a second of the newest changes.
 
 The two Litestream windows of the run itself (at its default, and with the ignored `sync-interval: 10s`) gave 457 and 1,334 operations under load, and 791 and 695 when quiet. Both were at the default, so the spread shows how noisy a 2-minute window is against Litestream's own schedule.

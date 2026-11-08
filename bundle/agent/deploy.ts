@@ -4,7 +4,7 @@
 // builder runs it, and calls the Guards by the addresses printed here.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { Refused, bringUp, compileAndVerify, contentHash, guardLicenceOn, licenceFor, ops, ownerOf, proveRunning, renewRelayCredential, serverProblems, writeServer } from "../deploy.ts";
+import { Refused, bringUp, compileAndVerify, contentHash, guardLicenceOn, licenceFor, ops, ownNumbersOf, proveRunning, renewRelayCredential, serverProblems, writeServer } from "../deploy.ts";
 import type { Context, PreparedGuard } from "../deploy.ts";
 import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
@@ -151,7 +151,7 @@ export async function checkAgent(ctx: Context, name: string): Promise<{ ok: bool
     const licence = await guardLicenceOn(ctx, server);
     if (licence.why) notes.push(licence.why);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownerOf(prepared.folder))));
+      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -187,7 +187,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   // B13: an agent someone else wrote is restricted by the lease at its Guards, as a shop is (its id is the shop's id in the lease)
   const licence = await guardLicenceOn(ctx, server);
   if (licence.why) ctx.log(`note: ${licence.why}`);
-  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownerOf(prepared.folder))));
+  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
   if (problems.length > 0) throw new Refused(problems);
 
   // nothing broken: no secret in any file we are about to write, then write
