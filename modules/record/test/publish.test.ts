@@ -62,7 +62,7 @@ test("a fingerprint file edited by hand, or with a line taken out, is refused wh
     const lines = readFileSync(file, "utf8").split("\n").filter(Boolean);
     writeFileSync(file, `${lines[0]}\n${lines[2]}\n`);
     assert.throws(() => readFingerprints(file), /changed or a line was removed/);
-    writeFileSync(file, `${lines[0].replace("\"seq\":2", "\"seq\":9")}\n`);
+    writeFileSync(file, `${lines[0].replace("\"seq\":2", "\"seq\":9")}\n${lines[1]}\n`);
     assert.throws(() => readFingerprints(file), /changed or a line was removed|changed by hand/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -113,7 +113,7 @@ test("with the owner's yes: the line is pushed to a (local, fake) public reposit
     appendFileSync(join(work, "README"), "fingerprints\n");
     git("git", ["add", "README"], { cwd: work });
     git("git", ["-c", "user.name=t", "-c", "user.email=t@localhost", "commit", "-q", "-m", "start"], { cwd: work });
-    git("git", ["push", "-q", "origin", "HEAD"], { cwd: work });
+    git("git", ["push", "-q", "-u", "origin", "HEAD"], { cwd: work });
     const port = (calendar.address() as { port: number }).port;
     const yes = { by: "Asha (owner)", at: "2026-11-02T10:00:00Z" };
     const targets = { git: { enabled: true, repo: work, yes }, opentimestamps: { enabled: true, calendars: [`http://127.0.0.1:${port}`], yes } };

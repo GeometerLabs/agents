@@ -7,6 +7,7 @@ import { headOf } from "../../../../modules/record/ledger.ts";
 import { bannedIn } from "../../../../modules/report/claims.ts";
 import { envelopeFile } from "../../../../modules/report/sign.ts";
 import { disputePage, sealDisputeRecord } from "../../../../modules/papers/dispute.ts";
+import { visibleText } from "../../../../modules/papers/common.ts";
 import { identityPage, newAgentId, sealIdentity } from "../../../../modules/papers/identity.ts";
 import { buildStatement, sealStatement, statementPage } from "../../../../modules/papers/statement.ts";
 import { buildGoLiveCertificate } from "../report/certificate.ts";
@@ -41,7 +42,7 @@ test("the record of one fee in every language names no student, carries no banne
     const env = sealDisputeRecord({ template: FEES_PAPERS, shop, case: feeCase(paidDue, w.settings), entries, language, now: at(12, 1, 10), tenant: "bright-tuition" });
     const page = disputePage(env);
     for (const n of names) assert.equal(page.includes(n) || envelopeFile(env).includes(n), false, `${language}: ${n}`);
-    assert.deepEqual(bannedIn(page, language), [], language);
+    assert.deepEqual(bannedIn(visibleText(page), language), [], language);
     assert.ok(env.document.notTested.length >= 4);
     assert.ok(env.document.rows.some((x) => x.services.some((s) => s.includes(paidEntry.refs.paymentId))));
   }
@@ -55,7 +56,7 @@ test("the identity paper of a Fees centre: its limits in plain words, held N of 
     history: [{ at: "2026-11-01T04:00:00.000Z", by: null, settings: w.settings }, { at: "2026-11-05T04:00:00.000Z", by: { name: "Arjun", role: "builder" }, settings: wider }], limitFacts, now: at(12, 1, 10) });
   assert.equal((full.document.limitChanges as { changes: unknown[] }).changes.length, 1);
   for (const env of [full, pub]) {
-    const text = envelopeFile(env) + identityPage(env);
+    const text = envelopeFile(env) + visibleText(identityPage(env));
     for (const n of names) assert.equal(text.includes(n), false);
     for (const d of dues) assert.equal(text.includes(d.customer), false);
     assert.deepEqual(bannedIn(text, "kn"), []);

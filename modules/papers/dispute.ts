@@ -81,7 +81,7 @@ function rowOf(e: RecordEntry, d: PaperWords, extra: Record<string, string>, led
   if (e.refs.by === "owner") row.owner.push(actionWord(d, extra, e.action));
   for (const x of e.decisions) row.limits.push(d.dispute.rule(x.ruleId, d.dispute.verdict[x.verdict], x.reason));
   if (e.refs.approval) row.limits.push(d.dispute.guardHeld(e.refs.approval));
-  if (e.outcome === "confirmed" && !OWNER_ACTIONS.has(e.action) && e.refs.markedBy !== "owner") {
+  if (e.outcome === "confirmed" && !OWNER_ACTIONS.has(e.action) && !CUSTOMER_ACTIONS.has(e.action) && e.refs.markedBy !== "owner") {
     const byService = new Map<string, string[]>();
     for (const [k, v] of Object.entries(e.refs)) if (SERVICE_OF[k] && v) byService.set(SERVICE_OF[k], [...(byService.get(SERVICE_OF[k]) ?? []), v]);
     for (const [s, ids] of byService) row.services.push(d.dispute.showed(d.dispute.service[s as keyof PaperWords["dispute"]["service"]], ids.join(", ") + amount));

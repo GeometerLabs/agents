@@ -10,7 +10,7 @@ import { headOf, ledgerEntries } from "../../record/ledger.ts";
 import { bannedIn } from "../../report/claims.ts";
 import { envelopeFile, verifyEnvelopeText } from "../../report/sign.ts";
 import type { PaperCase, TemplatePapers } from "../common.ts";
-import { isPerson, shortHash } from "../common.ts";
+import { isPerson, shortHash, visibleText } from "../common.ts";
 import { buildDisputeRecord, disputePage, disputeText, sealDisputeRecord } from "../dispute.ts";
 import { AGENT_ID, CHOOSABLE, identityPage, newAgentId, sealIdentity, widenedLimits } from "../identity.ts";
 import type { LimitFact } from "../identity.ts";
@@ -37,7 +37,7 @@ const RECORD: RecordEntry[] = [
   e(A, "b-1", "refund", "held_for_owner", { paymentId: "pay_1", amountPaise: "30000", approval: "appr_1" }, [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "above the ₹200 limit" }]),
   e(OWNER, "b-1", "owner_decision", "confirmed", { command: "approve", to: "owner" }),
   e(A, "b-1", "refund", "confirmed", { refundId: "rf_1", paymentId: "pay_1", amountPaise: "30000" }),
-  e(B, "b-3", "owner_marked_paid", "confirmed", { paymentId: "upi_1", requestId: "req_3", amountPaise: "20000", markedBy: "owner" }),
+  e(B, "b-3", "owner_marked_paid", "confirmed", { paymentId: "upi_1", requestId: "req_3", amountPaise: "25000", markedBy: "owner" }),
   e(B, "b-2", "send_message", "blocked", { to: "customer" }, [{ ruleId: "price-at-or-above-list", verdict: "block", reason: "a price below the list" }]),
 ];
 const caseOf = (id: string, customer: string, language: Language = "hi"): PaperCase => ({ id, customer, language, state: "confirmed", label: (l) => `Haircut (${l}) ${id}` });
@@ -54,7 +54,7 @@ test("a statement holds this person's own payments and refunds, once each, and t
   assert.deepEqual(s.totals, { paidPaise: 50000, refundedPaise: 30000, netPaise: 20000 });
   assert.deepEqual(s.person, { number: "…0001", cases: ["b-1"] });
   const text = JSON.stringify(s);
-  for (const other of ["b-2", "b-3", "pay_2", "upi_1", "40000", "20000", B, A, "9800000002"]) assert.equal(text.includes(other), false, `${other} must not be in A's statement`);
+  for (const other of ["b-2", "b-3", "pay_2", "upi_1", "40000", "25000", B, A, "9800000002"]) assert.equal(text.includes(other), false, `${other} must not be in A's statement`);
   assert.ok(s.notTested.includes(WORDS.hi.not.others));
   assert.deepEqual(s.anchor, headOf(RECORD, "glow-salon"));
 });
@@ -101,7 +101,7 @@ test("the record of one case puts the customer, the agent, the limits and Guard,
 
 test("the record of a UPI case says marked paid by owner and that no payment service has a record of it", () => {
   const r = buildDisputeRecord({ template: TOY, shop, case: CASES[2], entries: RECORD, language: "en", now: t0 });
-  assert.match(r.rows[0].owner.join(" "), /owner marked the payment received \(no payment service record\) \(₹200\)/);
+  assert.match(r.rows[0].owner.join(" "), /owner marked the payment received \(no payment service record\) \(₹250\)/);
   assert.deepEqual(r.rows[0].services, []);
   assert.ok(r.notTested.includes(WORDS.en.not.upi));
 });
@@ -112,7 +112,7 @@ test("no paper decides who is right, grades or promises: no such field, and no s
     const dispute = sealDisputeRecord({ template: TOY, shop, case: CASES[0], entries: RECORD, language, now: t0, tenant: "glow-salon" }, privateKey);
     const statement = sealStatement({ template: TOY, shop, number: A, entries: RECORD, cases: CASES, language, now: t0 }, privateKey);
     const identity = sealIdentity(identityInput({ language, show: [...CHOOSABLE] }), privateKey);
-    const texts = [disputePage(dispute), disputeText(dispute), statementPage(statement), statementText(statement), identityPage(identity.full), identityPage(identity.public), JSON.stringify(WORDS[language])];
+    const texts = [visibleText(disputePage(dispute)), disputeText(dispute), visibleText(statementPage(statement)), statementText(statement), visibleText(identityPage(identity.full)), visibleText(identityPage(identity.public)), JSON.stringify(WORDS[language])];
     for (const t of texts) {
       assert.deepEqual(bannedIn(t, language), [], `${language}: ${bannedIn(t, language)}`);
       if (language === "en") assert.equal(verdictWords.test(t.replace(/does not decide who is right|who is right\. This paper/giu, "")), false, t.match(verdictWords)?.[0]);

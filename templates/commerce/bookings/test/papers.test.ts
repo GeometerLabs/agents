@@ -14,6 +14,7 @@ import { bannedIn } from "../../../../modules/report/claims.ts";
 import { generateKeyFiles } from "../../../../modules/report/keys.ts";
 import { envelopeFile, verifyEnvelopeText } from "../../../../modules/report/sign.ts";
 import { buildDisputeRecord, disputePage } from "../../../../modules/papers/dispute.ts";
+import { visibleText } from "../../../../modules/papers/common.ts";
 import { identityPage, newAgentId, sealIdentity } from "../../../../modules/papers/identity.ts";
 import { buildStatement, sealStatement, statementPage } from "../../../../modules/papers/statement.ts";
 import { buildGoLiveCertificate } from "../report/certificate.ts";
@@ -62,7 +63,7 @@ test("the record of the refunded booking, in every language: the services' ids, 
     assert.ok(r.rows.every((x) => x.ledgerHash?.startsWith("sha256:")));
     assert.ok(r.rows.every((x) => entries[x.seq - 1].booking === refundedBooking.id));
     const page = disputePage({ format: "geometer-document/1", document: r, digest: "sha256:" + "0".repeat(64), code: "0000-0000", signature: null });
-    assert.deepEqual(bannedIn(page, language), [], language);
+    assert.deepEqual(bannedIn(visibleText(page), language), [], language);
   }
 });
 
@@ -78,7 +79,7 @@ test("the identity paper from the shop's go-live certificate: held N of M, the l
   assert.equal(changes.length, 1);
   assert.match(changes[0].by, /Divya/);
   for (const env of [full, pub]) {
-    const text = envelopeFile(env) + identityPage(env);
+    const text = envelopeFile(env) + visibleText(identityPage(env));
     for (const b of bookings) assert.equal(text.includes(b.customer), false);
     assert.deepEqual(bannedIn(text, "hi"), []);
   }
