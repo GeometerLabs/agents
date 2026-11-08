@@ -34,6 +34,7 @@ import type { LiveView } from "./contract.ts";
 import { latestPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
+import { licenceView } from "./licence.ts";
 import { createGoLive } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
@@ -278,6 +279,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
         id, name: settings?.name ?? id, live: liveOf(id),
         ...(read.ok && read.status.limits ? { limits: { proven: read.status.limits.proven, of: read.status.limits.of } } : {}),
         ...(read.ok && read.status.versions?.pathway ? { version: read.status.versions.pathway } : {}), ...(owner ? { setUpBy: owner.accountName } : {}),
+        ...(read.ok && read.status.licence?.listed ? { licence: read.status.licence.state } : {}),
       };
     });
     page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards }));
@@ -309,11 +311,13 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const report = settings && data && !isFees ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
     const plan = planView(shops.fleet(id), prices);
+    const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
       summary: settings && !isFees ? summaryOf(c, settings) : undefined,
       ...(isFees ? (settings ? { fees: feesPieces(c, id, settings, data, month) } : {}) : { cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)) }),
       ...(plan ? { plan } : {}),
+      ...(licence ? { licence } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
       inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: (isFees ? counts.fees : counts.bookings) ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),

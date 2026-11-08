@@ -64,3 +64,10 @@ Not built, or built only as far as said. The first block needs another part of t
 - Switching a saved shop from Razorpay to UPI (or back) in the panel changes the settings and the notes only. The old Razorpay secrets stay in the write-only inbox until whoever runs the server removes them.
 - The new Hindi, Malayalam and Kannada sentences (the `upi` block and the two inbox kinds) wait for a native reader.
 - A phone-width look at the new step has not been done (no browser).
+
+## The shop's licence (B13, 8 Nov)
+
+- **The renew link is fleet's, as fleet last said it.** The panel shows the link from the last heartbeat's answer; a link that has expired at Razorpay is not checked.
+  Revisit when: fleet re-links an expired invoice and partners find stale links.
+- **No licence page across shops.** The state is on each shop's page and its card; a builder with many shops has no one list of the ones that owe. Revisit when: a
+  builder asks for it.

@@ -17,6 +17,8 @@ import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
 import { formatInr } from "../../modules/language/format.ts";
 import type { Obligation } from "../../modules/unfinished/index.ts";
+import { dayWords } from "./licence.ts";
+import type { LicenceState, LicenceView } from "./licence.ts";
 import type { ShopInbox } from "./inbox.ts";
 import type { AssignmentFile } from "./contract.ts";
 import type { Draft } from "./setup.ts";
@@ -126,7 +128,7 @@ ${o.link ? html`<div class="notice"><p>${w.made}</p><code class="addr">${o.link}
 
 // ---- the shops --------------------------------------------------------------------------------------------------------------------------
 
-export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string }
+export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string; /** The licence, when the lease lists the shop and it is not in order. */ licence?: LicenceState }
 
 const liveLine = (c: Ctx, live: LiveView): Raw => html`<span class="state ${live.code}">${c.w.live[live.code]}</span>`;
 
@@ -137,7 +139,8 @@ ${o.cards.length === 0 ? html`<p class="big">${w.empty}</p><a class="btn primary
   <div class="name">${s.name}</div>
   <div>${liveLine(c, s.live)}</div>
   <div class="meta">${s.limits ? w.limits(s.limits.proven, s.limits.of) : w.limitsUnknown}${s.version ? html` · ${w.version(s.version)}` : ""}</div>
-  <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div></a>`)}</div>`}`);
+  <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div>${s.licence && s.licence !== "active" ? html`
+  <div class="meta"><b>${c.w.licence.states[s.licence]}</b></div>` : ""}</a>`)}</div>`}`);
 }
 
 // ---- the unfinished-work inbox (B31) ------------------------------------------------------------------------------------------------------------------
@@ -192,6 +195,8 @@ export interface ShopView {
   fees?: { summary: ReturnType<typeof summaryFees>; activity?: ReturnType<typeof activityFees>; messages: ReturnType<typeof messageCeiling> };
   /** Fleet's last word on the shop's plan (plan.ts). Left out when fleet has said nothing. */
   plan?: PlanView;
+  /** The shop's licence (B13): shown only when the lease lists the shop. */
+  licence?: LicenceView;
   activity?: { made: number; cancelled: number; moved: number; deposits: number; refunds: number; saidNo: number; owner: { asked: number; approved: number; denied: number } };
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
   /** This shop's unfinished work (B31), read from its exported record. */
@@ -201,6 +206,29 @@ export interface ShopView {
   details?: { statusJson: string; pins: string; runtimeJson: string };
   limitsText: string[];
   notice?: string;
+}
+
+/**
+ * The licence (B13): where it stands, in plain words, what that means for customers, the dates, fleet's renew link, and a note when the lease on this server has not been
+ * refreshed for more than 2 days. Fleet's licence warning codes are not repeated in the plan's warnings: this block says them.
+ */
+function licenceBlock(c: Ctx, l: LicenceView): Raw {
+  const w = c.w.licence;
+  const day = (d: string) => dayWords(d, c.lang);
+  const lines = [
+    l.paidThrough && (l.state === "active" || l.state === "reminder" || l.state === "warning") ? w.paidThrough(day(l.paidThrough)) : "",
+    l.windDownOn && (l.state === "reminder" || l.state === "warning") ? w.windDownOn(day(l.windDownOn)) : "",
+    l.extendedUntil && l.state !== "wind_down" && l.state !== "stopped" ? w.extended(day(l.extendedUntil)) : "",
+    l.stopOn && l.state === "wind_down" ? w.stopOn(day(l.stopOn)) : "",
+    l.exportUntil && l.state === "stopped" ? w.exportUntil(day(l.exportUntil)) : "",
+  ].filter(Boolean);
+  const urgent = l.state === "warning" || l.state === "wind_down" || l.state === "stopped";
+  return html`<h2>${w.heading}</h2>
+<p class="big"><span class="state ${urgent ? "stopped" : "live"}">${w.states[l.state]}</span></p>
+<p>${w.means[l.state]}</p>
+${lines.length > 0 ? html`<ul class="plain">${lines.map((t) => html`<li class="info"><span class="mark">·</span><span>${t}</span></li>`)}</ul>` : ""}
+${l.renewUrl ? html`<p><a class="btn primary" href="${l.renewUrl}" rel="noopener noreferrer">${w.renew}</a></p>` : ""}
+${l.staleSince ? html`<div class="notice" role="status">${w.stale(day(l.staleSince))}</div>` : ""}`;
 }
 
 /** The plan: its name and included messages, the Innovator badge, the price, and what fleet wants the partner to know (button mode, warnings). */
@@ -306,6 +334,7 @@ ${v.summary ? html`<ul class="plain">
 <form method="post" action="/shops/${v.id}/edit">${csrf(c)}<button class="btn" type="submit">${w.settingsEdit}</button></form>
 
 ${v.plan ? planBlock(c, v.plan) : ""}
+${v.licence ? licenceBlock(c, v.licence) : ""}
 
 ${v.cost ? costTable(c, v.cost) : v.fees ? feesMessagesBlock(c, v.fees.messages) : ""}
 

@@ -101,3 +101,13 @@ with no block is Razorpay, as before; the old "UPI is not built yet" refusal is 
 Fees' go-live certificate, record certificate and monthly report end in the shared seal block (`modules/report/page.ts`): the QR code (inline SVG), the link
 `https://geometer.dev/verify/#<digest>` in text under it, the code, and the sentence `scanToCheck` from `report/strings.ts`. The one-line text of the certificate now says
 `/verify/#<code>`. No WhatsApp template contains a verify link (`whatsapp-templates.json` has none), so nothing needs re-approval. The signed JSON is unchanged: the page is made from it.
+
+## The licence's wind-down and final stop (B13, 8 November 2026)
+
+As in Bookings (`templates/commerce/bookings/Explanation.md`, the same heading), with the centre's work: **in the wind-down** a parent who asks to pay, asks for a
+discount, or writes anything that would get the fee menu is answered "Online fee payment is paused for now. Please contact <centre> directly." (`fee_paused`); no new fee
+link is made (`currentLink` refuses with the decision `subscription_suspended`, and a waiver the owner approves is recorded without a new link); no month's fees are
+opened; no late fee is added; and a reminder that falls due is passed over, never kept to send later. Payments on links sent earlier are still counted and receipted, and
+refunds go on. **In the final stop** each open fee's link is closed through Guard once for each `paid_through` (`cancel_fee_link` with `refs.licence`; a UPI centre has
+none), and every message is held back. The owner's notices are `owner_licence_paused` and `owner_licence_stopped` (fees still open, other to-do items, the free copy's
+last day), as the utility templates `owner_fee_service_paused` and `owner_fee_service_stopped`. This is the runtime's own check: Guard does not read the lease yet.

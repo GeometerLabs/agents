@@ -317,7 +317,25 @@ The key: `scripts/report-key.ts <folder>` makes an Ed25519 pair, refuses any fol
 
 **Size.** `report/` is about 1,720 lines (the strings table, 325, is the largest; the scripted month, 150, is test support), `scripts/` 155, new tests about 1,010. Tests: 183 to 244 (61 new: 17 on the counts, 13 on the owner text and page, 8 on the certificates, 12 on signing and keys, 7 on the scripts, 2 on the record, 2 on the review sheets). `src/` changed by about 40 lines (`agent.ts`) and one word (`export` in `record.ts`). No dependencies.
 
-### Choices to review
+### The licence's wind-down and final stop (B13, 8 November 2026)
+
+The shop's licence comes from fleet's signed lease, which the bundle's deployer checks and hands the runtime as `client/licence.json`; the runtime reads it by its
+modified time and works the state out with its own clock (`modules/licence`). **This is the runtime's own check: Guard does not read the lease yet.**
+
+- **Wind-down: no new work.** `onBook` answers "Online booking is paused for now. Please contact <shop> directly." (`booking_paused`) before any draft is made, so
+  nothing is a promise to book later; a booking waiting for "yes" is cleared the same way in `proceedToHold`, which makes no hold and no link; a greeting or an unclear
+  message gets the same line instead of the menu. Each refusal is a `new_work` entry, `blocked`, with the decision `subscription_suspended`. Everything that finishes
+  money owed goes on: payment events and their reconciling (a deposit paid on a link sent before the wind-down still books), cancellations and their refunds, Guard's
+  held refunds, reschedules of existing bookings, reminders of existing bookings, recovery steps and the owner's commands.
+- **Final stop.** On the clock's beat the open deposit links are closed at Razorpay through Guard, once for each `paid_through` (`cancel_deposit_link` with
+  `refs.licence`; a UPI shop has none to close). Then a gate in `say` holds back every message, and the record says each one. Payments already made are still recorded.
+- **Back in order**: new bookings are taken at once; nothing from the wind-down is done by itself (the customer asks again). One `licence` record line marks each change.
+- **The owner's notice** (`server/licence.ts`, sent by `modules/licence/notice.ts` from the runtime core): `owner_licence_paused` at the wind-down,
+  `owner_licence_stopped` at the final stop (bookings still to come, other to-do items, and until when the partner can give the free copy), once for each
+  `paid_through`, as the utility templates `owner_service_paused` and `owner_service_stopped` when the owner's window is closed. They name the partner and never
+  mention money. Hindi, Malayalam and Kannada are machine-written and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+
+## Choices to review
 
 1. The record now carries amounts, the command and the recipient (decision 1). The runtime server that stores the record should keep `refs` whole.
 2. `package.json` has a version, `0.1.0`, because a certificate states the template version and there was none. Whether v0 should be called 0.1.0 is yours.

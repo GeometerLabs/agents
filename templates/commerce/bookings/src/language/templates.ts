@@ -2,7 +2,8 @@
 // and every amount, date, time, service and link in it is rendered from the record (the facts), never typed by hand
 // and never translated. Adding a language means adding one more object below; the type makes sure none is missing.
 import type { Language } from "../../../../../modules/language/languages.ts";
-import { formatInr, formatSlot } from "../../../../../modules/language/format.ts";
+import { formatDate, formatInr, formatSlot } from "../../../../../modules/language/format.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -35,6 +36,11 @@ export interface MessageFacts {
   /** UPI: what the owner marked received, and what is still to come, in whole rupees. */
   markedInr?: number;
   leftInr?: number;
+  /** The licence's service notices (B13): who the owner should contact (the partner who set the shop up), the counts the final stop's notice states, and the free export's last day. */
+  partner?: string;
+  upcomingCount?: number;
+  openCount?: number;
+  licenceDateMs?: number;
 }
 
 export type TemplateId =
@@ -55,7 +61,13 @@ export type TemplateId =
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
   // sent by the approvals relay, not by the agent: the ask for a refund Guard is holding, and the answers to the owner's reply
   | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed"
-  | UpiTemplateId;
+  | UpiTemplateId | LicenceTemplateId;
+
+/**
+ * The licence's wind-down and final stop (plan B13; modules/licence). The customer's line answers a request for new work while online booking is paused; the owner's
+ * two are the one service notice for each `paid_through` (WhatsApp utility templates). About the service, never about money; they name who to contact.
+ */
+export type LicenceTemplateId = "booking_paused" | "owner_licence_paused" | "owner_licence_stopped";
 
 /** UPI shops only (B33): the deposit is paid to the shop's own UPI ID and marked paid by the owner; refunds are sent by the owner. */
 export type UpiTemplateId =
@@ -71,6 +83,7 @@ type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
 type BaseSet = Record<Exclude<TemplateId, UpiTemplateId>, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
+type LicenceSet = Record<LicenceTemplateId, Template>;
 
 /** A template asks for a value the record does not have: refuse to write the message at all. */
 export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
@@ -463,7 +476,37 @@ const upiKn: UpiSet = {
   owner_upi_refund_kept: (f) => `ಸರಿ. ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ${inr(f, "refundInr")} ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಡಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn }, hi: { ...hi, ...upiHi }, ml: { ...ml, ...upiMl }, kn: { ...kn, ...upiKn } };
+// ---- the licence's wind-down and final stop (plan B13) --------------------------------------------------------------------------------------------------
+// The customer hears that online booking is paused and to contact the shop: no promise to book later. The owner hears once, plainly, and is told who to contact; the
+// final stop's notice says nothing is deleted, what is still open, and until when the free copy of the records can be had. Hindi, Malayalam and Kannada are
+// machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+const partner = (f: MessageFacts) => need(f, "partner");
+const until = (f: MessageFacts) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language);
+const upcoming = (f: MessageFacts) => need(f, "upcomingCount");
+const open = (f: MessageFacts) => need(f, "openCount");
+
+const licenceEn: LicenceSet = {
+  booking_paused: (f) => `Online booking is paused for now. Please contact ${f.businessName} directly.`,
+  owner_licence_paused: (f) => `Notice: online booking for ${f.businessName} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact ${partner(f)}.`,
+  owner_licence_stopped: (f) => `Notice: online booking for ${f.businessName} has stopped. Nothing is deleted. Bookings to come: ${upcoming(f)}. Other open items: ${open(f)}. ${partner(f)} can give you the full list and a free copy of all your records until ${until(f)}.`,
+};
+const licenceHi: LicenceSet = {
+  booking_paused: (f) => `ऑनलाइन बुकिंग अभी रुकी हुई है। कृपया सीधे ${f.businessName} से संपर्क करें।`,
+  owner_licence_paused: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग अभी रुकी हुई है। पहले की बुकिंग, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया ${partner(f)} से संपर्क करें।`,
+  owner_licence_stopped: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: ${upcoming(f)}। बाकी खुले काम: ${open(f)}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी ${until(f)} तक ${partner(f)} से मिल सकती है।`,
+};
+const licenceMl: LicenceSet = {
+  booking_paused: (f) => `ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
+  owner_licence_paused: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി ${partner(f)}-നെ ബന്ധപ്പെടൂ.`,
+  owner_licence_stopped: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: ${upcoming(f)}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: ${open(f)}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും ${until(f)} വരെ ${partner(f)} നൽകും.`,
+};
+const licenceKn: LicenceSet = {
+  booking_paused: (f) => `ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+  owner_licence_paused: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು ${partner(f)} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+  owner_licence_stopped: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: ${upcoming(f)}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: ${open(f)}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ${until(f)} ವರೆಗೆ ${partner(f)} ನೀಡುತ್ತಾರೆ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn }, hi: { ...hi, ...upiHi, ...licenceHi }, ml: { ...ml, ...upiMl, ...licenceMl }, kn: { ...kn, ...upiKn, ...licenceKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

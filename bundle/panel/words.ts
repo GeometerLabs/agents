@@ -65,6 +65,15 @@ export interface Words {
     buttons: string; buttonsWhy: Record<"overage_unfunded" | "other", string>;
     warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled", string>;
   };
+  /**
+   * The shop's licence (B13), from the signed lease the server keeps: where it stands and what that means for customers, its dates, fleet's renew link, and a note
+   * when the lease has not been refreshed for a while. Said to a builder or partner, never to the shop's customers.
+   */
+  licence: {
+    heading: string; states: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped", string>; means: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped", string>;
+    paidThrough(day: string): string; windDownOn(day: string): string; extended(day: string): string; stopOn(day: string): string; exportUntil(day: string): string;
+    renew: string; stale(day: string): string;
+  };
   setup: {
     title: string; chooseTemplate: string; templateNames: Record<string, string>; templateElsewhere: string; start: string; progress(n: number, of: number): string;
     steps: { business: string; deposit: string; languages: string; accounts: string; checks: string };
@@ -156,6 +165,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
   "cost.fromRecord": [38], "cost.assumption": [40], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
   "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceInnovator": ["₹299", "₹179"],
+  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
@@ -276,6 +286,20 @@ export const en: Words = {
       balance_80: "80% of the recharge balance is used. Recharge before it runs out.",
       whatsapp_unsettled: "Some WhatsApp charges are not paid from the balance yet. Recharge to settle them.",
     },
+  },
+  licence: {
+    heading: "Licence",
+    states: { active: "Licence in order", reminder: "Licence payment due", warning: "Licence payment overdue", wind_down: "Paused: no new bookings or payment requests", stopped: "Stopped" },
+    means: {
+      active: "Nothing changes for customers.",
+      reminder: "Nothing changes for customers yet.",
+      warning: "Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests.",
+      wind_down: "Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once.",
+      stopped: "Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free.",
+    },
+    paidThrough: (day) => `Next payment due: ${day}.`, windDownOn: (day) => `If it is not paid, new bookings pause on ${day}.`, extended: (day) => `Geometer's emergency extension covers it until ${day}.`,
+    stopOn: (day) => `Final stop planned for ${day}.`, exportUntil: (day) => `Free download of the shop's records until ${day}.`,
+    renew: "Pay to renew", stale: (day) => `Licence not refreshed since ${day}. Check that this server reaches Geometer. Write to support. A person answers.`,
   },
   setup: {
     title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes" },

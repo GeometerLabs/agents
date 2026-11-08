@@ -19,7 +19,7 @@ import { dueDate, inr, need, payTo, render } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode";
+export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "open" | "until";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   student: (f) => need(f, "studentName"),
@@ -41,18 +41,24 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   code: (f) => need(f, "approvalCode"),
   hours: (f) => String(need(f, "approvalHours")),
   upiCode: (f) => need(f, "upiCode"),
+  partner: (f) => need(f, "partner"),
+  openFees: (f) => String(need(f, "openFeesCount")),
+  open: (f) => String(need(f, "openCount")),
+  until: (f) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
-const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", student: "§student§", batch: "§batch§", month: "§month§", link: "§link§", phone: "§phone§", ref: "§ref§", req: "§req§", code: "§code§", upiCode: "§upicode§" };
+const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", student: "§student§", batch: "§batch§", month: "§month§", link: "§link§", phone: "§phone§", ref: "§ref§", req: "§req§", code: "§code§", upiCode: "§upicode§", partner: "§partner§" };
 const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { fee: 7_000_001, late: 7_000_002, balance: 7_000_003, paid: 7_000_004, received: 7_000_005, waiver: 7_000_006, refund: 7_000_007, limit: 7_000_008 };
 const STAND_IN_DUE_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of ours would state (Fri 14 Jun 2030)
 const STAND_IN_HOURS = 7_000_009;
+const STAND_IN_COUNT: Partial<Record<Slot, number>> = { openFees: 7_000_010, open: 7_000_011 };
+const STAND_IN_UNTIL_MS = Date.UTC(2031, 6, 15, 0, 0); // another date no message of ours would state (Tue 15 Jul 2031)
 
 function standInFacts(language: Language): MessageFacts {
-  const facts: MessageFacts = { language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, dueMs: STAND_IN_DUE_MS, approvalHours: STAND_IN_HOURS };
+  const facts: MessageFacts = { language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, dueMs: STAND_IN_DUE_MS, approvalHours: STAND_IN_HOURS, openFeesCount: STAND_IN_COUNT.openFees, openCount: STAND_IN_COUNT.open, licenceDateMs: STAND_IN_UNTIL_MS };
   const set = facts as unknown as Record<string, unknown>;
-  const names: Partial<Record<Slot, string>> = { student: "studentName", batch: "batchName", month: "monthLabel", link: "link", phone: "customerPhone", ref: "dueRef", req: "requestRef", code: "approvalCode", upiCode: "upiCode" };
+  const names: Partial<Record<Slot, string>> = { student: "studentName", batch: "batchName", month: "monthLabel", link: "link", phone: "customerPhone", ref: "dueRef", req: "requestRef", code: "approvalCode", upiCode: "upiCode", partner: "partner" };
   for (const [slot, key] of Object.entries(names)) set[key] = STAND_IN_TEXT[slot as Slot];
   const amounts: Partial<Record<Slot, string>> = { fee: "feeInr", late: "lateFeeInr", balance: "balanceInr", paid: "paidInr", received: "receivedInr", waiver: "waiverInr", refund: "refundInr", limit: "waiverLimitInr" };
   for (const [slot, key] of Object.entries(amounts)) set[key] = STAND_IN_AMOUNT[slot as Slot];
@@ -65,6 +71,8 @@ function bodyOf(id: TemplateId, language: Language): string {
   for (const [slot, stand] of Object.entries(STAND_IN_TEXT)) text = text.split(stand!).join(`{${slot}}`);
   for (const [slot, n] of Object.entries(STAND_IN_AMOUNT)) text = text.split(formatInr(n)).join(`{${slot}}`);
   text = text.split(formatDate(localParts(STAND_IN_DUE_MS, "UTC"), language)).join("{date}");
+  text = text.split(formatDate(localParts(STAND_IN_UNTIL_MS, "UTC"), language)).join("{until}");
+  for (const [slot, n] of Object.entries(STAND_IN_COUNT)) text = text.split(String(n)).join(`{${slot}}`);
   return text.split(String(STAND_IN_HOURS)).join("{hours}");
 }
 
@@ -99,6 +107,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_fee_upi_refund_reminder", "owner_fee_upi_refund_reminder", "owner"),
   template("fee_upi_refund_coming", "fee_upi_refund_owed", "customer"),
   template("fee_upi_refund_marked_sent", "fee_upi_refund_sent", "customer"),
+  // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
+  template("owner_fee_service_paused", "owner_licence_paused", "owner"),
+  template("owner_fee_service_stopped", "owner_licence_stopped", "owner"),
 ];
 
 const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
@@ -122,6 +133,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     waiverInr: settings.waiver.limitInr || 100, refundInr: batch.monthlyFeeInr, waiverLimitInr: settings.waiver.limitInr,
     dueMs: Date.UTC(2026, 10, 4, 18, 30), // Thu 5 Nov 2026 at midnight in India
     link: "https://rzp.io/i/example", dueRef: "f-3", requestRef: "q-2", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, upiCode: "P4XR9T", payee: settings.name,
+    partner: "Divya, local partner", openFeesCount: 4, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30), // Fri 5 Mar 2027 in India
   };
 }
 
