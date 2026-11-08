@@ -7,7 +7,7 @@
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner"]      copy a client folder in (settings.json, runtime.json, pathway.lock); --prepared-by is the name the
 //                                owner's monthly report message says set the shop up (written to report.json; without it the message says "your builder")
-//   shop add <name> --template bookings|fees [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ...]      start a shop from a template of this checkout: its example
+//   shop add <name> --template bookings|fees|orders [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ...]      start a shop from a template of this checkout: its example
 //                                settings (or the file --settings names, checked first), a pin to the template's version here, and a runtime.json that names the WhatsApp number (and, for
 //                                a template with a calendar, the calendar). The settings start as the template's made-up example: change them to the real ones.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
