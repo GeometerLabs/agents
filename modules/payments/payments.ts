@@ -71,9 +71,9 @@ export interface Payments {
    * Refund part or all of a payment, never more than what is left on it. Through a Guard, a refund above the owner's limit is not
    * done: it throws GuardHeldError (HTTP 202), carrying the exact bytes it was sent with in `call.body`.
    */
-  refund(paymentId: string, request: { amount: number; receipt?: string }): Promise<Refund>;
+  refund(paymentId: string, request: { amount: number; receipt?: string; requestedBy?: string[] }): Promise<Refund>;
   /** Send a refund Guard held again, with those exact bytes (`call.body` of the GuardHeldError). Only after the owner approved it. */
-  resendRefund(paymentId: string, body: string): Promise<Refund>;
+  resendRefund(paymentId: string, body: string, requestedBy?: string[]): Promise<Refund>;
   listRefunds(paymentId: string): Promise<Refund[]>;
 }
 
@@ -143,8 +143,8 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
   const call = (paymentId: string, body: string): SentCall => ({ method: "POST", path: `/v1/payments/${encodeURIComponent(paymentId)}/refund`, body });
   const info = (decision: string, code: string, retry: string, reason?: string, detail: unknown = null): GuardInfo => ({ decision, code, sent: "no", retry, ...(reason ? { reason } : {}), detail });
 
-  /** One refund call, as the service sees it after Guard (if there is one) has decided: the same bytes whether first sent or sent again. */
-  async function refundCall(paymentId: string, bodyText: string): Promise<Refund> {
+  /** One refund call, as the service sees it after Guard (if there is one) has decided: the same bytes whether first sent or sent again. `requestedBy` is the Geo-Requested-By header's ids. */
+  async function refundCall(paymentId: string, bodyText: string, requestedBy?: string[]): Promise<Refund> {
     const sentCall = call(paymentId, bodyText);
     const request = JSON.parse(bodyText) as { amount: number; receipt?: string };
     const before = faults.peek("refund");
@@ -163,7 +163,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       throw new GuardHeldError(202, "held by the Guard: an earlier attempt has an unknown outcome and the provider could not be asked; the Guard will not repeat it", info("hold", "held_for_approval", "after_approval", undefined, detail), sentCall, null, null);
     }
     if (guard) {
-      const decision = guard.decideRefund(paymentId, request);
+      const decision = guard.decideRefund(paymentId, request, requestedBy);
       switch (decision.kind) {
         case "hold": {
           const detail = { approval: decision.approval, status: "pending", expires_at_ms: decision.expiresAtMs };
@@ -263,11 +263,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     },
 
     async refund(paymentId, request) {
-      return refundCall(paymentId, JSON.stringify({ amount: request.amount, receipt: request.receipt })); // the same bytes the live adapter sends
+      return refundCall(paymentId, JSON.stringify({ amount: request.amount, receipt: request.receipt }), request.requestedBy); // the same bytes the live adapter sends
     },
 
-    async resendRefund(paymentId, body) {
-      return refundCall(paymentId, body);
+    async resendRefund(paymentId, body, requestedBy) {
+      return refundCall(paymentId, body, requestedBy);
     },
 
 

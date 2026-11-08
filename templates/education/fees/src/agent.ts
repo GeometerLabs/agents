@@ -12,6 +12,7 @@
 // following Guard's hold (payments/refunds.ts), reading a message with the month's AI allowance (understanding/reader.ts) and reminders (reminders/reminders.ts).
 // What is left here is Fees: the student's fee for a month, its states and its words.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
@@ -75,6 +76,9 @@ export function createAgent(deps: AgentDeps): Agent {
   const policy: AiPolicy = deps.ai ?? {};
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
+  // B37: with other approvers, a refund the owner's own command asks for names the owner (Geo-Requested-By), and the others' code replies are the relay's
+  const askedByOwner = ownerAsked(settings.approvers);
+  const approverDigits = approverNumbers(settings.approvers);
   const parseContext = { languages: settings.languages };
   const highestInr = highestDueInr(settings);
   store.startedAtMs ??= clock.now(); // the day this agent first ran: a month whose first reminder day was before it is not chased
@@ -581,8 +585,9 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     log(due, owner, "owner_decision", "confirmed", { command }, { decisions: [once, limit], refs: said });
-    const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr));
-    await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending" });
+    // with other approvers (B37) the owner is named as asking for it: if Guard holds it, someone else approves it
+    const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr), askedByOwner);
+    await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
   }
 
   // ---- events --------------------------------------------------------------------------------------------------------------
@@ -593,6 +598,8 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     store.seenMessages.add(msg.id);
+    // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
     if (msg.voiceNote) return onVoiceNote(msg);
     if (msg.from === owner) return onOwnerMessage(msg);
 

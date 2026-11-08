@@ -35,7 +35,19 @@ export interface Approval {
   expiresAtMs: number;
   decidedAtMs?: number;
   approver?: string;
+  /** B37: who asked for the call (Geo-Requested-By). None of them may decide it. */
+  requestedBy?: string[];
+  /** B37: how many different people must approve (set only when more than one). */
+  needed?: number;
+  /** B37: each answer so far, oldest first. */
+  votes?: { approver: string; approve: boolean; role: string; atMs: number }[];
 }
+
+/**
+ * B37 (Guard's ADR-0061): the approver directory a shop with other people has (bundle/generate/guards.ts writes the same one): the owner and the people hold the
+ * lower role (`shop-owner`, up to `twoAbovePaise`) and the upper one (`shop-two`, two approvals); the relay's reading credential (`reader`) holds the lower one only.
+ */
+export interface ModelApprovers { owner: string; people: string[]; twoAbovePaise?: number; reader?: string }
 
 /** An item of GET /admin/reviews, as Guard words it (typed `arguments`, plain `amount`, times as strings). */
 export interface ReviewItem {
@@ -50,10 +62,16 @@ export interface ReviewItem {
   summary: string;
   requested_at_ms: string;
   expires_at_ms: string;
-  waiting_for: "shop-owner";
+  waiting_for: "shop-owner" | "shop-two";
   you_may_decide: boolean | null;
   why_not: string | null;
   stuck: null;
+  /** B37: only on a request that needs several approvals or names who asked, as Guard writes them. */
+  approvals_needed?: number;
+  approvals_given?: number;
+  votes?: { approver: string; decision: "approve" | "deny"; role: string; at_ms: string }[];
+  requested_by?: string[];
+  may_still_decide?: string[];
 }
 
 export type RefundDecision =
@@ -71,8 +89,8 @@ export interface GuardModel {
   readonly ttlMs: number;
   /** Decide creating a payment link for this many paise: the spec's bound on the amount (HTTP 403, the rule's own id) or a pass. A spec with no such bound lets any amount through. */
   decideLink(amountPaise: unknown): { kind: "pass" } | { kind: "refused"; reason: string; ruleId: string };
-  /** Decide a refund call: its payment id and the JSON body exactly as it was sent. */
-  decideRefund(paymentId: string, body: unknown): RefundDecision;
+  /** Decide a refund call: its payment id and the JSON body exactly as it was sent, and who asked for it (the Geo-Requested-By header's ids, which are not part of the call). */
+  decideRefund(paymentId: string, body: unknown, requestedBy?: string[]): RefundDecision;
   /** The service answered the call that `decideRefund` let through. */
   recordSent(paymentId: string, body: unknown, reply: unknown): void;
   /** The call that `decideRefund` let through may have happened and the answer was lost (or was a 5xx, `providerStatus`). `body` is the call as it was sent. */
@@ -85,8 +103,8 @@ export interface GuardModel {
   /** Pending holds, for the review queue. `viewer` says whether the reader may decide them. */
   reviews(agent: string, mayDecide: boolean | null): ReviewItem[];
   approvals(): Approval[];
-  /** An approver's decision on a hold. The status and message are Guard's. */
-  decide(approvalId: string, approve: boolean, approver: string): { status: 200; approval: Approval } | { status: 404 | 409; error: string };
+  /** An approver's decision on a hold. The status and message are Guard's (B37: a vote, while more approvals are needed, leaves it pending). */
+  decide(approvalId: string, approve: boolean, approver: string): { status: 200; approval: Approval } | { status: 403 | 404 | 409; error: string };
 }
 
 /** The canonical form of a call: fields sorted, values keeping their JSON types. */
@@ -96,7 +114,17 @@ export function callKeyOf(paymentId: string, body: unknown): string {
   return JSON.stringify([paymentId, sorted]);
 }
 
-export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
+export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { approvers?: ModelApprovers } = {}): GuardModel {
+  const directory = options.approvers;
+  /** The role a new hold of this amount is assigned to, and how many approvals it needs (Guard: the covering role with the lowest ceiling). */
+  const tierOf = (amount: number): { role: "shop-owner" | "shop-two"; needed?: number } => (directory?.twoAbovePaise !== undefined && amount > directory.twoAbovePaise ? { role: "shop-two", needed: 2 } : { role: "shop-owner" });
+  /** Who may still decide a request: the role's holders, less the people who asked and those who answered (review.rs may_still_decide). */
+  const mayStillDecide = (a: Approval): string[] => {
+    if (!directory) return [];
+    const holders = [directory.owner, ...directory.people, ...(a.needed === undefined && directory.reader ? [directory.reader] : [])];
+    return holders.filter((p) => !(a.requestedBy ?? []).includes(p) && !(a.votes ?? []).some((v) => v.approver === p)).sort();
+  };
+  const several = (a: Approval) => a.needed !== undefined || (a.requestedBy?.length ?? 0) > 0;
   const rules = refundRulesOf(spec);
   const ttlMs = rules.approvalTtlSeconds * 1000;
   const approvals: Approval[] = [];
@@ -124,7 +152,8 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
       return outside === undefined ? { kind: "pass" } : { kind: "refused", reason: outside, ruleId: bound.ruleId };
     },
 
-    decideRefund(paymentId, body) {
+    decideRefund(paymentId, body, requestedBy) {
+      const asked = (requestedBy ?? []).filter((r) => r.length > 0);
       const amount = amountOf(body);
       if (amount === undefined) return { kind: "refused", reason: "refund-needs-owner: cannot decide: no amount in the call", ruleId: "refund-needs-owner" }; // a missing or non-numeric amount is never read as a pass
       // The bound on the amount is decided first, and a refusal wins over a hold (Guard folds every rule's answer: any refusal refuses, otherwise any hold holds).
@@ -142,10 +171,19 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
           usable.state = "consumed"; // an approval works once
         } else {
           const pending = approvals.find((a) => a.callKey === callKey && a.state === "pending" && !expired(a));
-          if (pending) return { kind: "hold", approval: pending.id, expiresAtMs: pending.expiresAtMs };
+          if (pending) {
+            // someone asking for the identical call while it is pending joins the same hold, as another person who asked (B37)
+            const more = asked.filter((r) => !(pending.requestedBy ?? []).includes(r));
+            if (more.length > 0) pending.requestedBy = [...(pending.requestedBy ?? []), ...more].sort();
+            return { kind: "hold", approval: pending.id, expiresAtMs: pending.expiresAtMs };
+          }
           const now = clock.now();
           const fields = { ...(body as Record<string, unknown>), payment_id: paymentId };
-          const created: Approval = { id: `ap-stub-razorpay-${++seq}`, state: "pending", callKey, paymentId, fields, amountPaise: amount, requestedAtMs: now, expiresAtMs: now + ttlMs };
+          const tier = tierOf(amount);
+          const created: Approval = {
+            id: `ap-stub-razorpay-${++seq}`, state: "pending", callKey, paymentId, fields, amountPaise: amount, requestedAtMs: now, expiresAtMs: now + ttlMs,
+            ...(tier.needed ? { needed: tier.needed } : {}), ...(asked.length > 0 ? { requestedBy: [...new Set(asked)].sort() } : {}),
+          };
           approvals.push(created);
           return { kind: "hold", approval: created.id, expiresAtMs: created.expiresAtMs };
         }
@@ -180,21 +218,39 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
     reviews(agent, mayDecide) {
       return approvals.filter((a) => a.state === "pending" && !expired(a)).map((a): ReviewItem => {
         const typed = Object.fromEntries(Object.entries(a.fields).map(([k, v]): [string, [string, string]] => [k, [typeof v === "number" ? "int" : "str", String(v)]]));
-        return {
+        const role = tierOf(a.amountPaise).role;
+        const item: ReviewItem = {
           id: a.id, agent, tool: "razorpay", operation: "refund", arguments: ["map", typed],
           plain_arguments: Object.entries(a.fields).map(([k, v]) => `${k}: ${v}`), amount: String(a.amountPaise), rule: "refund-needs-owner",
           summary: `refund: ${Object.entries(a.fields).map(([k, v]) => `${k} ${v}`).join(", ")} (refund-needs-owner: above the threshold: a person must approve this exact call)`,
-          requested_at_ms: String(a.requestedAtMs), expires_at_ms: String(a.expiresAtMs), waiting_for: "shop-owner",
+          requested_at_ms: String(a.requestedAtMs), expires_at_ms: String(a.expiresAtMs), waiting_for: role,
           you_may_decide: mayDecide, why_not: mayDecide === false ? "this credential belongs to nobody who may approve it" : null, stuck: null,
+        };
+        if (!several(a)) return item;
+        return {
+          ...item, approvals_needed: a.needed ?? 1, approvals_given: (a.votes ?? []).filter((v) => v.approve).length,
+          votes: (a.votes ?? []).map((v) => ({ approver: v.approver, decision: v.approve ? "approve" : "deny", role: v.role, at_ms: String(v.atMs) })),
+          requested_by: a.requestedBy ?? [], may_still_decide: mayStillDecide(a),
         };
       });
     },
 
-    approvals: () => approvals.map((a) => ({ ...a })),
+    approvals: () => approvals.map((a) => ({ ...a, ...(a.votes ? { votes: a.votes.map((v) => ({ ...v })) } : {}) })),
 
     decide(approvalId, approve, approver) {
       const a = approvals.find((x) => x.id === approvalId);
       if (!a) return { status: 404, error: `no approval ${approvalId}` };
+      // B37, in Guard's words (review.rs may_decide, store/mod.rs apply_vote): the person who asked never decides; each person answers once; any one no refuses
+      if (a.state === "pending" && !expired(a) && (a.requestedBy ?? []).includes(approver)) return { status: 403, error: `${approver} may not decide this request: ${approver} asked for this call, so may not approve or deny it (an admin may revoke it)` };
+      if (a.needed !== undefined && a.state === "pending" && !expired(a)) {
+        const votes = a.votes ?? [];
+        const given = votes.filter((v) => v.approve).length;
+        const prev = votes.find((v) => v.approver === approver);
+        if (prev) return { status: 409, error: `approval ${approvalId} is already ${prev.approve ? "approved" : "denied"} by ${approver}: each approver decides once (${given} of ${a.needed} approvals so far)` };
+        a.votes = [...votes, { approver, approve, role: tierOf(a.amountPaise).role, atMs: clock.now() }];
+        if (!approve || given + 1 >= a.needed) { a.state = approve ? "approved" : "denied"; a.decidedAtMs = clock.now(); a.approver = approver; }
+        return { status: 200, approval: { ...a, votes: a.votes.map((v) => ({ ...v })) } };
+      }
       if (a.state === "pending" && expired(a)) return { status: 409, error: `approval ${approvalId} expired before it was decided` };
       if (a.state !== "pending") return { status: 409, error: `approval ${approvalId} is already ${a.state}` };
       a.state = approve ? "approved" : "denied";

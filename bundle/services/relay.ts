@@ -8,7 +8,9 @@ import { createGuardClient, createRuntimeClient } from "../../modules/approvals/
 import type { GuardClient } from "../../modules/approvals/clients.ts";
 import { createRelay as bookingsRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
 import { createRelay as feesRelay } from "../../templates/education/fees/approvals/relay.ts";
-import type { Relay, RelayOptions } from "../../modules/approvals/relay.ts";
+import { lastInboundKey } from "../../modules/approvals/relay.ts";
+import type { Relay, RelayOptions, RelayPerson } from "../../modules/approvals/relay.ts";
+import { names } from "../generate/shop.ts";
 import { relayHandler } from "../../modules/approvals/server.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";
 import { createWhatsAppMessaging } from "../../modules/messaging/whatsapp.ts";
@@ -34,9 +36,11 @@ export interface RelayShopConfig {
   whatsappGuardUrl: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
-  /** Folder with internal_token, relay_token, owner_notify_secret, read_token and agent_whatsapp for this shop. */
+  /** Folder with internal_token, relay_token, owner_notify_secret, read_token and agent_whatsapp for this shop (B37: and approver_<id>_notify_secret for each other approver). */
   secretsDir: string;
   stateDir: string;
+  /** B37: the shop's other approvers. `approverId` is then the owner's id among them ("owner"). Left out: the owner alone. */
+  approvers?: RelayPerson[];
 }
 
 /**
@@ -44,8 +48,11 @@ export interface RelayShopConfig {
  * it), and the deployer writes a fresh one to the file before that: the relay never holds an admin token and never has to restart.
  */
 export function rereadingGuardClient(c: RelayShopConfig, read: (path: string) => string | undefined): GuardClient {
-  const make = () => createGuardClient({ adminUrl: c.guardAdminUrl, readToken: read(`${c.secretsDir}/read_token`) ?? "", approverId: c.approverId, approverSecret: read(`${c.secretsDir}/owner_notify_secret`) ?? "", now: () => Date.now() });
-  return { reviews: () => make().reviews(), notify: (approval, decision) => make().notify(approval, decision) };
+  const make = () => createGuardClient({
+    adminUrl: c.guardAdminUrl, readToken: read(`${c.secretsDir}/read_token`) ?? "", approverId: c.approverId, approverSecret: read(`${c.secretsDir}/owner_notify_secret`) ?? "", now: () => Date.now(),
+    ...(c.approvers && c.approvers.length > 0 ? { secretOf: (id: string) => (c.approvers!.some((p) => p.id === id) ? read(`${c.secretsDir}/${names.approverSecretFile(id)}`) : undefined) } : {}),
+  });
+  return { reviews: () => make().reviews(), notify: (approval, decision, approver) => make().notify(approval, decision, approver) };
 }
 
 export function shopRelay(name: string, c: RelayShopConfig, read: (path: string) => string | undefined, log: (line: string) => void): { relay: Relay; handler: Handler; close(): void } {
@@ -64,10 +71,12 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
       ? ownAgentRuntime({ guard, razorpay: { baseUrl: c.razorpayGuardUrl!, token: () => need("record_token") }, business: c.business! })
       : createRuntimeClient({ url: c.runtimeUrl!, token: need("internal_token") }),
     messaging: createWhatsAppMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, agentToken: need("agent_whatsapp") },
-      { clock: systemClock, window: { lastInboundAt: (phone) => (phone.replace(/\D/gu, "") === c.ownerWhatsapp.replace(/\D/gu, "") ? Number(store.getMeta("owner_last_inbound")) || undefined : undefined) } }),
+      { clock: systemClock, window: { lastInboundAt: (phone) => Number(store.getMeta(lastInboundKey(phone, c.ownerWhatsapp))) || undefined } }),
+    ...(c.approvers && c.approvers.length > 0 ? { approvers: c.approvers, ownerApproverId: c.approverId } : {}),
     log: (line) => log(`[${name}] ${line}`),
   });
   need("owner_notify_secret"); // the reading credential is issued by the deployer once the Guard is up (and renewed before it expires), so it may not exist yet
+  for (const p of c.approvers ?? []) need(names.approverSecretFile(p.id));
   return { relay, handler: relayHandler(relay, need("relay_token")), close: () => store.close() };
 }
 

@@ -17,6 +17,7 @@ import type { Decision } from "../../../../modules/limits/limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
 import type { Booking, Store } from "./booking.ts";
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { ApiError, ConflictError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
@@ -76,6 +77,9 @@ export function createAgent(deps: AgentDeps): Agent {
   const policy: AiPolicy = deps.ai ?? {};
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
+  // B37: with other approvers, a refund the owner's own command asks for names the owner (Geo-Requested-By), and the others' code replies are the relay's
+  const askedByOwner = ownerAsked(settings.approvers);
+  const approverDigits = approverNumbers(settings.approvers);
   const parseContext = { services: settings.services, languages: settings.languages };
   const depositPaise = settings.deposit.amountInr * 100;
 
@@ -726,8 +730,9 @@ export function createAgent(deps: AgentDeps): Agent {
       const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: amountInr, ownerApproved: true });
       log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
       // The owner chose to cancel. The deposit going back is a separate matter if it is above the limit: Guard holds it and the relay asks.
-      const result = await requestRefund(b, b.depositPaymentId!, amountInr, [limit], overLimit(amountInr));
-      await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: "cancelled_refund" }, held: "cancelled_refund_pending" });
+      // With other approvers (B37) the owner is named as asking for it, so someone else approves it.
+      const result = await requestRefund(b, b.depositPaymentId!, amountInr, [limit], overLimit(amountInr), askedByOwner);
+      await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: "cancelled_refund" }, held: "cancelled_refund_pending", requestedBy: askedByOwner });
       return;
     }
 
@@ -746,8 +751,8 @@ export function createAgent(deps: AgentDeps): Agent {
     const limit = checkRefundLimit({ amountInr: pending.amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: pending.amountInr, ownerApproved: true });
     log(b, owner, "owner_decision", "confirmed", { command }, { refs: said });
     b.pending = b.pending.filter((x) => x !== pending);
-    const result = await requestRefund(b, pending.paymentId, pending.amountInr, [limit], overLimit(pending.amountInr));
-    await afterRefund(b, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending" });
+    const result = await requestRefund(b, pending.paymentId, pending.amountInr, [limit], overLimit(pending.amountInr), askedByOwner);
+    await afterRefund(b, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending", requestedBy: askedByOwner });
   }
 
   // ---- STOP --------------------------------------------------------------------------------------------------------
@@ -787,6 +792,8 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     store.seenMessages.add(msg.id);
+    // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
     if (msg.voiceNote) return onVoiceNote(msg);
     if (msg.from === owner) return onOwnerMessage(msg);
 

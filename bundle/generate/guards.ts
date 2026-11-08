@@ -125,8 +125,11 @@ export interface TomlOptions {
   adminSha: string;
   /** Who may call this Guard. `operations` limits an agent to some operations (empty: all in the bundle). */
   agents: { id: string; sha: string; operations?: string[] }[];
-  /** The owner's approver id (Razorpay only): the approvals relay signs the owner's answers with the owner's secret. */
-  approver?: { id: string; secretFile: string };
+  /**
+   * The owner's approver id (Razorpay only): the approvals relay signs the owner's answers with the owner's secret. B37: `group` adds the shop's other people,
+   * each with their own secret file, and the amount (in paise) above which two different people must approve. Without it the file is the one it always was.
+   */
+  approver?: { id: string; secretFile: string; group?: { people: { id: string; secretFile: string }[]; twoAbovePaise?: number } };
   /** Seconds between tripwire runs; Guard's default is 300. */
   tripwireIntervalS?: number;
   /** Where this Guard listens and keeps its files. The defaults are the container's; a test that runs the real binary on this computer gives its own. */
@@ -172,7 +175,8 @@ export function guardToml(o: TomlOptions): string {
   }
   lines.push(``, `[upstream_headers]`, ...Object.entries(o.def.headers).map(([k, v]) => `${/^[A-Za-z0-9_-]+$/u.test(k) ? k : q(k)} = ${q(v)}`));
   if (o.upstream.tls) lines.push(``, `[upstream_tls]`);
-  if (o.approver) {
+  if (o.approver?.group) lines.push(...groupApprovers(o, { ...o.approver, group: o.approver.group }));
+  else if (o.approver) {
     lines.push(
       ``, `# Who may approve a held refund: the shop's owner, through the approvals relay, which signs each answer with the owner's secret (POST /admin/notify).`,
       `[[roles]]`, `id = "shop-owner"`, `tools = [${q(o.def.tool)}]`, `operations = ["refund"]`, `rules = ["*"]`, `tenants = [${q(o.tenant)}]`,
@@ -181,4 +185,27 @@ export function guardToml(o: TomlOptions): string {
     );
   }
   return `${lines.join("\n")}\n`;
+}
+
+/**
+ * B37 (Guard's ADR-0061, the monorepo's Deferred D82): the owner and the shop's other people, one role per amount tier. `shop-owner` covers refunds up to
+ * the two-person amount (one approval: the owner is asked, unless the owner asked for it) and keeps its id, so the relay's reading credential
+ * (ops `issue-approver`, role shop-owner) still sees and may decide those. `shop-two` covers the rest and needs two different people. The reading
+ * credential does not hold `shop-two`: it is not counted as a holder, and could not cast one of the two answers.
+ */
+function groupApprovers(o: TomlOptions, a: { id: string; secretFile: string; group: { people: { id: string; secretFile: string }[]; twoAbovePaise?: number } }): string[] {
+  const q = (s: string) => JSON.stringify(s);
+  const two = a.group.twoAbovePaise !== undefined;
+  const role = (id: string, extra: string[]) => [``, `[[roles]]`, `id = ${q(id)}`, `tools = [${q(o.def.tool)}]`, `operations = ["refund"]`, `rules = ["*"]`, `tenants = [${q(o.tenant)}]`, ...extra];
+  const everyone = [{ id: a.id, secretFile: a.secretFile }, ...a.group.people];
+  const roles = two ? `["shop-owner", "shop-two"]` : `["shop-owner"]`;
+  return [
+    ``, `# Who may approve a held refund: the owner and ${a.group.people.length} other ${a.group.people.length === 1 ? "person" : "people"}, each through the approvals relay, which signs each`,
+    `# person's answer with that person's own secret (POST /admin/notify). The person who asked for a refund never approves it (Geo-Requested-By).`,
+    ...(two
+      ? [...role("shop-owner", [`max_amount = ${q(String(a.group.twoAbovePaise))}`, `amount_unit = "paise"`]), ...role("shop-two", [`approvals_needed = 2`])]
+      : role("shop-owner", [])),
+    ...everyone.flatMap((p) => [``, `[[approvers]]`, `id = ${q(p.id)}`, `roles = ${roles}`]),
+    ``, `[notify_secrets]`, ...everyone.map((p) => `${p.id} = ${q("${file:" + p.secretFile + "}")}`),
+  ];
 }

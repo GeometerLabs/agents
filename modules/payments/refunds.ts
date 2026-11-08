@@ -40,9 +40,13 @@ export interface GuardHold {
   approval: string; body: string; expiresAtMs: number | null; heldAtMs: number;
   /** The relay has said the owner approved. Set before the call is sent again, so a send that could not be made is tried again. */
   approved?: boolean; tries?: number; retryAtMs?: number;
+  /** B37: who asked for this refund (Guard's approver ids, sent in Geo-Requested-By). The relay never asks them to approve it. */
+  requestedBy?: string[];
 }
 export interface RefundRetry {
   kind: "refund_retry"; amountInr: number; paymentId: string; tries: number; retryAtMs: number;
+  /** B37: who asked for it, named again on the next try (a try that sent nothing is a first try). */
+  requestedBy?: string[];
   /** What to tell once it is done or held, as message ids of the template. */
   then: { customer: string; owner?: string; held: string };
 }
@@ -139,7 +143,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
    * "done": the payments service's own list shows the refund. "held": Guard is holding it for the owner. "retry": nothing went out, it will
    * be tried again by itself. "stopped": the builder has been told, and nothing more is done for this payment.
    */
-  async function requestRefund(b: C, paymentId: string, amountInr: number, decisions: Decision[], expectHold: boolean): Promise<RefundResult> {
+  async function requestRefund(b: C, paymentId: string, amountInr: number, decisions: Decision[], expectHold: boolean, requestedBy?: string[]): Promise<RefundResult> {
     const receipt = `${b.id}:${paymentId}`; // the case id travels in the receipt: the relay finds the case from it
     const amountPaise = amountInr * 100;
     const refs = { paymentId, amountPaise: String(amountPaise) };
@@ -191,7 +195,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
         break; // what cannot be looked at is not sent blind
       }
       try {
-        const sent = await payments.refund(paymentId, { amount: amountPaise, receipt });
+        const sent = await payments.refund(paymentId, { amount: amountPaise, receipt, ...(requestedBy && requestedBy.length > 0 ? { requestedBy } : {}) });
         return await readBack(sent.replayed ? "Guard answered from its record; nothing was sent again" : undefined);
       } catch (e) {
         const sorted = sortRefundError(e);
@@ -204,7 +208,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
               raise(b, paymentId, "uncertain", note);
               return "stopped";
             }
-            holds(b).push({ kind: "guard_hold", amountInr, paymentId, receipt, approval: sorted.error.approval, body: sorted.error.call.body, expiresAtMs: sorted.error.expiresAtMs, heldAtMs: clock.now() } as GuardHold);
+            holds(b).push({ kind: "guard_hold", amountInr, paymentId, receipt, approval: sorted.error.approval, body: sorted.error.call.body, expiresAtMs: sorted.error.expiresAtMs, heldAtMs: clock.now(), ...(requestedBy && requestedBy.length > 0 ? { requestedBy } : {}) } as GuardHold);
             log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { decisions, refs: { ...refs, approval: sorted.error.approval }, notes: "Guard is holding this refund for the owner. The approvals relay asks the owner, once; the agent does not." });
             return "held";
           }
@@ -230,21 +234,21 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   }
 
   /** What the customer is told after a refund was asked for, and what is kept to try again. */
-  async function afterRefund(b: C, result: RefundResult, a: { paymentId: string; amountInr: number; done: { customer: string; owner?: string }; held: string }): Promise<void> {
+  async function afterRefund(b: C, result: RefundResult, a: { paymentId: string; amountInr: number; done: { customer: string; owner?: string }; held: string; requestedBy?: string[] }): Promise<void> {
     if (result === "done") {
       await tellCustomer(b, b.customer, [a.done.customer], { refundInr: a.amountInr });
       if (a.done.owner) await tellOwner(b, b.customer, a.done.owner, { refundInr: a.amountInr });
       return;
     }
     if (result === "held") { await tellCustomer(b, b.customer, [a.held], { refundInr: a.amountInr }); return; }
-    if (result === "retry") holds(b).push({ kind: "refund_retry", amountInr: a.amountInr, paymentId: a.paymentId, tries: 0, retryAtMs: clock.now() + RETRY_MINUTES[0] * MINUTE, then: { ...a.done, held: a.held } } as RefundRetry);
+    if (result === "retry") holds(b).push({ kind: "refund_retry", amountInr: a.amountInr, paymentId: a.paymentId, tries: 0, retryAtMs: clock.now() + RETRY_MINUTES[0] * MINUTE, then: { ...a.done, held: a.held }, ...(a.requestedBy && a.requestedBy.length > 0 ? { requestedBy: a.requestedBy } : {}) } as RefundRetry);
     await tellCustomer(b, b.customer, [deps.ids.checking], { refundInr: a.amountInr });
   }
 
   /** A refund that could not be sent at all is tried again by the clock, a few times; then the builder is told. */
   async function retryRefund(b: C, p: RefundRetry): Promise<void> {
     b.pending = b.pending.filter((x) => x !== p);
-    const result = await requestRefund(b, p.paymentId, p.amountInr, [], overLimit(p.amountInr));
+    const result = await requestRefund(b, p.paymentId, p.amountInr, [], overLimit(p.amountInr), p.requestedBy);
     if (result === "retry") {
       const tries = p.tries + 1;
       if (tries >= RETRY_MINUTES.length) {
@@ -331,7 +335,8 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     if (listed) return finish(listed.id, "the refund was already on the payments service's own list, so it was not sent again");
 
     try {
-      await payments.resendRefund(paymentId, hold.body);
+      // who asked goes again (B37): not needed for the approval, which Guard binds to the bytes, but if Guard holds it anew the new hold must not be asked of them
+      await payments.resendRefund(paymentId, hold.body, hold.requestedBy);
     } catch (e) {
       const sorted = sortRefundError(e);
       switch (sorted.is) {
