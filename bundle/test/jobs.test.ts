@@ -27,12 +27,12 @@ const at = (w: Awaited<ReturnType<typeof ready>>["w"], iso: string) => { w.ctx.n
 test("the relay's credential is renewed on the first pass and then once a day; the snapshot waits until 02:00; the drill is weekly; none runs twice", async () => {
   const { w, docker } = await ready(); try {
     at(w, "2026-11-04T01:00:00");
-    assert.deepEqual(await runDueJobs(w.ctx), ["relay credentials", "exports"], "01:00: too early for a snapshot or a drill");
+    assert.deepEqual(await runDueJobs(w.ctx), ["relay credentials", "exports", "fingerprints"], "01:00: too early for a snapshot or a drill; the first daily fingerprint follows the first export");
     at(w, "2026-11-04T02:30:00");
     assert.deepEqual(await runDueJobs(w.ctx), ["exports", "snapshot"], "02:30: the snapshot is due; the credential was renewed 90 minutes ago; the exports are quarter-hourly");
     assert.deepEqual(await runDueJobs(w.ctx), [], "and not again");
     at(w, "2026-11-05T02:30:00");
-    assert.deepEqual(await runDueJobs(w.ctx), ["relay credentials", "exports", "snapshot"]);
+    assert.deepEqual(await runDueJobs(w.ctx), ["relay credentials", "exports", "fingerprints", "snapshot"]);
     at(w, "2026-11-11T03:30:00");
     const week = await runDueJobs(w.ctx);
     assert.ok(week.includes("drill") || week.includes("drill FAILED"), week.join(","));
@@ -45,6 +45,6 @@ test("with no backup configured the deployer only renews credentials", async () 
   const w = world(); try {
     w.handIn("glow-salon"); await deploy(w.ctx);
     at(w, "2026-11-04T03:30:00");
-    assert.deepEqual(await runDueJobs(w.ctx), ["relay credentials", "exports"]);
+    assert.deepEqual(await runDueJobs(w.ctx), ["relay credentials", "exports", "fingerprints"]);
   } finally { w.done(); }
 });

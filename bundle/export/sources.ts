@@ -13,6 +13,8 @@ import type { ExportSources } from "./build.ts";
 export interface PanelParts {
   papers(shop: string): { path: string; text: string }[];
   meta(shop: string): ReturnType<ExportSources["meta"]>;
+  /** The panel's signing key, which signs the record's evidence pack and its anchor. */
+  signingKey?: () => ReturnType<NonNullable<ExportSources["signingKey"]>>;
 }
 
 const readText = (file: string): string | undefined => { try { return readFileSync(file, "utf8"); } catch { return undefined; } };
@@ -39,5 +41,6 @@ export function sourcesFor(serverDir: string, shop: string, panel?: PanelParts):
     papers: () => panel?.papers(shop) ?? [],
     pins: () => { try { return JSON.parse(readText(join(p.shop(shop), "pins.json")) ?? "null") ?? undefined; } catch { return undefined; } },
     meta: () => panel?.meta(shop),
+    signingKey: () => panel?.signingKey?.(),
   };
 }

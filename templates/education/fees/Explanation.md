@@ -106,6 +106,11 @@ The same two changes as Bookings, through the shared modules (`modules/Explanati
 
 Test: `test/agent.test.ts` ("Guard's 409 already_done ..."); the relay is tested on Bookings and in the bundle.
 
+## A parent's statement, the record of one fee and the agent's identity paper (B28, B35, B36; 8 November 2026)
+
+The papers are shared (`modules/papers/`); Fees hands in `report/papers.ts`: payments are `record_payment` and refunds `refund` (UPI's owner marks are added by the papers and labelled "marked paid by owner"); its action words in four languages; a fee as a case, labelled by its month and batch and **never the student's name** (the export hashes it, and a paper must not carry it), with what is still owed by the record now (the fee and late fee, less waivers and payments); its limits as facts (a higher waiver or refund limit is wider, a smaller least part payment is wider); and the go-live certificate's limit phrases and "held N of M". A parent's statement is their own fees only: their payments, refunds, what is still owed, and no other family's fee. `scripts/papers.ts` makes the papers and the evidence pack, like Bookings'. The monthly report's anchor is filled the same way (`report.tenant`, `--tenant`).
+
+Tests: `test/papers.test.ts` (3) on the busy month: a parent's statement agrees with the fees' own payments and owed amounts and holds nothing of another family and no student's name; the record of one fee in every language names no student and carries no banned word; the identity paper shows who made the waiver limit wider.
 ## The QR code on the papers (B12, 8 Nov)
 
 Fees' go-live certificate, record certificate and monthly report end in the shared seal block (`modules/report/page.ts`): the QR code (inline SVG), the link

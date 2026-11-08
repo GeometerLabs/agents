@@ -65,6 +65,8 @@ Not built, or built only as far as said. The first block needs another part of t
 - Switching a saved shop from Razorpay to UPI (or back) in the panel changes the settings and the notes only. The old Razorpay secrets stay in the write-only inbox until whoever runs the server removes them.
 - The new Hindi, Malayalam and Kannada sentences (the `upi` block and the two inbox kinds) wait for a native reader.
 - A phone-width look at the new step has not been done (no browser).
+- The papers page's sentences and the shop page's link to it (B28, B35, B36) wait for a native reader in Hindi, Malayalam and Kannada, and the page has not been looked at on a phone (no browser).
+- A statement's language follows the person's latest case; the page has no language choice yet (the POST takes `lang`, the form does not offer it).
 
 ## The shop's licence (B13, 8 Nov)
 

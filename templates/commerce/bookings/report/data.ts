@@ -23,6 +23,8 @@ import { canonicalJson } from "../../../../modules/record/record.ts";
 import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
+import { headOf } from "../../../../modules/record/ledger.ts";
+import type { LedgerHead } from "../../../../modules/record/ledger.ts";
 import { SOURCES } from "../../../../modules/report/text.ts";
 import type { Source } from "../../../../modules/report/text.ts";
 
@@ -132,8 +134,12 @@ export interface MonthlyReport {
    * labels them so. Left out for a Razorpay shop, which keeps the bytes (and the digest and code) of every report made before.
    */
   paidBy?: "owner-marked";
-  /** Reserved for the head of Guard's hash-chained ledger when it exists; null until then. Part of the signed bytes. */
-  anchor: null;
+  /**
+   * The head of the shop's record as a hash-chained ledger (modules/record/ledger.ts) when the report was made: the last entry's number and hash, over the whole record handed
+   * in. A later change to any entry it covers gives a different hash, which no longer matches this one or the daily fingerprint. null when the caller named no ledger
+   * (`ledger` below), which keeps the bytes of every report made before. Part of the signed bytes.
+   */
+  anchor: LedgerHead | null;
 }
 
 export interface ReportInput {
@@ -155,6 +161,8 @@ export interface ReportInput {
   goLive?: GoLiveFinding;
   /** Which agent the record is of. Left out, the bookings pathway. An agent someone else wrote (deploy bundle, `agent report`) says so here, and the page and the certificate repeat it. */
   pathway?: { name: string; version: string };
+  /** The ledger to anchor the report to: its tenant (the shop's id on the server). Left out, `anchor` is null. */
+  ledger?: { tenant: string };
 }
 
 /** What governs how the agent behaves and speaks, without contact details. Two shops with the same policy digest have the same limits and words. */
@@ -328,7 +336,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     goLive,
     ...(input.innovator === true ? { innovator: true as const } : {}),
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
-    anchor: null,
+    anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }
 

@@ -15,6 +15,8 @@ import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
+import { headOf } from "../../../../modules/record/ledger.ts";
+import type { LedgerHead } from "../../../../modules/record/ledger.ts";
 import { SOURCES } from "../../../../modules/report/text.ts";
 import type { Source } from "../../../../modules/report/text.ts";
 import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
@@ -97,7 +99,8 @@ export interface FeesReport {
   notTested: NotTestedKey[];
   /** What the report was told about the go-live checks: no certificate, one it could not trust, or one it read and what that says the checks ran on. */
   goLive: GoLiveFinding;
-  anchor: null;
+  /** The head of the centre's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
+  anchor: LedgerHead | null;
 }
 
 export interface ReportInput {
@@ -114,6 +117,8 @@ export interface ReportInput {
   innovator?: boolean;
   /** What the go-live certificate the caller was given says (report/go-live.ts). Left out, the report says that no go-live certificate was given. */
   goLive?: GoLiveFinding;
+  /** The ledger to anchor the report to: its tenant (the centre's id on the server). Left out, `anchor` is null. */
+  ledger?: { tenant: string };
 }
 
 /** What governs how the agent behaves and speaks, without contact details. Two centres with the same policy digest have the same limits and words. */
@@ -270,7 +275,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     notCounted: [...NOT_COUNTED],
     notTested: notTestedForReport(goLive, settings),
     goLive,
-    anchor: null,
+    anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }
 

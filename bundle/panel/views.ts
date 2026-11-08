@@ -50,6 +50,8 @@ const dateFmt = (lang: string) => new Intl.DateTimeFormat(`${lang}-IN-u-nu-latn`
 export const when = (iso: string | undefined | null, lang: string): string => (iso && Number.isFinite(Date.parse(iso)) ? dateFmt(lang).format(new Date(iso)) : "");
 
 const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}">`;
+/** The link to the shop's papers page (views-papers.ts). Hindi, Malayalam and Kannada machine-written, waiting for native review. */
+const PAPERS_LINK: Record<Language, string> = { en: "Statements, case records and the agent's paper", hi: "विवरण, मामलों के रिकॉर्ड और एजेंट का काग़ज़", ml: "വിവരങ്ങൾ, കേസ് രേഖകൾ, ഏജന്റിന്റെ രേഖ", kn: "ವಿವರಗಳು, ಪ್ರಕರಣ ದಾಖಲೆಗಳು ಮತ್ತು ಏಜೆಂಟ್ ಕಾಗದ" };
 const roleWord = (c: Ctx, role: "builder" | "partner") => c.w.roles[role];
 
 export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolean } = {}): string {
@@ -346,6 +348,7 @@ ${v.cost ? costTable(c, v.cost) : v.fees ? feesMessagesBlock(c, v.fees.messages)
 </ul>
 ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
+${v.papers.canMakeReport ? html`<p><a class="btn" href="/shops/${v.id}/papers">${PAPERS_LINK[c.lang]}</a></p>` : ""}
 
 <h2>${c.w.takeOut.heading}</h2>
 <p>${c.w.takeOut.text}</p>

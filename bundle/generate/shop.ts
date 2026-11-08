@@ -163,6 +163,8 @@ export interface ReportFacts {
   pageBaseUrl: string;
   /** What the numbers were counted from: "live" only when the connection checks confirmed a live Razorpay account, otherwise test money. */
   source: "live" | "test-mode";
+  /** The shop's id: the tenant of its record's ledger (B28), so the report is anchored under the same id the daily fingerprint uses. */
+  tenant?: string;
 }
 
 /**
@@ -173,9 +175,12 @@ export interface ReportFacts {
  */
 export function withReport(runtime: Record<string, unknown>, facts: ReportFacts, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
   if (Object.keys(runtime).length === 0) return runtime;
-  const withIt = { ...runtime, report: { preparedBy: facts.preparedBy, innovator: facts.innovator, pageBaseUrl: facts.pageBaseUrl, pagesDir: REPORTS_DIR, source: facts.source } };
+  const plain = { ...runtime, report: { preparedBy: facts.preparedBy, innovator: facts.innovator, pageBaseUrl: facts.pageBaseUrl, pagesDir: REPORTS_DIR, source: facts.source } };
+  // the ledger tenant (B28) anchors the report to the record's head; a template version from before it would refuse the key, and then gets its report unanchored
+  const withIt = facts.tenant ? { ...plain, report: { ...plain.report, tenant: facts.tenant } } : plain;
   const checked = validate(withIt, "/");
   if (checked.ok) return withIt;
+  if (withIt !== plain && validate(plain, "/").ok) { notes.push("the monthly report is not anchored to the record's ledger: this template version does not know report.tenant. Update the pathway, and it is written on the next deploy."); return plain; }
   if (validate(runtime, "/").ok) notes.push(`the monthly report to the owner is not switched on for this shop: this template version did not accept the report setting${checked.errors?.[0] ? ` (${checked.errors[0]})` : ""}, so the shop starts without it. Update the pathway, and it is written on the next deploy.`);
   return runtime;
 }
@@ -218,7 +223,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
-    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.razorpay?.mode === "live" ? "live" : "test-mode" }, check, notes); // a UPI shop's money is the owner's real marks
+    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.razorpay?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };
