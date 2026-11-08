@@ -101,10 +101,15 @@ export interface Words {
         mostBad: string; partBad(max: string): string; waiverBad(max: string): string; refundBad: string;
       };
     };
-    languagesStep: { main: string; also: string; hint: string; ownerLanguage: string; ownerNumber: string; ownerNumberHelp: string };
+    languagesStep: {
+      main: string; also: string; hint: string; ownerLanguage: string; ownerNumber: string; ownerNumberHelp: string;
+      /** B37: other people who approve refunds, and the amount above which two must. */
+      approversTitle: string; approversHelp: string; approverNumber(n: number): string; approverLanguage: string; twoAbove: string; twoAboveHelp: string;
+    };
     problems: {
       nameEmpty: string; noService: string; priceBad(row: number): string; depositBad: string; depositTooBig(deposit: string, cheapest: string): string; windowBad: string;
       hoursBad: string; noDay: string; noLanguage: string; ownerNumberBad: string; sameNumber: string; serviceNameEmpty(row: number): string;
+      approverNumberBad(n: number): string; approverNumberTaken(n: number): string; twoAboveBad: string; twoAboveAlone: string;
       expectedBad: string; numberIdBad: string; businessNumberBad: string; keyIdBad: string; secretMissing(what: string): string; secretShape(what: string): string; calendarIdBad: string; jsonBad: string; modeBad: string;
     };
     accounts: {
@@ -348,6 +353,9 @@ export const en: Words = {
     languagesStep: {
       main: "Main language of your customers", also: "Also tick any others your customers write in", hint: "The agent starts in the main language and answers each customer in the one they write in.", ownerLanguage: "Your language for messages to you",
       ownerNumber: "Your own WhatsApp number", ownerNumberHelp: "Start with the country code, for example +91 98765 43210. The agent asks you here before any refund. It is your own number, not the shop's number that customers write to.",
+      approversTitle: "Others who approve refunds (optional)", approversHelp: "A manager or a partner can approve refunds too, each from their own phone with their own code. When you ask for a refund yourself, one of them approves it, never you.",
+      approverNumber: (n) => `Person ${n}: their WhatsApp number`, approverLanguage: "Their language",
+      twoAbove: "Above this amount, two people must approve (₹, optional)", twoAboveHelp: "For example 5000. Up to it, one approval is enough. Any one person saying no stops the refund. Leave it empty for one approval at every amount.",
     },
     problems: {
       nameEmpty: "Write the shop's name.", noService: "Add at least one service with a price.", priceBad: (n) => `Service ${n}: write the price in whole rupees, for example 450.`, depositBad: "Write the deposit in whole rupees, for example 200.",
@@ -355,6 +363,9 @@ export const en: Words = {
       hoursBad: "The shop must open before it closes. Write times like 10:00 and 20:00.", noDay: "Tick at least one day the shop is open.", noLanguage: "Tick at least one language.",
       ownerNumberBad: "Write your number with the country code, for example +91 98765 43210.", sameNumber: "Your number and the shop's WhatsApp number must be different. You answer from your own phone.",
       serviceNameEmpty: (n) => `Service ${n} has a price but no name.`,
+      approverNumberBad: (n) => `Person ${n}: write their number with the country code, for example +91 98765 43210.`,
+      approverNumberTaken: (n) => `Person ${n}: that number is already yours, the shop's or another person's. Each person answers from their own phone.`,
+      twoAboveBad: "Write the two-person amount in whole rupees, for example 5000, or leave it empty.", twoAboveAlone: "Two people can only approve if you add at least one other person.",
       expectedBad: "Write the bookings a month as a whole number, for example 40, or leave it empty.", numberIdBad: "The phone number ID is digits only (6 to 20 of them).", businessNumberBad: "Write the shop's WhatsApp number with the country code.", keyIdBad: "The key ID starts with rzp_live_ or rzp_test_.",
       secretMissing: (w) => `Fill in ${w}.`, secretShape: (w) => `${w} has spaces or line breaks in it. Copy it again, without them.`,
       calendarIdBad: "Write the calendar's ID without spaces.", jsonBad: "That is not a Google service-account key file. Paste the whole file.", modeBad: "Choose live or practice.",

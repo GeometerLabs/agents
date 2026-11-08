@@ -12,6 +12,9 @@
 //   RELAY_TOKEN_FILE=/run/secrets/relay_token           the token the inbox must send (not the runtime's)
 //   STATE_DIR=/var/lib/approvals                        where the relay keeps what it must not forget
 //   PORT=8795  HOST=127.0.0.1  POLL_SECONDS=5
+//   APPROVERS_FILE=/etc/approvals/approvers.json        (optional, B37) the other people who approve: [{"id", "whatsapp", "language", "secretFile"}],
+//                                                       each secretFile the same file Guard reads as that person's notify_secrets entry. With it,
+//                                                       GUARD_APPROVER_ID is the owner's id in that directory ("owner").
 //
 // Run:  node templates/<domain>/<template>/approvals/main.ts
 // Secrets are files, never arguments or variables; a trailing newline is dropped. Nothing secret, no code and no phone number is ever logged.
@@ -21,7 +24,8 @@ import { systemClock } from "../core/clock.ts";
 import { createGuardClient, createRuntimeClient } from "./clients.ts";
 import { startRelayServer } from "./server.ts";
 import { openRelayStore } from "./store.ts";
-import type { Relay, RelayOptions } from "./relay.ts";
+import { lastInboundKey } from "./relay.ts";
+import type { Relay, RelayOptions, RelayPerson } from "./relay.ts";
 
 /** `createRelay`: the template's relay, the shared one with its words (Bookings: templates/commerce/bookings/approvals/relay.ts; Fees: templates/education/fees/approvals/relay.ts). */
 export async function runRelayMain(createRelay: (options: Omit<RelayOptions, "voice">) => Relay): Promise<void> {
@@ -45,12 +49,30 @@ export async function runRelayMain(createRelay: (options: Omit<RelayOptions, "vo
   const relayToken = secret("RELAY_TOKEN_FILE")!;
   if (relayToken.length < 16) { console.error("The relay token is too short to be safe. Make one with: openssl rand -hex 32"); process.exit(2); }
 
+  // B37: the other people who approve, each with their own secret, read once at start
+  const approvers: (RelayPerson & { secret: string })[] = [];
+  if (process.env.APPROVERS_FILE) {
+    let list: unknown;
+    try { list = JSON.parse(readFileSync(process.env.APPROVERS_FILE, "utf8")); } catch { console.error(`The relay could not read APPROVERS_FILE (${process.env.APPROVERS_FILE}) as JSON.`); process.exit(2); }
+    const people = Array.isArray(list) ? list : [];
+    for (const p of people as Record<string, unknown>[]) {
+      if (typeof p?.id !== "string" || typeof p.whatsapp !== "string" || typeof p.language !== "string" || typeof p.secretFile !== "string") { console.error("Each entry of APPROVERS_FILE needs id, whatsapp, language and secretFile."); process.exit(2); }
+      let s = "";
+      try { s = readFileSync(p.secretFile, "utf8").trim(); } catch { /* said below */ }
+      if (!s) { console.error(`The secret file of approver ${p.id} could not be read or is empty.`); process.exit(2); }
+      approvers.push({ id: p.id, whatsapp: p.whatsapp, language: p.language as RelayPerson["language"], secret: s });
+    }
+  }
+  const secrets = new Map(approvers.map((p) => [p.id, p.secret]));
+  const approverId = need("GUARD_APPROVER_ID");
+
   const relay = createRelay({
     clock, store, ownerWhatsapp,
-    guard: createGuardClient({ adminUrl: url("GUARD_URL"), readToken: secret("GUARD_READ_TOKEN_FILE")!, approverId: need("GUARD_APPROVER_ID"), approverSecret: secret("OWNER_NOTIFY_SECRET_FILE")!, now: () => clock.now() }),
+    guard: createGuardClient({ adminUrl: url("GUARD_URL"), readToken: secret("GUARD_READ_TOKEN_FILE")!, approverId, approverSecret: secret("OWNER_NOTIFY_SECRET_FILE")!, secretOf: (id) => secrets.get(id), now: () => clock.now() }),
     runtime: createRuntimeClient({ url: url("RUNTIME_URL"), token: secret("INTERNAL_TOKEN_FILE")! }),
     messaging: createWhatsAppMessaging({ baseUrl: url("WHATSAPP_GUARD_URL"), phoneNumberId: need("PHONE_NUMBER_ID"), agentToken: secret("WHATSAPP_GUARD_TOKEN_FILE", true) },
-      { clock, window: { lastInboundAt: (phone) => (phone.replace(/\D/gu, "") === ownerWhatsapp.replace(/\D/gu, "") ? Number(store.getMeta("owner_last_inbound")) || undefined : undefined) } }),
+      { clock, window: { lastInboundAt: (phone) => Number(store.getMeta(lastInboundKey(phone, ownerWhatsapp))) || undefined } }),
+    ...(approvers.length > 0 ? { approvers: approvers.map(({ id, whatsapp, language }) => ({ id, whatsapp, language })), ownerApproverId: approverId } : {}),
     ...(process.env.GUARD_AGENT_ID ? { expectedAgent: process.env.GUARD_AGENT_ID } : {}),
     log: (line) => console.error(line),
   });

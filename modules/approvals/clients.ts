@@ -22,9 +22,35 @@ export interface Held {
   requestedAtMs: number;
   expiresAtMs: number;
   youMayDecide: boolean | null;
+  /**
+   * B37 (Guard's ADR-0061): present only on a request that needs several approvals or names who asked for it. `mayStillDecide` is whom to ask: the same for
+   * every reader, sorted, without the people who asked, those who answered, removed approvers and roles not escalated to yet. Absent: one owner, as before.
+   */
+  group?: HeldGroup;
+}
+
+export interface HeldGroup {
+  needed: number;
+  given: number;
+  votes: { approver: string; decision: "approve" | "deny" }[];
+  requestedBy: string[];
+  mayStillDecide: string[];
 }
 
 export type ReadHeld = { ok: true; held: Held } | { ok: false; id?: string; reason: string };
+
+const ids = (v: unknown): string[] | undefined => (Array.isArray(v) && v.every((x) => typeof x === "string" && /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u.test(x)) ? v as string[] : undefined);
+
+/** The B37 keys of a review item, all of them or nothing (a request with only some of them is not in the form Guard writes). */
+function readGroup(item: Record<string, unknown>): HeldGroup | undefined | "malformed" {
+  if (!("may_still_decide" in item) && !("approvals_needed" in item) && !("requested_by" in item)) return undefined;
+  const needed = item.approvals_needed, given = item.approvals_given;
+  const mayStillDecide = ids(item.may_still_decide), requestedBy = ids(item.requested_by);
+  const votes = Array.isArray(item.votes) && item.votes.every((v) => isRecord(v) && typeof v.approver === "string" && (v.decision === "approve" || v.decision === "deny"))
+    ? (item.votes as Record<string, unknown>[]).map((v) => ({ approver: v.approver as string, decision: v.decision as "approve" | "deny" })) : undefined;
+  if (!Number.isSafeInteger(needed) || (needed as number) < 1 || (needed as number) > 20 || !Number.isSafeInteger(given) || (given as number) < 0 || !mayStillDecide || !requestedBy || !votes) return "malformed";
+  return { needed: needed as number, given: given as number, votes, requestedBy, mayStillDecide };
+}
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const millis = (v: unknown): number | undefined => (typeof v === "string" && /^\d{1,16}$/u.test(v) ? Number(v) : typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : undefined);
@@ -50,24 +76,39 @@ export function readHeld(item: unknown): ReadHeld {
   const requestedAtMs = millis(item.requested_at_ms);
   const expiresAtMs = millis(item.expires_at_ms);
   if (requestedAtMs === undefined || expiresAtMs === undefined) return no("it has no times");
-  return { ok: true, held: { id, agent: typeof item.agent === "string" ? item.agent : "", amountPaise: Number(amount), paymentId, receipt, requestedAtMs, expiresAtMs, youMayDecide: typeof item.you_may_decide === "boolean" ? item.you_may_decide : null } };
+  const group = readGroup(item);
+  if (group === "malformed") return no("it says it needs several approvals, but not in the form Guard writes (approvals_needed, approvals_given, votes, requested_by, may_still_decide)");
+  return { ok: true, held: { id, agent: typeof item.agent === "string" ? item.agent : "", amountPaise: Number(amount), paymentId, receipt, requestedAtMs, expiresAtMs, youMayDecide: typeof item.you_may_decide === "boolean" ? item.you_may_decide : null, ...(group ? { group } : {}) } };
 }
 
 export type Reviews = { ok: true; items: unknown[] } | { ok: false; credential: boolean; error: string };
 
 export type Notified =
-  | { kind: "recorded" }
-  | { kind: "already"; state: string } // Guard already has an answer for this approval (ours, from an earlier try, or another)
+  /**
+   * Guard took the answer. `state` is the request's after it (B37: "pending" means more approvals are needed, and only "approved" or "denied" is a decision);
+   * `needed` and `given` are there when the request needs several approvals.
+   */
+  | { kind: "recorded"; state?: string; needed?: number; given?: number }
+  /**
+   * Guard already has an answer. With `by`, it is THIS approver's earlier vote on a request still waiting for others ("is already approved by asha: each
+   * approver decides once (1 of 2 approvals so far)"); `state` is then what that approver answered, not the request's. Without `by`, the request is decided.
+   */
+  | { kind: "already"; state: string; by?: string; given?: number; needed?: number }
   | { kind: "expired" }
   | { kind: "missing" }
+  /** B37: the approver asked for this call themselves, so Guard will not take their answer. The relay should never have asked them. */
+  | { kind: "requester"; error: string }
   | { kind: "refused"; status: number; error: string } // signature, approver, time or role: the relay is set up wrongly
   | { kind: "unreachable"; error: string };
 
 export interface GuardClient {
   /** The held calls the read credential can see. */
   reviews(): Promise<Reviews>;
-  /** The owner's answer, signed with the owner's secret. A new nonce and time every call, so a try that did not get through can go again. */
-  notify(approval: string, decision: "approve" | "deny"): Promise<Notified>;
+  /**
+   * An approver's answer, signed with that approver's own secret: the owner's when `approver` is left out (or is the owner's id). A new nonce and time every
+   * call, so a try that did not get through can go again.
+   */
+  notify(approval: string, decision: "approve" | "deny", approver?: string): Promise<Notified>;
 }
 
 export interface GuardConfig {
@@ -78,7 +119,16 @@ export interface GuardConfig {
   /** The owner's id in Guard's approver directory, and the secret that signs the owner's answers. */
   approverId: string;
   approverSecret: string;
+  /** B37: another approver's signing secret, by their id in Guard's directory (each person signs their own answers). Undefined: they cannot answer through this relay. */
+  secretOf?(approverId: string): string | undefined;
   now(): number;
+}
+
+/** Guard's 409 words for an answer it already has, read once here ("approval X is already approved by asha: each approver decides once (1 of 2 approvals so far)"). */
+export function readAlready(error: string): { state: string; by?: string; given?: number; needed?: number } {
+  const vote = /already (approved|denied) by ([A-Za-z0-9][A-Za-z0-9._:/@+-]*): each approver decides once \((\d+) of (\d+) approvals so far\)/iu.exec(error);
+  if (vote) return { state: vote[1]!.toLowerCase(), by: vote[2]!, given: Number(vote[3]), needed: Number(vote[4]) };
+  return { state: /already (\w+)/iu.exec(error)?.[1]?.toLowerCase() ?? "decided" };
 }
 
 export function createGuardClient(config: GuardConfig): GuardClient {
@@ -96,21 +146,31 @@ export function createGuardClient(config: GuardConfig): GuardClient {
       }
     },
 
-    async notify(approval, decision) {
+    async notify(approval, decision, approver) {
+      const as = approver ?? config.approverId;
+      const secret = as === config.approverId ? config.approverSecret : config.secretOf?.(as);
+      if (secret === undefined || (as !== config.approverId && secret === "")) return { kind: "refused", status: 0, error: `the relay holds no signing secret for approver ${as}` };
       // The signature is over the exact bytes sent; the time is now (the message's own time may be older than Guard's five minutes if the provider redelivered).
-      const raw = JSON.stringify({ approval, decision, approver: config.approverId, at_ms: String(config.now()), nonce: randomUUID() });
-      const signature = createHmac("sha256", config.approverSecret).update(raw).digest("hex");
+      const raw = JSON.stringify({ approval, decision, approver: as, at_ms: String(config.now()), nonce: randomUUID() });
+      const signature = createHmac("sha256", secret).update(raw).digest("hex");
       try {
         const response = await fetch(url("/admin/notify"), { method: "POST", body: raw, headers: { "content-type": "application/json", "x-geo-signature": signature }, signal: AbortSignal.timeout(TIMEOUT_MS) });
         const text = await response.text().catch(() => "");
         let error = text;
-        try { const j = JSON.parse(text) as { error?: unknown }; if (typeof j.error === "string") error = j.error; } catch { /* not JSON */ }
-        if (response.status === 200) return { kind: "recorded" };
+        let body: Record<string, unknown> | undefined;
+        try { const j = JSON.parse(text) as unknown; if (isRecord(j)) { body = j; if (typeof j.error === "string") error = j.error; } } catch { /* not JSON */ }
+        if (response.status === 200) {
+          // B37: the answer to a vote is the request itself: its state, and its votes so far (`approve` is a boolean there, unlike the review queue's `decision`)
+          const needed = body && Number.isSafeInteger(body.approvals_needed) ? body.approvals_needed as number : undefined;
+          const given = body && Array.isArray(body.votes) ? body.votes.filter((v) => isRecord(v) && v.approve === true).length : undefined;
+          return { kind: "recorded", ...(typeof body?.state === "string" ? { state: body.state } : {}), ...(needed !== undefined ? { needed } : {}), ...(given !== undefined ? { given } : {}) };
+        }
         if (response.status === 409) {
           if (/expired/iu.test(error)) return { kind: "expired" };
-          return { kind: "already", state: /already (\w+)/iu.exec(error)?.[1]?.toLowerCase() ?? "decided" };
+          return { kind: "already", ...readAlready(error) };
         }
         if (response.status === 404) return { kind: "missing" };
+        if (response.status === 403 && /asked for this call/iu.test(error)) return { kind: "requester", error: error.slice(0, 200) };
         return { kind: "refused", status: response.status, error: error.slice(0, 200) };
       } catch (e) {
         return { kind: "unreachable", error: `Guard could not be reached (${why(e)})` };
@@ -143,6 +203,8 @@ export interface RefundContext {
   studentName?: string;
   batchName?: string;
   monthLabel?: string;
+  /** B37: who asked the agent for this refund, by approver id (the runtime sent them in Geo-Requested-By). They are never asked to approve it. */
+  requestedBy?: string[];
 }
 
 export type Context = { kind: "found"; context: RefundContext } | { kind: "missing" } | { kind: "error"; error: string };
@@ -168,7 +230,8 @@ export function createRuntimeClient(config: { url: string; token: string }): Run
         const c = await response.json() as Record<string, unknown>;
         const ok = typeof c.booking === "string" && typeof c.customerPhone === "string" && typeof c.businessName === "string" && typeof c.timeZone === "string" && ["en", "hi", "ml", "kn"].includes(c.ownerLanguage as string)
           && typeof c.paymentId === "string" && Number.isSafeInteger(c.amountPaise) && typeof c.approval === "string"
-          && ["serviceName", "studentName", "batchName", "monthLabel"].every((k) => c[k] === undefined || typeof c[k] === "string") && (c.slotMs === undefined || Number.isFinite(c.slotMs));
+          && ["serviceName", "studentName", "batchName", "monthLabel"].every((k) => c[k] === undefined || typeof c[k] === "string") && (c.slotMs === undefined || Number.isFinite(c.slotMs))
+          && (c.requestedBy === undefined || ids(c.requestedBy) !== undefined);
         return ok ? { kind: "found", context: c as unknown as RefundContext } : { kind: "error", error: "the runtime's answer was not in the form expected" };
       } catch (e) {
         return { kind: "error", error: `the runtime could not be reached (${why(e)})` };

@@ -10,7 +10,7 @@
 //  - a 200 with `Guard-Replayed: true`: the service's first reply, from Guard's record. It comes back marked `replayed`;
 //  - anything else is the service's own reply, passed through as it was: the adapters read it, and any other non-2xx is theirs to
 //    turn into an ApiError.
-import { GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "./faults.ts";
+import { GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "./faults.ts";
 import type { GuardInfo, SentCall } from "./faults.ts";
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
@@ -27,6 +27,8 @@ export interface HttpRequestOptions {
   body?: unknown;
   /** The exact bytes to send as the body, instead of serialising `body`. A call Guard held is sent again with the bytes it was held with: Guard binds an approval to the call's digest, and `60000` is not `"60000"`. */
   rawBody?: string;
+  /** More request headers. Only words for Guard itself go here (`Geo-Requested-By`, which Guard strips before it forwards); never a key of the service. */
+  headers?: Record<string, string>;
 }
 
 export interface Http {
@@ -62,6 +64,7 @@ export function guardObject(body: unknown): GuardInfo | undefined {
   if (!isRecord(g) || typeof g.decision !== "string" || typeof g.code !== "string") return undefined;
   return {
     decision: g.decision, code: g.code, sent: typeof g.sent === "string" ? g.sent : "no", retry: typeof g.retry === "string" ? g.retry : "no",
+    ...(typeof g.reason_code === "string" ? { reason_code: g.reason_code } : {}),
     ...(typeof g.reason === "string" ? { reason: g.reason } : {}), ...(g.detail !== undefined ? { detail: g.detail } : {}),
   };
 }
@@ -102,6 +105,8 @@ export function classify(status: number, headers: { get(name: string): string | 
     return new GuardUnavailableError(status, words, guard, call, Number.isFinite(after) && after >= 0 ? after : undefined);
   }
   if (guard.code === "unauthenticated") return new GuardUnauthenticatedError(status, words, guard, call);
+  // a settled repeat (ADR-0060): the same code as "the same action with other arguments", told apart by reason_code. Done, by a person's word.
+  if (guard.code === "conflict" && guard.reason_code === "already_done") return new GuardAlreadyDoneError(status, words, guard, call);
   if (guard.code === "conflict") return new GuardConflictError(status, words, guard, call);
   if (guard.code === "refused_by_policy") {
     const { kind, ruleId } = refusalKind(reason);
@@ -128,6 +133,7 @@ export function createHttp(baseUrl: string, what: string, timeoutMs: number = DE
     async request(method, path, options = {}) {
       const url = joinUrl(baseUrl, path, options.query);
       const headers: Record<string, string> = { accept: "application/json" };
+      for (const [k, v] of Object.entries(options.headers ?? {})) if (!/^(authorization|host|content-type|content-length|accept)$/iu.test(k)) headers[k.toLowerCase()] = v;
       if (agentToken) headers.authorization = `Bearer ${agentToken}`;
       let body: string | undefined;
       if (options.rawBody !== undefined) { body = options.rawBody; headers["content-type"] = "application/json"; }

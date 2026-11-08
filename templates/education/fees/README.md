@@ -86,6 +86,7 @@ A centre is a JSON file ([bright-tuition.example.json](settings/bright-tuition.e
 | `refund.limitInr` | The refund the agent may ask for on its own (an overpayment); above it Guard holds the refund for the owner. It is the same number Guard's threshold is made from |
 | `payment.module` | `razorpay` (UPI is the next module, plan item B33, and is not built) |
 | `owner` | The owner's WhatsApp number and language |
+| `approvers` | Optional: others who approve a refund Guard holds (a teacher, a partner), each from their own phone: `people` (1 to 6 of `{"id", "whatsapp", "language"}`) and `twoAboveInr` (above it, two different people must approve). Left out: the owner alone |
 
 ## The rules, in plain words
 

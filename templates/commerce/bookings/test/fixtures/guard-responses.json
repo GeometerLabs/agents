@@ -60,6 +60,17 @@
       "guard": { "decision": "deny", "code": "conflict", "sent": "no", "retry": "no", "reason": "intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated", "detail": null }
     }
   },
+  "already_done": {
+    "_about": "Added 8 Nov 2026 (Guard's ADR-0060): the identical call again after POST /admin/intents/resolve with happened. The doc writes it from the code and tests/compile.rs, not from the image; the detail's intent id is written in full here.",
+    "status": 409,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
+      "guard": { "decision": "deny", "code": "conflict", "reason_code": "already_done", "sent": "no", "retry": "no",
+                 "reason": "intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
+                 "detail": { "intent": "intent:fa8690f73eaf", "state": "reconciled", "confirmed_by": "operator:owner", "provider_status": 500 } }
+    }
+  },
   "unauthenticated": {
     "status": 401,
     "headers": { "content-type": "application/json" },

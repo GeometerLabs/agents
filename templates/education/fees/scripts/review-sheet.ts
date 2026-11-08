@@ -75,6 +75,10 @@ const WHEN: Record<TemplateId, string> = {
   owner_approval_denied: "The owner denied with the code: nothing is sent",
   owner_approval_expired: "The owner answered after the request had run out: nothing was refunded",
   owner_approval_failed: "The owner's answer could not be recorded just now: send it again",
+  owner_approval_waiting: "A refund needs two people to approve it: this person's approval is in, and the number is how many more are needed (sent to a teacher or the owner)",
+  owner_approval_closed: "A refund that needed two people was approved by the others before this person answered: their code is no longer needed",
+  owner_approval_refused: "A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it",
+  owner_refund_settled: "A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again",
   // UPI centres (B33): the parent pays the centre's own UPI ID; the owner marks it received
   fee_upi_qr_caption: "UPI centre: the words under the QR picture",
   fee_upi_claim: "UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid)",

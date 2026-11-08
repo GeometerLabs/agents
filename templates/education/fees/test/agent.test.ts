@@ -168,3 +168,31 @@ test("a payment at the exact moment of a reminder is read first: the reminder do
   assert.equal(w.textsTo(KIRAN_PARENT).length, 2, "the parent who has not paid is reminded");
   void DAY; void HOUR; void MINUTE;
 });
+
+test("Guard's 409 already_done (a person at the server settled the refund as made) is done: recorded with who said so, the owner told plainly, never sent again", async () => {
+  const raw = JSON.parse(JSON.stringify(brightTuition()));
+  raw.students = brightTuition().students.map((s) => ({ name: s.name, parent: s.parent, batch: s.batchId, ...(s.language ? { language: s.language } : {}) }));
+  const w = createWorld({ settings: parseSettings({ ...raw, partPayments: { allowed: false, minInr: 1 } }) });
+  await w.advance(61);
+  w.pays("Rohan Mehta");
+  w.pays("Rohan Mehta"); // from a second phone: ₹1,800 too much, above the ₹500 refund limit, so Guard holds the refund for the owner
+  const due = w.dueOf("Rohan Mehta")!;
+  const second = w.linkFor("Rohan Mehta")!.payments.at(-1)!.id;
+  // Guard's record of this very refund says a person at the server checked Razorpay and settled it as made
+  w.guard.recordUnknown(second, { amount: 180_000, receipt: `${due.id}:${second}` });
+  w.guard.resolve(second, "happened", "ops");
+  await w.deliverPaymentEvents();
+  assert.equal(w.heldForOwner().length, 1);
+  await w.ownerAnswers("approve");
+  assert.equal(w.payments.refunds().length, 0, "nothing was sent to Razorpay");
+  const done = w.record.entries().filter((e) => e.action === "refund" && e.outcome === "confirmed");
+  assert.equal(done.length, 1);
+  assert.equal(done[0].refs.confirmedBy, "operator:ops");
+  assert.equal(w.textsTo(w.owner).at(-1), `Refund done: ₹1,800 for ${ROHAN_PARENT}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.`);
+  assert.deepEqual(due.refundIssues ?? [], [], "not a problem for the builder");
+  assert.deepEqual(due.stoppedRefunds, [second], "and never asked about again");
+  const calls = w.payments.calls.length;
+  await w.advance(3 * 60);
+  assert.equal(w.payments.calls.filter((c) => c.op === "refund").length, 0);
+  assert.ok(w.payments.calls.length >= calls);
+});

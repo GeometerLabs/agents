@@ -23,6 +23,7 @@
 // open fee links (Razorpay; a UPI centre has none) and sends nothing more. This is the runtime's own check of the lease: Guard's offline check (`subscription_suspended`)
 // is not built yet.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
@@ -110,6 +111,9 @@ export function createAgent(deps: AgentDeps): Agent {
   const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
+  // B37: with other approvers, a refund the owner's own command asks for names the owner (Geo-Requested-By), and the others' code replies are the relay's
+  const askedByOwner = ownerAsked(settings.approvers);
+  const approverDigits = approverNumbers(settings.approvers);
   const parseContext = { languages: settings.languages };
   const highestInr = highestDueInr(settings);
   store.startedAtMs ??= clock.now(); // the day this agent first ran: a month whose first reminder day was before it is not chased
@@ -182,7 +186,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (due, phone, templates, more) => tellCustomer(due, phone, templates as TemplateId[], more),
     tellOwner: (due, phone, template, more) => tellOwner(due, phone, template as TemplateId, more),
     cases: () => store.dues.values(),
-    ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired" },
+    ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired", settled: "owner_refund_settled" },
   });
   const { requestRefund, afterRefund, overLimit } = refunds;
 
@@ -800,8 +804,9 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     log(due, owner, "owner_decision", "confirmed", { command }, { decisions: [once, limit], refs: said });
     if (upi) { await oweBack(due, pending.paymentId, pending.amountInr * 100, "the owner approved the refund the parent asked for", [once, limit]); return; }
-    const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr));
-    await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending" });
+    // with other approvers (B37) the owner is named as asking for it: if Guard holds it, someone else approves it
+    const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr), askedByOwner);
+    await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
   }
 
   // ---- events --------------------------------------------------------------------------------------------------------------
@@ -812,6 +817,8 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     store.seenMessages.add(msg.id);
+    // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
     if (msg.voiceNote) return onVoiceNote(msg);
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);

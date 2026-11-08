@@ -41,6 +41,7 @@ Not built, or built only as far as said. The first block needs another part of t
 - The shop's services are four rows, names typed once (the other languages reuse them, as the demo does); a service's names in each language, and per-day hours, are changed in `settings.json` by a builder.
 - The checks need the server to have applied the shop. There is no "check before saving" for the connection checks, because the keys are in the inbox and only Guard holds them.
 - Going live itself is the deployer's: "Ready to go live" makes the certificate and says so; it does not switch anything on.
+- Others who approve refunds (B37, 8 Nov): the form takes two people and gives them the ids `approver-1` and `approver-2`; names, more people and removing one are done in `settings.json`. The shop page and the go-live checks do not show who approves yet. In a Bookings shop the panel sets the refund limit at or above the deposit, so a deposit refund is never held and the approvers are asked only about other refunds (an extra payment). The new words are machine-written in Hindi, Malayalam and Kannada, waiting for native review (section 7 of the review sheets).
 
 ## Languages and looks
 
