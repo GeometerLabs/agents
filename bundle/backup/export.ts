@@ -1,5 +1,5 @@
 // The record and the bookings (for a Fees centre, the fees), exported for the monthly report, inside a short-lived container (like snapshot.ts). The panel's report reads
-// exports/<shop>/record.json and bookings.json (dues.json for Fees), and they leave the shop's volume, so they carry no customer's number: the customer field of a booking
+// exports/<shop>/record.json and bookings.json (dues.json for Fees, orders.json for Orders), and they leave the shop's volume, so they carry no customer's number: the customer field of a booking
 // (the parent's number on a fee) and the conversation of a record entry become a short hash of themselves (the report's own digest of an entry already leaves the
 // conversation out, so nothing in it changes). A fee also carries a CHILD's name, which the report never needs (it counts fees): the name on a fee is hashed too, and so is
 // the name in a record note that names the student ("the fee for Rohan Mehta, ..."). That changes the note, so the digest of an exported Fees record is of the exported
@@ -31,7 +31,7 @@ export interface ExportJob { shops: { name: string; db: string; out: string }[] 
  * panel's own setting is the panel's, and this count is fleet's.
  * `ledger`: the head of the record's ledger (B28), or why there is none (a record with a gap is not chained).
  */
-export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; ledger?: { seq: number; head: string } | { error: string } }
+export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; ledger?: { seq: number; head: string } | { error: string } }
 
 export const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
 
@@ -55,13 +55,18 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   } finally { db.close(); }
   const raw = rows.map((r) => JSON.parse(r.entry) as Record<string, unknown>);
   const usage = summarizeUsage(raw, rates); // counted before the conversation is hidden, and it reads no text
-  // A Bookings snapshot holds `bookings`, a Fees one holds `dues`: whichever the shop's store has is exported, under its own file name.
-  const saved = state ? (JSON.parse(state.snapshot) as { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][] }) : {};
-  const isFees = saved.dues !== undefined && saved.bookings === undefined;
+  // A Bookings snapshot holds `bookings`, a Fees one holds `dues`, an Orders one holds `orders`: whichever the shop's store has is exported, under its own file name.
+  const saved = state ? (JSON.parse(state.snapshot) as { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][]; orders?: [string, Record<string, unknown>][] }) : {};
+  const isOrders = saved.orders !== undefined;
+  const isFees = !isOrders && saved.dues !== undefined && saved.bookings === undefined;
+  const casesFile = isOrders ? "orders.json" : isFees ? "dues.json" : "bookings.json";
   const students = isFees ? [...new Set((saved.dues ?? []).map(([, d]) => String(d.studentName ?? "")).filter((n) => n.length >= 2))].sort((a, b) => b.length - a.length) : [];
   const scrub = (text: unknown): unknown => (typeof text === "string" ? students.reduce((t, name) => t.split(name).join(hide("s", name)), text) : text);
   const entries = raw.map((e) => ({ ...e, conversation: hide("c", e.conversation), ...(isFees && "notes" in e ? { notes: scrub(e.notes) } : {}) }));
-  const cases = isFees
+  // An order also carries the delivery address a customer wrote: it is the shop's, for the owner, and never leaves the shop's volume (only the place on the delivery list does).
+  const cases = isOrders
+    ? (saved.orders ?? []).map(([, o]) => { const { address: _address, ...rest } = o; return { ...rest, customer: hide("p", o.customer) }; })
+    : isFees
     ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
     : (saved.bookings ?? []).map(([, b]) => ({ ...b, customer: hide("p", b.customer) }));
   mkdirSync(shop.out, { recursive: true });
@@ -73,14 +78,14 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     const last = chain.at(-1);
     if (last) ledgerSaid = { seq: Number(last.seq), head: last.hash };
   } catch (e) { ledgerSaid = { error: (e as Error).message }; }
-  for (const [file, value] of [["record.json", entries], [isFees ? "dues.json" : "bookings.json", cases], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
+  for (const [file, value] of [["record.json", entries], [casesFile, cases], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
   }
   let open: Record<string, number> | undefined;
-  try { open = countsByKind(obligations.detect({ template: isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
+  try { open = countsByKind(obligations.detect({ template: isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
+  return { name: shop.name, ok: true, entries: entries.length, ...(isOrders ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
 }
 
 if (import.meta.main) {

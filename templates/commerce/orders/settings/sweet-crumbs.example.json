@@ -1,0 +1,96 @@
+{
+  "name": "Sweet Crumbs Bakery",
+  "address": "3 Market Lane, Thrissur",
+  "timezone": "Asia/Kolkata",
+  "languages": [
+    "ml",
+    "en"
+  ],
+  "menu": [
+    {
+      "id": "plum-cake",
+      "names": {
+        "en": [
+          "plum cake",
+          "cake"
+        ],
+        "ml": [
+          "പ്ലം കേക്ക്",
+          "കേക്ക്"
+        ]
+      },
+      "priceInr": 450,
+      "dailyStock": 6
+    },
+    {
+      "id": "puffs",
+      "names": {
+        "en": [
+          "puffs",
+          "puff"
+        ],
+        "ml": [
+          "പഫ്സ്",
+          "പഫ്"
+        ]
+      },
+      "priceInr": 25,
+      "dailyStock": 60
+    }
+  ],
+  "orders": {
+    "maxPerDay": 10,
+    "maxItemsPerOrder": 10,
+    "daysAhead": 14
+  },
+  "cutoff": {
+    "daysBefore": 2,
+    "time": "18:00"
+  },
+  "pickup": {
+    "slots": [
+      {
+        "id": "morning",
+        "from": "10:00",
+        "to": "12:00",
+        "names": {
+          "en": [
+            "morning"
+          ],
+          "ml": [
+            "രാവിലെ"
+          ]
+        }
+      },
+      {
+        "id": "evening",
+        "from": "16:00",
+        "to": "18:00",
+        "names": {
+          "en": [
+            "evening"
+          ],
+          "ml": [
+            "വൈകുന്നേരം"
+          ]
+        }
+      }
+    ]
+  },
+  "advance": {
+    "mode": "full"
+  },
+  "cancellation": {
+    "windowHours": 48
+  },
+  "refund": {
+    "limitInr": 500
+  },
+  "payment": {
+    "module": "razorpay"
+  },
+  "owner": {
+    "whatsapp": "+919800000002",
+    "language": "ml"
+  }
+}

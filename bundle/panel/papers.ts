@@ -20,6 +20,7 @@ import type { Choosable, LimitFact } from "../../modules/papers/identity.ts";
 import { sealStatement, statementPage } from "../../modules/papers/statement.ts";
 import { BOOKINGS_PAPERS, bookingCase, fromGoLive as bookingsGoLive, limitFacts as bookingsLimits } from "../../templates/commerce/bookings/report/papers.ts";
 import { FEES_PAPERS, feeCase, fromGoLive as feesGoLive, limitFacts as feesLimits } from "../../templates/education/fees/report/papers.ts";
+import { ORDERS_PAPERS, orderCase, fromGoLive as ordersGoLive, limitFacts as ordersLimits } from "../../templates/commerce/orders/report/papers.ts";
 import { readExport } from "./activity.ts";
 import type { PanelConfig } from "./config.ts";
 import type { Documents } from "./documents.ts";
@@ -29,6 +30,7 @@ import type { Shops } from "./shops.ts";
 const KINDS: Record<string, { papers: TemplatePapers; cases(data: NonNullable<ReturnType<typeof readExport>>, settings: any): PaperCase[]; limitFacts(s: unknown, l: Language): LimitFact[]; fromGoLive(doc: any, l: Language): { limits: string[]; checks: { held: number; total: number; on: { year: number; month: number; day: number }; notTested: string[] } } }> = {
   bookings: { papers: BOOKINGS_PAPERS, cases: (d, s) => d.bookings.map((b) => bookingCase(b, s)), limitFacts: bookingsLimits, fromGoLive: bookingsGoLive },
   fees: { papers: FEES_PAPERS, cases: (d, s) => (d.dues ?? []).map((x) => feeCase(x, s)), limitFacts: feesLimits, fromGoLive: feesGoLive },
+  orders: { papers: ORDERS_PAPERS, cases: (d, s) => (d.orders ?? []).map((x) => orderCase(x, s)), limitFacts: ordersLimits, fromGoLive: ordersGoLive },
 };
 
 export type PaperKind = "dispute" | "statement" | "identity" | "identity-public" | "pack" | "anchor";

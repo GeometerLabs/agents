@@ -10,7 +10,7 @@ Geometer catch it, a CI workflow and a prompt for your coding assistant.
 
 | Folder | What it holds |
 | --- | --- |
-| [templates/](templates/README.md) | Agent templates people deploy, one folder per domain: `commerce/` (bookings), `education/` (fees) and `community/` (specs for village and group templates, not runnable yet). Also the [sell guide spec](templates/SELL-GUIDE.md) every template follows |
+| [templates/](templates/README.md) | Agent templates people deploy, one folder per domain: `commerce/` (bookings, orders), `education/` (fees) and `community/` (specs for village and group templates, not runnable yet). Also the [sell guide spec](templates/SELL-GUIDE.md) every template follows |
 | [examples/](examples/README.md) | The fourteen example agents Geometer checks, one folder per domain: `payments/`, `commerce/`, `support/`, `games/` and `science/` |
 | [modules/](modules/README.md) | The features the templates share: language, understanding, payments, messaging, the record, reports, approvals, limits, reminders and the stand-ins |
 | [bundle/](bundle/README.md) | The deploy bundle: a folder per shop becomes one Docker Compose file; also the panel |

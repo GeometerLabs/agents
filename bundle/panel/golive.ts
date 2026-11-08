@@ -38,7 +38,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     try { return readFileSync(config.guardAgentTokenFile, "utf8").trim() || undefined; } catch { return undefined; }
   })();
 
-  /** The template a shop is: its hand check, its certificate and its settings digest (Bookings and Fees each have their own). */
+  /** The template a shop is: its hand check, its certificate and its settings digest (Bookings, Fees and Orders each have their own: lib/kinds.ts). */
   const kindOf = (shop: string): Kind => kindFor(shops.kind(shop)) as Kind;
   const docs = createDocuments(store);
   const stored = (shop: string) => store.read<StoredChecks>(`checks/${shop}.json`);
