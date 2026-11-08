@@ -82,6 +82,16 @@ function findItems(t: string, context: ParseContext): IntentLine[] {
   return lines;
 }
 
+/** The slots a name in the message stands for ("lunch" is the lunch slot for pickup and the one for delivery). */
+function findSlots(t: string, context: ParseContext): string[] {
+  const ids: string[] = [];
+  for (const slot of context.slots) {
+    const names = Object.values(slot.names).flat().map((n) => canon(n as string));
+    if (names.length > 0 && wordRe(names).test(t)) ids.push(slot.id);
+  }
+  return ids;
+}
+
 /** Read one message. Pure and synchronous; the async wrapper is only there to fit the IntentParser seam. */
 export function parseIntent(text: string, context: ParseContext): Intent {
   const t = canon(text);
@@ -96,14 +106,16 @@ export function parseIntent(text: string, context: ParseContext): Intent {
   const offerInr = findOffer(t);
   const date = findDatePhrase(text);
   const time = findTimePhrase(text);
+  const slotIds = findSlots(t, context);
   const mode = PICKUP_RE.test(t) ? "pickup" : DELIVERY_RE.test(t) ? "delivery" : undefined;
   if (items.length > 0) intent.items = items;
   if (offerInr !== undefined) intent.offerInr = offerInr;
   if (date) intent.date = date;
   if (time) intent.time = time;
   if (mode) intent.mode = mode;
+  if (slotIds.length > 0) intent.slotIds = slotIds;
 
-  const hasDetails = items.length > 0 || offerInr !== undefined || date !== undefined || time !== undefined || mode !== undefined;
+  const hasDetails = items.length > 0 || offerInr !== undefined || date !== undefined || time !== undefined || mode !== undefined || slotIds.length > 0;
   const shortReply = t.trim().split(/\s+/u).length <= 5 && !hasDetails;
 
   if (CANCEL_RE.test(t)) intent.kind = "cancel";

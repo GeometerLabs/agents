@@ -72,12 +72,12 @@ export type TemplateId =
   | "price_floor" | "too_many_items" | "out_of_stock" | "sold_out" | "day_full" | "after_cutoff" | "outside_area"
   // to the customer: the quote, the order, and what happens to the money
   | "quote_and_link" | "already_waiting" | "link_failed" | "order_confirmed" | "hold_expired" | "stock_gone_refund" | "cutoff_passed_refund" | "refund_unused"
-  | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending" | "cancelled_late" | "cancelled_no_advance" | "no_order_found"
+  | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending" | "cancelled_late" | "cancelled_no_advance" | "cancelled_draft" | "no_order_found"
   | "refund_approved" | "refund_denied" | "refund_checking" | "refund_expired" | "big_order_asked" | "big_order_denied"
   | "didnt_understand" | "voice_note" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
   // to the owner. Every line starts and ends with fixed words, because each one that goes out unasked is also a WhatsApp template (meta-templates.ts) and Meta rejects a body
   // that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
-  | "owner_order_confirmed" | "owner_big_order" | "owner_order_cancelled" | "owner_late_cancellation" | "owner_duplicate_payment" | "owner_payment_unused" | "owner_link_failed"
+  | "owner_order_confirmed" | "owner_delivery_confirmed" | "owner_big_order" | "owner_order_cancelled" | "owner_late_cancellation" | "owner_duplicate_payment" | "owner_payment_unused" | "owner_link_failed"
   | "owner_message_held" | "owner_opted_out" | "owner_unknown_command" | "owner_wants_to_talk"
   // button mode: the agent reads with the rules only and answers with buttons and lists (modules/understanding/ai-state.ts). Each says why, and that every limit still holds.
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
@@ -93,7 +93,7 @@ export type LicenceTemplateId = "orders_paused" | "owner_licence_paused" | "owne
 
 /** UPI shops only (B33): the advance is paid to the shop's own UPI ID and marked paid by the owner; refunds are sent by the owner. */
 export type UpiTemplateId =
-  | "upi_qr_caption" | "upi_paid_claim" | "upi_nothing_waiting" | "upi_late_received" | "upi_refund_owed" | "upi_cancelled_refund_owed" | "upi_extra_refund_owed" | "upi_refund_sent"
+  | "upi_order_confirmed" | "upi_qr_caption" | "upi_paid_claim" | "upi_nothing_waiting" | "upi_late_received" | "upi_refund_owed" | "upi_cancelled_refund_owed" | "upi_extra_refund_owed" | "upi_refund_sent"
   | "owner_upi_expected" | "owner_upi_claim" | "owner_upi_marked" | "owner_upi_part" | "owner_upi_already" | "owner_upi_unknown" | "owner_upi_late"
   | "owner_upi_refund_owed" | "owner_upi_refund_reminder" | "owner_upi_refund_marked" | "owner_upi_refund_kept";
 
@@ -174,7 +174,7 @@ const en: BaseSet = {
   quote_and_link: (f) => `${items(f)} for ${when(f)}, ${how(f)}. Total ${inr(f, "totalInr")}. To confirm, pay ${inr(f, "advanceInr")} here: ${payTo(f)} (I'll hold your order for ${need(f, "holdMinutes")} minutes.)${f.upiId ? " The owner confirms the payment, then I'll message you." : ""}`,
   already_waiting: (f) => `Your order (${items(f)}, ${when(f)}) is held. Pay ${inr(f, "advanceInr")} to confirm: ${payTo(f)}${f.upiId ? " The owner confirms the payment, then I'll message you." : ""}`,
   link_failed: () => "Sorry, I couldn't create the payment link just now, so nothing is ordered. I've told the owner. Please try again in a few minutes.",
-  order_confirmed: (f) => `Confirmed! ${items(f)} for ${when(f)}, ${how(f)}. ${f.upiId ? "The owner has confirmed" : "We have received"} your advance of ${inr(f, "advanceInr")}. ${rest(f)} Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
+  order_confirmed: (f) => `Confirmed! ${items(f)} for ${when(f)}, ${how(f)}. We have received your advance of ${inr(f, "advanceInr")}. ${rest(f)} Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
   hold_expired: (f) => `The hold on your order (${items(f)}, ${when(f)}) has ended because the advance was not received in time. Message me if you'd still like to order.`,
   stock_gone_refund: (f) => `Your payment of ${inr(f, "advanceInr")} arrived after the hold on your order ended, and ${items(f)} for ${day(f)} is no longer available. ${inr(f, "refundInr")} is being refunded to you.`,
   cutoff_passed_refund: (f) => `Your payment of ${inr(f, "advanceInr")} arrived after the hold on your order ended, and orders for ${day(f)} have closed (${cutAt(f)}). ${inr(f, "refundInr")} is being refunded to you.`,
@@ -185,6 +185,7 @@ const en: BaseSet = {
   cancelled_refund_pending: (f) => `Your order for ${when(f)} is cancelled. The owner will confirm your ${inr(f, "refundInr")} refund shortly.`,
   cancelled_late: (f) => `Your order for ${when(f)} is cancelled. As it is less than ${need(f, "windowHours")} hours before the start, the owner will decide about your ${inr(f, "advanceInr")} advance and message you.`,
   cancelled_no_advance: (f) => `Your order for ${day(f)} is cancelled. Nothing was charged.`,
+  cancelled_draft: () => "Okay, I have dropped that order. Nothing was charged.",
   no_order_found: () => "I couldn't find an order to change. Tell me what you'd like, how many and which day, and I'll set it up.",
   refund_approved: (f) => `The owner approved your refund. ${inr(f, "refundInr")} is on its way.`,
   refund_denied: (f) => `The owner has decided not to refund the ${inr(f, "advanceInr")} advance.`,
@@ -199,7 +200,8 @@ const en: BaseSet = {
   told_owner: () => "I've told the owner that you would like to talk. They will message you here.",
   couldnt_tell_owner: () => "Sorry, I couldn't reach the owner just now. Please try again in a few minutes.",
 
-  owner_order_confirmed: (f) => `New order ${need(f, "orderRef")} from ${need(f, "customerPhone")}: ${items(f)} for ${when(f)}, ${how(f)}${f.address ? ` (address: ${f.address})` : ""}. Total ${inr(f, "totalInr")}, advance ${inr(f, "advanceInr")} paid, ${inr(f, "balanceInr")} to collect. Nothing more to do now.`,
+  owner_order_confirmed: (f) => `New order ${need(f, "orderRef")} from ${need(f, "customerPhone")}: ${items(f)} for ${when(f)}, ${how(f)}. Total ${inr(f, "totalInr")}, advance ${inr(f, "advanceInr")} paid, ${inr(f, "balanceInr")} to collect. Nothing more to do now.`,
+  owner_delivery_confirmed: (f) => `New order ${need(f, "orderRef")} from ${need(f, "customerPhone")}: ${items(f)} for ${when(f)}, ${how(f)}, address: ${need(f, "address")}. Total ${inr(f, "totalInr")}, advance ${inr(f, "advanceInr")} paid, ${inr(f, "balanceInr")} to collect. Nothing more to do now.`,
   owner_big_order: (f) => `Approval needed: ${need(f, "customerPhone")} wants ${items(f)} for ${when(f)}, ${how(f)}. Total ${inr(f, "totalInr")}. Reply "approve ${need(f, "orderRef")}" to let them pay, or "deny ${need(f, "orderRef")}".`,
   owner_order_cancelled: (f) => `Customer ${need(f, "customerPhone")} cancelled order ${need(f, "orderRef")}: ${items(f)} for ${when(f)}. Please do not prepare it.`,
   owner_late_cancellation: (f) => `Customer ${need(f, "customerPhone")} cancelled order ${need(f, "orderRef")} (${items(f)}, ${when(f)}) less than ${need(f, "windowHours")} hours before the start. Advance ${inr(f, "advanceInr")}. Reply "approve ${need(f, "orderRef")}" to refund it or "deny ${need(f, "orderRef")}" to keep it.`,
@@ -243,7 +245,7 @@ const hi: BaseSet = {
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}। कुल ${inr(f, "totalInr")}। पक्का करने के लिए ${inr(f, "advanceInr")} यहाँ भेजें: ${payTo(f)} (आपका ऑर्डर ${need(f, "holdMinutes")} मिनट के लिए रोका गया है।)${f.upiId ? " पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।" : ""}`,
   already_waiting: (f) => `आपका ऑर्डर (${items(f)}, ${when(f)}) रोका हुआ है। पक्का करने के लिए ${inr(f, "advanceInr")} भेजें: ${payTo(f)}${f.upiId ? " पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।" : ""}`,
   link_failed: () => "माफ़ कीजिए, अभी पेमेंट लिंक नहीं बन पाया, इसलिए कुछ भी ऑर्डर नहीं हुआ है। मैंने मालिक को बता दिया है। कृपया कुछ मिनट बाद फिर कोशिश करें।",
-  order_confirmed: (f) => `ऑर्डर पक्का! ${items(f)}, ${when(f)}, ${how(f)}। ${f.upiId ? "मालिक ने आपका" : "हमें आपका"} ${inr(f, "advanceInr")} का एडवांस ${f.upiId ? "पक्का कर दिया है" : "मिल गया है"}। ${rest(f)} रिफंड के लिए शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द करें।`,
+  order_confirmed: (f) => `ऑर्डर पक्का! ${items(f)}, ${when(f)}, ${how(f)}। हमें आपका ${inr(f, "advanceInr")} का एडवांस मिल गया है। ${rest(f)} रिफंड के लिए शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द करें।`,
   hold_expired: (f) => `आपके ऑर्डर (${items(f)}, ${when(f)}) की रोक खत्म हो गई क्योंकि एडवांस समय पर नहीं मिला। अब भी ऑर्डर करना चाहें तो मुझे लिखें।`,
   stock_gone_refund: (f) => `आपका ${inr(f, "advanceInr")} का भुगतान ऑर्डर की रोक खत्म होने के बाद आया, और ${day(f)} के लिए ${items(f)} अब उपलब्ध नहीं है। ${inr(f, "refundInr")} आपको वापस किया जा रहा है।`,
   cutoff_passed_refund: (f) => `आपका ${inr(f, "advanceInr")} का भुगतान ऑर्डर की रोक खत्म होने के बाद आया, और ${day(f)} के ऑर्डर बंद हो चुके हैं (${cutAt(f)})। ${inr(f, "refundInr")} आपको वापस किया जा रहा है।`,
@@ -254,6 +256,7 @@ const hi: BaseSet = {
   cancelled_refund_pending: (f) => `${when(f)} का आपका ऑर्डर रद्द हो गया है। आपके ${inr(f, "refundInr")} के रिफंड की पुष्टि मालिक जल्द करेंगे।`,
   cancelled_late: (f) => `${when(f)} का आपका ऑर्डर रद्द हो गया है। यह शुरू होने से ${need(f, "windowHours")} घंटे से कम पहले है, इसलिए आपके ${inr(f, "advanceInr")} एडवांस पर मालिक फ़ैसला करेंगे और आपको बताएँगे।`,
   cancelled_no_advance: (f) => `${day(f)} का आपका ऑर्डर रद्द हो गया है। कोई शुल्क नहीं लिया गया।`,
+  cancelled_draft: () => "ठीक है, मैंने वह ऑर्डर छोड़ दिया है। कोई शुल्क नहीं लिया गया।",
   no_order_found: () => "मुझे बदलने के लिए कोई ऑर्डर नहीं मिला। बताइए क्या चाहिए, कितना और किस दिन, मैं ऑर्डर बना दूँगा।",
   refund_approved: (f) => `मालिक ने आपके रिफंड को मंज़ूरी दे दी है। ${inr(f, "refundInr")} आपको वापस भेजा जा रहा है।`,
   refund_denied: (f) => `मालिक ने ${inr(f, "advanceInr")} का एडवांस वापस न करने का फ़ैसला किया है।`,
@@ -268,7 +271,8 @@ const hi: BaseSet = {
   told_owner: () => "मैंने मालिक को बता दिया है कि आप बात करना चाहते हैं। वे यहीं आपको संदेश भेजेंगे।",
   couldnt_tell_owner: () => "माफ़ कीजिए, अभी मालिक तक बात नहीं पहुँच पाई। कृपया कुछ मिनट बाद फिर कोशिश करें।",
 
-  owner_order_confirmed: (f) => `नया ऑर्डर ${need(f, "orderRef")}, ग्राहक ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}${f.address ? ` (पता: ${f.address})` : ""}। कुल ${inr(f, "totalInr")}, एडवांस ${inr(f, "advanceInr")} मिल चुका, ${inr(f, "balanceInr")} लेने हैं। अभी कुछ करना बाकी नहीं है।`,
+  owner_order_confirmed: (f) => `नया ऑर्डर ${need(f, "orderRef")}, ग्राहक ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}। कुल ${inr(f, "totalInr")}, एडवांस ${inr(f, "advanceInr")} मिल चुका, ${inr(f, "balanceInr")} लेने हैं। अभी कुछ करना बाकी नहीं है।`,
+  owner_delivery_confirmed: (f) => `नया ऑर्डर ${need(f, "orderRef")}, ग्राहक ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}, पता: ${need(f, "address")}। कुल ${inr(f, "totalInr")}, एडवांस ${inr(f, "advanceInr")} मिल चुका, ${inr(f, "balanceInr")} लेने हैं। अभी कुछ करना बाकी नहीं है।`,
   owner_big_order: (f) => `मंज़ूरी चाहिए: ${need(f, "customerPhone")} को ${items(f)} चाहिए, ${when(f)}, ${how(f)}। कुल ${inr(f, "totalInr")}। भुगतान की अनुमति के लिए "approve ${need(f, "orderRef")}" या मना करने के लिए "deny ${need(f, "orderRef")}" लिखें।`,
   owner_order_cancelled: (f) => `ग्राहक ${need(f, "customerPhone")} ने ऑर्डर ${need(f, "orderRef")} रद्द किया: ${items(f)}, ${when(f)}। कृपया इसे तैयार न करें।`,
   owner_late_cancellation: (f) => `ग्राहक ${need(f, "customerPhone")} ने ऑर्डर ${need(f, "orderRef")} (${items(f)}, ${when(f)}) शुरू होने से ${need(f, "windowHours")} घंटे से कम पहले रद्द किया। एडवांस ${inr(f, "advanceInr")}। लौटाने के लिए "approve ${need(f, "orderRef")}" या रखने के लिए "deny ${need(f, "orderRef")}" लिखें।`,
@@ -312,7 +316,7 @@ const ml: BaseSet = {
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}. ആകെ ${inr(f, "totalInr")}. ഉറപ്പിക്കാൻ ${inr(f, "advanceInr")} ഇവിടെ അടയ്ക്കൂ: ${payTo(f)} (ഓർഡർ ${need(f, "holdMinutes")} മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)${f.upiId ? " പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ സന്ദേശം അയയ്ക്കും." : ""}`,
   already_waiting: (f) => `നിങ്ങളുടെ ഓർഡർ (${items(f)}, ${when(f)}) മാറ്റിവച്ചിട്ടുണ്ട്. ഉറപ്പിക്കാൻ ${inr(f, "advanceInr")} അടയ്ക്കൂ: ${payTo(f)}${f.upiId ? " പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ സന്ദേശം അയയ്ക്കും." : ""}`,
   link_failed: () => "ക്ഷമിക്കണം, ഇപ്പോൾ പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഒന്നും ഓർഡർ ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. ദയവായി കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ.",
-  order_confirmed: (f) => `ഓർഡർ ഉറപ്പായി! ${items(f)}, ${when(f)}, ${how(f)}. നിങ്ങളുടെ ${inr(f, "advanceInr")} അഡ്വാൻസ് ${f.upiId ? "ഉടമ ഉറപ്പിച്ചു" : "ലഭിച്ചു"}. ${rest(f)} പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് ${need(f, "windowHours")} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.`,
+  order_confirmed: (f) => `ഓർഡർ ഉറപ്പായി! ${items(f)}, ${when(f)}, ${how(f)}. നിങ്ങളുടെ ${inr(f, "advanceInr")} അഡ്വാൻസ് ലഭിച്ചു. ${rest(f)} പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് ${need(f, "windowHours")} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.`,
   hold_expired: (f) => `അഡ്വാൻസ് സമയത്ത് ലഭിക്കാത്തതിനാൽ നിങ്ങളുടെ ഓർഡർ (${items(f)}, ${when(f)}) മാറ്റിവച്ചത് ഒഴിവാക്കി. ഇനിയും ഓർഡർ ചെയ്യണമെങ്കിൽ എനിക്ക് മെസ്സേജ് അയയ്ക്കൂ.`,
   stock_gone_refund: (f) => `നിങ്ങളുടെ ${inr(f, "advanceInr")} പേയ്മെന്റ് ഓർഡർ മാറ്റിവച്ചത് അവസാനിച്ച ശേഷമാണ് എത്തിയത്, ${day(f)}-ന് ${items(f)} ഇപ്പോൾ ലഭ്യമല്ല. ${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നുണ്ട്.`,
   cutoff_passed_refund: (f) => `നിങ്ങളുടെ ${inr(f, "advanceInr")} പേയ്മെന്റ് ഓർഡർ മാറ്റിവച്ചത് അവസാനിച്ച ശേഷമാണ് എത്തിയത്, ${day(f)}-ലെ ഓർഡറുകൾ അവസാനിച്ചു (${cutAt(f)}). ${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നുണ്ട്.`,
@@ -323,6 +327,7 @@ const ml: BaseSet = {
   cancelled_refund_pending: (f) => `${when(f)}-ലെ നിങ്ങളുടെ ഓർഡർ റദ്ദാക്കി. നിങ്ങളുടെ ${inr(f, "refundInr")} തിരികെ നൽകുന്ന കാര്യം ഉടമ ഉടൻ ഉറപ്പാക്കും.`,
   cancelled_late: (f) => `${when(f)}-ലെ നിങ്ങളുടെ ഓർഡർ റദ്ദാക്കി. തുടങ്ങാൻ ${need(f, "windowHours")} മണിക്കൂറിൽ താഴെ മാത്രം ബാക്കിയുള്ളതിനാൽ, നിങ്ങളുടെ ${inr(f, "advanceInr")} അഡ്വാൻസിന്റെ കാര്യത്തിൽ ഉടമ തീരുമാനിച്ച് നിങ്ങളെ അറിയിക്കും.`,
   cancelled_no_advance: (f) => `${day(f)}-ലെ നിങ്ങളുടെ ഓർഡർ റദ്ദാക്കി. പണം ഒന്നും ഈടാക്കിയിട്ടില്ല.`,
+  cancelled_draft: () => "ശരി, ആ ഓർഡർ ഒഴിവാക്കി. പണം ഒന്നും ഈടാക്കിയിട്ടില്ല.",
   no_order_found: () => "മാറ്റാൻ ഓർഡർ ഒന്നും കണ്ടില്ല. എന്താണ് വേണ്ടത്, എത്ര, ഏത് ദിവസം എന്ന് പറയൂ, ഞാൻ ഓർഡർ ചെയ്യാം.",
   refund_approved: (f) => `ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. ${inr(f, "refundInr")} തിരികെ വരുന്നുണ്ട്.`,
   refund_denied: (f) => `${inr(f, "advanceInr")} അഡ്വാൻസ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു.`,
@@ -337,7 +342,8 @@ const ml: BaseSet = {
   told_owner: () => "നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ നിങ്ങൾക്ക് സന്ദേശം അയയ്ക്കും.",
   couldnt_tell_owner: () => "ക്ഷമിക്കണം, ഇപ്പോൾ ഉടമയെ അറിയിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ.",
 
-  owner_order_confirmed: (f) => `പുതിയ ഓർഡർ ${need(f, "orderRef")}, ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}${f.address ? ` (വിലാസം: ${f.address})` : ""}. ആകെ ${inr(f, "totalInr")}, അഡ്വാൻസ് ${inr(f, "advanceInr")} ലഭിച്ചു, ${inr(f, "balanceInr")} വാങ്ങാനുണ്ട്. ഇപ്പോൾ ഒന്നും ചെയ്യാനില്ല.`,
+  owner_order_confirmed: (f) => `പുതിയ ഓർഡർ ${need(f, "orderRef")}, ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}. ആകെ ${inr(f, "totalInr")}, അഡ്വാൻസ് ${inr(f, "advanceInr")} ലഭിച്ചു, ${inr(f, "balanceInr")} വാങ്ങാനുണ്ട്. ഇപ്പോൾ ഒന്നും ചെയ്യാനില്ല.`,
+  owner_delivery_confirmed: (f) => `പുതിയ ഓർഡർ ${need(f, "orderRef")}, ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}, വിലാസം: ${need(f, "address")}. ആകെ ${inr(f, "totalInr")}, അഡ്വാൻസ് ${inr(f, "advanceInr")} ലഭിച്ചു, ${inr(f, "balanceInr")} വാങ്ങാനുണ്ട്. ഇപ്പോൾ ഒന്നും ചെയ്യാനില്ല.`,
   owner_big_order: (f) => `അനുമതി വേണം: ${need(f, "customerPhone")}-ന് ${items(f)} വേണം, ${when(f)}, ${how(f)}. ആകെ ${inr(f, "totalInr")}. പണമടയ്ക്കാൻ അനുവദിക്കാൻ "approve ${need(f, "orderRef")}" എന്നും, നിരസിക്കാൻ "deny ${need(f, "orderRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
   owner_order_cancelled: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")} ഓർഡർ ${need(f, "orderRef")} റദ്ദാക്കി: ${items(f)}, ${when(f)}. ദയവായി ഇത് തയ്യാറാക്കരുത്.`,
   owner_late_cancellation: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: ഓർഡർ ${need(f, "orderRef")} (${items(f)}, ${when(f)}) തുടങ്ങാൻ ${need(f, "windowHours")} മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് ${inr(f, "advanceInr")}. തിരികെ നൽകാൻ "approve ${need(f, "orderRef")}" എന്നും, നിങ്ങൾ വയ്ക്കാൻ "deny ${need(f, "orderRef")}" എന്നും മറുപടി അയയ്ക്കൂ.`,
@@ -381,7 +387,7 @@ const kn: BaseSet = {
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}. ಒಟ್ಟು ${inr(f, "totalInr")}. ಖಚಿತಪಡಿಸಲು ${inr(f, "advanceInr")} ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)} (ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)${f.upiId ? " ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ." : ""}`,
   already_waiting: (f) => `ನಿಮ್ಮ ಆರ್ಡರ್ (${items(f)}, ${when(f)}) ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ. ಖಚಿತಪಡಿಸಲು ${inr(f, "advanceInr")} ಪಾವತಿಸಿ: ${payTo(f)}${f.upiId ? " ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ." : ""}`,
   link_failed: () => "ಕ್ಷಮಿಸಿ, ಈಗ ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಆರ್ಡರ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
-  order_confirmed: (f) => `ಆರ್ಡರ್ ಖಚಿತವಾಗಿದೆ! ${items(f)}, ${when(f)}, ${how(f)}. ನಿಮ್ಮ ${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣ ${f.upiId ? "ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ" : "ಸಿಕ್ಕಿದೆ"}. ${rest(f)} ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.`,
+  order_confirmed: (f) => `ಆರ್ಡರ್ ಖಚಿತವಾಗಿದೆ! ${items(f)}, ${when(f)}, ${how(f)}. ನಿಮ್ಮ ${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. ${rest(f)} ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.`,
   hold_expired: (f) => `ಮುಂಗಡ ಹಣ ಸಮಯಕ್ಕೆ ಸಿಗದ ಕಾರಣ ನಿಮ್ಮ ಆರ್ಡರ್ (${items(f)}, ${when(f)}) ಕಾಯ್ದಿರಿಸಿದ್ದನ್ನು ಬಿಡುಗಡೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೂ ಆರ್ಡರ್ ಮಾಡಬೇಕಾದರೆ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.`,
   stock_gone_refund: (f) => `ನಿಮ್ಮ ${inr(f, "advanceInr")} ಪಾವತಿ ಆರ್ಡರ್ ಕಾಯ್ದಿರಿಸಿದ್ದು ಮುಗಿದ ನಂತರ ಬಂದಿದೆ, ಮತ್ತು ${day(f)} ಕ್ಕೆ ${items(f)} ಈಗ ಲಭ್ಯವಿಲ್ಲ. ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,
   cutoff_passed_refund: (f) => `ನಿಮ್ಮ ${inr(f, "advanceInr")} ಪಾವತಿ ಆರ್ಡರ್ ಕಾಯ್ದಿರಿಸಿದ್ದು ಮುಗಿದ ನಂತರ ಬಂದಿದೆ, ಮತ್ತು ${day(f)} ರ ಆರ್ಡರ್‌ಗಳು ಮುಗಿದಿವೆ (${cutAt(f)}). ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,
@@ -392,6 +398,7 @@ const kn: BaseSet = {
   cancelled_refund_pending: (f) => `${when(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ${inr(f, "refundInr")} ಮರಳಿ ಕೊಡುವ ಬಗ್ಗೆ ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ಖಚಿತಪಡಿಸುತ್ತಾರೆ.`,
   cancelled_late: (f) => `${when(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ರದ್ದಾಗಿದೆ. ಪ್ರಾರಂಭಕ್ಕೆ ${need(f, "windowHours")} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಸಮಯ ಇರುವುದರಿಂದ, ನಿಮ್ಮ ${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣದ ಬಗ್ಗೆ ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿ ನಿಮಗೆ ತಿಳಿಸುತ್ತಾರೆ.`,
   cancelled_no_advance: (f) => `${day(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ರದ್ದಾಗಿದೆ. ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ.`,
+  cancelled_draft: () => "ಸರಿ, ಆ ಆರ್ಡರ್ ಅನ್ನು ಬಿಟ್ಟಿದ್ದೇನೆ. ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ.",
   no_order_found: () => "ಬದಲಾಯಿಸಲು ಯಾವುದೇ ಆರ್ಡರ್ ಸಿಗಲಿಲ್ಲ. ಏನು ಬೇಕು, ಎಷ್ಟು, ಯಾವ ದಿನ ತಿಳಿಸಿ, ನಾನು ಆರ್ಡರ್ ಮಾಡುತ್ತೇನೆ.",
   refund_approved: (f) => `ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಒಪ್ಪಿದ್ದಾರೆ. ${inr(f, "refundInr")} ಮರಳಿ ಬರುತ್ತಿದೆ.`,
   refund_denied: (f) => `${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣವನ್ನು ಮರಳಿ ಕೊಡದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ.`,
@@ -406,7 +413,8 @@ const kn: BaseSet = {
   told_owner: () => "ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ.",
   couldnt_tell_owner: () => "ಕ್ಷಮಿಸಿ, ಈಗ ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
 
-  owner_order_confirmed: (f) => `ಹೊಸ ಆರ್ಡರ್ ${need(f, "orderRef")}, ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}${f.address ? ` (ವಿಳಾಸ: ${f.address})` : ""}. ಒಟ್ಟು ${inr(f, "totalInr")}, ಮುಂಗಡ ${inr(f, "advanceInr")} ಸಿಕ್ಕಿದೆ, ${inr(f, "balanceInr")} ಪಡೆಯಬೇಕು. ಈಗ ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ.`,
+  owner_order_confirmed: (f) => `ಹೊಸ ಆರ್ಡರ್ ${need(f, "orderRef")}, ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}. ಒಟ್ಟು ${inr(f, "totalInr")}, ಮುಂಗಡ ${inr(f, "advanceInr")} ಸಿಕ್ಕಿದೆ, ${inr(f, "balanceInr")} ಪಡೆಯಬೇಕು. ಈಗ ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ.`,
+  owner_delivery_confirmed: (f) => `ಹೊಸ ಆರ್ಡರ್ ${need(f, "orderRef")}, ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${items(f)}, ${when(f)}, ${how(f)}, ವಿಳಾಸ: ${need(f, "address")}. ಒಟ್ಟು ${inr(f, "totalInr")}, ಮುಂಗಡ ${inr(f, "advanceInr")} ಸಿಕ್ಕಿದೆ, ${inr(f, "balanceInr")} ಪಡೆಯಬೇಕು. ಈಗ ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ.`,
   owner_big_order: (f) => `ಅನುಮತಿ ಬೇಕು: ${need(f, "customerPhone")} ಅವರಿಗೆ ${items(f)} ಬೇಕು, ${when(f)}, ${how(f)}. ಒಟ್ಟು ${inr(f, "totalInr")}. ಪಾವತಿಗೆ ಅನುಮತಿಸಲು "approve ${need(f, "orderRef")}" ಎಂದು, ನಿರಾಕರಿಸಲು "deny ${need(f, "orderRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_order_cancelled: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")} ಆರ್ಡರ್ ${need(f, "orderRef")} ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ: ${items(f)}, ${when(f)}. ದಯವಿಟ್ಟು ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಬೇಡಿ.`,
   owner_late_cancellation: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ಆರ್ಡರ್ ${need(f, "orderRef")} (${items(f)}, ${when(f)}) ಪ್ರಾರಂಭಕ್ಕೆ ${need(f, "windowHours")} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಇರುವಾಗ ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ. ಮುಂಗಡ ${inr(f, "advanceInr")}. ಹಿಂತಿರುಗಿಸಲು "approve ${need(f, "orderRef")}" ಎಂದು, ಇಟ್ಟುಕೊಳ್ಳಲು "deny ${need(f, "orderRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
@@ -439,6 +447,7 @@ const marked = (f: MessageFacts) => formatInr(need(f, "markedInr"));
 const left = (f: MessageFacts) => formatInr(need(f, "leftInr"));
 
 const upiEn: UpiSet = {
+  upi_order_confirmed: (f) => `Confirmed! ${items(f)} for ${when(f)}, ${how(f)}. The owner has confirmed your advance of ${inr(f, "advanceInr")}. ${rest(f)} Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
   upi_qr_caption: (f) => `Scan to pay ${inr(f, "advanceInr")} by UPI to ${payee(f)} for order ${ref(f)}.`,
   upi_paid_claim: (f) => `Thank you. The owner will look for your ${inr(f, "advanceInr")} payment in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message.`,
   upi_nothing_waiting: () => "Thank you. No UPI payment is waiting for you just now, so there is nothing for the owner to confirm. If you paid for something else, please talk to the owner.",
@@ -462,6 +471,7 @@ const upiEn: UpiSet = {
 };
 
 const upiHi: UpiSet = {
+  upi_order_confirmed: (f) => `ऑर्डर पक्का! ${items(f)}, ${when(f)}, ${how(f)}। मालिक ने आपका ${inr(f, "advanceInr")} का एडवांस पक्का कर दिया है। ${rest(f)} रिफंड के लिए शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द करें।`,
   upi_qr_caption: (f) => `ऑर्डर ${ref(f)} के लिए ${payee(f)} को UPI से ${inr(f, "advanceInr")} भेजने के लिए स्कैन करें।`,
   upi_paid_claim: (f) => `धन्यवाद। मालिक अपने UPI ऐप में आपका ${inr(f, "advanceInr")} देखकर पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा। स्क्रीनशॉट पेमेंट का सबूत नहीं है, इसलिए कृपया उस संदेश का इंतज़ार करें।`,
   upi_nothing_waiting: () => "धन्यवाद। अभी आपका कोई UPI पेमेंट बाकी नहीं है, इसलिए मालिक के पास पक्का करने को कुछ नहीं है। अगर आपने किसी और चीज़ के लिए पैसे भेजे हैं, तो कृपया मालिक से बात करें।",
@@ -485,6 +495,7 @@ const upiHi: UpiSet = {
 };
 
 const upiMl: UpiSet = {
+  upi_order_confirmed: (f) => `ഓർഡർ ഉറപ്പായി! ${items(f)}, ${when(f)}, ${how(f)}. നിങ്ങളുടെ ${inr(f, "advanceInr")} അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. ${rest(f)} പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് ${need(f, "windowHours")} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.`,
   upi_qr_caption: (f) => `ഓർഡർ ${ref(f)}-നായി ${payee(f)}-ന് UPI വഴി ${inr(f, "advanceInr")} അയക്കാൻ സ്കാൻ ചെയ്യൂ.`,
   upi_paid_claim: (f) => `നന്ദി. ഉടമ അവരുടെ UPI ആപ്പിൽ നിങ്ങളുടെ ${inr(f, "advanceInr")} നോക്കി ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. സ്ക്രീൻഷോട്ട് പണമടച്ചതിന്റെ തെളിവല്ല, അതിനാൽ ആ സന്ദേശത്തിനായി കാത്തിരിക്കൂ.`,
   upi_nothing_waiting: () => "നന്ദി. ഇപ്പോൾ നിങ്ങളുടെ ഒരു UPI പണമടവും ബാക്കിയില്ല, അതിനാൽ ഉടമയ്ക്ക് ഉറപ്പിക്കാൻ ഒന്നുമില്ല. മറ്റെന്തിനെങ്കിലും പണം അയച്ചിട്ടുണ്ടെങ്കിൽ ദയവായി ഉടമയോട് സംസാരിക്കൂ.",
@@ -508,6 +519,7 @@ const upiMl: UpiSet = {
 };
 
 const upiKn: UpiSet = {
+  upi_order_confirmed: (f) => `ಆರ್ಡರ್ ಖಚಿತವಾಗಿದೆ! ${items(f)}, ${when(f)}, ${how(f)}. ನಿಮ್ಮ ${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ${rest(f)} ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.`,
   upi_qr_caption: (f) => `ಆರ್ಡರ್ ${ref(f)} ಗಾಗಿ ${payee(f)} ಗೆ UPI ಮೂಲಕ ${inr(f, "advanceInr")} ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ.`,
   upi_paid_claim: (f) => `ಧನ್ಯವಾದ. ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನಿಮ್ಮ ${inr(f, "advanceInr")} ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ.`,
   upi_nothing_waiting: () => "ಧನ್ಯವಾದ. ಈಗ ನಿಮ್ಮ ಯಾವುದೇ UPI ಪಾವತಿ ಬಾಕಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಲು ಏನೂ ಇಲ್ಲ. ಬೇರೆ ಯಾವುದಕ್ಕಾದರೂ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತನಾಡಿ.",
