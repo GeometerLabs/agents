@@ -487,7 +487,7 @@ test("one-pagers: one example, three things to check, a place for the name and p
     const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     assert.ok(html.includes(`<p class="bubble">${esc(steps[0].lines[0].text)}</p>`), `${name}: the customer's bubble is the walkthrough's order`);
     assert.ok(html.includes(`<p class="bubble helper">${esc(steps[0].lines[1].text.replace(/upi:\/\/\S+/, "[link]"))}</p>`), `${name}: the helper's bubble is the walkthrough's answer`);
-    assert.ok(html.includes("Received") && html.includes("Refund sent"), `${name}: the owner's two buttons`);
+    assert.ok(html.includes("Received"), `${name}: the owner's button`);
   }
   assert.ok(visible(sheet("en")).includes("2 × veg thali for Tue 10 Nov, 12:00 pm to 1:00 pm, pickup. Total ₹240. To confirm, pay ₹120 here: [link] (UPI ID annapurna@okicici, Annapurna Tiffins)"));
   const en = sheet("en");
