@@ -1,12 +1,14 @@
 // The licence's wind-down and final stop in a Bookings shop (plan B13; modules/licence). The runtime's own check of the lease: no new work in the wind-down, refunds,
 // cancellations, existing bookings and payments from earlier links go on, nothing is kept to do later, and in the final stop the open links are closed and nothing more
-// is sent but the owner's one notice. Guard's offline check is not built yet; nothing here stands for it.
+// is sent but the owner's one notice. Guard's own offline check (monorepo ADR-0062) answers 402 `subscription_suspended`: the tests near the end give the runtime
+// that answer and check it is taken as the runtime's own pause. The real Guard's answer is the Docker proof's (bundle/test/proof/run.ts).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createWorld, CUSTOMER } from "../src/harness.ts";
+import { GuardSuspendedError } from "../../../../modules/core/faults.ts";
 import { LICENCE_RULE, UNRESTRICTED, licenceNow } from "../../../../modules/licence/rules.ts";
 import type { LeaseShop, LicenceFile, LicenceNow } from "../../../../modules/licence/rules.ts";
 import { licenceReader } from "../../../../modules/runtime/config.ts";
@@ -161,6 +163,57 @@ test("the runtime reads client/licence.json by its modified time and judges it w
     assert.equal(read().state, "wind_down", "a file that does not read leaves the last good reading standing");
     assert.equal(licenceNow({ ...file, shop: null }, clockMs).restricted, false, "a shop the lease does not list");
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- Guard's own check (ADR-0062): the same refusal, made outside the runtime. Here the runtime's file says the shop is in order (a builder edited it, or the
+// runtime has not read the newer lease yet) and Guard answers 402 `subscription_suspended`. The runtime treats it as its own pause: once, plainly, nothing kept.
+
+const PAUSED = "Online booking is paused for now. Please contact Glow Salon directly.";
+const suspended = (operation: string) => new GuardSuspendedError(402, `refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so ${operation} (new work) is refused`,
+  { decision: "deny", code: "subscription_suspended", reason_code: "subscription_suspended", sent: "no", retry: "no", reason: `subscription_suspended: the licence for shop glow-salon is in its wind-down, so ${operation} (new work) is refused`, detail: { state: "wind_down", shop: "glow-salon", operation } },
+  { method: "POST", path: "/x" });
+
+test("Guard refuses the hold for the licence while the runtime's own file says 'in order': the customer is told 'paused', the calendar is asked once, the owner is not asked to do anything", async () => {
+  const w = world();
+  let inserts = 0;
+  w.calendar.insert = async () => { inserts++; throw suspended("insert"); };
+  const ownerBefore = w.messaging.sentTo(w.owner).length;
+  await w.say(BOOK);
+  assert.equal(inserts, 1, "never tried again");
+  assert.equal(w.lastTextTo(CUSTOMER), PAUSED);
+  assert.equal(w.payments.links().length, 0, "no deposit link either");
+  const hold = entries(w, "hold_slot").at(-1)!;
+  assert.equal(hold.outcome, "blocked");
+  assert.ok(hold.decisions.some((d) => d.ruleId === LICENCE_RULE && /^Guard refused it for the shop's licence/u.test(d.reason)), JSON.stringify(hold.decisions));
+  const refused = entries(w, "new_work").at(-1)!;
+  assert.deepEqual([refused.outcome, refused.decisions[0].ruleId], ["blocked", LICENCE_RULE]);
+  assert.equal(w.messaging.sentTo(w.owner).length, ownerBefore, "no 'could not book' to the owner: nothing failed, the licence held it back");
+  assert.ok(![...w.store.bookings.values()].some((b) => b.state === "awaiting_deposit" || b.state === "confirmed" || b.pending.length > 0), "nothing is kept to do later");
+});
+
+test("Guard refuses the deposit link for the licence: asked once, the slot is let go, and the customer is told 'paused'", async () => {
+  const w = world();
+  let creates = 0;
+  w.payments.createPaymentLink = async () => { creates++; throw suspended("create_link"); };
+  await w.say(BOOK);
+  assert.equal(creates, 1, "never tried again");
+  assert.equal(w.lastTextTo(CUSTOMER), PAUSED);
+  assert.equal(w.calendar.events().filter((e) => e.bookingRef === "b-1").length, 0, "the hold was let go (a delete, which no licence refuses)");
+  const link = entries(w, "create_deposit_link").at(-1)!;
+  assert.deepEqual([link.outcome, link.decisions[0]?.ruleId], ["blocked", LICENCE_RULE]);
+});
+
+test("in Guard's final stop a send to a customer is refused: recorded once as blocked, and not sent again as plain text", async () => {
+  const w = world();
+  let texts = 0;
+  const realText = w.messaging.sendText.bind(w.messaging);
+  w.messaging.sendText = async (to, text) => { if (to === CUSTOMER) { texts++; throw suspended("send"); } return realText(to, text); };
+  if (w.messaging.sendInteractive) w.messaging.sendInteractive = async () => { throw suspended("send"); };
+  await w.say("hi");
+  assert.equal(texts, 0, "buttons Guard held back are not tried again as text");
+  const sent = entries(w, "send_message").at(-1)!;
+  assert.equal(sent.outcome, "blocked");
+  assert.ok(sent.decisions.some((d) => d.ruleId === LICENCE_RULE));
 });
 
 test("the monthly report of a month with a wind-down is made, and never counts a licence refusal as one of the shop's limits that held", async () => {

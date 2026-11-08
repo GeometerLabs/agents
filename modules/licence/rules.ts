@@ -145,3 +145,12 @@ export function parseLicenceFile(raw: unknown): LicenceFile | undefined {
 
 /** The record's name for the runtime's licence check, so a refusal reads the same as Guard's will (`subscription_suspended`). */
 export const LICENCE_RULE = "subscription_suspended";
+
+/**
+ * Guard's own licence refusal (a GuardSuspendedError, HTTP 402; ADR-0062) as a decision in the record: the same rule as the runtime's own check, said as Guard's.
+ * Recorded once, as `blocked`: nothing was sent, it is not tried again, and nothing is kept to do later.
+ */
+export const guardLicenceDecision = (guardReason: string | undefined): { ruleId: string; verdict: "block"; reason: string } => ({
+  ruleId: LICENCE_RULE, verdict: "block",
+  reason: `Guard refused it for the shop's licence (${(guardReason ?? LICENCE_RULE).slice(0, 300)}): nothing was sent, it is not tried again, and nothing is kept to do later`,
+});

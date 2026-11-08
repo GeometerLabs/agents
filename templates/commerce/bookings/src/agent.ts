@@ -32,7 +32,7 @@ import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
-import { ApiError, ConflictError, TimeoutError } from "../../../../modules/core/faults.ts";
+import { ApiError, ConflictError, GuardSuspendedError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
@@ -68,7 +68,7 @@ import { hoursOn, serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
-import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 
 export interface AgentDeps {
@@ -260,7 +260,7 @@ export function createAgent(deps: AgentDeps): Agent {
   interface Wanted { start: number; end: number; status: "tentative" | "confirmed" }
 
   /** Make the calendar show this booking's event as wanted. Returns the event only if the calendar's own list shows it. */
-  async function ensureEvent(b: Booking, want: Wanted): Promise<{ event: CalendarEvent | null; error?: string; conflict?: boolean }> {
+  async function ensureEvent(b: Booking, want: Wanted): Promise<{ event: CalendarEvent | null; error?: string; conflict?: boolean; suspended?: GuardSuspendedError }> {
     const matches = (e: CalendarEvent) => e.start === want.start && e.end === want.end && e.status === want.status;
     const holdExpiresAt = want.status === "tentative" ? b.holdExpiresAt : undefined;
     let error: string | undefined;
@@ -275,6 +275,7 @@ export function createAgent(deps: AgentDeps): Agent {
         if (after) return { event: after };
       } catch (e) {
         if (e instanceof ConflictError) return { event: null, error: e.message, conflict: true };
+        if (e instanceof GuardSuspendedError) return { event: null, error: e.message, suspended: e }; // Guard held it back for the licence: nothing was sent, never tried again
         if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
         error = (e as Error).message;
       }
@@ -560,7 +561,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** Check the limits for a slot, then hold it in the calendar. */
-  async function tryHold(b: Booking): Promise<{ ok: true; decisions: Decision[] } | { ok: false; why: "outside_hours" | "unavailable" | "failed"; decisions: Decision[] }> {
+  async function tryHold(b: Booking): Promise<{ ok: true; decisions: Decision[] } | { ok: false; why: "outside_hours" | "unavailable" | "failed" | "paused"; decisions: Decision[] }> {
     const service = serviceOf(b)!;
     const start = b.startMs!;
     const end = b.endMs!;
@@ -572,13 +573,18 @@ export function createAgent(deps: AgentDeps): Agent {
 
     b.holdExpiresAt = clock.now() + settings.deposit.holdMinutes * MINUTE;
     log(b, b.customer, "hold_slot", "attempted", { start, end }, { decisions });
-    const { event, error, conflict } = await ensureEvent(b, { start, end, status: "tentative" });
+    const { event, error, conflict, suspended } = await ensureEvent(b, { start, end, status: "tentative" });
     if (event) {
       b.eventId = event.id;
       log(b, b.customer, "hold_slot", "confirmed", { start, end }, { refs: { eventId: event.id } });
       return { ok: true, decisions };
     }
     b.holdExpiresAt = undefined;
+    if (suspended) {
+      const decision = guardLicenceDecision(suspended.guard.reason);
+      log(b, b.customer, "hold_slot", "blocked", { start, end }, { decisions: [...decisions, decision], notes: suspended.message });
+      return { ok: false, why: "paused", decisions: [decision] };
+    }
     if (conflict) {
       log(b, b.customer, "hold_slot", "blocked", { start }, { notes: "the calendar refused: someone took the time first", decisions });
       return { ok: false, why: "unavailable", decisions };
@@ -592,6 +598,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const phone = b.customer;
     if (!licence().takesNewWork) { clearSlot(b); if (b.state !== "enquiry") moveTo(b, "enquiry"); return pausedReply(phone, "hold"); } // nothing held, nothing kept for later
     const held = await tryHold(b);
+    if (!held.ok && held.why === "paused") { clearSlot(b); if (b.state !== "enquiry") moveTo(b, "enquiry"); return pausedReply(phone, "hold", held.decisions[0]); } // Guard's licence check: nothing held, nothing kept for later
     if (!held.ok) {
       const slotMs = b.startMs;
       if (held.why === "failed") await tellOwner(b, phone, "owner_not_booked");
@@ -604,7 +611,15 @@ export function createAgent(deps: AgentDeps): Agent {
     }
 
     log(b, phone, "create_deposit_link", "attempted", { amountPaise: depositPaise });
-    const { link, error } = await ensureLink(b);
+    const { link, error, suspended } = await ensureLink(b);
+    if (!link && suspended) { // Guard held the link back for the licence: the shop's own pause, said as Guard's. The slot is let go; the owner is not asked to do anything.
+      const decision = guardLicenceDecision(suspended.guard.reason);
+      log(b, phone, "create_deposit_link", "blocked", { amountPaise: depositPaise }, { decisions: [decision], notes: suspended.message });
+      await releaseSlot(b, "Guard refused the deposit link for the shop's licence");
+      moveTo(b, "enquiry");
+      clearSlot(b);
+      return pausedReply(phone, "link", decision);
+    }
     if (!link) {
       log(b, phone, "create_deposit_link", error ? "failed" : "unconfirmed", { amountPaise: depositPaise }, { notes: error ?? "the payments service does not show the link" });
       await releaseSlot(b, "no payment link could be created");
@@ -627,8 +642,8 @@ export function createAgent(deps: AgentDeps): Agent {
   const stoppedGate: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: "the shop's licence has reached its final stop, so nothing more is sent from here (the owner's one notice aside); the runtime's own check of the lease" };
 
   /** A request for new work while online booking is paused: said in the record, answered "please contact the shop", and nothing kept to do later. */
-  async function pausedReply(phone: string, asked: string): Promise<void> {
-    const decision: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: `online booking is paused: the shop's licence is in its ${licence().state === "stopped" ? "final stop" : "wind-down"}, so no booking, hold or deposit link is made, and nothing is kept to do later (the runtime's own check of the lease)` };
+  async function pausedReply(phone: string, asked: string, byGuard?: Decision): Promise<void> {
+    const decision: Decision = byGuard ?? { ruleId: LICENCE_RULE, verdict: "block", reason: `online booking is paused: the shop's licence is in its ${licence().state === "stopped" ? "final stop" : "wind-down"}, so no booking, hold or deposit link is made, and nothing is kept to do later (the runtime's own check of the lease)` };
     log(null, phone, "new_work", "blocked", { asked }, { decisions: [decision], notes: "the customer is told online booking is paused and to contact the shop" });
     await tellCustomer(null, phone, ["booking_paused"]);
   }

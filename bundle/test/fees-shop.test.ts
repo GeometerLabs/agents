@@ -129,7 +129,7 @@ test("the compose file: the centre's runtime waits for its two Guards, runs the 
     addFees(w);
     const server = serverConfig();
     const p = plan(w);
-    const dirs: Dirs = { app: w.ctx.appDir, generated: w.paths.generated, secrets: w.paths.secrets, status: w.paths.status, fleet: w.paths.fleet, shops: w.paths.shops, secretsInbox: w.paths.secretsInbox, requests: w.paths.requests, exports: w.paths.exports, panelData: w.paths.panel, config: w.paths.config };
+    const dirs: Dirs = { app: w.ctx.appDir, generated: w.paths.generated, secrets: w.paths.secrets, status: w.paths.status, fleet: w.paths.fleet, shops: w.paths.shops, secretsInbox: w.paths.secretsInbox, requests: w.paths.requests, exports: w.paths.exports, panelData: w.paths.panel, config: w.paths.config, licence: join(w.paths.state, "licence") };
     const deploy1 = { name: "bright", index: 1, pathwayDir: join(w.ctx.appDir, "templates", "education", "fees"), guards: p.guards.map((g) => ({ kind: g.kind, service: g.service, tenant: "bright" })) };
     const composed = composeServer(server, dirs, [deploy1], { backup: false });
     const names = Object.keys(composed.services);

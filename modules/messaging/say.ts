@@ -14,7 +14,8 @@
 import type { Language } from "../language/languages.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
-import { ApiError, WindowClosedError, mayHaveHappened } from "../core/faults.ts";
+import { ApiError, GuardSuspendedError, WindowClosedError, mayHaveHappened } from "../core/faults.ts";
+import { guardLicenceDecision } from "../licence/rules.ts";
 import { checkOptOut, strictest } from "../limits/limits.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
@@ -92,6 +93,7 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       const seen = await messaging.getMessage(sent.id);
       log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", { ...inputs, image: true }, { decisions: [...decisions, check], refs: { messageId: sent.id, templates: image.caption.join("+"), to: a.to, image: "qr" }, language });
     } catch (e) {
+      if (e instanceof GuardSuspendedError) { log(a.booking, a.phone, "send_message", "blocked", { ...inputs, image: true }, { decisions: [...decisions, check, guardLicenceDecision(e.guard.reason)], notes: e.message, refs: { to: a.to, image: "qr" }, language }); return; }
       log(a.booking, a.phone, "send_message", mayHaveHappened(e) ? "unconfirmed" : "failed", { ...inputs, image: true }, { notes: (e as Error).message, refs: { to: a.to, image: "qr" }, language });
     }
   }
@@ -146,7 +148,8 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
           asButtons = true;
         } catch (e) {
           // Refused outright (a 4xx): nothing went out, so the same words go out as plain text. A lost reply or a 5xx may have gone out and is not sent again.
-          if (mayHaveHappened(e) || e instanceof WindowClosedError || !(e instanceof ApiError) || e.status >= 500) throw e;
+          // Guard's licence refusal is not tried again in another form: it would be refused the same way.
+          if (mayHaveHappened(e) || e instanceof WindowClosedError || e instanceof GuardSuspendedError || !(e instanceof ApiError) || e.status >= 500) throw e;
           sent = await messaging.sendText(toNumber, text);
         }
       } else {
@@ -158,6 +161,11 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}) }, language });
       return seen !== null;
     } catch (e) {
+      // Guard held it back for the shop's licence (the final stop): nothing went out, and it is the runtime's own licence refusal, made outside it. Recorded once, plainly.
+      if (e instanceof GuardSuspendedError) {
+        log(a.booking, a.phone, action, "blocked", inputs, { decisions: [...decisions, guardLicenceDecision(e.guard.reason)], notes: e.message, refs: { to: a.to }, language });
+        return false;
+      }
       // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
       log(a.booking, a.phone, action, mayHaveHappened(e) ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
       return false;
