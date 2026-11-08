@@ -139,7 +139,7 @@ test("every language renders both certificates, as a page and as a short text, w
       const texts = [goLiveText(goLive, l), monthlyCertificateText(monthly, l)];
       const pages = [words(goLivePage(goLive, l)), words(monthlyCertificatePage(monthly, l))];
       for (const [i, env] of [goLive, monthly].entries()) {
-        assert.ok(texts[i].includes(env.code) && texts[i].includes(`/verify/${env.code}`), `${l}: the code and the path in the text`);
+        assert.ok(texts[i].includes(env.code) && texts[i].includes(`/verify/#${env.code}`), `${l}: the code and the path in the text`);
         assert.ok(pages[i].includes(env.digest) && pages[i].includes(env.code), `${l}: the full digest and the code on the page`);
         for (const n of NOT_TESTED) assert.ok(texts[i].includes(s.notTested[n.id]) && pages[i].includes(s.notTested[n.id]), `${l}: not tested "${n.id}"`);
         assert.ok(texts[i].includes(s.page.agentVersion) && pages[i].includes("0.1.0"), `${l}: the pathway version`);
@@ -152,7 +152,7 @@ test("every language renders both certificates, as a page and as a short text, w
     }
     for (const html of [goLivePage(goLive, language), monthlyCertificatePage(monthly, language)]) {
       for (const forbidden of ["<script", "<link", "<img", "url(", "@import", "src=", "href="]) assert.ok(!html.includes(forbidden), `${language} has ${forbidden}`);
-      assert.ok(!/https?:|\/\/[a-z]/i.test(html) && html.includes("default-src 'none'") && html.includes("width=device-width"));
+      assert.ok(!/https?:|\/\/[a-z]/i.test(html.replace(/https:\/\/geometer\.dev\/verify\/#sha256:[0-9a-f]{64}/g, "")) && html.includes("default-src 'none'") && html.includes("width=device-width"));
     }
   }
 });

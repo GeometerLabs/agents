@@ -9,6 +9,7 @@ import type { LocalDate } from "../../../modules/core/time.ts";
 import { formatDate, formatInr } from "../../../modules/language/format.ts";
 import { writer } from "../../../modules/report/months.ts";
 import { esc, list, page, sealBlock } from "../../../modules/report/page.ts";
+import { verifyCodePath } from "../../../modules/report/verify-link.ts";
 import { envelopeFile, seal } from "../../../modules/report/sign.ts";
 import type { Envelope } from "../../../modules/report/sign.ts";
 import { oneLine } from "../../../modules/report/text.ts";
@@ -92,7 +93,7 @@ export function agentCertificateText(envelope: Envelope<AgentCertificate>): stri
     ...limitLines(cert).map((line) => `• ${line}`),
     `${en.label.notChecked}: ${cert.notTested.join(" · ")}`,
     RAN_AS,
-    `${cert.preparedBy ? `${en.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${en.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${en.page.code}: ${envelope.code} · /verify/${envelope.code}`,
+    `${cert.preparedBy ? `${en.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${en.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${en.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
   ].join("\n");
 }
 
