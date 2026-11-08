@@ -161,3 +161,9 @@ Day 0 is the invoice due date. Days 0 to 14 are normal, 15 to 30 are warnings, w
 - **CI for the bundle's tests.** The repository's workflow does not run `node --test bundle/test/` or the template tests. The proof (`bundle/test/proof/run.ts`) needs Docker and about twenty minutes and is run by hand.
 - **Windows.** The deployer assumes a Linux or macOS host with Docker Engine or Docker Desktop. The plan's Windows route is WSL2, not tested.
 - **Cheaper forwarders.** Each Guard has a 1 MB `busybox nc` forwarder and each shop a door. That keeps the admin port off the runtime's network without TLS on the Guard's agent port. If Guard ever serves its admin port with its own TLS cleanly, the forwarders can go.
+- **Several approvers (B37, 8 November): what is left.**
+  - The approval roles are written only for a shop's Razorpay Guard. An agent someone else wrote (`agent add`) has one owner.
+  - **Upgrade every Guard replica before a shop names a two-person amount** (Guard's ADR-0061: a replica of an earlier release would approve a two-person refund on one answer). The bundle runs one Guard per upstream per shop, so it has one replica, but the Guard image it loads must be one built after `e99d5d47`.
+  - Removing a person from the settings leaves their secret file in the two folders. It is unused, and Guard no longer lists them.
+  - The panel's go-live checks and the certificate do not yet say who approves. The record still labels every approval an owner's decision (`agent/record.ts`).
+  - Revisit when: the first shop with a manager goes live. Done when: the certificate names the approvers and the two-person amount, and the record labels each approval by who gave it.
