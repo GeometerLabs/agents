@@ -933,4 +933,96 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
+| `health.nav` | ആരോഗ്യവും മാർജിനും | Health and margin |  |
+| `health.voteNav` | വോട്ട് | Vote |  |
+| `health.title` | ആരോഗ്യവും മാർജിനും | Health and margin |  |
+| `health.intro` | ഓരോ കടയ്ക്കും: എന്തിൽ ശ്രദ്ധ വേണം, അത് നടത്താൻ നിങ്ങൾക്ക് എത്ര ചെലവ്, നിങ്ങൾ എത്ര ഈടാക്കുന്നു, നിങ്ങൾക്ക് എത്ര ബാക്കി. ഇവിടെ നൽകുന്ന വിലകളും മിനിറ്റുകളും നിങ്ങൾക്ക് മാത്രമേ കാണാൻ കഴിയൂ. | For each shop: what needs a look, what it costs you to run, what you charge, and what you keep. Only you see the prices and minutes you type here. |  |
+| `health.none` | നിങ്ങൾക്ക് ഇതുവരെ കടകളില്ല. | You have no shops yet. |  |
+| `health.open` | തുറക്കുക | Open |  |
+| `health.month` | 2026-11-ലെ പ്രവർത്തന ചെലവ് | Running cost for 2026-11 |  |
+| `health.saved` | സേവ് ചെയ്തു. | Saved. |  |
+| `health.problems.price` | നിങ്ങളുടെ വില രൂപയിൽ ഒരു തുക ആയിരിക്കണം, ഉദാ. 1500 അല്ലെങ്കിൽ 1500.50. | Your price must be an amount in rupees, like 1500 or 1500.50. |  |
+| `health.problems.setup` | സെറ്റപ്പ് ഫീസ് രൂപയിൽ ഒരു തുക ആയിരിക്കണം, ഉദാ. 2000. | The setup fee must be an amount in rupees, like 2000. |  |
+| `health.problems.minutes` | സപ്പോർട്ട് മിനിറ്റ് ഒരു പൂർണ്ണസംഖ്യ ആയിരിക്കണം, ഉദാ. 90. | Support minutes must be a whole number, like 90. |  |
+| `health.problems.rate` | നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം രൂപയിൽ ഒരു തുക ആയിരിക്കണം, ഉദാ. 300. | The value of your hour must be an amount in rupees, like 300. |  |
+| `health.attention.heading` | ശ്രദ്ധ വേണ്ടത് | What needs a look |  |
+| `health.attention.ok` | ഇപ്പോൾ ഒന്നിനും ശ്രദ്ധ വേണ്ട. | Nothing needs a look right now. |  |
+| `health.attention.needs` | 2 കടകളിൽ ശ്രദ്ധ വേണം | 2 shops need a look |  |
+| `health.attention.unfinished` | 3 പൂർത്തിയാകാത്തത് | 3 unfinished |  |
+| `health.attention.kind.deposit_no_booking` | ഡെപ്പോസിറ്റ് വന്നു, ബുക്കിംഗ് ഇല്ല | Deposit with no booking |  |
+| `health.attention.kind.payment_unrecorded` | പണമടവ് രേഖപ്പെടുത്തിയിട്ടില്ല | Payment not recorded |  |
+| `health.attention.kind.approval_waiting_long` | ഉടമയുടെ മറുപടിക്കായി ദീർഘനേരം കാത്തിരിപ്പ് | Owner's answer waiting long |  |
+| `health.attention.kind.refund_waiting` | റീഫണ്ട് കാത്തിരിക്കുന്നു | Refund waiting |  |
+| `health.attention.kind.refund_unknown` | റീഫണ്ട് സ്ഥിരീകരിച്ചിട്ടില്ല | Refund not confirmed |  |
+| `health.attention.kind.refund_failed` | റീഫണ്ട് നടന്നില്ല | Refund failed |  |
+| `health.attention.kind.upi_payment_unconfirmed` | UPI പണമടവ് സ്ഥിരീകരിച്ചിട്ടില്ല | UPI payment not confirmed |  |
+| `health.attention.kind.upi_refund_owed` | UPI റീഫണ്ട് നൽകാനുണ്ട് | UPI refund owed |  |
+| `health.attention.otherKind` | മറ്റുള്ളവ | Other |  |
+| `health.attention.notShared` | ഈ കടയുടെ രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല, അതിനാൽ പൂർത്തിയാകാത്ത ജോലികൾ എണ്ണാൻ കഴിയില്ല. | This shop's record has not been shared yet, so its unfinished work cannot be counted. |  |
+| `health.attention.heartbeat` | ഈ കടയിൽ നിന്ന് Geometer-ന് അവസാനം വിവരം കിട്ടിയത് 8 Nov 2026, 10:30-ന്. | Geometer last heard from this shop on 8 Nov 2026, 10:30. |  |
+| `health.attention.heartbeatStale` | ഈ കടയിൽ നിന്ന് Geometer-ന് അവസാനം വിവരം കിട്ടിയത് 3 Nov 2026, 10:30-ന്, 2 ദിവസത്തിലേറെ മുമ്പ്. സെർവർ ഓണാണെന്നും Geometer-ൽ എത്തുന്നുണ്ടെന്നും പരിശോധിക്കുക. | Geometer last heard from this shop on 3 Nov 2026, 10:30, more than 2 days ago. Check that the server is on and reaches Geometer. |  |
+| `health.attention.heartbeatNone` | ഈ കടയെക്കുറിച്ച് Geometer ഇതുവരെ മറുപടി നൽകിയിട്ടില്ല. | Geometer has not answered about this shop yet. |  |
+| `health.attention.drill` | അവസാന റീസ്റ്റോർ പരിശീലനം: 12 ദിവസം മുമ്പ്. | Last restore drill: 12 days ago. |  |
+| `health.attention.drillFailed` | 12 ദിവസം മുമ്പത്തെ അവസാന റീസ്റ്റോർ പരിശീലനം യോജിച്ചില്ല. അത് നോക്കുക. | The last restore drill, 12 days ago, did not match. Look at it. |  |
+| `health.attention.drillNone` | ഇതുവരെ റീസ്റ്റോർ പരിശീലനം രേഖപ്പെടുത്തിയിട്ടില്ല. | No restore drill has been recorded yet. |  |
+| `health.attention.buttons` | ഈ കടയ്ക്ക് AI നിർത്തിവച്ചിരിക്കുന്നു. ഉപഭോക്താക്കൾക്ക് ബട്ടൺ മെനു കിട്ടും. | AI is paused for this shop. Customers get button menus. |  |
+| `health.attention.todo` | ചെയ്യാനുള്ള പട്ടിക തുറക്കുക | Open the to-do list |  |
+| `health.cost.heading` | ഈ മാസത്തെ പ്രവർത്തന ചെലവ് | Running cost this month |  |
+| `health.cost.lines.plan` | Geometer പ്ലാൻ ഫീസ്, GST ഒഴികെ | Geometer's plan fee, before GST |  |
+| `health.cost.lines.whatsapp` | WhatsApp സന്ദേശങ്ങൾ, ചെലവ് വിലയിൽ | WhatsApp messages, at cost |  |
+| `health.cost.lines.model` | AI മോഡൽ | AI model |  |
+| `health.cost.lines.support` | നിങ്ങളുടെ സപ്പോർട്ട് സമയം | Your support time |  |
+| `health.cost.unknown` | അറിയില്ല | unknown |  |
+| `health.cost.minutes` | 90 മിനിറ്റ് | 90 minutes |  |
+| `health.cost.total` | പ്രവർത്തന ചെലവ് | Running cost |  |
+| `health.cost.subtotal` | ഇതുവരെയുള്ള പ്രവർത്തന ചെലവ് (1 എണ്ണം ഇതുവരെ അറിയില്ല) | Running cost so far (1 not known yet) |  |
+| `health.cost.notes.innovator` | ഇന്നൊവേറ്റർ വില | Innovator price |  |
+| `health.cost.notes.selfHost` | സ്വന്തം സെർവറിന് പകുതി വില | Half price for your own server |  |
+| `health.cost.notes.included` | പ്ലാൻ ഫീസിൽ ഉൾപ്പെടുന്നു | Included in the plan fee |  |
+| `health.cost.notes.estimate` | ഈ മാസത്തെ എണ്ണത്തിൽ നിന്നുള്ള കണക്ക്, സൗജന്യ മറുപടികൾക്ക് മുമ്പ് | Estimate from this month's counts, before the free replies |  |
+| `health.cost.notes.noRecord` | രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല | No record shared yet |  |
+| `health.cost.notes.noPlan` | ഫ്ലീറ്റ് പ്ലാൻ നിശ്ചയിച്ചിട്ടില്ല | Fleet has not set a plan |  |
+| `health.cost.notes.noPrice` | പട്ടികയിൽ വിലയില്ല | No price in the list |  |
+| `health.cost.notes.noMinutes` | ഈ മാസത്തെ മിനിറ്റ് നൽകിയിട്ടില്ല | No minutes entered this month |  |
+| `health.cost.notes.noRate` | നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം നൽകുക | Enter what an hour of your time is worth |  |
+| `health.cost.notes.floor` | ഇത്രയെങ്കിലും: 4 കോളുകൾക്ക് വിലയില്ലായിരുന്നു | At least this much: 4 calls had no price |  |
+| `health.charge.heading` | നിങ്ങൾ ഈടാക്കുന്നത് | What you charge |  |
+| `health.charge.price` | നിങ്ങളുടെ വില മാസം (₹) | Your price a month (₹) |  |
+| `health.charge.setup` | ഒറ്റത്തവണ സെറ്റപ്പ് ഫീസ് (₹, ഐച്ഛികം) | One-time setup fee (₹, optional) |  |
+| `health.charge.minutes` | ഈ മാസത്തെ സപ്പോർട്ട് മിനിറ്റ് | Support minutes this month |  |
+| `health.charge.rate` | നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം (₹) | What an hour of your time is worth (₹) |  |
+| `health.charge.save` | സേവ് ചെയ്യുക | Save |  |
+| `health.charge.privacy` | ഇവ ഈ പാനലിൽ തന്നെ നിൽക്കുന്നു. Geometer-ന് ഒരിക്കലും അയയ്ക്കില്ല. | These stay on this panel. They are never sent to Geometer. |  |
+| `health.charge.hint` | അറിയാത്ത ഒന്ന് ശൂന്യമായി വിടുക. ശൂന്യം എന്നാൽ അറിയില്ല, പൂജ്യമല്ല. | Leave a box empty if you do not know it. Empty means unknown, not zero. |  |
+| `health.margin.heading` | മാർജിൻ | Margin |  |
+| `health.margin.yourPrice` | നിങ്ങളുടെ വില | Your price |  |
+| `health.margin.keep` | മാസം നിങ്ങൾക്ക് ബാക്കി വരുന്നത് | What you keep a month |  |
+| `health.margin.unknownPrice` | നിങ്ങളുടെ വില നൽകുന്നത് വരെ അറിയില്ല. | Unknown until you enter your price. |  |
+| `health.margin.before` | ഇവയ്ക്ക് മുമ്പ്: Your support time | before: Your support time |  |
+| `health.margin.setupOnce` | ഒരിക്കൽ ഈടാക്കിയ സെറ്റപ്പ് ഫീസ്: ₹2,000.00 | Setup fee you charged once: ₹2,000.00 |  |
+| `health.margin.negative` | പൂജ്യത്തിന് താഴെ: പ്രവർത്തന ചെലവ് നിങ്ങളുടെ വിലയേക്കാൾ കൂടുതലാണ്. | Below zero: the running cost is more than your price. |  |
+| `health.all.heading` | നിങ്ങളുടെ എല്ലാ കടകളും | All your shops |  |
+| `health.all.shops` | 3 കടകളിൽ 2 എണ്ണത്തിന് വില നൽകി | Price entered for 2 of 3 shops |  |
+| `health.all.keep` | മാസം നിങ്ങൾക്ക് ബാക്കി വരുന്നത് | What you keep a month |  |
+| `health.all.partial` | 3 കടകളിൽ വിലയുള്ള 2 എണ്ണം മാത്രമേ കൂട്ടിയിട്ടുള്ളൂ. | Only the 2 shops with a price are added up, out of 3. |  |
+| `health.all.setup` | ഒരിക്കൽ ഈടാക്കിയ സെറ്റപ്പ് ഫീസുകൾ | Setup fees charged once |  |
+| `health.all.unknown` | വില നൽകുന്നത് വരെ അറിയില്ല | Unknown until a price is entered |  |
+| `health.vote.title` | അടുത്ത ടെംപ്ലേറ്റിന് വോട്ട് | Vote on the next template |  |
+| `health.vote.intro` | ആദ്യത്തെ 100 ഇന്നൊവേറ്റർമാരിൽ ഒരാളായി, Geometer അടുത്തതായി ഉണ്ടാക്കുന്ന ടെംപ്ലേറ്റ് നിങ്ങൾ തിരഞ്ഞെടുക്കുന്നു. ഓരോരുത്തർക്കും ഒരു വോട്ട്, എപ്പോൾ വേണമെങ്കിലും മാറ്റാം. | As one of the first 100 innovators, you pick the next template Geometer builds. One vote each, and you can change it any time. |  |
+| `health.vote.yours` | നിങ്ങളുടെ വോട്ട് | Your vote |  |
+| `health.vote.none` | നിങ്ങൾ ഇതുവരെ വോട്ട് ചെയ്തിട്ടില്ല. | You have not voted yet. |  |
+| `health.vote.button` | എന്റെ വോട്ട് സേവ് ചെയ്യുക | Save my vote |  |
+| `health.vote.change` | എന്റെ വോട്ട് മാറ്റുക | Change my vote |  |
+| `health.vote.saved` | നിങ്ങളുടെ വോട്ട് സേവ് ചെയ്തു. | Your vote is saved. |  |
+| `health.vote.refused` | ആ തിരഞ്ഞെടുപ്പ് പട്ടികയിലില്ല. | That choice is not on the list. |  |
+| `health.vote.results` | ഇതുവരെയുള്ള വോട്ടുകൾ | Votes so far |  |
+| `health.vote.hidden` | മറ്റുള്ളവർ എങ്ങനെ വോട്ട് ചെയ്തെന്ന് കാണാൻ വോട്ട് ചെയ്യുക. | Vote to see how the others voted. |  |
+| `health.vote.votes` | 4 വോട്ട് | 4 votes |  |
+| `health.vote.note` | എണ്ണം മാത്രം. പേരുകൾ ഒരിക്കലും കാണിക്കില്ല. ഈ പാനലിൽ ഇതുവരെ എണ്ണിയ വോട്ടുകളാണിവ. | Counts only. Names are never shown. These are the votes counted on this panel so far. |  |
+| `health.vote.link` | അടുത്ത ടെംപ്ലേറ്റിന് വോട്ട് ചെയ്യുക | Vote on the next template |  |
+| `vote.option.orders` | ഓർഡറുകൾ: കട WhatsApp-ൽ ഓർഡറും പണവും സ്വീകരിക്കുന്നു | Orders: a shop takes orders and payment on WhatsApp |  |
+| `vote.option.fees-extensions` | ഫീസ് പിരിവ് വിപുലീകരണങ്ങൾ: ട്യൂഷൻ, പരിശീലന കേന്ദ്രങ്ങൾക്ക് കൂടുതൽ | Fee collection extensions: more for tuition and training centres |  |
+| `vote.option.equipment-rental` | സംഘങ്ങൾക്ക് ഉപകരണ വാടക: ക്ലബ്ബുകൾ, സൊസൈറ്റികൾ, ഹാളുകൾ | Equipment rental for groups: clubs, societies and halls |  |
+| `vote.option.social-posting` | അംഗീകാരത്തോടെ സോഷ്യൽ പോസ്റ്റിംഗ്: ഓരോ പോസ്റ്റും ഉടമ അംഗീകരിക്കുന്നു | Social posting with approval: the owner approves each post |  |
+| `vote.option.course-packs` | കോഴ്സ് പായ്ക്കുകൾ: ഒരു കോഴ്സ് പാഠങ്ങളായി വിൽക്കുകയും എത്തിക്കുകയും ചെയ്യുക | Course packs: sell and deliver a course in lessons |  |
 

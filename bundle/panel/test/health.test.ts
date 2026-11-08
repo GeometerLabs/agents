@@ -135,7 +135,7 @@ test("a partner's page: the running cost from the price list, her price and minu
     assert.match(page, /before: WhatsApp messages, at cost/u);
     assert.match(page, /Setup fee you charged once: ₹2,000\.00/u);
     // her figures are in the panel's own store and nowhere that goes to fleet
-    assert.ok(readdirSync(join(b.dir, "panel", "health", accountIdOf(b, "divya").replace(/_/gu, "-"))).includes("divya-shop.json"));
+    assert.ok(readdirSync(join(b.dir, "panel", "data", "health", accountIdOf(b, "divya").replace(/_/gu, "-"))).includes("divya-shop.json"));
     // with the record shared, the month's WhatsApp is counted from it
     exportRecord(b, "divya-shop", [entry(1, "2026-11-02T10:01:00+05:30", "send_message", { to: "owner" })]);
     const shared = (await divya.get("/health/divya-shop")).plain;
@@ -205,7 +205,7 @@ test("the vote: a 404 for anyone fleet has not flagged as an innovator, to read 
     assert.equal((await divya.get("/vote")).status, 404);
     assert.equal((await divya.req("POST", "/vote", { _csrf: tokenOf((await divya.get("/health")).text), option: "orders" })).status, 404);
     assert.doesNotMatch((await divya.get("/health")).plain, /Vote on the next template/u);
-    assert.throws(() => readdirSync(join(b.dir, "panel", "votes")), "nothing was kept");
+    assert.throws(() => readdirSync(join(b.dir, "panel", "data", "votes")), "nothing was kept");
     // flagged as an innovator on a shop that is somebody else's does not make her one
     const meena = await b.account("meena", "partner");
     b.addShop("meena-shop", { ownerId: accountIdOf(b, "meena"), ownerName: "Meena", ownerRole: "partner" });
@@ -240,7 +240,7 @@ test("one vote per innovator, changeable; results are counts only, without names
     const moved = (await divya.get("/vote")).plain;
     assert.match(moved, /Orders[^]*?<b>0 votes<\/b>/u);
     assert.match(moved, /Course packs[^]*?<b>1 votes<\/b>/u);
-    assert.equal(readdirSync(join(b.dir, "panel", "votes")).length, 1, "one file for one innovator");
+    assert.equal(readdirSync(join(b.dir, "panel", "data", "votes")).length, 1, "one file for one innovator");
     // a second innovator adds hers; neither sees names
     assert.doesNotMatch((await meena.get("/vote")).plain, /\d+ votes/u, "she has not voted, so she sees no counts");
     await post(meena, "/vote", { option: "course-packs" }, "/vote");
@@ -248,7 +248,7 @@ test("one vote per innovator, changeable; results are counts only, without names
     assert.match(both, /Course packs[^]*?<b>2 votes<\/b>/u);
     assert.doesNotMatch(both, /DIVYA|MEENA|divya|meena/u);
     assert.match(both, /Names are never shown/u);
-    assert.equal(readdirSync(join(b.dir, "panel", "votes")).length, 2);
+    assert.equal(readdirSync(join(b.dir, "panel", "data", "votes")).length, 2);
   } finally { await b.close(); }
 });
 
