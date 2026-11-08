@@ -54,3 +54,9 @@
 | **On a UPI centre the Razorpay situations do not run** | Twenty-six are named as not run; seven UPI situations run instead (`crash-test/upi.ts`) | A UPI centre goes live: make "the parent pays" mean "the owner marks it" in the world, so every situation runs either way |
 | **The owner gets one "UPI payment to check" per request** | The code ties a mark to a fee, and the owner needs it before the money comes | A centre with many students: a daily digest with one code per open request |
 | **No QR picture with a reminder outside the window** | A template with an image header is a different kind of Meta template | Meta approves a reminder template with an image header |
+
+## The papers (B28, B35, B36)
+
+- The new Hindi, Malayalam and Kannada words in `report/papers.ts` (action words, limit labels) are machine-written and wait for a native reader, before a parent gets a statement in them.
+- A parent with two children sees two fees by month and batch, not by child (the child's name is never on a paper). See `modules/papers/Deferred.md`.
+- Turning part payments on (from off) is a looser rule too, but only the least part payment's amount is compared today.

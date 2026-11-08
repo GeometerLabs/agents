@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { main } from "../geometer.ts";
 import { checkShop, deploy } from "../deploy.ts";
 import { exportShop } from "../backup/export.ts";
+import { headOf } from "../../modules/record/ledger.ts";
 import { composeServer } from "../generate/compose.ts";
 import type { Dirs } from "../generate/compose.ts";
 import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "../generate/configs.ts";
@@ -282,8 +283,13 @@ test("the export for a Fees centre is dues.json: the parent's number and the chi
     const result = exportShop({ name: "bright", db: db.file, out });
     assert.equal(result.ok, true);
     assert.deepEqual([result.dues, result.bookings], [5, undefined]);
-    assert.deepEqual(readdirSync(out).sort(), ["dues.json", "record.json"]);
-    const exported = readFileSync(join(out, "dues.json"), "utf8") + readFileSync(join(out, "record.json"), "utf8");
+    assert.deepEqual(readdirSync(out).sort(), ["dues.json", "ledger.json", "record.json"]);
+    const exported = readFileSync(join(out, "dues.json"), "utf8") + readFileSync(join(out, "record.json"), "utf8") + readFileSync(join(out, "ledger.json"), "utf8");
+    // B28: the ledger is chained from the centre's OWN record (names in its notes), and its head is the head of the exported record (names hashed): one fingerprint for both
+    const own = headOf(db.loadState().record, "bright")!;
+    assert.equal(headOf(JSON.parse(readFileSync(join(out, "record.json"), "utf8")), "bright")!.head, own.head);
+    assert.equal((JSON.parse(readFileSync(join(out, "ledger.json"), "utf8")) as { hash: string }[]).at(-1)!.hash, own.head);
+    assert.deepEqual(result.ledger, { seq: own.seq, head: own.head });
     for (const name of names) assert.ok(!exported.includes(name), `${name} left the volume`);
     assert.ok(!exported.includes(PARENT) && !exported.includes("+9198"), "no parent's number left the volume");
     const dues = JSON.parse(readFileSync(join(out, "dues.json"), "utf8")) as { studentName: string; customer: string; feeInr: number }[];

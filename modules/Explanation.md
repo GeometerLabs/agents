@@ -169,6 +169,10 @@ owner, not yet marked done", and `UPI_OBLIGATION_KINDS` puts them in the registr
 owner the notice again, with the code and the button). An unpaid fee nobody claims is not listed: a request is the owner's to look at once the customer says they paid
 or the owner marked part of it.
 
+## Records anyone can check, and the papers (B28, B35, B36; 8 November 2026)
+
+Not a cut: new shared code that both templates use from the start. `record/ledger.ts` and `record/publish.ts` turn any template's record into geometer-verify's ledger and publish its daily fingerprint (`record/Explanation.md`); `papers/` makes the three signed papers from any template's record (`papers/Explanation.md`). Each template hands in a `report/papers.ts` of about 70 lines (its money actions, its action words, its cases, its limits). The monthly reports' `anchor` slot, reserved since the reports were written, is filled from the ledger. Size: `record/` +330 lines, `papers/` about 790 (of which the words in four languages are about 290), the templates' `report/papers.ts` and `scripts/papers.ts` about 190, tests about 640.
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.
