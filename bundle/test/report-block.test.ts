@@ -225,7 +225,7 @@ test("the deployer writes the block into the generated runtime.json, redeploys t
     w.handIn("glow-salon");
     await deploy(w.ctx);
     const generated = () => JSON.parse(readFileSync(join(w.root, "generated", "shops", "glow-salon", "client", "runtime.json"), "utf8")) as { report: Record<string, unknown> };
-    assert.deepEqual(generated().report, { innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", preparedBy: "Divya, local partner", source: "test-mode" });
+    assert.deepEqual(generated().report, { innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", preparedBy: "Divya, local partner", source: "test-mode", tenant: "glow-salon" });
     const first = loadState(w.root).shops["glow-salon"].applied!.desiredHash;
     assert.deepEqual((await applyOnce(w.ctx)).skipped, ["glow-salon"], "nothing changed");
     putAnswer(w.paths, answer({ innovator: true }));
