@@ -80,7 +80,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   const lastFor = (w: World, who = shop.customer) => w.lastTextTo(who);
   const guardHeld = (w: World) => w.heldForOwner();
   /** How many messages of this template the record shows sent, confirmed by the messaging service, to the customer or the owner (the language they were written in does not matter). */
-  const told = (w: World, id: string, to: "customer" | "owner" = "customer", who = shop.customer): number => w.record.entries().filter((e) => e.action === "send_message" && e.outcome === "confirmed" && e.conversation === who && e.refs.to === to && (e.refs.templates ?? "").split("+").includes(id)).length;
+  const told = (w: World, id: string, to: "customer" | "owner" = "customer", who = shop.customer): number => w.record.entries().filter((e) => e.action === "send_message" && e.outcome === "confirmed" && (to === "owner" || e.conversation === who) && e.refs.to === to && (e.refs.templates ?? "").split("+").includes(id)).length;
 
   const list: Built[] = [];
   const add = (s: Situation) => list.push(s);
@@ -132,7 +132,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       expect("The order is still waiting for its advance", order(w).state === "awaiting_advance", order(w).state);
       expect("Nothing was marked paid", recorded(w, "record_payment", "confirmed").length === 0 && recorded(w, "owner_marked_paid", "confirmed").length === 0);
       expect("The customer was not told the order is confirmed", !recorded(w, "confirm_order", "confirmed").length && told(w, "order_confirmed") + told(w, "upi_order_confirmed") === 0);
-      if (isUpi) expect("The owner was asked to look in their UPI app (with a code), and only once an hour", toOwner(w).filter((m) => m.text.includes("says they have paid")).length === 1, `${toOwner(w).length}`);
+      if (isUpi) expect("The owner was asked to look in their UPI app (with a code), and only once an hour", told(w, "owner_upi_claim", "owner") === 1, `${toOwner(w).length}`);
       else expect("The agent looked at the payments service's own list and found no payment", w.payments.calls.some((c) => c.op === "fetchPaymentLink") && w.payments.links().every((l) => l.payments.length === 0));
       return results;
     },
@@ -271,7 +271,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
         const code = w.store.upi!.requests[0].usedCodes.at(-1)!;
         await w.ownerMarksReceived(shop.customer, { code });
         expect("The advance was counted once", w.store.upi!.requests[0].marks.length === before && before === 1, `${w.store.upi!.requests[0].marks.length}`);
-        expect("The owner was told it is already marked", toOwner(w).some((m) => m.text.includes("already marked")));
+        expect("The owner was told it is already marked", told(w, "owner_upi_already", "owner") === 1);
       } else {
         w.pays(shop.customer);
         w.pays(shop.customer);
@@ -319,7 +319,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
           expect("The hold ended and the stock is free", order(w).state === "expired" && taken(w) === 0, `${order(w).state} / ${taken(w)}`);
           await w.ownerMarksReceived(shop.customer, { code: w.store.upi!.requests[0].usedCodes.at(-1) ?? w.store.upi!.requests[0].code ?? undefined });
           expect("A UPI mark after the hold never confirms an order by itself", !confirmed(w), order(w).state);
-          expect("The money is owed back by the owner (or kept for an order they take by hand): the owner was told with a code", w.upiRefunds(shop.customer).length === 1 && toOwner(w).some((m) => /after its hold|होल्ड|रोक/u.test(m.text) || m.text.includes("hold had ended")), JSON.stringify(w.upiRefunds(shop.customer)));
+          expect("The money is owed back by the owner (or kept for an order they take by hand): the owner was told with a code", w.upiRefunds(shop.customer).length === 1 && told(w, "owner_upi_late", "owner") === 1, JSON.stringify(w.upiRefunds(shop.customer)));
           expect("The agent sent no money", refundedPaise(w) === 0);
           return results;
         }
@@ -528,10 +528,10 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       await w.say("", { image: true });
       expect("The order is not confirmed on a picture", order(w).state === "awaiting_advance" && !confirmed(w), order(w).state);
       expect("The customer was told a screenshot is not proof", told(w, "upi_paid_claim") >= 1, lastFor(w));
-      expect("The owner was asked to look in their UPI app, with a code", toOwner(w).some((m) => m.text.includes("screenshot is not proof")));
+      expect("The owner was asked to look in their UPI app, with a code", told(w, "owner_upi_claim", "owner") === 1);
       expect("Nothing was marked paid", recorded(w, "owner_marked_paid").length === 0);
       await w.say("", { image: true });
-      expect("A second picture does not ask the owner again within the hour", toOwner(w).filter((m) => m.text.includes("screenshot is not proof")).length === 1);
+      expect("A second picture does not ask the owner again within the hour", told(w, "owner_upi_claim", "owner") === 1);
       // the owner marks a smaller amount first
       const code = w.upiRequest(shop.customer)!.code!;
       await w.ownerSays(`received ${code} ${Math.max(1, advance - 1)}`);

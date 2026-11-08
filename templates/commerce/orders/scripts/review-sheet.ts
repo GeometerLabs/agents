@@ -127,7 +127,7 @@ function describeIntent(i: Intent): string {
 }
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each (the example shop's menu is English and Hindi, so Malayalam and Kannada use Latin item names). */
-const EXAMPLES: Record<ReviewLanguage, [string, string][]> = {
+export const EXAMPLES: Record<ReviewLanguage, [string, string][]> = {
   hi: [["कल 2 वेज थाली पिकअप", "2 veg thali tomorrow, pickup"], ["वेज थाली डिलीवरी 12 nov", "veg thali, delivery, 12 Nov"], ["मैंने पेमेंट कर दिया", "I have paid"], ["ऑर्डर रद्द करें", "Cancel my order"], ["मुझे मालिक से बात करनी है", "I want to talk to the owner"], ["पैसे वापस चाहिए", "I want my money back"]],
   ml: [["നാളെ 2 veg thali പിക്കപ്പ്", "2 veg thali tomorrow, pickup"], ["ഞാൻ പണം അടച്ചു", "I paid"], ["ഓർഡർ റദ്ദാക്കൂ", "Cancel my order"], ["എനിക്ക് ഉടമയോട് സംസാരിക്കണം", "I want to talk to the owner"], ["റീഫണ്ട് വേണം", "I want a refund"], ["മെസ്സേജ് നിർത്തൂ", "Stop the messages"]],
   kn: [["ನಾಳೆ 2 veg thali ಪಿಕಪ್", "2 veg thali tomorrow, pickup"], ["ನಾನು ಪಾವತಿಸಿದ್ದೇನೆ", "I paid"], ["ಆರ್ಡರ್ ರದ್ದು ಮಾಡಿ", "Cancel my order"], ["ನನಗೆ ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತನಾಡಬೇಕು", "I want to talk to the owner"], ["ರೀಫಂಡ್ ಬೇಕು", "I want a refund"], ["ಮೆಸೇಜ್ ನಿಲ್ಲಿಸಿ", "Stop the messages"]],
