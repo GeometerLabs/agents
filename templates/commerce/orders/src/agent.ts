@@ -282,6 +282,12 @@ export function createAgent(deps: AgentDeps): Agent {
       const modes = new Set(found.map((f) => f.mode));
       if (found.length > 0 && modes.size === 1) { o.slotId = found[0].id; o.mode = found[0].mode; }
     }
+    if (intent.slotIds && !o.slotId) o.slotCandidates = intent.slotIds;
+    if (!o.slotId && o.mode && o.slotCandidates) {
+      const hit = o.slotCandidates.find((id) => slotOf(settings, id)?.mode === o.mode);
+      if (hit) o.slotId = hit;
+    }
+    if (o.slotId) o.slotCandidates = undefined;
     return true;
   }
 

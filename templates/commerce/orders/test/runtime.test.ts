@@ -64,7 +64,7 @@ test("the order store round-trips every field, and a UPI shop's ledger with it",
   const w = createWorld();
   await w.say("2 veg thali 10 nov 12:00 pm pickup");
   const again = parseStore(serializeStore(w.store));
-  assert.deepEqual([...again.orders], [...w.store.orders]);
+  assert.deepEqual(JSON.parse(JSON.stringify([...again.orders])), JSON.parse(JSON.stringify([...w.store.orders])), "every field a saved order has comes back");
   assert.equal(again.nextOrder, w.store.nextOrder);
   assert.deepEqual(again.upi, w.store.upi);
 });

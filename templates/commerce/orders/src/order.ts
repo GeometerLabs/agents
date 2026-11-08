@@ -72,6 +72,8 @@ export interface Order {
   dateNeedsConfirmation: boolean; // a weekday phrase: read it back and wait for a yes
   mode?: "pickup" | "delivery";
   slotId?: string;
+  /** The slots a name the customer wrote ("lunch") stands for, kept until the way (pickup or delivery) says which. */
+  slotCandidates?: string[];
   /** A delivery whose address has not been given yet: the next plain message is the address. */
   awaitingAddress: boolean;
   /** The place in the shop's delivery list the address named; the address as the customer wrote it (cut short), for the owner only. */

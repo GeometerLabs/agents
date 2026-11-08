@@ -97,8 +97,9 @@ test("two customers, one stock: the second is told how many are left", async () 
 
 test("a voice note is answered with 'please type'; STOP is final", async () => {
   const w = createWorld({ settings: annapurnaRazorpay() });
-  w.messaging.receive(AMIT, "", { voiceNote: true });
-  await w.agent.handle({ kind: "message", message: w.messaging.receive(AMIT, "", { voiceNote: true }) });
+  const voice = w.messaging.receive(AMIT, "", { id: "wamid.v" });
+  (voice as { voiceNote?: true }).voiceNote = true;
+  await w.agent.handle({ kind: "message", message: voice });
   assert.match(w.lastTextTo(AMIT), /type your message/);
   await w.say("STOP");
   const n = w.textsTo(AMIT).length;
