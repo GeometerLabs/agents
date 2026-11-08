@@ -81,7 +81,7 @@ test("a shop whose other people approve refunds (B37): their numbers go through 
     w.guardLicence.reads = true; w.guardLicence.kids = [TEST_KID];
     const file = join(w.paths.shop("glow-salon"), "settings.json");
     const settings = JSON.parse(read(file));
-    settings.approvers = { people: [{ id: "ravi", whatsapp: "+919800000002", language: "hi" }, { id: "meena", whatsapp: "+919800000003", language: "en" }], twoAboveInr: 150 };
+    settings.approvers = { people: [{ id: "ravi", whatsapp: "+919800000002", language: "hi" }, { id: "meena", whatsapp: "+919800000003", language: "en" }], twoAboveInr: 500 };
     writeFileSync(file, JSON.stringify(settings));
     w.handIn("glow-salon");
     await deploy(w.ctx);
