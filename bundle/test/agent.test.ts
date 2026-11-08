@@ -99,7 +99,7 @@ test("a name is used once: an agent cannot take a shop's name, or another agent'
 
 // ---- the compose file ----------------------------------------------------------------------------------------------------------------------------
 
-const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json" };
+const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence" };
 const shopDeploy = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/templates/commerce/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
 const agentDeploy = (name: string, index: number, kinds: ("razorpay" | "whatsapp" | "calendar")[] = ["razorpay", "whatsapp", "calendar"]): AgentDeploy => ({ name, index, guards: kinds.map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
 const nets = (c: ReturnType<typeof composeServer>, svc: string): string[] => { const n = c.services[svc].block.networks as Record<string, unknown> | undefined; return n === undefined ? [] : Object.keys(n); };

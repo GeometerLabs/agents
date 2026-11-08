@@ -23,7 +23,24 @@ export interface TripwireResult {
 export interface GuardTool {
   compile(specText: string): Promise<{ ok: true; result: CompileResult } | { ok: false; problems: Problem[] }>;
   verify(bundleText: string, tomlText: string): Promise<TripwireResult>;
+  /**
+   * Does this Guard image read `[licence]` (monorepo ADR-0062)? An older one ignores the table, so a block written for it would do nothing while reading as if it did.
+   * Left out (a test's tool): no, so no block is written.
+   */
+  readsLicence?(): Promise<boolean>;
 }
+
+/**
+ * The question `readsLicence` asks the image: `verify-bundle --config` of a file whose `[licence]` names a refund (which no licence may hold back) and whose bundle
+ * does not exist. A Guard that reads the block refuses the file for the refund, naming `[licence]`, before it looks for the bundle; an older one does not read it and
+ * stops at the missing bundle. Nothing is started, and nothing goes on the network.
+ */
+export const LICENCE_PROBE_TOML = [
+  `tenant = "probe"`, `tool = "probe"`, `mode = "enforce"`, `bundle = "/work/no-such-bundle.json"`, ``,
+  `[licence]`, `lease_file = "/work/lease"`, `deployment = "probe"`, `shop = "probe"`, `wind_down_refuses = ["refund"]`, ``,
+].join("\n");
+/** The probe's answer: refused for the refund, by the `[licence]` table. */
+export const readsLicenceFrom = (stdout: string, stderr: string): boolean => /\[licence\]/u.test(`${stdout}${stderr}`) && /refund/u.test(`${stdout}${stderr}`);
 
 /** Guard's `refused: ...` lines, each with the rule it names if it names one. */
 export function refusalProblems(stage: string, text: string): Problem[] {
@@ -54,6 +71,7 @@ export function parseVerify(code: number, stdout: string, stderr: string): Tripw
 /** The real tool: `docker run` of the Guard image. `workDir` is a folder on this machine the container may use (it is mounted, then emptied). */
 export function dockerGuardTool(image: string, runner: Runner, workDir: string, docker = process.env.GEOMETER_DOCKER ?? "docker"): GuardTool {
   mkdirSync(workDir, { recursive: true });
+  let reads: Promise<boolean> | undefined; // asked once for this tool's image
   const run = async (dir: string, args: string[]) =>
     runner.run(docker, ["run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL", "--user", `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`, "-v", `${dir}:/work`, image, ...args], { timeoutMs: 120_000 });
   return {
@@ -76,6 +94,17 @@ export function dockerGuardTool(image: string, runner: Runner, workDir: string, 
         const r = await run(dir, ["verify-bundle", "/work/bundle.json", "--config", "/work/guard.toml"]);
         return parseVerify(r.code, r.stdout, r.stderr);
       } finally { rmSync(dir, { recursive: true, force: true }); }
+    },
+    readsLicence() {
+      reads ??= (async () => {
+        const dir = mkdtempSync(join(workDir, "licence-"));
+        try {
+          writeFileSync(join(dir, "guard.toml"), LICENCE_PROBE_TOML);
+          const r = await run(dir, ["verify-bundle", "--config", "/work/guard.toml"]);
+          return r.code !== 0 && readsLicenceFrom(r.stdout, r.stderr);
+        } finally { rmSync(dir, { recursive: true, force: true }); }
+      })();
+      return reads;
     },
   };
 }

@@ -111,6 +111,17 @@
       "guard": { "decision": "unknown", "code": "outcome_unknown", "sent": "unknown", "retry": "do_not_repeat", "reason": "outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically", "detail": null }
     }
   },
+  "suspended": {
+    "_about": "The licence (B13, monorepo ADR-0062): the doc's example of 8 Nov 2026, whose shape Guard's tests/licence.rs asserts; not captured from a binary run.",
+    "status": 402,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+      "guard": { "decision": "deny", "code": "subscription_suspended", "reason_code": "subscription_suspended", "sent": "no", "retry": "no",
+                 "reason": "subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+                 "detail": { "state": "wind_down", "shop": "glow-salon", "operation": "create_link", "lease_serial": "1796700000", "judged_at": 1797746400, "stop_at": 1799260200, "export_until": null } }
+    }
+  },
   "provider_500": {
     "status": 500,
     "headers": { "content-type": "application/json" },

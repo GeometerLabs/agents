@@ -35,6 +35,7 @@ import { basename, dirname, join } from "node:path";
 import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
+import { LICENCE_MOUNT } from "./guards.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
 
@@ -103,6 +104,11 @@ export interface Dirs {
   panelData: string;
   /** geometer.json, which the panel reads (the model, and nothing secret is in it). */
   config: string;
+  /**
+   * The server's state/licence/ (B13): the kept lease, seen.json and the extensions. Each per-shop Guard mounts the FOLDER read-only at LICENCE_MOUNT (the deployer
+   * replaces the files by rename, and a single-file bind mount keeps showing the old one). The model Guard does not get it.
+   */
+  licence: string;
 }
 
 export interface Addressing {
@@ -204,11 +210,13 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     }, [`${dirs.generated}/guards/${g.service}/guard.toml`, `${dirs.generated}/guards/${g.service}/bundle.json`]);
   };
 
+  // the lease's folder, read-only, on every per-shop Guard (a shop's and an agent's someone else wrote), never on the model Guard
+  const licenceVolume = `${dirs.licence}:${LICENCE_MOUNT}:ro`;
   for (const shop of shops) {
     for (const g of shop.guards) {
       guard(
         g, [names.net(shop.name)], net.adminIp(shop.name, g.kind, shop.index),
-        g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: shop.name } }] : [],
+        [licenceVolume, ...(g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: shop.name } }] : [])],
         g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined,
         features.panel ? net.panelIp(g.kind as Exclude<GuardKind, "model">, shop.index) : undefined,
       );
@@ -235,7 +243,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // An agent someone else wrote: the same Guards, on the `gate` network instead of a runtime's. There is no runtime, no door and no model Guard for it.
   for (const agent of agents) {
     for (const g of agent.guards) {
-      guard(g, [agentNames.gate], net.adminIp(agent.name, g.kind, agent.index), g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: agent.name } }] : [],
+      guard(g, [agentNames.gate], net.adminIp(agent.name, g.kind, agent.index), [licenceVolume, ...(g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: agent.name } }] : [])],
         g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined);
     }
   }

@@ -134,6 +134,58 @@ export interface TomlOptions {
   tripwireIntervalS?: number;
   /** Where this Guard listens and keeps its files. The defaults are the container's; a test that runs the real binary on this computer gives its own. */
   paths?: Partial<typeof CONTAINER_PATHS>;
+  /**
+   * Fleet's licence lease (plan B13, monorepo ADR-0062), for a per-shop Guard only (never the model Guard, which serves the whole server). Given only when the
+   * Guard image reads `[licence]` (an older one ignores the table: it would do nothing while reading as if it did) and geometer.json pins `licence.keys`.
+   */
+  licence?: GuardLicence;
+}
+
+/** What a per-shop Guard is told about the lease. `deployment` is the SERVER's id (the one fleet's lease names), not the Guard's own name (`TomlOptions.deployment`). */
+export interface GuardLicence {
+  deployment: string;
+  /** The shop's id, or the id of an agent someone else wrote. */
+  shop: string;
+  /** The owner's WhatsApp number(s): in the final stop a send to one of them still goes (the owner's notice). Only numbers Guard reads as numbers (`ownerNumbers`). */
+  ownerNumbers: string[];
+}
+
+/** Where a per-shop Guard sees the server's state/licence/ folder (read-only; the folder, not single files, because the deployer replaces the lease by rename). */
+export const LICENCE_MOUNT = "/run/geometer/licence";
+/**
+ * The operations held back. In the wind-down: a new payment link and a new calendar event. In the final stop also a WhatsApp send, except to the owner. Guard's
+ * configuration refuses a list that names a refund, a cancellation, a read, a list, `patch` or `delete`, so money owed to a customer always goes through.
+ */
+export const LICENCE_WIND_DOWN_REFUSES: readonly string[] = ["create_link", "insert"];
+export const LICENCE_STOPPED_REFUSES: readonly string[] = ["create_link", "insert", "send"];
+/** The argument of a send that names who it goes to: WhatsApp's `to`. Guard's default too; written out so the file says which field the owner's exception reads. */
+export const LICENCE_RECIPIENT_FIELD = "to";
+
+/** The owner's numbers as Guard will take them: 6 to 15 digits, with `+`, spaces, dashes and brackets allowed (Guard refuses the whole file for one it cannot read). */
+export const ownerNumbers = (numbers: readonly (string | undefined)[]): string[] =>
+  numbers.filter((n): n is string => typeof n === "string" && /^[\d+ ()-]+$/u.test(n.trim()) && (n.match(/\d/gu)?.length ?? 0) >= 6 && (n.match(/\d/gu)?.length ?? 0) <= 15).map((n) => n.trim());
+
+/** The `[licence]` lines of guard.toml (ADR-0062 decision 1). The paths are the mount's. */
+function licenceLines(l: GuardLicence): string[] {
+  const q = (s: string) => JSON.stringify(s);
+  const list = (xs: readonly string[]) => `[${xs.map(q).join(", ")}]`;
+  return [
+    ``,
+    `# Fleet's signed licence lease (plan B13, monorepo ADR-0059 and ADR-0062), checked offline with the public keys built into Guard's binary. Read again`,
+    `# when the files change; never a restart. No lease file, or a shop the lease does not list, restricts nothing. The folder is this server's state/licence/.`,
+    `[licence]`,
+    `lease_file = ${q(`${LICENCE_MOUNT}/lease`)}`,
+    `seen_file = ${q(`${LICENCE_MOUNT}/seen.json`)}`,
+    `extensions_dir = ${q(`${LICENCE_MOUNT}/extensions`)}`,
+    `deployment = ${q(l.deployment)}`,
+    `shop = ${q(l.shop)}`,
+    `# In the wind-down, refused with reason subscription_suspended (not a policy denial); in the final stop, also a send, except to the owner's number.`,
+    `# Never refused, in any state: refunds, cancel_link, reads, lists, patch, delete.`,
+    `wind_down_refuses = ${list(LICENCE_WIND_DOWN_REFUSES)}`,
+    `stopped_refuses = ${list(LICENCE_STOPPED_REFUSES)}`,
+    `owner_numbers = ${list(l.ownerNumbers)}`,
+    `recipient_field = ${q(LICENCE_RECIPIENT_FIELD)}`,
+  ];
 }
 
 /** Inside the Guard's container. A test running the binary directly overrides these (TomlOptions.paths). */
@@ -184,6 +236,7 @@ export function guardToml(o: TomlOptions): string {
       ``, `[notify_secrets]`, `${o.approver.id} = ${q("${file:" + o.approver.secretFile + "}")}`,
     );
   }
+  if (o.licence && o.def.kind !== "model") lines.push(...licenceLines(o.licence));
   return `${lines.join("\n")}\n`;
 }
 
