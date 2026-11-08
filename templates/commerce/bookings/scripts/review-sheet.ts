@@ -38,6 +38,8 @@ export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
     // a UPI shop's (B33) values: its UPI ID and name, the owner's code, and what the owner marked
     upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
+    // the licence's notices (B13): who set the shop up, what is still open at the final stop, and the free export's last day
+    partner: "Divya, local partner", upcomingCount: 3, openCount: 1, licenceDateMs: zonedToMs({ year: 2027, month: 3, day: 5 }, { hour: 0, minute: 0 }, TIME_ZONE),
   };
 }
 
@@ -126,6 +128,9 @@ const WHEN: Record<TemplateId, string> = {
   owner_upi_refund_reminder: "UPI shop: a reminder of a refund still owed (once a day, three times at most)",
   owner_upi_refund_marked: "UPI shop: the answer to the owner's Refund sent",
   owner_upi_refund_kept: "UPI shop: the answer to the owner's Kept for booking",
+  booking_paused: "The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later",
+  owner_licence_paused: "The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money",
+  owner_licence_stopped: "The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had",
 };
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
