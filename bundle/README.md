@@ -127,6 +127,7 @@ node bundle/geometer.ts update --dry-run     # a new template version for every 
 node bundle/geometer.ts update                # do it, each client checked on its own settings first
 node bundle/geometer.ts rollback              # put the clients the last update moved back on their previous version
 node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the record as it was, from the continuous copy
+node bundle/geometer.ts licence extension extension.gx1                  # an emergency extension from Geometer, if fleet cannot renew the licence for a while
 ```
 
 ## Update every client at once
@@ -293,6 +294,42 @@ Its calls to the services go where `agent add` printed: it is started with these
 **The go-live certificate** has the template's format (so `agent report` reads it the same way: it must be signed with the server's key, and its checks must have run on this agent's settings), in English: "Held N of M situations. K failed. J not tested.", what did not hold, the limits Guard enforces for this agent, the list of what was not tested (the situations that could not be run here named in it), that it was run by hand against stand-in services with the real Guards in front, and the version of the agent. It is written whatever the result, and says what failed. The version is recorded as the one in service only when everything held.
 
 An example agent that passes all ten is `bundle/examples/own-agent/server.js` (plain Node, no dependencies). `server-broken.js` is the same agent with one thing done wrong: when the answer to a refund is lost it asks again straight away with a new idempotency key. It fails that one situation and no other, and Razorpay still holds one refund because Guard held every repeat. Both are run by the tests.
+
+## The licence
+
+Each shop on your server is covered by a **licence lease**: a short signed note from Geometer's fleet service that says which shops are paid for and until when. It comes back with every heartbeat, and your server keeps the newest one. Nothing here talks to Razorpay: fleet decides what is paid.
+
+**Set up once.** Fleet's operator gives you the public half of fleet's licence key (64 letters and digits; fleet prints it with `licence key show`). Pin it when you make the server folder:
+
+```sh
+node bundle/geometer.ts init /srv/geometer --domain shops.example.com ... --licence-key <the 64 characters fleet printed>
+```
+
+`init` prints the key's id; it should be the id fleet printed. A lease is only ever checked with this key, never with one that comes inside a lease. Without it, no lease is kept and no shop is ever paused by one. To add a second key while Geometer changes keys, add it to `"licence": {"keys": [...]}` in `geometer.json`.
+
+**What a shop's owner and customers see.**
+
+| Where the shop stands | Customers | The owner |
+|---|---|---|
+| In order, payment due, or overdue (days 0 to 29) | Nothing changes. | Nothing. The panel shows you the dates and a renew link. |
+| **Wind-down** (from day 30) | A request to book (or to pay a fee) gets "Online booking is paused for now. Please contact the shop directly." Nothing is kept to do later. Refunds, cancellations, existing bookings and payments from links sent earlier still go through. | One plain notice on WhatsApp, in their language, naming the person who set the shop up. |
+| **Final stop** (no earlier than day 60) | Nothing more is sent. Open payment links are closed. Payments already made are still recorded, and refunds still go through. **Nothing is deleted.** | One notice: nothing is deleted, how much is still open, and that you can give them the full list and a free copy of their records (`geometer export`, or the panel's download). |
+
+Paying at any point brings the shop back at once, at the next heartbeat. Nothing a customer asked during the wind-down is done by itself afterwards: they ask again.
+
+**If your server is offline,** a paying shop keeps working: its lease covers it for about a month past its next invoice. A lease that runs out while nothing new arrives pauses new bookings at most; only a lease that says "stopped" stops a shop. Setting the server's clock back does not stretch a lease.
+
+**If Geometer's fleet is down for a long time,** Geometer can send you an emergency extension (a file starting `gx1.`). Hand it in:
+
+```sh
+node bundle/geometer.ts licence extension extension.gx1
+```
+
+It is checked with the same pinned key. Until the date it names, no shop here pauses because its lease could not be renewed. It does not lift a pause or a stop that a lease states.
+
+**Where it is kept:** `state/licence/` (the lease, `seen.json`, `extensions/`). `geometer status` shows each shop's licence line. The panel shows it on the shop's page, with the renew link and a note if the lease has not been refreshed for more than 2 days.
+
+**Today the check is the runtime's own.** The shop's agent reads the lease and stops taking new work; Guard does not check the lease yet. Write to support. A person answers.
 
 ## The owner's monthly report
 

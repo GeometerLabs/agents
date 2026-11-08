@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (35)
+## 1. Messages to the parent (36)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -47,8 +47,9 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_upi_claim` | UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid) | നന്ദി. Aarav Sharma-ന്റെ നവംബർ 2026 ഫീസിന്റെ നിങ്ങളുടെ പണമടവ് ഉടമ അവരുടെ UPI ആപ്പിൽ നോക്കി ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. സ്ക്രീൻഷോട്ട് പണമടച്ചതിന്റെ തെളിവല്ല, അതിനാൽ ആ സന്ദേശത്തിനായി കാത്തിരിക്കൂ. | Thank you. The owner will look for your payment for Aarav Sharma's Nov 2026 fee in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
 | `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ഉടമ Aarav Sharma-ന്റെ ഫീസിൽ നിന്ന് ₹1,200 UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
 | `fee_upi_refund_sent` | UPI centre: the owner marked the refund sent (only then is the parent told) | ഉടമ Aarav Sharma-ന്റെ ഫീസിന്റെ (f-3) നിങ്ങളുടെ ₹1,200 റീഫണ്ട് UPI വഴി അയച്ചതായി രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. | The owner has marked your ₹1,200 refund for Aarav Sharma's fee (f-3) as sent by UPI. Please check your UPI app. |  |
+| `fee_paused` | The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later | ഓൺലൈൻ ഫീസ് അടയ്ക്കൽ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി Bright Tuition Centre-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Online fee payment is paused for now. Please contact Bright Tuition Centre directly. |  |
 
-## 2. Messages to the owner (29)
+## 2. Messages to the owner (31)
 
 Most owner messages and the reminders and receipts to parents are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -83,6 +84,8 @@ Most owner messages and the reminders and receipts to parents are also WhatsApp 
 | `owner_fee_upi_refund_owed` | UPI centre: a refund the owner must send from their UPI app, with the code | തിരികെ അയക്കേണ്ടത്: രക്ഷിതാവ് +919811111111-ന് (ഫീസ് f-3) UPI വഴി ₹1,200. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Refund to send: ₹1,200 by UPI to parent +919811111111 (fee f-3). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_fee_upi_refund_reminder` | UPI centre: a reminder of a refund still owed (once a day, three times at most) | ഓർമ്മപ്പെടുത്തൽ: രക്ഷിതാവ് +919811111111-ന് (ഫീസ് f-3) ₹1,200 ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Reminder: ₹1,200 is still owed back to parent +919811111111 (fee f-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_fee_upi_refund_marked` | UPI centre: the answer to the owner's Refund sent | നന്ദി. ഫീസ് f-3-ന്റെ ₹1,200 റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, രക്ഷിതാവിനെ അറിയിച്ചു. | Thank you. The ₹1,200 refund for fee f-3 is marked sent, and the parent has been told. |  |
+| `owner_licence_paused` | The one notice to the owner when the centre's licence winds down: online fee payment is paused, who to contact. Never about money | അറിയിപ്പ്: Bright Tuition Centre-ന്റെ ഓൺലൈൻ ഫീസ് അടയ്ക്കൽ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. അടച്ച ഫീസും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി Divya, local partner-നെ ബന്ധപ്പെടൂ. | Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local partner. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | അറിയിപ്പ്: Bright Tuition Centre-ന്റെ ഓൺലൈൻ ഫീസ് പിരിവ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള ഫീസുകൾ: 4. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: 1. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും വെള്ളി, 5 മാർച്ച് വരെ Divya, local partner നൽകും. | Notice: online fee collection for Bright Tuition Centre has stopped. Nothing is deleted. Fees still open: 4. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -351,6 +354,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.madeOn` | ഉണ്ടാക്കിയ തീയതി | Made on |  |
 | `page.signedBy` | ഒപ്പിട്ടത് | Signed by |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
+| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
 | `page.notAGrade` | ഇവ രേഖയിൽ കാണുന്നതിന്റെ എണ്ണം മാത്രമാണ്. ഇവ ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | These are counts of what the record shows. They do not grade the agent. |  |
 | `page.period` | കാലയളവ് | Period |  |

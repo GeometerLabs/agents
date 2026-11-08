@@ -115,3 +115,19 @@ Written once to the inbox, never read back, never in a page, a redirect, a log, 
 The agent's stable id is made the first time it is asked for and kept in `shops/<shop>/identity.json` (written once, never overwritten); the operator's public fields are that file's `public` list (default: limits, checks, limit changes), chosen with the tick boxes on the papers page (`POST /shops/<shop>/papers/public`, through `shops.find` like every other route; the file is rewritten whole by a rename and keeps the id). `main.ts anchor <shop> --json` signs the checkpoint over the head for the deployer's daily fingerprint, and `main.ts paper dispute|identity|ledger <shop> --json` serves `geometer paper`.
 
 **Words.** The page's own sentences are in `views-papers.ts` and the shop page's link in `views.ts` (`PAPERS_LINK`), in four languages; Hindi, Malayalam and Kannada are machine-written. The papers' own words are in `modules/papers/words.ts`.
+## The price-list test follows the list in force (8 Nov)
+
+`test/plans.test.ts` compared fleet's `prices/2026-11-05.json` (the proposal). It now finds the newest dated table in fleet's `apps/fleet/prices/` and compares it with the panel's
+list in force: the same date, then every plan term. When either side gets a new table, the test fails until the other follows. It skips, saying why, when the monorepo is not there.
+
+## The shop's licence (B13, 8 Nov)
+
+The shop's page has a **Licence** block when the lease on the server lists the shop (`licence.ts`, `licenceBlock` in `views.ts`). The **state** is the one the deployer
+worked out from the signed lease and wrote into `status/<shop>.json` (`licence`): that is what the shop's runtime acts on, and an offline expiry can make it differ from
+fleet's last word. The **days** come from fleet's unsigned copy for the panel (`fleet/<shop>.json` `licence`: fleet's own local days), and the signed times are shown as
+days in India when that copy is missing. The renew link is fleet's (https only, and only while something is owed); "Licence not refreshed since <day>" shows once the
+kept lease is more than 2 days old, with the help line. The shops list shows the state when it is not in order. A shop the lease does not list, or a server with no
+lease, shows nothing. Fleet's `licence_*` warn codes are not repeated in the plan's warnings: this block says them. Words in four languages (`licence` in each word file;
+Hindi, Malayalam and Kannada are machine-written and wait for review). A partner sees only their own shops, as for every shop page.
+
+**Tests.** `test/licence.test.ts`.

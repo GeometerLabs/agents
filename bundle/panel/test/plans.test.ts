@@ -2,9 +2,9 @@
 // the same day, and the list of 7 Nov puts it in force. The proposal must still load and be skipped by the running-cost line, and the list in force must carry its terms.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { glowSalon } from "../../../templates/commerce/bookings/src/harness.ts";
 import { PRICES_DIR, latestPriceList, latestProposedPriceList, loadPriceList, monthlyCost } from "../cost.ts";
 import { fleetFile } from "../../test/monorepo.ts";
@@ -95,15 +95,20 @@ test("the loader checks the new forms: a count is a whole number, a rate has exa
   assert.equal(loadPriceList(write({ ...base, status: "proposed", proposal: "docs/x.md" })).status, "proposed");
 });
 
-// Fleet keeps the same plan terms in its own dated table (apps/fleet/prices/2026-11-05.json); the two must say the same numbers.
-const FLEET_PRICES = fleetFile("prices", "2026-11-05.json");
+// Fleet keeps the same plan terms in its own dated table (apps/fleet/prices/). The panel's list in force and fleet's newest table must be the same date and say the same
+// numbers. (On 5 Nov this compared the proposal; fleet's table in force since 7 Nov is apps/fleet/prices/2026-11-07.json.)
+const FLEET_DIR = fleetFile("prices");
+const newestFleetTable = (): string | undefined => (FLEET_DIR && existsSync(FLEET_DIR) ? readdirSync(FLEET_DIR).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f)).sort().at(-1) : undefined);
+const FLEET_PRICES = newestFleetTable() ? join(FLEET_DIR!, newestFleetTable()!) : undefined;
 const TERMS = ["plan.basic.fee", "plan.business.fee", "plan.operations.fee", "plan.basic.allowance", "plan.business.allowance", "plan.operations.allowance", "overage.extra", "licence.self-host", "innovator.discount", "innovator.max-shops", "innovator.places", "whatsapp.pass-through", "whatsapp.in.gst", "whatsapp.in.marketing", "whatsapp.in.utility", "whatsapp.in.service"];
-test("fleet's cost table and this list agree on every plan term", { skip: FLEET_PRICES ? false : "the monorepo's apps/fleet is not at a sibling path (set GEOMETER_MONOREPO)" }, (t) => {
+test("fleet's newest cost table and the panel's list in force agree on every plan term", { skip: FLEET_PRICES ? false : "the monorepo's apps/fleet is not at a sibling path (set GEOMETER_MONOREPO)" }, (t) => {
   let fleet: { rates?: Record<string, Record<string, unknown>> };
-  try { fleet = JSON.parse(readFileSync(FLEET_PRICES!, "utf8")); } catch { t.skip("fleet has no apps/fleet/prices/2026-11-05.json yet"); return; }
+  try { fleet = JSON.parse(readFileSync(FLEET_PRICES!, "utf8")); } catch { t.skip("fleet's newest price table cannot be read"); return; }
+  const live = latestPriceList();
+  assert.equal(basename(FLEET_PRICES!, ".json"), live.date, "fleet's newest table and the panel's list in force are the same date: when one gets a new table, the other must follow");
   for (const id of TERMS) {
     const theirs = fleet.rates?.[id];
     assert.ok(theirs, `fleet's table has no ${id}`);
-    for (const key of ["micro", "basisPoints", "count", "freePerMonth"] as const) assert.equal(theirs[key], (rate(id) as unknown as Record<string, unknown>)[key], `${id}.${key}`);
+    for (const key of ["micro", "basisPoints", "count", "freePerMonth"] as const) assert.equal(theirs[key], (live.rates[id] as unknown as Record<string, unknown>)[key], `${id}.${key}`);
   }
 });

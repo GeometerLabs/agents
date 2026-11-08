@@ -82,6 +82,8 @@ export interface ShopStatus {
   backups?: { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null };
   /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
   usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; /** Calls with no price: their cost is unknown, so `modelMicroInr` is a floor when this is above 0. Absent in an older file. */ unpriced?: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
+  /** The shop's licence (B13), worked out on the server from the signed lease (bundle/lib/licence.ts): what the runtime acts on. Times are ISO. */
+  licence?: { state: "active" | "reminder" | "warning" | "wind_down" | "stopped"; listed: boolean; paidThrough: string | null; windDownOn: string | null; stopOn: string | null; exportUntil: string | null; leaseIssuedAt: string | null; extendedUntil: string | null };
 }
 
 const isoDay = (v: unknown): string | undefined => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : undefined);
@@ -123,6 +125,11 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
       };
     }
   }
+  const l = raw.licence;
+  if (isObj(l) && ["active", "reminder", "warning", "wind_down", "stopped"].includes(l.state as string)) {
+    const t = (v: unknown): string | null => isoDay(v) ?? null;
+    status.licence = { state: l.state as "active", listed: l.listed === true, paidThrough: t(l.paidThrough), windDownOn: t(l.windDownOn), stopOn: t(l.stopOn), exportUntil: t(l.exportUntil), leaseIssuedAt: t(l.leaseIssuedAt), extendedUntil: t(l.extendedUntil) };
+  }
   return { ok: true, status };
 }
 
@@ -132,7 +139,11 @@ export const PLAN_NAMES = ["basic", "business", "operations"] as const;
 export type PlanName = (typeof PLAN_NAMES)[number];
 
 /** fleet/<shop>.json, as the panel reads it (the bundle's lib/fleet.ts writes it). Read field by field: a wrong field is dropped, never guessed. */
-export interface FleetAnswer { at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[] }
+export interface FleetAnswer {
+  at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[];
+  /** Fleet's unsigned copy of the licence for the panel (B13): its days and the renew link. The state that restricts the shop is the signed one in the status file. */
+  licence?: { state: string; paid_through: string | null; wind_down_on: string | null; stop_on: string | null; export_until: string | null; renew_url: string | null };
+}
 
 export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer | undefined {
   if (textOrNothing === undefined) return undefined;
@@ -148,8 +159,16 @@ export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer
       ai: r.ai,
       ...(r.ai === "buttons" && code(r.reason) ? { reason: r.reason } : {}),
       warn: Array.isArray(r.warn) ? r.warn.filter(code).slice(0, 8) : [],
+      ...(isObj(r.licence) && typeof r.licence.state === "string" && /^[a-z_]{1,20}$/u.test(r.licence.state) ? { licence: fleetLicence(r.licence) } : {}),
     };
   } catch { return undefined; }
+}
+
+/** The unsigned licence entry, field by field: a day that is not a day is null, and a renew link that is not https is null (it becomes a link on the page). */
+function fleetLicence(l: Record<string, unknown>): NonNullable<FleetAnswer["licence"]> {
+  const day = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(v) ? v : null);
+  const url = typeof l.renew_url === "string" && l.renew_url.length <= 300 && /^https:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:\/[A-Za-z0-9._~!$&'()*+,;=:@%/?#-]*)?$/u.test(l.renew_url) ? l.renew_url : null;
+  return { state: l.state as string, paid_through: day(l.paid_through), wind_down_on: day(l.wind_down_on), stop_on: day(l.stop_on), export_until: day(l.export_until), renew_url: url };
 }
 
 export interface StopRequest { schema: 1; requestId: string; shop: string; requestedAt: string; requestedBy: { id: string; name: string; role: string } }

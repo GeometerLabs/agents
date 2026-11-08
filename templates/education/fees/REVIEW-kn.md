@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (35)
+## 1. Messages to the parent (36)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -47,8 +47,9 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_upi_claim` | UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid) | ಧನ್ಯವಾದ. Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದ ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ. | Thank you. The owner will look for your payment for Aarav Sharma's Nov 2026 fee in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
 | `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ ₹1,200 ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
 | `fee_upi_refund_sent` | UPI centre: the owner marked the refund sent (only then is the parent told) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ (f-3) ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹1,200 refund for Aarav Sharma's fee (f-3) as sent by UPI. Please check your UPI app. |  |
+| `fee_paused` | The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later | ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Bright Tuition Centre ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online fee payment is paused for now. Please contact Bright Tuition Centre directly. |  |
 
-## 2. Messages to the owner (29)
+## 2. Messages to the owner (31)
 
 Most owner messages and the reminders and receipts to parents are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -83,6 +84,8 @@ Most owner messages and the reminders and receipts to parents are also WhatsApp 
 | `owner_fee_upi_refund_owed` | UPI centre: a refund the owner must send from their UPI app, with the code | ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಪೋಷಕರು +919811111111 (ಶುಲ್ಕ f-3) ಅವರಿಗೆ UPI ಮೂಲಕ ₹1,200. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Refund to send: ₹1,200 by UPI to parent +919811111111 (fee f-3). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_fee_upi_refund_reminder` | UPI centre: a reminder of a refund still owed (once a day, three times at most) | ನೆನಪಿಸುವುದು: ಪೋಷಕರು +919811111111 (ಶುಲ್ಕ f-3) ಅವರಿಗೆ ₹1,200 ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Reminder: ₹1,200 is still owed back to parent +919811111111 (fee f-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_fee_upi_refund_marked` | UPI centre: the answer to the owner's Refund sent | ಧನ್ಯವಾದ. ಶುಲ್ಕ f-3 ರ ₹1,200 ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಪೋಷಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Thank you. The ₹1,200 refund for fee f-3 is marked sent, and the parent has been told. |  |
+| `owner_licence_paused` | The one notice to the owner when the centre's licence winds down: online fee payment is paused, who to contact. Never about money | ಸೂಚನೆ: Bright Tuition Centre-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಾಗಲೇ ಪಾವತಿಸಿದ ಶುಲ್ಕಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, local partner ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local partner. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | ಸೂಚನೆ: Bright Tuition Centre-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಶುಲ್ಕಗಳು: 4. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: 1. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್ ವರೆಗೆ Divya, local partner ನೀಡುತ್ತಾರೆ. | Notice: online fee collection for Bright Tuition Centre has stopped. Nothing is deleted. Fees still open: 4. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -351,6 +354,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.madeOn` | ಮಾಡಿದ ದಿನ | Made on |  |
 | `page.signedBy` | ಸಹಿ ಮಾಡಿದವರು | Signed by |  |
 | `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
+| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
 | `page.notAGrade` | ಇವು ದಾಖಲೆಯಲ್ಲಿ ಕಾಣುವ ವಿಷಯಗಳ ಎಣಿಕೆ. ಇವು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ನೀಡುವುದಿಲ್ಲ. | These are counts of what the record shows. They do not grade the agent. |  |
 | `page.period` | ಅವಧಿ | Period |  |

@@ -14,6 +14,7 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { esc, list, page, sealBlock } from "../../../../modules/report/page.ts";
+import { verifyCodePath } from "../../../../modules/report/verify-link.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
 import { languagesOf, oneLine } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
@@ -154,7 +155,6 @@ export function limitLinesOf(l: Limits, language: Language): string[] {
 }
 
 const heldLine = (cert: GoLiveCertificate, language: Language): string => STRINGS[language].cert.held(cert.checks.held, cert.checks.total, cert.checks.failed, cert.notTested.length);
-const verifyPath = (e: Envelope): string => `/verify/${e.code}`;
 
 /** The short text, ready to paste into WhatsApp: a handful of lines. */
 export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Language): string {
@@ -168,7 +168,7 @@ export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Lang
     ...limitLines(cert, language).map((line) => `• ${line}`),
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.cert.handRunLine,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyPath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
   ];
   return lines.join("\n");
 }

@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (53)
+## 1. Messages to the customer (54)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -65,8 +65,9 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_cancelled_refund_owed` | UPI shop: the customer cancelled inside the window; the owner will send the deposit back | ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00-ലെ നിങ്ങളുടെ ബുക്കിംഗ് റദ്ദാക്കി. ഉടമ നിങ്ങളുടെ ₹200 UPI വഴി തിരികെ അയക്കും, അയച്ചതായി രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | Your booking for Tue 10 Nov, 6:00 pm is cancelled. The owner will send your ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
 | `upi_extra_refund_owed` | UPI shop: the owner marked more than the deposit; the extra goes back from the owner | നിങ്ങൾ അഡ്വാൻസിനേക്കാൾ കൂടുതൽ അയച്ചു. അധികമായ ₹200 ഉടമ UPI വഴി തിരികെ അയക്കും, അയച്ചതായി രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | You paid more than the deposit. The owner will send the extra ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ബുക്കിംഗ് b-3-ന്റെ നിങ്ങളുടെ ₹200 റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
+| `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
 
-## 2. Messages to the owner (29)
+## 2. Messages to the owner (31)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -101,6 +102,8 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് +919811111111-ന് (ബുക്കിംഗ് b-3) ₹200 ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Reminder: ₹200 is still owed back to customer +919811111111 (booking b-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | നന്ദി. ബുക്കിംഗ് b-3-ന്റെ ₹200 റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, ഉപഭോക്താവിനെ അറിയിച്ചു. | Thank you. The ₹200 refund for booking b-3 is marked sent, and the customer has been told. |  |
 | `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ശരി. ബുക്കിംഗ് b-3-ന്റെ ₹200 നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല. | Noted. The ₹200 for booking b-3 is kept for a booking you make yourself. Nothing more is owed back. |  |
+| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി Divya, local partner-നെ ബന്ധപ്പെടൂ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: 3. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: 1. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും വെള്ളി, 5 മാർച്ച് വരെ Divya, local partner നൽകും. | Notice: online booking for Glow Salon has stopped. Nothing is deleted. Bookings to come: 3. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -390,6 +393,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ഇവിടെ പരിശോധിക്കുക | Check it at |  |
 | `page.signedBy` | ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു | Signed with key |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
+| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ഞങ്ങൾ ചെയ്തത് കാണുക ▸ | Show what we did ▸ |  |
 | `page.byActionHeading` | എന്ത് ചെയ്തു, പ്രവൃത്തിയും ഫലവും അനുസരിച്ച് | What was done, by action and outcome |  |
@@ -620,6 +624,24 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ഈ മാസത്തെ ഉൾപ്പെട്ട സന്ദേശങ്ങളിൽ 80% ഉപയോഗിച്ചു. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | റീചാർജ് ബാലൻസിന്റെ 80% ഉപയോഗിച്ചു. തീരുന്നതിന് മുമ്പ് റീചാർജ് ചെയ്യുക. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp-ന്റെ ചില ചെലവുകൾ ബാലൻസിൽ നിന്ന് ഇതുവരെ അടച്ചിട്ടില്ല. അവ തീർക്കാൻ റീചാർജ് ചെയ്യുക. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `licence.heading` | ലൈസൻസ് | Licence |  |
+| `licence.states.active` | ലൈസൻസ് ശരിയാണ് | Licence in order |  |
+| `licence.states.reminder` | ലൈസൻസ് പണം അടയ്ക്കാനുണ്ട് | Licence payment due |  |
+| `licence.states.warning` | ലൈസൻസ് പണം വൈകി | Licence payment overdue |  |
+| `licence.states.wind_down` | നിർത്തിവച്ചു: പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ ഇല്ല | Paused: no new bookings or payment requests |  |
+| `licence.states.stopped` | നിർത്തി | Stopped |  |
+| `licence.means.active` | ഉപഭോക്താക്കൾക്ക് ഒന്നും മാറുന്നില്ല. | Nothing changes for customers. |  |
+| `licence.means.reminder` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. | Nothing changes for customers yet. |  |
+| `licence.means.warning` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. പണം അടച്ചില്ലെങ്കിൽ കട പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ എടുക്കില്ല. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
+| `licence.means.wind_down` | ഉപഭോക്താക്കളോട് കടയെ ബന്ധപ്പെടാൻ പറയുന്നു. റീഫണ്ടുകളും റദ്ദാക്കലുകളും നേരത്തെ ബുക്ക് ചെയ്തതോ പണം അടച്ചതോ ആയ കാര്യങ്ങളും തുടരും. പണം അടച്ചാൽ ഉടൻ എല്ലാം തിരിച്ചുവരും. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
+| `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള കാര്യങ്ങൾ ഉടമയ്ക്ക് അയച്ചു, കടയുടെ രേഖകൾ സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം. | Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free. |  |
+| `licence.paidThrough` | അടുത്ത പണം അടയ്ക്കേണ്ടത്: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
+| `licence.windDownOn` | പണം അടച്ചില്ലെങ്കിൽ 7 Jan 2027 മുതൽ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
+| `licence.extended` | Geometer-ന്റെ അടിയന്തര നീട്ടൽ 21 Dec 2026 വരെയുണ്ട്. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
+| `licence.stopOn` | പൂർണ്ണമായി നിർത്തുന്നത്: 6 Feb 2027. | Final stop planned for 6 Feb 2027. |  |
+| `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം. | Free download of the shop's records until 7 May 2027. |  |
+| `licence.renew` | പണം അടച്ച് പുതുക്കുക | Pay to renew |  |
+| `licence.stale` | 5 Dec 2026 മുതൽ ലൈസൻസ് പുതുക്കിയിട്ടില്ല. ഈ സർവർ Geometer-ൽ എത്തുന്നുണ്ടോ എന്ന് നോക്കൂ. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
