@@ -73,9 +73,10 @@ async function world() {
     guard: createGuardClient({ adminUrl: guard.adminUrl, readToken: issued.token, approverId: "owner", approverSecret: guard.ownerSecret!, secretOf: (id) => guard.secrets?.[id], now: () => Date.now() }),
     runtime: createRuntimeClient({ url: runtimeServer.url, token: INTERNAL }),
   });
-  /** A person writes from their own number: the relay's copy and the runtime's copy, as the inbox gives them. */
+  /** A person writes from their own number: the relay's copy and the runtime's copy, as the inbox gives them. Ids of their own: the kit's fake numbers its messages from the same start, and the runtime drops an id it has seen. */
+  let written = 0;
   const writes = async (from: string, text: string) => {
-    const m = whatsapp.receive(from, text);
+    const m = whatsapp.receive(from, text, { id: `wamid.person-${++written}` });
     relay.receive([m]);
     runtime.submit([{ kind: "message", message: m }]); runtime.kick();
     await relay.idle(); await runtime.idle();
