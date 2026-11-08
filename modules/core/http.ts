@@ -27,6 +27,8 @@ export interface HttpRequestOptions {
   body?: unknown;
   /** The exact bytes to send as the body, instead of serialising `body`. A call Guard held is sent again with the bytes it was held with: Guard binds an approval to the call's digest, and `60000` is not `"60000"`. */
   rawBody?: string;
+  /** More request headers. Only words for Guard itself go here (`Geo-Requested-By`, which Guard strips before it forwards); never a key of the service. */
+  headers?: Record<string, string>;
 }
 
 export interface Http {
@@ -131,6 +133,7 @@ export function createHttp(baseUrl: string, what: string, timeoutMs: number = DE
     async request(method, path, options = {}) {
       const url = joinUrl(baseUrl, path, options.query);
       const headers: Record<string, string> = { accept: "application/json" };
+      for (const [k, v] of Object.entries(options.headers ?? {})) if (!/^(authorization|host|content-type|content-length|accept)$/iu.test(k)) headers[k.toLowerCase()] = v;
       if (agentToken) headers.authorization = `Bearer ${agentToken}`;
       let body: string | undefined;
       if (options.rawBody !== undefined) { body = options.rawBody; headers["content-type"] = "application/json"; }
