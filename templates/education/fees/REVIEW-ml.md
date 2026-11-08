@@ -44,7 +44,7 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_couldnt_tell_owner` | The parent tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ക്ഷമിക്കണം, ഇപ്പോൾ ഉടമയെ അറിയിക്കാൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ. | Sorry, I could not reach the owner just now. Please try again in a few minutes. |  |
 | `voice_note` | The parent sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ദയവായി സന്ദേശം ടൈപ്പ് ചെയ്യൂ; എനിക്ക് ഇപ്പോൾ വോയ്സ് നോട്ട് കേൾക്കാൻ കഴിയില്ല. | Please type your message; I cannot listen to voice notes yet. |  |
 
-## 2. Messages to the owner (20)
+## 2. Messages to the owner (24)
 
 Most owner messages and the reminders and receipts to parents are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -70,6 +70,10 @@ Most owner messages and the reminders and receipts to parents are also WhatsApp 
 | `owner_approval_denied` | The owner denied with the code: nothing is sent | മനസ്സിലായി. +919811111111-ന്റെ ₹1,200 റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | Understood. The ₹1,200 refund for +919811111111 will not be sent, and they will be told. |  |
 | `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പേ ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയിട്ടില്ല: +919811111111, ₹1,200. | That request ran out before you answered, so nothing was refunded: ₹1,200 for +919811111111. |  |
 | `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും അയയ്ക്കൂ. | I could not record your answer just now. Please send it again in a few minutes. |  |
+| `owner_approval_waiting` | A refund needs two people to approve it: this person's approval is in, and the number is how many more are needed (sent to a teacher or the owner) | നന്ദി. +919811111111-ന്റെ ₹1,200 റീഫണ്ടിനുള്ള നിങ്ങളുടെ അനുമതി രേഖപ്പെടുത്തി. ഇനി മറ്റുള്ളവരിൽ നിന്ന് വേണ്ട അനുമതികൾ: 1. അവ ലഭിച്ച ശേഷമേ ഇത് അയയ്ക്കൂ. | Thank you. Your approval of the ₹1,200 refund for +919811111111 is recorded. Approvals still needed from the others: 1. It is sent only once they are given. |  |
+| `owner_approval_closed` | A refund that needed two people was approved by the others before this person answered: their code is no longer needed | അറിയിപ്പ്: +919811111111-ന്റെ ₹1,200 റീഫണ്ടിന് മറ്റുള്ളവർ അനുമതി നൽകി, അതിനാൽ ഇനി നിങ്ങളുടെ മറുപടി ആവശ്യമില്ല. നന്ദി. | The ₹1,200 refund for +919811111111 has been approved by the others, so your answer is no longer needed. Thank you. |  |
+| `owner_approval_refused` | A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it | അറിയിപ്പ്: +919811111111-ന്റെ ₹1,200 റീഫണ്ട് അനുമതി നൽകുന്നവരിൽ ഒരാൾ നിരസിച്ചു, അതിനാൽ ഇത് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | The ₹1,200 refund for +919811111111 was refused by one of the people who approve refunds, so it will not be sent, and they will be told. |  |
+| `owner_refund_settled` | A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again | റീഫണ്ട് പൂർത്തിയായി: +919811111111-ന്റെ ₹1,200. നിങ്ങളുടെ ഏജന്റ് സജ്ജമാക്കിയ ആൾ ഇത് പരിശോധിച്ച് നടന്നതായി രേഖപ്പെടുത്തി, അതിനാൽ ഇത് വീണ്ടും അയയ്ക്കില്ല. | Refund done: ₹1,200 for +919811111111. The person who set up your agent checked it and marked it as made, so it is not sent a second time. |  |
 
 ### The words on the buttons and the lists
 
