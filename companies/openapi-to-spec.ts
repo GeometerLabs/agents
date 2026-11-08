@@ -35,6 +35,11 @@ export interface Suggestion {
   field?: string;
   /** For `at_most_once_effect`: the API's idempotency header, if the call declares one. */
   idempotency_header?: string;
+  /**
+   * For `argument_bound` on a query or path parameter: `"string"`. Such a value always reaches Guard as text, and Guard reads a bound only in the encoding the
+   * rule declares (a JSON number unless it says `"string"`, ADR-0060), so the compiler refuses a number bound there. Written into the rule as it is.
+   */
+  encoding?: "string";
   review: string;
   fill: Fill[];
 }
@@ -81,6 +86,14 @@ function moneyFields(op: ApiOperation): Field[] {
   return op.fields.filter((f) => f.numeric && f.in !== "path" && isMoneyName(f.name));
 }
 
+/** The money fields a bound can read: the ones above, and a money number in the path too. A path value is bounded only: this draft never holds or counts a call on it. */
+function boundFields(op: ApiOperation): Field[] {
+  return op.fields.filter((f) => f.numeric && isMoneyName(f.name));
+}
+
+/** A query or path value is text on the wire, whatever its schema says, so its bound reads text that spells the number exactly (`"encoding": "string"`). */
+const readAsText = (f: Field): boolean => f.in === "query" || f.in === "path";
+
 /** The one money field a hold or a spend limit can read: a top-level one, preferring `amount`. A nested one can be bounded but not held or counted. */
 function primaryMoney(fields: Field[]): Field | undefined {
   const top = fields.filter((f) => !f.nested);
@@ -106,11 +119,12 @@ function suggestionsFor(op: ApiOperation, destructive: boolean): Suggestion[] {
   const main = primaryMoney(money);
   const name = op.operation;
 
-  for (const f of money) {
+  for (const f of boundFields(op)) {
     const apiLimits = [f.minimum !== undefined ? `minimum ${f.minimum}` : "", f.maximum !== undefined ? `maximum ${f.maximum}` : ""].filter(Boolean).join(", ");
+    const text = readAsText(f);
     out.push({
-      id: `${name}-${f.name.replaceAll(".", "-")}-bound`, kind: "argument_bound", operation: name, field: f.name,
-      review: `Refuses a ${name} call whose "${f.name}" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out.${apiLimits ? ` The API's own schema says ${apiLimits}; that is the API's limit, not yours.` : ""}${f.nested ? ` "${f.name}" sits inside an object in the body. Guard can bound it, but cannot hold a call on it or count it in a limit.` : ""} A call with no "${f.name}" is refused, never passed.`,
+      id: `${name}-${f.name.replaceAll(".", "-")}-bound`, kind: "argument_bound", operation: name, field: f.name, ...(text ? { encoding: "string" as const } : {}),
+      review: `Refuses a ${name} call whose "${f.name}" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out.${apiLimits ? ` The API's own schema says ${apiLimits}; that is the API's limit, not yours.` : ""}${f.nested ? ` "${f.name}" sits inside an object in the body. Guard can bound it, but cannot hold a call on it or count it in a limit.` : ""}${text ? ` "${f.name}" is a ${f.in} parameter, so it always reaches Guard as text ("500"), whatever its schema says. The bound is written with "encoding": "string": Guard then takes only text that spells the number exactly (no "+", no leading zero, no spaces, no exponent, and no fraction where min and max are whole). Without it Guard would want a JSON number, which a ${f.in} parameter never is, so every ${name} call would be refused${f.in === "path" ? " (geo-guard compile refuses such a spec outright). A path value is bounded only: this draft does not hold or count a call on it" : " (geo-guard compile refuses such a spec outright when the call is made only by GET; for this call it cannot tell, so the draft writes the encoding for you)"}.` : ""} A call with no "${f.name}" is refused, never passed.`,
       fill: [
         { name: "min", required: true, help: "The lowest amount one call may carry, as a string, for example \"1\"." },
         { name: "max", required: true, help: "The highest amount one call may carry, as a string, for example \"50000\"." },
@@ -348,7 +362,7 @@ export function specFromAccept(draft: Draft, accept: unknown, draftSha256: strin
       const min = amount("min"), max = amount("max");
       if (min !== undefined && max !== undefined && micro(min) > micro(max)) bad(`${s.id}: min ${min} is above max ${max}.`);
       if (max !== undefined) maxOf.set(`${s.operation}|${s.field}`, micro(max));
-      rules.push({ id: s.id, kind: "argument_bound", operation: s.operation, field: s.field, ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}), ...unitOf(s.id, s.field!, v) });
+      rules.push({ id: s.id, kind: "argument_bound", operation: s.operation, field: s.field, ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}), ...unitOf(s.id, s.field!, v), ...(s.encoding ? { encoding: s.encoding } : {}) });
       keptIds.rules.push(s.id);
     } else if (s.kind === "call_bound_approval") {
       const threshold = amount("threshold");

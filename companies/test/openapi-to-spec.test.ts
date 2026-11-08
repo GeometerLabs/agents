@@ -8,7 +8,7 @@ import { compileSpec, verifyBundle } from "../guard-binary.ts";
 import { Refusal, acceptTemplate, draftFromText, main, specFromAccept } from "../openapi-to-spec.ts";
 import type { Draft } from "../openapi-to-spec.ts";
 import { sha256 } from "../openapi-read.ts";
-import { GUARD, captureIo, exampleFile, exampleJson, exampleText, skipWithoutGuard, tempDir } from "./helpers.ts";
+import { GUARD, captureIo, exampleFile, exampleJson, exampleText, skipWithoutGuard, tempDir, textMoneyApi, textMoneySpec } from "./helpers.ts";
 
 const REGENERATE = "Regenerate the example files (see companies/README.md, 'Regenerating the example').";
 const draftText = () => exampleText("draft.json");
@@ -83,6 +83,25 @@ test("numbers that are not money get no bound; a string amount gets none; a nest
   assert.ok(!charge.includes("create_charge-needs-approval") && !charge.includes("create_charge-spend-per-day"));
   assert.match(d.suggestions.find((s) => s.id === "create_charge-amount-value-bound")!.review, /cannot hold a call on it or count it/u);
   assert.ok(d.suggestions.some((s) => s.id === "set_price-unitPriceCents-bound"), "camelCase and a nullable number are read");
+});
+
+test("a money number in the query or the path gets a bound read as text (\"encoding\": \"string\"), with a note that says why; a body amount does not", () => {
+  const d = draftFromText(textMoneyApi(), { tool: "refunds" });
+  const query = d.suggestions.find((s) => s.id === "create_refund-amount-bound")!;
+  assert.equal(query.encoding, "string");
+  assert.match(query.review, /"amount" is a query parameter, so it always reaches Guard as text/u);
+  assert.match(query.review, /"encoding": "string"/u);
+  assert.match(query.review, /every create_refund call would be refused/u);
+  // a query amount can still be held and counted: approvals and spend limits read text that spells a number as that number
+  assert.ok(d.suggestions.some((s) => s.id === "create_refund-needs-approval"));
+  const path = d.suggestions.find((s) => s.id === "create_payout-amount-bound")!;
+  assert.equal(path.encoding, "string");
+  assert.match(path.review, /a path parameter/u);
+  assert.match(path.review, /geo-guard compile refuses such a spec outright\)\. A path value is bounded only/u);
+  assert.ok(!d.suggestions.some((s) => s.operation === "create_payout" && (s.kind === "call_bound_approval" || s.kind === "spend")), "a path amount is never held or counted by this draft");
+  assert.equal(draft().suggestions.find((s) => s.id === "create_refund-amount-bound")!.encoding, undefined, "a JSON body amount is a JSON number: no encoding");
+  // the accept step writes the encoding into the rule
+  assert.deepEqual(textMoneySpec().rules.filter((r: any) => r.kind === "argument_bound").map((r: any) => [r.id, r.encoding]), [["create_refund-amount-bound", "string"], ["create_payout-amount-bound", "string"]]);
 });
 
 // ---- the accept step ---------------------------------------------------------------------------------------------------------------------
@@ -235,6 +254,22 @@ test("Guard's own compiler accepts the example spec and gives the checked-in bun
   assert.equal(readFileSync(join(dir, "bundle.json"), "utf8"), exampleText("bundle.json"), `Guard's compiler gives other bytes than the checked-in bundle.json: ${REGENERATE}`);
   const v = verifyBundle(GUARD!, join(dir, "bundle.json"));
   assert.ok(v.ok, v.ok ? "" : v.problems.join("\n"));
+});
+
+test("Guard's compiler takes a query or path bound written with \"encoding\": \"string\", and refuses a path bound without it", { skip: skipWithoutGuard }, () => {
+  const dir = tempDir();
+  const spec = textMoneySpec();
+  writeFileSync(join(dir, "spec.json"), JSON.stringify(spec));
+  const c = compileSpec(GUARD!, join(dir, "spec.json"), join(dir, "bundle.json"));
+  assert.ok(c.ok, c.ok ? "" : c.problems.join("\n"));
+  if (c.ok) assert.equal(c.summary.tripwires.passed, c.summary.tripwires.of, "the bounds bite, written as text, on the Guard's own self-check");
+  // a number bound on a path parameter could never pass a call, and the compiler says so (the query case, on a POST, is end-to-end.test.ts)
+  const without = structuredClone(spec);
+  delete without.rules.find((r: any) => r.id === "create_payout-amount-bound").encoding;
+  writeFileSync(join(dir, "without.json"), JSON.stringify(without));
+  const refused = compileSpec(GUARD!, join(dir, "without.json"), join(dir, "without.bundle.json"));
+  assert.equal(refused.ok, false, "a path bound without its encoding was compiled");
+  if (!refused.ok) assert.match(refused.problems.join("\n"), /"string"/u, refused.problems.join("\n"));
 });
 
 test("build compiles with the real Guard, prints what it cannot test, and writes a starter guard.toml it then checks the bundle against", { skip: skipWithoutGuard }, () => {

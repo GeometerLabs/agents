@@ -61,6 +61,8 @@ The suggestions are:
 | `forbidden_call` | Always refused, by name | nothing |
 | `spend` and `count` limits | Cap the total or the number of calls in a window (a day by default) | `cap` |
 
+A bound reads a JSON number unless it says otherwise. An amount in the **query or the path** always arrives as text, so the draft writes `"encoding": "string"` on its bound (Guard then takes only text that spells the number exactly: `500`, never `+500`, `0500` or `500.0`). Leave it in: without it every such call is refused for being text.
+
 ### 2. Review and accept
 
 Copy `accept.template.json` to `accept.json`. In it:
