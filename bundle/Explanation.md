@@ -257,7 +257,7 @@ that follows from a Razorpay Guard follows from that one list:
 
 ## The licence lease and wind-down (8 November: the bundle's half of B13), and the heartbeat's three counts
 
-Fleet's half is merged in the monorepo (ADR-0059; the contract is `apps/fleet/README.md`, "What the bundle does with the lease"). This is the other half. **The runtime's check is the only check today: Guard does not read the lease yet** (Deferred.md has the exact `[licence]` block for that engine task).
+Fleet's half is merged in the monorepo (ADR-0059; the contract is `apps/fleet/README.md`, "What the bundle does with the lease"). This is the other half. Guard's own check of the same lease came after it (8 November, monorepo ADR-0062): see "Guard checks the lease too" below.
 
 **Who does what, and why that way.** Three parts can each write only one place, and the design follows that:
 
@@ -297,6 +297,34 @@ The licence never goes through `runtime.json` or the shop's desired state: a cha
 A baseline written before these counts keeps the cost meter's nine and starts the new ones at the shop's current totals (`EXTRA_FIELDS`, optional on both sides), so an upgrade drops nothing and replays no report or reply. **So a shop that sent a report before this bundle gets fleet's First report sent badge with its next report**, dated then, not today: the honest date, chosen over replaying history.
 
 **Tests**: `test/licence.test.ts` (the port on the vectors, keeping the lease, replay, a lost lease file, extensions, the clock set back), `test/heartbeat-counts.test.ts` (the three counts, the baseline upgrade, fleet's own validator, ops keeping the token and the unsigned entry), each template's `test/licence.test.ts` (the wind-down, a deposit from an earlier link booking, back to normal with nothing replayed, the stop's link closing, the owner's notices once each through the runtime, the reader), and the panel's `test/licence.test.ts` (the view, the page and the list in Hindi, another partner seeing nothing).
+
+## Guard checks the lease too (8 November: D83, the bundle's side of monorepo ADR-0062)
+
+Guard now reads fleet's lease itself (monorepo ADR-0062): a `[licence]` table in `guard.toml`, the public keys built into its binary, and a 402 `subscription_suspended` for new work in the wind-down. The monorepo's Deferred D83 lists the change this repository makes. This is it.
+
+**The block** (`generate/guards.ts`, `TomlOptions.licence`), last in each per-shop Guard's file:
+
+| Setting | Value | Why |
+|---|---|---|
+| `lease_file`, `seen_file`, `extensions_dir` | under `/run/geometer/licence` | the server's `state/licence/`, which the deployer already keeps |
+| `deployment` | the **server's** id (`geometer.json` `id`) | the id fleet's lease names; not the Guard's own name, which stays the top-level `deployment` |
+| `shop` | the shop's id, or the id of an agent someone else wrote | a lease lists both; this closes "an agent someone else wrote is not restricted by the lease" |
+| `wind_down_refuses` | `["create_link", "insert"]` | a new payment link, a new calendar event |
+| `stopped_refuses` | `["create_link", "insert", "send"]` | and a message, in the final stop |
+| `owner_numbers` | the owner's WhatsApp number from the settings | the final stop's one notice to the owner still goes. Only a number Guard reads as one (6 to 15 digits, `+`, spaces, dashes and brackets) is written, because Guard refuses the whole file for one it cannot read |
+| `recipient_field` | `"to"` | Guard's own default, written out so the file says which field the owner's exception reads. The monorepo's templates leave it out; `test/drift.test.ts` knows it as the bundle's own addition |
+
+The model Guard never gets it: it serves every shop on the server.
+
+**When it is written.** Only when `geometer.json` pins `licence.keys` **and** the Guard image reads the table. An older image ignores an unknown table (its top-level settings were not read strictly), so a block written for it would do nothing while reading as if it did. The deployer asks the image itself, once per deploy (`GuardTool.readsLicence`, `generate/verify.ts`). It runs `verify-bundle --config` on a small file whose `[licence]` names a refund, and points at a bundle that does not exist. A Guard that reads the table refuses the file for the refund, naming `[licence]`, before it looks for the bundle. An older one stops at the missing bundle. When the image is older, the deploy says so in a note, and only the runtime refuses new work.
+
+**After the start.** `proveRunning` reads each running per-shop Guard's own account (`licence` in `/admin/status`). It must name this server and this shop, and the key ids built into its binary must be exactly the ids of the keys `geometer.json` pins (`kidOf`). A Guard built with other keys would take no lease fleet signs, and so would restrict nothing, while the panel shows the shop wound down. A mismatch fails the deploy and names the Guard, but **does not pull the kill switch**, because the kill switch would stop refunds owed as well.
+
+**The folder** (`generate/compose.ts`): `Dirs.licence` is `state/licence/`. It is mounted read-only at `/run/geometer/licence` on every per-shop Guard (a shop's, and an agent's someone else wrote), and not on the model Guard. The folder is mounted, not single files, because the deployer replaces the lease and `seen.json` by rename, and a single-file bind mount keeps showing the old file. `writeServer` makes `state/licence/` and `state/licence/extensions/` (0755) before `compose up`, for both deploy paths. Otherwise Docker would make them as root, and the deployer could not write the lease. The files are 0644, so the Guard's user (65532) can read them. Guard reads them again within a second when they change, so a lease never restarts anything.
+
+**The runtime** (`modules/`, both templates): Guard's 402 is a `GuardSuspendedError`. It is never tried again and is recorded once, as `blocked`, with the licence rule. The template takes it as its own pause. modules/Explanation.md has the detail.
+
+**Where Guard and the runtime differ** (Deferred.md has each): a Fees centre that takes UPI makes its new work with a WhatsApp message, which Guard holds back only in the final stop. In the wind-down Guard also refuses an `insert` the runtime would allow: a hold taken again after a late payment, or an existing booking whose calendar event went missing.
 
 ## What the tests show, and what they do not
 
