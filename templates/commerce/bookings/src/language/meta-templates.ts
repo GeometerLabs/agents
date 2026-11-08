@@ -20,11 +20,12 @@ import type { MetaTemplate } from "../../../../../modules/language/meta-template
 import { serviceName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { inr, need, slot } from "./templates.ts";
-import { formatInr } from "../../../../../modules/language/format.ts";
+import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left";
+export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming" | "open" | "until";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -39,6 +40,10 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   upiCode: (f) => need(f, "upiCode"),
   marked: (f) => formatInr(need(f, "markedInr")),
   left: (f) => formatInr(need(f, "leftInr")),
+  partner: (f) => need(f, "partner"),
+  upcoming: (f) => String(need(f, "upcomingCount")),
+  open: (f) => String(need(f, "openCount")),
+  until: (f) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language),
 };
 
 
@@ -218,6 +223,25 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
       kn: "ಸೂಚನೆ: {business}-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ.",
     },
   },
+  // The licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop, which the owner may get on a day they have not written.
+  {
+    name: "owner_service_paused", usedFor: "owner_licence_paused", audience: "owner",
+    bodies: {
+      en: "Notice: online booking for {business} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact {partner} about it.",
+      hi: "सूचना: {business} की ऑनलाइन बुकिंग अभी रुकी हुई है। पहले की बुकिंग, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया {partner} से संपर्क करें।",
+      ml: "അറിയിപ്പ്: {business}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി {partner}-നെ ബന്ധപ്പെടൂ.",
+      kn: "ಸೂಚನೆ: {business}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು {partner} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+    },
+  },
+  {
+    name: "owner_service_stopped", usedFor: "owner_licence_stopped", audience: "owner",
+    bodies: {
+      en: "Notice: online booking for {business} has stopped. Nothing is deleted. Bookings to come: {upcoming}. Other open items: {open}. {partner} can give you the full list and a free copy of all your records until {until}.",
+      hi: "सूचना: {business} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: {upcoming}। बाकी खुले काम: {open}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {until} तक {partner} से मिल सकती है।",
+      ml: "അറിയിപ്പ്: {business}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: {upcoming}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {open}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {until} വരെ {partner} നൽകും.",
+      kn: "ಸೂಚನೆ: {business}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: {upcoming}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {open}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {until} ವರೆಗೆ {partner} ನೀಡುತ್ತಾರೆ.",
+    },
+  },
   // UPI shops (B33). The messages that can go when the person has not written today: the customer's "booked", "after the hold", "your refund is coming" and
   // "your refund was sent"; the owner's "a payment to check", "the customer says they paid", "a refund to send" and its reminder. The owner's answers to their
   // own replies need none. The owner's code is a value like any other: it is in the message the owner reads, and nowhere a customer sees.
@@ -329,6 +353,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
     upiId: "glowsalon@okicici", payee: settings.name, upiCode: "P4XR9T", markedInr: settings.deposit.amountInr, leftInr: settings.deposit.amountInr,
+    partner: "Divya, local partner", upcomingCount: 3, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30), // Fri 5 Mar 2027 in India
   };
 }
 

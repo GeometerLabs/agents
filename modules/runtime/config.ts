@@ -8,6 +8,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { LANGUAGES } from "../language/languages.ts";
+import { licenceNow, parseLicenceFile } from "../licence/rules.ts";
+import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
 import type { Language } from "../language/languages.ts";
 import { DEFAULT_PORT } from "./http.ts";
 
@@ -347,6 +349,29 @@ export function aiOverrideReader(folder: string, initial: "auto" | "buttons" = "
       }
     } catch { /* keep the last answer */ }
     return last;
+  };
+}
+
+/**
+ * The shop's licence (plan B13): client/licence.json, which the bundle's deployer writes from the signed lease it keeps (bundle/lib/licence.ts), read again whenever it
+ * changes (by its modified time), and judged with THIS runtime's clock at every call, so a lease that runs out while the deployer is not running still takes effect.
+ * No file is no restriction. A file that cannot be read for a moment, or that does not check, leaves the last good reading standing. This is the runtime's own check of
+ * the lease: Guard's offline check (`subscription_suspended`) is not built yet.
+ */
+export function licenceReader(folder: string, clock: { now(): number }): () => LicenceNow {
+  const file = join(resolve(folder), "licence.json");
+  let last: LicenceFile | undefined;
+  let seen = -1;
+  return () => {
+    try {
+      const modified = statSync(file).mtimeMs;
+      if (modified !== seen) {
+        const parsed = parseLicenceFile(JSON.parse(readFileSync(file, "utf8")));
+        if (parsed) last = parsed;
+        seen = modified;
+      }
+    } catch { /* no file yet, or a moment of change: keep the last answer */ }
+    return licenceNow(last, clock.now());
   };
 }
 

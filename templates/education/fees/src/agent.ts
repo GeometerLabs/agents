@@ -16,12 +16,20 @@
 // payment counts only when the owner marks it received, from their own number, with a one-use code (modules/payments/upi). The requests and marks live in this
 // agent's store and are read through the same Payments shape, so "paid is judged from the payment record" holds, with the owner's marks as that record. A refund is
 // never sent by the agent: the owner owes it, is reminded, and the parent hears "sent" only after the owner marks it. A screenshot asks the owner to look.
+//
+// The licence (plan B13; modules/licence). While the centre's lease puts it in its WIND-DOWN, the agent takes no new work: a parent who asks to pay is answered "online
+// fee payment is paused, please contact the centre", no new fee link is made, no month's fees are opened, no late fee is added and the reminders that fall due are passed
+// over (none is kept to send later). Payments from links sent earlier are still counted, receipts still go, and refunds go on. In the FINAL STOP the agent also closes the
+// open fee links (Razorpay; a UPI centre has none) and sends nothing more. This is the runtime's own check of the lease: Guard's offline check (`subscription_suspended`)
+// is not built yet.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
@@ -69,6 +77,8 @@ export interface AgentDeps {
   ai?: AiPolicy;
   /** A UPI centre: make the QR picture of a `upi://pay` link and put it where WhatsApp can fetch it (modules/payments/upi/qr-image.ts). Left out, or null: the words carry the link and the UPI ID. */
   qrImage?: (text: string) => Promise<string | null>;
+  /** The centre's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
+  licence?: () => LicenceNow;
 }
 
 export type AgentEvent =
@@ -97,6 +107,7 @@ export function createAgent(deps: AgentDeps): Agent {
   const upiState = upi ? (store.upi ??= emptyUpiState()) : undefined;
   const payments: Payments = upi ? upiPayments(upiState!, upi, clock) : deps.payments;
   const policy: AiPolicy = deps.ai ?? {};
+  const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
   const parseContext = { languages: settings.languages };
@@ -147,6 +158,7 @@ export function createAgent(deps: AgentDeps): Agent {
       }
       if (due && a.templates.some((t) => t === "fee_received" || t === "fee_already_paid")) out.push(checkPaidOnlyWhenRecorded({ record, dueId: due.id, owedPaise: owedPaise(due), needsAll: true }));
       if (due && a.templates.includes("fee_part_received")) out.push(checkPaidOnlyWhenRecorded({ record, dueId: due.id, owedPaise: owedPaise(due), needsAll: false }));
+      if (licence().state === "stopped") out.push(stoppedGate);
       return out;
     },
     log: (due, phone, action, outcome, inputs, more) => log(due, phone, action, outcome, inputs, more),
@@ -392,12 +404,52 @@ export function createAgent(deps: AgentDeps): Agent {
    * fee, a waiver) a new link is made for the new balance and the old one is closed, if it can still be closed (a link with a part payment cannot be: it stays open, and
    * anything it collects beyond what is owed is given back).
    */
+  // ---- the licence: no new work in the wind-down, nothing more sent in the final stop ----------------------------------------------------------------------
+
+  const stoppedGate: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: "the centre's licence has reached its final stop, so nothing more is sent from here (the owner's one notice aside); the runtime's own check of the lease" };
+  const pausedDecision = (): Decision => ({ ruleId: LICENCE_RULE, verdict: "block", reason: `online fee payment is paused: the centre's licence is in its ${licence().state === "stopped" ? "final stop" : "wind-down"}, so no new fee link is made, and nothing is kept to do later (the runtime's own check of the lease)` });
+
+  /** A request for new work while online fee payment is paused: said in the record, answered "please contact the centre", and nothing kept to do later. */
+  async function pausedReply(phone: string, asked: string): Promise<void> {
+    log(null, phone, "new_work", "blocked", { asked }, { decisions: [pausedDecision()], notes: "the parent is told online fee payment is paused and to contact the centre" });
+    await tellCustomer(null, phone, ["fee_paused"]);
+  }
+
+  /** One record line each time the licence restricts the centre, or stops restricting it. Nothing asked during a wind-down is done when it ends: the parent asks again. */
+  function noteLicence(): void {
+    const l = licence();
+    const now = l.restricted ? l.state : "active";
+    let was = "active";
+    const entries = record.entries();
+    for (let i = entries.length - 1; i >= 0; i--) if (entries[i].action === "licence") { was = entries[i].refs.state ?? "active"; break; }
+    if (now === was) return;
+    const notes = now === "wind_down" ? "The centre's licence is in its wind-down (the lease fleet signed, read on this server): no new fee link is made, no month's fees are opened and no late fee is added, and nothing is kept to do later. Payments from links sent earlier, receipts and refunds go on."
+      : now === "stopped" ? "The centre's licence has reached its final stop: open fee links are closed and nothing more is sent from here, except the owner's one notice. Payments already made are still recorded and refunds still go through. Nothing is deleted."
+      : "The centre's licence is in order again: fees are collected from now on. Nothing asked during the wind-down is done now; a parent who still wants it asks again.";
+    log(null, owner, "licence", "confirmed", { state: now }, { refs: { state: now, ...(l.paidThrough !== null ? { paidThrough: String(l.paidThrough) } : {}) }, notes });
+  }
+
+  /** The final stop, once for each `paid_through`: close every open fee link at Razorpay through Guard, so no new payment comes in. A UPI centre has none to close. */
+  async function closeLinksAtStop(): Promise<void> {
+    const l = licence();
+    if (l.state !== "stopped" || upi) return;
+    const key = `stop:${l.paidThrough ?? 0}`;
+    for (const due of [...store.dues.values()]) {
+      const linkId = due.state === "open" ? due.currentLinkId : undefined;
+      if (!linkId) continue;
+      if (record.entries().some((e) => e.booking === due.id && e.action === "cancel_fee_link" && e.refs.licence === key)) continue;
+      const closed = await payments.cancelPaymentLink(linkId).then(() => payments.fetchPaymentLink(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
+      log(due, due.customer, "cancel_fee_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the centre's licence: the open fee link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the centre's licence: the link could not be closed (it may have a payment on it, or Razorpay did not answer); the owner can close it in Razorpay" });
+    }
+  }
+
   async function currentLink(due: Due): Promise<{ ok: true } | { ok: false; why: string }> {
     const balance = balancePaise(due);
     if (balance <= 0) return { ok: false, why: "nothing is owed" };
     const old = linkOf(due);
     // A UPI request asks for its whole amount (the payer's app cannot change it), so after a part the rest needs a request of its own; a Razorpay link takes the rest.
     if (old && (upi ? old.amountPaise === balance && paidOnLink(due, old.id) === 0 : old.amountPaise - paidOnLink(due, old.id) === balance)) return { ok: true };
+    if (!licence().takesNewWork) { log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance }, { decisions: [pausedDecision()] }); return { ok: false, why: "online fee payment is paused (the centre's licence)" }; }
     if (balance % 100 !== 0) return { ok: false, why: "the balance is not a whole number of rupees" };
     const decision = checkFeeLink({ amountInr: balance / 100, balanceInr: balance / 100, highestInr });
     if (decision.verdict === "block") { log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance }, { decisions: [decision] }); return { ok: false, why: decision.reason }; }
@@ -511,6 +563,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- what a parent says ------------------------------------------------------------------------------------------------
 
   async function onPay(phone: string, intent: Intent): Promise<void> {
+    if (!licence().takesNewWork) return pausedReply(phone, "pay");
     const due = targetDue(phone, intent);
     if (!due) { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
     const { fresh } = await reconcile(due);
@@ -545,6 +598,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** A discount or a waiver is never offered. When a parent asks, the owner is asked for the exact amount, or, within the limit, it is done and the owner is told. */
   async function onDiscount(phone: string, intent: Intent): Promise<void> {
+    if (!licence().takesNewWork) return pausedReply(phone, "discount");
     const due = targetDue(phone, intent);
     if (!due) { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
     const { fresh } = await reconcile(due);
@@ -583,6 +637,7 @@ export function createAgent(deps: AgentDeps): Agent {
     } else {
       const link = await currentLink(due);
       if (link.ok) await tellCustomer(due, due.customer, ["fee_waiver_applied"], { waiverInr: amountInr, offer: feeButtons(due, ["pay", "owner"]) });
+      else if (!licence().takesNewWork) await tellCustomer(due, due.customer, ["fee_paused"]); // the waiver is recorded; paying the rest online waits for the centre
       else { await tellCustomer(due, due.customer, ["fee_link_failed"], { offer: ownerButton }); await tellOwner(due, due.customer, "owner_link_failed"); }
     }
     if (by === "limit") await tellOwner(due, due.customer, "owner_waiver_applied", { waiverInr: amountInr });
@@ -649,6 +704,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** A greeting, a yes or a no, or words that are none of these: what is owed, with the buttons; or that nothing is. */
   async function onMenu(phone: string, understood: boolean): Promise<void> {
+    if (!licence().takesNewWork) return pausedReply(phone, "menu");
     const due = openDues(store, phone)[0];
     if (!due) { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
     const { fresh } = await reconcile(due);
@@ -829,9 +885,12 @@ export function createAgent(deps: AgentDeps): Agent {
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their fee is in
     if (upi) await remindOwedRefunds(now);
-    openMonthlyFees();
+    await closeLinksAtStop();
+    const working = licence().takesNewWork;
+    if (working) openMonthlyFees(); // in the wind-down no month's fees are opened: nothing is kept to chase later
     for (const due of [...store.dues.values()]) {
       if (due.state !== "open") continue;
+      if (!working) { takeDue(due.reminders, now); continue; } // a reminder that falls due in the wind-down is passed over, never sent later; no late fee is added
       await addLateFee(due);
       if (due.state === "open") await remind(due);
     }
@@ -874,6 +933,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function handle(event: AgentEvent): Promise<void> {
+    noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
