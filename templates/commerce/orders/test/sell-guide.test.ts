@@ -2,12 +2,11 @@
 // words the claim rules ban, the walkthrough it teaches quoted exactly as the script prints it, and every number it gives about the example shop and about the hand check
 // compared with the real thing. The spec every template copies is ../../../SELL-GUIDE.md.
 //
-// Two deliberate differences from Fees. The phone demo, the approvals relay and the Meta message list file are not built for Orders, and a test below fails the day one of them is
-// built (then the guide must change). And the walkthrough's UPI codes are random on every run, so the quoted printout is compared with the code, the link and nothing else made
-// the same. The report lines section 9 and the sheets name are the UPI shop's, in the report's own words (report/strings.ts).
+// Two deliberate differences from Fees. The phone demo is not built for Orders, and a test below fails the day it is (then the guide must change). And the walkthrough's UPI codes
+// are random on every run, so the quoted printout is compared with the code, the link and nothing else made the same. The report lines section 9 and the sheets name are the UPI shop's, in the report's own words (report/strings.ts).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { bannedIn } from "../../../../modules/report/claims.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -304,16 +303,12 @@ test("sell guide: the walkthrough command in the guide is a real one", () => {
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: what the guide says is not built yet is still not built (build it, then change sections 4, 8 and 11), and what it says is built is", () => {
+test("sell guide: what the guide says is not built yet is still not built (build the phone demo, then change sections 4 and 11), and what it says is built is", () => {
   const orders = (path: string) => new URL(`../${path}`, import.meta.url);
-  for (const missing of ["demo", "whatsapp-templates.json"]) {
-    assert.ok(!existsSync(orders(missing)), `templates/commerce/orders/${missing} exists now: the guide still says there is no phone demo for Orders`);
-  }
-  const relay = orders("approvals/");
-  assert.deepEqual(existsSync(relay) ? readdirSync(relay).filter((f) => f !== ".gitkeep") : [], [], "templates/commerce/orders/approvals has files now: the guide still says there is no approvals relay for Orders");
-  for (const built of ["scripts/go-live-certificate.ts", "scripts/client-report.ts", "report/strings.ts"]) assert.ok(existsSync(orders(built)), `${built}: the guide says the monthly report and the go-live certificate are built`);
+  assert.ok(!existsSync(orders("demo")), "templates/commerce/orders/demo exists now: the guide still says there is no phone demo for Orders");
+  for (const built of ["scripts/go-live-certificate.ts", "scripts/client-report.ts", "report/strings.ts", "approvals/relay.ts", "whatsapp-templates.json"]) assert.ok(existsSync(orders(built)), `${built}: the guide says it is built`);
   for (const l of LANGUAGES) {
-    assert.ok(section(l, 8).includes("hand-check.ts --settings") && section(l, 8).includes("templates/commerce/orders/src/language/meta-templates.ts"), `${l}: the real commands and files`);
+    assert.ok(section(l, 8).includes("hand-check.ts --settings") && section(l, 8).includes("templates/commerce/orders/whatsapp-templates.json"), `${l}: the real commands and files`);
     assert.ok(section(l, 8).includes("templates/commerce/orders/settings/annapurna-tiffins.example.json"));
     assert.ok(section(l, 8).includes("go-live-certificate.ts --settings <your file> --lang <en, hi, ml or kn> --out <folder>"), `${l}: the go-live certificate command`);
   }
@@ -321,7 +316,7 @@ test("sell guide: what the guide says is not built yet is still not built (build
   for (const option of ["settings", "lang", "out"]) assert.ok(certScript.includes(`${option}: { type: "string" }`), `go-live-certificate.ts takes --${option}`);
   const script = readFileSync(orders("scripts/hand-check.ts"), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the shop's own settings file");
-  assert.ok(existsSync(orders("src/language/meta-templates.ts")) && existsSync(orders("settings/annapurna-tiffins.example.json")));
+  assert.ok(existsSync(orders("settings/annapurna-tiffins.example.json")));
 });
 
 // ---- the example shop's numbers ------------------------------------------------------------------------------------------
