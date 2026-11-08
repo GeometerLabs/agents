@@ -34,7 +34,7 @@ test("every shop the bundle deploys gets a report block: the name, the badge, Ca
     const p = planShop(serverConfig(), t.shop("glow-salon"));
     assert.deepEqual(p.problems, []);
     assert.deepEqual(p.notes, []);
-    assert.deepEqual(reportOf(p), { preparedBy: "Divya, local partner", innovator: true, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", source: "test-mode" });
+    assert.deepEqual(reportOf(p), { preparedBy: "Divya, local partner", innovator: true, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", source: "test-mode", tenant: "glow-salon" }, "tenant: the ledger the report is anchored to (B28) is the shop id");
     const checked = validateRuntimeConfig(p.runtime, "/");
     assert.equal(checked.ok, true, "so the shop starts");
     assert.equal(checked.ok && checked.config.report?.innovator, true, "and the runtime reads the badge from it");
