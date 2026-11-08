@@ -15,7 +15,7 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { readUpiLink } from "../../../../modules/payments/upi/link.ts";
 import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/upi/ledger.ts";
 import { UPI_ACTIONS, upiObligations } from "../../../../modules/payments/upi/obligations.ts";
-import { textQrPng } from "../../../../modules/payments/qr/png.ts";
+import { textQrPng } from "../../../../modules/qr/png.ts";
 import { memoryQrImages } from "../../../../modules/payments/upi/qr-image.ts";
 import { upiOf } from "../../../../modules/payments/upi/settings.ts";
 import { createWorld } from "../src/harness.ts";
