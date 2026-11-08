@@ -34,12 +34,14 @@ export interface ReportRun {
   goLive?: GoLiveFinding;
   /** Epoch milliseconds the report is made at. */
   now: number;
+  /** The ledger tenant (the centre's id on the server) to anchor the report to its record's head. Left out, the report's anchor is null. */
+  tenant?: string;
 }
 
 /** The monthly report: the page, the owner text in each language, and the signed data. */
 export function writeFeesReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; report: Envelope<FeesReport> } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
-  const report = buildFeesReport({ settings: run.settings, entries: run.entries, dues: run.dues, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive });
+  const report = buildFeesReport({ settings: run.settings, entries: run.entries, dues: run.dues, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, ...(run.tenant ? { ledger: { tenant: run.tenant } } : {}) });
   const sealed = seal(report, run.key);
   const w = writer(run.out);
   const langs = languagesOf(run.language);

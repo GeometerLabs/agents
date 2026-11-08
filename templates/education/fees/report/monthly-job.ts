@@ -25,6 +25,8 @@ export interface MonthlyReportSetup {
   goLive?: () => GoLiveFinding;
   /** Test seam: the random part of the folder name. */
   token?: () => string;
+  /** The ledger tenant (the centre's id on the server, report.tenant in runtime.json): the report is anchored to the head of the record. Left out, its anchor is null. */
+  tenant?: string;
 }
 
 export interface MonthlyReportContext extends MonthlyJobContext {
@@ -42,7 +44,7 @@ export function createMonthlyReport(setup: MonthlyReportSetup) {
       const folder = join(setup.pages.dir, token);
       const made = writeFeesReport({
         settings: ctx.settings, entries: ctx.record.entries(), dues: [...ctx.store.dues.values()], month, language, out: folder, source: setup.source,
-        preparedBy, innovator, now, ...(setup.key ? { key: setup.key } : {}), ...(setup.goLive ? { goLive: setup.goLive() } : {}),
+        preparedBy, innovator, now, ...(setup.key ? { key: setup.key } : {}), ...(setup.goLive ? { goLive: setup.goLive() } : {}), ...(setup.tenant ? { tenant: setup.tenant } : {}),
       });
       const message = monthlyReportMessage(made.report, language, { link: `${setup.pages.baseUrl}/${token}/report-${month}-${language}.html` });
       return { code: made.code, page: token, folder, message };
