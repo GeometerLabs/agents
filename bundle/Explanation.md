@@ -338,3 +338,7 @@ Lines of code, counted with `wc -l` on the branch (every line, comments and blan
 | Outside `bundle/` | nothing |
 | What it supersedes | the single-shop `rollback` branch in `geometer.ts` (its popping of the history, now in `update.ts` with the checks it lacked) and README's "Upgrading a shop" paragraph (replaced by the section "Update every client at once") |
 
+## The agent crash test's certificate and the QR (B12, 8 Nov)
+
+`agent/crash-test/certificate.ts` uses the shared seal block, so the agent's own certificate page gets the QR and the link `https://geometer.dev/verify/#<digest>`, and its text line
+says `/verify/#<code>`. Nothing in the signed JSON changed. See `modules/Explanation.md`.

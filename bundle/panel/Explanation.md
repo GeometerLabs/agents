@@ -107,3 +107,8 @@ Written once to the inbox, never read back, never in a page, a redirect, a log, 
 **Words.** One `upi` block at the end of each word file (setup choice, refusals, cost note) and two inbox kinds, `upi_payment_unconfirmed` and `upi_refund_owed`. Hindi, Malayalam and Kannada are machine-written and wait for a native reader, like the rest.
 
 **Tests.** `test/upi.test.ts`.
+
+## The price-list test follows the list in force (8 Nov)
+
+`test/plans.test.ts` compared fleet's `prices/2026-11-05.json` (the proposal). It now finds the newest dated table in fleet's `apps/fleet/prices/` and compares it with the panel's
+list in force: the same date, then every plan term. When either side gets a new table, the test fails until the other follows. It skips, saying why, when the monorepo is not there.
