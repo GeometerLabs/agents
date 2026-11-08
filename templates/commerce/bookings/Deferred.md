@@ -330,3 +330,12 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
   ends, or the owner books by hand). Revisit when: owners ask for a "please send the other ₹50" message.
 - **UPI and the browser demo.** The demo runs Glow Salon's Razorpay settings; it has no QR maker (no `node:zlib`) and is not offered a UPI shop. Revisit when: the demo
   shows the UPI option.
+
+## The licence's wind-down (B13, 8 November 2026)
+
+- **Guard does not check the lease.** The agent's refusals are the runtime's own; Guard's `subscription_suspended` is an engine task (`bundle/Deferred.md` has the
+  block). Revisit when: Guard reads the lease, then add a crash-test situation that winds a shop down and checks both refuse the same calls.
+- **No crash-test situation for the wind-down.** It is unit-tested (`test/licence.test.ts`) and runtime-tested, not in `crash-test/situations.ts`. Revisit when: Guard's
+  check lands.
+- **A customer's reply in the final stop is recorded but not answered.** "Nothing more is sent" covers every message, so a customer who writes after the stop hears
+  nothing from the agent. Revisit when: the owner wants one fixed line (it would be a message the stop allows, like the owner's notice).
