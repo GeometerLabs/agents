@@ -176,3 +176,11 @@ Day 0 is the invoice due date. Days 0 to 14 are normal, 15 to 30 are warnings, w
   first partner shop on UPI goes live.
 - **Switching a live shop between UPI and Razorpay.** The deploy plans the new set of Guards, but a Razorpay Guard left over from before is not taken down by name, and its
   secrets stay in their folders. Revisit when: a shop switches.
+
+## Records anyone can check (B28, B35, B36; 8 November 2026)
+
+- **No public target is switched on.** The git repository and the OpenTimestamps calendars wait for the owner's yes, and for the choice of the public repository; until then the fingerprints stay in `state/fingerprints/` on the server, where the shop's operator could rewrite them. Revisit when: the owner says yes and names the repository.
+- **A server with no panel key writes unsigned fingerprints.** They cannot be used as geo-verify anchors (geo-verify needs a signed checkpoint and a key log). Revisit when: every server has a signing key (the runtime's `report.signingKeyFile` is not given to the deployer either).
+- **The B38 export does not carry the evidence pack or the fingerprints yet.** The panel's papers page and `geometer paper ledger` give the pack and today's anchor; the export package could add `record/evidence-pack.json` (signed by the panel's key) and the shop's fingerprint lines. Revisit when: someone moves a shop to another server and wants to check its history there.
+- **The agent's id (`shops/<shop>/identity.json`) is not in the B38 export**, so a shop moved to another server gets a new id. Revisit with the line above.
+- **The ledger is rebuilt from the whole record on every export** (every quarter of an hour). Fine at today's sizes (a few thousand entries); a shop with hundreds of thousands of entries would want the head kept and only new entries chained. Revisit when: an export takes more than a few seconds.
