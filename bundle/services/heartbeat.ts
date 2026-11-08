@@ -19,7 +19,14 @@
 //     and nothing is lost to the cap or to an outage;
 //   - the baseline moves on disk only when fleet answered 200 (ops.ts), the same rule as steps and errors.
 // A shop with nothing new gets no `usage` field at all.
-import { COUNTER_FIELDS, parseFleetAnswer } from "../lib/fleet.ts";
+//
+// Three counts fleet's badges and its unfinished-work views read (fleet ADR-0059; optional fields, so fleet must be deployed with them first):
+//   since_last.reports_sent       monthly reports the owner received, the same way as the cost meter's counts (a baseline that does not have it yet starts at the
+//                                 current total: a report sent before this bundle is not replayed, so a shop's First report sent badge comes with its next report)
+//   usage.replies_by_language     messages to customers by language, the same way, inside `usage` (never a `usage` with only this in it: fleet needs the nine counts)
+//   open_obligations              the unfinished-work list's counts by kind NOW (a gauge, sent every heartbeat; `{}` is none open), from the 15-minute export
+//                                 (modules/unfinished `countsByKind`). Kind ids only, filtered to fleet's rule, so a kind fleet would refuse never costs the heartbeat.
+import { COUNTER_FIELDS, EXTRA_FIELDS, looksLikeLease, parseFleetAnswer } from "../lib/fleet.ts";
 import type { ShopAnswer, UsageBaseline, UsageCounters } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 
@@ -65,6 +72,8 @@ export interface ShopObservation {
   backups?: BackupFacts;
   /** The record's cumulative counts, from the same file (`usage`); left out when there are none yet. Then no usage is sent and the baseline stays as it was. */
   usage?: UsageTotals;
+  /** The unfinished-work list's counts by kind, as of the last export (status/<shop>.json `obligations`). Left out when unknown: then `open_obligations` is left out too. */
+  obligations?: Record<string, number>;
 }
 
 /** Running totals as last ACCEPTED by fleet, per shop. The difference is what a heartbeat sends. */
@@ -90,10 +99,23 @@ export function since(status: RuntimeStatus | null, base: Baseline[string] | und
 const flat = (t: UsageTotals): UsageCounters => ({
   messages: t.messages, rules: t.byStep.rules, decision: t.byStep.decision, model: t.byStep.model, modelMicroInr: t.modelMicroInr,
   service: t.whatsapp.service, utility: t.whatsapp.utility, marketing: t.whatsapp.marketing, estMicroInr: t.whatsapp.estMicroInr, estimated: t.whatsapp.estimated,
+  ...(t.reportsSent !== undefined ? { reportsSent: t.reportsSent } : {}), ...(t.repliesByLanguage ? t.repliesByLanguage : {}),
 });
 
-/** What to send for one shop, and where its baseline goes if fleet accepts it. `send` is undefined when there is nothing to say. */
-export function usageDelta(current: UsageTotals, base: UsageCounters | undefined): { send?: Record<string, unknown>; next: UsageCounters } {
+/** Fleet's rule for a kind id (apps/fleet/src/schema.ts): lowercase words joined by single `_`, no digits, at most 40 characters; at most 20 kinds. */
+const FLEET_KIND = /^(?=.{1,40}$)[a-z]+(?:_[a-z]+)*$/u;
+export const MAX_OBLIGATION_KINDS = 20;
+/** The counts by kind as the heartbeat may carry them: only kind ids fleet takes, each a count, at most 20. A kind it would refuse is left out, never the heartbeat. */
+export function obligationCounts(raw: Record<string, unknown> | undefined): Record<string, number> | undefined {
+  if (!raw) return undefined;
+  return Object.fromEntries(Object.entries(raw).filter(([k, v]) => FLEET_KIND.test(k) && typeof v === "number" && Number.isFinite(v) && v >= 0).slice(0, MAX_OBLIGATION_KINDS).map(([k, v]) => [k, count(v)]));
+}
+
+/**
+ * What to send for one shop, and where its baseline goes if fleet accepts it. `send` is undefined when there is nothing to say. `reportsSent` is the count for
+ * `since_last.reports_sent`, undefined when the shop's totals do not count reports (an older status file) or there is no baseline yet.
+ */
+export function usageDelta(current: UsageTotals, base: UsageCounters | undefined): { send?: Record<string, unknown>; next: UsageCounters; reportsSent?: number } {
   const cur = flat(current);
   // The estimate was 0 because a rate was missing, or is no longer: its totals are not comparable, so it starts again from the current one and sends nothing this time.
   const comparable = !!base && cur.estimated === base.estimated;
@@ -106,13 +128,26 @@ export function usageDelta(current: UsageTotals, base: UsageCounters | undefined
     sent[f] = take;
     next[f] = skip(f) ? cur[f] : base[f] + take;
   }
-  if (COUNTER_FIELDS.every((f) => sent[f] === 0)) return { next };
+  // The badges' counts: one the baseline does not have yet, or that went down, starts at the current total and sends nothing this time.
+  const extra: Partial<Record<(typeof EXTRA_FIELDS)[number], number>> = {};
+  for (const f of EXTRA_FIELDS) {
+    const c = cur[f];
+    if (c === undefined) continue;
+    const b = base[f];
+    if (b === undefined || c < b) { next[f] = c; extra[f] = 0; continue; }
+    extra[f] = Math.min(c - b, MAX_COUNT);
+    next[f] = b + extra[f]!;
+  }
+  const replies = Object.fromEntries((["hi", "en", "ml", "kn"] as const).filter((l) => (extra[l] ?? 0) > 0).map((l) => [l, extra[l]]));
+  const reports = extra.reportsSent !== undefined ? { reportsSent: extra.reportsSent } : {};
+  if (COUNTER_FIELDS.every((f) => sent[f] === 0) && Object.keys(replies).length === 0) return { next, ...reports };
   return {
     send: {
       messages: sent.messages, by_step: { rules: sent.rules, decision: sent.decision, model: sent.model }, model_micro_inr: sent.modelMicroInr,
       whatsapp: { service: sent.service, utility: sent.utility, marketing: sent.marketing, est_micro_inr: sent.estMicroInr },
+      ...(Object.keys(replies).length > 0 ? { replies_by_language: replies } : {}),
     },
-    next,
+    next, ...reports,
   };
 }
 
@@ -149,10 +184,11 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
         killed: g.admin?.kill_switch?.on === true,
         held_calls: count(g.held),
       })),
-      since_last: delta,
+      since_last: { ...delta, ...(used?.reportsSent !== undefined ? { reports_sent: used.reportsSent } : {}) },
       ...(snapshotAge !== undefined ? { backup_age_s: snapshotAge } : {}),
       ...(drillAge !== undefined && typeof drillOk === "boolean" ? { drill: { age_s: drillAge, ok: drillOk } } : {}),
       ...(used?.send ? { usage: used.send } : {}),
+      ...(shop.obligations ? { open_obligations: obligationCounts(shop.obligations) } : {}),
     };
   });
   return {
@@ -161,8 +197,11 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
   };
 }
 
-/** `answer`: fleet's entry for each shop it said something about (lib/fleet.ts). Absent when the answer had none, or was not JSON: the caller keeps the last mode. */
-export interface SendResult { accepted: boolean; status: number | null; problem?: string; answer?: Record<string, ShopAnswer> }
+/**
+ * `answer`: fleet's entry for each shop it said something about (lib/fleet.ts). Absent when the answer had none, or was not JSON: the caller keeps the last mode.
+ * `lease`: the licence lease token of the answer, as it came (only something shaped like one); the deployer judges it.
+ */
+export interface SendResult { accepted: boolean; status: number | null; problem?: string; answer?: Record<string, ShopAnswer>; lease?: string }
 
 /** One try, ten seconds. The next heartbeat replaces this one, so a failure is never retried inside the minute. The key is a header and never logged. */
 export async function sendHeartbeat(url: string, key: string, body: unknown, fetchFn: typeof fetch = fetch): Promise<SendResult> {
@@ -171,8 +210,13 @@ export async function sendHeartbeat(url: string, key: string, body: unknown, fet
     const text = await r.text().catch(() => "");
     if (r.status === 200) {
       let answer: Record<string, ShopAnswer> | undefined;
-      try { answer = parseFleetAnswer(JSON.parse(text)); } catch { /* an answer that is not JSON says nothing: the heartbeat was still accepted */ }
-      return { accepted: true, status: 200, ...(answer ? { answer } : {}) };
+      let lease: string | undefined;
+      try {
+        const json = JSON.parse(text) as { lease?: unknown };
+        answer = parseFleetAnswer(json);
+        if (looksLikeLease(json?.lease)) lease = json.lease;
+      } catch { /* an answer that is not JSON says nothing: the heartbeat was still accepted */ }
+      return { accepted: true, status: 200, ...(answer ? { answer } : {}), ...(lease ? { lease } : {}) };
     }
     return { accepted: false, status: r.status, problem: r.status === 400 ? `fleet refused the heartbeat as malformed: ${text.slice(0, 300)}` : `fleet answered ${r.status}` };
   } catch (e) { return { accepted: false, status: null, problem: `fleet could not be reached (${(e as { cause?: { code?: string } }).cause?.code ?? (e as Error).name})` }; }
