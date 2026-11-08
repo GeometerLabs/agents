@@ -5,19 +5,21 @@
 //   node bundle/panel/review-sheet.ts kn > templates/commerce/bookings/REVIEW-kn.md
 // and test/words.test.ts fails when a committed sheet is behind the words.
 import { LANGUAGE_NAMES } from "../../modules/language/languages.ts";
+import type { Language } from "../../modules/language/languages.ts";
 import { WORDS } from "./languages.ts";
 import { SAMPLE_ARGS } from "./words.ts";
-import type { Words } from "./words.ts";
+import { HEALTH_SAMPLE_ARGS, HEALTH_WORDS } from "./words-health.ts";
+import { loadVoteRound } from "./votes.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
 
 /** Every sentence of a word set, by path ("shop.stopTitle"); a phrase that takes values is shown with the sample values in SAMPLE_ARGS. */
-export function flatWords(w: Words): Map<string, string> {
+export function flatWords(w: object, samples: Record<string, unknown[]> = SAMPLE_ARGS): Map<string, string> {
   const out = new Map<string, string>();
   const walk = (value: unknown, path: string): void => {
     if (typeof value === "string") out.set(path, value);
-    else if (typeof value === "function") out.set(path, (value as (...a: unknown[]) => string)(...(SAMPLE_ARGS[path] ?? [])));
+    else if (typeof value === "function") out.set(path, (value as (...a: unknown[]) => string)(...(samples[path] ?? [])));
     else if (Array.isArray(value)) value.forEach((v, i) => walk(v, `${path}.${i + 1}`));
     else if (value && typeof value === "object") for (const [k, v] of Object.entries(value)) walk(v, path ? `${path}.${k}` : k);
   };
@@ -25,9 +27,16 @@ export function flatWords(w: Words): Map<string, string> {
   return out;
 }
 
+/** The health and margin pages and the template vote (words-health.ts), under the ids "health.*", and the vote's candidate templates under "vote.option.*" (vote-options.json). */
+function healthFlat(language: Language): Map<string, string> {
+  const out = flatWords({ health: HEALTH_WORDS[language] }, HEALTH_SAMPLE_ARGS);
+  for (const o of loadVoteRound().options) out.set(`vote.option.${o.id}`, o.label[language]);
+  return out;
+}
+
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = flatWords(WORDS[language]);
-  const english = flatWords(WORDS.en);
+  const mine = new Map([...flatWords(WORDS[language]), ...healthFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...healthFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

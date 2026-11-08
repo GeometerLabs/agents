@@ -16,6 +16,13 @@ import { writeGoLiveCertificate as bookingsWrite } from "../../templates/commerc
 import { razorpayLimitsSpec as bookingsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import { validateSettings as bookingsSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { validateRuntimeConfig as bookingsRuntime } from "../../templates/commerce/bookings/server/config.ts";
+import { runOn as ordersRunOn } from "../../templates/commerce/orders/crash-test/situations.ts";
+import { buildGoLiveCertificate as ordersCertificate, summariseRun as ordersSummary } from "../../templates/commerce/orders/report/certificate.ts";
+import { policyDigest as ordersDigest } from "../../templates/commerce/orders/report/data.ts";
+import { writeGoLiveCertificate as ordersWrite } from "../../templates/commerce/orders/report/run.ts";
+import { razorpayLimitsSpec as ordersSpec } from "../../templates/commerce/orders/src/guard-limits.ts";
+import { validateSettings as ordersSettings } from "../../templates/commerce/orders/src/settings.ts";
+import { validateRuntimeConfig as ordersRuntime } from "../../templates/commerce/orders/server/config.ts";
 import { runOn as feesRunOn } from "../../templates/education/fees/crash-test/situations.ts";
 import { buildGoLiveCertificate as feesCertificate, summariseRun as feesSummary } from "../../templates/education/fees/report/certificate.ts";
 import { policyDigest as feesDigest } from "../../templates/education/fees/report/data.ts";
@@ -41,7 +48,10 @@ export interface HandCheckSummaryLike { held: number; total: number; checks: num
 export interface GoLiveCertificateLike { checks: { failed: number }; notTested: unknown[] }
 
 export interface Kind {
-  id: "bookings" | "fees";
+  id: "bookings" | "fees" | "orders";
+  /** The file the deployer exports this template's cases to (backup/export.ts), and what the runtime's status and the export call them. */
+  casesFile: "bookings.json" | "dues.json" | "orders.json";
+  casesName: "bookings" | "fees" | "orders";
   /** The Guards a shop of this template has. */
   guards: readonly ServiceKind[];
   /** Check a settings.json; the settings come back in the template's own shape (`any`: the bundle reads only what every template has: name, timezone, owner). */
@@ -63,6 +73,7 @@ export interface Kind {
 export const KINDS: Record<string, Kind> = {
   bookings: {
     id: "bookings",
+    casesFile: "bookings.json", casesName: "bookings",
     guards: ["razorpay", "whatsapp", "calendar"],
     validateSettings: bookingsSettings,
     validateRuntimeConfig: bookingsRuntime,
@@ -71,11 +82,21 @@ export const KINDS: Record<string, Kind> = {
   },
   fees: {
     id: "fees",
+    casesFile: "dues.json", casesName: "fees",
     guards: ["razorpay", "whatsapp"],
     validateSettings: feesSettings,
     validateRuntimeConfig: feesRuntime,
     razorpaySpec: feesSpec,
     papers: { runOn: feesRunOn, summariseRun: feesSummary, buildGoLiveCertificate: feesCertificate, policyDigest: feesDigest, writeGoLiveCertificate: feesWrite },
+  },
+  orders: {
+    id: "orders",
+    casesFile: "orders.json", casesName: "orders",
+    guards: ["razorpay", "whatsapp"],
+    validateSettings: ordersSettings,
+    validateRuntimeConfig: ordersRuntime,
+    razorpaySpec: ordersSpec,
+    papers: { runOn: ordersRunOn, summariseRun: ordersSummary, buildGoLiveCertificate: ordersCertificate, policyDigest: ordersDigest, writeGoLiveCertificate: ordersWrite },
   },
 };
 

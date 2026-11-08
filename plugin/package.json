@@ -1,0 +1,8 @@
+{
+  "name": "geometer-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geometer's Claude Code plugin: skills and a zero-dependency MCP server that call the deploy bundle. Not an npm package; Claude Code installs it from the marketplace file.",
+  "scripts": { "test": "node --test test/" }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "geometer-pathway-orders",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pre-orders with an advance payment for tiffin services, bakeries and caterers: a pickup or delivery slot, stock and per-day limits, cut-off times, 'confirmed' judged from the payment record (or the owner's UPI mark), refunds that ask the owner. Runs as a server (one SQLite file per shop, a signed-webhook inbox, an approvals relay for refunds Guard holds, a go-live certificate and a monthly report), checked against stand-in services. No dependencies.",
+  "scripts": {
+    "test": "node --test test/",
+    "hand-check": "node scripts/hand-check.ts",
+    "walkthrough": "node scripts/walkthrough.ts",
+    "report-example": "node scripts/report-example.ts",
+    "whatsapp-templates": "node scripts/whatsapp-templates.ts",
+    "serve": "node server/main.ts",
+    "inbox": "node inbox/main.ts",
+    "approvals": "node approvals/main.ts",
+    "go-live-certificate": "node scripts/go-live-certificate.ts",
+    "client-report": "node scripts/client-report.ts"
+  }
+}

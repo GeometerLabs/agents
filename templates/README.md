@@ -5,6 +5,7 @@ A **template** is a ready, tested agent for one job a local business already pay
 | Folder | What it is |
 | --- | --- |
 | [commerce/bookings](commerce/bookings/README.md) | Bookings with a deposit on WhatsApp (salons, studios, home services; also village equipment hiring as a variant). Built and checked against stand-in services; no business is live |
+| [commerce/orders](commerce/orders/README.md) | Pre-orders with an advance for tiffin services, bakeries and caterers: a pickup or delivery slot, stock and per-day limits, cut-off times, "confirmed" only from the payment record (or the owner's UPI mark), refunds that ask the owner. Built and checked against stand-in services; no shop is live |
 | [education/fees](education/fees/README.md) | Monthly fee reminders with a payment link, sent to parents of a tuition or coaching centre's students. Built and checked against stand-in services; no centre is live |
 | [community/](community/README.md) | Specs for village and group templates: [self-help-group](community/self-help-group/README.md), [community-fund](community/community-fund/README.md), [meeting-follow-through](community/meeting-follow-through/README.md). Not runnable: nothing here has been built |
 
