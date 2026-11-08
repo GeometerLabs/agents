@@ -10,7 +10,7 @@
 //  - a 200 with `Guard-Replayed: true`: the service's first reply, from Guard's record. It comes back marked `replayed`;
 //  - anything else is the service's own reply, passed through as it was: the adapters read it, and any other non-2xx is theirs to
 //    turn into an ApiError.
-import { GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "./faults.ts";
+import { GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "./faults.ts";
 import type { GuardInfo, SentCall } from "./faults.ts";
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
@@ -98,6 +98,8 @@ export function classify(status: number, headers: { get(name: string): string | 
     const approval = typeof detail.approval === "string" && detail.approval.length > 0 ? detail.approval : header ? header : null;
     return new GuardHeldError(status, words, guard, call, approval, milliseconds(detail.expires_at_ms));
   }
+  // the licence (B13, ADR-0062): Guard's own refusal, a 402, not a policy denial. The runtime's own licence refusal, made outside it: never retried, never queued.
+  if (guard.code === "subscription_suspended" || guard.reason_code === "subscription_suspended") return new GuardSuspendedError(status, words, guard, call);
   if (guard.code === "outcome_unknown" || guard.decision === "unknown" || headers.get("guard-outcome")?.toLowerCase() === "unknown") return new GuardOutcomeUnknownError(status, words, guard, call);
   if (guard.code === "guard_unavailable" || guard.code === "busy" || guard.code === "provider_unreachable") {
     const header = headers.get("retry-after");

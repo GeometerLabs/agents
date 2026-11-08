@@ -3,7 +3,9 @@
 // task is marked failed and the queue goes on with the next one (a customer waiting behind a broken message is worse
 // than a broken message).
 //
-// "Tried again" starts from the last saved state, not from wherever the failed step stopped: see runtime.ts.
+// "Tried again" starts from the last saved state, not from wherever the failed step stopped: see runtime.ts. A step that Guard refused for the shop's licence
+// (a GuardSuspendedError that reached this far) is NOT tried again: it would be refused the same way until a newer lease, and nothing is kept to do later.
+import { GuardSuspendedError } from "../core/faults.ts";
 import type { RuntimeEvent } from "./events.ts";
 import type { DurableStore } from "./store.ts";
 
@@ -73,7 +75,7 @@ export function createRunner(options: RunnerOptions & { now: () => number }): Ta
         steps++;
         return;
       } catch (e) {
-        const last = attempt >= maxAttempts;
+        const last = attempt >= maxAttempts || e instanceof GuardSuspendedError;
         db.failTask(id, (e as Error)?.message ?? String(e), last);
         failed(`Task ${id} failed (try ${attempt} of ${maxAttempts})${last ? ", so it is marked failed and the queue goes on" : ""}`, e);
         if (last || stopped) return;

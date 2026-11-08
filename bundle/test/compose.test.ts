@@ -7,7 +7,7 @@ import type { ShopDeploy } from "../generate/compose.ts";
 import { names } from "../generate/shop.ts";
 import { serverConfig } from "./helpers.ts";
 
-const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json" };
+const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence" };
 const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/templates/commerce/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
 const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}, backup = true) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup, panel: { user: "501:20", shareAddress: "calendar@x.iam.gserviceaccount.com" } });
 const nets = (c: ReturnType<typeof build>, svc: string): string[] => { const n = c.services[svc].block.networks as Record<string, unknown> | string[] | undefined; return n === undefined ? [] : Array.isArray(n) ? n : Object.keys(n); };
@@ -114,6 +114,13 @@ test("the Calendar Guard reads only its own shop's token (a sub-folder of the to
   assert.deepEqual(m, { type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: "glow-salon" } });
   assert.deepEqual(c.services["g-glow-salon-calendar"].block.depends_on, { "fwd-glow-salon-calendar": { condition: "service_started" }, refresher: { condition: "service_healthy" } });
   assert.ok(!mounts(c, "g-glow-salon-razorpay").some((x) => x.includes("google")));
+});
+
+test("the lease's folder is mounted read-only on every shop Guard, and on nothing else (not the model Guard, not the runtime)", () => {
+  const c = two();
+  const holders = Object.keys(c.services).filter((s) => mounts(c, s).includes("/srv/state/licence:/run/geometer/licence:ro")).sort();
+  assert.deepEqual(holders, ["bright-tuition", "glow-salon"].flatMap((shop) => ["calendar", "razorpay", "whatsapp"].map((k) => `g-${shop}-${k}`)).sort());
+  assert.ok(Object.keys(c.services).every((s) => holders.includes(s) || !mounts(c, s).some((m) => m.includes("/srv/state"))), "no other service sees state/");
 });
 
 test("litestream streams only the runtimes' databases: no Guard store is mounted into it", () => {

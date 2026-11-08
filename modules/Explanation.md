@@ -230,6 +230,21 @@ on it and the bundle checks it:
 report back in the final stop. What each state does to a template's work is the template's: both agents gate where new work starts (a request to book or pay, a new
 link) and leave everything that finishes money owed. The decision they record is `subscription_suspended`, so it reads like Guard's will.
 
+**Guard's own check (8 Nov, monorepo ADR-0062; the bundle writes the block, D83).** A per-shop Guard now reads the same lease and refuses new work with a 402 whose
+`guard.code` and `guard.reason_code` are both `subscription_suspended`. The runtime meets it when its own file says the shop is in order and Guard's lease says it is not
+(a builder edited `licence.json`, or the runtime has not read the newer lease yet). It is the runtime's own licence refusal, made outside it:
+
+- `core/http.ts` `classify` makes it a `GuardSuspendedError` (`faults.ts`; `state` and `operation` from Guard's `detail`). It is a `GuardError`, so code that does not
+  know it still never reads it as a success; it is not a `GuardRefusedError` (not a rule of the shop's) and not a `GuardUnavailableError` (not "try later").
+- **Never tried again.** `payments/links.ts` stops at once and returns it as `suspended` (no second try, no read-back); `messaging/say.ts` does not send the same words as
+  plain text after Guard held back the buttons; `runtime/tasks.ts` marks a step that threw it as failed on the first try, where anything else gets its retries.
+- **Recorded once, plainly**: `blocked`, with `guardLicenceDecision` (`licence/rules.ts`): the rule `subscription_suspended` and Guard's own reason. The monthly report
+  leaves it out of "what the limits stopped", as it leaves out the runtime's own.
+- **The templates treat it as their pause**: Bookings, when Guard refuses the hold or the deposit link, lets the slot go and answers "Online booking is paused ... contact
+  the shop" (no "could not book" to the owner: nothing failed); Fees, when Guard refuses a fee link, answers the parent the same way and passes the reminder over
+  instead of trying again at the next beat; Orders, when Guard refuses the advance link, lets the order go back to an enquiry and answers "Online ordering is
+  paused ... contact the shop", with no "link failed" to the owner.
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.

@@ -14,8 +14,11 @@ const CANDIDATES = [process.env.GEOMETER_MONOREPO, join(ROOT, "..", "monorepo"),
 const TEMPLATES = CANDIDATES.map((c) => join(c, "deploy", "pathways", "bookings")).find((c) => existsSync(join(c, "razorpay", "spec.json")));
 const skip = TEMPLATES ? false : "the monorepo's deploy/pathways/bookings templates are not at a sibling path (set GEOMETER_MONOREPO to its folder to run this)";
 
-/** What the bundle adds to the fixtures on purpose: the panel's read-only routes and the exact-id rule beside each. Anything else that differs is drift. */
-const ADDED = { routes: ["read_number", "get_calendar"], rules: ["own-number-read", "own-calendar-get-calendar"] };
+/**
+ * What the bundle adds to the fixtures on purpose: the panel's read-only routes and the exact-id rule beside each, and in `[licence]` the recipient field written out
+ * (`to`, Guard's own default, so the file says which field the owner's exception reads). Anything else that differs is drift.
+ */
+const ADDED = { routes: ["read_number", "get_calendar"], rules: ["own-number-read", "own-calendar-get-calendar"], licence: ["recipient_field"] };
 
 const read = (dir: string, file: string) => readFileSync(join(TEMPLATES!, dir, file), "utf8");
 const shape = (spec: any) => ({
@@ -26,9 +29,9 @@ const shape = (spec: any) => ({
   intents: spec.intents, fail_policy: spec.fail_policy,
 });
 
-/** A guard.toml's keys: the top-level ones, the tables, and the lines whose values are not a shop's own. */
+/** A guard.toml's keys: the top-level ones, the tables, and the lines whose values are not a shop's own (in `[licence]`: the paths and the two lists). */
 function tomlShape(text: string) {
-  const top = new Map<string, string>(); const tables = new Set<string>(); const headers = new Map<string, string>();
+  const top = new Map<string, string>(); const tables = new Set<string>(); const headers = new Map<string, string>(); const licence = new Map<string, string>();
   let table = "";
   for (const raw of text.split("\n")) {
     const line = raw.trim();
@@ -39,9 +42,10 @@ function tomlShape(text: string) {
     if (!kv) continue;
     // anthropic-version is a date the request shape is written for: the generator writes the parser's own (Explanation.md says why it differs).
     if (table === "") top.set(kv[1], kv[2]); else if (table === "upstream_headers") headers.set(kv[1], kv[1] === "anthropic-version" ? "(a version)" : kv[2]);
+    else if (table === "licence" && !ADDED.licence.includes(kv[1])) licence.set(kv[1], ["deployment", "shop", "owner_numbers"].includes(kv[1]) ? "(the server's, the shop's)" : kv[2]);
   }
   const same = ["schema", "profile", "listen", "admin_listen", "health_listen", "mode", "upstream", "upstream_timeout_ms", "state", "bundle", "unlisted_tools"];
-  return { keys: [...top.keys()].sort(), values: same.map((k) => [k, top.get(k)]), tables: [...tables].sort(), headers: [...headers.entries()].sort() };
+  return { keys: [...top.keys()].sort(), values: same.map((k) => [k, top.get(k)]), tables: [...tables].sort(), headers: [...headers.entries()].sort(), licence: [...licence.entries()].sort() };
 }
 
 function generatedToml(kind: "razorpay" | "whatsapp" | "calendar" | "model", model = serverConfig().model) {
@@ -49,7 +53,9 @@ function generatedToml(kind: "razorpay" | "whatsapp" | "calendar" | "model", mod
   try {
     const server = serverConfig({ model });
     const g = kind === "model" ? planModelGuard(server) : planShop(server, t.shop("glow-salon")).guards.find((x) => x.kind === kind)!;
-    return { g, toml: guardToml({ def: guardDef(kind, model), tenant: g.tenant, deployment: g.deployment, bundleDigest: "sha256:" + "0".repeat(64), upstream: { host: g.def.upstream, tls: true }, adminSha: "0".repeat(64), agents: [{ id: "runtime-glow-salon", sha: "0".repeat(64) }], ...(kind === "razorpay" ? { approver: { id: "owner-glow-salon", secretFile: "/run/secrets/owner_notify_secret" } } : {}) }) };
+    // a per-shop Guard is given `[licence]` when geometer.json pins a key and the image reads it (deploy.ts licenceFor); the monorepo's templates carry it (ADR-0062)
+    const licence = kind === "model" ? {} : { licence: { deployment: server.id, shop: "glow-salon", ownerNumbers: ["+919000000000"] } };
+    return { g, toml: guardToml({ def: guardDef(kind, model), tenant: g.tenant, deployment: g.deployment, bundleDigest: "sha256:" + "0".repeat(64), upstream: { host: g.def.upstream, tls: true }, adminSha: "0".repeat(64), agents: [{ id: "runtime-glow-salon", sha: "0".repeat(64) }], ...(kind === "razorpay" ? { approver: { id: "owner-glow-salon", secretFile: "/run/secrets/owner_notify_secret" } } : {}), ...licence }) };
   } finally { t.done(); }
 }
 

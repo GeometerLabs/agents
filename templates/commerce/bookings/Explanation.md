@@ -320,7 +320,8 @@ The key: `scripts/report-key.ts <folder>` makes an Ed25519 pair, refuses any fol
 ### The licence's wind-down and final stop (B13, 8 November 2026)
 
 The shop's licence comes from fleet's signed lease, which the bundle's deployer checks and hands the runtime as `client/licence.json`; the runtime reads it by its
-modified time and works the state out with its own clock (`modules/licence`). **This is the runtime's own check: Guard does not read the lease yet.**
+modified time and works the state out with its own clock (`modules/licence`). **Guard checks the same lease too** (9 Nov, monorepo ADR-0062): when it refuses the hold or the deposit link with its 402 `subscription_suspended`, the agent
+lets the slot go and answers "paused, contact the shop", as for its own check, and does not tell the owner "could not book" (modules/Explanation.md).
 
 - **Wind-down: no new work.** `onBook` answers "Online booking is paused for now. Please contact <shop> directly." (`booking_paused`) before any draft is made, so
   nothing is a promise to book later; a booking waiting for "yes" is cleared the same way in `proceedToHold`, which makes no hold and no link; a greeting or an unclear

@@ -4,7 +4,7 @@
 // builder runs it, and calls the Guards by the addresses printed here.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { Refused, bringUp, compileAndVerify, contentHash, ops, proveRunning, renewRelayCredential, serverProblems, writeServer } from "../deploy.ts";
+import { Refused, bringUp, compileAndVerify, contentHash, guardLicenceOn, licenceFor, ops, ownNumbersOf, proveRunning, renewRelayCredential, serverProblems, writeServer } from "../deploy.ts";
 import type { Context, PreparedGuard } from "../deploy.ts";
 import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
@@ -148,8 +148,10 @@ export async function checkAgent(ctx: Context, name: string): Promise<{ ok: bool
   const lines: string[] = [];
   if (prepared) {
     const creds = ensureCredentials(ctx.dir, name, prepared.guards.map((g) => g.plan.kind as Kind));
+    const licence = await guardLicenceOn(ctx, server);
+    if (licence.why) notes.push(licence.why);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds)));
+      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -182,7 +184,10 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
 
   const kinds = prepared.guards.map((g) => g.plan.kind as Kind);
   const creds = ensureCredentials(ctx.dir, name, kinds);
-  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds)));
+  // B13: an agent someone else wrote is restricted by the lease at its Guards, as a shop is (its id is the shop's id in the lease)
+  const licence = await guardLicenceOn(ctx, server);
+  if (licence.why) ctx.log(`note: ${licence.why}`);
+  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
   if (problems.length > 0) throw new Refused(problems);
 
   // nothing broken: no secret in any file we are about to write, then write
@@ -211,7 +216,8 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   const line = provenLine({ ...total, notSelfTestable: Object.values(proof.guards).flatMap((g) => g.notSelfTestable) });
   const connection = connectionOf(ctx.dir, server, prepared.folder);
   updateStatus(ctx.dir, name, ctx.now(), (st) => {
-    st.deploy = proof.problems.length === 0 ? { state: "applied", at } : { state: "failed", at, message: refusalMessage(proof.problems), refusal: proof.problems };
+    const failedBy = [...proof.problems, ...proof.licence];
+    st.deploy = failedBy.length === 0 ? { state: "applied", at } : { state: "failed", at, message: refusalMessage(failedBy), refusal: failedBy };
     st.limits = { proven: total.passed, of: total.of, unprovable: [...new Set(Object.values(proof.guards).flatMap((g) => g.notSelfTestable))], line, perGuard: proof.guards };
     st.versions = { pathway: "own-agent", bundle: "0.1.0", guard: server.guardImage, guards: Object.fromEntries(Object.entries(s.guards).map(([k, v]) => [k, v.version])) };
     if (s.stopped) st.stopped = { at: s.stopped.at, by: s.stopped.by, reason: s.stopped.reason }; else delete st.stopped;
@@ -222,6 +228,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
     await ops(ctx, ["stop", name, "on", "the deployer", "a running Guard did not match what was checked"]);
     throw new Refused(proof.problems);
   }
+  if (proof.licence.length > 0) throw new Refused(proof.licence); // refused, but the kill switch is not pulled (refunds owed must still go through)
   ctx.log(`Changed services: ${changed.length === 0 ? "none" : changed.join(", ")}`);
   return { agent: name, proven: { ...total, line }, guards: proof.guards, connection };
 }

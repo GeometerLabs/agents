@@ -34,7 +34,7 @@ import type { TimePhrase } from "../../../../modules/language/dates.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
-import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
@@ -190,8 +190,8 @@ export function createAgent(deps: AgentDeps): Agent {
   const stoppedGate: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: "the shop's licence has reached its final stop, so nothing more is sent from here (the owner's one notice aside); the runtime's own check of the lease" };
 
   /** A request for new work while online ordering is paused: said in the record, answered "please contact the shop", and nothing kept to do later. */
-  async function pausedReply(phone: string, asked: string): Promise<void> {
-    const decision: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: `online ordering is paused: the shop's licence is in its ${licence().state === "stopped" ? "final stop" : "wind-down"}, so no order, hold or advance link is made, and nothing is kept to do later (the runtime's own check of the lease)` };
+  async function pausedReply(phone: string, asked: string, byGuard?: Decision): Promise<void> {
+    const decision: Decision = byGuard ?? { ruleId: LICENCE_RULE, verdict: "block", reason: `online ordering is paused: the shop's licence is in its ${licence().state === "stopped" ? "final stop" : "wind-down"}, so no order, hold or advance link is made, and nothing is kept to do later (the runtime's own check of the lease)` };
     log(null, phone, "new_work", "blocked", { asked }, { decisions: [decision], notes: "the customer is told online ordering is paused and to contact the shop" });
     await tellCustomer(null, phone, ["orders_paused"]);
   }
@@ -427,7 +427,14 @@ export function createAgent(deps: AgentDeps): Agent {
     log(o, phone, "hold_stock", "confirmed", { lines: o.lines, date: o.date, slot: o.slotId, until: o.holdExpiresAt }, { decisions: avail.decisions, notes: "the order's stock and its place in the day's count are held until the hold ends or the cut-off, whichever is first; they are worked out from the orders themselves, not counted" });
 
     log(o, phone, "create_advance_link", "attempted", { amountPaise: advancePaise(o) });
-    const { link, error } = await makeLink(payments, { reference: o.id, amountPaise: advancePaise(o), description: `${settings.name} advance` });
+    const { link, error, suspended } = await makeLink(payments, { reference: o.id, amountPaise: advancePaise(o), description: `${settings.name} advance` });
+    if (!link && suspended) { // Guard held the advance link back for the licence (ADR-0062): the shop's own pause, said as Guard's. Asked once; the owner is not asked to do anything.
+      const decision = guardLicenceDecision(suspended.guard.reason);
+      log(o, phone, "create_advance_link", "blocked", { amountPaise: advancePaise(o) }, { decisions: [decision], notes: suspended.message });
+      o.holdExpiresAt = undefined;
+      moveTo(o, "enquiry");
+      return pausedReply(phone, "link", decision);
+    }
     if (!link) {
       log(o, phone, "create_advance_link", error ? "failed" : "unconfirmed", { amountPaise: advancePaise(o) }, { notes: error ?? "the payments service does not show the link" });
       o.holdExpiresAt = undefined;
