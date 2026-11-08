@@ -89,6 +89,9 @@ const WHEN: Record<TemplateId, string> = {
   owner_fee_upi_refund_owed: "UPI centre: a refund the owner must send from their UPI app, with the code",
   owner_fee_upi_refund_reminder: "UPI centre: a reminder of a refund still owed (once a day, three times at most)",
   owner_fee_upi_refund_marked: "UPI centre: the answer to the owner's Refund sent",
+  fee_paused: "The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later",
+  owner_licence_paused: "The one notice to the owner when the centre's licence winds down: online fee payment is paused, who to contact. Never about money",
+  owner_licence_stopped: "The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had",
 };
 
 /** Parent sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */

@@ -9,11 +9,11 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     language: facts.language,
     timeZone: facts.timeZone,
     amountsInr: [facts.feeInr, facts.lateFeeInr, facts.balanceInr, facts.paidInr, facts.receivedInr, facts.waiverInr, facts.refundInr, facts.waiverLimitInr].filter((v): v is number => v !== undefined),
-    counts: [facts.graceDays, facts.approvalHours].filter((v): v is number => v !== undefined),
+    counts: [facts.graceDays, facts.approvalHours, facts.openFeesCount, facts.openCount].filter((v): v is number => v !== undefined),
     shownMs: facts.dueMs,
-    momentsMs: [],
+    momentsMs: facts.licenceDateMs !== undefined ? [facts.licenceDateMs] : [],
     links: facts.link ? [facts.link] : [],
-    literals: [facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode],
+    literals: [facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner],
   };
 }
 

@@ -3,6 +3,8 @@
 //   <fleet>/<shop>.json        schema 1: the last answer fleet gave about this shop. The deployer reads `ai` from it (button mode, generate/shop.ts), the panel reads
 //                              the rest (plan, allowance, innovator badge, warnings). Written by ops only, on a 200, and only for a shop that is in the answer.
 //   <fleet>/usage-baseline.json  schema 1: the cumulative counts fleet has accepted for each shop, so an ops restart sends the difference and never replays history.
+//   <fleet>/lease              the licence lease token of the last 200 answer, as it came (B13). Ops trusts nothing in it: the deployer checks it with the key pinned in
+//                              geometer.json and keeps it only if it is good and newer (lib/licence.ts).
 //
 // A missing, older or unreadable answer means "keep the last mode": nothing here ever turns a shop to normal because fleet was quiet. The reading is tolerant,
 // field by field: a field of the wrong type is dropped, never guessed, and an `ai` that is neither "normal" nor "buttons" makes no entry at all.
@@ -21,14 +23,44 @@ export interface ShopAnswer {
   ai: "normal" | "buttons";
   /** Only with "buttons": why. Today only "overage_unfunded". */
   reason?: string;
-  /** Codes the panel says in the shop's language: allowance_80, balance_80, whatsapp_unsettled. Unknown codes are kept and ignored by the panel. */
+  /** Codes the panel says in the shop's language: allowance_80, balance_80, whatsapp_unsettled, licence_due, licence_warning, licence_wind_down, licence_stopped. */
   warn: string[];
+  /**
+   * Where the shop stands in the licence's wind-down, as fleet worked it out (B13), for the panel only: its days (fleet's local days) and the renew link. Not signed: what
+   * restricts a shop is the signed lease alone, worked out on this server (lib/licence.ts). Only for a shop with a plan, while fleet's licence is on.
+   */
+  licence?: ShopLicence;
+}
+
+export const LICENCE_STATES = ["active", "reminder", "warning", "wind_down", "stopped"] as const;
+export interface ShopLicence {
+  state: (typeof LICENCE_STATES)[number];
+  paid_through: string | null;
+  wind_down_on: string | null;
+  stop_on: string | null;
+  export_until: string | null;
+  notice: "wind_down" | "stop" | null;
+  /** The partner's payment link for the invoice holding the shop back: https only, or null. */
+  renew_url: string | null;
 }
 
 export interface AnswerFile extends ShopAnswer { schema: 1; at: string }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const CODE = /^[a-z0-9_]{1,40}$/u;
+const DAY = /^\d{4}-\d{2}-\d{2}$/u;
+const RENEW_URL = /^https:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:\/[A-Za-z0-9._~!$&'()*+,;=:@%/?#-]*)?$/u;
+
+/** The unsigned licence entry, field by field: a day that is not a day is null, a renew link that is not https is null, and an unknown state makes no entry. */
+export function parseShopLicence(raw: unknown): ShopLicence | undefined {
+  if (!isObj(raw) || !(LICENCE_STATES as readonly unknown[]).includes(raw.state)) return undefined;
+  const day = (v: unknown): string | null => (typeof v === "string" && DAY.test(v) ? v : null);
+  return {
+    state: raw.state as ShopLicence["state"], paid_through: day(raw.paid_through), wind_down_on: day(raw.wind_down_on), stop_on: day(raw.stop_on), export_until: day(raw.export_until),
+    notice: raw.notice === "wind_down" || raw.notice === "stop" ? raw.notice : null,
+    renew_url: typeof raw.renew_url === "string" && raw.renew_url.length <= 300 && RENEW_URL.test(raw.renew_url) ? raw.renew_url : null,
+  };
+}
 /** Fleet's agent ids: the heartbeat's id rule. The first character is never `_`, so no `__proto__`. */
 const SHOP = /^[a-z0-9][a-z0-9_-]{0,63}$/u;
 
@@ -38,11 +70,25 @@ export function parseShopAnswer(raw: unknown): ShopAnswer | undefined {
   const plan = (PLANS as readonly unknown[]).includes(raw.plan) ? (raw.plan as Plan) : null;
   const allowance = typeof raw.allowance === "number" && Number.isSafeInteger(raw.allowance) && raw.allowance >= 0 ? raw.allowance : null;
   const warn = Array.isArray(raw.warn) ? raw.warn.filter((c): c is string => typeof c === "string" && CODE.test(c)).slice(0, 8) : [];
+  const licence = parseShopLicence(raw.licence);
   return {
     plan, allowance, innovator: raw.innovator === true, ai: raw.ai,
     ...(raw.ai === "buttons" && typeof raw.reason === "string" && CODE.test(raw.reason) ? { reason: raw.reason } : {}),
     warn,
+    ...(licence ? { licence } : {}),
   };
+}
+
+/** A lease token, as far as ops may judge it: the lease's prefix and its characters, at most 64 KB. Whether it is GOOD is the deployer's question (lib/licence.ts). */
+export const looksLikeLease = (v: unknown): v is string => typeof v === "string" && v.length <= 64 * 1024 && /^gl1\.[A-Za-z0-9_.-]+$/u.test(v);
+
+/** Keep the lease fleet sent, as it came, for the deployer to check. The same token again is not written again (fleet hands it back until something changes). */
+export function writeLeaseInbox(dir: string, token: string): boolean {
+  if (!looksLikeLease(token)) return false;
+  const path = join(dir, "lease");
+  try { if (readFileSync(path, "utf8").trim() === token) return false; } catch { /* none yet */ }
+  writeAtomic(path, `${token}\n`);
+  return true;
 }
 
 /** The `shops` of a 200 answer, by shop id. Undefined when the answer has none (an older fleet): the caller then keeps whatever it last knew. */
@@ -79,13 +125,19 @@ export function writeAnswerFiles(dir: string, shops: readonly string[], answer: 
 
 // ---- the usage baseline -------------------------------------------------------------------------------------------------------------------------------------------
 
-/** The cumulative counts fleet has accepted for one shop: the totals of lib/usage.ts, flattened. */
+/**
+ * The cumulative counts fleet has accepted for one shop: the totals of lib/usage.ts, flattened. The nine `COUNTER_FIELDS` are the cost meter's; the `EXTRA_FIELDS` are the
+ * counts fleet's badges read (reports sent, and replies by language), optional on both sides: a baseline written before them has none, and then each starts at the
+ * shop's current total (it sends nothing that time), so an upgrade never drops the cost meter's baseline and never replays a report or a reply.
+ */
 export interface UsageCounters {
   messages: number; rules: number; decision: number; model: number; modelMicroInr: number;
   service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean;
+  reportsSent?: number; hi?: number; en?: number; ml?: number; kn?: number;
 }
 export type UsageBaseline = Record<string, UsageCounters>;
 export const COUNTER_FIELDS = ["messages", "rules", "decision", "model", "modelMicroInr", "service", "utility", "marketing", "estMicroInr"] as const;
+export const EXTRA_FIELDS = ["reportsSent", "hi", "en", "ml", "kn"] as const;
 
 export const baselineFile = (dir: string): string => join(dir, "usage-baseline.json");
 
@@ -97,7 +149,8 @@ export function readUsageBaseline(dir: string): UsageBaseline {
     for (const [shop, c] of Object.entries(raw.shops)) {
       if (!SHOP.test(shop) || !isObj(c)) continue;
       const n = COUNTER_FIELDS.map((f) => c[f]);
-      if (n.every((v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) out[shop] = { ...(Object.fromEntries(COUNTER_FIELDS.map((f, i) => [f, n[i]])) as Omit<UsageCounters, "estimated">), estimated: c.estimated === true };
+      const extra = Object.fromEntries(EXTRA_FIELDS.filter((f) => typeof c[f] === "number" && Number.isSafeInteger(c[f]) && (c[f] as number) >= 0).map((f) => [f, c[f]]));
+      if (n.every((v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) out[shop] = { ...(Object.fromEntries(COUNTER_FIELDS.map((f, i) => [f, n[i]])) as Omit<UsageCounters, "estimated">), estimated: c.estimated === true, ...extra };
     }
     return out;
   } catch { return {}; }

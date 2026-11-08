@@ -57,3 +57,10 @@
 - **The QR code on the certificates and the report (B12, 8 Nov)** is the shared block in `modules/report/page.ts` (see `modules/Explanation.md`). Left open here: the Hindi, Malayalam and
   Kannada `scanToCheck` sentence (`report/strings.ts`) waits for native review (Malayalam and Kannada: the `page.scanToCheck` row of the REVIEW sheets; Hindi has no sheet); the link carries no key on purpose; the website page is not
   deployed. Revisit when: the owner deploys the website; a native speaker reviews the sheets.
+
+
+## The licence's wind-down (B13, 8 November 2026)
+
+- **Guard does not check the lease**, and no crash-test situation winds a centre down (as in Bookings' Deferred.md). Revisit when: Guard's check lands.
+- **Fees opened late after a wind-down.** No month's fees are opened in the wind-down; once the centre is in order again, the month's fees whose first reminder day has
+  passed are opened then and reminded once (the centre's own schedule, not a parent's request). Revisit when: the owner would rather those months were not chased.
