@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (53)
+## 1. Messages to the customer (54)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -65,8 +65,9 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_cancelled_refund_owed` | UPI shop: the customer cancelled inside the window; the owner will send the deposit back | ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ. ಮಾಲೀಕರು ನಿಮ್ಮ ₹200 ಅನ್ನು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | Your booking for Tue 10 Nov, 6:00 pm is cancelled. The owner will send your ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
 | `upi_extra_refund_owed` | UPI shop: the owner marked more than the deposit; the extra goes back from the owner | ನೀವು ಮುಂಗಡ ಹಣಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಳುಹಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ ₹200 ಅನ್ನು ಮಾಲೀಕರು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | You paid more than the deposit. The owner will send the extra ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ಬುಕಿಂಗ್ b-3 ರ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
+| `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Glow Salon ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
 
-## 2. Messages to the owner (29)
+## 2. Messages to the owner (31)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -101,6 +102,8 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು +919811111111 (ಬುಕಿಂಗ್ b-3) ಅವರಿಗೆ ₹200 ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Reminder: ₹200 is still owed back to customer +919811111111 (booking b-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | ಧನ್ಯವಾದ. ಬುಕಿಂಗ್ b-3 ರ ₹200 ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Thank you. The ₹200 refund for booking b-3 is marked sent, and the customer has been told. |  |
 | `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ಸರಿ. ಬುಕಿಂಗ್ b-3 ರ ₹200 ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಡಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ. | Noted. The ₹200 for booking b-3 is kept for a booking you make yourself. Nothing more is owed back. |  |
+| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, local partner ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner about it. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: 3. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: 1. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್ ವರೆಗೆ Divya, local partner ನೀಡುತ್ತಾರೆ. | Notice: online booking for Glow Salon has stopped. Nothing is deleted. Bookings to come: 3. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -620,6 +623,24 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ಈ ತಿಂಗಳ ಸೇರಿದ ಸಂದೇಶಗಳಲ್ಲಿ 80% ಬಳಕೆಯಾಗಿದೆ. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | ರೀಚಾರ್ಜ್ ಬ್ಯಾಲೆನ್ಸ್‌ನ 80% ಬಳಕೆಯಾಗಿದೆ. ಮುಗಿಯುವ ಮೊದಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp ನ ಕೆಲವು ವೆಚ್ಚಗಳನ್ನು ಇನ್ನೂ ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಪಾವತಿಸಿಲ್ಲ. ಅವನ್ನು ತೀರಿಸಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `licence.heading` | ಪರವಾನಗಿ | Licence |  |
+| `licence.states.active` | ಪರವಾನಗಿ ಸರಿಯಾಗಿದೆ | Licence in order |  |
+| `licence.states.reminder` | ಪರವಾನಗಿ ಪಾವತಿ ಬಾಕಿ ಇದೆ | Licence payment due |  |
+| `licence.states.warning` | ಪರವಾನಗಿ ಪಾವತಿ ತಡವಾಗಿದೆ | Licence payment overdue |  |
+| `licence.states.wind_down` | ನಿಲ್ಲಿಸಲಾಗಿದೆ: ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ಇಲ್ಲ | Paused: no new bookings or payment requests |  |
+| `licence.states.stopped` | ನಿಂತಿದೆ | Stopped |  |
+| `licence.means.active` | ಗ್ರಾಹಕರಿಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers. |  |
+| `licence.means.reminder` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers yet. |  |
+| `licence.means.warning` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. ಪಾವತಿಸದಿದ್ದರೆ ಅಂಗಡಿ ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
+| `licence.means.wind_down` | ಗ್ರಾಹಕರಿಗೆ ಅಂಗಡಿಯನ್ನು ಸಂಪರ್ಕಿಸಲು ಹೇಳಲಾಗುತ್ತದೆ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಈಗಾಗಲೇ ಬುಕ್ ಅಥವಾ ಪಾವತಿಯಾದ ಕೆಲಸಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಪಾವತಿಸಿದ ಕೂಡಲೇ ಎಲ್ಲವೂ ಮರಳುತ್ತದೆ. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
+| `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಕೆಲಸಗಳನ್ನು ಮಾಲೀಕರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ, ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ಉಚಿತವಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free. |  |
+| `licence.paidThrough` | ಮುಂದಿನ ಪಾವತಿ: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
+| `licence.windDownOn` | ಪಾವತಿಸದಿದ್ದರೆ 7 Jan 2027 ರಿಂದ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
+| `licence.extended` | Geometer-ನ ತುರ್ತು ವಿಸ್ತರಣೆ 21 Dec 2026 ವರೆಗೆ ಇದೆ. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
+| `licence.stopOn` | ಪೂರ್ಣವಾಗಿ ನಿಲ್ಲುವ ದಿನ: 6 Feb 2027. | Final stop planned for 6 Feb 2027. |  |
+| `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು 7 May 2027 ವರೆಗೆ ಉಚಿತವಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ. | Free download of the shop's records until 7 May 2027. |  |
+| `licence.renew` | ಪಾವತಿಸಿ ನವೀಕರಿಸಿ | Pay to renew |  |
+| `licence.stale` | 5 Dec 2026 ರಿಂದ ಪರವಾನಗಿ ನವೀಕರಣಗೊಂಡಿಲ್ಲ. ಈ ಸರ್ವರ್ Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
