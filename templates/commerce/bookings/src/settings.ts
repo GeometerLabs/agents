@@ -3,6 +3,8 @@
 import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
+import { readApprovers } from "../../../../modules/approvals/people.ts";
+import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -37,6 +39,8 @@ export interface Settings {
   };
   languages: Language[]; // customer-facing; the first is the default
   owner: { whatsapp: string; language: Language };
+  /** Others who may approve a refund Guard holds, and the amount above which two must (B37, modules/approvals/people.ts). Left out: the owner alone. */
+  approvers?: ApproversSettings;
   reminders: { hoursBefore: number[] };
 }
 
@@ -52,7 +56,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "reminders"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "approvers", "reminders"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the business's name (\"name\").");
@@ -73,6 +77,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const deposit = readDeposit(input.deposit, services, errors);
   const cancellation = readCancellation(input.cancellation, errors);
   const owner = readOwner(input.owner, errors);
+  const approvers = readApprovers(input.approvers, { ownerWhatsapp: owner?.whatsapp, refundLimitInr: cancellation?.refundLimitInr }, errors);
   const reminders = readReminders(input.reminders, errors);
 
   if (errors.length > 0) return { ok: false, errors };
@@ -90,6 +95,7 @@ export function validateSettings(input: unknown): SettingsResult {
     reminders,
   };
   if (typeof address === "string") settings.address = address;
+  if (approvers) settings.approvers = approvers;
   return { ok: true, settings };
 }
 

@@ -214,6 +214,36 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
       kn: "ಸೂಚನೆ: {business}-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ.",
     },
   },
+  // 8 Nov: three owner notices that go out unprompted. A refund a person at the server settled as made (Guard's already_done), and, when a refund needs several
+  // people (B37), the word to the ones who did not answer that it was approved by the others or refused by one of them. "Waiting for N more" is a reply to the
+  // person's own message, inside their window, so it needs no template.
+  {
+    name: "owner_refund_settled", usedFor: "owner_refund_settled", audience: "owner",
+    bodies: {
+      en: "Refund done: {refund} for {phone}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.",
+      hi: "रिफंड हो गया: {phone} को {refund}। आपका एजेंट सेट करने वाले व्यक्ति ने इसे जाँचकर पूरा हुआ दर्ज किया है, इसलिए यह दोबारा नहीं भेजा जाएगा।",
+      ml: "റീഫണ്ട് പൂർത്തിയായി: ഉപഭോക്താവ് {phone}, {refund}. നിങ്ങളുടെ ഏജന്റ് ക്രമീകരിച്ച വ്യക്തി ഇത് പരിശോധിച്ച് നടന്നതായി രേഖപ്പെടുത്തി, അതിനാൽ ഇത് വീണ്ടും അയയ്ക്കില്ല.",
+      kn: "ರೀಫಂಡ್ ಆಗಿದೆ: ಗ್ರಾಹಕರು {phone}, {refund}. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+    },
+  },
+  {
+    name: "owner_approval_closed", usedFor: "owner_approval_closed", audience: "owner",
+    bodies: {
+      en: "The {refund} refund for {phone} has been approved by the others, so your answer is no longer needed. Thank you.",
+      hi: "सूचना: {phone} को {refund} के रिफंड को दूसरों ने मंज़ूरी दे दी है, इसलिए अब आपके जवाब की ज़रूरत नहीं है। धन्यवाद।",
+      ml: "അറിയിപ്പ്: ഉപഭോക്താവ് {phone}: {refund} റീഫണ്ടിന് മറ്റുള്ളവർ അനുമതി നൽകി, അതിനാൽ ഇനി നിങ്ങളുടെ മറുപടി ആവശ്യമില്ല. നന്ദി.",
+      kn: "ಸೂಚನೆ: ಗ್ರಾಹಕರು {phone}: {refund} ರೀಫಂಡ್‌ಗೆ ಇತರರು ಅನುಮತಿ ನೀಡಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಈಗ ನಿಮ್ಮ ಉತ್ತರ ಬೇಕಿಲ್ಲ. ಧನ್ಯವಾದ.",
+    },
+  },
+  {
+    name: "owner_approval_refused", usedFor: "owner_approval_refused", audience: "owner",
+    bodies: {
+      en: "The {refund} refund for {phone} was refused by one of the people who approve refunds, so it will not be sent, and they will be told.",
+      hi: "सूचना: {phone} को {refund} के रिफंड को मंज़ूरी देने वालों में से एक ने मना कर दिया है, इसलिए यह नहीं भेजा जाएगा, और उन्हें बता दिया जाएगा।",
+      ml: "അറിയിപ്പ്: ഉപഭോക്താവ് {phone}: {refund} റീഫണ്ട് അനുമതി നൽകുന്നവരിൽ ഒരാൾ നിരസിച്ചു, അതിനാൽ ഇത് അയയ്ക്കില്ല, അവരെ അറിയിക്കും.",
+      kn: "ಸೂಚನೆ: ಗ್ರಾಹಕರು {phone}: {refund} ರೀಫಂಡ್ ಅನ್ನು ಅನುಮತಿ ನೀಡುವವರಲ್ಲಿ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.",
+    },
+  },
 ];
 
 const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
@@ -238,7 +268,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     depositInr: settings.deposit.amountInr, refundInr: settings.deposit.amountInr,
     slotMs: Date.UTC(2026, 10, 10, 12, 30), // Tue 10 Nov 2026, 6:00 pm in India
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
-    bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
+    bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
   };
 }
 

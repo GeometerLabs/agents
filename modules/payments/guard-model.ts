@@ -62,6 +62,8 @@ export type RefundDecision =
   | { kind: "hold_uncertain" } // an earlier attempt may have happened: only a person at the server can resolve it
   | { kind: "replay"; reply: unknown } // the first reply, from the record
   | { kind: "conflict"; reason: string }
+  /** The identical call again after a person settled it as `happened` (409 conflict, reason_code already_done): `detail` is Guard's, as its docs show it. */
+  | { kind: "already_done"; reason: string; detail: { intent: string; state: "reconciled"; confirmed_by: string; provider_status?: number } }
   | { kind: "refused"; reason: string; ruleId: string };
 
 export interface GuardModel {
@@ -73,8 +75,13 @@ export interface GuardModel {
   decideRefund(paymentId: string, body: unknown): RefundDecision;
   /** The service answered the call that `decideRefund` let through. */
   recordSent(paymentId: string, body: unknown, reply: unknown): void;
-  /** The call that `decideRefund` let through may have happened and the answer was lost. */
-  recordUnknown(paymentId: string): void;
+  /** The call that `decideRefund` let through may have happened and the answer was lost (or was a 5xx, `providerStatus`). `body` is the call as it was sent. */
+  recordUnknown(paymentId: string, body?: unknown, providerStatus?: number): void;
+  /**
+   * A person at the server settles an uncertain refund (POST /admin/intents/resolve). `happened`: the identical call is never sent again and is answered 409
+   * already_done, naming `operator:<by>`; the same action with other arguments stays a plain 409. `did_not_happen`: the call may go again.
+   */
+  resolve(paymentId: string, resolution: "happened" | "did_not_happen", by?: string): void;
   /** Pending holds, for the review queue. `viewer` says whether the reader may decide them. */
   reviews(agent: string, mayDecide: boolean | null): ReviewItem[];
   approvals(): Approval[];
@@ -94,7 +101,8 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
   const ttlMs = rules.approvalTtlSeconds * 1000;
   const approvals: Approval[] = [];
   const sent = new Map<string, { callKey: string; reply: unknown }>(); // by payment: what "refund this payment" already did
-  const uncertain = new Set<string>();
+  const uncertain = new Map<string, { callKey?: string; providerStatus?: number }>(); // by payment: an attempt whose outcome is unknown
+  const settled = new Map<string, { callKey?: string; by: string; intent: string; providerStatus?: number }>(); // by payment: settled by a person as `happened`
   let seq = 0;
 
   const expired = (a: Approval) => a.expiresAtMs <= clock.now();
@@ -144,6 +152,14 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
       }
       // refund-once: one refund per payment, whatever the amount
       if (uncertain.has(paymentId)) return { kind: "hold_uncertain" };
+      const done = settled.get(paymentId);
+      if (done) {
+        // Guard's words (monorepo docs/guard-for-pathways.md, "A call that may have happened"): there is no provider reply to replay, so it is not a replay
+        if (done.callKey === undefined || done.callKey === callKey) {
+          return { kind: "already_done", reason: `intent ${done.intent} already reconciled (confirmed by operator:${done.by}); nothing is sent again, and there is no provider reply to return`, detail: { intent: done.intent, state: "reconciled", confirmed_by: `operator:${done.by}`, ...(done.providerStatus !== undefined ? { provider_status: done.providerStatus } : {}) } };
+        }
+        return { kind: "conflict", reason: "the same business action was already carried out with different arguments; the same business action is not repeated" };
+      }
       const earlier = sent.get(paymentId);
       if (earlier) {
         if (earlier.callKey === callKey) return { kind: "replay", reply: earlier.reply };
@@ -153,7 +169,13 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock): GuardModel {
     },
 
     recordSent(paymentId, body, reply) { sent.set(paymentId, { callKey: callKeyOf(paymentId, body), reply }); },
-    recordUnknown(paymentId) { uncertain.add(paymentId); },
+    recordUnknown(paymentId, body, providerStatus) { uncertain.set(paymentId, { ...(body !== undefined ? { callKey: callKeyOf(paymentId, body) } : {}), ...(providerStatus !== undefined ? { providerStatus } : {}) }); },
+    resolve(paymentId, resolution, by = "ops") {
+      const open = uncertain.get(paymentId);
+      if (!open) return;
+      uncertain.delete(paymentId);
+      if (resolution === "happened") settled.set(paymentId, { ...open, by, intent: `intent:stub-${paymentId}` });
+    },
 
     reviews(agent, mayDecide) {
       return approvals.filter((a) => a.state === "pending" && !expired(a)).map((a): ReviewItem => {

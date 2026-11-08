@@ -133,6 +133,7 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
         res.end(JSON.stringify(d.reply));
         return;
       case "conflict": json(res, 409, { error: `refused by the Guard: ${d.reason}`, guard: decision("conflict", "no", "no", d.reason) }); return;
+      case "already_done": json(res, 409, { error: `refused by the Guard: ${d.reason}`, guard: { decision: "deny", code: "conflict", reason_code: "already_done", sent: "no", retry: "no", reason: d.reason, detail: d.detail } }); return;
       case "refused": json(res, 403, { error: `refused by the Guard: ${d.reason}`, guard: decision("refused_by_policy", "no", "no", d.reason) }); return;
       case "pass": break;
     }
@@ -145,15 +146,15 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
     const answer = await forward(req, res, path, raw);
     if (failure === "outcome_unknown" || !answer) {
       failure = undefined;
-      model.recordUnknown(paymentId);
+      model.recordUnknown(paymentId, body);
       const reason = "outcome unknown: the request may or may not have reached the provider. The action may have happened; it is not repeated automatically";
       json(res, 504, { error: `refused by the Guard: ${reason}`, guard: decision("outcome_unknown", "unknown", "do_not_repeat", reason) }, { "guard-outcome": "unknown" });
       return;
     }
     if (answer.status >= 200 && answer.status < 300) {
-      try { model.recordSent(paymentId, body, JSON.parse(answer.text)); } catch { model.recordUnknown(paymentId); }
+      try { model.recordSent(paymentId, body, JSON.parse(answer.text)); } catch { model.recordUnknown(paymentId, body); }
     } else if (answer.status >= 500) {
-      model.recordUnknown(paymentId); // a provider 5xx may have happened: passed through as it came, and a repeat is held
+      model.recordUnknown(paymentId, body, answer.status); // a provider 5xx may have happened: passed through as it came, and a repeat is held
     }
     res.writeHead(answer.status, { "content-type": "application/json" });
     res.end(answer.text);
