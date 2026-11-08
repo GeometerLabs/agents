@@ -28,6 +28,7 @@ import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
 import { feesBusinessBody, feesRulesBody } from "./views-fees.ts";
+import { HEALTH_WORDS } from "./words-health.ts";
 import type { activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
 
 const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
@@ -79,6 +80,7 @@ export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolea
 ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
   <a class="tab" href="/shops">${c.w.nav.shops}</a>
   <a class="tab" href="/inbox">${c.w.inbox.nav}</a>
+  <a class="tab" href="/health">${HEALTH_WORDS[c.lang].nav}</a>
   <a class="tab" href="/setup">${c.w.nav.setUp}</a>
   ${c.canInvite ? html`<a class="tab" href="/invite">${c.w.nav.invite}</a>` : ""}
   <form method="post" action="/logout" class="tab" style="padding:0"><input type="hidden" name="_csrf" value="${c.csrf}"><button class="tab" type="submit" style="width:100%">${c.w.nav.signOut}</button></form>

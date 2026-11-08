@@ -35,6 +35,10 @@ import { latestPriceList, monthlyCost } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { licenceView } from "./licence.ts";
+import { createEntries, entriesFromForm, sumMargins } from "./health.ts";
+import { createHealthData } from "./health-data.ts";
+import { createVotes } from "./votes.ts";
+import { healthPage, shopHealthPage, votePage } from "./views-health.ts";
 import { createGoLive } from "./golive.ts";
 import type { Unmet } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
@@ -301,6 +305,50 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const c = r.ctx();
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
     page(r, 200, inboxPage(c, { shops: inboxAll(shops, r.account!, now(), unfinished), ...(notice && Object.hasOwn(c.w.inbox.recover, notice) ? { notice: c.w.inbox.recover[notice as keyof typeof c.w.inbox.recover] } : {}) }));
+  });
+
+  // client health and margin (B32): what needs a look, the running cost, what the person charges and keeps. The person's own entries stay in the panel's store.
+  const healthEntries = createEntries(store);
+  const healthData = createHealthData({ config, shops, entries: healthEntries, prices, now, unfinished });
+  const votes = createVotes(store, shops, now);
+  on("GET", /^\/health$/u, "user", (r) => {
+    handover.sweep();
+    const list = healthData.all(r.account!);
+    page(r, 200, healthPage(r.ctx(), { shops: list, sum: sumMargins(list.map((s) => s.margin)), month: healthData.month(), innovator: votes.isInnovator(r.account!) }));
+  });
+  on("GET", /^\/health\/([a-z0-9-]{1,40})$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const saved = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice") === "saved";
+    const shop = healthData.shop(r.account!, ref.id);
+    page(r, 200, shopHealthPage(r.ctx(), { shop, month: healthData.month(shops.settings(ref.id)?.timezone), ...(saved ? { saved } : {}) }));
+  });
+  on("POST", /^\/health\/([a-z0-9-]{1,40})$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    const month = healthData.month(shops.settings(ref.id)?.timezone);
+    const made = entriesFromForm(r.form, month);
+    if (!made.ok) return page(r, 400, shopHealthPage(r.ctx(), { shop: healthData.shop(r.account!, ref.id), month, problem: made.problem, values: { price: r.form.price ?? "", setup: r.form.setup ?? "", minutes: r.form.minutes ?? "", rate: r.form.rate ?? "" } }));
+    healthEntries.write(r.account!.id, ref.id, made.entries);
+    log(`health entries of ${ref.id} saved by ${r.account!.id}`); // the log never holds an amount
+    redirect(r, `/health/${ref.id}?notice=saved`);
+  });
+
+  // the template vote for the first 100 innovators (B56): a 404 for anyone fleet has not flagged as an innovator; results (counts only) only after voting
+  on("GET", /^\/vote$/u, "user", (r) => {
+    if (!votes.isInnovator(r.account!)) return notFound(r);
+    const mine = votes.mine(r.account!);
+    const saved = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice") === "saved";
+    page(r, 200, votePage(r.ctx(), { round: votes.round, mine, counts: mine ? votes.counts() : undefined, ...(saved ? { saved } : {}) }));
+  });
+  on("POST", /^\/vote$/u, "user", (r) => {
+    if (!votes.isInnovator(r.account!)) return notFound(r);
+    if (!votes.cast(r.account!, r.form.option ?? "")) {
+      const mine = votes.mine(r.account!);
+      return page(r, 400, votePage(r.ctx(), { round: votes.round, mine, counts: mine ? votes.counts() : undefined, refused: true }));
+    }
+    log(`template vote changed by ${r.account!.id}`);
+    redirect(r, "/vote?notice=saved");
   });
 
   on("GET", /^\/shops\/([a-z0-9-]{1,40})$/u, "user", async (r) => {
