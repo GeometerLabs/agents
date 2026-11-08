@@ -2,7 +2,7 @@
 // folder it mounts, and the check of the running Guards' own account of the lease. Against the fake machine (test/world.ts); the real binary is the Docker proof's.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addAgent, deployAgent } from "../agent/deploy.ts";
 import { Refused, checkShop, deploy } from "../deploy.ts";
@@ -86,6 +86,40 @@ test("a shop whose other people approve refunds (B37): their numbers go through 
     w.handIn("glow-salon");
     await deploy(w.ctx);
     for (const kind of ["razorpay", "whatsapp", "calendar"]) assert.equal(block(toml(w, `g-glow-salon-${kind}`)).owner_numbers, '["+919000000000", "+919800000002", "+919800000003"]', kind);
+  } finally { w.done(); }
+});
+
+test("a Fees centre and an Orders shop get the block and the folder on each of their Guards too, with their own owner's number", async () => {
+  const w = world({}, PIN); try {
+    w.guardLicence.reads = true; w.guardLicence.kids = [TEST_KID];
+    const live = { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 } };
+    const add = (name: string, settings: string, lock: string, template: string) => {
+      mkdirSync(w.paths.shop(name), { recursive: true });
+      cpSync(settings, join(w.paths.shop(name), "settings.json"));
+      writeFileSync(join(w.paths.shop(name), "pathway.lock"), `${lock}\n`);
+      writeFileSync(join(w.paths.shop(name), "runtime.json"), JSON.stringify(live));
+      writeFileSync(join(w.paths.shop(name), "owner.json"), JSON.stringify({ schema: 1, accountId: "acc_test", accountName: "Divya", role: "partner", createdAt: "2026-11-01T10:00:00Z", template }));
+      const { "google_service_account.json": _google, ...rest } = secretsFor(name);
+      w.handIn(name, rest);
+    };
+    const repo = new URL("../../", import.meta.url).pathname;
+    add("bright", join(repo, "templates/education/fees/clients/bright-tuition.example/settings.json"), "fees@0.1.0", "fees");
+    add("annapurna", join(repo, "templates/commerce/orders/settings/annapurna-tiffins-razorpay.example.json"), "orders@0.1.0", "orders");
+    await deploy(w.ctx);
+    const compose = read(join(w.paths.generated, "compose.yaml"));
+    const owners: Record<string, string> = {
+      bright: JSON.parse(read(join(w.paths.shop("bright"), "settings.json"))).owner.whatsapp,
+      annapurna: JSON.parse(read(join(w.paths.shop("annapurna"), "settings.json"))).owner.whatsapp,
+    };
+    for (const shop of ["bright", "annapurna"]) {
+      for (const kind of ["razorpay", "whatsapp"]) {
+        const b = block(toml(w, `g-${shop}-${kind}`));
+        assert.deepEqual([b.deployment, b.shop, b.owner_numbers], ['"acme-vps-1"', `"${shop}"`, `["${owners[shop]}"]`], `${shop} ${kind}`);
+        const service = new RegExp(`\\n  g-${shop}-${kind}:\\n([\\s\\S]*?)\\n  [a-z]`, "u").exec(compose)?.[1] ?? "";
+        assert.ok(service.includes(`${licencePaths(w.root).root}:${LICENCE_MOUNT}:ro`), `${shop} ${kind} mounts the folder`);
+      }
+      assert.ok(!existsSync(join(w.paths.generated, "guards", `g-${shop}-calendar`)), `${shop} has no calendar Guard`);
+    }
   } finally { w.done(); }
 });
 
