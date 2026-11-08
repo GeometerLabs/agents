@@ -74,6 +74,8 @@ test("the line can carry the signed anchor, so anyone who kept it can use it wit
     const ledger = ledgerOf(3);
     const r = await publishFingerprint({ file: join(dir, "f.jsonl"), ledger, day: "2026-11-03", now: t0, anchor: anchorOf(ledger, privateKey) });
     assert.equal(r.line!.anchor!.checkpoint.head, r.line!.head);
+    const stale = await publishFingerprint({ file: join(dir, "f.jsonl"), ledger: ledgerOf(4), day: "2026-11-04", now: t0, anchor: anchorOf(ledger, privateKey) });
+    assert.equal(stale.line!.anchor, null, "an anchor over another head is not written beside this one");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
