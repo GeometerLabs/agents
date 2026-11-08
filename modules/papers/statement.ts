@@ -15,6 +15,7 @@ import { esc, table } from "../report/page.ts";
 import { seal } from "../report/sign.ts";
 import type { Envelope } from "../report/sign.ts";
 import { rupees } from "../report/text.ts";
+import { verifyCodePath } from "../report/verify-link.ts";
 import { UPI_PAID, UPI_REFUNDED, dayText, entriesOf, head, isPerson, lastDigits, localDay, notCheckedSection, paperPage, sealSection, when } from "./common.ts";
 import type { PaperCase, TemplatePapers } from "./common.ts";
 import { WORDS } from "./words.ts";
@@ -124,7 +125,7 @@ export function statementText(envelope: Envelope<Statement>): string {
   if (d.items.length === 0) lines.push(s.none);
   else lines.push(`${s.totalPaid}: ${rupees(d.totals.paidPaise)} · ${s.totalRefunded}: ${rupees(d.totals.refundedPaise)}`);
   if (d.totals.owedPaise !== undefined) lines.push(`${s.owed}: ${rupees(d.totals.owedPaise)}`);
-  lines.push(`${w.common.code}: ${envelope.code} · ${w.common.checkAt(`/verify/#${envelope.code}`)}`);
+  lines.push(`${w.common.code}: ${envelope.code} · ${w.common.checkAt(verifyCodePath(envelope))}`);
   return lines.join("\n");
 }
 

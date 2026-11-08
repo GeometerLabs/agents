@@ -15,6 +15,7 @@ import { esc, table } from "../report/page.ts";
 import { seal } from "../report/sign.ts";
 import type { Envelope } from "../report/sign.ts";
 import { rupees } from "../report/text.ts";
+import { verifyCodePath } from "../report/verify-link.ts";
 import { UPI_PAID, UPI_REFUNDED, dayText, entriesOf, head, localDay, notCheckedSection, paperPage, sealSection, when } from "./common.ts";
 import type { PaperCase, TemplatePapers } from "./common.ts";
 import { WORDS, actionWord } from "./words.ts";
@@ -135,5 +136,5 @@ ${sealSection(envelope, r.language)}`;
 export function disputeText(envelope: Envelope<DisputeRecord>): string {
   const r = envelope.document;
   const w = WORDS[r.language];
-  return [`${w.dispute.title} · ${r.shop.name}`, `${w.dispute.case} ${r.case.id}: ${r.case.label}`, w.dispute.intro, `${w.common.code}: ${envelope.code} · ${w.common.checkAt(`/verify/#${envelope.code}`)}`].join("\n");
+  return [`${w.dispute.title} · ${r.shop.name}`, `${w.dispute.case} ${r.case.id}: ${r.case.label}`, w.dispute.intro, `${w.common.code}: ${envelope.code} · ${w.common.checkAt(verifyCodePath(envelope))}`].join("\n");
 }

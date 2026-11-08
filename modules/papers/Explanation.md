@@ -15,7 +15,7 @@ Three signed papers made from a shop's record, for every template. They are seal
 - **Nothing about anyone else.** A statement is made only from the entries of that person's own cases; it carries no shop total. The record of one case only from that case's entries. The identity paper takes no customer data as input at all (counts of the record, the limits, the go-live certificate).
 - **Customer details only as the record keeps them.** In the shop's own store the record holds the number; in the bundle's export, a short hash (`p-…`, `c-…`). A paper made from either shows what it was given. A statement shows the person only the last four digits of their own number. A fee's label is the month and the batch, never the student's name.
 - **Draft words are marked.** Hindi, Malayalam and Kannada are machine-written (`words.ts`, `REVIEW_STATUS`); every page in those languages carries a "draft words, waiting for review" tag, and a test keeps it there.
-- **The verify link is a plain link** (`geometer.dev/verify/#CODE`) for now: the QR encoder is moving to a shared module in other work.
+- **The verification block is the shared one** (`sealBlock` in `modules/report/page.ts`, B12): the QR code of `https://geometer.dev/verify/#<digest>`, the code, the link, the digest and the signing key, with the ledger anchor as an extra row. The short texts print `/verify/#<code>` (`verifyCodePath`), as the other papers do.
 
 ## How a person is found
 
