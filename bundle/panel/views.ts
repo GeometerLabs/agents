@@ -281,7 +281,7 @@ function ownActivityBlock(c: Ctx, v: ShopView): Raw {
   const x = v.own!.activity;
   if (!x) return html`<p class="note">${w.noRecord}</p>`;
   return html`<ul class="plain">
-  ${x.lines.map((t) => html`<li><span class="mark">·</span><span>${t}</span></li>`)}
+  ${raw(x.lines.map((t) => html`<li><span class="mark">·</span><span>${t}</span></li>`.markup).join("\n  "))}
   <li><span class="mark">·</span><span><b>${w.approvals}</b><br>${w.approvalsLine(x.owner.asked, x.owner.approved, x.owner.denied)}</span></li>
 </ul>`;
 }

@@ -7,6 +7,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { validateSettings } from "../../../templates/commerce/orders/src/settings.ts";
 import { WORDS } from "../languages.ts";
+import { DAYS_IN_A_MONTH, MESSAGES_PER_ORDER } from "../views-orders.ts";
 import { PHONE_ID, NOW, boot, papers } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
@@ -165,7 +166,7 @@ test("the shop page of an Orders shop, in four languages: its menu, its rules in
       assert.ok(page.includes("Chicken meal"), `${language}: the menu`);
       assert.ok(page.includes(w.ordersShop.summaryMenu) && page.includes(w.ordersShop.summaryRules) && page.includes(w.ordersShop.perDay(8)), `${language}: ${page.slice(0, 200)}`);
       assert.ok(page.includes(w.ordersShop.activity.taken) && page.includes(w.ordersShop.messages.heading), `${language}: this month and the messages`);
-      assert.ok(page.includes(w.ordersShop.messages.ceiling(8, 3, 744)), `${language}: the most messages the rules allow: 8 orders a day, 31 days, 3 each`);
+      assert.ok(page.includes(w.ordersShop.messages.ceiling(8, MESSAGES_PER_ORDER, 8 * DAYS_IN_A_MONTH * MESSAGES_PER_ORDER)), `${language}: what to plan for: 8 orders a day, a 31-day month, about 3 messages each`);
       assert.ok(page.includes("₹160"), `${language}: a price in rupees as given`);
       assert.ok(!page.includes('class="cost"') && !page.includes(w.cost.heading), `${language}: no bookings cost table`);
       assert.ok(!page.includes("undefined") && !page.includes("NaN"), `${language}`);

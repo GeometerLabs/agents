@@ -605,9 +605,9 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `ordersShop.activity.pickup` | ಪಿಕಪ್ ಆರ್ಡರ್‌ಗಳು | Pickup orders |  |
 | `ordersShop.activity.delivery` | ಡೆಲಿವರಿ ಆರ್ಡರ್‌ಗಳು | Delivery orders |  |
 | `ordersShop.messages.heading` | ಸಂದೇಶಗಳು | Messages |  |
-| `ordersShop.messages.ceiling` | ನಿಮ್ಮ ನಿಯಮಗಳ ಪ್ರಕಾರ ತಿಂಗಳಿಗೆ ಗರಿಷ್ಠ 744 ಸಂದೇಶಗಳು ಹೋಗಬಹುದು: ದಿನಕ್ಕೆ 8 ಆರ್ಡರ್‌ವರೆಗೆ, 31 ದಿನ, ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ 3 ಸಂದೇಶದವರೆಗೆ. | Your rules allow at most 744 messages a month: up to 8 orders a day, for 31 days, and up to 3 messages for each order. |  |
+| `ordersShop.messages.ceiling` | ನಿಮ್ಮ ನಿಯಮಗಳು ದಿನಕ್ಕೆ 8 ಆರ್ಡರ್‌ವರೆಗೆ ಅವಕಾಶ ಕೊಡುತ್ತವೆ. ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ ಸುಮಾರು 3 ಸಂದೇಶ ಎಂದು ಲೆಕ್ಕ ಹಾಕಿದರೆ, 31 ದಿನದ ತಿಂಗಳಲ್ಲಿ 744 ಸಂದೇಶಗಳವರೆಗೆ ನಿರೀಕ್ಷಿಸಬಹುದು. | Your rules allow up to 8 orders a day. At about 3 messages for each order, plan for up to 744 messages in a 31-day month. |  |
 | `ordersShop.messages.included` | ನಿಮ್ಮ ಯೋಜನೆಯಲ್ಲಿ ತಿಂಗಳಿಗೆ 3000 ಸಂದೇಶಗಳು ಸೇರಿವೆ. | Your plan includes 3000 messages a month. |  |
-| `ordersShop.messages.note` | ಗ್ರಾಹಕರ ಸ್ವಂತ ಸಂದೇಶಗಳಿಗೆ ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. ಇದು ನಿಮ್ಮ ನಿಯಮಗಳಿಂದ ಬಂದ ಮೇಲಿನ ಮಿತಿ, ಬಿಲ್ ಅಲ್ಲ. | Replies to customers' own messages come on top. This is a ceiling from your rules, not a bill. |  |
+| `ordersShop.messages.note` | ಗ್ರಾಹಕರ ಸ್ವಂತ ಸಂದೇಶಗಳಿಗೆ ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. ಇದು ನಿಮ್ಮ ನಿಯಮಗಳಿಂದ ಬಂದ ಅಂದಾಜು, ಬಿಲ್ ಅಲ್ಲ. | Replies to customers' own messages come on top. This is a planning figure from your rules, not a bill. |  |
 | `cost.heading` | ಪ್ರತಿ ತಿಂಗಳು ನಡೆಸಲು ಆಗುವ ವೆಚ್ಚ | What it costs to run, each month |  |
 | `cost.early` | ಆರಂಭಿಕ ಅಂದಾಜು: ನಿಜವಾದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ಇನ್ನೂ ಎಣಿಸಿಲ್ಲ. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | ದಾಖಲೆಯಲ್ಲಿರುವ 38 ಬುಕಿಂಗ್ ನೋಡಿ ಲೆಕ್ಕ ಹಾಕಲಾಗಿದೆ. | Worked out from 38 bookings in the record. |  |
