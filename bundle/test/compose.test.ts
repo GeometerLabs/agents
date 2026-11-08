@@ -116,6 +116,13 @@ test("the Calendar Guard reads only its own shop's token (a sub-folder of the to
   assert.ok(!mounts(c, "g-glow-salon-razorpay").some((x) => x.includes("google")));
 });
 
+test("the lease's folder is mounted read-only on every shop Guard, and on nothing else (not the model Guard, not the runtime)", () => {
+  const c = two();
+  const holders = Object.keys(c.services).filter((s) => mounts(c, s).includes("/srv/state/licence:/run/geometer/licence:ro")).sort();
+  assert.deepEqual(holders, ["bright-tuition", "glow-salon"].flatMap((shop) => ["calendar", "razorpay", "whatsapp"].map((k) => `g-${shop}-${k}`)).sort());
+  assert.ok(Object.keys(c.services).every((s) => holders.includes(s) || !mounts(c, s).some((m) => m.includes("/srv/state"))), "no other service sees state/");
+});
+
 test("litestream streams only the runtimes' databases: no Guard store is mounted into it", () => {
   const c = two();
   assert.deepEqual(mounts(c, "litestream").filter((m) => !m.includes("litestream.yml")), ["rt-data-glow-salon:/data/glow-salon", "rt-data-bright-tuition:/data/bright-tuition"]);
