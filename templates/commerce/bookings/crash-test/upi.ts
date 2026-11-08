@@ -13,7 +13,7 @@ import type { Situation } from "../../../../modules/crash-test/situations.ts";
 import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
 import { languageList } from "./says.ts";
 import { readUpiLink } from "../../../../modules/payments/upi/link.ts";
-import { textQrPng } from "../../../../modules/payments/upi/png.ts";
+import { textQrPng } from "../../../../modules/payments/qr/png.ts";
 import { memoryQrImages } from "../../../../modules/payments/upi/qr-image.ts";
 import { UPI_ACTIONS, upiObligations } from "../../../../modules/payments/upi/obligations.ts";
 import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/upi/ledger.ts";

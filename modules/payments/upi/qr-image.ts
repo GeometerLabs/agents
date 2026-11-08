@@ -10,7 +10,7 @@
 import { randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { textQrPng } from "./png.ts";
+import { textQrPng } from "../qr/png.ts";
 
 /** Make the picture of this text and host it; the https address, or null when it could not be made. */
 export type QrImageMaker = (text: string) => Promise<string | null>;
