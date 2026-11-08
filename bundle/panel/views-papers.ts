@@ -3,32 +3,34 @@
 // languages, Hindi, Malayalam and Kannada machine-written and waiting for native review like the rest of the panel's.
 import type { Language } from "../../modules/language/languages.ts";
 import { WORDS } from "../../modules/papers/words.ts";
+import { CHOOSABLE, choosableLabel } from "../../modules/papers/identity.ts";
+import type { Choosable } from "../../modules/papers/identity.ts";
 import { html } from "./html.ts";
 import { layout } from "./views.ts";
 import type { Ctx } from "./views.ts";
 
-const PANEL_WORDS: Record<Language, { title: (shop: string) => string; intro: string; case: string; number: string; numberNote: string; open: string; signed: string; ledger: string; ledgerNote: string; publicNote: string; noCases: string }> = {
+const PANEL_WORDS: Record<Language, { title: (shop: string) => string; intro: string; case: string; number: string; numberNote: string; open: string; signed: string; ledger: string; ledgerNote: string; publicNote: string; noCases: string; choose: string; save: string; saved: string }> = {
   en: { title: (s) => `Papers for ${s}`, intro: "Each paper is signed, carries a check code, and lists what it did not check. None of them says who is right.", case: "Case", number: "WhatsApp number",
     numberNote: "The number is used to find this person's own payments and is not kept.", open: "Open the page", signed: "Signed file (.json)", ledger: "The record as an evidence pack",
-    ledgerNote: "For geo-verify, the open checker: geo-verify pack.json --anchor anchor.json", publicNote: "The public paper shows only the fields you chose.", noCases: "No cases in the record yet." },
+    ledgerNote: "For geo-verify, the open checker: geo-verify pack.json --anchor anchor.json", publicNote: "The public paper shows only the fields you chose.", noCases: "No cases in the record yet.", choose: "Shown on the public paper (never any customer's details):", save: "Keep this choice", saved: "Kept. The public paper now shows only what is ticked." },
   hi: { title: (s) => `${s} के काग़ज़`, intro: "हर काग़ज़ पर हस्ताक्षर और जाँच कोड है, और वह बताता है कि उसने क्या नहीं जाँचा। कोई भी यह नहीं बताता कि कौन सही है।", case: "मामला", number: "WhatsApp नंबर",
     numberNote: "नंबर से सिर्फ़ इस व्यक्ति के अपने भुगतान ढूँढे जाते हैं; उसे रखा नहीं जाता।", open: "पेज खोलें", signed: "हस्ताक्षर वाली फ़ाइल (.json)", ledger: "रिकॉर्ड, सबूत पैक के रूप में",
-    ledgerNote: "खुले जाँचने वाले geo-verify के लिए: geo-verify pack.json --anchor anchor.json", publicNote: "सार्वजनिक काग़ज़ में सिर्फ़ वही है जो आपने चुना।", noCases: "रिकॉर्ड में अभी कोई मामला नहीं है।" },
+    ledgerNote: "खुले जाँचने वाले geo-verify के लिए: geo-verify pack.json --anchor anchor.json", publicNote: "सार्वजनिक काग़ज़ में सिर्फ़ वही है जो आपने चुना।", noCases: "रिकॉर्ड में अभी कोई मामला नहीं है।", choose: "सार्वजनिक काग़ज़ पर दिखेगा (ग्राहक की कोई जानकारी कभी नहीं):", save: "यह चुनाव रखें", saved: "रख लिया। सार्वजनिक काग़ज़ पर अब सिर्फ़ चुनी हुई चीज़ें दिखेंगी।" },
   ml: { title: (s) => `${s} ന്റെ രേഖകൾ`, intro: "ഓരോ രേഖയിലും ഒപ്പും പരിശോധനാ കോഡും ഉണ്ട്, അത് എന്ത് പരിശോധിച്ചില്ലെന്നും പറയുന്നു. ആരാണ് ശരിയെന്ന് ഒന്നും പറയുന്നില്ല.", case: "കേസ്", number: "WhatsApp നമ്പർ",
     numberNote: "ഈ ആളുടെ സ്വന്തം പണമടവുകൾ കണ്ടെത്താൻ മാത്രം നമ്പർ ഉപയോഗിക്കുന്നു; അത് സൂക്ഷിക്കുന്നില്ല.", open: "പേജ് തുറക്കുക", signed: "ഒപ്പിട്ട ഫയൽ (.json)", ledger: "തെളിവ് പായ്ക്കായി രേഖ",
-    ledgerNote: "തുറന്ന പരിശോധകൻ geo-verify-ക്ക്: geo-verify pack.json --anchor anchor.json", publicNote: "പൊതു രേഖയിൽ നിങ്ങൾ തിരഞ്ഞെടുത്തവ മാത്രം.", noCases: "രേഖയിൽ ഇതുവരെ കേസുകളില്ല." },
+    ledgerNote: "തുറന്ന പരിശോധകൻ geo-verify-ക്ക്: geo-verify pack.json --anchor anchor.json", publicNote: "പൊതു രേഖയിൽ നിങ്ങൾ തിരഞ്ഞെടുത്തവ മാത്രം.", noCases: "രേഖയിൽ ഇതുവരെ കേസുകളില്ല.", choose: "പൊതു രേഖയിൽ കാണിക്കുന്നത് (ഉപഭോക്താവിന്റെ വിവരങ്ങൾ ഒരിക്കലുമില്ല):", save: "ഈ തിരഞ്ഞെടുപ്പ് സൂക്ഷിക്കുക", saved: "സൂക്ഷിച്ചു. പൊതു രേഖയിൽ ഇപ്പോൾ തിരഞ്ഞെടുത്തവ മാത്രം." },
   kn: { title: (s) => `${s} ನ ಕಾಗದಗಳು`, intro: "ಪ್ರತಿ ಕಾಗದಕ್ಕೂ ಸಹಿ ಮತ್ತು ಪರಿಶೀಲನಾ ಕೋಡ್ ಇದೆ, ಅದು ಏನನ್ನು ಪರಿಶೀಲಿಸಲಿಲ್ಲ ಎಂದೂ ಹೇಳುತ್ತದೆ. ಯಾರು ಸರಿ ಎಂದು ಯಾವುದೂ ಹೇಳುವುದಿಲ್ಲ.", case: "ಪ್ರಕರಣ", number: "WhatsApp ಸಂಖ್ಯೆ",
     numberNote: "ಈ ವ್ಯಕ್ತಿಯ ಸ್ವಂತ ಪಾವತಿಗಳನ್ನು ಹುಡುಕಲು ಮಾತ್ರ ಸಂಖ್ಯೆ ಬಳಸಲಾಗುತ್ತದೆ; ಅದನ್ನು ಇಡುವುದಿಲ್ಲ.", open: "ಪುಟ ತೆರೆಯಿರಿ", signed: "ಸಹಿ ಇರುವ ಫೈಲ್ (.json)", ledger: "ಸಾಕ್ಷ್ಯ ಪ್ಯಾಕ್ ಆಗಿ ದಾಖಲೆ",
-    ledgerNote: "ತೆರೆದ ಪರಿಶೀಲಕ geo-verify ಗೆ: geo-verify pack.json --anchor anchor.json", publicNote: "ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ನೀವು ಆರಿಸಿದ್ದು ಮಾತ್ರ.", noCases: "ದಾಖಲೆಯಲ್ಲಿ ಇನ್ನೂ ಪ್ರಕರಣಗಳಿಲ್ಲ." },
+    ledgerNote: "ತೆರೆದ ಪರಿಶೀಲಕ geo-verify ಗೆ: geo-verify pack.json --anchor anchor.json", publicNote: "ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ನೀವು ಆರಿಸಿದ್ದು ಮಾತ್ರ.", noCases: "ದಾಖಲೆಯಲ್ಲಿ ಇನ್ನೂ ಪ್ರಕರಣಗಳಿಲ್ಲ.", choose: "ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ತೋರಿಸುವುದು (ಗ್ರಾಹಕರ ವಿವರ ಎಂದಿಗೂ ಇಲ್ಲ):", save: "ಈ ಆಯ್ಕೆ ಇಡಿ", saved: "ಇಟ್ಟಿದೆ. ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ಈಗ ಆರಿಸಿದ್ದು ಮಾತ್ರ." },
 };
 
-export function papersPage(c: Ctx, o: { id: string; name: string; cases: string[]; problem?: string }): string {
+export function papersPage(c: Ctx, o: { id: string; name: string; cases: string[]; problem?: string; public?: Choosable[]; saved?: boolean }): string {
   const p = PANEL_WORDS[c.lang];
   const w = WORDS[c.lang];
   const base = `/shops/${o.id}/papers`;
   return layout(c, p.title(o.name), html`<h1>${p.title(o.name)}</h1>
 <p class="big">${p.intro}</p>
-${o.problem ? html`<div class="notice">${o.problem}</div>` : ""}
+${o.problem ? html`<div class="notice">${o.problem}</div>` : ""}${o.saved ? html`<div class="notice">${p.saved}</div>` : ""}
 <h2>${w.dispute.title}</h2>
 ${o.cases.length === 0 ? html`<p class="note">${p.noCases}</p>` : html`<form method="get" action="${base}/case"><label class="field">${p.case} <select name="case">${o.cases.map((id) => html`<option value="${id}">${id}</option>`)}</select></label>
 <button class="btn primary" type="submit" name="as" value="html">${p.open}</button> <button class="btn" type="submit" name="as" value="json">${p.signed}</button></form>`}
@@ -38,6 +40,8 @@ ${o.cases.length === 0 ? html`<p class="note">${p.noCases}</p>` : html`<form met
 <h2>${w.identity.title}</h2>
 <p><a class="btn primary" href="${base}/identity.html">${p.open}</a> <a class="btn" href="${base}/identity.json">${p.signed}</a></p>
 <p class="note">${p.publicNote}</p><p><a class="btn" href="${base}/identity-public.html">${p.open}</a> <a class="btn" href="${base}/identity-public.json">${p.signed}</a></p>
+<form method="post" action="${base}/public"><input type="hidden" name="_csrf" value="${c.csrf}"><p>${p.choose}</p>${CHOOSABLE.map((f) => html`<label class="field"><input type="checkbox" name="show_${f}" value="1"${(o.public ?? []).includes(f) ? html` checked` : ""}> ${choosableLabel(f, c.lang)}</label>`)}
+<button class="btn" type="submit">${p.save}</button></form>
 <h2>${p.ledger}</h2>
 <p><a class="btn" href="${base}/ledger/pack.json">pack.json</a> <a class="btn" href="${base}/ledger/anchor.json">anchor.json</a></p><p class="note">${p.ledgerNote}</p>
 <p><a href="/shops/${o.id}">${c.w.common.back}</a></p>`);

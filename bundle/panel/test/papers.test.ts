@@ -69,6 +69,16 @@ test("the papers of a partner's own shop: one case, a statement by POST, the ide
     const pub = again.envelope!.document as { agent: { id: string }; operator: unknown; shown: string[] };
     assert.equal(pub.agent.id, id.agent.id, "the same id every time: it is kept with the shop");
     assert.deepEqual(pub.operator, { shown: false });
+    // the operator chooses what the public paper shows, on the papers page
+    const chose = await divya.post("/shops/glow-salon/papers/public", { show_operator: "1", show_limits: "1", show_live: "1" }, "/shops/glow-salon/papers");
+    assert.equal(chose.status, 303);
+    assert.match((await divya.get("/shops/glow-salon/papers?notice=public")).text, /checked/);
+    const chosen = verifyEnvelopeText((await divya.bytes("/shops/glow-salon/papers/identity-public.json")).body.toString("utf8")).envelope!.document as { agent: { id: string }; operator: { name: string }; checks: unknown; shown: string[] };
+    assert.deepEqual(chosen.shown, ["operator", "limits", "live"]);
+    assert.equal(chosen.operator.name, "Divya");
+    assert.deepEqual(chosen.checks, { shown: false });
+    assert.equal(chosen.agent.id, id.agent.id, "choosing keeps the id");
+    assert.equal((await meena.post("/shops/glow-salon/papers/public", { show_shop: "1" }, "/shops")).status, 404);
     assert.equal(JSON.parse(readFileSync(join(b.dir, "shops", "glow-salon", "identity.json"), "utf8")).id, id.agent.id);
 
     const pack = JSON.parse((await divya.bytes("/shops/glow-salon/papers/ledger/pack.json")).body.toString("utf8"));

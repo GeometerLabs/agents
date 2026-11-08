@@ -5,7 +5,9 @@ import { createPublicKey, generateKeyPairSync, verify } from "node:crypto";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { canonicalJson } from "../record.ts";
+import { canonicalJson, createRecord } from "../record.ts";
+import { fakeClock } from "../../core/clock.ts";
+import { openStore } from "../../runtime/store.ts";
 import type { RecordEntry } from "../record.ts";
 import { BODY_TYPE, anchorOf, entryHash, evidencePack, genesisEvent, hashAt, headOf, ledgerBody, ledgerEntries, ledgerFile, ledgerHead, tenantOf } from "../ledger.ts";
 
@@ -59,6 +61,20 @@ test("changing any chained field of an old entry changes the head; the number, t
   const body = JSON.parse(ledgerEntries([entry(1, { refs: { to: "owner", page: "secret" }, notes: "Rohan" })], "s")[0].body);
   assert.equal(JSON.stringify(body).includes("secret") || JSON.stringify(body).includes("Rohan") || JSON.stringify(body).includes("+91"), false);
   assert.deepEqual(Object.keys(ledgerBody(entry(1))).sort(), ["action", "booking", "decisions", "inputsDigest", "language", "outcome", "refs", "seq", "time"]);
+});
+
+test("the head the runtime works out from its record in memory is the head of the same record saved in its database and read back", () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-ledger-db-"));
+  try {
+    const record = createRecord(fakeClock(t0));
+    record.append({ conversation: "+919800000001", booking: "b-1", action: "refund", inputs: { amountInr: 300 }, outcome: "held_for_owner", decisions: [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "above the limit" }], language: "kn", notes: "Guard is holding it", refs: { paymentId: "pay_1", approval: undefined as unknown as string, amountPaise: "30000" } });
+    record.append({ conversation: "+919800009999", booking: null, action: "owner_decision", inputs: { command: "approve" }, outcome: "confirmed", language: "kn" });
+    const db = openStore(dir);
+    db.commitStep({ snapshot: "{}", entries: record.entries(), nowMs: t0 });
+    const saved = db.loadState().record;
+    db.close();
+    assert.equal(headOf(saved, "glow-salon")!.head, headOf(record.entries(), "glow-salon")!.head);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("a record with a gap or a repeat is refused, the tenant follows geometer-verify's id rule, and an empty record has no head", () => {

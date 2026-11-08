@@ -4,9 +4,9 @@
 // and the last daily fingerprint the deployer wrote into the shop's status. The panel's signing key signs them; without one they say they are not signed.
 //
 // The agent's stable id lives in shops/<shop>/identity.json, written once (never overwritten) the first time it is asked for; the operator's choice of public fields
-// is the `public` list in the same file (left out: the facts about the agent, not about the business). Choosing them in the panel is not built yet (Deferred.md).
+// is the `public` list in the same file (left out: the facts about the agent, not about the business), chosen on the papers page by whoever serves the shop.
 import { randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Language } from "../../modules/language/languages.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
@@ -64,6 +64,19 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
     return { id: found.id, public: pub };
   }
 
+  /** Write the operator's public fields, keeping the id (made first if it is not there yet). The file is replaced whole, by a rename. */
+  function setPublic(id: string, fields: readonly string[]): Choosable[] {
+    const current = identityFile(id);
+    const chosen = CHOOSABLE.filter((f) => fields.includes(f));
+    const file = join(shops.paths.shop(id), "identity.json");
+    let createdAt: string | undefined;
+    try { createdAt = JSON.parse(readText(file) ?? "{}").createdAt; } catch { createdAt = undefined; }
+    const tmp = `${file}.${randomBytes(6).toString("hex")}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify({ schema: 1, id: current.id, ...(createdAt ? { createdAt } : {}), public: chosen, publicSetAt: new Date(now()).toISOString() }, null, 2)}\n`, { mode: 0o644 });
+    renameSync(tmp, file);
+    return chosen;
+  }
+
   function history(id: string): { at: string; by: { name: string; role: string } | null; settings: unknown }[] {
     return (readText(join(shops.paths.shop(id), "settings-history.jsonl")) ?? "").split("\n").filter((l) => l.trim() !== "").flatMap((l) => {
       try { const x = JSON.parse(l); return [{ at: String(x.at), by: x.by ? { name: String(x.by.name), role: String(x.by.role) } : null, settings: x.settings }]; } catch { return []; }
@@ -71,6 +84,12 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
   }
 
   return {
+    /** The operator's public fields now (without making the id), for the papers page. */
+    publicOf(id: string): Choosable[] {
+      try { const x = JSON.parse(readText(join(shops.paths.shop(id), "identity.json")) ?? "null"); if (x && Array.isArray(x.public)) return CHOOSABLE.filter((f) => x.public.includes(f)); } catch { /* the default below */ }
+      return [...DEFAULT_PUBLIC];
+    },
+    setPublic,
     /** The record of one case: its signed JSON and its page, in the shop's language unless another is asked for. */
     dispute(id: string, caseId: string, language?: string): MadePaper[] {
       const b = base(id);

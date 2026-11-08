@@ -94,6 +94,13 @@ export function newAgentId(random: Uint8Array): string {
 }
 export const AGENT_ID = /^agt_[0-9a-hjkmnp-tv-z]{20}$/u;
 
+/** The label of each choosable field, in a language (the paper's own headings). */
+export const choosableLabel = (field: Choosable, language: Language): string => {
+  const w = WORDS[language];
+  const labels: Record<Choosable, string> = { operator: w.identity.operator, shop: w.identity.shop, limits: w.identity.limits, checks: w.identity.checks, live: w.identity.live, limitChanges: w.identity.changes, ledger: w.common.ledger };
+  return labels[field];
+};
+
 /** Who made a limit wider and when: each saved version compared with the one before it. The first version is where the history starts, not a change. */
 export function widenedLimits(input: Pick<IdentityInput, "history" | "limitFacts" | "language">): LimitChange[] {
   const changes: LimitChange[] = [];
@@ -143,7 +150,7 @@ export function buildIdentity(input: IdentityInput): { full: IdentityPaper; publ
   const notTested = [
     w.not.everySituation, w.not.liveNotChecked,
     ...(historyFrom ? [w.not.historyStart(dayText(localDay(Date.parse(historyFrom), input.shop.timeZone), input.language))] : [w.identity.noHistory]),
-    w.not.keyHolder, w.not.truth, ...(anchor ? [] : [w.not.noLedger]),
+    w.not.keyHolder, w.not.truth, anchor ? w.not.anchorNotCompared : w.not.noLedger,
   ];
   const base = {
     format: IDENTITY_FORMAT, agent: { id: input.agentId }, template: { ...input.template.pathway }, language: input.language,

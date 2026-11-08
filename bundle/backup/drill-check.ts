@@ -47,6 +47,7 @@ function check(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
 /** The restored record's ledger hash at the published fingerprint's entry, against the hash that was published. */
 function compareFingerprint(db: DatabaseSync, tenant: string, published: DrillJob["shops"][number]["published"]): { ok: boolean; detail: string } {
   if (!published) return { ok: true, detail: "no fingerprint of its record has been published yet, so none was compared" };
+  if (published.head === "unreadable") return { ok: false, detail: "the server's fingerprint file for this shop was changed by hand or a line was taken out, so the restored record could not be compared with what was published" };
   const rows = db.prepare("SELECT entry FROM record ORDER BY seq").all() as { entry: string }[];
   let chain;
   try { chain = ledgerEntries(rows.map((r) => JSON.parse(r.entry) as RecordEntry), tenant); } catch (e) { return { ok: false, detail: `the restored record could not be chained into its ledger (${(e as Error).message})` }; }

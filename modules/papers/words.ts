@@ -35,7 +35,7 @@ export interface PaperWords {
   /** The lines of "what this paper did not check". */
   not: {
     truth: string; providers: string; words: string; outside: string; guardLog: string; whoIsRight: string; upi: string; others: string; cash: string;
-    everySituation: string; keyHolder: string; historyStart: (date: string) => string; liveNotChecked: string; noLedger: string;
+    everySituation: string; keyHolder: string; historyStart: (date: string) => string; liveNotChecked: string; noLedger: string; anchorNotCompared: string;
   };
 }
 
@@ -86,6 +86,7 @@ const en: PaperWords = {
     historyStart: (d) => `Limit changes before ${d}, when the panel began keeping the shop's settings.`,
     liveNotChecked: "The live counts against the services' own records. They are counted from the agent's record.",
     noLedger: "The record's fingerprint. This paper is not anchored to it.",
+    anchorNotCompared: "Whether the record fingerprint on this paper is the one the shop published that day. Compare the two, and check the record itself with geo-verify, the open checker.",
   },
 };
 
@@ -136,6 +137,7 @@ const hi: PaperWords = {
     historyStart: (d) => `${d} से पहले के सीमा बदलाव, जब पैनल ने दुकान की सेटिंग रखनी शुरू की।`,
     liveNotChecked: "अब तक की गिनती, सेवाओं के अपने रिकॉर्ड से। ये एजेंट के रिकॉर्ड से गिनी गई हैं।",
     noLedger: "रिकॉर्ड की पहचान। यह काग़ज़ उससे नहीं जुड़ा।",
+    anchorNotCompared: "इस काग़ज़ पर लिखी रिकॉर्ड की पहचान वही है या नहीं जो दुकान ने उस दिन प्रकाशित की। दोनों को मिलाएँ, और रिकॉर्ड को खुले जाँचने वाले geo-verify से जाँचें।",
   },
 };
 
@@ -186,6 +188,7 @@ const ml: PaperWords = {
     historyStart: (d) => `${d} ന് മുമ്പുള്ള പരിധി മാറ്റങ്ങൾ, പാനൽ കടയുടെ ക്രമീകരണങ്ങൾ സൂക്ഷിക്കാൻ തുടങ്ങിയത് അന്നാണ്.`,
     liveNotChecked: "ഇതുവരെയുള്ള എണ്ണം, സേവനങ്ങളുടെ സ്വന്തം രേഖകളുമായി. ഇവ ഏജന്റിന്റെ രേഖയിൽ നിന്ന് എണ്ണിയതാണ്.",
     noLedger: "രേഖയുടെ വിരലടയാളം. ഈ രേഖ അതുമായി ബന്ധിപ്പിച്ചിട്ടില്ല.",
+    anchorNotCompared: "ഈ രേഖയിലെ വിരലടയാളം അന്ന് കട പ്രസിദ്ധീകരിച്ചതുതന്നെയാണോ എന്ന്. രണ്ടും ഒത്തുനോക്കുക, രേഖ തന്നെ തുറന്ന പരിശോധകൻ geo-verify കൊണ്ട് പരിശോധിക്കുക.",
   },
 };
 
@@ -236,6 +239,7 @@ const kn: PaperWords = {
     historyStart: (d) => `${d} ಕ್ಕಿಂತ ಮೊದಲಿನ ಮಿತಿ ಬದಲಾವಣೆಗಳು, ಪ್ಯಾನೆಲ್ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಇಡಲು ಶುರು ಮಾಡಿದ್ದು ಆಗ.`,
     liveNotChecked: "ಇದುವರೆಗಿನ ಎಣಿಕೆ, ಸೇವೆಗಳ ಸ್ವಂತ ದಾಖಲೆಗಳ ಜೊತೆ. ಇವು ಏಜೆಂಟ್‌ನ ದಾಖಲೆಯಿಂದ ಎಣಿಸಿದವು.",
     noLedger: "ದಾಖಲೆಯ ಬೆರಳಚ್ಚು. ಈ ಕಾಗದವನ್ನು ಅದಕ್ಕೆ ಜೋಡಿಸಿಲ್ಲ.",
+    anchorNotCompared: "ಈ ಕಾಗದದ ಮೇಲಿನ ದಾಖಲೆಯ ಬೆರಳಚ್ಚು ಅಂದು ಅಂಗಡಿ ಪ್ರಕಟಿಸಿದ್ದೇ ಎಂದು. ಎರಡನ್ನೂ ಹೋಲಿಸಿ, ದಾಖಲೆಯನ್ನು ತೆರೆದ ಪರಿಶೀಲಕ geo-verify ನಿಂದ ಪರಿಶೀಲಿಸಿ.",
   },
 };
 
