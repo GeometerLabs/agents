@@ -43,8 +43,12 @@ export interface ModelConfig {
 }
 
 export interface BackupConfig {
-  /** Litestream's target for the runtime databases: an s3:// URL (Google Cloud Storage's S3 interface, Backblaze, R2, MinIO). */
-  stream: { url: string; endpoint?: string; region?: string };
+  /**
+   * Litestream's target for the runtime databases: an s3:// URL (Google Cloud Storage's S3 interface, Backblaze, R2, MinIO). `syncSeconds`: how often Litestream sends
+   * a changing database to the bucket (its `sync-interval`). Left out: Litestream's own default, about every second. Longer means fewer bucket operations and, if the
+   * server's disk is lost, up to that many seconds of the newest changes lost (a crash of a container or of the server loses nothing: the database is on its disk).
+   */
+  stream: { url: string; endpoint?: string; region?: string; syncSeconds?: number };
   /** Where the nightly snapshots go: a different place from the stream. An s3:// URL (with `endpoint`) or a folder on this machine. */
   snapshots: { url: string; endpoint?: string; region?: string; keepDays?: number };
   /** The age public key (`age1...`) snapshots are encrypted to. The matching secret key is kept somewhere else (it is only needed to restore). */
@@ -184,6 +188,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     const b = config.backup as Partial<BackupConfig>;
     if (!isObj(b.stream) || typeof b.stream.url !== "string" || !isObj(b.snapshots) || typeof b.snapshots.url !== "string" || typeof b.ageRecipient !== "string" || !/^age1[02-9ac-hj-np-z]{58}$/u.test(b.ageRecipient)) errors.push('"backup" must say {"stream": {"url": "s3://..."}, "snapshots": {"url": "s3://..." or a folder}, "ageRecipient": "age1..."}.');
     else if (b.stream.url === b.snapshots.url) errors.push('"backup.snapshots" must be a different place from "backup.stream": a copy in the same place is one copy.');
+    else if (b.stream.syncSeconds !== undefined && !(Number.isInteger(b.stream.syncSeconds) && b.stream.syncSeconds >= 1 && b.stream.syncSeconds <= 3600)) errors.push('"backup.stream.syncSeconds" must be a whole number of seconds from 1 to 3600: how often Litestream sends a changing database to the bucket.');
   }
   return { config, errors };
 }
