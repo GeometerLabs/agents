@@ -26,8 +26,7 @@ import { paymentModuleOf } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
-import { feesBusinessBody, feesRulesBody } from "./views-fees.ts";
-import type { activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
+import { setupOf } from "./setups.ts";
 
 const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
 
@@ -184,6 +183,12 @@ ${o.shops.map((s) => html`<h2><a href="/shops/${s.id}">${s.name}</a></h2>${inbox
 <p class="note">${w.help}</p>`);
 }
 
+/** The shop page's pieces for a template with its own forms (Fees, Orders): plain text lines, already in the reader's language, so the page does not know which template made them. */
+export interface TemplateSummary { heading: string; rulesHeading: string; lines: string[]; languages: string; owner: string }
+export interface TemplateActivity { lines: string[]; owner: { asked: number; approved: number; denied: number } }
+export interface TemplateMessages { heading: string; lines: string[]; note: string }
+export interface TemplatePieces { summary: TemplateSummary; activity?: TemplateActivity; states: Record<string, string>; messages: TemplateMessages }
+
 export interface ShopView {
   id: string;
   name: string;
@@ -191,10 +196,10 @@ export interface ShopView {
   status: ShopStatus | undefined;
   stopRequestedAt?: string;
   summary: { services: string[]; hours: string[]; deposit: string; cancel: string; languages: string; owner: string } | undefined;
-  /** Bookings' running-cost model. A Fees centre has none (it has `fees`): the model is of bookings, and a wrong cost line is worse than none. */
+  /** Bookings' running-cost model. A Fees or Orders shop has none (it has `own`): the model is of bookings, and a wrong cost line is worse than none. */
   cost?: MonthlyCost;
-  /** What a Fees centre's page shows in place of Bookings' summary, activity and cost. */
-  fees?: { summary: ReturnType<typeof summaryFees>; activity?: ReturnType<typeof activityFees>; messages: ReturnType<typeof messageCeiling> };
+  /** What a Fees or Orders shop's page shows in place of Bookings' summary, activity and cost (setups.ts builds it). */
+  own?: TemplatePieces;
   /** Fleet's last word on the shop's plan (plan.ts). Left out when fleet has said nothing. */
   plan?: PlanView;
   /** The shop's licence (B13): shown only when the lease lists the shop. */
@@ -260,35 +265,31 @@ ${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.plan ? ` (${c.w.plan.na
 <ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${k === "no-gateway-fee" ? c.w.upi.noGatewayFee : w.caveats[k as keyof typeof w.caveats]}</li>`)}</ul>`;
 }
 
-/** The Fees centre's settings in plain words: its batches with their fees, the rules (the certificate's own lines), the languages and the owner. */
-function feesSummaryBlock(c: Ctx, v: ShopView): Raw {
+/** The settings of a Fees or Orders shop in plain words: the template's own lines (its batches, or its menu and slots), the languages and the owner, then the heading for the rules (the certificate's own lines). */
+function ownSummaryBlock(c: Ctx, v: ShopView): Raw {
   const w = c.w.shop;
-  const f = v.fees!;
+  const f = v.own!.summary;
   return html`<ul class="plain">
-  <li class="info"><span class="mark">·</span><span><b>${w.summaryFees}</b><br>${f.summary.batches.map((b) => html`${b}<br>`)}</span></li>
-  <li class="info"><span class="mark">·</span><span>${w.summaryLanguages}: ${f.summary.languages}<br>${w.summaryOwner}: ${f.summary.owner}</span></li>
+  <li class="info"><span class="mark">·</span><span><b>${f.heading}</b><br>${f.lines.map((b) => html`${b}<br>`)}</span></li>
+  <li class="info"><span class="mark">·</span><span>${w.summaryLanguages}: ${f.languages}<br>${w.summaryOwner}: ${f.owner}</span></li>
 </ul>
-<h3>${w.summaryRules}</h3>`;
+<h3>${f.rulesHeading}</h3>`;
 }
 
-function feesActivityBlock(c: Ctx, v: ShopView): Raw {
+function ownActivityBlock(c: Ctx, v: ShopView): Raw {
   const w = c.w.shop;
-  const a = c.w.feesShop.activity;
-  const x = v.fees!.activity;
+  const x = v.own!.activity;
   if (!x) return html`<p class="note">${w.noRecord}</p>`;
   return html`<ul class="plain">
-  <li><span class="mark">·</span><span>${a.opened}: ${x.opened} · ${a.paidInFull}: ${x.paidInFull} · ${a.partlyPaid}: ${x.partlyPaid} · ${a.stillOpen}: ${x.stillOpen}</span></li>
-  <li><span class="mark">·</span><span>${a.collected}: ${formatRupees(x.collected)} · ${a.stillToCollect}: ${formatRupees(x.stillToCollect)}</span></li>
-  <li><span class="mark">·</span><span>${a.reminders}: ${x.reminders} · ${w.saidNo}: ${x.saidNo}</span></li>
+  ${x.lines.map((t) => html`<li><span class="mark">·</span><span>${t}</span></li>`)}
   <li><span class="mark">·</span><span><b>${w.approvals}</b><br>${w.approvalsLine(x.owner.asked, x.owner.approved, x.owner.denied)}</span></li>
 </ul>`;
 }
 
-function feesMessagesBlock(c: Ctx, m: ReturnType<typeof messageCeiling>): Raw {
-  const w = c.w.feesShop.messages;
-  return html`<h2>${w.heading}</h2>
-<ul class="plain"><li class="info"><span class="mark">·</span><span>${w.ceiling(m.students, m.mostReminders, m.ceiling)}</span></li>${m.included !== null ? html`<li class="info"><span class="mark">·</span><span>${w.included(m.included)}</span></li>` : ""}</ul>
-<p class="note">${w.note}</p>`;
+function messagesBlock(m: TemplateMessages): Raw {
+  return html`<h2>${m.heading}</h2>
+<ul class="plain">${m.lines.map((t) => html`<li class="info"><span class="mark">·</span><span>${t}</span></li>`)}</ul>
+<p class="note">${m.note}</p>`;
 }
 
 export function shopPage(c: Ctx, v: ShopView): string {
@@ -309,14 +310,14 @@ ${whyList.length > 0 ? html`<ul>${whyList}</ul>` : ""}
 </ul>
 
 <h2>${w.activity}</h2>
-${v.fees ? feesActivityBlock(c, v) : ""}
+${v.own ? ownActivityBlock(c, v) : ""}
 ${v.activity ? html`<ul class="plain">
   <li><span class="mark">·</span><span>${w.made}: ${v.activity.made} · ${w.cancelled}: ${v.activity.cancelled} · ${w.moved}: ${v.activity.moved}</span></li>
   <li><span class="mark">·</span><span>${w.deposits}: ${v.activity.deposits} · ${w.refunds}: ${v.activity.refunds} · ${w.saidNo}: ${v.activity.saidNo}</span></li>
   <li><span class="mark">·</span><span><b>${w.approvals}</b><br>${w.approvalsLine(v.activity.owner.asked, v.activity.owner.approved, v.activity.owner.denied)}</span></li>
-</ul>` : v.fees?.activity ? "" : html`<p class="note">${w.noRecord}</p>`}
+</ul>` : v.own?.activity ? "" : html`<p class="note">${w.noRecord}</p>`}
 ${v.liveCounts ? html`<ul class="plain">
-  ${Object.entries(v.liveCounts.bookings).map(([state, n]) => html`<li class="info"><span class="mark">${n}</span><span>${(v.fees ? w.feeStates : w.bookingStates)[state] ?? state}</span></li>`)}
+  ${Object.entries(v.liveCounts.bookings).map(([state, n]) => html`<li class="info"><span class="mark">${n}</span><span>${(v.own ? v.own.states : w.bookingStates)[state] ?? state}</span></li>`)}
   ${v.liveCounts.waitingForOwner > 0 ? html`<li class="warn"><span class="mark">!</span><span>${w.waiting(v.liveCounts.waitingForOwner)}</span></li>` : ""}
   ${v.liveCounts.needBuilder > 0 ? html`<li class="warn"><span class="mark">!</span><span>${w.needBuilder(v.liveCounts.needBuilder)}</span></li>` : ""}
 </ul>` : ""}
@@ -325,7 +326,7 @@ ${v.liveCounts ? html`<ul class="plain">
 ${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
 
 <h2>${w.settings}</h2>
-${v.fees ? feesSummaryBlock(c, v) : ""}
+${v.own ? ownSummaryBlock(c, v) : ""}
 ${v.summary ? html`<ul class="plain">
   <li class="info"><span class="mark">·</span><span><b>${w.summaryServices}</b><br>${v.summary.services.map((s) => html`${s}<br>`)}</span></li>
   <li class="info"><span class="mark">·</span><span><b>${w.summaryHours}</b><br>${v.summary.hours.map((s) => html`${s}<br>`)}</span></li>
@@ -338,7 +339,7 @@ ${v.summary ? html`<ul class="plain">
 ${v.plan ? planBlock(c, v.plan) : ""}
 ${v.licence ? licenceBlock(c, v.licence) : ""}
 
-${v.cost ? costTable(c, v.cost) : v.fees ? feesMessagesBlock(c, v.fees.messages) : ""}
+${v.cost ? costTable(c, v.cost) : v.own ? messagesBlock(v.own.messages) : ""}
 
 <h2>${w.papers}</h2>
 <ul class="linklist">
@@ -416,7 +417,7 @@ export function setupStartPage(c: Ctx, templates: Template[]): string {
   const w = c.w.setup;
   return layout(c, w.title, html`<h1>${w.title}</h1>
 <p class="big">${w.chooseTemplate}</p>
-<div class="cards">${templates.map((t) => t.setup === "bookings" || t.setup === "fees" ? html`<form method="post" action="/setup">${csrf(c)}<input type="hidden" name="template" value="${t.id}">
+<div class="cards">${templates.map((t) => t.setup === "bookings" || setupOf(t.setup) ? html`<form method="post" action="/setup">${csrf(c)}<input type="hidden" name="template" value="${t.id}">
   <button class="btn primary" type="submit" style="width:100%">${w.templateNames[t.id] ?? t.id} · ${w.start}</button></form>` : html`<div class="shopcard"><div class="name">${w.templateNames[t.id] ?? t.id}</div><div class="meta">${w.templateElsewhere}</div></div>`)}</div>`);
 }
 
@@ -436,8 +437,8 @@ export interface StepView {
   now: number;
   problems: string[];
   limits: { price: string; hours: string; deposit: string; refund: string; booked: string; language: string; charge: string };
-  /** A Fees centre's limits in plain words (the certificate's lines), shown under the rules step. Empty until the form builds. */
-  feesLines?: string[];
+  /** A Fees or Orders shop's limits in plain words (the certificate's lines), shown under the rules step. Empty until the form builds. */
+  ownLines?: string[];
   receipts: Partial<Record<string, string>>;
   shareAddress: string | undefined;
   webhookUrl: string | undefined;
@@ -446,15 +447,15 @@ export interface StepView {
 export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" | "languages" | "accounts"): string {
   const w = c.w.setup;
   const d = v.draft;
-  const isFees = v.template.setup === "fees";
-  const title = isFees && (step === "business" || step === "deposit") ? w.fees.steps[step === "business" ? "business" : "rules"] : w.steps[step];
+  const own = setupOf(v.template.setup);
+  const title = own && (step === "business" || step === "deposit") ? own.titles(c.w)[step === "business" ? "business" : "rules"] : w.steps[step];
   const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${title}</h1>${errorsBox(c, v.problems)}`;
   const back = v.now > 0 ? html`<a class="btn" href="/setup/${d.id}/${v.now}">${c.w.common.back}</a> ` : "";
   const next = html`<button class="btn primary" type="submit">${c.w.common.next}</button>`;
   const shared = { csrf: csrf(c), text };
   let body: Raw;
-  if (isFees && step === "business") body = feesBusinessBody(c, d, `/setup/${d.id}/${v.now + 1}`, back, next, shared);
-  else if (isFees && step === "deposit") body = feesRulesBody(c, d, `/setup/${d.id}/${v.now + 1}`, back, next, v.feesLines ?? [], shared);
+  if (own && step === "business") body = own.businessBody(c, d, `/setup/${d.id}/${v.now + 1}`, back, next, shared);
+  else if (own && step === "deposit") body = own.rulesBody(c, d, `/setup/${d.id}/${v.now + 1}`, back, next, v.ownLines ?? [], shared);
   else if (step === "business") {
     const b = w.business;
     body = html`<form method="post" action="/setup/${d.id}/${v.now + 1}">${csrf(c)}
@@ -529,8 +530,8 @@ export interface ChecksView {
   unmet: Unmet[];
   ready: boolean;
   cost?: MonthlyCost;
-  /** A Fees centre: its limits in plain words and the messages its rules allow, in place of Bookings' limits, cost table and bookings estimate. */
-  fees?: { lines: string[]; messages: ReturnType<typeof messageCeiling> };
+  /** A Fees or Orders shop: its limits in plain words and the messages its rules allow, in place of Bookings' limits, cost table and bookings estimate. */
+  own?: { lines: string[]; messages: TemplateMessages };
   certificate: string | undefined;
   shopId: string | undefined;
 }
@@ -582,7 +583,7 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
 <p class="note">${k.readOnly}</p>
 <form method="post" action="/setup/${d.id}/check">${csrf(c)}<button class="btn primary" type="submit">${k.runButton}</button></form>
 ${v.cost ? html`${costTable(c, v.cost)}
-<form method="post" action="/setup/${d.id}/expected" style="margin-top:12px">${csrf(c)}${text(k.bookingsExpected, "expectedBookings", d.expectedBookings, { mode: "numeric", max: 6 })}<button class="btn" type="submit">${c.w.common.save}</button></form>` : v.fees ? feesMessagesBlock(c, v.fees.messages) : ""}
+<form method="post" action="/setup/${d.id}/expected" style="margin-top:12px">${csrf(c)}${text(k.bookingsExpected, "expectedBookings", d.expectedBookings, { mode: "numeric", max: 6 })}<button class="btn" type="submit">${c.w.common.save}</button></form>` : v.own ? messagesBlock(v.own.messages) : ""}
 <h2>${w.depositStep.whatThisMeans}</h2>
 <ul class="plain">${limitLines(c, d, v).map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>
 ${v.ready
@@ -592,8 +593,8 @@ ${v.shopId ? html`<p><a href="/shops/${v.shopId}">${c.w.nav.shops}</a></p>` : ""
 <p>${back}</p>`);
 }
 
-/** The limits to show on the checks page: Bookings' seven sentences, or a Fees centre's lines (the certificate's own words). */
-const limitLines = (c: Ctx, d: Draft, v: ChecksView): string[] => (v.fees ? v.fees.lines : Object.values(limitList(c, d)));
+/** The limits to show on the checks page: Bookings' seven sentences, or a Fees or Orders shop's lines (the certificate's own words). */
+const limitLines = (c: Ctx, d: Draft, v: ChecksView): string[] => (v.own ? v.own.lines : Object.values(limitList(c, d)));
 
 /** The seven limits as one benefit sentence each, with this shop's own numbers. */
 export function limitList(c: Ctx, d: Draft, hold = 15): { price: string; hours: string; deposit: string; refund: string; booked: string; language: string; charge: string } {
