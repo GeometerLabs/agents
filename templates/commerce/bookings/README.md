@@ -285,6 +285,7 @@ One JSON file per business. [`settings/glow-salon.example.json`](settings/glow-s
 | `cancellation` | `windowHours`: cancel at least this long before the start and the deposit is refunded. `refundLimitInr`: the agent refunds up to and including this amount alone; above it the owner must approve |
 | `languages` | Any of `"hi"`, `"en"`, `"ml"`, `"kn"`; `["hi", "en"]` by default; the first is the default. Every service needs a name in each language listed |
 | `owner` | `whatsapp` number, and `language` for the owner's messages (default `en`; any of the four) |
+| `approvers` | Optional: others who approve a refund Guard holds, each from their own phone. `people`: 1 to 6 of `{"id", "whatsapp", "language"}`; `twoAboveInr`: above it two different people must approve, and one no refuses. When the owner's own command asks for a refund, someone else approves it. Left out: the owner alone |
 | `reminders` | `hoursBefore`, default `[24, 2]` |
 
 ## The rules, in plain words
