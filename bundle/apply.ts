@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { runBackup, runDrill, runExports } from "./backup/jobs.ts";
+import { runFingerprints } from "./backup/fingerprints.ts";
 import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import { recordAgents } from "./agent/records.ts";
@@ -205,6 +206,11 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   if (since(jobs.exportsAt) >= 15 * 60_000) {
     jobs.exportsAt = now.toISOString();
     const e = await runExports(ctx); e.lines.filter((l) => /not exported|failed/u.test(l)).forEach((l) => ctx.log(l)); ran.push("exports");
+  }
+  // the daily fingerprint of each shop's record (B28): the ledger's head, never its data, appended to a local file; a git repository and a timestamp calendar only with the owner's yes
+  if (since(jobs.fingerprintsAt) >= 24 * HOUR && jobs.exportsAt) {
+    jobs.fingerprintsAt = now.toISOString(); saveState(ctx.dir, state);
+    const f = await runFingerprints(ctx); f.lines.filter((l) => /REFUSED|not pushed|could not/u.test(l)).forEach((l) => ctx.log(l)); ran.push(f.ok ? "fingerprints" : "fingerprints REFUSED");
   }
   if (server.backup && since(jobs.snapshotAt) >= 24 * HOUR && now.getHours() >= 2) {
     jobs.snapshotAt = now.toISOString(); saveState(ctx.dir, state);

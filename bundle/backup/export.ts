@@ -5,6 +5,10 @@
 // the name in a record note that names the student ("the fee for Rohan Mehta, ..."). That changes the note, so the digest of an exported Fees record is of the exported
 // notes, not of the shop's own; nothing compares the two.
 //
+// The record's ledger (B28, modules/record/ledger.ts) is written beside them as ledger.json: the chain made from the shop's OWN entries, before anything is hidden. Its
+// bodies leave out the number, the note and a page's secret address, so it carries no customer's number either, and its head is the same as the head of the exported
+// record (which is what lets the panel anchor a paper made from the export). The daily fingerprint (backup/fingerprints.ts) and the restore drill read it.
+//
 //   node bundle/backup/export.ts /job/job.json
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
@@ -14,10 +18,12 @@ import { mkdirSync } from "node:fs";
 import { summarizeUsage, usageRatesFrom } from "../lib/usage.ts";
 import type { RateSource, UsageRates, UsageTotals } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
+import { ledgerEntries } from "../../modules/record/ledger.ts";
+import type { RecordEntry } from "../../modules/record/record.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string }[] }
 /** `usage`: the cost meter's cumulative counts over the whole record (lib/usage.ts), which the deployer writes into status/<shop>.json. Counts only. */
-export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; error?: string }
+export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; error?: string; /** The ledger's head, or why there is none (a record with a gap is not chained). */ ledger?: { seq: number; head: string } | { error: string } }
 
 export const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
 
@@ -51,12 +57,20 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
     : (saved.bookings ?? []).map(([, b]) => ({ ...b, customer: hide("p", b.customer) }));
   mkdirSync(shop.out, { recursive: true });
-  for (const [file, value] of [["record.json", entries], [isFees ? "dues.json" : "bookings.json", cases]] as const) {
+  let ledger: unknown[] | undefined;
+  let ledgerSaid: Exported["ledger"];
+  try {
+    const chain = ledgerEntries(raw as unknown as RecordEntry[], shop.name);
+    ledger = chain;
+    const last = chain.at(-1);
+    if (last) ledgerSaid = { seq: Number(last.seq), head: last.hash };
+  } catch (e) { ledgerSaid = { error: (e as Error).message }; }
+  for (const [file, value] of [["record.json", entries], [isFees ? "dues.json" : "bookings.json", cases], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
   }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isFees ? { dues: cases.length } : { bookings: cases.length }), usage };
+  return { name: shop.name, ok: true, entries: entries.length, ...(isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
 }
 
 if (import.meta.main) {

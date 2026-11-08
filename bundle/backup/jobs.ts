@@ -7,7 +7,8 @@
 //   runtime database      nightly, age-encrypted, kept 30 days, elsewhere     backup/snapshot.ts (VACUUM INTO: never touches the live file's checkpoints)
 //   each Guard's store    nightly with the above, Guard's own POST /admin/backup (a consistent copy of its store and its evidence ledger, checked by
 //                         geo-verify), not Litestream: Litestream has to own the checkpointing of what it streams
-//   the weekly drill      restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live one
+//   the weekly drill      restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live one, and (B28) compares
+//                         the restored record's chain with the last daily fingerprint published for the shop (backup/fingerprints.ts)
 import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { adminCall, compose } from "../deploy.ts";
@@ -21,6 +22,7 @@ import { updateStatus } from "../lib/status.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 import { ensureDir } from "../lib/util.ts";
 import type { DrillResult } from "./drill-check.ts";
+import { lastFingerprint } from "./fingerprints.ts";
 import type { ShopSnapshot } from "./snapshot.ts";
 
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
@@ -91,6 +93,11 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   return { ok: out.results.every((x) => x.ok || x.error === "no database yet"), lines: out.results.map((x) => (x.ok ? `${x.name}: exported ${x.entries} record entries and ${x.dues !== undefined ? `${x.dues} fees` : `${x.bookings} bookings`}` : `${x.name}: not exported (${x.error})`)) };
 }
 
+/** The last fingerprint published for a shop, for the drill to compare with; a fingerprint file that was changed by hand is a drill failure of its own, said in the detail. */
+function publishedOf(dir: string, shop: string): { published?: { seq: number; head: string; day: string } } {
+  try { const p = lastFingerprint(dir, shop); return p ? { published: p } : {}; } catch { return { published: { seq: Number.MAX_SAFE_INTEGER, head: "the fingerprint file was changed by hand", day: "(unreadable)" } }; }
+}
+
 /** The weekly drill: restore the continuous copy into a scratch folder and compare it with the live record. A failure is written where the panel and `status` show it. */
 export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
   const server = loadServer(ctx.dir);
@@ -110,7 +117,7 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
     const toCheck = shops.filter((s) => !verdicts.some((v) => v.name === s));
     if (toCheck.length > 0) {
       const jobFile = join(work, "job.json");
-      writeFileSync(jobFile, JSON.stringify({ maxLagEntries: 100, shops: toCheck.map((s) => ({ name: s, restored: `/scratch/${s}/agent.db`, live: `/v/${names.dataVolume(s)}/data/agent.db` })) }), { mode: 0o644 });
+      writeFileSync(jobFile, JSON.stringify({ maxLagEntries: 100, shops: toCheck.map((s) => ({ name: s, restored: `/scratch/${s}/agent.db`, live: `/v/${names.dataVolume(s)}/data/agent.db`, ...publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
       // the scratch folder is mounted writable: a restored database in WAL mode needs its -shm beside it to be opened, even to be read
       const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${work}:/scratch`, ...toCheck.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
       const j = lastJson(r.stdout) as { results?: DrillResult[] } | undefined;
