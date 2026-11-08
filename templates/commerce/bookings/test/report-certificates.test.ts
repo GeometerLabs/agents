@@ -139,7 +139,7 @@ test("every language renders both certificates, as a page and as a short text, w
       const texts = [goLiveText(goLive, l), monthlyCertificateText(monthly, l)];
       const pages = [words(goLivePage(goLive, l)), words(monthlyCertificatePage(monthly, l))];
       for (const [i, env] of [goLive, monthly].entries()) {
-        assert.ok(texts[i].includes(env.code) && texts[i].includes(`/verify/${env.code}`), `${l}: the code and the path in the text`);
+        assert.ok(texts[i].includes(env.code) && texts[i].includes(`/verify/#${env.code}`), `${l}: the code and the path in the text`);
         assert.ok(pages[i].includes(env.digest) && pages[i].includes(env.code), `${l}: the full digest and the code on the page`);
         for (const n of NOT_TESTED) assert.ok(texts[i].includes(s.notTested[n.id]) && pages[i].includes(s.notTested[n.id]), `${l}: not tested "${n.id}"`);
         assert.ok(texts[i].includes(s.page.agentVersion) && pages[i].includes("0.1.0"), `${l}: the pathway version`);
