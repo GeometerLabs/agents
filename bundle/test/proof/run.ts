@@ -343,14 +343,14 @@ async function refusalDemo() {
   check("compile refuses a rule that fails its own tripwire", !compiled.ok, compiled.ok ? "" : compiled.problems[0]?.message);
   // 2. the whole deploy, with a tool name in guard.toml that differs from the spec's (the Nov 3 failure: a Guard that looks healthy and protects nothing)
   await addShop(1);
-  const broken: GuardTool = { compile: (s) => real.compile(s), verify: (bundle, toml) => real.verify(bundle, toml.replace(/^tool = "razorpay"$/mu, 'tool = "whatsapp"')) };
+  const broken: GuardTool = { readsLicence: () => real.readsLicence!(), compile: (s) => real.compile(s), verify: (bundle, toml) => real.verify(bundle, toml.replace(/^tool = "razorpay"$/mu, 'tool = "whatsapp"')) };
   let shown = "";
   try { await deploy(ctxFor(broken)); } catch (e) { if (e instanceof Refused) shown = e.problems.map((p) => `  - [${p.rule}] ${p.message}`).join("\n"); else throw e; }
   say(`deploy with a mismatched tool name refused:\n${shown}`);
   results.refusalDeploy = shown;
   check("deploy refuses a Guard whose guard.toml names another tool, and starts nothing", shown !== "" && dk(["ps", "-q", "--filter", `name=${PROJECT}`]).out.trim() === "" && !existsSync(composeFile), shown.slice(0, 300));
   // 3. the whole deploy, with a rule that would let a forbidden call through (the Calendar-style exact pin swapped for every suffix a tripwire could use)
-  const weak: GuardTool = { compile: (specText) => { const spec = JSON.parse(specText); if (spec.tool === "whatsapp") spec.rules = [{ id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", allowed_suffixes: [..."xqzkjvw0123456789-_.abcdefghilmnoprstuy"] }]; return real.compile(JSON.stringify(spec)); }, verify: (b, t) => real.verify(b, t) };
+  const weak: GuardTool = { readsLicence: () => real.readsLicence!(), compile: (specText) => { const spec = JSON.parse(specText); if (spec.tool === "whatsapp") spec.rules = [{ id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", allowed_suffixes: [..."xqzkjvw0123456789-_.abcdefghilmnoprstuy"] }]; return real.compile(JSON.stringify(spec)); }, verify: (b, t) => real.verify(b, t) };
   let weakShown = "";
   try { await deploy(ctxFor(weak)); } catch (e) { if (e instanceof Refused) weakShown = e.problems.map((p) => `  - [${p.rule}] ${p.message}`).join("\n"); else throw e; }
   say(`deploy with a rule that fails its tripwire refused:\n${weakShown}`);
@@ -794,7 +794,7 @@ async function panelContainer() {
   const viaCaddy = sh("curl", ["-sk", "-o", "/dev/null", "-w", "%{http_code}", "https://localhost:18443/healthz"]).out;
   check("Caddy reaches it: https://localhost:18443/healthz answers 200", viaCaddy === "200", viaCaddy);
   const invite = exec("panel", ["node", "/app/bundle/panel/main.ts", "invite", "--role", "builder"]);
-  check("`invite --role builder` inside the container prints a sign-in link", /https:\/\/localhost:18443\/\S+/u.test(invite.out), (invite.out || invite.err).trim().slice(0, 160).replace(/token=[^&\s]+/u, "token=..."));
+  check("`invite --role builder` inside the container prints a sign-in link", /https:\/\/localhost:18443\/\S+/u.test(invite.out), (invite.out || invite.err).trim().slice(0, 160).replace(/\/join\/\S+/u, "/join/..."));
   const connection = exec("panel", ["node", "/app/bundle/services/connection-check.ts", "glow-salon"], { timeout: 120_000 });
   const parsed = (() => { try { return JSON.parse(connection.out.trim().split("\n").at(-1) ?? "{}"); } catch { return { raw: (connection.out || connection.err).slice(0, 300) }; } })();
   results.panelConnectionCheck = parsed;
@@ -828,9 +828,10 @@ async function hostileRuntime() {
   check("hostile runtime: no Docker socket in the container", sock === "ABSENT", sock);
   // Guard as an open proxy: a request in absolute form for MinIO, and a call with MinIO's name in Host. Guard sends only to its one upstream, and only routes it lists.
   const agent = readSecret(rt, "agent_razorpay");
-  const raw = (request: string) => nodeEval(rt, `const s=require('net').connect(8080,'g-glow-salon-razorpay',()=>s.end(${JSON.stringify(request)}));let d='';s.on('data',c=>d+=c);s.on('end',()=>console.log(d.split('\\r\\n')[0]+' | '+d.slice(d.indexOf('\\r\\n\\r\\n')+4,d.indexOf('\\r\\n\\r\\n')+200).replace(/\\s+/g,' ')));s.on('error',e=>console.log('ERR '+e.code))`).out.trim();
+  // the request is written and the socket left open (a half-close before the answer can end the exchange); the answer is read until Guard closes it
+  const raw = (request: string) => nodeEval(rt, `const s=require('net').connect(8080,'g-glow-salon-razorpay',()=>s.write(${JSON.stringify(request)}));let d='';s.setTimeout(8000,()=>s.destroy());s.on('data',c=>{d+=c;if(/\\r\\n\\r\\n/.test(d)&&d.length>400)s.destroy()});s.on('close',()=>{const i=d.indexOf('\\r\\n\\r\\n');console.log((d.split('\\r\\n')[0]||'NO-ANSWER')+' | '+(i<0?'':d.slice(i+4,i+200)).replace(/\\s+/g,' '))});s.on('error',e=>console.log('ERR '+e.code))`).out.trim().split("\n").at(-1) ?? "";
   const absolute = raw(`GET http://minio:9000/geo-stream/ HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
-  check("hostile runtime: Guard does not fetch an absolute-form address for it (MinIO): refused, not passed on", !/^HTTP\/1\.1 2\d\d/u.test(absolute) && !/ListBucketResult|minio/iu.test(absolute.split("|")[1] ?? ""), absolute.slice(0, 200));
+  check("hostile runtime: Guard does not fetch an absolute-form address for it (MinIO): it answers itself, and not with MinIO's answer", /^HTTP\/1\.1 [3-5]\d\d/u.test(absolute) && !/<\?xml|ListBucket|AccessDenied|MinIO/iu.test(absolute), absolute.slice(0, 200));
   const hostTrick = raw(`GET /v1/payment_links?reference_id=x HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
   check("hostile runtime: a foreign Host header never reaches MinIO: the answer is Guard's own or its one upstream's (the Razorpay stand-in), never MinIO's", /^HTTP\/1\.1 \d{3}/u.test(hostTrick) && !/<\?xml|ListBucket|AccessDenied|MinIO/iu.test(hostTrick), hostTrick.slice(0, 200));
   // the control: Guard's own namespace (its forwarder's) does reach the provider. Only Guard can get out.
@@ -884,7 +885,12 @@ async function killEachGuardUnderLoad() {
     out[kind] = { sent: load.sent.length, delivered: load.sent.filter((s) => s.ok).length, answered: answers.answered, downSeconds: Math.round((downTo - downFrom) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, entriesWhileDown: window.length, outcomesWhileDown: outcomes, twice };
     say(`   ${kind}: ${JSON.stringify(out[kind])}`);
     check(`${kind} Guard killed under load: nothing reached the ${kind} stand-in while it was down (${atKill} -> ${beforeRestart} over ${Math.round((downTo - downFrom) / 1000)} s)`, atKill >= 0 && atKill === beforeRestart, { atKill, beforeRestart });
-    check(`${kind} Guard killed: the runtime recorded its ${kind} steps while it was down as not done (never "confirmed")`, window.length > 0 && !outcomes.confirmed, outcomes);
+    // a step whose first call cannot reach the Guard (the calendar is asked first, about the slot) ends before it records anything, and the task runner tries
+    // the whole step again after its wait; a step that gets further records the call it could not make as failed. Either way nothing is recorded as done.
+    const tasks = (() => { try { return (JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "observe"]).out.trim().split("\n").at(-1) ?? "{}") as { shops: { id: string; status?: { tasks?: unknown } }[] }).shops.find((x) => x.id === shop)?.status?.tasks; } catch { return undefined; } })();
+    (out[kind] as Record<string, unknown>).tasksAfter = tasks;
+    check(`${kind} Guard killed: the runtime recorded nothing it does through that Guard as done while it was down (${window.length} entries: ${JSON.stringify(outcomes)}), and every message was answered once the Guard was back (${answers.answered} of ${load.sent.filter((s) => s.ok).length})`,
+      !outcomes.confirmed && (kind === "whatsapp" || answers.answered === load.sent.filter((s) => s.ok).length), { outcomes, tasks });
     check(`${kind} Guard restarted: it is ready again, and nothing was sent twice (no second link or event for a booking, no message twice)`, back && twice.links.length === 0 && twice.events.length === 0 && twice.messages.length === 0, twice);
   }
   results.killEachGuard = out; save();
@@ -899,7 +905,8 @@ async function heldRefundThroughRuntime() {
   const c = nextCustomer(1);
   const wrote = await customerWrites(shop, c.from, c.text);
   let link: { id: string; short_url: string } | undefined;
-  await waitFor("the deposit link", async () => { const s = await st(); const msg = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).map((m) => m.text).join(" "); link = ((s.links ?? []) as { id: string; short_url: string }[]).find((l) => msg.includes(l.short_url)); return !!link; }, 60);
+  // the link's address exactly as the message gives it (plink3 is the start of plink381, so a "contains" would find the wrong one)
+  await waitFor("the deposit link", async () => { const s = await st(); const urls = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).flatMap((m) => m.text.match(/https:\/\/rzp\.io\/l\/[A-Za-z0-9_]+/gu) ?? []); link = ((s.links ?? []) as { id: string; short_url: string }[]).find((l) => urls.includes(l.short_url)); return !!link; }, 60);
   if (!link) { check("a booking through the runtime gets its deposit link (the start of the held-refund check)", false, { wrote }); return; }
   const refundsBefore = ((await st()).refunds ?? []).length;
   await control(shop, "/_standin/razorpay/pay", { link_id: link.id });
