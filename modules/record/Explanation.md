@@ -42,4 +42,4 @@ What a published line shows anyone who kept it: that on that day the shop's reco
 
 ## Size
 
-`ledger.ts` 180 lines, `publish.ts` 150; tests 260. No dependencies; `node:crypto` only.
+`ledger.ts` 197 lines, `publish.ts` 145; their tests 300. No dependencies; `node:crypto` only.
