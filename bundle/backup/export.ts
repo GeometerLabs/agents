@@ -16,14 +16,22 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { summarizeUsage, usageRatesFrom } from "../lib/usage.ts";
+import { DEFAULT_OPTIONS, countsByKind, obligations } from "../../modules/unfinished/index.ts";
+import type { CaseLike } from "../../modules/unfinished/index.ts";
+import type { RecordEntry } from "../../modules/record/record.ts";
 import type { RateSource, UsageRates, UsageTotals } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 import { ledgerEntries } from "../../modules/record/ledger.ts";
-import type { RecordEntry } from "../../modules/record/record.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string }[] }
-/** `usage`: the cost meter's cumulative counts over the whole record (lib/usage.ts), which the deployer writes into status/<shop>.json. Counts only. */
-export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; error?: string; /** The ledger's head, or why there is none (a record with a gap is not chained). */ ledger?: { seq: number; head: string } | { error: string } }
+/**
+ * `usage`: the cost meter's cumulative counts over the whole record (lib/usage.ts), which the deployer writes into status/<shop>.json. Counts only.
+ * `obligations`: the unfinished-work list's counts by kind right now (modules/unfinished `countsByKind`), worked out from the same exported record and cases the panel's
+ * to-do list reads, so the heartbeat's `open_obligations` and the panel never disagree. Kind ids and counts only. The owner-wait limit is the default (12 hours): the
+ * panel's own setting is the panel's, and this count is fleet's.
+ * `ledger`: the head of the record's ledger (B28), or why there is none (a record with a gap is not chained).
+ */
+export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; ledger?: { seq: number; head: string } | { error: string } }
 
 export const hide = (prefix: string, value: unknown): string => `${prefix}-${createHash("sha256").update(String(value)).digest("hex").slice(0, 12)}`;
 
@@ -70,7 +78,9 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
   }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
+  let open: Record<string, number> | undefined;
+  try { open = countsByKind(obligations.detect({ template: isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
+  return { name: shop.name, ok: true, entries: entries.length, ...(isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
 }
 
 if (import.meta.main) {

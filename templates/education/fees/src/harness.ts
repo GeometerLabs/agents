@@ -1,5 +1,6 @@
 // The dev harness: the Fees agent wired to the in-memory fakes, with a clock you can move and helpers that play the part of the parent, the payment provider's
 // webhooks and the owner. The crash-test situations, the hand check and the walkthrough build on this.
+import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
 import { readFileSync } from "node:fs";
 import { fakeClock } from "../../../../modules/core/clock.ts";
@@ -99,6 +100,8 @@ export interface WorldOptions {
   interactive?: boolean;
   /** A UPI centre: where the QR pictures go (modules/payments/upi/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
   qrImage?: (text: string) => Promise<string | null>;
+  /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
+  licence?: () => LicenceNow;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -114,7 +117,7 @@ export function createWorld(options: WorldOptions = {}): World {
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}) });
+  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
   let deliveredEvents = 0;
   const PARENT = ROHAN_PARENT;
 

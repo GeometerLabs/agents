@@ -13,6 +13,7 @@ import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import { RECOVERY_FILE, parseRecoveryRequest, parseStopRequest } from "./lib/requests.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
+import { syncLicence } from "./lib/licence.ts";
 import { updateStatus } from "./lib/status.ts";
 import { shopNameProblem, sha256Hex, stableJson } from "./lib/util.ts";
 
@@ -224,11 +225,23 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   return ran;
 }
 
+/**
+ * The licence lease (B13), on every loop: the lease ops kept from fleet's last answer is checked and kept if it is good and newer, each deployed shop's runtime is handed
+ * its entry, and the state the panel shows is written (lib/licence.ts). Cheap: one signature check per lease file, and files written only when they change.
+ */
+export function runLicence(ctx: Context): string[] {
+  const state = loadState(ctx.dir);
+  const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  const lines = syncLicence(ctx.dir, loadServer(ctx.dir), shops, ctx.now());
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
 export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   let lastRefresh = 0;
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyOnce(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

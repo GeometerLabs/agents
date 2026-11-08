@@ -19,6 +19,8 @@ import type { ActionRecord, RecordEntry } from "../record/record.ts";
 import { summaryOf } from "../understanding/ai-state.ts";
 import type { AiPolicy, AiState, AiSummary } from "../understanding/ai-state.ts";
 import type { IncomingEvent, RuntimeEvent } from "./events.ts";
+import type { LicenceNow } from "../licence/rules.ts";
+import type { NoticeContext } from "../licence/notice.ts";
 import type { DurableStore, TaskCounts, WindowStore } from "./store.ts";
 import { createRunner } from "./tasks.ts";
 
@@ -111,6 +113,12 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   ai?: AiPolicy;
   /** The monthly report job, made from the template's report. Left out: none is made and nothing is sent. */
   monthly?: MonthlyRunner<Store, Settings>;
+  /**
+   * The shop's licence right now (plan B13; modules/licence), read from client/licence.json with this runtime's clock. Left out: never restricted. In the final stop
+   * the monthly report is not sent (the shop sends nothing more), and `licenceNotice` tells the owner, once for each `paid_through`.
+   */
+  licence?: () => LicenceNow;
+  licenceNotice?: { run(ctx: NoticeContext<Store>): Promise<unknown> };
   retryDelaysMs?: number[];
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: RuntimeEvent, run: () => Promise<void>) => Promise<void>;
@@ -156,9 +164,14 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const run = () => agent.handle(event);
     await (options.aroundStep ? options.aroundStep(event, run) : run());
 
+    // The owner's licence notice rides on the clock's beat too, after the agent's own work, and saves around its send the same way (modules/licence/notice.ts).
+    if (event.kind === "tick" && options.licenceNotice) {
+      try { await options.licenceNotice.run({ settings: settings as unknown as NoticeContext<Store>["settings"], clock, messaging, record, store, log, save: () => save(store, record) }); }
+      catch (e) { log(`The owner's licence notice could not be sent: ${(e as Error).message}`); }
+    }
     // The monthly report rides on the clock's beat, after the agent's own work. It saves twice itself (before it sends, and after), through `save`. A report that cannot be
-    // made is said once and never holds up the beat: holds still expire and reminders still go.
-    if (event.kind === "tick" && monthly) {
+    // made is said once and never holds up the beat: holds still expire and reminders still go. In the licence's final stop the shop sends nothing more, so no report goes.
+    if (event.kind === "tick" && monthly && options.licence?.().state !== "stopped") {
       try { await monthly.run({ settings, clock, messaging, record, store, log, save: () => save(store, record) }); }
       catch (e) {
         // said once, and again each hour it goes on: the paths in the message (a new random folder each time) are left out of the comparison

@@ -10,6 +10,9 @@
 // Aligned with that branch's real names (5 Nov, when it merged): the pathway writes them in the record entry's `refs`, as strings, so FIELDS.container is "refs"
 // and the numbers are read from decimal strings. The names are listed in templates/commerce/bookings/Explanation.md, "Understanding record fields (for the cost meter)".
 
+import { LANGUAGES } from "../../modules/language/languages.ts";
+import type { Language } from "../../modules/language/languages.ts";
+
 export const STEPS = ["rules", "decision", "model"] as const;
 export type Step = (typeof STEPS)[number];
 
@@ -119,11 +122,37 @@ export interface UsageTotals {
     /** False when a rate the counts need is missing from the price lists: the estimate is then 0, never a guess. */
     estimated: boolean;
   };
+  /**
+   * Monthly reports the owner received (B54): the record's report message, `send_message` with `refs.report` (the month), that WhatsApp showed back (`confirmed`). The
+   * certificate document that may follow it (`refs.reportFile`) is not a report. For fleet's First report sent badge (heartbeat `since_last.reports_sent`). Optional
+   * because a status file written before this count has none: absent means "not counted", and then the heartbeat leaves the field out.
+   */
+  reportsSent?: number;
+  /**
+   * Messages sent to customers (never the owner's), read back from WhatsApp (`confirmed`), by the language they were written in (the record entry's `language`). A UPI
+   * QR picture is logged as its own `send_message` beside the words (`refs.image`) and is not counted, so one reply counts once. For fleet's Second language badge
+   * (heartbeat `usage.replies_by_language`). Optional, like `reportsSent`.
+   */
+  repliesByLanguage?: Record<Language, number>;
+}
+
+/** The monthly report message to the owner, read back from WhatsApp. */
+export const isReportSent = (entry: unknown): boolean => isObj(entry) && entry.action === "send_message" && entry.outcome === "confirmed" && isObj(entry.refs) && typeof entry.refs.report === "string";
+
+/** A message to a customer that WhatsApp showed back, in one of the four languages: its language, or undefined. */
+export function replyLanguageOf(entry: unknown): Language | undefined {
+  if (!isObj(entry) || (entry.action !== "send_message" && entry.action !== "voice_note_reply") || entry.outcome !== "confirmed") return undefined;
+  const refs = isObj(entry.refs) ? entry.refs : {};
+  if (refs.to !== "customer" || refs.image !== undefined) return undefined;
+  return (LANGUAGES as readonly unknown[]).includes(entry.language) ? (entry.language as Language) : undefined;
 }
 
 export function summarizeUsage(entries: readonly unknown[], rates: UsageRates): UsageTotals {
-  const t: UsageTotals = { messages: 0, byStep: { rules: 0, decision: 0, model: 0 }, modelMicroInr: 0, unpriced: 0, whatsapp: { service: 0, utility: 0, marketing: 0, estMicroInr: 0, estimated: true } };
+  const t: UsageTotals = { messages: 0, byStep: { rules: 0, decision: 0, model: 0 }, modelMicroInr: 0, unpriced: 0, whatsapp: { service: 0, utility: 0, marketing: 0, estMicroInr: 0, estimated: true }, reportsSent: 0, repliesByLanguage: { hi: 0, en: 0, ml: 0, kn: 0 } };
   for (const entry of entries) {
+    if (isReportSent(entry)) t.reportsSent = (t.reportsSent ?? 0) + 1;
+    const language = replyLanguageOf(entry);
+    if (language) t.repliesByLanguage![language]++;
     if (isCustomerMessage(entry)) {
       const u = understandingOf(entry);
       t.messages++;

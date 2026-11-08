@@ -4,7 +4,7 @@
 // It follows ISO/IEC 18004:2015 (the QR code standard): the bit stream (section 7.4), the Reed-Solomon codes over GF(256) with the polynomial
 // x^8 + x^4 + x^3 + x^2 + 1 (7.5), the split into blocks and their interleaving (7.6), the function patterns and the order the data goes in (7.7),
 // the eight masks and the four penalty rules (7.8), and the format and version information with their BCH codes (7.9, 7.10). The two tables below are
-// the standard's table 9 for level M. Tests check it against worked examples and against an independent encoder (modules/payments/upi/test/qr.test.ts).
+// the standard's table 9 for level M. Tests check it against worked examples and against an independent encoder (modules/qr/test/qr.test.ts).
 //
 // Level M and byte mode are fixed on purpose: a UPI link is plain ASCII except for a payee name in another script, and level M is what payment QR codes
 // usually use; a phone camera reads it from a WhatsApp image without trouble.
@@ -207,23 +207,36 @@ function drawFormat(g: Grid, mask: number): void {
   setFixed(g, 8, size - 8, true); // the dark module
 }
 
-/** The codewords' bits, placed two columns at a time from the bottom right, up and down in turn, skipping the timing column. */
-function drawCodewords(g: Grid, codewords: readonly number[]): void {
-  const size = g.size;
-  let i = 0;
+/** The data modules in the order the bits go into them: two columns at a time from the bottom right, up and down in turn, skipping the timing column and every fixed module. */
+export function dataModuleOrder(version: number): [number, number][] {
+  const fixed = functionModules(version);
+  const size = fixed.length;
+  const out: [number, number][] = [];
   for (let right = size - 1; right >= 1; right -= 2) {
     if (right === 6) right = 5;
     for (let vert = 0; vert < size; vert++) {
       for (let j = 0; j < 2; j++) {
         const x = right - j;
-        const upward = ((right + 1) & 2) === 0;
-        const y = upward ? size - 1 - vert : vert;
-        if (g.fixed[y][x]) continue;
-        if (i < codewords.length * 8) g.dark[y][x] = ((codewords[i >>> 3] >>> (7 - (i & 7))) & 1) === 1;
-        i++; // a remainder bit past the last codeword stays light
+        const y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert;
+        if (!fixed[y][x]) out.push([x, y]);
       }
     }
   }
+  return out;
+}
+
+/** Which modules of a code of this version are fixed patterns (finders, timing, alignment, format and version areas): `true` there. The data modules are the `false` ones. */
+export function functionModules(version: number): boolean[][] {
+  const g = emptyGrid(17 + 4 * version);
+  drawFunctionPatterns(g, version);
+  return g.fixed;
+}
+
+/** The codewords' bits, put into the data modules in order. A remainder bit past the last codeword stays light. */
+function drawCodewords(g: Grid, version: number, codewords: readonly number[]): void {
+  dataModuleOrder(version).forEach(([x, y], i) => {
+    if (i < codewords.length * 8) g.dark[y][x] = ((codewords[i >>> 3] >>> (7 - (i & 7))) & 1) === 1;
+  });
 }
 
 /** Whether the mask flips the module at (x, y). ISO/IEC 18004 table 10. */
@@ -294,7 +307,7 @@ export function encodeQr(text: string, options: { minVersion?: number; mask?: nu
   const size = 17 + 4 * version;
   const base = emptyGrid(size);
   drawFunctionPatterns(base, version);
-  drawCodewords(base, codewords);
+  drawCodewords(base, version, codewords);
   let best: { mask: number; grid: Grid; score: number } | undefined;
   for (const mask of options.mask !== undefined ? [options.mask] : [0, 1, 2, 3, 4, 5, 6, 7]) {
     const g: Grid = { size, dark: base.dark.map((r) => [...r]), fixed: base.fixed };

@@ -155,7 +155,7 @@ test("every language renders a self-contained page: same numbers, no script, no 
     const html = reportPage(seal(report), language);
     assert.ok(html.startsWith("<!doctype html>") && html.includes('<meta charset="utf-8">') && html.includes("width=device-width") && html.includes(`<html lang="${languagesOf(language)[0]}">`));
     for (const forbidden of ["<script", "<link", "<img", "<iframe", "url(", "@import", "src=", "href="]) assert.ok(!html.includes(forbidden), `${language} page has ${forbidden}`);
-    assert.ok(!/https?:|\/\/[a-z]/i.test(html), `${language} page names an address`);
+    assert.ok(!/https?:|\/\/[a-z]/i.test(html.replace(/https:\/\/geometer\.dev\/verify\/#sha256:[0-9a-f]{64}/g, "")), `${language} page names an address other than the printed check link`);
     assert.ok(html.includes("default-src 'none'"), "a content policy forbids everything but its own style");
     for (const l of languagesOf(language)) {
       const s = STRINGS[l];
@@ -176,7 +176,7 @@ test("the page lists each limit, the digests, the entries' fingerprints and the 
   const some = report.record.rows[100];
   assert.ok(html.includes(some.digest.slice(7, 23)) && html.includes(`<code>${some.action}</code>`));
   assert.ok(html.includes("<code>confirm_booking</code>") && html.includes("Set up by") && html.includes("Divya, local partner"));
-  assert.ok(html.includes("/verify/") && html.includes("Not signed"));
+  assert.ok(html.includes("https://geometer.dev/verify/#sha256:") && html.includes("<svg") && html.includes("Not signed"));
   assert.ok(!/\+91\d/.test(html), "no phone number on the page");
 });
 
