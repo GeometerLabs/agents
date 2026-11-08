@@ -169,6 +169,22 @@ owner, not yet marked done", and `UPI_OBLIGATION_KINDS` puts them in the registr
 owner the notice again, with the code and the button). An unpaid fee nobody claims is not listed: a request is the owner's to look at once the customer says they paid
 or the owner marked part of it.
 
+## The licence lease and wind-down (B13, 8 Nov)
+
+`licence/` is fleet's lease format and rule, ported (monorepo `apps/fleet/src/lease.ts`, ADR-0059), and the owner's one notice. It is a module because both templates act
+on it and the bundle checks it:
+
+- `rules.ts`: `newerThan`, `serverNow`, `effectiveState`, `takesNewWork`, `allowsRecovery`, the version-1 shape, and what the runtime is handed (`LicenceFile`,
+  `licenceNow`). **No crypto**: the agents import it, and the browser demo has no `node:crypto`. The state is worked out with the caller's clock at every call.
+- `token.ts`: `checkToken` with `node:crypto` Ed25519, the same checks in the same order as fleet's; the keys come from the caller (the bundle's pinned keys), never
+  from a token. Only the bundle imports it.
+- `notice.ts`: the owner's notice at the wind-down and at the final stop, once for each `paid_through`, kept in the record the way the monthly report keeps its month
+  (a claim, a save, the send, the ending). The runtime core runs it on the clock's beat; the template gives the words.
+
+`runtime/config.ts` reads `client/licence.json` (`licenceReader`, by modified time, like the `ai` switch), and `runtime/core.ts` runs the notice and holds the monthly
+report back in the final stop. What each state does to a template's work is the template's: both agents gate where new work starts (a request to book or pay, a new
+link) and leave everything that finishes money owed. The decision they record is `subscription_suspended`, so it reads like Guard's will.
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.

@@ -95,3 +95,13 @@ with no block is Razorpay, as before; the old "UPI is not built yet" refusal is 
 - **A new student in the middle of a month is not chased until next month** (decision 4's rule applied to a single student).
 - **A waiver limit of zero** means every request goes to the owner (Gauss Maths Circle does this).
 - **Caps are not counted in Guard's model.** The daily caps are in the spec for the real Guard; the in-memory model does not count a day's refunds or an hour's links.
+
+## The licence's wind-down and final stop (B13, 8 November 2026)
+
+As in Bookings (`templates/commerce/bookings/Explanation.md`, the same heading), with the centre's work: **in the wind-down** a parent who asks to pay, asks for a
+discount, or writes anything that would get the fee menu is answered "Online fee payment is paused for now. Please contact <centre> directly." (`fee_paused`); no new fee
+link is made (`currentLink` refuses with the decision `subscription_suspended`, and a waiver the owner approves is recorded without a new link); no month's fees are
+opened; no late fee is added; and a reminder that falls due is passed over, never kept to send later. Payments on links sent earlier are still counted and receipted, and
+refunds go on. **In the final stop** each open fee's link is closed through Guard once for each `paid_through` (`cancel_fee_link` with `refs.licence`; a UPI centre has
+none), and every message is held back. The owner's notices are `owner_licence_paused` and `owner_licence_stopped` (fees still open, other to-do items, the free copy's
+last day), as the utility templates `owner_fee_service_paused` and `owner_fee_service_stopped`. This is the runtime's own check: Guard does not read the lease yet.
