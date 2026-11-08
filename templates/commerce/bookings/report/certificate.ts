@@ -200,7 +200,8 @@ export interface MonthlyCertificate {
   goLive: GoLiveFinding;
   /** Copied from the report: present, and true, only when the report carries the Innovator badge. */
   innovator?: true;
-  anchor: null;
+  /** Copied from the report: the ledger head it was anchored to, or null. */
+  anchor: MonthlyReport["anchor"];
 }
 
 export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedAt: number): MonthlyCertificate {
@@ -227,7 +228,7 @@ export function buildMonthlyCertificate(report: Envelope<MonthlyReport>, issuedA
     goLive: r.goLive,
     ...(r.innovator ? { innovator: true as const } : {}),
     ...(r.paidBy ? { paidBy: r.paidBy } : {}),
-    anchor: null,
+    anchor: r.anchor,
   };
 }
 

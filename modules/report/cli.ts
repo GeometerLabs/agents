@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { LANGUAGES } from "../language/languages.ts";
 import type { RecordEntry } from "../record/record.ts";
 import { loadPrivateKey } from "./sign.ts";
+import { tenantOf } from "../record/ledger.ts";
 import { SOURCES } from "./text.ts";
 import type { ReportLanguage, Source } from "./text.ts";
 
@@ -53,4 +54,17 @@ export function readNow(value: string | undefined): number {
   const ms = Date.parse(value);
   if (!Number.isFinite(ms)) throw new UsageError(`--now ${value} is not a date and time. Write it like 2026-12-02T10:00:00+05:30.`);
   return ms;
+}
+
+/**
+ * The ledger tenant a report or paper is anchored to: --tenant when given (it must be an id: letters, digits and . _ : / @ + -), otherwise a slug of the shop's name
+ * ("Glow Salon" is glow-salon). On a server the tenant is the shop's id, which the bundle passes. A name with no Latin letters or digits gives no slug, and then the
+ * paper is not anchored (its anchor is null) and the script says so.
+ */
+export function ledgerTenant(option: string | undefined, shopName: string): { tenant?: string } {
+  if (option !== undefined) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u.test(option)) throw new UsageError(`--tenant ${option} is not an id: use letters, digits and . _ : / @ + - (the shop's id on the server, like glow-salon).`);
+    return { tenant: option };
+  }
+  try { return { tenant: tenantOf(shopName) }; } catch { return {}; }
 }
