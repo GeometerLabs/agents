@@ -35,12 +35,14 @@ export interface ReportRun {
   now: number;
   /** Which agent the record is of; left out, the bookings pathway (see ReportInput.pathway). */
   pathway?: { name: string; version: string };
+  /** The ledger tenant (the shop's id on the server) to anchor the report to its record's head. Left out, the report's anchor is null. */
+  tenant?: string;
 }
 
 /** The monthly report (page, owner text, signed data) and the monthly record certificate (page, text, signed data). */
 export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; certificateCode: string; report: Envelope<MonthlyReport> } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
-  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, pathway: run.pathway });
+  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, pathway: run.pathway, ...(run.tenant ? { ledger: { tenant: run.tenant } } : {}) });
   const sealed = seal(report, run.key);
   const certificate = seal(buildMonthlyCertificate(sealed, run.now), run.key);
   const w = writer(run.out);

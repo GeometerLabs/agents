@@ -1,15 +1,19 @@
 // The weekly restore drill's check, inside a short-lived container: the copy Litestream restored into a scratch folder is opened, its integrity is checked,
 // and its last record entry is compared with the LIVE record's entry at the same sequence number. A backup nobody restored is not counted as a backup.
+// Then (B28) the restored record is chained into its ledger (modules/record/ledger.ts) and its hash at the last PUBLISHED fingerprint's entry must be the hash that was
+// published: a copy that was rewritten, or one that is shorter than what was published, fails. A shop with no fingerprint yet is said, not failed.
 //
 //   node bundle/backup/drill-check.ts /job/job.json
 import { existsSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
 import { recordFacts } from "./snapshot.ts";
+import { hashAt, ledgerEntries } from "../../modules/record/ledger.ts";
+import type { RecordEntry } from "../../modules/record/record.ts";
 
 const digestOf = (entry: string) => createHash("sha256").update(entry).digest("hex");
 
-export interface DrillJob { shops: { name: string; restored: string; live: string }[]; /** The restored copy may be this many entries behind the live record (Litestream lags by about a second). */ maxLagEntries: number }
+export interface DrillJob { shops: { name: string; restored: string; live: string; /** The last daily fingerprint of the shop's ledger (B28), if one was published. */ published?: { seq: number; head: string; day: string } }[]; /** The restored copy may be this many entries behind the live record (Litestream lags by about a second). */ maxLagEntries: number }
 export interface DrillResult { name: string; ok: boolean; detail: string }
 
 export function drillShop(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
@@ -27,15 +31,30 @@ function check(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
     const live = new DatabaseSync(shop.live, { readOnly: true });
     try {
       const now = recordFacts(live);
-      if (back.lastSeq === null) return now.records === 0 ? { name: shop.name, ok: true, detail: "restored fine; both records are empty" } : { name: shop.name, ok: false, detail: `the restored record is empty but the live one has ${now.records} entries` };
+      if (back.lastSeq === null) return now.records === 0 ? (shop.published ? { name: shop.name, ok: false, detail: `both records are empty, but a fingerprint of ${shop.published.seq} entries was published on ${shop.published.day}` } : { name: shop.name, ok: true, detail: "restored fine; both records are empty" }) : { name: shop.name, ok: false, detail: `the restored record is empty but the live one has ${now.records} entries` };
       const same = live.prepare("SELECT entry FROM record WHERE seq = ?").get(back.lastSeq) as { entry: string } | undefined;
       const liveDigest = same ? digestOf(same.entry) : null;
       if (liveDigest !== back.lastEntryDigest) return { name: shop.name, ok: false, detail: `the restored record's last entry (#${back.lastSeq}) is not the live record's entry #${back.lastSeq}` };
       const lag = (now.lastSeq ?? 0) - back.lastSeq;
       if (lag > maxLag) return { name: shop.name, ok: false, detail: `the restored copy is ${lag} entries behind the live record (more than ${maxLag})` };
-      return { name: shop.name, ok: true, detail: `restored ${back.records} entries, integrity ok, last entry #${back.lastSeq} matches the live record${lag > 0 ? ` (${lag} newer entries not yet copied)` : ""}` };
+      const said = `restored ${back.records} entries, integrity ok, last entry #${back.lastSeq} matches the live record${lag > 0 ? ` (${lag} newer entries not yet copied)` : ""}`;
+      const fingerprint = compareFingerprint(restored, shop.name, shop.published);
+      return fingerprint.ok ? { name: shop.name, ok: true, detail: `${said}; ${fingerprint.detail}` } : { name: shop.name, ok: false, detail: fingerprint.detail };
     } finally { live.close(); }
   } finally { restored.close(); }
+}
+
+/** The restored record's ledger hash at the published fingerprint's entry, against the hash that was published. */
+function compareFingerprint(db: DatabaseSync, tenant: string, published: DrillJob["shops"][number]["published"]): { ok: boolean; detail: string } {
+  if (!published) return { ok: true, detail: "no fingerprint of its record has been published yet, so none was compared" };
+  if (published.head === "unreadable") return { ok: false, detail: "the server's fingerprint file for this shop was changed by hand or a line was taken out, so the restored record could not be compared with what was published" };
+  const rows = db.prepare("SELECT entry FROM record ORDER BY seq").all() as { entry: string }[];
+  let chain;
+  try { chain = ledgerEntries(rows.map((r) => JSON.parse(r.entry) as RecordEntry), tenant); } catch (e) { return { ok: false, detail: `the restored record could not be chained into its ledger (${(e as Error).message})` }; }
+  const hash = hashAt(chain, published.seq);
+  if (hash === null) return { ok: false, detail: `the restored record has ${chain.length} entries, fewer than the ${published.seq} its fingerprint of ${published.day} covers` };
+  if (hash !== published.head) return { ok: false, detail: `the restored record does not match the fingerprint published on ${published.day} (entry ${published.seq}): it was changed after that fingerprint` };
+  return { ok: true, detail: `its chain matches the fingerprint published on ${published.day} (entry ${published.seq})` };
 }
 
 if (import.meta.main) {

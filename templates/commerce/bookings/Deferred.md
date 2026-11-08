@@ -216,7 +216,7 @@ Laya is `convaiinnovations/laya` on Hugging Face (Apache-2.0; the multilingual o
 | **The verify page on geometer.dev (`/verify/#<digest>`)** | Built on the website (8 Nov, public-web P22) but not deployed. The papers now print `/verify/#<code>` and `https://geometer.dev/verify/#<digest>`; a scan opens nothing useful until the owner deploys | The owner approves the deploy |
 | A QR code on the certificates | **Built (8 Nov, B12)** in `modules/qr` and `modules/report/verify-link.ts`; every paper's page shows it. Left open: no key in the link (see `modules/Explanation.md`), the Hindi/Malayalam/Kannada `scanToCheck` words wait for native review (Malayalam and Kannada are on the REVIEW sheets, section 6, `page.scanToCheck`; Hindi has no sheet), and no phone camera ran against a printed paper | A native speaker reviews the sheets; the next hand check |
 | **Native review of the report and certificate words** | The Hindi, Malayalam and Kannada strings in `report/strings.ts` are machine-written. Section 6 of [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) lists them; Hindi has no sheet yet. Word choices to look at: "പരിധി"/"ಮಿತಿ"/"सीमा" for the shop's limits, "അഡ്വാൻസ്"/"ಮುಂಗಡ ಹಣ" for the deposit, the label forms ("label: number") for the owner's lines, and that nothing reads as a promise | **Before any real shop sees either language**; a Hindi sheet before the Hindi pilot |
-| The Guard anchor | Every document has `anchor: null`, inside the signed bytes. Guard's hash-chained ledger does not exist yet | Guard passes its fail-closed minimum; then fill the field before signing and write the matching anchor file |
+| The Guard anchor | **Filled from the record's own ledger, 8 November 2026 (B28):** the monthly report and its certificate carry the head of the shop's record as a geometer-verify ledger when a tenant is named (the bundle always names the shop's id; `client-report.ts --tenant`, or a slug of the shop's name). `anchor: null` stays when none is named, which keeps the bytes of every report before. What is left: Guard's own evidence ledger (its decisions) is a separate chain, not this one | Guard's ledger is joined to the record's (each record entry citing the Guard decision it came from, as geometer-verify's `links`) |
 | `geo-verify` reading these files | Same conventions, not the same format: geometer-verify writes integers as strings and its schemas are strict and generated. Joining them means adding the report and certificate records to the contract schemas | The anchor work above |
 | Key custody beyond a file | One Ed25519 key in a file the caller names, 0600, never in a repository. No rotation, no revocation list, no key log, no hardware key. A lost key means old documents can still be checked (the public key is in the file) but nothing can be re-issued under it | Before documents from more than one partner are signed |
 | A go-live certificate from real services in test mode | The hand check runs on stand-in services only, so the go-live certificate says so and has no `source` choice. When the checks run against test-mode accounts (Phase 1) it needs its own wording | Test-mode accounts exist |
@@ -331,6 +331,13 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
 - **UPI and the browser demo.** The demo runs Glow Salon's Razorpay settings; it has no QR maker (no `node:zlib`) and is not offered a UPI shop. Revisit when: the demo
   shows the UPI option.
 
+## Records anyone can check, the record of one case, the identity paper (B28, B35, B36)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| Native review of the new Hindi, Malayalam and Kannada words in `report/papers.ts` (action words, limit labels) | Machine-written on 8 November 2026 | Before a real customer gets a statement or a record in those languages; add them to the review sheets |
+| The deposit amount and each service's price are not read as limits that can be made wider | A lower deposit or price is a business choice, not a looser rule on the agent; only the refund limit and the cancellation window are | An owner asks to see price changes on the identity paper |
+| The papers' own open items | See `modules/papers/Deferred.md` and `modules/record/Deferred.md` | |
 ## The licence's wind-down (B13, 8 November 2026)
 
 - **Guard does not check the lease.** The agent's refusals are the runtime's own; Guard's `subscription_suspended` is an engine task (`bundle/Deferred.md` has the

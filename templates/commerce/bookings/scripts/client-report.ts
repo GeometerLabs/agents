@@ -13,13 +13,14 @@
 import { parseArgs } from "node:util";
 import { UsageError, main, readBookings, readEntries, readGoLive, readKey, readLanguage, readNow, readSettings, readSource } from "../report/cli.ts";
 import { writeClientReport } from "../report/run.ts";
+import { ledgerTenant } from "../../../../modules/report/cli.ts";
 
 await main(async () => {
   let args;
   try {
     args = parseArgs({ args: process.argv.slice(2), options: {
       settings: { type: "string" }, record: { type: "string" }, bookings: { type: "string" }, month: { type: "string" }, lang: { type: "string" }, out: { type: "string" },
-      key: { type: "string" }, source: { type: "string" }, "prepared-by": { type: "string" }, innovator: { type: "boolean" }, now: { type: "string" }, "go-live": { type: "string" },
+      key: { type: "string" }, source: { type: "string" }, "prepared-by": { type: "string" }, innovator: { type: "boolean" }, now: { type: "string" }, "go-live": { type: "string" }, tenant: { type: "string" },
     } });
   } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of templates/commerce/bookings/scripts/client-report.ts for the options.`); }
   const o = args.values;
@@ -29,11 +30,12 @@ await main(async () => {
   const goLive = readGoLive(o["go-live"], settings); // never stops the report: what is wrong with it is said, here and in the report
   const run = {
     settings, entries: readEntries(o.record), bookings: readBookings(o.bookings), month: o.month, language: readLanguage(o.lang), out: o.out,
-    source: readSource(o.source), key: readKey(o.key), preparedBy: o["prepared-by"], innovator: o.innovator === true, now: readNow(o.now), goLive: goLive.finding,
+    source: readSource(o.source), key: readKey(o.key), preparedBy: o["prepared-by"], innovator: o.innovator === true, now: readNow(o.now), goLive: goLive.finding, ...ledgerTenant(o.tenant, settings.name),
   };
   const result = writeClientReport(run);
   console.log(run.key ? "Signed with your key." : "NOT signed (no --key): the files carry a digest and a code, but nothing shows who issued them.");
   console.log(goLive.said);
+  console.log(run.tenant ? `Anchored to the head of the record as ledger ${run.tenant} (pass the same --tenant to every paper of this shop).` : "Not anchored to the record's ledger: give --tenant <the shop's id>.");
   console.log(`Wrote ${result.files.length} files into ${o.out}:`);
   for (const f of result.files) console.log(`  ${f}`);
   console.log(`\nReport code ${result.code}, certificate code ${result.certificateCode}.\n\nFor the owner, ready for WhatsApp:\n`);

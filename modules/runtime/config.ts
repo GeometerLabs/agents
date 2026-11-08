@@ -88,6 +88,8 @@ export interface ReportConfig {
   signingKeyFile?: string;
   /** A go-live certificate (go-live-certificate.json) for the report to read. Left out, the report says none was given. */
   goLiveFile?: string;
+  /** The shop's id as its record's ledger tenant (modules/record/ledger.ts): the report is anchored to the head of the record under this id, the same one the daily fingerprint uses. Left out, the report's anchor is null. */
+  tenant?: string;
 }
 
 export interface RuntimeConfig {
@@ -214,7 +216,7 @@ function readAllowance(raw: unknown, errors: string[]): AllowanceConfig | undefi
   return { ...(raw.messages !== undefined ? { messages: raw.messages as number } : {}), ...(raw.costInr !== undefined ? { costInr: raw.costInr as number } : {}) };
 }
 
-const REPORT_KEYS = ["preparedBy", "innovator", "pageBaseUrl", "pagesDir", "source", "signingKeyFile", "goLiveFile"];
+const REPORT_KEYS = ["preparedBy", "innovator", "pageBaseUrl", "pagesDir", "source", "signingKeyFile", "goLiveFile", "tenant"];
 const NAME_LIMIT = 120;
 
 /** What the owner is shown as the name of who set the agent up: some text, one line, not very long. */
@@ -234,12 +236,14 @@ function readReport(raw: unknown, folder: string, dataDir: string, errors: strin
   else if ((raw.pageBaseUrl as string).endsWith("/")) errors.push("report.pageBaseUrl must not end with a slash.");
   if (raw.source !== undefined && raw.source !== "live" && raw.source !== "test-mode") errors.push('report.source must be "live" or "test-mode". Left out, it is test-mode (a report that says test money when it was real is a smaller mistake than the other way round).');
   for (const key of ["pagesDir", "signingKeyFile", "goLiveFile"]) if (raw[key] !== undefined && !isText(raw[key])) errors.push(`report.${key} must be a path.`);
+  if (raw.tenant !== undefined && !(isText(raw.tenant) && /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u.test(raw.tenant))) errors.push("report.tenant must be the shop's id (letters, digits and . _ : / @ + -), the one its daily fingerprint uses.");
   if (errors.length > before) return undefined;
   const at = (p: string) => (isAbsolute(p) ? p : resolve(folder, p));
   return {
     preparedBy: (raw.preparedBy as string).trim(), pageBaseUrl: raw.pageBaseUrl as string, pagesDir: raw.pagesDir !== undefined ? at(raw.pagesDir as string) : join(dataDir, "reports"),
     ...(raw.innovator !== undefined ? { innovator: raw.innovator as boolean } : {}), ...(raw.source !== undefined ? { source: raw.source as "live" | "test-mode" } : {}),
     ...(raw.signingKeyFile !== undefined ? { signingKeyFile: at(raw.signingKeyFile as string) } : {}), ...(raw.goLiveFile !== undefined ? { goLiveFile: at(raw.goLiveFile as string) } : {}),
+    ...(raw.tenant !== undefined ? { tenant: raw.tenant as string } : {}),
   };
 }
 
