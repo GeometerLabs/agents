@@ -149,7 +149,7 @@ export function createGuardClient(config: GuardConfig): GuardClient {
     async notify(approval, decision, approver) {
       const as = approver ?? config.approverId;
       const secret = as === config.approverId ? config.approverSecret : config.secretOf?.(as);
-      if (!secret) return { kind: "refused", status: 0, error: `the relay holds no signing secret for approver ${as}` };
+      if (secret === undefined || (as !== config.approverId && secret === "")) return { kind: "refused", status: 0, error: `the relay holds no signing secret for approver ${as}` };
       // The signature is over the exact bytes sent; the time is now (the message's own time may be older than Guard's five minutes if the provider redelivered).
       const raw = JSON.stringify({ approval, decision, approver: as, at_ms: String(config.now()), nonce: randomUUID() });
       const signature = createHmac("sha256", secret).update(raw).digest("hex");
