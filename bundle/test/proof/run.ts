@@ -117,7 +117,7 @@ function bundleServices(): string[] {
 function writeTestCompose(): void {
   const user = `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`;
   const services: Record<string, any> = {
-    standins: { image: "node:26-alpine", user: "1000:1000", init: true, command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1:18791:8790"],
+    standins: { image: "node:26-alpine", user: "1000:1000", init: true, restart: "unless-stopped", command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1:18791:8790"],
       healthcheck: { test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8791/_state"], interval: "3s", timeout: "3s", retries: 20, start_period: "3s" } },
     "panel-probe": { image: "node:26-alpine", user, command: ["sleep", "100000"], volumes: [`${join(SERVER, "secrets", "panel")}:/run/secrets:ro`], networks: ["panel"] },
     minio: { image: "minio/minio:latest", command: ["server", "/data"], environment: { MINIO_ROOT_USER: "proofkey", MINIO_ROOT_PASSWORD: "proofsecret123", MINIO_PROMETHEUS_AUTH_TYPE: "public" }, volumes: [`${join(SCRATCH, "minio")}:/data`], networks: ["egress"], ports: ["127.0.0.1:19000:9000"] },
@@ -1159,6 +1159,9 @@ if (import.meta.main) {
     save();
     if (!KEEP) {
       say("\n== cleanup ==");
+      const standinsLog = dc(["logs", "--no-color", "--tail", "60", "standins"]).out;
+      results.standinsLog = standinsLog.split("\n").filter((l) => /stand-ins: |Error|restart/iu.test(l)).slice(-20); save();
+      say(`the stand-ins' own errors: ${(results.standinsLog as string[]).length} (in results.json)`);
       dc(["down", "-v", "--remove-orphans", "--timeout", "10"], { timeout: 600_000 });
       for (const row of dk(["ps", "-a", "--filter", "name=geometer-job", "-q"]).out.trim().split("\n").filter(Boolean)) dk(["rm", "-f", row]);
       for (const v of dk(["volume", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean)) dk(["volume", "rm", "-f", v]);

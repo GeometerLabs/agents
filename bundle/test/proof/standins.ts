@@ -28,10 +28,17 @@ function setOf(shop: string): Promise<RunningStandins> | undefined {
 
 /** Pass the request on to the shop's own stand-ins as it came, and the answer back as it came (a cut connection stays a cut connection: a lost reply). */
 function pass(req: IncomingMessage, res: ServerResponse, port: number, path: string): void {
-  const up = request({ host: "127.0.0.1", port, method: req.method, path, headers: req.headers }, (answer) => { res.writeHead(answer.statusCode ?? 502, answer.headers); answer.pipe(res); });
+  const up = request({ host: "127.0.0.1", port, method: req.method, path, headers: req.headers }, (answer) => {
+    answer.on("error", () => res.destroy()); // the shop's stand-in cut the connection half way: so does this one
+    res.writeHead(answer.statusCode ?? 502, answer.headers); answer.pipe(res);
+  });
   up.on("error", () => req.socket.destroy());
+  req.on("error", () => up.destroy());
+  res.on("error", () => up.destroy());
   req.pipe(up);
 }
+// a stand-in that stops would make every later check fail for the proof's own reason, not the bundle's: an error is written down and the server goes on
+process.on("uncaughtException", (e) => console.error(`stand-ins: ${e.stack ?? e}`));
 
 const json = (res: ServerResponse, status: number, body: unknown) => { const t = JSON.stringify(body); res.writeHead(status, { "content-type": "application/json", "content-length": Buffer.byteLength(t) }); res.end(t); };
 
