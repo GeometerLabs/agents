@@ -65,6 +65,8 @@ export interface DisputeInput {
 
 const SERVICE_OF: Record<string, keyof PaperWords["dispute"]["service"]> = { paymentId: "payments", refundId: "payments", linkId: "payments", eventId: "calendar", messageId: "whatsapp" };
 const CUSTOMER_ACTIONS = new Set(["receive_message", "opt_out", "upi_paid_claim"]);
+/** What came in (a message, a payment service's notice): it was taken, not read back from a service's own record, so it has no outcome to state and no service column. */
+const RECEIVED = new Set(["receive_message", "receive_payment_event"]);
 const OWNER_ACTIONS = new Set(["owner_decision", UPI_PAID, UPI_REFUNDED, "upi_refund_kept"]);
 
 function rowOf(e: RecordEntry, d: PaperWords, extra: Record<string, string>, ledgerHash: string | null): DisputeRow {
@@ -77,11 +79,11 @@ function rowOf(e: RecordEntry, d: PaperWords, extra: Record<string, string>, led
   else if (e.action === UPI_PAID) row.owner.push(`${d.dispute.ownerMarked}${amount}`);
   else if (e.action === UPI_REFUNDED) row.owner.push(`${d.dispute.ownerMarkedRefund}${amount}`);
   else if (OWNER_ACTIONS.has(e.action)) row.owner.push(`${actionWord(d, extra, e.action)}${amount}`);
-  if (!CUSTOMER_ACTIONS.has(e.action) && !OWNER_ACTIONS.has(e.action)) row.agent.push(`${actionWord(d, extra, e.action)}${amount}: ${d.outcome[e.outcome]}`);
+  if (!CUSTOMER_ACTIONS.has(e.action) && !OWNER_ACTIONS.has(e.action)) row.agent.push(RECEIVED.has(e.action) ? actionWord(d, extra, e.action) : `${actionWord(d, extra, e.action)}${amount}: ${d.outcome[e.outcome]}`);
   if (e.refs.by === "owner") row.owner.push(actionWord(d, extra, e.action));
   for (const x of e.decisions) row.limits.push(d.dispute.rule(x.ruleId, d.dispute.verdict[x.verdict], x.reason));
   if (e.refs.approval) row.limits.push(d.dispute.guardHeld(e.refs.approval));
-  if (e.outcome === "confirmed" && !OWNER_ACTIONS.has(e.action) && !CUSTOMER_ACTIONS.has(e.action) && e.refs.markedBy !== "owner") {
+  if (e.outcome === "confirmed" && !OWNER_ACTIONS.has(e.action) && !CUSTOMER_ACTIONS.has(e.action) && !RECEIVED.has(e.action) && e.refs.markedBy !== "owner") {
     const byService = new Map<string, string[]>();
     for (const [k, v] of Object.entries(e.refs)) if (SERVICE_OF[k] && v) byService.set(SERVICE_OF[k], [...(byService.get(SERVICE_OF[k]) ?? []), v]);
     for (const [s, ids] of byService) row.services.push(d.dispute.showed(d.dispute.service[s as keyof PaperWords["dispute"]["service"]], ids.join(", ") + amount));
