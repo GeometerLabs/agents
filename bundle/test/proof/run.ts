@@ -44,8 +44,6 @@ const KEEP = args.includes("--keep");
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
 const runs = (phase: string) => !ONLY || ONLY.has(phase);
 const LOAD_SECONDS = args.includes("--load-seconds") ? Number(args[args.indexOf("--load-seconds") + 1]) : 120;
-/** How long each of Litestream's four windows lasts (idle and under load, at each interval). Its own compaction runs on a schedule of its own, so a short window is noisy. */
-const LITESTREAM_SECONDS = args.includes("--litestream-seconds") ? Number(args[args.indexOf("--litestream-seconds") + 1]) : LOAD_SECONDS;
 const SERVER = join(SCRATCH, "server");
 const PROJECT = "geometer-proof";
 const results: Record<string, unknown> = { startedAt: new Date().toISOString(), guardImage: GUARD_IMAGE, checks: [] as unknown[] };
@@ -307,7 +305,7 @@ async function main_(): Promise<void> {
     measure("1 shop (after the checks above)", 1);
     await phase("load", () => loadStep(1));
 
-    for (const size of SIZES.filter((s) => s > 1 && (runs("load") || runs("litestream")))) {
+    for (const size of SIZES.filter((s) => s > 1 && runs("load"))) {
       say(`\n== scale to ${size} shops ==`);
       const have = Object.keys(loadState(SERVER).shops).length;
       for (let i = have + 1; i <= size; i++) await addShop(i);
@@ -332,7 +330,6 @@ async function main_(): Promise<void> {
       measure(`${size} shops (idle)`, size);
       if (size === SIZES.filter((s) => s > 1)[0] && runs("isolation")) { await isolation(size); await panelAccess(size); }
       await phase("load", () => loadStep(size));
-      if (size === SIZES.filter((s) => s > 1)[0]) await phase("litestream", () => litestreamOps(size));
     }
     if (runs("load")) loadSummary();
   } finally {
@@ -1082,7 +1079,9 @@ const cores = (a?: CapReading, b?: CapReading) => (a && b ? +((b.cpuUsec - a.cpu
 const loads: Record<number, any> = {};
 async function loadStep(size: number) {
   say(`\n== load at ${size} shop(s), every bundle container inside 2 CPUs and 4 GiB (B14 item 4) ==`);
-  const idleA = readCap(); await sleep(30_000); const idleB = readCap();
+  // a quiet minute first: the CPU, and Litestream's bucket operations, with nothing asked of the shops
+  const opsIdleA = await minioOps(); const idleA = readCap(); await sleep(60_000); const idleB = readCap(); const opsIdleB = await minioOps();
+  const idleHours = idleA && idleB ? (idleB.atMs - idleA.atMs) / 3_600_000 : 1 / 60;
   const diskBefore = volumeSizes();
   const opsA = await minioOps(); const capA = readCap();
   const load = await drive(size, LOAD_SECONDS, LOAD_PER_MINUTE, `load ${size}`);
@@ -1099,6 +1098,7 @@ async function loadStep(size: number) {
     diskMiB: { runtimesNow: +(diskAfter.runtimes / MiB).toFixed(2), guardsNow: +(diskAfter.guards / MiB).toFixed(2), growthDuringLoad: +(((diskAfter.runtimes + diskAfter.guards) - (diskBefore.runtimes + diskBefore.guards)) / MiB).toFixed(2) },
     diskWritesMiBPerShopPerHour: capA && capB ? +(((capB.writeBytes - capA.writeBytes) / MiB) / size / hours).toFixed(1) : NaN,
     bucketOpsPerShopPerHour: Object.fromEntries(Object.entries(opsDelta(opsA, opsB)).map(([k, v]) => [k, Math.round((v as number) / size / hours)])),
+    bucketOpsIdlePerShopPerHour: Object.fromEntries(Object.entries(opsDelta(opsIdleA, opsIdleB)).map(([k, v]) => [k, Math.round((v as number) / size / idleHours)])),
     topContainersCpu: load.stats.filter((c) => !TEST_SERVICES.has(c.name)).sort((a, b) => b.cpu - a.cpu).slice(0, 6),
     unanswered: answers.unanswered.length,
   };
@@ -1122,42 +1122,6 @@ function loadSummary() {
   save();
 }
 
-/** Litestream's bucket operations per shop per hour under the same load, at its default sync interval and at a longer one (the bundle's backup.stream.syncSeconds). */
-async function litestreamOps(size: number) {
-  say(`\n== Litestream's bucket operations at ${size} shops: the default sync interval and 10 s ==`);
-  const window = async (label: string) => {
-    const a = await minioOps(); const t0 = Date.now();
-    await drive(size, LITESTREAM_SECONDS, LOAD_PER_MINUTE, label);
-    await sleep(15_000);
-    const b = await minioOps();
-    const hours = (Date.now() - t0) / 3_600_000;
-    const d = opsDelta(a, b) as Record<string, number>;
-    const total = Object.values(d).reduce((x, y) => x + y, 0);
-    return { perShopPerHour: Math.round(total / size / hours), byApi: Object.fromEntries(Object.entries(d).map(([k, v]) => [k, Math.round(v / size / hours)])) };
-  };
-  const idle = async (label: string) => { const a = await minioOps(); const t0 = Date.now(); await sleep(LITESTREAM_SECONDS * 1000); const b = await minioOps(); const d = opsDelta(a, b) as Record<string, number>; return { label, perShopPerHour: Math.round(Object.values(d).reduce((x, y) => x + y, 0) / size / ((Date.now() - t0) / 3_600_000)) }; };
-  const setInterval_ = async (seconds: number | undefined) => {
-    const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
-    if (seconds === undefined) delete conf.backup.stream.syncSeconds; else conf.backup.stream.syncSeconds = seconds;
-    writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
-    await deploy(ctxFor());
-    const yml = readFileSync(secretFile(SERVER, "litestream", "litestream.yml"), "utf8");
-    await waitFor("Litestream to run again", () => /Up /u.test(dc(["ps", "litestream"]).out), 60);
-    await sleep(20_000);
-    return yml.includes("sync-interval") ? (/sync-interval: "?(\w+)"?/u.exec(yml)?.[1] ?? "?") : "Litestream's default";
-  };
-  const defaultIdle = await idle("default, idle");
-  const defaultLoad = await window("Litestream at its default interval");
-  const set = await setInterval_(10);
-  const longIdle = await idle("10 s, idle");
-  const longLoad = await window("Litestream every 10 s");
-  results.litestream = { shops: size, default: { idle: defaultIdle.perShopPerHour, load: defaultLoad }, tenSeconds: { configured: set, idle: longIdle.perShopPerHour, load: longLoad } };
-  say(`   ${JSON.stringify(results.litestream)}`);
-  check("Litestream's operations per shop per hour were counted at the default interval and at 10 s (the setting reached Litestream)", set === "10s" && defaultLoad.perShopPerHour > 0, results.litestream);
-  // leave the server as the bundle's default makes it
-  await setInterval_(undefined);
-  save();
-}
 
 if (import.meta.main) {
   try { await main_(); } catch (e) { say(`\nTHE PROOF STOPPED: ${(e as Error).stack ?? e}`); results.error = String(e); }

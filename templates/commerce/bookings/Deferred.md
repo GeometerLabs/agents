@@ -340,8 +340,9 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
 | The papers' own open items | See `modules/papers/Deferred.md` and `modules/record/Deferred.md` | |
 ## The licence's wind-down (B13, 8 November 2026)
 
-- **Guard does not check the lease.** The agent's refusals are the runtime's own; Guard's `subscription_suspended` is an engine task (`bundle/Deferred.md` has the
-  block). Revisit when: Guard reads the lease, then add a crash-test situation that winds a shop down and checks both refuse the same calls.
+- [x] **Guard checks the lease too (9 Nov, monorepo ADR-0062; the bundle's D83).** Guard's 402 `subscription_suspended` is taken as the shop's own pause:
+  the slot let go, "paused, contact the shop", nothing kept for later (`test/licence.test.ts`). The Docker proof checks that Guard and the runtime refuse the same
+  new work. Still open: a crash-test situation that winds a shop down, below.
 - **No crash-test situation for the wind-down.** It is unit-tested (`test/licence.test.ts`) and runtime-tested, not in `crash-test/situations.ts`. Revisit when: Guard's
   check lands.
 - **A customer's reply in the final stop is recorded but not answered.** "Nothing more is sent" covers every message, so a customer who writes after the stop hears

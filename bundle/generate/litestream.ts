@@ -7,7 +7,7 @@ export function litestreamConfig(backup: BackupConfig, shops: string[], key: { a
   const q = (s: string) => JSON.stringify(s);
   const base = backup.stream.url.replace(/\/+$/u, "");
   return [
-    `# Written by the Geometer deploy bundle. Streams each shop's runtime database to the bucket you chose, ${backup.stream.syncSeconds ? `every ${backup.stream.syncSeconds} s while it changes (backup.stream.syncSeconds)` : "about every second while it changes"}.`,
+    `# Written by the Geometer deploy bundle. Streams each shop's runtime database to the bucket you chose, about every second.`,
     `dbs:`,
     ...shops.flatMap((shop) => [
       `  - path: ${q(`/data/${shop}/data/agent.db`)}`,
@@ -15,7 +15,6 @@ export function litestreamConfig(backup: BackupConfig, shops: string[], key: { a
       `      url: ${q(`${base}/${shop}`)}`,
       ...(backup.stream.endpoint ? [`      endpoint: ${q(backup.stream.endpoint)}`] : []),
       ...(backup.stream.region ? [`      region: ${q(backup.stream.region)}`] : []),
-      ...(backup.stream.syncSeconds ? [`      sync-interval: ${q(`${backup.stream.syncSeconds}s`)}`] : []),
       `      access-key-id: ${q(key.accessKeyId)}`,
       `      secret-access-key: ${q(key.secretAccessKey)}`,
     ]),
