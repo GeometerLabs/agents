@@ -61,7 +61,7 @@ const en: PaperWords = {
     message: "a message (its words are not kept, only a fingerprint)", claim: (v) => `said they paid (${v})`, guardHeld: (a) => `Guard held it for the owner (approval ${a})`,
     rule: (r, v, why) => `limit ${r}: ${v}${why ? `, ${why}` : ""}`, verdict: { allow: "allowed", block: "stopped", hold_for_owner: "held for the owner" }, owner: (c) => `owner answered ${c}`,
     ownerMarked: "owner marked the payment received (no payment service record)", ownerMarkedRefund: "owner marked the refund sent (no payment service record)",
-    service: { payments: "payments service", calendar: "calendar", whatsapp: "WhatsApp" }, showed: (s, ids) => `the ${s}'s own record showed ${ids} when the agent read it back`,
+    service: { payments: "payments service", calendar: "calendar", whatsapp: "WhatsApp service" }, showed: (s, ids) => `the ${s}'s own record showed ${ids} when the agent read it back`,
     nothing: "Nothing in the record is about this case.", case: "Case", customer: "Customer, as the record keeps it", state: "State now",
   },
   identity: {
