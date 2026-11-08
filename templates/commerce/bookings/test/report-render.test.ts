@@ -176,7 +176,7 @@ test("the page lists each limit, the digests, the entries' fingerprints and the 
   const some = report.record.rows[100];
   assert.ok(html.includes(some.digest.slice(7, 23)) && html.includes(`<code>${some.action}</code>`));
   assert.ok(html.includes("<code>confirm_booking</code>") && html.includes("Set up by") && html.includes("Divya, local partner"));
-  assert.ok(html.includes("/verify/") && html.includes("Not signed"));
+  assert.ok(html.includes("https://geometer.dev/verify/#sha256:") && html.includes("<svg") && html.includes("Not signed"));
   assert.ok(!/\+91\d/.test(html), "no phone number on the page");
 });
 
