@@ -21,6 +21,7 @@ import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./genera
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
+import { syncLicence } from "./lib/licence.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
@@ -266,6 +267,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     for (const g of Object.values(s.applied!.guards)) writeGuardFiles(ctx.dir, g.service, g);
   }
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
+  // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
+  syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
   const agents = agentFacts(ctx.dir, state);
   for (const a of Object.values(state.agents ?? {})) if (a.applied) for (const g of Object.values(a.applied.guards)) writeGuardFiles(ctx.dir, g.service, g);

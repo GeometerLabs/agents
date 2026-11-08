@@ -18,8 +18,9 @@ import { dirname, join } from "node:path";
 import { checkToken, CHECK_WORDS, keysFromHex } from "../../modules/licence/token.ts";
 import { licenceNow, newerThan, serverNow } from "../../modules/licence/rules.ts";
 import type { ExtensionPayload, LeasePayload, LeaseState, LicenceFile } from "../../modules/licence/rules.ts";
-import { serverPaths } from "./server.ts";
+import { readShop, serverPaths } from "./server.ts";
 import type { ServerConfig } from "./server.ts";
+import { readStatus, updateStatus } from "./status.ts";
 import { sha256Hex, stableJson, writeAtomic } from "./util.ts";
 
 export const licencePaths = (dir: string) => {
@@ -149,4 +150,42 @@ export function statusLicence(kept: KeptLicence, file: LicenceFile, nowMs: numbe
     state: now.state, listed: s !== null, paidThrough: iso(s?.paid_through), windDownOn: iso(s ? Math.max(s.expires, kept.extensionUntil) : null), stopOn: iso(s?.stop_at),
     exportUntil: iso(s?.export_until), leaseIssuedAt: iso(kept.lease?.issued_at), extendedUntil: iso(kept.extensionUntil || null),
   };
+}
+
+const sameLicence = (a: StatusLicence | undefined, b: StatusLicence): boolean => !!a && (Object.keys(b) as (keyof StatusLicence)[]).every((k) => a[k] === b[k]);
+
+/**
+ * One pass of the licence (the deployer runs it on every loop, and every deploy runs it once): take the lease ops kept from fleet's last answer, if it is one not
+ * looked at yet; then hand each deployed shop its entry (client/licence.json, which its runtime reads by its modified time, so no restart) and write the state the panel
+ * shows (status/<shop>.json `licence`). A shop is handed a file only once a key is pinned (or it already has one, which is then cleared). Returns lines for the log.
+ */
+export function syncLicence(dir: string, server: ServerConfig, shops: readonly string[], now: Date): string[] {
+  const lines: string[] = [];
+  const p = licencePaths(dir);
+  let token = "";
+  try { token = readFileSync(p.inbox, "utf8").trim(); } catch { /* fleet has sent no lease (an older fleet, or its licence is off) */ }
+  const mark = token ? sha256Hex(token) : null;
+  if (mark && readSeen(dir).inbox !== mark) {
+    const r = takeLease(dir, server, token);
+    writeSeen(dir, { ...readSeen(dir), inbox: mark });
+    if (r.taken) lines.push(`licence: fleet's lease ${r.payload.serial} (signed ${new Date(r.payload.issued_at * 1000).toISOString()}) is kept.`);
+    else if (!r.same) lines.push(`licence: fleet's last lease was not kept: ${r.why}. The lease kept before it stays in force until it runs out.`);
+  }
+  const kept = keptLicence(dir, server);
+  for (const shop of shops) {
+    const file = clientLicenceFile(dir, shop);
+    if (!existsSync(dirname(file)) || (!kept.pinned && !existsSync(file))) continue; // not deployed yet (the deploy writes it), or nothing to say
+    const content = licenceFileFor(kept, shop, readShop(dir, shop).preparedBy);
+    const text = stableJson(content);
+    let before = "";
+    try { before = readFileSync(file, "utf8"); } catch { /* the first one */ }
+    if (before !== text) writeAtomic(file, text);
+    const next = statusLicence(kept, content, now.getTime());
+    const was = readStatus(dir, shop)?.licence;
+    if (!sameLicence(was, next)) {
+      updateStatus(dir, shop, now, (s) => { s.licence = { ...next, at: now.toISOString() }; }, false);
+      if (was && was.state !== next.state) lines.push(`${shop}: licence ${was.state.replace("_", " ")} -> ${next.state.replace("_", " ")}${next.state === "wind_down" ? ": no new bookings or links; refunds, cancellations and existing bookings go on" : next.state === "stopped" ? ": the final stop; nothing is deleted, and the export stays free" : ""}.`);
+    }
+  }
+  return lines;
 }
