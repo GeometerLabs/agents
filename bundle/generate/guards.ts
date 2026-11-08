@@ -146,7 +146,10 @@ export interface GuardLicence {
   deployment: string;
   /** The shop's id, or the id of an agent someone else wrote. */
   shop: string;
-  /** The owner's WhatsApp number(s): in the final stop a send to one of them still goes (the owner's notice). Only numbers Guard reads as numbers (`ownerNumbers`). */
+  /**
+   * The shop's own people's WhatsApp numbers: the owner, and the other people who approve refunds (B37). In the final stop a send to one of them still goes (the
+   * owner's notice; the relay asking about a refund Guard holds). Guard's field is `owner_numbers`. Only numbers Guard reads as numbers (`ownerNumbers`).
+   */
   ownerNumbers: string[];
 }
 

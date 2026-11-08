@@ -92,8 +92,15 @@ const hasCalendar = (guards: readonly { kind: string }[]): boolean => guards.som
 /** Does this shop take Razorpay? A UPI shop (B33) was planned with no Razorpay Guard, and so has no Razorpay key, webhook or approvals relay. */
 export const hasRazorpay = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "razorpay");
 
-/** The owner's WhatsApp number in a shop's (or an agent's) settings: Bookings and Fees both keep it at owner.whatsapp. */
-export const ownerOf = (folder: { settings?: unknown }): string | undefined => (folder.settings as { owner?: { whatsapp?: unknown } } | undefined)?.owner?.whatsapp as string | undefined;
+/**
+ * The shop's own people's WhatsApp numbers in its (or an agent's) settings: the owner (Bookings and Fees both keep it at owner.whatsapp) and, B37, each other
+ * person who approves refunds. In the final stop the WhatsApp Guard still lets a send to these through: the owner's notice, and the approvals relay asking any of
+ * them about a refund Guard holds (a refund owed must still go through, and the person who asked for it never approves it).
+ */
+export const ownNumbersOf = (folder: { settings?: unknown }): (string | undefined)[] => {
+  const s = folder.settings as { owner?: { whatsapp?: unknown }; approvers?: { people?: { whatsapp?: unknown }[] } } | undefined;
+  return [s?.owner?.whatsapp, ...(s?.approvers?.people ?? []).map((p) => p?.whatsapp)].map((n) => (typeof n === "string" ? n : undefined));
+};
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
 function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true): Problem[] {
@@ -236,10 +243,10 @@ export async function guardLicenceOn(ctx: Context, server: ServerConfig): Promis
   return { on: true };
 }
 
-/** The `[licence]` a per-shop Guard is given (never the model Guard's): the server's id, the shop's (or agent's) id, and the owner's number for the final stop's one notice. */
-export function licenceFor(server: ServerConfig, on: boolean, kind: GuardPlan["kind"], shop: string | undefined, ownerWhatsapp: string | undefined): (GuardLicence & { kids: string[] }) | undefined {
+/** The `[licence]` a per-shop Guard is given (never the model Guard's): the server's id, the shop's (or agent's) id, and its own people's numbers (`ownNumbersOf`). */
+export function licenceFor(server: ServerConfig, on: boolean, kind: GuardPlan["kind"], shop: string | undefined, numbers: readonly (string | undefined)[]): (GuardLicence & { kids: string[] }) | undefined {
   if (!on || kind === "model" || !shop || !server.licence) return undefined;
-  return { deployment: server.id, shop, ownerNumbers: ownerNumbers([ownerWhatsapp]), kids: server.licence.keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort() };
+  return { deployment: server.id, shop, ownerNumbers: [...new Set(ownerNumbers(numbers))], kids: server.licence.keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort() };
 }
 
 /** Compile one Guard's spec, render its guard.toml, run the tool-name rule and verify-bundle. Nothing running is touched. */
@@ -279,7 +286,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
     const licence = await guardLicenceOn(ctx, server);
     if (licence.why) notes.push(licence.why);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }, licenceFor(server, licence.on, g.plan.kind, name, ownerOf(prepared.folder))));
+      problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }, licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -422,7 +429,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards))]));
   const licence = await guardLicenceOn(ctx, server);
   if (licence.why) ctx.log(`note: ${licence.why}`);
-  for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownerOf(p.folder))));
+  for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
   const modelPlan = planModelGuard(server, 1);

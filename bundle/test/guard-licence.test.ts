@@ -2,7 +2,7 @@
 // folder it mounts, and the check of the running Guards' own account of the lease. Against the fake machine (test/world.ts); the real binary is the Docker proof's.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addAgent, deployAgent } from "../agent/deploy.ts";
 import { Refused, checkShop, deploy } from "../deploy.ts";
@@ -73,6 +73,19 @@ test("with a key pinned and an image that reads it, every per-shop Guard gets th
     for (const d of [licencePaths(w.root).root, licencePaths(w.root).extensions]) assert.equal(statSync(d).mode & 0o777, 0o755, `${d} is made 0755 before compose up`);
     assert.equal(readStatus(w.root, "glow-salon")!.deploy.state, "applied");
     assert.ok(composeCalls(w).some((c) => c[0] === "up"));
+  } finally { w.done(); }
+});
+
+test("a shop whose other people approve refunds (B37): their numbers go through in the final stop too, or a refund held for one of them could never be asked about", async () => {
+  const w = world(undefined, PIN); try {
+    w.guardLicence.reads = true; w.guardLicence.kids = [TEST_KID];
+    const file = join(w.paths.shop("glow-salon"), "settings.json");
+    const settings = JSON.parse(read(file));
+    settings.approvers = { people: [{ id: "ravi", whatsapp: "+919800000002", language: "hi" }, { id: "meena", whatsapp: "+919800000003", language: "en" }], twoAboveInr: 150 };
+    writeFileSync(file, JSON.stringify(settings));
+    w.handIn("glow-salon");
+    await deploy(w.ctx);
+    for (const kind of ["razorpay", "whatsapp", "calendar"]) assert.equal(block(toml(w, `g-glow-salon-${kind}`)).owner_numbers, '["+919000000000", "+919800000002", "+919800000003"]', kind);
   } finally { w.done(); }
 });
 
