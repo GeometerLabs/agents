@@ -17,6 +17,7 @@ export type LiveServices = { [service: string]: (Omit<ServiceConfig, "agentToken
 export function readAgentTokens(config: NonNullable<LiveServicesConfig>, names: readonly string[]): LiveServices {
   const out: LiveServices = {};
   for (const name of names) {
+    if (config[name] === undefined) continue; // a service the shop does not have (a UPI shop has no payment service)
     const { agentTokenFile, ...rest } = config[name] as ServiceConfig;
     let token: string | undefined;
     if (agentTokenFile) {

@@ -3,6 +3,8 @@
 import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
+import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
+import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -38,6 +40,11 @@ export interface Settings {
   languages: Language[]; // customer-facing; the first is the default
   owner: { whatsapp: string; language: Language };
   reminders: { hoursBefore: number[] };
+  /**
+   * How customers pay the deposit (modules/payments/upi/settings.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
+   * Left out: Razorpay, as every shop was before UPI (B33), and the parsed settings leave it out too, so a shop set up before stays byte for byte the same.
+   */
+  payment?: PaymentSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -52,7 +59,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "reminders"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "reminders", "payment"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the business's name (\"name\").");
@@ -74,6 +81,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const cancellation = readCancellation(input.cancellation, errors);
   const owner = readOwner(input.owner, errors);
   const reminders = readReminders(input.reminders, errors);
+  const payment = readPaymentSettings(input.payment, errors);
 
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
@@ -90,6 +98,7 @@ export function validateSettings(input: unknown): SettingsResult {
     reminders,
   };
   if (typeof address === "string") settings.address = address;
+  if (payment) settings.payment = payment;
   return { ok: true, settings };
 }
 

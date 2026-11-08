@@ -7,7 +7,10 @@
 //  - buttons and lists are a session message, like free text: only while the 24-hour window is open and only if they fit WhatsApp's limits, and otherwise the
 //    same words go out as plain text, so nothing is lost;
 //  - a message that cannot go as text goes as an approved template when the window is closed;
-//  - a lost reply may still have gone out, so it is not sent again, because there is no way to look it up.
+//  - a lost reply may still have gone out, so it is not sent again, because there is no way to look it up;
+//  - a picture that goes with the words (a UPI QR code) is sent first, by its address, only while the window is open; its caption passes the same check, and if
+//    it cannot go the words still do (they carry everything the picture does);
+//  - buttons can go to the owner too (UPI's "Received" button): the template says which messages offer them.
 import type { Language } from "../language/languages.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
@@ -15,6 +18,7 @@ import { ApiError, WindowClosedError, mayHaveHappened } from "../core/faults.ts"
 import { checkOptOut, strictest } from "../limits/limits.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
+import { imageProblem } from "./messaging.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
 
 /** What every message to say carries. A template adds its own fields (an amount, a time), which only its own `factsFor` reads. */
@@ -34,6 +38,8 @@ export interface SayArgs {
   action?: Action;
   /** Buttons or a list to go with the words; the template knows what its offers are. */
   offer?: { kind: string; body?: string[] };
+  /** A picture to send before the words (a UPI QR code): its https address, and the templates that make its caption. */
+  image?: { link: string; caption: string[] };
 }
 
 export interface SayVoice<Facts extends { language: Language }> {
@@ -71,12 +77,31 @@ export interface SayDeps<A extends SayArgs, Facts extends { language: Language }
 export function createSay<A extends SayArgs, Facts extends { language: Language }>(deps: SayDeps<A, Facts>): (a: A) => Promise<boolean> {
   const { messaging, voice, owner, log } = deps;
 
+  /** The picture before the words: best effort. Inside the window only, with a caption that passes the check; whatever happens, the words go next. */
+  async function sendImage(a: A, toNumber: string, facts: Facts, language: Language, inputs: Record<string, unknown>, decisions: Decision[]): Promise<void> {
+    const image = a.image!;
+    if (typeof messaging.sendImage !== "function") return;
+    let caption: string;
+    try { caption = image.caption.map((id) => voice.render(id, facts)).join(" "); } catch (e) { log(a.booking, a.phone, "send_message", "blocked", { ...inputs, image: true }, { notes: (e as Error).message, refs: { to: a.to, image: "qr" }, language }); return; }
+    const check = voice.matches(caption, facts);
+    const problem = imageProblem({ link: image.link, caption });
+    if (check.verdict !== "allow" || problem) { log(a.booking, a.phone, "send_message", "blocked", { ...inputs, image: true }, { decisions: [check], notes: problem ?? check.reason, refs: { to: a.to, image: "qr" }, language }); return; }
+    if (!(await messaging.isWindowOpen(toNumber).catch(() => false))) return; // a picture is a session message: outside the window the words go alone
+    try {
+      const sent = await messaging.sendImage(toNumber, { link: image.link, caption });
+      const seen = await messaging.getMessage(sent.id);
+      log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", { ...inputs, image: true }, { decisions: [...decisions, check], refs: { messageId: sent.id, templates: image.caption.join("+"), to: a.to, image: "qr" }, language });
+    } catch (e) {
+      log(a.booking, a.phone, "send_message", mayHaveHappened(e) ? "unconfirmed" : "failed", { ...inputs, image: true }, { notes: (e as Error).message, refs: { to: a.to, image: "qr" }, language });
+    }
+  }
+
   return async function say(a: A): Promise<boolean> {
     const toCustomer = a.to === "customer";
     const action = a.action ?? "send_message";
     const toNumber = toCustomer ? a.phone : owner.whatsapp;
     const language = toCustomer ? deps.languageOf(a.phone, a.booking) : owner.language;
-    const offer = toCustomer ? a.offer : undefined;
+    const offer = a.offer; // the owner gets buttons only where a template offers them (UPI's "Received")
     const facts = deps.factsFor({ ...a, offer } as A, language);
     const inputs = { to: a.to, templates: a.templates, ...(deps.inputsOf ? deps.inputsOf({ ...a, offer } as A) : {}), ...(offer ? { offer: offer.kind } : {}) };
     let text: string;
@@ -109,6 +134,8 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       if (toCustomer && worst.ruleId === "message-matches-record") await deps.heldBack(a);
       return false;
     }
+
+    if (a.image) await sendImage(a, toNumber, facts, language, inputs, decisions);
 
     try {
       let sent: OutboundMessage;

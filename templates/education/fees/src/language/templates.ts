@@ -41,6 +41,10 @@ export interface MessageFacts {
   approvalCode?: string;
   /** How many hours the owner has to answer. */
   approvalHours?: number;
+  /** UPI centres (B33): the centre's UPI ID and the name parents see; the owner's one-use code for a payment or refund (only ever in a message to the owner). */
+  upiId?: string;
+  payee?: string;
+  upiCode?: string;
 }
 
 export type TemplateId =
@@ -58,13 +62,22 @@ export type TemplateId =
   // button mode: the agent reads with the rules only and answers with buttons (modules/understanding/ai-state.ts). Each says why, and that every limit still holds.
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
   // sent by the approvals relay, not by the agent: the ask for a refund Guard is holding, and the answers to the owner's reply
-  | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed";
+  | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed"
+  | UpiTemplateId;
+
+/** UPI centres only (B33): the parent pays the centre's own UPI ID and the owner marks it received; refunds are sent by the owner. */
+export type UpiTemplateId =
+  | "fee_upi_qr_caption" | "fee_upi_claim" | "fee_upi_refund_owed" | "fee_upi_refund_sent"
+  | "owner_fee_upi_expected" | "owner_fee_upi_claim" | "owner_fee_upi_marked" | "owner_fee_upi_part" | "owner_fee_upi_already" | "owner_fee_upi_unknown"
+  | "owner_fee_upi_refund_owed" | "owner_fee_upi_refund_reminder" | "owner_fee_upi_refund_marked";
 
 /** Which approved WhatsApp template carries a message once the parent's 24-hour window has closed and no exact template fits. */
 export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_notice", owner: "owner_notice" } as const;
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId>, Template>;
+type UpiSet = Record<UpiTemplateId, Template>;
 
 /** A template asks for a value the record does not have: refuse to write the message at all. */
 export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
@@ -74,23 +87,28 @@ export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): Non
 }
 type Money = "feeInr" | "lateFeeInr" | "balanceInr" | "paidInr" | "receivedInr" | "waiverInr" | "refundInr" | "waiverLimitInr";
 export const inr = (f: MessageFacts, key: Money) => formatInr(need(f, key));
+/**
+ * Where to pay, as the messages say it: the payment link; for a UPI centre the `upi://pay` link with the centre's UPI ID and name after it, since WhatsApp does not
+ * open upi:// links and a parent can pay by hand from those. One value, so every message that asks for money, and its WhatsApp template, says it the same way.
+ */
+export const payTo = (f: MessageFacts): string => (f.upiId ? `${need(f, "link")} (UPI ID ${f.upiId}, ${need(f, "payee")})` : need(f, "link"));
 export const dueDate = (f: MessageFacts) => formatDate(localParts(need(f, "dueMs"), f.timeZone), f.language);
 
-const en: TemplateSet = {
-  fee_reminder: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} is ${inr(f, "balanceInr")}, due on ${dueDate(f)}. Pay here: ${need(f, "link")} Reply STOP if you do not want these reminders.`,
-  fee_overdue: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} was due on ${dueDate(f)}. ${inr(f, "balanceInr")} is still to pay: ${need(f, "link")} Reply STOP if you do not want these reminders.`,
-  fee_overdue_late: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} was due on ${dueDate(f)}. A late fee of ${inr(f, "lateFeeInr")} has been added, so ${inr(f, "balanceInr")} is still to pay: ${need(f, "link")} Reply STOP if you do not want these reminders.`,
+const en: BaseSet = {
+  fee_reminder: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} is ${inr(f, "balanceInr")}, due on ${dueDate(f)}. Pay here: ${payTo(f)} Reply STOP if you do not want these reminders.`,
+  fee_overdue: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} was due on ${dueDate(f)}. ${inr(f, "balanceInr")} is still to pay: ${payTo(f)} Reply STOP if you do not want these reminders.`,
+  fee_overdue_late: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} was due on ${dueDate(f)}. A late fee of ${inr(f, "lateFeeInr")} has been added, so ${inr(f, "balanceInr")} is still to pay: ${payTo(f)} Reply STOP if you do not want these reminders.`,
   fee_received: (f) => `Thank you! ${f.businessName} has received ${inr(f, "receivedInr")} for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. Nothing more is due. Your receipt number is ${need(f, "dueRef")}.`,
-  fee_part_received: (f) => `Thank you! ${f.businessName} has received ${inr(f, "receivedInr")} for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is still to pay. Pay the rest here: ${need(f, "link")} Reply STOP if you do not want these reminders.`,
-  fee_pay_link: (f) => `Pay ${inr(f, "balanceInr")} for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} here: ${need(f, "link")}`,
+  fee_part_received: (f) => `Thank you! ${f.businessName} has received ${inr(f, "receivedInr")} for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is still to pay. Pay the rest here: ${payTo(f)} Reply STOP if you do not want these reminders.`,
+  fee_pay_link: (f) => `Pay ${inr(f, "balanceInr")} for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} here: ${payTo(f)}`,
   fee_already_paid: (f) => `Yes, we can see your payment of ${inr(f, "paidInr")} for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. Nothing more is due. Thank you.`,
-  fee_claim_partial: (f) => `We can see ${inr(f, "paidInr")} paid for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}, so ${inr(f, "balanceInr")} is still to pay. Pay the rest here: ${need(f, "link")}`,
-  fee_claim_not_found: (f) => `We cannot see a payment yet for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. If you paid just now, it can take a few minutes to show. I have asked the owner to check. If it did not go through, you can pay here: ${need(f, "link")}`,
+  fee_claim_partial: (f) => `We can see ${inr(f, "paidInr")} paid for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}, so ${inr(f, "balanceInr")} is still to pay. Pay the rest here: ${payTo(f)}`,
+  fee_claim_not_found: (f) => `We cannot see a payment yet for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. If you paid just now, it can take a few minutes to show. I have asked the owner to check. If it did not go through, you can pay here: ${payTo(f)}`,
   fee_nothing_due: () => "Nothing is due from you right now. Thank you!",
   fee_waiver_asked: (f) => `I cannot change the fee myself. I have asked the owner about taking ${inr(f, "waiverInr")} off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. You will hear back here.`,
-  fee_waiver_applied: (f) => `Done. ${inr(f, "waiverInr")} is taken off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is now to pay: ${need(f, "link")}`,
+  fee_waiver_applied: (f) => `Done. ${inr(f, "waiverInr")} is taken off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is now to pay: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `Done. ${inr(f, "waiverInr")} is taken off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. Nothing more is due.`,
-  fee_waiver_denied: (f) => `The owner has decided not to change ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is still to pay: ${need(f, "link")}`,
+  fee_waiver_denied: (f) => `The owner has decided not to change ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is still to pay: ${payTo(f)}`,
   fee_discount_to_owner: (f) => `I cannot change the fee myself. I have told the owner that you asked about ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. They will message you here.`,
   fee_request_waiting: (f) => `The owner has already been asked about ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. You will hear back here.`,
   fee_refund_asked: (f) => `I have asked the owner about refunding ${inr(f, "refundInr")} of the ${inr(f, "paidInr")} you paid for ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. You will hear back here.`,
@@ -131,21 +149,21 @@ const en: TemplateSet = {
   owner_approval_failed: () => "I could not record your answer just now. Please send it again in a few minutes.",
 };
 
-const hi: TemplateSet = {
-  fee_reminder: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${inr(f, "balanceInr")} है, देय तारीख ${dueDate(f)}। यहाँ भुगतान करें: ${need(f, "link")} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
-  fee_overdue: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${dueDate(f)} तक देनी थी। ${inr(f, "balanceInr")} अभी बाकी है: ${need(f, "link")} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
-  fee_overdue_late: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${dueDate(f)} तक देनी थी। ${inr(f, "lateFeeInr")} की देर की फीस जुड़ गई है, इसलिए ${inr(f, "balanceInr")} अभी बाकी है: ${need(f, "link")} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+const hi: BaseSet = {
+  fee_reminder: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${inr(f, "balanceInr")} है, देय तारीख ${dueDate(f)}। यहाँ भुगतान करें: ${payTo(f)} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_overdue: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${dueDate(f)} तक देनी थी। ${inr(f, "balanceInr")} अभी बाकी है: ${payTo(f)} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_overdue_late: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${dueDate(f)} तक देनी थी। ${inr(f, "lateFeeInr")} की देर की फीस जुड़ गई है, इसलिए ${inr(f, "balanceInr")} अभी बाकी है: ${payTo(f)} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
   fee_received: (f) => `धन्यवाद! ${f.businessName} को ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस के ${inr(f, "receivedInr")} मिल गए। अब कुछ बाकी नहीं है। आपकी रसीद संख्या ${need(f, "dueRef")} है।`,
-  fee_part_received: (f) => `धन्यवाद! ${f.businessName} को ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस के ${inr(f, "receivedInr")} मिल गए। ${inr(f, "balanceInr")} अभी बाकी है। बाकी यहाँ भरें: ${need(f, "link")} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
-  fee_pay_link: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस के ${inr(f, "balanceInr")} यहाँ भरें: ${need(f, "link")}`,
+  fee_part_received: (f) => `धन्यवाद! ${f.businessName} को ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस के ${inr(f, "receivedInr")} मिल गए। ${inr(f, "balanceInr")} अभी बाकी है। बाकी यहाँ भरें: ${payTo(f)} ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_pay_link: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस के ${inr(f, "balanceInr")} यहाँ भरें: ${payTo(f)}`,
   fee_already_paid: (f) => `हाँ, ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस का ${inr(f, "paidInr")} का भुगतान हमें दिख रहा है। अब कुछ बाकी नहीं है। धन्यवाद।`,
-  fee_claim_partial: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस में ${inr(f, "paidInr")} भरे दिख रहे हैं, इसलिए ${inr(f, "balanceInr")} अभी बाकी है। बाकी यहाँ भरें: ${need(f, "link")}`,
-  fee_claim_not_found: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस का भुगतान अभी हमें नहीं दिख रहा। अगर अभी भरा है तो दिखने में कुछ मिनट लग सकते हैं। मैंने मालिक से जाँचने को कहा है। अगर भुगतान नहीं हुआ तो यहाँ भर सकते हैं: ${need(f, "link")}`,
+  fee_claim_partial: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस में ${inr(f, "paidInr")} भरे दिख रहे हैं, इसलिए ${inr(f, "balanceInr")} अभी बाकी है। बाकी यहाँ भरें: ${payTo(f)}`,
+  fee_claim_not_found: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस का भुगतान अभी हमें नहीं दिख रहा। अगर अभी भरा है तो दिखने में कुछ मिनट लग सकते हैं। मैंने मालिक से जाँचने को कहा है। अगर भुगतान नहीं हुआ तो यहाँ भर सकते हैं: ${payTo(f)}`,
   fee_nothing_due: () => "अभी आपकी ओर से कुछ बाकी नहीं है। धन्यवाद!",
   fee_waiver_asked: (f) => `फीस मैं खुद नहीं बदल सकता। मैंने मालिक से पूछा है कि ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम किए जाएँ या नहीं। जवाब यहीं मिलेगा।`,
-  fee_waiver_applied: (f) => `हो गया। ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम कर दिए गए हैं। अब ${inr(f, "balanceInr")} भरने हैं: ${need(f, "link")}`,
+  fee_waiver_applied: (f) => `हो गया। ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम कर दिए गए हैं। अब ${inr(f, "balanceInr")} भरने हैं: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `हो गया। ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम कर दिए गए हैं। अब कुछ बाकी नहीं है।`,
-  fee_waiver_denied: (f) => `मालिक ने ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस न बदलने का फ़ैसला किया है। ${inr(f, "balanceInr")} अभी बाकी है: ${need(f, "link")}`,
+  fee_waiver_denied: (f) => `मालिक ने ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस न बदलने का फ़ैसला किया है। ${inr(f, "balanceInr")} अभी बाकी है: ${payTo(f)}`,
   fee_discount_to_owner: (f) => `फीस मैं खुद नहीं बदल सकता। मैंने मालिक को बता दिया है कि आपने ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस के बारे में पूछा है। वे आपको यहीं संदेश भेजेंगे।`,
   fee_request_waiting: (f) => `${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस के बारे में मालिक से पहले ही पूछा जा चुका है। जवाब यहीं मिलेगा।`,
   fee_refund_asked: (f) => `मैंने मालिक से पूछा है कि ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस के भरे हुए ${inr(f, "paidInr")} में से ${inr(f, "refundInr")} लौटाए जाएँ या नहीं। जवाब यहीं मिलेगा।`,
@@ -186,21 +204,21 @@ const hi: TemplateSet = {
   owner_approval_failed: () => "आपका जवाब अभी दर्ज नहीं हो पाया। कृपया कुछ मिनट बाद फिर भेजें।",
 };
 
-const ml: TemplateSet = {
-  fee_reminder: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${inr(f, "balanceInr")} ആണ്, അടയ്ക്കേണ്ട തീയതി ${dueDate(f)}. ഇവിടെ അടയ്ക്കാം: ${need(f, "link")} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
-  fee_overdue: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${dueDate(f)}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${need(f, "link")} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
-  fee_overdue_late: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${dueDate(f)}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. ${inr(f, "lateFeeInr")} വൈകിയ ഫീസ് ചേർത്തിട്ടുണ്ട്, അതിനാൽ ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${need(f, "link")} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+const ml: BaseSet = {
+  fee_reminder: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${inr(f, "balanceInr")} ആണ്, അടയ്ക്കേണ്ട തീയതി ${dueDate(f)}. ഇവിടെ അടയ്ക്കാം: ${payTo(f)} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_overdue: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${dueDate(f)}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${payTo(f)} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_overdue_late: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${dueDate(f)}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. ${inr(f, "lateFeeInr")} വൈകിയ ഫീസ് ചേർത്തിട്ടുണ്ട്, അതിനാൽ ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${payTo(f)} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
   fee_received: (f) => `നന്ദി! ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ ${inr(f, "receivedInr")} ${f.businessName}-ന് ലഭിച്ചു. ഇനി ഒന്നും അടയ്ക്കാനില്ല. നിങ്ങളുടെ രസീത് നമ്പർ ${need(f, "dueRef")} ആണ്.`,
-  fee_part_received: (f) => `നന്ദി! ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ ${inr(f, "receivedInr")} ${f.businessName}-ന് ലഭിച്ചു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്. ബാക്കി ഇവിടെ അടയ്ക്കാം: ${need(f, "link")} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
-  fee_pay_link: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ ${inr(f, "balanceInr")} ഇവിടെ അടയ്ക്കാം: ${need(f, "link")}`,
+  fee_part_received: (f) => `നന്ദി! ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ ${inr(f, "receivedInr")} ${f.businessName}-ന് ലഭിച്ചു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്. ബാക്കി ഇവിടെ അടയ്ക്കാം: ${payTo(f)} ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_pay_link: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ ${inr(f, "balanceInr")} ഇവിടെ അടയ്ക്കാം: ${payTo(f)}`,
   fee_already_paid: (f) => `അതെ, ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ ${inr(f, "paidInr")} പേയ്മെന്റ് ഞങ്ങൾക്ക് കാണാം. ഇനി ഒന്നും അടയ്ക്കാനില്ല. നന്ദി.`,
-  fee_claim_partial: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിൽ ${inr(f, "paidInr")} അടച്ചതായി കാണാം, അതിനാൽ ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്. ബാക്കി ഇവിടെ അടയ്ക്കാം: ${need(f, "link")}`,
-  fee_claim_not_found: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ പേയ്മെന്റ് ഇതുവരെ ഞങ്ങൾക്ക് കാണാനില്ല. ഇപ്പോൾ അടച്ചതാണെങ്കിൽ കാണാൻ കുറച്ച് മിനിറ്റ് എടുക്കാം. പരിശോധിക്കാൻ ഉടമയോട് പറഞ്ഞിട്ടുണ്ട്. പേയ്മെന്റ് നടന്നിട്ടില്ലെങ്കിൽ ഇവിടെ അടയ്ക്കാം: ${need(f, "link")}`,
+  fee_claim_partial: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിൽ ${inr(f, "paidInr")} അടച്ചതായി കാണാം, അതിനാൽ ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്. ബാക്കി ഇവിടെ അടയ്ക്കാം: ${payTo(f)}`,
+  fee_claim_not_found: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ പേയ്മെന്റ് ഇതുവരെ ഞങ്ങൾക്ക് കാണാനില്ല. ഇപ്പോൾ അടച്ചതാണെങ്കിൽ കാണാൻ കുറച്ച് മിനിറ്റ് എടുക്കാം. പരിശോധിക്കാൻ ഉടമയോട് പറഞ്ഞിട്ടുണ്ട്. പേയ്മെന്റ് നടന്നിട്ടില്ലെങ്കിൽ ഇവിടെ അടയ്ക്കാം: ${payTo(f)}`,
   fee_nothing_due: () => "ഇപ്പോൾ നിങ്ങൾ ഒന്നും അടയ്ക്കാനില്ല. നന്ദി!",
   fee_waiver_asked: (f) => `ഫീസ് മാറ്റാൻ എനിക്ക് സ്വയം കഴിയില്ല. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറയ്ക്കാമോ എന്ന് ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി ഇവിടെ തന്നെ ലഭിക്കും.`,
-  fee_waiver_applied: (f) => `ശരി. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറച്ചിട്ടുണ്ട്. ഇനി ${inr(f, "balanceInr")} അടയ്ക്കണം: ${need(f, "link")}`,
+  fee_waiver_applied: (f) => `ശരി. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറച്ചിട്ടുണ്ട്. ഇനി ${inr(f, "balanceInr")} അടയ്ക്കണം: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `ശരി. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറച്ചിട്ടുണ്ട്. ഇനി ഒന്നും അടയ്ക്കാനില്ല.`,
-  fee_waiver_denied: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസ് മാറ്റേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${need(f, "link")}`,
+  fee_waiver_denied: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസ് മാറ്റേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${payTo(f)}`,
   fee_discount_to_owner: (f) => `ഫീസ് മാറ്റാൻ എനിക്ക് സ്വയം കഴിയില്ല. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിനെക്കുറിച്ച് നിങ്ങൾ ചോദിച്ചതായി ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ സന്ദേശം അയയ്ക്കും.`,
   fee_request_waiting: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിനെക്കുറിച്ച് ഉടമയോട് നേരത്തേ ചോദിച്ചിട്ടുണ്ട്. മറുപടി ഇവിടെ തന്നെ ലഭിക്കും.`,
   fee_refund_asked: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസായി അടച്ച ${inr(f, "paidInr")}-ൽ നിന്ന് ${inr(f, "refundInr")} തിരികെ നൽകാമോ എന്ന് ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി ഇവിടെ തന്നെ ലഭിക്കും.`,
@@ -241,21 +259,21 @@ const ml: TemplateSet = {
   owner_approval_failed: () => "നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും അയയ്ക്കൂ.",
 };
 
-const kn: TemplateSet = {
-  fee_reminder: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕ ${inr(f, "balanceInr")}, ಕೊನೆಯ ದಿನಾಂಕ ${dueDate(f)}. ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${need(f, "link")} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
-  fee_overdue: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ${dueDate(f)}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${need(f, "link")} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
-  fee_overdue_late: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ${dueDate(f)}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. ${inr(f, "lateFeeInr")} ತಡ ಶುಲ್ಕ ಸೇರಿಸಲಾಗಿದೆ, ಆದ್ದರಿಂದ ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${need(f, "link")} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+const kn: BaseSet = {
+  fee_reminder: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕ ${inr(f, "balanceInr")}, ಕೊನೆಯ ದಿನಾಂಕ ${dueDate(f)}. ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_overdue: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ${dueDate(f)}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${payTo(f)} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_overdue_late: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ${dueDate(f)}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. ${inr(f, "lateFeeInr")} ತಡ ಶುಲ್ಕ ಸೇರಿಸಲಾಗಿದೆ, ಆದ್ದರಿಂದ ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${payTo(f)} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
   fee_received: (f) => `ಧನ್ಯವಾದ! ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ${inr(f, "receivedInr")} ${f.businessName}-ಗೆ ಸಿಕ್ಕಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ. ನಿಮ್ಮ ರಸೀದಿ ಸಂಖ್ಯೆ ${need(f, "dueRef")}.`,
-  fee_part_received: (f) => `ಧನ್ಯವಾದ! ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ${inr(f, "receivedInr")} ${f.businessName}-ಗೆ ಸಿಕ್ಕಿದೆ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${need(f, "link")} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
-  fee_pay_link: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ${inr(f, "balanceInr")} ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${need(f, "link")}`,
+  fee_part_received: (f) => `ಧನ್ಯವಾದ! ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ${inr(f, "receivedInr")} ${f.businessName}-ಗೆ ಸಿಕ್ಕಿದೆ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)} ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_pay_link: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ${inr(f, "balanceInr")} ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)}`,
   fee_already_paid: (f) => `ಹೌದು, ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ${inr(f, "paidInr")} ಪಾವತಿ ನಮಗೆ ಕಾಣಿಸುತ್ತಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ. ಧನ್ಯವಾದ.`,
-  fee_claim_partial: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದಲ್ಲಿ ${inr(f, "paidInr")} ಪಾವತಿಯಾಗಿರುವುದು ಕಾಣಿಸುತ್ತಿದೆ, ಆದ್ದರಿಂದ ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${need(f, "link")}`,
-  fee_claim_not_found: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ಪಾವತಿ ಇನ್ನೂ ನಮಗೆ ಕಾಣಿಸುತ್ತಿಲ್ಲ. ಈಗಷ್ಟೇ ಪಾವತಿಸಿದ್ದರೆ ಕಾಣಿಸಲು ಕೆಲವು ನಿಮಿಷ ಬೇಕಾಗಬಹುದು. ಪರಿಶೀಲಿಸಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿದ್ದೇನೆ. ಪಾವತಿ ಆಗದಿದ್ದರೆ ಇಲ್ಲಿ ಪಾವತಿಸಬಹುದು: ${need(f, "link")}`,
+  fee_claim_partial: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದಲ್ಲಿ ${inr(f, "paidInr")} ಪಾವತಿಯಾಗಿರುವುದು ಕಾಣಿಸುತ್ತಿದೆ, ಆದ್ದರಿಂದ ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)}`,
+  fee_claim_not_found: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ಪಾವತಿ ಇನ್ನೂ ನಮಗೆ ಕಾಣಿಸುತ್ತಿಲ್ಲ. ಈಗಷ್ಟೇ ಪಾವತಿಸಿದ್ದರೆ ಕಾಣಿಸಲು ಕೆಲವು ನಿಮಿಷ ಬೇಕಾಗಬಹುದು. ಪರಿಶೀಲಿಸಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿದ್ದೇನೆ. ಪಾವತಿ ಆಗದಿದ್ದರೆ ಇಲ್ಲಿ ಪಾವತಿಸಬಹುದು: ${payTo(f)}`,
   fee_nothing_due: () => "ಈಗ ನಿಮ್ಮಿಂದ ಏನೂ ಬಾಕಿ ಇಲ್ಲ. ಧನ್ಯವಾದ!",
   fee_waiver_asked: (f) => `ಶುಲ್ಕವನ್ನು ನಾನೇ ಬದಲಾಯಿಸಲು ಆಗುವುದಿಲ್ಲ. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಬಹುದೇ ಎಂದು ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ.`,
-  fee_waiver_applied: (f) => `ಆಯಿತು. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಈಗ ${inr(f, "balanceInr")} ಪಾವತಿಸಬೇಕು: ${need(f, "link")}`,
+  fee_waiver_applied: (f) => `ಆಯಿತು. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಈಗ ${inr(f, "balanceInr")} ಪಾವತಿಸಬೇಕು: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `ಆಯಿತು. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ.`,
-  fee_waiver_denied: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ಬದಲಾಯಿಸದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${need(f, "link")}`,
+  fee_waiver_denied: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ಬದಲಾಯಿಸದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${payTo(f)}`,
   fee_discount_to_owner: (f) => `ಶುಲ್ಕವನ್ನು ನಾನೇ ಬದಲಾಯಿಸಲು ಆಗುವುದಿಲ್ಲ. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದ ಬಗ್ಗೆ ನೀವು ಕೇಳಿದ್ದನ್ನು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ.`,
   fee_request_waiting: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದ ಬಗ್ಗೆ ಮಾಲೀಕರನ್ನು ಈಗಾಗಲೇ ಕೇಳಲಾಗಿದೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ.`,
   fee_refund_asked: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕವಾಗಿ ಪಾವತಿಸಿದ ${inr(f, "paidInr")}ರಲ್ಲಿ ${inr(f, "refundInr")} ಹಿಂತಿರುಗಿಸಬಹುದೇ ಎಂದು ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ.`,
@@ -296,7 +314,79 @@ const kn: TemplateSet = {
   owner_approval_failed: () => "ನಿಮ್ಮ ಉತ್ತರವನ್ನು ಈಗ ದಾಖಲಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಕಳುಹಿಸಿ.",
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en, hi, ml, kn };
+// ---- UPI, marked paid by the owner (plan B33; modules/payments/upi) ------------------------------------------------------------
+// A centre that takes UPI: the parent pays the centre's own UPI ID (the QR picture, and the link with the UPI ID in every message that asks for money), and a
+// payment counts only when the owner marks it received (the "Received" button, or "received <code>"). These messages never say the agent checked a payment. A
+// refund is sent by the owner, and the parent hears "sent" only after the owner marks it so. Hindi, Malayalam and Kannada are machine-written and wait for a native
+// speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+const payee = (f: MessageFacts) => need(f, "payee");
+const code = (f: MessageFacts) => need(f, "upiCode");
+
+const upiEn: UpiSet = {
+  fee_upi_qr_caption: (f) => `Scan to pay ${inr(f, "balanceInr")} by UPI to ${payee(f)} for ${need(f, "studentName")}'s fee (${need(f, "dueRef")}).`,
+  fee_upi_claim: (f) => `Thank you. The owner will look for your payment for ${need(f, "studentName")}'s ${need(f, "monthLabel")} fee in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message.`,
+  fee_upi_refund_owed: (f) => `The owner will send ${inr(f, "refundInr")} back to you by UPI for ${need(f, "studentName")}'s fee. I'll message you when they mark it sent.`,
+  fee_upi_refund_sent: (f) => `The owner has marked your ${inr(f, "refundInr")} refund for ${need(f, "studentName")}'s fee (${need(f, "dueRef")}) as sent by UPI. Please check your UPI app.`,
+  owner_fee_upi_expected: (f) => `UPI payment to check: parent ${need(f, "customerPhone")} has been asked for ${inr(f, "balanceInr")} for ${need(f, "studentName")}'s ${need(f, "monthLabel")} fee (fee ${need(f, "dueRef")}). When it shows in your UPI app, tap Received or reply "received ${code(f)}". If a different amount came, reply "received ${code(f)}" and the amount.`,
+  owner_fee_upi_claim: (f) => `Parent ${need(f, "customerPhone")} says they have paid ${need(f, "studentName")}'s ${need(f, "monthLabel")} fee (fee ${need(f, "dueRef")}). A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received ${code(f)}".`,
+  owner_fee_upi_marked: (f) => `Thank you. ${inr(f, "receivedInr")} for fee ${need(f, "dueRef")} is marked paid by you.`,
+  owner_fee_upi_part: (f) => `Thank you. ${inr(f, "receivedInr")} for fee ${need(f, "dueRef")} is marked paid by you. ${inr(f, "balanceInr")} is still to pay; when it arrives, tap Received or reply "received ${code(f)}".`,
+  owner_fee_upi_already: () => "That payment is already marked. It is counted once.",
+  owner_fee_upi_unknown: () => "I don't know that code. Please use the code in my latest message about the payment.",
+  owner_fee_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to parent ${need(f, "customerPhone")} (fee ${need(f, "dueRef")}). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_fee_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to parent ${need(f, "customerPhone")} (fee ${need(f, "dueRef")}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_fee_upi_refund_marked: (f) => `Thank you. The ${inr(f, "refundInr")} refund for fee ${need(f, "dueRef")} is marked sent, and the parent has been told.`,
+};
+
+const upiHi: UpiSet = {
+  fee_upi_qr_caption: (f) => `${need(f, "studentName")} की फीस (${need(f, "dueRef")}) के लिए ${payee(f)} को UPI से ${inr(f, "balanceInr")} भेजने के लिए स्कैन करें।`,
+  fee_upi_claim: (f) => `धन्यवाद। मालिक अपने UPI ऐप में ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस का आपका भुगतान देखकर पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा। स्क्रीनशॉट भुगतान का सबूत नहीं है, इसलिए कृपया उस संदेश का इंतज़ार करें।`,
+  fee_upi_refund_owed: (f) => `मालिक ${need(f, "studentName")} की फीस के ${inr(f, "refundInr")} UPI से आपको वापस भेजेंगे। जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।`,
+  fee_upi_refund_sent: (f) => `मालिक ने ${need(f, "studentName")} की फीस (${need(f, "dueRef")}) का आपका ${inr(f, "refundInr")} रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें।`,
+  owner_fee_upi_expected: (f) => `जाँचने के लिए UPI भुगतान: अभिभावक ${need(f, "customerPhone")} से ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस (${need(f, "dueRef")}) के ${inr(f, "balanceInr")} माँगे गए हैं। जब यह आपके UPI ऐप में दिखे, तो "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें। अगर कोई और रकम आई है, तो "received ${code(f)}" के बाद रकम लिखें।`,
+  owner_fee_upi_claim: (f) => `अभिभावक ${need(f, "customerPhone")} कह रहे हैं कि उन्होंने ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस (${need(f, "dueRef")}) भर दी है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें।`,
+  owner_fee_upi_marked: (f) => `धन्यवाद। फीस ${need(f, "dueRef")} के ${inr(f, "receivedInr")} आपने मिला हुआ दर्ज किया है।`,
+  owner_fee_upi_part: (f) => `धन्यवाद। फीस ${need(f, "dueRef")} के ${inr(f, "receivedInr")} आपने मिला हुआ दर्ज किया है। ${inr(f, "balanceInr")} अभी बाकी है; आने पर "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें।`,
+  owner_fee_upi_already: () => "यह भुगतान पहले ही दर्ज है। इसे एक ही बार गिना गया है।",
+  owner_fee_upi_unknown: () => "मैं यह कोड नहीं पहचानता। कृपया उस भुगतान के बारे में मेरे सबसे नए संदेश वाला कोड इस्तेमाल करें।",
+  owner_fee_upi_refund_owed: (f) => `वापस भेजना है: अभिभावक ${need(f, "customerPhone")} (फीस ${need(f, "dueRef")}) को UPI से ${inr(f, "refundInr")}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
+  owner_fee_upi_refund_reminder: (f) => `याद दिलाना: अभिभावक ${need(f, "customerPhone")} (फीस ${need(f, "dueRef")}) को ${inr(f, "refundInr")} अभी भी वापस देना है। UPI से भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
+  owner_fee_upi_refund_marked: (f) => `धन्यवाद। फीस ${need(f, "dueRef")} का ${inr(f, "refundInr")} रिफंड भेजा हुआ दर्ज हो गया है, और अभिभावक को बता दिया गया है।`,
+};
+
+const upiMl: UpiSet = {
+  fee_upi_qr_caption: (f) => `${need(f, "studentName")}-ന്റെ ഫീസിനായി (${need(f, "dueRef")}) ${payee(f)}-ന് UPI വഴി ${inr(f, "balanceInr")} അയക്കാൻ സ്കാൻ ചെയ്യൂ.`,
+  fee_upi_claim: (f) => `നന്ദി. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിന്റെ നിങ്ങളുടെ പണമടവ് ഉടമ അവരുടെ UPI ആപ്പിൽ നോക്കി ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. സ്ക്രീൻഷോട്ട് പണമടച്ചതിന്റെ തെളിവല്ല, അതിനാൽ ആ സന്ദേശത്തിനായി കാത്തിരിക്കൂ.`,
+  fee_upi_refund_owed: (f) => `ഉടമ ${need(f, "studentName")}-ന്റെ ഫീസിൽ നിന്ന് ${inr(f, "refundInr")} UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.`,
+  fee_upi_refund_sent: (f) => `ഉടമ ${need(f, "studentName")}-ന്റെ ഫീസിന്റെ (${need(f, "dueRef")}) നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് UPI വഴി അയച്ചതായി രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ.`,
+  owner_fee_upi_expected: (f) => `പരിശോധിക്കാനുള്ള UPI പണമടവ്: രക്ഷിതാവ് ${need(f, "customerPhone")}-നോട് ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിനായി (${need(f, "dueRef")}) ${inr(f, "balanceInr")} ചോദിച്ചിട്ടുണ്ട്. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ "received ${code(f)}" എന്നതിന് ശേഷം തുക എഴുതുക.`,
+  owner_fee_upi_claim: (f) => `രക്ഷിതാവ് ${need(f, "customerPhone")} പറയുന്നു: ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസ് (${need(f, "dueRef")}) അടച്ചു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_fee_upi_marked: (f) => `നന്ദി. ഫീസ് ${need(f, "dueRef")}-ന്റെ ${inr(f, "receivedInr")} നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി.`,
+  owner_fee_upi_part: (f) => `നന്ദി. ഫീസ് ${need(f, "dueRef")}-ന്റെ ${inr(f, "receivedInr")} നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്; അത് എത്തുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_fee_upi_already: () => "ആ പണമടവ് ഇതിനകം രേഖപ്പെടുത്തിയിട്ടുണ്ട്. അത് ഒരു തവണ മാത്രം കണക്കാക്കും.",
+  owner_fee_upi_unknown: () => "ആ കോഡ് എനിക്ക് അറിയില്ല. ആ പണമടവിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ സന്ദേശത്തിലെ കോഡ് ഉപയോഗിക്കുക.",
+  owner_fee_upi_refund_owed: (f) => `തിരികെ അയക്കേണ്ടത്: രക്ഷിതാവ് ${need(f, "customerPhone")}-ന് (ഫീസ് ${need(f, "dueRef")}) UPI വഴി ${inr(f, "refundInr")}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_fee_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: രക്ഷിതാവ് ${need(f, "customerPhone")}-ന് (ഫീസ് ${need(f, "dueRef")}) ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_fee_upi_refund_marked: (f) => `നന്ദി. ഫീസ് ${need(f, "dueRef")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, രക്ഷിതാവിനെ അറിയിച്ചു.`,
+};
+
+const upiKn: UpiSet = {
+  fee_upi_qr_caption: (f) => `${need(f, "studentName")} ಅವರ ಶುಲ್ಕಕ್ಕಾಗಿ (${need(f, "dueRef")}) ${payee(f)} ಗೆ UPI ಮೂಲಕ ${inr(f, "balanceInr")} ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ.`,
+  fee_upi_claim: (f) => `ಧನ್ಯವಾದ. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದ ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ.`,
+  fee_upi_refund_owed: (f) => `ಮಾಲೀಕರು ${need(f, "studentName")} ಅವರ ಶುಲ್ಕದ ${inr(f, "refundInr")} ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  fee_upi_refund_sent: (f) => `ಮಾಲೀಕರು ${need(f, "studentName")} ಅವರ ಶುಲ್ಕದ (${need(f, "dueRef")}) ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.`,
+  owner_fee_upi_expected: (f) => `ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಪೋಷಕರು ${need(f, "customerPhone")} ಅವರಿಗೆ ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕಕ್ಕಾಗಿ (${need(f, "dueRef")}) ${inr(f, "balanceInr")} ಕೇಳಲಾಗಿದೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ "received ${code(f)}" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ.`,
+  owner_fee_upi_claim: (f) => `ಪೋಷಕರು ${need(f, "customerPhone")} ಹೇಳುತ್ತಿದ್ದಾರೆ: ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕ (${need(f, "dueRef")}) ಪಾವತಿಸಿದ್ದೇವೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_fee_upi_marked: (f) => `ಧನ್ಯವಾದ. ಶುಲ್ಕ ${need(f, "dueRef")} ರ ${inr(f, "receivedInr")} ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ.`,
+  owner_fee_upi_part: (f) => `ಧನ್ಯವಾದ. ಶುಲ್ಕ ${need(f, "dueRef")} ರ ${inr(f, "receivedInr")} ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ; ಅದು ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_fee_upi_already: () => "ಆ ಪಾವತಿ ಈಗಾಗಲೇ ದಾಖಲಾಗಿದೆ. ಅದನ್ನು ಒಂದೇ ಬಾರಿ ಎಣಿಸಲಾಗುತ್ತದೆ.",
+  owner_fee_upi_unknown: () => "ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಆ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಸಂದೇಶದಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ.",
+  owner_fee_upi_refund_owed: (f) => `ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಪೋಷಕರು ${need(f, "customerPhone")} (ಶುಲ್ಕ ${need(f, "dueRef")}) ಅವರಿಗೆ UPI ಮೂಲಕ ${inr(f, "refundInr")}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_fee_upi_refund_reminder: (f) => `ನೆನಪಿಸುವುದು: ಪೋಷಕರು ${need(f, "customerPhone")} (ಶುಲ್ಕ ${need(f, "dueRef")}) ಅವರಿಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_fee_upi_refund_marked: (f) => `ಧನ್ಯವಾದ. ಶುಲ್ಕ ${need(f, "dueRef")} ರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಪೋಷಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn }, hi: { ...hi, ...upiHi }, ml: { ...ml, ...upiMl }, kn: { ...kn, ...upiKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

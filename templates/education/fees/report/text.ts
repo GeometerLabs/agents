@@ -9,7 +9,7 @@ import { languagesOf, oneLine, periodLabel, rupees } from "../../../../modules/r
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
 import type { FeesReport, GoLiveFinding } from "./data.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 
 /**
  * What a document says about the go-live checks, as sentences in the centre's language: no certificate was given, one was given and could not be trusted, or one was read
@@ -31,7 +31,8 @@ export function goLiveLines(goLive: GoLiveFinding, language: Language): string[]
 /** What was not checked, as the owner's short form names it: the things an owner would expect, then how many more the full report lists. */
 export function notCheckedList(report: FeesReport, language: Language): string {
   const s = STRINGS[language].notChecked;
-  const named = [s.cash, s.upi, s.whatsapp, s.razorpay, s.review];
+  // a UPI centre (B33): "payments outside Razorpay" and "real Razorpay" do not apply; automatic payment checking does not either, and the line says so
+  const named = report.paidBy === "owner-marked" ? [s.cash, STRINGS[language].upiLabel.notChecked, s.whatsapp, s.review] : [s.cash, s.upi, s.whatsapp, s.razorpay, s.review];
   const others = report.notTested.length + report.notCounted.length - named.length;
   return [...named, STRINGS[language].more(Math.max(0, others))].join(" · ");
 }
@@ -45,9 +46,9 @@ export function ownerText(report: FeesReport, language: Language): string {
 
   const title = [oneLine(report.shop.name), periodLabel(report.period, language), tag].filter(Boolean).join(" · ");
   const moneyLine = [
-    pair(s.label.collected, rupees(money.collected.paise)),
+    pair(moneyLabels(language, report.paidBy).collected, rupees(money.collected.paise)),
     pair(s.label.stillToCollect, fees.stillToCollect.count > 0 ? `${rupees(fees.stillToCollect.paise)} (${fees.stillToCollect.count} ${s.label.students})` : rupees(0)),
-    money.givenBack.count > 0 ? pair(s.label.givenBack, rupees(money.givenBack.paise)) : "",
+    money.givenBack.count > 0 ? pair(moneyLabels(language, report.paidBy).givenBack, rupees(money.givenBack.paise)) : "",
   ].filter(Boolean).join(" · ");
   const doneLine = [
     pair(s.label.remindersSent, reminders.sent),

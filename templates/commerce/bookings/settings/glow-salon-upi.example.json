@@ -1,0 +1,163 @@
+{
+  "name": "Glow Salon (UPI)",
+  "address": "12 MG Road, Kochi",
+  "timezone": "Asia/Kolkata",
+  "services": [
+    {
+      "id": "haircut",
+      "names": {
+        "en": [
+          "haircut",
+          "hair cut"
+        ],
+        "hi": [
+          "हेयरकट",
+          "हेयर कट",
+          "बाल कटवाना",
+          "कटिंग"
+        ],
+        "ml": [
+          "ഹെയർകട്ട്",
+          "ഹെയർ കട്ട്",
+          "മുടി വെട്ട്",
+          "കട്ടിംഗ്"
+        ],
+        "kn": [
+          "ಹೇರ್ ಕಟ್",
+          "ಹೇರ್ಕಟ್",
+          "ಕೂದಲು ಕತ್ತರಿಸ",
+          "ಕಟಿಂಗ್"
+        ]
+      },
+      "priceInr": 450,
+      "durationMinutes": 45
+    },
+    {
+      "id": "beard-trim",
+      "names": {
+        "en": [
+          "beard trim",
+          "beard"
+        ],
+        "hi": [
+          "दाढ़ी ट्रिम",
+          "दाढ़ी"
+        ],
+        "ml": [
+          "താടി ട്രിം",
+          "താടി"
+        ],
+        "kn": [
+          "ಗಡ್ಡ ಟ್ರಿಮ್",
+          "ಗಡ್ಡ"
+        ]
+      },
+      "priceInr": 250,
+      "durationMinutes": 20
+    },
+    {
+      "id": "facial",
+      "names": {
+        "en": [
+          "facial"
+        ],
+        "hi": [
+          "फेशियल"
+        ],
+        "ml": [
+          "ഫേഷ്യൽ"
+        ],
+        "kn": [
+          "ಫೇಶಿಯಲ್"
+        ]
+      },
+      "priceInr": 900,
+      "durationMinutes": 60
+    },
+    {
+      "id": "hair-colour",
+      "names": {
+        "en": [
+          "hair colour",
+          "hair color"
+        ],
+        "hi": [
+          "हेयर कलर",
+          "बाल रंगवाना"
+        ],
+        "ml": [
+          "ഹെയർ കളർ",
+          "മുടി കളർ",
+          "ഹെയർ ഡൈ"
+        ],
+        "kn": [
+          "ಹೇರ್ ಕಲರ್",
+          "ಕೂದಲು ಬಣ್ಣ",
+          "ಹೇರ್ ಡೈ"
+        ]
+      },
+      "priceInr": 1800,
+      "durationMinutes": 90
+    }
+  ],
+  "openingHours": {
+    "mon": {
+      "open": "10:00",
+      "close": "20:00"
+    },
+    "tue": {
+      "open": "10:00",
+      "close": "20:00"
+    },
+    "wed": {
+      "open": "10:00",
+      "close": "20:00"
+    },
+    "thu": {
+      "open": "10:00",
+      "close": "20:00"
+    },
+    "fri": {
+      "open": "10:00",
+      "close": "20:00"
+    },
+    "sat": {
+      "open": "10:00",
+      "close": "21:00"
+    },
+    "sun": null
+  },
+  "slotMinutes": 30,
+  "bufferMinutes": 10,
+  "deposit": {
+    "amountInr": 200,
+    "holdMinutes": 60
+  },
+  "cancellation": {
+    "windowHours": 24,
+    "refundLimitInr": 200
+  },
+  "languages": [
+    "hi",
+    "en",
+    "ml",
+    "kn"
+  ],
+  "owner": {
+    "whatsapp": "+919000000000",
+    "language": "en"
+  },
+  "reminders": {
+    "hoursBefore": [
+      24,
+      2
+    ]
+  },
+  "payment": {
+    "module": "upi",
+    "upi": {
+      "id": "glowsalon@okicici",
+      "payee": "Glow Salon"
+    }
+  }
+}

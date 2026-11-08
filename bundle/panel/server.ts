@@ -43,7 +43,8 @@ import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
-import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, runtimeFor } from "./setup.ts";
+import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
+import { moduleOf } from "../../modules/payments/upi/settings.ts";
 import { applyFeesBusiness, applyFeesRules, buildFeesSettings, feesDraftFromShop, feesLimitLines, newFeesDraft, runtimeForFees } from "./fees.ts";
 import { activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
 import type { Body, Draft } from "./setup.ts";
@@ -421,10 +422,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const certificate = goLive.docs.get(ref.id, "go-live/go-live-certificate.json");
     const fees = shops.kind(ref.id) === "fees";
     const reading = certificate !== undefined ? (fees ? readFeesGoLive : readGoLiveCertificate)(certificate, settings) : undefined;
-    const pins = shops.pins(ref.id);
+    const pins = shops.pins(ref.id); // a UPI shop has no test mode and no Razorpay pin: its report reads "live"
     goLive.docs.make(ref.id, `monthly/${month}`, (scratch) => (fees ? writeFeesReport : writeClientReport)({
       settings, entries: data.entries, ...(fees ? { dues: data.dues ?? [] } : { bookings: data.bookings }), month, language: settings.owner.language, out: scratch,
-      source: pins?.razorpay?.mode === "live" ? "live" : "test-mode", ...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
+      source: pins?.razorpay?.mode === "live" || moduleOf(settings.payment) === "upi" ? "live" : "test-mode",...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
       // the Innovator badge is fleet's answer for the shop (fleet/<shop>.json, written by ops): the same file the owner's monthly message reads, so the builder's copy and the owner's agree
       innovator: shops.fleet(ref.id)?.innovator === true,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
@@ -547,7 +548,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
           problems = [w.setup.fallback("A file for this shop is already waiting in the server's inbox, so nothing was written. Start the setup again.")];
         }
         const after = shops.meta(d.shopId as string);
-        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...after, whatsapp: { businessNumber: d.whatsapp.businessNumber }, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId },
+        // A UPI shop has no Razorpay key to remember (and one it had before is dropped from its notes: the secrets inbox is write-only and is not touched).
+        const { razorpay: _kept, ...withoutRazorpay } = after;
+        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...(paymentModuleOf(d) === "upi" && template.accounts.includes("razorpay") ? withoutRazorpay : { ...after, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId } }), whatsapp: { businessNumber: d.whatsapp.businessNumber },
           calendar: { shareAddress: result.clientEmail ?? after.calendar?.shareAddress }, ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
       }
     }

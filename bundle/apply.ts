@@ -184,11 +184,13 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   const jobs = state.jobs ??= {};
   const since = (iso?: string) => (iso ? now.getTime() - Date.parse(iso) : Infinity);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  // a UPI shop (B33) has no Razorpay Guard and so no approvals relay: there is no credential to renew for it
+  const shopsWithRelay = Object.entries(state.shops).filter(([, s]) => s.applied && Object.values(s.applied.guards).some((g) => g.kind === "razorpay")).map(([n]) => n);
   // an agent someone else wrote has a relay credential too, when it calls Razorpay (a held refund is asked about on WhatsApp)
   const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && a.guards.razorpay).map(([n]) => n);
   if (shops.length === 0 && withRelay.length === 0) return ran;
   if (since(jobs.relayCredentialsAt) >= 24 * HOUR) {
-    for (const shop of [...shops, ...withRelay]) await renewRelayCredential(ctx, shop);
+    for (const shop of [...shopsWithRelay, ...withRelay]) await renewRelayCredential(ctx, shop);
     jobs.relayCredentialsAt = now.toISOString(); ran.push("relay credentials");
   }
   // the record of each agent someone else wrote, from its Guards' decisions and the services' own state: every five minutes. Guard lists only its 500 most recent decisions, so

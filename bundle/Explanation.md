@@ -228,6 +228,22 @@ Three things were added to the deployer's side of the panel's contract, all as f
 
 `settings-history.jsonl` in the shop's folder is written by the panel on each save (`shops.recordSettings`); the deployer ignores it.
 
+## A shop that takes UPI (B33, 7 November)
+
+A shop whose settings say `"payment": {"module": "upi", ...}` has no Razorpay account, so `guardsOf` (`lib/kinds.ts`) leaves Razorpay out of its Guards. Everything
+that follows from a Razorpay Guard follows from that one list:
+
+- **No Razorpay Guard and no payment service in runtime.json.** `planShop` makes no Razorpay spec; the generated runtime has no `services.payments`, and the runtime's
+  config check accepts that for a UPI shop and refuses it, plainly, for a Razorpay one (`modules/runtime/config.ts`, with the settings in hand). The report's numbers are
+  counted as live: they are the owner's real marks, not test money.
+- **No Razorpay key, no Razorpay webhook secret asked for.** `missingSecrets` and `ensureCredentials` skip them; the inbox's Razorpay route still gets a secret, made here
+  and given to nobody, so nothing can ever be signed for it.
+- **No approvals relay.** No refund is ever held for a UPI shop's owner (the owner sends UPI refunds), so the shop is not in relay.json, the relay's reading credential is
+  not issued, and its inbox sends the owner's messages to the runtime only (the runtime reads the owner's "received <code>" itself).
+- **The QR pictures** are written by the runtime into the report pages folder, which Caddy already serves read-only; a picture's name is 128 random bits.
+
+`test/upi-shop.test.ts` deploys one.
+
 ## What the tests show, and what they do not
 
 97 tests run with no Docker (`cd bundle && npm test`; one of them checks the status file and the stop request with the panel's own checker and is skipped until `bundle/panel/contract.ts` is in the tree). The template's own tests still pass. **On the previewed merge with main** (`git merge-tree --write-tree main bundle`, extracted to a scratch folder, nothing merged): the bundle's 97 run with that test un-skipped (it passes; six more skip only because the scratch folder is not beside the monorepo, so the drift and fleet checks have nothing to compare to), the panel's own 67 pass, and the template's 604 pass with the same one skip as before. The merge has two conflicts, both prose: `templates/commerce/bookings/Explanation.md` and `templates/commerce/bookings/Deferred.md`. The tests cover the generator and each of its refusals, the drift against the monorepo fixtures, the compose layout (who is on which network, which container mounts which secrets folder, nothing mounts the Docker socket), the deployer against a fake machine (a broken tripwire starts nothing; versions only rise; only changed services are restarted; a stopped shop stays stopped; a running Guard that disagrees stops the shop), the inbox isolation, the heartbeat against fleet's validator, the refresher's token discipline, snapshots and the drill against real SQLite, age, the S3 signing and the command line.

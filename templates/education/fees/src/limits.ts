@@ -20,9 +20,12 @@ import type { MessageFacts } from "./language/templates.ts";
 export { allow, block, hold };
 export type { Decision };
 
-/** What the payment record shows paid on a fee, in paise: the payments the agent read back from the payments service's own list and wrote as confirmed. Never what a parent said. */
+/**
+ * What the payment record shows paid on a fee, in paise: the payments the agent read back from the payments service's own list and wrote as confirmed, and on a UPI
+ * centre (B33) the payments the owner marked received ("owner_marked_paid"). Never what a parent said or sent: a screenshot makes no such entry.
+ */
 export function recordedPaidPaise(record: RecordView, dueId: string): number {
-  return record.confirmedRefs(dueId, "record_payment", "amountPaise").reduce((n, s) => n + Number(s), 0);
+  return [...record.confirmedRefs(dueId, "record_payment", "amountPaise"), ...record.confirmedRefs(dueId, "owner_marked_paid", "amountPaise")].reduce((n, s) => n + Number(s), 0);
 }
 
 // fee-link-matches-record: a link is made for what is still owed, from the record, and never for more than the dearest fee with its late fee.

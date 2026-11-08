@@ -3,7 +3,7 @@
 // against the amounts the record holds.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { NOT_TESTED } from "../crash-test/not-tested.ts";
+import { NOT_TESTED, UPI_NOT_TESTED } from "../crash-test/not-tested.ts";
 import { MONTH_NAMES, formatInr } from "../../../../modules/language/format.ts";
 import { glowSalon } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -132,7 +132,7 @@ test("the not-tested and not-counted lists are always on the page, in the shop's
     assert.ok(page.includes(s.notTested["no-go-live-certificate"]), `${language}: this report was given no go-live certificate, and says so in the list`);
     assert.ok(ownerText(report, language).split("\n")[4].includes(String(report.notTested.length + report.notCounted.length - 2)));
   }
-  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 5, "the hand check's list, and the five ways the checks on this shop's own settings are or are not shown (test/report-go-live.test.ts)");
+  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 5 + UPI_NOT_TESTED.length, "the hand check's list, the five ways the checks on this shop's own settings are or are not shown (test/report-go-live.test.ts), and a UPI shop's two lines (B33)");
 });
 
 test("a monthly report that is not told what the go-live checks ran on says so, for Glow Salon and for any other shop; it no longer claims they ran on Glow Salon", async () => {

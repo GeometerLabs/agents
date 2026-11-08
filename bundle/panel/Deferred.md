@@ -57,3 +57,10 @@ Not built, or built only as far as said. The first block needs another part of t
 - A move is within one server. Moving a shop between two servers (a builder's own server to Geometer's hosted one, or the other way) is an export and a new `shop add` there; the keys are entered again. There is no import.
 - Hindi, Malayalam and Kannada for the new pages (to do, export, handover) are machine-written like the rest, listed in section 7 of the review sheets; the new lines wait for a native reader.
 - The export holds the record as the deployer exports it (customers as short hashes). A copy with the raw numbers, for the owner who asks for it, is the shop's own database (`geometer restore` makes one from the backup); an export mode that reads the database inside the shop's volume and keeps the numbers is not built.
+
+## UPI in the panel (B33)
+
+- No live check of a UPI ID: nothing can read one without paying it. The partner types it and reads it back to the owner; a wrong but well-formed ID is not caught by the panel.
+- Switching a saved shop from Razorpay to UPI (or back) in the panel changes the settings and the notes only. The old Razorpay secrets stay in the write-only inbox until whoever runs the server removes them.
+- The new Hindi, Malayalam and Kannada sentences (the `upi` block and the two inbox kinds) wait for a native reader.
+- A phone-width look at the new step has not been done (no browser).

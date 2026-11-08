@@ -6,9 +6,12 @@
 //   refund_waiting         a refund is on its way: with the owner, held by Guard for the owner, or being sent again
 //   refund_unknown         a refund whose outcome nobody can state: it may or may not have gone
 //   refund_failed          a refund that did not go, and will not go on its own (Guard said no, it ran out, it failed)
+//   upi_payment_unconfirmed  a UPI shop: the customer says they paid, or the owner marked part, and the owner has not confirmed the rest (modules/payments/upi, B33)
+//   upi_refund_owed        a UPI shop: a refund the owner owes and has not marked done (the agent never sends a UPI refund)
 //
 // A case shows once for one cause: a waiting answer that is overdue is listed as that, and not also as a refund on its way.
 import { latestEntry, latestRecovery, timeOf } from "./registry.ts";
+import { UPI_OBLIGATION_KINDS } from "../payments/upi/obligations.ts";
 import type { CaseLike, DetectInput, Obligation, ObligationKind } from "./registry.ts";
 
 type Pending = CaseLike["pending"][number];
@@ -109,7 +112,8 @@ function refundIssues(id: "refund_unknown" | "refund_failed", unknown: boolean):
     detect(input) {
       const out: Obligation[] = [];
       for (const c of input.cases) {
-        const issues = (c.refundIssues ?? []).filter((i) => UNKNOWN_ISSUES.has(i.kind) === unknown);
+        // "late_upi" (a UPI mark after the hold ended) is not a refund that failed: the refund the owner owes for it is listed as upi_refund_owed
+        const issues = (c.refundIssues ?? []).filter((i) => i.kind !== "late_upi" && UNKNOWN_ISSUES.has(i.kind) === unknown);
         if (issues.length === 0) continue;
         const oldest = issues.reduce((a, b) => (a.atMs <= b.atMs ? a : b));
         // a refund that may have gone can be looked for again, read-only; one Guard refused, or that ran out, is definite and has nothing to look at
@@ -121,4 +125,4 @@ function refundIssues(id: "refund_unknown" | "refund_failed", unknown: boolean):
   };
 }
 
-export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false)];
+export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), ...UPI_OBLIGATION_KINDS];

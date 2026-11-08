@@ -11,7 +11,7 @@
 //    and again as the reason shown on the message that follows), so each rule is counted at its own entry only.
 //  - Only "unconfirmed" and "failed" outcomes are counted as such, never "attempted" (an attempt is checked in the next step).
 import { readFileSync } from "node:fs";
-import { NOT_TESTED } from "../crash-test/not-tested.ts";
+import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import { glowSalon } from "../src/harness.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -127,6 +127,11 @@ export interface MonthlyReport {
    * bytes, so the badge on the page is the one that was signed. Left out otherwise, which keeps the bytes (and the digest and code) of every report made without it.
    */
   innovator?: true;
+  /**
+   * Present only for a UPI shop (B33): its deposits and refunds are what the owner MARKED (received, sent), not what a payment service shows, and every document
+   * labels them so. Left out for a Razorpay shop, which keeps the bytes (and the digest and code) of every report made before.
+   */
+  paidBy?: "owner-marked";
   /** Reserved for the head of Guard's hash-chained ledger when it exists; null until then. Part of the signed bytes. */
   anchor: null;
 }
@@ -167,14 +172,14 @@ export const checkedPolicyDigest = (): string => policyDigest(glowSalon());
  * (Glow Salon's, when left out) and how many situations those settings could not run.
  */
 export function notTestedFor(settings: Settings, ran: { onPolicyDigest?: string; notRun?: number } = {}): NotTestedKey[] {
-  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+  const ids: NotTestedKey[] = notTestedOf(settings).map((n) => n.id);
   if (policyDigest(settings) !== (ran.onPolicyDigest ?? checkedPolicyDigest())) return [...ids, "own-settings"];
   return (ran.notRun ?? 0) > 0 ? [...ids, "situations-skipped"] : ids;
 }
 
 /** What the monthly report lists as not tested: the hand check's list, and one more unless a go-live certificate shows the checks ran on this shop's own settings with nothing left out. */
-export function notTestedForReport(goLive: GoLiveFinding): NotTestedKey[] {
-  const ids: NotTestedKey[] = NOT_TESTED.map((n) => n.id);
+export function notTestedForReport(goLive: GoLiveFinding, settings?: Settings): NotTestedKey[] {
+  const ids: NotTestedKey[] = (settings ? notTestedOf(settings) : NOT_TESTED).map((n) => n.id);
   switch (goLive.status) {
     case "own": return goLive.notRun > 0 ? [...ids, "situations-skipped"] : ids;
     case "example": return [...ids, "own-settings"];
@@ -223,7 +228,9 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const missing = { depositAmounts: 0, refundAmounts: 0, ownerCommands: 0, messageTargets: 0 };
   const deposits = emptyAmount();
   const seenDeposits = new Set<string>();
-  for (const e of month.filter((x) => x.action === "record_deposit" && x.outcome === "confirmed")) {
+  // UPI (B33): the owner's marks are the payment record ("owner_marked_paid"), and a refund counts once the owner marks it sent ("upi_refund_marked_done")
+  const upi = settings.payment?.module === "upi";
+  for (const e of month.filter((x) => (x.action === "record_deposit" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
     const key = e.refs.paymentId ?? `seq-${e.seq}`;
     if (seenDeposits.has(key)) continue;
     seenDeposits.add(key);
@@ -231,11 +238,11 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   }
   const refunds = { ...emptyAmount(), ofDeposits: emptyAmount(), ofSecondPayments: emptyAmount() };
   const seenRefunds = new Set<string>();
-  for (const e of month.filter((x) => x.action === "refund" && x.outcome === "confirmed")) {
+  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed")) {
     const key = e.refs.refundId ?? `seq-${e.seq}`;
     if (seenRefunds.has(key)) continue;
     seenRefunds.add(key);
-    const part = depositPayments.has(e.refs.paymentId) ? refunds.ofDeposits : refunds.ofSecondPayments;
+    const part = depositPayments.has(e.refs.paymentId) || e.action === "upi_refund_marked_done" ? refunds.ofDeposits : refunds.ofSecondPayments;
     if (!tally([refunds, part], e.refs.amountPaise)) missing.refundAmounts++;
   }
 
@@ -316,9 +323,10 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     },
     missing,
     notCounted: [...NOT_COUNTED],
-    notTested: notTestedForReport(goLive),
+    notTested: notTestedForReport(goLive, settings),
     goLive,
     ...(input.innovator === true ? { innovator: true as const } : {}),
+    ...(upi ? { paidBy: "owner-marked" as const } : {}),
     anchor: null,
   };
 }
