@@ -202,8 +202,11 @@ async function sendCertificate(ctx: MonthlyJobContext, a: { month: string; langu
 }
 
 
-/** An entry this job wrote itself (the claim, the ending, the document). They are not the shop's activity: a month holding only these would otherwise be reported forever. */
-const isOwn = (e: RecordEntry): boolean => e.action === "send_message" && (e.refs.report !== undefined || e.refs.reportFile !== undefined);
+/**
+ * An entry this job wrote itself (the claim, the ending, the document), or one the licence wrote (its state line, and the owner's service notice, B13). They are not the
+ * shop's activity: a month holding only these would otherwise be reported forever, and a wound-down month nobody wrote in is a quiet month.
+ */
+const isOwn = (e: RecordEntry): boolean => (e.action === "send_message" && (e.refs.report !== undefined || e.refs.reportFile !== undefined || e.refs.licence !== undefined)) || e.action === "licence";
 
 /** Is there any entry of the shop's in [from, to)? The record is in time order, so look from the end and stop as soon as it is before the month. */
 function hasActivity(entries: readonly RecordEntry[], from: number, to: number): boolean {

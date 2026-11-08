@@ -8,6 +8,8 @@ import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
 import { createKit } from "./runtime-kit.ts";
+import { buildFeesReport } from "../report/data.ts";
+import { monthRange } from "../../../../modules/report/months.ts";
 
 const PAID_THROUGH = 1_796_668_200;
 let state: LicenceNow = UNRESTRICTED;
@@ -85,6 +87,17 @@ test("the runtime sends the owner the wind-down's notice once, as the utility te
     await runtime.tick();
     await runtime.tick();
     assert.equal(notices().length, 1);
-    assert.equal(notices()[0].text, "Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local partner about it.");
+    assert.equal(notices()[0].text, "Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local partner.");
   } finally { kit.cleanup(); }
+});
+
+test("the monthly report of a month with a wind-down is made, and never counts a licence refusal as one of the centre's limits that held", async () => {
+  const w = world();
+  await w.advance(61);
+  set("wind_down");
+  await w.say("I want to pay", { from: ROHAN_PARENT });
+  await w.goto({ year: 2026, month: 11, day: 10 });
+  const { from, to } = monthRange("2026-11", w.settings.timezone);
+  const report = buildFeesReport({ settings: w.settings, entries: w.record.entries(), dues: [...w.store.dues.values()], from, to, source: "stand-in", madeAt: to });
+  assert.equal(Object.values(report.stopped.byRule).reduce((a, b) => a + b, 0), 0, "the licence's refusals are not the centre's limits");
 });

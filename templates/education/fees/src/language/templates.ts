@@ -409,7 +409,7 @@ const open = (f: MessageFacts) => need(f, "openCount");
 
 const licenceEn: LicenceSet = {
   fee_paused: (f) => `Online fee payment is paused for now. Please contact ${f.businessName} directly.`,
-  owner_licence_paused: (f) => `Notice: online fee payment for ${f.businessName} is paused for now. Fees already paid, and refunds, still go through. Please contact ${partner(f)} about it.`,
+  owner_licence_paused: (f) => `Notice: online fee payment for ${f.businessName} is paused for now. Fees already paid, and refunds, still go through. Please contact ${partner(f)}.`,
   owner_licence_stopped: (f) => `Notice: online fee collection for ${f.businessName} has stopped. Nothing is deleted. Fees still open: ${openFees(f)}. Other open items: ${open(f)}. ${partner(f)} can give you the full list and a free copy of all your records until ${until(f)}.`,
 };
 const licenceHi: LicenceSet = {

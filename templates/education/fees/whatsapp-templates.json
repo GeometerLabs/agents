@@ -1983,7 +1983,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Notice: online fee payment for {{1}} is paused for now. Fees already paid, and refunds, still go through. Please contact {{2}} about it.",
+        "text": "Notice: online fee payment for {{1}} is paused for now. Fees already paid, and refunds, still go through. Please contact {{2}}.",
         "example": {
           "body_text": [
             [

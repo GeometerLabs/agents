@@ -487,7 +487,7 @@ const open = (f: MessageFacts) => need(f, "openCount");
 
 const licenceEn: LicenceSet = {
   booking_paused: (f) => `Online booking is paused for now. Please contact ${f.businessName} directly.`,
-  owner_licence_paused: (f) => `Notice: online booking for ${f.businessName} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact ${partner(f)} about it.`,
+  owner_licence_paused: (f) => `Notice: online booking for ${f.businessName} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact ${partner(f)}.`,
   owner_licence_stopped: (f) => `Notice: online booking for ${f.businessName} has stopped. Nothing is deleted. Bookings to come: ${upcoming(f)}. Other open items: ${open(f)}. ${partner(f)} can give you the full list and a free copy of all your records until ${until(f)}.`,
 };
 const licenceHi: LicenceSet = {

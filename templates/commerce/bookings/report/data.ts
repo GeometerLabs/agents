@@ -261,7 +261,8 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const byRule = Object.fromEntries(RULE_IDS.map((r) => [r, 0])) as Record<RuleId, number>;
   let stoppedTotal = 0;
   for (const e of month) {
-    const blocked = e.decisions.filter((d) => d.verdict === "block" && STOP_SITES[d.ruleId].includes(e.action));
+    // a rule the report does not list is not one of the shop's limits (the licence's `subscription_suspended`, B13): it is never counted as a limit that held
+    const blocked = e.decisions.filter((d) => d.verdict === "block" && (STOP_SITES[d.ruleId] ?? []).includes(e.action));
     if (blocked.length === 0) continue;
     stoppedTotal++;
     for (const ruleId of new Set(blocked.map((d) => d.ruleId))) byRule[ruleId]++;

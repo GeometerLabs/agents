@@ -12,6 +12,8 @@ import type { LeaseShop, LicenceFile, LicenceNow } from "../../../../modules/lic
 import { licenceReader } from "../../../../modules/runtime/config.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
 import { createKit } from "./runtime-kit.ts";
+import { buildMonthlyReport } from "../report/data.ts";
+import { monthRange } from "../../../../modules/report/months.ts";
 
 const BOOK = "haircut tomorrow at 6pm";
 const PAID_THROUGH = 1_796_668_200;
@@ -126,7 +128,7 @@ test("the runtime sends the owner one service notice at the wind-down and one at
     const first = kit.messaging.sentTo(owner);
     assert.equal(first.length, 1, "once");
     assert.equal(first[0].templateName, "owner_service_paused", "the owner has not written today, so it goes as the utility template");
-    assert.equal(first[0].text, "Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner about it.");
+    assert.equal(first[0].text, "Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner.");
     now = { ...now, state: "stopped", exportUntil: PAID_THROUGH + 150 * 86_400 };
     await runtime.tick();
     await runtime.tick();
@@ -159,4 +161,19 @@ test("the runtime reads client/licence.json by its modified time and judges it w
     assert.equal(read().state, "wind_down", "a file that does not read leaves the last good reading standing");
     assert.equal(licenceNow({ ...file, shop: null }, clockMs).restricted, false, "a shop the lease does not list");
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("the monthly report of a month with a wind-down is made, and never counts a licence refusal as one of the shop's limits that held", async () => {
+  const w = world();
+  await w.say(BOOK); // a booking while in order: nothing stopped
+  set("wind_down");
+  await w.say(BOOK, { from: "+919822222222" });
+  await w.say("hi", { from: "+919833333333" });
+  set("stopped");
+  await w.tick();
+  await w.say("hello");
+  const { from, to } = monthRange("2026-11", w.settings.timezone);
+  const report = buildMonthlyReport({ settings: w.settings, entries: w.record.entries(), bookings: [...w.store.bookings.values()], from, to, source: "stand-in", madeAt: to });
+  assert.equal(report.stopped.total, 0, "the licence's refusals are not the shop's limits");
+  assert.equal(Object.values(report.stopped.byRule).reduce((a, b) => a + b, 0), 0);
 });
