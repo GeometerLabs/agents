@@ -30,9 +30,9 @@ export function createHealthData(deps: { config: PanelConfig; shops: Shops; entr
       const inbox = inboxFor(shops, id, now(), unfinished);
       const mine = entries.read(account.id, id);
 
-      // the Innovator discount covers up to the price list's number of one person's shops, in id order
+      // the Innovator discount covers up to the price list's number of one person's shops, the oldest first (fleet's invoice does the same)
       const owner = shops.servedBy(id)?.accountId;
-      const flagged = shops.ids().filter((s) => shops.servedBy(s)?.accountId === owner && shops.fleet(s)?.innovator === true);
+      const flagged = shops.ids().flatMap((s) => { const by = shops.servedBy(s); return by?.accountId === owner && shops.fleet(s)?.innovator === true ? [{ id: s, since: by.createdAt }] : []; });
       const innovator = fleet?.innovator === true && discountedShops(flagged, prices).has(id);
       const plan = fleet?.plan ?? (settings && shops.kind(id) === "bookings" ? planFromSettings(settings) : null);
 

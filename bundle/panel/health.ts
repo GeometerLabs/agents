@@ -123,6 +123,8 @@ export interface Sum {
   marginPaise: number | null;
   /** True only when every shop has a margin and none of them leaves a cost line out. */
   complete: boolean;
+  /** True when no shop's margin leaves a cost line out (the shops without a price are not counted here: `priced` says those). */
+  costsKnown: boolean;
   costPaise: number;
   setupPaise: number;
 }
@@ -133,6 +135,7 @@ export function sumMargins(list: readonly ShopMargin[]): Sum {
     shops: list.length, priced: known.length,
     marginPaise: known.length === 0 ? null : known.reduce((n, m) => n + (m.margin as { paise: number }).paise, 0),
     complete: list.length > 0 && known.length === list.length && known.every((m) => (m.margin as { complete: boolean }).complete),
+    costsKnown: known.every((m) => (m.margin as { complete: boolean }).complete),
     costPaise: list.reduce((n, m) => n + m.cost.paise, 0),
     setupPaise: list.reduce((n, m) => n + (m.setupFeePaise ?? 0), 0),
   };
@@ -147,26 +150,34 @@ export interface PlanFeeInput {
   innovator: boolean;
 }
 
-/** Geometer's plan fee for a shop, in whole paise, before GST, from the price list; null when there is no plan or no price for it. Each share is taken once, then rounded up once. */
+/**
+ * Geometer's plan fee for a shop, in whole paise, before GST, from the price list; null when there is no plan or no price for it. The rule is fleet's invoice
+ * (monorepo apps/fleet/src/invoice.ts): the half-price licence on a builder's own server and the Innovator discount do NOT stack, the lower of the two is charged.
+ * Each share is taken once from the plan fee, then the result is rounded up once (the same arithmetic as plan.ts, so the two pages agree for one shop).
+ */
 export function planFeePaise(i: PlanFeeInput): { paise: number | null; notes: CostNote[] } {
   if (!i.plan) return { paise: null, notes: ["no-plan"] };
   const fee = microPaise(i.prices, `plan.${i.plan}.fee`);
   if (!fee) return { paise: null, notes: ["no-price"] };
-  const notes: CostNote[] = [];
   let value = fee.value;
+  let notes: CostNote[] = [];
   const half = i.prices.rates["licence.self-host"]?.basisPoints;
-  if (i.selfHost && half !== undefined) { value = (value * BigInt(half)) / 10_000n; notes.push("self-host"); }
+  if (i.selfHost && half !== undefined) { value = (fee.value * BigInt(half)) / 10_000n; notes = ["self-host"]; }
   const discount = i.prices.rates["innovator.discount"]?.basisPoints;
-  if (i.innovator && discount !== undefined) { value = (value * BigInt(10_000 - discount)) / 10_000n; notes.push("innovator"); }
+  if (i.innovator && discount !== undefined) {
+    const price = (fee.value * BigInt(10_000 - discount)) / 10_000n;
+    if (price < value) { value = price; notes = ["innovator"]; }
+  }
   return { paise: paiseOf(value), notes };
 }
 
-/** How many of an innovator's shops the discount covers (price list `innovator.max-shops`). Left out of the list: all of them. */
-export const innovatorShopCap = (prices: PriceList): number => prices.rates["innovator.max-shops"]?.count ?? Number.MAX_SAFE_INTEGER;
+/** How many of one person's shops the Innovator discount covers (price list `innovator.max-shops`). Fleet gives no discount when the list does not say, and neither does this. */
+export const innovatorShopCap = (prices: PriceList): number => prices.rates["innovator.max-shops"]?.count ?? 0;
 
-/** The shops of this person that get the Innovator discount: the innovator-flagged ones, in id order, up to the cap. */
-export function discountedShops(flagged: readonly string[], prices: PriceList): Set<string> {
-  return new Set([...flagged].sort().slice(0, innovatorShopCap(prices)));
+/** The shops that get the Innovator discount: the person's innovator-flagged shops, the oldest assignments first (as fleet's invoice takes them), up to the cap. */
+export function discountedShops(flagged: readonly { id: string; since: string }[], prices: PriceList): Set<string> {
+  const ordered = [...flagged].sort((a, b) => (a.since < b.since ? -1 : a.since > b.since ? 1 : a.id < b.id ? -1 : 1));
+  return new Set(ordered.slice(0, innovatorShopCap(prices)).map((s) => s.id));
 }
 
 /** This month's usage from the exported record: only the entries whose own time is in [from, to). Null when the shop has no export. */

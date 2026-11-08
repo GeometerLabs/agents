@@ -21,7 +21,7 @@ export interface HealthWords {
     notes: { innovator: string; selfHost: string; included: string; estimate: string; noRecord: string; noPlan: string; noPrice: string; noMinutes: string; noRate: string; floor(n: number): string };
   };
   charge: { heading: string; price: string; setup: string; minutes: string; rate: string; save: string; privacy: string; hint: string };
-  margin: { heading: string; yourPrice: string; keep: string; unknownPrice: string; before(items: string): string; setupOnce(amount: string): string; negative: string };
+  margin: { heading: string; yourPrice: string; keep: string; unknownPrice: string; before(items: string): string; notFinal: string; setupOnce(amount: string): string; negative: string };
   all: { heading: string; shops(priced: number, n: number): string; keep: string; partial(priced: number, n: number): string; setup: string; unknown: string };
   vote: {
     title: string; intro: string; yours: string; none: string; button: string; change: string; saved: string; refused: string;
@@ -75,6 +75,7 @@ const en: HealthWords = {
   },
   margin: {
     heading: "Margin", yourPrice: "Your price", keep: "What you keep a month", unknownPrice: "Unknown until you enter your price.",
+    notFinal: "Before the costs that are not known yet.",
     before: (items) => `before: ${items}`, setupOnce: (a) => `Setup fee you charged once: ${a}`, negative: "Below zero: the running cost is more than your price.",
   },
   all: {
@@ -123,6 +124,7 @@ const hi: HealthWords = {
   },
   margin: {
     heading: "मार्जिन", yourPrice: "आपकी कीमत", keep: "हर महीने आपके पास बचता है", unknownPrice: "आपकी कीमत भरने तक पता नहीं।",
+    notFinal: "उन ख़र्चों से पहले जो अभी पता नहीं हैं।",
     before: (items) => `इनसे पहले: ${items}`, setupOnce: (a) => `एक बार लिया सेटअप शुल्क: ${a}`, negative: "शून्य से नीचे: चालू ख़र्च आपकी कीमत से ज़्यादा है।",
   },
   all: {
@@ -171,6 +173,7 @@ const ml: HealthWords = {
   },
   margin: {
     heading: "മാർജിൻ", yourPrice: "നിങ്ങളുടെ വില", keep: "മാസം നിങ്ങൾക്ക് ബാക്കി വരുന്നത്", unknownPrice: "നിങ്ങളുടെ വില നൽകുന്നത് വരെ അറിയില്ല.",
+    notFinal: "ഇതുവരെ അറിയാത്ത ചെലവുകൾക്ക് മുമ്പുള്ളത്.",
     before: (items) => `ഇവയ്ക്ക് മുമ്പ്: ${items}`, setupOnce: (a) => `ഒരിക്കൽ ഈടാക്കിയ സെറ്റപ്പ് ഫീസ്: ${a}`, negative: "പൂജ്യത്തിന് താഴെ: പ്രവർത്തന ചെലവ് നിങ്ങളുടെ വിലയേക്കാൾ കൂടുതലാണ്.",
   },
   all: {
@@ -219,6 +222,7 @@ const kn: HealthWords = {
   },
   margin: {
     heading: "ಮಾರ್ಜಿನ್", yourPrice: "ನಿಮ್ಮ ಬೆಲೆ", keep: "ತಿಂಗಳಿಗೆ ನಿಮಗೆ ಉಳಿಯುವುದು", unknownPrice: "ನಿಮ್ಮ ಬೆಲೆ ನಮೂದಿಸುವವರೆಗೆ ಗೊತ್ತಿಲ್ಲ.",
+    notFinal: "ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲದ ಖರ್ಚುಗಳ ಮೊದಲಿನದು.",
     before: (items) => `ಇವುಗಳ ಮೊದಲು: ${items}`, setupOnce: (a) => `ಒಮ್ಮೆ ಪಡೆದ ಸೆಟಪ್ ಶುಲ್ಕ: ${a}`, negative: "ಸೊನ್ನೆಗಿಂತ ಕೆಳಗೆ: ನಡೆಸುವ ಖರ್ಚು ನಿಮ್ಮ ಬೆಲೆಗಿಂತ ಹೆಚ್ಚಿದೆ.",
   },
   all: {
