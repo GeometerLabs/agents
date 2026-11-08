@@ -390,6 +390,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ഇവിടെ പരിശോധിക്കുക | Check it at |  |
 | `page.signedBy` | ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു | Signed with key |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
+| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ഞങ്ങൾ ചെയ്തത് കാണുക ▸ | Show what we did ▸ |  |
 | `page.byActionHeading` | എന്ത് ചെയ്തു, പ്രവൃത്തിയും ഫലവും അനുസരിച്ച് | What was done, by action and outcome |  |
