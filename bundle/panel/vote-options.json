@@ -1,0 +1,12 @@
+{
+  "format": "geometer-template-vote/1",
+  "about": "The poll for the first 100 innovators (plan B56): which template Geometer builds next. One data file: change the round and the options here and nowhere else. A new round (a new `round`) starts a new poll; votes of an older round are kept but not counted. Labels in Hindi, Malayalam and Kannada are machine-written and wait for a native reader (they are on the review sheets, section 7).",
+  "round": "2026-11",
+  "options": [
+    { "id": "orders", "label": { "en": "Orders: a shop takes orders and payment on WhatsApp", "hi": "ऑर्डर: दुकान WhatsApp पर ऑर्डर और भुगतान लेती है", "ml": "ഓർഡറുകൾ: കട WhatsApp-ൽ ഓർഡറും പണവും സ്വീകരിക്കുന്നു", "kn": "ಆರ್ಡರ್‌ಗಳು: ಅಂಗಡಿ WhatsApp ನಲ್ಲಿ ಆರ್ಡರ್ ಮತ್ತು ಪಾವತಿ ಪಡೆಯುತ್ತದೆ" } },
+    { "id": "fees-extensions", "label": { "en": "Fee collection extensions: more for tuition and training centres", "hi": "फ़ीस वसूली के विस्तार: ट्यूशन और ट्रेनिंग केंद्रों के लिए और सुविधाएँ", "ml": "ഫീസ് പിരിവ് വിപുലീകരണങ്ങൾ: ട്യൂഷൻ, പരിശീലന കേന്ദ്രങ്ങൾക്ക് കൂടുതൽ", "kn": "ಶುಲ್ಕ ವಸೂಲಿ ವಿಸ್ತರಣೆಗಳು: ಟ್ಯೂಷನ್ ಮತ್ತು ತರಬೇತಿ ಕೇಂದ್ರಗಳಿಗೆ ಹೆಚ್ಚು" } },
+    { "id": "equipment-rental", "label": { "en": "Equipment rental for groups: clubs, societies and halls", "hi": "समूहों के लिए उपकरण किराया: क्लब, सोसाइटी और हॉल", "ml": "സംഘങ്ങൾക്ക് ഉപകരണ വാടക: ക്ലബ്ബുകൾ, സൊസൈറ്റികൾ, ഹാളുകൾ", "kn": "ಗುಂಪುಗಳಿಗೆ ಉಪಕರಣ ಬಾಡಿಗೆ: ಕ್ಲಬ್‌ಗಳು, ಸೊಸೈಟಿಗಳು, ಹಾಲ್‌ಗಳು" } },
+    { "id": "social-posting", "label": { "en": "Social posting with approval: the owner approves each post", "hi": "मंज़ूरी के साथ सोशल पोस्टिंग: हर पोस्ट मालिक मंज़ूर करता है", "ml": "അംഗീകാരത്തോടെ സോഷ്യൽ പോസ്റ്റിംഗ്: ഓരോ പോസ്റ്റും ഉടമ അംഗീകരിക്കുന്നു", "kn": "ಒಪ್ಪಿಗೆಯೊಂದಿಗೆ ಸಾಮಾಜಿಕ ಪೋಸ್ಟ್: ಪ್ರತಿ ಪೋಸ್ಟ್ ಅನ್ನು ಮಾಲೀಕರು ಒಪ್ಪುತ್ತಾರೆ" } },
+    { "id": "course-packs", "label": { "en": "Course packs: sell and deliver a course in lessons", "hi": "कोर्स पैक: कोर्स को पाठों में बेचना और पहुँचाना", "ml": "കോഴ്സ് പായ്ക്കുകൾ: ഒരു കോഴ്സ് പാഠങ്ങളായി വിൽക്കുകയും എത്തിക്കുകയും ചെയ്യുക", "kn": "ಕೋರ್ಸ್ ಪ್ಯಾಕ್‌ಗಳು: ಕೋರ್ಸ್ ಅನ್ನು ಪಾಠಗಳಾಗಿ ಮಾರಾಟ ಮಾಡಿ ತಲುಪಿಸುವುದು" } }
+  ]
+}
