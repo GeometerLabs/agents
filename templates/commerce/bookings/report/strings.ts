@@ -47,7 +47,7 @@ export interface Strings {
     missingHeading: string; missingDepositAmounts: string; missingRefundAmounts: string; missingOwnerCommands: string; missingMessageTargets: string;
     notCountedHeading: string; notTestedHeading: string;
     checkHeading: string; code: string; digest: string; limitsDigest: string; recordDigest: string; countedFrom: string; setUpBy: string; madeOn: string; agentVersion: string;
-    checkAt: string; signedBy: string; notSigned: string; signatureNote: string;
+    checkAt: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string;
     showWhatWeDid: string; byActionHeading: string; entriesHeading: string; colNo: string; colTime: string; colAction: string; colOutcome: string; colBooking: string; colFingerprint: string;
     notAGrade: string; period: string;
   };
@@ -121,7 +121,7 @@ const en: Strings = {
     notCountedHeading: "Not counted", notTestedHeading: "Not tested",
     checkHeading: "Check this document", code: "Code", digest: "Digest", limitsDigest: "Limits digest", recordDigest: "Record digest", countedFrom: "Counted from", setUpBy: "Set up by", madeOn: "Made on",
     agentVersion: "Agent version", checkAt: "Check it at", signedBy: "Signed with key", notSigned: "Not signed",
-    signatureNote: "A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true.",
+    scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you.", signatureNote: "A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true.",
     showWhatWeDid: "Show what we did ▸", byActionHeading: "What was done, by action and outcome",
     entriesHeading: "Every entry in the record (fingerprints only: no customer messages and no phone numbers)",
     colNo: "No.", colTime: "Time", colAction: "Action", colOutcome: "Outcome", colBooking: "Booking", colFingerprint: "Fingerprint",
@@ -200,7 +200,7 @@ const hi: Strings = {
     notCountedHeading: "गिना नहीं गया", notTestedHeading: "जाँचा नहीं गया",
     checkHeading: "इस दस्तावेज़ को जाँचें", code: "कोड", digest: "डाइजेस्ट", limitsDigest: "सीमाओं का डाइजेस्ट", recordDigest: "रिकॉर्ड का डाइजेस्ट", countedFrom: "कहाँ से गिना", setUpBy: "तैयार किया", madeOn: "बनाया गया",
     agentVersion: "एजेंट का संस्करण", checkAt: "यहाँ जाँचें", signedBy: "इस कुंजी से हस्ताक्षर", notSigned: "हस्ताक्षर नहीं है",
-    signatureNote: "हस्ताक्षर बताता है कि यह दस्तावेज़ किसने जारी किया और तब से बदला नहीं है। यह नहीं बताता कि आँकड़े सच हैं।",
+    scanToCheck: "इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।", signatureNote: "हस्ताक्षर बताता है कि यह दस्तावेज़ किसने जारी किया और तब से बदला नहीं है। यह नहीं बताता कि आँकड़े सच हैं।",
     showWhatWeDid: "हमने क्या किया, देखें ▸", byActionHeading: "क्या किया गया, काम और नतीजे के हिसाब से",
     entriesHeading: "रिकॉर्ड की हर प्रविष्टि (सिर्फ़ फ़िंगरप्रिंट: कोई ग्राहक संदेश या फ़ोन नंबर नहीं)",
     colNo: "क्र.", colTime: "समय", colAction: "काम", colOutcome: "नतीजा", colBooking: "बुकिंग", colFingerprint: "फ़िंगरप्रिंट",
@@ -279,7 +279,7 @@ const ml: Strings = {
     notCountedHeading: "എണ്ണാത്തത്", notTestedHeading: "പരിശോധിക്കാത്തത്",
     checkHeading: "ഈ രേഖ പരിശോധിക്കുക", code: "കോഡ്", digest: "ഡൈജസ്റ്റ്", limitsDigest: "പരിധികളുടെ ഡൈജസ്റ്റ്", recordDigest: "രേഖയുടെ ഡൈജസ്റ്റ്", countedFrom: "എവിടെ നിന്ന് എണ്ണി", setUpBy: "തയ്യാറാക്കിയത്", madeOn: "ഉണ്ടാക്കിയ തീയതി",
     agentVersion: "ഏജന്റ് പതിപ്പ്", checkAt: "ഇവിടെ പരിശോധിക്കുക", signedBy: "ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു", notSigned: "ഒപ്പിട്ടിട്ടില്ല",
-    signatureNote: "ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
+    scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക.", signatureNote: "ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
     showWhatWeDid: "ഞങ്ങൾ ചെയ്തത് കാണുക ▸", byActionHeading: "എന്ത് ചെയ്തു, പ്രവൃത്തിയും ഫലവും അനുസരിച്ച്",
     entriesHeading: "രേഖയിലെ ഓരോ എൻട്രിയും (വിരലടയാളം മാത്രം: ഉപഭോക്തൃ സന്ദേശങ്ങളോ ഫോൺ നമ്പറുകളോ ഇല്ല)",
     colNo: "നം.", colTime: "സമയം", colAction: "പ്രവൃത്തി", colOutcome: "ഫലം", colBooking: "ബുക്കിംഗ്", colFingerprint: "വിരലടയാളം",
@@ -358,7 +358,7 @@ const kn: Strings = {
     notCountedHeading: "ಎಣಿಸದ್ದು", notTestedHeading: "ಪರಿಶೀಲಿಸದ್ದು",
     checkHeading: "ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ", code: "ಕೋಡ್", digest: "ಡೈಜೆಸ್ಟ್", limitsDigest: "ಮಿತಿಗಳ ಡೈಜೆಸ್ಟ್", recordDigest: "ದಾಖಲೆಯ ಡೈಜೆಸ್ಟ್", countedFrom: "ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು", setUpBy: "ಸಿದ್ಧಪಡಿಸಿದವರು", madeOn: "ಮಾಡಿದ ದಿನ",
     agentVersion: "ಏಜೆಂಟ್ ಆವೃತ್ತಿ", checkAt: "ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಿ", signedBy: "ಈ ಕೀಲಿಯಿಂದ ಸಹಿ ಮಾಡಲಾಗಿದೆ", notSigned: "ಸಹಿ ಇಲ್ಲ",
-    signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
+    scanToCheck: "ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ.", signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
     showWhatWeDid: "ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸", byActionHeading: "ಏನು ಮಾಡಲಾಯಿತು, ಕೆಲಸ ಮತ್ತು ಫಲಿತಾಂಶದ ಪ್ರಕಾರ",
     entriesHeading: "ದಾಖಲೆಯ ಪ್ರತಿ ನಮೂದು (ಬೆರಳಚ್ಚು ಮಾತ್ರ: ಗ್ರಾಹಕರ ಸಂದೇಶಗಳಾಗಲಿ ಫೋನ್ ಸಂಖ್ಯೆಗಳಾಗಲಿ ಇಲ್ಲ)",
     colNo: "ಕ್ರ.", colTime: "ಸಮಯ", colAction: "ಕೆಲಸ", colOutcome: "ಫಲಿತಾಂಶ", colBooking: "ಬುಕಿಂಗ್", colFingerprint: "ಬೆರಳಚ್ಚು",
