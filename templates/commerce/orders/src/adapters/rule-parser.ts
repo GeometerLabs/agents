@@ -11,20 +11,24 @@ import { GREETING_RE, NO_RE, YES_RE, detectLanguage, findOffer, isOverrideAttemp
 import type { IntentLine, Intent, IntentParser, ParseContext } from "./model.ts";
 
 const CANCEL_RE = wordRe(["cancel", "cancelled", "canceled", "cancellation", "कैंसल", "रद्द", "रद", "निरस्त", "radd", "cancle", ...inBoth((w) => w.cancel)]);
-const REFUND_RE = wordRe([
+const REFUND_WORDS = [
   "refund", "refunded", "money back", "give back", "return my money", "get back my money", "रिफंड", "वापस", "paise wapas", "wapas",
   "റീഫണ്ട്", "തിരികെ", "ರೀಫಂಡ್", "ಮರುಪಾವತಿ", "ವಾಪಸ್",
-]);
-const OWNER_RE = wordRe([
+];
+const REFUND_RE = wordRe(REFUND_WORDS);
+const OWNER_WORDS = [
   "owner", "talk to", "call me", "speak to", "manager", "मालिक", "बात करनी", "बात करना", "फोन करो", "malik", "ഉടമ", "സംസാരിക്കണം", "വിളിക്കൂ", "ಮಾಲೀಕ", "ಮಾತನಾಡ", "ಕರೆ ಮಾಡಿ",
-]);
+];
+const OWNER_RE = wordRe(OWNER_WORDS);
 const ORDER_LIST = [
   "order", "orders", "want", "need", "get me", "send", "book", "tiffin", "i'd like", "i would like", "chahiye", "chahie", "bhej do", "mangwana", "ऑर्डर", "चाहिए", "मँगवाना", "बुक",
   ...inBoth((w) => w.book),
 ];
 const ORDER_RE = wordRe(ORDER_LIST);
-const PICKUP_RE = phraseRe(["pickup", "pick up", "pick-up", "collect", "takeaway", "take away", "take-away", "come and take", "aake le", "lene aunga", "lene aaunga", "पिकअप", "पिक अप", "लेने आ", "खुद ले", "പിക്കപ്പ്", "പിക്ക് അപ്പ്", "വന്ന് എടുക്ക", "ಪಿಕಪ್", "ಪಿಕ್ ಅಪ್", "ನಾನೇ ಬಂದು"]);
-const DELIVERY_RE = phraseRe(["deliver", "delivery", "home delivery", "send it to", "bhej do", "bhejna", "pahuncha", "डिलीवरी", "डिलिवरी", "पहुँचा", "पहुंचा", "घर पर", "ഡെലിവറി", "വീട്ടിൽ എത്തിക്ക", "എത്തിച്ച", "ಡೆಲಿವರಿ", "ಮನೆಗೆ ತಲುಪಿಸ", "ತಲುಪಿಸ"]);
+const PICKUP_WORDS = ["pickup", "pick up", "pick-up", "collect", "takeaway", "take away", "take-away", "come and take", "aake le", "lene aunga", "lene aaunga", "पिकअप", "पिक अप", "लेने आ", "खुद ले", "പിക്കപ്പ്", "പിക്ക് അപ്പ്", "വന്ന് എടുക്ക", "ಪಿಕಪ್", "ಪಿಕ್ ಅಪ್", "ನಾನೇ ಬಂದು"];
+const PICKUP_RE = phraseRe(PICKUP_WORDS);
+const DELIVERY_WORDS = ["deliver", "delivery", "home delivery", "send it to", "bhej do", "bhejna", "pahuncha", "डिलीवरी", "डिलिवरी", "पहुँचा", "पहुंचा", "घर पर", "ഡെലിവറി", "വീട്ടിൽ എത്തിക്ക", "എത്തിച്ച", "ಡೆಲಿವರಿ", "ಮನೆಗೆ ತಲುಪಿಸ", "ತಲುಪಿಸ"];
+const DELIVERY_RE = phraseRe(DELIVERY_WORDS);
 
 // "I have paid" in words (a UPI shop reads this as a claim and asks the owner to look). A "no" in the same message ("I have not paid yet") makes it not a claim.
 const PAID_WORDS = [
@@ -38,12 +42,12 @@ const NEGATION_RE = wordRe(["not", "haven't", "havent", "didn't", "didnt", "not 
 /** Does this say "I have paid"? Used on a UPI shop before any model is asked, and for the "paid" intent. */
 export const isPaidClaim = (text: string): boolean => { const t = canon(text); return PAID_RE.test(t) && !NEGATION_RE.test(t); };
 
-/** The words about orders, by what they mean, for the review sheets. Every language's words are in each list, with the Latin-letter forms people type. */
-export const ORDER_WORDS = { order: ORDER_LIST, paid: PAID_WORDS, cancel: [] as string[], pickup: [] as string[], delivery: [] as string[] } as const;
+/** The words about orders, by what they mean, for the review sheets (REVIEW-hi.md, REVIEW-ml.md, REVIEW-kn.md). Every language's words are in each list, with the Latin-letter forms people type. */
+export const ORDER_WORDS = { order: ORDER_LIST, paid: PAID_WORDS, refund: REFUND_WORDS, owner: OWNER_WORDS, pickup: PICKUP_WORDS, delivery: DELIVERY_WORDS } as const;
 
 // ---- quantities ---------------------------------------------------------------------------------------------------------------
 
-const NUMBER_WORDS: Record<string, number> = {
+export const NUMBER_WORDS: Record<string, number> = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
   ek: 1, teen: 3, char: 4, chaar: 4, paanch: 5, panch: 5, chhe: 6, chhah: 6, saat: 7, aath: 8, nau: 9, das: 10,
   "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पाँच": 5, "पांच": 5, "छह": 6, "छः": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
