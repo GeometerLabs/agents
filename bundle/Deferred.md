@@ -173,6 +173,23 @@ Built: the lease kept on the server, checked with the pinned key; each shop's ru
 - **Per-Guard panel tokens.** The panel reads one token file and presents it to every Guard (`golive.ts`), so the panel has one token, valid at every shop's Guards for the connection-check reads only (`list_links`, `read_number`, `get_calendar`, `list`). If the panel read `PANEL_GUARD_AGENT_TOKEN_FILE` with `{shop}` and `{kind}` filled (as it does for the URL), each Guard could have its own and a leak would reach one Guard. The calendar `list` read also lets that agent read the events of the shop's own calendar, which the check needs only for the access role. Revisit when: the panel's token file is templated, or Google's calendar check can use something narrower.
 - **The connection checks before the first deploy.** They go through the shop's running Guards, so `check` runs them only once the shop has been deployed (`geometer check` says "not run" before). Nothing confirms, before the first deploy, that the WhatsApp number id is the shop's or that the calendar is shared and writable; the first deploy uses the ids as typed, the panel's checks then confirm them and write `pins.json`, and the next deploy pins the Guards to what the providers reported.
 
+## The innovators' template vote (B56, 9 Nov): the heartbeat field fleet must accept
+
+The panel keeps each innovator's vote on the next template in its own store (`bundle/panel/votes.ts`, one file per account, counts shown only to a person who has voted). The votes are meant to reach Geometer as **counts per option in the heartbeat**. Fleet refuses a field it does not know (ADR-0059 decision 12), so **nothing sends it yet**; `votes.heartbeatField()` already returns the exact shape.
+
+- [ ] **Fleet: accept one new optional top-level heartbeat field, counts only.**
+
+  ```json
+  "template_votes": { "round": "2026-11", "counts": { "orders": 1, "fees-extensions": 0, "equipment-rental": 0, "social-posting": 0, "course-packs": 0 } }
+  ```
+
+  - `round`: `YYYY-MM`, the poll's round (`bundle/panel/vote-options.json`).
+  - `counts`: an object of option id to a whole number 0 or more. An option id is `^[a-z][a-z0-9-]{0,39}$`; at most 20 options. Fleet adds a server's counts per round; it does not need to know the options in advance, and it must not store anything else from the field. No account id, name, shop id or address is in it, and there is no per-voter detail to ask for.
+  - Optional on both sides: a heartbeat without it is valid (a server with no innovator, or no vote yet, leaves it out).
+  - Fleet side: `src/schema.ts` allows the field and checks the shape above; `src/store.ts` keeps one row per (deployment, round, option) with the latest count; the README row `template_votes | object, optional | Counts of the innovators' votes on the next template, by option; counts only`.
+  - Bundle side, once fleet is deployed (deploy fleet **before** any bundle that sends it): `services/heartbeat.ts` reads the panel's `votes/` folder (`<server>/panel/votes/*.json`, `{ schema: 1, round, option, at }`) through a small helper shared with `panel/votes.ts`, and sends `template_votes` only when at least one vote is in the current round.
+- [ ] **The totals Geometer reads are for a whole programme, the panel's are for one server.** Until fleet accepts the field, the results an innovator sees are the votes counted on the panel they use (the page says so). Revisit when: fleet accepts the field and can hand back the programme's totals.
+
 ## Not measured
 
 - **CPU, disk and the Docker daemon on a 2 vCPU / 4 GB machine under load** (plan B14 item 4), and **the demo salon through Guard for two weeks** (item 5). The memory numbers are Docker Desktop's cgroup memory on an Apple-silicon Mac, idle, with the heartbeat every 10 s; the cap of 25 shops per server is a guess to test on a real VPS. Revisit when: a Hetzner or DigitalOcean machine is available for a day.
