@@ -262,6 +262,13 @@ export function createRelay(options: RelayOptions): Relay {
       if (waited > graceMs) stop(held.id, "stale", "The runtime holds a different approval for this booking than the one Guard shows.");
       return;
     }
+    // B37: the runtime says someone asked for this refund, but Guard's item names nobody (a Guard from before B37, or the header was lost). Guard cannot keep
+    // them from approving it, so the relay does: the builder is told, and when the person who asked is the owner, the owner is not asked to approve their own request.
+    if ((c.requestedBy ?? []).length > 0) {
+      const note = `The runtime says ${c.requestedBy!.join(", ")} asked for approval ${held.id}, but Guard's held call names nobody who asked. Check that this Guard is a release with approval by several people, and that the runtime sends Geo-Requested-By.`;
+      if (ownerId !== undefined && c.requestedBy!.includes(ownerId)) return stop(held.id, "requester_not_named", `${note} The owner asked for it, so may not approve it.`);
+      alert(held.id, "requester_not_named", note);
+    }
 
     const code = freshCode();
     const approvalHours = hoursOf(held);
@@ -418,11 +425,12 @@ export function createRelay(options: RelayOptions): Relay {
     const back = () => store.moveAsk(ask, ["deciding"], "asked", { decision: null }); // the code was not used up: Guard never recorded the answer
     switch (told.kind) {
       case "recorded": {
-        const state = told.state ?? (decision === "approve" ? "approved" : "denied");
+        // only Guard's word decides (D82): a 200 without a state is not read as this person's own answer, which on a two-person refund would be one vote of two
+        const state = told.state;
         if (state === "pending") return voted(ask, left(told.needed, told.given));
         if (state === "approved" || state === "denied") return decided(ask, state === "approved" ? "approve" : "deny", true);
         back();
-        alert(ask.approval, `odd_state:${ask.approver}`, `Guard answered ${ask.approver}'s answer for approval ${ask.approval} with the state "${state}". Nothing more was done.`);
+        alert(ask.approval, `odd_state:${ask.approver}`, `Guard answered ${ask.approver}'s answer for approval ${ask.approval} with ${state === undefined ? "no state" : `the state "${state}"`}. Nothing more was done.`);
         await tellOwner(ask, voice.ids.failed);
         return;
       }
