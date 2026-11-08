@@ -17,6 +17,7 @@ import { recordFacts, snapshotShop } from "../backup/snapshot.ts";
 import type { SnapshotJob } from "../backup/snapshot.ts";
 import { folderStore } from "../backup/store.ts";
 import { litestreamConfig } from "../generate/litestream.ts";
+import { parseServer } from "../lib/server.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 import { deploy } from "../deploy.ts";
 import { loadState } from "../lib/state.ts";
@@ -137,6 +138,16 @@ test("Litestream streams only the runtime databases, one replica per shop, with 
   assert.match(yml, /- path: "\/data\/glow-salon\/data\/agent\.db"\n    replica:\n      url: "s3:\/\/geo-stream\/acme\/glow-salon"\n      endpoint: "http:\/\/minio:9000"/);
   assert.equal(yml.match(/path:/gu)!.length, 2);
   assert.ok(!/state\.db|geo-guard/.test(yml), "no Guard store is streamed");
+  assert.ok(!yml.includes("sync-interval"), "left out, Litestream's own interval");
+});
+
+test("backup.stream.syncSeconds sets Litestream's sync interval on every replica, and only a whole number of seconds from 1 to 3600 is taken", () => {
+  const backup = (syncSeconds?: unknown) => ({ stream: { url: "s3://geo-stream/acme", ...(syncSeconds !== undefined ? { syncSeconds } : {}) }, snapshots: { url: "/srv/snaps" }, ageRecipient: "age1" + "q".repeat(58) });
+  const yml = litestreamConfig(backup(10) as Parameters<typeof litestreamConfig>[0], ["glow-salon", "bright-tuition"], { accessKeyId: "AKID", secretAccessKey: "SECRET" });
+  assert.equal(yml.match(/^      sync-interval: "10s"$/gmu)!.length, 2);
+  const base = { schema: 1, id: "acme-vps-1", domain: "shops.example.com", reviewedBy: "builder-arjun", model: { wire: "openai", model: "gpt-4o-mini" } };
+  assert.deepEqual(parseServer({ ...base, backup: backup(10) }).errors, []);
+  for (const bad of [0, 1.5, 3601, "10"]) assert.ok(parseServer({ ...base, backup: backup(bad) }).errors.some((e) => e.includes("syncSeconds")), String(bad));
 });
 
 test("the runtime never checkpoints by hand: Litestream owns checkpointing of what it streams", () => {

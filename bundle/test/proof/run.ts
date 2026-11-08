@@ -1,13 +1,17 @@
-// The B14 proof and the memory measurement, on real Docker. ONE script, meant to be run inside ONE hold of the heavy lock:
+// The B14 proof and the load measurement, on real Docker. ONE script, meant to be run inside ONE hold of the heavy lock:
 //
-//   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10] [--keep]
+//   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10,25] [--only phase,phase] [--load-seconds 120] [--keep]
 //
-// It builds a throwaway server folder, brings the real bundle up with docker compose (the real Guard image, the stand-ins as the providers, MinIO as the
-// bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Everything it creates is named
-// geometer-proof-* and is removed at the end (volumes, networks, containers); it never deletes an image.
+// It builds a throwaway server folder, brings the real bundle up with docker compose (the real Guard image, one set of stand-ins per shop as the providers, MinIO
+// as the bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Every bundle container runs inside
+// ONE parent cgroup capped at 2 CPUs and 4 GiB (the 2 vCPU / 4 GB server of B14 item 4; the stand-ins, MinIO and the probes are outside it). Everything it creates
+// is named geometer-proof-* and is removed at the end (volumes, networks, containers, the cgroup); it never deletes an image.
+//
+// The Guard image must read `[licence]` and have RFC 8032's published test key built in (monorepo ADR-0062): the proof pins that key in geometer.json and signs
+// its leases with it (test/licence-helpers.ts). GUARD_IMAGE names the image (default geo-guard:local-b14, built locally, never pushed).
 import { spawn, spawnSync } from "node:child_process";
 import { createHmac, generateKeyPairSync } from "node:crypto";
-import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main } from "../../geometer.ts";
@@ -21,15 +25,25 @@ import { readStatus } from "../../lib/status.ts";
 import { runBackup, runDrill, restoreShop } from "../../backup/jobs.ts";
 import { decrypt, encrypt, generateIdentity } from "../../backup/age.ts";
 import { loadState } from "../../lib/state.ts";
+import { clientLicenceFile, licencePaths, syncLicence } from "../../lib/licence.ts";
+import { loadServer } from "../../lib/server.ts";
+import { yaml } from "../../generate/compose.ts";
+import type { Runner } from "../../lib/runner.ts";
+import { TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
+import { OWNER, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
 const EXAMPLE = join(APP, "templates/commerce/bookings/clients/glow-salon.example");
 const MONOREPO = process.env.GEOMETER_MONOREPO ?? "/Users/navaltharun/Work/geometer/monorepo";
 const SCRATCH = process.env.PROOF_DIR ?? mkdtempSync(join(tmpdir(), "geometer-proof-"));
-const GUARD_IMAGE = process.env.GUARD_IMAGE ?? "geo-guard:0.1.0-alpha.2-pathways.1";
+const GUARD_IMAGE = process.env.GUARD_IMAGE ?? "geo-guard:local-b14";
 const args = process.argv.slice(2);
-const SIZES = (args.includes("--shops") ? args[args.indexOf("--shops") + 1] : "1,5,10").split(",").map(Number);
+const SIZES = (args.includes("--shops") ? args[args.indexOf("--shops") + 1] : "1,5,10,25").split(",").map(Number);
 const KEEP = args.includes("--keep");
+/** `--only kill,licence`: run those phases (and the deploy of one shop they need); the default is every phase. */
+const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
+const runs = (phase: string) => !ONLY || ONLY.has(phase);
+const LOAD_SECONDS = args.includes("--load-seconds") ? Number(args[args.indexOf("--load-seconds") + 1]) : 120;
 const SERVER = join(SCRATCH, "server");
 const PROJECT = "geometer-proof";
 const results: Record<string, unknown> = { startedAt: new Date().toISOString(), guardImage: GUARD_IMAGE, checks: [] as unknown[] };
@@ -57,9 +71,6 @@ const healthy = (service: string) => /\(healthy\)/u.test(dc(["ps", service]).out
 
 // ---------------------------------------------------------------------------------------------------------------------------------- the shops
 
-const shopName = (i: number) => (i === 1 ? "glow-salon" : `shop-${String(i).padStart(2, "0")}`);
-const phoneOf = (i: number) => `10000000000${String(i).padStart(4, "0")}`;
-const calendarOf = (i: number) => `${shopName(i)}@group.calendar.google.com`;
 const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const SA = (i: number) => JSON.stringify({ client_email: `${shopName(i)}@proof.iam.gserviceaccount.com`, private_key: privateKey.export({ type: "pkcs8", format: "pem" }), token_uri: "http://standins:8791/oauth2/token" });
 
@@ -76,15 +87,68 @@ async function addShop(i: number) {
   if (code !== 0) throw new Error(`shop add ${name} failed`);
   const inbox = join(SERVER, "secrets-inbox", name);
   mkdirSync(inbox, { recursive: true });
-  const files: Record<string, string> = { razorpay_key: `rzp_test_proof${i}abcdef:secretproof${i}abcdef123`, whatsapp_token: `EAAproof${i}tokentokentokentoken`, razorpay_webhook_secret: `webhook-secret-${i}-0123456789`, whatsapp_app_secret: `meta-app-secret-${i}-0123456789`, whatsapp_verify_token: `verify-token-${i}-0123456789`, "google_service_account.json": SA(i) };
+  const files: Record<string, string> = { ...secretsOf(i), "google_service_account.json": SA(i) };
   for (const [n, v] of Object.entries(files)) writeFileSync(join(inbox, n), v);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- the machine
 
 function ctxFor(tool?: GuardTool): Context {
-  return { dir: SERVER, appDir: APP, runner: realRunner, tool: tool ?? dockerGuardTool(GUARD_IMAGE, realRunner, join(SERVER, "state", "work")), log: say, now: () => new Date(), sleep, docker: "docker", waitSeconds: 150, extraComposeFiles: [testCompose] };
+  return { dir: SERVER, appDir: APP, runner: cappedRunner, tool: tool ?? dockerGuardTool(GUARD_IMAGE, realRunner, join(SERVER, "state", "work")), log: say, now: () => new Date(), sleep, docker: "docker", waitSeconds: 150, extraComposeFiles: [testCompose] };
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------------- the 2 CPU / 4 GiB cap
+
+/** The parent cgroup every bundle container is started in (cgroup v2, Docker's cgroupfs driver), and its limits: the B14 server's 2 vCPUs and 4 GiB. */
+const CAP_CGROUP = "geometer-proof-cap";
+const CAP = { cpus: 2, memoryBytes: 4 * 1024 ** 3 };
+/** The test's own containers (stand-ins, bucket, probe): outside the cap, as the providers and the bucket are outside a real server. */
+const TEST_SERVICES = new Set(["standins", "minio", "panel-probe"]);
+
+/** The services of the generated compose file, read from it (the keys under `services:`). */
+function bundleServices(): string[] {
+  if (!existsSync(composeFile)) return [];
+  const lines = readFileSync(composeFile, "utf8").split("\n");
+  const start = lines.indexOf("services:"); const end = lines.findIndex((l, i) => i > start && /^[a-z]/u.test(l));
+  return lines.slice(start + 1, end < 0 ? undefined : end).map((l) => /^  ([A-Za-z0-9_.-]+):$/u.exec(l)?.[1]).filter((x): x is string => !!x);
+}
+
+/** The test's compose file, merged over the generated one: the stand-ins, MinIO and the panel's probe, and every bundle service inside the capped cgroup. */
+function writeTestCompose(): void {
+  const user = `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`;
+  const services: Record<string, any> = {
+    standins: { image: "node:26-alpine", user: "1000:1000", init: true, command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1:18791:8790"],
+      healthcheck: { test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8791/_state"], interval: "3s", timeout: "3s", retries: 20, start_period: "3s" } },
+    "panel-probe": { image: "node:26-alpine", user, command: ["sleep", "100000"], volumes: [`${join(SERVER, "secrets", "panel")}:/run/secrets:ro`], networks: ["panel"] },
+    minio: { image: "minio/minio:latest", command: ["server", "/data"], environment: { MINIO_ROOT_USER: "proofkey", MINIO_ROOT_PASSWORD: "proofsecret123", MINIO_PROMETHEUS_AUTH_TYPE: "public" }, volumes: [`${join(SCRATCH, "minio")}:/data`], networks: ["egress"], ports: ["127.0.0.1:19000:9000"] },
+  };
+  for (const svc of bundleServices()) if (!TEST_SERVICES.has(svc)) services[svc] = { ...services[svc], cgroup_parent: `/${CAP_CGROUP}` };
+  if (services.refresher) services.refresher.depends_on = { standins: { condition: "service_healthy" } };
+  if (services.litestream) services.litestream.depends_on = { minio: { condition: "service_started" } };
+  writeFileSync(testCompose, `${yaml({ services, networks: { egress: {}, front: {}, panel: {} } })}\n`);
+}
+
+/** The deployer's runner, with one addition for the test: before each `compose up`, the test's file names every service the generated file now has, so each is capped. */
+const cappedRunner: Runner = { run(command, a, o) { if (command === "docker" && a[0] === "compose" && a.includes("up")) writeTestCompose(); return realRunner.run(command, a, o); } };
+
+/** A privileged one-off in the Docker VM's own cgroup namespace (the only way to set a parent cgroup's limits on Docker Desktop). */
+const inVm = (script: string) => dk(["run", "--rm", "--privileged", "--cgroupns=host", "-v", "/sys/fs/cgroup:/sys/fs/cgroup", "alpine:3.22", "sh", "-c", script], { timeout: 60_000 });
+let capDir = "";
+function setCap(): boolean {
+  const r = inVm(`d=$(find /sys/fs/cgroup -maxdepth 4 -type d -name ${CAP_CGROUP} | head -1); [ -n "$d" ] || exit 3; echo ${CAP.cpus * 100000} 100000 > $d/cpu.max && echo ${CAP.memoryBytes} > $d/memory.max && echo $d && cat $d/cpu.max $d/memory.max`);
+  capDir = r.out.trim().split("\n")[0] ?? "";
+  results.cap = { dir: capDir, set: r.code === 0, cpuMax: r.out.trim().split("\n")[1], memoryMax: r.out.trim().split("\n")[2], note: "every bundle container is in this one cgroup; the Docker daemon, the VM's kernel and the test's stand-ins, MinIO and probes are not" };
+  return r.code === 0;
+}
+interface CapReading { atMs: number; cpuUsec: number; memoryBytes: number; peakBytes: number; readBytes: number; writeBytes: number; oomKills: number; throttledUsec: number }
+function readCap(): CapReading | undefined {
+  if (!capDir) return undefined;
+  const r = inVm(`cd ${capDir} && grep -E '^(usage_usec|throttled_usec) ' cpu.stat && echo mem $(cat memory.current) && echo peak $(cat memory.peak 2>/dev/null || echo 0) && echo oom $(grep '^oom_kill ' memory.events | cut -d' ' -f2) && awk '{for(i=2;i<=NF;i++){split($i,a,"=");if(a[1]=="rbytes")r+=a[2];if(a[1]=="wbytes")w+=a[2]}}END{print "io",r+0,w+0}' io.stat`);
+  const v = (k: string) => Number(new RegExp(`^${k} (\\d+)`, "mu").exec(r.out)?.[1] ?? NaN);
+  const io = /^io (\d+) (\d+)/mu.exec(r.out);
+  return { atMs: Date.now(), cpuUsec: v("usage_usec"), memoryBytes: v("mem"), peakBytes: v("peak"), readBytes: Number(io?.[1] ?? NaN), writeBytes: Number(io?.[2] ?? NaN), oomKills: v("oom"), throttledUsec: v("throttled_usec") };
+}
+const removeCap = () => inVm(`for d in $(find /sys/fs/cgroup -maxdepth 4 -type d -name ${CAP_CGROUP}); do rmdir $d; done; echo done`);
 
 const GiB = 1024;
 function stats(): { name: string; mib: number }[] {
@@ -173,40 +237,12 @@ async function main_(): Promise<void> {
   if (code !== 0) throw new Error("init failed");
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
   conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
-  conf.heartbeatSeconds = 10; conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000 }; // the load test must not meet the shop's own cap
+  // the load must not meet the shops' own hourly caps (the proof measures the server, not the caps): every count is raised, and the report says so
+  conf.heartbeatSeconds = 10; conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
+  conf.licence = { keys: [TEST_PUBLIC_HEX] }; // RFC 8032's published test key, the one built into the proof's Guard image: anyone can sign with it, never a production key
   writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
   mkdirSync(join(SCRATCH, "minio", "geo-stream"), { recursive: true }); mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
-  writeFileSync(testCompose, `services:
-  standins:
-    image: node:26-alpine
-    user: "1000:1000"
-    init: true
-    command: ["node", "/app/bundle/test/proof/standins.ts"]
-    volumes: ["${APP}:/app:ro"]
-    networks: [egress]
-    healthcheck: { test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8791/_state"], interval: 3s, timeout: 3s, retries: 20, start_period: 3s }
-  refresher:
-    depends_on:
-      standins: { condition: service_healthy }
-  litestream:
-    depends_on:
-      minio: { condition: service_started }
-  panel-probe:
-    image: node:26-alpine
-    user: "${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}"
-    command: ["sleep", "100000"]
-    volumes: ["${join(SERVER, "secrets", "panel")}:/run/secrets:ro"]
-    networks: [panel]
-  minio:
-    image: minio/minio:latest
-    command: ["server", "/data"]
-    environment: { MINIO_ROOT_USER: proofkey, MINIO_ROOT_PASSWORD: proofsecret123 }
-    volumes: ["${join(SCRATCH, "minio")}:/data"]
-    networks: [egress]
-networks:
-  egress: {}
-  panel: {}
-`);
+  writeTestCompose();
   writeFileSync(join(SCRATCH, "model-key"), "sk-proof-model-key-0123456789\n"); writeFileSync(join(SCRATCH, "bucket-key"), "proofkey:proofsecret123\n");
   for (const a of [["model-key", join(SCRATCH, "model-key")], ["backup-key", "stream", join(SCRATCH, "bucket-key")], ["backup-key", "snapshots", join(SCRATCH, "bucket-key")]]) if (await main([...a, "--server", SERVER]) !== 0) throw new Error(`${a[0]} failed`);
 
@@ -247,19 +283,25 @@ networks:
     await sleep(70_000); // steady state: Litestream has settled, the first heartbeat is in, the model Guard has been quiet
     measure("1 shop (idle)", 1);
 
-    await isolation(1);
-    await panelAccess(1);
-    await killUnderLoad();
-    await heldRefundSurvives();
-    await tripwireForced(fleetAdmin, fleetLog);
-    await webhookThroughCaddy();
-    await stopPersists();
-    await deployerOutputs();
-    await dataDuties();
-    await modelGuard();
+    check("every bundle container is inside one cgroup capped at 2 CPUs and 4 GiB", setCap(), results.cap);
+    say(`   the cap: ${JSON.stringify(results.cap)}`);
+    if (runs("licence-block")) await licenceBlockOnGuards();
+    if (runs("panel")) await panelContainer();
+    if (runs("isolation")) { await isolation(1); await hostileRuntime(); }
+    if (runs("panelAccess")) await panelAccess(1);
+    if (runs("kill")) { await killUnderLoad(); await killEachGuardUnderLoad(); }
+    if (runs("held")) { await heldRefundSurvives(); await heldRefundThroughRuntime(); }
+    if (runs("licence")) await licenceWindDown();
+    if (runs("tripwire")) await tripwireForced(fleetAdmin, fleetLog);
+    if (runs("webhook")) await webhookThroughCaddy();
+    if (runs("stop")) await stopPersists();
+    if (runs("outputs")) await deployerOutputs();
+    if (runs("data")) await dataDuties();
+    if (runs("model")) await modelGuard();
     measure("1 shop (after the checks above)", 1);
+    if (runs("load")) await loadStep(1);
 
-    for (const size of SIZES.filter((s) => s > 1)) {
+    for (const size of SIZES.filter((s) => s > 1 && runs("load"))) {
       say(`\n== scale to ${size} shops ==`);
       const have = Object.keys(loadState(SERVER).shops).length;
       for (let i = have + 1; i <= size; i++) await addShop(i);
@@ -276,8 +318,11 @@ networks:
       const viaModel = nodeEval(`rt-${newest}`, `fetch('http://g-model:8080/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer ${readSecret(`rt-${newest}`, "agent_model")}','content-type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'user',content:'hi'}]})}).then(r=>console.log(r.status))`).out.trim();
       check(`the newest shop's runtime reaches the model Guard after the scale step (its namespace was not stranded)`, viaModel === "200", viaModel);
       measure(`${size} shops (idle)`, size);
-      if (size === SIZES.filter((s) => s > 1)[0]) { await isolation(size); await panelAccess(size); }
+      if (size === SIZES.filter((s) => s > 1)[0] && runs("isolation")) { await isolation(size); await panelAccess(size); }
+      await loadStep(size);
+      if (size === SIZES.filter((s) => s > 1)[0] && runs("litestream")) await litestreamOps(size);
     }
+    if (runs("load")) loadSummary();
   } finally {
     results.fleetLog = readFileSync(fleetLog, "utf8").split("\n").filter((l) => /alert|Guard|incident|recover/iu.test(l)).slice(-12);
     fleet.kill();
@@ -605,6 +650,489 @@ async function modelGuard() {
   check("and refuses any other model", other.startsWith("403"), other);
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------------- B14, through the runtime
+
+/** The test's way to the stand-ins (published on the host's loopback only): play a shop's customer, pay a link, read what the provider holds. */
+const STANDINS = "http://127.0.0.1:18791";
+async function control(shop: string, path: string, body?: unknown): Promise<any> {
+  try {
+    const r = await fetch(`${STANDINS}/_proof/${shop}${path}`, { method: body === undefined ? "GET" : "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30_000) });
+    return await r.json();
+  } catch (e) { return { error: (e as Error).message }; }
+}
+const digits = (n: string) => n.replace(/\D/gu, "");
+const DAY_S = 86_400;
+const nowS = () => Math.floor(Date.now() / 1000);
+
+/** Each shop's customers, one new number for each request, and a slot of their own: day 2 onwards, 10 am to 6 pm on the hour, Sundays skipped (Glow Salon is closed). */
+const seqs = new Map<number, number>();
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+function nextCustomer(i: number): { from: string; text: string } {
+  const k = (seqs.get(i) ?? 0) + 1; seqs.set(i, k);
+  const ist = new Date(Date.now() + 5.5 * 3600_000);
+  let day = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate() + 2));
+  // nine slots a working day (10 am to 6 pm), so the k-th request is on working day floor((k - 1) / 9) from the day after tomorrow, Sundays skipped
+  for (let n = Math.floor((k - 1) / 9); ; day = new Date(day.getTime() + DAY_S * 1000)) { if (day.getUTCDay() === 0) continue; if (n === 0) break; n--; }
+  const hour = 10 + ((k - 1) % 9);
+  const when = `${day.getUTCDate()} ${MONTHS[day.getUTCMonth()]} at ${hour > 12 ? hour - 12 : hour}${hour >= 12 ? "pm" : "am"}`;
+  return { from: `+9197${String(i).padStart(2, "0")}${String(k).padStart(6, "0")}`, text: `I want a beard trim ${when}` };
+}
+
+interface Sent { shop: string; from: string; at: number; ok: boolean }
+/** A customer writes: the shop's stand-in records the message and hands the signed webhook to the inbox, which answers once the runtime has saved it. */
+async function customerWrites(shop: string, from: string, text: string): Promise<Sent> {
+  const r = await control(shop, "/_standin/whatsapp/inbound", { from, text });
+  return { shop, from, at: Number(r.message?.timestamp ?? Date.now()), ok: r.delivered?.[0]?.status === 200 };
+}
+
+/**
+ * Traffic through the runtime: for each shop, a new customer asks for a booking every `60 / perMinute` seconds (with some jitter), and every second deposit link
+ * that appears is paid (the payment's webhooks go to the inbox as Razorpay's would). Returns what was sent; the replies are read from the stand-ins afterwards.
+ */
+async function drive(shops: number, seconds: number, perMinute: number, label: string): Promise<{ sent: Sent[]; paid: number; samples: CapReading[]; stats: { name: string; cpu: number; mib: number }[] }> {
+  const sent: Sent[] = []; let paid = 0; const samples: CapReading[] = []; let stats: { name: string; cpu: number; mib: number }[] = [];
+  const end = Date.now() + seconds * 1000;
+  const gap = 60_000 / perMinute;
+  const writer = async (i: number) => {
+    await sleep(Math.random() * gap);
+    while (Date.now() < end) {
+      const c = nextCustomer(i);
+      sent.push(await customerWrites(shopName(i), c.from, c.text));
+      await sleep(gap * (0.7 + Math.random() * 0.6));
+    }
+  };
+  const payer = async (i: number) => {
+    const seen = new Set<string>();
+    while (Date.now() < end) {
+      await sleep(4000);
+      const st = await control(shopName(i), "/_standin/state");
+      for (const l of (st.links ?? []) as { id: string; status: string }[]) {
+        if (l.status !== "created" || seen.has(l.id)) continue;
+        seen.add(l.id);
+        if (seen.size % 2 === 0) { const r = await control(shopName(i), "/_standin/razorpay/pay", { link_id: l.id }); if (r.payment) paid++; }
+      }
+    }
+  };
+  const sampler = async () => {
+    while (Date.now() < end) {
+      const r = readCap(); if (r) samples.push(r);
+      if (stats.length === 0 && Date.now() > end - seconds * 500) stats = containerStats();
+      await sleep(10_000);
+    }
+  };
+  say(`   ${label}: ${shops} shop(s), a customer every ${(gap / 1000).toFixed(0)} s per shop for ${seconds} s, every second link paid`);
+  await Promise.all([...Array.from({ length: shops }, (_, k) => writer(k + 1)), ...Array.from({ length: shops }, (_, k) => payer(k + 1)), sampler()]);
+  return { sent, paid, samples, stats };
+}
+
+/** CPU and memory of each bundle container now (`docker stats`, one reading). */
+function containerStats(): { name: string; cpu: number; mib: number }[] {
+  const r = dk(["stats", "--no-stream", "--format", "{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"], { timeout: 120_000 });
+  return r.out.trim().split("\n").filter((l) => l.startsWith(`${PROJECT}-`)).map((l) => {
+    const [name, cpu, usage] = l.split("\t");
+    const m = /^([\d.]+)\s*([KMG]i?)B/u.exec(usage ?? "");
+    return { name: name.replace(`${PROJECT}-`, "").replace(/-1$/u, ""), cpu: Number((cpu ?? "0").replace("%", "")), mib: m ? Number(m[1]) * (m[2].startsWith("G") ? 1024 : m[2].startsWith("K") ? 1 / 1024 : 1) : 0 };
+  });
+}
+
+/** For each message sent, the first message back to that customer (the stand-in's own outbox and clock): the time a customer waits for an answer. */
+async function latencies(sent: Sent[], waitSeconds = 90): Promise<{ answered: number; waits: number[]; unanswered: Sent[] }> {
+  const shops = [...new Set(sent.map((s) => s.shop))];
+  let outboxes = new Map<string, { to: string; sentAt: number }[]>();
+  const read = async () => { outboxes = new Map(await Promise.all(shops.map(async (s) => [s, ((await control(s, "/_standin/state")).outbox ?? []) as { to: string; sentAt: number }[]] as const))); };
+  const firstReply = (s: Sent) => (outboxes.get(s.shop) ?? []).filter((m) => digits(m.to) === digits(s.from) && m.sentAt >= s.at).map((m) => m.sentAt).sort((a, b) => a - b)[0];
+  const deadline = Date.now() + waitSeconds * 1000;
+  do { await read(); if (sent.filter((s) => s.ok).every((s) => firstReply(s) !== undefined)) break; await sleep(3000); } while (Date.now() < deadline);
+  const waits: number[] = []; const unanswered: Sent[] = [];
+  for (const s of sent.filter((x) => x.ok)) { const r = firstReply(s); if (r === undefined) unanswered.push(s); else waits.push(r - s.at); }
+  return { answered: waits.length, waits: waits.sort((a, b) => a - b), unanswered };
+}
+const pct = (xs: number[], p: number) => (xs.length === 0 ? NaN : xs[Math.min(xs.length - 1, Math.ceil((p / 100) * xs.length) - 1)]);
+
+/** The runtime's record, read from its own database (read-only, in a one-off container on its volume): each entry with its time, action, outcome and rule ids. */
+function recordOf(shop: string): { seq: number; time: string; action: string; outcome: string; booking: string | null; conversation: string; rules: string[]; notes: string; refs: Record<string, string>; hash: string }[] {
+  const r = dk(["run", "--rm", "--network", "none", "--user", "1000:1000", "-v", `${PROJECT}_rt-data-${shop}:/d`, "node:26-alpine", "node", "-e",
+    `const {DatabaseSync}=require('node:sqlite');const {createHash}=require('node:crypto');const db=new DatabaseSync('/d/data/agent.db',{readOnly:true});db.exec('PRAGMA busy_timeout=5000');const rows=db.prepare('SELECT entry FROM record ORDER BY seq').all();console.log(JSON.stringify(rows.map(r=>{const e=JSON.parse(r.entry);return {seq:e.seq,time:e.time,action:e.action,outcome:e.outcome,booking:e.booking,conversation:e.conversation,rules:(e.decisions||[]).map(d=>d.ruleId+':'+d.verdict),notes:String(e.notes||'').slice(0,200),refs:e.refs||{},hash:createHash('sha256').update(r.entry).digest('hex').slice(0,16)}})))`], { timeout: 120_000 });
+  try { return JSON.parse(r.out.trim().split("\n").at(-1) ?? "[]"); } catch { say(`(could not read ${shop}'s record: ${r.err.slice(0, 200)})`); return []; }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- the licence block (D83)
+
+/** The block on the running Guards: each per-shop Guard has read `[licence]`, for this server and shop, with the test key built in; the model Guard has none. */
+async function licenceBlockOnGuards() {
+  say("\n== Guard's licence block (D83) ==");
+  const view = (svc: string) => JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", svc, "GET", "/admin/licence"]).out.trim().split("\n").at(-1) ?? "{}");
+  for (const kind of ["razorpay", "whatsapp", "calendar"]) {
+    const svc = `g-glow-salon-${kind}`;
+    const v = view(svc);
+    const toml = readFileSync(join(SERVER, "generated", "guards", svc, "guard.toml"), "utf8");
+    check(`${svc}: guard.toml has [licence] for server "proof" and shop glow-salon, and the running Guard reports it with the test key built in`,
+      /\n\[licence\]\n/u.test(toml) && v.status === 200 && v.body?.configured === true && v.body?.deployment === "proof" && v.body?.shop === "glow-salon" && v.body?.keys?.[0]?.kid === "21fe31dfa154a261" && v.body?.keys?.[0]?.test_key === true,
+      { configured: v.body?.configured, deployment: v.body?.deployment, shop: v.body?.shop, keys: v.body?.keys, keys_from: v.body?.keys_from, state: v.body?.state, note: v.body?.note });
+  }
+  const model = view("g-model");
+  check("the model Guard has no licence block (it serves every shop)", model.body?.configured === false && !readFileSync(join(SERVER, "generated", "guards", "g-model", "guard.toml"), "utf8").includes("[licence]"), model.body?.note);
+  const tw = JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", "g-glow-salon-razorpay", "GET", "/admin/status"]).out.trim().split("\n").at(-1) ?? "{}").body?.tripwires;
+  results.licenceTripwires = { razorpay: tw ? `${tw.passed} of ${tw.of}` : null };
+  say(`   the Razorpay Guard's tripwires with the licence block: ${tw?.passed} of ${tw?.of} (ADR-0062: 8 become 10 with the block)`);
+  const mount = dk(["inspect", containerOf("g-glow-salon-razorpay"), "--format", "{{range .Mounts}}{{if eq .Destination \"/run/geometer/licence\"}}{{.Source}} rw={{.RW}}{{end}}{{end}}"]).out.trim();
+  check("the server's state/licence/ folder is mounted read-only in the Guard (the folder, not single files)", mount.endsWith("rw=false") && mount.includes("state/licence"), mount);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- item 6: the panel container
+
+async function panelContainer() {
+  say("\n== the panel container (B14 item 6) ==");
+  const id = containerOf("panel");
+  const up = await waitFor("the panel to be healthy", () => healthy("panel"), 90);
+  check("the panel container starts and is (healthy)", up, dc(["ps", "panel"]).out.trim().split("\n").at(-1));
+  const facts = JSON.parse(dk(["inspect", id, "--format", "{{json .}}"]).out || "{}");
+  const user = `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`;
+  check("it runs read-only, as the deployer's user (not root), with every capability dropped, on the front and panel networks only",
+    facts.HostConfig?.ReadonlyRootfs === true && facts.Config?.User === user && (facts.HostConfig?.CapDrop ?? []).includes("ALL") && Object.keys(facts.NetworkSettings?.Networks ?? {}).sort().join(",") === `${PROJECT}_front,${PROJECT}_panel`,
+    { readOnly: facts.HostConfig?.ReadonlyRootfs, user: facts.Config?.User, capDrop: facts.HostConfig?.CapDrop, networks: Object.keys(facts.NetworkSettings?.Networks ?? {}) });
+  const viaCaddy = sh("curl", ["-sk", "-o", "/dev/null", "-w", "%{http_code}", "https://localhost:18443/healthz"]).out;
+  check("Caddy reaches it: https://localhost:18443/healthz answers 200", viaCaddy === "200", viaCaddy);
+  const invite = exec("panel", ["node", "/app/bundle/panel/main.ts", "invite", "--role", "builder"]);
+  check("`invite --role builder` inside the container prints a sign-in link", /https:\/\/localhost:18443\/\S+/u.test(invite.out), (invite.out || invite.err).trim().slice(0, 160).replace(/token=[^&\s]+/u, "token=..."));
+  const connection = exec("panel", ["node", "/app/bundle/services/connection-check.ts", "glow-salon"], { timeout: 120_000 });
+  const parsed = (() => { try { return JSON.parse(connection.out.trim().split("\n").at(-1) ?? "{}"); } catch { return { raw: (connection.out || connection.err).slice(0, 300) }; } })();
+  results.panelConnectionCheck = parsed;
+  check("the connection check runs inside the real panel container, through the shop's Guards with the panel's own agent", connection.code === 0 && !parsed.raw, parsed);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- item 2: a hostile runtime
+
+/** What a runtime someone took over would try, from inside its container. Only TCP connections and DNS lookups: no request is sent to any real service. */
+async function hostileRuntime() {
+  say("\n== a hostile runtime (B14 item 2): every way out it could try ==");
+  const rt = "rt-glow-salon";
+  const tries: Record<string, string> = {};
+  const attempt = (label: string, host: string, port: number) => { const got = host === "" ? "DID-NOT-RUN (no address)" : probe(rt, host, port); tries[label] = got; check(`hostile runtime: ${label} -> ${got}`, UNREACHABLE.test(got), got); };
+  const real = ["api.razorpay.com", "graph.facebook.com", "www.googleapis.com", "oauth2.googleapis.com", "api.openai.com", "api.anthropic.com"];
+  for (const h of real) attempt(`${h}:443 by name`, h, 443);
+  // their addresses, looked up on the host (a DNS lookup, nothing sent to the services), then tried from inside by address
+  const { lookup } = await import("node:dns/promises");
+  for (const h of real) { const ip = await lookup(h, { family: 4 }).then((a) => a.address).catch(() => ""); attempt(`${h}:443 by its address ${ip}`, ip, 443); }
+  const dns = nodeEval(rt, "require('dns').promises.lookup('api.razorpay.com').then(a=>console.log('RESOLVED '+a.address)).catch(e=>console.log('ERR '+e.code))").out.trim().split("\n").at(-1) ?? "";
+  tries["DNS lookup of api.razorpay.com from inside"] = dns;
+  check(`hostile runtime: a DNS lookup of a provider's name from inside fails (no DNS way out) -> ${dns}`, /^ERR (ENOTFOUND|EAI_AGAIN|ESERVFAIL|ECONNREFUSED)$/u.test(dns), dns);
+  const gateway = dk(["network", "inspect", `${PROJECT}_net-glow-salon`, "--format", "{{(index .IPAM.Config 0).Gateway}}"]).out.trim();
+  attempt("host.docker.internal:18790 (fleet, on the host)", "host.docker.internal", 18790);
+  attempt(`its network's gateway ${gateway || "(none)"}:18790`, gateway, 18790);
+  attempt(`its network's gateway ${gateway || "(none)"}:22`, gateway, 22);
+  attempt("the cloud metadata address 169.254.169.254:80", "169.254.169.254", 80);
+  attempt("a public IPv6 address [2606:4700:4700::1111]:443", "2606:4700:4700::1111", 443);
+  attempt(`the stand-ins' published port on the host, 127.0.0.1:18791 (its own loopback)`, "127.0.0.1", 18791);
+  const sock = nodeEval(rt, "console.log(require('fs').existsSync('/var/run/docker.sock')?'PRESENT':'ABSENT')").out.trim();
+  check("hostile runtime: no Docker socket in the container", sock === "ABSENT", sock);
+  // Guard as an open proxy: a request in absolute form for MinIO, and a call with MinIO's name in Host. Guard sends only to its one upstream, and only routes it lists.
+  const agent = readSecret(rt, "agent_razorpay");
+  const raw = (request: string) => nodeEval(rt, `const s=require('net').connect(8080,'g-glow-salon-razorpay',()=>s.end(${JSON.stringify(request)}));let d='';s.on('data',c=>d+=c);s.on('end',()=>console.log(d.split('\\r\\n')[0]+' | '+d.slice(d.indexOf('\\r\\n\\r\\n')+4,d.indexOf('\\r\\n\\r\\n')+200).replace(/\\s+/g,' ')));s.on('error',e=>console.log('ERR '+e.code))`).out.trim();
+  const absolute = raw(`GET http://minio:9000/geo-stream/ HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
+  check("hostile runtime: Guard does not fetch an absolute-form address for it (MinIO): refused, not passed on", !/^HTTP\/1\.1 2\d\d/u.test(absolute) && !/ListBucketResult|minio/iu.test(absolute.split("|")[1] ?? ""), absolute.slice(0, 200));
+  const hostTrick = raw(`GET /v1/payment_links?reference_id=x HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
+  check("hostile runtime: a foreign Host header never reaches MinIO: the answer is Guard's own or its one upstream's (the Razorpay stand-in), never MinIO's", /^HTTP\/1\.1 \d{3}/u.test(hostTrick) && !/<\?xml|ListBucket|AccessDenied|MinIO/iu.test(hostTrick), hostTrick.slice(0, 200));
+  // the control: Guard's own namespace (its forwarder's) does reach the provider. Only Guard can get out.
+  const out = dk(["exec", containerOf("fwd-glow-salon-razorpay"), "wget", "-q", "-O", "-", "-T", "3", "http://standins:8791/_state"]);
+  check("control: from the Guard's own network namespace the provider IS reachable (so 'unreachable' above means something)", out.code === 0 && out.out.includes("tokens"), out.out.trim().slice(0, 80) || out.err.trim().slice(0, 120));
+  results.hostileRuntime = tries; save();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- item 1: each Guard killed under load
+
+const KIND_ACTIONS: Record<string, string[]> = {
+  razorpay: ["create_deposit_link", "refund", "cancel_deposit_link"],
+  calendar: ["hold_slot", "confirm_booking", "reschedule_booking"],
+  whatsapp: ["send_message"],
+};
+/** What the shop's provider holds for one service: every call it took (Razorpay, the calendar) or every message it sent (WhatsApp). */
+async function providerCount(shop: string, kind: string): Promise<number> {
+  const st = await control(shop, "/_standin/state");
+  return kind === "razorpay" ? (st.calls?.payments?.length ?? -1) : kind === "calendar" ? (st.calls?.calendar?.length ?? -1) : (st.outbox?.length ?? -1);
+}
+
+async function killEachGuardUnderLoad() {
+  say("\n== kill each of the shop's Guards under load, the traffic going through the runtime (B14 item 1) ==");
+  const shop = "glow-salon";
+  const out: Record<string, unknown> = {};
+  for (const kind of ["razorpay", "calendar", "whatsapp"]) {
+    const svc = `g-${shop}-${kind}`;
+    const driving = drive(1, 50, 12, `kill ${kind}`);
+    await sleep(12_000);
+    dk(["kill", containerOf(svc)]); // SIGKILL by hand: Docker does not restart it, so it stays down until it is started again
+    const downFrom = Date.now();
+    await sleep(1500); // a call already past the Guard when it died may still land
+    const atKill = await providerCount(shop, kind);
+    await sleep(15_000);
+    const beforeRestart = await providerCount(shop, kind);
+    const downTo = Date.now();
+    dc(["up", "-d", "--no-deps", svc]);
+    const back = await waitFor(`${svc} to be ready again`, () => healthy(svc), 90);
+    const load = await driving;
+    await sleep(35_000); // a tick of the runtime (30 s) after the Guard is back: anything it would do again, it has done
+    const answers = await latencies(load.sent, 30);
+    const st = await control(shop, "/_standin/state");
+    const record = recordOf(shop);
+    const window = record.filter((e) => { const t = Date.parse(e.time); return t >= downFrom + 1500 && t <= downTo - 500 && KIND_ACTIONS[kind].includes(e.action); });
+    const outcomes = window.reduce<Record<string, number>>((m, e) => { m[e.outcome] = (m[e.outcome] ?? 0) + 1; return m; }, {});
+    const links = ((st.links ?? []) as { reference_id: string }[]).reduce<Record<string, number>>((m, l) => { m[l.reference_id] = (m[l.reference_id] ?? 0) + 1; return m; }, {});
+    const events = ((st.calendar ?? []) as { bookingRef?: string; status?: string }[]).filter((e) => e.status !== "cancelled").reduce<Record<string, number>>((m, e) => { const k = e.bookingRef ?? "?"; m[k] = (m[k] ?? 0) + 1; return m; }, {});
+    // a customer's messages (the owner's notices name each booking, but a template could repeat itself word for word for two bookings, so they are left out)
+    const texts = ((st.outbox ?? []) as { to: string; text: string }[]).filter((x) => digits(x.to) !== digits(OWNER)).reduce<Record<string, number>>((m, x) => { const k = `${digits(x.to)}|${x.text}`; m[k] = (m[k] ?? 0) + 1; return m; }, {});
+    const twice = { links: Object.entries(links).filter(([, n]) => n > 1).map(([k]) => k), events: Object.entries(events).filter(([, n]) => n > 1).map(([k]) => k), messages: Object.entries(texts).filter(([, n]) => n > 1).map(([k]) => k.slice(0, 80)) };
+    out[kind] = { sent: load.sent.length, delivered: load.sent.filter((s) => s.ok).length, answered: answers.answered, downSeconds: Math.round((downTo - downFrom) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, entriesWhileDown: window.length, outcomesWhileDown: outcomes, twice };
+    say(`   ${kind}: ${JSON.stringify(out[kind])}`);
+    check(`${kind} Guard killed under load: nothing reached the ${kind} stand-in while it was down (${atKill} -> ${beforeRestart} over ${Math.round((downTo - downFrom) / 1000)} s)`, atKill >= 0 && atKill === beforeRestart, { atKill, beforeRestart });
+    check(`${kind} Guard killed: the runtime recorded its ${kind} steps while it was down as not done (never "confirmed")`, window.length > 0 && !outcomes.confirmed, outcomes);
+    check(`${kind} Guard restarted: it is ready again, and nothing was sent twice (no second link or event for a booking, no message twice)`, back && twice.links.length === 0 && twice.events.length === 0 && twice.messages.length === 0, twice);
+  }
+  results.killEachGuard = out; save();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- item 3: a held refund, through the runtime
+
+async function heldRefundThroughRuntime() {
+  say("\n== a refund held for the owner survives restarting Guard and the runtime, through the runtime itself (B14 item 3) ==");
+  const shop = "glow-salon";
+  const st = () => control(shop, "/_standin/state");
+  const c = nextCustomer(1);
+  const wrote = await customerWrites(shop, c.from, c.text);
+  let link: { id: string; short_url: string } | undefined;
+  await waitFor("the deposit link", async () => { const s = await st(); const msg = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).map((m) => m.text).join(" "); link = ((s.links ?? []) as { id: string; short_url: string }[]).find((l) => msg.includes(l.short_url)); return !!link; }, 60);
+  if (!link) { check("a booking through the runtime gets its deposit link (the start of the held-refund check)", false, { wrote }); return; }
+  const refundsBefore = ((await st()).refunds ?? []).length;
+  await control(shop, "/_standin/razorpay/pay", { link_id: link.id });
+  const booked = await waitFor("'Booked!'", async () => ((await st()).outbox ?? []).some((m: { to: string; text: string }) => digits(m.to) === digits(c.from) && /^Booked!/u.test(m.text)), 60);
+  check("the customer paid the deposit and the runtime booked it (the calendar and the payment record agree)", booked, link.id);
+  await customerWrites(shop, c.from, "please cancel my booking");
+  let held: { seq: number; refs: Record<string, string> } | undefined;
+  await waitFor("the refund to be held for the owner", () => { held = recordOf(shop).find((e) => e.action === "refund" && e.outcome === "held_for_owner" && e.conversation.endsWith(digits(c.from).slice(-6))); return !!held; }, 60);
+  const approval = held?.refs.approval;
+  const reviews = () => nodeEval("relay", `fetch('http://${adminIpOf(`g-${shop}-razorpay`)}:8190/admin/reviews',{headers:{authorization:'Bearer ${readSecret("relay", `${shop}/read_token`)}'}}).then(async r=>console.log(r.status+' '+(await r.text())))`).out.trim();
+  check("the cancellation's refund (₹200, above the owner's ₹100) is HELD by Guard, the runtime records it as held for the owner, nothing is refunded", !!approval && reviews().includes(approval!) && ((await st()).refunds ?? []).length === refundsBefore, { approval, refunds: ((await st()).refunds ?? []).length - refundsBefore });
+  const before = recordOf(shop);
+  dc(["restart", `g-${shop}-razorpay`]); await waitFor("the Guard", () => healthy(`g-${shop}-razorpay`), 90);
+  dc(["restart", `rt-${shop}`]); await waitFor("the runtime", () => healthy(`rt-${shop}`), 90);
+  const after = recordOf(shop);
+  const intact = before.length > 0 && after.length >= before.length && before.every((e, i) => after[i]?.hash === e.hash);
+  check(`after restarting both, the runtime's record is intact: the ${before.length} entries before are the first ${before.length} after, byte for byte`, intact, { before: before.length, after: after.length });
+  check("and the hold is still there under the SAME approval, and still nothing is refunded", !!approval && reviews().includes(approval!) && ((await st()).refunds ?? []).length === refundsBefore, { approval });
+  // the owner answers on WhatsApp, as an owner does: "approve <code>" from the code the relay sent
+  let code: string | undefined;
+  await waitFor("the relay's question to the owner", async () => { const m = ((await st()).outbox ?? []).filter((x: { to: string; text: string }) => digits(x.to) === digits(OWNER) && /approve\s+[A-HJKMNP-Z2-9]{6}/u.test(x.text)).at(-1); code = m ? /approve\s+([A-HJKMNP-Z2-9]{6})/u.exec(m.text)?.[1] : undefined; return !!code; }, 60);
+  check("the approvals relay asked the owner on WhatsApp, with a one-use code", !!code, code ? "a code was sent" : "no code");
+  if (code) await customerWrites(shop, OWNER, `approve ${code}`);
+  const once = await waitFor("the refund", async () => ((await st()).refunds ?? []).length === refundsBefore + 1, 90);
+  await sleep(35_000); // a tick: the runtime would try again now if it were going to
+  const refunds = ((await st()).refunds ?? []).length - refundsBefore;
+  const final = recordOf(shop);
+  const confirmed = final.filter((e) => e.action === "refund" && e.outcome === "confirmed" && e.conversation === held?.conversation);
+  check("the owner's approval sends it exactly once: one refund at the provider, one 'confirmed' refund in the record", once && refunds === 1 && confirmed.length === 1, { refundsAtProvider: refunds, confirmedInRecord: confirmed.length });
+  check("and the record is still intact after it (every earlier entry unchanged)", after.every((e, i) => final[i]?.hash === e.hash), { entries: final.length });
+  results.heldRefundThroughRuntime = { approval, recordBefore: before.length, recordAfterRestart: after.length, recordAtEnd: final.length, refunds };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- item 5: the licence
+
+/** A lease for this server, signed with RFC 8032's published test key (the key built into the proof's Guard), handed in as fleet's answer, and taken by the deployer. */
+function handLease(serial: number, entry: Record<string, unknown>): string[] {
+  const token = signTest({ v: 1, kind: "lease", deployment: "proof", serial, issued_at: nowS(), shops: [{ id: "glow-salon", plan: "business", grace_days: 30, ...entry }] });
+  writeFileSync(join(SERVER, "fleet", "lease"), `${token}\n`);
+  return syncLicence(SERVER, loadServer(SERVER), ["glow-salon"], new Date());
+}
+const guardView = (svc: string) => JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", svc, "GET", "/admin/licence"]).out.trim().split("\n").at(-1) ?? "{}").body ?? {};
+const SHOP_GUARDS = ["razorpay", "whatsapp", "calendar"].map((k) => `g-glow-salon-${k}`);
+async function guardsSay(state: string): Promise<boolean> { return waitFor(`every Guard to say ${state}`, () => SHOP_GUARDS.every((g) => guardView(g).state === state), 30); }
+
+async function licenceWindDown() {
+  say("\n== the licence: a wind-down lease, at Guard and at the runtime (B14 item 5, D83) ==");
+  const shop = "glow-salon";
+  const rt = `rt-${shop}`;
+  const st = () => control(shop, "/_standin/state");
+  const agent = (k: string) => readSecret(rt, `agent_${k}`);
+  const call = (kind: string, method: string, path: string, body?: unknown) => { const r = nodeEval(rt, `fetch('http://g-${shop}-${kind}:8080${path}',{method:'${method}',headers:{authorization:'Bearer ${agent(kind)}','content-type':'application/json'}${body ? `,body:${JSON.stringify(JSON.stringify(body))}` : ""}}).then(async r=>console.log(JSON.stringify({status:r.status,body:await r.json().catch(()=>null)})))`); try { return JSON.parse(r.out.trim().split("\n").at(-1) ?? "{}") as { status: number; body: any }; } catch { return { status: 0, body: r.err.slice(0, 200) }; } };
+  const newLink = (ref: string) => call("razorpay", "POST", "/v1/payment_links", { amount: 20000, currency: "INR", description: "licence check", reference_id: ref });
+  const insert = (ref: string) => call("calendar", "POST", `/calendar/v3/calendars/${encodeURIComponent(calendarOf(1))}/events`, { summary: "licence check", start: { dateTime: new Date(Date.now() + 30 * DAY_S * 1000).toISOString() }, end: { dateTime: new Date(Date.now() + 30 * DAY_S * 1000 + 1800_000).toISOString() }, extendedProperties: { private: { bookingRef: ref } } });
+  const sendTo = (to: string) => call("whatsapp", "POST", `/v21.0/${phoneOf(1)}/messages`, { messaging_product: "whatsapp", to, type: "text", text: { body: "licence check" } });
+  const suspended = (r: { status: number; body: any }) => r.status === 402 && r.body?.guard?.code === "subscription_suspended" && r.body?.guard?.reason_code === "subscription_suspended" && r.body?.guard?.sent === "no";
+  // a link made and paid while the shop is in order (not handed to the runtime), so a refund is owed during the wind-down
+  const before = newLink("lic-before");
+  const paid = await control(shop, "/_standin/razorpay/pay", { link_id: before.body?.id, deliver: false });
+  const second = newLink("lic-cancel-me");
+  const now = nowS();
+  const lines = handLease(1, { state: "wind_down", paid_through: now - 35 * DAY_S, expires: now - 5 * DAY_S, stop_at: now + 25 * DAY_S, export_until: null, notice: "wind_down" });
+  lines.forEach((l) => say(`   ${l}`));
+  const panel = readStatus(SERVER, shop)?.licence?.state;
+  const agree = await guardsSay("wind_down");
+  const views = Object.fromEntries(SHOP_GUARDS.map((g) => [g, guardView(g)]));
+  check("a wind-down lease (signed with the test key, handed in as fleet's answer): every Guard's GET /admin/licence shows the state the panel shows", panel === "wind_down" && agree && SHOP_GUARDS.every((g) => views[g].lease?.serial === 1 && views[g].keys?.[0]?.test_key === true),
+    { panel, guards: Object.fromEntries(SHOP_GUARDS.map((g) => [g, { state: views[g].state, refuses_now: views[g].refuses_now, serial: views[g].lease?.serial }])) });
+  const counts0 = await st();
+  const link = newLink("lic-new-work"); const event = insert("lic-new-work");
+  check("in the wind-down Guard refuses a new payment link with its own 402 subscription_suspended (not a policy denial), nothing sent", suspended(link), { status: link.status, code: link.body?.guard?.code, reason: String(link.body?.guard?.reason ?? "").slice(0, 120) });
+  check("and a new calendar event, the same way", suspended(event), { status: event.status, code: event.body?.guard?.code });
+  const counts1 = await st();
+  check("and neither reached the provider", counts1.links.length === counts0.links.length && counts1.calendar.length === counts0.calendar.length, { links: [counts0.links.length, counts1.links.length], events: [counts0.calendar.length, counts1.calendar.length] });
+  const refund = call("razorpay", "POST", `/v1/payments/${paid.payment?.id}/refund`, { amount: 5000, speed: "normal", receipt: "lic-before:refund" });
+  const cancel = call("razorpay", "POST", `/v1/payment_links/${second.body?.id}/cancel`);
+  check("a refund owed still goes through in the wind-down (₹50, under the owner's limit), and so does closing a link", refund.status === 200 && cancel.status === 200 && ((await st()).refunds ?? []).length === (counts0.refunds ?? []).length + 1, { refund: refund.status, cancel: cancel.status });
+  const send = sendTo("919811199999");
+  check("a message to a customer still goes in the wind-down (only the final stop holds sends back)", !suspended(send), { status: send.status });
+  // the runtime's own check refuses the same new work: a customer asks to book, and is told the shop's online booking is paused
+  const c = nextCustomer(1);
+  await customerWrites(shop, c.from, c.text);
+  await sleep(3000);
+  const counts2 = await st();
+  const reply = ((counts2.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).at(-1)?.text ?? "";
+  const own = recordOf(shop).filter((e) => e.action === "new_work").at(-1);
+  check("the runtime refuses the same new work by its own check: 'paused, contact the shop', nothing held, no link", /paused/iu.test(reply) && counts2.links.length === counts1.links.length && counts2.calendar.length === counts1.calendar.length && own?.outcome === "blocked" && own.rules.includes("subscription_suspended:block"),
+    { reply: reply.slice(0, 80), newWork: own?.notes.slice(0, 80) });
+  // a builder edits the runtime's licence file to say the shop is in order: Guard still refuses, and the runtime takes Guard's 402 as its own pause, once
+  const file = clientLicenceFile(SERVER, shop);
+  const kept = readFileSync(file, "utf8");
+  writeFileSync(file, JSON.stringify({ ...JSON.parse(kept), shop: null })); utimesSync(file, new Date(), new Date());
+  await sleep(1500);
+  const t = nextCustomer(1);
+  const callsBefore = (await st()).calls?.calendar?.length ?? 0;
+  const tamperedAt = Date.now();
+  await customerWrites(shop, t.from, t.text);
+  await sleep(4000);
+  const counts3 = await st();
+  const reply3 = ((counts3.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(t.from)).at(-1)?.text ?? "";
+  const byGuard = recordOf(shop).filter((e) => Date.parse(e.time) >= tamperedAt - 2000 && e.action === "hold_slot" && e.outcome === "blocked" && e.rules.includes("subscription_suspended:block"));
+  check("with the runtime's file edited to 'in order', Guard still refuses the hold (402); the runtime records it once as blocked and tells the customer 'paused'; nothing reached the provider",
+    /paused/iu.test(reply3) && counts3.links.length === counts2.links.length && counts3.calendar.length === counts2.calendar.length && byGuard.length === 1,
+    { reply: reply3.slice(0, 80), blockedByGuard: byGuard.length, calendarCalls: (counts3.calls?.calendar?.length ?? 0) - callsBefore });
+  syncLicence(SERVER, loadServer(SERVER), [shop], new Date()); // the deployer puts the runtime's file back
+  check("the deployer puts the runtime's licence file back on its next pass", readFileSync(file, "utf8") === kept, "");
+  // the final stop: sends are held back too, except to the owner
+  handLease(2, { state: "stopped", paid_through: now - 70 * DAY_S, expires: now - 9 * DAY_S, stop_at: now - DAY_S, export_until: now + 150 * DAY_S, notice: "stop" });
+  const stopped = await guardsSay("stopped");
+  const toCustomer = sendTo("919811199999"); const toOwner = sendTo(digits(OWNER));
+  check("the final stop: every Guard says stopped, as the panel does; a send to a customer is refused (402), a send to the owner's number goes", stopped && readStatus(SERVER, shop)?.licence?.state === "stopped" && suspended(toCustomer) && !suspended(toOwner) && toOwner.status !== 0,
+    { panel: readStatus(SERVER, shop)?.licence?.state, toCustomer: toCustomer.status, toOwner: toOwner.status });
+  // in order again: a newer lease lifts it, at Guard and at the runtime
+  handLease(3, { state: "active", paid_through: now + 30 * DAY_S, expires: now + 30 * DAY_S, stop_at: null, export_until: null, notice: null });
+  const active = await guardsSay("active");
+  const again = newLink("lic-after");
+  check("a newer lease in order lifts it: every Guard says active, as the panel does, and a new link is made again", active && readStatus(SERVER, shop)?.licence?.state === "active" && (again.status === 200 || again.status === 201), { panel: readStatus(SERVER, shop)?.licence?.state, link: again.status });
+  results.licence = { views: Object.fromEntries(SHOP_GUARDS.map((g) => [g, guardView(g)])) }; save();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- item 4: load, under the cap
+
+/** The bound the shops-per-server count is judged by: a customer's first answer within 5 seconds, 95 times in 100. */
+const LATENCY_BOUND_P95_MS = 5_000;
+/** Each shop: a new customer every 15 s (240 an hour, several times a busy salon's busiest hour), half the deposit links paid. */
+const LOAD_PER_MINUTE = 4;
+const MiB = 1024 * 1024;
+
+/** The proof's volumes, by kind, in bytes: `du` in one read-only one-off container that mounts them all. */
+function volumeSizes(): { runtimes: number; guards: number; other: number; byName: Record<string, number> } {
+  const vols = dk(["volume", "ls", "-q", "--filter", `name=${PROJECT}_`]).out.trim().split("\n").filter(Boolean);
+  const r = dk(["run", "--rm", "--network", "none", ...vols.flatMap((v) => ["-v", `${v}:/v/${v.replace(`${PROJECT}_`, "")}:ro`]), "alpine:3.22", "du", "-sk", ...vols.map((v) => `/v/${v.replace(`${PROJECT}_`, "")}`)], { timeout: 300_000 });
+  if (r.code !== 0) return { runtimes: NaN, guards: NaN, other: NaN, byName: {} };
+  const byName = Object.fromEntries(r.out.trim().split("\n").map((l) => l.split("\t")).filter((x) => x.length === 2).map(([kb, path]) => [path.replace("/v/", ""), Number(kb) * 1024]));
+  const sum = (f: (n: string) => boolean) => Object.entries(byName).filter(([n]) => f(n)).reduce((a, [, b]) => a + b, 0);
+  return { runtimes: sum((n) => n.startsWith("rt-data-")), guards: sum((n) => n.startsWith("gs-") && n !== "gs-model"), other: sum((n) => !n.startsWith("rt-data-") && !(n.startsWith("gs-") && n !== "gs-model")), byName };
+}
+
+/** MinIO's own count of the requests it served, by S3 API (its Prometheus endpoint, public in the test's MinIO only). */
+async function minioOps(): Promise<Record<string, number>> {
+  for (const [path, metric, label] of [["/minio/v2/metrics/cluster", "minio_s3_requests_total", "api"], ["/minio/v2/metrics/node", "minio_s3_requests_total", "api"], ["/minio/metrics/v3/api/requests", "minio_api_requests_total", "name"]]) {
+    try {
+      const t = await (await fetch(`http://127.0.0.1:19000${path}`, { signal: AbortSignal.timeout(10_000) })).text();
+      const out: Record<string, number> = {};
+      for (const m of t.matchAll(new RegExp(`^${metric}\\{([^}]*)\\}\\s+([\\d.e+]+)$`, "gmu"))) { const api = new RegExp(`${label}="([^"]+)"`, "u").exec(m[1])?.[1] ?? "?"; out[api] = (out[api] ?? 0) + Number(m[2]); }
+      if (Object.keys(out).length > 0) return out;
+    } catch { /* the next path */ }
+  }
+  return {};
+}
+const opsDelta = (a: Record<string, number>, b: Record<string, number>) => Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((k) => [k, (b[k] ?? 0) - (a[k] ?? 0)]).filter(([, v]) => (v as number) > 0));
+const cores = (a?: CapReading, b?: CapReading) => (a && b ? +((b.cpuUsec - a.cpuUsec) / ((b.atMs - a.atMs) * 1000)).toFixed(3) : NaN);
+
+const loads: Record<number, any> = {};
+async function loadStep(size: number) {
+  say(`\n== load at ${size} shop(s), every bundle container inside 2 CPUs and 4 GiB (B14 item 4) ==`);
+  const idleA = readCap(); await sleep(30_000); const idleB = readCap();
+  const diskBefore = volumeSizes();
+  const opsA = await minioOps(); const capA = readCap();
+  const load = await drive(size, LOAD_SECONDS, LOAD_PER_MINUTE, `load ${size}`);
+  const capB = readCap(); const opsB = await minioOps();
+  const answers = await latencies(load.sent);
+  const diskAfter = volumeSizes();
+  const hours = (capB && capA ? capB.atMs - capA.atMs : LOAD_SECONDS * 1000) / 3_600_000;
+  const peakCores = load.samples.slice(1).map((s, k) => cores(load.samples[k], s)).filter((x) => Number.isFinite(x));
+  const r = {
+    shops: size, seconds: LOAD_SECONDS, perShopPerMinute: LOAD_PER_MINUTE, sent: load.sent.length, delivered: load.sent.filter((s) => s.ok).length, answered: answers.answered, paid: load.paid,
+    latencyMs: { p50: pct(answers.waits, 50), p95: pct(answers.waits, 95), max: answers.waits.at(-1) ?? NaN },
+    cpuCores: { idle: cores(idleA, idleB), load: cores(capA, capB), peak10s: peakCores.length ? Math.max(...peakCores) : NaN, throttledSeconds: capA && capB ? +((capB.throttledUsec - capA.throttledUsec) / 1e6).toFixed(1) : NaN },
+    memoryMiB: { atEnd: capB ? +(capB.memoryBytes / MiB).toFixed(0) : NaN, peakSinceStart: capB ? +(capB.peakBytes / MiB).toFixed(0) : NaN, oomKills: capB?.oomKills },
+    diskMiB: { runtimesNow: +(diskAfter.runtimes / MiB).toFixed(2), guardsNow: +(diskAfter.guards / MiB).toFixed(2), growthDuringLoad: +(((diskAfter.runtimes + diskAfter.guards) - (diskBefore.runtimes + diskBefore.guards)) / MiB).toFixed(2) },
+    diskWritesMiBPerShopPerHour: capA && capB ? +(((capB.writeBytes - capA.writeBytes) / MiB) / size / hours).toFixed(1) : NaN,
+    bucketOpsPerShopPerHour: Object.fromEntries(Object.entries(opsDelta(opsA, opsB)).map(([k, v]) => [k, Math.round((v as number) / size / hours)])),
+    topContainersCpu: load.stats.sort((a, b) => b.cpu - a.cpu).slice(0, 6),
+    unanswered: answers.unanswered.length,
+  };
+  loads[size] = r; results.load = loads; save();
+  say(`   ${JSON.stringify(r)}`);
+  check(`load at ${size} shop(s): every message the inbox took was answered`, r.delivered === r.sent && answers.unanswered.length === 0, { sent: r.sent, delivered: r.delivered, answered: r.answered });
+  check(`load at ${size} shop(s): no container was killed for memory inside the 4 GiB cap`, (capB?.oomKills ?? 1) === 0, { oomKills: capB?.oomKills });
+  say(`   ${size} shop(s): p95 answer ${r.latencyMs.p95} ms (bound ${LATENCY_BOUND_P95_MS} ms), CPU ${r.cpuCores.load} of 2 cores, memory ${r.memoryMiB.atEnd} MiB of 4096`);
+}
+
+function loadSummary() {
+  const sizes = Object.keys(loads).map(Number).sort((a, b) => a - b);
+  say(`\nLOAD (2 CPUs, 4 GiB for every bundle container together; a customer every 15 s per shop, half the links paid; ${LOAD_SECONDS} s each; bound: p95 first answer <= ${LATENCY_BOUND_P95_MS} ms)`);
+  say("  shops  sent  answered  p50 ms  p95 ms  max ms  CPU idle  CPU load  CPU peak  MiB end  MiB peak  disk MiB/shop  writes MiB/shop/h");
+  for (const n of sizes) { const r = loads[n]; say(`  ${String(n).padStart(5)}  ${String(r.sent).padStart(4)}  ${String(r.answered).padStart(8)}  ${String(r.latencyMs.p50).padStart(6)}  ${String(r.latencyMs.p95).padStart(6)}  ${String(r.latencyMs.max).padStart(6)}  ${String(r.cpuCores.idle).padStart(8)}  ${String(r.cpuCores.load).padStart(8)}  ${String(r.cpuCores.peak10s).padStart(8)}  ${String(r.memoryMiB.atEnd).padStart(7)}  ${String(r.memoryMiB.peakSinceStart).padStart(8)}  ${String(+((r.diskMiB.runtimesNow + r.diskMiB.guardsNow) / n).toFixed(2)).padStart(13)}  ${String(r.diskWritesMiBPerShopPerHour).padStart(17)}`); }
+  const within = sizes.filter((n) => loads[n].latencyMs.p95 <= LATENCY_BOUND_P95_MS && loads[n].unanswered === 0);
+  const largest = within.at(-1);
+  const ceilingFound = sizes.some((n) => !within.includes(n));
+  results.loadVerdict = { bound: `p95 first answer <= ${LATENCY_BOUND_P95_MS} ms, every message answered`, within, largest, ceilingFound, note: ceilingFound ? `the largest count measured within the bound is ${largest}` : `every count measured (up to ${largest}) stayed within the bound: the ceiling was not found` };
+  say(`  ${String((results.loadVerdict as { note: string }).note)}`);
+  save();
+}
+
+/** Litestream's bucket operations per shop per hour under the same load, at its default sync interval and at a longer one (the bundle's backup.stream.syncSeconds). */
+async function litestreamOps(size: number) {
+  say(`\n== Litestream's bucket operations at ${size} shops: the default sync interval and 10 s ==`);
+  const window = async (label: string) => {
+    const a = await minioOps(); const t0 = Date.now();
+    await drive(size, LOAD_SECONDS, LOAD_PER_MINUTE, label);
+    await sleep(15_000);
+    const b = await minioOps();
+    const hours = (Date.now() - t0) / 3_600_000;
+    const d = opsDelta(a, b) as Record<string, number>;
+    const total = Object.values(d).reduce((x, y) => x + y, 0);
+    return { perShopPerHour: Math.round(total / size / hours), byApi: Object.fromEntries(Object.entries(d).map(([k, v]) => [k, Math.round(v / size / hours)])) };
+  };
+  const idle = async (label: string) => { const a = await minioOps(); const t0 = Date.now(); await sleep(60_000); const b = await minioOps(); const d = opsDelta(a, b) as Record<string, number>; return { label, perShopPerHour: Math.round(Object.values(d).reduce((x, y) => x + y, 0) / size / ((Date.now() - t0) / 3_600_000)) }; };
+  const setInterval_ = async (seconds: number | undefined) => {
+    const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
+    if (seconds === undefined) delete conf.backup.stream.syncSeconds; else conf.backup.stream.syncSeconds = seconds;
+    writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
+    await deploy(ctxFor());
+    const yml = readFileSync(secretFile(SERVER, "litestream", "litestream.yml"), "utf8");
+    await waitFor("Litestream to run again", () => /Up /u.test(dc(["ps", "litestream"]).out), 60);
+    await sleep(20_000);
+    return yml.includes("sync-interval") ? (/sync-interval: "?(\w+)"?/u.exec(yml)?.[1] ?? "?") : "Litestream's default";
+  };
+  const defaultIdle = await idle("default, idle");
+  const defaultLoad = await window("Litestream at its default interval");
+  const set = await setInterval_(10);
+  const longIdle = await idle("10 s, idle");
+  const longLoad = await window("Litestream every 10 s");
+  results.litestream = { shops: size, default: { idle: defaultIdle.perShopPerHour, load: defaultLoad }, tenSeconds: { configured: set, idle: longIdle.perShopPerHour, load: longLoad } };
+  say(`   ${JSON.stringify(results.litestream)}`);
+  check("Litestream's operations per shop per hour were counted at the default interval and at 10 s (the setting reached Litestream)", set === "10s" && defaultLoad.perShopPerHour > 0, results.litestream);
+  // leave the server as the bundle's default makes it
+  await setInterval_(undefined);
+  save();
+}
+
 if (import.meta.main) {
   try { await main_(); } catch (e) { say(`\nTHE PROOF STOPPED: ${(e as Error).stack ?? e}`); results.error = String(e); }
   finally {
@@ -617,6 +1145,7 @@ if (import.meta.main) {
       for (const row of dk(["ps", "-a", "--filter", "name=geometer-job", "-q"]).out.trim().split("\n").filter(Boolean)) dk(["rm", "-f", row]);
       for (const v of dk(["volume", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean)) dk(["volume", "rm", "-f", v]);
       for (const n of dk(["network", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean)) dk(["network", "rm", n]);
+      say(`the capped cgroup removed: ${removeCap().out.trim()}`);
       say(`left behind: containers ${dk(["ps", "-a", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean).length}, volumes ${dk(["volume", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean).length}, networks ${dk(["network", "ls", "-q", "--filter", `name=${PROJECT}`]).out.trim().split("\n").filter(Boolean).length}`);
     }
     say(`\n${JSON.stringify(results.summary)}`);
