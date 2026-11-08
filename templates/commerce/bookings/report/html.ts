@@ -8,7 +8,7 @@ const two = (n: number) => String(n).padStart(2, "0");
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 import { badgeText } from "../../../../modules/report/text.ts";
 import type { Strings } from "./strings.ts";
 import { goLiveLines } from "./text.ts";
@@ -39,8 +39,8 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
     [esc(s.label.cancelled), String(r.bookings.cancelled), ""],
     [esc(s.label.moved), String(r.bookings.moved), ""],
     [esc(p.droppedBeforeBooked), String(r.bookings.droppedBeforeBooked), ""],
-    [esc(s.label.depositsCollected), ...amount(r.money.deposits)],
-    [esc(s.label.givenBack), ...amount(r.money.refunds)],
+    [esc(moneyLabels(language, r.paidBy).deposits), ...amount(r.money.deposits)],
+    [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.refunds)],
     [esc(p.givenBackDeposits), ...amount(r.money.refunds.ofDeposits)],
     [esc(p.givenBackSecond), ...amount(r.money.refunds.ofSecondPayments)],
     [esc(s.label.wasAsked), String(r.owner.asked), ""],
@@ -72,8 +72,8 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
 <p class="note">${esc(s.sourceLong[r.source])} ${esc(s.handRun)}</p>
 <div class="cards">
 <div class="card"><b>${r.bookings.made}</b><span>${esc(s.label.bookingsMade)}</span></div>
-<div class="card"><b>${esc(rupees(r.money.deposits.paise))}</b><span>${esc(s.label.depositsCollected)}</span></div>
-<div class="card"><b>${esc(rupees(r.money.refunds.paise))}</b><span>${esc(s.label.givenBack)}</span></div>
+<div class="card"><b>${esc(rupees(r.money.deposits.paise))}</b><span>${esc(moneyLabels(language, r.paidBy).deposits)}</span></div>
+<div class="card"><b>${esc(rupees(r.money.refunds.paise))}</b><span>${esc(moneyLabels(language, r.paidBy).givenBack)}</span></div>
 <div class="card"><b>${r.stopped.total}</b><span>${esc(s.label.stoppedByLimits)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}

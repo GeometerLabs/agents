@@ -95,3 +95,15 @@ Written once to the inbox, never read back, never in a page, a redirect, a log, 
 ## Tests
 
 110 in `bundle/panel/test/` (109 run, 1 skipped as before; `inbox.test.ts`, `handover.test.ts` and `export.test.ts` are B31/B38's). The older breakdown of the first 67: price list and cost arithmetic (14), connection checks (11), foundations (11), words and review sheets (8), access: accounts, roles, isolation, CSRF, limit, cookies, hosted encryption of the data and the papers (10), setup: valid folder, plain refusals, secrets, the template's own accounts, no writing into another shop, every step URL (7), shop, stop, checks, ready and the report (6). The template's own suite is 601 (576 before the two fixes, plus 24 for them and 1 skipped as before); the hand check says 33 of 33. No browser was used: pages are tested as HTML, and how they look on a phone has not been looked at.
+
+## UPI as the way customers pay (B33, 8 Nov)
+
+**Setup, step 4 (accounts).** A new shop (Bookings or Fees) starts on UPI. The partner chooses UPI or Razorpay (a radio, `payMod`). For UPI they type the shop's own UPI ID and the payee name customers see in their UPI app; both are checked by `vpaProblem` / `payeeProblem` (modules/payments/upi/link.ts) and refused in the person's language (`upi.problems` in the four word files). No Razorpay key, secret or webhook secret is asked or written for UPI, and the settings get `payment: {module: "upi", upi: {id, payee}}`. The page says plainly that a UPI ID cannot be checked without paying it, so the partner reads it back to the owner. A form that sends no choice (not a browser) is a Razorpay shop, as before UPI. A draft made before this, or from a saved Razorpay shop, is Razorpay: Bookings leaves `payment` out of its settings, Fees keeps writing `{module: "razorpay"}` (a saved block is written back as it was), so editing a Razorpay shop changes nothing unless the partner switches. A shop switched to UPI drops the Razorpay key id from its notes; the write-only inbox is not touched. Fees' limit lines on the rules step are worked out before the UPI ID is asked, so until it is given they are built as for Razorpay (they do not depend on it; the save cannot be reached before step 4).
+
+**Go-live.** `golive.ts` leaves Razorpay out of the connection targets for a UPI shop, so there is no Razorpay check, no pin, and "connections" is met by WhatsApp and the calendar alone. Nothing else in readiness asked for Razorpay. The monthly report's `source` is "live" for a UPI shop (it has no test mode and no pin).
+
+**Cost.** A UPI shop has no Razorpay line; the cost table says "No gateway fee: customers pay the shop's own UPI ID" (caveat `no-gateway-fee`, words in `upi.noGatewayFee`). `shop-pays-razorpay` stays only for Razorpay shops, whose lines are unchanged.
+
+**Words.** One `upi` block at the end of each word file (setup choice, refusals, cost note) and two inbox kinds, `upi_payment_unconfirmed` and `upi_refund_owed`. Hindi, Malayalam and Kannada are machine-written and wait for a native reader, like the rest.
+
+**Tests.** `test/upi.test.ts`.

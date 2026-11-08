@@ -53,12 +53,12 @@ test("a voice note, and an audio file, are read as a message with no words and v
   for (const leaked of ["MEDIA", "ogg", "mpeg", "sha256", "mime", "audio"]) assert.ok(!wire.includes(leaked), `${leaked} must not travel on`);
 });
 
-test("the text path is unchanged (no voiceNote key at all), images, locations, stickers and a broken audio message are still left out", () => {
+test("the text path is unchanged (no voiceNote key at all), locations, stickers and a broken audio message are still left out; a picture is only the fact of it (B33)", () => {
   const text = parseWhatsAppWebhook(fixture("whatsapp-webhook-text.json"));
   assert.equal(text.length, 1);
   assert.ok(!("voiceNote" in text[0]), "a text message does not carry the flag");
+  assert.deepEqual(parseWhatsAppWebhook(webhookWith({ from: "919811111111", id: "wamid.i", timestamp: "1", type: "image", image: { id: "1" } })).map((m) => [m.text, m.image, m.voiceNote]), [["", true, undefined]]);
   const left = parseWhatsAppWebhook(webhookWith(
-    { from: "919811111111", id: "wamid.i", timestamp: "1", type: "image", image: { id: "1" } },
     { from: "919811111111", id: "wamid.l", timestamp: "1", type: "location", location: { latitude: 1, longitude: 2 } },
     { from: "919811111111", id: "wamid.s", timestamp: "1", type: "sticker", sticker: { id: "1" } },
     { from: "919811111111", id: "wamid.v", timestamp: "1", type: "video", video: { id: "1" } },

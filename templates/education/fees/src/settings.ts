@@ -3,6 +3,8 @@
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { isValidTimeZone } from "../../../../modules/core/time.ts";
+import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
+import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -56,8 +58,11 @@ export interface Settings {
   waiver: { limitInr: number };
   /** The agent refunds up to and including this amount alone (an overpayment); anything above needs the owner (Guard holds it). */
   refund: { limitInr: number };
-  /** How parents pay. Razorpay is built; UPI is the next module (plan B33). */
-  payment: { module: "razorpay" };
+  /**
+   * How parents pay (modules/payments/upi/settings.ts): "upi", the centre's own UPI ID, marked paid by the owner; or "razorpay", the centre's own account.
+   * Left out: Razorpay (written into the parsed settings, as it always was).
+   */
+  payment: PaymentSettings;
   owner: { whatsapp: string; language: Language };
 }
 
@@ -265,11 +270,8 @@ function readLimit(v: unknown, key: "waiver" | "refund", label: string, max: num
 
 function readPayment(v: unknown, errors: string[]): Settings["payment"] | undefined {
   if (v === undefined) return { module: "razorpay" };
-  if (!isObj(v)) { errors.push("The payment module (\"payment\") must look like {\"module\": \"razorpay\"}."); return undefined; }
-  unknownKeys(v, ["module"], "the payment module", errors);
-  if (v.module === "upi") { errors.push("The UPI module is not built yet (plan B33). Use \"razorpay\" for now."); return undefined; }
-  if (v.module !== undefined && v.module !== "razorpay") { errors.push(`The payment module ${JSON.stringify(v.module)} is not one I know. Use "razorpay".`); return undefined; }
-  return { module: "razorpay" };
+  if (isObj(v) && v.module === undefined && Object.keys(v).length === 0) return { module: "razorpay" };
+  return readPaymentSettings(v, errors);
 }
 
 function readOwner(v: unknown, errors: string[]): Settings["owner"] | undefined {

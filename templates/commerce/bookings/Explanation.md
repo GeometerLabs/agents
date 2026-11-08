@@ -771,6 +771,36 @@ The hand-check counts: Glow Salon 37 to 38 situations and 242 to 252 checks, the
 
 The agent handles two more things, both small and both through the paths it already has. A **`recovery` event** (the panel's to-do list files a request, the deployer carries it to the runtime's `POST /internal/recover`) names one booking and an action: `recheck_payment` runs `reconcilePayments` (the payments service's own list for the booking's link, the one-deposit rule and all), `retry_booking` runs `completeBooking` for a booking the calendar would not confirm (the customer hears "booked" only if the calendar now shows it), `ask_owner_again` sends the owner the same notice again (`owner_cant_confirm`, or `owner_late_cancellation`), and `recheck_refund` looks, read-only, for a refund whose outcome was unclear and sends nothing. An action that does not fit, or a booking that is not there, is a `recovery` / `blocked` line and changes nothing. The record keeps a `recovery` entry for each (`refs.action`, `refs.recovery`). What the actions are and how the to-do list finds the bookings that need them is in `modules/Explanation.md`. **"move CODE"** from the owner's number writes one `handover_agreed` entry with the code's hash and nothing else (no reply, not an `owner_decision`, so the monthly report does not count it). Tests: `test/recovery.test.ts`.
 
+## UPI, marked paid by the owner (B33; added 7 November 2026)
+
+A shop picks how customers pay the deposit: `"payment": {"module": "upi", "upi": {"id": "glowsalon@okicici", "payee": "Glow Salon"}}` (the default the panel offers a
+partner shop: no gateway account, no gateway fee) or `{"module": "razorpay"}`. A settings file with no `payment` is a Razorpay shop, and parses to the same object as
+before, so nothing set up earlier changes. The shared module is `modules/payments/upi` (its Explanation section says why each part is as it is); this is what Bookings
+does with it.
+
+- **The quote.** The slot is held as always; the request is made through the same "look first, write, read back" (`ensureLink`), but the "link" is a `upi://pay` link
+  to the shop's own UPI ID for exactly the deposit, with the booking number as its note. The customer gets the QR picture of that link (inside the window), then the
+  words with the link, the UPI ID and the amount, and the buttons I have paid, Cancel booking and Talk to the owner. The owner gets "UPI payment to check", with the
+  one-use code and a "Received ₹200" button (a WhatsApp template when the owner has not written today, which asks them to reply "received <code>").
+- **Booked** only when the owner has marked the whole deposit received (`owner_marked_paid`), and the calendar shows it: `checkConfirmOnlyWhenRecorded` accepts the
+  owner's marks adding up to the deposit, and nothing a customer sends. The customer's words say the owner confirmed it ("Booked! ... The owner has confirmed your ₹200
+  deposit").
+- **A different amount:** less is not booked; the hold stays; the owner is asked for the rest with a new code (the used one counts nothing again). If the hold runs out,
+  the part is owed back by the owner. More books it, and the extra is owed back.
+- **Never confirmed:** the hold ends at `holdMinutes` (the UPI example shop holds for 60, since the owner looks in their app); the request is closed in the record and the
+  customer is told the owner had not confirmed it in time.
+- **Twice:** one mark; the owner is told it was already counted.
+- **After the hold:** recorded as received, never booked again by itself. The customer is told the owner will contact them; the owner gets Refund sent and Kept for
+  booking (for a booking they make by hand); the builder sees a `late_upi` count in the status, and the money owed back is on the unfinished-work list.
+- **Refunds** are owed by the owner (`upi_refund_owed`): inside the window at once, after it when the owner approves (`approve b-3`, as before; there is no Guard and no
+  refund limit hold, because the owner sends every UPI refund). The customer is told the owner will send it, and "sent" only after the owner's mark.
+- **"I paid", a screenshot, the I have paid button:** thanks, the owner will confirm, a screenshot is not proof; the owner is asked to look, at most once an hour.
+- **Crash test:** on a UPI shop the situations written around a Razorpay link are named as not run, and nine UPI situations run (`crash-test/upi.ts`); Glow Salon (UPI)
+  holds 9 of 9. The Razorpay shops are unchanged: Glow Salon 38 of 38, the equipment rental 33 of 33. The not-tested list of a UPI shop says that automatic payment
+  checking does not apply to UPI and that no real UPI payment was made.
+- **The report** labels a UPI shop's money "Deposits marked paid by owner" and "Refunds marked sent by owner" (the owner's lines, the page, the monthly certificate,
+  and two more WhatsApp report templates, `monthly_report_upi` and `monthly_report_upi_innovator`). A Razorpay shop's report keeps its bytes.
+
 ## Syntax rules used
 
 Only erasable TypeScript: no enums, namespaces, parameter properties or decorators. Type-only imports use `import type`. Imports carry their `.ts` extension. Files that read the settings JSON use `new URL(…, import.meta.url)`, so they work from any directory.

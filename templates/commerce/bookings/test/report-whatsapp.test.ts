@@ -86,7 +86,7 @@ test("the template variables: one value for each {{n}}, in order, and filling th
   const env = sealed();
   for (const t of REPORT_TEMPLATES) {
     for (const language of LANGUAGES) {
-      const message = monthlyReportMessage(seal({ ...report(), ...(t.badge ? { innovator: true as const } : {}) }), language, { link: LINK });
+      const message = monthlyReportMessage(seal({ ...report(), ...(t.badge ? { innovator: true as const } : {}), ...(t.upi ? { paidBy: "owner-marked" as const } : {}) }), language, { link: LINK });
       assert.equal(message.template.name, t.name);
       assert.equal(message.template.language, language);
       const slots = reportSlotsOf(t.bodies[language]);
@@ -101,7 +101,7 @@ test("the template variables: one value for each {{n}}, in order, and filling th
 });
 
 test("each report template follows Meta's rules: a lowercase name, numbered values used once, fixed words at both ends, never two values side by side, values with no line break", () => {
-  assert.deepEqual([...REPORT_TEMPLATE_NAMES], ["monthly_report", "monthly_report_innovator"]);
+  assert.deepEqual([...REPORT_TEMPLATE_NAMES], ["monthly_report", "monthly_report_innovator", "monthly_report_upi", "monthly_report_upi_innovator"]); // the last two: a UPI shop's (B33)
   for (const t of REPORT_TEMPLATES) {
     assert.match(t.name, /^[a-z0-9_]+$/);
     for (const language of LANGUAGES) {
@@ -153,7 +153,7 @@ test("the stand-in takes both report templates in every language, refuses a wron
     const { messaging } = w.adapters;
     for (const t of REPORT_TEMPLATES) {
       for (const language of LANGUAGES) {
-        const message = monthlyReportMessage(seal({ ...report(), ...(t.badge ? { innovator: true as const } : {}) }), language, { link: LINK });
+        const message = monthlyReportMessage(seal({ ...report(), ...(t.badge ? { innovator: true as const } : {}), ...(t.upi ? { paidBy: "owner-marked" as const } : {}) }), language, { link: LINK });
         const sent = await messaging.sendTemplate(owner, message.template);
         const kept = w.fakes.messaging.outbox().find((m) => m.id === sent.id)!;
         assert.equal(kept.kind, "template");

@@ -34,8 +34,10 @@ export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
     language, timeZone: TIME_ZONE, businessName: salon.name,
     services: (id === "menu" ? salon.services : [haircut]).map((s) => ({ name: serviceName(s, language), priceInr: s.priceInr })),
     serviceName: serviceName(haircut, language), priceInr: haircut.priceInr, depositInr: salon.deposit.amountInr, refundInr: salon.deposit.amountInr,
-    slotMs: SAMPLE_SLOT, link: "https://rzp.io/l/plink3", holdMinutes: salon.deposit.holdMinutes, windowHours: salon.cancellation.windowHours,
+    slotMs: SAMPLE_SLOT, link: id.startsWith("upi_") ? "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR" : "https://rzp.io/l/plink3", holdMinutes: salon.deposit.holdMinutes, windowHours: salon.cancellation.windowHours,
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
+    // a UPI shop's (B33) values: its UPI ID and name, the owner's code, and what the owner marked
+    upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
   };
 }
 
@@ -99,6 +101,31 @@ const WHEN: Record<TemplateId, string> = {
   owner_ai_allowance: "Button mode, told once a month: the shop's monthly AI allowance is used up",
   owner_ai_off: "Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent)",
   owner_ai_fault: "Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes",
+  // UPI shops (B33): the customer pays the shop's own UPI ID; the owner marks it received
+  upi_quote_and_link: "UPI shop: normal quote, with the UPI ID and the upi:// link (the QR picture goes just before)",
+  upi_slot_and_link: "UPI shop: straight after price_floor, the same without the price",
+  upi_already_waiting: "UPI shop: the customer writes again while the slot is held",
+  upi_qr_caption: "UPI shop: the words under the QR picture",
+  upi_booked: "UPI shop: the owner marked the whole deposit received and the calendar shows the booking",
+  upi_paid_claim: "UPI shop: the customer says they paid, taps I have paid, or sends a screenshot (nothing is marked paid)",
+  upi_nothing_waiting: "UPI shop: the customer says they paid and no UPI payment is waiting",
+  upi_hold_expired: "UPI shop: the hold ended before the owner confirmed the deposit",
+  upi_late_received: "UPI shop: the owner marked the money after the hold ended: not booked again by itself",
+  upi_refund_owed: "UPI shop: a refund the owner will send (the agent never sends it)",
+  upi_cancelled_refund_owed: "UPI shop: the customer cancelled inside the window; the owner will send the deposit back",
+  upi_extra_refund_owed: "UPI shop: the owner marked more than the deposit; the extra goes back from the owner",
+  upi_refund_sent: "UPI shop: the owner marked the refund sent (only then is the customer told)",
+  owner_upi_expected: "UPI shop: tells the owner what payment to look for in their UPI app, with the one-use code",
+  owner_upi_claim: "UPI shop: the customer says they paid (a screenshot is not proof): the owner is asked to look",
+  owner_upi_marked: "UPI shop: the answer to the owner's Received",
+  owner_upi_part: "UPI shop: the owner marked less than the deposit: not booked, the rest is asked for",
+  owner_upi_already: "UPI shop: the owner used a code that was already used: counted once",
+  owner_upi_unknown: "UPI shop: the owner used a code the agent never gave",
+  owner_upi_late: "UPI shop: the owner marked the money after the hold ended: book by hand, or send it back",
+  owner_upi_refund_owed: "UPI shop: a refund the owner must send from their UPI app, with the code",
+  owner_upi_refund_reminder: "UPI shop: a reminder of a refund still owed (once a day, three times at most)",
+  owner_upi_refund_marked: "UPI shop: the answer to the owner's Refund sent",
+  owner_upi_refund_kept: "UPI shop: the answer to the owner's Kept for booking",
 };
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
@@ -185,6 +212,9 @@ export function reviewSheet(language: ReviewLanguage): string {
     ["yes", "Button under a read-back: yes, that is right"], ["no", "Button under a read-back: no, that is wrong"], ["cancel", "Button under a booking: cancel it (asks once more)"],
     ["cancelYes", "Button when asked 'cancel your booking?': yes, cancel it"], ["keep", "Button when asked 'cancel your booking?': no, leave it"], ["owner", "Button, and the last row of each list: talk to the shop's owner"],
     ["pickService", "The button that opens the list of services"], ["pickTime", "The button that opens the list of free times"],
+    ["paid", "UPI shop: button under the payment request: I have paid (the owner is asked to look; nothing is marked paid)"],
+    ["received", "UPI shop: the owner's button, with the amount after it: the money is in my UPI app"],
+    ["refundSent", "UPI shop: the owner's button: I have sent the refund"], ["keptForBooking", "UPI shop: the owner's button: I keep the money for a booking I make myself"],
   ];
   out.push(table(["Id", "Where it is shown", `Text (${name})`, "Meaning (English)", REVIEWER], labelRows.map(([key, where]) => [`\`${key}\``, where, LABELS[language][key], english[key], ""])), "");
 

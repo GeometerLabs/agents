@@ -8,13 +8,14 @@ import { isObj } from "../../../../../modules/understanding/model.ts";
 import type { IntentParser as Parser, ParseOptionsBase, ParseResult as Result } from "../../../../../modules/understanding/model.ts";
 import type { Service } from "../settings.ts";
 
-export type IntentKind = "book" | "cancel" | "reschedule" | "yes" | "no" | "stop" | "greeting" | "owner" | "keep" | "unknown";
-export const KINDS: IntentKind[] = ["book", "cancel", "reschedule", "yes", "no", "stop", "greeting", "owner", "keep", "unknown"];
+export type IntentKind = "book" | "cancel" | "reschedule" | "yes" | "no" | "stop" | "greeting" | "owner" | "keep" | "paid" | "unknown";
+export const KINDS: IntentKind[] = ["book", "cancel", "reschedule", "yes", "no", "stop", "greeting", "owner", "keep", "paid", "unknown"];
 /**
- * What a model is asked to tell apart. "keep" (leave my booking as it is) only ever comes from a button, so a model is not offered it.
+ * What a model is asked to tell apart. "keep" (leave my booking as it is) only ever comes from a button, so a model is not offered it; nor is "paid" ("I have
+ * paid", a UPI shop's button, B33), which a UPI shop also reads from a few plain words before any model (agent.ts), and which never marks anything paid.
  * "owner" is a customer asking for a person: the agent tells the owner and the customer, and decides nothing else.
  */
-export const MODEL_KINDS: IntentKind[] = KINDS.filter((k) => k !== "keep");
+export const MODEL_KINDS: IntentKind[] = KINDS.filter((k) => k !== "keep" && k !== "paid");
 
 export interface Intent {
   kind: IntentKind;

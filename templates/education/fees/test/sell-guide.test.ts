@@ -172,6 +172,27 @@ test("sell guide: no banned word in any guide or sheet, in any language (the Nev
   }
 });
 
+// ---- the UPI option (B33) ----------------------------------------------------------------------------------------------------
+
+test("sell guide: every guide teaches the UPI option, each carries the one allowed UPI claim, and none says a UPI payment is checked automatically", () => {
+  const CLAIMS: Record<Language, string> = {
+    en: "No fee marked paid without your confirmation; every refund tracked.",
+    hi: "आपके पक्का किए बिना कोई फ़ीस चुकाई हुई दर्ज नहीं होती; हर रिफंड का हिसाब।",
+    ml: "നിങ്ങൾ ഉറപ്പിക്കാതെ ഒരു ഫീസും അടച്ചതായി രേഖപ്പെടുത്തില്ല; ഓരോ റീഫണ്ടിനും കണക്കുണ്ട്.",
+    kn: "ನೀವು ಖಚಿತಪಡಿಸದೆ ಯಾವ ಶುಲ್ಕವನ್ನೂ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ದಾಖಲಿಸುವುದಿಲ್ಲ; ಪ್ರತಿ ರೀಫಂಡ್‌ನ ಲೆಕ್ಕ ಇರುತ್ತದೆ.",
+  };
+  // "checked automatically", as a claim, in each language (the "Never say" column quotes it, so it is skipped there like the banned words)
+  const AUTO: Record<Language, string> = { en: "checked automatically", hi: "अपने आप जाँचा", ml: "തനിയെ പരിശോധിക്കപ്പെടും", kn: "ತಾನಾಗಿ ಪರಿಶೀಲಿಸಲಾಗುತ್ತದೆ" };
+  for (const l of LANGUAGES) {
+    const text = guide(l);
+    assert.ok(text.includes("UPI"), `${l}: the guide mentions UPI`);
+    assert.ok(text.includes(CLAIMS[l]), `${l}: the guide carries the UPI claim`);
+    assert.ok(!checked(text).replaceAll("not checked automatically", "").includes(AUTO[l]), `${l}: the guide does not say a UPI payment is ${AUTO[l]}`);
+    assert.ok(!text.includes("B33"), `${l}: UPI is no longer described as not built`);
+  }
+  assert.ok(guide("en").includes('tap "Received"'), "the owner taps Received");
+});
+
 // ---- amounts and numbers ------------------------------------------------------------------------------------------------
 
 test("sell guide: the ₹ amounts are the same set in every guide, section by section, and match the plan's figures", () => {

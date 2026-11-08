@@ -35,6 +35,8 @@ export interface Strings {
   handRun: string;
   sourceTag: Record<Source, string>;
   sourceLong: Record<Source, string>;
+  /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
+  upiLabel: { deposits: string; givenBack: string };
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
   page: {
@@ -89,7 +91,9 @@ const en: Strings = {
     "test-mode": "These numbers come from real services in test mode. The money was test money.",
     live: "These numbers come from the live record of real services.",
   },
+  upiLabel: { deposits: "Deposits marked paid by owner", givenBack: "Refunds marked sent by owner" },
   notTested: {
+    "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
     "voice-calls": "phone calls", "group-bookings": "group bookings", "walk-ins": "walk-ins", "payments-outside-razorpay": "payments made outside Razorpay",
     "real-whatsapp": "real WhatsApp", "real-razorpay": "real Razorpay, in test mode or live", "real-calendar": "a real calendar", "webhook-signatures": "webhook signatures (proof that a payment notice came from Razorpay)",
     "real-model": "a real AI model (messages are read by fixed rules and answered from fixed templates)", "other-languages": "Tamil, Telugu and other languages",
@@ -166,7 +170,9 @@ const hi: Strings = {
     "test-mode": "ये आँकड़े असली सेवाओं के टेस्ट मोड से आए हैं। पैसा टेस्ट पैसा था।",
     live: "ये आँकड़े असली सेवाओं के चालू रिकॉर्ड से आए हैं।",
   },
+  upiLabel: { deposits: "मालिक द्वारा मिला हुआ दर्ज जमा", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड" },
   notTested: {
+    "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
     "voice-calls": "फ़ोन कॉल", "group-bookings": "समूह की बुकिंग", "walk-ins": "वॉक-इन ग्राहक", "payments-outside-razorpay": "Razorpay के बाहर के भुगतान",
     "real-whatsapp": "असली WhatsApp", "real-razorpay": "असली Razorpay (टेस्ट मोड या चालू)", "real-calendar": "असली कैलेंडर", "webhook-signatures": "पेमेंट सूचनाओं के हस्ताक्षर (webhook signatures)",
     "real-model": "असली AI मॉडल (संदेश तय नियमों से पढ़े जाते हैं और जवाब तय साँचों से बनते हैं)", "other-languages": "तमिल, तेलुगु और दूसरी भाषाएँ",
@@ -243,7 +249,9 @@ const ml: Strings = {
     "test-mode": "ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ ടെസ്റ്റ് മോഡിൽ നിന്നുള്ളതാണ്. പണം ടെസ്റ്റ് പണമായിരുന്നു.",
     live: "ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ പ്രവർത്തിക്കുന്ന രേഖയിൽ നിന്നുള്ളതാണ്.",
   },
+  upiLabel: { deposits: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്" },
   notTested: {
+    "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
     "voice-calls": "ഫോൺ കോളുകൾ", "group-bookings": "ഗ്രൂപ്പ് ബുക്കിംഗ്", "walk-ins": "നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ)", "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ",
     "real-whatsapp": "യഥാർത്ഥ WhatsApp", "real-razorpay": "യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡോ ലൈവോ)", "real-calendar": "യഥാർത്ഥ കലണ്ടർ", "webhook-signatures": "പേയ്മെന്റ് അറിയിപ്പുകളുടെ ഒപ്പ് (webhook signatures)",
     "real-model": "യഥാർത്ഥ AI മോഡൽ (സന്ദേശം വായിക്കുന്നത് നിശ്ചിത നിയമങ്ങളാലാണ്, മറുപടികൾ നിശ്ചിത മാതൃകകളാണ്)", "other-languages": "തമിഴ്, തെലുങ്ക്, മറ്റ് ഭാഷകൾ",
@@ -320,7 +328,9 @@ const kn: Strings = {
     "test-mode": "ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ಟೆಸ್ಟ್ ಮೋಡ್‌ನಿಂದ ಬಂದವು. ಹಣ ಟೆಸ್ಟ್ ಹಣವಾಗಿತ್ತು.",
     live: "ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ನಡೆಯುತ್ತಿರುವ ದಾಖಲೆಯಿಂದ ಬಂದವು.",
   },
+  upiLabel: { deposits: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್" },
   notTested: {
+    "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",
     "voice-calls": "ಫೋನ್ ಕರೆಗಳು", "group-bookings": "ಗುಂಪು ಬುಕಿಂಗ್", "walk-ins": "ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್)", "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು",
     "real-whatsapp": "ನಿಜವಾದ WhatsApp", "real-razorpay": "ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್)", "real-calendar": "ನಿಜವಾದ ಕ್ಯಾಲೆಂಡರ್", "webhook-signatures": "ಪಾವತಿ ಸೂಚನೆಗಳ ಸಹಿ (webhook signatures)",
     "real-model": "ನಿಜವಾದ AI ಮಾದರಿ (ಸಂದೇಶ ಓದುವುದು ನಿಗದಿತ ನಿಯಮಗಳಿಂದ, ಉತ್ತರಗಳು ನಿಗದಿತ ಮಾದರಿಗಳಿಂದ)", "other-languages": "ತಮಿಳು, ತೆಲುಗು ಮತ್ತು ಇತರ ಭಾಷೆಗಳು",
@@ -376,3 +386,7 @@ const kn: Strings = {
 };
 
 export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
+
+/** The money labels of a report: a UPI shop's (B33) say the money was marked by the owner ("Deposits marked paid by owner"); a Razorpay shop's are as they were. */
+export const moneyLabels = (language: Language, paidBy?: "owner-marked"): { deposits: string; givenBack: string } =>
+  paidBy === "owner-marked" ? STRINGS[language].upiLabel : { deposits: STRINGS[language].label.depositsCollected, givenBack: STRINGS[language].label.givenBack };

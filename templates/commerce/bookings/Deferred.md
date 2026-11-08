@@ -323,3 +323,10 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
 - **Model calls are counted per server, not per shop.** The model Guard has one cap; this template's record has each action's model cost, and nothing yet stops one shop from using the server's whole cap.
 - **The runtime's single `services.timeoutMs`** applies to every service. The bundle needs it above Guard's 15 s for payments; WhatsApp, Calendar and the model are then also given that long. A per-service value would let the model parser keep its 8 s.
 - **`steps` does not count clock ticks.** A tick that sends a reminder is work, but is not counted as a step, so a shop that only sends reminders shows no steps. Revisit when: fleet wants a "ticks" count.
+- **On a UPI shop the situations written around a Razorpay link do not run.** Thirty-eight are named as not run, with the reason, and nine UPI situations run instead
+  (`crash-test/upi.ts`); the calendar faults, the reminders, rescheduling and the AI situations are not repeated with a UPI deposit. Revisit when: a UPI shop goes live
+  (make the world's "the customer pays" mean "the owner marks it" so every situation runs either way).
+- **A part payment on a UPI booking does not tell the customer.** The owner is asked for the rest; the customer's request still asks for the whole deposit (the hold
+  ends, or the owner books by hand). Revisit when: owners ask for a "please send the other ₹50" message.
+- **UPI and the browser demo.** The demo runs Glow Salon's Razorpay settings; it has no QR maker (no `node:zlib`) and is not offered a UPI shop. Revisit when: the demo
+  shows the UPI option.

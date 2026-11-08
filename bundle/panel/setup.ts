@@ -8,6 +8,8 @@ import type { Language } from "../../modules/language/languages.ts";
 import { formatInr } from "../../modules/language/format.ts";
 import { MAX_SERVICES, formFromSettings, settingsFromForm } from "../../templates/commerce/bookings/demo/personalise.ts";
 import type { ShopForm } from "../../templates/commerce/bookings/demo/personalise.ts";
+import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
+import type { PaymentSettings } from "../../modules/payments/upi/settings.ts";
 import { KEY_ID, checkSecret } from "./secrets.ts";
 import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
@@ -34,9 +36,32 @@ export interface Draft {
   whatsapp: { businessNumber: string; numberId: string };
   calendar: { id: string };
   razorpay: { mode: string; keyId: string };
+  /** How customers pay (B33). A draft made before UPI has none, which is a Razorpay shop; a new shop starts on UPI. */
+  payment?: PaymentDraft;
   expectedBookings: string;
   /** How many steps have been filled in (0 for a new draft). A later step and the save need the earlier ones. A draft made from an existing shop starts with all of them done. */
   done: number;
+}
+
+/** `explicit` is true when the shop's saved settings already carried a "payment" block, so saving them again writes the block back as it was. */
+export interface PaymentDraft { module: "upi" | "razorpay"; upiId: string; payee: string; explicit?: boolean }
+
+/** The module a draft takes: no choice recorded is a Razorpay shop, as every shop was before UPI. */
+export const paymentModuleOf = (d: Draft): "upi" | "razorpay" => d.payment?.module ?? "razorpay";
+
+/** A new shop starts on UPI (no gateway account, no gateway fee). */
+export const newPayment = (): PaymentDraft => ({ module: "upi", upiId: "", payee: "" });
+
+/** The draft of a shop that exists: its payment block when it has one, else Razorpay. */
+export function paymentFromSettings(p: PaymentSettings | undefined): PaymentDraft {
+  return p?.module === "upi" ? { module: "upi", upiId: p.upi.id, payee: p.upi.payee, explicit: true } : { module: "razorpay", upiId: "", payee: "", ...(p ? { explicit: true } : {}) };
+}
+
+/** The "payment" block the settings get, or undefined when they should not carry one (a Razorpay shop whose settings never did). `always` writes the Razorpay block too (Fees does). */
+export function paymentBlock(d: Draft, always = false): PaymentSettings | undefined {
+  const p = d.payment;
+  if (p?.module === "upi") return { module: "upi", upi: { id: normaliseVpa(p.upiId), payee: p.payee.trim() } };
+  return always || p?.explicit ? { module: "razorpay" } : undefined;
 }
 
 /** What the example settings of the template say, as the form's starting point. */
@@ -48,7 +73,7 @@ export function newDraft(id: string, accountId: string, template: Template, exam
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false, form, windowHours: String(example.cancellation.windowHours),
     primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
-    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, expectedBookings: "", done: 0,
+    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
   };
 }
 
@@ -59,6 +84,7 @@ export function draftFromShop(id: string, accountId: string, templateId: string,
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
     calendar: { id: String(runtime?.services?.calendar?.calendarId ?? "") }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" },
+    payment: paymentFromSettings(settings.payment),
     expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings), done: Number.MAX_SAFE_INTEGER,
   };
 }
@@ -188,25 +214,41 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
     take("google_service_account.json", body.calJson, label.calendar.json, !calendarShared);
   }
   if (template.accounts.includes("razorpay")) {
-    const mode = text(body.rzpMode, 5);
-    const keyId = text(body.rzpKeyId, 60);
-    if (mode !== "live" && mode !== "test") problems.push(s.modeBad);
-    if (!KEY_ID.test(keyId)) problems.push(s.keyIdBad);
-    else if ((mode === "live" || mode === "test") && !keyId.startsWith(`rzp_${mode}_`)) problems.push(w.setup.checks.razorpay.wrongMode);
-    draft.razorpay = { mode: mode === "test" ? "test" : "live", keyId: KEY_ID.test(keyId) ? keyId : text(body.rzpKeyId, 60) };
-    const secret = (body.rzpKeySecret ?? "").trim();
-    const keyChanged = meta.razorpay?.keyId !== keyId;
-    if (secret === "" && (keyChanged || meta.receipts.razorpay_key === undefined)) problems.push(s.secretMissing(label.razorpay.keySecret));
-    else if (secret !== "" && KEY_ID.test(keyId)) {
-      const checked = checkSecret("razorpay_key", `${keyId}:${secret}`);
-      if (checked.ok) secrets.push({ name: "razorpay_key", text: checked.text }); else problems.push(s.secretShape(label.razorpay.keySecret));
+    // The choice comes from the form; a form without it (not a browser) is a Razorpay shop, as before UPI existed. Typed UPI boxes are kept when the form is sent back.
+    const module = body.payMod === "upi" ? "upi" : "razorpay";
+    const before = draft.payment;
+    draft.payment = { module, upiId: body.upiId === undefined ? before?.upiId ?? "" : text(body.upiId, 80), payee: body.upiPayee === undefined ? before?.payee ?? "" : text(body.upiPayee, 80), ...(before?.explicit ? { explicit: true } : {}) };
+    if (module === "upi") problems.push(...upiProblems(draft.payment.upiId, draft.payment.payee, w));
+    else {
+      const mode = text(body.rzpMode, 5);
+      const keyId = text(body.rzpKeyId, 60);
+      if (mode !== "live" && mode !== "test") problems.push(s.modeBad);
+      if (!KEY_ID.test(keyId)) problems.push(s.keyIdBad);
+      else if ((mode === "live" || mode === "test") && !keyId.startsWith(`rzp_${mode}_`)) problems.push(w.setup.checks.razorpay.wrongMode);
+      draft.razorpay = { mode: mode === "test" ? "test" : "live", keyId: KEY_ID.test(keyId) ? keyId : text(body.rzpKeyId, 60) };
+      const secret = (body.rzpKeySecret ?? "").trim();
+      const keyChanged = meta.razorpay?.keyId !== keyId;
+      if (secret === "" && (keyChanged || meta.receipts.razorpay_key === undefined)) problems.push(s.secretMissing(label.razorpay.keySecret));
+      else if (secret !== "" && KEY_ID.test(keyId)) {
+        const checked = checkSecret("razorpay_key", `${keyId}:${secret}`);
+        if (checked.ok) secrets.push({ name: "razorpay_key", text: checked.text }); else problems.push(s.secretShape(label.razorpay.keySecret));
+      }
+      take("razorpay_webhook_secret", body.rzpWebhook, label.razorpay.webhookSecret, true);
     }
-    take("razorpay_webhook_secret", body.rzpWebhook, label.razorpay.webhookSecret, true);
   }
   const expected = text(body.expectedBookings, 6);
   if (expected !== "" && !WHOLE.test(expected)) problems.push(s.expectedBad);
   draft.expectedBookings = WHOLE.test(expected) ? expected : "";
   return { problems, secrets, ...(clientEmail ? { clientEmail } : {}) };
+}
+
+/** The shop's UPI ID and payee name, refused in the person's language. The shared checks (modules/payments/upi/link.ts) decide; this only picks the sentence that says why. */
+export function upiProblems(id: string, payee: string, w: Words): string[] {
+  const u = w.upi.problems;
+  const out: string[] = [];
+  if (vpaProblem(id) !== null) out.push(id.trim() === "" ? u.idEmpty : !id.includes("@") ? u.idNoAt(id.trim()) : u.idShape(id.trim()));
+  if (payeeProblem(payee) !== null) out.push(payee.trim() === "" ? u.payeeEmpty : /[\p{Cc}\n\r\t]/u.test(payee) ? u.payeeOneLine : u.payeeLong);
+  return out;
 }
 
 // ---- the settings, and the folder ---------------------------------------------------------------------------------------------------------
@@ -220,8 +262,10 @@ export function buildSettings(draft: Draft, example: Settings): Built {
   const s = first.settings;
   const deposit = s.deposit.amountInr;
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
+  const payment = paymentBlock(draft);
   const raw = {
     ...s,
+    ...(payment ? { payment } : {}),
     languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(example.cancellation.refundLimitInr, deposit) },

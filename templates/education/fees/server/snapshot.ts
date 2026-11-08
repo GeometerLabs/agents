@@ -16,6 +16,8 @@ const codec = snapshotCodec<Store>(1, [
   { name: "nextRequest", kind: "count" },
   { name: "startedAtMs", kind: "optional-number" },
   { name: "ai", kind: "optional-ai" },
+  // a UPI centre's requests, the owner's marks and the refunds the owner owes (B33); a Razorpay centre never has it, so its snapshot is as it was
+  { name: "upi", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

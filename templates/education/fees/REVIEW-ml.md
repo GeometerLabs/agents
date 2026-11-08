@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (31)
+## 1. Messages to the parent (35)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -43,8 +43,12 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_told_owner` | The parent tapped Talk to the owner: they are told the owner has been asked to message them | നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ സന്ദേശം അയയ്ക്കും. | I have told the owner that you would like to talk. They will message you here. |  |
 | `fee_couldnt_tell_owner` | The parent tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ക്ഷമിക്കണം, ഇപ്പോൾ ഉടമയെ അറിയിക്കാൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ. | Sorry, I could not reach the owner just now. Please try again in a few minutes. |  |
 | `voice_note` | The parent sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ദയവായി സന്ദേശം ടൈപ്പ് ചെയ്യൂ; എനിക്ക് ഇപ്പോൾ വോയ്സ് നോട്ട് കേൾക്കാൻ കഴിയില്ല. | Please type your message; I cannot listen to voice notes yet. |  |
+| `fee_upi_qr_caption` | UPI centre: the words under the QR picture | Aarav Sharma-ന്റെ ഫീസിനായി (f-3) Bright Tuition Centre-ന് UPI വഴി ₹1,200 അയക്കാൻ സ്കാൻ ചെയ്യൂ. | Scan to pay ₹1,200 by UPI to Bright Tuition Centre for Aarav Sharma's fee (f-3). |  |
+| `fee_upi_claim` | UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid) | നന്ദി. Aarav Sharma-ന്റെ നവംബർ 2026 ഫീസിന്റെ നിങ്ങളുടെ പണമടവ് ഉടമ അവരുടെ UPI ആപ്പിൽ നോക്കി ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. സ്ക്രീൻഷോട്ട് പണമടച്ചതിന്റെ തെളിവല്ല, അതിനാൽ ആ സന്ദേശത്തിനായി കാത്തിരിക്കൂ. | Thank you. The owner will look for your payment for Aarav Sharma's Nov 2026 fee in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
+| `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ഉടമ Aarav Sharma-ന്റെ ഫീസിൽ നിന്ന് ₹1,200 UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
+| `fee_upi_refund_sent` | UPI centre: the owner marked the refund sent (only then is the parent told) | ഉടമ Aarav Sharma-ന്റെ ഫീസിന്റെ (f-3) നിങ്ങളുടെ ₹1,200 റീഫണ്ട് UPI വഴി അയച്ചതായി രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. | The owner has marked your ₹1,200 refund for Aarav Sharma's fee (f-3) as sent by UPI. Please check your UPI app. |  |
 
-## 2. Messages to the owner (20)
+## 2. Messages to the owner (29)
 
 Most owner messages and the reminders and receipts to parents are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -70,6 +74,15 @@ Most owner messages and the reminders and receipts to parents are also WhatsApp 
 | `owner_approval_denied` | The owner denied with the code: nothing is sent | മനസ്സിലായി. +919811111111-ന്റെ ₹1,200 റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | Understood. The ₹1,200 refund for +919811111111 will not be sent, and they will be told. |  |
 | `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പേ ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയിട്ടില്ല: +919811111111, ₹1,200. | That request ran out before you answered, so nothing was refunded: ₹1,200 for +919811111111. |  |
 | `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും അയയ്ക്കൂ. | I could not record your answer just now. Please send it again in a few minutes. |  |
+| `owner_fee_upi_expected` | UPI centre: tells the owner what payment to look for in their UPI app, with the one-use code | പരിശോധിക്കാനുള്ള UPI പണമടവ്: രക്ഷിതാവ് +919811111111-നോട് Aarav Sharma-ന്റെ നവംബർ 2026 ഫീസിനായി (f-3) ₹1,200 ചോദിച്ചിട്ടുണ്ട്. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received P4XR9T" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ "received P4XR9T" എന്നതിന് ശേഷം തുക എഴുതുക. | UPI payment to check: parent +919811111111 has been asked for ₹1,200 for Aarav Sharma's Nov 2026 fee (fee f-3). When it shows in your UPI app, tap Received or reply "received P4XR9T". If a different amount came, reply "received P4XR9T" and the amount. |  |
+| `owner_fee_upi_claim` | UPI centre: the parent says they paid (a screenshot is not proof): the owner is asked to look | രക്ഷിതാവ് +919811111111 പറയുന്നു: Aarav Sharma-ന്റെ നവംബർ 2026 ഫീസ് (f-3) അടച്ചു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received P4XR9T" എന്ന് മറുപടി അയക്കുക. | Parent +919811111111 says they have paid Aarav Sharma's Nov 2026 fee (fee f-3). A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received P4XR9T". |  |
+| `owner_fee_upi_marked` | UPI centre: the answer to the owner's Received, the fee paid | നന്ദി. ഫീസ് f-3-ന്റെ ₹1,200 നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി. | Thank you. ₹1,200 for fee f-3 is marked paid by you. |  |
+| `owner_fee_upi_part` | UPI centre: the answer to the owner's Received, part paid, with the code for the rest | നന്ദി. ഫീസ് f-3-ന്റെ ₹1,200 നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി. ₹1,200 ഇനിയും അടയ്ക്കാനുണ്ട്; അത് എത്തുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received P4XR9T" എന്ന് മറുപടി അയക്കുക. | Thank you. ₹1,200 for fee f-3 is marked paid by you. ₹1,200 is still to pay; when it arrives, tap Received or reply "received P4XR9T". |  |
+| `owner_fee_upi_already` | UPI centre: the owner used a code that was already used: counted once | ആ പണമടവ് ഇതിനകം രേഖപ്പെടുത്തിയിട്ടുണ്ട്. അത് ഒരു തവണ മാത്രം കണക്കാക്കും. | That payment is already marked. It is counted once. |  |
+| `owner_fee_upi_unknown` | UPI centre: the owner used a code the agent never gave | ആ കോഡ് എനിക്ക് അറിയില്ല. ആ പണമടവിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ സന്ദേശത്തിലെ കോഡ് ഉപയോഗിക്കുക. | I don't know that code. Please use the code in my latest message about the payment. |  |
+| `owner_fee_upi_refund_owed` | UPI centre: a refund the owner must send from their UPI app, with the code | തിരികെ അയക്കേണ്ടത്: രക്ഷിതാവ് +919811111111-ന് (ഫീസ് f-3) UPI വഴി ₹1,200. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Refund to send: ₹1,200 by UPI to parent +919811111111 (fee f-3). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_fee_upi_refund_reminder` | UPI centre: a reminder of a refund still owed (once a day, three times at most) | ഓർമ്മപ്പെടുത്തൽ: രക്ഷിതാവ് +919811111111-ന് (ഫീസ് f-3) ₹1,200 ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Reminder: ₹1,200 is still owed back to parent +919811111111 (fee f-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_fee_upi_refund_marked` | UPI centre: the answer to the owner's Refund sent | നന്ദി. ഫീസ് f-3-ന്റെ ₹1,200 റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, രക്ഷിതാവിനെ അറിയിച്ചു. | Thank you. The ₹1,200 refund for fee f-3 is marked sent, and the parent has been told. |  |
 
 ### The words on the buttons and the lists
 
@@ -251,8 +264,13 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `languageName.en` | ഇംഗ്ലീഷ് | English |  |
 | `languageName.ml` | മലയാളം | Malayalam |  |
 | `languageName.kn` | കന്നഡ | Kannada |  |
+| `upiLabel.collected` | ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത് | Marked paid by owner |  |
+| `upiLabel.givenBack` | ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട് | Refunds marked sent by owner |  |
+| `upiLabel.notChecked` | പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) | automatic payment checking (with UPI you mark each payment) |  |
+| `notTested.upi-not-automatic` | പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു | automatic payment checking: with UPI the owner marks each payment received |  |
+| `notTested.real-upi` | യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല) | a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment) |  |
 | `notTested.cash-and-bank-transfers` | പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് (അങ്ങനെ പറയുന്ന രക്ഷിതാവിനെ ഉടമയുടെ അടുത്തേക്ക് അയയ്ക്കുന്നു; ഒന്നും "അടച്ചു" എന്ന് രേഖപ്പെടുത്തുന്നില്ല) | Fees paid in cash or by bank transfer (a parent who says so is sent to the owner; nothing is marked paid) |  |
-| `notTested.payments-outside-razorpay` | Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ (UPI മൊഡ്യൂൾ ഇതുവരെ നിർമ്മിച്ചിട്ടില്ല) | Payments outside Razorpay (the UPI module is not built) |  |
+| `notTested.payments-outside-razorpay` | Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ (ഈ സെന്റർ Razorpay വഴി വാങ്ങുന്നു) | Payments outside Razorpay (this centre takes Razorpay) |  |
 | `notTested.real-whatsapp` | യഥാർത്ഥ WhatsApp | Real WhatsApp |  |
 | `notTested.real-razorpay` | യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡ് അല്ലെങ്കിൽ ലൈവ്) | Real Razorpay (test mode or live) |  |
 | `notTested.webhook-signatures` | വെബ്ഹുക്ക് ഒപ്പുകൾ | Webhook signatures |  |
