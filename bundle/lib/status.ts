@@ -22,6 +22,8 @@ export interface ShopStatus {
   versions?: { pathway: string; bundle: string; guard: string; guards: Record<string, number> };
   stopped?: { at: string; requestId?: string; by?: string; reason?: string };
   backups?: { lastCopyAt: string | null; lastDrillAt: string | null; drillOk: boolean | null; drillDetail?: string };
+  /** The last daily fingerprint of the record's ledger (B28, backup/fingerprints.ts): what was written, or why it was refused (the record changed after it was published). */
+  fingerprint?: { at: string; ok: boolean; day?: string; seq?: number; head?: string; signed?: boolean; detail?: string };
   /** The cost meter's cumulative counts over the shop's whole record, as of the last export (every 15 minutes). Counts only (lib/usage.ts). Ops sends the difference to fleet. */
   usage?: UsageTotals & { at: string };
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */

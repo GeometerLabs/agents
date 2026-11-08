@@ -38,6 +38,9 @@ import { createGoLive } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
 import { exportShop } from "./export.ts";
+import { PaperError, createPapers } from "./papers.ts";
+import type { MadePaper } from "./papers.ts";
+import { papersPage } from "./views-papers.ts";
 import { ExportError } from "../export/build.ts";
 import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
@@ -350,6 +353,36 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     }
   });
 
+  // the papers (B28, B35, B36): the record of one case, a person's statement, the agent's identity paper (full and public), the record as an evidence pack. Each goes
+  // through shops.find, so a partner gets a 404 for a shop that is not theirs; a person's number is only ever in a POST body, never in the address or the log
+  const papers = createPapers(config, shops, goLive.docs, now);
+  const PAPER_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
+  const sendPaper = (r: Req, made: MadePaper | undefined) => (made ? body(r.res, 200, made.type, made.text, { "content-security-policy": PAPER_CSP, ...(made.file.endsWith(".json") ? { "content-disposition": `attachment; filename=\"${made.file}\"` } : {}) }) : notFound(r));
+  const paperRoute = (pattern: RegExp, method: "GET" | "POST", make: (r: Req, id: string) => MadePaper | undefined, what: string) => on(method, pattern, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    try { const made = make(r, ref.id); log(`${what} of ${ref.id} downloaded by ${r.account!.id}`); sendPaper(r, made); }
+    catch (e) { if (!(e instanceof PaperError)) throw e; page(r, 409, papersPage(r.ctx(), { id: ref.id, name: shops.settings(ref.id)?.name ?? ref.id, cases: caseIds(ref.id), problem: e.message })); }
+  });
+  const query = (r: Req) => new URL(r.req.url ?? "/", "http://x").searchParams;
+  const caseIds = (id: string): string[] => { const d = readExport(shops.paths.exports(id)); return d ? [...(d.dues ?? []).map((x) => x.id), ...d.bookings.map((b) => b.id)].reverse() : []; };
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/papers$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    page(r, 200, papersPage(r.ctx(), { id: ref.id, name: shops.settings(ref.id)?.name ?? ref.id, cases: caseIds(ref.id) }));
+  });
+  paperRoute(/^\/shops\/([a-z0-9-]{1,40})\/papers\/case$/u, "GET", (r, id) => {
+    const caseId = query(r).get("case") ?? "";
+    if (!/^[a-z]-[0-9]{1,8}$/u.test(caseId)) throw new PaperError("Choose a case from the list.");
+    return papers.dispute(id, caseId, query(r).get("lang") ?? undefined).find((m) => m.file.endsWith(query(r).get("as") === "json" ? ".json" : ".html"));
+  }, "record of one case");
+  paperRoute(/^\/shops\/([a-z0-9-]{1,40})\/papers\/statement$/u, "POST", (r, id) => papers.statement(id, r.form.number ?? "", r.form.lang).find((m) => m.file.endsWith(r.form.as === "json" ? ".json" : ".html")), "a statement");
+  paperRoute(/^\/shops\/([a-z0-9-]{1,40})\/papers\/(identity|identity-public)\.(json|html)$/u, "GET", (r, id) => {
+    const made = papers.identity(id, query(r).get("lang") ?? undefined);
+    return (r.params[1] === "identity" ? made.full : made.public).find((m) => m.file.endsWith(`.${r.params[2]}`));
+  }, "identity paper");
+  paperRoute(/^\/shops\/([a-z0-9-]{1,40})\/papers\/ledger\/(pack|anchor)\.json$/u, "GET", (r, id) => papers.ledger(id).find((m) => m.file.endsWith(`-${r.params[1]}.json`)), "evidence pack");
+
   // moving a shop to another partner or builder (B38), with the owner's agreement from their own number
   const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
     const state = handover.check(id);
@@ -429,6 +462,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       // the Innovator badge is fleet's answer for the shop (fleet/<shop>.json, written by ops): the same file the owner's monthly message reads, so the builder's copy and the owner's agree
       innovator: shops.fleet(ref.id)?.innovator === true,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
+      tenant: ref.id, // B28: the report is anchored to the head of the shop's record, under the shop's id (the tenant its daily fingerprint uses)
     }));
     redirect(r, `/shops/${ref.id}?notice=report`);
   });
