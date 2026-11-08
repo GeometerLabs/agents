@@ -10,7 +10,8 @@ import { MAX_BATCHES } from "./fees.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import { languageOptions } from "../../templates/commerce/bookings/demo/personalise.ts";
-import type { Ctx } from "./views.ts";
+import type { Ctx, TemplateActivity, TemplateMessages, TemplateSummary } from "./views.ts";
+import { formatRupees } from "./cost.ts";
 import type { Draft } from "./setup.ts";
 
 /** The helpers views.ts shares with the Fees pages. */
@@ -53,27 +54,37 @@ export function feesRulesBody(c: Ctx, d: Draft, action: string, back: Raw | stri
 }
 
 /** The centre on the shop page: each batch with its fee and its students, the languages and the owner. The rules are the certificate's own lines (fees.ts, feesLimitLines). */
-export function summaryFees(c: Ctx, s: Settings): { batches: string[]; languages: string; owner: string } {
+export function summaryFees(c: Ctx, s: Settings): TemplateSummary {
   const w = c.w.feesShop;
   const language = s.languages.includes(c.lang) ? c.lang : s.languages[0];
   return {
-    batches: s.batches.map((b) => `${batchName(b, language)} · ${formatInr(b.monthlyFeeInr)} · ${w.studentsIn(s.students.filter((x) => x.batchId === b.id).length)}`),
+    heading: c.w.shop.summaryFees, rulesHeading: c.w.shop.summaryRules,
+    lines: s.batches.map((b) => `${batchName(b, language)} · ${formatInr(b.monthlyFeeInr)} · ${w.studentsIn(s.students.filter((x) => x.batchId === b.id).length)}`),
     languages: s.languages.map((l) => languageOptions().find((o) => o.code === l)?.label.split(" · ")[0] ?? l).join(", "),
     owner: s.owner.whatsapp,
   };
 }
 
 /** This month in counts, as the shop page shows them. */
-export function activityFees(r: FeesReport): { opened: number; paidInFull: number; partlyPaid: number; stillOpen: number; collected: number; stillToCollect: number; reminders: number; saidNo: number; owner: { asked: number; approved: number; denied: number } } {
-  return { opened: r.fees.opened, paidInFull: r.fees.paidInFull, partlyPaid: r.fees.partlyPaid, stillOpen: r.fees.stillOpen, collected: r.money.collected.paise, stillToCollect: r.fees.stillToCollect.paise, reminders: r.reminders.sent, saidNo: r.stopped.total, owner: r.owner };
+export function activityFees(c: Ctx, r: FeesReport): TemplateActivity {
+  const a = c.w.feesShop.activity;
+  return {
+    lines: [
+      `${a.opened}: ${r.fees.opened} · ${a.paidInFull}: ${r.fees.paidInFull} · ${a.partlyPaid}: ${r.fees.partlyPaid} · ${a.stillOpen}: ${r.fees.stillOpen}`,
+      `${a.collected}: ${formatRupees(r.money.collected.paise)} · ${a.stillToCollect}: ${formatRupees(r.fees.stillToCollect.paise)}`,
+      `${a.reminders}: ${r.reminders.sent} · ${c.w.shop.saidNo}: ${r.stopped.total}`,
+    ],
+    owner: r.owner,
+  };
 }
 
 /**
  * The most messages a centre's own rules allow in a month, from its settings: each student's fee can be reminded up to the most reminders, and a receipt follows a payment.
  * It is a ceiling from the rules, not a forecast, and replies to parents' own messages come on top. `included` is the plan's allowance from the proposed price list, if it has one.
  */
-export function messageCeiling(s: Settings, included: number | null): { students: number; mostReminders: number; ceiling: number; included: number | null } {
+export function messageCeiling(c: Ctx, s: Settings, included: number | null): TemplateMessages {
+  const w = c.w.feesShop.messages;
   const students = s.students.length;
   const mostReminders = s.reminders.maxPerMonth;
-  return { students, mostReminders, ceiling: students * (mostReminders + 1), included };
+  return { heading: w.heading, lines: [w.ceiling(students, mostReminders, students * (mostReminders + 1)), ...(included !== null ? [w.included(included)] : [])], note: w.note };
 }
