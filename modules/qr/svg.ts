@@ -31,7 +31,7 @@ export function qrSvg(qr: QrCode, options: SvgOptions = {}): string {
   }
   const label = options.label ? ` role="img" aria-label="${escapeAttribute(options.label)}"` : ` aria-hidden="true"`;
   const width = options.width ? ` width="${options.width}" height="${options.width}"` : "";
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}"${width}${label} shape-rendering="crispEdges"><rect width="${total}" height="${total}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
+  return `<svg viewBox="0 0 ${total} ${total}"${width}${label} shape-rendering="crispEdges"><rect width="${total}" height="${total}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
 }
 
 /** The SVG text of the QR code for this text. */
