@@ -3,7 +3,7 @@
 // after "approved" the same bytes are sent again, once. These tests play the relay's part with `ownerAnswers`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GuardHeldError } from "../../../../modules/core/faults.ts";
+import { ApiError, GuardHeldError, TimeoutError } from "../../../../modules/core/faults.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
@@ -364,6 +364,81 @@ test("if Guard sends a refund above the limit without holding it, the builder is
   assert.deepEqual(unguarded.store.bookings.get("b-1")!.stoppedRefunds ?? [], [], "the refund is done, so it is not blocked");
 });
 
+// ---- 409 already_done: a person at the server settled the refund as made (Guard's ADR-0060) ----------------------------------------------
+
+/** A paid booking within the limit (₹200 limit, ₹200 deposit), its payment id, and a count of the refund calls the agent makes. */
+async function paidWithinLimit() {
+  const w = createWorld({ settings: limited(200) });
+  await w.say(BOOK);
+  w.payments.customerPays(w.linkFor("b-1")!.id);
+  await w.deliverPaymentEvents();
+  const sent: string[] = [];
+  const { refund } = w.payments;
+  w.payments.refund = async (id, request) => { sent.push(id); return refund(id, request); };
+  return { w, pay: paymentOf(w), sent };
+}
+
+test("409 already_done: a refund a person at the server settled as made is done by their word; the owner is told plainly, and it is never sent again", async () => {
+  const { w, pay, sent } = await paidWithinLimit();
+  const { refund, listRefunds } = w.payments;
+  // The connection is cut after the refund left, and Guard's own record says its outcome is unknown. The agent cannot look at Razorpay's list a second time,
+  // so it does not send blind: it tries again in a minute. Meanwhile the person who looks after the server checks Razorpay and settles it as made.
+  let cut = true, looks = 0;
+  w.payments.refund = async (id, request) => {
+    if (cut) { cut = false; w.guard.recordUnknown(id, { amount: request.amount, receipt: request.receipt }); throw new TimeoutError("refund"); }
+    return refund(id, request);
+  };
+  w.payments.listRefunds = async (id) => { if (++looks === 2) throw new ApiError(503, "Razorpay is not answering"); await listRefunds(id); return []; };
+  await w.say("cancel my booking");
+  assert.match(w.lastTextTo(CUSTOMER), /checking your ₹200 refund/);
+  w.guard.resolve(pay, "happened", "ops");
+  await w.advance(2 * 60);
+  // the second try reached Guard, which said already_done: nothing was sent, and it is not a failure
+  assert.equal(w.payments.refunds().length, 0, "nothing was sent to Razorpay a second time (in this world the first never landed either: it is the person's word)");
+  const done = entries(w, "refund", "confirmed");
+  assert.equal(done.length, 1);
+  assert.equal(done[0].refs.confirmedBy, "operator:ops");
+  assert.equal(done[0].refs.intent, `intent:stub-${pay}`);
+  assert.match(done[0].notes, /settled this refund as made \(already_done\).*not by the payments service's own list.*not sent again/);
+  assert.deepEqual(issues(w), [], "nobody needs to look at it again");
+  assert.deepEqual(w.store.bookings.get("b-1")!.stoppedRefunds, [pay], "and Guard is never asked about this payment again");
+  assert.equal(w.textsTo(w.owner).at(-1), `Refund done: ₹200 for ${CUSTOMER}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.`);
+  assert.match(w.lastTextTo(CUSTOMER), /deposit is being refunded/, "the customer is told it is done, never that it failed");
+  const tries = w.payments.calls.length;
+  await w.advance(60 * 60);
+  await w.say("cancel my booking");
+  assert.equal(w.payments.calls.length, tries, "time passing and asking again send nothing");
+  w.payments.listRefunds = listRefunds;
+});
+
+test("any other 409 (the same refund with other numbers) still means nothing was refunded: not sent again, and the builder is told", async () => {
+  const { w, pay } = await paidWithinLimit();
+  w.guard.recordSent(pay, { amount: 5000, receipt: "an-earlier-refund" }, { id: "rfnd_earlier" }); // Guard's once-only record holds a different refund of this payment
+  await w.say("cancel my booking");
+  assert.equal(w.payments.refunds().length, 0);
+  assert.deepEqual(issues(w).map((i) => i.kind), ["failed"]);
+  assert.match(issues(w)[0].note, /will not on a retry.*Nothing was refunded/);
+  assert.equal(entries(w, "refund", "confirmed").length, 0);
+  assert.ok(!w.textsTo(w.owner).some((t) => /Refund done/u.test(t)), "the owner is not told it is done");
+});
+
+test("409 already_done after the owner approved a held refund: done, the owner is told, nothing is sent, and the approval is not counted as used", async () => {
+  const { w, calls } = await paidAndCancelled();
+  const pay = paymentOf(w);
+  // Guard's record of this very call says a person settled it as made
+  w.guard.recordUnknown(pay, { amount: 20000, receipt: `b-1:${pay}` });
+  w.guard.resolve(pay, "happened", "asha.ops");
+  await w.ownerAnswers("approve");
+  assert.equal(calls.length, 1, "the held bytes went to Guard once");
+  assert.equal(w.payments.refunds().length, 0);
+  assert.equal(entries(w, "refund", "confirmed").at(-1)!.refs.confirmedBy, "operator:asha.ops");
+  assert.match(w.textsTo(w.owner).at(-1)!, /^Refund done: ₹200 for /u);
+  assert.match(w.lastTextTo(CUSTOMER), /owner approved your refund/);
+  assert.deepEqual(issues(w), []);
+  assert.equal(w.store.bookings.get("b-1")!.pending.length, 0);
+  assert.deepEqual(entries(w, "owner_decision", "confirmed"), [], "Guard did not release the held call, so the report does not count the approval as used");
+});
+
 test("every template the agent uses for these exists in all four languages", () => {
-  for (const language of ["en", "hi", "ml", "kn"] as const) for (const id of ["refund_checking", "refund_expired", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed"] as const) assert.ok(TEMPLATES[language][id], `${id} (${language})`);
+  for (const language of ["en", "hi", "ml", "kn"] as const) for (const id of ["refund_checking", "refund_expired", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed", "owner_approval_waiting", "owner_approval_closed", "owner_approval_refused", "owner_refund_settled"] as const) assert.ok(TEMPLATES[language][id], `${id} (${language})`);
 });

@@ -178,12 +178,14 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
     fetchPayment: fetchPaymentRecord,
 
     async refund(paymentId, request) {
-      return refundReply(await http.request("POST", refundPath(paymentId), { body: { amount: request.amount, receipt: request.receipt } }));
+      // B37: who asked for it, for Guard alone (it strips the header and keeps it out of the call's digest). The body is the same bytes either way.
+      const asked = request.requestedBy && request.requestedBy.length > 0 ? { headers: { "Geo-Requested-By": request.requestedBy.join(",") } } : {};
+      return refundReply(await http.request("POST", refundPath(paymentId), { body: { amount: request.amount, receipt: request.receipt }, ...asked }));
     },
 
     /** The bytes of a call Guard held, sent again exactly as they were: Guard releases a call only if it is the same call. */
-    async resendRefund(paymentId, body) {
-      return refundReply(await http.request("POST", refundPath(paymentId), { rawBody: body }));
+    async resendRefund(paymentId, body, requestedBy) {
+      return refundReply(await http.request("POST", refundPath(paymentId), { rawBody: body, ...(requestedBy && requestedBy.length > 0 ? { headers: { "Geo-Requested-By": requestedBy.join(",") } } : {}) }));
     },
 
     async listRefunds(paymentId) {

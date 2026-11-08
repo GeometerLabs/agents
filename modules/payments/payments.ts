@@ -2,7 +2,7 @@
 // Field names follow Razorpay's (snake_case, amounts in paise, times in epoch seconds) so a real adapter drops in.
 // The fake's store is the record the agent reads back: "a deposit counts when Razorpay's record shows it".
 import type { Clock } from "../core/clock.ts";
-import { ApiError, GuardConflictError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
 import type { FaultOptions, GuardInfo, SentCall } from "../core/faults.ts";
 import type { GuardModel } from "./guard-model.ts";
 
@@ -71,9 +71,9 @@ export interface Payments {
    * Refund part or all of a payment, never more than what is left on it. Through a Guard, a refund above the owner's limit is not
    * done: it throws GuardHeldError (HTTP 202), carrying the exact bytes it was sent with in `call.body`.
    */
-  refund(paymentId: string, request: { amount: number; receipt?: string }): Promise<Refund>;
+  refund(paymentId: string, request: { amount: number; receipt?: string; requestedBy?: string[] }): Promise<Refund>;
   /** Send a refund Guard held again, with those exact bytes (`call.body` of the GuardHeldError). Only after the owner approved it. */
-  resendRefund(paymentId: string, body: string): Promise<Refund>;
+  resendRefund(paymentId: string, body: string, requestedBy?: string[]): Promise<Refund>;
   listRefunds(paymentId: string): Promise<Refund[]>;
 }
 
@@ -143,8 +143,8 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
   const call = (paymentId: string, body: string): SentCall => ({ method: "POST", path: `/v1/payments/${encodeURIComponent(paymentId)}/refund`, body });
   const info = (decision: string, code: string, retry: string, reason?: string, detail: unknown = null): GuardInfo => ({ decision, code, sent: "no", retry, ...(reason ? { reason } : {}), detail });
 
-  /** One refund call, as the service sees it after Guard (if there is one) has decided: the same bytes whether first sent or sent again. */
-  async function refundCall(paymentId: string, bodyText: string): Promise<Refund> {
+  /** One refund call, as the service sees it after Guard (if there is one) has decided: the same bytes whether first sent or sent again. `requestedBy` is the Geo-Requested-By header's ids. */
+  async function refundCall(paymentId: string, bodyText: string, requestedBy?: string[]): Promise<Refund> {
     const sentCall = call(paymentId, bodyText);
     const request = JSON.parse(bodyText) as { amount: number; receipt?: string };
     const before = faults.peek("refund");
@@ -163,7 +163,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       throw new GuardHeldError(202, "held by the Guard: an earlier attempt has an unknown outcome and the provider could not be asked; the Guard will not repeat it", info("hold", "held_for_approval", "after_approval", undefined, detail), sentCall, null, null);
     }
     if (guard) {
-      const decision = guard.decideRefund(paymentId, request);
+      const decision = guard.decideRefund(paymentId, request, requestedBy);
       switch (decision.kind) {
         case "hold": {
           const detail = { approval: decision.approval, status: "pending", expires_at_ms: decision.expiresAtMs };
@@ -176,6 +176,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
         }
         case "refused": throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, info("deny", "refused_by_policy", "no", decision.reason), sentCall, "rule", decision.ruleId);
         case "conflict": throw new GuardConflictError(409, `refused by the Guard: ${decision.reason}`, info("deny", "conflict", "no", decision.reason), sentCall);
+        case "already_done": throw new GuardAlreadyDoneError(409, `refused by the Guard: ${decision.reason}`, { ...info("deny", "conflict", "no", decision.reason, decision.detail), reason_code: "already_done" }, sentCall);
         case "replay": return { ...(decision.reply as Refund), replayed: true };
         case "pass": break;
       }
@@ -190,11 +191,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     refundStore.push(refund);
     emit("refund.processed", { refund: { id: refund.id, payment_id: paymentId } });
     if (fault === "outcomeUnknown") {
-      guard?.recordUnknown(paymentId);
+      guard?.recordUnknown(paymentId, request);
       throw new GuardOutcomeUnknownError(504, "refused by the Guard: outcome unknown: the request may or may not have reached the provider. The action may have happened; it is not repeated automatically", { decision: "unknown", code: "outcome_unknown", sent: "unknown", retry: "do_not_repeat", detail: null }, sentCall);
     }
     if (fault === "serverError") {
-      guard?.recordUnknown(paymentId);
+      guard?.recordUnknown(paymentId, request, 500);
       throw new ApiError(500, "The payments service answered 500.");
     }
     guard?.recordSent(paymentId, request, { ...refund });
@@ -262,11 +263,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     },
 
     async refund(paymentId, request) {
-      return refundCall(paymentId, JSON.stringify({ amount: request.amount, receipt: request.receipt })); // the same bytes the live adapter sends
+      return refundCall(paymentId, JSON.stringify({ amount: request.amount, receipt: request.receipt }), request.requestedBy); // the same bytes the live adapter sends
     },
 
-    async resendRefund(paymentId, body) {
-      return refundCall(paymentId, body);
+    async resendRefund(paymentId, body, requestedBy) {
+      return refundCall(paymentId, body, requestedBy);
     },
 
 

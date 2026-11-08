@@ -15,6 +15,7 @@ import type { LiveView, ShopStatus } from "./contract.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
+import { MAX_PANEL_APPROVERS } from "./setup.ts";
 import { formatInr } from "../../modules/language/format.ts";
 import type { Obligation } from "../../modules/unfinished/index.ts";
 import { dayWords } from "./licence.ts";
@@ -27,6 +28,7 @@ import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
 import { setupOf } from "./setups.ts";
+import { HEALTH_WORDS } from "./words-health.ts";
 
 const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
 
@@ -77,6 +79,7 @@ export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolea
 ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
   <a class="tab" href="/shops">${c.w.nav.shops}</a>
   <a class="tab" href="/inbox">${c.w.inbox.nav}</a>
+  <a class="tab" href="/health">${HEALTH_WORDS[c.lang].nav}</a>
   <a class="tab" href="/setup">${c.w.nav.setUp}</a>
   ${c.canInvite ? html`<a class="tab" href="/invite">${c.w.nav.invite}</a>` : ""}
   <form method="post" action="/logout" class="tab" style="padding:0"><input type="hidden" name="_csrf" value="${c.csrf}"><button class="tab" type="submit" style="width:100%">${c.w.nav.signOut}</button></form>
@@ -483,6 +486,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   <div class="field"><span>${s.also}</span><div class="days">${options.map((o) => html`<label><input type="checkbox" name="lang_${o.code}" ${d.otherLanguages.includes(o.code) ? raw("checked") : ""}> ${o.label.split(" · ")[0]}</label>`)}</div><p class="help">${s.hint}</p></div>
   <label class="field"><span>${s.ownerLanguage}</span><select name="ownerLanguage">${options.map((o) => html`<option value="${o.code}" ${o.code === d.ownerLanguage ? raw("selected") : ""}>${o.label}</option>`)}</select></label>
   ${text(s.ownerNumber, "ownerNumber", d.ownerNumber, { type: "tel", mode: "tel", max: 30, help: s.ownerNumberHelp })}
+  <h2>${s.approversTitle}</h2><p class="help">${s.approversHelp}</p>
+  ${Array.from({ length: MAX_PANEL_APPROVERS }, (_, i) => { const p = d.approvers?.[i]; return html`<div class="row">${text(s.approverNumber(i + 1), `approver_${i}`, p?.whatsapp ?? "", { type: "tel", mode: "tel", max: 30 })}<label class="field"><span>${s.approverLanguage}</span><select name="approverLang_${i}">${options.map((o) => html`<option value="${o.code}" ${o.code === (p?.language ?? d.ownerLanguage) ? raw("selected") : ""}>${o.label}</option>`)}</select></label></div>`; })}
+  ${text(s.twoAbove, "twoAbove", d.twoAboveInr ?? "", { mode: "numeric", max: 9, help: s.twoAboveHelp })}
   ${back}${next}</form>`;
   } else {
     const a = w.accounts;

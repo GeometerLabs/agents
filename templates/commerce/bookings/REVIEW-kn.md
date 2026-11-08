@@ -67,7 +67,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ಬುಕಿಂಗ್ b-3 ರ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
 | `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Glow Salon ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
 
-## 2. Messages to the owner (31)
+## 2. Messages to the owner (35)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -87,6 +87,10 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_approval_denied` | The owner denied with the code: nothing is sent | ಅರ್ಥವಾಯಿತು. ಗ್ರಾಹಕರು +919811111111: ₹200 ರೀಫಂಡ್ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು. | Understood. The ₹200 refund for +919811111111 will not be sent, and they will be told. |  |
 | `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | ನೀವು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಆ ವಿನಂತಿಯ ಸಮಯ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಮರಳಿ ಕೊಟ್ಟಿಲ್ಲ: ಗ್ರಾಹಕರು +919811111111, ₹200. | That request ran out before you answered, so nothing was refunded: ₹200 for +919811111111. |  |
 | `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | ನಿಮ್ಮ ಉತ್ತರವನ್ನು ಈಗ ದಾಖಲಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಕಳುಹಿಸಿ. | I could not record your answer just now. Please send it again in a few minutes. |  |
+| `owner_approval_waiting` | A refund needs two people to approve it: this person's approval is in, and the number is how many more are needed (sent to a manager or the owner) | ಧನ್ಯವಾದ. ಗ್ರಾಹಕರು +919811111111: ₹200 ರೀಫಂಡ್‌ಗೆ ನಿಮ್ಮ ಅನುಮತಿ ದಾಖಲಾಗಿದೆ. ಇನ್ನೂ ಇತರರಿಂದ ಬೇಕಾದ ಅನುಮತಿಗಳು: 1. ಅವು ಸಿಕ್ಕ ನಂತರವೇ ಇದನ್ನು ಕಳುಹಿಸಲಾಗುವುದು. | Thank you. Your approval of the ₹200 refund for +919811111111 is recorded. Approvals still needed from the others: 1. It is sent only once they are given. |  |
+| `owner_approval_closed` | A refund that needed two people was approved by the others before this person answered: their code is no longer needed | ಸೂಚನೆ: ಗ್ರಾಹಕರು +919811111111: ₹200 ರೀಫಂಡ್‌ಗೆ ಇತರರು ಅನುಮತಿ ನೀಡಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಈಗ ನಿಮ್ಮ ಉತ್ತರ ಬೇಕಿಲ್ಲ. ಧನ್ಯವಾದ. | The ₹200 refund for +919811111111 has been approved by the others, so your answer is no longer needed. Thank you. |  |
+| `owner_approval_refused` | A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it | ಸೂಚನೆ: ಗ್ರಾಹಕರು +919811111111: ₹200 ರೀಫಂಡ್ ಅನ್ನು ಅನುಮತಿ ನೀಡುವವರಲ್ಲಿ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು. | The ₹200 refund for +919811111111 was refused by one of the people who approve refunds, so it will not be sent, and they will be told. |  |
+| `owner_refund_settled` | A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again | ರೀಫಂಡ್ ಆಗಿದೆ: ಗ್ರಾಹಕರು +919811111111, ₹200. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ. | Refund done: ₹200 for +919811111111. The person who set up your agent checked it and marked it as made, so it is not sent a second time. |  |
 | `owner_wants_to_talk` | A customer tapped Talk to the owner (sent at most once an hour for the same customer) | ಗ್ರಾಹಕರು +919811111111 ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. | Customer +919811111111 would like to talk to you. Please message them. |  |
 | `owner_ai_allowance` | Button mode, told once a month: the shop's monthly AI allowance is used up | ಸೂಚನೆ: Glow Salon-ನ ಈ ತಿಂಗಳ AI ಮಿತಿ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಈಗ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳ ಮೂಲಕ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಮುಂದಿನ ತಿಂಗಳು ಸಾಮಾನ್ಯ ಸೇವೆ ಮರಳುತ್ತದೆ. | Notice: this month's AI allowance for Glow Salon is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month. |  |
 | `owner_ai_off` | Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent) | ಸೂಚನೆ: Glow Salon-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಸದ್ಯಕ್ಕೆ ಆಫ್ ಮಾಡಲಾಗಿದೆ. ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳಿಂದ ಬುಕಿಂಗ್ ಮುಂದುವರಿಸುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Notice: the AI that reads messages for Glow Salon has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told. |  |
@@ -807,6 +811,12 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.languagesStep.ownerLanguage` | ನಿಮಗೆ ಬರುವ ಸಂದೇಶಗಳ ಭಾಷೆ | Your language for messages to you |  |
 | `setup.languagesStep.ownerNumber` | ನಿಮ್ಮ ಸ್ವಂತ WhatsApp ನಂಬರ್ | Your own WhatsApp number |  |
 | `setup.languagesStep.ownerNumberHelp` | ದೇಶದ ಕೋಡ್‌ನಿಂದ ಶುರು ಮಾಡಿ, ಉದಾಹರಣೆಗೆ +91 98765 43210. ಯಾವುದೇ ರೀಫಂಡ್‌ಗೆ ಮೊದಲು ಏಜೆಂಟ್ ನಿಮ್ಮನ್ನು ಇಲ್ಲಿ ಕೇಳುತ್ತದೆ. ಇದು ನಿಮ್ಮ ಸ್ವಂತ ನಂಬರ್, ಗ್ರಾಹಕರು ಸಂದೇಶ ಕಳುಹಿಸುವ ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. | Start with the country code, for example +91 98765 43210. The agent asks you here before any refund. It is your own number, not the shop's number that customers write to. |  |
+| `setup.languagesStep.approversTitle` | ರೀಫಂಡ್‌ಗೆ ಅನುಮತಿ ನೀಡುವ ಇತರರು (ಕಡ್ಡಾಯವಲ್ಲ) | Others who approve refunds (optional) |  |
+| `setup.languagesStep.approversHelp` | ಮ್ಯಾನೇಜರ್ ಅಥವಾ ಪಾಲುದಾರರೂ ರೀಫಂಡ್‌ಗೆ ಅನುಮತಿ ನೀಡಬಹುದು, ಪ್ರತಿಯೊಬ್ಬರೂ ತಮ್ಮ ಫೋನ್‌ನಿಂದ ತಮ್ಮದೇ ಕೋಡ್‌ನೊಂದಿಗೆ. ನೀವೇ ರೀಫಂಡ್ ಕೇಳಿದಾಗ ಅವರಲ್ಲಿ ಒಬ್ಬರು ಅನುಮತಿ ನೀಡುತ್ತಾರೆ, ನೀವಲ್ಲ. | A manager or a partner can approve refunds too, each from their own phone with their own code. When you ask for a refund yourself, one of them approves it, never you. |  |
+| `setup.languagesStep.approverNumber` | ವ್ಯಕ್ತಿ undefined: ಅವರ WhatsApp ನಂಬರ್ | Person undefined: their WhatsApp number |  |
+| `setup.languagesStep.approverLanguage` | ಅವರ ಭಾಷೆ | Their language |  |
+| `setup.languagesStep.twoAbove` | ಈ ಮೊತ್ತಕ್ಕಿಂತ ಹೆಚ್ಚಿಗೆ ಇಬ್ಬರು ಅನುಮತಿ ನೀಡಬೇಕು (₹, ಕಡ್ಡಾಯವಲ್ಲ) | Above this amount, two people must approve (₹, optional) |  |
+| `setup.languagesStep.twoAboveHelp` | ಉದಾಹರಣೆಗೆ 5000. ಇಷ್ಟರವರೆಗೆ ಒಂದು ಅನುಮತಿ ಸಾಕು. ಯಾರಾದರೂ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದರೆ ರೀಫಂಡ್ ನಿಲ್ಲುತ್ತದೆ. ಎಲ್ಲಾ ಮೊತ್ತಕ್ಕೂ ಒಂದು ಅನುಮತಿ ಸಾಕಾದರೆ ಇದನ್ನು ಖಾಲಿ ಬಿಡಿ. | For example 5000. Up to it, one approval is enough. Any one person saying no stops the refund. Leave it empty for one approval at every amount. |  |
 | `setup.problems.nameEmpty` | ಅಂಗಡಿಯ ಹೆಸರು ಬರೆಯಿರಿ. | Write the shop's name. |  |
 | `setup.problems.noService` | ಬೆಲೆಯೊಂದಿಗೆ ಕನಿಷ್ಠ ಒಂದು ಸೇವೆ ಸೇರಿಸಿ. | Add at least one service with a price. |  |
 | `setup.problems.priceBad` | ಸೇವೆ 2: ಬೆಲೆಯನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 450. | Service 2: write the price in whole rupees, for example 450. |  |
@@ -819,6 +829,10 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.problems.ownerNumberBad` | ನಿಮ್ಮ ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ +91 98765 43210. | Write your number with the country code, for example +91 98765 43210. |  |
 | `setup.problems.sameNumber` | ನಿಮ್ಮ ನಂಬರ್ ಮತ್ತು ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಬೇರೆ ಬೇರೆ ಆಗಿರಬೇಕು. ನೀವು ನಿಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ ಉತ್ತರಿಸುತ್ತೀರಿ. | Your number and the shop's WhatsApp number must be different. You answer from your own phone. |  |
 | `setup.problems.serviceNameEmpty` | ಸೇವೆ 2: ಬೆಲೆ ಇದೆ, ಆದರೆ ಹೆಸರಿಲ್ಲ. | Service 2 has a price but no name. |  |
+| `setup.problems.approverNumberBad` | ವ್ಯಕ್ತಿ undefined: ಅವರ ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ +91 98765 43210. | Person undefined: write their number with the country code, for example +91 98765 43210. |  |
+| `setup.problems.approverNumberTaken` | ವ್ಯಕ್ತಿ undefined: ಈ ನಂಬರ್ ಈಗಾಗಲೇ ನಿಮ್ಮದು, ಅಂಗಡಿಯದು ಅಥವಾ ಇನ್ನೊಬ್ಬರದು. ಪ್ರತಿಯೊಬ್ಬರೂ ತಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ ಉತ್ತರಿಸುತ್ತಾರೆ. | Person undefined: that number is already yours, the shop's or another person's. Each person answers from their own phone. |  |
+| `setup.problems.twoAboveBad` | ಇಬ್ಬರ ಅನುಮತಿ ಬೇಕಾದ ಮೊತ್ತವನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 5000, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the two-person amount in whole rupees, for example 5000, or leave it empty. |  |
+| `setup.problems.twoAboveAlone` | ಕನಿಷ್ಠ ಇನ್ನೊಬ್ಬ ವ್ಯಕ್ತಿಯನ್ನು ಸೇರಿಸಿದರೆ ಮಾತ್ರ ಇಬ್ಬರು ಅನುಮತಿ ನೀಡಲು ಸಾಧ್ಯ. | Two people can only approve if you add at least one other person. |  |
 | `setup.problems.expectedBad` | ತಿಂಗಳಿಗೆ ಬುಕಿಂಗ್ ಎಷ್ಟು ಎಂದು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 40, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
 | `setup.problems.numberIdBad` | ಫೋನ್ ನಂಬರ್ ID ಅಂಕಿಗಳು ಮಾತ್ರ (6 ರಿಂದ 20 ಅಂಕಿ). | The phone number ID is digits only (6 to 20 of them). |  |
 | `setup.problems.businessNumberBad` | ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ. | Write the shop's WhatsApp number with the country code. |  |
@@ -997,4 +1011,97 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
 | `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
 | `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
+| `health.nav` | ಆರೋಗ್ಯ ಮತ್ತು ಮಾರ್ಜಿನ್ | Health and margin |  |
+| `health.voteNav` | ಮತ | Vote |  |
+| `health.title` | ಆರೋಗ್ಯ ಮತ್ತು ಮಾರ್ಜಿನ್ | Health and margin |  |
+| `health.intro` | ಪ್ರತಿ ಅಂಗಡಿಗೆ: ಯಾವುದರ ಮೇಲೆ ಗಮನ ಬೇಕು, ಅದನ್ನು ನಡೆಸಲು ನಿಮಗೆ ಎಷ್ಟು ಖರ್ಚು, ನೀವು ಎಷ್ಟು ಪಡೆಯುತ್ತೀರಿ, ನಿಮಗೆ ಎಷ್ಟು ಉಳಿಯುತ್ತದೆ. ಇಲ್ಲಿ ನೀವು ಬರೆಯುವ ಬೆಲೆ ಮತ್ತು ನಿಮಿಷಗಳು ನಿಮಗೆ ಮಾತ್ರ ಕಾಣುತ್ತವೆ. | For each shop: what needs a look, what it costs you to run, what you charge, and what you keep. Only you see the prices and minutes you type here. |  |
+| `health.none` | ನಿಮಗೆ ಇನ್ನೂ ಅಂಗಡಿಗಳಿಲ್ಲ. | You have no shops yet. |  |
+| `health.open` | ತೆರೆಯಿರಿ | Open |  |
+| `health.month` | 2026-11 ರ ನಡೆಸುವ ಖರ್ಚು | Running cost for 2026-11 |  |
+| `health.saved` | ಉಳಿಸಲಾಗಿದೆ. | Saved. |  |
+| `health.problems.price` | ನಿಮ್ಮ ಬೆಲೆ ರೂಪಾಯಿಗಳಲ್ಲಿ ಒಂದು ಮೊತ್ತವಾಗಿರಬೇಕು, ಉದಾ. 1500 ಅಥವಾ 1500.50. | Your price must be an amount in rupees, like 1500 or 1500.50. |  |
+| `health.problems.setup` | ಸೆಟಪ್ ಶುಲ್ಕ ರೂಪಾಯಿಗಳಲ್ಲಿ ಒಂದು ಮೊತ್ತವಾಗಿರಬೇಕು, ಉದಾ. 2000. | The setup fee must be an amount in rupees, like 2000. |  |
+| `health.problems.minutes` | ಸಪೋರ್ಟ್ ನಿಮಿಷಗಳು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಾಗಿರಬೇಕು, ಉದಾ. 90. | Support minutes must be a whole number, like 90. |  |
+| `health.problems.rate` | ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯ ರೂಪಾಯಿಗಳಲ್ಲಿ ಒಂದು ಮೊತ್ತವಾಗಿರಬೇಕು, ಉದಾ. 300. | The value of your hour must be an amount in rupees, like 300. |  |
+| `health.attention.heading` | ಗಮನ ಬೇಕಾದದ್ದು | What needs a look |  |
+| `health.attention.ok` | ಈಗ ಯಾವುದಕ್ಕೂ ಗಮನ ಬೇಕಿಲ್ಲ. | Nothing needs a look right now. |  |
+| `health.attention.needs` | 2 ಅಂಗಡಿಗಳ ಮೇಲೆ ಗಮನ ಬೇಕು | 2 shops need a look |  |
+| `health.attention.unfinished` | 3 ಅರ್ಧಂಬರ್ಧ | 3 unfinished |  |
+| `health.attention.kind.deposit_no_booking` | ಡೆಪಾಸಿಟ್ ಬಂದಿದೆ, ಬುಕಿಂಗ್ ಇಲ್ಲ | Deposit with no booking |  |
+| `health.attention.kind.payment_unrecorded` | ಪಾವತಿ ದಾಖಲಾಗಿಲ್ಲ | Payment not recorded |  |
+| `health.attention.kind.approval_waiting_long` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕೆ ಬಹಳ ಕಾಯುವಿಕೆ | Owner's answer waiting long |  |
+| `health.attention.kind.refund_waiting` | ರೀಫಂಡ್ ಕಾಯುತ್ತಿದೆ | Refund waiting |  |
+| `health.attention.kind.refund_unknown` | ರೀಫಂಡ್ ದೃಢಪಟ್ಟಿಲ್ಲ | Refund not confirmed |  |
+| `health.attention.kind.refund_failed` | ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ | Refund failed |  |
+| `health.attention.kind.upi_payment_unconfirmed` | UPI ಪಾವತಿ ದೃಢಪಟ್ಟಿಲ್ಲ | UPI payment not confirmed |  |
+| `health.attention.kind.upi_refund_owed` | UPI ರೀಫಂಡ್ ಕೊಡಬೇಕಿದೆ | UPI refund owed |  |
+| `health.attention.otherKind` | ಇತರೆ | Other |  |
+| `health.attention.notShared` | ಈ ಅಂಗಡಿಯ ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಅರ್ಧಂಬರ್ಧ ಕೆಲಸಗಳನ್ನು ಎಣಿಸಲಾಗುವುದಿಲ್ಲ. | This shop's record has not been shared yet, so its unfinished work cannot be counted. |  |
+| `health.attention.heartbeat` | ಈ ಅಂಗಡಿಯಿಂದ Geometer ಗೆ ಕೊನೆಯ ಸುದ್ದಿ ಸಿಕ್ಕಿದ್ದು 8 Nov 2026, 10:30. | Geometer last heard from this shop on 8 Nov 2026, 10:30. |  |
+| `health.attention.heartbeatStale` | ಈ ಅಂಗಡಿಯಿಂದ Geometer ಗೆ ಕೊನೆಯ ಸುದ್ದಿ ಸಿಕ್ಕಿದ್ದು 3 Nov 2026, 10:30, 2 ದಿನಕ್ಕಿಂತ ಹೆಚ್ಚು ಹಿಂದೆ. ಸರ್ವರ್ ಆನ್ ಆಗಿದೆಯೇ ಮತ್ತು Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. | Geometer last heard from this shop on 3 Nov 2026, 10:30, more than 2 days ago. Check that the server is on and reaches Geometer. |  |
+| `health.attention.heartbeatNone` | ಈ ಅಂಗಡಿಯ ಬಗ್ಗೆ Geometer ಇನ್ನೂ ಉತ್ತರಿಸಿಲ್ಲ. | Geometer has not answered about this shop yet. |  |
+| `health.attention.drill` | ಕೊನೆಯ ರಿಸ್ಟೋರ್ ಅಭ್ಯಾಸ: 12 ದಿನ ಹಿಂದೆ. | Last restore drill: 12 days ago. |  |
+| `health.attention.drillFailed` | 12 ದಿನ ಹಿಂದಿನ ಕೊನೆಯ ರಿಸ್ಟೋರ್ ಅಭ್ಯಾಸ ಹೊಂದಲಿಲ್ಲ. ಅದನ್ನು ನೋಡಿ. | The last restore drill, 12 days ago, did not match. Look at it. |  |
+| `health.attention.drillNone` | ಇನ್ನೂ ಯಾವುದೇ ರಿಸ್ಟೋರ್ ಅಭ್ಯಾಸ ದಾಖಲಾಗಿಲ್ಲ. | No restore drill has been recorded yet. |  |
+| `health.attention.buttons` | ಈ ಅಂಗಡಿಗೆ AI ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ಬಟನ್ ಮೆನು ಸಿಗುತ್ತದೆ. | AI is paused for this shop. Customers get button menus. |  |
+| `health.attention.todo` | ಮಾಡಬೇಕಾದ ಪಟ್ಟಿ ತೆರೆಯಿರಿ | Open the to-do list |  |
+| `health.cost.heading` | ಈ ತಿಂಗಳ ನಡೆಸುವ ಖರ್ಚು | Running cost this month |  |
+| `health.cost.lines.plan` | Geometer ಪ್ಲಾನ್ ಶುಲ್ಕ, GST ಬಿಟ್ಟು | Geometer's plan fee, before GST |  |
+| `health.cost.lines.whatsapp` | WhatsApp ಸಂದೇಶಗಳು, ವೆಚ್ಚದ ಬೆಲೆಯಲ್ಲಿ | WhatsApp messages, at cost |  |
+| `health.cost.lines.model` | AI ಮಾಡೆಲ್ | AI model |  |
+| `health.cost.lines.support` | ನಿಮ್ಮ ಸಪೋರ್ಟ್ ಸಮಯ | Your support time |  |
+| `health.cost.unknown` | ಗೊತ್ತಿಲ್ಲ | unknown |  |
+| `health.cost.minutes` | 90 ನಿಮಿಷ | 90 minutes |  |
+| `health.cost.total` | ನಡೆಸುವ ಖರ್ಚು | Running cost |  |
+| `health.cost.subtotal` | ಇಲ್ಲಿಯವರೆಗಿನ ನಡೆಸುವ ಖರ್ಚು (1 ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲ) | Running cost so far (1 not known yet) |  |
+| `health.cost.notes.innovator` | ಇನ್ನೋವೇಟರ್ ಬೆಲೆ | Innovator price |  |
+| `health.cost.notes.selfHost` | ನಿಮ್ಮ ಸ್ವಂತ ಸರ್ವರ್‌ಗೆ ಅರ್ಧ ಬೆಲೆ | Half price for your own server |  |
+| `health.cost.notes.included` | ಪ್ಲಾನ್ ಶುಲ್ಕದಲ್ಲಿ ಸೇರಿದೆ | Included in the plan fee |  |
+| `health.cost.notes.estimate` | ಈ ತಿಂಗಳ ಎಣಿಕೆಯಿಂದ ಅಂದಾಜು, ಉಚಿತ ಉತ್ತರಗಳ ಮೊದಲು | Estimate from this month's counts, before the free replies |  |
+| `health.cost.notes.noRecord` | ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ | No record shared yet |  |
+| `health.cost.notes.noPlan` | ಫ್ಲೀಟ್ ಪ್ಲಾನ್ ಹೊಂದಿಸಿಲ್ಲ | Fleet has not set a plan |  |
+| `health.cost.notes.noPrice` | ಪಟ್ಟಿಯಲ್ಲಿ ಬೆಲೆ ಇಲ್ಲ | No price in the list |  |
+| `health.cost.notes.noMinutes` | ಈ ತಿಂಗಳ ನಿಮಿಷಗಳನ್ನು ನಮೂದಿಸಿಲ್ಲ | No minutes entered this month |  |
+| `health.cost.notes.noRate` | ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ | Enter what an hour of your time is worth |  |
+| `health.cost.notes.floor` | ಕನಿಷ್ಠ ಇಷ್ಟು: 4 ಕರೆಗಳಿಗೆ ಬೆಲೆ ಇರಲಿಲ್ಲ | At least this much: 4 calls had no price |  |
+| `health.charge.heading` | ನೀವು ಪಡೆಯುವುದು | What you charge |  |
+| `health.charge.price` | ನಿಮ್ಮ ಬೆಲೆ ತಿಂಗಳಿಗೆ (₹) | Your price a month (₹) |  |
+| `health.charge.setup` | ಒಮ್ಮೆಯ ಸೆಟಪ್ ಶುಲ್ಕ (₹, ಐಚ್ಛಿಕ) | One-time setup fee (₹, optional) |  |
+| `health.charge.minutes` | ಈ ತಿಂಗಳ ಸಪೋರ್ಟ್ ನಿಮಿಷಗಳು | Support minutes this month |  |
+| `health.charge.rate` | ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯ (₹) | What an hour of your time is worth (₹) |  |
+| `health.charge.save` | ಉಳಿಸಿ | Save |  |
+| `health.charge.privacy` | ಇವು ಈ ಪ್ಯಾನೆಲ್‌ನಲ್ಲೇ ಇರುತ್ತವೆ. Geometer ಗೆ ಎಂದಿಗೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. | These stay on this panel. They are never sent to Geometer. |  |
+| `health.charge.hint` | ಗೊತ್ತಿಲ್ಲದ ಪೆಟ್ಟಿಗೆಯನ್ನು ಖಾಲಿ ಬಿಡಿ. ಖಾಲಿ ಎಂದರೆ ಗೊತ್ತಿಲ್ಲ, ಸೊನ್ನೆ ಅಲ್ಲ. | Leave a box empty if you do not know it. Empty means unknown, not zero. |  |
+| `health.margin.heading` | ಮಾರ್ಜಿನ್ | Margin |  |
+| `health.margin.yourPrice` | ನಿಮ್ಮ ಬೆಲೆ | Your price |  |
+| `health.margin.keep` | ತಿಂಗಳಿಗೆ ನಿಮಗೆ ಉಳಿಯುವುದು | What you keep a month |  |
+| `health.margin.unknownPrice` | ನಿಮ್ಮ ಬೆಲೆ ನಮೂದಿಸುವವರೆಗೆ ಗೊತ್ತಿಲ್ಲ. | Unknown until you enter your price. |  |
+| `health.margin.notFinal` | ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲದ ಖರ್ಚುಗಳ ಮೊದಲಿನದು. | Before the costs that are not known yet. |  |
+| `health.margin.before` | ಇವುಗಳ ಮೊದಲು: Your support time | before: Your support time |  |
+| `health.margin.setupOnce` | ಒಮ್ಮೆ ಪಡೆದ ಸೆಟಪ್ ಶುಲ್ಕ: ₹2,000.00 | Setup fee you charged once: ₹2,000.00 |  |
+| `health.margin.negative` | ಸೊನ್ನೆಗಿಂತ ಕೆಳಗೆ: ನಡೆಸುವ ಖರ್ಚು ನಿಮ್ಮ ಬೆಲೆಗಿಂತ ಹೆಚ್ಚಿದೆ. | Below zero: the running cost is more than your price. |  |
+| `health.all.heading` | ನಿಮ್ಮ ಎಲ್ಲ ಅಂಗಡಿಗಳು | All your shops |  |
+| `health.all.shops` | 3 ಅಂಗಡಿಗಳಲ್ಲಿ 2 ಕ್ಕೆ ಬೆಲೆ ನಮೂದಿಸಲಾಗಿದೆ | Price entered for 2 of 3 shops |  |
+| `health.all.keep` | ತಿಂಗಳಿಗೆ ನಿಮಗೆ ಉಳಿಯುವುದು | What you keep a month |  |
+| `health.all.partial` | 3 ರಲ್ಲಿ ಬೆಲೆ ಇರುವ 2 ಅಂಗಡಿಗಳನ್ನು ಮಾತ್ರ ಕೂಡಿಸಲಾಗಿದೆ. | Only the 2 shops with a price are added up, out of 3. |  |
+| `health.all.setup` | ಒಮ್ಮೆ ಪಡೆದ ಸೆಟಪ್ ಶುಲ್ಕಗಳು | Setup fees charged once |  |
+| `health.all.unknown` | ಬೆಲೆ ನಮೂದಿಸುವವರೆಗೆ ಗೊತ್ತಿಲ್ಲ | Unknown until a price is entered |  |
+| `health.vote.title` | ಮುಂದಿನ ಟೆಂಪ್ಲೇಟ್‌ಗೆ ಮತ | Vote on the next template |  |
+| `health.vote.intro` | ಮೊದಲ 100 ಇನ್ನೋವೇಟರ್‌ಗಳಲ್ಲಿ ಒಬ್ಬರಾಗಿ, Geometer ಮುಂದೆ ಮಾಡುವ ಟೆಂಪ್ಲೇಟ್ ಅನ್ನು ನೀವು ಆರಿಸುತ್ತೀರಿ. ಪ್ರತಿಯೊಬ್ಬರಿಗೆ ಒಂದು ಮತ, ಯಾವಾಗ ಬೇಕಾದರೂ ಬದಲಿಸಬಹುದು. | As one of the first 100 innovators, you pick the next template Geometer builds. One vote each, and you can change it any time. |  |
+| `health.vote.yours` | ನಿಮ್ಮ ಮತ | Your vote |  |
+| `health.vote.none` | ನೀವು ಇನ್ನೂ ಮತ ಹಾಕಿಲ್ಲ. | You have not voted yet. |  |
+| `health.vote.button` | ನನ್ನ ಮತ ಉಳಿಸಿ | Save my vote |  |
+| `health.vote.change` | ನನ್ನ ಮತ ಬದಲಿಸಿ | Change my vote |  |
+| `health.vote.saved` | ನಿಮ್ಮ ಮತ ಉಳಿಸಲಾಗಿದೆ. | Your vote is saved. |  |
+| `health.vote.refused` | ಆ ಆಯ್ಕೆ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ. | That choice is not on the list. |  |
+| `health.vote.results` | ಇಲ್ಲಿಯವರೆಗಿನ ಮತಗಳು | Votes so far |  |
+| `health.vote.hidden` | ಇತರರು ಹೇಗೆ ಮತ ಹಾಕಿದರು ಎಂದು ನೋಡಲು ಮತ ಹಾಕಿ. | Vote to see how the others voted. |  |
+| `health.vote.votes` | 4 ಮತ | 4 votes |  |
+| `health.vote.note` | ಎಣಿಕೆ ಮಾತ್ರ. ಹೆಸರುಗಳನ್ನು ಎಂದಿಗೂ ತೋರಿಸುವುದಿಲ್ಲ. ಇವು ಈ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಇಲ್ಲಿಯವರೆಗೆ ಎಣಿಸಿದ ಮತಗಳು. | Counts only. Names are never shown. These are the votes counted on this panel so far. |  |
+| `health.vote.link` | ಮುಂದಿನ ಟೆಂಪ್ಲೇಟ್‌ಗೆ ಮತ ಹಾಕಿ | Vote on the next template |  |
+| `vote.option.orders` | ಆರ್ಡರ್‌ಗಳು: ಅಂಗಡಿ WhatsApp ನಲ್ಲಿ ಆರ್ಡರ್ ಮತ್ತು ಪಾವತಿ ಪಡೆಯುತ್ತದೆ | Orders: a shop takes orders and payment on WhatsApp |  |
+| `vote.option.fees-extensions` | ಶುಲ್ಕ ವಸೂಲಿ ವಿಸ್ತರಣೆಗಳು: ಟ್ಯೂಷನ್ ಮತ್ತು ತರಬೇತಿ ಕೇಂದ್ರಗಳಿಗೆ ಹೆಚ್ಚು | Fee collection extensions: more for tuition and training centres |  |
+| `vote.option.equipment-rental` | ಗುಂಪುಗಳಿಗೆ ಉಪಕರಣ ಬಾಡಿಗೆ: ಕ್ಲಬ್‌ಗಳು, ಸೊಸೈಟಿಗಳು, ಹಾಲ್‌ಗಳು | Equipment rental for groups: clubs, societies and halls |  |
+| `vote.option.social-posting` | ಒಪ್ಪಿಗೆಯೊಂದಿಗೆ ಸಾಮಾಜಿಕ ಪೋಸ್ಟ್: ಪ್ರತಿ ಪೋಸ್ಟ್ ಅನ್ನು ಮಾಲೀಕರು ಒಪ್ಪುತ್ತಾರೆ | Social posting with approval: the owner approves each post |  |
+| `vote.option.course-packs` | ಕೋರ್ಸ್ ಪ್ಯಾಕ್‌ಗಳು: ಕೋರ್ಸ್ ಅನ್ನು ಪಾಠಗಳಾಗಿ ಮಾರಾಟ ಮಾಡಿ ತಲುಪಿಸುವುದು | Course packs: sell and deliver a course in lessons |  |
 

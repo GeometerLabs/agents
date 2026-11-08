@@ -32,7 +32,7 @@ export const ordersVoice: shared.RelayVoice<MessageFacts> = {
       refundInr: ask.amountPaise / 100, orderRef: c.booking, approvalHours: ask.approvalHours, ...(ask.code ? { approvalCode: ask.code } : {}),
     };
   },
-  ids: { ask: "owner_refund_needs_approval", expired: "owner_approval_expired", failed: "owner_approval_failed", done: "owner_approval_done", denied: "owner_approval_denied" },
+  ids: { ask: "owner_refund_needs_approval", expired: "owner_approval_expired", failed: "owner_approval_failed", done: "owner_approval_done", denied: "owner_approval_denied", waiting: "owner_approval_waiting", closed: "owner_approval_closed", refused: "owner_approval_refused" },
 };
 
 export function createRelay(options: RelayOptions): shared.Relay {

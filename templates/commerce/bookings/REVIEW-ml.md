@@ -67,7 +67,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ബുക്കിംഗ് b-3-ന്റെ നിങ്ങളുടെ ₹200 റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
 | `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
 
-## 2. Messages to the owner (31)
+## 2. Messages to the owner (35)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -87,6 +87,10 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_approval_denied` | The owner denied with the code: nothing is sent | മനസ്സിലായി. ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | Understood. The ₹200 refund for +919811111111 will not be sent, and they will be told. |  |
 | `owner_approval_expired` | The owner answered after the request had run out: nothing was refunded | നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പ് ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയില്ല: ഉപഭോക്താവ് +919811111111, ₹200. | That request ran out before you answered, so nothing was refunded: ₹200 for +919811111111. |  |
 | `owner_approval_failed` | The owner's answer could not be recorded just now: send it again | നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. ദയവായി കുറച്ച് മിനിറ്റുകൾക്ക് ശേഷം വീണ്ടും അയയ്ക്കൂ. | I could not record your answer just now. Please send it again in a few minutes. |  |
+| `owner_approval_waiting` | A refund needs two people to approve it: this person's approval is in, and the number is how many more are needed (sent to a manager or the owner) | നന്ദി. ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ടിനുള്ള നിങ്ങളുടെ അനുമതി രേഖപ്പെടുത്തി. ഇനി മറ്റുള്ളവരിൽ നിന്ന് വേണ്ട അനുമതികൾ: 1. അവ ലഭിച്ച ശേഷമേ ഇത് അയയ്ക്കൂ. | Thank you. Your approval of the ₹200 refund for +919811111111 is recorded. Approvals still needed from the others: 1. It is sent only once they are given. |  |
+| `owner_approval_closed` | A refund that needed two people was approved by the others before this person answered: their code is no longer needed | അറിയിപ്പ്: ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ടിന് മറ്റുള്ളവർ അനുമതി നൽകി, അതിനാൽ ഇനി നിങ്ങളുടെ മറുപടി ആവശ്യമില്ല. നന്ദി. | The ₹200 refund for +919811111111 has been approved by the others, so your answer is no longer needed. Thank you. |  |
+| `owner_approval_refused` | A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it | അറിയിപ്പ്: ഉപഭോക്താവ് +919811111111: ₹200 റീഫണ്ട് അനുമതി നൽകുന്നവരിൽ ഒരാൾ നിരസിച്ചു, അതിനാൽ ഇത് അയയ്ക്കില്ല, അവരെ അറിയിക്കും. | The ₹200 refund for +919811111111 was refused by one of the people who approve refunds, so it will not be sent, and they will be told. |  |
+| `owner_refund_settled` | A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again | റീഫണ്ട് പൂർത്തിയായി: ഉപഭോക്താവ് +919811111111, ₹200. നിങ്ങളുടെ ഏജന്റ് ക്രമീകരിച്ച വ്യക്തി ഇത് പരിശോധിച്ച് നടന്നതായി രേഖപ്പെടുത്തി, അതിനാൽ ഇത് വീണ്ടും അയയ്ക്കില്ല. | Refund done: ₹200 for +919811111111. The person who set up your agent checked it and marked it as made, so it is not sent a second time. |  |
 | `owner_wants_to_talk` | A customer tapped Talk to the owner (sent at most once an hour for the same customer) | ഉപഭോക്താവ് +919811111111 നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ. | Customer +919811111111 would like to talk to you. Please message them. |  |
 | `owner_ai_allowance` | Button mode, told once a month: the shop's monthly AI allowance is used up | അറിയിപ്പ്: Glow Salon-ന്റെ ഈ മാസത്തെ AI പരിധി തീർന്നു, അതിനാൽ ഏജന്റ് ഇനി ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് മറുപടി നൽകും. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. അടുത്ത മാസം സാധാരണ സേവനം തിരിച്ചെത്തും. | Notice: this month's AI allowance for Glow Salon is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month. |  |
 | `owner_ai_off` | Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent) | അറിയിപ്പ്: Glow Salon-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI തൽക്കാലം ഓഫ് ചെയ്തിരിക്കുന്നു. ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് ബുക്കിംഗ് തുടരും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. | Notice: the AI that reads messages for Glow Salon has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told. |  |
@@ -807,6 +811,12 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.languagesStep.ownerLanguage` | നിങ്ങൾക്കുള്ള സന്ദേശങ്ങളുടെ ഭാഷ | Your language for messages to you |  |
 | `setup.languagesStep.ownerNumber` | നിങ്ങളുടെ സ്വന്തം WhatsApp നമ്പർ | Your own WhatsApp number |  |
 | `setup.languagesStep.ownerNumberHelp` | രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് തുടങ്ങൂ, ഉദാഹരണം +91 98765 43210. ഏത് റീഫണ്ടിനും മുമ്പ് ഏജന്റ് ഈ നമ്പറിൽ നിങ്ങളോട് ചോദിക്കും. ഇത് നിങ്ങളുടെ സ്വന്തം നമ്പർ ആണ്, ഉപഭോക്താക്കൾ സന്ദേശം അയയ്ക്കുന്ന കടയുടെ നമ്പർ അല്ല. | Start with the country code, for example +91 98765 43210. The agent asks you here before any refund. It is your own number, not the shop's number that customers write to. |  |
+| `setup.languagesStep.approversTitle` | റീഫണ്ടിന് അനുമതി നൽകുന്ന മറ്റുള്ളവർ (നിർബന്ധമില്ല) | Others who approve refunds (optional) |  |
+| `setup.languagesStep.approversHelp` | ഒരു മാനേജർക്കോ പങ്കാളിക്കോ റീഫണ്ടിന് അനുമതി നൽകാം, ഓരോരുത്തരും സ്വന്തം ഫോണിൽ നിന്ന് സ്വന്തം കോഡ് ഉപയോഗിച്ച്. നിങ്ങൾ തന്നെ ഒരു റീഫണ്ട് ചോദിക്കുമ്പോൾ അവരിൽ ഒരാളാണ് അനുമതി നൽകുന്നത്, നിങ്ങളല്ല. | A manager or a partner can approve refunds too, each from their own phone with their own code. When you ask for a refund yourself, one of them approves it, never you. |  |
+| `setup.languagesStep.approverNumber` | വ്യക്തി undefined: അവരുടെ WhatsApp നമ്പർ | Person undefined: their WhatsApp number |  |
+| `setup.languagesStep.approverLanguage` | അവരുടെ ഭാഷ | Their language |  |
+| `setup.languagesStep.twoAbove` | ഈ തുകയ്ക്ക് മുകളിൽ രണ്ടുപേർ അനുമതി നൽകണം (₹, നിർബന്ധമില്ല) | Above this amount, two people must approve (₹, optional) |  |
+| `setup.languagesStep.twoAboveHelp` | ഉദാഹരണം 5000. ഇത്രയും വരെ ഒരു അനുമതി മതി. ആരെങ്കിലും ഒരാൾ നിരസിച്ചാൽ റീഫണ്ട് നിൽക്കും. എല്ലാ തുകയ്ക്കും ഒരു അനുമതി മതിയെങ്കിൽ ഇത് ഒഴിച്ചിടൂ. | For example 5000. Up to it, one approval is enough. Any one person saying no stops the refund. Leave it empty for one approval at every amount. |  |
 | `setup.problems.nameEmpty` | കടയുടെ പേര് എഴുതൂ. | Write the shop's name. |  |
 | `setup.problems.noService` | വിലയോടൊപ്പം കുറഞ്ഞത് ഒരു സേവനം ചേർക്കൂ. | Add at least one service with a price. |  |
 | `setup.problems.priceBad` | സേവനം 2: വില മുഴുവൻ രൂപയിൽ എഴുതൂ, ഉദാഹരണം 450. | Service 2: write the price in whole rupees, for example 450. |  |
@@ -819,6 +829,10 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.problems.ownerNumberBad` | രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് നിങ്ങളുടെ നമ്പർ എഴുതൂ, ഉദാഹരണം +91 98765 43210. | Write your number with the country code, for example +91 98765 43210. |  |
 | `setup.problems.sameNumber` | നിങ്ങളുടെ നമ്പറും കടയുടെ WhatsApp നമ്പറും വ്യത്യസ്തമായിരിക്കണം. നിങ്ങൾ മറുപടി നൽകുന്നത് നിങ്ങളുടെ സ്വന്തം ഫോണിൽ നിന്നാണ്. | Your number and the shop's WhatsApp number must be different. You answer from your own phone. |  |
 | `setup.problems.serviceNameEmpty` | സേവനം 2: വില ഉണ്ട്, പക്ഷേ പേര് ഇല്ല. പേര് എഴുതൂ. | Service 2 has a price but no name. |  |
+| `setup.problems.approverNumberBad` | വ്യക്തി undefined: രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് അവരുടെ നമ്പർ എഴുതൂ, ഉദാഹരണം +91 98765 43210. | Person undefined: write their number with the country code, for example +91 98765 43210. |  |
+| `setup.problems.approverNumberTaken` | വ്യക്തി undefined: ഈ നമ്പർ നിങ്ങളുടേതോ കടയുടേതോ മറ്റൊരാളുടേതോ ആണ്. ഓരോരുത്തരും സ്വന്തം ഫോണിൽ നിന്നാണ് മറുപടി നൽകുന്നത്. | Person undefined: that number is already yours, the shop's or another person's. Each person answers from their own phone. |  |
+| `setup.problems.twoAboveBad` | രണ്ടുപേരുടെ അനുമതി വേണ്ട തുക മുഴുവൻ രൂപയിൽ എഴുതൂ, ഉദാഹരണം 5000, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the two-person amount in whole rupees, for example 5000, or leave it empty. |  |
+| `setup.problems.twoAboveAlone` | കുറഞ്ഞത് ഒരാളെക്കൂടി ചേർത്താൽ മാത്രമേ രണ്ടുപേർക്ക് അനുമതി നൽകാൻ കഴിയൂ. | Two people can only approve if you add at least one other person. |  |
 | `setup.problems.expectedBad` | മാസത്തിലെ ബുക്കിംഗുകളുടെ എണ്ണം പൂർണ്ണസംഖ്യയായി എഴുതൂ, ഉദാഹരണം 40, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
 | `setup.problems.numberIdBad` | ഫോൺ നമ്പർ ഐഡിയിൽ അക്കങ്ങൾ മാത്രമേ ഉണ്ടാകൂ (6 മുതൽ 20 വരെ). | The phone number ID is digits only (6 to 20 of them). |  |
 | `setup.problems.businessNumberBad` | കടയുടെ WhatsApp നമ്പർ രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് എഴുതൂ. | Write the shop's WhatsApp number with the country code. |  |
@@ -997,4 +1011,97 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
+| `health.nav` | ആരോഗ്യവും മാർജിനും | Health and margin |  |
+| `health.voteNav` | വോട്ട് | Vote |  |
+| `health.title` | ആരോഗ്യവും മാർജിനും | Health and margin |  |
+| `health.intro` | ഓരോ കടയ്ക്കും: എന്തിൽ ശ്രദ്ധ വേണം, അത് നടത്താൻ നിങ്ങൾക്ക് എത്ര ചെലവ്, നിങ്ങൾ എത്ര ഈടാക്കുന്നു, നിങ്ങൾക്ക് എത്ര ബാക്കി. ഇവിടെ നൽകുന്ന വിലകളും മിനിറ്റുകളും നിങ്ങൾക്ക് മാത്രമേ കാണാൻ കഴിയൂ. | For each shop: what needs a look, what it costs you to run, what you charge, and what you keep. Only you see the prices and minutes you type here. |  |
+| `health.none` | നിങ്ങൾക്ക് ഇതുവരെ കടകളില്ല. | You have no shops yet. |  |
+| `health.open` | തുറക്കുക | Open |  |
+| `health.month` | 2026-11-ലെ പ്രവർത്തന ചെലവ് | Running cost for 2026-11 |  |
+| `health.saved` | സേവ് ചെയ്തു. | Saved. |  |
+| `health.problems.price` | നിങ്ങളുടെ വില രൂപയിൽ ഒരു തുക ആയിരിക്കണം, ഉദാ. 1500 അല്ലെങ്കിൽ 1500.50. | Your price must be an amount in rupees, like 1500 or 1500.50. |  |
+| `health.problems.setup` | സെറ്റപ്പ് ഫീസ് രൂപയിൽ ഒരു തുക ആയിരിക്കണം, ഉദാ. 2000. | The setup fee must be an amount in rupees, like 2000. |  |
+| `health.problems.minutes` | സപ്പോർട്ട് മിനിറ്റ് ഒരു പൂർണ്ണസംഖ്യ ആയിരിക്കണം, ഉദാ. 90. | Support minutes must be a whole number, like 90. |  |
+| `health.problems.rate` | നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം രൂപയിൽ ഒരു തുക ആയിരിക്കണം, ഉദാ. 300. | The value of your hour must be an amount in rupees, like 300. |  |
+| `health.attention.heading` | ശ്രദ്ധ വേണ്ടത് | What needs a look |  |
+| `health.attention.ok` | ഇപ്പോൾ ഒന്നിനും ശ്രദ്ധ വേണ്ട. | Nothing needs a look right now. |  |
+| `health.attention.needs` | 2 കടകളിൽ ശ്രദ്ധ വേണം | 2 shops need a look |  |
+| `health.attention.unfinished` | 3 പൂർത്തിയാകാത്തത് | 3 unfinished |  |
+| `health.attention.kind.deposit_no_booking` | ഡെപ്പോസിറ്റ് വന്നു, ബുക്കിംഗ് ഇല്ല | Deposit with no booking |  |
+| `health.attention.kind.payment_unrecorded` | പണമടവ് രേഖപ്പെടുത്തിയിട്ടില്ല | Payment not recorded |  |
+| `health.attention.kind.approval_waiting_long` | ഉടമയുടെ മറുപടിക്കായി ദീർഘനേരം കാത്തിരിപ്പ് | Owner's answer waiting long |  |
+| `health.attention.kind.refund_waiting` | റീഫണ്ട് കാത്തിരിക്കുന്നു | Refund waiting |  |
+| `health.attention.kind.refund_unknown` | റീഫണ്ട് സ്ഥിരീകരിച്ചിട്ടില്ല | Refund not confirmed |  |
+| `health.attention.kind.refund_failed` | റീഫണ്ട് നടന്നില്ല | Refund failed |  |
+| `health.attention.kind.upi_payment_unconfirmed` | UPI പണമടവ് സ്ഥിരീകരിച്ചിട്ടില്ല | UPI payment not confirmed |  |
+| `health.attention.kind.upi_refund_owed` | UPI റീഫണ്ട് നൽകാനുണ്ട് | UPI refund owed |  |
+| `health.attention.otherKind` | മറ്റുള്ളവ | Other |  |
+| `health.attention.notShared` | ഈ കടയുടെ രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല, അതിനാൽ പൂർത്തിയാകാത്ത ജോലികൾ എണ്ണാൻ കഴിയില്ല. | This shop's record has not been shared yet, so its unfinished work cannot be counted. |  |
+| `health.attention.heartbeat` | ഈ കടയിൽ നിന്ന് Geometer-ന് അവസാനം വിവരം കിട്ടിയത് 8 Nov 2026, 10:30-ന്. | Geometer last heard from this shop on 8 Nov 2026, 10:30. |  |
+| `health.attention.heartbeatStale` | ഈ കടയിൽ നിന്ന് Geometer-ന് അവസാനം വിവരം കിട്ടിയത് 3 Nov 2026, 10:30-ന്, 2 ദിവസത്തിലേറെ മുമ്പ്. സെർവർ ഓണാണെന്നും Geometer-ൽ എത്തുന്നുണ്ടെന്നും പരിശോധിക്കുക. | Geometer last heard from this shop on 3 Nov 2026, 10:30, more than 2 days ago. Check that the server is on and reaches Geometer. |  |
+| `health.attention.heartbeatNone` | ഈ കടയെക്കുറിച്ച് Geometer ഇതുവരെ മറുപടി നൽകിയിട്ടില്ല. | Geometer has not answered about this shop yet. |  |
+| `health.attention.drill` | അവസാന റീസ്റ്റോർ പരിശീലനം: 12 ദിവസം മുമ്പ്. | Last restore drill: 12 days ago. |  |
+| `health.attention.drillFailed` | 12 ദിവസം മുമ്പത്തെ അവസാന റീസ്റ്റോർ പരിശീലനം യോജിച്ചില്ല. അത് നോക്കുക. | The last restore drill, 12 days ago, did not match. Look at it. |  |
+| `health.attention.drillNone` | ഇതുവരെ റീസ്റ്റോർ പരിശീലനം രേഖപ്പെടുത്തിയിട്ടില്ല. | No restore drill has been recorded yet. |  |
+| `health.attention.buttons` | ഈ കടയ്ക്ക് AI നിർത്തിവച്ചിരിക്കുന്നു. ഉപഭോക്താക്കൾക്ക് ബട്ടൺ മെനു കിട്ടും. | AI is paused for this shop. Customers get button menus. |  |
+| `health.attention.todo` | ചെയ്യാനുള്ള പട്ടിക തുറക്കുക | Open the to-do list |  |
+| `health.cost.heading` | ഈ മാസത്തെ പ്രവർത്തന ചെലവ് | Running cost this month |  |
+| `health.cost.lines.plan` | Geometer പ്ലാൻ ഫീസ്, GST ഒഴികെ | Geometer's plan fee, before GST |  |
+| `health.cost.lines.whatsapp` | WhatsApp സന്ദേശങ്ങൾ, ചെലവ് വിലയിൽ | WhatsApp messages, at cost |  |
+| `health.cost.lines.model` | AI മോഡൽ | AI model |  |
+| `health.cost.lines.support` | നിങ്ങളുടെ സപ്പോർട്ട് സമയം | Your support time |  |
+| `health.cost.unknown` | അറിയില്ല | unknown |  |
+| `health.cost.minutes` | 90 മിനിറ്റ് | 90 minutes |  |
+| `health.cost.total` | പ്രവർത്തന ചെലവ് | Running cost |  |
+| `health.cost.subtotal` | ഇതുവരെയുള്ള പ്രവർത്തന ചെലവ് (1 എണ്ണം ഇതുവരെ അറിയില്ല) | Running cost so far (1 not known yet) |  |
+| `health.cost.notes.innovator` | ഇന്നൊവേറ്റർ വില | Innovator price |  |
+| `health.cost.notes.selfHost` | സ്വന്തം സെർവറിന് പകുതി വില | Half price for your own server |  |
+| `health.cost.notes.included` | പ്ലാൻ ഫീസിൽ ഉൾപ്പെടുന്നു | Included in the plan fee |  |
+| `health.cost.notes.estimate` | ഈ മാസത്തെ എണ്ണത്തിൽ നിന്നുള്ള കണക്ക്, സൗജന്യ മറുപടികൾക്ക് മുമ്പ് | Estimate from this month's counts, before the free replies |  |
+| `health.cost.notes.noRecord` | രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല | No record shared yet |  |
+| `health.cost.notes.noPlan` | ഫ്ലീറ്റ് പ്ലാൻ നിശ്ചയിച്ചിട്ടില്ല | Fleet has not set a plan |  |
+| `health.cost.notes.noPrice` | പട്ടികയിൽ വിലയില്ല | No price in the list |  |
+| `health.cost.notes.noMinutes` | ഈ മാസത്തെ മിനിറ്റ് നൽകിയിട്ടില്ല | No minutes entered this month |  |
+| `health.cost.notes.noRate` | നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം നൽകുക | Enter what an hour of your time is worth |  |
+| `health.cost.notes.floor` | ഇത്രയെങ്കിലും: 4 കോളുകൾക്ക് വിലയില്ലായിരുന്നു | At least this much: 4 calls had no price |  |
+| `health.charge.heading` | നിങ്ങൾ ഈടാക്കുന്നത് | What you charge |  |
+| `health.charge.price` | നിങ്ങളുടെ വില മാസം (₹) | Your price a month (₹) |  |
+| `health.charge.setup` | ഒറ്റത്തവണ സെറ്റപ്പ് ഫീസ് (₹, ഐച്ഛികം) | One-time setup fee (₹, optional) |  |
+| `health.charge.minutes` | ഈ മാസത്തെ സപ്പോർട്ട് മിനിറ്റ് | Support minutes this month |  |
+| `health.charge.rate` | നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം (₹) | What an hour of your time is worth (₹) |  |
+| `health.charge.save` | സേവ് ചെയ്യുക | Save |  |
+| `health.charge.privacy` | ഇവ ഈ പാനലിൽ തന്നെ നിൽക്കുന്നു. Geometer-ന് ഒരിക്കലും അയയ്ക്കില്ല. | These stay on this panel. They are never sent to Geometer. |  |
+| `health.charge.hint` | അറിയാത്ത ഒന്ന് ശൂന്യമായി വിടുക. ശൂന്യം എന്നാൽ അറിയില്ല, പൂജ്യമല്ല. | Leave a box empty if you do not know it. Empty means unknown, not zero. |  |
+| `health.margin.heading` | മാർജിൻ | Margin |  |
+| `health.margin.yourPrice` | നിങ്ങളുടെ വില | Your price |  |
+| `health.margin.keep` | മാസം നിങ്ങൾക്ക് ബാക്കി വരുന്നത് | What you keep a month |  |
+| `health.margin.unknownPrice` | നിങ്ങളുടെ വില നൽകുന്നത് വരെ അറിയില്ല. | Unknown until you enter your price. |  |
+| `health.margin.notFinal` | ഇതുവരെ അറിയാത്ത ചെലവുകൾക്ക് മുമ്പുള്ളത്. | Before the costs that are not known yet. |  |
+| `health.margin.before` | ഇവയ്ക്ക് മുമ്പ്: Your support time | before: Your support time |  |
+| `health.margin.setupOnce` | ഒരിക്കൽ ഈടാക്കിയ സെറ്റപ്പ് ഫീസ്: ₹2,000.00 | Setup fee you charged once: ₹2,000.00 |  |
+| `health.margin.negative` | പൂജ്യത്തിന് താഴെ: പ്രവർത്തന ചെലവ് നിങ്ങളുടെ വിലയേക്കാൾ കൂടുതലാണ്. | Below zero: the running cost is more than your price. |  |
+| `health.all.heading` | നിങ്ങളുടെ എല്ലാ കടകളും | All your shops |  |
+| `health.all.shops` | 3 കടകളിൽ 2 എണ്ണത്തിന് വില നൽകി | Price entered for 2 of 3 shops |  |
+| `health.all.keep` | മാസം നിങ്ങൾക്ക് ബാക്കി വരുന്നത് | What you keep a month |  |
+| `health.all.partial` | 3 കടകളിൽ വിലയുള്ള 2 എണ്ണം മാത്രമേ കൂട്ടിയിട്ടുള്ളൂ. | Only the 2 shops with a price are added up, out of 3. |  |
+| `health.all.setup` | ഒരിക്കൽ ഈടാക്കിയ സെറ്റപ്പ് ഫീസുകൾ | Setup fees charged once |  |
+| `health.all.unknown` | വില നൽകുന്നത് വരെ അറിയില്ല | Unknown until a price is entered |  |
+| `health.vote.title` | അടുത്ത ടെംപ്ലേറ്റിന് വോട്ട് | Vote on the next template |  |
+| `health.vote.intro` | ആദ്യത്തെ 100 ഇന്നൊവേറ്റർമാരിൽ ഒരാളായി, Geometer അടുത്തതായി ഉണ്ടാക്കുന്ന ടെംപ്ലേറ്റ് നിങ്ങൾ തിരഞ്ഞെടുക്കുന്നു. ഓരോരുത്തർക്കും ഒരു വോട്ട്, എപ്പോൾ വേണമെങ്കിലും മാറ്റാം. | As one of the first 100 innovators, you pick the next template Geometer builds. One vote each, and you can change it any time. |  |
+| `health.vote.yours` | നിങ്ങളുടെ വോട്ട് | Your vote |  |
+| `health.vote.none` | നിങ്ങൾ ഇതുവരെ വോട്ട് ചെയ്തിട്ടില്ല. | You have not voted yet. |  |
+| `health.vote.button` | എന്റെ വോട്ട് സേവ് ചെയ്യുക | Save my vote |  |
+| `health.vote.change` | എന്റെ വോട്ട് മാറ്റുക | Change my vote |  |
+| `health.vote.saved` | നിങ്ങളുടെ വോട്ട് സേവ് ചെയ്തു. | Your vote is saved. |  |
+| `health.vote.refused` | ആ തിരഞ്ഞെടുപ്പ് പട്ടികയിലില്ല. | That choice is not on the list. |  |
+| `health.vote.results` | ഇതുവരെയുള്ള വോട്ടുകൾ | Votes so far |  |
+| `health.vote.hidden` | മറ്റുള്ളവർ എങ്ങനെ വോട്ട് ചെയ്തെന്ന് കാണാൻ വോട്ട് ചെയ്യുക. | Vote to see how the others voted. |  |
+| `health.vote.votes` | 4 വോട്ട് | 4 votes |  |
+| `health.vote.note` | എണ്ണം മാത്രം. പേരുകൾ ഒരിക്കലും കാണിക്കില്ല. ഈ പാനലിൽ ഇതുവരെ എണ്ണിയ വോട്ടുകളാണിവ. | Counts only. Names are never shown. These are the votes counted on this panel so far. |  |
+| `health.vote.link` | അടുത്ത ടെംപ്ലേറ്റിന് വോട്ട് ചെയ്യുക | Vote on the next template |  |
+| `vote.option.orders` | ഓർഡറുകൾ: കട WhatsApp-ൽ ഓർഡറും പണവും സ്വീകരിക്കുന്നു | Orders: a shop takes orders and payment on WhatsApp |  |
+| `vote.option.fees-extensions` | ഫീസ് പിരിവ് വിപുലീകരണങ്ങൾ: ട്യൂഷൻ, പരിശീലന കേന്ദ്രങ്ങൾക്ക് കൂടുതൽ | Fee collection extensions: more for tuition and training centres |  |
+| `vote.option.equipment-rental` | സംഘങ്ങൾക്ക് ഉപകരണ വാടക: ക്ലബ്ബുകൾ, സൊസൈറ്റികൾ, ഹാളുകൾ | Equipment rental for groups: clubs, societies and halls |  |
+| `vote.option.social-posting` | അംഗീകാരത്തോടെ സോഷ്യൽ പോസ്റ്റിംഗ്: ഓരോ പോസ്റ്റും ഉടമ അംഗീകരിക്കുന്നു | Social posting with approval: the owner approves each post |  |
+| `vote.option.course-packs` | കോഴ്സ് പായ്ക്കുകൾ: ഒരു കോഴ്സ് പാഠങ്ങളായി വിൽക്കുകയും എത്തിക്കുകയും ചെയ്യുക | Course packs: sell and deliver a course in lessons |  |
 

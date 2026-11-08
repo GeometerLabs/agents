@@ -33,6 +33,9 @@ export interface Draft {
   otherLanguages: string[];
   ownerLanguage: string;
   ownerNumber: string;
+  /** B37: up to MAX_PANEL_APPROVERS other people who approve refunds, and the amount above which two must. Optional; a draft from before has neither. */
+  approvers?: { whatsapp: string; language: string }[];
+  twoAboveInr?: string;
   whatsapp: { businessNumber: string; numberId: string };
   calendar: { id: string };
   razorpay: { mode: string; keyId: string };
@@ -82,6 +85,7 @@ export function draftFromShop(id: string, accountId: string, templateId: string,
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: formFromSettings(settings), windowHours: String(settings.cancellation.windowHours),
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
+    ...approversDraftOf(settings.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
     calendar: { id: String(runtime?.services?.calendar?.calendarId ?? "") }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" },
     payment: paymentFromSettings(settings.payment),
@@ -169,7 +173,40 @@ export function applyLanguages(draft: Draft, body: Body, w: Words): StepResult {
   if (known(primary)) { draft.primaryLanguage = primary; draft.otherLanguages = others; }
   draft.ownerLanguage = known(ownerLanguage) ? ownerLanguage : draft.primaryLanguage;
   draft.ownerNumber = phone ?? text(body.ownerNumber, 30);
+  // B37: other people who approve refunds, each from their own phone, and the amount above which two of them must. Both optional.
+  const approvers: { whatsapp: string; language: string }[] = [];
+  const taken = new Set([phone, draft.whatsapp.businessNumber].filter((n): n is string => !!n).map(digitsOf));
+  for (let i = 0; i < MAX_PANEL_APPROVERS; i++) {
+    const given = text(body[`approver_${i}`], 30);
+    if (given === "") continue;
+    const number = normalizePhone(given);
+    const language = known(text(body[`approverLang_${i}`], 4)) ? text(body[`approverLang_${i}`], 4) : draft.ownerLanguage;
+    if (!number) problems.push(s.approverNumberBad(i + 1));
+    else if (taken.has(digitsOf(number))) problems.push(s.approverNumberTaken(i + 1));
+    else taken.add(digitsOf(number));
+    approvers.push({ whatsapp: number ?? given, language });
+  }
+  const twoAbove = text(body.twoAbove, 9);
+  if (twoAbove !== "" && !WHOLE.test(twoAbove)) problems.push(s.twoAboveBad);
+  if (twoAbove !== "" && approvers.length === 0) problems.push(s.twoAboveAlone);
+  draft.approvers = approvers;
+  draft.twoAboveInr = twoAbove;
   return { problems };
+}
+
+/** How many other approvers the setup asks for. More can be written in the settings file by hand (modules/approvals/people.ts allows six). */
+export const MAX_PANEL_APPROVERS = 2;
+
+/** The approvers part of a draft, from saved settings (so editing a shop shows them). */
+export function approversDraftOf(a: Settings["approvers"]): Pick<Draft, "approvers" | "twoAboveInr"> {
+  return a ? { approvers: a.people.map((p) => ({ whatsapp: p.whatsapp, language: p.language })), twoAboveInr: a.twoAboveInr === undefined ? "" : String(a.twoAboveInr) } : {};
+}
+
+/** The approvers part of the settings, from a draft: each person gets the id `approver-<n>` (a name Guard and the relay can show), in the order given. */
+export function approversFromDraft(d: Pick<Draft, "approvers" | "twoAboveInr">): { approvers?: { people: { id: string; whatsapp: string; language: string }[]; twoAboveInr?: number } } {
+  const people = (d.approvers ?? []).filter((p) => p.whatsapp !== "").map((p, i) => ({ id: `approver-${i + 1}`, whatsapp: p.whatsapp, language: p.language }));
+  if (people.length === 0) return {};
+  return { approvers: { people, ...(d.twoAboveInr && WHOLE.test(d.twoAboveInr) ? { twoAboveInr: Number(d.twoAboveInr) } : {}) } };
 }
 
 // ---- step 4: the shop's accounts, and the secrets that go with them -----------------------------------------------------------------------
@@ -268,6 +305,7 @@ export function buildSettings(draft: Draft, example: Settings): Built {
     ...(payment ? { payment } : {}),
     languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
+    ...approversFromDraft(draft),
     cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(example.cancellation.refundLimitInr, deposit) },
   };
   return validateSettings(raw);
