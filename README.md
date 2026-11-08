@@ -14,6 +14,7 @@ Geometer catch it, a CI workflow and a prompt for your coding assistant.
 | [examples/](examples/README.md) | The fourteen example agents Geometer checks, one folder per domain: `payments/`, `commerce/`, `support/`, `games/` and `science/` |
 | [modules/](modules/README.md) | The features the templates share: language, understanding, payments, messaging, the record, reports, approvals, limits, reminders and the stand-ins |
 | [bundle/](bundle/README.md) | The deploy bundle: a folder per shop becomes one Docker Compose file; also the panel |
+| [plugin/](plugin/README.md) | The Claude Code plugin: set up, check and run shop agents from Claude Code (`/plugin marketplace add GeometerLabs/agents`); limits and go-live are confirmed by a person in the panel |
 | [companies/](companies/README.md) | The kit for a company that runs its own agents against its own APIs: from an OpenAPI file to a Guard in front of the agent |
 | [scripts/](scripts/try-broken.sh) | `try-broken.sh`: apply an example agent's one-line mistake to a copy and let Geometer check it |
 

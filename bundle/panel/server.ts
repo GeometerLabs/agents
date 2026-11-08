@@ -36,6 +36,7 @@ import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { licenceView } from "./licence.ts";
 import { createGoLive } from "./golive.ts";
+import type { Unmet } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
 import { exportShop } from "./export.ts";
@@ -53,6 +54,10 @@ import { applyFeesBusiness, applyFeesRules, buildFeesSettings, feesDraftFromShop
 import { activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
 import type { Body, Draft } from "./setup.ts";
 import { createShops } from "./shops.ts";
+import { CONFIRM_TOKEN, createConfirmations, planLimits, rawSettings } from "./confirmations.ts";
+import { settingsDigest } from "../lib/limits-draft.ts";
+import type { Change } from "../lib/limits-draft.ts";
+import { confirmGoLivePage, confirmGonePage, confirmLimitsPage } from "./views-confirm.ts";
 import { createStore } from "./store.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
@@ -111,6 +116,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
+  const confirmations = createConfirmations(store, now);
   const handover = createHandover(shops, accounts, store, now);
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
@@ -145,7 +151,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     return "en";
   }
 
-  const redactPath = (path: string) => path.replace(/^\/join\/.+$/u, "/join/[invite]");
+  const redactPath = (path: string) => path.replace(/^\/join\/.+$/u, "/join/[invite]").replace(/^\/confirm\/.+$/u, "/confirm/[link]");
 
   function body(res: ServerResponse, status: number, type: string, content: string | Buffer, headers: Record<string, string | string[]> = {}) {
     res.writeHead(status, { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "x-frame-options": "DENY", ...(secure ? { "strict-transport-security": "max-age=31536000" } : {}), ...headers });
@@ -662,6 +668,67 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     redirect(r, here);
   });
 
+  // ---- one-time confirmations asked for from outside the panel (the Claude Code plugin; confirmations.ts) ------------------------------------
+  // A link is made on the command line and does nothing by itself. Opening it shows what is asked; only a POST from a signed-in person who may see the shop does it.
+  const waTemplates = (shop: string): string[] => {
+    const t = templates().find((x) => x.id === shops.kind(shop));
+    try {
+      const list = JSON.parse(readFileSync(join((t as { folder: string }).folder, "whatsapp-templates.json"), "utf8")) as { name: string; language: string }[];
+      return [...new Set(list.map((x) => `${x.name} (${x.language})`))];
+    } catch { return []; }
+  };
+  const confirmFor = (r: Req) => {
+    const token = r.params[0];
+    if (!CONFIRM_TOKEN.test(token)) return { gone: "unknown" as const };
+    const status = confirmations.status(token);
+    if (status !== "ok") return { gone: status };
+    const c = confirmations.find(token)!;
+    const ref = shops.find(r.account!, c.shop);
+    return ref && shops.exists(c.shop) ? { token, c } : { gone: "unknown" as const };
+  };
+  const goLivePieces = (shop: string) => {
+    const checks = goLive.stored(shop);
+    return { ...(checks ? { hand: { held: checks.hand.held, total: checks.hand.total, failedTitles: checks.hand.failedTitles, notTested: checks.hand.notTested } } : {}), connections: checks?.connections ?? null, templates: waTemplates(shop) };
+  };
+  on("GET", /^\/confirm\/([A-Za-z0-9_-]{16,80})$/u, "user", (r) => {
+    const f = confirmFor(r);
+    if ("gone" in f) return page(r, f.gone === "unknown" ? 404 : 410, confirmGonePage(r.ctx(), f.gone));
+    const name = shops.settings(f.c.shop)?.name ?? f.c.shop;
+    if (f.c.kind === "limits") {
+      const plan = planLimits(shops, f.c.shop, f.c.changes ?? [], f.c.digest);
+      return page(r, 200, confirmLimitsPage(r.ctx(), { token: f.token, shopName: name, shopId: f.c.shop, rows: plan.ok ? plan.rows : [], note: f.c.note, problems: plan.ok ? [] : plan.problems, done: false }));
+    }
+    const settings = shops.settings(f.c.shop);
+    page(r, 200, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: f.c.shop, unmet: settings ? goLive.unmet(f.c.shop, settings) : ["settings-changed"], ...goLivePieces(f.c.shop), problems: [], done: false }));
+  });
+  on("POST", /^\/confirm\/([A-Za-z0-9_-]{16,80})$/u, "user", async (r) => {
+    const f = confirmFor(r);
+    if ("gone" in f) return page(r, f.gone === "unknown" ? 404 : 410, confirmGonePage(r.ctx(), f.gone));
+    const { c } = f;
+    const name = shops.settings(c.shop)?.name ?? c.shop;
+    if (c.kind === "limits") {
+      // checked again now, against the settings as they are now: a link cannot be used to write anything the check refuses, and a widening is refused whatever was stored
+      const plan = planLimits(shops, c.shop, c.changes ?? [], c.digest);
+      if (!plan.ok) return page(r, 409, confirmLimitsPage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, rows: [], note: c.note, problems: plan.problems, done: false }));
+      if (!confirmations.spend(f.token, r.account!.id)) return page(r, 410, confirmGonePage(r.ctx(), "used"));
+      shops.writeFolder(c.shop, { settings: plan.proposed, runtime: shops.runtime(c.shop) as Record<string, unknown>, lock: shops.lock(c.shop) as string }, undefined, r.account!);
+      log(`limits for ${c.shop} tightened by ${r.account!.id} through ${c.id}: ${plan.rows.map((x) => x.path).join(", ")}`);
+      return page(r, 200, confirmLimitsPage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, rows: plan.rows, note: c.note, problems: [], done: true }));
+    }
+    const settings = shops.settings(c.shop);
+    const again = (problems: string[], unmet: Unmet[] = []) => page(r, 409, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, unmet, ...goLivePieces(c.shop), problems, done: false }));
+    if (!settings) return again(["The settings cannot be read."]);
+    if (r.form.templates_seen !== "yes" || r.form.keys_in_guard !== "yes") return again(["Tick both boxes to say what you have seen and done. Nobody else can say it for you."]);
+    await goLive.run(c.shop);
+    const owner = shops.servedBy(c.shop);
+    const result = goLive.ready(c.shop, owner ? preparedByOf(owner) : r.account!.name);
+    if (!result.ok) return again([], result.unmet);
+    if (!confirmations.spend(f.token, r.account!.id)) return page(r, 410, confirmGonePage(r.ctx(), "used"));
+    shops.saveMeta(c.shop, { ...shops.meta(c.shop), goLiveStatement: { at: new Date(now()).toISOString(), by: r.account!.id, whatsappTemplatesSeenApproved: true, keysHandedInThroughGuard: true } });
+    log(`go-live confirmed for ${c.shop} by ${r.account!.id} through ${c.id}`);
+    page(r, 200, confirmGoLivePage(r.ctx(), { token: f.token, shopName: name, shopId: c.shop, unmet: [], connections: goLive.stored(c.shop)?.connections ?? null, templates: [], problems: [], done: true, certificate: `/shops/${c.shop}/docs/go-live/go-live-certificate.html` }));
+  });
+
   // ---- the server ---------------------------------------------------------------------------------------------------------------------------
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -733,4 +800,26 @@ export function makeInviteLink(config: PanelConfig, role: Role, note: string, ho
   const { store } = openStores(config);
   const { token } = createAccounts(store, config.now).createInvite({ role, note, createdBy: "server", ttlHours: hours });
   return `${config.publicUrl ?? `http://${config.host}:${config.port}`}/join/${token}`;
+}
+
+/**
+ * A one-time link for a person to confirm something Claude Code asked for (plugin/, plan B11), made on the command line like an invitation. It only ASKS: the link does
+ * nothing until a signed-in person who may see the shop opens it and presses the button. For `limits` the change is checked here first (tighter only), and again when pressed.
+ */
+export function makeConfirmLink(config: PanelConfig, o: { kind: "limits" | "go-live"; shop: string; changes?: Change[]; note?: string }): { link: string; expiresAt: string } {
+  const { store } = openStores(config);
+  const shops = createShops(config, store);
+  if (!shops.exists(o.shop)) throw new ConfigError(`There is no shop ${o.shop} on this server.`);
+  let digest: string;
+  if (o.kind === "limits") {
+    const plan = planLimits(shops, o.shop, o.changes ?? []);
+    if (!plan.ok) throw new ConfigError(plan.problems.join(" "));
+    digest = plan.digest;
+  } else {
+    const raw = rawSettings(shops, o.shop);
+    if (!raw) throw new ConfigError(`There are no readable settings for ${o.shop}.`);
+    digest = settingsDigest(raw);
+  }
+  const { token, confirmation } = createConfirmations(store, config.now).create({ kind: o.kind, shop: o.shop, digest, ...(o.changes ? { changes: o.changes } : {}), ...(o.note ? { note: o.note } : {}) });
+  return { link: `${config.publicUrl ?? `http://${config.host}:${config.port}`}/confirm/${token}`, expiresAt: confirmation.expiresAt };
 }

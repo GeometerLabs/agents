@@ -1,0 +1,12 @@
+{
+  "name": "geometer-agents",
+  "description": "Geometer's open agents repository: the Claude Code plugin for setting up, checking and running shop agents.",
+  "owner": { "name": "Geometer" },
+  "plugins": [
+    {
+      "name": "geometer",
+      "source": "./plugin",
+      "description": "Set up an agent template for a shop, tighten its limits, crash test it, go live with a person's confirmation in the panel, and make the monthly client report."
+    }
+  ]
+}
