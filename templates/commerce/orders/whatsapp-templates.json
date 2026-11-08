@@ -1,0 +1,2390 @@
+[
+  {
+    "name": "order_confirmed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ऑर्डर पक्का! {{1}}, {{2}}, पिकअप। हमें आपका {{3}} का एडवांस मिल गया है। {{4}} पिकअप पर देने हैं। रिफंड के लिए शुरू होने से कम से कम {{5}} घंटे पहले रद्द करें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Confirmed! {{1}} for {{2}}, pickup. We have received your advance of {{3}}. {{4}} is to pay on pickup. Cancel at least {{5}} hours before the start for a refund.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ ഉറപ്പായി! {{1}}, {{2}}, പിക്കപ്പ്. നിങ്ങളുടെ {{3}} അഡ്വാൻസ് ലഭിച്ചു. {{4}} പിക്കപ്പിന് അടയ്ക്കണം. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് {{5}} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ ಖಚಿತವಾಗಿದೆ! {{1}}, {{2}}, ಪಿಕಪ್. ನಿಮ್ಮ {{3}} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. {{4}} ಪಿಕಪ್ ಸಮಯದಲ್ಲಿ ಪಾವತಿಸಬೇಕು. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ {{5}} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed_upi",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ऑर्डर पक्का! {{1}}, {{2}}, पिकअप। मालिक ने आपका {{3}} का एडवांस पक्का कर दिया है। {{4}} पिकअप पर देने हैं। रिफंड के लिए शुरू होने से कम से कम {{5}} घंटे पहले रद्द करें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed_upi",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Confirmed! {{1}} for {{2}}, pickup. The owner has confirmed your advance of {{3}}. {{4}} is to pay on pickup. Cancel at least {{5}} hours before the start for a refund.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed_upi",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ ഉറപ്പായി! {{1}}, {{2}}, പിക്കപ്പ്. നിങ്ങളുടെ {{3}} അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. {{4}} പിക്കപ്പിന് അടയ്ക്കണം. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് {{5}} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_confirmed_upi",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ ಖಚಿತವಾಗಿದೆ! {{1}}, {{2}}, ಪಿಕಪ್. ನಿಮ್ಮ {{3}} ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. {{4}} ಪಿಕಪ್ ಸಮಯದಲ್ಲಿ ಪಾವತಿಸಬೇಕು. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ {{5}} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "₹120",
+              "₹120",
+              "6"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_ended",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके ऑर्डर ({{1}}, {{2}}) की रोक खत्म हो गई क्योंकि एडवांस समय पर नहीं मिला। अब भी ऑर्डर करना चाहें तो मुझे लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_ended",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The hold on your order ({{1}}, {{2}}) has ended because the advance was not received in time. Message me if you'd still like to order.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_ended",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അഡ്വാൻസ് സമയത്ത് ലഭിക്കാത്തതിനാൽ നിങ്ങളുടെ ഓർഡർ ({{1}}, {{2}}) മാറ്റിവച്ചത് ഒഴിവാക്കി. ഇനിയും ഓർഡർ ചെയ്യണമെങ്കിൽ എനിക്ക് മെസ്സേജ് അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_hold_ended",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮುಂಗಡ ಹಣ ಸಮಯಕ್ಕೆ ಸಿಗದ ಕಾರಣ ನಿಮ್ಮ ಆರ್ಡರ್ ({{1}}, {{2}}) ಕಾಯ್ದಿರಿಸಿದ್ದನ್ನು ಬಿಡುಗಡೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೂ ಆರ್ಡರ್ ಮಾಡಬೇಕಾದರೆ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_order",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नया ऑर्डर {{1}}, ग्राहक {{2}}: {{3}}, {{4}}, पिकअप। कुल {{5}}, एडवांस {{6}} मिल चुका, {{7}} लेने हैं। अभी कुछ करना बाकी नहीं है।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_order",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "New order {{1}} from {{2}}: {{3}} for {{4}}, pickup. Total {{5}}, advance {{6}} paid, {{7}} to collect. Nothing more to do now.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_order",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പുതിയ ഓർഡർ {{1}}, ഉപഭോക്താവ് {{2}}: {{3}}, {{4}}, പിക്കപ്പ്. ആകെ {{5}}, അഡ്വാൻസ് {{6}} ലഭിച്ചു, {{7}} വാങ്ങാനുണ്ട്. ഇപ്പോൾ ഒന്നും ചെയ്യാനില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_order",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಹೊಸ ಆರ್ಡರ್ {{1}}, ಗ್ರಾಹಕರು {{2}}: {{3}}, {{4}}, ಪಿಕಪ್. ಒಟ್ಟು {{5}}, ಮುಂಗಡ {{6}} ಸಿಕ್ಕಿದೆ, {{7}} ಪಡೆಯಬೇಕು. ಈಗ ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_delivery_order",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नया ऑर्डर {{1}}, ग्राहक {{2}}: {{3}}, {{4}}, {{5}}, पता: {{6}}। कुल {{7}}, एडवांस {{8}} मिल चुका, {{9}} लेने हैं। अभी कुछ करना बाकी नहीं है।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "पिकअप",
+              "Flat 4, Lake View Apartments, Kakkanad",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_delivery_order",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "New order {{1}} from {{2}}: {{3}} for {{4}}, {{5}}, address: {{6}}. Total {{7}}, advance {{8}} paid, {{9}} to collect. Nothing more to do now.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "pickup",
+              "Flat 4, Lake View Apartments, Kakkanad",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_delivery_order",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പുതിയ ഓർഡർ {{1}}, ഉപഭോക്താവ് {{2}}: {{3}}, {{4}}, {{5}}, വിലാസം: {{6}}. ആകെ {{7}}, അഡ്വാൻസ് {{8}} ലഭിച്ചു, {{9}} വാങ്ങാനുണ്ട്. ഇപ്പോൾ ഒന്നും ചെയ്യാനില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "പിക്കപ്പ്",
+              "Flat 4, Lake View Apartments, Kakkanad",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_new_delivery_order",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಹೊಸ ಆರ್ಡರ್ {{1}}, ಗ್ರಾಹಕರು {{2}}: {{3}}, {{4}}, {{5}}, ವಿಳಾಸ: {{6}}. ಒಟ್ಟು {{7}}, ಮುಂಗಡ {{8}} ಸಿಕ್ಕಿದೆ, {{9}} ಪಡೆಯಬೇಕು. ಈಗ ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "ಪಿಕಪ್",
+              "Flat 4, Lake View Apartments, Kakkanad",
+              "₹240",
+              "₹120",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_big_order_asks",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} को {{2}} चाहिए, {{3}}, पिकअप। कुल {{4}}। भुगतान की अनुमति के लिए \"approve {{5}}\" या मना करने के लिए \"deny {{6}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "₹240",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_big_order_asks",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: {{1}} wants {{2}} for {{3}}, pickup. Total {{4}}. Reply \"approve {{5}}\" to let them pay, or \"deny {{6}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "₹240",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_big_order_asks",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}}-ന് {{2}} വേണം, {{3}}, പിക്കപ്പ്. ആകെ {{4}}. പണമടയ്ക്കാൻ അനുവദിക്കാൻ \"approve {{5}}\" എന്നും, നിരസിക്കാൻ \"deny {{6}}\" എന്നും മറുപടി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "₹240",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_big_order_asks",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮತಿ ಬೇಕು: {{1}} ಅವರಿಗೆ {{2}} ಬೇಕು, {{3}}, ಪಿಕಪ್. ಒಟ್ಟು {{4}}. ಪಾವತಿಗೆ ಅನುಮತಿಸಲು \"approve {{5}}\" ಎಂದು, ನಿರಾಕರಿಸಲು \"deny {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "₹240",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_cancelled",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने ऑर्डर {{2}} रद्द किया: {{3}}, {{4}}। कृपया इसे तैयार न करें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_cancelled",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} cancelled order {{2}}: {{3}} for {{4}}. Please do not prepare it.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_cancelled",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}} ഓർഡർ {{2}} റദ്ദാക്കി: {{3}}, {{4}}. ദയവായി ഇത് തയ്യാറാക്കരുത്.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_cancelled",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} ಆರ್ಡರ್ {{2}} ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ: {{3}}, {{4}}. ದಯವಿಟ್ಟು ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಬೇಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancel_asks",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने ऑर्डर {{2}} ({{3}}, {{4}}) शुरू होने से {{5}} घंटे से कम पहले रद्द किया। एडवांस {{6}}। लौटाने के लिए \"approve {{7}}\" या रखने के लिए \"deny {{8}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "6",
+              "₹120",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancel_asks",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} cancelled order {{2}} ({{3}}, {{4}}) less than {{5}} hours before the start. Advance {{6}}. Reply \"approve {{7}}\" to refund it or \"deny {{8}}\" to keep it.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "6",
+              "₹120",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancel_asks",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: ഓർഡർ {{2}} ({{3}}, {{4}}) തുടങ്ങാൻ {{5}} മണിക്കൂറിൽ താഴെ ബാക്കിയുള്ളപ്പോൾ റദ്ദാക്കി. അഡ്വാൻസ് {{6}}. തിരികെ നൽകാൻ \"approve {{7}}\" എന്നും, നിങ്ങൾ വയ്ക്കാൻ \"deny {{8}}\" എന്നും മറുപടി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "6",
+              "₹120",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_late_cancel_asks",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: ಆರ್ಡರ್ {{2}} ({{3}}, {{4}}) ಪ್ರಾರಂಭಕ್ಕೆ {{5}} ಗಂಟೆಗಿಂತ ಕಡಿಮೆ ಇರುವಾಗ ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ. ಮುಂಗಡ {{6}}. ಹಿಂತಿರುಗಿಸಲು \"approve {{7}}\" ಎಂದು, ಇಟ್ಟುಕೊಳ್ಳಲು \"deny {{8}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "6",
+              "₹120",
+              "o-3",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_duplicate_paid",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने ऑर्डर {{2}} ({{3}}, {{4}}) का एडवांस दो बार भरा। अतिरिक्त {{5}} वापस कर दिया गया।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_duplicate_paid",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} paid the advance twice for order {{2}} ({{3}}, {{4}}). The extra {{5}} was refunded.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_duplicate_paid",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}: ഓർഡർ {{2}} ({{3}}, {{4}}) — അഡ്വാൻസ് രണ്ടു തവണ അടച്ചു. അധികമായി വന്ന {{5}} തിരികെ നൽകി.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_duplicate_paid",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}}: ಆರ್ಡರ್ {{2}} ({{3}}, {{4}}) — ಮುಂಗಡ ಹಣವನ್ನು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ್ದಾರೆ. ಹೆಚ್ಚುವರಿ {{5}} ಮರಳಿ ಕೊಡಲಾಗಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_link_failed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} के ऑर्डर {{2}} के लिए पेमेंट लिंक नहीं बन पाया। कुछ भी ऑर्डर नहीं हुआ है। कृपया अपना पेमेंट अकाउंट देखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_link_failed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Could not make the payment link for order {{1}} from {{2}}. Nothing is ordered. Please check your payment account.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_link_failed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}}-ന്റെ ഓർഡർ {{2}}-ന് പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. ഒന്നും ഓർഡർ ആയിട്ടില്ല. ദയവായി നിങ്ങളുടെ പേയ്മെന്റ് അക്കൗണ്ട് പരിശോധിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_link_failed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} ಅವರ ಆರ್ಡರ್ {{2}} ಗೆ ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ. ಏನೂ ಆರ್ಡರ್ ಆಗಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾವತಿ ಖಾತೆಯನ್ನು ನೋಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_wants_you",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} आपसे बात करना चाहते हैं। कृपया उन्हें संदेश भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_wants_you",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} would like to talk to you. Please message them.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_wants_you",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}} നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നു. ദയവായി അവർക്ക് സന്ദേശം അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_wants_you",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತಾರೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} sent STOP. No more messages will go to them.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_customer_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_approval",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी चाहिए: {{1}} (ऑर्डर {{2}}, {{3}}) को {{4}} का रिफंड। {{5}} घंटे के भीतर \"approve {{6}}\" या \"deny {{7}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "गुरुवार, 12 नवंबर",
+              "₹120",
+              "24",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_approval",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Approval needed: refund {{1}} for {{2}} (order {{3}}, {{4}}). Reply \"approve {{5}}\" or \"deny {{6}}\" within {{7}} hours.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "+919811111111",
+              "o-3",
+              "Thu 12 Nov",
+              "K7M2QX",
+              "K7M2QX",
+              "24"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_approval",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതി വേണം: {{1}}-ന് (ഓർഡർ {{2}}, {{3}}) {{4}} റീഫണ്ട്. {{5}} മണിക്കൂറിനുള്ളിൽ \"approve {{6}}\" അല്ലെങ്കിൽ \"deny {{7}}\" എന്ന് മറുപടി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "വ്യാഴം, 12 നവംബർ",
+              "₹120",
+              "24",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_approval",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಅನುಮತಿ ಬೇಕು: {{1}} (ಆರ್ಡರ್ {{2}}, {{3}}) ಅವರಿಗೆ {{4}} ರೀಫಂಡ್. {{5}} ಗಂಟೆಯೊಳಗೆ \"approve {{6}}\" ಅಥವಾ \"deny {{7}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "₹120",
+              "24",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_check",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "जाँचने के लिए UPI पेमेंट: ग्राहक {{1}} ऑर्डर {{2}} ({{3}}, {{4}}) के लिए {{5}} एडवांस भेजेंगे। जब यह आपके UPI ऐप में दिखे, तो \"मिल गया\" दबाएँ या \"received {{6}}\" लिखकर भेजें। अगर कोई और रकम आई है, तो \"received {{7}}\" के बाद रकम लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक",
+              "₹120",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_check",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "UPI payment to check: customer {{1}} will pay the {{2}} advance for order {{3}} ({{4}}, {{5}}). When it shows in your UPI app, tap Received or reply \"received {{6}}\". If a different amount came, reply \"received {{7}}\" and the amount.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120",
+              "o-3",
+              "2 × veg thali",
+              "Thu 12 Nov, 12:00 pm to 1:00 pm",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_check",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പരിശോധിക്കാനുള്ള UPI പണമടവ്: ഉപഭോക്താവ് {{1}}, ഓർഡർ {{2}} ({{3}}, {{4}}) എന്നതിനായി {{5}} അഡ്വാൻസ് അയക്കും. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{6}}\" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ \"received {{7}}\" എന്നതിന് ശേഷം തുക എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ",
+              "₹120",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_check",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಗ್ರಾಹಕರು {{1}} ಆರ್ಡರ್ {{2}} ({{3}}, {{4}}) ಗಾಗಿ {{5}} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ \"received {{7}}\" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ",
+              "₹120",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_says_paid",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ग्राहक {{1}} कह रहे हैं कि उन्होंने ऑर्डर {{2}} का {{3}} एडवांस भेज दिया है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो \"मिल गया\" दबाएँ या \"received {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_says_paid",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Customer {{1}} says they have paid the {{2}} advance for order {{3}}. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply \"received {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120",
+              "o-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_says_paid",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉപഭോക്താവ് {{1}} ഓർഡർ {{2}}-ന്റെ {{3}} അഡ്വാൻസ് അയച്ചെന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_says_paid",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಗ್ರಾಹಕರು {{1}} ಆರ್ಡರ್ {{2}} ರ {{3}} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_to_send",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "वापस भेजना है: ग्राहक {{1}} (ऑर्डर {{2}}) को UPI से {{3}}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद \"रिफंड भेज दिया\" दबाएँ या \"refunded {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_to_send",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Refund to send: customer {{1}} (order {{2}}) is owed {{3}} by UPI. The agent never sends money. After you send it, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_to_send",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "തിരികെ അയക്കേണ്ടത്: ഉപഭോക്താവ് {{1}}-ന് (ഓർഡർ {{2}}) UPI വഴി {{3}}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം \"റീഫണ്ട് അയച്ചു\" അമർത്തുക, അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_to_send",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಗ್ರಾಹಕರು {{1}} (ಆರ್ಡರ್ {{2}}) ಅವರಿಗೆ UPI ಮೂಲಕ {{3}}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "याद दिलाना: ग्राहक {{1}} (ऑर्डर {{2}}) को {{3}} अभी भी वापस देना है। UPI से भेजने के बाद \"रिफंड भेज दिया\" दबाएँ या \"refunded {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reminder: customer {{1}} (order {{2}}) is still owed {{3}}. After you send it by UPI, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് {{1}}-ന് (ഓർഡർ {{2}}) {{3}} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം \"റീഫണ്ട് അയച്ചു\" അമർത്തുക, അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_upi_refund_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು {{1}} (ಆರ್ಡರ್ {{2}}) ಅವರಿಗೆ {{3}} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "o-3",
+              "₹120",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_coming",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक {{1}} UPI से आपको वापस भेजेंगे। जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।",
+        "example": {
+          "body_text": [
+            [
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_coming",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner will send {{1}} back to you by UPI. I'll message you when they mark it sent.",
+        "example": {
+          "body_text": [
+            [
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_coming",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉടമ {{1}} UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_coming",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಲೀಕರು {{1}} ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_marked_sent",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने ऑर्डर {{1}} का आपका {{2}} रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें।",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_marked_sent",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner has marked your {{1}} refund for order {{2}} as sent by UPI. Please check your UPI app.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "o-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_marked_sent",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർഡർ {{1}}-ന്റെ നിങ്ങളുടെ {{2}} റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_upi_refund_marked_sent",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಆರ್ಡರ್ {{1}} ರ ನಿಮ್ಮ {{2}} ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "o-3",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_paused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} के ऑनलाइन ऑर्डर अभी रुके हुए हैं। पहले के ऑर्डर, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया {{2}} से संपर्क करें।",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_paused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Notice: online ordering for {{1}} is paused for now. Existing orders, cancellations and refunds still go through. Please contact {{2}}.",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_paused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ഓർഡർ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ഓർഡറുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി {{2}}-നെ ബന്ധപ്പെടൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_paused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಆರ್ಡರ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಆರ್ಡರ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು {{2}} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} के ऑनलाइन ऑर्डर बंद हो गए हैं। कुछ भी मिटाया नहीं गया है। आने वाले ऑर्डर: {{2}}। बाकी खुले काम: {{3}}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {{4}} तक {{5}} से मिल सकती है।",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "4",
+              "1",
+              "शुक्रवार, 5 मार्च",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Notice: online ordering for {{1}} has stopped. Nothing is deleted. Orders to come: {{2}}. Other open items: {{3}}. {{4}} can give you the full list and a free copy of all your records until {{5}}.",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "4",
+              "1",
+              "Divya, local partner",
+              "Fri 5 Mar"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ഓർഡർ നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ഓർഡറുകൾ: {{2}}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {{3}}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {{4}} വരെ {{5}} നൽകും.",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "4",
+              "1",
+              "വെള്ളി, 5 മാർച്ച്",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_service_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಆರ್ಡರ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಆರ್ಡರ್‌ಗಳು: {{2}}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {{3}}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {{4}} ವರೆಗೆ {{5}} ನೀಡುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins",
+              "4",
+              "1",
+              "ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nएडवांस जमा हुआ: {{2}} · वापस किया: {{3}} · पिकअप पर लेना बाकी: {{4}}\nलिए गए ऑर्डर: {{5}} · रद्द हुए: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nसपोर्ट को लिखें। एक इंसान जवाब देता है।\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · फरवरी 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ऑर्डर: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nAdvance collected: {{2}} · Given back: {{3}} · To collect at pickup: {{4}}\nOrders taken: {{5}} · Cancelled: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nWrite to support. A person answers.\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · Feb 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (orders: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "balance paid in cash or UPI at pickup · automatic payment checking (with UPI you mark each payment) · real WhatsApp · a native speaker's review of the wording · and 16 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞ അഡ്വാൻസ്: {{2}} · തിരികെ നൽകിയത്: {{3}} · പിക്കപ്പിൽ വാങ്ങാനുള്ളത്: {{4}}\nഎടുത്ത ഓർഡറുകൾ: {{5}} · റദ്ദാക്കിയത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nസപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ഫെബ്രുവരി 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ഓർഡറുകൾ: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക · പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) · യഥാർത്ഥ WhatsApp · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದ ಮುಂಗಡ: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು: {{4}}\nತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು: {{5}} · ರದ್ದಾದವು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ಆರ್ಡರ್‌ಗಳು: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ · ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) · ನಿಜವಾದ WhatsApp · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nएडवांस जमा हुआ: {{2}} · वापस किया: {{3}} · पिकअप पर लेना बाकी: {{4}}\nलिए गए ऑर्डर: {{5}} · रद्द हुए: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nसपोर्ट को लिखें। एक इंसान जवाब देता है।\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · फरवरी 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ऑर्डर: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nAdvance collected: {{2}} · Given back: {{3}} · To collect at pickup: {{4}}\nOrders taken: {{5}} · Cancelled: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nWrite to support. A person answers.\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · Feb 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (orders: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "balance paid in cash or UPI at pickup · automatic payment checking (with UPI you mark each payment) · real WhatsApp · a native speaker's review of the wording · and 16 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞ അഡ്വാൻസ്: {{2}} · തിരികെ നൽകിയത്: {{3}} · പിക്കപ്പിൽ വാങ്ങാനുള്ളത്: {{4}}\nഎടുത്ത ഓർഡറുകൾ: {{5}} · റദ്ദാക്കിയത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nസപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ഫെബ്രുവരി 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ഓർഡറുകൾ: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക · പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) · യഥാർത്ഥ WhatsApp · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದ ಮುಂಗಡ: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು: {{4}}\nತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು: {{5}} · ರದ್ದಾದವು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ಆರ್ಡರ್‌ಗಳು: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ · ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) · ನಿಜವಾದ WhatsApp · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज एडवांस: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · पिकअप पर लेना बाकी: {{4}}\nलिए गए ऑर्डर: {{5}} · रद्द हुए: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nसपोर्ट को लिखें। एक इंसान जवाब देता है।\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · फरवरी 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ऑर्डर: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nAdvance marked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · To collect at pickup: {{4}}\nOrders taken: {{5}} · Cancelled: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nWrite to support. A person answers.\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · Feb 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (orders: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "balance paid in cash or UPI at pickup · automatic payment checking (with UPI you mark each payment) · real WhatsApp · a native speaker's review of the wording · and 16 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · പിക്കപ്പിൽ വാങ്ങാനുള്ളത്: {{4}}\nഎടുത്ത ഓർഡറുകൾ: {{5}} · റദ്ദാക്കിയത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nസപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ഫെബ്രുവരി 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ഓർഡറുകൾ: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക · പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) · യഥാർത്ഥ WhatsApp · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು: {{4}}\nತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು: {{5}} · ರದ್ದಾದವು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ಆರ್ಡರ್‌ಗಳು: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ · ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) · ನಿಜವಾದ WhatsApp · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज एडवांस: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · पिकअप पर लेना बाकी: {{4}}\nलिए गए ऑर्डर: {{5}} · रद्द हुए: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nसपोर्ट को लिखें। एक इंसान जवाब देता है।\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · फरवरी 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ऑर्डर: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nAdvance marked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · To collect at pickup: {{4}}\nOrders taken: {{5}} · Cancelled: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nWrite to support. A person answers.\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · Feb 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (orders: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "balance paid in cash or UPI at pickup · automatic payment checking (with UPI you mark each payment) · real WhatsApp · a native speaker's review of the wording · and 16 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · പിക്കപ്പിൽ വാങ്ങാനുള്ളത്: {{4}}\nഎടുത്ത ഓർഡറുകൾ: {{5}} · റദ്ദാക്കിയത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nസപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ഫെബ്രുവരി 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ഓർഡറുകൾ: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക · പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) · യഥാർത്ഥ WhatsApp · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "order_monthly_report_upi_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು: {{4}}\nತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು: {{5}} · ರದ್ದಾದವು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027",
+              "₹24,000",
+              "₹600",
+              "₹9,000 (ಆರ್ಡರ್‌ಗಳು: 6)",
+              "41",
+              "3",
+              "3",
+              "2",
+              "1",
+              "7",
+              "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ · ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) · ನಿಜವಾದ WhatsApp · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 16 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]
