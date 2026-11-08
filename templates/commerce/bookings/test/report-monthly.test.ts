@@ -9,6 +9,7 @@ import { createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { ApiError, NotSentError, TimeoutError } from "../../../../modules/core/faults.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
+import { headOf, ledgerEntries } from "../../../../modules/record/ledger.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { MAX_TRIES, RETRY_AFTER_MS, lastMonth, nothingWasSent, sendFrom } from "../../../../modules/report/monthly-job.ts";
 import { createMonthlyReport } from "../report/monthly-job.ts";
@@ -337,6 +338,20 @@ test("the page the link points to carries the same badge, and the same code the 
   assert.ok(page.includes(`<p class="badge">★ Innovator</p>`) && page.includes(code));
   assert.ok(readFileSync(join(dir, "t1000000", "certificate-2026-11-en.txt"), "utf8").includes("★ Innovator"));
   assert.ok(readFileSync(join(dir, "t1000000", "report-2026-11.json"), "utf8").includes('"innovator": true') || readFileSync(join(dir, "t1000000", "report-2026-11.json"), "utf8").includes('"innovator":true'));
+});
+
+test("with report.tenant set, the owner's report is anchored to the head of the shop's record as it was when the report was made (B28)", async () => {
+  const w = await novemberWorld();
+  const dir = tempDir();
+  w.clock.set(at(12, 1, 9));
+  const before = headOf(w.record.entries(), "glow-salon")!;
+  await createMonthlyReport({ ...setup({ dir }), tenant: "glow-salon" }).run(context(w));
+  const report = JSON.parse(readFileSync(join(dir, "t1000000", "report-2026-11.json"), "utf8")) as { document: { anchor: { tenant: string; seq: number; head: string } } };
+  assert.equal(report.document.anchor.tenant, "glow-salon");
+  assert.deepEqual(report.document.anchor, before, "the head when the report was made, before the job wrote its own claim");
+  assert.equal(report.document.anchor.head, ledgerEntries(w.record.entries(), "glow-salon")[before.seq - 1].hash, "and the record's chain still has that hash at that entry after the job's own entries");
+  const certificate = JSON.parse(readFileSync(join(dir, "t1000000", "certificate-2026-11.json"), "utf8")) as { document: { anchor: unknown } };
+  assert.deepEqual(certificate.document.anchor, report.document.anchor, "the monthly certificate names the same head");
 });
 
 // ---- inside the runtime: saved twice, riding on the clock's beat ----

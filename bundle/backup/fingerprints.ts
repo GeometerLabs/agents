@@ -79,7 +79,8 @@ export async function runFingerprints(ctx: Context, deps: { fetch?: Fetch } = {}
       continue;
     }
     const line = published.line!;
-    lines.push(`${shop}: ${published.local === "same-day" ? "today's fingerprint is already written" : `fingerprint of entry ${line.seq} written (${signed.said})`}; git: ${published.targets.git}; OpenTimestamps: ${published.targets.opentimestamps}`);
+    const how = line.anchor ? "signed by the panel's key" : signed.anchor ? "not signed: the panel signed a different head (the record grew in between); the next run signs it" : signed.said;
+    lines.push(`${shop}: ${published.local === "same-day" ? "today's fingerprint is already written" : `fingerprint of entry ${line.seq} written (${how})`}; git: ${published.targets.git}; OpenTimestamps: ${published.targets.opentimestamps}`);
     updateStatus(ctx.dir, shop, now, (s) => { s.fingerprint = { at: now.toISOString(), ok: true, day: line.day, seq: line.seq, head: line.head, signed: line.anchor !== null }; }, false);
   }
   return { ok, lines, results };

@@ -3,6 +3,7 @@
 // number is only ever in a POST body, never in the log.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runBusyMonth } from "../../../templates/commerce/bookings/report/example-month.ts";
@@ -91,5 +92,43 @@ test("the papers of a partner's own shop: one case, a statement by POST, the ide
       assert.equal((await meena.get(path)).status, 404, `${path} for another partner`);
     }
     assert.equal((await meena.post("/shops/glow-salon/papers/statement", { number: refunded.customer }, "/shops")).status, 404);
+  } finally { await b.close(); }
+});
+
+test("the monthly report the panel makes is anchored to the head of the shop's ledger, and main.ts anchor and main.ts paper answer the deployer for real, signed with the panel's key", async () => {
+  const b = await boot({}, { signing: true, key: true });
+  try {
+    const arjun = await b.account("arjun", "builder");
+    b.addShop("glow-salon", { name: "Glow Salon" });
+    b.status("glow-salon", { updatedAt: new Date(NOW).toISOString(), deploy: { state: "applied" } });
+    mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
+    const chain = ledgerEntries(entries, "glow-salon");
+    writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(entries));
+    writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), JSON.stringify(bookings));
+    writeFileSync(join(b.dir, "exports", "glow-salon", "ledger.json"), JSON.stringify(chain));
+
+    assert.equal((await arjun.post("/shops/glow-salon/report", { month: "2026-11" }, "/shops/glow-salon")).status, 303);
+    const written = papers(b, "glow-salon").get("glow-salon", "monthly/2026-11/report-2026-11.json");
+    const report = verifyEnvelopeText(written!);
+    assert.equal(report.unchanged && report.signed, true, report.summary);
+    assert.deepEqual((report.envelope!.document as { anchor: unknown }).anchor, { ledger: "agent-record", tenant: "glow-salon", seq: chain.length, head: chain.at(-1)!.hash });
+
+    const env = { ...process.env, PANEL_SERVER_DIR: b.dir, PANEL_SIGNING_KEY_FILE: b.config.signingKeyFile!, PANEL_DATA_KEY_FILE: b.config.dataKeyFile! };
+    const run = (...args: string[]) => spawnSync(process.execPath, [new URL("../main.ts", import.meta.url).pathname, ...args], { encoding: "utf8", env });
+    const anchored = run("anchor", "glow-salon", "--json");
+    assert.equal(anchored.status, 0, anchored.stderr);
+    const reply = JSON.parse(anchored.stdout.trim().split("\n").at(-1)!) as { ok: boolean; anchor: { checkpoint: { head: string; sig: string } } };
+    assert.equal(reply.ok, true);
+    assert.equal(reply.anchor.checkpoint.head, chain.at(-1)!.hash);
+    assert.match(reply.anchor.checkpoint.sig, /^[0-9a-f]{128}$/);
+    const paper = run("paper", "dispute", "glow-salon", "--case", refunded.id, "--json");
+    assert.equal(paper.status, 0, paper.stderr);
+    const made = JSON.parse(paper.stdout.trim().split("\n").at(-1)!) as { ok: boolean; files: { file: string; text: string }[] };
+    assert.equal(made.files[0].file, `case-${refunded.id}.json`);
+    assert.match(made.files[1].file, new RegExp(`^case-${refunded.id}-(en|hi|ml|kn)\\.html$`));
+    assert.equal(verifyEnvelopeText(made.files[0].text).signed, true);
+    const none = run("paper", "dispute", "no-such-shop", "--case", "b-1", "--json");
+    assert.equal(none.status, 1);
+    assert.match(none.stdout, /There is no shop no-such-shop/);
   } finally { await b.close(); }
 });
