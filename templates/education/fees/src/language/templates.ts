@@ -45,6 +45,11 @@ export interface MessageFacts {
   upiId?: string;
   payee?: string;
   upiCode?: string;
+  /** The licence's service notices (B13): who the owner should contact (the partner who set the centre up), the counts the final stop's notice states, and the free export's last day. */
+  partner?: string;
+  openFeesCount?: number;
+  openCount?: number;
+  licenceDateMs?: number;
 }
 
 export type TemplateId =
@@ -63,7 +68,13 @@ export type TemplateId =
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
   // sent by the approvals relay, not by the agent: the ask for a refund Guard is holding, and the answers to the owner's reply
   | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed"
-  | UpiTemplateId;
+  | UpiTemplateId | LicenceTemplateId;
+
+/**
+ * The licence's wind-down and final stop (plan B13; modules/licence). The parent's line answers a request to pay while online fee payment is paused; the owner's two
+ * are the one service notice for each `paid_through` (WhatsApp utility templates). About the service, never about Geometer's fee; they name who to contact.
+ */
+export type LicenceTemplateId = "fee_paused" | "owner_licence_paused" | "owner_licence_stopped";
 
 /** UPI centres only (B33): the parent pays the centre's own UPI ID and the owner marks it received; refunds are sent by the owner. */
 export type UpiTemplateId =
@@ -78,6 +89,7 @@ type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
 type BaseSet = Record<Exclude<TemplateId, UpiTemplateId>, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
+type LicenceSet = Record<LicenceTemplateId, Template>;
 
 /** A template asks for a value the record does not have: refuse to write the message at all. */
 export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
@@ -386,7 +398,37 @@ const upiKn: UpiSet = {
   owner_fee_upi_refund_marked: (f) => `ಧನ್ಯವಾದ. ಶುಲ್ಕ ${need(f, "dueRef")} ರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಪೋಷಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn }, hi: { ...hi, ...upiHi }, ml: { ...ml, ...upiMl }, kn: { ...kn, ...upiKn } };
+// ---- the licence's wind-down and final stop (plan B13) --------------------------------------------------------------------------------------------------
+// The parent hears that online fee payment is paused and to contact the centre: no promise to collect later. The owner hears once, plainly, and is told who to
+// contact; the final stop's notice says nothing is deleted, what is still open, and until when the free copy of the records can be had. Hindi, Malayalam and
+// Kannada are machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+const partner = (f: MessageFacts) => need(f, "partner");
+const until = (f: MessageFacts) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language);
+const openFees = (f: MessageFacts) => need(f, "openFeesCount");
+const open = (f: MessageFacts) => need(f, "openCount");
+
+const licenceEn: LicenceSet = {
+  fee_paused: (f) => `Online fee payment is paused for now. Please contact ${f.businessName} directly.`,
+  owner_licence_paused: (f) => `Notice: online fee payment for ${f.businessName} is paused for now. Fees already paid, and refunds, still go through. Please contact ${partner(f)} about it.`,
+  owner_licence_stopped: (f) => `Notice: online fee collection for ${f.businessName} has stopped. Nothing is deleted. Fees still open: ${openFees(f)}. Other open items: ${open(f)}. ${partner(f)} can give you the full list and a free copy of all your records until ${until(f)}.`,
+};
+const licenceHi: LicenceSet = {
+  fee_paused: (f) => `ऑनलाइन फ़ीस भुगतान अभी रुका हुआ है। कृपया सीधे ${f.businessName} से संपर्क करें।`,
+  owner_licence_paused: (f) => `सूचना: ${f.businessName} का ऑनलाइन फ़ीस भुगतान अभी रुका हुआ है। जमा हो चुकी फ़ीस और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया ${partner(f)} से संपर्क करें।`,
+  owner_licence_stopped: (f) => `सूचना: ${f.businessName} की ऑनलाइन फ़ीस वसूली बंद हो गई है। कुछ भी मिटाया नहीं गया है। बाकी फ़ीस: ${openFees(f)}। बाकी खुले काम: ${open(f)}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी ${until(f)} तक ${partner(f)} से मिल सकती है।`,
+};
+const licenceMl: LicenceSet = {
+  fee_paused: (f) => `ഓൺലൈൻ ഫീസ് അടയ്ക്കൽ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
+  owner_licence_paused: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ഫീസ് അടയ്ക്കൽ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. അടച്ച ഫീസും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി ${partner(f)}-നെ ബന്ധപ്പെടൂ.`,
+  owner_licence_stopped: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ഫീസ് പിരിവ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള ഫീസുകൾ: ${openFees(f)}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: ${open(f)}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും ${until(f)} വരെ ${partner(f)} നൽകും.`,
+};
+const licenceKn: LicenceSet = {
+  fee_paused: (f) => `ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+  owner_licence_paused: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಾಗಲೇ ಪಾವತಿಸಿದ ಶುಲ್ಕಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು ${partner(f)} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+  owner_licence_stopped: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಶುಲ್ಕಗಳು: ${openFees(f)}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: ${open(f)}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ${until(f)} ವರೆಗೆ ${partner(f)} ನೀಡುತ್ತಾರೆ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn }, hi: { ...hi, ...upiHi, ...licenceHi }, ml: { ...ml, ...upiMl, ...licenceMl }, kn: { ...kn, ...upiKn, ...licenceKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

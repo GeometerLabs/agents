@@ -18,6 +18,12 @@
 // its own store, seen through the same Payments shape, so "look first, write, read back" and "booked only when recorded" hold as they do with Razorpay. What differs is
 // in the functions marked UPI below: the deposit counts only when the owner has marked all of it; a mark after the hold ended never books by itself; and a refund
 // is never sent by the agent: the owner owes it, and the customer hears "sent" only after the owner marks it so.
+//
+// The licence (plan B13; modules/licence). While the shop's lease puts it in its WIND-DOWN, the agent takes no new work: a request to book is answered "online booking
+// is paused, please contact the shop", no hold or deposit link is made, and nothing is kept to do later. Refunds owed, cancellations, reschedules of existing bookings,
+// reminders of existing bookings and payments from links sent earlier go on as every day. In the FINAL STOP the agent also closes the open deposit links (Razorpay;
+// a UPI shop has none) and sends nothing more; payments already made are still recorded and refunds still go through Guard. This is the runtime's own check of the
+// lease: Guard's offline check (`subscription_suspended`) is not built yet.
 import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours } from "./limits.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
@@ -61,6 +67,8 @@ import { hoursOn, serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
+import { LICENCE_RULE, UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -78,6 +86,8 @@ export interface AgentDeps {
    * or null, the customer gets the link, the UPI ID and the amount as text, which is enough to pay. Handed in, so the agent never loads node:zlib (the browser demo has none).
    */
   qrImage?: (text: string) => Promise<string | null>;
+  /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
+  licence?: () => LicenceNow;
 }
 
 export type AgentEvent =
@@ -105,6 +115,7 @@ export function createAgent(deps: AgentDeps): Agent {
   const upiState = upi ? (store.upi ??= emptyUpiState()) : undefined;
   const payments: Payments = upi ? upiPayments(upiState!, upi, clock) : deps.payments;
   const policy: AiPolicy = deps.ai ?? {};
+  const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
   const parseContext = { services: settings.services, languages: settings.languages };
@@ -173,6 +184,7 @@ export function createAgent(deps: AgentDeps): Agent {
     gates: (a, optedOut) => [
       ...(a.to === "customer" && a.reminder ? [checkNoMessageAfterStop({ isReminder: true, bookingConfirmed: a.booking?.state === "confirmed", customerOptedOut: optedOut })] : []),
       ...(a.booking && (a.templates.includes("booked") || a.templates.includes("upi_booked")) ? [checkConfirmOnlyWhenRecorded({ record, booking: a.booking.id, ...(upi ? { depositPaise } : {}) })] : []),
+      ...(licence().state === "stopped" ? [stoppedGate] : []),
     ],
     log: (booking, phone, action, outcome, inputs, more) => log(booking, phone, action, outcome, inputs, more),
     heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
@@ -574,6 +586,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** Hold the slot, create the deposit link, and send the quote. */
   async function proceedToHold(b: Booking, prefix: TemplateId[], shown: Decision[]): Promise<void> {
     const phone = b.customer;
+    if (!licence().takesNewWork) { clearSlot(b); if (b.state !== "enquiry") moveTo(b, "enquiry"); return pausedReply(phone, "hold"); } // nothing held, nothing kept for later
     const held = await tryHold(b);
     if (!held.ok) {
       const slotMs = b.startMs;
@@ -605,7 +618,47 @@ export function createAgent(deps: AgentDeps): Agent {
     await tellCustomer(b, phone, [...prefix, prefix.includes("price_floor") ? "slot_and_link" : "quote_and_link"], { shown: [...shown, ...held.decisions], offer: cancelOrOwner });
   }
 
+  // ---- the licence: no new work in the wind-down, nothing more sent in the final stop ----------------------------------------------------------------------
+
+  const stoppedGate: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: "the shop's licence has reached its final stop, so nothing more is sent from here (the owner's one notice aside); the runtime's own check of the lease" };
+
+  /** A request for new work while online booking is paused: said in the record, answered "please contact the shop", and nothing kept to do later. */
+  async function pausedReply(phone: string, asked: string): Promise<void> {
+    const decision: Decision = { ruleId: LICENCE_RULE, verdict: "block", reason: `online booking is paused: the shop's licence is in its ${licence().state === "stopped" ? "final stop" : "wind-down"}, so no booking, hold or deposit link is made, and nothing is kept to do later (the runtime's own check of the lease)` };
+    log(null, phone, "new_work", "blocked", { asked }, { decisions: [decision], notes: "the customer is told online booking is paused and to contact the shop" });
+    await tellCustomer(null, phone, ["booking_paused"]);
+  }
+
+  /** One record line each time the licence restricts the shop, or stops restricting it. Nothing asked during a wind-down is done when it ends: the customer asks again. */
+  function noteLicence(): void {
+    const l = licence();
+    const now = l.restricted ? l.state : "active";
+    let was = "active";
+    const entries = record.entries();
+    for (let i = entries.length - 1; i >= 0; i--) if (entries[i].action === "licence") { was = entries[i].refs.state ?? "active"; break; }
+    if (now === was) return;
+    const notes = now === "wind_down" ? "The shop's licence is in its wind-down (the lease fleet signed, read on this server): no new booking or deposit link is made, and nothing is kept to do later. Refunds owed, cancellations, existing bookings and payments from links sent earlier go on."
+      : now === "stopped" ? "The shop's licence has reached its final stop: open deposit links are closed and nothing more is sent from here, except the owner's one notice. Payments already made are still recorded and refunds still go through. Nothing is deleted."
+      : "The shop's licence is in order again: new bookings are taken from now on. Nothing asked during the wind-down is done now; a customer who still wants it asks again.";
+    log(null, owner, "licence", "confirmed", { state: now }, { refs: { state: now, ...(l.paidThrough !== null ? { paidThrough: String(l.paidThrough) } : {}) }, notes });
+  }
+
+  /** The final stop, once for each `paid_through`: close every open deposit link at Razorpay through Guard, so no new payment comes in. A UPI shop has none to close. */
+  async function closeLinksAtStop(): Promise<void> {
+    const l = licence();
+    if (l.state !== "stopped" || upi) return;
+    const key = `stop:${l.paidThrough ?? 0}`;
+    for (const b of [...store.bookings.values()]) {
+      if (b.state !== "awaiting_deposit" || !b.linkId) continue;
+      if (record.entries().some((e) => e.booking === b.id && e.action === "cancel_deposit_link" && e.refs.licence === key)) continue;
+      const linkId = b.linkId;
+      const closed = await payments.cancelPaymentLink(linkId).then(() => payments.fetchPaymentLink(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
+      log(b, b.customer, "cancel_deposit_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open deposit link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or Razorpay did not answer); the owner can close it in Razorpay" });
+    }
+  }
+
   async function onBook(phone: string, intent: Intent): Promise<void> {
+    if (!licence().takesNewWork) return pausedReply(phone, "book");
     const language = languageOf(phone);
     const waiting = latestBooking(store, phone, ["awaiting_deposit"]);
     let b = latestBooking(store, phone, ["enquiry", "confirming_details"]);
@@ -1060,8 +1113,8 @@ export function createAgent(deps: AgentDeps): Agent {
         case "owner": return await onTalkToOwner(phone);
         case "keep": return await onKeep(phone);
         case "paid": return await (upi ? onPaidClaim(phone, "button") : tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) }).then(() => undefined));
-        case "greeting": await tellCustomer(null, phone, ["menu"], { offer: servicesOffer(["pick_service"]) }); return;
-        default: await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
+        case "greeting": if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["menu"], { offer: servicesOffer(["pick_service"]) }); return;
+        default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
       }
     } finally {
       await announceButtonMode(); // after the customer has their answer
@@ -1103,6 +1156,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their booking is in (modules/payments/refunds.ts)
     if (upi) await remindOwedRefunds(now);
+    await closeLinksAtStop();
     for (const b of [...store.bookings.values()]) {
       if (b.state === "awaiting_deposit" && b.holdExpiresAt !== undefined && b.holdExpiresAt <= now) await expireHold(b);
       if (b.state !== "confirmed" || b.startMs === undefined || b.endMs === undefined) continue;
@@ -1160,6 +1214,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function handle(event: AgentEvent): Promise<void> {
+    noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
