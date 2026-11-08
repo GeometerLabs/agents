@@ -583,6 +583,31 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `feesShop.messages.ceiling` | ನಿಮ್ಮ ನಿಯಮಗಳ ಪ್ರಕಾರ ತಿಂಗಳಿಗೆ ಗರಿಷ್ಠ 200 ನೆನಪು ಮತ್ತು ರಸೀದಿ ಸಂದೇಶಗಳು ಹೋಗಬಹುದು: 40 ವಿದ್ಯಾರ್ಥಿಗಳು, ಪ್ರತಿಯೊಬ್ಬರಿಗೂ 4 ನೆನಪಿನವರೆಗೆ, ಮತ್ತು ಒಂದು ರಸೀದಿ. | Your rules allow at most 200 reminders and receipts a month: 40 students, up to 4 reminders each, and a receipt. |  |
 | `feesShop.messages.included` | ನಿಮ್ಮ ಯೋಜನೆಯಲ್ಲಿ ತಿಂಗಳಿಗೆ 3000 ಸಂದೇಶಗಳು ಸೇರಿವೆ. | Your plan includes 3000 messages a month. |  |
 | `feesShop.messages.note` | ಪೋಷಕರ ಸ್ವಂತ ಸಂದೇಶಗಳಿಗೆ ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. ಇದು ನಿಮ್ಮ ನಿಯಮಗಳಿಂದ ಬಂದ ಮೇಲಿನ ಮಿತಿ, ಬಿಲ್ ಅಲ್ಲ. | Replies to parents' own messages come on top. This is a ceiling from your rules, not a bill. |  |
+| `ordersShop.summaryMenu` | ಮೆನು ಮತ್ತು ದಿನದ ಸ್ಟಾಕ್ | Menu and daily stock |  |
+| `ordersShop.summaryRules` | ಕೊನೆಯ ಸಮಯಗಳು ಮತ್ತು ಮಿತಿಗಳು | Cut-off times and limits |  |
+| `ordersShop.perDay` | ದಿನಕ್ಕೆ 12 | 12 a day |  |
+| `ordersShop.pickup` | ಪಿಕಪ್ | Pickup |  |
+| `ordersShop.delivery` | ಡೆಲಿವರಿ | Delivery |  |
+| `ordersShop.noDelivery` | ಡೆಲಿವರಿ ಇಲ್ಲ | No delivery |  |
+| `ordersShop.states.enquiry` | ವಿಚಾರಣೆ | Asking |  |
+| `ordersShop.states.awaiting_owner` | ಮಾಲೀಕರಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for the owner |  |
+| `ordersShop.states.awaiting_advance` | ಮುಂಗಡಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for the advance |  |
+| `ordersShop.states.confirmed` | ಖಚಿತವಾಯಿತು | Confirmed |  |
+| `ordersShop.states.expired` | ಕಾಯುವ ಸಮಯ ಮುಗಿಯಿತು | Hold ran out |  |
+| `ordersShop.states.cancelled` | ರದ್ದಾಯಿತು | Cancelled |  |
+| `ordersShop.states.completed` | ಮುಗಿಯಿತು | Done |  |
+| `ordersShop.activity.taken` | ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು | Orders taken |  |
+| `ordersShop.activity.completed` | ಮುಗಿದವು | Done |  |
+| `ordersShop.activity.cancelled` | ರದ್ದಾದವು | Cancelled |  |
+| `ordersShop.activity.holdsRanOut` | ಕಾಯುವ ಸಮಯ ಮುಗಿದವು | Holds that ran out |  |
+| `ordersShop.activity.collected` | ಸಿಕ್ಕ ಮುಂಗಡ | Advance received |  |
+| `ordersShop.activity.toCollect` | ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು | Still to collect at pickup |  |
+| `ordersShop.activity.pickup` | ಪಿಕಪ್ ಆರ್ಡರ್‌ಗಳು | Pickup orders |  |
+| `ordersShop.activity.delivery` | ಡೆಲಿವರಿ ಆರ್ಡರ್‌ಗಳು | Delivery orders |  |
+| `ordersShop.messages.heading` | ಸಂದೇಶಗಳು | Messages |  |
+| `ordersShop.messages.ceiling` | ನಿಮ್ಮ ನಿಯಮಗಳ ಪ್ರಕಾರ ತಿಂಗಳಿಗೆ ಗರಿಷ್ಠ 744 ಸಂದೇಶಗಳು ಹೋಗಬಹುದು: ದಿನಕ್ಕೆ 8 ಆರ್ಡರ್‌ವರೆಗೆ, 31 ದಿನ, ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ 3 ಸಂದೇಶದವರೆಗೆ. | Your rules allow at most 744 messages a month: up to 8 orders a day, for 31 days, and up to 3 messages for each order. |  |
+| `ordersShop.messages.included` | ನಿಮ್ಮ ಯೋಜನೆಯಲ್ಲಿ ತಿಂಗಳಿಗೆ 3000 ಸಂದೇಶಗಳು ಸೇರಿವೆ. | Your plan includes 3000 messages a month. |  |
+| `ordersShop.messages.note` | ಗ್ರಾಹಕರ ಸ್ವಂತ ಸಂದೇಶಗಳಿಗೆ ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. ಇದು ನಿಮ್ಮ ನಿಯಮಗಳಿಂದ ಬಂದ ಮೇಲಿನ ಮಿತಿ, ಬಿಲ್ ಅಲ್ಲ. | Replies to customers' own messages come on top. This is a ceiling from your rules, not a bill. |  |
 | `cost.heading` | ಪ್ರತಿ ತಿಂಗಳು ನಡೆಸಲು ಆಗುವ ವೆಚ್ಚ | What it costs to run, each month |  |
 | `cost.early` | ಆರಂಭಿಕ ಅಂದಾಜು: ನಿಜವಾದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ಇನ್ನೂ ಎಣಿಸಿಲ್ಲ. | Early estimate: no real bookings are counted yet. |  |
 | `cost.fromRecord` | ದಾಖಲೆಯಲ್ಲಿರುವ 38 ಬುಕಿಂಗ್ ನೋಡಿ ಲೆಕ್ಕ ಹಾಕಲಾಗಿದೆ. | Worked out from 38 bookings in the record. |  |
@@ -646,6 +671,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
 | `setup.templateNames.fees` | ತರಗತಿಗಳ ಶುಲ್ಕ ವಸೂಲಿ | Fee collection for classes |  |
+| `setup.templateNames.orders` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಮೊದಲೇ ಆರ್ಡರ್ | Pre-orders with an advance |  |
 | `setup.templateElsewhere` | ಇದನ್ನು ಬಿಲ್ಡರ್ ಪ್ಲಗಿನ್ ಮೂಲಕ ಸಿದ್ಧಪಡಿಸುತ್ತಾರೆ. ಫೋನ್ ಸೆಟಪ್‌ನಲ್ಲಿ ಇದು ಇನ್ನೂ ಇಲ್ಲ. | A builder sets this one up with the plugin. The phone setup does not have it yet. |  |
 | `setup.start` | ಆರಂಭಿಸಿ | Start |  |
 | `setup.progress` | ಹಂತ 2 (ಒಟ್ಟು 5) | Step 2 of 5 |  |
@@ -724,6 +750,57 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.fees.problems.partBad` | ಕನಿಷ್ಠ ಭಾಗಶಃ ಪಾವತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 1 ರಿಂದ ₹1,200 ರವರೆಗೆ (ಅತಿ ಕಡಿಮೆ ಮಾಸಿಕ ಶುಲ್ಕ) ಇರಬೇಕು. | The least part payment must be a whole number of rupees from 1 to ₹1,200 (the cheapest monthly fee). |  |
 | `setup.fees.problems.waiverBad` | ರಿಯಾಯಿತಿ ಮಿತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ರಿಂದ ₹1,200 ರವರೆಗೆ (ಅತಿ ಕಡಿಮೆ ಮಾಸಿಕ ಶುಲ್ಕ) ಇರಬೇಕು. | The waiver limit must be a whole number of rupees from 0 to ₹1,200 (the cheapest monthly fee). |  |
 | `setup.fees.problems.refundBad` | ರೀಫಂಡ್ ಮಿತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ಅಥವಾ ಹೆಚ್ಚು ಇರಬೇಕು. | The refund limit must be a whole number of rupees, 0 or more. |  |
+| `setup.orders.steps.business` | ಅಂಗಡಿ ಮತ್ತು ಅದರ ಮೆನು | The shop and its menu |  |
+| `setup.orders.steps.rules` | ಕೊನೆಯ ಸಮಯ, ಸ್ಲಾಟ್‌ಗಳು ಮತ್ತು ಮಿತಿಗಳು | Cut-off, slots and limits |  |
+| `setup.orders.business.name` | ಅಂಗಡಿಯ ಹೆಸರು | The shop's name |  |
+| `setup.orders.business.address` | ವಿಳಾಸ (ಬೇಕಿದ್ದರೆ) | Address (optional) |  |
+| `setup.orders.business.menu` | ಮೆನು | Menu |  |
+| `setup.orders.business.menuHelp` | ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಂದು ವಸ್ತು: ಅದರ ಹೆಸರು, ರೂಪಾಯಿಗಳಲ್ಲಿ ಬೆಲೆ, ಮತ್ತು ಒಂದು ದಿನಕ್ಕೆ ಗರಿಷ್ಠ ಎಷ್ಟು ಮಾಡುತ್ತೀರಿ. ಉದಾಹರಣೆ: Veg thali, 120, 12 | One item on each line: its name, its price in rupees, and the most you make in a day. For example: Veg thali, 120, 12 |  |
+| `setup.orders.rules.cutoffDays` | ಆರ್ಡರ್ ಎಷ್ಟು ದಿನ ಮೊದಲು ಮುಚ್ಚಬೇಕು (0 ಎಂದರೆ ಅದೇ ದಿನ) | Orders close this many days before (0 is the same day) |  |
+| `setup.orders.rules.cutoffTime` | ಮುಚ್ಚುವ ಸಮಯ | Closing time |  |
+| `setup.orders.rules.cutoffHelp` | 24 ಗಂಟೆಯ ಸಮಯದಲ್ಲಿ, ಉದಾಹರಣೆ 20:00. | In 24-hour time, like 20:00. |  |
+| `setup.orders.rules.pickup` | ಪಿಕಪ್ ಸ್ಲಾಟ್‌ಗಳು | Pickup slots |  |
+| `setup.orders.rules.slotsHelp` | ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಂದು ಸ್ಲಾಟ್: ಸಮಯ, ಬೇಕಿದ್ದರೆ ಒಂದು ಹೆಸರು. ಉದಾಹರಣೆ: 12:00-13:00, lunch | One slot on each line: the times, then a name if you like. For example: 12:00-13:00, lunch |  |
+| `setup.orders.rules.delivery` | ಡೆಲಿವರಿ ಸ್ಲಾಟ್‌ಗಳು (ಡೆಲಿವರಿ ಇಲ್ಲದಿದ್ದರೆ ಖಾಲಿ ಬಿಡಿ) | Delivery slots (leave empty if you do not deliver) |  |
+| `setup.orders.rules.deliveryHelp` | ಅದೇ ರೀತಿ, ಉದಾಹರಣೆ: 12:30-13:30, lunch | The same way, for example: 12:30-13:30, lunch |  |
+| `setup.orders.rules.area` | ನೀವು ಡೆಲಿವರಿ ಮಾಡುವ ಸ್ಥಳಗಳು | Places you deliver to |  |
+| `setup.orders.rules.areaHelp` | ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ. ಇವುಗಳಲ್ಲಿ ಯಾವುದೇ ಸ್ಥಳದ ಹೆಸರಿಲ್ಲದ ವಿಳಾಸಕ್ಕೆ ಡೆಲಿವರಿ ಮಾಡುವುದಿಲ್ಲ. | Separate them with commas. An address that names none of them is not delivered to. |  |
+| `setup.orders.rules.advance` | ಖಚಿತಪಡಿಸಲು ಗ್ರಾಹಕರು ಎಷ್ಟು ಕೊಡಬೇಕು | What the customer pays to confirm |  |
+| `setup.orders.rules.advancePart` | ಆರ್ಡರ್‌ನ ಒಂದು ಭಾಗ | A part of the order |  |
+| `setup.orders.rules.advanceFull` | ಪೂರ್ತಿ ಆರ್ಡರ್ | All of the order |  |
+| `setup.orders.rules.percent` | ಭಾಗ (%) | Part to pay (%) |  |
+| `setup.orders.rules.hold` | ಮುಂಗಡಕ್ಕಾಗಿ ಆರ್ಡರ್ ಎಷ್ಟು ನಿಮಿಷ ಕಾಯಬೇಕು | Minutes an order is held for the advance |  |
+| `setup.orders.rules.perDay` | ಒಂದು ದಿನಕ್ಕೆ ಗರಿಷ್ಠ ಆರ್ಡರ್‌ಗಳು | Most orders for one day |  |
+| `setup.orders.rules.perOrder` | ಒಂದು ಆರ್ಡರ್‌ನಲ್ಲಿ ಗರಿಷ್ಠ ವಸ್ತುಗಳು | Most items in one order |  |
+| `setup.orders.rules.daysAhead` | ಎಷ್ಟು ದಿನ ಮುಂದಿನ ಆರ್ಡರ್ ತೆಗೆದುಕೊಳ್ಳಬಹುದು (0 ಎಂದರೆ ಇಂದು ಮಾತ್ರ) | How many days ahead an order may be (0 is today only) |  |
+| `setup.orders.rules.window` | ಮುಂಗಡ ವಾಪಸ್ ಪಡೆಯಲು ಸ್ಲಾಟ್‌ಗೆ ಕನಿಷ್ಠ ಎಷ್ಟು ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಬೇಕು | Cancel at least this many hours before the slot to get the advance back |  |
+| `setup.orders.rules.refund` | ಏಜೆಂಟ್ ತಾನಾಗಿ ರೀಫಂಡ್ ಮಾಡಬಹುದಾದ ಗರಿಷ್ಠ ಮೊತ್ತ (₹) | Most the agent may refund by itself (₹) |  |
+| `setup.orders.rules.refundHelp` | ಇದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್ WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತದೆ. | A refund above this waits for your OK on WhatsApp. |  |
+| `setup.orders.rules.approveOver` | ಈ ಮೊತ್ತಕ್ಕಿಂತ ದೊಡ್ಡ ಆರ್ಡರ್‌ಗೆ ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕು (₹, ಎಂದೂ ಬೇಡವಾದರೆ 0) | Orders above this total wait for your OK (₹, 0 for never) |  |
+| `setup.orders.rules.approveHelp` | ಅಂತಹ ಆರ್ಡರ್ ಮೊದಲು ನಿಮ್ಮ ಬಳಿಗೆ ಬರುತ್ತದೆ, ನಿಮ್ಮ ಒಪ್ಪಿಗೆಯ ನಂತರವೇ ಗ್ರಾಹಕರಿಂದ ಹಣ ಕೇಳಲಾಗುತ್ತದೆ. | Such an order comes to you first, and the customer is asked to pay only after your OK. |  |
+| `setup.orders.problems.noItems` | ಮೆನುವಿಗೆ ಕನಿಷ್ಠ ಒಂದು ವಸ್ತು ಸೇರಿಸಿ. | Add at least one item to the menu. |  |
+| `setup.orders.problems.itemBad` | ಸಾಲು 2: ಹೆಸರು, ಬೆಲೆ ಮತ್ತು ದಿನದ ಸ್ಟಾಕ್ ಅನ್ನು ಅಲ್ಪವಿರಾಮ ಹಾಕಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ Veg thali, 120, 12. | Line 2: write the name, the price and the daily stock with commas between them, like Veg thali, 120, 12. |  |
+| `setup.orders.problems.priceBad` | ಸಾಲು 2: ಬೆಲೆಯನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ, 1 ರಿಂದ ಶುರು, ಉದಾಹರಣೆಗೆ 120. | Line 2: write the price as a whole number of rupees, from 1, like 120. |  |
+| `setup.orders.problems.stockBad` | ಸಾಲು 2: ಒಂದು ದಿನಕ್ಕೆ ಗರಿಷ್ಠ ಎಷ್ಟು ಮಾಡುತ್ತೀರಿ ಎಂಬುದನ್ನು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ, 1 ರಿಂದ ಶುರು, ಉದಾಹರಣೆಗೆ 12. | Line 2: write the most you make in a day as a whole number, from 1, like 12. |  |
+| `setup.orders.problems.itemTwice` | ಸಾಲು 3: "Veg thali" ಮೇಲಿನ ಮೆನುವಿನಲ್ಲಿ ಈಗಾಗಲೇ ಇದೆ. | Line 3: "Veg thali" is already on the menu above. |  |
+| `setup.orders.problems.tooManyItems` | ಇದು 30 ವಸ್ತುಗಳಿಗಿಂತ ಹೆಚ್ಚು. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | That is more than 30 items. Write to support. A person answers. |  |
+| `setup.orders.problems.cutoffDaysBad` | ಆರ್ಡರ್ ಎಷ್ಟು ದಿನ ಮೊದಲು ಮುಚ್ಚಬೇಕು ಎಂಬುದನ್ನು 0 ರಿಂದ 7 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ. | Write how many days before orders close as a whole number from 0 to 7. |  |
+| `setup.orders.problems.cutoffTimeBad` | ಮುಚ್ಚುವ ಸಮಯವನ್ನು 24 ಗಂಟೆಯ ಸಮಯದಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 20:00. | Write the closing time in 24-hour time, like 20:00. |  |
+| `setup.orders.problems.noPickup` | ಕನಿಷ್ಠ ಒಂದು ಪಿಕಪ್ ಸ್ಲಾಟ್ ಸೇರಿಸಿ. | Add at least one pickup slot. |  |
+| `setup.orders.problems.pickupBad` | ಪಿಕಪ್ ಸ್ಲಾಟ್ 2: ಸಮಯವನ್ನು 12:00-13:00 ಹೀಗೆ ಬರೆಯಿರಿ, ಬೇಕಿದ್ದರೆ ಒಂದು ಹೆಸರು. ಅದು ಶುರುವಾದ ನಂತರ ಮುಗಿಯಬೇಕು. | Pickup slot 2: write the times like 12:00-13:00, then a name if you like. It must end after it starts. |  |
+| `setup.orders.problems.deliveryBad` | ಡೆಲಿವರಿ ಸ್ಲಾಟ್ 2: ಸಮಯವನ್ನು 12:30-13:30 ಹೀಗೆ ಬರೆಯಿರಿ, ಬೇಕಿದ್ದರೆ ಒಂದು ಹೆಸರು. ಅದು ಶುರುವಾದ ನಂತರ ಮುಗಿಯಬೇಕು. | Delivery slot 2: write the times like 12:30-13:30, then a name if you like. It must end after it starts. |  |
+| `setup.orders.problems.tooManySlots` | ಒಂದು ಪಟ್ಟಿಯಲ್ಲಿ 8 ಸ್ಲಾಟ್‌ಗಳಿಗಿಂತ ಹೆಚ್ಚು ಇರಬಾರದು. | That is more than 8 slots in one list. |  |
+| `setup.orders.problems.deliveryNeedsArea` | ಡೆಲಿವರಿ ಸ್ಲಾಟ್‌ಗಳಿವೆ ಆದರೆ ಸ್ಥಳಗಳಿಲ್ಲ. ಡೆಲಿವರಿ ಮಾಡುವ ಸ್ಥಳಗಳನ್ನು ಬರೆಯಿರಿ, ಅಥವಾ ಡೆಲಿವರಿ ಸ್ಲಾಟ್‌ಗಳನ್ನು ಖಾಲಿ ಮಾಡಿ. | You have delivery slots but no places. Write where you deliver, or empty the delivery slots. |  |
+| `setup.orders.problems.areaNeedsSlots` | ಸ್ಥಳಗಳಿವೆ ಆದರೆ ಡೆಲಿವರಿ ಸ್ಲಾಟ್ ಇಲ್ಲ. ಒಂದು ಡೆಲಿವರಿ ಸ್ಲಾಟ್ ಸೇರಿಸಿ, ಅಥವಾ ಸ್ಥಳಗಳನ್ನು ಖಾಲಿ ಮಾಡಿ. | You have places but no delivery slot. Add a delivery slot, or empty the places. |  |
+| `setup.orders.problems.percentBad` | ಕೊಡಬೇಕಾದ ಭಾಗ 1 ರಿಂದ 99 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. ಪೂರ್ತಿ ಆರ್ಡರ್ ಬೇಕಿದ್ದರೆ "ಪೂರ್ತಿ ಆರ್ಡರ್" ಆಯ್ಕೆ ಮಾಡಿ. | The part to pay must be a whole number from 1 to 99. To take all of the order, choose "All of the order". |  |
+| `setup.orders.problems.holdBad` | ಆರ್ಡರ್ ಕಾಯುವ ನಿಮಿಷಗಳು 5 ರಿಂದ 1440 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The minutes an order is held must be a whole number from 5 to 1440. |  |
+| `setup.orders.problems.perDayBad` | ಒಂದು ದಿನದ ಗರಿಷ್ಠ ಆರ್ಡರ್‌ಗಳು 1 ರಿಂದ 10000 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The most orders for one day must be a whole number from 1 to 10000. |  |
+| `setup.orders.problems.perOrderBad` | ಒಂದು ಆರ್ಡರ್‌ನ ಗರಿಷ್ಠ ವಸ್ತುಗಳು 1 ರಿಂದ 100 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The most items in one order must be a whole number from 1 to 100. |  |
+| `setup.orders.problems.daysAheadBad` | ಎಷ್ಟು ದಿನ ಮುಂದೆ ಎಂಬುದು 0 ರಿಂದ 60 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | How many days ahead must be a whole number from 0 to 60. |  |
+| `setup.orders.problems.windowBad` | ರದ್ದು ಮಾಡುವ ಗಂಟೆಗಳು 0 ರಿಂದ 336 ರ ನಡುವಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | The cancellation hours must be a whole number from 0 to 336. |  |
+| `setup.orders.problems.refundBad` | ರೀಫಂಡ್ ಮಿತಿ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ಅಥವಾ ಹೆಚ್ಚು ಇರಬೇಕು. | The refund limit must be a whole number of rupees, 0 or more. |  |
+| `setup.orders.problems.approveBad` | ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಬೇಕಾದ ಆರ್ಡರ್ ಮೊತ್ತ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, 0 ಅಥವಾ ಹೆಚ್ಚು ಇರಬೇಕು. | The order total for your OK must be a whole number of rupees, 0 or more. |  |
+| `setup.orders.problems.orderTooBig` | ಒಂದು ಆರ್ಡರ್ ₹12,000 ವರೆಗೆ ಆಗಬಹುದು (ಅತಿ ಹೆಚ್ಚು ವಸ್ತುಗಳು, ಅತಿ ದುಬಾರಿ ವಸ್ತುವಿನದು), ಇದು ಒಂದು ದಿನದಲ್ಲಿ ವಾಪಸ್ ಕೊಡಬಹುದಾದ ₹50,000 ಕ್ಕಿಂತ ಹೆಚ್ಚು. ಒಂದು ಆರ್ಡರ್‌ನ ವಸ್ತುಗಳು ಅಥವಾ ಬೆಲೆ ಕಡಿಮೆ ಮಾಡಿ. | One order could come to ₹12,000 (the most items, all of your dearest item), which is more than the ₹50,000 that can be refunded in a day. Lower the most items in one order, or the price. |  |
 | `setup.languagesStep.main` | ನಿಮ್ಮ ಗ್ರಾಹಕರ ಮುಖ್ಯ ಭಾಷೆ | Main language of your customers |  |
 | `setup.languagesStep.also` | ನಿಮ್ಮ ಗ್ರಾಹಕರು ಬರೆಯುವ ಬೇರೆ ಭಾಷೆಗಳನ್ನೂ ಟಿಕ್ ಮಾಡಿ | Also tick any others your customers write in |  |
 | `setup.languagesStep.hint` | ಏಜೆಂಟ್ ಮುಖ್ಯ ಭಾಷೆಯಲ್ಲಿ ಶುರು ಮಾಡುತ್ತದೆ, ಮತ್ತು ಪ್ರತಿ ಗ್ರಾಹಕರಿಗೆ ಅವರು ಬರೆದ ಭಾಷೆಯಲ್ಲೇ ಉತ್ತರಿಸುತ್ತದೆ. | The agent starts in the main language and answers each customer in the one they write in. |  |
@@ -852,6 +929,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.variants.calendar` | ಕ್ಯಾಲೆಂಡರ್ ಸಮಸ್ಯೆ | a calendar problem |  |
 | `inbox.variants.owner` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ | for the owner's answer |  |
 | `inbox.variants.agent` | ಮತ್ತೆ ಕಳುಹಿಸಲು | to be sent again |  |
+| `inbox.variants.big_order` | ದೊಡ್ಡ ಆರ್ಡರ್ | a big order |  |
 | `inbox.actions.recheck_payment` | ಹಣವನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the payment again |  |
 | `inbox.actions.retry_booking` | ಬುಕಿಂಗ್ ಅನ್ನು ಮತ್ತೆ ಖಚಿತಪಡಿಸಲು ಪ್ರಯತ್ನಿಸಿ | Try to confirm the booking again |  |
 | `inbox.actions.ask_owner_again` | ಮಾಲೀಕರನ್ನು ಮತ್ತೆ ಕೇಳಿ | Ask the owner again |  |
