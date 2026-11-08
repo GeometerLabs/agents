@@ -17,7 +17,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseLock } from "../../modules/runtime/config.ts";
 import { KINDS, kindFor, kindNames } from "./kinds.ts";
-import { parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
+import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
 
@@ -76,6 +76,11 @@ export interface ServerConfig {
   ports: { http: number; https: number };
   /** Seconds between heartbeats. Fleet's contract says 60; a test makes it shorter. */
   heartbeatSeconds: number;
+  /**
+   * Fleet's licence lease (B13): the public half of fleet's lease key (or keys, while one is rotated), 64 hex characters each, as fleet's `licence key show` prints
+   * them. Pinned here at `init --licence-key`, never taken from a lease. Left out: no lease is kept and no shop is ever restricted by one (bundle/lib/licence.ts).
+   */
+  licence?: { keys: string[] };
 }
 
 export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.2-pathways.1";
@@ -153,6 +158,9 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 1) { errors.push(`"limits.${key}" must be a whole number above zero.`); return fallback; }
     return v;
   };
+  const licence = isObj(o.licence) ? o.licence : undefined;
+  const licenceKeys = licence && Array.isArray(licence.keys) ? licence.keys : undefined;
+  if (o.licence !== undefined && (!licenceKeys || licenceKeys.length === 0 || licenceKeys.length > 4 || !licenceKeys.every((k) => typeof k === "string" && /^[0-9a-f]{64}$/u.test(k)))) errors.push('"licence" must say {"keys": ["<64 hex characters>"]}: the public half of fleet\'s licence key, as fleet\'s `licence key show` prints it (one to four keys).');
   const fleet = isObj(o.fleet) ? o.fleet : undefined;
   if (o.fleet !== undefined && (!fleet || typeof fleet.url !== "string" || typeof fleet.keyFile !== "string")) errors.push('"fleet" must say {"url": "https://...", "keyFile": "<a file that holds this server\'s deployment key>"}.');
   if (fleet && typeof fleet.url === "string" && !/^https:\/\//u.test(fleet.url) && !/^http:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)/u.test(fleet.url)) errors.push('"fleet.url" must be https:// (the deployment key is a bearer secret).');
@@ -169,6 +177,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     limits: { razorpayLinksPerHour: limit("razorpayLinksPerHour", 60), whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
     panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own" },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
+    ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
   if (config.backup) {
@@ -233,7 +242,7 @@ export interface ShopFolder {
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
   preparedBy: string;
-  preparedBySource: "report.json" | "owner.json" | "default";
+  preparedBySource: "assignment.json" | "report.json" | "owner.json" | "default";
   /** Fleet's last word on whether this shop's builder or partner has the Innovator badge (fleet/<shop>.json). False when fleet has said nothing readable. */
   innovator: boolean;
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
@@ -287,7 +296,8 @@ export function readShop(dir: string, name: string): ShopFolder {
   const reportFile = parseReportFile(reportText);
   if (reportText !== undefined && !reportFile) problems.push('report.json is not usable: it must be {"schema": 1, "preparedBy": "Divya, local partner"}, the name on one line, up to 120 characters.');
   const ownerFile = parseOwner(optional("owner.json"));
-  const by = resolvePreparedBy({ ...(reportFile ? { report: reportFile } : {}), ...(ownerFile ? { owner: ownerFile } : {}) });
+  const assignment = parseAssignmentFile(optional("assignment.json"));
+  const by = resolvePreparedBy({ ...(reportFile ? { report: reportFile } : {}), ...(ownerFile ? { owner: ownerFile } : {}), ...(assignment ? { assignment } : {}) });
   const lockText = read("pathway.lock");
   let lock: { pathway: string; version: string } | undefined;
   if (lockText) { try { lock = parseLock(lockText); } catch (e) { problems.push((e as Error).message); } }

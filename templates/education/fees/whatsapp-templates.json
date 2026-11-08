@@ -1664,6 +1664,710 @@
     ]
   },
   {
+    "name": "owner_fee_upi_check",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "जाँचने के लिए UPI भुगतान: अभिभावक {{1}} से {{2}} की {{3}} की फीस ({{4}}) के {{5}} माँगे गए हैं। जब यह आपके UPI ऐप में दिखे, तो \"मिल गया\" दबाएँ या \"received {{6}}\" लिखकर भेजें। अगर कोई और रकम आई है, तो \"received {{7}}\" के बाद रकम लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "नवंबर 2026",
+              "f-3",
+              "₹1,200",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_check",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "UPI payment to check: parent {{1}} has been asked for {{2}} for {{3}}'s {{4}} fee (fee {{5}}). When it shows in your UPI app, tap Received or reply \"received {{6}}\". If a different amount came, reply \"received {{7}}\" and the amount.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹1,200",
+              "Aarav Sharma",
+              "Nov 2026",
+              "f-3",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_check",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പരിശോധിക്കാനുള്ള UPI പണമടവ്: രക്ഷിതാവ് {{1}}-നോട് {{2}}-ന്റെ {{3}} ഫീസിനായി ({{4}}) {{5}} ചോദിച്ചിട്ടുണ്ട്. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{6}}\" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ \"received {{7}}\" എന്നതിന് ശേഷം തുക എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "നവംബർ 2026",
+              "f-3",
+              "₹1,200",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_check",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಪೋಷಕರು {{1}} ಅವರಿಗೆ {{2}} ಅವರ {{3}} ಶುಲ್ಕಕ್ಕಾಗಿ ({{4}}) {{5}} ಕೇಳಲಾಗಿದೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{6}}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ \"received {{7}}\" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "ನವೆಂಬರ್ 2026",
+              "f-3",
+              "₹1,200",
+              "P4XR9T",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_parent_says_paid",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "अभिभावक {{1}} कह रहे हैं कि उन्होंने {{2}} की {{3}} की फीस ({{4}}) भर दी है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो \"मिल गया\" दबाएँ या \"received {{5}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "नवंबर 2026",
+              "f-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_parent_says_paid",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Parent {{1}} says they have paid {{2}}'s {{3}} fee (fee {{4}}). A screenshot is not proof: check your UPI app. When it is there, tap Received or reply \"received {{5}}\".",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "Nov 2026",
+              "f-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_parent_says_paid",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "രക്ഷിതാവ് {{1}} പറയുന്നു: {{2}}-ന്റെ {{3}} ഫീസ് ({{4}}) അടച്ചു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ \"കിട്ടി\" അമർത്തുക, അല്ലെങ്കിൽ \"received {{5}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "നവംബർ 2026",
+              "f-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_parent_says_paid",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೋಷಕರು {{1}} ಹೇಳುತ್ತಿದ್ದಾರೆ: {{2}} ಅವರ {{3}} ಶುಲ್ಕ ({{4}}) ಪಾವತಿಸಿದ್ದೇವೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ \"ಬಂದಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"received {{5}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "Aarav Sharma",
+              "ನವೆಂಬರ್ 2026",
+              "f-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_to_send",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "वापस भेजना है: अभिभावक {{1}} (फीस {{2}}) को UPI से {{3}}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद \"रिफंड भेज दिया\" दबाएँ या \"refunded {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "f-3",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_to_send",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Refund to send: {{1}} by UPI to parent {{2}} (fee {{3}}). The agent never sends money. When you have sent it, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "+919811111111",
+              "f-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_to_send",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "തിരികെ അയക്കേണ്ടത്: രക്ഷിതാവ് {{1}}-ന് (ഫീസ് {{2}}) UPI വഴി {{3}}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം \"റീഫണ്ട് അയച്ചു\" അമർത്തുക, അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "f-3",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_to_send",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಪೋಷಕರು {{1}} (ಶುಲ್ಕ {{2}}) ಅವರಿಗೆ UPI ಮೂಲಕ {{3}}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "f-3",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "याद दिलाना: अभिभावक {{1}} (फीस {{2}}) को {{3}} अभी भी वापस देना है। UPI से भेजने के बाद \"रिफंड भेज दिया\" दबाएँ या \"refunded {{4}}\" लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "f-3",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reminder: {{1}} is still owed back to parent {{2}} (fee {{3}}). When you have sent it by UPI, tap Refund sent or reply \"refunded {{4}}\".",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "+919811111111",
+              "f-3",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഓർമ്മപ്പെടുത്തൽ: രക്ഷിതാവ് {{1}}-ന് (ഫീസ് {{2}}) {{3}} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം \"റീഫണ്ട് അയച്ചു\" അമർത്തുക, അല്ലെങ്കിൽ \"refunded {{4}}\" എന്ന് മറുപടി അയക്കുക.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "f-3",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_upi_refund_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನೆನಪಿಸುವುದು: ಪೋಷಕರು {{1}} (ಶುಲ್ಕ {{2}}) ಅವರಿಗೆ {{3}} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ \"ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ\" ಒತ್ತಿ, ಅಥವಾ \"refunded {{4}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "f-3",
+              "₹1,200",
+              "P4XR9T"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_coming",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक {{1}} की फीस के {{2}} UPI से आपको वापस भेजेंगे। जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_coming",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner will send {{1}} back to you by UPI for {{2}}'s fee. I'll message you when they mark it sent.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_coming",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉടമ {{1}}-ന്റെ ഫീസിൽ നിന്ന് {{2}} UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_coming",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಲೀಕರು {{1}} ಅವರ ಶುಲ್ಕದ {{2}} ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_marked_sent",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मालिक ने {{1}} की फीस ({{2}}) का आपका {{3}} रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें।",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "f-3",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_marked_sent",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The owner has marked your {{1}} refund for {{2}}'s fee ({{3}}) as sent by UPI. Please check your UPI app.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200",
+              "Aarav Sharma",
+              "f-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_marked_sent",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഉടമ {{1}}-ന്റെ ഫീസിന്റെ ({{2}}) നിങ്ങളുടെ {{3}} റീഫണ്ട് UPI വഴി അയച്ചതായി രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "f-3",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_upi_refund_marked_sent",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಲೀಕರು {{1}} ಅವರ ಶುಲ್ಕದ ({{2}}) ನಿಮ್ಮ {{3}} ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Aarav Sharma",
+              "f-3",
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_paused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} का ऑनलाइन फ़ीस भुगतान अभी रुका हुआ है। जमा हो चुकी फ़ीस और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया {{2}} से संपर्क करें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_paused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Notice: online fee payment for {{1}} is paused for now. Fees already paid, and refunds, still go through. Please contact {{2}}.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_paused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ഫീസ് അടയ്ക്കൽ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. അടച്ച ഫീസും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി {{2}}-നെ ബന്ധപ്പെടൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_paused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಾಗಲೇ ಪಾವತಿಸಿದ ಶುಲ್ಕಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು {{2}} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_stopped",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} की ऑनलाइन फ़ीस वसूली बंद हो गई है। कुछ भी मिटाया नहीं गया है। बाकी फ़ीस: {{2}}। बाकी खुले काम: {{3}}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {{4}} तक {{5}} से मिल सकती है।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "4",
+              "1",
+              "शुक्रवार, 5 मार्च",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_stopped",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Notice: online fee collection for {{1}} has stopped. Nothing is deleted. Fees still open: {{2}}. Other open items: {{3}}. {{4}} can give you the full list and a free copy of all your records until {{5}}.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "4",
+              "1",
+              "Divya, local partner",
+              "Fri 5 Mar"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_stopped",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ഫീസ് പിരിവ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള ഫീസുകൾ: {{2}}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {{3}}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {{4}} വരെ {{5}} നൽകും.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "4",
+              "1",
+              "വെള്ളി, 5 മാർച്ച്",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_fee_service_stopped",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಶುಲ್ಕಗಳು: {{2}}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {{3}}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {{4}} ವರೆಗೆ {{5}} ನೀಡುತ್ತಾರೆ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "4",
+              "1",
+              "ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "fee_monthly_report",
     "language": "hi",
     "category": "UTILITY",
@@ -1896,6 +2600,262 @@
       {
         "type": "BODY",
         "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · फरवरी 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 विद्यार्थी)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 12 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nMarked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · Feb 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 students)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 12 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ഫെബ്രുവരി 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 വിദ്യാർത്ഥികൾ)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ಫೆಬ್ರವರಿ 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 ವಿದ್ಯಾರ್ಥಿಗಳು)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · फरवरी 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 विद्यार्थी)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 12 बातें (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Monthly report: {{1}}\nMarked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · Feb 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 students)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 12 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre · ഫെബ്രുവരി 2027",
+              "₹1,20,000",
+              "₹1,500",
+              "₹18,000 (3 വിദ്യാർത്ഥികൾ)",
+              "96",
+              "₹2,000",
+              "3",
+              "2",
+              "1",
+              "5",
+              "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "Divya, local partner"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_monthly_report_upi_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
         "example": {
           "body_text": [
             [

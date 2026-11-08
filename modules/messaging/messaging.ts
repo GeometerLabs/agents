@@ -19,6 +19,11 @@ export interface InboundMessage {
    */
   voiceNote?: true;
   /**
+   * True when the person sent a picture (a screenshot of a payment, say) instead of words. Like a voice note, only the fact is carried: the picture is never fetched,
+   * looked at or kept, and no media id travels with the message. A picture is never proof of anything to the agent.
+   */
+  image?: true;
+  /**
    * Set when the customer tapped a button or a list row instead of writing: the id that row had when we sent it (language/interactive.ts), and which kind it was.
    * `text` is the row's title, as WhatsApp sends it. The agent looks the id up and reads no words, so no model is asked.
    */
@@ -28,13 +33,15 @@ export interface InboundMessage {
 export interface OutboundMessage {
   id: string;
   to: string;
-  kind: "text" | "template" | "interactive" | "document";
+  kind: "text" | "template" | "interactive" | "document" | "image";
   /** For an interactive message, the body and then each option on its own line (interactiveText): what the outgoing check read. */
   text: string;
   /** Interactive only: the buttons or the list that went with the body. */
   interactive?: InteractiveMessage;
   /** Document only: the file WhatsApp was asked to fetch and show (`text` is its caption, or its file name). */
   document?: DocumentMessage;
+  /** Image only: the picture WhatsApp was asked to fetch and show (`text` is its caption). */
+  image?: ImageMessage;
   templateName?: string;
   language?: Language;
   sentAt: number;
@@ -64,6 +71,19 @@ export function documentProblem(doc: DocumentMessage): string | null {
   return null;
 }
 
+/**
+ * A picture sent by its address, like a document: WhatsApp fetches `link` itself (https, reachable from the internet) and shows it with the caption. A PNG or a
+ * JPEG of at most 5 MB. A session message, like free text: only while the person's 24-hour window is open. (A UPI QR code goes this way: modules/payments/upi.)
+ */
+export interface ImageMessage { link: string; caption?: string }
+
+/** Why an image cannot be sent, in plain words, or null. Checked before anything goes out (WhatsApp: https link, a caption up to 1024 characters). */
+export function imageProblem(image: ImageMessage): string | null {
+  if (!/^https:\/\/[^\s]+$/u.test(image.link)) return "the link must start with https:// and hold no spaces";
+  if (image.caption !== undefined && (image.caption.length > 1024 || image.caption.trim() === "")) return "the caption must be 1 to 1024 characters, or left out";
+  return null;
+}
+
 export interface Messaging {
   /** Free-form text. Only allowed while the customer's 24-hour window is open. */
   sendText(to: string, text: string): Promise<OutboundMessage>;
@@ -76,6 +96,8 @@ export interface Messaging {
   sendInteractive?(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
   /** A file by its address (see DocumentMessage). Like free text, only while the customer's 24-hour window is open. Optional: a provider without it is simply not asked. */
   sendDocument?(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
+  /** A picture by its address (see ImageMessage). Like free text, only while the person's 24-hour window is open. Optional: a provider without it is not asked, and the words go alone. */
+  sendImage?(to: string, image: ImageMessage): Promise<OutboundMessage>;
   /** Did this person message us in the last 24 hours? */
   isWindowOpen(to: string): Promise<boolean>;
   getMessage(id: string): Promise<OutboundMessage | null>;
@@ -83,13 +105,14 @@ export interface Messaging {
 
 /** lostReply: the message goes out, the reply is lost. error: the provider refuses. */
 export type MessagingFault = "lostReply" | "error";
-export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument";
+export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument" | "sendImage";
 
 export interface FakeMessaging extends Messaging {
   sendInteractive(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
   sendDocument(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
-  /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. */
-  receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" } }): InboundMessage;
+  sendImage(to: string, image: ImageMessage): Promise<OutboundMessage>;
+  /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. `image`: they sent a picture (its words, if any, are `text`). */
+  receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" }; image?: boolean }): InboundMessage;
   outbox(): OutboundMessage[];
   sentTo(number: string): OutboundMessage[];
   isOptedOut(number: string): boolean;
@@ -128,7 +151,7 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
     receive(from, text, options = {}) {
       lastInbound.set(from, clock.now());
       if (text.trim().toUpperCase() === "STOP") optedOut.add(from);
-      return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now(), ...(options.reply ? { reply: options.reply } : {}) };
+      return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now(), ...(options.reply ? { reply: options.reply } : {}), ...(options.image ? { image: true as const } : {}) };
     },
 
     async sendText(to, text) {
@@ -157,6 +180,17 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
       if (problem) throw new ApiError(400, `The document cannot be sent: ${problem}.`);
       const m = store({ to, kind: "document", text: doc.caption ?? doc.filename, document: { ...doc } });
       if (fault === "lostReply") throw new TimeoutError("send document");
+      return { ...m };
+    },
+
+    async sendImage(to, image) {
+      const fault = faults.take("sendImage");
+      if (fault === "error") throw new ApiError(500, "The provider could not take the message.");
+      if (!windowOpen(to)) throw new WindowClosedError();
+      const problem = imageProblem(image);
+      if (problem) throw new ApiError(400, `The image cannot be sent: ${problem}.`);
+      const m = store({ to, kind: "image", text: image.caption ?? "", image: { ...image } });
+      if (fault === "lostReply") throw new TimeoutError("send image");
       return { ...m };
     },
 

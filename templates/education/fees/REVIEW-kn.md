@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (31)
+## 1. Messages to the parent (36)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -43,8 +43,13 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_told_owner` | The parent tapped Talk to the owner: they are told the owner has been asked to message them | ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ. | I have told the owner that you would like to talk. They will message you here. |  |
 | `fee_couldnt_tell_owner` | The parent tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ಕ್ಷಮಿಸಿ, ಈಗ ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Sorry, I could not reach the owner just now. Please try again in a few minutes. |  |
 | `voice_note` | The parent sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ; ನನಗೆ ಇನ್ನೂ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I cannot listen to voice notes yet. |  |
+| `fee_upi_qr_caption` | UPI centre: the words under the QR picture | Aarav Sharma ಅವರ ಶುಲ್ಕಕ್ಕಾಗಿ (f-3) Bright Tuition Centre ಗೆ UPI ಮೂಲಕ ₹1,200 ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. | Scan to pay ₹1,200 by UPI to Bright Tuition Centre for Aarav Sharma's fee (f-3). |  |
+| `fee_upi_claim` | UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid) | ಧನ್ಯವಾದ. Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದ ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ. | Thank you. The owner will look for your payment for Aarav Sharma's Nov 2026 fee in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
+| `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ ₹1,200 ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
+| `fee_upi_refund_sent` | UPI centre: the owner marked the refund sent (only then is the parent told) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ (f-3) ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹1,200 refund for Aarav Sharma's fee (f-3) as sent by UPI. Please check your UPI app. |  |
+| `fee_paused` | The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later | ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Bright Tuition Centre ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online fee payment is paused for now. Please contact Bright Tuition Centre directly. |  |
 
-## 2. Messages to the owner (24)
+## 2. Messages to the owner (35)
 
 Most owner messages and the reminders and receipts to parents are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -74,6 +79,17 @@ Most owner messages and the reminders and receipts to parents are also WhatsApp 
 | `owner_approval_closed` | A refund that needed two people was approved by the others before this person answered: their code is no longer needed | ಸೂಚನೆ: +919811111111 ಅವರ ₹1,200 ರೀಫಂಡ್‌ಗೆ ಇತರರು ಅನುಮತಿ ನೀಡಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಈಗ ನಿಮ್ಮ ಉತ್ತರ ಬೇಕಿಲ್ಲ. ಧನ್ಯವಾದ. | The ₹1,200 refund for +919811111111 has been approved by the others, so your answer is no longer needed. Thank you. |  |
 | `owner_approval_refused` | A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it | ಸೂಚನೆ: +919811111111 ಅವರ ₹1,200 ರೀಫಂಡ್ ಅನ್ನು ಅನುಮತಿ ನೀಡುವವರಲ್ಲಿ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು. | The ₹1,200 refund for +919811111111 was refused by one of the people who approve refunds, so it will not be sent, and they will be told. |  |
 | `owner_refund_settled` | A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again | ರೀಫಂಡ್ ಆಗಿದೆ: +919811111111 ಅವರ ₹1,200. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ. | Refund done: ₹1,200 for +919811111111. The person who set up your agent checked it and marked it as made, so it is not sent a second time. |  |
+| `owner_fee_upi_expected` | UPI centre: tells the owner what payment to look for in their UPI app, with the one-use code | ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಪೋಷಕರು +919811111111 ಅವರಿಗೆ Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕಕ್ಕಾಗಿ (f-3) ₹1,200 ಕೇಳಲಾಗಿದೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ "received P4XR9T" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ. | UPI payment to check: parent +919811111111 has been asked for ₹1,200 for Aarav Sharma's Nov 2026 fee (fee f-3). When it shows in your UPI app, tap Received or reply "received P4XR9T". If a different amount came, reply "received P4XR9T" and the amount. |  |
+| `owner_fee_upi_claim` | UPI centre: the parent says they paid (a screenshot is not proof): the owner is asked to look | ಪೋಷಕರು +919811111111 ಹೇಳುತ್ತಿದ್ದಾರೆ: Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕ (f-3) ಪಾವತಿಸಿದ್ದೇವೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Parent +919811111111 says they have paid Aarav Sharma's Nov 2026 fee (fee f-3). A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received P4XR9T". |  |
+| `owner_fee_upi_marked` | UPI centre: the answer to the owner's Received, the fee paid | ಧನ್ಯವಾದ. ಶುಲ್ಕ f-3 ರ ₹1,200 ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ. | Thank you. ₹1,200 for fee f-3 is marked paid by you. |  |
+| `owner_fee_upi_part` | UPI centre: the answer to the owner's Received, part paid, with the code for the rest | ಧನ್ಯವಾದ. ಶುಲ್ಕ f-3 ರ ₹1,200 ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ. ₹1,200 ಇನ್ನೂ ಬಾಕಿ ಇದೆ; ಅದು ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Thank you. ₹1,200 for fee f-3 is marked paid by you. ₹1,200 is still to pay; when it arrives, tap Received or reply "received P4XR9T". |  |
+| `owner_fee_upi_already` | UPI centre: the owner used a code that was already used: counted once | ಆ ಪಾವತಿ ಈಗಾಗಲೇ ದಾಖಲಾಗಿದೆ. ಅದನ್ನು ಒಂದೇ ಬಾರಿ ಎಣಿಸಲಾಗುತ್ತದೆ. | That payment is already marked. It is counted once. |  |
+| `owner_fee_upi_unknown` | UPI centre: the owner used a code the agent never gave | ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಆ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಸಂದೇಶದಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ. | I don't know that code. Please use the code in my latest message about the payment. |  |
+| `owner_fee_upi_refund_owed` | UPI centre: a refund the owner must send from their UPI app, with the code | ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಪೋಷಕರು +919811111111 (ಶುಲ್ಕ f-3) ಅವರಿಗೆ UPI ಮೂಲಕ ₹1,200. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Refund to send: ₹1,200 by UPI to parent +919811111111 (fee f-3). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_fee_upi_refund_reminder` | UPI centre: a reminder of a refund still owed (once a day, three times at most) | ನೆನಪಿಸುವುದು: ಪೋಷಕರು +919811111111 (ಶುಲ್ಕ f-3) ಅವರಿಗೆ ₹1,200 ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Reminder: ₹1,200 is still owed back to parent +919811111111 (fee f-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_fee_upi_refund_marked` | UPI centre: the answer to the owner's Refund sent | ಧನ್ಯವಾದ. ಶುಲ್ಕ f-3 ರ ₹1,200 ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಪೋಷಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Thank you. The ₹1,200 refund for fee f-3 is marked sent, and the parent has been told. |  |
+| `owner_licence_paused` | The one notice to the owner when the centre's licence winds down: online fee payment is paused, who to contact. Never about money | ಸೂಚನೆ: Bright Tuition Centre-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಾಗಲೇ ಪಾವತಿಸಿದ ಶುಲ್ಕಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, local partner ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local partner. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | ಸೂಚನೆ: Bright Tuition Centre-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಶುಲ್ಕಗಳು: 4. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: 1. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್ ವರೆಗೆ Divya, local partner ನೀಡುತ್ತಾರೆ. | Notice: online fee collection for Bright Tuition Centre has stopped. Nothing is deleted. Fees still open: 4. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -255,8 +271,13 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `languageName.en` | ಇಂಗ್ಲಿಷ್ | English |  |
 | `languageName.ml` | ಮಲಯಾಳಂ | Malayalam |  |
 | `languageName.kn` | ಕನ್ನಡ | Kannada |  |
+| `upiLabel.collected` | ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು | Marked paid by owner |  |
+| `upiLabel.givenBack` | ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್ | Refunds marked sent by owner |  |
+| `upiLabel.notChecked` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) | automatic payment checking (with UPI you mark each payment) |  |
+| `notTested.upi-not-automatic` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ | automatic payment checking: with UPI the owner marks each payment received |  |
+| `notTested.real-upi` | ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ) | a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment) |  |
 | `notTested.cash-and-bank-transfers` | ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ (ಹಾಗೆ ಹೇಳಿದ ಪೋಷಕರನ್ನು ಮಾಲೀಕರ ಬಳಿ ಕಳುಹಿಸಲಾಗುತ್ತದೆ; ಏನನ್ನೂ "ಪಾವತಿಯಾಗಿದೆ" ಎಂದು ಗುರುತಿಸುವುದಿಲ್ಲ) | Fees paid in cash or by bank transfer (a parent who says so is sent to the owner; nothing is marked paid) |  |
-| `notTested.payments-outside-razorpay` | Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು (UPI ಮಾಡ್ಯೂಲ್ ಇನ್ನೂ ಮಾಡಿಲ್ಲ) | Payments outside Razorpay (the UPI module is not built) |  |
+| `notTested.payments-outside-razorpay` | Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು (ಈ ಸೆಂಟರ್ Razorpay ಮೂಲಕ ಪಡೆಯುತ್ತದೆ) | Payments outside Razorpay (this centre takes Razorpay) |  |
 | `notTested.real-whatsapp` | ನಿಜವಾದ WhatsApp | Real WhatsApp |  |
 | `notTested.real-razorpay` | ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್) | Real Razorpay (test mode or live) |  |
 | `notTested.webhook-signatures` | ವೆಬ್‌ಹುಕ್ ಸಹಿಗಳು | Webhook signatures |  |
@@ -337,6 +358,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.madeOn` | ಮಾಡಿದ ದಿನ | Made on |  |
 | `page.signedBy` | ಸಹಿ ಮಾಡಿದವರು | Signed by |  |
 | `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
+| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
 | `page.notAGrade` | ಇವು ದಾಖಲೆಯಲ್ಲಿ ಕಾಣುವ ವಿಷಯಗಳ ಎಣಿಕೆ. ಇವು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ನೀಡುವುದಿಲ್ಲ. | These are counts of what the record shows. They do not grade the agent. |  |
 | `page.period` | ಅವಧಿ | Period |  |

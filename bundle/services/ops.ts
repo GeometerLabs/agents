@@ -6,10 +6,11 @@
 //     admin <guard-service> <METHOD> <path> [json]     one admin call, answered as {"status":200,"body":...}
 //     observe                                          everything the heartbeat reads, as JSON (what `geometer status` shows)
 //     stop <shop> <on|off> <by> <reason>               the kill switch on all three of the shop's Guards, and the shop's agent on the model Guard
+//     recover <shop> <request-id> <case> <action>      ask the shop's runtime to look again or ask again about one booking or fee (POST /internal/recover); answered as {"status":200}
 //     issue-approver <shop> <ttl-seconds>              a fresh reading credential for the shop's relay, printed once on stdout
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
-import { readUsageBaseline, writeAnswerFiles, writeUsageBaseline } from "../lib/fleet.ts";
+import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 import { buildHeartbeat, sendHeartbeat } from "./heartbeat.ts";
@@ -88,8 +89,24 @@ export function readUsage(statusFile: string | undefined): UsageTotals | undefin
     if (typeof u !== "object" || u === null || typeof u.byStep !== "object" || u.byStep === null || typeof u.whatsapp !== "object" || u.whatsapp === null) return undefined;
     const n = [u.messages, u.byStep.rules, u.byStep.decision, u.byStep.model, u.modelMicroInr, u.whatsapp.service, u.whatsapp.utility, u.whatsapp.marketing, u.whatsapp.estMicroInr];
     if (!n.every((v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) return undefined;
-    const unpriced = typeof u.unpriced === "number" && Number.isSafeInteger(u.unpriced) && u.unpriced >= 0 ? { unpriced: u.unpriced as number } : {}; // optional: an older status file has none
-    return { messages: n[0], byStep: { rules: n[1], decision: n[2], model: n[3] }, modelMicroInr: n[4], ...unpriced, whatsapp: { service: n[5], utility: n[6], marketing: n[7], estMicroInr: n[8], estimated: u.whatsapp.estimated === true } };
+    const ok = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
+    const unpriced = ok(u.unpriced) ? { unpriced: u.unpriced } : {}; // optional: an older status file has none
+    // the badges' counts, optional the same way: each is taken only whole, never half a language list
+    const reports = ok(u.reportsSent) ? { reportsSent: u.reportsSent } : {};
+    const r = u.repliesByLanguage;
+    const replies = typeof r === "object" && r !== null && ok(r.hi) && ok(r.en) && ok(r.ml) && ok(r.kn) ? { repliesByLanguage: { hi: r.hi, en: r.en, ml: r.ml, kn: r.kn } } : {};
+    return { messages: n[0], byStep: { rules: n[1], decision: n[2], model: n[3] }, modelMicroInr: n[4], ...unpriced, whatsapp: { service: n[5], utility: n[6], marketing: n[7], estMicroInr: n[8], estimated: u.whatsapp.estimated === true }, ...reports, ...replies };
+  } catch { return undefined; }
+}
+
+/** The unfinished-work counts by kind the 15-minute export wrote into a shop's status file (`obligations.counts`). Only counts are taken; anything else is unknown. */
+export function readObligations(statusFile: string | undefined): Record<string, number> | undefined {
+  if (!statusFile) return undefined;
+  try {
+    const o = (JSON.parse(readFileSync(statusFile, "utf8")) as { obligations?: { counts?: unknown } | null }).obligations?.counts;
+    if (typeof o !== "object" || o === null || Array.isArray(o)) return undefined;
+    const entries = Object.entries(o as Record<string, unknown>);
+    return entries.every(([, v]) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0) ? Object.fromEntries(entries) as Record<string, number> : undefined;
   } catch { return undefined; }
 }
 
@@ -102,7 +119,8 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
   ]);
   const backups = readBackups(c.statusFile);
   const usage = readUsage(c.statusFile);
-  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}), ...(usage ? { usage } : {}) };
+  const obligations = readObligations(c.statusFile);
+  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}), ...(usage ? { usage } : {}), ...(obligations ? { obligations } : {}) };
 }
 
 type WithCounts = AdminStatus & { counts?: { decisions?: number } };
@@ -136,6 +154,16 @@ export async function stopShop(config: OpsConfig, shop: string, on: boolean, by:
   return { shop, on, reason: why, results: results.map((r) => ({ guard: r.guard, status: r.status })) };
 }
 
+/** Ask a shop's runtime to run a recovery step (the to-do list's buttons). The runtime saves it like any event; its agent does it through Guard and the normal limits. */
+export async function recoverCase(config: OpsConfig, shop: string, requestId: string, caseId: string, action: string, fetchFn: typeof fetch = fetch): Promise<{ shop: string; status: number }> {
+  const c = config.shops[shop];
+  if (!c) throw new Error(`no shop ${shop} on this server`);
+  try {
+    const r = await fetchFn(`${c.runtimeUrl.replace(/\/+$/u, "")}/internal/recover`, { method: "POST", headers: { authorization: `Bearer ${readSecret(c.internalTokenFile)}`, "content-type": "application/json" }, body: JSON.stringify({ id: requestId, case: caseId, action }), signal: timeout() });
+    return { shop, status: r.status };
+  } catch { return { shop, status: 0 }; }
+}
+
 async function main(argv: string[], config: OpsConfig): Promise<number> {
   const [command, ...args] = argv;
   const out = (v: unknown) => console.log(JSON.stringify(v));
@@ -166,11 +194,15 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     }, new Date(), fetch, skip));
     return 0;
   }
+  if (command === "recover") {
+    try { out(await recoverCase(config, args[0], args[1], args[2], args[3])); return 0; } catch (e) { console.error((e as Error).message); return 2; }
+  }
   if (command === "stop") { out(await stopShop(config, args[0], args[1] !== "off", args[2] ?? "someone", args.slice(3).join(" "))); return 0; }
   if (command === "issue-approver") {
     const c = config.shops[args[0]] ?? config.ownAgents?.[args[0]];
     if (!c) { console.error(`no shop or agent ${args[0]}`); return 2; }
-    const g = c.guards.find((x) => x.id === "guard-razorpay")!;
+    const g = c.guards.find((x) => x.id === "guard-razorpay");
+    if (!g) { console.error(`${args[0]} has no Razorpay Guard (a UPI shop has none), so there is no approvals relay to give a credential to`); return 2; }
     const r = await adminCall(g, "POST", "/admin/approvers", { id: `relay-${args[0]}`, roles: ["shop-owner"], ttl_seconds: Number(args[1] ?? 604_800), note: "the approvals relay's reading credential" });
     const token = (r.body as { token?: string }).token;
     if (r.status !== 200 || !token) { console.error(`Guard did not issue a credential (HTTP ${r.status})`); return 1; }
@@ -205,6 +237,8 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
         writeUsageBaseline(config.fleetDir, state.usageBaseline, Object.keys(config.shops));
         // fleet's answer, for the shops in it; no answer (an older fleet) leaves each shop's file as it was: keep the last mode, never "normal"
         if (r.answer) writeAnswerFiles(config.fleetDir, [...Object.keys(config.shops), ...Object.keys(config.ownAgents ?? {})], r.answer, now);
+        // the signed licence lease, as it came: the deployer checks it with the pinned key and keeps it only if it is good and newer (lib/licence.ts). Ops trusts nothing in it.
+        if (r.lease) writeLeaseInbox(config.fleetDir, r.lease);
       } catch (e) { console.error(`could not write ${config.fleetDir}: ${(e as Error).message}`); }
     }
   } else if (r.problem !== state.lastProblem) { state.lastProblem = r.problem ?? ""; console.error(`heartbeat not accepted: ${state.lastProblem}`); }

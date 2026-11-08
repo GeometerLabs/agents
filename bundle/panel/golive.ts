@@ -6,6 +6,7 @@
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
 import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
+import { moduleOf } from "../../modules/payments/upi/settings.ts";
 import { kindFor } from "../lib/kinds.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
@@ -45,6 +46,8 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
   function targetsFor(shop: string): ConnectionTargets | undefined {
     if (!config.guardUrl) return undefined;
     const meta = shops.meta(shop);
+    // A UPI shop (B33) has no Razorpay account: nothing to check, no key to pin. A shop with no payment block is a Razorpay shop, as before.
+    const upi = moduleOf(shops.settings(shop)?.payment) === "upi";
     const runtime = shops.runtime(shop);
     const pins = shops.pins(shop);
     const wa = guardUrlFor(config, shop, "whatsapp") as string;
@@ -53,7 +56,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     return {
       ...(agentToken ? { agentToken } : {}),
       whatsapp: { baseUrl: wa, phoneNumberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" },
-      razorpay: { baseUrl: rz, ...(meta.razorpay?.keyId ? { keyId: meta.razorpay.keyId } : {}), expectedMode: meta.razorpay?.mode ?? "live", ...(pins?.razorpay?.keyId ? { pinnedKeyId: pins.razorpay.keyId } : {}) },
+      ...(upi ? {} : { razorpay: { baseUrl: rz, ...(meta.razorpay?.keyId ? { keyId: meta.razorpay.keyId } : {}), expectedMode: meta.razorpay?.mode ?? "live", ...(pins?.razorpay?.keyId ? { pinnedKeyId: pins.razorpay.keyId } : {}) } }),
       ...(hasCalendar ? { calendar: { baseUrl: guardUrlFor(config, shop, "calendar") as string, calendarId: String(runtime?.services?.calendar?.calendarId ?? "") } } : {}),
     };
   }

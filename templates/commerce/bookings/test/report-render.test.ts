@@ -3,7 +3,7 @@
 // against the amounts the record holds.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { NOT_TESTED } from "../crash-test/not-tested.ts";
+import { NOT_TESTED, UPI_NOT_TESTED } from "../crash-test/not-tested.ts";
 import { MONTH_NAMES, formatInr } from "../../../../modules/language/format.ts";
 import { glowSalon } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -132,7 +132,7 @@ test("the not-tested and not-counted lists are always on the page, in the shop's
     assert.ok(page.includes(s.notTested["no-go-live-certificate"]), `${language}: this report was given no go-live certificate, and says so in the list`);
     assert.ok(ownerText(report, language).split("\n")[4].includes(String(report.notTested.length + report.notCounted.length - 2)));
   }
-  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 5, "the hand check's list, and the five ways the checks on this shop's own settings are or are not shown (test/report-go-live.test.ts)");
+  assert.ok(new Set(Object.keys(STRINGS.en.notTested)).size === NOT_TESTED.length + 5 + UPI_NOT_TESTED.length, "the hand check's list, the five ways the checks on this shop's own settings are or are not shown (test/report-go-live.test.ts), and a UPI shop's two lines (B33)");
 });
 
 test("a monthly report that is not told what the go-live checks ran on says so, for Glow Salon and for any other shop; it no longer claims they ran on Glow Salon", async () => {
@@ -155,7 +155,7 @@ test("every language renders a self-contained page: same numbers, no script, no 
     const html = reportPage(seal(report), language);
     assert.ok(html.startsWith("<!doctype html>") && html.includes('<meta charset="utf-8">') && html.includes("width=device-width") && html.includes(`<html lang="${languagesOf(language)[0]}">`));
     for (const forbidden of ["<script", "<link", "<img", "<iframe", "url(", "@import", "src=", "href="]) assert.ok(!html.includes(forbidden), `${language} page has ${forbidden}`);
-    assert.ok(!/https?:|\/\/[a-z]/i.test(html), `${language} page names an address`);
+    assert.ok(!/https?:|\/\/[a-z]/i.test(html.replace(/https:\/\/geometer\.dev\/verify\/#sha256:[0-9a-f]{64}/g, "")), `${language} page names an address other than the printed check link`);
     assert.ok(html.includes("default-src 'none'"), "a content policy forbids everything but its own style");
     for (const l of languagesOf(language)) {
       const s = STRINGS[l];
@@ -176,7 +176,7 @@ test("the page lists each limit, the digests, the entries' fingerprints and the 
   const some = report.record.rows[100];
   assert.ok(html.includes(some.digest.slice(7, 23)) && html.includes(`<code>${some.action}</code>`));
   assert.ok(html.includes("<code>confirm_booking</code>") && html.includes("Set up by") && html.includes("Divya, local partner"));
-  assert.ok(html.includes("/verify/") && html.includes("Not signed"));
+  assert.ok(html.includes("https://geometer.dev/verify/#sha256:") && html.includes("<svg") && html.includes("Not signed"));
   assert.ok(!/\+91\d/.test(html), "no phone number on the page");
 });
 

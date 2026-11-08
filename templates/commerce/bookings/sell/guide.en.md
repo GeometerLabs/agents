@@ -139,6 +139,17 @@ Answer your phone, and reply the same day.
 
 > "Yes. It is an AI that only does bookings and deposits, inside your rules. It doesn't chat about anything else."
 
+### "How do my customers pay me?"
+
+> "By UPI, straight to your own UPI ID. The customer gets a QR picture and a pay link with the exact amount and the booking code. The money comes to you, not to us, and there is no gateway fee. When you see it in your UPI app, you tap "Received" on WhatsApp. Only then is the booking made."
+
+Say this, word for word: "No booking without your confirmation; every refund tracked."
+
+- A customer's screenshot is not proof. The helper tells them the owner will confirm.
+- A hold that you never confirm is released when its time runs out.
+- You send each refund from your own UPI app. The helper keeps the list of refunds owed and reminds you. It tells the customer "sent" only after you mark it done.
+- A shop that has, or wants, its own Razorpay account can use Razorpay instead: it confirms by itself and refunds within your limit. The shop opens that account itself. Razorpay's fee applies only then.
+
 ## 6. Price
 
 Three payments, three different people. Keep them apart.
@@ -151,7 +162,7 @@ Three payments, three different people. Keep them apart.
 | The shop | You | The monthly service, Business (a starting point; you decide) | ₹999 to ₹1,499 |
 | The shop | You | Setup for Basic, once. You keep all of it. | ₹999 to ₹1,999 |
 | The shop | You | Setup for Business, once. You keep all of it. | ₹1,999 to ₹2,999 |
-| The shop | Razorpay | A fee on each deposit | about 2% plus GST |
+| The shop | Razorpay | A fee on each deposit | about 2% plus GST (only if the shop chooses Razorpay) |
 | As you agree with the shop | WhatsApp, at cost, from your prepaid balance | Message fees | about ₹100 to ₹300 per shop per month |
 
 1. **Geometer's plan: Basic ₹99 or Business ₹299 per live shop per month, before GST.** A shop counts for a month when it was live on 15 or more days. Basic holds bookings, reminders, prices and hours, no money moves, and includes 1,000 customer messages a month. Business adds deposits, refunds, the owner's OK on refunds above the limit and the monthly report, and includes 3,000 messages. A Bookings shop that takes a deposit is Business; one where no money moves is Basic. A shop with several workflows or branches is Operations, from ₹999 and 10,000 messages: ask Geometer's support before you quote it. You pay nothing to join: no joining fee, no kit, no paid training. The plan starts when a shop goes live.
@@ -159,7 +170,7 @@ Three payments, three different people. Keep them apart.
 3. **The first 100 builders and partners are Innovators.** They get 40% off any plan, locked for as long as they stay, for up to 25 shops: Basic ₹59, Business ₹179. They also get an Innovator badge and a vote on the next template. Running on your own server, with your own AI key and WhatsApp account, costs half the plan price.
 4. **The shop's price: a starting point; you decide.** For Basic, ₹399 to ₹599 a month and a setup of ₹999 to ₹1,999. For Business, ₹999 to ₹1,499 a month and a setup of ₹1,999 to ₹2,999. The setup is all yours. What is left each month is the shop's price minus Geometer's plan and anything you pass on.
 5. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
-6. **Tell the shop about Razorpay's fee:** "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins.
+6. **Tell the shop about Razorpay's fee:** "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins. This applies only if the shop chooses Razorpay: on UPI there is no gateway fee.
 7. **When to take money:** until Geometer tells you your town is ready, don't take the setup fee or a first month. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
 8. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make, not even as an example. Geometer doesn't either.
 
@@ -179,17 +190,20 @@ Three payments, three different people. Keep them apart.
 | "Nothing can go wrong with your WhatsApp." | It depends on the account. | "I check your WhatsApp first. If it can't keep your number and app, we don't go ahead." |
 | "You'll make ₹X a month selling this." | Nobody can say how much anyone will make. | "The shop pays you, and you set your price." |
 | "Introduce me to a friend and get a discount." | No rewards for introductions, ever. | "Would you introduce me to one shop owner you know?" |
+| "The payment is checked automatically." | With UPI, nothing checks the payment for the owner. The owner sees the money in their own UPI app and taps "Received". | "No booking without your confirmation; every refund tracked." |
 
 ## 8. The setup visit
 
 Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner.
+
+**How the shop gets paid.** UPI is the default: customers pay the shop's own UPI ID, and the shop needs no gateway account. Ask the owner for the UPI ID and the name that shows on it. Type both carefully, then read them back to the owner. Nothing checks a UPI ID for you, so one wrong letter sends the money to someone else. Then show the owner the "Received" button on WhatsApp. Use Razorpay only if the shop has, or wants, its own account.
 
 - [ ] **The WhatsApp check.** Open the shop's WhatsApp with the owner.
   - It must be the WhatsApp Business app, and the shop keeps its number and its app.
   - Ask how old the account is. If it is too new, the helper can't connect yet: agree a date to check again, and don't take the setup fee.
   - Tell the owner: open the app at least once a week, don't uninstall it, and link the other devices again afterwards.
 - [ ] **Share the calendar together.** On your laptop, not the phone: the owner's Google Calendar, Settings and sharing, Share with specific people. Add the address Geometer gives you, with "Make changes to events". It takes about 2 minutes. If the shop uses a paper diary, make a Google Calendar first and add the next 2 weeks together.
-- [ ] **The shop's own Razorpay account.** Deposits go straight to the shop, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. It may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes minutes, or up to 4 working days.
+- [ ] **The shop's own Razorpay account.** Only if the shop chooses Razorpay. Deposits go straight to the shop, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. It may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes minutes, or up to 4 working days.
 - [ ] **The limits, in the owner's words.** Ask, write down, read back:
 
   | Limit | Ask | Example (Glow Salon) |
@@ -204,7 +218,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 - [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Give back ₹200?". The owner answers "approve b-1" or "deny b-1". Practise one together.
 - [ ] **One test booking with test money.** From your own phone, book, pay a test deposit, see it in the owner's calendar, then cancel. Nothing real is paid.
 - [ ] **The go-live certificate, read together.** Read every line aloud in the owner's language, including "Not checked". It says the checks were run by hand on practice services, using this shop's own prices, hours and limits, and it lists what was not checked. If some checks could not be run on this shop's settings, it says so. Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
-- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, the WhatsApp message fees, whether the deposit is refundable or counts against the bill (the shop's accountant decides), cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet.
+- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, the WhatsApp message fees, whether the deposit is refundable or counts against the bill (the shop's accountant decides), cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet. On UPI there is no gateway fee; Razorpay's fee applies only if the shop chooses Razorpay.
 
 ## 9. The first month
 
@@ -212,6 +226,8 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
    - Be there, or on the phone, for the first real booking.
    - For 7 days, look at the record every day. You are the alert for now.
    - At the end of the week, ask: "Did it say anything you would not have said?" A limit gets wider only when the owner says so, and it is written down.
+   - With UPI, a customer's screenshot is not proof. The helper tells them the owner will confirm; the owner taps "Received" after seeing the money in their own UPI app.
+   - Check that refunds owed are being sent: the owner sends each one from their own UPI app and marks it done.
 2. **End of the month: read the first report together.** It is 5 lines on WhatsApp, with a page behind it. Read every line, including the mistakes and "Not checked". If there is a mistake, you say it first.
 3. **Ask for one introduction.** "Do you know another shop owner who takes bookings on WhatsApp? Would you introduce me?" Ask only after the owner has seen the report and is happy. Never offer a reward, a discount or a gift for it.
 4. **Keep checking in.** A shop that is still paying at month 3 is the real result.
@@ -221,11 +237,11 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 1. **Stop the agent first.** In the pilot you stop it by hand, because the stop button is not built yet: learn how before your first visit. The owner can also disconnect it from their phone (section 5).
 2. **Call the owner before they find out.** "Something went wrong with [what]. I have stopped the helper. Here is what happened and what I am doing. Your own WhatsApp works as normal."
 3. **Look at the record.** Find the action, what was confirmed, and which limit said what. "Show what we did" shows it.
-4. **Fix it, check it again, then switch it on.** If a customer was charged wrongly, sit with the owner while they refund it from their own Razorpay account.
+4. **Fix it, check it again, then switch it on.** If a customer was charged wrongly, sit with the owner while they refund it from their own Razorpay account. With UPI, the owner sends the refund from their own UPI app, and the helper tells the customer "sent" only after the owner marks it done.
 5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's support the same day.
 
 You are the shop's named, accountable person. Your name is on the report and the certificate. Don't blame the software, and don't say "it won't happen again".
 
 ## 11. Be honest about what's true today
 
-As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and Geometer tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this.
+As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and Geometer tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this. UPI is built as a payment option: the owner marks each payment paid and sends each refund. It is not checked automatically, and it has not run in a live shop.

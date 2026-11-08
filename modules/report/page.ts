@@ -2,6 +2,7 @@
 // font, image or link), green and white with amber for what was not tested. Every value that reaches the page is escaped by the caller with `esc`.
 import type { Language } from "../language/languages.ts";
 import type { Envelope } from "./sign.ts";
+import { verifyLink, verifyQrSvg } from "./verify-link.ts";
 
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
@@ -39,6 +40,10 @@ details{margin:1.2rem 0;border:1px solid var(--line);border-radius:10px;padding:
 summary{cursor:pointer;font-weight:600;color:var(--g9);padding:.3rem 0}
 .seal{border:2px solid var(--g7);border-radius:12px;padding:.6rem 1rem;margin:1rem 0}
 .seal .code{font-size:1.6rem;font-weight:700;letter-spacing:.08em;color:var(--g9)}
+.seal{display:flex;flex-wrap:wrap;gap:1rem;align-items:center}
+.seal .qr{flex:0 0 auto;width:9.5rem}
+.seal .qr svg{display:block;width:100%;height:auto;border:1px solid var(--line)}
+.seal .words{flex:1 1 14rem;min-width:0}
 @media print{.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}details{border:0}.doc{break-after:page}}
 `;
 
@@ -68,14 +73,14 @@ export const table = (head: { text: string; n?: boolean }[], rows: string[][]): 
 export const list = (items: string[]): string => `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
 
 /** The words the verification block needs; every template's strings carry them under `page`. */
-export interface SealWords { checkHeading: string; code: string; digest: string; signedBy: string; notSigned: string; signatureNote: string }
+export interface SealWords { checkHeading: string; code: string; digest: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string }
 
 /** The verification block every report and certificate carries: the code, the full digest, and what a signature does and does not show. */
 export function sealBlock(words: SealWords, envelope: Envelope, extra: [string, string][] = []): string {
   const rows: [string, string][] = [...extra, [words.digest, envelope.digest]];
-  const where = `/verify/${envelope.code}`;
+  const link = verifyLink(envelope);
   return `<h2>${esc(words.checkHeading)}</h2>
-<div class="seal"><div class="small">${esc(words.code)}</div><div class="code">${esc(envelope.code)}</div><div class="mono">${esc(where)}</div></div>
+<div class="seal"><div class="qr">${verifyQrSvg(envelope, words.scanToCheck)}</div><div class="words"><div class="small">${esc(words.code)}</div><div class="code">${esc(envelope.code)}</div><div class="mono">${esc(link)}</div><p class="small">${esc(words.scanToCheck)}</p></div></div>
 <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd class="mono">${esc(v)}</dd>`).join("")}<dt>${esc(words.signedBy)}</dt><dd class="mono">${esc(envelope.signature ? envelope.signature.keyId : words.notSigned)}</dd></dl>
 <p class="small">${esc(words.signatureNote)}</p>`;
 }

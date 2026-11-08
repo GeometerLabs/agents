@@ -13,6 +13,7 @@ import type { PanelConfig } from "../config.ts";
 import { makeInviteLink, openStores, startPanel } from "../server.ts";
 import { createDocuments } from "../documents.ts";
 import type { RunningPanel } from "../server.ts";
+import { createAccounts } from "../accounts.ts";
 import type { Role } from "../accounts.ts";
 
 export const NOW = Date.parse("2026-11-04T10:00:00+05:30");
@@ -131,6 +132,12 @@ export class Browser {
     return { status: res.status, text, plain: text.replace(/&#39;/gu, "'").replace(/&quot;/gu, '"').replace(/&lt;/gu, "<").replace(/&gt;/gu, ">").replace(/&amp;/gu, "&"), headers: res.headers, location: res.headers.get("location") ?? undefined, cookies };
   }
   get(path: string, extra: Record<string, string> = {}) { return this.req("GET", path, undefined, extra); }
+  /** GET a file (a download): the bytes, not text. */
+  async bytes(path: string): Promise<{ status: number; body: Buffer; headers: Headers }> {
+    const cookie = [...this.jar].map(([k, v]) => `${k}=${v}`).join("; ");
+    const res = await fetch(this.base + path, { redirect: "manual", headers: { ...(cookie ? { cookie } : {}), ...this.headers } });
+    return { status: res.status, body: Buffer.from(await res.arrayBuffer()), headers: res.headers };
+  }
   /** POST a form carrying the token found on `from` (a page of this panel that has a form). */
   async post(path: string, form: Record<string, string>, from: string = path): Promise<Reply> {
     const token = tokenOf((await this.get(from)).text);
@@ -141,4 +148,11 @@ export class Browser {
 /** The papers the panel made for a shop, read through its own store (they are sealed there when the panel has a data key). */
 export function papers(b: Boot, shop: string) {
   return createDocuments(openStores(b.config).store);
+}
+
+/** The id of an account made through `account()`, from the panel's own store. */
+export function accountIdOf(b: Boot, handle: string): string {
+  const found = createAccounts(openStores(b.config).store).byHandle(handle);
+  if (!found) throw new Error(`no account ${handle}`);
+  return found.id;
 }

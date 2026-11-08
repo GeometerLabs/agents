@@ -6,7 +6,8 @@ November 2026. Plan items B9, parts of B9a, B14 (the fail-closed minimum), B19, 
 
 | File | What it is |
 |---|---|
-| `geometer.ts` | the command line: `init`, `model-key`, `backup-key`, `shop add`, `agent add\|check\|deploy\|show\|record\|report`, `check`, `deploy`, `status`, `stop`, `start`, `restore`, `update`, `rollback`, `logs`, `apply [--watch]`, `backup now`, `backup drill` |
+| `geometer.ts` | the command line: `init`, `model-key`, `backup-key`, `shop add`, `agent add\|check\|deploy\|show\|record\|report`, `check`, `deploy`, `status`, `stop`, `start`, `restore`, `update`, `rollback`, `logs`, `apply [--watch]`, `backup now`, `backup drill`, `licence extension` |
+| `lib/licence.ts` | the licence lease on this server (B13): the newest good lease, the extensions, what each shop's runtime is handed (`client/licence.json`) and what the panel shows |
 | `agent/` | an agent someone else wrote (B51): its folder and flags (`folder.ts`), its Guards (`plan.ts`, `deploy.ts`, `applied.ts`), the record from the Guards' decisions and the services' state (`facts.ts`, `record.ts`, `records.ts`), the report (`report.ts`), the relay's look at a payment (`relay-context.ts`) and the inbox (`inbox.ts`) |
 | `examples/own-agent/agent.js` | a tiny agent that is not a template: plain Node, no dependencies; what the end-to-end test runs |
 | `deploy.ts` | the checked deploy: plan, compile, verify, write, `docker compose up`, then ask the running Guards |
@@ -227,6 +228,75 @@ Guard can now ask several people for one refund (ADR-0061; the relay's contract 
 - **`relay.json`** names the owner `owner` and lists the people (id, number, language; never a secret). `services/relay.ts` reads each person's secret from its file on every answer, like the owner's, and refuses to start a shop whose person has no secret file. **`inbox.json`** lists the people's numbers (`approverWhatsapps`), so their replies reach the relay as the owner's do.
 - **Tested against the real binary** (`test/approvals-group.test.ts`, `geo-guard` built from monorepo main `e99d5d47`). The Guard runs the `guard.toml` this bundle writes for a shop with Ravi and Meena and a ₹150 two-person amount, behind it the Bookings runtime over the live Razorpay adapter, and the real relay. When the owner's own command asks for a ₹200 refund, Guard lists `requested_by: ["owner"]` and `may_still_decide: ["meena", "ravi"]`. Ravi's approval leaves it pending, Meena's approves it, and the refund is made once. A recorder in front of the Razorpay stand-in shows that `Geo-Requested-By` never reached it. A second test: the owner approves, Meena says no, nothing is sent, and the others are told.
 
+## To do, export and handover (7 November: B31 and B38)
+
+Three things were added to the deployer's side of the panel's contract, all as files (the panel still never has the Docker socket or a runtime's token):
+
+- **`requests/<shop>.recover.<id>.json`** (the panel files it, `lib/requests.ts` reads it strictly): `apply.ts` `processRecoveryRequests` asks `ops recover <shop> <id> <case> <action>`, which POSTs the runtime's `/internal/recover` with the runtime's own token (`services/ops.ts`, `recoverCase`) and answers the runtime's status; the file is removed only on a 200 (or dropped after an hour, said in the log). `watch` runs it with the stop requests.
+- **`shops/<shop>/assignment.json`** (the panel writes it when a handover completes): who serves the shop now and every move. `lib/server.ts` `readShop` reads it into `preparedBy` with `resolvePreparedBy` (assignment, then report.json, then owner.json), so the owner's monthly message names the new person after the next deploy. Nothing else in the deploy reads it.
+- **`export/`**: `build.ts` (one builder), `sources.ts` (where it reads on a server), `tar.ts`, `check.ts` (the open check) and `cli.ts` (`geometer export <shop>`). The format and what is left out are in `bundle/panel/Explanation.md`; the README the package carries is `FORMAT_README` in `build.ts`, the one place the format is described for the person who receives it.
+
+`settings-history.jsonl` in the shop's folder is written by the panel on each save (`shops.recordSettings`); the deployer ignores it.
+
+## A shop that takes UPI (B33, 7 November)
+
+A shop whose settings say `"payment": {"module": "upi", ...}` has no Razorpay account, so `guardsOf` (`lib/kinds.ts`) leaves Razorpay out of its Guards. Everything
+that follows from a Razorpay Guard follows from that one list:
+
+- **No Razorpay Guard and no payment service in runtime.json.** `planShop` makes no Razorpay spec; the generated runtime has no `services.payments`, and the runtime's
+  config check accepts that for a UPI shop and refuses it, plainly, for a Razorpay one (`modules/runtime/config.ts`, with the settings in hand). The report's numbers are
+  counted as live: they are the owner's real marks, not test money.
+- **No Razorpay key, no Razorpay webhook secret asked for.** `missingSecrets` and `ensureCredentials` skip them; the inbox's Razorpay route still gets a secret, made here
+  and given to nobody, so nothing can ever be signed for it.
+- **No approvals relay.** No refund is ever held for a UPI shop's owner (the owner sends UPI refunds), so the shop is not in relay.json, the relay's reading credential is
+  not issued, and its inbox sends the owner's messages to the runtime only (the runtime reads the owner's "received <code>" itself).
+- **The QR pictures** are written by the runtime into the report pages folder, which Caddy already serves read-only; a picture's name is 128 random bits.
+
+`test/upi-shop.test.ts` deploys one.
+
+## The licence lease and wind-down (8 November: the bundle's half of B13), and the heartbeat's three counts
+
+Fleet's half is merged in the monorepo (ADR-0059; the contract is `apps/fleet/README.md`, "What the bundle does with the lease"). This is the other half. **The runtime's check is the only check today: Guard does not read the lease yet** (Deferred.md has the exact `[licence]` block for that engine task).
+
+**Who does what, and why that way.** Three parts can each write only one place, and the design follows that:
+
+| Part | Writes | Does |
+|---|---|---|
+| ops (container) | `fleet/lease` | On a 200, keeps the answer's `lease` as it came (only something shaped like `gl1.…`, at most 64 KB), and fleet's unsigned `shops[id].licence` in `fleet/<shop>.json` for the panel. It trusts nothing in either. |
+| the deployer (host) | `state/licence/`, `generated/shops/<shop>/client/licence.json`, `status/<shop>.json` | On every loop (`runLicence` in `apply.ts`) and every deploy (`writeServer`): checks the inbox token with the key pinned in `geometer.json` (`licence.keys`, from `init --licence-key`), for this server's own id, newer than the kept one (`newerThan`: a higher serial and an issue time no earlier, judged against `seen.json` so a deleted lease file lets nothing older back in, while the same lease again puts a lost file back). Then hands each deployed shop its entry and writes the state the panel shows. |
+| the runtime (container, `/client` read-only) | its own record | Reads `licence.json` by its modified time (`licenceReader`, like the `ai` switch) and works the state out **with its own clock** at every call (`effectiveState` at `serverNow`), so a lease that runs out while the deployer is not running still takes effect, and a clock set back is judged no earlier than the newest `issued_at` taken. |
+
+The licence never goes through `runtime.json` or the shop's desired state: a change there would redeploy the shop (every Guard checked again, the runtime restarted) each time a lease arrived, and an older pinned template's validator refuses a key it does not know. `licence.json` is a file of its own in the client folder; nothing restarts for it.
+
+**The port** (`modules/licence/`): `rules.ts` is fleet's `newerThan`, `serverNow`, `effectiveState`, `takesNewWork`, `allowsRecovery` and the version-1 shape, with no crypto, because the agents import it and the browser demo has no `node:crypto`; `token.ts` is `checkToken` with `node:crypto` Ed25519, the same checks in the same order. `bundle/test/fixtures/licence-vectors.json` is fleet's file, copied; a test fails if it differs from fleet's when the monorepo is at hand, and every good token, every refusal (with its reason), every replay case and every state case (the server clock set back among them) gives fleet's answer.
+
+**A shop the lease does not list, and a server with no lease, are not restricted.** With no key pinned, no lease is kept at all, and no `licence.json` is written.
+
+**What the runtime does** (both templates; the words are in each template's `templates.ts`, four languages):
+
+- **Wind-down**: no new work. Bookings: a request to book (or a greeting, which would offer the menu) gets "Online booking is paused for now. Please contact <shop> directly.", a `new_work` entry `blocked` with the decision `subscription_suspended` (Guard's reason, so the two read the same later), and no draft is kept, so nothing is a promise. A request that was waiting for "yes" is cleared the same way. Fees: no new fee link (`currentLink` refuses with the same decision), no month's fees opened, no late fee, and reminders that fall due are passed over (never sent later). Refunds owed, cancellations, reschedules of existing bookings, reminders of existing bookings, recovery steps and payments from links sent earlier go on: a deposit paid on a link sent before the wind-down still books.
+- **Final stop**: as the wind-down, and on the clock's beat the open payment links are closed at Razorpay through Guard, once for each `paid_through` (`cancel_deposit_link` / `cancel_fee_link` with `refs.licence`; a UPI shop has none); after that every message is blocked by a gate in `say` and recorded. The monthly report is not sent. Payments already made are still recorded and refunds still go through Guard. **Nothing is deleted.** Keys are not released (Deferred.md).
+- **Back in order**: one `licence` record line says so; nothing from the wind-down is replayed.
+- One `licence` record line at each change (wind-down, stop, back), so the record keeps the suspension.
+
+**The owner's notice** (`modules/licence/notice.ts`, run by the runtime core on the clock's beat like the monthly report): one plain WhatsApp notice for each `paid_through`, in the owner's language, naming the partner (the shop's `preparedBy`), never about money. The record is the memory: a claim, a save, the send, the ending (a claim with no ending is closed as "may have gone" and not sent again; a refusal is tried again an hour later, three tries). Outside the owner's window it goes as a utility template: `owner_service_paused` / `owner_service_stopped` (Bookings) and `owner_fee_service_paused` / `owner_fee_service_stopped` (Fees), in the generated `whatsapp-templates.json`. The stop's notice says how many bookings (or fees) are still open and how many other to-do items there are (the same `modules/unfinished` registry, run over the runtime's own record and cases), and until when the partner can give the free copy. A wind-down caused by an expired lease sends the notice too (the lease's own `notice` is then null): the owner should hear why bookings paused either way. Fleet's README proposed keeping this in `state/licence/notices.json`; the runtime cannot write there, and the record is exported and signed, so it is kept there.
+
+**Reschedules in the wind-down** go on: moving an existing booking makes no new booking or link. **"Stop sending" in the final stop** covers every message the agent sends, except the stop's own notice; refunds still move, and the agent's confirmations of them are held back and recorded. The approvals relay is a service of its own and still asks the owner about a refund Guard holds, because a refund owed must still go through.
+
+**The monthly report** never counts a licence refusal as one of the shop's limits that held (a rule it does not list is left out of "what the limits stopped"), and a month whose only entries are the licence's own lines (its state line, the owner's notice) is a quiet month with no report. In the final stop no report is sent.
+
+**The panel** (`panel/licence.ts`): the shop page shows the state the server worked out from the signed lease (an offline expiry can differ from fleet's last word), in the partner's language, with the dates from fleet's unsigned copy (fleet's own local days; otherwise the signed times as days in India), fleet's renew link (https only) when something is owed, and "not refreshed since <day>" once the kept lease is more than 2 days old. The shops list shows the state when it is not in order. A shop the lease does not list shows nothing. Fleet's `licence_*` warn codes are not repeated in the plan's warnings: this block says them.
+
+**The heartbeat's three counts** (fleet ADR-0059 decision 12; optional fields, so fleet must be deployed first):
+
+- `since_last.reports_sent`: the record's report message read back (`send_message` with `refs.report`, `confirmed`; not the claim, a failed try or the certificate document after it), counted by the 15-minute export with the cost meter's counts and sent as a difference against `fleet/usage-baseline.json`.
+- `usage.replies_by_language`: messages to customers read back, by the entry's language; a UPI QR picture beside the words is not a second reply. Inside `usage`, never alone in it.
+- `open_obligations`: `countsByKind` from the same exported record and cases the to-do list reads, worked out by the export job and kept in `status/<shop>.json` (`obligations`), sent on every heartbeat, `{}` when none is open. Kind ids fleet would refuse are dropped, not the heartbeat.
+
+A baseline written before these counts keeps the cost meter's nine and starts the new ones at the shop's current totals (`EXTRA_FIELDS`, optional on both sides), so an upgrade drops nothing and replays no report or reply. **So a shop that sent a report before this bundle gets fleet's First report sent badge with its next report**, dated then, not today: the honest date, chosen over replaying history.
+
+**Tests**: `test/licence.test.ts` (the port on the vectors, keeping the lease, replay, a lost lease file, extensions, the clock set back), `test/heartbeat-counts.test.ts` (the three counts, the baseline upgrade, fleet's own validator, ops keeping the token and the unsigned entry), each template's `test/licence.test.ts` (the wind-down, a deposit from an earlier link booking, back to normal with nothing replayed, the stop's link closing, the owner's notices once each through the runtime, the reader), and the panel's `test/licence.test.ts` (the view, the page and the list in Hindi, another partner seeing nothing).
+
 ## What the tests show, and what they do not
 
 97 tests run with no Docker (`cd bundle && npm test`; one of them checks the status file and the stop request with the panel's own checker and is skipped until `bundle/panel/contract.ts` is in the tree). The template's own tests still pass. **On the previewed merge with main** (`git merge-tree --write-tree main bundle`, extracted to a scratch folder, nothing merged): the bundle's 97 run with that test un-skipped (it passes; six more skip only because the scratch folder is not beside the monorepo, so the drift and fleet checks have nothing to compare to), the panel's own 67 pass, and the template's 604 pass with the same one skip as before. The merge has two conflicts, both prose: `templates/commerce/bookings/Explanation.md` and `templates/commerce/bookings/Deferred.md`. The tests cover the generator and each of its refusals, the drift against the monorepo fixtures, the compose layout (who is on which network, which container mounts which secrets folder, nothing mounts the Docker socket), the deployer against a fake machine (a broken tripwire starts nothing; versions only rise; only changed services are restarted; a stopped shop stays stopped; a running Guard that disagrees stops the shop), the inbox isolation, the heartbeat against fleet's validator, the refresher's token discipline, snapshots and the drill against real SQLite, age, the S3 signing and the command line.
@@ -321,3 +391,7 @@ Lines of code, counted with `wc -l` on the branch (every line, comments and blan
 | Outside `bundle/` | nothing |
 | What it supersedes | the single-shop `rollback` branch in `geometer.ts` (its popping of the history, now in `update.ts` with the checks it lacked) and README's "Upgrading a shop" paragraph (replaced by the section "Update every client at once") |
 
+## The agent crash test's certificate and the QR (B12, 8 Nov)
+
+`agent/crash-test/certificate.ts` uses the shared seal block, so the agent's own certificate page gets the QR and the link `https://geometer.dev/verify/#<digest>`, and its text line
+says `/verify/#<code>`. Nothing in the signed JSON changed. See `modules/Explanation.md`.

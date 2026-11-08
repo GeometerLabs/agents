@@ -10,8 +10,9 @@ import { recordAgents } from "./agent/records.ts";
 import { Refused, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
-import { parseStopRequest } from "./lib/requests.ts";
+import { RECOVERY_FILE, parseRecoveryRequest, parseStopRequest } from "./lib/requests.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
+import { syncLicence } from "./lib/licence.ts";
 import { updateStatus } from "./lib/status.ts";
 import { shopNameProblem, sha256Hex, stableJson } from "./lib/util.ts";
 
@@ -113,6 +114,36 @@ export async function processStopRequests(ctx: Context): Promise<string[]> {
   return done;
 }
 
+/** A recovery request the runtime did not take for this long is dropped, said once in the log: the to-do list is built from the record, so a button that did nothing shows again. */
+export const RECOVERY_GIVE_UP_MS = HOUR;
+
+/**
+ * The panel's recovery requests (the to-do list's buttons). Each is carried to the shop's runtime through `ops`, which holds the runtime's token; the runtime saves it as an event and its
+ * agent does it through Guard and the normal limits. The file is removed only when the runtime answered 200, or when it has been waiting longer than an hour (then it is dropped and said).
+ * A request is a name and an id: nothing the panel writes here can send a message or move money by itself.
+ */
+export async function processRecoveryRequests(ctx: Context): Promise<string[]> {
+  const dir = serverPaths(ctx.dir).requests;
+  const done: string[] = [];
+  if (!existsSync(dir)) return done;
+  for (const file of readdirSync(dir).sort()) {
+    const m = RECOVERY_FILE.exec(file);
+    if (!m) continue;
+    const [, shop, id] = m;
+    const path = join(dir, file);
+    const request = shopNameProblem(shop) ? undefined : parseRecoveryRequest(readFileSync(path, "utf8"), shop, id);
+    if (!request) { if (!warned.has(path)) { warned.add(path); ctx.log(`requests/${file} is not a recovery request for a shop on this server, so it is left alone.`); } continue; }
+    const state = loadState(ctx.dir);
+    if (state.shops[shop]?.applied === undefined) { ctx.log(`${shop}: the recovery request ${id} waits: the shop is not running yet.`); continue; }
+    const r = await ops(ctx, ["recover", shop, request.requestId, request.case, request.action]);
+    let status = 0;
+    try { status = (JSON.parse(r.stdout.trim().split("\n").at(-1) ?? "") as { status: number }).status; } catch { /* ops could not be asked */ }
+    if (status === 200) { rmSync(path, { force: true }); ctx.log(`${shop}: ${request.action} on ${request.case} was handed to the shop's agent (request ${id}).`); done.push(id); continue; }
+    if (ctx.now().getTime() - Date.parse(request.requestedAt) > RECOVERY_GIVE_UP_MS) { rmSync(path, { force: true }); ctx.log(`${shop}: the recovery request ${id} (${request.action} on ${request.case}) was dropped: the shop's runtime did not take it in an hour. It will show on the to-do list again if it still needs doing.`); }
+  }
+  return done;
+}
+
 /**
  * Keep `updatedAt` honest. Every minute the deployer asks the RUNNING Guards and runtimes (through ops) and, for each shop whose runtime and three Guards all answer
  * and have run their tripwires, rewrites the shop's `limits` from what they say and moves `updatedAt`. A shop that does not answer is left as it was: the file goes quiet and the
@@ -154,11 +185,13 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   const jobs = state.jobs ??= {};
   const since = (iso?: string) => (iso ? now.getTime() - Date.parse(iso) : Infinity);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  // a UPI shop (B33) has no Razorpay Guard and so no approvals relay: there is no credential to renew for it
+  const shopsWithRelay = Object.entries(state.shops).filter(([, s]) => s.applied && Object.values(s.applied.guards).some((g) => g.kind === "razorpay")).map(([n]) => n);
   // an agent someone else wrote has a relay credential too, when it calls Razorpay (a held refund is asked about on WhatsApp)
   const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && a.guards.razorpay).map(([n]) => n);
   if (shops.length === 0 && withRelay.length === 0) return ran;
   if (since(jobs.relayCredentialsAt) >= 24 * HOUR) {
-    for (const shop of [...shops, ...withRelay]) await renewRelayCredential(ctx, shop);
+    for (const shop of [...shopsWithRelay, ...withRelay]) await renewRelayCredential(ctx, shop);
     jobs.relayCredentialsAt = now.toISOString(); ran.push("relay credentials");
   }
   // the record of each agent someone else wrote, from its Guards' decisions and the services' own state: every five minutes. Guard lists only its 500 most recent decisions, so
@@ -186,11 +219,23 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   return ran;
 }
 
+/**
+ * The licence lease (B13), on every loop: the lease ops kept from fleet's last answer is checked and kept if it is good and newer, each deployed shop's runtime is handed
+ * its entry, and the state the panel shows is written (lib/licence.ts). Cheap: one signature check per lease file, and files written only when they change.
+ */
+export function runLicence(ctx: Context): string[] {
+  const state = loadState(ctx.dir);
+  const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  const lines = syncLicence(ctx.dir, loadServer(ctx.dir), shops, ctx.now());
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
 export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   let lastRefresh = 0;
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
-    try { await processStopRequests(ctx); await applyOnce(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

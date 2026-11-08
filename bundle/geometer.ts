@@ -1,6 +1,8 @@
 // geometer: the deploy bundle's command line.   node bundle/geometer.ts <command> [--server <folder>]
 //
-//   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [backup options]
+//   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [--licence-key HEX[,HEX]] [backup options]
+//                                --licence-key: the public half of fleet's licence key, as fleet's `licence key show` prints it (64 hex characters). It is pinned in geometer.json;
+//                                a lease is only ever checked with it. Without it no lease is kept and no shop is restricted by one.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner"]      copy a client folder in (settings.json, runtime.json, pathway.lock); --prepared-by is the name the
@@ -20,6 +22,11 @@
 //                                real Guards: "Held N of M", judged from the stand-ins' records and Guard's decisions. agent go-live <name> [--out <folder>] does the same and writes the go-live certificate.
 //                                agent set <name> --run "<cmd>" --version V   records how to start the agent ({version} in the command) and which version it is at
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
+//   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
+//                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
+//                                Check one with: node bundle/export/check.ts <folder>
+//   licence extension <file>     an emergency extension from Geometer (gx1.), checked with the pinned key and kept: until it ends, no shop here winds down because fleet could
+//                                not renew its lease. It never lifts a wind-down or a stop the lease states.
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last backup and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
@@ -35,7 +42,9 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { applyOnce, watch } from "./apply.ts";
+import { applyOnce, runLicence, watch } from "./apply.ts";
+import { takeExtension } from "./lib/licence.ts";
+import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
 import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
@@ -45,6 +54,7 @@ import { listAgents, readAgent } from "./agent/folder.ts";
 import type { AgentFlags } from "./agent/folder.ts";
 import { CRASH_SUBCOMMANDS, crashCommand } from "./agent/crash-test/cli.ts";
 import { recordAgent } from "./agent/records.ts";
+import { exportCommand } from "./export/cli.ts";
 import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
@@ -87,7 +97,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     args: rest, allowPositionals: true, strict: false,
     options: {
       server: { type: "string" }, domain: { type: "string" }, id: { type: "string" }, "reviewed-by": { type: "string" }, "model-wire": { type: "string" }, model: { type: "string" },
-      "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
+      "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       "prepared-by": { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
@@ -228,6 +238,15 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return 0;
     }
 
+    if (command === "export") {
+      if (!shop) throw new Error("Say which shop: export <shop> [--out <folder>]");
+      const r = await exportCommand(ctx, shop, str("out") ?? ".");
+      console.log(`Exported ${shop}: ${r.files} files in ${r.folder} and the same as ${r.archive}.`);
+      for (const line of [...r.notes, ...r.warnings]) console.log(`note: ${line}`);
+      console.log(`${r.whole ? "Every file is the one the manifest names." : "A file does not match the manifest: do not rely on this package."} No key or secret is in it. README.txt inside says how to check it: node bundle/export/check.ts <folder>`);
+      return r.whole ? 0 : 1;
+    }
+
     if (command === "deploy") {
       // with no name: every shop, then every agent someone else wrote
       const agents = shop ? [] : listAgents(dir);
@@ -240,6 +259,17 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "status") return await status(ctx);
+
+    if (command === "licence") {
+      if (positionals[0] !== "extension" || !positionals[1]) throw new Error("Say what to do: licence extension <file>   (the gx1. token Geometer sent, in a file or as it is)");
+      const server = loadServer(dir);
+      const text = existsSync(resolve(positionals[1])) ? readFileSync(resolve(positionals[1]), "utf8") : positionals[1];
+      const r = takeExtension(dir, server, text, Math.floor(ctx.now().getTime() / 1000));
+      if (!r.taken) { console.log(`This extension was not kept: ${r.why}.`); return r.same ? 0 : 1; }
+      runLicence(ctx);
+      console.log(`Kept. Until ${new Date(r.payload.until * 1000).toISOString().slice(0, 10)}, no shop on this server winds down because its lease could not be renewed. It does not lift a wind-down or a stop that fleet's lease states, and it changes nothing that was paid.`);
+      return 0;
+    }
 
     if (command === "stop" || command === "start") {
       if (!shop) throw new Error(`Say which shop: ${command} <shop>`);
@@ -269,7 +299,10 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     if (command === "logs") {
       if (!shop) throw new Error("Say which shop: logs <shop>");
-      const r = await compose(ctx, ["logs", "--no-color", "--tail", str("tail") ?? "200", `rt-${shop}`, `g-${shop}-razorpay`, `g-${shop}-whatsapp`, `g-${shop}-calendar`]);
+      // the shop's own Guards, as it was applied: a Fees centre has no calendar Guard and a UPI shop (B33) no Razorpay one
+      const applied = loadState(ctx.dir).shops[shop]?.applied;
+      const guards = applied ? Object.values(applied.guards).map((g) => g.service) : [`g-${shop}-razorpay`, `g-${shop}-whatsapp`, `g-${shop}-calendar`];
+      const r = await compose(ctx, ["logs", "--no-color", "--tail", str("tail") ?? "200", `rt-${shop}`, ...guards]);
       process.stdout.write(r.stdout); process.stderr.write(r.stderr);
       return r.code;
     }
@@ -348,6 +381,7 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     approvalHours: s("approval-hours") ? Number(s("approval-hours")) : 24,
     model: { wire: s("model-wire") ?? "openai", model: s("model") ?? "" },
     ...(s("fleet-url") ? { fleet: { url: s("fleet-url"), keyFile: s("fleet-key-file") ?? "" } } : {}),
+    ...(s("licence-key") ? { licence: { keys: s("licence-key")!.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean) } } : {}),
     ...(s("stream-url") && s("snapshots-url") && recipient ? { backup: { stream: { url: s("stream-url"), ...(s("stream-endpoint") ? { endpoint: s("stream-endpoint") } : {}) }, snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
     panel: { enabled: v.panel === true, mode: v["panel-mode"] === "hosted" ? "hosted" : "own" },
     ports: { http: s("http-port") ? Number(s("http-port")) : 80, https: s("https-port") ? Number(s("https-port")) : 443 },
@@ -358,6 +392,7 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   for (const d of [p.shops, p.secretsInbox, p.status, p.state, p.generated, p.requests, p.exports, p.panel]) ensureDir(d);
   prepareSecretsRoot(dir);
   writeAtomic(p.config, stableJson(raw));
+  for (const k of checked.config.licence?.keys ?? []) console.log(`Fleet's licence key is pinned: key id ${kidOf(Buffer.from(k, "hex"))}. It should be the id fleet's \`licence key show\` printed.`);
   console.log(`Server folder ready: ${dir}\nNext: \`geometer model-key <file>\`, then \`geometer shop add <name> --from <client folder>\`, hand in the shop's secrets, and \`geometer check <name>\`.`);
   return 0;
 }
@@ -428,6 +463,7 @@ async function status(ctx: Context): Promise<number> {
     console.log(`${name}  ${s?.versions?.pathway ?? state.shops[name].applied?.pathway ?? "(not deployed)"}  ${o ? (o.up && o.ready ? "running" : o.up ? "up, not ready" : "DOWN") : "unknown"}${s?.stopped ? `  STOPPED${s.stopped.by ? ` by ${s.stopped.by}` : ""} (${s.stopped.at})` : ""}`);
     if (o) for (const g of o.guards) console.log(`  ${g.id}: ${g.admin === null ? "admin port not reachable" : `${g.healthReady ? "ready" : "NOT READY"}, ${g.admin.kill_switch?.on ? "KILLED" : "open"}, tripwires ${g.admin.tripwires?.passed ?? "?"} of ${g.admin.tripwires?.of ?? "?"}${g.admin.tripwires?.ok === false ? " (FAILED)" : ""}`}`);
     if (s?.limits) console.log(`  ${s.limits.line}${s.deploy.state === "failed" ? `; the last deploy FAILED: ${s.deploy.message}` : ""}`);
+    if (s?.licence?.listed) console.log(`  licence: ${s.licence.state.replace("_", " ")}${s.licence.paidThrough ? `, paid through ${s.licence.paidThrough.slice(0, 10)}` : ""}${s.licence.state !== "wind_down" && s.licence.state !== "stopped" && s.licence.windDownOn ? `, covered until ${s.licence.windDownOn.slice(0, 10)}` : ""}${s.licence.stopOn ? `, final stop ${s.licence.stopOn.slice(0, 10)}` : ""}${s.licence.exportUntil ? `, free export until ${s.licence.exportUntil.slice(0, 10)}` : ""}${s.licence.leaseIssuedAt ? ` (lease signed ${s.licence.leaseIssuedAt.slice(0, 10)})` : ""}`);
     console.log(`  backup: ${s?.backups?.lastCopyAt ? `last snapshot ${s.backups.lastCopyAt}` : "no snapshot yet"}; restore drill: ${s?.backups?.lastDrillAt ? `${s.backups.drillOk ? "passed" : "FAILED"} ${s.backups.lastDrillAt}${s.backups.drillOk ? "" : ` (${s.backups.drillDetail})`}` : "never run"}`);
   }
   // agents someone else wrote: their Guards only

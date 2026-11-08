@@ -2,7 +2,8 @@
 // and every amount, date, time, service and link in it is rendered from the record (the facts), never typed by hand
 // and never translated. Adding a language means adding one more object below; the type makes sure none is missing.
 import type { Language } from "../../../../../modules/language/languages.ts";
-import { formatInr, formatSlot } from "../../../../../modules/language/format.ts";
+import { formatDate, formatInr, formatSlot } from "../../../../../modules/language/format.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -29,6 +30,19 @@ export interface MessageFacts {
   approvalHours?: number;
   /** A refund that needs several people (B37): how many more approvals it waits for after this person's. Made by the approvals relay from Guard's answer. */
   approvalsLeft?: number;
+  /** UPI shops (B33): the shop's UPI ID and the name its customers see. */
+  upiId?: string;
+  payee?: string;
+  /** UPI: the owner's one-use code for this payment or refund (modules/payments/upi/ledger.ts). Only ever in a message to the owner. */
+  upiCode?: string;
+  /** UPI: what the owner marked received, and what is still to come, in whole rupees. */
+  markedInr?: number;
+  leftInr?: number;
+  /** The licence's service notices (B13): who the owner should contact (the partner who set the shop up), the counts the final stop's notice states, and the free export's last day. */
+  partner?: string;
+  upcomingCount?: number;
+  openCount?: number;
+  licenceDateMs?: number;
 }
 
 export type TemplateId =
@@ -52,13 +66,30 @@ export type TemplateId =
   // the relay again, when a refund needs several people (B37): this person's approval is in and more are needed; the others approved it; one person refused it
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
-  | "owner_refund_settled";
+  | "owner_refund_settled"
+  | UpiTemplateId | LicenceTemplateId;
+
+/**
+ * The licence's wind-down and final stop (plan B13; modules/licence). The customer's line answers a request for new work while online booking is paused; the owner's
+ * two are the one service notice for each `paid_through` (WhatsApp utility templates). About the service, never about money; they name who to contact.
+ */
+export type LicenceTemplateId = "booking_paused" | "owner_licence_paused" | "owner_licence_stopped";
+
+/** UPI shops only (B33): the deposit is paid to the shop's own UPI ID and marked paid by the owner; refunds are sent by the owner. */
+export type UpiTemplateId =
+  | "upi_quote_and_link" | "upi_slot_and_link" | "upi_already_waiting" | "upi_qr_caption" | "upi_booked" | "upi_paid_claim" | "upi_nothing_waiting" | "upi_hold_expired"
+  | "upi_late_received" | "upi_refund_owed" | "upi_cancelled_refund_owed" | "upi_extra_refund_owed" | "upi_refund_sent"
+  | "owner_upi_expected" | "owner_upi_claim" | "owner_upi_marked" | "owner_upi_part" | "owner_upi_already" | "owner_upi_unknown" | "owner_upi_late"
+  | "owner_upi_refund_owed" | "owner_upi_refund_reminder" | "owner_upi_refund_marked" | "owner_upi_refund_kept";
 
 /** Which approved WhatsApp template carries a message once the customer's 24-hour window has closed. */
 export const TEMPLATE_NAMES = { customer: "booking_update", reminder: "booking_reminder", owner: "owner_notice" } as const;
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId>, Template>;
+type UpiSet = Record<UpiTemplateId, Template>;
+type LicenceSet = Record<LicenceTemplateId, Template>;
 
 /** A template asks for a value the record does not have: refuse to write the message at all. */
 export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
@@ -70,7 +101,7 @@ export const slot = (f: MessageFacts) => formatSlot(need(f, "slotMs"), f.timeZon
 export const inr = (f: MessageFacts, key: "priceInr" | "depositInr" | "refundInr") => formatInr(need(f, key));
 const menuList = (f: MessageFacts) => f.services.map((s) => `${s.name} ${formatInr(s.priceInr)}`).join(", ");
 
-const en: TemplateSet = {
+const en: BaseSet = {
   menu: (f) => `Hello! Welcome to ${f.businessName}. We offer: ${menuList(f)}. Tell me which service, day and time you would like.`,
   ask_when: (f) => `Which day and time would you like for your ${need(f, "serviceName")}?`,
   ask_new_time: () => "Which day and time would you like instead?",
@@ -139,7 +170,7 @@ const en: TemplateSet = {
   owner_ai_fault: (f) => `Notice: the AI that reads messages for ${f.businessName} is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes.`,
 };
 
-const hi: TemplateSet = {
+const hi: BaseSet = {
   menu: (f) => `नमस्ते! ${f.businessName} में आपका स्वागत है। हमारी सेवाएँ: ${menuList(f)}। बताइए आपको कौन सी सेवा, किस दिन और किस समय चाहिए?`,
   ask_when: (f) => `आपको ${need(f, "serviceName")} के लिए कौन सा दिन और समय चाहिए?`,
   ask_new_time: () => "आपको इसकी जगह कौन सा दिन और समय चाहिए?",
@@ -209,7 +240,7 @@ const hi: TemplateSet = {
 // shop uses them. Choices that keep them safe for any shop: no service name or business name gets a case ending glued on
 // (so "ഹെയർകട്ട് വില ₹450", "ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450", never a form that depends on the name's last letter), the date and time are
 // written as a unit or in brackets, and owner commands stay in Latin letters ("approve b-3") with the meaning in the owner's language.
-const ml: TemplateSet = {
+const ml: BaseSet = {
   menu: (f) => `നമസ്കാരം! ${f.businessName}-ലേക്ക് സ്വാഗതം. ഞങ്ങളുടെ സേവനങ്ങൾ: ${menuList(f)}. ഏത് സേവനം, ഏത് ദിവസം, ഏത് സമയം വേണമെന്ന് പറയൂ.`,
   ask_when: (f) => `${need(f, "serviceName")} ഏത് ദിവസം, ഏത് സമയത്ത് വേണം?`,
   ask_new_time: () => "പകരം ഏത് ദിവസം, ഏത് സമയം വേണം?",
@@ -276,7 +307,7 @@ const ml: TemplateSet = {
   owner_ai_fault: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI ഇപ്പോൾ മറുപടി നൽകുന്നില്ല, അതിനാൽ ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിക്കുന്നു. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. കുറച്ച് മിനിറ്റിനു ശേഷം ഏജന്റ് വീണ്ടും AI പരീക്ഷിക്കും.`,
 };
 
-const kn: TemplateSet = {
+const kn: BaseSet = {
   menu: (f) => `ನಮಸ್ಕಾರ! ${f.businessName}-ಗೆ ಸ್ವಾಗತ. ನಮ್ಮ ಸೇವೆಗಳು: ${menuList(f)}. ಯಾವ ಸೇವೆ, ಯಾವ ದಿನ, ಯಾವ ಸಮಯ ಬೇಕು ಎಂದು ತಿಳಿಸಿ.`,
   ask_when: (f) => `${need(f, "serviceName")} ಯಾವ ದಿನ, ಯಾವ ಸಮಯಕ್ಕೆ ಬೇಕು?`,
   ask_new_time: () => "ಬದಲಿಗೆ ಯಾವ ದಿನ, ಯಾವ ಸಮಯ ಬೇಕು?",
@@ -343,7 +374,161 @@ const kn: TemplateSet = {
   owner_ai_fault: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಸಂದೇಶಗಳನ್ನು ಓದುವ AI ಈಗ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ, ಆದ್ದರಿಂದ ಏಜೆಂಟ್ ಬಟನ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳನ್ನು ಬಳಸುತ್ತಿದೆ. ಬುಕಿಂಗ್ ಮುಂದುವರಿಯುತ್ತದೆ, ಎಲ್ಲಾ ಮಿತಿಗಳು ಮೊದಲಿನಂತೆಯೇ ಪಾಲನೆಯಾಗುತ್ತವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಏಜೆಂಟ್ ಮತ್ತೆ AI ಪ್ರಯತ್ನಿಸುತ್ತದೆ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en, hi, ml, kn };
+// ---- UPI, marked paid by the owner (plan B33; modules/payments/upi) ------------------------------------------------------------
+// A shop that takes UPI: the customer pays the shop's own UPI ID, and the booking is made only when the owner taps "Received" (or replies "received <code>"). These
+// messages never say a payment was checked by the agent: the owner confirms it. A refund is sent by the owner from their own UPI app, and the customer hears "sent"
+// only after the owner marks it so. The owner's lines start and end with fixed words, as every owner line does (several are WhatsApp templates: meta-templates.ts).
+// Hindi, Malayalam and Kannada are machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+
+const payee = (f: MessageFacts) => need(f, "payee");
+const upiId = (f: MessageFacts) => need(f, "upiId");
+const code = (f: MessageFacts) => need(f, "upiCode");
+const marked = (f: MessageFacts) => formatInr(need(f, "markedInr"));
+const left = (f: MessageFacts) => formatInr(need(f, "leftInr"));
+
+const upiEn: UpiSet = {
+  upi_quote_and_link: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}. ${slot(f)} is free. To confirm, pay the ${inr(f, "depositInr")} deposit by UPI to ${payee(f)} (UPI ID ${upiId(f)}): ${need(f, "link")} I'll hold the slot for ${need(f, "holdMinutes")} minutes. The owner confirms the payment, then I'll message you.`,
+  upi_slot_and_link: (f) => `${slot(f)} is free. To confirm, pay the ${inr(f, "depositInr")} deposit by UPI to ${payee(f)} (UPI ID ${upiId(f)}): ${need(f, "link")} I'll hold the slot for ${need(f, "holdMinutes")} minutes. The owner confirms the payment, then I'll message you.`,
+  upi_already_waiting: (f) => `Your slot (${slot(f)}) is held. Pay the ${inr(f, "depositInr")} deposit by UPI to ${payee(f)} (UPI ID ${upiId(f)}): ${need(f, "link")} The owner confirms the payment, then I'll message you.`,
+  upi_qr_caption: (f) => `Scan to pay ${inr(f, "depositInr")} by UPI to ${payee(f)} for booking ${need(f, "bookingRef")}.`,
+  upi_booked: (f) => `Booked! ${need(f, "serviceName")} on ${slot(f)}. The owner has confirmed your ${inr(f, "depositInr")} deposit. Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
+  upi_paid_claim: (f) => `Thank you. The owner will look for your ${inr(f, "depositInr")} payment in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message.`,
+  upi_nothing_waiting: () => "Thank you. No UPI payment is waiting for you just now, so there is nothing for the owner to confirm. If you paid for something else, please talk to the owner.",
+  upi_hold_expired: (f) => `The hold on ${slot(f)} has ended because the owner had not confirmed the deposit in time. If you have already paid, the owner will contact you. Message me if you'd still like to book.`,
+  upi_late_received: (f) => `The owner confirmed your ${marked(f)} payment after the hold on ${slot(f)} had ended, so it is not booked. The owner will contact you about booking again or sending the money back.`,
+  upi_refund_owed: (f) => `The owner will send ${inr(f, "refundInr")} back to you by UPI. I'll message you when they mark it sent.`,
+  upi_cancelled_refund_owed: (f) => `Your booking for ${slot(f)} is cancelled. The owner will send your ${inr(f, "refundInr")} back to you by UPI, and I'll message you when they mark it sent.`,
+  upi_extra_refund_owed: (f) => `You paid more than the deposit. The owner will send the extra ${inr(f, "refundInr")} back to you by UPI, and I'll message you when they mark it sent.`,
+  upi_refund_sent: (f) => `The owner has marked your ${inr(f, "refundInr")} refund for booking ${need(f, "bookingRef")} as sent by UPI. Please check your UPI app.`,
+
+  owner_upi_expected: (f) => `UPI payment to check: customer ${need(f, "customerPhone")} will pay the ${inr(f, "depositInr")} deposit for ${need(f, "serviceName")} on ${slot(f)} (booking ${need(f, "bookingRef")}). When it shows in your UPI app, tap Received or reply "received ${code(f)}". If a different amount came, reply "received ${code(f)}" and the amount.`,
+  owner_upi_claim: (f) => `Customer ${need(f, "customerPhone")} says they have paid the ${inr(f, "depositInr")} deposit for booking ${need(f, "bookingRef")}. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received ${code(f)}".`,
+  owner_upi_marked: (f) => `Thank you. ${marked(f)} for booking ${need(f, "bookingRef")} is marked paid by you.`,
+  owner_upi_part: (f) => `You marked ${marked(f)} for booking ${need(f, "bookingRef")}, but the deposit is ${inr(f, "depositInr")}, so it is not booked yet. The slot stays held until the hold ends. When the other ${left(f)} arrives, tap Received or reply "received ${code(f)}".`,
+  owner_upi_already: () => "That payment is already marked. It is counted once.",
+  owner_upi_unknown: () => "I don't know that code. Please use the code in my latest message about the payment.",
+  owner_upi_late: (f) => `You marked ${marked(f)} received for booking ${need(f, "bookingRef")} after its hold had ended, so it was not booked again by itself. Book customer ${need(f, "customerPhone")} again yourself, or send the ${inr(f, "refundInr")} back by UPI. Then tap Refund sent or Kept for booking, or reply "refunded ${code(f)}" or "kept ${code(f)}".`,
+  owner_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to customer ${need(f, "customerPhone")} (booking ${need(f, "bookingRef")}). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to customer ${need(f, "customerPhone")} (booking ${need(f, "bookingRef")}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
+  owner_upi_refund_marked: (f) => `Thank you. The ${inr(f, "refundInr")} refund for booking ${need(f, "bookingRef")} is marked sent, and the customer has been told.`,
+  owner_upi_refund_kept: (f) => `Noted. The ${inr(f, "refundInr")} for booking ${need(f, "bookingRef")} is kept for a booking you make yourself. Nothing more is owed back.`,
+};
+
+const upiHi: UpiSet = {
+  upi_quote_and_link: (f) => `हमारा ${need(f, "serviceName")} ${inr(f, "priceInr")} है। ${slot(f)} खाली है। पक्का करने के लिए ${inr(f, "depositInr")} जमा UPI से ${payee(f)} (UPI ID ${upiId(f)}) को भेजें: ${need(f, "link")} स्लॉट ${need(f, "holdMinutes")} मिनट के लिए रोका गया है। पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।`,
+  upi_slot_and_link: (f) => `${slot(f)} खाली है। पक्का करने के लिए ${inr(f, "depositInr")} जमा UPI से ${payee(f)} (UPI ID ${upiId(f)}) को भेजें: ${need(f, "link")} स्लॉट ${need(f, "holdMinutes")} मिनट के लिए रोका गया है। पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।`,
+  upi_already_waiting: (f) => `आपका स्लॉट (${slot(f)}) रोका हुआ है। ${inr(f, "depositInr")} जमा UPI से ${payee(f)} (UPI ID ${upiId(f)}) को भेजें: ${need(f, "link")} पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।`,
+  upi_qr_caption: (f) => `बुकिंग ${need(f, "bookingRef")} के लिए ${payee(f)} को UPI से ${inr(f, "depositInr")} भेजने के लिए स्कैन करें।`,
+  upi_booked: (f) => `बुक हो गया! ${need(f, "serviceName")}, ${slot(f)}। मालिक ने आपका ${inr(f, "depositInr")} जमा पक्का कर दिया है। रिफंड के लिए शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द करें।`,
+  upi_paid_claim: (f) => `धन्यवाद। मालिक अपने UPI ऐप में आपका ${inr(f, "depositInr")} देखकर पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा। स्क्रीनशॉट पेमेंट का सबूत नहीं है, इसलिए कृपया उस संदेश का इंतज़ार करें।`,
+  upi_nothing_waiting: () => "धन्यवाद। अभी आपका कोई UPI पेमेंट बाकी नहीं है, इसलिए मालिक के पास पक्का करने को कुछ नहीं है। अगर आपने किसी और चीज़ के लिए पैसे भेजे हैं, तो कृपया मालिक से बात करें।",
+  upi_hold_expired: (f) => `${slot(f)} की रोक खत्म हो गई, क्योंकि मालिक ने समय पर जमा पक्का नहीं किया। अगर आप पैसे भेज चुके हैं, तो मालिक आपसे संपर्क करेंगे। अगर आप अब भी बुक करना चाहते हैं, तो मुझे संदेश भेजें।`,
+  upi_late_received: (f) => `मालिक ने आपका ${marked(f)} पेमेंट ${slot(f)} की रोक खत्म होने के बाद पक्का किया, इसलिए बुकिंग नहीं हुई है। मालिक आपसे दोबारा बुकिंग या पैसे वापस भेजने के बारे में बात करेंगे।`,
+  upi_refund_owed: (f) => `मालिक ${inr(f, "refundInr")} UPI से आपको वापस भेजेंगे। जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।`,
+  upi_cancelled_refund_owed: (f) => `${slot(f)} की आपकी बुकिंग रद्द हो गई है। मालिक आपका ${inr(f, "refundInr")} UPI से वापस भेजेंगे, और जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।`,
+  upi_extra_refund_owed: (f) => `आपने जमा से ज़्यादा पैसे भेजे हैं। मालिक ज़्यादा भेजे गए ${inr(f, "refundInr")} UPI से वापस भेजेंगे, और जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा।`,
+  upi_refund_sent: (f) => `मालिक ने बुकिंग ${need(f, "bookingRef")} का आपका ${inr(f, "refundInr")} रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें।`,
+
+  owner_upi_expected: (f) => `जाँचने के लिए UPI पेमेंट: ग्राहक ${need(f, "customerPhone")} बुकिंग ${need(f, "bookingRef")} (${need(f, "serviceName")}, ${slot(f)}) के लिए ${inr(f, "depositInr")} जमा भेजेंगे। जब यह आपके UPI ऐप में दिखे, तो "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें। अगर कोई और रकम आई है, तो "received ${code(f)}" के बाद रकम लिखें।`,
+  owner_upi_claim: (f) => `ग्राहक ${need(f, "customerPhone")} कह रहे हैं कि उन्होंने बुकिंग ${need(f, "bookingRef")} का ${inr(f, "depositInr")} जमा भेज दिया है। स्क्रीनशॉट सबूत नहीं है: अपना UPI ऐप देखें। पैसे दिखें तो "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें।`,
+  owner_upi_marked: (f) => `धन्यवाद। बुकिंग ${need(f, "bookingRef")} के ${marked(f)} आपने मिला हुआ दर्ज किया है।`,
+  owner_upi_part: (f) => `आपने बुकिंग ${need(f, "bookingRef")} के लिए ${marked(f)} दर्ज किया, पर जमा ${inr(f, "depositInr")} है, इसलिए अभी बुकिंग नहीं हुई। रोक का समय खत्म होने तक स्लॉट रुका रहेगा। बाकी ${left(f)} आने पर "मिल गया" दबाएँ या "received ${code(f)}" लिखकर भेजें।`,
+  owner_upi_already: () => "यह पेमेंट पहले ही दर्ज है। इसे एक ही बार गिना गया है।",
+  owner_upi_unknown: () => "मैं यह कोड नहीं पहचानता। कृपया उस पेमेंट के बारे में मेरे सबसे नए संदेश वाला कोड इस्तेमाल करें।",
+  owner_upi_late: (f) => `आपने बुकिंग ${need(f, "bookingRef")} के ${marked(f)} उसकी रोक खत्म होने के बाद दर्ज किए, इसलिए बुकिंग अपने-आप दोबारा नहीं हुई। ग्राहक ${need(f, "customerPhone")} की बुकिंग खुद दोबारा करें, या ${inr(f, "refundInr")} UPI से वापस भेजें। फिर "रिफंड भेज दिया" या "बुकिंग के लिए रखा" दबाएँ, या "refunded ${code(f)}" या "kept ${code(f)}" लिखकर भेजें।`,
+  owner_upi_refund_owed: (f) => `वापस भेजना है: ग्राहक ${need(f, "customerPhone")} (बुकिंग ${need(f, "bookingRef")}) को UPI से ${inr(f, "refundInr")}। एजेंट कभी पैसे नहीं भेजता। भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
+  owner_upi_refund_reminder: (f) => `याद दिलाना: ग्राहक ${need(f, "customerPhone")} (बुकिंग ${need(f, "bookingRef")}) को ${inr(f, "refundInr")} अभी भी वापस देना है। UPI से भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded ${code(f)}" लिखकर भेजें।`,
+  owner_upi_refund_marked: (f) => `धन्यवाद। बुकिंग ${need(f, "bookingRef")} का ${inr(f, "refundInr")} रिफंड भेजा हुआ दर्ज हो गया है, और ग्राहक को बता दिया गया है।`,
+  owner_upi_refund_kept: (f) => `ठीक है। बुकिंग ${need(f, "bookingRef")} के ${inr(f, "refundInr")} आपकी खुद की हुई बुकिंग के लिए रखे गए हैं। अब कुछ वापस देना बाकी नहीं है।`,
+};
+
+const upiMl: UpiSet = {
+  upi_quote_and_link: (f) => `ഞങ്ങളുടെ ${need(f, "serviceName")} ${inr(f, "priceInr")} ആണ്. ${slot(f)} ഒഴിവാണ്. ഉറപ്പിക്കാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് UPI വഴി ${payee(f)}-ന് (UPI ID ${upiId(f)}) അയക്കൂ: ${need(f, "link")} സ്ലോട്ട് ${need(f, "holdMinutes")} മിനിറ്റ് പിടിച്ചുവെക്കും. പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും.`,
+  upi_slot_and_link: (f) => `${slot(f)} ഒഴിവാണ്. ഉറപ്പിക്കാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് UPI വഴി ${payee(f)}-ന് (UPI ID ${upiId(f)}) അയക്കൂ: ${need(f, "link")} സ്ലോട്ട് ${need(f, "holdMinutes")} മിനിറ്റ് പിടിച്ചുവെക്കും. പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും.`,
+  upi_already_waiting: (f) => `നിങ്ങളുടെ സ്ലോട്ട് (${slot(f)}) പിടിച്ചുവെച്ചിട്ടുണ്ട്. ${inr(f, "depositInr")} അഡ്വാൻസ് UPI വഴി ${payee(f)}-ന് (UPI ID ${upiId(f)}) അയക്കൂ: ${need(f, "link")} പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും.`,
+  upi_qr_caption: (f) => `ബുക്കിംഗ് ${need(f, "bookingRef")}-നായി ${payee(f)}-ന് UPI വഴി ${inr(f, "depositInr")} അയക്കാൻ സ്കാൻ ചെയ്യൂ.`,
+  upi_booked: (f) => `ബുക്ക് ആയി! ${need(f, "serviceName")}, ${slot(f)}. നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് ${need(f, "windowHours")} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.`,
+  upi_paid_claim: (f) => `നന്ദി. ഉടമ അവരുടെ UPI ആപ്പിൽ നിങ്ങളുടെ ${inr(f, "depositInr")} നോക്കി ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. സ്ക്രീൻഷോട്ട് പണമടച്ചതിന്റെ തെളിവല്ല, അതിനാൽ ആ സന്ദേശത്തിനായി കാത്തിരിക്കൂ.`,
+  upi_nothing_waiting: () => "നന്ദി. ഇപ്പോൾ നിങ്ങളുടെ ഒരു UPI പണമടവും ബാക്കിയില്ല, അതിനാൽ ഉടമയ്ക്ക് ഉറപ്പിക്കാൻ ഒന്നുമില്ല. മറ്റെന്തിനെങ്കിലും പണം അയച്ചിട്ടുണ്ടെങ്കിൽ ദയവായി ഉടമയോട് സംസാരിക്കൂ.",
+  upi_hold_expired: (f) => `ഉടമ സമയത്തിനുള്ളിൽ അഡ്വാൻസ് ഉറപ്പിക്കാത്തതിനാൽ ${slot(f)}-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ചു. നിങ്ങൾ ഇതിനകം പണം അയച്ചിട്ടുണ്ടെങ്കിൽ ഉടമ നിങ്ങളെ ബന്ധപ്പെടും. ഇനിയും ബുക്ക് ചെയ്യണമെങ്കിൽ എനിക്ക് സന്ദേശം അയക്കൂ.`,
+  upi_late_received: (f) => `നിങ്ങളുടെ ${marked(f)} ഉടമ ഉറപ്പിച്ചത് ${slot(f)}-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ച ശേഷമാണ്, അതിനാൽ ബുക്ക് ആയിട്ടില്ല. വീണ്ടും ബുക്ക് ചെയ്യുന്നതിനെക്കുറിച്ചോ പണം തിരികെ അയക്കുന്നതിനെക്കുറിച്ചോ ഉടമ നിങ്ങളെ ബന്ധപ്പെടും.`,
+  upi_refund_owed: (f) => `ഉടമ ${inr(f, "refundInr")} UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.`,
+  upi_cancelled_refund_owed: (f) => `${slot(f)}-ലെ നിങ്ങളുടെ ബുക്കിംഗ് റദ്ദാക്കി. ഉടമ നിങ്ങളുടെ ${inr(f, "refundInr")} UPI വഴി തിരികെ അയക്കും, അയച്ചതായി രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.`,
+  upi_extra_refund_owed: (f) => `നിങ്ങൾ അഡ്വാൻസിനേക്കാൾ കൂടുതൽ അയച്ചു. അധികമായ ${inr(f, "refundInr")} ഉടമ UPI വഴി തിരികെ അയക്കും, അയച്ചതായി രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും.`,
+  upi_refund_sent: (f) => `ബുക്കിംഗ് ${need(f, "bookingRef")}-ന്റെ നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ.`,
+
+  owner_upi_expected: (f) => `പരിശോധിക്കാനുള്ള UPI പണമടവ്: ഉപഭോക്താവ് ${need(f, "customerPhone")}, ബുക്കിംഗ് ${need(f, "bookingRef")} (${need(f, "serviceName")}, ${slot(f)}) എന്നതിനായി ${inr(f, "depositInr")} അഡ്വാൻസ് അയക്കും. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ "received ${code(f)}" എന്നതിന് ശേഷം തുക എഴുതുക.`,
+  owner_upi_claim: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")} ബുക്കിംഗ് ${need(f, "bookingRef")}-ന്റെ ${inr(f, "depositInr")} അഡ്വാൻസ് അയച്ചെന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_upi_marked: (f) => `നന്ദി. ബുക്കിംഗ് ${need(f, "bookingRef")}-ന്റെ ${marked(f)} നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി.`,
+  owner_upi_part: (f) => `ബുക്കിംഗ് ${need(f, "bookingRef")}-ന് നിങ്ങൾ ${marked(f)} രേഖപ്പെടുത്തി, പക്ഷേ അഡ്വാൻസ് ${inr(f, "depositInr")} ആണ്, അതിനാൽ ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. പിടിച്ചുവെക്കൽ സമയം തീരും വരെ സ്ലോട്ട് പിടിച്ചുവെക്കും. ബാക്കി ${left(f)} എത്തുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_upi_already: () => "ആ പണമടവ് ഇതിനകം രേഖപ്പെടുത്തിയിട്ടുണ്ട്. അത് ഒരു തവണ മാത്രം കണക്കാക്കും.",
+  owner_upi_unknown: () => "ആ കോഡ് എനിക്ക് അറിയില്ല. ആ പണമടവിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ സന്ദേശത്തിലെ കോഡ് ഉപയോഗിക്കുക.",
+  owner_upi_late: (f) => `ബുക്കിംഗ് ${need(f, "bookingRef")}-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ച ശേഷമാണ് നിങ്ങൾ ${marked(f)} കിട്ടിയതായി രേഖപ്പെടുത്തിയത്, അതിനാൽ അത് സ്വയം വീണ്ടും ബുക്ക് ആയില്ല. ഉപഭോക്താവ് ${need(f, "customerPhone")}-നെ നിങ്ങൾ തന്നെ വീണ്ടും ബുക്ക് ചെയ്യുക, അല്ലെങ്കിൽ ${inr(f, "refundInr")} UPI വഴി തിരികെ അയക്കുക. പിന്നെ "റീഫണ്ട് അയച്ചു" അല്ലെങ്കിൽ "ബുക്കിംഗിനായി വെച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" അല്ലെങ്കിൽ "kept ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_upi_refund_owed: (f) => `തിരികെ അയക്കേണ്ടത്: ഉപഭോക്താവ് ${need(f, "customerPhone")}-ന് (ബുക്കിംഗ് ${need(f, "bookingRef")}) UPI വഴി ${inr(f, "refundInr")}. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് ${need(f, "customerPhone")}-ന് (ബുക്കിംഗ് ${need(f, "bookingRef")}) ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded ${code(f)}" എന്ന് മറുപടി അയക്കുക.`,
+  owner_upi_refund_marked: (f) => `നന്ദി. ബുക്കിംഗ് ${need(f, "bookingRef")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, ഉപഭോക്താവിനെ അറിയിച്ചു.`,
+  owner_upi_refund_kept: (f) => `ശരി. ബുക്കിംഗ് ${need(f, "bookingRef")}-ന്റെ ${inr(f, "refundInr")} നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല.`,
+};
+
+const upiKn: UpiSet = {
+  upi_quote_and_link: (f) => `ನಮ್ಮ ${need(f, "serviceName")} ${inr(f, "priceInr")}. ${slot(f)} ಖಾಲಿ ಇದೆ. ಖಚಿತಪಡಿಸಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣವನ್ನು UPI ಮೂಲಕ ${payee(f)} (UPI ID ${upiId(f)}) ಗೆ ಕಳುಹಿಸಿ: ${need(f, "link")} ಸ್ಲಾಟ್ ಅನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ. ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  upi_slot_and_link: (f) => `${slot(f)} ಖಾಲಿ ಇದೆ. ಖಚಿತಪಡಿಸಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣವನ್ನು UPI ಮೂಲಕ ${payee(f)} (UPI ID ${upiId(f)}) ಗೆ ಕಳುಹಿಸಿ: ${need(f, "link")} ಸ್ಲಾಟ್ ಅನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ. ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  upi_already_waiting: (f) => `ನಿಮ್ಮ ಸ್ಲಾಟ್ (${slot(f)}) ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ. ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣವನ್ನು UPI ಮೂಲಕ ${payee(f)} (UPI ID ${upiId(f)}) ಗೆ ಕಳುಹಿಸಿ: ${need(f, "link")} ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  upi_qr_caption: (f) => `ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ಗಾಗಿ ${payee(f)} ಗೆ UPI ಮೂಲಕ ${inr(f, "depositInr")} ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ.`,
+  upi_booked: (f) => `ಬುಕ್ ಆಗಿದೆ! ${need(f, "serviceName")}, ${slot(f)}. ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.`,
+  upi_paid_claim: (f) => `ಧನ್ಯವಾದ. ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನಿಮ್ಮ ${inr(f, "depositInr")} ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ.`,
+  upi_nothing_waiting: () => "ಧನ್ಯವಾದ. ಈಗ ನಿಮ್ಮ ಯಾವುದೇ UPI ಪಾವತಿ ಬಾಕಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಲು ಏನೂ ಇಲ್ಲ. ಬೇರೆ ಯಾವುದಕ್ಕಾದರೂ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತನಾಡಿ.",
+  upi_hold_expired: (f) => `ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಮುಂಗಡ ಹಣವನ್ನು ಖಚಿತಪಡಿಸದ ಕಾರಣ ${slot(f)} ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದಿದೆ. ನೀವು ಈಗಾಗಲೇ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ಮಾಲೀಕರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ. ಇನ್ನೂ ಬುಕ್ ಮಾಡಬೇಕಿದ್ದರೆ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.`,
+  upi_late_received: (f) => `ನಿಮ್ಮ ${marked(f)} ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ${slot(f)} ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದ ನಂತರ ಖಚಿತಪಡಿಸಿದರು, ಆದ್ದರಿಂದ ಬುಕ್ ಆಗಿಲ್ಲ. ಮತ್ತೆ ಬುಕ್ ಮಾಡುವ ಅಥವಾ ಹಣ ಮರಳಿ ಕಳುಹಿಸುವ ಬಗ್ಗೆ ಮಾಲೀಕರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.`,
+  upi_refund_owed: (f) => `ಮಾಲೀಕರು ${inr(f, "refundInr")} ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  upi_cancelled_refund_owed: (f) => `${slot(f)} ರ ನಿಮ್ಮ ಬುಕಿಂಗ್ ರದ್ದಾಗಿದೆ. ಮಾಲೀಕರು ನಿಮ್ಮ ${inr(f, "refundInr")} ಅನ್ನು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  upi_extra_refund_owed: (f) => `ನೀವು ಮುಂಗಡ ಹಣಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಳುಹಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ ${inr(f, "refundInr")} ಅನ್ನು ಮಾಲೀಕರು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  upi_refund_sent: (f) => `ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.`,
+
+  owner_upi_expected: (f) => `ಪರಿಶೀಲಿಸಬೇಕಾದ UPI ಪಾವತಿ: ಗ್ರಾಹಕರು ${need(f, "customerPhone")} ಬುಕಿಂಗ್ ${need(f, "bookingRef")} (${need(f, "serviceName")}, ${slot(f)}) ಗಾಗಿ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಂಡಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ "received ${code(f)}" ನಂತರ ಮೊತ್ತ ಬರೆಯಿರಿ.`,
+  owner_upi_claim: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")} ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ: ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. ಹಣ ಇದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_upi_marked: (f) => `ಧನ್ಯವಾದ. ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ${marked(f)} ಬಂದಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ್ದೀರಿ.`,
+  owner_upi_part: (f) => `ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ಗೆ ನೀವು ${marked(f)} ದಾಖಲಿಸಿದ್ದೀರಿ, ಆದರೆ ಮುಂಗಡ ಹಣ ${inr(f, "depositInr")}, ಆದ್ದರಿಂದ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರುತ್ತದೆ. ಉಳಿದ ${left(f)} ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ, ಅಥವಾ "received ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_upi_already: () => "ಆ ಪಾವತಿ ಈಗಾಗಲೇ ದಾಖಲಾಗಿದೆ. ಅದನ್ನು ಒಂದೇ ಬಾರಿ ಎಣಿಸಲಾಗುತ್ತದೆ.",
+  owner_upi_unknown: () => "ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಆ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಸಂದೇಶದಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ.",
+  owner_upi_late: (f) => `ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದ ನಂತರ ನೀವು ${marked(f)} ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದೀರಿ, ಆದ್ದರಿಂದ ಅದು ತಾನಾಗಿ ಮತ್ತೆ ಬುಕ್ ಆಗಲಿಲ್ಲ. ಗ್ರಾಹಕರು ${need(f, "customerPhone")} ಅವರನ್ನು ನೀವೇ ಮತ್ತೆ ಬುಕ್ ಮಾಡಿ, ಅಥವಾ ${inr(f, "refundInr")} ಅನ್ನು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸಿ. ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಅಥವಾ "ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಅಥವಾ "kept ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_upi_refund_owed: (f) => `ಮರಳಿ ಕಳುಹಿಸಬೇಕು: ಗ್ರಾಹಕರು ${need(f, "customerPhone")} (ಬುಕಿಂಗ್ ${need(f, "bookingRef")}) ಅವರಿಗೆ UPI ಮೂಲಕ ${inr(f, "refundInr")}. ಏಜೆಂಟ್ ಎಂದಿಗೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_upi_refund_reminder: (f) => `ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು ${need(f, "customerPhone")} (ಬುಕಿಂಗ್ ${need(f, "bookingRef")}) ಅವರಿಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded ${code(f)}" ಎಂದು ಉತ್ತರಿಸಿ.`,
+  owner_upi_refund_marked: (f) => `ಧನ್ಯವಾದ. ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ.`,
+  owner_upi_refund_kept: (f) => `ಸರಿ. ಬುಕಿಂಗ್ ${need(f, "bookingRef")} ರ ${inr(f, "refundInr")} ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಡಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ.`,
+};
+
+// ---- the licence's wind-down and final stop (plan B13) --------------------------------------------------------------------------------------------------
+// The customer hears that online booking is paused and to contact the shop: no promise to book later. The owner hears once, plainly, and is told who to contact; the
+// final stop's notice says nothing is deleted, what is still open, and until when the free copy of the records can be had. Hindi, Malayalam and Kannada are
+// machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+const partner = (f: MessageFacts) => need(f, "partner");
+const until = (f: MessageFacts) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language);
+const upcoming = (f: MessageFacts) => need(f, "upcomingCount");
+const open = (f: MessageFacts) => need(f, "openCount");
+
+const licenceEn: LicenceSet = {
+  booking_paused: (f) => `Online booking is paused for now. Please contact ${f.businessName} directly.`,
+  owner_licence_paused: (f) => `Notice: online booking for ${f.businessName} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact ${partner(f)}.`,
+  owner_licence_stopped: (f) => `Notice: online booking for ${f.businessName} has stopped. Nothing is deleted. Bookings to come: ${upcoming(f)}. Other open items: ${open(f)}. ${partner(f)} can give you the full list and a free copy of all your records until ${until(f)}.`,
+};
+const licenceHi: LicenceSet = {
+  booking_paused: (f) => `ऑनलाइन बुकिंग अभी रुकी हुई है। कृपया सीधे ${f.businessName} से संपर्क करें।`,
+  owner_licence_paused: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग अभी रुकी हुई है। पहले की बुकिंग, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया ${partner(f)} से संपर्क करें।`,
+  owner_licence_stopped: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: ${upcoming(f)}। बाकी खुले काम: ${open(f)}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी ${until(f)} तक ${partner(f)} से मिल सकती है।`,
+};
+const licenceMl: LicenceSet = {
+  booking_paused: (f) => `ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
+  owner_licence_paused: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി ${partner(f)}-നെ ബന്ധപ്പെടൂ.`,
+  owner_licence_stopped: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: ${upcoming(f)}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: ${open(f)}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും ${until(f)} വരെ ${partner(f)} നൽകും.`,
+};
+const licenceKn: LicenceSet = {
+  booking_paused: (f) => `ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+  owner_licence_paused: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು ${partner(f)} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+  owner_licence_stopped: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: ${upcoming(f)}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: ${open(f)}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ${until(f)} ವರೆಗೆ ${partner(f)} ನೀಡುತ್ತಾರೆ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn }, hi: { ...hi, ...upiHi, ...licenceHi }, ml: { ...ml, ...upiMl, ...licenceMl }, kn: { ...kn, ...upiKn, ...licenceKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

@@ -213,8 +213,8 @@ Laya is `convaiinnovations/laya` on Hugging Face (Apache-2.0; the multilingual o
 
 | Left open | Why | Revisit when |
 | --- | --- | --- |
-| **The verify page on geometer.dev (`/verify/<code>`)** | The documents print their short code and the path `/verify/<code>`, but no page answers it. A page needs hosting, a place that keeps each issued document (or its digest) so a code can be looked up, and **the owner's approval before anything is deployed**. Until then a reader checks a file with `scripts/verify-report.ts`, or asks the partner. The printed path is text, not a link | The owner approves the deploy; decide whether Geometer keeps issued documents or only digests |
-| A QR code on the certificates | It needs an encoder written by hand (no dependencies) and a test against a known reference vector, and it would point at the verify page above, which does not exist. Not built rather than built unchecked | The verify page exists |
+| **The verify page on geometer.dev (`/verify/#<digest>`)** | Built on the website (8 Nov, public-web P22) but not deployed. The papers now print `/verify/#<code>` and `https://geometer.dev/verify/#<digest>`; a scan opens nothing useful until the owner deploys | The owner approves the deploy |
+| A QR code on the certificates | **Built (8 Nov, B12)** in `modules/qr` and `modules/report/verify-link.ts`; every paper's page shows it. Left open: no key in the link (see `modules/Explanation.md`), the Hindi/Malayalam/Kannada `scanToCheck` words wait for native review (Malayalam and Kannada are on the REVIEW sheets, section 6, `page.scanToCheck`; Hindi has no sheet), and no phone camera ran against a printed paper | A native speaker reviews the sheets; the next hand check |
 | **Native review of the report and certificate words** | The Hindi, Malayalam and Kannada strings in `report/strings.ts` are machine-written. Section 6 of [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) lists them; Hindi has no sheet yet. Word choices to look at: "പരിധി"/"ಮಿತಿ"/"सीमा" for the shop's limits, "അഡ്വാൻസ്"/"ಮುಂಗಡ ಹಣ" for the deposit, the label forms ("label: number") for the owner's lines, and that nothing reads as a promise | **Before any real shop sees either language**; a Hindi sheet before the Hindi pilot |
 | The Guard anchor | Every document has `anchor: null`, inside the signed bytes. Guard's hash-chained ledger does not exist yet | Guard passes its fail-closed minimum; then fill the field before signing and write the matching anchor file |
 | `geo-verify` reading these files | Same conventions, not the same format: geometer-verify writes integers as strings and its schemas are strict and generated. Joining them means adding the report and certificate records to the contract schemas | The anchor work above |
@@ -323,6 +323,22 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
 - **Model calls are counted per server, not per shop.** The model Guard has one cap; this template's record has each action's model cost, and nothing yet stops one shop from using the server's whole cap.
 - **The runtime's single `services.timeoutMs`** applies to every service. The bundle needs it above Guard's 15 s for payments; WhatsApp, Calendar and the model are then also given that long. A per-service value would let the model parser keep its 8 s.
 - **`steps` does not count clock ticks.** A tick that sends a reminder is work, but is not counted as a step, so a shop that only sends reminders shows no steps. Revisit when: fleet wants a "ticks" count.
+- **On a UPI shop the situations written around a Razorpay link do not run.** Thirty-eight are named as not run, with the reason, and nine UPI situations run instead
+  (`crash-test/upi.ts`); the calendar faults, the reminders, rescheduling and the AI situations are not repeated with a UPI deposit. Revisit when: a UPI shop goes live
+  (make the world's "the customer pays" mean "the owner marks it" so every situation runs either way).
+- **A part payment on a UPI booking does not tell the customer.** The owner is asked for the rest; the customer's request still asks for the whole deposit (the hold
+  ends, or the owner books by hand). Revisit when: owners ask for a "please send the other ₹50" message.
+- **UPI and the browser demo.** The demo runs Glow Salon's Razorpay settings; it has no QR maker (no `node:zlib`) and is not offered a UPI shop. Revisit when: the demo
+  shows the UPI option.
+
+## The licence's wind-down (B13, 8 November 2026)
+
+- **Guard does not check the lease.** The agent's refusals are the runtime's own; Guard's `subscription_suspended` is an engine task (`bundle/Deferred.md` has the
+  block). Revisit when: Guard reads the lease, then add a crash-test situation that winds a shop down and checks both refuse the same calls.
+- **No crash-test situation for the wind-down.** It is unit-tested (`test/licence.test.ts`) and runtime-tested, not in `crash-test/situations.ts`. Revisit when: Guard's
+  check lands.
+- **A customer's reply in the final stop is recorded but not answered.** "Nothing more is sent" covers every message, so a customer who writes after the stop hears
+  nothing from the agent. Revisit when: the owner wants one fixed line (it would be a message the stop allows, like the owner's notice).
 
 ## Guard's "already done" and several approvers (added 8 November 2026)
 

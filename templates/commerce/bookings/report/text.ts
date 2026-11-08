@@ -3,7 +3,7 @@
 // per-limit table are in the builder layer; this is what an owner wants in ten seconds.)
 // Lines are "label: number", like the product's mock-up, so no number needs a case ending in Malayalam or Kannada.
 // Every number and amount is read from the report (which counted the record); the words come from strings.ts.
-import { NOT_TESTED } from "../crash-test/not-tested.ts";
+import { NOT_TESTED, UPI_NOT_TESTED } from "../crash-test/not-tested.ts";
 import { formatDate } from "../../../../modules/language/format.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { languagesOf, oneLine, periodLabel, rupees } from "../../../../modules/report/text.ts";
@@ -11,7 +11,7 @@ import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 
 /**
  * What a monthly document says about the go-live checks, as sentences in the shop's language: no certificate was given, one was given and could
@@ -33,7 +33,7 @@ export function goLiveLines(goLive: GoLiveFinding, language: Language): string[]
 /** What was not checked, as the owner's short form names it: the items an owner would expect, then how many more the full report lists. */
 export function notCheckedList(report: MonthlyReport, language: Language): string {
   const s = STRINGS[language];
-  const named = NOT_TESTED.filter((n) => n.forOwner).map((n) => s.notTested[n.id]);
+  const named = [...NOT_TESTED, ...UPI_NOT_TESTED].filter((n) => n.forOwner && report.notTested.includes(n.id)).map((n) => s.notTested[n.id]);
   const others = report.notTested.length + report.notCounted.length - named.length;
   return [...named, s.more(others)].join(" · ");
 }
@@ -49,8 +49,8 @@ export function ownerText(report: MonthlyReport, language: Language): string {
   const moneyAndBookings = [
     pair(s.label.bookingsMade, bookings.made),
     bookings.cancelled > 0 ? pair(s.label.cancelled, bookings.cancelled) : "",
-    pair(s.label.depositsCollected, rupees(money.deposits.paise)),
-    money.refunds.count > 0 ? pair(s.label.givenBack, rupees(money.refunds.paise)) : "",
+    pair(moneyLabels(language, report.paidBy).deposits, rupees(money.deposits.paise)),
+    money.refunds.count > 0 ? pair(moneyLabels(language, report.paidBy).givenBack, rupees(money.refunds.paise)) : "",
   ].filter(Boolean).join(" · ");
   const asked = [
     pair(s.label.wasAsked, owner.asked), pair(s.label.approved, owner.approved), pair(s.label.saidNo, owner.denied),

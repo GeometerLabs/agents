@@ -52,11 +52,14 @@ export function checkNoDoubleBooking(input: { startMs: number; endMs: number; bu
 
 // confirm-only-when-recorded: say "booked" only when the calendar shows it AND the deposit is recorded, both read back
 // from the services' own records (the record only holds "confirmed" after a read-back).
-export function checkConfirmOnlyWhenRecorded(input: { record: RecordView; booking: string }): Decision {
-  const { record, booking } = input;
+// A UPI shop (B33) has no payment service to read back: its deposit is recorded when the owner has marked the whole amount received ("owner_marked_paid", whose
+// `amountPaise` add up to `depositPaise`). Nothing a customer says or sends (a screenshot, "I paid") makes such an entry.
+export function checkConfirmOnlyWhenRecorded(input: { record: RecordView; booking: string; depositPaise?: number }): Decision {
+  const { record, booking, depositPaise } = input;
   const calendar = record.isConfirmed(booking, "confirm_booking");
-  const deposit = record.isConfirmed(booking, "record_deposit");
-  if (calendar && deposit) return allow("confirm-only-when-recorded", "The calendar shows the booking and the payment record shows the deposit.");
+  const markedByOwner = depositPaise !== undefined && record.confirmedRefs(booking, "owner_marked_paid", "amountPaise").reduce((n, s) => n + Number(s), 0) >= depositPaise;
+  const deposit = record.isConfirmed(booking, "record_deposit") || markedByOwner;
+  if (calendar && deposit) return allow("confirm-only-when-recorded", markedByOwner ? "The calendar shows the booking and the owner has marked the whole deposit received." : "The calendar shows the booking and the payment record shows the deposit.");
   const missing = [calendar ? null : "the calendar does not show the booking", deposit ? null : "no deposit is recorded"].filter(Boolean).join(" and ");
   return block("confirm-only-when-recorded", `Not booked yet: ${missing}.`);
 }

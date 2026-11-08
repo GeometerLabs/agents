@@ -26,8 +26,12 @@ import type { Payments } from "./payments.ts";
 /** After a refund could not be sent at all, or an approved one could not be sent again: minutes before each next try, then the builder is told. */
 export const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
 
-/** Why a refund needs the builder, not the owner. "unheld": a refund above the limit was sent without Guard holding it (Guard's threshold does not match the settings). */
-export type RefundIssueKind = "unknown" | "uncertain" | "refused" | "failed" | "unconfirmed" | "expired" | "unheld";
+/**
+ * Why a refund needs the builder, not the owner. "unheld": a refund above the limit was sent without Guard holding it (Guard's threshold does not match the settings).
+ * "late_upi": a UPI shop's owner marked money received after the booking's hold had ended (B33): it was not booked again by itself, the owner owes it back or books
+ * the customer by hand, and the builder or partner is told through this count as well as the record.
+ */
+export type RefundIssueKind = "unknown" | "uncertain" | "refused" | "failed" | "unconfirmed" | "expired" | "unheld" | "late_upi";
 export interface RefundIssue { paymentId: string; kind: RefundIssueKind; note: string; atMs: number }
 
 /**
@@ -264,6 +268,37 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     else if (result === "held") await tellCustomer(b, b.customer, [p.then.held], { refundInr: p.amountInr });
   }
 
+  // ---- a look at a refund whose outcome is not known (the panel's to-do list asks for it) -------------------------------------------------
+
+  /**
+   * Look once more, read-only, at the payments service's own list of refunds for each payment whose refund may have gone (unknown, uncertain, unconfirmed, or failed after its
+   * tries). A refund that is on the list is recorded as confirmed and the problem is cleared. Nothing is ever SENT: no refund is asked for again, and the payment stays in
+   * `stoppedRefunds`. Returns how many it settled, and how many it looked at and still could not see.
+   */
+  async function recheck(b: C): Promise<{ settled: number; looked: number }> {
+    let settled = 0;
+    let looked = 0;
+    for (const issue of [...issuesOf(b)]) {
+      if (!["unknown", "uncertain", "unconfirmed", "failed"].includes(issue.kind)) continue;
+      looked++;
+      const refs = { paymentId: issue.paymentId };
+      let found;
+      try { found = (await payments.listRefunds(issue.paymentId)).find((r) => r.receipt === `${b.id}:${issue.paymentId}`); } catch (e) {
+        if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
+        log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: `looked again, but the payments service's list could not be read (${(e as Error).message}). Nothing was sent` });
+        continue;
+      }
+      if (found) {
+        log(b, b.customer, "refund", "confirmed", { paymentId: issue.paymentId, recheck: true }, { refs: { ...refs, refundId: found.id }, notes: "looked again: the payments service's own list now shows the refund. It was not sent again" });
+        b.refundIssues = issuesOf(b).filter((x) => x !== issue);
+        settled++;
+      } else {
+        log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: "looked again: the payments service's own list still does not show the refund. It was not sent again; check Razorpay" });
+      }
+    }
+    return { settled, looked };
+  }
+
   // ---- a refund Guard held: the relay says the owner decided ---------------------------------------------------------------------
 
   const holdFor = (approval: string): { b: C; hold: GuardHold } | undefined => {
@@ -405,5 +440,5 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     }
   }
 
-  return { requestRefund, afterRefund, retryRefund, onApprovalDecision, releaseHeld, expireGuardHold, sweep, overLimit, stoppedOf, raise };
+  return { requestRefund, afterRefund, retryRefund, onApprovalDecision, releaseHeld, expireGuardHold, sweep, overLimit, stoppedOf, raise, recheck };
 }

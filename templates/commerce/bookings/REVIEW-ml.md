@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (40)
+## 1. Messages to the customer (54)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -52,8 +52,22 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `kept` | The customer tapped No, keep it: the booking stays as it is | ശരി, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ലെ നിങ്ങളുടെ ബുക്കിംഗ് അതുപോലെ തന്നെ തുടരും. | Okay, your booking for Tue 10 Nov, 6:00 pm stays as it is. |  |
 | `told_owner` | The customer tapped Talk to the owner: they are told the owner has been asked to message them | നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ നിങ്ങൾക്ക് സന്ദേശം അയയ്ക്കും. | I've told the owner that you would like to talk. They will message you here. |  |
 | `couldnt_tell_owner` | The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ക്ഷമിക്കണം, ഇപ്പോൾ ഉടമയെ അറിയിക്കാൻ കഴിഞ്ഞില്ല. ദയവായി കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ. | Sorry, I couldn't reach the owner just now. Please try again in a few minutes. |  |
+| `upi_quote_and_link` | UPI shop: normal quote, with the UPI ID and the upi:// link (the QR picture goes just before) | ഞങ്ങളുടെ ഹെയർകട്ട് ₹450 ആണ്. ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവാണ്. ഉറപ്പിക്കാൻ ₹200 അഡ്വാൻസ് UPI വഴി Glow Salon-ന് (UPI ID glowsalon@okicici) അയക്കൂ: upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR സ്ലോട്ട് 15 മിനിറ്റ് പിടിച്ചുവെക്കും. പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. | Our haircut is ₹450. Tue 10 Nov, 6:00 pm is free. To confirm, pay the ₹200 deposit by UPI to Glow Salon (UPI ID glowsalon@okicici): upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR I'll hold the slot for 15 minutes. The owner confirms the payment, then I'll message you. |  |
+| `upi_slot_and_link` | UPI shop: straight after price_floor, the same without the price | ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവാണ്. ഉറപ്പിക്കാൻ ₹200 അഡ്വാൻസ് UPI വഴി Glow Salon-ന് (UPI ID glowsalon@okicici) അയക്കൂ: upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR സ്ലോട്ട് 15 മിനിറ്റ് പിടിച്ചുവെക്കും. പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. | Tue 10 Nov, 6:00 pm is free. To confirm, pay the ₹200 deposit by UPI to Glow Salon (UPI ID glowsalon@okicici): upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR I'll hold the slot for 15 minutes. The owner confirms the payment, then I'll message you. |  |
+| `upi_already_waiting` | UPI shop: the customer writes again while the slot is held | നിങ്ങളുടെ സ്ലോട്ട് (ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00) പിടിച്ചുവെച്ചിട്ടുണ്ട്. ₹200 അഡ്വാൻസ് UPI വഴി Glow Salon-ന് (UPI ID glowsalon@okicici) അയക്കൂ: upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. | Your slot (Tue 10 Nov, 6:00 pm) is held. Pay the ₹200 deposit by UPI to Glow Salon (UPI ID glowsalon@okicici): upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR The owner confirms the payment, then I'll message you. |  |
+| `upi_qr_caption` | UPI shop: the words under the QR picture | ബുക്കിംഗ് b-3-നായി Glow Salon-ന് UPI വഴി ₹200 അയക്കാൻ സ്കാൻ ചെയ്യൂ. | Scan to pay ₹200 by UPI to Glow Salon for booking b-3. |  |
+| `upi_booked` | UPI shop: the owner marked the whole deposit received and the calendar shows the booking | ബുക്ക് ആയി! ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. നിങ്ങളുടെ ₹200 അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് 24 മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം. | Booked! haircut on Tue 10 Nov, 6:00 pm. The owner has confirmed your ₹200 deposit. Cancel at least 24 hours before the start for a refund. |  |
+| `upi_paid_claim` | UPI shop: the customer says they paid, taps I have paid, or sends a screenshot (nothing is marked paid) | നന്ദി. ഉടമ അവരുടെ UPI ആപ്പിൽ നിങ്ങളുടെ ₹200 നോക്കി ഉറപ്പിക്കും, പിന്നെ ഞാൻ നിങ്ങൾക്ക് സന്ദേശം അയക്കും. സ്ക്രീൻഷോട്ട് പണമടച്ചതിന്റെ തെളിവല്ല, അതിനാൽ ആ സന്ദേശത്തിനായി കാത്തിരിക്കൂ. | Thank you. The owner will look for your ₹200 payment in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
+| `upi_nothing_waiting` | UPI shop: the customer says they paid and no UPI payment is waiting | നന്ദി. ഇപ്പോൾ നിങ്ങളുടെ ഒരു UPI പണമടവും ബാക്കിയില്ല, അതിനാൽ ഉടമയ്ക്ക് ഉറപ്പിക്കാൻ ഒന്നുമില്ല. മറ്റെന്തിനെങ്കിലും പണം അയച്ചിട്ടുണ്ടെങ്കിൽ ദയവായി ഉടമയോട് സംസാരിക്കൂ. | Thank you. No UPI payment is waiting for you just now, so there is nothing for the owner to confirm. If you paid for something else, please talk to the owner. |  |
+| `upi_hold_expired` | UPI shop: the hold ended before the owner confirmed the deposit | ഉടമ സമയത്തിനുള്ളിൽ അഡ്വാൻസ് ഉറപ്പിക്കാത്തതിനാൽ ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ചു. നിങ്ങൾ ഇതിനകം പണം അയച്ചിട്ടുണ്ടെങ്കിൽ ഉടമ നിങ്ങളെ ബന്ധപ്പെടും. ഇനിയും ബുക്ക് ചെയ്യണമെങ്കിൽ എനിക്ക് സന്ദേശം അയക്കൂ. | The hold on Tue 10 Nov, 6:00 pm has ended because the owner had not confirmed the deposit in time. If you have already paid, the owner will contact you. Message me if you'd still like to book. |  |
+| `upi_late_received` | UPI shop: the owner marked the money after the hold ended: not booked again by itself | നിങ്ങളുടെ ₹150 ഉടമ ഉറപ്പിച്ചത് ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ച ശേഷമാണ്, അതിനാൽ ബുക്ക് ആയിട്ടില്ല. വീണ്ടും ബുക്ക് ചെയ്യുന്നതിനെക്കുറിച്ചോ പണം തിരികെ അയക്കുന്നതിനെക്കുറിച്ചോ ഉടമ നിങ്ങളെ ബന്ധപ്പെടും. | The owner confirmed your ₹150 payment after the hold on Tue 10 Nov, 6:00 pm had ended, so it is not booked. The owner will contact you about booking again or sending the money back. |  |
+| `upi_refund_owed` | UPI shop: a refund the owner will send (the agent never sends it) | ഉടമ ₹200 UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | The owner will send ₹200 back to you by UPI. I'll message you when they mark it sent. |  |
+| `upi_cancelled_refund_owed` | UPI shop: the customer cancelled inside the window; the owner will send the deposit back | ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00-ലെ നിങ്ങളുടെ ബുക്കിംഗ് റദ്ദാക്കി. ഉടമ നിങ്ങളുടെ ₹200 UPI വഴി തിരികെ അയക്കും, അയച്ചതായി രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | Your booking for Tue 10 Nov, 6:00 pm is cancelled. The owner will send your ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
+| `upi_extra_refund_owed` | UPI shop: the owner marked more than the deposit; the extra goes back from the owner | നിങ്ങൾ അഡ്വാൻസിനേക്കാൾ കൂടുതൽ അയച്ചു. അധികമായ ₹200 ഉടമ UPI വഴി തിരികെ അയക്കും, അയച്ചതായി രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | You paid more than the deposit. The owner will send the extra ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
+| `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ബുക്കിംഗ് b-3-ന്റെ നിങ്ങളുടെ ₹200 റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
+| `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
 
-## 2. Messages to the owner (22)
+## 2. Messages to the owner (35)
 
 Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.
 
@@ -81,6 +95,19 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_ai_allowance` | Button mode, told once a month: the shop's monthly AI allowance is used up | അറിയിപ്പ്: Glow Salon-ന്റെ ഈ മാസത്തെ AI പരിധി തീർന്നു, അതിനാൽ ഏജന്റ് ഇനി ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് മറുപടി നൽകും. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. അടുത്ത മാസം സാധാരണ സേവനം തിരിച്ചെത്തും. | Notice: this month's AI allowance for Glow Salon is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month. |  |
 | `owner_ai_off` | Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent) | അറിയിപ്പ്: Glow Salon-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI തൽക്കാലം ഓഫ് ചെയ്തിരിക്കുന്നു. ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിച്ച് ബുക്കിംഗ് തുടരും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. ഇത് ക്രമീകരിച്ച വ്യക്തിയെ അറിയിച്ചിട്ടുണ്ട്. | Notice: the AI that reads messages for Glow Salon has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told. |  |
 | `owner_ai_fault` | Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes | അറിയിപ്പ്: Glow Salon-ന്റെ സന്ദേശങ്ങൾ വായിക്കുന്ന AI ഇപ്പോൾ മറുപടി നൽകുന്നില്ല, അതിനാൽ ഏജന്റ് ബട്ടണുകളും പട്ടികകളും ഉപയോഗിക്കുന്നു. ബുക്കിംഗ് തുടർന്നും നടക്കും, എല്ലാ പരിധികളും മുമ്പത്തെപ്പോലെ തന്നെ പാലിക്കും. കുറച്ച് മിനിറ്റിനു ശേഷം ഏജന്റ് വീണ്ടും AI പരീക്ഷിക്കും. | Notice: the AI that reads messages for Glow Salon is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes. |  |
+| `owner_upi_expected` | UPI shop: tells the owner what payment to look for in their UPI app, with the one-use code | പരിശോധിക്കാനുള്ള UPI പണമടവ്: ഉപഭോക്താവ് +919811111111, ബുക്കിംഗ് b-3 (ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00) എന്നതിനായി ₹200 അഡ്വാൻസ് അയക്കും. നിങ്ങളുടെ UPI ആപ്പിൽ കാണുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received P4XR9T" എന്ന് മറുപടി അയക്കുക. മറ്റൊരു തുക ആണ് വന്നതെങ്കിൽ "received P4XR9T" എന്നതിന് ശേഷം തുക എഴുതുക. | UPI payment to check: customer +919811111111 will pay the ₹200 deposit for haircut on Tue 10 Nov, 6:00 pm (booking b-3). When it shows in your UPI app, tap Received or reply "received P4XR9T". If a different amount came, reply "received P4XR9T" and the amount. |  |
+| `owner_upi_claim` | UPI shop: the customer says they paid (a screenshot is not proof): the owner is asked to look | ഉപഭോക്താവ് +919811111111 ബുക്കിംഗ് b-3-ന്റെ ₹200 അഡ്വാൻസ് അയച്ചെന്ന് പറയുന്നു. സ്ക്രീൻഷോട്ട് തെളിവല്ല: നിങ്ങളുടെ UPI ആപ്പ് നോക്കുക. പണം ഉണ്ടെങ്കിൽ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received P4XR9T" എന്ന് മറുപടി അയക്കുക. | Customer +919811111111 says they have paid the ₹200 deposit for booking b-3. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received P4XR9T". |  |
+| `owner_upi_marked` | UPI shop: the answer to the owner's Received | നന്ദി. ബുക്കിംഗ് b-3-ന്റെ ₹150 നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തി. | Thank you. ₹150 for booking b-3 is marked paid by you. |  |
+| `owner_upi_part` | UPI shop: the owner marked less than the deposit: not booked, the rest is asked for | ബുക്കിംഗ് b-3-ന് നിങ്ങൾ ₹150 രേഖപ്പെടുത്തി, പക്ഷേ അഡ്വാൻസ് ₹200 ആണ്, അതിനാൽ ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. പിടിച്ചുവെക്കൽ സമയം തീരും വരെ സ്ലോട്ട് പിടിച്ചുവെക്കും. ബാക്കി ₹50 എത്തുമ്പോൾ "കിട്ടി" അമർത്തുക, അല്ലെങ്കിൽ "received P4XR9T" എന്ന് മറുപടി അയക്കുക. | You marked ₹150 for booking b-3, but the deposit is ₹200, so it is not booked yet. The slot stays held until the hold ends. When the other ₹50 arrives, tap Received or reply "received P4XR9T". |  |
+| `owner_upi_already` | UPI shop: the owner used a code that was already used: counted once | ആ പണമടവ് ഇതിനകം രേഖപ്പെടുത്തിയിട്ടുണ്ട്. അത് ഒരു തവണ മാത്രം കണക്കാക്കും. | That payment is already marked. It is counted once. |  |
+| `owner_upi_unknown` | UPI shop: the owner used a code the agent never gave | ആ കോഡ് എനിക്ക് അറിയില്ല. ആ പണമടവിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ സന്ദേശത്തിലെ കോഡ് ഉപയോഗിക്കുക. | I don't know that code. Please use the code in my latest message about the payment. |  |
+| `owner_upi_late` | UPI shop: the owner marked the money after the hold ended: book by hand, or send it back | ബുക്കിംഗ് b-3-ന്റെ പിടിച്ചുവെക്കൽ അവസാനിച്ച ശേഷമാണ് നിങ്ങൾ ₹150 കിട്ടിയതായി രേഖപ്പെടുത്തിയത്, അതിനാൽ അത് സ്വയം വീണ്ടും ബുക്ക് ആയില്ല. ഉപഭോക്താവ് +919811111111-നെ നിങ്ങൾ തന്നെ വീണ്ടും ബുക്ക് ചെയ്യുക, അല്ലെങ്കിൽ ₹200 UPI വഴി തിരികെ അയക്കുക. പിന്നെ "റീഫണ്ട് അയച്ചു" അല്ലെങ്കിൽ "ബുക്കിംഗിനായി വെച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" അല്ലെങ്കിൽ "kept P4XR9T" എന്ന് മറുപടി അയക്കുക. | You marked ₹150 received for booking b-3 after its hold had ended, so it was not booked again by itself. Book customer +919811111111 again yourself, or send the ₹200 back by UPI. Then tap Refund sent or Kept for booking, or reply "refunded P4XR9T" or "kept P4XR9T". |  |
+| `owner_upi_refund_owed` | UPI shop: a refund the owner must send from their UPI app, with the code | തിരികെ അയക്കേണ്ടത്: ഉപഭോക്താവ് +919811111111-ന് (ബുക്കിംഗ് b-3) UPI വഴി ₹200. ഏജന്റ് ഒരിക്കലും പണം അയക്കില്ല. അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Refund to send: ₹200 by UPI to customer +919811111111 (booking b-3). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് +919811111111-ന് (ബുക്കിംഗ് b-3) ₹200 ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Reminder: ₹200 is still owed back to customer +919811111111 (booking b-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
+| `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | നന്ദി. ബുക്കിംഗ് b-3-ന്റെ ₹200 റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, ഉപഭോക്താവിനെ അറിയിച്ചു. | Thank you. The ₹200 refund for booking b-3 is marked sent, and the customer has been told. |  |
+| `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ശരി. ബുക്കിംഗ് b-3-ന്റെ ₹200 നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല. | Noted. The ₹200 for booking b-3 is kept for a booking you make yourself. Nothing more is owed back. |  |
+| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി Divya, local partner-നെ ബന്ധപ്പെടൂ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: 3. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: 1. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും വെള്ളി, 5 മാർച്ച് വരെ Divya, local partner നൽകും. | Notice: online booking for Glow Salon has stopped. Nothing is deleted. Bookings to come: 3. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -96,6 +123,10 @@ Some of the messages above come with buttons (up to 3, each 20 letters at most) 
 | `owner` | Button, and the last row of each list: talk to the shop's owner | ഉടമയോട് സംസാരിക്കണം | Talk to the owner |  |
 | `pickService` | The button that opens the list of services | സേവനം തിരഞ്ഞെടുക്കൂ | Pick a service |  |
 | `pickTime` | The button that opens the list of free times | സമയം തിരഞ്ഞെടുക്കൂ | Pick a time |  |
+| `paid` | UPI shop: button under the payment request: I have paid (the owner is asked to look; nothing is marked paid) | ഞാൻ പണമടച്ചു | I have paid |  |
+| `received` | UPI shop: the owner's button, with the amount after it: the money is in my UPI app | കിട്ടി | Received |  |
+| `refundSent` | UPI shop: the owner's button: I have sent the refund | റീഫണ്ട് അയച്ചു | Refund sent |  |
+| `keptForBooking` | UPI shop: the owner's button: I keep the money for a booking I make myself | ബുക്കിംഗിനായി വെച്ചു | Kept for booking |  |
 
 ## 3. Dates and times as the agent writes them
 
@@ -297,6 +328,10 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `sourceLong.stand-in` | ഈ കണക്കുകൾ പരിശീലന സംവിധാനങ്ങളിൽ നിന്നും ടെസ്റ്റ് പണത്തിൽ നിന്നും ഉള്ളതാണ്. യഥാർത്ഥമായ ഒന്നും അയയ്ക്കുകയോ അടയ്ക്കുകയോ ചെയ്തിട്ടില്ല. | These numbers come from stand-in services and test money. Nothing real was sent or paid. |  |
 | `sourceLong.test-mode` | ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ ടെസ്റ്റ് മോഡിൽ നിന്നുള്ളതാണ്. പണം ടെസ്റ്റ് പണമായിരുന്നു. | These numbers come from real services in test mode. The money was test money. |  |
 | `sourceLong.live` | ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ പ്രവർത്തിക്കുന്ന രേഖയിൽ നിന്നുള്ളതാണ്. | These numbers come from the live record of real services. |  |
+| `upiLabel.deposits` | ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ് | Deposits marked paid by owner |  |
+| `upiLabel.givenBack` | ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട് | Refunds marked sent by owner |  |
+| `notTested.upi-not-automatic` | പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു | automatic payment checking: with UPI the owner marks each payment received |  |
+| `notTested.real-upi` | യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല) | a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment) |  |
 | `notTested.voice-calls` | ഫോൺ കോളുകൾ | phone calls |  |
 | `notTested.group-bookings` | ഗ്രൂപ്പ് ബുക്കിംഗ് | group bookings |  |
 | `notTested.walk-ins` | നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) | walk-ins |  |
@@ -362,6 +397,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ഇവിടെ പരിശോധിക്കുക | Check it at |  |
 | `page.signedBy` | ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു | Signed with key |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
+| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ഞങ്ങൾ ചെയ്തത് കാണുക ▸ | Show what we did ▸ |  |
 | `page.byActionHeading` | എന്ത് ചെയ്തു, പ്രവൃത്തിയും ഫലവും അനുസരിച്ച് | What was done, by action and outcome |  |
@@ -592,6 +628,24 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ഈ മാസത്തെ ഉൾപ്പെട്ട സന്ദേശങ്ങളിൽ 80% ഉപയോഗിച്ചു. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | റീചാർജ് ബാലൻസിന്റെ 80% ഉപയോഗിച്ചു. തീരുന്നതിന് മുമ്പ് റീചാർജ് ചെയ്യുക. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp-ന്റെ ചില ചെലവുകൾ ബാലൻസിൽ നിന്ന് ഇതുവരെ അടച്ചിട്ടില്ല. അവ തീർക്കാൻ റീചാർജ് ചെയ്യുക. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `licence.heading` | ലൈസൻസ് | Licence |  |
+| `licence.states.active` | ലൈസൻസ് ശരിയാണ് | Licence in order |  |
+| `licence.states.reminder` | ലൈസൻസ് പണം അടയ്ക്കാനുണ്ട് | Licence payment due |  |
+| `licence.states.warning` | ലൈസൻസ് പണം വൈകി | Licence payment overdue |  |
+| `licence.states.wind_down` | നിർത്തിവച്ചു: പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ ഇല്ല | Paused: no new bookings or payment requests |  |
+| `licence.states.stopped` | നിർത്തി | Stopped |  |
+| `licence.means.active` | ഉപഭോക്താക്കൾക്ക് ഒന്നും മാറുന്നില്ല. | Nothing changes for customers. |  |
+| `licence.means.reminder` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. | Nothing changes for customers yet. |  |
+| `licence.means.warning` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. പണം അടച്ചില്ലെങ്കിൽ കട പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ എടുക്കില്ല. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
+| `licence.means.wind_down` | ഉപഭോക്താക്കളോട് കടയെ ബന്ധപ്പെടാൻ പറയുന്നു. റീഫണ്ടുകളും റദ്ദാക്കലുകളും നേരത്തെ ബുക്ക് ചെയ്തതോ പണം അടച്ചതോ ആയ കാര്യങ്ങളും തുടരും. പണം അടച്ചാൽ ഉടൻ എല്ലാം തിരിച്ചുവരും. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
+| `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള കാര്യങ്ങൾ ഉടമയ്ക്ക് അയച്ചു, കടയുടെ രേഖകൾ സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം. | Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free. |  |
+| `licence.paidThrough` | അടുത്ത പണം അടയ്ക്കേണ്ടത്: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
+| `licence.windDownOn` | പണം അടച്ചില്ലെങ്കിൽ 7 Jan 2027 മുതൽ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
+| `licence.extended` | Geometer-ന്റെ അടിയന്തര നീട്ടൽ 21 Dec 2026 വരെയുണ്ട്. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
+| `licence.stopOn` | പൂർണ്ണമായി നിർത്തുന്നത്: 6 Feb 2027. | Final stop planned for 6 Feb 2027. |  |
+| `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം. | Free download of the shop's records until 7 May 2027. |  |
+| `licence.renew` | പണം അടച്ച് പുതുക്കുക | Pay to renew |  |
+| `licence.stale` | 5 Dec 2026 മുതൽ ലൈസൻസ് പുതുക്കിയിട്ടില്ല. ഈ സർവർ Geometer-ൽ എത്തുന്നുണ്ടോ എന്ന് നോക്കൂ. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
@@ -787,6 +841,92 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.notReady` | ഇതുവരെ തയ്യാറായിട്ടില്ല. ശരിയാക്കാനുള്ള കാര്യങ്ങൾ: 2. | Not ready yet: 2 things need fixing. |  |
 | `setup.checks.certificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് തുറക്കൂ | Open the go-live certificate |  |
 | `setup.checks.switchOn` | സെർവർ ഇത് നടപ്പാക്കുമ്പോൾ കട ഓൺ ആകും. | The server switches the shop on when it applies it. |  |
+| `inbox.nav` | ചെയ്യാനുള്ളത് | To do |  |
+| `inbox.title` | തീരാത്ത കാര്യങ്ങൾ | Unfinished work |  |
+| `inbox.intro` | ഒരാൾ നോക്കേണ്ട യഥാർത്ഥ കാര്യങ്ങൾ. ഓരോ വരിയും കടയുടെ റെക്കോർഡിൽ നിന്ന് എടുത്തതാണ്; കൈകൊണ്ട് ഒന്നും ചേർത്തിട്ടില്ല. | Real jobs that need a person. Each line is worked out from the shop's record; nothing is added by hand. |  |
+| `inbox.empty` | ഇപ്പോൾ ആരും ഒന്നും ചെയ്യേണ്ടതില്ല. | Nothing needs a person right now. |  |
+| `inbox.count` | ചെയ്യാനുള്ളത്: 3 | 3 to do |  |
+| `inbox.asOf` | 4 Nov 2026, 10:30-ലെ റെക്കോർഡിൽ നിന്ന് വായിച്ചത്. | Read from the record of 4 Nov 2026, 10:30. |  |
+| `inbox.notShared` | ഈ കടയുടെ റെക്കോർഡ് ഇതുവരെ പങ്കിട്ടിട്ടില്ല, അതിനാൽ വായിക്കാൻ ഒന്നുമില്ല. | This shop's record has not been shared yet, so there is nothing to read. |  |
+| `inbox.since` | 4 Nov 2026, 10:30 മുതൽ | Since 4 Nov 2026, 10:30 |  |
+| `inbox.failedKinds` | ഈ കടയുടെ ഒരു പരിശോധന വായിക്കാനായില്ല, അതിനാൽ ഈ പട്ടിക ചെറുതായിരിക്കാം. | One of the checks could not be read for this shop, so this list may be short. |  |
+| `inbox.kinds.deposit_no_booking` | ₹200 ഡെപ്പോസിറ്റ് കിട്ടി, ബുക്കിങ് b-3 ഉറപ്പായില്ല: നോക്കി ശരിയാക്കുക | Deposit of ₹200 received, booking b-3 is missing: review recovery |  |
+| `inbox.kinds.payment_unrecorded` | ഫീസ് f-3-ന് പണം വന്നു, പക്ഷേ ഫീസ് പുതുക്കിയില്ല: പണം ഒന്നുകൂടി പരിശോധിക്കുക | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
+| `inbox.kinds.approval_waiting_long` | b-3-ൽ ഉടമയുടെ മറുപടിക്കായി 14 മണിക്കൂറായി കാത്തിരിക്കുന്നു ([what]): വീണ്ടും ചോദിക്കുക | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
+| `inbox.kinds.refund_waiting` | b-3-ന്റെ ₹200 റീഫണ്ട് [who] കാത്തിരിക്കുന്നു | The refund of ₹200 for b-3 is waiting [who] |  |
+| `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: Razorpay-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
+| `inbox.kinds.upi_payment_unconfirmed` | b-3-നുള്ള ₹200 UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
+| `inbox.kinds.upi_refund_owed` | b-3-ന്റെ ₹200 റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
+| `inbox.fallback` | b-3-ൽ ഒരാൾ നോക്കേണ്ടതുണ്ട് (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
+| `inbox.variants.guard_hold` | ഒരു റീഫണ്ട് | a refund |  |
+| `inbox.variants.refund` | ഒരു റീഫണ്ട് | a refund |  |
+| `inbox.variants.waiver` | ഫീസ് ഇളവ് | a fee waiver |  |
+| `inbox.variants.refund_request` | റീഫണ്ട് അഭ്യർത്ഥന | a refund request |  |
+| `inbox.variants.calendar` | കലണ്ടർ പ്രശ്നം | a calendar problem |  |
+| `inbox.variants.owner` | ഉടമയുടെ മറുപടിക്കായി | for the owner's answer |  |
+| `inbox.variants.agent` | വീണ്ടും അയയ്ക്കാനായി | to be sent again |  |
+| `inbox.actions.recheck_payment` | പണം വീണ്ടും പരിശോധിക്കുക | Check the payment again |  |
+| `inbox.actions.retry_booking` | ബുക്കിങ് വീണ്ടും ഉറപ്പിക്കാൻ ശ്രമിക്കുക | Try to confirm the booking again |  |
+| `inbox.actions.ask_owner_again` | ഉടമയോട് വീണ്ടും ചോദിക്കുക | Ask the owner again |  |
+| `inbox.actions.recheck_refund` | റീഫണ്ട് വീണ്ടും പരിശോധിക്കുക | Check the refund again |  |
+| `inbox.actionNote` | ഇവ വീണ്ടും നോക്കുകയോ വീണ്ടും ചോദിക്കുകയോ മാത്രം ചെയ്യുന്നു. മറ്റെല്ലാറ്റിനെയും പോലെ ഇവയും Guard-ലൂടെയും അതേ പരിധികളിലൂടെയും കടന്നുപോകുന്നു. | These only look again or ask again. They go through Guard and the same limits as everything else. |  |
+| `inbox.recover.sent` | അയച്ചു. കടയുടെ ഏജന്റ് ഒന്നോ രണ്ടോ മിനിറ്റിനുള്ളിൽ ഇത് ചെയ്യും. അടുത്ത റെക്കോർഡ് പുതുക്കലിന് ശേഷം പട്ടിക മാറും; അതിന് പതിനഞ്ച് മിനിറ്റ് വരെ എടുത്തേക്കാം. | Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour. |  |
+| `inbox.recover.refused` | ഇത് ഈ കാര്യത്തിന് യോജിക്കില്ല, അതിനാൽ ഒന്നും അയച്ചിട്ടില്ല. | That does not fit this item, so nothing was sent. |  |
+| `inbox.help` | സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Write to support. A person answers. |  |
+| `takeOut.heading` | എല്ലാം കൂടെ കൊണ്ടുപോകൂ | Take everything with you |  |
+| `takeOut.text` | ഈ കടയുടെ സെറ്റിങ്ങുകൾ, പരിധികൾ, റെക്കോർഡ്, റിപ്പോർട്ടുകൾ, സർട്ടിഫിക്കറ്റുകൾ എന്നിവയുടെ ഒരു പകർപ്പ്, Geometer ഇല്ലാതെയും തുറക്കാവുന്ന സാധാരണ ഫയലുകളായി. പ്ലാൻ നിലച്ചാലും ഇത് പ്രവർത്തിക്കും. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
+| `takeOut.button` | എക്സ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യുക | Download the export |  |
+| `takeOut.notIn` | ഇതിൽ ഒരു കീയോ രഹസ്യമോ ഇല്ല; കടയുടെ സ്വന്തം WhatsApp, പേയ്മെന്റ്, കലണ്ടർ അക്കൗണ്ടുകൾ കടയുടേതായി തന്നെ തുടരും. ഉപഭോക്താക്കളുടെ നമ്പറുകൾ ചെറിയ കോഡുകളാണ്. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.check` | ഫയലുകൾ പരിശോധിക്കാൻ അകത്തെ README നോക്കുക. | To check the files, use the README inside. |  |
+| `handover.heading` | ഈ കട മറ്റൊരാൾക്ക് കൈമാറുക | Move this shop to someone else |  |
+| `handover.button` | ഈ കട കൈമാറുക… | Move this shop… |  |
+| `handover.intro` | ഈ സെർവറിലെ മറ്റൊരു പാർട്ണർക്കോ ബിൽഡർക്കോ ഈ കടയുടെ നടത്തിപ്പ് നൽകുക. ആദ്യം കടയുടമ സ്വന്തം ഫോണിൽ നിന്ന് സമ്മതിക്കണം. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.moves` | മാറുന്നത്: ഇവിടെ ഈ കട ആർക്കൊക്കെ കാണാനും മാറ്റാനും കഴിയും, ഉടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിലെ പേര്. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
+| `handover.stays` | മാറാത്തത്: കടയുടെ സ്വന്തം WhatsApp നമ്പർ, പേയ്മെന്റ് അക്കൗണ്ട്, കലണ്ടർ എന്നിവ കൂടെ പോകില്ല. കീകൾ കൈമാറില്ല: അടുത്തതായി കട നടത്തുന്നയാൾ അവ വീണ്ടും നൽകണം. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
+| `handover.never` | ഒരു കട മറ്റൊരു പാർട്ണർക്കോ ബിൽഡർക്കോ പോകാം. Geometer-ലേക്ക് പോകാൻ പറ്റില്ല. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.who` | അവരുടെ സൈൻ-ഇൻ പേര് | Their sign-in name |  |
+| `handover.whoHelp` | ഈ പാനലിൽ അവർ സൈൻ ഇൻ ചെയ്യുന്ന പേര്. | The name they sign in to this panel with. |  |
+| `handover.why` | എന്തിനാണ് കട മാറ്റുന്നത്? | Why is it moving? |  |
+| `handover.reasons.stopped_paying` | അവർ പണം അടയ്ക്കുന്നത് നിർത്തി | They stopped paying |  |
+| `handover.reasons.stopped_serving` | അവർ കടയ്ക്ക് സേവനം നൽകുന്നത് നിർത്തി | They stopped serving the shop |  |
+| `handover.reasons.owner_request` | ഉടമ ആവശ്യപ്പെട്ടു | The owner asked for it |  |
+| `handover.start` | ഉടമയോട് സമ്മതം ചോദിക്കുക | Ask the owner to agree |  |
+| `handover.askTitle` | ഇനി ഉടമ സമ്മതിക്കണം | Now the owner has to agree |  |
+| `handover.ask` | ഉടമ സ്വന്തം ഫോണിൽ നിന്ന് കടയുടെ WhatsApp നമ്പറിലേക്ക് ഈ ഒരൊറ്റ സന്ദേശം അയയ്ക്കാൻ പറയുക: move K7M2QX | Ask the owner to send this one message, from their own phone, to the shop's WhatsApp number: move K7M2QX |  |
+| `handover.askNote` | ഈ കോഡ് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും, 72 മണിക്കൂറിൽ തീരും. ഇപ്പോൾ മാത്രമേ കാണിക്കൂ. സന്ദേശം സ്വീകരിക്കാൻ കട പ്രവർത്തിക്കുന്നുണ്ടാവണം. | The code works once and runs out in 72 hours. It is shown only now. The shop must be running to receive it. |  |
+| `handover.waiting` | ഉടമയെ കാത്തിരിക്കുന്നു. സന്ദേശം വന്നാൽ Meera ചുമതല ഏറ്റെടുക്കും. സന്ദേശത്തിന് ശേഷം ഇതിന് പതിനഞ്ച് മിനിറ്റ് വരെ എടുത്തേക്കാം. | Waiting for the owner. When the message arrives, Meera takes over. This can take a quarter of an hour after the message. |  |
+| `handover.check` | വീണ്ടും നോക്കുക | Check again |  |
+| `handover.cancel` | കൈമാറ്റം റദ്ദാക്കുക | Cancel the move |  |
+| `handover.done` | കഴിഞ്ഞു. ഇനി Meera ഈ കട നടത്തും. | Done. Meera now serves this shop. |  |
+| `handover.expired` | ഉടമ മറുപടി നൽകും മുമ്പ് കോഡ് തീർന്നു. വീണ്ടും തുടങ്ങുക. | The code ran out before the owner replied. Start again. |  |
+| `handover.cancelled` | കൈമാറ്റം റദ്ദാക്കി. | The move was cancelled. |  |
+| `handover.problems.who` | ഈ സെർവറിൽ ആ പേരിൽ ആരും സൈൻ ഇൻ ചെയ്യുന്നില്ല. | Nobody signs in with that name on this server. |  |
+| `handover.problems.same` | അവർ ഇതിനകം ഈ കട നടത്തുന്നു. | That person already serves this shop. |  |
+| `handover.problems.geometer` | കട Geometer-ലേക്ക് മാറ്റാൻ പറ്റില്ല. | A shop cannot be moved to Geometer. |  |
+| `handover.problems.reason` | എന്തിനാണ് കട മാറ്റുന്നതെന്ന് തിരഞ്ഞെടുക്കുക. | Choose why the shop is moving. |  |
+| `handover.problems.waiting` | ഒരു കൈമാറ്റം ഇതിനകം ഉടമയുടെ മറുപടിക്കായി കാത്തിരിക്കുന്നു. മറ്റൊന്ന് തുടങ്ങാൻ അത് റദ്ദാക്കുക. | A move is already waiting for the owner. Cancel it first to start another. |  |
+| `handover.history` | ഈ കട ആരൊക്കെ നടത്തി | Who has served this shop |  |
+| `handover.historyLine` | Divya → Meera, 4 Nov 2026, 10:30: [reason] | Divya to Meera, 4 Nov 2026, 10:30: [reason] |  |
+| `upi.setup.heading` | ഉപഭോക്താക്കൾ എങ്ങനെ പണം അടയ്ക്കും | How customers pay |  |
+| `upi.setup.intro` | ഡെപ്പോസിറ്റോ ഫീസോ ഉപഭോക്താക്കൾ എങ്ങനെ അടയ്ക്കണമെന്ന് തിരഞ്ഞെടുക്കുക. UPI ആണ് ഏറ്റവും എളുപ്പം: പേയ്മെന്റ് ഗേറ്റ്‌വേ അക്കൗണ്ട് തുറക്കേണ്ടതില്ല. | Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open. |  |
+| `upi.setup.optionUpi` | UPI: ഉപഭോക്താക്കൾ കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് അടയ്ക്കും | UPI: customers pay the shop's own UPI ID |  |
+| `upi.setup.optionRazorpay` | Razorpay: കടയ്ക്ക് സ്വന്തം Razorpay അക്കൗണ്ട് ഉണ്ട് | Razorpay: the shop has its own Razorpay account |  |
+| `upi.setup.upiTitle` | UPI വഴി പണം അടയ്ക്കൽ | Pay by UPI |  |
+| `upi.setup.upiIntro` | ഉപഭോക്താക്കൾ അവരുടെ UPI ആപ്പിൽ നിന്ന് കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് പണം അയയ്ക്കും. പണം എത്തുമ്പോൾ ഉടമ WhatsApp-ൽ “കിട്ടി” (Received) അമർത്തും. ഗേറ്റ്‌വേ ഫീസ് ഇല്ല, Geometer പണം തൊടുന്നില്ല. | Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money. |  |
+| `upi.setup.upiId` | കടയുടെ UPI ഐഡി | The shop's UPI ID |  |
+| `upi.setup.upiIdHelp` | ഉദാഹരണം glowsalon@okicici | For example glowsalon@okicici |  |
+| `upi.setup.payee` | ഉപഭോക്താവിന് അവരുടെ UPI ആപ്പിൽ കാണുന്ന പേര് | The name customers see in their UPI app |  |
+| `upi.setup.payeeHelp` | ഉദാഹരണം Glow Salon | For example Glow Salon |  |
+| `upi.setup.noCheck` | പണം അയയ്ക്കാതെ ഒരു UPI ഐഡി പരിശോധിക്കാൻ കഴിയില്ല, അതിനാൽ ഇവിടെ പരിശോധന ഇല്ല. സാവധാനം ശ്രദ്ധയോടെ ടൈപ്പ് ചെയ്യുക, എന്നിട്ട് ഉടമയ്ക്ക് വായിച്ചു കേൾപ്പിക്കുക. | A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner. |  |
+| `upi.setup.razorpayOnly` | മുകളിൽ Razorpay തിരഞ്ഞെടുത്തെങ്കിൽ മാത്രം Razorpay കളങ്ങൾ പൂരിപ്പിക്കുക. | Fill in the Razorpay boxes only if you chose Razorpay above. |  |
+| `upi.problems.idEmpty` | കടയുടെ UPI ഐഡി ചേർക്കുക, ഉദാഹരണം glowsalon@okicici. | Add the shop's UPI ID, for example glowsalon@okicici. |  |
+| `upi.problems.idNoAt` | "glowsalon" UPI ഐഡി അല്ല: @ ഉം അതിനു ശേഷം ആപ്പിന്റെയോ ബാങ്കിന്റെയോ പേരും വേണം, ഉദാഹരണം glowsalon@okicici. | "glowsalon" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici. |  |
+| `upi.problems.idShape` | "glow salon@" UPI ഐഡി അല്ല. അക്ഷരത്തെറ്റ് നോക്കുക: @ ന് മുമ്പ് അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട്, ഡാഷ് അല്ലെങ്കിൽ അണ്ടർസ്കോർ, @ ന് ശേഷം ആപ്പിന്റെയോ ബാങ്കിന്റെയോ പേര്. | "glow salon@" is not a UPI ID. Check the spelling: letters, digits, dots, dashes or underscores before the @, and the app's or bank's name after it. |  |
+| `upi.problems.payeeEmpty` | ഉപഭോക്താവിന് അവരുടെ UPI ആപ്പിൽ കാണേണ്ട പേര് ചേർക്കുക, ഉദാഹരണം Glow Salon. | Add the name customers should see in their UPI app, for example Glow Salon. |  |
+| `upi.problems.payeeOneLine` | പേര് ഒറ്റ വരിയിൽ ആയിരിക്കണം. | The name must be on one line. |  |
+| `upi.problems.payeeLong` | ഈ പേര് വളരെ നീളമുള്ളതാണ്. കടയുടെ UPI ആപ്പ് കാണിക്കുന്ന ചെറിയ പേര് ഉപയോഗിക്കുക. | That name is too long. Use the short name the shop's UPI app shows. |  |
+| `upi.noGatewayFee` | ഗേറ്റ്‌വേ ഫീസ് ഇല്ല: ഉപഭോക്താക്കൾ കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് അടയ്ക്കുന്നു. | No gateway fee: customers pay the shop's own UPI ID. |  |
 | `errors.notFound` | ഇവിടെ ഒന്നുമില്ല. | There is nothing here. |  |
 | `errors.notAllowed` | ഇത് ചെയ്യാൻ നിങ്ങൾക്ക് അനുവാദമില്ല. | You cannot do that. |  |
 | `errors.csrf` | ആ ഫോം പഴയതായിരുന്നു, അല്ലെങ്കിൽ ഈ പേജിൽ നിന്നുള്ളതായിരുന്നില്ല. പിന്നോട്ട് പോയി വീണ്ടും ശ്രമിക്കൂ. | That form was too old or did not come from this page. Go back and try again. |  |
