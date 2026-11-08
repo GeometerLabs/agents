@@ -152,7 +152,7 @@ test("every language renders both certificates, as a page and as a short text, w
     }
     for (const html of [goLivePage(goLive, language), monthlyCertificatePage(monthly, language)]) {
       for (const forbidden of ["<script", "<link", "<img", "url(", "@import", "src=", "href="]) assert.ok(!html.includes(forbidden), `${language} has ${forbidden}`);
-      assert.ok(!/https?:|\/\/[a-z]/i.test(html) && html.includes("default-src 'none'") && html.includes("width=device-width"));
+      assert.ok(!/https?:|\/\/[a-z]/i.test(html.replace(/https:\/\/geometer\.dev\/verify\/#sha256:[0-9a-f]{64}/g, "")) && html.includes("default-src 'none'") && html.includes("width=device-width"));
     }
   }
 });
