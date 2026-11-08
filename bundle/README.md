@@ -329,7 +329,14 @@ It is checked with the same pinned key. Until the date it names, no shop here pa
 
 **Where it is kept:** `state/licence/` (the lease, `seen.json`, `extensions/`). `geometer status` shows each shop's licence line. The panel shows it on the shop's page, with the renew link and a note if the lease has not been refreshed for more than 2 days.
 
-**Today the check is the runtime's own.** The shop's agent reads the lease and stops taking new work; Guard does not check the lease yet. Write to support. A person answers.
+**Guard checks it too, with a new enough Guard image.** The shop's agent reads the lease and stops taking new work. A Guard image built from Guard's licence change (monorepo ADR-0062) or later, with fleet's key built into it, checks the same lease on its own:
+
+- each shop's Guards (Razorpay, WhatsApp, Calendar; not the server's model Guard) get a `[licence]` block in their `guard.toml` and the folder `state/licence/`, read-only;
+- in the wind-down they refuse a new payment link and a new calendar event with their own answer, `subscription_suspended`; in the final stop, a message too, except to the owner's number;
+- refunds, cancellations, reads and changes to existing bookings always go through;
+- an agent you run yourself (`geometer agent add`) is checked the same way, under its own name.
+
+So a shop stays paused even if someone changes its agent or the agent's licence file. `deploy` asks the Guard image whether it reads the block: an older image gets none, and the deploy says so. After the start, each Guard must report the same key ids that `geometer.json` pins (`licence.keys`). If one does not, the deploy is refused and says which. The shop keeps running and nothing is stopped, because refunds owed must still go through. Write to support. A person answers.
 
 ## The owner's monthly report
 
