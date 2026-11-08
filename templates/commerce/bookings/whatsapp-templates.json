@@ -1607,7 +1607,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Notice: online booking for {{1}} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact {{2}} about it.",
+        "text": "Notice: online booking for {{1}} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact {{2}}.",
         "example": {
           "body_text": [
             [
