@@ -390,6 +390,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಿ | Check it at |  |
 | `page.signedBy` | ಈ ಕೀಲಿಯಿಂದ ಸಹಿ ಮಾಡಲಾಗಿದೆ | Signed with key |  |
 | `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
+| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
 | `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸ | Show what we did ▸ |  |
 | `page.byActionHeading` | ಏನು ಮಾಡಲಾಯಿತು, ಕೆಲಸ ಮತ್ತು ಫಲಿತಾಂಶದ ಪ್ರಕಾರ | What was done, by action and outcome |  |

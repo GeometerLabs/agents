@@ -40,3 +40,13 @@ export interface UpiObligation {
 }
 export const UPI_OBLIGATION_KINDS: readonly ObligationKind[]; // the two, as registry kinds: facts { case, amountInr, ref }, actions ["ask_owner_again"]
 ```
+
+## The QR code on the signed papers (B12, 8 Nov)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **The website is not deployed** | The QR points at `https://geometer.dev/verify/#<digest>`; the page that answers it is merged in public-web but not deployed (the owner decides). Until then a scan opens nothing useful | The owner approves the deploy |
+| **Hindi, Malayalam and Kannada `scanToCheck` words wait for native review** | Machine-written (Bookings and Fees `report/strings.ts`, the `scanToCheck` line of each language); the Malayalam and Kannada lines are on the REVIEW-ml/kn sheets (section 6, `page.scanToCheck`); there is no Hindi sheet | The review sheets are next regenerated |
+| A key in the QR | Not carried, on purpose (see Explanation): a key printed on the paper is not independent of the paper. The website can name a key only if a reader has it another way | The fleet keeps shops' keys and the link can name a shop |
+| The document in the QR | The QR carries the digest only, so a phone also needs the paper's `.json` file. A later paper could carry the whole document in the fragment | The website asks for it |
+| A scanner test with a real phone camera | The tests read the code back through the encoder's own layout, plus the earlier reference symbols; no camera or independent decoder ran in this session | Next hand check on a printed paper |

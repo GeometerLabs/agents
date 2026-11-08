@@ -54,3 +54,6 @@
 | **On a UPI centre the Razorpay situations do not run** | Twenty-six are named as not run; seven UPI situations run instead (`crash-test/upi.ts`) | A UPI centre goes live: make "the parent pays" mean "the owner marks it" in the world, so every situation runs either way |
 | **The owner gets one "UPI payment to check" per request** | The code ties a mark to a fee, and the owner needs it before the money comes | A centre with many students: a daily digest with one code per open request |
 | **No QR picture with a reminder outside the window** | A template with an image header is a different kind of Meta template | Meta approves a reminder template with an image header |
+- **The QR code on the certificates and the report (B12, 8 Nov)** is the shared block in `modules/report/page.ts` (see `modules/Explanation.md`). Left open here: the Hindi, Malayalam and
+  Kannada `scanToCheck` sentence (`report/strings.ts`) waits for native review (Malayalam and Kannada: the `page.scanToCheck` row of the REVIEW sheets; Hindi has no sheet); the link carries no key on purpose; the website page is not
+  deployed. Revisit when: the owner deploys the website; a native speaker reviews the sheets.

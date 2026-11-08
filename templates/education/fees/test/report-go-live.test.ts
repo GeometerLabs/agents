@@ -137,7 +137,7 @@ test("the text and the page: held N of M, what did not hold, what was not tested
       const text = goLiveText(sealed, l);
       const s = STRINGS[l];
       assert.ok(text.includes(s.cert.held(summary.held, 26, 26 - summary.held, 12)), `${l}: held line`);
-      assert.ok(text.includes(sealed.code) && text.includes(`/verify/${sealed.code}`) && text.includes("Divya, local partner"), l);
+      assert.ok(text.includes(sealed.code) && text.includes(`/verify/#${sealed.code}`) && text.includes("Divya, local partner"), l);
       assert.ok(text.includes(s.cert.handRunLine) && text.includes(s.notTested["real-razorpay"]), l);
       if (summary.held < 26) assert.ok(text.includes("A refund above the limit is held by Guard"), l);
       assert.equal(bannedIn(text, l).length, 0, `${l}: ${bannedIn(text, l).join(" ")}`);
