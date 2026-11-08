@@ -54,6 +54,8 @@ export interface InboxConfig {
   relayUrl?: string;
   relayToken?: string;
   ownerWhatsapp?: string;
+  /** B37: the numbers of the shop's other approvers. Their messages go to the relay too, for the same reason as the owner's (and to the runtime, as every message does). */
+  approverWhatsapps?: string[];
   /** How long to wait for the runtime. Default 4 seconds (Razorpay waits 5). */
   forwardTimeoutMs?: number;
   /** The runtime refuses a request of more than 100 events or 256 KiB. Events are sent in batches below both. Defaults: 100 events, 200 KiB. */
@@ -146,6 +148,8 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
   if (relay && !(config.relayUrl && config.relayToken && config.ownerWhatsapp)) throw new Error("The approvals relay needs relayUrl, relayToken and ownerWhatsapp together: the inbox needs to know which number is the owner's.");
   const ownerDigits = config.ownerWhatsapp?.replace(/\D/gu, "");
   if (relay && !/^\d{6,15}$/u.test(ownerDigits ?? "")) throw new Error("ownerWhatsapp is not a phone number.");
+  const relayDigits = new Set([ownerDigits, ...(config.approverWhatsapps ?? []).map((n) => n.replace(/\D/gu, ""))].filter((d): d is string => !!d));
+  if ((config.approverWhatsapps?.length ?? 0) > 0 && !relay) throw new Error("approverWhatsapps needs the approvals relay (relayUrl, relayToken and ownerWhatsapp).");
   const log = config.log ?? ((line: string) => console.error(line));
   const forwardTimeoutMs = config.forwardTimeoutMs ?? 4000;
   const maxEvents = config.maxEventsPerRequest ?? 100;
@@ -178,8 +182,8 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
   };
   const messagesIn = (json: unknown): IncomingEvent[] => ownNumber(json) ? parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })) : [];
 
-  /** The owner's messages in these events: from the owner's number, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */
-  const fromOwner = (events: IncomingEvent[]): IncomingEvent[] => (relay ? events.filter((e) => e.kind === "message" && e.message.from.replace(/\D/gu, "") === ownerDigits) : []);
+  /** The owner's messages in these events (B37: and the other approvers'): from those numbers, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */
+  const fromOwner = (events: IncomingEvent[]): IncomingEvent[] => (relay ? events.filter((e) => e.kind === "message" && relayDigits.has(e.message.from.replace(/\D/gu, ""))) : []);
 
   /** The owner's messages go to the relay as well. True only if the relay answered 2xx: it keeps what it was given, and drops a message id it has seen. */
   async function forwardToRelay(events: IncomingEvent[]): Promise<boolean> {

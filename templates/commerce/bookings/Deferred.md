@@ -346,3 +346,11 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
   check lands.
 - **A customer's reply in the final stop is recorded but not answered.** "Nothing more is sent" covers every message, so a customer who writes after the stop hears
   nothing from the agent. Revisit when: the owner wants one fixed line (it would be a message the stop allows, like the owner's notice).
+
+## Guard's "already done" and several approvers (added 8 November 2026)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **Native review of the four new owner lines** (`owner_approval_waiting`, `owner_approval_closed`, `owner_approval_refused`, `owner_refund_settled`) and the panel's approver fields | Machine-written in Hindi, Malayalam and Kannada, waiting for native review. Malayalam and Kannada are on [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) (sections 2 and 7); Hindi has no sheet. Three of them are new Meta templates (`owner_refund_settled`, `owner_approval_closed`, `owner_approval_refused`) and must be submitted before a shop with other approvers goes live | Before submitting the templates |
+| **A panel-made shop never holds a deposit refund** | The panel sets the refund limit to at least the deposit, so a refund of one deposit is never above it. Only an extra payment, or a settings file written by hand, reaches Guard's hold and so the approvers. They are asked for, and work, wherever a hold happens | A shop wants deposit refunds approved by two people |
+| **Managers cannot ask the agent for a refund** | Only the owner's number gives commands, so the person named in `Geo-Requested-By` is always the owner | A shop's manager needs to command the agent (see `modules/Deferred.md`) |

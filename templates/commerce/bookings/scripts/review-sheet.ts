@@ -35,7 +35,7 @@ export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
     services: (id === "menu" ? salon.services : [haircut]).map((s) => ({ name: serviceName(s, language), priceInr: s.priceInr })),
     serviceName: serviceName(haircut, language), priceInr: haircut.priceInr, depositInr: salon.deposit.amountInr, refundInr: salon.deposit.amountInr,
     slotMs: SAMPLE_SLOT, link: id.startsWith("upi_") ? "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR" : "https://rzp.io/l/plink3", holdMinutes: salon.deposit.holdMinutes, windowHours: salon.cancellation.windowHours,
-    bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24,
+    bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     // a UPI shop's (B33) values: its UPI ID and name, the owner's code, and what the owner marked
     upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
     // the licence's notices (B13): who set the shop up, what is still open at the final stop, and the free export's last day
@@ -92,6 +92,10 @@ const WHEN: Record<TemplateId, string> = {
   owner_approval_denied: "The owner denied with the code: nothing is sent",
   owner_approval_expired: "The owner answered after the request had run out: nothing was refunded",
   owner_approval_failed: "The owner's answer could not be recorded just now: send it again",
+  owner_approval_waiting: "A refund needs two people to approve it: this person's approval is in, and the number is how many more are needed (sent to a manager or the owner)",
+  owner_approval_closed: "A refund that needed two people was approved by the others before this person answered: their code is no longer needed",
+  owner_approval_refused: "A refund that needed two people was refused by one of them: sent to the others who were asked, and to the person who asked for it",
+  owner_refund_settled: "A refund whose answer was lost was checked by the person who set up the agent and marked as made: it is done and is not sent again",
   pick_service: "A list of the shop's services is shown (the first hello, or a message that was not understood), so the customer taps instead of typing",
   pick_slot: "The service is known and the time is not: a list of free times from the calendar is shown",
   confirm_buttons: "The same read-back as confirm_details, with Yes and No buttons instead of asking the customer to type yes",

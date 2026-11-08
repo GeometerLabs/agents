@@ -25,6 +25,8 @@ export interface ShopMeta {
   calendar?: { shareAddress?: string };
   receipts: Partial<Record<SecretName, string>>;
   readyAt?: string;
+  /** What the person said when they confirmed go-live through a one-time link: written down as their statement, not as something checked. */
+  goLiveStatement?: { at: string; by: string; whatsappTemplatesSeenApproved: boolean; keysHandedInThroughGuard: boolean };
 }
 
 export interface ShopRef { id: string; owner: OwnerFile | undefined }

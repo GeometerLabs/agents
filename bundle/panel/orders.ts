@@ -9,7 +9,7 @@ import { limitLinesOf, limitsOf } from "../../templates/commerce/orders/report/c
 import { itemName, validateSettings } from "../../templates/commerce/orders/src/settings.ts";
 import type { Settings, Slot } from "../../templates/commerce/orders/src/settings.ts";
 import { idsFrom } from "./fees.ts";
-import { newPayment, paymentBlock, paymentFromSettings } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, paymentBlock, paymentFromSettings } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -106,6 +106,7 @@ export function ordersDraftFromShop(id: string, accountId: string, templateId: s
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: { ...emptyShopForm(), name: s.name }, windowHours: "",
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
+    ...approversDraftOf(s.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
     calendar: { id: "" }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     orders: {
@@ -222,6 +223,7 @@ export function buildOrdersSettings(draft: Draft, example: Settings): Built {
     cancellation: { windowHours: n(f.windowHours) }, refund: { limitInr: n(f.refund) },
     payment,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage, approveOverInr: n(f.approveOver) },
+    ...approversFromDraft(draft),
   };
   const checked = validateSettings(raw);
   // `raw` is the shape a builder writes (and `shop add --template orders` takes), with the form's own ids kept.

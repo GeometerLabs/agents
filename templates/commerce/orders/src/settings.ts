@@ -2,6 +2,8 @@
 // Validation is written by hand and says what is wrong in plain words, so a builder can fix it without a manual.
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
+import { readApprovers } from "../../../../modules/approvals/people.ts";
+import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
 import { DEFAULT_CAPS } from "../../../../modules/payments/guard-limits.ts";
 import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
@@ -73,6 +75,8 @@ export interface Settings {
     /** An order whose total is above this goes to the owner before any payment is asked. 0: never. */
     approveOverInr: number;
   };
+  /** Others who may approve a refund Guard holds, and the amount above which two must (B37, modules/approvals/people.ts). Left out: the owner alone. */
+  approvers?: ApproversSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -87,7 +91,7 @@ const PHONE = /^\+\d{10,15}$/;
 export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the shop's name, menu, slots and so on."] };
-  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "cancellation", "refund", "payment", "owner"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "cancellation", "refund", "payment", "owner", "approvers"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the shop's name (\"name\").");
@@ -107,6 +111,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const refund = readRefund(input.refund, errors);
   const payment = readPayment(input.payment, errors);
   const owner = readOwner(input.owner, errors);
+  const approvers = readApprovers(input.approvers, { ownerWhatsapp: owner?.whatsapp, refundLimitInr: refund?.limitInr }, errors);
 
   if (errors.length === 0 && orders && menu.length > 0 && highestOrderInr({ menu, orders } as Settings) * 100 > DEFAULT_CAPS.refundPaisePerDay) {
     errors.push(`One order can come to ₹${highestOrderInr({ menu, orders } as Settings).toLocaleString("en-IN")} (the most items in an order, all of your dearest item), which is more than the ₹${(DEFAULT_CAPS.refundPaisePerDay / 100).toLocaleString("en-IN")} that can be refunded in a day. Lower "orders.maxItemsPerOrder" or the price.`);
@@ -117,6 +122,7 @@ export function validateSettings(input: unknown): SettingsResult {
     advance: advance as Settings["advance"], cancellation: cancellation as Settings["cancellation"], refund: refund as Settings["refund"], payment: payment as Settings["payment"], owner: owner as Settings["owner"],
   };
   if (delivery) settings.delivery = delivery;
+  if (approvers) settings.approvers = approvers;
   if (typeof address === "string") settings.address = address;
   return { ok: true, settings };
 }

@@ -1184,6 +1184,246 @@
     ]
   },
   {
+    "name": "owner_order_refund_settled",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "रिफंड हो गया: {{1}} को {{2}}। आपका एजेंट सेट करने वाले व्यक्ति ने इसे जाँचकर पूरा हुआ दर्ज किया है, इसलिए यह दोबारा नहीं भेजा जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_settled",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Refund done: {{1}} for {{2}}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_settled",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "റീഫണ്ട് പൂർത്തിയായി: {{1}}-ന്റെ {{2}}. നിങ്ങളുടെ ഏജന്റ് സജ്ജമാക്കിയ ആൾ ഇത് പരിശോധിച്ച് നടന്നതായി രേഖപ്പെടുത്തി, അതിനാൽ ഇത് വീണ്ടും അയയ്ക്കില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_refund_settled",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ರೀಫಂಡ್ ಆಗಿದೆ: {{1}} ಅವರ {{2}}. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_closed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} के {{2}} के रिफंड को दूसरों ने मंज़ूरी दे दी है, इसलिए अब आपके जवाब की ज़रूरत नहीं है। धन्यवाद।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_closed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The {{1}} refund for {{2}} has been approved by the others, so your answer is no longer needed. Thank you.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_closed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ {{2}} റീഫണ്ടിന് മറ്റുള്ളവർ അനുമതി നൽകി, അതിനാൽ ഇനി നിങ്ങളുടെ മറുപടി ആവശ്യമില്ല. നന്ദി.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_closed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}} ಅವರ {{2}} ರೀಫಂಡ್‌ಗೆ ಇತರರು ಅನುಮತಿ ನೀಡಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಈಗ ನಿಮ್ಮ ಉತ್ತರ ಬೇಕಿಲ್ಲ. ಧನ್ಯವಾದ.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_refused",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सूचना: {{1}} के {{2}} के रिफंड को मंज़ूरी देने वालों में से एक ने मना कर दिया है, इसलिए यह नहीं भेजा जाएगा, और उन्हें बता दिया जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_refused",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "The {{1}} refund for {{2}} was refused by one of the people who approve refunds, so it will not be sent, and they will be told.",
+        "example": {
+          "body_text": [
+            [
+              "₹120",
+              "+919811111111"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_refused",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ {{2}} റീഫണ്ട് അനുമതി നൽകുന്നവരിൽ ഒരാൾ നിരസിച്ചു, അതിനാൽ ഇത് അയയ്ക്കില്ല, അവരെ അറിയിക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_order_approval_refused",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸೂಚನೆ: {{1}} ಅವರ {{2}} ರೀಫಂಡ್ ಅನ್ನು ಅನುಮತಿ ನೀಡುವವರಲ್ಲಿ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.",
+        "example": {
+          "body_text": [
+            [
+              "+919811111111",
+              "₹120"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_order_upi_check",
     "language": "hi",
     "category": "UTILITY",

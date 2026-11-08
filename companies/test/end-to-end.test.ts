@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { specFromAccept } from "../openapi-to-spec.ts";
 import type { Draft } from "../openapi-to-spec.ts";
 import { sha256 } from "../openapi-read.ts";
-import { exampleJson, exampleText, skipWithoutGuard, tempDir } from "./helpers.ts";
+import { exampleJson, exampleText, skipWithoutGuard, tempDir, textMoneySpec } from "./helpers.ts";
 import { API_KEY, startStack } from "./real-guard.ts";
 import type { Stack } from "./real-guard.ts";
 
@@ -97,8 +97,14 @@ test("the same refund twice after a lost reply is made once", opts, () => withSt
   assert.equal(intent.operation, "create_refund");
   const settled = await s.admin("POST", "/admin/intents/resolve", { intent: intent.intent, resolution: "happened" });
   assert.equal(settled.status, 200);
+  // the identical call again is done, by that person's word: a 409 that says so (reason_code already_done), not a replay and not a send
   const afterwards = await s.call("POST", "/v1/refunds", refund);
-  assert.notEqual(afterwards.status, 201);
+  assert.equal(afterwards.status, 409);
+  assert.equal(afterwards.json.guard.code, "conflict");
+  assert.equal(afterwards.json.guard.reason_code, "already_done");
+  assert.equal(afterwards.json.guard.sent, "no");
+  assert.equal(afterwards.headers.get("guard-replayed"), null, "there is no reply of the API's to replay");
+  assert.match(String(afterwards.json.guard.detail?.confirmed_by), /^operator:/u, "who settled it is named");
   assert.equal(refundsReaching(s, "ch_B"), 1);
   assert.equal(posts(s).length, 1, "the API was asked exactly once in the whole story");
 }));
@@ -126,7 +132,11 @@ test("an amount above the bound is refused before it is sent, and so are the amo
   for (const [label, body, why] of [
     ["zero", { charge_id: "ch_C", amount: 0 }, /below the lowest allowed value, 1/u],
     ["negative", { charge_id: "ch_C", amount: -5 }, /below the lowest allowed value/u],
-    ["written as a string", { charge_id: "ch_C", amount: "60000" }, /above the highest allowed value/u],
+    ["one above the bound, as a JSON number", { charge_id: "ch_C", amount: 50001 }, /create_refund-amount-bound: amount 50001 is above the highest allowed value, 50000/u],
+    // the bound reads a JSON number only (ADR-0060): text is refused for being text, whatever number it spells, and even inside the range,
+    // because how the API would read "60000" is the API's business
+    ["above the bound, written as text", { charge_id: "ch_C", amount: "60000" }, /create_refund-amount-bound: amount is text \("60000"\), not a JSON number/u],
+    ["inside the bound, written as text", { charge_id: "ch_C", amount: "5000" }, /create_refund-amount-bound: amount is text \("5000"\), not a JSON number/u],
     ["written as 1e5", { charge_id: "ch_C", amount: 1e5 }, /above the highest allowed value/u],
     ["no amount", { charge_id: "ch_C" }, /no amount in the call/u],
   ] as const) {
@@ -140,6 +150,41 @@ test("an amount above the bound is refused before it is sent, and so are the amo
   assert.match(noKey.json.guard.reason, /intent key field charge_id is missing/u);
   assert.equal(posts(s).length, 0, "the API never saw any of them");
 }));
+
+test("an amount in the query is text: the draft's \"encoding\": \"string\" bounds it exactly, and the same bound without it would refuse every call", opts, async () => {
+  const dir = tempDir();
+  const spec = textMoneySpec();
+  writeFileSync(join(dir, "spec.json"), JSON.stringify(spec));
+  const s = await startStack({ spec: join(dir, "spec.json") });
+  try {
+    const q = (amount: string) => `/v1/refunds?amount=${encodeURIComponent(amount)}&charge_id=ch_Q`;
+    const inRange = await s.call("POST", q("500"));
+    assert.equal(inRange.json?.guard, undefined, `"500" in the query passed the bound and reached the API: ${JSON.stringify(inRange.json)}`);
+    assert.equal(inRange.status, 422, "the made-up API wants a JSON body, and says so itself");
+    const over = await s.call("POST", q("60000"));
+    assert.equal(over.status, 403);
+    assert.match(over.json.guard.reason, /create_refund-amount-bound: amount 60000 is above the highest allowed value, 50000/u);
+    for (const odd of ["+500", "0500", "500.0", "5e2", " 500"]) {
+      const r = await s.call("POST", q(odd));
+      assert.equal(r.status, 403, `${JSON.stringify(odd)} is not the number written exactly`);
+      assert.match(r.json.guard.reason, /create_refund-amount-bound/u, odd);
+    }
+    assert.equal(posts(s).length, 1, "only the exact, in-range amount reached the API");
+  } finally { await s.stop(); }
+
+  // the same spec with the encoding taken off the query bound: the compiler cannot tell a query field from a body field on a POST, so it builds it, and Guard
+  // then refuses even "500", because a query value is never a JSON number. That is why the draft writes the encoding.
+  const without = structuredClone(spec);
+  delete without.rules.find((r: any) => r.id === "create_refund-amount-bound").encoding;
+  writeFileSync(join(dir, "without.json"), JSON.stringify(without));
+  const t = await startStack({ spec: join(dir, "without.json") });
+  try {
+    const r = await t.call("POST", "/v1/refunds?amount=500&charge_id=ch_Q");
+    assert.equal(r.status, 403);
+    assert.match(r.json.guard.reason, /create_refund-amount-bound: amount is text \("500"\), not a JSON number/u);
+    assert.equal(posts(t).length, 0);
+  } finally { await t.stop(); }
+});
 
 test("a call the reviewer forbade, and calls nobody listed, are refused by name; reads that were listed go through", opts, () => withStack(async (s) => {
   const transfer = await s.call("POST", "/v1/transfers", { from_account_id: "acc_1", to_account_id: "acc_2", amount: 1 });

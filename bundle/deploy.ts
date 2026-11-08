@@ -34,6 +34,7 @@ import { readStatus, refusalMessage, updateStatus } from "./lib/status.ts";
 import type { GuardProof } from "./lib/status.ts";
 import { Refused, ensureDir, mintGuardToken, mintSecret, mintSigningKey, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
 import type { Problem } from "./lib/util.ts";
+import type { ApproversSettings } from "../modules/approvals/people.ts";
 
 export interface Context {
   /** The server folder. */
@@ -110,7 +111,7 @@ interface Credentials { agent: Partial<Record<Three, string>> & Record<"model" |
  * Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. `calendar`: whether the shop's
  * template has a calendar. One that has none gets no calendar credentials, no folder for a calendar Guard, and nothing in the token refresher's folder.
  */
-function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true): Credentials {
+function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = []): Credentials {
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
@@ -126,6 +127,8 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   if (razorpay) writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
   // A UPI shop has no Razorpay webhook: its inbox still holds a secret for that route, made here and given to nobody, so a call to it can never be signed.
   else ensureSecret(secretFile(dir, "inbox", shop, "razorpay_webhook_secret"), mintSecret);
+  // B37: each other approver signs with their own secret, kept in the Razorpay Guard's folder and copied to the relay's, like the owner's (a UPI shop has neither)
+  if (razorpay) for (const person of people) writeSecretFile(secretFile(dir, "relay", shop, names.approverSecretFile(person)), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, names.approverSecretFile(person)), mintSecret));
   if (calendar) {
     writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar as string);
     ensureDir(secretFile(dir, `g-${shop}-calendar`));
@@ -202,12 +205,24 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
 
 export type Sha = { admin: string; agents: { id: string; sha: string; operations?: string[] }[] };
 
+/** Who approves at a shop's Razorpay Guard: the owner alone (as it always was), or, B37, the owner and the shop's other people with the two-person amount in paise. */
+export function approverOf(shop: string, approvers: ApproversSettings | undefined): NonNullable<Parameters<typeof guardToml>[0]["approver"]> {
+  if (!approvers) return { id: names.approverId(shop), secretFile: "/run/secrets/owner_notify_secret" };
+  return {
+    id: names.ownerApproverId(shop, true), secretFile: "/run/secrets/owner_notify_secret",
+    group: { people: approvers.people.map((p) => ({ id: p.id, secretFile: `/run/secrets/${names.approverSecretFile(p.id)}` })), ...(approvers.twoAboveInr !== undefined ? { twoAbovePaise: approvers.twoAboveInr * 100 } : {}) },
+  };
+}
+
+/** B37: the ids of a shop's other approvers, from its Razorpay Guard's plan. */
+const peopleOf = (guards: { plan: GuardPlan }[]): string[] => guards.find((g) => g.plan.kind === "razorpay")?.plan.approvers?.people.map((p) => p.id) ?? [];
+
 /** Compile one Guard's spec, render its guard.toml, run the tool-name rule and verify-bundle. Nothing running is touched. */
 export async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha): Promise<Problem[]> {
   const compiled = await ctx.tool.compile(g.plan.specText);
   if (!compiled.ok) return compiled.problems.map((p) => ({ ...p, message: `${g.plan.service}: ${p.message}` }));
   g.compiled = compiled.result;
-  g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(g.plan.kind === "razorpay" && shop ? { approver: { id: names.approverId(shop), secretFile: "/run/secrets/owner_notify_secret" } } : {}) });
+  g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(g.plan.kind === "razorpay" && shop ? { approver: approverOf(shop, g.plan.approvers) } : {}) });
   g.tripwires = await ctx.tool.verify(compiled.result.text, g.toml);
   return [...toolNamesMatch(g.plan, g.toml, compiled.result), ...tripwiresHold(g.plan, g.tripwires)];
 }
@@ -233,7 +248,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)));
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards));
     for (const g of prepared.guards) {
       problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
@@ -255,9 +270,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   const applied = Object.entries(state.shops).filter(([, s]) => s.applied).sort(([a], [b]) => (a < b ? -1 : 1));
   const shops = applied.map(([name, s]) => {
     const snap = s.applied!;
-    const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string } };
+    const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string }; approvers?: ApproversSettings };
     const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string } } };
-    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1] };
+    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
   });
   for (const [name, s] of applied) {
     const client = join(p.generated, "shops", name, "client");
@@ -373,7 +388,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)))]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards))]));
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);

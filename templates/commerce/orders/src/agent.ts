@@ -22,6 +22,7 @@
 // ordering is paused, please contact the shop", no hold or advance link is made, and nothing is kept to do later. Cancellations, refunds owed and payments from links sent
 // earlier go on as every day. In the FINAL STOP the agent also closes the open advance links (Razorpay; a UPI shop has none) and sends nothing more.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
@@ -117,6 +118,9 @@ export function createAgent(deps: AgentDeps): Agent {
   const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
   const owner = settings.owner.whatsapp;
+  // B37: with other approvers, a refund the owner's own command asks for names the owner (Geo-Requested-By), and the others' code replies are the relay's
+  const askedByOwner = ownerAsked(settings.approvers);
+  const approverDigits = approverNumbers(settings.approvers);
   const parseContext: ParseContext = { menu: settings.menu, slots: allSlots(settings).map(({ slot }) => ({ id: slot.id, names: slot.names ?? {} })), languages: settings.languages };
   const approveOver = settings.owner.approveOverInr;
 
@@ -233,7 +237,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (o, phone, templates, more) => tellCustomer(o, phone, templates as TemplateId[], more),
     tellOwner: (o, phone, template, more) => tellOwner(o, phone, template as TemplateId, more),
     cases: () => store.orders.values(),
-    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired" },
+    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled" },
   });
   const { requestRefund, overLimit } = refunds;
   const afterRefund = (o: Order, result: Parameters<typeof refunds.afterRefund>[1], a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }) => refunds.afterRefund(o, result, a);
@@ -883,8 +887,8 @@ export function createAgent(deps: AgentDeps): Agent {
     log(o, owner, "owner_decision", "confirmed", { command }, { refs: said });
     o.pending = o.pending.filter((x) => x !== pending);
     if (upi) { await oweBack(o, refund.paymentId, refund.amountInr * 100, "the owner approved a refund after a late cancellation", { customer: "upi_refund_owed", decisions: [limit] }); return; }
-    const result = await requestRefund(o, refund.paymentId, refund.amountInr, [limit], overLimit(refund.amountInr));
-    await afterRefund(o, result, { paymentId: refund.paymentId, amountInr: refund.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending" });
+    const result = await requestRefund(o, refund.paymentId, refund.amountInr, [limit], overLimit(refund.amountInr), askedByOwner); // with other approvers the owner is named as asking: if Guard holds it, someone else approves
+    await afterRefund(o, result, { paymentId: refund.paymentId, amountInr: refund.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending", requestedBy: askedByOwner });
   }
 
   // ---- STOP --------------------------------------------------------------------------------------------------------
@@ -919,6 +923,8 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     store.seenMessages.add(msg.id);
+    // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
     if (msg.voiceNote) return onVoiceNote(msg);
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);

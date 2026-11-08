@@ -61,6 +61,8 @@ The suggestions are:
 | `forbidden_call` | Always refused, by name | nothing |
 | `spend` and `count` limits | Cap the total or the number of calls in a window (a day by default) | `cap` |
 
+A bound reads a JSON number unless it says otherwise. An amount in the **query or the path** always arrives as text, so the draft writes `"encoding": "string"` on its bound (Guard then takes only text that spells the number exactly: `500`, never `+500`, `0500` or `500.0`). Leave it in: without it every such call is refused for being text.
+
 ### 2. Review and accept
 
 Copy `accept.template.json` to `accept.json`. In it:
@@ -93,7 +95,7 @@ This writes `spec.json` (a Guard limits spec, schema 1; its full definition is G
 ```
 Kept 6 routes, 4 rules, 3 limits.
 Guard compiled it: 4 rules, 3 limits, 6 routes, digest sha256:de7ec839...
-Tripwires: passed 4 of 4.
+Tripwires: passed 5 of 5.
 Guard cannot test these without writing (read them; they are part of what you are told was not covered):
   - rule create_refund-once: whether a repeat is stopped depends on the intent ledger in the store; a probe would have to write to it
   - limit create_refund-spend-per-day: a cap is counted by reserving capacity in the store; a probe would have to write to it

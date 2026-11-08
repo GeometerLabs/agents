@@ -96,6 +96,16 @@ with no block is Razorpay, as before; the old "UPI is not built yet" refusal is 
 - **A waiver limit of zero** means every request goes to the owner (Gauss Maths Circle does this).
 - **Caps are not counted in Guard's model.** The daily caps are in the spec for the real Guard; the in-memory model does not count a day's refunds or an hour's links.
 
+## Guard's "already done", and approval by several named people (B37; added 8 November 2026)
+
+The same two changes as Bookings, through the shared modules (`modules/Explanation.md`):
+
+- A refund Guard answers with 409 `already_done` is recorded as done by the word of the person who settled it, never sent again, and the owner is told (`owner_refund_settled`).
+- The settings may name other approvers (`approvers`). The owner is named in `Geo-Requested-By` when the owner's own "approve q-2" asks for a refund. A parent's request names nobody (a parent is not an approver), and a person's number may not be a parent's.
+- Four new owner lines in four languages; three of them are Meta templates (`owner_fee_refund_settled`, `owner_fee_approval_closed`, `owner_fee_approval_refused`), built from the templates as the others are.
+
+Test: `test/agent.test.ts` ("Guard's 409 already_done ..."); the relay is tested on Bookings and in the bundle.
+
 ## A parent's statement, the record of one fee and the agent's identity paper (B28, B35, B36; 8 November 2026)
 
 The papers are shared (`modules/papers/`); Fees hands in `report/papers.ts`: payments are `record_payment` and refunds `refund` (UPI's owner marks are added by the papers and labelled "marked paid by owner"); its action words in four languages; a fee as a case, labelled by its month and batch and **never the student's name** (the export hashes it, and a paper must not carry it), with what is still owed by the record now (the fee and late fee, less waivers and payments); its limits as facts (a higher waiver or refund limit is wider, a smaller least part payment is wider); and the go-live certificate's limit phrases and "held N of M". A parent's statement is their own fees only: their payments, refunds, what is still owed, and no other family's fee. `scripts/papers.ts` makes the papers and the evidence pack, like Bookings'. The monthly report's anchor is filled the same way (`report.tenant`, `--tenant`).

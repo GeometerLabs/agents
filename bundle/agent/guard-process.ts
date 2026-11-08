@@ -79,6 +79,8 @@ export interface RealGuard {
   adminToken: string;
   /** The owner's signing secret, when this Guard has an approver. */
   ownerSecret?: string;
+  /** B37: each other approver's signing secret, by id, when the approver has a group. */
+  secrets?: Record<string, string>;
   digest: string;
   stop(): Promise<void>;
 }
@@ -93,7 +95,8 @@ export interface RealGuardOptions {
   /** The stand-in this Guard sends to: plain HTTP on this computer. */
   upstreamPort: number;
   agents: { id: string; token: string; operations?: string[] }[];
-  approver?: { id: string };
+  /** B37: `group` writes the guard.toml of a shop with other approvers (generate/guards.ts), each with a secret of their own. */
+  approver?: { id: string; group?: { people: string[]; twoAbovePaise?: number } };
 }
 
 // A Guard that is still running when this program ends (Ctrl-C reaches it, but a kill of this program does not) is ended with it.
@@ -118,11 +121,14 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
   const headers = Object.fromEntries(Object.entries(o.def.headers).map(([k]) => [k, `\${file:${join(dir, "provider_authorization")}}`]));
   writeFileSync(join(dir, "provider_authorization"), "Bearer stand-in-provider-key", { mode: 0o600 });
   if (ownerSecret) writeFileSync(join(dir, "owner_notify_secret"), ownerSecret, { mode: 0o600 });
+  const group = o.approver?.group;
+  const secrets = group ? Object.fromEntries(group.people.map((id) => [id, mintSecret()])) : undefined;
+  for (const [id, s] of Object.entries(secrets ?? {})) writeFileSync(join(dir, `approver_${id}_notify_secret`), s, { mode: 0o600 });
   const [listen, adminListen, healthListen] = [await freePort(), await freePort(), await freePort()];
   const toml = guardToml({
     def: { ...o.def, headers }, tenant: o.tenant, deployment: o.deployment, bundleDigest: summary.digest, upstream: { host: `127.0.0.1:${o.upstreamPort}`, tls: false },
     adminSha: admin.hash, agents: o.agents.map((a) => ({ id: a.id, sha: sha256Hex(a.token), ...(a.operations ? { operations: a.operations } : {}) })),
-    ...(o.approver ? { approver: { id: o.approver.id, secretFile: join(dir, "owner_notify_secret") } } : {}),
+    ...(o.approver ? { approver: { id: o.approver.id, secretFile: join(dir, "owner_notify_secret"), ...(group ? { group: { people: group.people.map((id) => ({ id, secretFile: join(dir, `approver_${id}_notify_secret`) })), ...(group.twoAbovePaise !== undefined ? { twoAbovePaise: group.twoAbovePaise } : {}) } } : {}) } } : {}),
     paths: { listen: `127.0.0.1:${listen}`, adminListen: `127.0.0.1:${adminListen}`, healthListen: `127.0.0.1:${healthListen}`, state: join(dir, "state.db"), bundle: join(dir, "bundle.json") },
   });
   writeFileSync(join(dir, "guard.toml"), toml);
@@ -141,5 +147,5 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
     await new Promise((r) => setTimeout(r, 50));
   }
   if (!/geo-guard ready/u.test(output)) { await stop(); throw new Error(`geo-guard was not ready in 10 s: ${output.slice(0, 600)}`); }
-  return { agentUrl: `http://127.0.0.1:${listen}`, adminUrl: `http://127.0.0.1:${adminListen}`, adminToken: admin.token, digest: summary.digest, ...(ownerSecret ? { ownerSecret } : {}), stop };
+  return { agentUrl: `http://127.0.0.1:${listen}`, adminUrl: `http://127.0.0.1:${adminListen}`, adminToken: admin.token, digest: summary.digest, ...(ownerSecret ? { ownerSecret } : {}), ...(secrets ? { secrets } : {}), stop };
 }

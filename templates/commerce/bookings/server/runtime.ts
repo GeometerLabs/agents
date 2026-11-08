@@ -65,6 +65,8 @@ export interface RefundContext {
   amountPaise: number;
   approval: string;
   expiresAtMs: number | null;
+  /** B37: who asked for this refund (the owner, by their command, in a shop with other approvers). The relay never asks them to approve it. */
+  requestedBy?: string[];
 }
 
 export type Runtime = CoreRuntime<Status, RefundContext>;
@@ -97,7 +99,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       return {
         booking: b.id, customerPhone: b.customer, businessName: settings.name, timeZone: settings.timezone,
         ownerLanguage: settings.owner.language, serviceName: serviceName(service, settings.owner.language), slotMs: b.startMs,
-        paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs,
+        paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs, ...(hold.requestedBy ? { requestedBy: hold.requestedBy } : {}),
       };
     },
   };

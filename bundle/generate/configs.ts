@@ -7,6 +7,7 @@ import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
+import type { ApproverPerson } from "../../modules/approvals/people.ts";
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
@@ -45,7 +46,10 @@ export function guardAdmin(server: ServerConfig, shop: Pick<ShopDeploy, "name" |
   return { adminUrl: url(ip, ADMIN_FORWARD_PORT), healthUrl: url(ip, HEALTH_PORT) };
 }
 
-export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; ownerWhatsapp: string; phoneNumberId: string })[], agents: AgentFacts[] = []): string {
+/** B37: a shop's other approvers, as the inbox and the relay need them (their secrets are files in the relay's folder, never in a config). */
+type Approvers = { approvers?: ApproverPerson[] };
+
+export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; ownerWhatsapp: string; phoneNumberId: string } & Approvers)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
       ...shops.map((s) => [s.name, {
@@ -53,6 +57,8 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         // a UPI shop (B33) has no approvals relay (no refund is ever held for its owner): the owner's messages go to the runtime only
         ...(s.guards.some((g) => g.kind === "razorpay") ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId, verification: s.webhooks.verification,
+        // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
+        ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
         secretsDir: `/run/secrets/${s.name}`,
       }]),
       // an agent someone else wrote has no runtime: its WhatsApp number's webhook comes here, the owner's replies go to the relay, and the rest goes on to the agent itself
@@ -64,14 +70,16 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
   });
 }
 
-export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string })[], agents: AgentFacts[] = []): string {
+export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
       ...shops.filter((s) => s.guards.some((g) => g.kind === "razorpay")).map((s) => [s.name, {
         // which template's words the relay asks the owner in (services/relay.ts); left out for Bookings, as it always was
         ...(s.pathway && s.pathway !== "bookings" ? { pathway: s.pathway } : {}),
         guardAdminUrl: guardAdmin(server, s, "razorpay").adminUrl,
-        approverId: names.approverId(s.name), agentId: names.agentId(s.name),
+        approverId: names.ownerApproverId(s.name, (s.approvers?.length ?? 0) > 0), agentId: names.agentId(s.name),
+        // B37: each other approver signs with approver_<id>_notify_secret in this shop's secrets folder
+        ...(s.approvers && s.approvers.length > 0 ? { approvers: s.approvers.map((p) => ({ id: p.id, whatsapp: p.whatsapp, language: p.language })) } : {}),
         runtimeUrl: runtimeUrl(server, s),
         // the relay is not on the shop's network: it reaches the WhatsApp Guard's agent port on the Guard's address on the admin network
         whatsappGuardUrl: url(addressing(server).adminIp(s.name, "whatsapp", s.index), GUARD_PORT),

@@ -29,6 +29,8 @@ export interface StubGuardConfig {
   agentToken?: string;
   /** The owner as an approver: its id and the secret that signs a notification. */
   approver: { id: string; secret: string };
+  /** B37: the other people who may approve, each signing with their own secret (the model is given the same directory). */
+  others?: { id: string; secret: string }[];
   /** The bearer token that may read GET /admin/reviews (an approver's credential). */
   readToken: string;
 }
@@ -118,7 +120,11 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
     try { body = JSON.parse(raw.toString("utf8")); } catch { body = undefined; }
     if (typeof body !== "object" || body === null) { json(res, 403, { error: "refused by the Guard: the body is not readable JSON", guard: decision("refused_by_policy", "no", "no", "the body is not readable JSON") }); return; }
 
-    const d = model.decideRefund(paymentId, body);
+    // B37: who asked for it, as the agent names them. Guard keeps it out of the call (and never forwards it: `forward` sends no header of the caller's)
+    const header = String(req.headers["geo-requested-by"] ?? "");
+    const requestedBy = header ? header.split(",").map((s) => s.trim()) : undefined;
+    if (requestedBy && (requestedBy.length > 8 || requestedBy.some((r) => !/^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u.test(r)))) { json(res, 400, { error: "refused by the Guard: Geo-Requested-By must be approver ids separated by commas", guard: decision("bad_request", "no", "no", "Geo-Requested-By must be approver ids separated by commas") }); return; }
+    const d = model.decideRefund(paymentId, body, requestedBy);
     switch (d.kind) {
       case "hold": {
         const reason = "refund-needs-owner: above the threshold: a person must approve this exact call";
@@ -133,6 +139,7 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
         res.end(JSON.stringify(d.reply));
         return;
       case "conflict": json(res, 409, { error: `refused by the Guard: ${d.reason}`, guard: decision("conflict", "no", "no", d.reason) }); return;
+      case "already_done": json(res, 409, { error: `refused by the Guard: ${d.reason}`, guard: { decision: "deny", code: "conflict", reason_code: "already_done", sent: "no", retry: "no", reason: d.reason, detail: d.detail } }); return;
       case "refused": json(res, 403, { error: `refused by the Guard: ${d.reason}`, guard: decision("refused_by_policy", "no", "no", d.reason) }); return;
       case "pass": break;
     }
@@ -145,15 +152,15 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
     const answer = await forward(req, res, path, raw);
     if (failure === "outcome_unknown" || !answer) {
       failure = undefined;
-      model.recordUnknown(paymentId);
+      model.recordUnknown(paymentId, body);
       const reason = "outcome unknown: the request may or may not have reached the provider. The action may have happened; it is not repeated automatically";
       json(res, 504, { error: `refused by the Guard: ${reason}`, guard: decision("outcome_unknown", "unknown", "do_not_repeat", reason) }, { "guard-outcome": "unknown" });
       return;
     }
     if (answer.status >= 200 && answer.status < 300) {
-      try { model.recordSent(paymentId, body, JSON.parse(answer.text)); } catch { model.recordUnknown(paymentId); }
+      try { model.recordSent(paymentId, body, JSON.parse(answer.text)); } catch { model.recordUnknown(paymentId, body); }
     } else if (answer.status >= 500) {
-      model.recordUnknown(paymentId); // a provider 5xx may have happened: passed through as it came, and a repeat is held
+      model.recordUnknown(paymentId, body, answer.status); // a provider 5xx may have happened: passed through as it came, and a repeat is held
     }
     res.writeHead(answer.status, { "content-type": "application/json" });
     res.end(answer.text);
@@ -168,8 +175,9 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
       const refuse = (status: number, why: string, message: string) => { refused.push(why); json(res, status, { error: message }); };
       let body: any;
       try { body = JSON.parse(raw.toString("utf8")); } catch { return refuse(400, "not json", "approval and decision are required"); }
-      if (body?.approver !== config.approver.id) return refuse(401, "approver", "unknown approver: the notification is not accepted");
-      const expected = createHmac("sha256", config.approver.secret).update(raw).digest("hex");
+      const signer = [config.approver, ...(config.others ?? [])].find((p) => p.id === body?.approver);
+      if (!signer) return refuse(401, "approver", "unknown approver: the notification is not accepted");
+      const expected = createHmac("sha256", signer.secret).update(raw).digest("hex");
       if (!same(String(req.headers["x-geo-signature"] ?? ""), expected)) return refuse(401, "signature", "signature does not verify: the notification is not accepted and no approval changed");
       const at = Number(body.at_ms);
       if (!Number.isFinite(at)) return refuse(401, "time", "the notification has no time: it is not accepted");
@@ -178,10 +186,13 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
       if (nonces.has(body.nonce)) return refuse(401, "nonce", "this nonce was already used: the notification is not accepted");
       nonces.add(body.nonce);
       if (typeof body.approval !== "string" || (body.decision !== "approve" && body.decision !== "deny")) return refuse(400, "fields", "approval and decision are required");
-      const decided = model.decide(body.approval, body.decision === "approve", config.approver.id);
+      const decided = model.decide(body.approval, body.decision === "approve", signer.id);
       if (decided.status !== 200) return refuse(decided.status, `state ${decided.status}`, decided.error);
-      accepted.push({ approval: body.approval, decision: body.decision, approver: config.approver.id });
-      json(res, 200, { id: decided.approval.id, state: body.decision === "approve" ? "approved" : "denied", approver: config.approver.id, role: "shop-owner", operation: "refund", tool: "razorpay", expires_at_ms: String(decided.approval.expiresAtMs) });
+      accepted.push({ approval: body.approval, decision: body.decision, approver: signer.id });
+      const a = decided.approval;
+      // a single owner's answer reads as it always did; a vote (B37) is the request itself: its state, the number needed and the votes so far (`approve` a boolean)
+      const several = a.needed !== undefined ? { approvals_needed: a.needed, votes: (a.votes ?? []).map((v) => ({ approver: v.approver, approve: v.approve, role: v.role, at_ms: String(v.atMs) })) } : {};
+      json(res, 200, { id: a.id, state: a.needed !== undefined ? a.state : body.decision === "approve" ? "approved" : "denied", approver: a.approver ?? signer.id, role: "shop-owner", operation: "refund", tool: "razorpay", expires_at_ms: String(a.expiresAtMs), ...several });
       return;
     }
     if (!same(bearer(req), config.readToken)) { json(res, 401, { error: "an admin or approver credential is required (agent credentials do not work here)" }); return; }

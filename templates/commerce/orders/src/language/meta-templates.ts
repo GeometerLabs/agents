@@ -108,6 +108,10 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_customer_wants_you", "owner_wants_to_talk", "owner"),
   template("owner_customer_stopped", "owner_opted_out", "owner"),
   template("owner_order_refund_approval", "owner_refund_needs_approval", "owner"),
+  // a refund a person at the server settled as made (Guard's already_done), and, when a refund needs several people (B37), the word to the ones who did not answer. "Waiting for N more" answers the person's own message, inside their window: no template.
+  template("owner_order_refund_settled", "owner_refund_settled", "owner"),
+  template("owner_order_approval_closed", "owner_approval_closed", "owner"),
+  template("owner_order_approval_refused", "owner_approval_refused", "owner"),
   // UPI shops (B33): what the owner is asked to look for or send back, and what the customer hears about a refund, which can come days later
   template("owner_order_upi_check", "owner_upi_expected", "owner"),
   template("owner_order_upi_says_paid", "owner_upi_claim", "owner"),
@@ -142,7 +146,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     itemsText: `2 × ${itemName(item, language)}`, totalInr: item.priceInr * 2, advanceInr: Math.ceil((item.priceInr * 2 * settings.advance.percent) / 100), balanceInr: item.priceInr * 2 - Math.ceil((item.priceInr * 2 * settings.advance.percent) / 100), refundInr: Math.ceil((item.priceInr * 2 * settings.advance.percent) / 100), markedInr: Math.ceil((item.priceInr * 2 * settings.advance.percent) / 100), leftInr: 100,
     dateMs: at("00:00"), slotFromMs: at(slot.from), slotToMs: at(slot.to), cutoffMs: at(settings.cutoff.time, { year: 2026, month: 11, day: 11 }),
     mode: "pickup", area: settings.delivery?.area[0] ?? "Kakkanad", address: "Flat 4, Lake View Apartments, Kakkanad",
-    link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
+    link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
     partner: "Divya, local partner", upcomingCount: 4, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30), // Fri 5 Mar 2027 in India
   };
 }

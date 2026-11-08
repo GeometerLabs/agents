@@ -41,6 +41,7 @@ Not built, or built only as far as said. The first block needs another part of t
 - The shop's services are four rows, names typed once (the other languages reuse them, as the demo does); a service's names in each language, and per-day hours, are changed in `settings.json` by a builder.
 - The checks need the server to have applied the shop. There is no "check before saving" for the connection checks, because the keys are in the inbox and only Guard holds them.
 - Going live itself is the deployer's: "Ready to go live" makes the certificate and says so; it does not switch anything on.
+- Others who approve refunds (B37, 8 Nov): the form takes two people and gives them the ids `approver-1` and `approver-2`; names, more people and removing one are done in `settings.json`. The shop page and the go-live checks do not show who approves yet. In a Bookings shop the panel sets the refund limit at or above the deposit, so a deposit refund is never held and the approvers are asked only about other refunds (an extra payment). The new words are machine-written in Hindi, Malayalam and Kannada, waiting for native review (section 7 of the review sheets).
 
 ## Languages and looks
 
@@ -72,4 +73,17 @@ Not built, or built only as far as said. The first block needs another part of t
 - **The renew link is fleet's, as fleet last said it.** The panel shows the link from the last heartbeat's answer; a link that has expired at Razorpay is not checked.
   Revisit when: fleet re-links an expired invoice and partners find stale links.
 - **No licence page across shops.** The state is on each shop's page and its card; a builder with many shops has no one list of the ones that owe. Revisit when: a
-  builder asks for it.
+  builder asks for it. (9 Nov: the "Health and margin" page lists every shop with what needs a look, but it does not list licence state across shops on its own.)
+
+## Client health and margin, and the template vote (B32, B56; 9 Nov)
+
+- [ ] **The heartbeat field for the vote is not sent.** The votes stay in the panel's store until fleet accepts one optional counts-only field; the exact field and both sides' edits are in `bundle/Deferred.md` ("The innovators' template vote"). Until then the results an innovator sees are this panel's votes only.
+- [ ] **Hindi, Malayalam and Kannada for `words-health.ts` and `vote-options.json` are machine-written and wait for a native reader.** They are on the review sheets (section 7, ids `health.*` and `vote.option.*`), and the pages carry the panel's draft note in those languages.
+- [ ] **Messages above the plan's allowance are not in the running cost.** The overage (INR 49 per 1,000 customer messages above the allowance, paid from the partner's balance) needs the balance and the month's message count against the allowance. The line is left out, not shown as 0, so the running cost can be a little short for a busy shop. Revisit when: the balance is in the shop's fleet answer.
+- [ ] **WhatsApp at cost is an estimate that leans high.** It is the month's counts at the price list's rates with GST, before the month's 1,000 free service replies per number (`lib/usage.ts`), and the record cannot say whether a 24-hour window was open. The line says "Estimate".
+- [ ] **The shop page's price line (`plan.ts`) shows the Innovator price whenever fleet flags the shop, with no 25-shop cap and no self-host half.** The health page follows fleet's invoice (`apps/fleet/src/invoice.ts`): the lower of the half-price licence and the Innovator price (they do not stack), and the Innovator price only for the oldest 25 of one person's flagged shops. For one shop under the cap on a hosted server the two pages agree; past the cap or on a builder's own server the health page is the one that matches the invoice. Revisit when: `plan.ts` should take the same function.
+- [ ] **Self-host is read from the panel's mode.** A panel on a builder's own server (`PANEL_MODE=own`) is taken as the half-price licence and a hosted panel as the full plan fee with the model inside it. A builder who runs the panel on their own server for a shop on Geometer's hosting is not told apart.
+- [ ] **Hosting share is not in the running cost.** The bundle does not measure a shop's share of the server yet (the shop page's cost line says so too). It is not shown as 0.
+- [ ] **Only the shops a person serves count for their innovator status and discount cap.** A builder who can see every shop on a server is not made an innovator by a partner's shop. The cap of 25 shops takes the oldest assignments first (the shop's `createdAt` from `owner.json`, or the handover's `since`), as fleet's invoice does; fleet's own record of assignment dates is the truth.
+- [ ] **No phone-width look at the new pages** (no browser here), and the bottom tab bar now has one more tab.
+- [ ] **The setup fee is shown once, not spread over months** and is not part of the monthly margin. Revisit when: partners ask for it per month.
