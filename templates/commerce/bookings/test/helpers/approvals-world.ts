@@ -67,6 +67,8 @@ export interface ApprovalsWorld {
   ownerWrites(text: string, options?: { id?: string; from?: string }): Promise<void>;
   /** Everything the owner has been sent, oldest first. */
   toOwner(): { kind: string; templateName?: string; text: string }[];
+  /** This world's payment webhooks reach the runtime (the kit's own `deliverPaymentEvents` delivers the kit's fake's, not this world's). */
+  deliverPayments(): Promise<void>;
   /** B37: one of the other approvers writes from their own number (to the relay and the runtime, as the inbox gives both a copy). */
   personWrites(id: string, text: string, options?: { from?: string }): Promise<void>;
   /** B37: everything that person has been sent. */
@@ -106,6 +108,7 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; ap
   const owner = settings.owner.whatsapp;
   const stores: RelayStore[] = [];
   const relays: Relay[] = [];
+  let delivered = 0;
 
   function makeRelay(more: Partial<RelayOptions> = {}): Relay {
     const store = openRelayStore(dir);
@@ -143,6 +146,13 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; ap
       await runtime.idle();
     },
     toOwner: () => whatsapp.sentTo(owner).map((m) => ({ kind: m.kind, templateName: m.templateName, text: m.text })),
+    async deliverPayments() {
+      const fresh = payments.events.slice(delivered);
+      delivered = payments.events.length;
+      runtime.submit(fresh.map((event) => ({ kind: "payment_event" as const, event })));
+      runtime.kick();
+      await runtime.idle();
+    },
     async personWrites(id, text, o = {}) {
       const person = people.find((p) => p.id === id);
       if (!person) throw new Error(`no approver ${id} in this world`);

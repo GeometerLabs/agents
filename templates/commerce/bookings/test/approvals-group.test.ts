@@ -101,7 +101,7 @@ run("the person who asked never approves: the owner's own command names the owne
   await w.kit.say(w.runtime, "haircut day after tomorrow at 6pm");
   w.kit.calendar.inject("update", "silentFailure", { times: 2 });
   w.payments.customerPays(w.payments.links().at(-1)!.id);
-  await w.kit.deliverPaymentEvents(w.runtime);
+  await w.deliverPayments();
   await w.ownerWrites("approve b-1");
   const held = w.model.approvals();
   assert.equal(held.length, 1);
@@ -132,7 +132,7 @@ run("up to the two-person amount, when the owner asked: the others are asked, an
   await w.kit.say(w.runtime, "haircut day after tomorrow at 6pm");
   w.kit.calendar.inject("update", "silentFailure", { times: 2 });
   w.payments.customerPays(w.payments.links().at(-1)!.id);
-  await w.kit.deliverPaymentEvents(w.runtime);
+  await w.deliverPayments();
   await w.ownerWrites("approve b-1");
   const item = w.model.reviews("runtime-glow-salon", true)[0]!;
   assert.deepEqual([item.approvals_needed, item.may_still_decide], [1, ["meena", "ravi", READER_ID]]);
