@@ -85,3 +85,6 @@ export function head(kind: string, title: string, subtitle: string, language: La
 }
 
 export const paperPage = (title: string, language: Language, body: string): string => page(title, language, [`<section class="doc">${body}</section>`]);
+
+/** The words a reader sees on a page: no style sheet, no tags, entities read back. What the claim-rule checks read. */
+export const visibleText = (html: string): string => html.replace(/<style>[\s\S]*?<\/style>/gu, " ").replace(/<[^>]*>/gu, " ").replace(/&quot;/gu, '"').replace(/&#39;/gu, "'").replace(/&lt;/gu, "<").replace(/&gt;/gu, ">").replace(/&amp;/gu, "&");
