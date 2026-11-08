@@ -242,7 +242,8 @@ link) and leave everything that finishes money owed. The decision they record is
   leaves it out of "what the limits stopped", as it leaves out the runtime's own.
 - **The templates treat it as their pause**: Bookings, when Guard refuses the hold or the deposit link, lets the slot go and answers "Online booking is paused ... contact
   the shop" (no "could not book" to the owner: nothing failed); Fees, when Guard refuses a fee link, answers the parent the same way and passes the reminder over
-  instead of trying again at the next beat.
+  instead of trying again at the next beat; Orders, when Guard refuses the advance link, lets the order go back to an enquiry and answers "Online ordering is
+  paused ... contact the shop", with no "link failed" to the owner.
 
 ## Adding to a module later
 

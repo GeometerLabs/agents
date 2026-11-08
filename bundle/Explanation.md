@@ -322,9 +322,9 @@ The model Guard never gets it: it serves every shop on the server.
 
 **The folder** (`generate/compose.ts`): `Dirs.licence` is `state/licence/`. It is mounted read-only at `/run/geometer/licence` on every per-shop Guard (a shop's, and an agent's someone else wrote), and not on the model Guard. The folder is mounted, not single files, because the deployer replaces the lease and `seen.json` by rename, and a single-file bind mount keeps showing the old file. `writeServer` makes `state/licence/` and `state/licence/extensions/` (0755) before `compose up`, for both deploy paths. Otherwise Docker would make them as root, and the deployer could not write the lease. The files are 0644, so the Guard's user (65532) can read them. Guard reads them again within a second when they change, so a lease never restarts anything.
 
-**The runtime** (`modules/`, both templates): Guard's 402 is a `GuardSuspendedError`. It is never tried again and is recorded once, as `blocked`, with the licence rule. The template takes it as its own pause. modules/Explanation.md has the detail.
+**The runtime** (`modules/`, and Bookings, Fees and Orders): Guard's 402 is a `GuardSuspendedError`. It is never tried again and is recorded once, as `blocked`, with the licence rule. The template takes it as its own pause. modules/Explanation.md has the detail.
 
-**Where Guard and the runtime differ** (Deferred.md has each): a Fees centre that takes UPI makes its new work with a WhatsApp message, which Guard holds back only in the final stop. In the wind-down Guard also refuses an `insert` the runtime would allow: a hold taken again after a late payment, or an existing booking whose calendar event went missing.
+**Where Guard and the runtime differ** (Deferred.md has each): a Fees centre or an Orders shop that takes UPI makes its new work with a WhatsApp message, which Guard holds back only in the final stop. In the wind-down Guard also refuses an `insert` the runtime would allow: a hold taken again after a late payment, or an existing booking whose calendar event went missing.
 
 ## What the tests show, and what they do not
 
