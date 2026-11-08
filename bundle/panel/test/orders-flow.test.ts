@@ -7,7 +7,6 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { validateSettings } from "../../../templates/commerce/orders/src/settings.ts";
 import { WORDS } from "../languages.ts";
-import { STEP3 } from "./flow.ts";
 import { PHONE_ID, NOW, boot, papers } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
@@ -21,13 +20,16 @@ const ORDERS2 = {
 /** The accounts step of a UPI shop: the shop's WhatsApp number and its UPI ID; no Razorpay key is asked. */
 const ORDERS4 = { waNumber: "+91 90000 11111", waNumberId: PHONE_ID, waToken: M.token, waAppSecret: M.app, payMod: "upi", upiId: "sunrise@okicici", upiPayee: "Sunrise Tiffins" };
 
+/** Malayalam and English for customers, English for messages to the owner: the hand check's UPI situations read the owner's replies in English only (said in Deferred.md), so a shop that is to pass them has an English-speaking owner line. */
+const STEP3 = { primary: "ml", lang_en: "on", ownerLanguage: "en", ownerNumber: "98765 43210" };
+
 const applied = (o: Record<string, unknown> = {}) => ({
   updatedAt: new Date(NOW - 5 * 60_000).toISOString(), deploy: { state: "applied", at: new Date(NOW - 3600_000).toISOString() }, limits: { proven: 6, of: 6, unprovable: [] },
   versions: { pathway: "0.1.0", bundle: "0.1.0", guard: "geo-guard:0.1.0-alpha.2-pathways.1" }, backups: { lastCopyAt: new Date(NOW - 60_000).toISOString() }, ...o,
 });
 
 /** The five steps for an Orders shop, as a partner does them on a phone. */
-async function setUpOrders(who: Browser, steps: Record<string, string>[] = [ORDERS1, ORDERS2, STEP3, ORDERS4]) {
+async function setUpOrders(who: Browser, _b: Boot, steps: Record<string, string>[] = [ORDERS1, ORDERS2, STEP3, ORDERS4]) {
   const start = await who.post("/setup", { template: "orders" }, "/setup");
   assert.equal(start.status, 303, start.text.slice(0, 300));
   const draft = start.location!.split("/")[2];
