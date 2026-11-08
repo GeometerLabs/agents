@@ -37,7 +37,8 @@ exit 1
 function world(extra: Record<string, unknown> = {}) {
   const server = tempServer({ "glow-salon": null }, { panel: { enabled: true }, ...extra });
   const docker = dockerStub(server.root);
-  const env = { GEOMETER_AGENTS_DIR: AGENTS, GEOMETER_SERVER: server.root, GEOMETER_DOCKER: docker.file };
+  const env = { GEOMETER_AGENTS_DIR: AGENTS, GEOMETER_SERVER: server.root };
+  process.env.GEOMETER_DOCKER = docker.file; // the bundle command the tools start reads it from the environment, as it does in life
   let n = 0;
   const call = async (name: string, args: Record<string, unknown> = {}) => {
     const out = await handle({ jsonrpc: "2.0", id: ++n, method: "tools/call", params: { name, arguments: args } }, env) as any;
@@ -75,11 +76,11 @@ test("run as a real program, standard output holds JSON messages and nothing els
   child.stdin.write("not json\n");
   child.stdin.end();
   await new Promise((r) => child.on("close", r));
-  const lines = out.trim().split("\n").map((l) => JSON.parse(l));
+  const lines = out.trim().split("\n").map((l) => JSON.parse(l)); // every line is JSON; answers may come in any order
   assert.equal(lines.length, 3);
-  assert.equal(lines[0].result.protocolVersion, "2024-11-05");
-  assert.equal(lines[1].result.tools.length, 9);
-  assert.equal(lines[2].error.code, -32700);
+  assert.equal(lines.find((l) => l.id === 1).result.protocolVersion, "2024-11-05");
+  assert.equal(lines.find((l) => l.id === 2).result.tools.length, 9);
+  assert.equal(lines.find((l) => l.id === null).error.code, -32700);
 });
 
 test("the agents checkout and the server folder are found, or the tool says what to set", () => {
