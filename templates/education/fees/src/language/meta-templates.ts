@@ -100,6 +100,11 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_parent_wants_you", "owner_wants_to_talk", "owner"),
   template("owner_parent_stopped", "owner_opted_out", "owner"),
   template("owner_fee_approval_request", "owner_refund_needs_approval", "owner"),
+  // 8 Nov: a refund a person at the server settled as made (Guard's already_done), and, when a refund needs several people (B37), the word to the ones who did not
+  // answer that the others approved it or one of them refused it. "Waiting for N more" answers the person's own message, inside their window: no template.
+  template("owner_fee_refund_settled", "owner_refund_settled", "owner"),
+  template("owner_fee_approval_closed", "owner_approval_closed", "owner"),
+  template("owner_fee_approval_refused", "owner_approval_refused", "owner"),
   // UPI centres (B33): what the owner is asked to look for or send back, and what the parent hears about a refund, which can come days later
   template("owner_fee_upi_check", "owner_fee_upi_expected", "owner"),
   template("owner_fee_upi_parent_says_paid", "owner_fee_upi_claim", "owner"),
@@ -132,7 +137,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     feeInr: batch.monthlyFeeInr, lateFeeInr: settings.lateFeeInr || 100, balanceInr: batch.monthlyFeeInr, paidInr: batch.monthlyFeeInr, receivedInr: batch.monthlyFeeInr,
     waiverInr: settings.waiver.limitInr || 100, refundInr: batch.monthlyFeeInr, waiverLimitInr: settings.waiver.limitInr,
     dueMs: Date.UTC(2026, 10, 4, 18, 30), // Thu 5 Nov 2026 at midnight in India
-    link: "https://rzp.io/i/example", dueRef: "f-3", requestRef: "q-2", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, upiCode: "P4XR9T", payee: settings.name,
+    link: "https://rzp.io/i/example", dueRef: "f-3", requestRef: "q-2", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name,
     partner: "Divya, local partner", openFeesCount: 4, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30), // Fri 5 Mar 2027 in India
   };
 }

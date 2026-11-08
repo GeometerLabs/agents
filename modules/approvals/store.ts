@@ -5,7 +5,11 @@
 //   messages   the owner's replies, saved before they are answered (the inbox is told 200 only after that), each id once
 //   guesses    codes that matched no ask, with the time, for the lockout
 //   alerts     things the builder must look at, in plain words, once per approval and kind
-//   meta       the owner's last message time (for WhatsApp's 24-hour window)
+//   meta       the owner's last message time (for WhatsApp's 24-hour window), and each other approver's
+//   outcomes   B37: a refund that needed several people, once Guard decided it: approved or denied, and whether the runtime has been told
+//
+// An ask is one approval asked of one person (B37, Guard's ADR-0061): the pair (approval, approver) is its key. On a refund the owner decides alone,
+// as every refund did before, `approver` is "" (the owner, signing as the relay's own approver id), and nothing else about it changed.
 import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -18,10 +22,13 @@ export type AskState =
   | "deciding" // the owner's answer is being recorded with Guard: the code is used up
   | "decided" // Guard has the answer
   | "expired" // the code ran out unanswered
-  | "alerted"; // not asked: the builder was told why
+  | "alerted" // not asked: the builder was told why
+  | "closed"; // B37: someone else's answer decided it (or this person asked for it): the code is gone, and the person is told how it ended
 
 export interface Ask {
   approval: string;
+  /** B37: who is asked, by Guard's approver id. "" on a refund the owner decides alone (one owner, as before). */
+  approver: string;
   state: AskState;
   codeHash: string | null;
   /** In the clear only while state is "sending", so a failed send can go again with the same code. */
@@ -46,7 +53,16 @@ export interface Ask {
   ownerTold: boolean;
   lateReplied: boolean;
   sendTries: number;
+  /** B37: after this person's approval was recorded, how many more Guard waits for (what "waiting for N more" says). */
+  approvalsLeft: number | null;
 }
+
+/** An ask by its key: the pair, or an approval alone for the owner's single ask. */
+export type AskKey = string | { approval: string; approver: string };
+const keyOf = (k: AskKey): [string, string] => (typeof k === "string" ? [k, ""] : [k.approval, k.approver]);
+
+/** B37: how a refund that needed several people ended, as Guard decided it. Told to the runtime once. */
+export interface Outcome { approval: string; decision: "approve" | "deny"; runtimeTold: boolean; guardExpiresAtMs: number; atMs: number }
 
 export interface OwnerMessage { id: string; from: string; text: string; timestamp: number; receivedMs: number }
 
@@ -63,24 +79,49 @@ const MIGRATIONS = [`
   CREATE TABLE guesses (at_ms INTEGER NOT NULL);
   CREATE TABLE alerts (approval TEXT NOT NULL, kind TEXT NOT NULL, note TEXT NOT NULL, at_ms INTEGER NOT NULL, PRIMARY KEY (approval, kind));
   CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+`,
+// 2 (8 Nov 2026, B37): an ask is (approval, approver). Every ask written before is the owner's single ask: approver "". A table is rebuilt to change its key.
+`
+  CREATE TABLE asks_2 (
+    approval TEXT NOT NULL, approver TEXT NOT NULL DEFAULT '', state TEXT NOT NULL, code_hash TEXT UNIQUE, code TEXT, receipt TEXT NOT NULL, booking TEXT, payment_id TEXT NOT NULL,
+    amount_paise INTEGER NOT NULL, customer_phone TEXT, language TEXT, context TEXT, first_seen_ms INTEGER NOT NULL, asked_at_ms INTEGER, code_expires_at_ms INTEGER,
+    guard_expires_at_ms INTEGER NOT NULL, approval_hours INTEGER NOT NULL, decision TEXT, guard_told INTEGER NOT NULL DEFAULT 0,
+    runtime_told INTEGER NOT NULL DEFAULT 0, owner_told INTEGER NOT NULL DEFAULT 0, late_replied INTEGER NOT NULL DEFAULT 0, send_tries INTEGER NOT NULL DEFAULT 0,
+    approvals_left INTEGER, PRIMARY KEY (approval, approver)
+  );
+  INSERT INTO asks_2 (approval, approver, state, code_hash, code, receipt, booking, payment_id, amount_paise, customer_phone, language, context, first_seen_ms, asked_at_ms,
+    code_expires_at_ms, guard_expires_at_ms, approval_hours, decision, guard_told, runtime_told, owner_told, late_replied, send_tries)
+  SELECT approval, '', state, code_hash, code, receipt, booking, payment_id, amount_paise, customer_phone, language, context, first_seen_ms, asked_at_ms,
+    code_expires_at_ms, guard_expires_at_ms, approval_hours, decision, guard_told, runtime_told, owner_told, late_replied, send_tries FROM asks;
+  DROP TABLE asks;
+  ALTER TABLE asks_2 RENAME TO asks;
+  CREATE TABLE outcomes (approval TEXT PRIMARY KEY, decision TEXT NOT NULL, runtime_told INTEGER NOT NULL DEFAULT 0, guard_expires_at_ms INTEGER NOT NULL, at_ms INTEGER NOT NULL);
 `];
 
 const flag = (n: unknown) => Number(n) === 1;
 const toAsk = (r: Record<string, any>): Ask => ({
-  approval: r.approval, state: r.state, codeHash: r.code_hash, code: r.code, receipt: r.receipt, booking: r.booking, paymentId: r.payment_id, amountPaise: Number(r.amount_paise),
+  approval: r.approval, approver: r.approver ?? "", state: r.state, approvalsLeft: r.approvals_left === null || r.approvals_left === undefined ? null : Number(r.approvals_left), codeHash: r.code_hash, code: r.code, receipt: r.receipt, booking: r.booking, paymentId: r.payment_id, amountPaise: Number(r.amount_paise),
   customerPhone: r.customer_phone, language: r.language, context: r.context, firstSeenMs: Number(r.first_seen_ms), askedAtMs: r.asked_at_ms === null ? null : Number(r.asked_at_ms),
   codeExpiresAtMs: r.code_expires_at_ms === null ? null : Number(r.code_expires_at_ms), guardExpiresAtMs: Number(r.guard_expires_at_ms), approvalHours: Number(r.approval_hours),
   decision: r.decision, guardTold: flag(r.guard_told), runtimeTold: flag(r.runtime_told), ownerTold: flag(r.owner_told), lateReplied: flag(r.late_replied), sendTries: Number(r.send_tries),
 });
 
 export interface RelayStore {
-  ask(approval: string): Ask | undefined;
+  /** The ask of this approval to this approver ("": the owner's single ask). */
+  ask(approval: string, approver?: string): Ask | undefined;
   askByCode(code: string): Ask | undefined;
   asks(state?: AskState[]): Ask[];
+  /** B37: every ask of one approval, one per person asked. */
+  asksOf(approval: string): Ask[];
   insertAsk(a: Pick<Ask, "approval" | "state" | "receipt" | "paymentId" | "amountPaise" | "firstSeenMs" | "guardExpiresAtMs" | "approvalHours"> & Partial<Ask>): void;
-  updateAsk(approval: string, changes: Partial<Omit<Ask, "approval">>): void;
+  updateAsk(key: AskKey, changes: Partial<Omit<Ask, "approval" | "approver">>): void;
   /** Move to `to` only if it is in `from` now. True if this call made the move: the one use of a code is this compare-and-set. */
-  moveAsk(approval: string, from: AskState[], to: AskState, changes?: Partial<Omit<Ask, "approval" | "state">>): boolean;
+  moveAsk(key: AskKey, from: AskState[], to: AskState, changes?: Partial<Omit<Ask, "approval" | "approver" | "state">>): boolean;
+  /** B37: record how a refund that needed several people ended. True if this call recorded it (the first word of it). */
+  setOutcome(o: Omit<Outcome, "runtimeTold">): boolean;
+  outcome(approval: string): Outcome | undefined;
+  outcomes(): Outcome[];
+  markRuntimeTold(approval: string): void;
   /** Save owner messages; ids already seen are skipped. Returns how many were new. */
   saveMessages(messages: Omit<OwnerMessage, "receivedMs">[], nowMs: number): { saved: number; duplicates: number };
   unprocessed(): OwnerMessage[];
@@ -109,33 +150,41 @@ export function openRelayStore(dir: string): RelayStore {
     state: "state", codeHash: "code_hash", code: "code", receipt: "receipt", booking: "booking", paymentId: "payment_id", amountPaise: "amount_paise", customerPhone: "customer_phone",
     language: "language", context: "context", firstSeenMs: "first_seen_ms", askedAtMs: "asked_at_ms", codeExpiresAtMs: "code_expires_at_ms", guardExpiresAtMs: "guard_expires_at_ms", approvalHours: "approval_hours",
     decision: "decision", guardTold: "guard_told", runtimeTold: "runtime_told", ownerTold: "owner_told", lateReplied: "late_replied", sendTries: "send_tries",
+    approver: "approver", approvalsLeft: "approvals_left",
   };
   const column = (key: string) => { const c = columns[key]; if (!c) throw new Error(`no such column ${key}`); return c; };
   const value = (v: unknown) => (typeof v === "boolean" ? (v ? 1 : 0) : (v ?? null)) as string | number | null;
-  const getAsk = db.prepare("SELECT * FROM asks WHERE approval = ?");
+  const getAsk = db.prepare("SELECT * FROM asks WHERE approval = ? AND approver = ?");
   const getByHash = db.prepare("SELECT * FROM asks WHERE code_hash = ?");
   let nextSeq = (db.prepare("SELECT COALESCE(MAX(seq), 0) AS n FROM messages").get() as { n: number }).n;
 
-  function set(approval: string, changes: Record<string, unknown>, where = "") {
-    const keys = Object.keys(changes);
+  function set(key: AskKey, changes: Record<string, unknown>, where = "") {
+    const keys = Object.keys(changes).filter((k) => k !== "approval" && k !== "approver");
     if (keys.length === 0) return 0;
-    const result = db.prepare(`UPDATE asks SET ${keys.map((k) => `${column(k)} = ?`).join(", ")} WHERE approval = ?${where}`).run(...keys.map((k) => value(changes[k])), approval);
+    const [approval, approver] = keyOf(key);
+    const result = db.prepare(`UPDATE asks SET ${keys.map((k) => `${column(k)} = ?`).join(", ")} WHERE approval = ? AND approver = ?${where}`).run(...keys.map((k) => value(changes[k])), approval, approver);
     return Number(result.changes);
   }
+  const toOutcome = (r: Record<string, any>): Outcome => ({ approval: r.approval, decision: r.decision, runtimeTold: flag(r.runtime_told), guardExpiresAtMs: Number(r.guard_expires_at_ms), atMs: Number(r.at_ms) });
 
   return {
-    ask: (approval) => { const r = getAsk.get(approval) as Record<string, any> | undefined; return r ? toAsk(r) : undefined; },
+    ask: (approval, approver = "") => { const r = getAsk.get(approval, approver) as Record<string, any> | undefined; return r ? toAsk(r) : undefined; },
     askByCode: (code) => { const r = getByHash.get(hashCode(code)) as Record<string, any> | undefined; return r ? toAsk(r) : undefined; },
-    asks: (state) => (db.prepare(`SELECT * FROM asks${state ? ` WHERE state IN (${state.map(() => "?").join(",")})` : ""} ORDER BY first_seen_ms`).all(...(state ?? [])) as Record<string, any>[]).map(toAsk),
+    asks: (state) => (db.prepare(`SELECT * FROM asks${state ? ` WHERE state IN (${state.map(() => "?").join(",")})` : ""} ORDER BY first_seen_ms, approver, rowid`).all(...(state ?? [])) as Record<string, any>[]).map(toAsk),
+    asksOf: (approval) => (db.prepare("SELECT * FROM asks WHERE approval = ? ORDER BY approver, rowid").all(approval) as Record<string, any>[]).map(toAsk),
     insertAsk(a) {
-      const full = a as unknown as Record<string, unknown>;
+      const full = { approver: "", ...a } as unknown as Record<string, unknown>;
       const keys = Object.keys(full).filter((k) => k !== "approval");
       db.prepare(`INSERT INTO asks (approval, ${keys.map(column).join(", ")}) VALUES (?, ${keys.map(() => "?").join(", ")})`).run(a.approval, ...keys.map((k) => value(full[k])));
     },
-    updateAsk: (approval, changes) => { set(approval, changes); },
-    moveAsk(approval, from, to, changes = {}) {
-      return set(approval, { ...changes, state: to }, ` AND state IN (${from.map((s) => `'${s}'`).join(",")})`) === 1;
+    updateAsk: (key, changes) => { set(key, changes); },
+    moveAsk(key, from, to, changes = {}) {
+      return set(key, { ...changes, state: to }, ` AND state IN (${from.map((s) => `'${s}'`).join(",")})`) === 1;
     },
+    setOutcome: (o) => Number(db.prepare("INSERT OR IGNORE INTO outcomes (approval, decision, guard_expires_at_ms, at_ms) VALUES (?, ?, ?, ?)").run(o.approval, o.decision, o.guardExpiresAtMs, o.atMs).changes) === 1,
+    outcome: (approval) => { const r = db.prepare("SELECT * FROM outcomes WHERE approval = ?").get(approval) as Record<string, any> | undefined; return r ? toOutcome(r) : undefined; },
+    outcomes: () => (db.prepare("SELECT * FROM outcomes ORDER BY at_ms").all() as Record<string, any>[]).map(toOutcome),
+    markRuntimeTold: (approval) => { db.prepare("UPDATE outcomes SET runtime_told = 1 WHERE approval = ?").run(approval); },
     saveMessages(messages, nowMs) {
       db.exec("BEGIN");
       try {

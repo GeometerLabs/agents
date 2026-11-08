@@ -6,7 +6,7 @@ import { batchName, validateSettings } from "../../templates/education/fees/src/
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
 import { payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
-import { newPayment, normalizePhone, paymentBlock, paymentFromSettings } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, paymentBlock, paymentFromSettings } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -62,6 +62,7 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: { ...emptyShopForm(), name: s.name }, windowHours: "",
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
+    ...approversDraftOf(s.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
     calendar: { id: "" }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     fees: {
@@ -181,6 +182,7 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
     waiver: { limitInr: whole(fees.waiver) }, refund: { limitInr: whole(fees.refund) },
     payment,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
+    ...approversFromDraft(draft),
   };
   const checked = validateSettings(raw);
   // `raw` is the shape a builder writes (and `shop add --template fees` takes): the checked settings name a student's batch differently.

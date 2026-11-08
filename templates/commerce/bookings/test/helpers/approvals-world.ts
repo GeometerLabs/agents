@@ -67,24 +67,40 @@ export interface ApprovalsWorld {
   ownerWrites(text: string, options?: { id?: string; from?: string }): Promise<void>;
   /** Everything the owner has been sent, oldest first. */
   toOwner(): { kind: string; templateName?: string; text: string }[];
+  /** This world's payment webhooks reach the runtime (the kit's own `deliverPaymentEvents` delivers the kit's fake's, not this world's). */
+  deliverPayments(): Promise<void>;
+  /** B37: one of the other approvers writes from their own number (to the relay and the runtime, as the inbox gives both a copy). */
+  personWrites(id: string, text: string, options?: { from?: string }): Promise<void>;
+  /** B37: everything that person has been sent. */
+  toPerson(id: string): { kind: string; templateName?: string; text: string }[];
   close(): Promise<void>;
 }
 
 let nextId = 1;
 
-export async function startApprovalsWorld(options: { refundLimitInr?: number; approvalTtlSeconds?: number; relay?: Partial<RelayOptions>; ownerLanguage?: "en" | "hi" | "ml" | "kn" } = {}): Promise<ApprovalsWorld> {
+/** B37: the shop's other approvers for a world that has them: Ravi (Hindi) and Meena (English), and above ₹150 two different people must approve. */
+export const RAVI = { id: "ravi", whatsapp: "+919800000002", language: "hi" as const };
+export const MEENA = { id: "meena", whatsapp: "+919800000003", language: "en" as const };
+export const SECRET_OF: Record<string, string> = { ravi: "ravi-notify-secret-0123456789abcdef", meena: "meena-notify-secret-0123456789abcdef" };
+export const READER_ID = "relay-glow-salon";
+
+export async function startApprovalsWorld(options: { refundLimitInr?: number; approvalTtlSeconds?: number; relay?: Partial<RelayOptions>; ownerLanguage?: "en" | "hi" | "ml" | "kn"; group?: { people?: typeof RAVI[]; twoAboveInr?: number } } = {}): Promise<ApprovalsWorld> {
   const base = JSON.parse(JSON.stringify(glowSalon()));
-  const settings = parseSettings({ ...base, cancellation: { windowHours: 24, refundLimitInr: options.refundLimitInr ?? 100 }, owner: { ...base.owner, language: options.ownerLanguage ?? base.owner.language } });
+  const people = options.group ? options.group.people ?? [RAVI, MEENA] : [];
+  const approvers = options.group ? { approvers: { people, ...(options.group.twoAboveInr !== undefined ? { twoAboveInr: options.group.twoAboveInr } : {}) } } : {};
+  const settings = parseSettings({ ...base, cancellation: { windowHours: 24, refundLimitInr: options.refundLimitInr ?? 100 }, owner: { ...base.owner, language: options.ownerLanguage ?? base.owner.language }, ...approvers });
   const kit = createKit();
   const clock = kit.clock;
   const spec = razorpayLimitsSpec(settings, HARNESS_GUARD, options.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: options.approvalTtlSeconds } : {});
-  const model = createGuardModel(spec, clock);
+  // with other approvers the owner is `owner` in Guard's directory (bundle/generate/shop.ts ownerApproverId), as the runtime names them in Geo-Requested-By
+  const ownerId = options.group ? "owner" : APPROVER_ID;
+  const model = createGuardModel(spec, clock, options.group ? { approvers: { owner: ownerId, people: people.map((p) => p.id), ...(options.group.twoAboveInr !== undefined ? { twoAbovePaise: options.group.twoAboveInr * 100 } : {}), reader: READER_ID } } : {});
   const payments = createFakePayments(clock, { guard: model });
   const lines: string[] = [];
   const { runtime, db } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(`runtime: ${l}`) });
   const runtimeServer = await startServer(runtime, { token: INTERNAL_TOKEN, port: 0 });
-  const guard = await startStubGuard({ clock, upstreamUrl: "http://127.0.0.1:1", spec, model, agentId: AGENT_ID, approver: { id: APPROVER_ID, secret: OWNER_SECRET }, readToken: READ_TOKEN });
-  const guardClient = createGuardClient({ adminUrl: guard.adminUrl, readToken: READ_TOKEN, approverId: APPROVER_ID, approverSecret: OWNER_SECRET, now: () => clock.now() });
+  const guard = await startStubGuard({ clock, upstreamUrl: "http://127.0.0.1:1", spec, model, agentId: AGENT_ID, approver: { id: ownerId, secret: OWNER_SECRET }, readToken: READ_TOKEN, others: people.map((p) => ({ id: p.id, secret: SECRET_OF[p.id]! })) });
+  const guardClient = createGuardClient({ adminUrl: guard.adminUrl, readToken: READ_TOKEN, approverId: ownerId, approverSecret: OWNER_SECRET, now: () => clock.now(), ...(options.group ? { secretOf: (id: string) => SECRET_OF[id] } : {}) });
   const runtimeClient = createRuntimeClient({ url: runtimeServer.url, token: INTERNAL_TOKEN });
   const whatsapp = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) whatsapp.approve(name, language);
@@ -92,12 +108,14 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; ap
   const owner = settings.owner.whatsapp;
   const stores: RelayStore[] = [];
   const relays: Relay[] = [];
+  let delivered = 0;
 
   function makeRelay(more: Partial<RelayOptions> = {}): Relay {
     const store = openRelayStore(dir);
     stores.push(store);
     const relay = createRelay({
       clock, store, guard: guardClient, runtime: runtimeClient, messaging: whatsapp, ownerWhatsapp: owner, expectedAgent: AGENT_ID,
+      ...(options.group ? { approvers: people, ownerApproverId: ownerId } : {}),
       log: (l) => lines.push(`relay: ${l}`), ...options.relay, ...more,
     });
     relays.push(relay);
@@ -128,6 +146,24 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; ap
       await runtime.idle();
     },
     toOwner: () => whatsapp.sentTo(owner).map((m) => ({ kind: m.kind, templateName: m.templateName, text: m.text })),
+    async deliverPayments() {
+      const fresh = payments.events.slice(delivered);
+      delivered = payments.events.length;
+      runtime.submit(fresh.map((event) => ({ kind: "payment_event" as const, event })));
+      runtime.kick();
+      await runtime.idle();
+    },
+    async personWrites(id, text, o = {}) {
+      const person = people.find((p) => p.id === id);
+      if (!person) throw new Error(`no approver ${id} in this world`);
+      const message = whatsapp.receive(o.from ?? person.whatsapp, text, { id: `wamid.${id}-${nextId++}` });
+      world.relay.receive([message]);
+      runtime.submit([{ kind: "message", message }]);
+      runtime.kick();
+      await world.relay.idle();
+      await runtime.idle();
+    },
+    toPerson: (id) => whatsapp.sentTo(people.find((p) => p.id === id)!.whatsapp).map((m) => ({ kind: m.kind, templateName: m.templateName, text: m.text })),
     async close() {
       for (const r of relays) await r.stop();
       for (const s of stores) s.close();

@@ -1,6 +1,8 @@
 // One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
+import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
+import type { ApproversSettings } from "../../modules/approvals/people.ts";
 import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
@@ -43,6 +45,13 @@ export const names = {
   /** The one token file the panel presents to every Guard it checks (secrets/panel/<this>); the panel reads a single file (golive.ts). */
   panelGuardToken: "guard_agent_token",
   approverId: (shop: string) => `owner-${shop}`,
+  /**
+   * B37: the owner's id in the Razorpay Guard's directory. A shop of the owner alone keeps `owner-<shop>`; one with other approvers names the owner `owner`, the
+   * id the runtime puts in Geo-Requested-By when the owner asks for a refund (modules/approvals/people.ts), beside each person's own id.
+   */
+  ownerApproverId: (shop: string, group: boolean) => (group ? OWNER_APPROVER : `owner-${shop}`),
+  /** B37: the file, in the Razorpay Guard's and the relay's secret folders, that holds one person's signing secret. */
+  approverSecretFile: (person: string) => `approver_${person}_notify_secret`,
 };
 
 export interface GuardPlan {
@@ -56,6 +65,8 @@ export interface GuardPlan {
   spec: LimitsSpec;
   /** The spec as written to disk. The same value is the same bytes, so an unchanged shop is not recompiled. */
   specText: string;
+  /** B37, the Razorpay Guard only: the shop's other approvers and its two-person amount, from its settings. Left out: the owner alone. */
+  approvers?: ApproversSettings;
 }
 
 export interface ShopPlan {
@@ -197,7 +208,8 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       const spec = specs[kind];
       if (!spec) continue;
       const def = guardDef(kind);
-      guards.push({ kind, service: names.guard(shop.name, kind), tenant: shop.name, deployment: `${shop.name}-${kind}`, def, upstream: upstreamOf(server, kind, def), spec, specText: stableJson(spec) });
+      const approvers = kind === "razorpay" ? (shop.settings as { approvers?: ApproversSettings }).approvers : undefined;
+      guards.push({ kind, service: names.guard(shop.name, kind), tenant: shop.name, deployment: `${shop.name}-${kind}`, def, upstream: upstreamOf(server, kind, def), spec, specText: stableJson(spec), ...(approvers ? { approvers } : {}) });
     }
     runtime = {
       mode: "live", host: "0.0.0.0", port: RUNTIME_PORT, dataDir: DATA_DIR,

@@ -96,6 +96,8 @@ export interface GuardInfo {
   code: string; // held_for_approval, refused_by_policy, conflict, unauthenticated, guard_unavailable, busy, provider_unreachable, outcome_unknown
   sent: string; // "no", or "unknown" for a lost answer
   retry: string; // after_approval, no, later, do_not_repeat
+  /** A finer reason beside `code`, when Guard gives one: limit_exceeded, self_check_failed, already_done. A client that does not read it behaves as before. */
+  reason_code?: string;
   reason?: string; // plain words, for a person
   detail?: unknown;
 }
@@ -170,6 +172,24 @@ export class GuardConflictError extends GuardError {
   constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
     super(status, message, guard, call);
     this.name = "GuardConflictError";
+  }
+}
+
+/**
+ * The identical call again after a person at the server settled it as `happened` (409 `conflict` with `reason_code: "already_done"`, Guard's ADR-0060).
+ * It is DONE, by that person's word: never send it again, and never tell anyone it failed. There is no reply of the service's to give back (it was lost,
+ * or it was a 5xx). `confirmedBy` is who settled it (`operator:<admin id>`), `intent` Guard's record of the action, when Guard names them.
+ * It is a GuardConflictError, so code that does not know it still never sends it again.
+ */
+export class GuardAlreadyDoneError extends GuardConflictError {
+  confirmedBy?: string;
+  intent?: string;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message, guard, call);
+    this.name = "GuardAlreadyDoneError";
+    const d = typeof guard.detail === "object" && guard.detail !== null ? guard.detail as Record<string, unknown> : {};
+    if (typeof d.confirmed_by === "string" && d.confirmed_by.length > 0) this.confirmedBy = d.confirmed_by.slice(0, 200);
+    if (typeof d.intent === "string" && d.intent.length > 0) this.intent = d.intent.slice(0, 200);
   }
 }
 
