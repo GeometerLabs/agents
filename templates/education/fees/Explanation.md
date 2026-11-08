@@ -95,3 +95,9 @@ with no block is Razorpay, as before; the old "UPI is not built yet" refusal is 
 - **A new student in the middle of a month is not chased until next month** (decision 4's rule applied to a single student).
 - **A waiver limit of zero** means every request goes to the owner (Gauss Maths Circle does this).
 - **Caps are not counted in Guard's model.** The daily caps are in the spec for the real Guard; the in-memory model does not count a day's refunds or an hour's links.
+
+## The QR code on the papers (B12, 8 Nov)
+
+Fees' go-live certificate, record certificate and monthly report end in the shared seal block (`modules/report/page.ts`): the QR code (inline SVG), the link
+`https://geometer.dev/verify/#<digest>` in text under it, the code, and the sentence `scanToCheck` from `report/strings.ts`. The one-line text of the certificate now says
+`/verify/#<code>`. No WhatsApp template contains a verify link (`whatsapp-templates.json` has none), so nothing needs re-approval. The signed JSON is unchanged: the page is made from it.
