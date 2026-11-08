@@ -11,7 +11,7 @@ export const STEP_IDS: readonly StepId[] = ["business", "deposit", "languages", 
 export interface Template {
   id: string;
   version: string;
-  /** Which phone form sets it up. Only "bookings" exists; any other template is listed but set up by a builder. */
+  /** Which phone form sets it up: "bookings", or a template with its own forms (a row in setups.ts: "fees", "orders"). Any other template is listed but set up by a builder. */
   setup: string;
   steps: StepId[];
   accounts: AccountKind[];
