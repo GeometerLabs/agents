@@ -27,6 +27,8 @@ export interface Slot {
   /** The window as the customer sees it, "12:00" to "13:00" in the shop's time zone. */
   from: string;
   to: string;
+  /** What customers call it, per language ("lunch", "dinner"): a customer who writes one means this slot. */
+  names?: Partial<Record<Language, string[]>>;
   /** This slot's own cut-off. Left out: the shop's `cutoff`. */
   cutoff?: Cutoff;
 }
@@ -251,7 +253,7 @@ function readSlots(v: unknown, where: "pickup" | "delivery", used: Set<string>, 
   raw.forEach((s, i) => {
     const label = isObj(s) && typeof s.id === "string" ? `The ${where} slot "${s.id}"` : `${where} slot number ${i + 1}`;
     if (!isObj(s)) { errors.push(`${label} must be an object with id, from and to.`); return; }
-    unknownKeys(s, ["id", "from", "to", "cutoff"], label, errors);
+    unknownKeys(s, ["id", "from", "to", "names", "cutoff"], label, errors);
     const id = s.id;
     if (typeof id !== "string" || !/^[a-z0-9-]+$/.test(id)) errors.push(`${label} needs an id made of lowercase letters, digits and dashes, for example "lunch".`);
     else if (used.has(id)) errors.push(`Two slots share the id "${id}". Each slot (pickup or delivery) needs its own id.`);
@@ -261,9 +263,24 @@ function readSlots(v: unknown, where: "pickup" | "delivery", used: Set<string>, 
     if (from === null || to === null) errors.push(`${label} needs "from" and "to" as 24-hour times like "12:00".`);
     else if (to <= from) errors.push(`${label} must end after it starts.`);
     const cutoff = s.cutoff === undefined ? undefined : readCutoff(s.cutoff, `${label}'s cut-off`, errors);
-    if (typeof id === "string" && from !== null && to !== null && to > from && (s.cutoff === undefined || cutoff)) slots.push({ id, from: s.from as string, to: s.to as string, ...(cutoff ? { cutoff } : {}) });
+    const names = readSlotNames(s.names, label, errors);
+    if (typeof id === "string" && from !== null && to !== null && to > from && (s.cutoff === undefined || cutoff)) slots.push({ id, from: s.from as string, to: s.to as string, ...(names ? { names } : {}), ...(cutoff ? { cutoff } : {}) });
   });
   return slots;
+}
+
+function readSlotNames(v: unknown, label: string, errors: string[]): Slot["names"] | undefined {
+  if (v === undefined) return undefined;
+  if (!isObj(v)) { errors.push(`${label}'s names ("names") must look like {"en": ["lunch"], "hi": ["लंच"]}.`); return undefined; }
+  unknownKeys(v, [...LANGUAGES], `${label}'s names`, errors);
+  const names: NonNullable<Slot["names"]> = {};
+  for (const lang of LANGUAGES) {
+    const list = v[lang];
+    if (list === undefined) continue;
+    if (!Array.isArray(list) || !list.every((n) => typeof n === "string" && n.trim() !== "")) { errors.push(`${label}'s names in ${LANGUAGE_NAMES[lang]} ("${lang}") must be a list of words.`); continue; }
+    names[lang] = list.map((n: string) => n.trim());
+  }
+  return names;
 }
 
 function readDelivery(v: unknown, used: Set<string>, errors: string[]): Settings["delivery"] | undefined {

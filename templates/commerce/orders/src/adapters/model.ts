@@ -31,6 +31,8 @@ export interface Intent {
   time?: TimePhrase;
   /** A slot named by a tap on the slot list. */
   slotId?: string;
+  /** The slots a name the customer wrote ("lunch") stands for: one per mode, so the way (pickup or delivery) picks between them. */
+  slotIds?: string[];
   mode?: "pickup" | "delivery";
   /** A price the customer proposed. The agent never accepts one below the menu price. */
   offerInr?: number;
@@ -39,7 +41,7 @@ export interface Intent {
   overrideAttempt?: boolean;
 }
 
-export interface ParseContext { menu: MenuItem[]; languages: Language[] }
+export interface ParseContext { menu: MenuItem[]; slots: { id: string; names: Partial<Record<Language, string[]>> }[]; languages: Language[] }
 
 export type ParseOptions = ParseOptionsBase;
 export type ParseResult = Result<Intent>;
@@ -71,6 +73,7 @@ export function coerceIntent(raw: unknown, context: ParseContext): Intent | null
   if (raw.date !== undefined) intent.date = raw.date as DatePhrase;
   if (raw.time !== undefined) intent.time = raw.time as TimePhrase;
   if (raw.slotId !== undefined) { if (typeof raw.slotId !== "string" || !/^[a-z0-9-]{1,60}$/u.test(raw.slotId)) return null; intent.slotId = raw.slotId; }
+  if (raw.slotIds !== undefined) { if (!Array.isArray(raw.slotIds) || !raw.slotIds.every((x) => typeof x === "string" && /^[a-z0-9-]{1,60}$/u.test(x))) return null; intent.slotIds = raw.slotIds as string[]; }
   if (raw.mode !== undefined) { if (raw.mode !== "pickup" && raw.mode !== "delivery") return null; intent.mode = raw.mode; }
   if (raw.ask !== undefined) intent.ask = raw.ask === true;
   if (raw.overrideAttempt !== undefined) intent.overrideAttempt = raw.overrideAttempt === true;
