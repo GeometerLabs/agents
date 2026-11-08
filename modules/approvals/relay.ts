@@ -409,7 +409,7 @@ export function createRelay(options: RelayOptions): Relay {
   // ---- B37: one person's answer to a refund that needs several -----------------------------------------------------------------------
   /**
    * One person's answer, signed with their own secret. A vote on a request that is still pending is recorded and the person told how many more are needed;
-   * the decision (approved, or denied by any one no) goes to the runtime once, and the others are told how it ended. Safe to run again after a crash: Guard's
+   * the decision (approved, or denied by any one no) goes to the runtime once, and the others are told how it ended. It can run again after a crash: Guard's
    * 409 says whether this person's earlier answer, or the decision, is already in.
    */
   async function finishVote(ask: Ask): Promise<void> {

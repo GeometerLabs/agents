@@ -323,3 +323,11 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
 - **Model calls are counted per server, not per shop.** The model Guard has one cap; this template's record has each action's model cost, and nothing yet stops one shop from using the server's whole cap.
 - **The runtime's single `services.timeoutMs`** applies to every service. The bundle needs it above Guard's 15 s for payments; WhatsApp, Calendar and the model are then also given that long. A per-service value would let the model parser keep its 8 s.
 - **`steps` does not count clock ticks.** A tick that sends a reminder is work, but is not counted as a step, so a shop that only sends reminders shows no steps. Revisit when: fleet wants a "ticks" count.
+
+## Guard's "already done" and several approvers (added 8 November 2026)
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **Native review of the four new owner lines** (`owner_approval_waiting`, `owner_approval_closed`, `owner_approval_refused`, `owner_refund_settled`) and the panel's approver fields | Machine-written in Hindi, Malayalam and Kannada, waiting for native review. Malayalam and Kannada are on [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) (sections 2 and 7); Hindi has no sheet. Three of them are new Meta templates (`owner_refund_settled`, `owner_approval_closed`, `owner_approval_refused`) and must be submitted before a shop with other approvers goes live | Before submitting the templates |
+| **A panel-made shop never holds a deposit refund** | The panel sets the refund limit to at least the deposit, so a refund of one deposit is never above it. Only an extra payment, or a settings file written by hand, reaches Guard's hold and so the approvers. They are asked for, and work, wherever a hold happens | A shop wants deposit refunds approved by two people |
+| **Managers cannot ask the agent for a refund** | Only the owner's number gives commands, so the person named in `Geo-Requested-By` is always the owner | A shop's manager needs to command the agent (see `modules/Deferred.md`) |

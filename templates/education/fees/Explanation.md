@@ -72,3 +72,13 @@ Fees runs as a server the way Bookings does, because the server was moved into `
 - **A new student in the middle of a month is not chased until next month** (decision 4's rule applied to a single student).
 - **A waiver limit of zero** means every request goes to the owner (Gauss Maths Circle does this).
 - **Caps are not counted in Guard's model.** The daily caps are in the spec for the real Guard; the in-memory model does not count a day's refunds or an hour's links.
+
+## Guard's "already done", and approval by several named people (B37; added 8 November 2026)
+
+The same two changes as Bookings, through the shared modules (`modules/Explanation.md`):
+
+- A refund Guard answers with 409 `already_done` is recorded as done by the word of the person who settled it, never sent again, and the owner is told (`owner_refund_settled`).
+- The settings may name other approvers (`approvers`). The owner is named in `Geo-Requested-By` when the owner's own "approve q-2" asks for a refund. A parent's request names nobody (a parent is not an approver), and a person's number may not be a parent's.
+- Four new owner lines in four languages; three of them are Meta templates (`owner_fee_refund_settled`, `owner_fee_approval_closed`, `owner_fee_approval_refused`), built from the templates as the others are.
+
+Test: `test/agent.test.ts` ("Guard's 409 already_done ..."); the relay is tested on Bookings and in the bundle.
