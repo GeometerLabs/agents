@@ -258,7 +258,7 @@ test("one vote per innovator, changeable; results are counts only, without names
     await post(meena, "/vote", { option: "course-packs" }, "/vote");
     const both = (await meena.get("/vote")).plain;
     assert.match(both, /Course packs[^]*?<b>2 votes<\/b>/u);
-    assert.doesNotMatch(both, /DIVYA|MEENA|divya|meena/u);
+    assert.doesNotMatch(both, /DIVYA|divya/iu, "the other voter's name is nowhere on the page (her own is in the header, as on every page)");
     assert.match(both, /Names are never shown/u);
     assert.equal(readdirSync(join(b.dir, "panel", "data", "votes")).length, 2);
   } finally { await b.close(); }
