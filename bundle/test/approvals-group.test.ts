@@ -80,8 +80,10 @@ async function world() {
     runtime.submit([{ kind: "message", message: m }]); runtime.kick();
     await relay.idle(); await runtime.idle();
   };
-  const bookAndPay = async () => {
+  /** A customer books and pays. `beforePaying` runs between the two (the calendar's fault goes there: the booking's own hold must not use it up). */
+  const bookAndPay = async (beforePaying: () => void = () => undefined) => {
     await kit.say(runtime, "haircut day after tomorrow at 6pm");
+    beforePaying();
     standins.fakes.payments.customerPays(standins.fakes.payments.links().at(-1)!.id);
     runtime.submit(standins.fakes.payments.events.map((event) => ({ kind: "payment_event" as const, event }))); runtime.kick(); await runtime.idle();
   };
@@ -97,8 +99,7 @@ test("the real Guard with the bundle's guard.toml: the owner's own command names
   const w = await world();
   try {
     // the calendar will not confirm the paid booking; the owner answers "approve b-1" (cancel and refund): ₹200, above ₹150, so two people, and not the owner
-    w.kit.calendar.inject("update", "silentFailure", { times: 2 });
-    await w.bookAndPay();
+    await w.bookAndPay(() => w.kit.calendar.inject("update", "silentFailure", { times: 2 }));
     await w.writes(w.owner, "approve b-1");
     const items = await w.reviews();
     assert.equal(items.length, 1);

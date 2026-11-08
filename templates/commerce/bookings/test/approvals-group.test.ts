@@ -143,6 +143,24 @@ run("up to the two-person amount, when the owner asked: the others are asked, an
   assert.match(w.toPerson("ravi").at(-1)!.text, /^सूचना: .*दूसरों ने मंज़ूरी दे दी है/u, "Ravi's ask is closed");
 }, ONE);
 
+run("the runtime names the owner but Guard's item names nobody (a Guard from before B37, or the header lost): the owner is not asked, and the builder is told", async (w) => {
+  const { refund } = w.payments;
+  w.payments.refund = (id, r) => refund(id, { amount: r.amount, ...(r.receipt ? { receipt: r.receipt } : {}) }); // Geo-Requested-By never reaches Guard
+  await w.kit.say(w.runtime, "haircut day after tomorrow at 6pm");
+  w.kit.calendar.inject("update", "silentFailure", { times: 2 });
+  w.payments.customerPays(w.payments.links().at(-1)!.id);
+  await w.deliverPayments();
+  await w.ownerWrites("approve b-1");
+  const item = w.model.reviews("runtime-glow-salon", true)[0]!;
+  assert.equal(item.may_still_decide, undefined, "Guard's item has none of the B37 keys: it looks like the owner's alone");
+  await w.relay.poll();
+  assert.equal(w.toOwner().length, 0, "the owner, who asked, is not asked to approve it");
+  assert.deepEqual([w.toPerson("ravi").length, w.toPerson("meena").length], [0, 0]);
+  assert.equal(w.relay.status().alerts.byKind.requester_not_named, 1);
+  assert.match(w.store.alerts().find((a) => a.kind === "requester_not_named")!.note, /The owner asked for it, so may not approve it/u);
+  assert.equal(refunded(w), 0);
+}, ONE);
+
 run("an answer whose reply was lost is not a second answer: Guard's 409 'already approved by ravi' reads as Ravi's vote, recorded", async (w) => {
   const approval = await w.heldRefund();
   await w.relay.poll();
