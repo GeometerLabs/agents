@@ -101,6 +101,8 @@ export interface MonthlyReportSetupBase<GoLive> {
   options: () => { preparedBy: string; innovator: boolean };
   key?: ReturnType<typeof loadPrivateKey>;
   goLive?: () => GoLive;
+  /** report.tenant: the ledger tenant the report is anchored under. */
+  tenant?: string;
 }
 
 /**
@@ -120,6 +122,7 @@ export function monthlyReportSetup<Settings, GoLive>(client: Pick<ClientFolder<S
   return {
     source, pages: { dir: r.pagesDir, baseUrl: r.pageBaseUrl }, options: reportOptionsReader(client.folder, { preparedBy: r.preparedBy, innovator: r.innovator }),
     ...(key ? { key } : {}), ...(r.goLiveFile && readGoLive ? { goLive: () => readGoLive(r.goLiveFile, client.settings).finding } : {}),
+    ...(r.tenant ? { tenant: r.tenant } : {}),
   };
 }
 

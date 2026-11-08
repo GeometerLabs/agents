@@ -10,6 +10,8 @@ import { DatabaseSync } from "node:sqlite";
 import { decrypt, generateIdentity } from "../backup/age.ts";
 import { restoreSnapshot } from "../backup/restore-snapshot.ts";
 import { drillShop } from "../backup/drill-check.ts";
+import { ledgerEntries } from "../../modules/record/ledger.ts";
+import type { RecordEntry } from "../../modules/record/record.ts";
 import { runBackup, runDrill } from "../backup/jobs.ts";
 import { recordFacts, snapshotShop } from "../backup/snapshot.ts";
 import type { SnapshotJob } from "../backup/snapshot.ts";
@@ -89,11 +91,33 @@ test("snapshots older than the keep period are deleted, newer ones kept, and a s
   } finally { t.done(); }
 });
 
+test("the drill also compares the restored record's chain with the last published fingerprint (B28): a match passes, a rewritten or shorter copy fails", () => {
+  const t = tmp(); try {
+    const live = runtimeDb(join(t.dir, "live"), 10);
+    const rows = (file: string) => { const db = new DatabaseSync(file, { readOnly: true }); try { return (db.prepare("SELECT entry FROM record ORDER BY seq").all() as { entry: string }[]).map((r) => JSON.parse(r.entry) as RecordEntry); } finally { db.close(); } };
+    const chain = ledgerEntries(rows(live), "s");
+    const published = { seq: 8, head: chain[7].hash, day: "2026-11-04" };
+    const good = drillShop({ name: "s", restored: runtimeDb(join(t.dir, "a"), 10), live, published }, 100);
+    assert.equal(good.ok, true, good.detail);
+    assert.match(good.detail, /its chain matches the fingerprint published on 2026-11-04 \(entry 8\)/);
+    const rewritten = runtimeDb(join(t.dir, "b"), 10);
+    const d = new DatabaseSync(rewritten); d.exec("DROP TRIGGER record_no_update; UPDATE record SET entry = json_set(entry, '$.outcome', 'failed') WHERE seq = 3"); d.close();
+    const bad = drillShop({ name: "s", restored: rewritten, live: rewritten, published }, 100);
+    assert.equal(bad.ok, false);
+    assert.match(bad.detail, /does not match the fingerprint published on 2026-11-04 \(entry 8\): it was changed after that fingerprint/);
+    const short = drillShop({ name: "s", restored: runtimeDb(join(t.dir, "c"), 5), live: runtimeDb(join(t.dir, "c2"), 5), published }, 100);
+    assert.equal(short.ok, false);
+    assert.match(short.detail, /fewer than the 8 its fingerprint of 2026-11-04 covers/);
+    const gone = drillShop({ name: "s", restored: runtimeDb(join(t.dir, "e"), 0), live: runtimeDb(join(t.dir, "e2"), 0), published }, 100);
+    assert.equal(gone.ok, false, "both empty, but something was published: the record is gone");
+  } finally { t.done(); }
+});
+
 test("the drill passes a good copy and says exactly what is wrong with a bad one", () => {
   const t = tmp(); try {
     const live = runtimeDb(join(t.dir, "live"), 10);
     const copyOf = (name: string, entries: number) => runtimeDb(join(t.dir, name), entries);
-    assert.deepEqual(drillShop({ name: "s", restored: copyOf("a", 10), live }, 100), { name: "s", ok: true, detail: "restored 10 entries, integrity ok, last entry #10 matches the live record" });
+    assert.deepEqual(drillShop({ name: "s", restored: copyOf("a", 10), live }, 100), { name: "s", ok: true, detail: "restored 10 entries, integrity ok, last entry #10 matches the live record; no fingerprint of its record has been published yet, so none was compared" });
     const behind = drillShop({ name: "s", restored: copyOf("b", 8), live }, 100);
     assert.equal(behind.ok, true); assert.match(behind.detail, /2 newer entries not yet copied/);
     assert.match(drillShop({ name: "s", restored: copyOf("c", 8), live }, 1).detail, /2 entries behind the live record \(more than 1\)/);
