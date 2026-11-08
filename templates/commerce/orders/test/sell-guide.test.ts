@@ -2,17 +2,18 @@
 // words the claim rules ban, the walkthrough it teaches quoted exactly as the script prints it, and every number it gives about the example shop and about the hand check
 // compared with the real thing. The spec every template copies is ../../../SELL-GUIDE.md.
 //
-// Two deliberate differences from Fees. The monthly report, the go-live certificate, the approvals relay and the phone demo are not built for Orders, so section 9 and the sheet
-// name no report lines, and a test below fails the day one of them is built (then the guide must change). And the walkthrough's UPI codes are random on every run, so the quoted
-// printout is compared with the code, the link and nothing else made the same.
+// Two deliberate differences from Fees. The phone demo, the approvals relay and the Meta message list file are not built for Orders, and a test below fails the day one of them is
+// built (then the guide must change). And the walkthrough's UPI codes are random on every run, so the quoted printout is compared with the code, the link and nothing else made
+// the same. The report lines section 9 and the sheets name are the UPI shop's, in the report's own words (report/strings.ts).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { bannedIn } from "../../../../modules/report/claims.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { NOT_TESTED, UPI_NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
 import { runOn } from "../crash-test/situations.ts";
+import { STRINGS } from "../report/strings.ts";
 import { WALK_OFFER_INR, WALK_QTY, printed, walk, walkSettings } from "../scripts/walkthrough.ts";
 import { annapurna, annapurnaRazorpay } from "../src/harness.ts";
 
@@ -37,8 +38,6 @@ const HELP: Record<Language, string> = {
   ml: "സപ്പോർട്ടിന് എഴുതൂ. ഒരാൾ മറുപടി തരും.",
   kn: "ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.",
 };
-const NOT_CHECKED_LABEL: Record<Language, string> = { en: "Not checked", hi: "जाँचा नहीं गया", ml: "പരിശോധിച്ചിട്ടില്ല", kn: "ಪರಿಶೀಲಿಸಿಲ್ಲ" };
-const HAND_RUN: Record<Language, string> = { en: "Checks were run by hand.", hi: "जाँचें हाथ से चलाई गईं।", ml: "പരിശോധനകൾ കൈകൊണ്ട് നടത്തി.", kn: "ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಿಂದ ನಡೆಸಲಾಗಿದೆ." };
 
 // ---- reading a guide ---------------------------------------------------------------------------------------------------
 
@@ -305,15 +304,21 @@ test("sell guide: the walkthrough command in the guide is a real one", () => {
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: what the guide says is not built yet is still not built (build it, then change sections 4, 8, 9 and 11)", () => {
+test("sell guide: what the guide says is not built yet is still not built (build it, then change sections 4, 8 and 11), and what it says is built is", () => {
   const orders = (path: string) => new URL(`../${path}`, import.meta.url);
-  for (const missing of ["demo", "scripts/go-live-certificate.ts", "report/strings.ts", "whatsapp-templates.json"]) {
-    assert.ok(!existsSync(orders(missing)), `templates/commerce/orders/${missing} exists now: the guide still says there is no phone demo, go-live certificate or monthly report for Orders`);
+  for (const missing of ["demo", "whatsapp-templates.json"]) {
+    assert.ok(!existsSync(orders(missing)), `templates/commerce/orders/${missing} exists now: the guide still says there is no phone demo for Orders`);
   }
+  const relay = orders("approvals/");
+  assert.deepEqual(existsSync(relay) ? readdirSync(relay).filter((f) => f !== ".gitkeep") : [], [], "templates/commerce/orders/approvals has files now: the guide still says there is no approvals relay for Orders");
+  for (const built of ["scripts/go-live-certificate.ts", "scripts/client-report.ts", "report/strings.ts"]) assert.ok(existsSync(orders(built)), `${built}: the guide says the monthly report and the go-live certificate are built`);
   for (const l of LANGUAGES) {
     assert.ok(section(l, 8).includes("hand-check.ts --settings") && section(l, 8).includes("templates/commerce/orders/src/language/meta-templates.ts"), `${l}: the real commands and files`);
     assert.ok(section(l, 8).includes("templates/commerce/orders/settings/annapurna-tiffins.example.json"));
+    assert.ok(section(l, 8).includes("go-live-certificate.ts --settings <your file> --lang <en, hi, ml or kn> --out <folder>"), `${l}: the go-live certificate command`);
   }
+  const certScript = readFileSync(orders("scripts/go-live-certificate.ts"), "utf8");
+  for (const option of ["settings", "lang", "out"]) assert.ok(certScript.includes(`${option}: { type: "string" }`), `go-live-certificate.ts takes --${option}`);
   const script = readFileSync(orders("scripts/hand-check.ts"), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the shop's own settings file");
   assert.ok(existsSync(orders("src/language/meta-templates.ts")) && existsSync(orders("settings/annapurna-tiffins.example.json")));
@@ -397,6 +402,21 @@ test("sell guide: section 11 lists everything the hand check does not cover, one
   for (const word of ["whatsapp", "webhook", "native speaker", "restart", "last portion", "upi app", "pickup or delivery", "made, collected or delivered", "confirmed order"]) assert.ok(en.includes(word), `English section 11 names: ${word}`);
 });
 
+// ---- the report's own words ----------------------------------------------------------------------------------------------------
+
+test("sell guide: section 9 and the sheets name the monthly report's lines in the report's own words (a UPI shop's), in each language", () => {
+  for (const l of LANGUAGES) {
+    const s = STRINGS[l];
+    const words = [s.upiLabel.collected, s.label.stillToCollect, s.upiLabel.givenBack, s.label.ordersTaken, s.label.cancelled, s.label.wasAsked, s.label.approved, s.label.saidNo, s.label.stoppedByLimits, s.label.notChecked];
+    const nine = section(l, 9);
+    for (const w of words) assert.ok(nine.includes(w), `${l}: section 9 must name the report line "${w}"`);
+    const html = sheet(l);
+    for (const w of [s.upiLabel.collected, s.label.stillToCollect, s.upiLabel.givenBack, s.label.ordersTaken, s.label.cancelled, s.label.wasAsked, s.label.stoppedByLimits, s.label.notChecked]) {
+      assert.ok(html.includes(`<li>${w}<span class="num"></span></li>`), `one-pager.${l}.html: the report line "${w}"`);
+    }
+  }
+});
+
 // ---- the machine-written banner, the date ------------------------------------------------------------------------------------
 
 test("sell guide: the Hindi, Malayalam and Kannada guides carry the machine-written banner with the date; the English master does not", () => {
@@ -430,8 +450,8 @@ test("one-pagers: the not-checked line is dated, says the checks were run by han
   for (const l of LANGUAGES) {
     const html = sheet(l);
     const line = /<div class="not-checked">([\s\S]*?)<\/div>/.exec(html)?.[1] ?? "";
-    assert.ok(line.startsWith(`<b>${NOT_CHECKED_LABEL[l]}</b> (${DATE[l]}): `), `${l}: the line starts with the "Not checked" label and the date`);
-    assert.ok(line.includes(HAND_RUN[l]), `${l}: the line says the checks were run by hand`);
+    assert.ok(line.startsWith(`<b>${STRINGS[l].label.notChecked}</b> (${DATE[l]}): `), `${l}: the line starts with the "Not checked" label and the date`);
+    assert.ok(line.includes(STRINGS[l].handRun), `${l}: the line says the checks were run by hand`);
     assert.ok(line.includes("WhatsApp") && line.includes("UPI") && line.includes("17 of 17"), `${l}: the line names real WhatsApp, a real UPI app and the count`);
     assert.equal(line.split(" · ").length, 6, `${l}: six things not checked`);
   }
