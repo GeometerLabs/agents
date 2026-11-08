@@ -204,3 +204,11 @@ Built: the lease kept on the server, checked with the pinned key; each shop's ru
   first partner shop on UPI goes live.
 - **Switching a live shop between UPI and Razorpay.** The deploy plans the new set of Guards, but a Razorpay Guard left over from before is not taken down by name, and its
   secrets stay in their folders. Revisit when: a shop switches.
+
+## Records anyone can check (B28, B35, B36; 8 November 2026)
+
+- **No public target is switched on.** The git repository and the OpenTimestamps calendars wait for the owner's yes, and for the choice of the public repository; until then the fingerprints stay in `state/fingerprints/` on the server, where the shop's operator could rewrite them. Revisit when: the owner says yes and names the repository.
+- **A server with no panel key writes unsigned fingerprints.** They cannot be used as geo-verify anchors (geo-verify needs a signed checkpoint and a key log). Revisit when: every server has a signing key (the runtime's `report.signingKeyFile` is not given to the deployer either).
+- **A shop moved to another server keeps its agent id only if that server's operator copies `identity.json` from the export into the new shop folder** (the B38 export now carries it, with the evidence pack, its anchor and the fingerprints). Nothing imports an export yet. Revisit when: import from an export is built.
+- **A shop deployed before this change gets `report.tenant` (and so an anchored monthly report) at its next deploy**, because the deployer redeploys a shop only when its own files change. Revisit when: a fleet-wide redeploy is next run.
+- **The ledger is rebuilt from the whole record on every export** (every quarter of an hour). Fine at today's sizes (a few thousand entries); a shop with hundreds of thousands of entries would want the head kept and only new entries chained. Revisit when: an export takes more than a few seconds.

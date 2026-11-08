@@ -66,3 +66,9 @@
 - **Guard does not check the lease**, and no crash-test situation winds a centre down (as in Bookings' Deferred.md). Revisit when: Guard's check lands.
 - **Fees opened late after a wind-down.** No month's fees are opened in the wind-down; once the centre is in order again, the month's fees whose first reminder day has
   passed are opened then and reminded once (the centre's own schedule, not a parent's request). Revisit when: the owner would rather those months were not chased.
+
+## The papers (B28, B35, B36)
+
+- The new Hindi, Malayalam and Kannada words in `report/papers.ts` (action words, limit labels) are machine-written and wait for a native reader, before a parent gets a statement in them.
+- A parent with two children sees two fees by month and batch, not by child (the child's name is never on a paper). See `modules/papers/Deferred.md`.
+- Turning part payments on (from off) is a looser rule too, but only the least part payment's amount is compared today.

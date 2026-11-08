@@ -188,6 +188,9 @@ owner, not yet marked done", and `UPI_OBLIGATION_KINDS` puts them in the registr
 owner the notice again, with the code and the button). An unpaid fee nobody claims is not listed: a request is the owner's to look at once the customer says they paid
 or the owner marked part of it.
 
+## Records anyone can check, and the papers (B28, B35, B36; 8 November 2026)
+
+Not a cut: new shared code that both templates use from the start. `record/ledger.ts` and `record/publish.ts` turn any template's record into geometer-verify's ledger and publish its daily fingerprint (`record/Explanation.md`); `papers/` makes the three signed papers from any template's record (`papers/Explanation.md`). Each template hands in a `report/papers.ts` of about 70 lines (its money actions, its action words, its cases, its limits). The monthly reports' `anchor` slot, reserved since the reports were written, is filled from the ledger. Size (8 November 2026, against main at 2ef04b6): `record/` +342 lines, `papers/` 954 (of which the words in four languages are 249), the templates' `report/papers.ts`, `scripts/papers.ts` and the Bookings example script 239, the bundle's fingerprint job, paper command, panel papers and papers page 308; new tests 840. Nothing was superseded: the reports' `anchor` slot was reserved for this, and the bundle's export job gained the ledger beside the record it already wrote.
 ## The QR code, shared (`qr/`, B12, 8 Nov)
 
 The encoder, its PNG writer and its tests were in `payments/upi/`; the signed papers (go-live certificate, monthly record certificate, monthly report) are the second user, so

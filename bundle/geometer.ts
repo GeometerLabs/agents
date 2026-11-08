@@ -25,6 +25,12 @@
 //   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
 //                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
 //                                Check one with: node bundle/export/check.ts <folder>
+//   paper dispute <shop> --case b-3 [--lang en] [--out <folder>]   the signed record of one booking or fee (B35), side by side, in the shop's language; never who is right
+//   paper identity <shop> [--lang en] [--out <folder>]              the agent's identity paper (B36), full and public (the fields in shops/<shop>/identity.json "public")
+//   paper ledger <shop> [--out <folder>]                            the record as geometer-verify's evidence pack, and the anchor over today's head (B28)
+//                                The panel makes them (it holds the signing key and the papers); a person's statement is made in the panel only.
+//   fingerprints                 the daily fingerprint of every shop's record, now (it also runs once a day by itself): local file always; git and OpenTimestamps only
+//                                when <server>/fingerprints.json turns them on with the owner's yes
 //   licence extension <file>     an emergency extension from Geometer (gx1.), checked with the pinned key and kept: until it ends, no shop here winds down because fleet could
 //                                not renew its lease. It never lifts a wind-down or a stop the lease states.
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
@@ -55,6 +61,8 @@ import type { AgentFlags } from "./agent/folder.ts";
 import { CRASH_SUBCOMMANDS, crashCommand } from "./agent/crash-test/cli.ts";
 import { recordAgent } from "./agent/records.ts";
 import { exportCommand } from "./export/cli.ts";
+import { paperCommand } from "./backup/papers-cli.ts";
+import { runFingerprints } from "./backup/fingerprints.ts";
 import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
@@ -105,7 +113,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
       "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
-      credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" },
+      credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" }, case: { type: "string" }, lang: { type: "string" },
       // agent crash-test / go-live / set (and --run, --version on agent add)
       run: { type: "string" }, version: { type: "string" }, situations: { type: "string" }, "guard-bin": { type: "string" }, json: { type: "boolean" }, details: { type: "boolean" },
       // update / rollback
@@ -235,6 +243,17 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", "invite", "--role", role, ...(str("note") ? ["--note", str("note") as string] : [])], { timeoutMs: 60_000 });
       if (r.code !== 0) throw new Error(`The panel did not make a link (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 300)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
       console.log(r.stdout.trim());
+      return 0;
+    }
+
+    if (command === "fingerprints") {
+      const r = await runFingerprints(ctx);
+      r.lines.forEach((l) => console.log(l));
+      return r.ok ? 0 : 1;
+    }
+    if (command === "paper") {
+      const files = await paperCommand(ctx, positionals[0] ?? "", positionals[1] ?? "", { ...(str("case") ? { caseId: str("case") } : {}), ...(str("language") ?? str("lang") ? { lang: (str("language") ?? str("lang")) as string } : {}), out: str("out") ?? "." });
+      console.log(`Wrote ${files.length} files:\n${files.map((f) => `  ${f}`).join("\n")}\nCheck a signed one at geometer.dev/verify, or with node templates/commerce/bookings/scripts/verify-report.ts <file>. Each paper lists what it did not check.`);
       return 0;
     }
 

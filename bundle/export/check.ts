@@ -1,11 +1,15 @@
 // Check a shop export (build.ts): every file is the one the manifest names (sha256 and size), nothing is missing or extra, and every signed paper in it still verifies the way the
 // report verifier checks one (modules/report/sign.ts: unchanged since the key named in it signed it; that does not show who holds the key or that the numbers are true).
+// When GEO_VERIFY_BIN names the open verifier (geo-verify, the geometer-verify repository), the record's evidence pack (record/ledger/pack.json) is checked by it too,
+// against the package's own anchor and every signed fingerprint line's anchor: a changed record is a problem; no anchor it can use is said, and is not one.
 //
 //   node bundle/export/check.ts <the exported folder | the .tar.gz>
 //
 // Exit 0: the package is whole. 1: something was changed, is missing or is extra. 64: it was not asked a question it can answer.
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { verifyEnvelopeText } from "../../modules/report/sign.ts";
 import { EXPORT_FORMAT } from "./build.ts";
@@ -18,6 +22,33 @@ export interface PackageCheck {
   /** Signed papers found, with what the report verifier said of each. */
   papers: { path: string; unchanged: boolean; signed: boolean; keyId: string | null; summary: string }[];
   manifest?: Manifest;
+  /** What geo-verify said of the record's evidence pack, or why it was not asked. */
+  ledger?: { asked: false; why: string } | { asked: true; exit: number; state: string; verified: { from: number; to: number } | null; anchors: number; detail: string };
+}
+
+/** Run geo-verify on the package's evidence pack, with the package's anchor and each signed fingerprint line's anchor. */
+function verifyLedger(files: ReadonlyMap<string, Buffer>, bin: string | undefined): PackageCheck["ledger"] {
+  const pack = files.get("record/ledger/pack.json");
+  if (!pack) return undefined;
+  if (!bin) return { asked: false, why: "set GEO_VERIFY_BIN to the geo-verify program to check the record's evidence pack too" };
+  if (!existsSync(bin)) return { asked: false, why: `GEO_VERIFY_BIN names ${bin}, which is not there` };
+  const anchors: string[] = [];
+  const own = files.get("record/ledger/anchor.json");
+  if (own) anchors.push(own.toString("utf8"));
+  for (const line of (files.get("record/ledger/fingerprints.jsonl")?.toString("utf8") ?? "").split("\n").filter((l) => l.trim() !== "")) {
+    try { const a = (JSON.parse(line) as { anchor?: unknown }).anchor; if (a) anchors.push(`${JSON.stringify(a)}\n`); } catch { /* the fingerprint file is checked as a file; an unreadable line gives no anchor */ }
+  }
+  const dir = mkdtempSync(join(tmpdir(), "geo-export-ledger-"));
+  try {
+    writeFileSync(join(dir, "pack.json"), pack);
+    anchors.forEach((a, i) => writeFileSync(join(dir, `anchor-${i}.json`), a));
+    const r = spawnSync(bin, [join(dir, "pack.json"), ...anchors.flatMap((_a, i) => ["--anchor", join(dir, `anchor-${i}.json`)]), "--json"], { encoding: "utf8", timeout: 60_000 });
+    let report: { state?: string; verified?: { from: number; to: number } | null; anchors?: number; invalid?: { detail: string }[] } = {};
+    try { report = JSON.parse(r.stdout); } catch { /* said below */ }
+    const exit = r.status ?? -1;
+    const detail = exit === 0 ? `the record matches ${report.anchors ?? anchors.length} anchor(s): entries ${report.verified?.from} to ${report.verified?.to}` : exit === 3 ? "no anchor it could use: the record is unverifiable, not changed" : exit === 1 ? `the record does not match its anchor: ${(report.invalid ?? []).map((f) => f.detail).slice(0, 3).join("; ")}` : `geo-verify answered ${exit}: ${(r.stderr || r.stdout).trim().split("\n").at(-1)?.slice(0, 160) ?? ""}`;
+    return { asked: true, exit, state: report.state ?? "unknown", verified: report.verified ?? null, anchors: anchors.length, detail };
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
 const sha = (data: Buffer) => createHash("sha256").update(data).digest("hex");
@@ -36,7 +67,7 @@ export function readPackage(where: string): Map<string, Buffer> {
   return new Map([...all].map(([p, c]) => [p.slice(folder.length + 1), c]));
 }
 
-export function checkPackage(files: ReadonlyMap<string, Buffer>): PackageCheck {
+export function checkPackage(files: ReadonlyMap<string, Buffer>, o: { geoVerify?: string } = { geoVerify: process.env.GEO_VERIFY_BIN }): PackageCheck {
   const problems: string[] = [];
   const papers: PackageCheck["papers"] = [];
   const manifestFile = files.get("manifest.json");
@@ -68,7 +99,9 @@ export function checkPackage(files: ReadonlyMap<string, Buffer>): PackageCheck {
     papers.push({ path, unchanged: v.unchanged, signed: v.signed, keyId: v.keyId, summary: v.summary });
     if (!v.unchanged) problems.push(`${path}: ${v.summary}`);
   }
-  return { ok: problems.length === 0, problems, papers, manifest };
+  const ledger = verifyLedger(files, o.geoVerify);
+  if (ledger?.asked && ledger.exit !== 0 && ledger.exit !== 3) problems.push(`record/ledger/pack.json: geo-verify says ${ledger.detail}.`);
+  return { ok: problems.length === 0, problems, papers, manifest, ...(ledger ? { ledger } : {}) };
 }
 
 export function describe(check: PackageCheck): string {
@@ -76,6 +109,7 @@ export function describe(check: PackageCheck): string {
   if (check.manifest) lines.push(`Shop ${check.manifest.shop}, made ${check.manifest.exportedAt}; ${check.manifest.counts.recordEntries} record entries, ${check.manifest.counts.cases} cases, ${check.manifest.counts.reports} reports, ${check.manifest.counts.certificates} certificates.`);
   for (const p of check.papers) lines.push(`  ${p.unchanged ? "unchanged" : "CHANGED  "}  ${p.path}${p.signed ? ` (signed by ${p.keyId})` : " (not signed)"}`);
   if (check.papers.length > 0) lines.push("A signature shows a paper is unchanged since its key signed it. It does not show who holds the key, or that the numbers are true.");
+  if (check.ledger) lines.push(check.ledger.asked ? `The record (geo-verify): ${check.ledger.detail}. That shows the record was not changed since those anchors, not that it is true or complete.` : `The record's evidence pack was not checked: ${check.ledger.why}.`);
   return lines.join("\n");
 }
 

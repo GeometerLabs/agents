@@ -12,6 +12,7 @@ import { ExportError } from "../export/build.ts";
 import { createDocuments } from "./documents.ts";
 import { exportShop } from "./export.ts";
 import { createShops } from "./shops.ts";
+import { PaperError, createPapers } from "./papers.ts";
 import { makeInviteLink, openStores, startPanel } from "./server.ts";
 import { VaultError } from "./vault.ts";
 
@@ -40,11 +41,34 @@ try {
       if (values.json) console.log(JSON.stringify({ ok: false, error: (e as Error).message })); else console.error((e as Error).message);
       process.exitCode = 1;
     }
+  } else if (command === "anchor" || command === "paper") {
+    // B28: `anchor <shop> --json` signs the checkpoint over the head of the shop's ledger for the deployer's daily fingerprint (the deployer holds no key).
+    // B35, B36: `paper dispute|identity|ledger <shop> [--case b-3] [--lang en] --json` makes a paper for `geometer paper`; each file comes back as text.
+    const { values, positionals } = parseArgs({ args: rest, allowPositionals: true, options: { json: { type: "boolean" }, case: { type: "string" }, lang: { type: "string" } } });
+    const [kindOrShop, maybeShop] = positionals;
+    const shop = command === "anchor" ? kindOrShop : maybeShop;
+    try {
+      if (!shop || !/^[a-z0-9-]{1,40}$/u.test(shop)) throw new PaperError(command === "anchor" ? "Say which shop: anchor <shop>." : "Say which paper and which shop: paper dispute|identity|ledger <shop>.");
+      const { store } = openStores(config);
+      const shops = createShops(config, store);
+      if (!shops.exists(shop)) throw new PaperError(`There is no shop ${shop} on this server.`);
+      const papers = createPapers(config, shops, createDocuments(store), Date.now);
+      if (command === "anchor") console.log(JSON.stringify({ ok: true, anchor: papers.anchor(shop) }));
+      else {
+        const files = kindOrShop === "dispute" ? papers.dispute(shop, values.case ?? "", values.lang) : kindOrShop === "identity" ? (() => { const i = papers.identity(shop, values.lang); return [...i.full, ...i.public]; })() : kindOrShop === "ledger" ? papers.ledger(shop) : undefined;
+        if (!files) throw new PaperError(`"${kindOrShop}" is not a paper the command line makes: dispute, identity or ledger (a statement is made in the panel, so the person's number stays out of the command line).`);
+        console.log(JSON.stringify({ ok: true, files: files.map((f) => ({ file: f.file, text: f.text })) }));
+      }
+    } catch (e) {
+      if (!(e instanceof PaperError)) throw e;
+      if (values.json) console.log(JSON.stringify({ ok: false, error: e.message })); else console.error(e.message);
+      process.exitCode = 1;
+    }
   } else if (command === "serve") {
     const panel = await startPanel(config);
     console.log(`Geometer panel (${config.mode}) is open at ${panel.url}${config.publicUrl ? `, served to people as ${config.publicUrl}` : ""}.`);
     for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { void panel.close().then(() => process.exit(0)); });
-  } else throw new ConfigError(`I don't know "${command}". Use serve (the default), invite or export.`);
+  } else throw new ConfigError(`I don't know "${command}". Use serve (the default), invite, export, anchor or paper.`);
 } catch (e) {
   if (e instanceof ConfigError || e instanceof VaultError) { console.error(e.message); process.exit(2); }
   throw e;
