@@ -267,7 +267,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (b, phone, templates, more) => tellCustomer(b, phone, templates as TemplateId[], more),
     tellOwner: (b, phone, template, more) => tellOwner(b, phone, template as TemplateId, more),
     cases: () => store.bookings.values(),
-    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired" },
+    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled" },
   });
   const { requestRefund, overLimit } = refunds;
   const afterRefund = (b: Booking, result: Parameters<typeof refunds.afterRefund>[1], a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }) => refunds.afterRefund(b, result, a);

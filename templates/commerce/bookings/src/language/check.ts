@@ -9,7 +9,7 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     language: facts.language,
     timeZone: facts.timeZone,
     amountsInr: [facts.priceInr, facts.depositInr, facts.refundInr, ...facts.services.map((s) => s.priceInr)].filter((v): v is number => v !== undefined),
-    counts: [facts.holdMinutes, facts.windowHours, facts.approvalHours].filter((v): v is number => v !== undefined),
+    counts: [facts.holdMinutes, facts.windowHours, facts.approvalHours, facts.approvalsLeft].filter((v): v is number => v !== undefined),
     shownMs: facts.slotMs,
     momentsMs: facts.slotChoices ?? [],
     links: facts.link ? [facts.link] : [],

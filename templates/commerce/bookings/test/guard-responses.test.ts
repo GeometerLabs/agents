@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../../../modules/core/clock.ts";
-import { ApiError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
 import { classify, createHttp } from "../../../../modules/core/http.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
 import { createRazorpayPayments } from "../../../../modules/payments/razorpay.ts";
@@ -79,6 +79,23 @@ test("unauthenticated and conflict", () => {
   assert.ok(u instanceof GuardUnauthenticatedError && u.status === 401);
   const c = read("conflict");
   assert.ok(c instanceof GuardConflictError && c.status === 409 && c.guard.retry === "no");
+  assert.ok(!(c instanceof GuardAlreadyDoneError), "the same action with other arguments is the plain conflict: nothing was done");
+  assert.equal(c.guard.reason_code, undefined);
+});
+
+test("already_done: the identical call after a person settled it as happened is a 409 conflict that is DONE, with who settled it; never a replay", () => {
+  const e = read("already_done");
+  assert.ok(e instanceof GuardAlreadyDoneError, "told apart from the plain conflict by reason_code");
+  assert.ok(e instanceof GuardConflictError, "and still a conflict, so code that does not know it never sends it again");
+  assert.equal(e.status, 409);
+  assert.equal(e.guard.code, "conflict");
+  assert.equal(e.guard.reason_code, "already_done");
+  assert.equal(e.confirmedBy, "operator:owner");
+  assert.equal(e.intent, "intent:fa8690f73eaf");
+  assert.equal(mayHaveHappened(e), false, "it is not 'may have happened': a person said it did");
+  // a reason_code on any other code changes nothing
+  const other = classify(409, { get: () => null }, { guard: { decision: "deny", code: "refused_by_policy", reason_code: "already_done" } }, CALL);
+  assert.ok(other instanceof GuardRefusedError && !(other instanceof GuardAlreadyDoneError));
 });
 
 test("a decision this code does not know is still a GuardError: a 2xx with a guard object is never a success", () => {

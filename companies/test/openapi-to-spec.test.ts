@@ -101,7 +101,7 @@ test("a money number in the query or the path gets a bound read as text (\"encod
   assert.ok(!d.suggestions.some((s) => s.operation === "create_payout" && (s.kind === "call_bound_approval" || s.kind === "spend")), "a path amount is never held or counted by this draft");
   assert.equal(draft().suggestions.find((s) => s.id === "create_refund-amount-bound")!.encoding, undefined, "a JSON body amount is a JSON number: no encoding");
   // the accept step writes the encoding into the rule
-  assert.deepEqual(textMoneySpec().rules.filter((r: any) => r.kind === "argument_bound").map((r: any) => [r.id, r.encoding]), [["create_refund-amount-bound", "string"], ["create_payout-amount-bound", "string"]]);
+  assert.deepEqual(textMoneySpec().rules.filter((r: any) => r.kind === "argument_bound").map((r: any) => [r.id, r.encoding]).sort(), [["create_payout-amount-bound", "string"], ["create_refund-amount-bound", "string"]]);
 });
 
 // ---- the accept step ---------------------------------------------------------------------------------------------------------------------
@@ -278,7 +278,8 @@ test("build compiles with the real Guard, prints what it cannot test, and writes
   const args = ["build", "--draft", join(dir, "draft.json"), "--accept", join(dir, "accept.json"), "--out", join(dir, "spec.json"), "--bundle", join(dir, "guard", "bundle.json"), "--guard-toml", join(dir, "guard", "guard.toml"), "--upstream", "refunds.brightside.example:443", "--listen", "127.0.0.1:8080", "--agent-id", "support-bot"];
   assert.equal(main(args, io), 0, io.text());
   const text = io.text();
-  assert.match(text, /Tripwires: passed 4 of 4/u);
+  // 5, not 4, since Guard's ADR-0060 (8 Nov 2026): each argument_bound has one more tripwire, its edge value written the wrong way ("50000" as text)
+  assert.match(text, /Tripwires: passed 5 of 5/u);
   assert.match(text, /rule create_refund-once: whether a repeat is stopped depends on the intent ledger/u);
   assert.match(text, /only the provider's receipt lookup or idempotency key can show whether it happened/u);
   assert.match(text, /checked against guard\.toml/u);

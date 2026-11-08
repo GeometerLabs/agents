@@ -41,6 +41,8 @@ export interface MessageFacts {
   approvalCode?: string;
   /** How many hours the owner has to answer. */
   approvalHours?: number;
+  /** A refund that needs several people (B37): how many more approvals it waits for after this person's. Made by the approvals relay from Guard's answer. */
+  approvalsLeft?: number;
 }
 
 export type TemplateId =
@@ -58,7 +60,11 @@ export type TemplateId =
   // button mode: the agent reads with the rules only and answers with buttons (modules/understanding/ai-state.ts). Each says why, and that every limit still holds.
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
   // sent by the approvals relay, not by the agent: the ask for a refund Guard is holding, and the answers to the owner's reply
-  | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed";
+  | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed"
+  // the relay again, when a refund needs several people (B37): this person's approval is in and more are needed; the others approved it; one person refused it
+  | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
+  // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
+  | "owner_refund_settled";
 
 /** Which approved WhatsApp template carries a message once the parent's 24-hour window has closed and no exact template fits. */
 export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_notice", owner: "owner_notice" } as const;
@@ -129,6 +135,10 @@ const en: TemplateSet = {
   owner_approval_denied: (f) => `Understood. The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} will not be sent, and they will be told.`,
   owner_approval_expired: (f) => `That request ran out before you answered, so nothing was refunded: ${inr(f, "refundInr")} for ${need(f, "customerPhone")}.`,
   owner_approval_failed: () => "I could not record your answer just now. Please send it again in a few minutes.",
+  owner_approval_waiting: (f) => `Thank you. Your approval of the ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} is recorded. Approvals still needed from the others: ${need(f, "approvalsLeft")}. It is sent only once they are given.`,
+  owner_approval_closed: (f) => `The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} has been approved by the others, so your answer is no longer needed. Thank you.`,
+  owner_approval_refused: (f) => `The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} was refused by one of the people who approve refunds, so it will not be sent, and they will be told.`,
+  owner_refund_settled: (f) => `Refund done: ${inr(f, "refundInr")} for ${need(f, "customerPhone")}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.`,
 };
 
 const hi: TemplateSet = {
@@ -184,6 +194,10 @@ const hi: TemplateSet = {
   owner_approval_denied: (f) => `समझ गया। ${need(f, "customerPhone")} का ${inr(f, "refundInr")} का रिफंड नहीं भेजा जाएगा, और उन्हें बता दिया जाएगा।`,
   owner_approval_expired: (f) => `आपके जवाब देने से पहले ही वह अनुरोध समाप्त हो गया, इसलिए कुछ वापस नहीं हुआ: ${need(f, "customerPhone")}, ${inr(f, "refundInr")}।`,
   owner_approval_failed: () => "आपका जवाब अभी दर्ज नहीं हो पाया। कृपया कुछ मिनट बाद फिर भेजें।",
+  owner_approval_waiting: (f) => `धन्यवाद। ${need(f, "customerPhone")} के ${inr(f, "refundInr")} के रिफंड पर आपकी मंज़ूरी दर्ज हो गई है। दूसरों से अभी इतनी मंज़ूरी और चाहिए: ${need(f, "approvalsLeft")}। वे मिलने पर ही रिफंड भेजा जाएगा।`,
+  owner_approval_closed: (f) => `सूचना: ${need(f, "customerPhone")} के ${inr(f, "refundInr")} के रिफंड को दूसरों ने मंज़ूरी दे दी है, इसलिए अब आपके जवाब की ज़रूरत नहीं है। धन्यवाद।`,
+  owner_approval_refused: (f) => `सूचना: ${need(f, "customerPhone")} के ${inr(f, "refundInr")} के रिफंड को मंज़ूरी देने वालों में से एक ने मना कर दिया है, इसलिए यह नहीं भेजा जाएगा, और उन्हें बता दिया जाएगा।`,
+  owner_refund_settled: (f) => `रिफंड हो गया: ${need(f, "customerPhone")} को ${inr(f, "refundInr")}। आपका एजेंट सेट करने वाले व्यक्ति ने इसे जाँचकर पूरा हुआ दर्ज किया है, इसलिए यह दोबारा नहीं भेजा जाएगा।`,
 };
 
 const ml: TemplateSet = {
@@ -239,6 +253,10 @@ const ml: TemplateSet = {
   owner_approval_denied: (f) => `മനസ്സിലായി. ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും.`,
   owner_approval_expired: (f) => `നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പേ ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയിട്ടില്ല: ${need(f, "customerPhone")}, ${inr(f, "refundInr")}.`,
   owner_approval_failed: () => "നിങ്ങളുടെ മറുപടി ഇപ്പോൾ രേഖപ്പെടുത്താൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും അയയ്ക്കൂ.",
+  owner_approval_waiting: (f) => `നന്ദി. ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ടിനുള്ള നിങ്ങളുടെ അനുമതി രേഖപ്പെടുത്തി. ഇനി മറ്റുള്ളവരിൽ നിന്ന് വേണ്ട അനുമതികൾ: ${need(f, "approvalsLeft")}. അവ ലഭിച്ച ശേഷമേ ഇത് അയയ്ക്കൂ.`,
+  owner_approval_closed: (f) => `അറിയിപ്പ്: ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ടിന് മറ്റുള്ളവർ അനുമതി നൽകി, അതിനാൽ ഇനി നിങ്ങളുടെ മറുപടി ആവശ്യമില്ല. നന്ദി.`,
+  owner_approval_refused: (f) => `അറിയിപ്പ്: ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ട് അനുമതി നൽകുന്നവരിൽ ഒരാൾ നിരസിച്ചു, അതിനാൽ ഇത് അയയ്ക്കില്ല, അവരെ അറിയിക്കും.`,
+  owner_refund_settled: (f) => `റീഫണ്ട് പൂർത്തിയായി: ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")}. നിങ്ങളുടെ ഏജന്റ് സജ്ജമാക്കിയ ആൾ ഇത് പരിശോധിച്ച് നടന്നതായി രേഖപ്പെടുത്തി, അതിനാൽ ഇത് വീണ്ടും അയയ്ക്കില്ല.`,
 };
 
 const kn: TemplateSet = {
@@ -294,6 +312,10 @@ const kn: TemplateSet = {
   owner_approval_denied: (f) => `ಅರ್ಥವಾಯಿತು. ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.`,
   owner_approval_expired: (f) => `ನೀವು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಆ ಕೋರಿಕೆಯ ಸಮಯ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಮರಳಿ ಕೊಟ್ಟಿಲ್ಲ: ${need(f, "customerPhone")}, ${inr(f, "refundInr")}.`,
   owner_approval_failed: () => "ನಿಮ್ಮ ಉತ್ತರವನ್ನು ಈಗ ದಾಖಲಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಕಳುಹಿಸಿ.",
+  owner_approval_waiting: (f) => `ಧನ್ಯವಾದ. ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")} ರೀಫಂಡ್‌ಗೆ ನಿಮ್ಮ ಅನುಮತಿ ದಾಖಲಾಗಿದೆ. ಇನ್ನೂ ಇತರರಿಂದ ಬೇಕಾದ ಅನುಮತಿಗಳು: ${need(f, "approvalsLeft")}. ಅವು ಸಿಕ್ಕ ನಂತರವೇ ಇದನ್ನು ಕಳುಹಿಸಲಾಗುವುದು.`,
+  owner_approval_closed: (f) => `ಸೂಚನೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")} ರೀಫಂಡ್‌ಗೆ ಇತರರು ಅನುಮತಿ ನೀಡಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಈಗ ನಿಮ್ಮ ಉತ್ತರ ಬೇಕಿಲ್ಲ. ಧನ್ಯವಾದ.`,
+  owner_approval_refused: (f) => `ಸೂಚನೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಅನುಮತಿ ನೀಡುವವರಲ್ಲಿ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.`,
+  owner_refund_settled: (f) => `ರೀಫಂಡ್ ಆಗಿದೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")}. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
 };
 
 export const TEMPLATES: Record<Language, TemplateSet> = { en, hi, ml, kn };

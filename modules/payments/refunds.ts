@@ -8,11 +8,15 @@
 // Whatever Guard or the service answered, a refund that may have gone out is never sent again: Guard's own record makes the second one a
 // new hold, which would ask the owner about money already paid.
 //
+// A 409 is "nothing was refunded" (the same action with other arguments), except one: a 409 with `reason_code: "already_done"` is Guard saying
+// that a person at the server looked and settled the refund as made (Guard's ADR-0060). That one is DONE: recorded as done by that person's word,
+// never sent again, and the owner is told in plain words.
+//
 // What a template gives this file: the thing a refund belongs to (a booking, a student's fee) as a `RefundCase`, how to write to the record and to the
 // customer about it, and where to find the case again from an approval. Everything about HOW a refund is asked for and read back is here, once.
 import { formatInr } from "../language/format.ts";
 import type { Clock } from "../core/clock.ts";
-import { ApiError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError } from "../core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError } from "../core/faults.ts";
 import { MINUTE } from "../core/time.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
@@ -51,7 +55,7 @@ export interface RefundCase {
   pending: { kind: string }[];
   /** Refunds that need the builder (never the owner): see RefundIssueKind. Counted in the runtime's status. */
   refundIssues?: RefundIssue[];
-  /** Payments the agent must not ask Guard to refund again: the owner said no, the outcome is unclear, it failed for good, or the approval ran out. */
+  /** Payments the agent must not ask Guard to refund again: the owner said no, the outcome is unclear, it failed for good, the approval ran out, or a person settled it as made. */
   stoppedRefunds?: string[];
 }
 
@@ -70,8 +74,8 @@ export interface RefundDeps<C extends RefundCase> {
   tellOwner(c: C, phone: string, template: string, more?: { refundInr?: number }): Promise<boolean>;
   /** Every case, to find the one that waits on an approval, and to sweep the clock's work. */
   cases(): Iterable<C>;
-  /** The message ids this file sends itself. */
-  ids: { checking: string; denied: string; approved: string; expired: string };
+  /** The message ids this file sends itself. `settled` tells the owner a refund is done by the word of the person who looks after the server (Guard's `already_done`). */
+  ids: { checking: string; denied: string; approved: string; expired: string; settled: string };
 }
 
 export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
@@ -87,6 +91,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   }
 
   type Sorted =
+    | { is: "already_done"; error: GuardAlreadyDoneError } // a person at the server settled it as made: done, never sent again
     | { is: "held"; error: GuardHeldError }
     | { is: "may_have_happened"; why: string } // look once, never send again
     | { is: "refused"; error: GuardRefusedError }
@@ -96,6 +101,8 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
 
   /** What an error from a refund call means for the refund. Anything that is not one of the service errors is the agent's own bug, and is thrown. */
   function sortRefundError(e: unknown): Sorted {
+    // first: it is a GuardConflictError too, and any other 409 still means "nothing was refunded"
+    if (e instanceof GuardAlreadyDoneError) return { is: "already_done", error: e };
     if (e instanceof GuardHeldError) return { is: "held", error: e };
     if (e instanceof GuardOutcomeUnknownError) return { is: "may_have_happened", why: "Guard says the outcome is unknown" };
     if (e instanceof GuardRefusedError) return { is: "refused", error: e };
@@ -110,6 +117,21 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
 
   const findRefund = async (paymentId: string, receipt: string) => (await payments.listRefunds(paymentId)).find((r) => r.receipt === receipt);
 
+  /**
+   * Guard says a person at the server settled this refund as made (409 `already_done`): done, by that person's word, and never sent again. The record says
+   * who (refs.confirmedBy) and that the payments service's own list did not show it; the payment is never asked about again; the owner is told plainly.
+   * It is not a refund issue: nobody needs to look at it again.
+   */
+  async function settledByPerson(b: C, paymentId: string, amountInr: number, refs: Record<string, string>, e: GuardAlreadyDoneError): Promise<void> {
+    const who = e.confirmedBy ?? "a person at the server";
+    log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, {
+      refs: { ...refs, confirmedBy: who, ...(e.intent ? { intent: e.intent } : {}) },
+      notes: `Guard says ${who} settled this refund as made (already_done): it is done by that person's word, not by the payments service's own list, which did not show it. It is not sent again`,
+    });
+    if (!stoppedOf(b).includes(paymentId)) stoppedOf(b).push(paymentId); // asking Guard again would only get the same answer
+    await tellOwner(b, b.customer, deps.ids.settled, { refundInr: amountInr });
+  }
+
   const overLimit = (amountInr: number) => amountInr > deps.limitInr();
 
   /**
@@ -122,7 +144,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     const amountPaise = amountInr * 100;
     const refs = { paymentId, amountPaise: String(amountPaise) };
     if (stoppedOf(b).includes(paymentId)) {
-      log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: "an earlier try at this refund ended with a no, an unclear outcome, or a failure, so Guard is not asked again" });
+      log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: "an earlier try at this refund ended with a no, an unclear outcome, a failure, or Guard's word that a person settled it as made, so Guard is not asked again" });
       return "stopped";
     }
     log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs });
@@ -174,6 +196,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       } catch (e) {
         const sorted = sortRefundError(e);
         switch (sorted.is) {
+          case "already_done": await settledByPerson(b, paymentId, amountInr, refs, sorted.error); return "done";
           case "held": {
             if (sorted.error.approval === null || sorted.error.call.body === undefined) {
               const note = `Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`;
@@ -312,6 +335,13 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     } catch (e) {
       const sorted = sortRefundError(e);
       switch (sorted.is) {
+        case "already_done": {
+          // a person at the server settled it as made while it waited for the owner: Guard did not use the owner's approval, and nothing was sent
+          dropHold(b, hold);
+          await settledByPerson(b, paymentId, amountInr, refs, sorted.error);
+          await tellCustomer(b, b.customer, [deps.ids.approved], { refundInr: amountInr });
+          return;
+        }
         case "held":
           if (sorted.error.approval === null) return stop("uncertain", `After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`, "unconfirmed");
           hold.approved = false;

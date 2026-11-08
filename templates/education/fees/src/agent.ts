@@ -146,7 +146,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (due, phone, templates, more) => tellCustomer(due, phone, templates as TemplateId[], more),
     tellOwner: (due, phone, template, more) => tellOwner(due, phone, template as TemplateId, more),
     cases: () => store.dues.values(),
-    ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired" },
+    ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired", settled: "owner_refund_settled" },
   });
   const { requestRefund, afterRefund, overLimit } = refunds;
 

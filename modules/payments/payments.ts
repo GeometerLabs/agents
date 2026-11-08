@@ -2,7 +2,7 @@
 // Field names follow Razorpay's (snake_case, amounts in paise, times in epoch seconds) so a real adapter drops in.
 // The fake's store is the record the agent reads back: "a deposit counts when Razorpay's record shows it".
 import type { Clock } from "../core/clock.ts";
-import { ApiError, GuardConflictError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
 import type { FaultOptions, GuardInfo, SentCall } from "../core/faults.ts";
 import type { GuardModel } from "./guard-model.ts";
 
@@ -176,6 +176,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
         }
         case "refused": throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, info("deny", "refused_by_policy", "no", decision.reason), sentCall, "rule", decision.ruleId);
         case "conflict": throw new GuardConflictError(409, `refused by the Guard: ${decision.reason}`, info("deny", "conflict", "no", decision.reason), sentCall);
+        case "already_done": throw new GuardAlreadyDoneError(409, `refused by the Guard: ${decision.reason}`, { ...info("deny", "conflict", "no", decision.reason, decision.detail), reason_code: "already_done" }, sentCall);
         case "replay": return { ...(decision.reply as Refund), replayed: true };
         case "pass": break;
       }
@@ -190,11 +191,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     refundStore.push(refund);
     emit("refund.processed", { refund: { id: refund.id, payment_id: paymentId } });
     if (fault === "outcomeUnknown") {
-      guard?.recordUnknown(paymentId);
+      guard?.recordUnknown(paymentId, request);
       throw new GuardOutcomeUnknownError(504, "refused by the Guard: outcome unknown: the request may or may not have reached the provider. The action may have happened; it is not repeated automatically", { decision: "unknown", code: "outcome_unknown", sent: "unknown", retry: "do_not_repeat", detail: null }, sentCall);
     }
     if (fault === "serverError") {
-      guard?.recordUnknown(paymentId);
+      guard?.recordUnknown(paymentId, request, 500);
       throw new ApiError(500, "The payments service answered 500.");
     }
     guard?.recordSent(paymentId, request, { ...refund });

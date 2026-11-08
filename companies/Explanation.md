@@ -13,7 +13,7 @@
 | `export-record.ts` | Guard's decisions in plain words, a manifest, and a call for the evidence pack |
 | `deploy/` | Compose and Kubernetes recipes, text only |
 | `examples/refunds-api/` | a made-up refunds API with every file of the path from OpenAPI to bundle, and a fake of the API |
-| `test/` | 52 tests: 29 draft, accept and command line; 8 end to end; 5 export; 2 fake API; 8 deploy |
+| `test/` | 55 tests: 31 draft, accept and command line; 9 end to end; 5 export; 2 fake API; 8 deploy |
 
 Nothing outside `companies/` was touched: no `bundle/`, no `templates/`, no monorepo, and no cargo.
 
@@ -53,6 +53,8 @@ Eight end-to-end tests, each on a fresh Guard and a fresh fake API (the eighth, 
 - **`forbid`.** A kept route marked off in the accept file's `forbid` list (a cancel, which the draft would not have suggested forbidding) was refused naming `cancel_refund-forbidden`, while the read of a refund next to it went through.
 - **A daily spend cap.** 22 refunds of 9000 passed (198000 of 200000); the 23rd was refused with `reason_code: limit_exceeded`, the limit's id, and when the window resets.
 - **The key lives only in Guard.** The agent's token was a 401 at the API; the API's own key opened nothing at Guard; through Guard the API saw only its own key.
+
+**The tripwire count is Guard's, and it grew on 8 November 2026.** Guard's ADR-0060 gives every `argument_bound` one more self-check: its edge value written the wrong way (`"50000"` as text for a number bound, `"+50"` for a string one), which must be refused. The example keeps one bound, so `build` now prints "Tripwires: passed 5 of 5" where it printed 4 of 4; the test and the README's sample output say 5. The compiled `bundle.json` did not change (an absent encoding is written as absent, so the digest is the same), and the test that compares it byte for byte still passes against the new binary.
 
 Things that surprised me, worth a second look by whoever owns Guard's docs:
 
