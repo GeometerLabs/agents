@@ -933,4 +933,97 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
 | `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
 | `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
+| `health.nav` | ಆರೋಗ್ಯ ಮತ್ತು ಮಾರ್ಜಿನ್ | Health and margin |  |
+| `health.voteNav` | ಮತ | Vote |  |
+| `health.title` | ಆರೋಗ್ಯ ಮತ್ತು ಮಾರ್ಜಿನ್ | Health and margin |  |
+| `health.intro` | ಪ್ರತಿ ಅಂಗಡಿಗೆ: ಯಾವುದರ ಮೇಲೆ ಗಮನ ಬೇಕು, ಅದನ್ನು ನಡೆಸಲು ನಿಮಗೆ ಎಷ್ಟು ಖರ್ಚು, ನೀವು ಎಷ್ಟು ಪಡೆಯುತ್ತೀರಿ, ನಿಮಗೆ ಎಷ್ಟು ಉಳಿಯುತ್ತದೆ. ಇಲ್ಲಿ ನೀವು ಬರೆಯುವ ಬೆಲೆ ಮತ್ತು ನಿಮಿಷಗಳು ನಿಮಗೆ ಮಾತ್ರ ಕಾಣುತ್ತವೆ. | For each shop: what needs a look, what it costs you to run, what you charge, and what you keep. Only you see the prices and minutes you type here. |  |
+| `health.none` | ನಿಮಗೆ ಇನ್ನೂ ಅಂಗಡಿಗಳಿಲ್ಲ. | You have no shops yet. |  |
+| `health.open` | ತೆರೆಯಿರಿ | Open |  |
+| `health.month` | 2026-11 ರ ನಡೆಸುವ ಖರ್ಚು | Running cost for 2026-11 |  |
+| `health.saved` | ಉಳಿಸಲಾಗಿದೆ. | Saved. |  |
+| `health.problems.price` | ನಿಮ್ಮ ಬೆಲೆ ರೂಪಾಯಿಗಳಲ್ಲಿ ಒಂದು ಮೊತ್ತವಾಗಿರಬೇಕು, ಉದಾ. 1500 ಅಥವಾ 1500.50. | Your price must be an amount in rupees, like 1500 or 1500.50. |  |
+| `health.problems.setup` | ಸೆಟಪ್ ಶುಲ್ಕ ರೂಪಾಯಿಗಳಲ್ಲಿ ಒಂದು ಮೊತ್ತವಾಗಿರಬೇಕು, ಉದಾ. 2000. | The setup fee must be an amount in rupees, like 2000. |  |
+| `health.problems.minutes` | ಸಪೋರ್ಟ್ ನಿಮಿಷಗಳು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಾಗಿರಬೇಕು, ಉದಾ. 90. | Support minutes must be a whole number, like 90. |  |
+| `health.problems.rate` | ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯ ರೂಪಾಯಿಗಳಲ್ಲಿ ಒಂದು ಮೊತ್ತವಾಗಿರಬೇಕು, ಉದಾ. 300. | The value of your hour must be an amount in rupees, like 300. |  |
+| `health.attention.heading` | ಗಮನ ಬೇಕಾದದ್ದು | What needs a look |  |
+| `health.attention.ok` | ಈಗ ಯಾವುದಕ್ಕೂ ಗಮನ ಬೇಕಿಲ್ಲ. | Nothing needs a look right now. |  |
+| `health.attention.needs` | 2 ಅಂಗಡಿಗಳ ಮೇಲೆ ಗಮನ ಬೇಕು | 2 shops need a look |  |
+| `health.attention.unfinished` | 3 ಅರ್ಧಂಬರ್ಧ | 3 unfinished |  |
+| `health.attention.kind.deposit_no_booking` | ಡೆಪಾಸಿಟ್ ಬಂದಿದೆ, ಬುಕಿಂಗ್ ಇಲ್ಲ | Deposit with no booking |  |
+| `health.attention.kind.payment_unrecorded` | ಪಾವತಿ ದಾಖಲಾಗಿಲ್ಲ | Payment not recorded |  |
+| `health.attention.kind.approval_waiting_long` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕೆ ಬಹಳ ಕಾಯುವಿಕೆ | Owner's answer waiting long |  |
+| `health.attention.kind.refund_waiting` | ರೀಫಂಡ್ ಕಾಯುತ್ತಿದೆ | Refund waiting |  |
+| `health.attention.kind.refund_unknown` | ರೀಫಂಡ್ ದೃಢಪಟ್ಟಿಲ್ಲ | Refund not confirmed |  |
+| `health.attention.kind.refund_failed` | ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ | Refund failed |  |
+| `health.attention.kind.upi_payment_unconfirmed` | UPI ಪಾವತಿ ದೃಢಪಟ್ಟಿಲ್ಲ | UPI payment not confirmed |  |
+| `health.attention.kind.upi_refund_owed` | UPI ರೀಫಂಡ್ ಕೊಡಬೇಕಿದೆ | UPI refund owed |  |
+| `health.attention.otherKind` | ಇತರೆ | Other |  |
+| `health.attention.notShared` | ಈ ಅಂಗಡಿಯ ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಅರ್ಧಂಬರ್ಧ ಕೆಲಸಗಳನ್ನು ಎಣಿಸಲಾಗುವುದಿಲ್ಲ. | This shop's record has not been shared yet, so its unfinished work cannot be counted. |  |
+| `health.attention.heartbeat` | ಈ ಅಂಗಡಿಯಿಂದ Geometer ಗೆ ಕೊನೆಯ ಸುದ್ದಿ ಸಿಕ್ಕಿದ್ದು 8 Nov 2026, 10:30. | Geometer last heard from this shop on 8 Nov 2026, 10:30. |  |
+| `health.attention.heartbeatStale` | ಈ ಅಂಗಡಿಯಿಂದ Geometer ಗೆ ಕೊನೆಯ ಸುದ್ದಿ ಸಿಕ್ಕಿದ್ದು 3 Nov 2026, 10:30, 2 ದಿನಕ್ಕಿಂತ ಹೆಚ್ಚು ಹಿಂದೆ. ಸರ್ವರ್ ಆನ್ ಆಗಿದೆಯೇ ಮತ್ತು Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. | Geometer last heard from this shop on 3 Nov 2026, 10:30, more than 2 days ago. Check that the server is on and reaches Geometer. |  |
+| `health.attention.heartbeatNone` | ಈ ಅಂಗಡಿಯ ಬಗ್ಗೆ Geometer ಇನ್ನೂ ಉತ್ತರಿಸಿಲ್ಲ. | Geometer has not answered about this shop yet. |  |
+| `health.attention.drill` | ಕೊನೆಯ ರಿಸ್ಟೋರ್ ಅಭ್ಯಾಸ: 12 ದಿನ ಹಿಂದೆ. | Last restore drill: 12 days ago. |  |
+| `health.attention.drillFailed` | 12 ದಿನ ಹಿಂದಿನ ಕೊನೆಯ ರಿಸ್ಟೋರ್ ಅಭ್ಯಾಸ ಹೊಂದಲಿಲ್ಲ. ಅದನ್ನು ನೋಡಿ. | The last restore drill, 12 days ago, did not match. Look at it. |  |
+| `health.attention.drillNone` | ಇನ್ನೂ ಯಾವುದೇ ರಿಸ್ಟೋರ್ ಅಭ್ಯಾಸ ದಾಖಲಾಗಿಲ್ಲ. | No restore drill has been recorded yet. |  |
+| `health.attention.buttons` | ಈ ಅಂಗಡಿಗೆ AI ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ಬಟನ್ ಮೆನು ಸಿಗುತ್ತದೆ. | AI is paused for this shop. Customers get button menus. |  |
+| `health.attention.todo` | ಮಾಡಬೇಕಾದ ಪಟ್ಟಿ ತೆರೆಯಿರಿ | Open the to-do list |  |
+| `health.cost.heading` | ಈ ತಿಂಗಳ ನಡೆಸುವ ಖರ್ಚು | Running cost this month |  |
+| `health.cost.lines.plan` | Geometer ಪ್ಲಾನ್ ಶುಲ್ಕ, GST ಬಿಟ್ಟು | Geometer's plan fee, before GST |  |
+| `health.cost.lines.whatsapp` | WhatsApp ಸಂದೇಶಗಳು, ವೆಚ್ಚದ ಬೆಲೆಯಲ್ಲಿ | WhatsApp messages, at cost |  |
+| `health.cost.lines.model` | AI ಮಾಡೆಲ್ | AI model |  |
+| `health.cost.lines.support` | ನಿಮ್ಮ ಸಪೋರ್ಟ್ ಸಮಯ | Your support time |  |
+| `health.cost.unknown` | ಗೊತ್ತಿಲ್ಲ | unknown |  |
+| `health.cost.minutes` | 90 ನಿಮಿಷ | 90 minutes |  |
+| `health.cost.total` | ನಡೆಸುವ ಖರ್ಚು | Running cost |  |
+| `health.cost.subtotal` | ಇಲ್ಲಿಯವರೆಗಿನ ನಡೆಸುವ ಖರ್ಚು (1 ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲ) | Running cost so far (1 not known yet) |  |
+| `health.cost.notes.innovator` | ಇನ್ನೋವೇಟರ್ ಬೆಲೆ | Innovator price |  |
+| `health.cost.notes.selfHost` | ನಿಮ್ಮ ಸ್ವಂತ ಸರ್ವರ್‌ಗೆ ಅರ್ಧ ಬೆಲೆ | Half price for your own server |  |
+| `health.cost.notes.included` | ಪ್ಲಾನ್ ಶುಲ್ಕದಲ್ಲಿ ಸೇರಿದೆ | Included in the plan fee |  |
+| `health.cost.notes.estimate` | ಈ ತಿಂಗಳ ಎಣಿಕೆಯಿಂದ ಅಂದಾಜು, ಉಚಿತ ಉತ್ತರಗಳ ಮೊದಲು | Estimate from this month's counts, before the free replies |  |
+| `health.cost.notes.noRecord` | ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ | No record shared yet |  |
+| `health.cost.notes.noPlan` | ಫ್ಲೀಟ್ ಪ್ಲಾನ್ ಹೊಂದಿಸಿಲ್ಲ | Fleet has not set a plan |  |
+| `health.cost.notes.noPrice` | ಪಟ್ಟಿಯಲ್ಲಿ ಬೆಲೆ ಇಲ್ಲ | No price in the list |  |
+| `health.cost.notes.noMinutes` | ಈ ತಿಂಗಳ ನಿಮಿಷಗಳನ್ನು ನಮೂದಿಸಿಲ್ಲ | No minutes entered this month |  |
+| `health.cost.notes.noRate` | ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ | Enter what an hour of your time is worth |  |
+| `health.cost.notes.floor` | ಕನಿಷ್ಠ ಇಷ್ಟು: 4 ಕರೆಗಳಿಗೆ ಬೆಲೆ ಇರಲಿಲ್ಲ | At least this much: 4 calls had no price |  |
+| `health.charge.heading` | ನೀವು ಪಡೆಯುವುದು | What you charge |  |
+| `health.charge.price` | ನಿಮ್ಮ ಬೆಲೆ ತಿಂಗಳಿಗೆ (₹) | Your price a month (₹) |  |
+| `health.charge.setup` | ಒಮ್ಮೆಯ ಸೆಟಪ್ ಶುಲ್ಕ (₹, ಐಚ್ಛಿಕ) | One-time setup fee (₹, optional) |  |
+| `health.charge.minutes` | ಈ ತಿಂಗಳ ಸಪೋರ್ಟ್ ನಿಮಿಷಗಳು | Support minutes this month |  |
+| `health.charge.rate` | ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯ (₹) | What an hour of your time is worth (₹) |  |
+| `health.charge.save` | ಉಳಿಸಿ | Save |  |
+| `health.charge.privacy` | ಇವು ಈ ಪ್ಯಾನೆಲ್‌ನಲ್ಲೇ ಇರುತ್ತವೆ. Geometer ಗೆ ಎಂದಿಗೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. | These stay on this panel. They are never sent to Geometer. |  |
+| `health.charge.hint` | ಗೊತ್ತಿಲ್ಲದ ಪೆಟ್ಟಿಗೆಯನ್ನು ಖಾಲಿ ಬಿಡಿ. ಖಾಲಿ ಎಂದರೆ ಗೊತ್ತಿಲ್ಲ, ಸೊನ್ನೆ ಅಲ್ಲ. | Leave a box empty if you do not know it. Empty means unknown, not zero. |  |
+| `health.margin.heading` | ಮಾರ್ಜಿನ್ | Margin |  |
+| `health.margin.yourPrice` | ನಿಮ್ಮ ಬೆಲೆ | Your price |  |
+| `health.margin.keep` | ತಿಂಗಳಿಗೆ ನಿಮಗೆ ಉಳಿಯುವುದು | What you keep a month |  |
+| `health.margin.unknownPrice` | ನಿಮ್ಮ ಬೆಲೆ ನಮೂದಿಸುವವರೆಗೆ ಗೊತ್ತಿಲ್ಲ. | Unknown until you enter your price. |  |
+| `health.margin.notFinal` | ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲದ ಖರ್ಚುಗಳ ಮೊದಲಿನದು. | Before the costs that are not known yet. |  |
+| `health.margin.before` | ಇವುಗಳ ಮೊದಲು: Your support time | before: Your support time |  |
+| `health.margin.setupOnce` | ಒಮ್ಮೆ ಪಡೆದ ಸೆಟಪ್ ಶುಲ್ಕ: ₹2,000.00 | Setup fee you charged once: ₹2,000.00 |  |
+| `health.margin.negative` | ಸೊನ್ನೆಗಿಂತ ಕೆಳಗೆ: ನಡೆಸುವ ಖರ್ಚು ನಿಮ್ಮ ಬೆಲೆಗಿಂತ ಹೆಚ್ಚಿದೆ. | Below zero: the running cost is more than your price. |  |
+| `health.all.heading` | ನಿಮ್ಮ ಎಲ್ಲ ಅಂಗಡಿಗಳು | All your shops |  |
+| `health.all.shops` | 3 ಅಂಗಡಿಗಳಲ್ಲಿ 2 ಕ್ಕೆ ಬೆಲೆ ನಮೂದಿಸಲಾಗಿದೆ | Price entered for 2 of 3 shops |  |
+| `health.all.keep` | ತಿಂಗಳಿಗೆ ನಿಮಗೆ ಉಳಿಯುವುದು | What you keep a month |  |
+| `health.all.partial` | 3 ರಲ್ಲಿ ಬೆಲೆ ಇರುವ 2 ಅಂಗಡಿಗಳನ್ನು ಮಾತ್ರ ಕೂಡಿಸಲಾಗಿದೆ. | Only the 2 shops with a price are added up, out of 3. |  |
+| `health.all.setup` | ಒಮ್ಮೆ ಪಡೆದ ಸೆಟಪ್ ಶುಲ್ಕಗಳು | Setup fees charged once |  |
+| `health.all.unknown` | ಬೆಲೆ ನಮೂದಿಸುವವರೆಗೆ ಗೊತ್ತಿಲ್ಲ | Unknown until a price is entered |  |
+| `health.vote.title` | ಮುಂದಿನ ಟೆಂಪ್ಲೇಟ್‌ಗೆ ಮತ | Vote on the next template |  |
+| `health.vote.intro` | ಮೊದಲ 100 ಇನ್ನೋವೇಟರ್‌ಗಳಲ್ಲಿ ಒಬ್ಬರಾಗಿ, Geometer ಮುಂದೆ ಮಾಡುವ ಟೆಂಪ್ಲೇಟ್ ಅನ್ನು ನೀವು ಆರಿಸುತ್ತೀರಿ. ಪ್ರತಿಯೊಬ್ಬರಿಗೆ ಒಂದು ಮತ, ಯಾವಾಗ ಬೇಕಾದರೂ ಬದಲಿಸಬಹುದು. | As one of the first 100 innovators, you pick the next template Geometer builds. One vote each, and you can change it any time. |  |
+| `health.vote.yours` | ನಿಮ್ಮ ಮತ | Your vote |  |
+| `health.vote.none` | ನೀವು ಇನ್ನೂ ಮತ ಹಾಕಿಲ್ಲ. | You have not voted yet. |  |
+| `health.vote.button` | ನನ್ನ ಮತ ಉಳಿಸಿ | Save my vote |  |
+| `health.vote.change` | ನನ್ನ ಮತ ಬದಲಿಸಿ | Change my vote |  |
+| `health.vote.saved` | ನಿಮ್ಮ ಮತ ಉಳಿಸಲಾಗಿದೆ. | Your vote is saved. |  |
+| `health.vote.refused` | ಆ ಆಯ್ಕೆ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ. | That choice is not on the list. |  |
+| `health.vote.results` | ಇಲ್ಲಿಯವರೆಗಿನ ಮತಗಳು | Votes so far |  |
+| `health.vote.hidden` | ಇತರರು ಹೇಗೆ ಮತ ಹಾಕಿದರು ಎಂದು ನೋಡಲು ಮತ ಹಾಕಿ. | Vote to see how the others voted. |  |
+| `health.vote.votes` | 4 ಮತ | 4 votes |  |
+| `health.vote.note` | ಎಣಿಕೆ ಮಾತ್ರ. ಹೆಸರುಗಳನ್ನು ಎಂದಿಗೂ ತೋರಿಸುವುದಿಲ್ಲ. ಇವು ಈ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಇಲ್ಲಿಯವರೆಗೆ ಎಣಿಸಿದ ಮತಗಳು. | Counts only. Names are never shown. These are the votes counted on this panel so far. |  |
+| `health.vote.link` | ಮುಂದಿನ ಟೆಂಪ್ಲೇಟ್‌ಗೆ ಮತ ಹಾಕಿ | Vote on the next template |  |
+| `vote.option.orders` | ಆರ್ಡರ್‌ಗಳು: ಅಂಗಡಿ WhatsApp ನಲ್ಲಿ ಆರ್ಡರ್ ಮತ್ತು ಪಾವತಿ ಪಡೆಯುತ್ತದೆ | Orders: a shop takes orders and payment on WhatsApp |  |
+| `vote.option.fees-extensions` | ಶುಲ್ಕ ವಸೂಲಿ ವಿಸ್ತರಣೆಗಳು: ಟ್ಯೂಷನ್ ಮತ್ತು ತರಬೇತಿ ಕೇಂದ್ರಗಳಿಗೆ ಹೆಚ್ಚು | Fee collection extensions: more for tuition and training centres |  |
+| `vote.option.equipment-rental` | ಗುಂಪುಗಳಿಗೆ ಉಪಕರಣ ಬಾಡಿಗೆ: ಕ್ಲಬ್‌ಗಳು, ಸೊಸೈಟಿಗಳು, ಹಾಲ್‌ಗಳು | Equipment rental for groups: clubs, societies and halls |  |
+| `vote.option.social-posting` | ಒಪ್ಪಿಗೆಯೊಂದಿಗೆ ಸಾಮಾಜಿಕ ಪೋಸ್ಟ್: ಪ್ರತಿ ಪೋಸ್ಟ್ ಅನ್ನು ಮಾಲೀಕರು ಒಪ್ಪುತ್ತಾರೆ | Social posting with approval: the owner approves each post |  |
+| `vote.option.course-packs` | ಕೋರ್ಸ್ ಪ್ಯಾಕ್‌ಗಳು: ಕೋರ್ಸ್ ಅನ್ನು ಪಾಠಗಳಾಗಿ ಮಾರಾಟ ಮಾಡಿ ತಲುಪಿಸುವುದು | Course packs: sell and deliver a course in lessons |  |
 
