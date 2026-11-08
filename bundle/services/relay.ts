@@ -8,6 +8,7 @@ import { createGuardClient, createRuntimeClient } from "../../modules/approvals/
 import type { GuardClient } from "../../modules/approvals/clients.ts";
 import { createRelay as bookingsRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
 import { createRelay as feesRelay } from "../../templates/education/fees/approvals/relay.ts";
+import { createRelay as ordersRelay } from "../../templates/commerce/orders/approvals/relay.ts";
 import type { Relay, RelayOptions } from "../../modules/approvals/relay.ts";
 import { relayHandler } from "../../modules/approvals/server.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";
@@ -18,7 +19,7 @@ import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";
 
 /** The words each template's relay asks the owner in. An agent someone else wrote has none of its own, and is asked in Bookings' words. */
-const RELAYS: Record<string, (options: Omit<RelayOptions, "voice">) => Relay> = { bookings: bookingsRelay, fees: feesRelay };
+const RELAYS: Record<string, (options: Omit<RelayOptions, "voice">) => Relay> = { bookings: bookingsRelay, fees: feesRelay, orders: ordersRelay };
 
 export interface RelayShopConfig {
   /** Which template's words the owner is asked in ("bookings" when left out). */
