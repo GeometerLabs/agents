@@ -94,7 +94,7 @@ export function tenantOf(text: string): string {
 
 /** What one record entry puts in the chain (see the header for what it leaves out, and why). */
 export function ledgerBody(e: RecordEntry): Record<string, unknown> {
-  const { page: _page, ...refs } = e.refs;
+  const { page: _page, ...refs } = e.refs ?? {}; // an entry from before the record kept refs has none
   // through JSON once, as the runtime's database keeps it: a ref left undefined in memory is simply absent, there as here
   return JSON.parse(JSON.stringify({ seq: e.seq, time: e.time, booking: e.booking, action: e.action, outcome: e.outcome, inputsDigest: e.inputsDigest, decisions: e.decisions, language: e.language, refs }));
 }
