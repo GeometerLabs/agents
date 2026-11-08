@@ -46,8 +46,9 @@ const list_modules: Tool = {
     const { kindFor } = await load(e, "bundle/lib/kinds.ts");
     const templates = discoverTemplates(join(e.agentsDir, "templates")).map((t: any) => ({ id: t.id, version: t.version, runnableByTheBundle: Boolean(kindFor(t.id)), summary: firstSentence(join(t.folder, "README.md")) }));
     const modulesDir = join(e.agentsDir, "modules");
-    const modules = readdirSync(modulesDir, { withFileTypes: true }).filter((d) => d.isDirectory() && (existsSync(join(modulesDir, d.name, "README.md")) || existsSync(join(modulesDir, d.name, "Explanation.md"))))
-      .map((d) => ({ id: d.name, summary: firstSentence(join(modulesDir, d.name, existsSync(join(modulesDir, d.name, "README.md")) ? "README.md" : "Explanation.md")) }));
+    const headerLine = (file: string): string => { try { return (readFileSync(file, "utf8").split("\n").find((l) => l.startsWith("// ")) ?? "").slice(3, 223); } catch { return ""; } };
+    const modules = readdirSync(modulesDir, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith(".") && d.name !== "node_modules" && d.name !== "test")
+      .map((d) => { const readme = join(modulesDir, d.name, "README.md"); return { id: d.name, summary: existsSync(readme) ? firstSentence(readme) : headerLine(join(modulesDir, d.name, `${d.name}.ts`)) }; });
     return { templates, modules };
   },
 };
