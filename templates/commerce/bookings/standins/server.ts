@@ -17,7 +17,7 @@ import type { Fakes } from "./control.ts";
 import { calendarStandin } from "./google-calendar.ts";
 import { LostReply } from "../../../../modules/standins/http.ts";
 import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
-import { razorpayStandin } from "../../../../modules/standins/razorpay.ts";
+import { razorpayStandin } from "../../../../modules/payments/providers/razorpay/standin.ts";
 import { ruleDecider } from "./rule-decider.ts";
 import { systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import type { SystemOneStandin, SystemOneStandinOptions } from "../../../../modules/standins/system-one.ts";

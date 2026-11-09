@@ -5,8 +5,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 import { isValidTimeZone } from "../../../../modules/core/time.ts";
-import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
-import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
+import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -61,7 +61,7 @@ export interface Settings {
   /** The agent refunds up to and including this amount alone (an overpayment); anything above needs the owner (Guard holds it). */
   refund: { limitInr: number };
   /**
-   * How parents pay (modules/payments/upi/settings.ts): "upi", the centre's own UPI ID, marked paid by the owner; or "razorpay", the centre's own account.
+   * How parents pay (modules/payments/providers/index.ts): "upi", the centre's own UPI ID, marked paid by the owner; or "razorpay", the centre's own account.
    * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway centre.
    */
   payment: PaymentSettings;

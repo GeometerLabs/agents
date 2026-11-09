@@ -1,7 +1,7 @@
 // The dev harness: the Fees agent wired to the in-memory fakes, with a clock you can move and helpers that play the part of the parent, the payment provider's
 // webhooks and the owner. The crash-test situations, the hand check and the walkthrough build on this.
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
+import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { readFileSync } from "node:fs";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import type { FakeClock } from "../../../../modules/core/clock.ts";
@@ -79,7 +79,7 @@ export interface World {
   /** The parent pays the current link (all of it, or part). */
   pays(student: string, options?: { amountInr?: number }): void;
   /** UPI centres (B33): the student's fee's current request, as the agent's own ledger holds it (its code is the owner's, never the parent's). */
-  upiRequest(student: string): UpiRequest | undefined;
+  upiRequest(student: string): MarkedRequest | undefined;
   /** UPI: the refunds the owner owes for the student's fee. */
   upiRefunds(student: string): OwedRefund[];
   /** UPI: the owner marks money received on the student's current request (by tapping the newest "Received" button with `tap`), or another amount with `amountInr`. `code` replays a code. */
@@ -98,7 +98,7 @@ export interface WorldOptions {
   ai?: AiPolicy;
   /** Whether the stand-in WhatsApp takes buttons. Default true. */
   interactive?: boolean;
-  /** A UPI centre: where the QR pictures go (modules/payments/upi/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
+  /** A UPI centre: where the QR pictures go (modules/payments/owner-marked/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
   qrImage?: (text: string) => Promise<string | null>;
   /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
   licence?: () => LicenceNow;

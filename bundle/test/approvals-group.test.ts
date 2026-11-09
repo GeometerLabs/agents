@@ -14,7 +14,7 @@ import { openRelayStore } from "../../modules/approvals/store.ts";
 import { systemClock } from "../../modules/core/clock.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { createFakeMessaging } from "../../modules/messaging/messaging.ts";
-import { createRazorpayPayments } from "../../modules/payments/razorpay.ts";
+import { createRazorpayPayments } from "../../modules/payments/providers/razorpay/api.ts";
 import { createRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
 import { startServer } from "../../templates/commerce/bookings/server/server.ts";
 import { glowSalon, HARNESS_GUARD } from "../../templates/commerce/bookings/src/harness.ts";

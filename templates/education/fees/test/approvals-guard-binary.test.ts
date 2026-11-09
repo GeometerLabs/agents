@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHmac, randomUUID } from "node:crypto";
 import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
-import { createRazorpayPayments } from "../../../../modules/payments/razorpay.ts";
+import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { systemClock } from "../../../../modules/core/clock.ts";
 import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";

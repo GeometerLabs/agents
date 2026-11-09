@@ -20,8 +20,8 @@ import type { TimePhrase } from "../../../../modules/language/dates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
-import type { UpiState } from "../../../../modules/payments/upi/ledger.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 
 export type BookingState =
   | "enquiry" | "confirming_details" | "awaiting_deposit" | "needs_owner" | "confirmed" | "expired" | "cancelled" | "completed";
@@ -115,8 +115,8 @@ export interface Store {
   nextBooking: number;
   /** The month's AI spend and button-mode notices. Left out until the first message. */
   ai?: AiState;
-  /** A UPI shop's requests, the owner's marks and the refunds the owner owes (modules/payments/upi/ledger.ts). Left out until the first request. */
-  upi?: UpiState;
+  /** An owner-marked shop's requests, the owner's marks and the refunds the owner owes (modules/payments/owner-marked/ledger.ts). Kept under `upi`, as it always was. Left out until the first request. */
+  upi?: MarkState;
 }
 
 export function createStore(): Store {
@@ -141,7 +141,7 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
 export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number } = {}): MessageFacts {
-  const upi = upiOf(settings.payment);
+  const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
     language,
@@ -160,7 +160,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     windowHours: settings.cancellation.windowHours,
     bookingRef: booking?.id || undefined,
     customerPhone: extra.customerPhone ?? booking?.customer,
-    ...(upi ? { upiId: upi.id, payee: upi.payee } : {}),
+    ...(payTo ? { upiId: payTo.id, payee: payTo.name } : {}),
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
     ...(extra.markedInr !== undefined ? { markedInr: extra.markedInr } : {}),
     ...(extra.leftInr !== undefined ? { leftInr: extra.leftInr } : {}),

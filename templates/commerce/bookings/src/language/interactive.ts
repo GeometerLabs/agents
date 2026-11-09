@@ -5,7 +5,7 @@
 //   owner              "Talk to the owner": tells the owner, once an hour for the same customer
 //   menu               back to the list of services
 //   paid               "I have paid" (a UPI shop, B33): the owner is asked to look; nothing is marked paid
-//   upi-received:<code>, upi-refunded:<code>, upi-kept:<code>   the owner's buttons for a UPI payment or refund (modules/payments/upi/owner.ts)
+//   upi-received:<code>, upi-refunded:<code>, upi-kept:<code>   the owner's buttons for a UPI payment or refund (modules/payments/owner-marked/owner.ts)
 //   svc:<service id>   a row of the list of services
 //   slot:<epoch ms>    a row of the list of free times
 // A forged or old id changes nothing the typed word would not: a slot is checked against the opening hours and the calendar like any typed time, and an id
@@ -18,7 +18,7 @@ import { localParts } from "../../../../../modules/core/time.ts";
 import { serviceName } from "../settings.ts";
 import type { Service, Settings } from "../settings.ts";
 import type { Intent } from "../adapters/model.ts";
-import { ownerUpiChoices } from "../../../../../modules/payments/upi/buttons.ts";
+import { ownerMarkChoices } from "../../../../../modules/payments/owner-marked/buttons.ts";
 
 // ---- the words ------------------------------------------------------------------------------------------------------------------
 
@@ -52,8 +52,8 @@ export function buttonsFor(language: Language, ids: ButtonId[]): Choice[] {
 }
 
 /** The owner's buttons for a UPI payment ("Received ₹200") or a refund ("Refund sent", and "Kept for booking" where that is offered). Each carries its one-use code. */
-export function ownerUpiButtons(language: Language, a: { kind: "received"; code: string; amountInr: number } | { kind: "refund"; code: string; keepAllowed: boolean }): Choice[] {
-  return ownerUpiChoices(LABELS[language], a);
+export function ownerMarkButtons(language: Language, a: { kind: "received"; code: string; amountInr: number } | { kind: "refund"; code: string; keepAllowed: boolean }): Choice[] {
+  return ownerMarkChoices(LABELS[language], a);
 }
 
 /** The list of the shop's services, with the price on each row and, last, a row to reach the owner. At most 9 services fit beside it; a tenth is reached by typing its name. */

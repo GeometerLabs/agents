@@ -5,8 +5,8 @@ import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/language
 import type { Language } from "../../../../modules/language/languages.ts";
 import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
-import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
-import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
+import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -45,7 +45,7 @@ export interface Settings {
   approvers?: ApproversSettings;
   reminders: { hoursBefore: number[] };
   /**
-   * How customers pay the deposit (modules/payments/upi/settings.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
+   * How customers pay the deposit (modules/payments/providers/index.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
    * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop. It is the last key of the parsed settings, as it always was.
    */
   payment: PaymentSettings;

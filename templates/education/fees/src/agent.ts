@@ -12,15 +12,17 @@
 // following Guard's hold (payments/refunds.ts), reading a message with the month's AI allowance (understanding/reader.ts) and reminders (reminders/reminders.ts).
 // What is left here is Fees: the student's fee for a month, its states and its words.
 //
-// A centre that takes UPI (settings "payment": {"module": "upi"}, plan B33) has no payment service the agent can read: the parent pays the centre's own UPI ID and a
-// payment counts only when the owner marks it received, from their own number, with a one-use code (modules/payments/upi). The requests and marks live in this
-// agent's store and are read through the same Payments shape, so "paid is judged from the payment record" holds, with the owner's marks as that record. A refund is
-// never sent by the agent: the owner owes it, is reminded, and the parent hears "sent" only after the owner marks it. A screenshot asks the owner to look.
+// What the centre's payment module can do decides every payment branch, never its name (B71: modules/payments/providers). A module that cannot confirm a payment by
+// itself (UPI, the default, plan B33) has no payment service the agent can read: the parent pays the centre directly and a payment counts only when the owner marks it
+// received, from their own number, with a one-use code (modules/payments/owner-marked). The requests and marks live in this agent's store and are read through the same
+// Payments shape, so the owner's marks are counted by the same `count` a gateway's payments are: "paid is judged from the payment record" is one flow. With a module
+// that cannot refund by itself a refund is never sent by the agent: the owner owes it, is reminded, and the parent hears "sent" only after the owner marks it. A
+// screenshot asks the owner to look.
 //
 // The licence (plan B13; modules/licence). While the centre's lease puts it in its WIND-DOWN, the agent takes no new work: a parent who asks to pay is answered "online
 // fee payment is paused, please contact the centre", no new fee link is made, no month's fees are opened, no late fee is added and the reminders that fall due are passed
 // over (none is kept to send later). Payments from links sent earlier are still counted, receipts still go, and refunds go on. In the FINAL STOP the agent also closes the
-// open fee links (Razorpay; a UPI centre has none) and sends nothing more. This is the runtime's own check of the lease: Guard's offline check (`subscription_suspended`)
+// open fee links (where the module can cancel one) and sends nothing more. This is the runtime's own check of the lease: Guard's offline check (`subscription_suspended`)
 // is not built yet.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
@@ -51,13 +53,13 @@ import { balanceInr, balancePaise, duesOf, factsFor, monthKey, moveTo, newDue, n
 import type { CountedPayment, Customer, Due, Pending, Store } from "./due.ts";
 import { LABELS, buttonsFor, intentFromReply } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
-import { emptyUpiState, markReceived, markRefund, oweRefund, reminded, remindersDue, upiPayments } from "../../../../modules/payments/upi/ledger.ts";
-import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
-import { parseUpiReply } from "../../../../modules/payments/upi/owner.ts";
-import type { UpiReply } from "../../../../modules/payments/upi/owner.ts";
-import { ownerUpiChoices } from "../../../../modules/payments/upi/buttons.ts";
-import { UPI_ACTIONS } from "../../../../modules/payments/upi/obligations.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
+import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
+import { ownerMarkChoices } from "../../../../modules/payments/owner-marked/buttons.ts";
+import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
+import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
@@ -76,7 +78,7 @@ export interface AgentDeps {
   store: Store;
   /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
   ai?: AiPolicy;
-  /** A UPI centre: make the QR picture of a `upi://pay` link and put it where WhatsApp can fetch it (modules/payments/upi/qr-image.ts). Left out, or null: the words carry the link and the UPI ID. */
+  /** An owner-marked centre: make the QR picture of its pay link and put it where WhatsApp can fetch it (modules/payments/owner-marked/qr-image.ts). Left out, or null: the words carry the link and the UPI ID. */
   qrImage?: (text: string) => Promise<string | null>;
   /** The centre's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
@@ -103,10 +105,16 @@ interface SayArgs { booking: Due | null; phone: string; to: "customer" | "owner"
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
-  // UPI (B33): the requests and the owner's marks live in this agent's own store and are read through the same shape as Razorpay's; deps.payments is never called.
-  const upi = upiOf(settings.payment);
-  const upiState = upi ? (store.upi ??= emptyUpiState()) : undefined;
-  const payments: Payments = upi ? upiPayments(upiState!, upi, clock) : deps.payments;
+  // B71: what the payment module can do, asked once. A module that cannot confirm a payment by itself is marked paid by the owner: the requests and the owner's
+  // marks live in this agent's own store (its `upi` key, as it always was) and are read through the same Payments shape as a gateway's, and deps.payments is never
+  // called. One that cannot refund by itself has the owner pay refunds back, tracked in the same store.
+  const can = capabilitiesOf(settings.payment);
+  const ownerConfirms = !can.confirmsAutomatically;
+  const ownerRefunds = !can.refundsAutomatically;
+  const marked = ownerMarkedOf(settings.payment);
+  if (ownerConfirms && !marked) throw new Error("This payment module cannot confirm a payment by itself and says no way for the owner to be paid: it cannot run.");
+  const markState = ownerConfirms || ownerRefunds ? (store.upi ??= emptyMarkState()) : undefined;
+  const payments: Payments = ownerConfirms ? markedPayments(markState!, marked!.payLink, clock) : deps.payments;
   const policy: AiPolicy = deps.ai ?? {};
   const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
@@ -199,72 +207,72 @@ export function createAgent(deps: AgentDeps): Agent {
   });
   const { readIntent, understandingRefs, countUnderstood, announceButtonMode } = reader;
 
-  // ---- UPI, marked paid by the owner (B33; modules/payments/upi) ------------------------------------------------------------
+  // ---- owner-marked: paid when the owner marks it (B33; modules/payments/owner-marked) -------------------------------------------
   //
   // The parent pays the centre's own UPI ID; the agent cannot see that payment, the owner can. A payment counts only when the owner marks it received with the
   // one-use code the agent sent only to them. A screenshot, the "I have paid" button or the words ask the owner to look and mark nothing. Refunds are owed by the
   // owner, reminded, and "sent" is said only after the owner marks it so.
 
-  const requestById = (id: string | undefined): UpiRequest | undefined => (id ? upiState?.requests.find((r) => r.id === id) : undefined);
-  const upiLabels = () => LABELS[settings.owner.language];
-  const receivedButtons = (request: UpiRequest | undefined, amountPaise: number): Offer | undefined =>
-    request?.code && amountPaise > 0 ? { kind: "buttons", buttons: [], choices: ownerUpiChoices(upiLabels(), { kind: "received", code: request.code, amountInr: amountPaise / 100 }) } : undefined;
+  const requestById = (id: string | undefined): MarkedRequest | undefined => (id ? markState?.requests.find((r) => r.id === id) : undefined);
+  const markLabels = () => LABELS[settings.owner.language];
+  const receivedButtons = (request: MarkedRequest | undefined, amountPaise: number): Offer | undefined =>
+    request?.code && amountPaise > 0 ? { kind: "buttons", buttons: [], choices: ownerMarkChoices(markLabels(), { kind: "received", code: request.code, amountInr: amountPaise / 100 }) } : undefined;
   const refundButtons = (r: OwedRefund): Offer | undefined =>
-    r.code ? { kind: "buttons", buttons: [], choices: ownerUpiChoices(upiLabels(), { kind: "refund", code: r.code, keepAllowed: false }) } : undefined;
+    r.code ? { kind: "buttons", buttons: [], choices: ownerMarkChoices(markLabels(), { kind: "refund", code: r.code, keepAllowed: false }) } : undefined;
 
   /** The QR picture of the fee's current request, made once (best effort: the words carry the link and the UPI ID anyway). */
   async function qrOf(due: Due): Promise<SayArgs["image"]> {
-    const request = upi ? requestById(due.currentLinkId) : undefined;
+    const request = ownerConfirms ? requestById(due.currentLinkId) : undefined;
     if (!request) return undefined;
     if (request.imageLink === undefined && deps.qrImage) request.imageLink = (await deps.qrImage(request.link).catch(() => null)) ?? undefined;
     return request.imageLink ? { link: request.imageLink, caption: ["fee_upi_qr_caption"] } : undefined;
   }
 
   /** A request was made for what is owed: in the record, and the owner told what to look for, with the code and the Received button. Once per request. */
-  async function upiRequestMade(due: Due, requestId: string, rest: boolean): Promise<void> {
+  async function markedRequestMade(due: Due, requestId: string, rest: boolean): Promise<void> {
     const request = requestById(requestId)!;
-    log(due, due.customer, UPI_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId, reference: request.reference, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the centre's own UPI ID; it counts as paid only when the owner marks it received" });
+    log(due, due.customer, MARK_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId, reference: request.reference, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the centre's own UPI ID; it counts as paid only when the owner marks it received" });
     if (rest) return; // the rest after a part the owner just marked: the owner's answer to that mark carries this request's code
     await tellOwner(due, due.customer, "owner_fee_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
   }
 
   /** "I have paid", the words, or a screenshot, with the fee still open: thanks, the owner will confirm, a screenshot is not proof. The owner is asked, once an hour. */
-  async function upiClaim(due: Due, phone: string, via: "button" | "words" | "screenshot", linkOk: boolean): Promise<void> {
+  async function markClaim(due: Due, phone: string, via: "button" | "words" | "screenshot", linkOk: boolean): Promise<void> {
     const request = requestById(due.currentLinkId);
     await tellCustomer(due, phone, ["fee_upi_claim"], linkOk ? { offer: feeButtons(due, ["pay", "owner"]) } : {});
     const now = clock.now();
     const recently = due.claimTellAtMs !== undefined && now - due.claimTellAtMs < HOURLY;
     let told = recently;
     if (!recently && request?.code) { told = await tellOwner(due, phone, "owner_fee_upi_claim", { upiCode: request.code, offer: receivedButtons(request, balancePaise(due)) }); if (told) due.claimTellAtMs = now; }
-    log(due, phone, UPI_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, ...(request ? { requestId: request.id } : {}) }, notes: `the parent says the fee is paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
+    log(due, phone, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, ...(request ? { requestId: request.id } : {}) }, notes: `the parent says the fee is paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
   }
 
   /** A picture from a parent: never looked at or kept. On a UPI centre it is read as "I paid" (a screenshot is not proof); a Razorpay centre answers nothing, as before. */
   async function onPicture(msg: InboundMessage): Promise<void> {
     const phone = msg.from;
     log(null, phone, "receive_message", "confirmed", { image: true, id: msg.id }, { notes: "a picture: it is not looked at and nothing of it is kept; a picture is never proof of a payment", refs: { messageId: msg.id } });
-    if (!upi || customerOf(phone).optedOut) return;
+    if (!ownerConfirms || customerOf(phone).optedOut) return;
     await onPaidClaim(phone, { kind: "paid" }, "screenshot");
   }
 
   /** A refund the owner owes: recorded, the parent told it will come from the owner, the owner told what to send, with the code. The agent never sends it. */
   async function oweBack(due: Due, paymentId: string, amountPaise: number, why: string, decisions: Decision[] = []): Promise<OwedRefund> {
-    const r = oweRefund(upiState!, { caseId: due.id, customer: due.customer, paymentId, amountPaise, why }, clock.now());
-    log(due, due.customer, UPI_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise) }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` });
+    const r = oweRefund(markState!, { caseId: due.id, customer: due.customer, paymentId, amountPaise, why }, clock.now());
+    log(due, due.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise) }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` });
     await tellCustomer(due, due.customer, ["fee_upi_refund_owed"], { refundInr: amountPaise / 100 });
     await tellOwner(due, due.customer, "owner_fee_upi_refund_owed", { refundInr: amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
     return r;
   }
 
   /** The owner's UPI reply: money received on a request, or a refund marked sent. A code is used once; the same reply again counts nothing. */
-  async function onUpiReply(reply: UpiReply, msg: InboundMessage): Promise<void> {
+  async function onOwnerMark(reply: MarkReply, msg: InboundMessage): Promise<void> {
     const now = clock.now();
     const quietly = (outcome: "already" | "unknown", notes: string) => {
       log(null, owner, "upi_owner_reply", "blocked", { kind: reply.kind, id: msg.id }, { notes, refs: { command: reply.kind } });
       return say({ booking: null, phone: owner, to: "owner", templates: [outcome === "already" ? "owner_fee_upi_already" : "owner_fee_upi_unknown"] });
     };
     if (reply.kind === "received") {
-      const result = markReceived(upiState!, reply.code, reply.amountPaise, now);
+      const result = markReceived(markState!, reply.code, reply.amountPaise, now);
       if (result.kind === "already" || result.kind === "already_refund") { await quietly("already", "a code that was already used: the payment is counted once"); return; }
       if (result.kind !== "marked") { await quietly("unknown", result.kind === "bad_amount" ? "an amount that cannot be right for this payment" : "a code the agent never issued"); return; }
       const due = store.dues.get(result.request.reference.split(".")[0]);
@@ -277,12 +285,12 @@ export function createAgent(deps: AgentDeps): Agent {
       else await tellOwner(due, due.customer, "owner_fee_upi_marked", { receivedInr: result.mark.amountPaise / 100 });
       return;
     }
-    const result = markRefund(upiState!, reply.code, reply.kind === "kept" ? "kept" : "done", now);
+    const result = markRefund(markState!, reply.code, reply.kind === "kept" ? "kept" : "done", now);
     if (result.kind === "already") { await quietly("already", "a refund code that was already used"); return; }
     if (result.kind !== "done") { await quietly("unknown", result.kind === "not_allowed" ? "keeping this money was not offered" : "a code the agent never issued"); return; }
     const r = result.refund;
     const due = store.dues.get(r.caseId) ?? null;
-    log(due, r.customer, UPI_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs: { refundId: r.id, paymentId: r.paymentId, amountPaise: String(r.amountPaise) }, notes: "the owner marked the refund sent from their UPI app; only now is the parent told it was sent" });
+    log(due, r.customer, MARK_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs: { refundId: r.id, paymentId: r.paymentId, amountPaise: String(r.amountPaise) }, notes: "the owner marked the refund sent from their UPI app; only now is the parent told it was sent" });
     await tellCustomer(due, r.customer, ["fee_upi_refund_sent"], { refundInr: r.amountPaise / 100 });
     await tellOwner(due, r.customer, "owner_fee_upi_refund_marked", { refundInr: r.amountPaise / 100 });
   }
@@ -293,23 +301,23 @@ export function createAgent(deps: AgentDeps): Agent {
       const request = requestById(l.id);
       if (!request || (request.status !== "created" && request.status !== "partially_paid")) continue;
       await payments.cancelRequest(l.id);
-      log(due, due.customer, UPI_ACTIONS.closed, "confirmed", { requestId: l.id }, { refs: { requestId: l.id }, notes: "the fee is settled, so nothing more is asked on this request" });
+      log(due, due.customer, MARK_ACTIONS.closed, "confirmed", { requestId: l.id }, { refs: { requestId: l.id }, notes: "the fee is settled, so nothing more is asked on this request" });
     }
   }
 
   /** Refunds still owed: remind the owner, once a day, at most three times; after that they stay in the record's unfinished work. */
   async function remindOwedRefunds(now: number): Promise<void> {
-    for (const r of remindersDue(upiState!, now)) {
+    for (const r of remindersDue(markState!, now)) {
       const due = store.dues.get(r.caseId) ?? null;
       reminded(r, now);
       const told = await tellOwner(due, r.customer, "owner_fee_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
-      log(due, r.customer, UPI_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
+      log(due, r.customer, MARK_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
     }
   }
 
   /** The unfinished-work list (B31) asks the owner again: each refund still owed, and an open fee's request the parent says they paid. False when there is nothing UPI to ask. */
-  async function upiAskAgain(due: Due, note: (outcome: Outcome, notes: string) => unknown): Promise<boolean> {
-    const owed = upiState!.refunds.filter((r) => r.caseId === due.id && r.state === "owed" && r.code);
+  async function markAskAgain(due: Due, note: (outcome: Outcome, notes: string) => unknown): Promise<boolean> {
+    const owed = markState!.refunds.filter((r) => r.caseId === due.id && r.state === "owed" && r.code);
     const request = due.state === "open" ? requestById(due.currentLinkId) : undefined;
     const open = request?.code && (request.status === "created" || request.status === "partially_paid") ? request : undefined;
     if (owed.length === 0 && !open) return false;
@@ -344,7 +352,7 @@ export function createAgent(deps: AgentDeps): Agent {
         const counted: CountedPayment = { id: p.id, amountPaise: p.amount, linkId: link.id };
         due.payments.push(counted);
         fresh.push(counted);
-        if (upi) log(due, due.customer, UPI_ACTIONS.marked, "confirmed", { requestId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, requestId: link.id, amountPaise: String(p.amount), markedBy: "owner" }, notes: found.status === "cancelled" ? "marked received by the owner on a request the agent had replaced (the amount changed): it counts toward the fee" : "marked paid by owner: from the owner's own number, with a one-use code" });
+        if (ownerConfirms) log(due, due.customer, MARK_ACTIONS.marked, "confirmed", { requestId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, requestId: link.id, amountPaise: String(p.amount), markedBy: "owner" }, notes: found.status === "cancelled" ? "marked received by the owner on a request the agent had replaced (the amount changed): it counts toward the fee" : "marked paid by owner: from the owner's own number, with a one-use code" });
         else log(due, due.customer, "record_payment", "confirmed", { linkId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, amountPaise: String(p.amount) } });
       }
     }
@@ -371,7 +379,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (useful > 0) {
       if (paid >= owed) { receipt = await tellCustomer(due, due.customer, ["fee_received"], { receivedInr: useful / 100 }); }
       else {
-        if (upi) await currentLink(due); // UPI: a request for exactly the rest, so the link in the receipt asks for what is still owed
+        if (!can.takesPartPayments) await currentLink(due); // a request is for one amount: a new one for exactly the rest, so the link in the receipt asks for what is still owed
         receipt = await tellCustomer(due, due.customer, ["fee_part_received"], { receivedInr: useful / 100, offer: feeButtons(due, ["pay", "owner"]) });
       }
     }
@@ -392,7 +400,7 @@ export function createAgent(deps: AgentDeps): Agent {
       const once = checkOneRefundPerPayment({ paymentId: counted.id, refundedPaise: payment?.amount_refunded ?? 0 });
       const limit = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: counted.amountPaise / 100 });
       if (once.verdict === "block" || limit.verdict === "block") { log(due, due.customer, "refund", "blocked", { paymentId: counted.id, amountInr }, { decisions: [once, limit], refs: { paymentId: counted.id, amountPaise: String(amountInr * 100) } }); continue; }
-      if (upi) { await oweBack(due, counted.id, amountInr * 100, "paid more than was owed", [once, limit]); continue; }
+      if (ownerRefunds) { await oweBack(due, counted.id, amountInr * 100, "paid more than was owed", [once, limit]); continue; }
       const result = await requestRefund(due, counted.id, amountInr, [once, limit], limit.verdict !== "allow");
       await afterRefund(due, result, { paymentId: counted.id, amountInr, done: { customer: "fee_refund_done", owner: "owner_overpayment" }, held: "fee_refund_pending" });
     }
@@ -436,7 +444,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** The final stop, once for each `paid_through`: close every open fee link at Razorpay through Guard, so no new payment comes in. A UPI centre has none to close. */
   async function closeLinksAtStop(): Promise<void> {
     const l = licence();
-    if (l.state !== "stopped" || upi) return;
+    if (l.state !== "stopped" || !can.cancels) return;
     const key = `stop:${l.paidThrough ?? 0}`;
     for (const due of [...store.dues.values()]) {
       const linkId = due.state === "open" ? due.currentLinkId : undefined;
@@ -452,8 +460,9 @@ export function createAgent(deps: AgentDeps): Agent {
     const balance = balancePaise(due);
     if (balance <= 0) return { ok: false, why: "nothing is owed" };
     const old = linkOf(due);
-    // A UPI request asks for its whole amount (the payer's app cannot change it), so after a part the rest needs a request of its own; a Razorpay link takes the rest.
-    if (old && (upi ? old.amountPaise === balance && paidOnLink(due, old.id) === 0 : old.amountPaise - paidOnLink(due, old.id) === balance)) return { ok: true };
+    // A module whose request is for one exact amount (UPI: the payer's app cannot change it) needs a request of its own for the rest after a part; one that takes
+    // part payments keeps the open link for the rest.
+    if (old && (!can.takesPartPayments ? old.amountPaise === balance && paidOnLink(due, old.id) === 0 : old.amountPaise - paidOnLink(due, old.id) === balance)) return { ok: true };
     if (!licence().takesNewWork) { log(due, due.customer, "create_fee_link", "blocked", { amountPaise: balance }, { decisions: [pausedDecision()] }); return { ok: false, why: "online fee payment is paused (the centre's licence)", paused: true }; }
     if (balance % 100 !== 0) return { ok: false, why: "the balance is not a whole number of rupees" };
     const decision = checkFeeLink({ amountInr: balance / 100, balanceInr: balance / 100, highestInr });
@@ -477,11 +486,11 @@ export function createAgent(deps: AgentDeps): Agent {
     due.links.push({ id: link.id, url: link.pay_url, reference, amountPaise: link.amount });
     due.currentLinkId = link.id;
     log(due, due.customer, "create_fee_link", "confirmed", { amountPaise: balance, reference }, { refs: { linkId: link.id, reference, amountPaise: String(balance) } });
-    if (upi) await upiRequestMade(due, link.id, paidPaise(due) > 0);
+    if (ownerConfirms) await markedRequestMade(due, link.id, paidPaise(due) > 0);
     if (old) {
       const closed = await payments.cancelRequest(old.id).then(() => payments.fetchRequest(old.id)).then((l) => l?.status === "cancelled").catch(() => false);
       log(due, due.customer, "cancel_fee_link", closed ? "confirmed" : "unconfirmed", { linkId: old.id }, { refs: { linkId: old.id }, notes: closed ? "the amount owed changed, so the old link was closed" : "the old link could not be closed (it has a part payment on it, or the payments service did not answer): it stays open, and anything it collects beyond what is owed is given back" });
-      if (upi && closed) log(due, due.customer, UPI_ACTIONS.closed, "confirmed", { requestId: old.id }, { refs: { requestId: old.id }, notes: "the amount owed changed, so a new request was made; a mark the owner makes on this one later still counts toward the fee" });
+      if (ownerConfirms && closed) log(due, due.customer, MARK_ACTIONS.closed, "confirmed", { requestId: old.id }, { refs: { requestId: old.id }, notes: "the amount owed changed, so a new request was made; a mark the owner makes on this one later still counts toward the fee" });
     }
     return { ok: true };
   }
@@ -595,7 +604,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (due.state !== "open" && paidPaise(due) > 0) { await tellCustomer(due, phone, ["fee_already_paid"]); return; }
     if (due.state !== "open") { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
     const link = await currentLink(due);
-    if (upi) { await upiClaim(due, phone, via, link.ok); return; }
+    if (ownerConfirms) { await markClaim(due, phone, via, link.ok); return; }
     if (paidPaise(due) > 0) {
       if (link.ok) await tellCustomer(due, phone, ["fee_claim_partial"], { offer: feeButtons(due, ["pay", "owner"]) });
       return;
@@ -682,8 +691,8 @@ export function createAgent(deps: AgentDeps): Agent {
       await tellCustomer(due, phone, ["fee_refund_too_much"], { paidInr, offer: ownerButton });
       return;
     }
-    if (limit.verdict === "hold_for_owner" && !upi) {
-      // above the owner's limit: Guard holds it and the approvals relay asks the owner, once. The agent does not ask a second time. (UPI: the owner decides any refund below.)
+    if (limit.verdict === "hold_for_owner" && !ownerRefunds) {
+      // above the owner's limit: Guard holds it and the approvals relay asks the owner, once. The agent does not ask a second time. (When the owner pays refunds by hand, the owner decides any refund below.)
       const result = await requestRefund(due, target.id, requested, [once, limit], true);
       await afterRefund(due, result, { paymentId: target.id, amountInr: requested, done: { customer: "fee_refund_done" }, held: "fee_refund_pending" });
       return;
@@ -750,9 +759,9 @@ export function createAgent(deps: AgentDeps): Agent {
   };
 
   async function onOwnerMessage(msg: InboundMessage): Promise<void> {
-    // UPI (B33): "received K7M2QX", "refunded K7M2QX" or a tap on one of those buttons. Only the owner's number reaches here.
-    const upiReply = upi ? parseUpiReply(msg) : undefined;
-    if (upiReply) return onUpiReply(upiReply, msg);
+    // Owner-marked (B33): "received K7M2QX", "refunded K7M2QX" or a tap on one of those buttons. Only the owner's number reaches here.
+    const markReply = markState ? parseMarkReply(msg) : undefined;
+    if (markReply) return onOwnerMark(markReply, msg);
     if (msg.image) return; // a picture from the owner is not a mark: only the reply with its code is
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent.
     if (RELAY_CODE_REPLY.test(msg.text)) return;
@@ -810,7 +819,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     log(due, owner, "owner_decision", "confirmed", { command }, { decisions: [once, limit], refs: said });
-    if (upi) { await oweBack(due, pending.paymentId, pending.amountInr * 100, "the owner approved the refund the parent asked for", [once, limit]); return; }
+    if (ownerRefunds) { await oweBack(due, pending.paymentId, pending.amountInr * 100, "the owner approved the refund the parent asked for", [once, limit]); return; }
     // with other approvers (B37) the owner is named as asking for it: if Guard holds it, someone else approves it
     const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr), askedByOwner);
     await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
@@ -898,7 +907,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their fee is in
-    if (upi) await remindOwedRefunds(now);
+    if (markState) await remindOwedRefunds(now);
     await closeLinksAtStop();
     const working = licence().takesNewWork;
     if (working) openMonthlyFees(); // in the wind-down no month's fees are opened: nothing is kept to chase later
@@ -927,7 +936,7 @@ export function createAgent(deps: AgentDeps): Agent {
       await settle(due, fresh);
       return say(ok ? "confirmed" : "failed", ok ? "the payments service's list was read; any payment not yet counted was recorded above" : "the payments service could not be read whole just now; nothing was changed");
     }
-    if (e.action === "ask_owner_again" && upi && (await upiAskAgain(due, say))) return;
+    if (e.action === "ask_owner_again" && markState && (await markAskAgain(due, say))) return;
     if (e.action === "ask_owner_again") {
       const waiting = due.pending.find((p) => p.kind === "waiver" || p.kind === "refund_request");
       if (!waiting) return say("blocked", "nothing the agent asked the owner is waiting (a refund Guard holds is asked by the approvals relay)");

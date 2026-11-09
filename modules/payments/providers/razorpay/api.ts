@@ -20,10 +20,10 @@
 //             https://razorpay.com/docs/api/refunds/fetch-multiple-refund-payment/
 //  - a missing id is HTTP 400 "The id provided does not exist", not 404.
 //  - errors: { error: { code, description, source, step, reason, metadata } }.
-import { ApiError, GuardError } from "../core/faults.ts";
-import type { NewPaymentRequest, Payment, PaymentRequest, Payments, Refund } from "./payments.ts";
-import { asArray, createHttp, isObject, num, str } from "../core/http.ts";
-import type { Http, HttpReply, Json } from "../core/http.ts";
+import { ApiError, GuardError } from "../../../core/faults.ts";
+import type { NewPaymentRequest, Payment, PaymentRequest, Payments, Refund } from "../../payments.ts";
+import { asArray, createHttp, isObject, num, str } from "../../../core/http.ts";
+import type { Http, HttpReply, Json } from "../../../core/http.ts";
 
 export interface RazorpayConfig { baseUrl: string; timeoutMs?: number; /** Guard's credential for this agent (never a Razorpay key). Left out, no Authorization header is sent. */ agentToken?: string }
 

@@ -21,7 +21,8 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { BlockList, isIP } from "node:net";
 import type { IncomingEvent } from "../runtime/events.ts";
-import { parseRazorpayEvent, parseWhatsAppWebhook, verifyMetaSignature, verifyRazorpaySignature } from "../messaging/webhooks.ts";
+import { parseWhatsAppWebhook, verifyMetaSignature } from "../messaging/webhooks.ts";
+import { parseRazorpayEvent, verifyRazorpaySignature } from "../payments/providers/razorpay/webhook.ts";
 
 export interface InboxConfig {
   /** Where the runtime listens (events go to POST {runtimeUrl}/internal/events). */

@@ -5,6 +5,7 @@
 // It reads in three layers: the result line and the work done by default, and "--details" (or --all) shows what was done in each situation: how the stand-ins made
 // it go wrong, and every check read from their records.
 // The deploy bundle reads this output (bundle/handcheck.ts): "Held N of M" and the tick and cross lines. Their shape is shared (modules/crash-test/print.ts).
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { handCheckText } from "../../../../modules/crash-test/print.ts";
@@ -46,7 +47,7 @@ async function main(): Promise<number> {
         "",
         `CRASH TEST   ${settings.name} · Fees · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
       ],
-      workDone: ({ situations, checks, tookMs: ms }) => settings.payment.module === "upi" ? [
+      workDone: ({ situations, checks, tookMs: ms }) => !capabilitiesOf(settings.payment).confirmsAutomatically ? [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp, with UPI marked`,
         "  paid by the owner: a screenshot sent as proof, the owner confirming a different amount, never, twice, or on a replaced request,",
         `  and a refund the owner owes, in ${names}.`,

@@ -7,6 +7,7 @@
 //  - "Collected" is the sum of payments the agent read back from the payments service's own list. What a parent said is never in it.
 //  - "Still to collect" is read from the fees as they are when the report is made: the open fees of the month and what is left on each.
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once.
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -178,7 +179,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   const collected = emptyAmount();
   const seenPayments = new Set<string>();
   // UPI (B33): the owner's marks are the payment record, and a refund counts once the owner marks it sent
-  const upi = settings.payment?.module === "upi";
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
   for (const e of month.filter((x) => (x.action === "record_payment" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
     const key = e.refs.paymentId ?? `seq-${e.seq}`;
     if (seenPayments.has(key)) continue;

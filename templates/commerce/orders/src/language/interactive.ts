@@ -6,7 +6,7 @@
 //   menu               back to the menu
 //   pickup, delivery   how the order is collected
 //   paid               "I have paid" (a UPI shop, B33): the owner is asked to look; nothing is marked paid
-//   upi-received:<code>, upi-refunded:<code>, upi-kept:<code>   the owner's buttons for a UPI payment or refund (modules/payments/upi/owner.ts)
+//   upi-received:<code>, upi-refunded:<code>, upi-kept:<code>   the owner's buttons for a UPI payment or refund (modules/payments/owner-marked/owner.ts)
 //   item:<item id>     a row of the menu list: one of that item
 //   slot:<slot id>     a row of the list of the day's slots
 // A forged or old id changes nothing the typed word would not: a slot is checked against the cut-off, the stock and the day's limit like any typed one, and an id that
@@ -19,7 +19,7 @@ import { localParts } from "../../../../../modules/core/time.ts";
 import { itemName, slotOf } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import type { Intent } from "../adapters/model.ts";
-import { ownerUpiChoices } from "../../../../../modules/payments/upi/buttons.ts";
+import { ownerMarkChoices } from "../../../../../modules/payments/owner-marked/buttons.ts";
 
 export interface Labels extends CommonLabels {
   cancel: string; cancelYes: string; keep: string; pickItem: string; pickTime: string; pickup: string; delivery: string;
@@ -49,8 +49,8 @@ export function buttonsFor(language: Language, ids: ButtonId[]): Choice[] {
 }
 
 /** The owner's buttons for a UPI payment ("Received ₹200") or a refund ("Refund sent", and "Kept for order" where that is offered). Each carries its one-use code. */
-export function ownerUpiButtons(language: Language, a: { kind: "received"; code: string; amountInr: number } | { kind: "refund"; code: string; keepAllowed: boolean }): Choice[] {
-  return ownerUpiChoices(LABELS[language], a);
+export function ownerMarkButtons(language: Language, a: { kind: "received"; code: string; amountInr: number } | { kind: "refund"; code: string; keepAllowed: boolean }): Choice[] {
+  return ownerMarkChoices(LABELS[language], a);
 }
 
 /** The list of the shop's menu, with the price on each row and, last, a row to reach the owner. At most 9 items fit beside it; a tenth is reached by typing its name. */

@@ -73,7 +73,7 @@ export function documentProblem(doc: DocumentMessage): string | null {
 
 /**
  * A picture sent by its address, like a document: WhatsApp fetches `link` itself (https, reachable from the internet) and shows it with the caption. A PNG or a
- * JPEG of at most 5 MB. A session message, like free text: only while the person's 24-hour window is open. (A UPI QR code goes this way: modules/payments/upi.)
+ * JPEG of at most 5 MB. A session message, like free text: only while the person's 24-hour window is open. (A UPI QR code goes this way: modules/payments/owner-marked/qr-image.ts.)
  */
 export interface ImageMessage { link: string; caption?: string }
 

@@ -8,7 +8,7 @@ import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardH
 import { ensureLink } from "../../../../modules/payments/links.ts";
 import { classify, createHttp } from "../../../../modules/core/http.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
-import { createRazorpayPayments } from "../../../../modules/payments/razorpay.ts";
+import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { fixture, scripted } from "./helpers/scripted-server.ts";
 
 interface Wire { status: number; headers: Record<string, string>; body: unknown }
