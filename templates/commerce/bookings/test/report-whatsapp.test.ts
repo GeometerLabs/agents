@@ -138,7 +138,7 @@ test("the examples Meta reviews are a believable month, one line each, in the te
     assert.equal(examples.length, REPORT_SLOTS.length);
     assert.equal(entry.category, "UTILITY");
     assert.ok(examples.every((e) => e.trim() === e && e.length > 0 && !/[\n\t]| {4}/u.test(e)), JSON.stringify(examples));
-    assert.ok(examples.includes("Divya, local partner") && examples.includes("7K2M-9QXD") && examples.some((e) => e.startsWith("https://")));
+    assert.ok(examples.includes("Divya, Sri Sai Digital") && examples.includes("7K2M-9QXD") && examples.some((e) => e.startsWith("https://")));
   }
   const hindi = submissions.find((e) => e.name === "monthly_report" && e.language === "hi")!;
   assert.ok(hindi.components[0].example.body_text[0][0].includes(`${MONTH_NAMES.hi[1]} 2027`), hindi.components[0].example.body_text[0][0]);

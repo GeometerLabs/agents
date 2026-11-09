@@ -5,9 +5,10 @@
 //                                a lease is only ever checked with it. Without it no lease is kept and no shop is restricted by one.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
-//   shop add <name> --from <client folder> [--prepared-by "Divya, local partner"]      copy a client folder in (settings.json, runtime.json, pathway.lock); --prepared-by is the name the
-//                                owner's monthly report message says set the shop up (written to report.json; without it the message says "your builder")
-//   shop add <name> --template bookings|fees|orders [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ...]      start a shop from a template of this checkout: its example
+//   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
+//                                pathway.lock); --prepared-by is the name the owner's monthly report message says set the shop up (written to report.json; without it the message says "your
+//                                builder"). With --company, --prepared-by is the person's name alone and the message says "Divya, Sri Sai Digital".
+//   shop add <name> --template bookings|fees|orders [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ... [--company ...]]      start a shop from a template of this checkout: its example
 //                                settings (or the file --settings names, checked first), a pin to the template's version here, and a runtime.json that names the WhatsApp number (and, for
 //                                a template with a calendar, the calendar). The settings start as the template's made-up example: change them to the real ones.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
@@ -71,7 +72,7 @@ import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
 import { kindFor } from "./lib/kinds.ts";
-import { parseReportFile } from "./panel/contract.ts";
+import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
 import { discoverTemplates } from "./panel/templates.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { readStatus, updateStatus } from "./lib/status.ts";
@@ -110,7 +111,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" },
-      "prepared-by": { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
+      "prepared-by": { type: "string" }, company: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
@@ -169,7 +170,14 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       const template = str("template");
       if (from && template) throw new Error("Say where the shop starts, once: --from <client folder> or --template <id>, not both.");
       if (!from && !template) throw new Error("Say where the shop starts: shop add <name> --from <client folder> (a folder with settings.json and pathway.lock), or shop add <name> --template <id> (a template of this checkout).");
-      const preparedBy = str("prepared-by");
+      let preparedBy = str("prepared-by");
+      const company = str("company");
+      if (company !== undefined) {
+        // with --company, --prepared-by is the person's name alone and the owner reads "Name, Company"
+        if (preparedBy === undefined || preparedBy.trim() === "") throw new Error('--company goes with --prepared-by, the person\'s name: for example --prepared-by "Divya" --company "Sri Sai Digital".');
+        if (!companyOf(company)) throw new Error(`--company must be the company or business name on one line, up to ${COMPANY_LIMIT} characters.`);
+        preparedBy = preparedByOf({ accountName: preparedBy, company, role: "partner" });
+      }
       if (preparedBy !== undefined && !parseReportFile(JSON.stringify({ schema: 1, preparedBy }))) throw new Error('--prepared-by must be the name the owner reads for who set the shop up, on one line with single spaces, up to 120 characters: for example --prepared-by "Divya, local partner".');
       const target = serverPaths(dir).shop(name);
       if (existsSync(target)) throw new Error(`There is already a shop called ${name}.`);
@@ -213,7 +221,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         cpSync(src, join(target, file));
       }
       if (preparedBy !== undefined) writeFileSync(join(target, "report.json"), `${JSON.stringify({ schema: 1, preparedBy }, null, 2)}\n`);
-      console.log(`Added ${name}. Next: hand in its secrets (the panel does this), then \`geometer check ${name}\`.${preparedBy === undefined ? ` The owner's monthly report will say "${DEFAULT_PREPARED_BY}" set it up; \`--prepared-by "Divya, local partner"\` (or shops/${name}/report.json) names a person.` : ""}`);
+      console.log(`Added ${name}. Next: hand in its secrets (the panel does this), then \`geometer check ${name}\`.${preparedBy === undefined ? ` The owner's monthly report will say "${DEFAULT_PREPARED_BY}" set it up; \`--prepared-by "Divya, local partner"\` (or \`--prepared-by Divya --company "Sri Sai Digital"\`, or shops/${name}/report.json) names a person.` : ""}`);
       return 0;
     }
 

@@ -15,7 +15,7 @@ import type { Caveat, LineId, Payer } from "./cost.ts";
 
 const demo = uiFor("en");
 
-export type JoinProblem = "invite-unknown" | "invite-used" | "invite-expired" | "handle-bad" | "handle-taken" | "name-bad" | "language-bad" | "short" | "long" | "same-as-handle";
+export type JoinProblem = "invite-unknown" | "invite-used" | "invite-expired" | "handle-bad" | "handle-taken" | "name-bad" | "company-bad" | "language-bad" | "short" | "long" | "same-as-handle";
 
 export interface Words {
   appName: string;
@@ -24,7 +24,7 @@ export interface Words {
   nav: { shops: string; setUp: string; invite: string; signOut: string };
   common: { back: string; next: string; save: string; counts: string };
   login: { title: string; handle: string; passphrase: string; button: string; wrong: string; wait(seconds: number): string; byInvitation: string };
-  join: { title(role: string): string; intro: string; name: string; handle: string; handleHelp: string; passphrase: string; passphraseHelp: string; language: string; button: string; problems: Record<JoinProblem, string> };
+  join: { title(role: string): string; intro: string; name: string; company: string; companyHelp: string; handle: string; handleHelp: string; passphrase: string; passphraseHelp: string; language: string; button: string; problems: Record<JoinProblem, string> };
   roles: { builder: string; partner: string };
   invite: { title: string; role: string; note: string; button: string; made: string; copy: string; hostedOnly: string };
   shops: { title: string; titleAll: string; empty: string; setUp: string; version(v: string): string; limits(proven: number, of: number): string; limitsUnknown: string; setUpBy(name: string): string; setUpOnServer: string };
@@ -227,11 +227,11 @@ export const en: Words = {
     wait: (s) => `Too many tries. Wait ${s} seconds and try again.`, byInvitation: "Accounts are made by invitation. Ask the person who runs this server for your link.",
   },
   join: {
-    title: (role) => `Create your ${role} account`, intro: "Your invitation works once. Choose how you sign in.", name: "Your name", handle: "Name to sign in with", handleHelp: "3 to 40 letters, digits, dots or dashes.",
+    title: (role) => `Create your ${role} account`, intro: "Your invitation works once. Choose how you sign in.", name: "Your name", company: "Company or business name (optional)", companyHelp: "Shop owners read this after your name in their monthly report. Leave it empty and they read \"local partner\" or \"builder\" instead. Up to 60 characters.", handle: "Name to sign in with", handleHelp: "3 to 40 letters, digits, dots or dashes.",
     passphrase: "Passphrase", passphraseHelp: "At least 10 characters. A few words in a row is easy to remember and hard to guess.", language: "Your language", button: "Create account",
     problems: {
       "invite-unknown": "This link is not one we made. Ask for a new one.", "invite-used": "This link was already used. Ask for a new one.", "invite-expired": "This link has run out. Ask for a new one.",
-      "handle-bad": "Use 3 to 40 letters, digits, dots or dashes for the sign-in name.", "handle-taken": "That sign-in name is taken. Choose another.", "name-bad": "Write your name.",
+      "handle-bad": "Use 3 to 40 letters, digits, dots or dashes for the sign-in name.", "handle-taken": "That sign-in name is taken. Choose another.", "name-bad": "Write your name.", "company-bad": "Write the company name on one line, up to 60 characters, or leave it empty.",
       "language-bad": "Choose a language from the list.", short: "The passphrase needs at least 10 characters.", long: "The passphrase is too long (200 characters at most).",
       "same-as-handle": "The passphrase cannot be the same as your sign-in name.",
     },

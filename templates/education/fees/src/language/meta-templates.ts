@@ -134,7 +134,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     waiverInr: settings.waiver.limitInr || 100, refundInr: batch.monthlyFeeInr, waiverLimitInr: settings.waiver.limitInr,
     dueMs: Date.UTC(2026, 10, 4, 18, 30), // Thu 5 Nov 2026 at midnight in India
     link: "https://rzp.io/i/example", dueRef: "f-3", requestRef: "q-2", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name,
-    partner: "Divya, local partner", openFeesCount: 4,
+    partner: "Divya, Sri Sai Digital", openFeesCount: 4,
   };
 }
 
