@@ -40,7 +40,8 @@ test("each Guard has the panel's own agent, allowed its connection-check reads a
     const token = read(tokenFile).trim();
     assert.match(token, /^gg_[0-9a-f]{32}$/);
     assert.equal(statSync(tokenFile).mode & 0o777, 0o600);
-    assert.equal(readdirSync(join(w.paths.secrets, "panel")).sort().join(), "data_key,guard_agent_token,signing_key", "one folder, three files: no per-shop folders");
+    assert.equal(readdirSync(join(w.paths.secrets, "panel")).sort().join(), "data_key,guard_agent_token,person-keys,signing_key", "one folder, three files and the fingerprint keys: no per-shop token folders");
+    assert.equal(readdirSync(join(w.paths.secrets, "panel", "person-keys")).sort().join(), "bright-tuition,glow-salon", "B69: one fingerprint key per shop, and nothing else in that folder");
     for (const shop of ["glow-salon", "bright-tuition"]) for (const [kind, ops] of [["razorpay", '["list_links"]'], ["whatsapp", '["read_number"]'], ["calendar", '["get_calendar", "list"]']] as const) {
       const toml = tomlOf(w, `g-${shop}-${kind}`);
       const block = agentBlock(toml, `panel-${shop}`)!;
