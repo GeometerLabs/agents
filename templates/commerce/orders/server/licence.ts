@@ -1,11 +1,8 @@
 // The owner's licence notice for an Orders shop (plan B13): what modules/licence/notice.ts sends, once for each `paid_through`, in the owner's language. The wind-down's
-// says online ordering is paused and who to contact; the final stop's says nothing is deleted, how many orders are still to come and how much other work is open (the
-// unfinished-work list, modules/unfinished, read from this shop's own record and orders), and until when the partner can hand over the free copy of the records.
+// says online ordering is paused and who to contact; the final stop's says the partner's service has ended, how many orders are still to come, and that
+// hello@geometer.dev will connect the owner with another local partner. It never mentions a copy or export of the records (that goes only to the builder or partner).
 import { createLicenceNotice } from "../../../../modules/licence/notice.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import { DEFAULT_OPTIONS, obligations } from "../../../../modules/unfinished/index.ts";
-import type { CaseLike } from "../../../../modules/unfinished/index.ts";
-import { DAY } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { factsFor } from "../src/order.ts";
 import type { Store } from "../src/order.ts";
@@ -15,7 +12,6 @@ import type { Settings } from "../src/settings.ts";
 
 /** Who to contact when the bundle could not say (it always names the partner who set the shop up; this is only for a runtime started by hand). */
 export const WHO_SET_IT_UP: Record<Language, string> = { en: "the person who set it up", hi: "इसे सेट करने वाले व्यक्ति", ml: "ഇത് ക്രമീകരിച്ച വ്യക്തിയെ", kn: "ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರನ್ನು" };
-const EXPORT_DAYS = 90;
 
 export function createOrdersLicenceNotice(settings: Settings, licence: () => LicenceNow) {
   return createLicenceNotice<Store>({
@@ -24,8 +20,7 @@ export function createOrdersLicenceNotice(settings: Settings, licence: () => Lic
       const language = settings.owner.language;
       const id = kind === "stop" ? "owner_licence_stopped" : "owner_licence_paused";
       const upcoming = [...a.store.orders.values()].filter((o) => o.state === "confirmed").length;
-      const open = obligations.detect({ template: "orders", entries: a.record.entries(), cases: [...a.store.orders.values()] as unknown as CaseLike[], nowMs: a.now, options: DEFAULT_OPTIONS }).found.length;
-      const facts = { ...factsFor(settings, null, language), partner: a.licence.partner || WHO_SET_IT_UP[language], upcomingCount: upcoming, openCount: open, licenceDateMs: (a.licence.exportUntil ?? Math.floor(a.now / 1000) + EXPORT_DAYS * DAY / 1000) * 1000 };
+      const facts = { ...factsFor(settings, null, language), partner: a.licence.partner || WHO_SET_IT_UP[language], upcomingCount: upcoming };
       const text = render(id, facts);
       return { text, template: templateMessage({ ids: [id], language, facts, text, generic: TEMPLATE_NAMES.owner }) };
     },

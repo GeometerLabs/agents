@@ -50,7 +50,7 @@ test("each Meta template starts and ends with fixed words, and fills back into t
   for (const t of META_TEMPLATES) for (const language of LANGUAGES) {
     const body = t.bodies[language];
     assert.ok(!/^\{|\}$/u.test(body), `${t.name} ${language} starts or ends with a value`);
-    const facts = { ...factsFor(language), mode: t.usedFor === "owner_delivery_confirmed" ? ("delivery" as const) : ("pickup" as const), partner: "Divya", upcomingCount: 2, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4), upiCode: "P4XR9T", markedInr: 120, leftInr: 60 };
+    const facts = { ...factsFor(language), mode: t.usedFor === "owner_delivery_confirmed" ? ("delivery" as const) : ("pickup" as const), partner: "Divya", upcomingCount: 2, upiCode: "P4XR9T", markedInr: 120, leftInr: 60 };
     const text = render(t.usedFor, facts);
     const message = templateMessage({ ids: [t.usedFor], language, facts, text, generic: TEMPLATE_NAMES.owner });
     assert.equal(message.name, t.name, `${t.name} ${language} did not fill back into its own text`);
