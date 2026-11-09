@@ -48,8 +48,8 @@ function build(): Record<string, Entry> {
   for (const [kind, file, name] of examples) {
     const s = settings(kind, file);
     const id = { tenant: name, name: `${name}-razorpay`, version: 1, reviewedBy: "golden" };
-    out[`${name}/spec/defaults`] = entry(KINDS[kind].razorpaySpec(s, id, { approvalTtlSeconds: 86_400 }));
-    out[`${name}/spec/caps`] = entry(KINDS[kind].razorpaySpec(s, { ...id, version: 7 }, { approvalTtlSeconds: 21_600, caps: { refundPaisePerDay: 900_000, refundsPerDay: 5, linksPerHour: 11 } }));
+    out[`${name}/spec/defaults`] = entry(KINDS[kind].gatewaySpec(s, id, { approvalTtlSeconds: 86_400 }));
+    out[`${name}/spec/caps`] = entry(KINDS[kind].gatewaySpec(s, { ...id, version: 7 }, { approvalTtlSeconds: 21_600, caps: { refundPaisePerDay: 900_000, refundsPerDay: 5, linksPerHour: 11 } }));
   }
 
   const server = serverConfig();

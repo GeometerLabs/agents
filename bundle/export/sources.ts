@@ -2,7 +2,7 @@
 // the panel made and its memory of the shop's accounts. Plain files only; nothing here starts a process or calls a service.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { razorpaySpec } from "../generate/guards.ts";
+import { gatewaySpec } from "../generate/guards.ts";
 import { kindFor } from "../lib/kinds.ts";
 import { loadServer } from "../lib/server.ts";
 import { loadState } from "../lib/state.ts";
@@ -36,7 +36,7 @@ export function sourcesFor(serverDir: string, shop: string, panel?: PanelParts):
       if (!kind) return undefined;
       let version = 1;
       try { version = loadState(serverDir).shops[shop]?.guards?.razorpay?.version ?? 1; } catch { /* no state yet: version 1, as a first deploy gives */ }
-      return razorpaySpec(settings, { tenant: shop, name: `${shop}-razorpay`, version, reviewedBy: server.reviewedBy }, server.approvalHours, server.limits.razorpayLinksPerHour, undefined, kind.razorpaySpec);
+      return gatewaySpec(settings, { tenant: shop, name: `${shop}-razorpay`, version, reviewedBy: server.reviewedBy }, server.approvalHours, server.limits.razorpayLinksPerHour, undefined, kind.gatewaySpec);
     },
     papers: () => panel?.papers(shop) ?? [],
     pins: () => { try { return JSON.parse(readText(join(p.shop(shop), "pins.json")) ?? "null") ?? undefined; } catch { return undefined; } },

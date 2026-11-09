@@ -21,7 +21,7 @@ import { parseSettings } from "../src/settings.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { systemClock } from "../../../../modules/core/clock.ts";
 import { glowSalon, HARNESS_GUARD } from "../src/harness.ts";
-import { razorpayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
 import { startServer } from "../server/server.ts";
 import { startStandins } from "../standins/server.ts";
 import { createGuardClient, createRuntimeClient } from "../../../../modules/approvals/clients.ts";
@@ -41,7 +41,7 @@ interface RealGuard { agentUrl: string; adminUrl: string; agentToken: string; ad
 /** compile + run, on a temp folder. The upstream is plain HTTP on this computer: the stand-in. */
 async function startRealGuard(settings: ReturnType<typeof glowSalon>, upstreamPort: number, approvalTtlSeconds = 86_400): Promise<RealGuard> {
   const dir = mkdtempSync(join(tmpdir(), "geo-guard-it-"));
-  const spec = razorpayLimitsSpec(settings, HARNESS_GUARD, { approvalTtlSeconds });
+  const spec = gatewayLimitsSpec(settings, HARNESS_GUARD, { approvalTtlSeconds });
   writeFileSync(join(dir, "spec.json"), JSON.stringify(spec));
   const summary = JSON.parse(execFileSync(BINARY, ["compile", "--spec", join(dir, "spec.json"), "--out", join(dir, "bundle.json")], { encoding: "utf8" })) as { digest: string };
   const agent = credential(); const admin = credential();
@@ -186,7 +186,7 @@ test("the longest approval time Guard accepts is 7 days; one second more is refu
   const dir = mkdtempSync(join(tmpdir(), "geo-guard-ttl-"));
   try {
     const compile = (seconds: number) => {
-      const spec = { ...razorpayLimitsSpec(glowSalon(), HARNESS_GUARD), approval_ttl_seconds: seconds };
+      const spec = { ...gatewayLimitsSpec(glowSalon(), HARNESS_GUARD), approval_ttl_seconds: seconds };
       writeFileSync(join(dir, "spec.json"), JSON.stringify(spec));
       return (() => { try { execFileSync(BINARY, ["compile", "--spec", join(dir, "spec.json"), "--out", join(dir, "bundle.json")], { encoding: "utf8", stdio: "pipe" }); return ""; } catch (e) { return String((e as { stderr?: unknown }).stderr); } })();
     };

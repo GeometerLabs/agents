@@ -1,4 +1,4 @@
-// A stub Guard in front of the Razorpay stand-in: it speaks Guard's documented shapes (monorepo docs/guard-for-pathways.md) for the
+// A stub Guard in front of a gateway's stand-in: it speaks Guard's documented shapes (monorepo docs/guard-for-pathways.md) for the
 // refund route, so the runtime, the approvals relay and the tests can be run end to end without the real Guard. It is not Guard:
 // the behaviour it has is the model in modules/payments/guard-model.ts (built from the generated spec), which is checked against the
 // real binary in test/approvals-guard-binary.test.ts. Every other route is passed through to the stand-in unchanged.
@@ -192,7 +192,7 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
       const a = decided.approval;
       // a single owner's answer reads as it always did; a vote (B37) is the request itself: its state, the number needed and the votes so far (`approve` a boolean)
       const several = a.needed !== undefined ? { approvals_needed: a.needed, votes: (a.votes ?? []).map((v) => ({ approver: v.approver, approve: v.approve, role: v.role, at_ms: String(v.atMs) })) } : {};
-      json(res, 200, { id: a.id, state: a.needed !== undefined ? a.state : body.decision === "approve" ? "approved" : "denied", approver: a.approver ?? signer.id, role: "shop-owner", operation: "refund", tool: "razorpay", expires_at_ms: String(a.expiresAtMs), ...several });
+      json(res, 200, { id: a.id, state: a.needed !== undefined ? a.state : body.decision === "approve" ? "approved" : "denied", approver: a.approver ?? signer.id, role: "shop-owner", operation: "refund", tool: config.spec.tool, expires_at_ms: String(a.expiresAtMs), ...several });
       return;
     }
     if (!same(bearer(req), config.readToken)) { json(res, 401, { error: "an admin or approver credential is required (agent credentials do not work here)" }); return; }

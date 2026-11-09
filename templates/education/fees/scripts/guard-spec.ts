@@ -6,7 +6,7 @@
 // It only reads the settings file and prints JSON. `reviewed_by` is the builder's own declaration that a person read the numbers.
 import { readFileSync } from "node:fs";
 import { parseSettings } from "../src/settings.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 
 const args = process.argv.slice(2);
 const option = (name: string): string | undefined => { const i = args.indexOf(`--${name}`); return i === -1 ? undefined : args[i + 1]; };
@@ -20,7 +20,7 @@ if (!file || !tenant || !reviewedBy) { console.error("Give --settings, --tenant 
 try {
   const settings = parseSettings(JSON.parse(readFileSync(file, "utf8")));
   const hours = option("approval-hours");
-  console.log(JSON.stringify(razorpayLimitsSpec(settings, { tenant, reviewedBy, version: Number(option("version") ?? 1) }, hours ? { approvalTtlSeconds: Math.round(Number(hours) * 3600) } : {}), null, 2));
+  console.log(JSON.stringify(gatewayLimitsSpec(settings, { tenant, reviewedBy, version: Number(option("version") ?? 1) }, hours ? { approvalTtlSeconds: Math.round(Number(hours) * 3600) } : {}), null, 2));
 } catch (e) {
   console.error((e as Error).message);
   process.exit(1);

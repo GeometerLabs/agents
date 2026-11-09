@@ -1,9 +1,9 @@
 // One agent we did not write, planned: from its folder to the specs of the Guards that go in front of the services it calls. The specs come from the SAME functions the
-// templates use (generate/guards.ts: razorpaySpec, whatsappSpec, calendarSpec, which for Razorpay is templates/commerce/bookings/src/guard-limits.ts), so the same settings give the
+// templates use (generate/guards.ts: gatewaySpec, whatsappSpec, calendarSpec, which for Razorpay is templates/commerce/bookings/src/guard-limits.ts), so the same settings give the
 // same bytes whether a template or an agent of someone else's sits behind them. Pure: no files, no Docker, no clock.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
 import { rupeesToPaise } from "../../modules/payments/guard-limits.ts";
-import { calendarSpec, guardDef, razorpaySpec, whatsappSpec } from "../generate/guards.ts";
+import { calendarSpec, guardDef, gatewaySpec, whatsappSpec } from "../generate/guards.ts";
 import type { GuardKind } from "../generate/guards.ts";
 import { names, upstreamOf } from "../generate/shop.ts";
 import type { GuardPlan } from "../generate/shop.ts";
@@ -42,7 +42,7 @@ export function planAgent(server: ServerConfig, folder: AgentFolder, versions: P
   const make = (kind: AgentUpstream): LimitsSpec | undefined => {
     try {
       switch (kind) {
-        case "razorpay": return razorpaySpec(settings, identity("razorpay"), server.approvalHours, caps.linksPerHour ?? server.limits.razorpayLinksPerHour,
+        case "razorpay": return gatewaySpec(settings, identity("razorpay"), server.approvalHours, caps.linksPerHour ?? server.limits.razorpayLinksPerHour,
           { ...(caps.refundInrPerDay !== undefined ? { refundPaisePerDay: rupeesToPaise(caps.refundInrPerDay) } : {}), ...(caps.refundsPerDay !== undefined ? { refundsPerDay: caps.refundsPerDay } : {}) });
         case "whatsapp": return whatsappSpec(identity("whatsapp"), { phoneNumberId: agent.whatsapp!.phoneNumberId, messagesPerHour: caps.messagesPerHour ?? server.limits.whatsappMessagesPerHour });
         case "calendar": return calendarSpec(identity("calendar"), { calendarId: agent.calendar!.calendarId, createdPerHour: caps.eventsCreatedPerHour ?? server.limits.calendarEventsCreatedPerHour, deletedPerDay: caps.eventsDeletedPerDay ?? server.limits.calendarEventsDeletedPerDay });

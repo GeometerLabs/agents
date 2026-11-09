@@ -32,7 +32,7 @@ import type { Language } from "../language/languages.ts";
 import type { CheckResult } from "../language/check.ts";
 import type { TemplateMessage } from "../messaging/messaging.ts";
 import { HOUR } from "../core/time.ts";
-import { readHeld } from "./clients.ts";
+import { NOT_A_REFUND, readHeld } from "./clients.ts";
 import type { GuardClient, Held, Notified, RefundContext, RuntimeClient } from "./clients.ts";
 import { hashCode } from "./store.ts";
 import type { Ask, AskState, RelayStore } from "./store.ts";
@@ -347,7 +347,7 @@ export function createRelay(options: RelayOptions): Relay {
         // a hold with no approval to give: only a person at the server can settle it, so it is the builder's
         const key = JSON.stringify(item).slice(0, 200);
         if (!seenUncertain.has(key)) { seenUncertain.add(key); counters.uncertain++; log("Guard shows a held call that cannot be approved on WhatsApp. It is for the builder, not the owner."); }
-      } else if (/not a refund on razorpay/u.test(parsed.reason)) continue; // not ours to ask about
+      } else if (parsed.reason.endsWith(NOT_A_REFUND)) continue; // not ours to ask about
       else alert(parsed.id, "unreadable", `Guard holds refund ${parsed.id}, but ${parsed.reason}.`);
     }
     // waiting for the runtime, and the code that ran out

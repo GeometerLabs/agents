@@ -144,7 +144,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
       else try {
         guardSpec = src.limitsSpec?.(checked.settings, kind.id);
         if (guardSpec === undefined) {
-          guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-razorpay`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
+          guardSpec = kind.gatewaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-razorpay`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
           specNote = " This server's own settings (geometer.json) could not be read, so it was made with the default approval time and caps: it may differ from the one Guard enforces.";
           warnings.push("The server's own settings could not be read, so the limits were made with the defaults.");
         }
