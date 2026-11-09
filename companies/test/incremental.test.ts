@@ -55,7 +55,7 @@ test("two exports: the second holds only what is new, seq carries on, and nothin
     assert.deepEqual(lines(a).map((l) => l.seq), [1, 2, 3]);
     assert.deepEqual(lines(b).map((l) => l.seq), [4, 5, 6]);
     assert.deepEqual(lines(b).map((l) => l.call), ["call-4", "call-5", "call-6"]);
-    assert.deepEqual(JSON.parse(readFileSync(join(b, "decisions.json"), "utf8")).decisions.map((d: Obj) => d.id), ["d00004", "d00005", "d00006"]);
+    assert.deepEqual(JSON.parse(readFileSync(join(b, "decisions.json"), "utf8")).decisions.map((d: Obj) => d.id), ["d00006", "d00005", "d00004"], "decisions.json keeps Guard's own order, newest first");
     assert.match(readFileSync(join(b, "summary.txt"), "utf8"), /incremental export: it holds only decisions after 1970-01-01T00:00:01\.003Z/u);
     // nothing new: an empty export, still not a gap, and the next number is still 7
     const c = tempDir();
