@@ -224,7 +224,7 @@ test("outcome unknown on a refund within the limit: never sent again, recorded a
   assert.deepEqual(issues(w).map((i) => i.kind), ["unknown"]);
   const note = entries(w, "refund", "unconfirmed").at(-1)!.notes;
   assert.match(note, /NOT sent again/);
-  assert.match(note, /Check Razorpay/);
+  assert.match(note, /Check the payment gateway.s own records/);
   assert.deepEqual(w.textsTo(w.owner), [], "the owner cannot settle it");
   assert.match(w.lastTextTo(CUSTOMER), /checking your ₹200 refund/);
   await w.advance(5 * 60); // time passing does not send it either

@@ -130,7 +130,7 @@ test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; 
     assert.ok(rowOf(WORDS.en.cost.lines.whatsapp).includes(WORDS.en.cost.payer["builder-pays-whatsapp-provider"]));
     const totalRow = page.split('<tr class="total">')[1].split("</tr>")[0];
     assert.ok(totalRow.includes(WORDS.en.cost.subtotal(2)) && !totalRow.includes(`<td>${WORDS.en.cost.total}</td>`), "unknown lines make a subtotal");
-    assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-gateway"]) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
+    assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-gateway"].replace("{gateway}", "Razorpay")) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
     assert.ok(page.includes(WORDS.en.cost.priceList(live.date)));
     assert.ok(!/unknown\s*₹0/u.test(page));
   } finally { await b.close(); }
@@ -191,13 +191,13 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     const page = (await divya.get(checks)).plain;
     const w = WORDS.en.setup.checks;
     assert.ok(page.includes(w.whatsapp.confirmed("+919000011111")), page.slice(page.indexOf("Checks"), page.indexOf("Checks") + 1500));
-    assert.ok(page.includes(w.calendar.confirmed("Stand-in calendar")) && page.includes(RZW.en.checks.confirmed(RZW.en.accounts.modeLive)) && page.includes(w.razorpayWhose));
+    assert.ok(page.includes(w.calendar.confirmed("Stand-in calendar")) && page.includes(RZW.en.checks.confirmed(RZW.en.accounts.modeLive)) && page.includes(RZW.en.whose));
     assert.ok(/Held \d+ of \d+ situations\. 0 failed\. \d+ not tested\./u.test(page), "the certificate's own sentence");
     assert.ok(page.includes(w.limitsProven(9, 9)) && page.includes(w.readOnly));
     assert.ok(page.includes(w.readyButton));
     // The ids the providers reported are pinned for Guard's exact allowlists.
     const pins = JSON.parse(readFileSync(join(folder, "pins.json"), "utf8"));
-    assert.deepEqual([pins.whatsapp, pins.calendar, pins.gateway], [{ phoneNumberId: STEP4.waNumberId, displayNumber: "+919000011111" }, { calendarId: STEP4.calId }, { keyId: "rzp_live_AbCdEf123456", mode: "live" }]);
+    assert.deepEqual([pins.whatsapp, pins.calendar, pins.gateway], [{ phoneNumberId: STEP4.waNumberId, displayNumber: "+919000011111" }, { calendarId: STEP4.calId }, { provider: "razorpay", keyId: "rzp_live_AbCdEf123456", mode: "live" }]);
 
     const ready = await divya.post(`/setup/${f.draft}/ready`, {}, checks);
     assert.equal(ready.status, 303);
@@ -242,7 +242,7 @@ test("the monthly report reads the go-live certificate the panel made, and says 
       const { createShops } = await import("../shops.ts");
       const { openStores } = await import("../server.ts");
       const s = createShops(b.config, openStores(b.config).store);
-      s.saveMeta("glow-salon", { schema: 1, receipts: {}, whatsapp: { businessNumber: "+91 90000 11111" }, razorpay: { mode: "live", keyId: "rzp_live_AbCdEf123456" } });
+      s.saveMeta("glow-salon", { schema: 1, receipts: {}, whatsapp: { businessNumber: "+91 90000 11111" }, gateway: { provider: "razorpay", mode: "live", keyId: "rzp_live_AbCdEf123456" } });
     }
     mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
     writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(month.world.record.entries()));

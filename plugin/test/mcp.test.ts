@@ -218,7 +218,7 @@ test("crash_test starts a run with its budget and crash_test_result reads 'Held 
 test("a crash test of an agent that cannot start says so, and counts nothing", async () => {
   const w = world();
   try {
-    const add = await import("node:child_process").then((m) => m.spawnSync(process.execPath, [join(AGENTS, "bundle/geometer.ts"), "agent", "add", "my-agent", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "x@group.calendar.google.com", "--server", w.server.root], { encoding: "utf8" }));
+    const add = await import("node:child_process").then((m) => m.spawnSync(process.execPath, [join(AGENTS, "bundle/geometer.ts"), "agent", "add", "my-agent", "--upstreams", "razorpay,whatsapp,calendar", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "x@group.calendar.google.com", "--server", w.server.root], { encoding: "utf8" }));
     assert.equal(add.status, 0, add.stderr + add.stdout);
     const started = await w.call("crash_test", { name: "my-agent" });
     let result: any;

@@ -96,7 +96,7 @@ test("calendar update silentFailure leaves the event as it was; faults are used 
 test("payments over HTTP: a link with a reference id; a second link with the same reference is refused, and the first is found by reference or by payment", async () => {
   await withWorld(async ({ adapters: { payments }, fakes, control }) => {
     const link = await payments.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
-    assert.match(link.pay_url, /^https:\/\/rzp\.io\/l\//);
+    assert.match(link.pay_url, /^https:\/\/pay\.example\/req_/);
     assert.equal(link.amount, 20000);
     assert.equal(link.status, "created");
     assert.equal((await payments.listRequests({ reference_id: "b1" })).length, 1);
@@ -246,7 +246,7 @@ test("lost reply on the payment link: exactly one link exists and the agent aske
     await w.say(BOOK);
     assert.equal(w.fakes.payments.links().length, 1);
     assert.equal(w.fakes.payments.calls.filter((c) => c.op === "createRequest").length, 1);
-    assert.match(w.textsTo(CUSTOMER).at(-1)!, /rzp\.io/);
+    assert.match(w.textsTo(CUSTOMER).at(-1)!, /pay\.example/);
   }, { timeoutMs: 300 });
 });
 

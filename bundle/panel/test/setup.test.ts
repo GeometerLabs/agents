@@ -108,7 +108,7 @@ test("bad input is refused in the person's own language, in plain words, and not
     const four = (form: Record<string, string>) => divya.post(`/setup/${d}/4`, form, `/setup/${d}/4`);
     assert.ok((await four({ ...STEP4, waNumber: "98765 43210" })).plain.includes(w.sameNumber));
     assert.ok((await four({ ...STEP4, gwMode: "test" })).plain.includes(RZW.ml.checks.wrongMode));
-    assert.ok((await four({ ...STEP4, gwKeyId: "key 123" })).plain.includes(w.keyIdBad));
+    assert.ok((await four({ ...STEP4, gwKeyId: "key 123" })).plain.includes(RZW.ml.accounts.keyIdBad));
     assert.ok((await four({ ...STEP4, waNumberId: "12ab" })).plain.includes(w.numberIdBad));
     assert.ok((await four({ ...STEP4, calId: "my calendar" })).plain.includes(w.calendarIdBad));
     // Someone else's draft is not found.
@@ -162,7 +162,7 @@ test("the secrets: written once to the inbox, exactly as given, 0600; never in a
     // The panel remembers that each arrived, and when.
     const meta = JSON.parse(readFileSync(join(b.dir, "panel", "data", "meta", `${f.shop}.json`), "utf8"));
     assert.deepEqual(Object.keys(meta.receipts).sort(), ["razorpay_key", "razorpay_webhook_secret", "whatsapp_app_secret", "whatsapp_token"]);
-    assert.deepEqual(meta.gateway, { mode: "live", keyId: "rzp_live_AbCdEf123456" });
+    assert.deepEqual(meta.gateway, { provider: "razorpay", mode: "live", keyId: "rzp_live_AbCdEf123456" });
     // The intake has no way to read anything back.
     const source = readFileSync(new URL("../secrets.ts", import.meta.url), "utf8");
     assert.ok(!/readFile|readdir|createReadStream|readSync|openSync/u.test(source), "secrets.ts must only write");
