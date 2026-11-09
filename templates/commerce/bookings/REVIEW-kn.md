@@ -436,7 +436,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 
 Everything a partner or builder reads in the panel, in Kannada: signing in, the shop's status and its monthly cost line, and the five setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the checks). Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
 
-What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and Razorpay read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, Razorpay, Google Calendar, Guard, Geometer).
+What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
 
 | Id | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |
@@ -621,11 +621,11 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.assumption` | ತಿಂಗಳಿಗೆ 40 ಬುಕಿಂಗ್ ಎಂದು ಅಂದಾಜು ಮಾಡಲಾಗಿದೆ. | We assumed 40 bookings a month. |  |
 | `cost.lines.whatsapp` | WhatsApp ಸಂದೇಶಗಳು (Meta ಶುಲ್ಕ) | WhatsApp messages (Meta's fee) |  |
 | `cost.lines.whatsapp-provider` | WhatsApp ಪ್ರೊವೈಡರ್‌ನ ಸ್ವಂತ ಶುಲ್ಕ | WhatsApp provider's own fee |  |
-| `cost.lines.razorpay` | Razorpay ಶುಲ್ಕ | Razorpay's fee |  |
+| `cost.lines.gateway` | {gateway} ಶುಲ್ಕ | {gateway}'s fee |  |
 | `cost.lines.geometer` | Geometer ಪ್ಲಾನ್ | Geometer's plan |  |
 | `cost.lines.hosting` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲು | Hosting share |  |
 | `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or partner to their own WhatsApp provider |  |
-| `cost.payer.shop-pays-razorpay` | ಅಂಗಡಿಯೇ Razorpay ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to Razorpay |  |
+| `cost.payer.shop-pays-gateway` | ಅಂಗಡಿಯೇ {gateway} ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to {gateway} |  |
 | `cost.payer.builder-pays-geometer` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ | paid to Geometer by the builder or partner; the AI model is included |  |
 | `cost.payer.builder-pays-licence` | ಬಿಲ್ಡರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ, ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ಒಮ್ಮೆ; AI ಕೀ ಬಿಲ್ಡರ್‌ನ ಸ್ವಂತದ್ದು | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
 | `cost.payer.hosting` | ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ | the server's cost, shared |  |
@@ -638,7 +638,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.caveats.provider-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ ಈ ಪ್ರೊವೈಡರ್‌ಗೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for this provider. |  |
 | `cost.caveats.fee-not-priced` | ಬೆಲೆ ಪಟ್ಟಿಯಲ್ಲಿ Geometer ಶುಲ್ಕಕ್ಕೆ ಬೆಲೆ ಇಲ್ಲ. | The price list has no price for Geometer's fee. |  |
 | `cost.caveats.hosting-not-measured` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲನ್ನು ಇನ್ನೂ ಅಳೆದಿಲ್ಲ. | The hosting share has not been measured yet. |  |
-| `cost.caveats.payment-link-fee-conflict` | ಪಾವತಿ ಲಿಂಕ್‌ಗಳ ಶುಲ್ಕದ ಬಗ್ಗೆ Razorpay ಪುಟಗಳೇ ಬೇರೆ ಬೇರೆ ಹೇಳುತ್ತವೆ. ಹೆಚ್ಚಿನದನ್ನು (2%) ಬಳಸಲಾಗಿದೆ. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
+| `cost.caveats.payment-link-fee-conflict` | ಪಾವತಿ ಲಿಂಕ್‌ಗಳ ಶುಲ್ಕದ ಬಗ್ಗೆ {gateway} ಪುಟಗಳೇ ಬೇರೆ ಬೇರೆ ಹೇಳುತ್ತವೆ. ಹೆಚ್ಚಿನದನ್ನು (2%) ಬಳಸಲಾಗಿದೆ. | {gateway}'s own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
 | `cost.caveats.whatsapp-rate-second-hand` | WhatsApp ರೂಪಾಯಿ ದರ Meta ಪುಟದಿಂದ ಬಂದಿಲ್ಲ, ಒಬ್ಬ ರಿಸೆಲ್ಲರ್ ಪುಟದಿಂದ ಬಂದಿದೆ. ಮೊದಲ ಬಿಲ್ ಬಂದಾಗ ಪರಿಶೀಲಿಸಿ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
 | `plan.heading` | ಪ್ಲಾನ್ | Plan |  |
 | `plan.none` | ಈ ಅಂಗಡಿಗೆ ಇನ್ನೂ ಯಾವ ಪ್ಲಾನ್ ಕೂಡ ಹೊಂದಿಸಿಲ್ಲ. | No plan is set for this shop yet. |  |
@@ -842,7 +842,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.problems.expectedBad` | ತಿಂಗಳಿಗೆ ಬುಕಿಂಗ್ ಎಷ್ಟು ಎಂದು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 40, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
 | `setup.problems.numberIdBad` | ಫೋನ್ ನಂಬರ್ ID ಅಂಕಿಗಳು ಮಾತ್ರ (6 ರಿಂದ 20 ಅಂಕಿ). | The phone number ID is digits only (6 to 20 of them). |  |
 | `setup.problems.businessNumberBad` | ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ. | Write the shop's WhatsApp number with the country code. |  |
-| `setup.problems.keyIdBad` | ಕೀ ID rzp_live_ ಅಥವಾ rzp_test_ ಎಂದು ಶುರುವಾಗುತ್ತದೆ. | The key ID starts with rzp_live_ or rzp_test_. |  |
 | `setup.problems.secretMissing` | ಇದನ್ನು ತುಂಬಿ: the access token. | Fill in the access token. |  |
 | `setup.problems.secretShape` | ಇದರಲ್ಲಿ ಖಾಲಿ ಜಾಗ ಅಥವಾ ಹೊಸ ಸಾಲು ಇದೆ: the access token. ಅವು ಇಲ್ಲದೆ ಮತ್ತೆ ಕಾಪಿ ಮಾಡಿ. | the access token has spaces or line breaks in it. Copy it again, without them. |  |
 | `setup.problems.calendarIdBad` | ಕ್ಯಾಲೆಂಡರ್ ID ಖಾಲಿ ಜಾಗ ಇಲ್ಲದೆ ಬರೆಯಿರಿ. | Write the calendar's ID without spaces. |  |
@@ -871,18 +870,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.calendar.id` | ಕ್ಯಾಲೆಂಡರ್ ID | Calendar ID |  |
 | `setup.accounts.calendar.json` | ಸರ್ವೀಸ್-ಅಕೌಂಟ್ ಕೀ ಫೈಲ್ | Service-account key file |  |
 | `setup.accounts.calendar.jsonHelp` | ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಒಂದು ಕೊಟ್ಟಿದ್ದರೆ ಮಾತ್ರ. ಇಡೀ ಫೈಲ್ ಪೇಸ್ಟ್ ಮಾಡಿ. | Only if your builder gave you one. Paste the whole file. |  |
-| `setup.accounts.razorpay.title` | Razorpay | Razorpay |  |
-| `setup.accounts.razorpay.intro` | ಗ್ರಾಹಕರು ಮುಂಗಡ ಹಣವನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ Razorpay ಖಾತೆಗೆ ಕಟ್ಟುತ್ತಾರೆ. ಹಣ ನೇರವಾಗಿ ಅಂಗಡಿಯ ಬ್ಯಾಂಕ್‌ಗೆ ಹೋಗುತ್ತದೆ. Geometer ಅದನ್ನು ಎಂದೂ ಇಟ್ಟುಕೊಳ್ಳುವುದಿಲ್ಲ. | Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it. |  |
-| `setup.accounts.razorpay.steps.1` | ಅಂಗಡಿಯ ಸ್ವಂತ Razorpay ಖಾತೆಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ. | Sign in to the shop's own Razorpay account. |  |
-| `setup.accounts.razorpay.steps.2` | Settings, API keys ಅಡಿಯಲ್ಲಿ ಒಂದು ಕೀ ಮಾಡಿ, ಮತ್ತು Key ID ಹಾಗೂ Key secret ಕಾಪಿ ಮಾಡಿ. | Under Settings, API keys, make a key and copy the Key ID and the Key secret. |  |
-| `setup.accounts.razorpay.steps.3` | Settings, Webhooks ಅಡಿಯಲ್ಲಿ ಕೆಳಗೆ ತೋರಿಸಿದ ವೆಬ್ ಅಡ್ರೆಸ್ ಸೇರಿಸಿ, ಮತ್ತು ನಿಮ್ಮದೇ ಒಂದು ಸೀಕ್ರೆಟ್ ಆರಿಸಿ. ಅದೇ ಸೀಕ್ರೆಟ್ ಅನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ. | Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here. |  |
-| `setup.accounts.razorpay.mode` | ಇದು ಯಾವ ಕೀ? | Which key is this? |  |
-| `setup.accounts.razorpay.modeLive` | ಲೈವ್: ನಿಜವಾದ ಹಣ | Live: real money |  |
-| `setup.accounts.razorpay.modeTest` | ಅಭ್ಯಾಸ: ಟೆಸ್ಟ್ ಹಣ | Practice: test money |  |
-| `setup.accounts.razorpay.keyId` | ಕೀ ID | Key ID |  |
-| `setup.accounts.razorpay.keySecret` | ಕೀ ಸೀಕ್ರೆಟ್ | Key secret |  |
-| `setup.accounts.razorpay.webhookSecret` | ವೆಬ್‌ಹುಕ್ ಸೀಕ್ರೆಟ್ | Webhook secret |  |
-| `setup.accounts.razorpay.webhookUrl` | ವೆಬ್‌ಹುಕ್‌ಗಾಗಿ ವೆಬ್ ಅಡ್ರೆಸ್: https://shops.example.com/hooks/glow-salon/razorpay | Web address for the webhook: https://shops.example.com/hooks/glow-salon/razorpay |  |
 | `setup.checks.saveFirst` | ಮೊದಲು ಈ ಅಂಗಡಿಯನ್ನು ಸರ್ವರ್‌ಗೆ ಉಳಿಸಿ. | Save this shop to the server first. |  |
 | `setup.checks.saveButton` | ಉಳಿಸಿ ಮತ್ತು ಜೋಡಿಸಿ | Save and connect |  |
 | `setup.checks.saved` | ಉಳಿಸಲಾಗಿದೆ. ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತರುತ್ತದೆ, ಜಾರಿಯಾದಾಗ ಈ ಪುಟದಲ್ಲಿ ಕಾಣುತ್ತದೆ. | Saved. The server will apply it, and this page shows when it has. |  |
@@ -902,10 +889,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ಇದು ಅಂಗಡಿಯ ನಂಬರ್ (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | ಸಿಕ್ಕ ನಂಬರ್‌ನ ಕೊನೆಯ ಅಂಕಿಗಳು: 3210. ಇದು ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ಆ ಫೋನ್ ನಂಬರ್ ID ಈ ಖಾತೆಯಲ್ಲಿ ಇಲ್ಲ. | That phone number ID is not on this account. |  |
-| `setup.checks.razorpay.title` | Razorpay | Razorpay |  |
-| `setup.checks.razorpay.confirmed` | ಕೀ ಕೆಲಸ ಮಾಡುತ್ತಿದೆ (Live). | The key works (Live). |  |
-| `setup.checks.razorpay.differs` | ಇದು ಮೊದಲು ಖಚಿತಪಡಿಸಿದ ಕೀ ಅಲ್ಲ, ಬೇರೆ ಕೀ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | This is a different key from the one confirmed before. Nothing was changed. |  |
-| `setup.checks.razorpay.wrongMode` | ಈ ಕೀಯ ಮೋಡ್ ಮೇಲೆ ಆರಿಸಿದ ಮೋಡ್ ಅಲ್ಲ. ಹೊಂದುವ ಕೀ ಬಳಸಿ. | This key's mode is not the one chosen above. Use the key that matches. |  |
 | `setup.checks.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
 | `setup.checks.calendar.confirmed` | “Glow Salon bookings” ಸಿಕ್ಕಿದೆ, ಮತ್ತು ಇದನ್ನು ಬದಲಾಯಿಸಬಹುದು. | Found “Glow Salon bookings”, and it can be changed. |  |
 | `setup.checks.calendar.differs` | Google ಬೇರೆ ಕ್ಯಾಲೆಂಡರ್ ತೋರಿಸುತ್ತಿದೆ, ಕೊಟ್ಟಿದ್ದನ್ನಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | Google shows a different calendar from the one given. Nothing was changed. |  |
@@ -916,7 +899,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.generic.unreachable` | ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Could not reach it. Try again in a minute. |  |
 | `setup.checks.generic.unexpected_response` | ಉತ್ತರ ಈ ಸೇವೆ ಕೊಡುವ ರೀತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಬಳಸಲಿಲ್ಲ. | The answer was not what this service gives, so it was not used. |  |
 | `setup.checks.generic.not_configured` | ಮೊದಲು ಮೇಲಿನ ವಿವರಗಳನ್ನು ತುಂಬಿ. | Fill in the details above first. |  |
-| `setup.checks.razorpayWhose` | ಕೀ ಯಾರ ಖಾತೆಗೆ ಸೇರಿದ್ದು ಎಂದು Razorpay ಹೇಳುವುದಿಲ್ಲ. ಮೊದಲ ಟೆಸ್ಟ್ ಪಾವತಿ ಲಿಂಕ್ ತೆರೆದು ನೋಡಿ: ಅದರಲ್ಲಿ ಅಂಗಡಿಯ ಹೆಸರು ಇರಬೇಕು. | Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it. |  |
 | `setup.checks.guardWords` | Guard ಹೇಳಿದ್ದು: the route is not listed | Guard said: the route is not listed |  |
 | `setup.checks.bookingsExpected` | ತಿಂಗಳಿಗೆ ನೀವು ನಿರೀಕ್ಷಿಸುವ ಬುಕಿಂಗ್ (ವೆಚ್ಚದ ಲೆಕ್ಕಕ್ಕೆ ಮಾತ್ರ ಬಳಕೆ) | Bookings you expect each month (only used for the cost) |  |
 | `setup.checks.readyButton` | ಲೈವ್ ಮಾಡಲು ಸಿದ್ಧ | Ready to go live |  |
@@ -937,7 +919,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.payment_unrecorded` | ಶುಲ್ಕ f-3 ಗೆ ಹಣ ಬಂದಿದೆ, ಆದರೆ ಶುಲ್ಕ ನವೀಕರಣವಾಗಿಲ್ಲ: ಹಣವನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
 | `inbox.kinds.approval_waiting_long` | b-3 ನಲ್ಲಿ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ 14 ಗಂಟೆಗಳಿಂದ ಕಾಯುತ್ತಿದೆ ([what]): ಮತ್ತೆ ಕೇಳಿ | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
 | `inbox.kinds.refund_waiting` | b-3 ರ ₹200 ರೀಫಂಡ್ [who] ಕಾಯುತ್ತಿದೆ | The refund of ₹200 for b-3 is waiting [who] |  |
-| `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: Razorpay ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: {gateway} ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3 ಗಾಗಿ ₹200 UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3 ಗಾಗಿ ₹200 ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
@@ -995,7 +977,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `upi.setup.heading` | ಗ್ರಾಹಕರು ಹೇಗೆ ಪಾವತಿಸುತ್ತಾರೆ | How customers pay |  |
 | `upi.setup.intro` | ಡೆಪಾಸಿಟ್ ಅಥವಾ ಶುಲ್ಕವನ್ನು ಗ್ರಾಹಕರು ಹೇಗೆ ಪಾವತಿಸಬೇಕೆಂದು ಆರಿಸಿ. UPI ಅತ್ಯಂತ ಸುಲಭ: ಪೇಮೆಂಟ್ ಗೇಟ್‌ವೇ ಖಾತೆ ತೆರೆಯುವ ಅಗತ್ಯವಿಲ್ಲ. | Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open. |  |
 | `upi.setup.optionUpi` | UPI: ಗ್ರಾಹಕರು ಅಂಗಡಿಯ ಸ್ವಂತ UPI ಐಡಿಗೆ ಪಾವತಿಸುತ್ತಾರೆ | UPI: customers pay the shop's own UPI ID |  |
-| `upi.setup.optionRazorpay` | Razorpay: ಅಂಗಡಿಗೆ ಸ್ವಂತ Razorpay ಖಾತೆ ಇದೆ | Razorpay: the shop has its own Razorpay account |  |
 | `upi.setup.upiTitle` | UPI ಮೂಲಕ ಪಾವತಿ | Pay by UPI |  |
 | `upi.setup.upiIntro` | ಗ್ರಾಹಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಿಂದ ಅಂಗಡಿಯ ಸ್ವಂತ UPI ಐಡಿಗೆ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು WhatsApp ನಲ್ಲಿ “ಬಂತು” (Received) ಒತ್ತುತ್ತಾರೆ. ಗೇಟ್‌ವೇ ಶುಲ್ಕ ಇಲ್ಲ, Geometer ಹಣವನ್ನು ಮುಟ್ಟುವುದಿಲ್ಲ. | Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money. |  |
 | `upi.setup.upiId` | ಅಂಗಡಿಯ UPI ಐಡಿ | The shop's UPI ID |  |
@@ -1003,7 +984,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `upi.setup.payee` | ಗ್ರಾಹಕರಿಗೆ ಅವರ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಾಣುವ ಹೆಸರು | The name customers see in their UPI app |  |
 | `upi.setup.payeeHelp` | ಉದಾಹರಣೆ Glow Salon | For example Glow Salon |  |
 | `upi.setup.noCheck` | ಹಣ ಕಳುಹಿಸದೆ UPI ಐಡಿಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಇಲ್ಲಿ ಪರಿಶೀಲನೆ ಇಲ್ಲ. ನಿಧಾನವಾಗಿ ಎಚ್ಚರಿಕೆಯಿಂದ ಟೈಪ್ ಮಾಡಿ, ನಂತರ ಮಾಲೀಕರಿಗೆ ಓದಿ ಹೇಳಿ. | A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner. |  |
-| `upi.setup.razorpayOnly` | ಮೇಲೆ Razorpay ಆರಿಸಿದರೆ ಮಾತ್ರ Razorpay ಪೆಟ್ಟಿಗೆಗಳನ್ನು ತುಂಬಿ. | Fill in the Razorpay boxes only if you chose Razorpay above. |  |
 | `upi.problems.idEmpty` | ಅಂಗಡಿಯ UPI ಐಡಿ ಸೇರಿಸಿ, ಉದಾಹರಣೆ glowsalon@okicici. | Add the shop's UPI ID, for example glowsalon@okicici. |  |
 | `upi.problems.idNoAt` | "glowsalon" UPI ಐಡಿ ಅಲ್ಲ: @ ಮತ್ತು ಅದರ ನಂತರ ಆ್ಯಪ್ ಅಥವಾ ಬ್ಯಾಂಕ್‌ನ ಹೆಸರು ಬೇಕು, ಉದಾಹರಣೆ glowsalon@okicici. | "glowsalon" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici. |  |
 | `upi.problems.idShape` | "glow salon@" UPI ಐಡಿ ಅಲ್ಲ. ಕಾಗುಣಿತ ನೋಡಿ: @ ಮೊದಲು ಅಕ್ಷರಗಳು, ಅಂಕೆಗಳು, ಚುಕ್ಕೆ, ಡ್ಯಾಶ್ ಅಥವಾ ಅಂಡರ್‌ಸ್ಕೋರ್, @ ನಂತರ ಆ್ಯಪ್ ಅಥವಾ ಬ್ಯಾಂಕ್‌ನ ಹೆಸರು. | "glow salon@" is not a UPI ID. Check the spelling: letters, digits, dots, dashes or underscores before the @, and the app's or bank's name after it. |  |
@@ -1017,6 +997,25 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | ಕಳುಹಿಸಿದ್ದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು. | That was too much to send. |  |
 | `errors.wrongMethod` | ಈ ಪುಟ ಹೀಗೆ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | That is not how this page works. |  |
 | `errors.tryAgain` | ಏನೋ ತಪ್ಪಾಯಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Something went wrong. Try again. |  |
+| `payment.razorpay.option` | Razorpay: ಅಂಗಡಿಗೆ ಸ್ವಂತ Razorpay ಖಾತೆ ಇದೆ | Razorpay: the shop has its own Razorpay account |  |
+| `payment.razorpay.accounts.title` | Razorpay | Razorpay |  |
+| `payment.razorpay.accounts.intro` | ಗ್ರಾಹಕರು ಮುಂಗಡ ಹಣವನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ Razorpay ಖಾತೆಗೆ ಕಟ್ಟುತ್ತಾರೆ. ಹಣ ನೇರವಾಗಿ ಅಂಗಡಿಯ ಬ್ಯಾಂಕ್‌ಗೆ ಹೋಗುತ್ತದೆ. Geometer ಅದನ್ನು ಎಂದೂ ಇಟ್ಟುಕೊಳ್ಳುವುದಿಲ್ಲ. | Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it. |  |
+| `payment.razorpay.accounts.steps.1` | ಅಂಗಡಿಯ ಸ್ವಂತ Razorpay ಖಾತೆಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ. | Sign in to the shop's own Razorpay account. |  |
+| `payment.razorpay.accounts.steps.2` | Settings, API keys ಅಡಿಯಲ್ಲಿ ಒಂದು ಕೀ ಮಾಡಿ, ಮತ್ತು Key ID ಹಾಗೂ Key secret ಕಾಪಿ ಮಾಡಿ. | Under Settings, API keys, make a key and copy the Key ID and the Key secret. |  |
+| `payment.razorpay.accounts.steps.3` | Settings, Webhooks ಅಡಿಯಲ್ಲಿ ಕೆಳಗೆ ತೋರಿಸಿದ ವೆಬ್ ಅಡ್ರೆಸ್ ಸೇರಿಸಿ, ಮತ್ತು ನಿಮ್ಮದೇ ಒಂದು ಸೀಕ್ರೆಟ್ ಆರಿಸಿ. ಅದೇ ಸೀಕ್ರೆಟ್ ಅನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ. | Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here. |  |
+| `payment.razorpay.accounts.mode` | ಇದು ಯಾವ ಕೀ? | Which key is this? |  |
+| `payment.razorpay.accounts.modeLive` | ಲೈವ್: ನಿಜವಾದ ಹಣ | Live: real money |  |
+| `payment.razorpay.accounts.modeTest` | ಅಭ್ಯಾಸ: ಟೆಸ್ಟ್ ಹಣ | Practice: test money |  |
+| `payment.razorpay.accounts.keyId` | ಕೀ ID | Key ID |  |
+| `payment.razorpay.accounts.keySecret` | ಕೀ ಸೀಕ್ರೆಟ್ | Key secret |  |
+| `payment.razorpay.accounts.webhookSecret` | ವೆಬ್‌ಹುಕ್ ಸೀಕ್ರೆಟ್ | Webhook secret |  |
+| `payment.razorpay.accounts.webhookUrl` | ವೆಬ್‌ಹುಕ್‌ಗಾಗಿ ವೆಬ್ ಅಡ್ರೆಸ್: https://shops.example.com/hooks/glow-salon/razorpay | Web address for the webhook: https://shops.example.com/hooks/glow-salon/razorpay |  |
+| `payment.razorpay.accounts.keyIdBad` | ಕೀ ID rzp_live_ ಅಥವಾ rzp_test_ ಎಂದು ಶುರುವಾಗುತ್ತದೆ. | The key ID starts with rzp_live_ or rzp_test_. |  |
+| `payment.razorpay.checks.title` | Razorpay | Razorpay |  |
+| `payment.razorpay.checks.confirmed` | ಕೀ ಕೆಲಸ ಮಾಡುತ್ತಿದೆ (Live). | The key works (Live). |  |
+| `payment.razorpay.checks.differs` | ಇದು ಮೊದಲು ಖಚಿತಪಡಿಸಿದ ಕೀ ಅಲ್ಲ, ಬೇರೆ ಕೀ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | This is a different key from the one confirmed before. Nothing was changed. |  |
+| `payment.razorpay.checks.wrongMode` | ಈ ಕೀಯ ಮೋಡ್ ಮೇಲೆ ಆರಿಸಿದ ಮೋಡ್ ಅಲ್ಲ. ಹೊಂದುವ ಕೀ ಬಳಸಿ. | This key's mode is not the one chosen above. Use the key that matches. |  |
+| `payment.razorpay.whose` | ಕೀ ಯಾರ ಖಾತೆಗೆ ಸೇರಿದ್ದು ಎಂದು Razorpay ಹೇಳುವುದಿಲ್ಲ. ಮೊದಲ ಟೆಸ್ಟ್ ಪಾವತಿ ಲಿಂಕ್ ತೆರೆದು ನೋಡಿ: ಅದರಲ್ಲಿ ಅಂಗಡಿಯ ಹೆಸರು ಇರಬೇಕು. | Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it. |  |
 | `health.nav` | ಆರೋಗ್ಯ ಮತ್ತು ಮಾರ್ಜಿನ್ | Health and margin |  |
 | `health.voteNav` | ಮತ | Vote |  |
 | `health.title` | ಆರೋಗ್ಯ ಮತ್ತು ಮಾರ್ಜಿನ್ | Health and margin |  |

@@ -436,7 +436,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 
 Everything a partner or builder reads in the panel, in Malayalam: signing in, the shop's status and its monthly cost line, and the five setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the checks). Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
 
-What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and Razorpay read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, Razorpay, Google Calendar, Guard, Geometer).
+What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
 
 | Id | Text (Malayalam) | Meaning (English) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |
@@ -621,11 +621,11 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.assumption` | ഒരു മാസം 40 ബുക്കിംഗ് ഉണ്ടാകും എന്ന് ഞങ്ങൾ കണക്കാക്കി. | We assumed 40 bookings a month. |  |
 | `cost.lines.whatsapp` | WhatsApp സന്ദേശങ്ങൾ (Meta-യുടെ ഫീസ്) | WhatsApp messages (Meta's fee) |  |
 | `cost.lines.whatsapp-provider` | WhatsApp പ്രൊവൈഡറുടെ സ്വന്തം ഫീസ് | WhatsApp provider's own fee |  |
-| `cost.lines.razorpay` | Razorpay-യുടെ ഫീസ് | Razorpay's fee |  |
+| `cost.lines.gateway` | {gateway}-യുടെ ഫീസ് | {gateway}'s fee |  |
 | `cost.lines.geometer` | Geometer-ന്റെ പ്ലാൻ | Geometer's plan |  |
 | `cost.lines.hosting` | ഹോസ്റ്റിംഗ് വിഹിതം | Hosting share |  |
 | `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or partner to their own WhatsApp provider |  |
-| `cost.payer.shop-pays-razorpay` | കട Razorpay-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to Razorpay |  |
+| `cost.payer.shop-pays-gateway` | കട {gateway}-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to {gateway} |  |
 | `cost.payer.builder-pays-geometer` | ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു | paid to Geometer by the builder or partner; the AI model is included |  |
 | `cost.payer.builder-pays-licence` | ബിൽഡർ Geometer-ന് അടയ്ക്കും, പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും ഒരിക്കൽ; AI കീ ബിൽഡറുടെ സ്വന്തം | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
 | `cost.payer.hosting` | സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത് | the server's cost, shared |  |
@@ -638,7 +638,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.caveats.provider-not-priced` | വില ലിസ്റ്റിൽ ഈ പ്രൊവൈഡറുടെ വില ഇല്ല. | The price list has no price for this provider. |  |
 | `cost.caveats.fee-not-priced` | വില ലിസ്റ്റിൽ Geometer-ന്റെ ഫീസിന്റെ വില ഇല്ല. | The price list has no price for Geometer's fee. |  |
 | `cost.caveats.hosting-not-measured` | ഹോസ്റ്റിംഗ് വിഹിതം ഇതുവരെ അളന്നിട്ടില്ല. | The hosting share has not been measured yet. |  |
-| `cost.caveats.payment-link-fee-conflict` | പേയ്മെന്റ് ലിങ്കുകളുടെ ഫീസിനെക്കുറിച്ച് Razorpay-യുടെ സ്വന്തം പേജുകൾ പരസ്പരം യോജിക്കുന്നില്ല. കൂടുതലുള്ളത് (2%) എടുത്തിരിക്കുന്നു. | Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
+| `cost.caveats.payment-link-fee-conflict` | പേയ്മെന്റ് ലിങ്കുകളുടെ ഫീസിനെക്കുറിച്ച് {gateway}-യുടെ സ്വന്തം പേജുകൾ പരസ്പരം യോജിക്കുന്നില്ല. കൂടുതലുള്ളത് (2%) എടുത്തിരിക്കുന്നു. | {gateway}'s own pages disagree about the fee on payment links. The higher one (2%) is used. |  |
 | `cost.caveats.whatsapp-rate-second-hand` | WhatsApp-ന്റെ രൂപ നിരക്ക് Meta-യുടെ പേജിൽ നിന്നല്ല, ഒരു റീസെല്ലറുടെ പേജിൽ നിന്നാണ്. ആദ്യത്തെ ഇൻവോയ്സിൽ ഇത് നോക്കൂ. | The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice. |  |
 | `plan.heading` | പ്ലാൻ | Plan |  |
 | `plan.none` | ഈ കടയ്ക്ക് ഇതുവരെ പ്ലാൻ ഒന്നും നിശ്ചയിച്ചിട്ടില്ല. | No plan is set for this shop yet. |  |
@@ -842,7 +842,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.problems.expectedBad` | മാസത്തിലെ ബുക്കിംഗുകളുടെ എണ്ണം പൂർണ്ണസംഖ്യയായി എഴുതൂ, ഉദാഹരണം 40, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
 | `setup.problems.numberIdBad` | ഫോൺ നമ്പർ ഐഡിയിൽ അക്കങ്ങൾ മാത്രമേ ഉണ്ടാകൂ (6 മുതൽ 20 വരെ). | The phone number ID is digits only (6 to 20 of them). |  |
 | `setup.problems.businessNumberBad` | കടയുടെ WhatsApp നമ്പർ രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് എഴുതൂ. | Write the shop's WhatsApp number with the country code. |  |
-| `setup.problems.keyIdBad` | കീ ഐഡി rzp_live_ അല്ലെങ്കിൽ rzp_test_ എന്ന് തുടങ്ങണം. | The key ID starts with rzp_live_ or rzp_test_. |  |
 | `setup.problems.secretMissing` | the access token പൂരിപ്പിക്കൂ. | Fill in the access token. |  |
 | `setup.problems.secretShape` | the access token എന്നതിൽ സ്പേസോ വരിമാറ്റമോ ഉണ്ട്. അവ ഇല്ലാതെ വീണ്ടും കോപ്പി ചെയ്യൂ. | the access token has spaces or line breaks in it. Copy it again, without them. |  |
 | `setup.problems.calendarIdBad` | കലണ്ടർ ഐഡി സ്പേസ് ഇല്ലാതെ എഴുതൂ. | Write the calendar's ID without spaces. |  |
@@ -871,18 +870,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.calendar.id` | കലണ്ടർ ഐഡി | Calendar ID |  |
 | `setup.accounts.calendar.json` | സർവീസ്-അക്കൗണ്ട് കീ ഫയൽ | Service-account key file |  |
 | `setup.accounts.calendar.jsonHelp` | നിങ്ങളുടെ ബിൽഡർ തന്നിട്ടുണ്ടെങ്കിൽ മാത്രം. മുഴുവൻ ഫയലും പേസ്റ്റ് ചെയ്യൂ. | Only if your builder gave you one. Paste the whole file. |  |
-| `setup.accounts.razorpay.title` | Razorpay അക്കൗണ്ട് | Razorpay |  |
-| `setup.accounts.razorpay.intro` | ഉപഭോക്താക്കൾ ഡെപ്പോസിറ്റ് അടയ്ക്കുന്നത് കടയുടെ സ്വന്തം Razorpay അക്കൗണ്ടിലേക്കാണ്. പണം നേരെ കടയുടെ ബാങ്കിലേക്ക് പോകും. Geometer അത് ഒരിക്കലും കൈവശം വയ്ക്കില്ല. | Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it. |  |
-| `setup.accounts.razorpay.steps.1` | കടയുടെ സ്വന്തം Razorpay അക്കൗണ്ടിൽ ലോഗിൻ ചെയ്യൂ. | Sign in to the shop's own Razorpay account. |  |
-| `setup.accounts.razorpay.steps.2` | Settings, API keys എന്നതിൽ ഒരു കീ ഉണ്ടാക്കി Key ID, Key secret എന്നിവ കോപ്പി ചെയ്യൂ. | Under Settings, API keys, make a key and copy the Key ID and the Key secret. |  |
-| `setup.accounts.razorpay.steps.3` | Settings, Webhooks എന്നതിൽ താഴെ കാണിച്ച വെബ് വിലാസം ചേർത്ത്, നിങ്ങളുടെ സ്വന്തം ഒരു സീക്രട്ട് തിരഞ്ഞെടുക്കൂ. അതേ സീക്രട്ട് ഇവിടെയും ടൈപ്പ് ചെയ്യൂ. | Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here. |  |
-| `setup.accounts.razorpay.mode` | ഇത് ഏത് കീ ആണ്? | Which key is this? |  |
-| `setup.accounts.razorpay.modeLive` | ലൈവ്: യഥാർത്ഥ പണം | Live: real money |  |
-| `setup.accounts.razorpay.modeTest` | പരിശീലനം: ടെസ്റ്റ് പണം | Practice: test money |  |
-| `setup.accounts.razorpay.keyId` | കീ ഐഡി | Key ID |  |
-| `setup.accounts.razorpay.keySecret` | കീ സീക്രട്ട് | Key secret |  |
-| `setup.accounts.razorpay.webhookSecret` | വെബ്ഹുക്ക് സീക്രട്ട് | Webhook secret |  |
-| `setup.accounts.razorpay.webhookUrl` | വെബ്ഹുക്കിനുള്ള വെബ് വിലാസം: https://shops.example.com/hooks/glow-salon/razorpay | Web address for the webhook: https://shops.example.com/hooks/glow-salon/razorpay |  |
 | `setup.checks.saveFirst` | ആദ്യം ഈ കട സെർവറിൽ സേവ് ചെയ്യൂ. | Save this shop to the server first. |  |
 | `setup.checks.saveButton` | സേവ് ചെയ്ത് ബന്ധിപ്പിക്കൂ | Save and connect |  |
 | `setup.checks.saved` | സേവ് ചെയ്തു. സെർവർ ഇത് നടപ്പാക്കും, നടപ്പായാൽ ഈ പേജ് അത് കാണിക്കും. | Saved. The server will apply it, and this page shows when it has. |  |
@@ -902,10 +889,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ഇത് ഈ കടയുടെ നമ്പർ ആണ് (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | കിട്ടിയ നമ്പറിന്റെ അവസാന അക്കങ്ങൾ 3210 ആണ്; ഇത് കടയുടെ നമ്പർ അല്ല. ഒന്നും മാറ്റിയിട്ടില്ല. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ആ ഫോൺ നമ്പർ ഐഡി ഈ അക്കൗണ്ടിൽ ഇല്ല. | That phone number ID is not on this account. |  |
-| `setup.checks.razorpay.title` | Razorpay അക്കൗണ്ട് | Razorpay |  |
-| `setup.checks.razorpay.confirmed` | കീ പ്രവർത്തിക്കുന്നു (Live). | The key works (Live). |  |
-| `setup.checks.razorpay.differs` | ഇത് മുമ്പ് ഉറപ്പിച്ച കീയിൽ നിന്ന് വ്യത്യസ്തമായ കീ ആണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | This is a different key from the one confirmed before. Nothing was changed. |  |
-| `setup.checks.razorpay.wrongMode` | ഈ കീയുടെ മോഡ് മുകളിൽ തിരഞ്ഞെടുത്തതല്ല. അതിന് ചേരുന്ന കീ ഉപയോഗിക്കൂ. | This key's mode is not the one chosen above. Use the key that matches. |  |
 | `setup.checks.calendar.title` | Google കലണ്ടർ | Calendar |  |
 | `setup.checks.calendar.confirmed` | “Glow Salon bookings” കണ്ടെത്തി. ഇതിൽ മാറ്റങ്ങൾ വരുത്താൻ കഴിയും. | Found “Glow Salon bookings”, and it can be changed. |  |
 | `setup.checks.calendar.differs` | Google കാണിക്കുന്ന കലണ്ടർ നൽകിയതിൽ നിന്ന് വ്യത്യസ്തമാണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | Google shows a different calendar from the one given. Nothing was changed. |  |
@@ -916,7 +899,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.generic.unreachable` | ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Could not reach it. Try again in a minute. |  |
 | `setup.checks.generic.unexpected_response` | കിട്ടിയ മറുപടി ഈ സേവനം സാധാരണ തരാറുള്ളതല്ല, അതിനാൽ അത് ഉപയോഗിച്ചില്ല. | The answer was not what this service gives, so it was not used. |  |
 | `setup.checks.generic.not_configured` | ആദ്യം മുകളിലെ വിവരങ്ങൾ പൂരിപ്പിക്കൂ. | Fill in the details above first. |  |
-| `setup.checks.razorpayWhose` | ഒരു കീ ആരുടെ അക്കൗണ്ടിന്റേതാണെന്ന് Razorpay പറയില്ല. ആദ്യത്തെ ടെസ്റ്റ് പേയ്മെന്റ് ലിങ്ക് തുറന്ന് നോക്കൂ: അതിൽ കടയുടെ പേര് ഉണ്ടാകണം. | Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it. |  |
 | `setup.checks.guardWords` | Guard പറഞ്ഞത്: the route is not listed | Guard said: the route is not listed |  |
 | `setup.checks.bookingsExpected` | ഓരോ മാസവും നിങ്ങൾ പ്രതീക്ഷിക്കുന്ന ബുക്കിംഗുകൾ (ചെലവ് കണക്കാക്കാൻ മാത്രം) | Bookings you expect each month (only used for the cost) |  |
 | `setup.checks.readyButton` | തുടങ്ങാൻ തയ്യാർ | Ready to go live |  |
@@ -937,7 +919,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.payment_unrecorded` | ഫീസ് f-3-ന് പണം വന്നു, പക്ഷേ ഫീസ് പുതുക്കിയില്ല: പണം ഒന്നുകൂടി പരിശോധിക്കുക | A payment came for fee f-3 but the fee was not updated: check the payment again |  |
 | `inbox.kinds.approval_waiting_long` | b-3-ൽ ഉടമയുടെ മറുപടിക്കായി 14 മണിക്കൂറായി കാത്തിരിക്കുന്നു ([what]): വീണ്ടും ചോദിക്കുക | Waiting 14 hours for the owner's answer on b-3 ([what]): ask again |  |
 | `inbox.kinds.refund_waiting` | b-3-ന്റെ ₹200 റീഫണ്ട് [who] കാത്തിരിക്കുന്നു | The refund of ₹200 for b-3 is waiting [who] |  |
-| `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: Razorpay-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in Razorpay |  |
+| `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: {gateway}-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3-നുള്ള ₹200 UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3-ന്റെ ₹200 റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
@@ -995,7 +977,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `upi.setup.heading` | ഉപഭോക്താക്കൾ എങ്ങനെ പണം അടയ്ക്കും | How customers pay |  |
 | `upi.setup.intro` | ഡെപ്പോസിറ്റോ ഫീസോ ഉപഭോക്താക്കൾ എങ്ങനെ അടയ്ക്കണമെന്ന് തിരഞ്ഞെടുക്കുക. UPI ആണ് ഏറ്റവും എളുപ്പം: പേയ്മെന്റ് ഗേറ്റ്‌വേ അക്കൗണ്ട് തുറക്കേണ്ടതില്ല. | Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open. |  |
 | `upi.setup.optionUpi` | UPI: ഉപഭോക്താക്കൾ കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് അടയ്ക്കും | UPI: customers pay the shop's own UPI ID |  |
-| `upi.setup.optionRazorpay` | Razorpay: കടയ്ക്ക് സ്വന്തം Razorpay അക്കൗണ്ട് ഉണ്ട് | Razorpay: the shop has its own Razorpay account |  |
 | `upi.setup.upiTitle` | UPI വഴി പണം അടയ്ക്കൽ | Pay by UPI |  |
 | `upi.setup.upiIntro` | ഉപഭോക്താക്കൾ അവരുടെ UPI ആപ്പിൽ നിന്ന് കടയുടെ സ്വന്തം UPI ഐഡിയിലേക്ക് പണം അയയ്ക്കും. പണം എത്തുമ്പോൾ ഉടമ WhatsApp-ൽ “കിട്ടി” (Received) അമർത്തും. ഗേറ്റ്‌വേ ഫീസ് ഇല്ല, Geometer പണം തൊടുന്നില്ല. | Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money. |  |
 | `upi.setup.upiId` | കടയുടെ UPI ഐഡി | The shop's UPI ID |  |
@@ -1003,7 +984,6 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `upi.setup.payee` | ഉപഭോക്താവിന് അവരുടെ UPI ആപ്പിൽ കാണുന്ന പേര് | The name customers see in their UPI app |  |
 | `upi.setup.payeeHelp` | ഉദാഹരണം Glow Salon | For example Glow Salon |  |
 | `upi.setup.noCheck` | പണം അയയ്ക്കാതെ ഒരു UPI ഐഡി പരിശോധിക്കാൻ കഴിയില്ല, അതിനാൽ ഇവിടെ പരിശോധന ഇല്ല. സാവധാനം ശ്രദ്ധയോടെ ടൈപ്പ് ചെയ്യുക, എന്നിട്ട് ഉടമയ്ക്ക് വായിച്ചു കേൾപ്പിക്കുക. | A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner. |  |
-| `upi.setup.razorpayOnly` | മുകളിൽ Razorpay തിരഞ്ഞെടുത്തെങ്കിൽ മാത്രം Razorpay കളങ്ങൾ പൂരിപ്പിക്കുക. | Fill in the Razorpay boxes only if you chose Razorpay above. |  |
 | `upi.problems.idEmpty` | കടയുടെ UPI ഐഡി ചേർക്കുക, ഉദാഹരണം glowsalon@okicici. | Add the shop's UPI ID, for example glowsalon@okicici. |  |
 | `upi.problems.idNoAt` | "glowsalon" UPI ഐഡി അല്ല: @ ഉം അതിനു ശേഷം ആപ്പിന്റെയോ ബാങ്കിന്റെയോ പേരും വേണം, ഉദാഹരണം glowsalon@okicici. | "glowsalon" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici. |  |
 | `upi.problems.idShape` | "glow salon@" UPI ഐഡി അല്ല. അക്ഷരത്തെറ്റ് നോക്കുക: @ ന് മുമ്പ് അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട്, ഡാഷ് അല്ലെങ്കിൽ അണ്ടർസ്കോർ, @ ന് ശേഷം ആപ്പിന്റെയോ ബാങ്കിന്റെയോ പേര്. | "glow salon@" is not a UPI ID. Check the spelling: letters, digits, dots, dashes or underscores before the @, and the app's or bank's name after it. |  |
@@ -1017,6 +997,25 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `errors.tooBig` | അയച്ചത് വളരെ കൂടുതലാണ്. | That was too much to send. |  |
 | `errors.wrongMethod` | ഈ പേജ് അങ്ങനെയല്ല പ്രവർത്തിക്കുന്നത്. | That is not how this page works. |  |
 | `errors.tryAgain` | എന്തോ കുഴപ്പം പറ്റി. വീണ്ടും ശ്രമിക്കൂ. | Something went wrong. Try again. |  |
+| `payment.razorpay.option` | Razorpay: കടയ്ക്ക് സ്വന്തം Razorpay അക്കൗണ്ട് ഉണ്ട് | Razorpay: the shop has its own Razorpay account |  |
+| `payment.razorpay.accounts.title` | Razorpay അക്കൗണ്ട് | Razorpay |  |
+| `payment.razorpay.accounts.intro` | ഉപഭോക്താക്കൾ ഡെപ്പോസിറ്റ് അടയ്ക്കുന്നത് കടയുടെ സ്വന്തം Razorpay അക്കൗണ്ടിലേക്കാണ്. പണം നേരെ കടയുടെ ബാങ്കിലേക്ക് പോകും. Geometer അത് ഒരിക്കലും കൈവശം വയ്ക്കില്ല. | Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it. |  |
+| `payment.razorpay.accounts.steps.1` | കടയുടെ സ്വന്തം Razorpay അക്കൗണ്ടിൽ ലോഗിൻ ചെയ്യൂ. | Sign in to the shop's own Razorpay account. |  |
+| `payment.razorpay.accounts.steps.2` | Settings, API keys എന്നതിൽ ഒരു കീ ഉണ്ടാക്കി Key ID, Key secret എന്നിവ കോപ്പി ചെയ്യൂ. | Under Settings, API keys, make a key and copy the Key ID and the Key secret. |  |
+| `payment.razorpay.accounts.steps.3` | Settings, Webhooks എന്നതിൽ താഴെ കാണിച്ച വെബ് വിലാസം ചേർത്ത്, നിങ്ങളുടെ സ്വന്തം ഒരു സീക്രട്ട് തിരഞ്ഞെടുക്കൂ. അതേ സീക്രട്ട് ഇവിടെയും ടൈപ്പ് ചെയ്യൂ. | Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here. |  |
+| `payment.razorpay.accounts.mode` | ഇത് ഏത് കീ ആണ്? | Which key is this? |  |
+| `payment.razorpay.accounts.modeLive` | ലൈവ്: യഥാർത്ഥ പണം | Live: real money |  |
+| `payment.razorpay.accounts.modeTest` | പരിശീലനം: ടെസ്റ്റ് പണം | Practice: test money |  |
+| `payment.razorpay.accounts.keyId` | കീ ഐഡി | Key ID |  |
+| `payment.razorpay.accounts.keySecret` | കീ സീക്രട്ട് | Key secret |  |
+| `payment.razorpay.accounts.webhookSecret` | വെബ്ഹുക്ക് സീക്രട്ട് | Webhook secret |  |
+| `payment.razorpay.accounts.webhookUrl` | വെബ്ഹുക്കിനുള്ള വെബ് വിലാസം: https://shops.example.com/hooks/glow-salon/razorpay | Web address for the webhook: https://shops.example.com/hooks/glow-salon/razorpay |  |
+| `payment.razorpay.accounts.keyIdBad` | കീ ഐഡി rzp_live_ അല്ലെങ്കിൽ rzp_test_ എന്ന് തുടങ്ങണം. | The key ID starts with rzp_live_ or rzp_test_. |  |
+| `payment.razorpay.checks.title` | Razorpay അക്കൗണ്ട് | Razorpay |  |
+| `payment.razorpay.checks.confirmed` | കീ പ്രവർത്തിക്കുന്നു (Live). | The key works (Live). |  |
+| `payment.razorpay.checks.differs` | ഇത് മുമ്പ് ഉറപ്പിച്ച കീയിൽ നിന്ന് വ്യത്യസ്തമായ കീ ആണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | This is a different key from the one confirmed before. Nothing was changed. |  |
+| `payment.razorpay.checks.wrongMode` | ഈ കീയുടെ മോഡ് മുകളിൽ തിരഞ്ഞെടുത്തതല്ല. അതിന് ചേരുന്ന കീ ഉപയോഗിക്കൂ. | This key's mode is not the one chosen above. Use the key that matches. |  |
+| `payment.razorpay.whose` | ഒരു കീ ആരുടെ അക്കൗണ്ടിന്റേതാണെന്ന് Razorpay പറയില്ല. ആദ്യത്തെ ടെസ്റ്റ് പേയ്മെന്റ് ലിങ്ക് തുറന്ന് നോക്കൂ: അതിൽ കടയുടെ പേര് ഉണ്ടാകണം. | Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it. |  |
 | `health.nav` | ആരോഗ്യവും മാർജിനും | Health and margin |  |
 | `health.voteNav` | വോട്ട് | Vote |  |
 | `health.title` | ആരോഗ്യവും മാർജിനും | Health and margin |  |
