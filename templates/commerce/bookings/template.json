@@ -4,5 +4,5 @@
   "setup": "bookings",
   "steps": ["business", "deposit", "languages", "accounts", "checks"],
   "accounts": ["whatsapp", "calendar", "razorpay"],
-  "settingsExample": "settings/glow-salon.example.json"
+  "settingsExample": "settings/glow-salon-upi.example.json"
 }

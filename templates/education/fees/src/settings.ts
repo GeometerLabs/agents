@@ -62,7 +62,7 @@ export interface Settings {
   refund: { limitInr: number };
   /**
    * How parents pay (modules/payments/upi/settings.ts): "upi", the centre's own UPI ID, marked paid by the owner; or "razorpay", the centre's own account.
-   * Left out: Razorpay (written into the parsed settings, as it always was).
+   * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway centre.
    */
   payment: PaymentSettings;
   owner: { whatsapp: string; language: Language };
@@ -275,10 +275,9 @@ function readLimit(v: unknown, key: "waiver" | "refund", label: string, max: num
   return limitInr === undefined ? undefined : { limitInr };
 }
 
+/** The shared reader (B71): no block, or an empty one, is refused and asked for the UPI ID. Before B71 both were read as Razorpay. */
 function readPayment(v: unknown, errors: string[]): Settings["payment"] | undefined {
-  if (v === undefined) return { module: "razorpay" };
-  if (isObj(v) && v.module === undefined && Object.keys(v).length === 0) return { module: "razorpay" };
-  return readPaymentSettings(v, errors);
+  return readPaymentSettings(isObj(v) && Object.keys(v).length === 0 ? undefined : v, errors);
 }
 
 function readOwner(v: unknown, errors: string[]): Settings["owner"] | undefined {

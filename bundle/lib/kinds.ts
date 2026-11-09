@@ -35,12 +35,13 @@ import { validateRuntimeConfig as feesRuntime } from "../../templates/education/
 export type ServiceKind = "razorpay" | "whatsapp" | "calendar";
 
 /**
- * The Guards one shop runs: its template's, without Razorpay when the shop takes UPI (settings "payment": {"module": "upi"}, plan B33). A UPI shop has no Razorpay account,
- * so it has no Razorpay Guard, no Razorpay key to hand in, no Razorpay webhook and no approvals relay (no refund is ever held for the owner: the owner sends UPI refunds).
+ * The Guards one shop runs: its template's, with the gateway's only when the shop CHOSE the gateway (settings "payment": {"module": "razorpay"}). UPI is the default (B71):
+ * a UPI shop, and settings with no payment block at all, get no gateway Guard, no gateway key to hand in, no gateway webhook and no approvals relay (no refund is ever
+ * held for the owner: the owner sends UPI refunds). This is the one place that decides it, and it fails closed: anything but an explicit choice is no gateway.
  */
 export function guardsOf(kind: { guards: readonly ServiceKind[] }, settings: unknown): ServiceKind[] {
-  const upi = (settings as { payment?: { module?: string } } | undefined)?.payment?.module === "upi";
-  return kind.guards.filter((g) => !(upi && g === "razorpay"));
+  const gateway = (settings as { payment?: { module?: string } } | undefined)?.payment?.module === "razorpay";
+  return kind.guards.filter((g) => gateway || g !== "razorpay");
 }
 
 /** What the panel needs of a hand check's summary and of a go-live certificate, whichever template made them. */

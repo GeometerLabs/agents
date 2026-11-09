@@ -6,7 +6,7 @@ import { batchName, validateSettings } from "../../templates/education/fees/src/
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
 import { payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
-import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, paymentBlock, paymentFromSettings } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -171,10 +171,11 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
     return { name: parts[0], parent: normalizePhone(parts[1] ?? "") ?? parts[1], batch: lookup.get(parts.slice(2).join(",").toLowerCase()) ?? parts.slice(2).join(","), ...(languages.length > 1 ? { language: languages[0] } : {}) };
   });
   const whole = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
-  // The rules step shows the centre's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out as for Razorpay (they do not depend on it).
+  // The rules step shows the centre's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out with a stand-in UPI ID
+  // (PREVIEW_PAYMENT; they do not depend on it), never as a gateway centre.
   // The save cannot be reached before the accounts step has checked the UPI ID.
-  const upi = draft.payment?.module === "upi";
-  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? { module: "razorpay" } : paymentBlock(draft, true);
+  const upi = paymentModuleOf(draft) === "upi";
+  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
   const raw = {
     name: draft.form.name, ...(fees.address !== "" ? { address: fees.address } : {}), timezone: example.timezone, languages,
     batches: rows.map((b, i) => ({ id: ids[i], names: names(b.name), monthlyFeeInr: whole(b.fee) })),
@@ -200,11 +201,11 @@ export function feesLimitLines(draft: Draft, example: Settings, language: Langua
   return settings ? limitLinesOf(limitsOf(settings), language) : [];
 }
 
-/** runtime.json for a Fees centre: who things are. It has payments and messaging and no calendar (the runtime refuses a calendar it does not use). */
-export function runtimeForFees(phoneNumberId: string, serverModel?: { wire: string; model: string }): Record<string, unknown> {
+/** runtime.json for a Fees centre: who things are. It has messaging and no calendar (the runtime refuses a calendar it does not use), and payments only for a centre that chose a gateway (B71). */
+export function runtimeForFees(phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {
     mode: "live", tickSeconds: 30,
-    services: { payments: {}, messaging: { phoneNumberId }, timeoutMs: 20_000 },
+    services: { ...(gateway ? { payments: {} } : {}), messaging: { phoneNumberId }, timeoutMs: 20_000 },
     ...(serverModel ? { parser: { wire: serverModel.wire, model: serverModel.model } } : {}),
   };
 }

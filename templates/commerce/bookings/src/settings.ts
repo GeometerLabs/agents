@@ -46,9 +46,9 @@ export interface Settings {
   reminders: { hoursBefore: number[] };
   /**
    * How customers pay the deposit (modules/payments/upi/settings.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
-   * Left out: Razorpay, as every shop was before UPI (B33), and the parsed settings leave it out too, so a shop set up before stays byte for byte the same.
+   * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop. It is the last key of the parsed settings, as it always was.
    */
-  payment?: PaymentSettings;
+  payment: PaymentSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -89,7 +89,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const payment = readPaymentSettings(input.payment, errors);
 
   if (errors.length > 0) return { ok: false, errors };
-  const settings: Settings = {
+  const settings = {
     name: (name as string).trim(),
     timezone: timezone as string,
     services,
@@ -101,10 +101,10 @@ export function validateSettings(input: unknown): SettingsResult {
     languages,
     owner: owner as Settings["owner"],
     reminders,
-  };
+  } as Settings;
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
-  if (payment) settings.payment = payment;
+  settings.payment = payment as PaymentSettings; // last, as before: the order of keys is what an older settings file read back has
   return { ok: true, settings };
 }
 

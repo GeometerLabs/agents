@@ -183,7 +183,7 @@ node bundle/geometer.ts agent add my-agent \
   --whatsapp-number-id 123456789012345 --calendar-id shop@group.calendar.google.com
 ```
 
-`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`templates/commerce/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
+`--upstreams razorpay,whatsapp,calendar` is the default (the services the templates use; a refund needs WhatsApp, because the owner is asked there). Without `razorpay` in `--upstreams` the shop takes UPI, and `agent add` asks for `--upi-id` and `--payee` (B71: a gateway is only ever what you chose). Instead of the flags, `--settings my-settings.json` takes the same settings file a template uses (`templates/commerce/bookings/clients/glow-salon.example/settings.json`), checked by the same validator. `add` starts nothing. It prints what your agent must use instead of the real services:
 
 ```
 Razorpay        https://shops.example.com/g/my-agent/razorpay
