@@ -4,6 +4,7 @@
 //   node bundle/panel/review-sheet.ts ml > templates/commerce/bookings/REVIEW-ml.md
 //   node bundle/panel/review-sheet.ts kn > templates/commerce/bookings/REVIEW-kn.md
 // and test/words.test.ts fails when a committed sheet is behind the words.
+import { GATEWAYS } from "../../modules/payments/providers/index.ts";
 import { LANGUAGE_NAMES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { WORDS } from "./languages.ts";
@@ -27,6 +28,19 @@ export function flatWords(w: object, samples: Record<string, unknown[]> = SAMPLE
   return out;
 }
 
+/**
+ * Each gateway's own words (B71: they live in its folder, modules/payments/providers/<name>/words.ts), under the ids "payment.<id>.*", so they reach the same native
+ * reviewer as the rest of the panel. Their sample arguments are the same as before the move.
+ */
+function gatewaysFlat(language: Language): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const g of GATEWAYS) {
+    const samples = { [`payment.${g.id}.accounts.webhookUrl`]: [`https://shops.example.com/hooks/glow-salon/${g.id}`], [`payment.${g.id}.checks.confirmed`]: ["Live"] };
+    for (const [id, text] of flatWords({ payment: { [g.id]: g.gateway!.setup.words[language] } }, samples)) out.set(id, text);
+  }
+  return out;
+}
+
 /** The health and margin pages and the template vote (words-health.ts), under the ids "health.*", and the vote's candidate templates under "vote.option.*" (vote-options.json). */
 function healthFlat(language: Language): Map<string, string> {
   const out = flatWords({ health: HEALTH_WORDS[language] }, HEALTH_SAMPLE_ARGS);
@@ -35,8 +49,8 @@ function healthFlat(language: Language): Map<string, string> {
 }
 
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...healthFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...healthFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 
