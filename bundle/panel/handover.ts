@@ -2,13 +2,13 @@
 //
 // The steps. Whoever serves the shop (or a builder on the server) says who gets it and why. The panel makes a one-use code, shows it once, and keeps its hash with the request
 // (72 hours). The owner sends "move CODE" to the shop's WhatsApp number from their own number; the agent writes a `handover_agreed` entry in the record (modules/approvals/handover.ts).
-// When the panel finds that entry in the shop's exported record, from the owner's number (as the export writes it: hashed), after the request and before it ran out, it writes
+// When the panel finds that entry in the shop's exported record, from the owner's number (as the export writes it: a fingerprint under the shop's key), after the request and before it ran out, it writes
 // assignment.json and the move is done. Until then nothing has moved. A request can be cancelled, and a new one replaces an expired one.
 //
 // What moves: who can see and change the shop in the panel, and the name on the owner's monthly report (assignment.json, read by the panel and by the deployer).
 // What does not: the shop's WhatsApp, payment and calendar accounts are the shop's own; no key is carried across (the secrets inbox is write-only and never read back, and the
 // shop's own settings and runtime.json are not rewritten here), so whoever serves the shop now enters them again. Never to Geometer.
-import { hide } from "../backup/export.ts";
+import { personLabel } from "../../modules/record/fingerprint.ts";
 import { HANDOVER_ACTION, handoverHash, newHandoverCode } from "../../modules/approvals/handover.ts";
 import type { Account, Accounts } from "./accounts.ts";
 import { readExport } from "./activity.ts";
@@ -52,8 +52,9 @@ export function createHandover(shops: Shops, accounts: Accounts, store: Store, n
   function agreement(move: PendingMove): { at: string } | undefined {
     const settings = shops.settings(move.shop);
     const data = readExport(shops.paths.exports(move.shop));
-    if (!settings || !data) return undefined;
-    const owner = hide("c", settings.owner.whatsapp);
+    const personKey = shops.personKey(move.shop); // B69: no key on this server yet (the next deploy gives it): the move waits, nothing is decided without it
+    if (!settings || !data || !personKey) return undefined;
+    const owner = personLabel(personKey, "c", settings.owner.whatsapp);
     const from = Date.parse(move.requestedAt);
     const until = Date.parse(move.expiresAt);
     const hit = data.entries.find((e) => {
