@@ -10,19 +10,19 @@
 // A message whose wording changes with the order (a delivery that names an address, a UPI shop's "the owner has confirmed", a full advance that leaves nothing to pay) has
 // one template for the usual wording and a message of its own for the other (owner_delivery_confirmed, upi_order_confirmed); a customer's confirmation that differs again
 // goes as the generic name, and inside the window as free text, which is when it is sent (Deferred.md).
-import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
+import { formatInr } from "../../../../../modules/language/format.ts";
 import { LANGUAGES } from "../../../../../modules/language/languages.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../../modules/language/meta-templates.ts";
 import type { MetaTemplate } from "../../../../../modules/language/meta-templates.ts";
-import { localParts, zonedToMs } from "../../../../../modules/core/time.ts";
+import { zonedToMs } from "../../../../../modules/core/time.ts";
 import { itemName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { cutAt, day, how, inr, need, render, when } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "open" | "until";
+export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   items: (f) => need(f, "itemsText"),
@@ -45,8 +45,6 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   window: (f) => String(need(f, "windowHours")),
   partner: (f) => need(f, "partner"),
   upcoming: (f) => String(need(f, "upcomingCount")),
-  open: (f) => String(need(f, "openCount")),
-  until: (f) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
@@ -56,8 +54,7 @@ const STAND_IN_DAY_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of our
 const STAND_IN_FROM_MS = Date.UTC(2030, 5, 14, 10, 17);
 const STAND_IN_TO_MS = Date.UTC(2030, 5, 14, 11, 43);
 const STAND_IN_CUTOFF_MS = Date.UTC(2030, 5, 13, 19, 29); // Thu 13 Jun 2030
-const STAND_IN_UNTIL_MS = Date.UTC(2031, 6, 15, 0, 0); // another date no message of ours would state (Tue 15 Jul 2031)
-const STAND_IN_COUNT: Partial<Record<Slot, number>> = { hours: 7_000_009, window: 7_000_012, upcoming: 7_000_010, open: 7_000_011 };
+const STAND_IN_COUNT: Partial<Record<Slot, number>> = { hours: 7_000_009, window: 7_000_012, upcoming: 7_000_010 };
 
 function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageFacts {
   return {
@@ -66,7 +63,7 @@ function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageF
     totalInr: STAND_IN_AMOUNT.total, advanceInr: STAND_IN_AMOUNT.advance, balanceInr: STAND_IN_AMOUNT.balance, refundInr: STAND_IN_AMOUNT.refund, markedInr: STAND_IN_AMOUNT.marked, leftInr: STAND_IN_AMOUNT.left,
     dateMs: STAND_IN_DAY_MS, slotFromMs: STAND_IN_FROM_MS, slotToMs: STAND_IN_TO_MS, cutoffMs: STAND_IN_CUTOFF_MS,
     mode, area: "§area§",
-    approvalHours: STAND_IN_COUNT.hours, windowHours: STAND_IN_COUNT.window, upcomingCount: STAND_IN_COUNT.upcoming, openCount: STAND_IN_COUNT.open, licenceDateMs: STAND_IN_UNTIL_MS,
+    approvalHours: STAND_IN_COUNT.hours, windowHours: STAND_IN_COUNT.window, upcomingCount: STAND_IN_COUNT.upcoming,
   };
 }
 
@@ -81,7 +78,6 @@ function bodyOf(id: TemplateId, language: Language, mode: "pickup" | "delivery")
   text = text.split(cutAt(facts)).join("{cutoff}");
   text = text.split(day(facts)).join("{day}");
   if (mode === "delivery") text = text.split(how(facts)).join("{how}"); // a pickup template says "pickup" in fixed words
-  text = text.split(formatDate(localParts(STAND_IN_UNTIL_MS, "UTC"), language)).join("{until}");
   for (const [slot, n] of Object.entries(STAND_IN_COUNT)) text = text.split(String(n)).join(`{${slot}}`);
   return text;
 }
@@ -147,7 +143,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     dateMs: at("00:00"), slotFromMs: at(slot.from), slotToMs: at(slot.to), cutoffMs: at(settings.cutoff.time, { year: 2026, month: 11, day: 11 }),
     mode: "pickup", area: settings.delivery?.area[0] ?? "Kakkanad", address: "Flat 4, Lake View Apartments, Kakkanad",
     link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
-    partner: "Divya, local partner", upcomingCount: 4, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30), // Fri 5 Mar 2027 in India
+    partner: "Divya, local partner", upcomingCount: 4,
   };
 }
 

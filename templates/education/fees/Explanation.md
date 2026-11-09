@@ -124,6 +124,5 @@ discount, or writes anything that would get the fee menu is answered "Online fee
 link is made (`currentLink` refuses with the decision `subscription_suspended`, and a waiver the owner approves is recorded without a new link); no month's fees are
 opened; no late fee is added; and a reminder that falls due is passed over, never kept to send later. Payments on links sent earlier are still counted and receipted, and
 refunds go on. **In the final stop** each open fee's link is closed through Guard once for each `paid_through` (`cancel_fee_link` with `refs.licence`; a UPI centre has
-none), and every message is held back. The owner's notices are `owner_licence_paused` and `owner_licence_stopped` (fees still open, other to-do items, the free copy's
-last day), as the utility templates `owner_fee_service_paused` and `owner_fee_service_stopped`. Guard checks the same lease too (9 Nov, monorepo ADR-0062): a fee link it refuses with its 402 is the centre's own pause, the parent told
+none), and every message is held back. The owner's notices are `owner_licence_paused` and `owner_licence_stopped` (the fees still open, and that the owner can write to hello@geometer.dev to be connected with another local partner; no copy of the records goes to the owner), as the utility templates `owner_fee_service_paused` and `owner_fee_service_stopped`. Guard checks the same lease too (9 Nov, monorepo ADR-0062): a fee link it refuses with its 402 is the centre's own pause, the parent told
 to contact the centre and the reminder passed over, never tried again at the next beat.
