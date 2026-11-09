@@ -140,6 +140,8 @@ export function settingsFromForm(input: unknown, base: Settings): SettingsResult
     cancellation: { windowHours: current.cancellation.windowHours, refundLimitInr: typeof depositValue === "number" ? Math.max(current.cancellation.refundLimitInr, depositValue) : current.cancellation.refundLimitInr },
     owner: current.owner,
     reminders: current.reminders,
+    // how customers pay is the demo shop's own choice, never the form's (B71: a settings object without one is refused, not read as a gateway shop)
+    payment: current.payment,
   };
   return validateSettings(raw);
 }
