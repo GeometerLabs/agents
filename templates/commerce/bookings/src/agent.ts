@@ -31,7 +31,7 @@ import type { Booking, Pending, Store } from "./booking.ts";
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
-import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
+import { GUARD_WAIT_ENTRY, RECOVERY_ENTRY, guardWaitLine } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, ConflictError, GuardSuspendedError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
@@ -101,7 +101,11 @@ export type AgentEvent =
   | { kind: "recovery"; id: string; case: string; action: string }
   | { kind: "tick" }; // time has passed: let holds expire and send due reminders
 
-export interface Agent { handle(event: AgentEvent): Promise<void> }
+export interface Agent {
+  handle(event: AgentEvent): Promise<void>;
+  /** The wait for a Guard is over and this event's work is not done (modules/runtime/guard-wait.ts). With `tell`, the customer also gets the shop's words for it. */
+  giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void>;
+}
 
 /** "I paid", in the shop's four languages: on a UPI shop with a deposit waiting it asks the owner to look. It never marks anything paid. */
 /** A "no" in the same message ("I have not paid yet") makes it not a claim. */
@@ -268,7 +272,12 @@ export function createAgent(deps: AgentDeps): Agent {
       try {
         const before = await calendar.list({ bookingRef: b.id }); // look first: an earlier try (a lost reply) may have landed
         const found = before.find(matches);
-        if (found) return { event: found };
+        if (found) {
+          // A rerun after a wait for a Guard finds the hold its first try left. The booking's hold has a new end now, and the calendar must show the same one: other customers
+          // are kept out of this time only until the end written there.
+          if (want.status === "tentative" && found.holdExpiresAt !== holdExpiresAt) await calendar.update(found.id, { start: want.start, end: want.end, status: want.status, holdExpiresAt });
+          return { event: found };
+        }
         if (before[0]) await calendar.update(before[0].id, { start: want.start, end: want.end, status: want.status, holdExpiresAt });
         else await calendar.insert({ summary: `${serviceOf(b)?.id ?? "booking"} · ${b.customer}`, start: want.start, end: want.end, status: want.status, bookingRef: b.id, holdExpiresAt });
         const after = (await calendar.list({ bookingRef: b.id })).find(matches); // read back from the calendar's own list
@@ -1244,5 +1253,13 @@ export function createAgent(deps: AgentDeps): Agent {
     return onTick();
   }
 
-  return { handle };
+  /** `couldnt_tell_owner`: the words this template already has for "this could not be done just now", and they ask the customer to try again rather than promise anything. */
+  async function giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void> {
+    const phone = event.kind === "message" ? event.message.from : owner;
+    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["couldnt_tell_owner"]) : false;
+    const line = guardWaitLine(event, why, told);
+    log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
+  }
+
+  return { handle, giveUp };
 }

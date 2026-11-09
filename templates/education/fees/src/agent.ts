@@ -25,7 +25,7 @@
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
-import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
+import { GUARD_WAIT_ENTRY, RECOVERY_ENTRY, guardWaitLine } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
@@ -92,7 +92,11 @@ export type AgentEvent =
   | { kind: "recovery"; id: string; case: string; action: string }
   | { kind: "tick" }; // time has passed: open the month's fees, add late fees and send due reminders
 
-export interface Agent { handle(event: AgentEvent): Promise<void> }
+export interface Agent {
+  handle(event: AgentEvent): Promise<void>;
+  /** The wait for a Guard is over and this event's work is not done (modules/runtime/guard-wait.ts). With `tell`, the parent also gets the centre's words for it. */
+  giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void>;
+}
 
 const MIDNIGHT = { hour: 0, minute: 0 };
 const HOURLY = HOUR; // the owner is told about the same parent at most this often
@@ -955,5 +959,13 @@ export function createAgent(deps: AgentDeps): Agent {
     return onTick();
   }
 
-  return { handle };
+  /** `fee_couldnt_tell_owner`: the words this template already has for "this could not be done just now", and they ask the parent to try again rather than promise anything. */
+  async function giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void> {
+    const phone = event.kind === "message" ? event.message.from : owner;
+    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["fee_couldnt_tell_owner"]) : false;
+    const line = guardWaitLine(event, why, told);
+    log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
+  }
+
+  return { handle, giveUp };
 }
