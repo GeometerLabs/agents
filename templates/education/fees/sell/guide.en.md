@@ -154,7 +154,7 @@ The facts behind "it depends":
 
 ### "What does it cost?"
 
-> "It's [your monthly price] a month, and [your setup price] once for setting it up. Razorpay takes its own fee, about 2% plus GST, on each payment. WhatsApp's message fees are small, at cost. Nothing else. You can stop with one message."
+> "It's [your monthly price] a month, and [your setup price] once for setting it up. Razorpay takes its own fee, about 2% plus GST, on each payment. WhatsApp's message fees are their own line on the bill, at cost. Nothing else. You can stop with one message."
 
 Section 6 has the numbers.
 
@@ -220,7 +220,7 @@ Say this, word for word: "No fee marked paid without your confirmation; every re
 
 ## 6. Price
 
-Three payments, three different people. Keep them apart.
+Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 9 November 2026.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
@@ -228,10 +228,10 @@ Three payments, three different people. Keep them apart.
 | The centre | You | The monthly service (a starting point; you decide) | ₹999 to ₹1,499 |
 | The centre | You | Setup, once. You keep all of it. | ₹1,999 to ₹2,999 |
 | The centre | Razorpay | A fee on each payment | about 2% plus GST (only if the centre chooses Razorpay) |
-| As you agree with the centre | WhatsApp, at cost | Message fees | about ₹100 to ₹300 per centre per month |
+| The centre, as its own line on your bill | WhatsApp, at cost | Message fees | about ₹295 per centre per month |
 
-1. **Geometer's fee: ₹299 per live centre per month.** Fees is in the Business plan, with 3,000 messages a month included. The first 100 innovators (builders and partners) pay ₹179, which is 40% off, locked for as long as they stay, for up to 25 centres each, and they get an Innovator badge. Extra messages are ₹49 for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost. A builder who runs it on their own server pays half the plan price. A centre counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a centre goes live.
-2. **The centre's price: a starting point; you decide.** The table gives the range. The setup is ₹1,999 to ₹2,999, and you keep all of it.
+1. **Geometer's fee: ₹299 per live centre per month.** Fees is in the Business plan, with 3,000 messages a month included. Extra messages are ₹49 for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost, and so is the payment fee when you top up the balance. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays ₹149 a month for each live client business instead. The first 100 builders and partners with a shop live get the Innovator badge: a badge, not a discount. A centre counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a centre goes live.
+2. **The centre's price: a starting point; you decide.** The table gives the range. The setup is ₹1,999 to ₹2,999, and you keep all of it. Put WhatsApp on the centre's bill as its own line, at cost: a centre that sends more messages then pays for more, and your service price stays yours.
 3. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the centre can cancel with one message, no automatic debit unless the owner clearly agreed.
 4. **Tell the centre about Razorpay's fee:** "Razorpay keeps its fee even when you give a payment back. On a ₹1,200 fee that is about ₹28." Check Razorpay's current page; if the centre's own agreement says otherwise, the agreement wins. The centre opens and pays for its own Razorpay account, and WhatsApp's message fees are at cost. You pay for nothing else to use Fees. This applies only if the centre chooses Razorpay: on UPI there is no gateway fee.
 5. **When to take money:** Fees is not live anywhere, so do not take a setup fee or a first month, and do not give a start date. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
@@ -315,3 +315,5 @@ You are the centre's named, accountable person. Your name is on the report and t
 ## 11. Be honest about what's true today
 
 As of 5 November 2026 the Fees agent and its checks run against stand-in services (stand-in WhatsApp and Razorpay), not real ones. The hand check holds 26 of 26 situations (209 checks), with 12 listed as not tested; on the Gauss Maths Circle example settings it holds 23 of 23, with 3 not run on those settings. It is a count of those situations, not a verdict on the agent. No centre is live. You can show the walkthrough on a laptop, but there is no phone demo yet. Payments by cash or bank transfer are not handled: a parent who says so is sent to the owner and nothing is marked paid. UPI is built as a payment option: the owner marks each fee paid and sends each refund. It is not checked automatically, and it has not run in a live centre. The walkthrough was run with Razorpay; the hand check was run on a Razorpay centre and on a UPI centre. Since 7 November 2026 the Fees agent can run as a live service on the server, with the approvals relay and a go-live certificate, and the panel sets a centre up in five steps. These have been tried only against stand-in services, and the approval against the real Guard program; none has run with a real WhatsApp number or a real Razorpay account. So: promise no start date, take no setup fee or first month (use the letter of intent), and say plainly "it is not live anywhere yet". Hindi, Malayalam and Kannada wording is machine-written: REVIEW-ml.md and REVIEW-kn.md list every line for a native reader, and Malayalam and Kannada wait for that review before any real centre uses them. Never say more than this.
+
+<!-- Made by prices/render.ts from guide.en.src.md and the price list in force. Edit that file, then run: node prices/render.ts -->
