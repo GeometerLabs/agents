@@ -124,7 +124,7 @@ node bundle/geometer.ts start glow-salon
 node bundle/geometer.ts update --dry-run     # a new template version for every client: what would move and what would be held back (changes nothing)
 node bundle/geometer.ts update                # do it, each client checked on its own settings first
 node bundle/geometer.ts rollback              # put the clients the last update moved back on their previous version
-node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the shop's data from the newest nightly snapshot at or before that time
+node bundle/geometer.ts restore glow-salon --identity ~/age-identity.txt --at 2026-11-04T10:30:00Z    # the shop's data from the newest nightly snapshot at or before that time, opened with your key (bring it, then take it away)
 node bundle/geometer.ts licence extension extension.gx1                  # an emergency extension from Geometer, if fleet cannot renew the licence for a while
 ```
 
