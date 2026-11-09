@@ -190,7 +190,8 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   const shopsWithRelay = Object.entries(state.shops).filter(([, s]) => s.applied && Object.values(s.applied.guards).some((g) => g.kind === "razorpay")).map(([n]) => n);
   // an agent someone else wrote has a relay credential too, when it calls Razorpay (a held refund is asked about on WhatsApp)
   const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && a.guards.razorpay).map(([n]) => n);
-  if (shops.length === 0 && withRelay.length === 0) return ran;
+  const anyAgent = Object.values(state.agents ?? {}).some((a) => a.applied);
+  if (shops.length === 0 && !anyAgent) return ran;
   if (since(jobs.relayCredentialsAt) >= 24 * HOUR) {
     for (const shop of [...shopsWithRelay, ...withRelay]) await renewRelayCredential(ctx, shop);
     jobs.relayCredentialsAt = now.toISOString(); ran.push("relay credentials");
@@ -201,15 +202,15 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
     jobs.agentRecordsAt = now.toISOString();
     (await recordAgents(ctx)).filter((l) => /could not|cannot/u.test(l)).forEach((l) => ctx.log(l)); ran.push("agent records");
   }
-  // the jobs below are about shops' runtimes (their databases): a server with only agents someone else wrote has none
-  if (shops.length === 0) { const fresh = loadState(ctx.dir); fresh.jobs = { ...fresh.jobs, ...jobs }; saveState(ctx.dir, fresh); return ran; }
+  // the exports and fingerprints are about shops' runtimes (their databases): a server with only agents someone else wrote has none. The snapshot and the drill below
+  // are not: an agent's Guards and record are in them too (B51)
   // the record and bookings for the panel's monthly report: every quarter of an hour (counts for the report; no customer's number leaves the shop's volume)
-  if (since(jobs.exportsAt) >= 15 * 60_000) {
+  if (shops.length > 0 && since(jobs.exportsAt) >= 15 * 60_000) {
     jobs.exportsAt = now.toISOString();
     const e = await runExports(ctx); e.lines.filter((l) => /not exported|failed/u.test(l)).forEach((l) => ctx.log(l)); ran.push("exports");
   }
   // the daily fingerprint of each shop's record (B28): the ledger's head, never its data, appended to a local file; a git repository and a timestamp calendar only with the owner's yes
-  if (since(jobs.fingerprintsAt) >= 24 * HOUR && jobs.exportsAt) {
+  if (shops.length > 0 && since(jobs.fingerprintsAt) >= 24 * HOUR && jobs.exportsAt) {
     jobs.fingerprintsAt = now.toISOString(); saveState(ctx.dir, state);
     const f = await runFingerprints(ctx); f.lines.filter((l) => /REFUSED|not pushed|could not/u.test(l)).forEach((l) => ctx.log(l)); ran.push(f.ok ? "fingerprints" : "fingerprints REFUSED");
   }

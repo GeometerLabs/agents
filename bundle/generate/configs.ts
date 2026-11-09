@@ -132,6 +132,8 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
     ...(agents.length > 0 ? {
       ownAgents: Object.fromEntries(agents.map((a) => [a.name, {
         createdAt: a.createdAt, recordTokenFile: `/run/secrets/${a.name}/record_token`, labelKeyFile: `/run/secrets/${a.name}/label_key`, ownerWhatsapp: a.ownerWhatsapp, ...(a.calendarId ? { calendarId: a.calendarId } : {}),
+        // as a shop's: the deployer's status file, where the snapshot and the drill of its Guards and record are written (B51), so the heartbeat reports their ages
+        statusFile: `${OPS_STATUS_DIR}/${a.name}.json`,
         guards: a.guards.map((g) => ({
           id: `guard-${g.kind}`, service: g.service, ...guardAdmin(server, a, g.kind as Three), agentUrl: url(agentIp(server, a, g.kind as Three), GUARD_PORT), adminTokenFile: `/run/secrets/${a.name}/admin_${g.kind}`,
         })),
