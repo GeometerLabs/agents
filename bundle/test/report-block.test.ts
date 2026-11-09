@@ -62,9 +62,9 @@ test("the address is the server's: its domain, and its port when it is not 443; 
     assert.equal(reportOf(planShop(serverConfig({ ports: { https: 8443 } }), t.shop("glow-salon")))?.pageBaseUrl, "https://shops.example.com:8443/r/glow-salon");
     assert.equal(reportOf(planShop(serverConfig({ domain: "localhost" }), t.shop("glow-salon")))?.pageBaseUrl, "https://localhost/r/glow-salon");
     assert.equal(reportOf(planShop(serverConfig(), t.shop("glow-salon")))?.source, "test-mode");
-    writeFileSync(join(t.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, razorpay: { keyId: "rzp_live_abcdefghij", mode: "live" } }));
+    writeFileSync(join(t.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, gateway: { provider: "razorpay", keyId: "rzp_live_abcdefghij", mode: "live" } }));
     assert.equal(reportOf(planShop(serverConfig(), t.shop("glow-salon")))?.source, "live");
-    writeFileSync(join(t.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, razorpay: { keyId: "rzp_test_abcdefghij", mode: "test" } }));
+    writeFileSync(join(t.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, gateway: { provider: "razorpay", keyId: "rzp_test_abcdefghij", mode: "test" } }));
     assert.equal(reportOf(planShop(serverConfig(), t.shop("glow-salon")))?.source, "test-mode");
   } finally { t.done(); }
 });

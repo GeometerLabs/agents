@@ -1,6 +1,7 @@
 // The Orders template in the panel: a partner sets up a tiffin service on a phone in the same five steps (UPI is the way customers pay unless the partner chooses Razorpay), and the
 // folder written is the one `geometer shop add --template orders` writes (Orders settings, a runtime.json with no calendar, orders@<version> in the lock). The checks, "Ready to go
 // live", the monthly report and the shop page work for it in four languages, and nothing of Bookings (a calendar, a cost table of bookings) leaks onto an Orders shop's pages.
+import { RAZORPAY_WORDS as RZW } from "../../../modules/payments/providers/razorpay/words.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -125,7 +126,7 @@ test("the checks for an Orders shop have no calendar and no Razorpay, 'Ready to 
     const page = (await divya.get(checks)).plain;
     const w = WORDS.en.setup.checks;
     assert.ok(page.includes(w.whatsapp.confirmed("+919000011111")), page.slice(page.indexOf("Checks"), page.indexOf("Checks") + 1500));
-    assert.ok(!page.includes(w.calendar.title) && !page.includes(w.razorpay.title), "no calendar check, and no Razorpay check for a UPI shop");
+    assert.ok(!page.includes(w.calendar.title) && !page.includes(RZW.en.checks.title), "no calendar check, and no Razorpay check for a UPI shop");
     const held = /Held (\d+) of (\d+) situations\. 0 failed\./u.exec(page);
     assert.ok(held && held[1] === held[2] && Number(held[1]) > 0, "the Orders hand check's own sentence");
     assert.ok(page.includes(w.readyButton));

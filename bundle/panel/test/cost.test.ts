@@ -69,11 +69,11 @@ test("Glow Salon, 40 bookings a month: the line, to the paisa", () => {
   // 40 bookings x (2 reminders + 1 owner notice) = 120 utility templates at 11.5 paise = 1,380 paise. 240 replies are inside the 1,000 free ones.
   assert.deepEqual([line(c, "whatsapp").state, line(c, "whatsapp").paise, line(c, "whatsapp").quantities.templates, line(c, "whatsapp").quantities.paidServiceReplies], ["amount", 1380, 120, 0]);
   // 40 deposits of Rs 200: fee 400 paise + 18% GST 72 paise = 472 each.
-  assert.deepEqual([line(c, "razorpay").paise, line(c, "razorpay").payer], [40 * 472, "shop-pays-razorpay"]);
+  assert.deepEqual([line(c, "gateway").paise, line(c, "gateway").payer], [40 * 472, "shop-pays-gateway"]);
   // Geometer's line is the shop's plan: Glow Salon takes a deposit, so it is Business, INR 299 before GST, and the AI model is in it: no model line, nothing passed through, nothing that depends on bookings.
   assert.deepEqual([line(c, "geometer").state, line(c, "geometer").paise, line(c, "geometer").payer, line(c, "geometer").uses, line(c, "geometer").plan], ["amount", 29900, "builder-pays-geometer", ["plan.business.fee"], "business"]);
-  assert.deepEqual(c.lines.map((l) => l.id), ["whatsapp", "whatsapp-provider", "razorpay", "geometer", "hosting"]);
-  assert.deepEqual(c.lines.map((l) => l.payer), ["builder-pays-whatsapp-provider", "builder-pays-whatsapp-provider", "shop-pays-razorpay", "builder-pays-geometer", "hosting"]);
+  assert.deepEqual(c.lines.map((l) => l.id), ["whatsapp", "whatsapp-provider", "gateway", "geometer", "hosting"]);
+  assert.deepEqual(c.lines.map((l) => l.payer), ["builder-pays-whatsapp-provider", "builder-pays-whatsapp-provider", "shop-pays-gateway", "builder-pays-geometer", "hosting"]);
   // No provider is chosen and nothing has measured the hosting: those two are unknown, not zero.
   for (const id of ["whatsapp-provider", "hosting"] as const) assert.deepEqual([line(c, id).state, line(c, id).paise], ["unknown", null], id);
   assert.deepEqual(c.total, { paise: 1380 + 18880 + 29900, complete: false, unknown: ["whatsapp-provider", "hosting"] });

@@ -58,3 +58,13 @@ export const UPI_OBLIGATION_KINDS: readonly ObligationKind[]; // the two, as reg
 | A key in the QR | Not carried, on purpose (see Explanation): a key printed on the paper is not independent of the paper. The website can name a key only if a reader has it another way | The fleet keeps shops' keys and the link can name a shop |
 | The document in the QR | The QR carries the digest only, so a phone also needs the paper's `.json` file. A later paper could carry the whole document in the fragment | The website asks for it |
 | A scanner test with a real phone camera | The tests read the code back through the encoder's own layout, plus the earlier reference symbols; no camera or independent decoder ran in this session | Next hand check on a printed paper |
+
+## UPI by default, any other provider through one seam (B71, 10 Nov)
+
+| What | Why not now | Revisit when |
+|---|---|---|
+| **No second gateway is built.** The seam, the contract test and the panel's generic payment step make one a folder; Cashfree is the likely first. | The owner: build it when a shop or builder needs it. Its docs and small-merchant sign-up terms are to be read first. | A shop or builder asks for a gateway other than Razorpay. |
+| **The owner-marked desk is not served on a server.** An agent someone else wrote can call it in `geometer agent crash-test` (the world starts it, `GEOMETER_UPI_URL`), and `agent add --upstreams upi,...` plans it, but no container serves it to a deployed agent. | Serving it means the relay hosting it per agent (its saved state, the owner's replies from the inbox, the WhatsApp Guard for the owner's notices), a Caddy route `/g/<name>/upi/*` checked with the agent's credential, and the desk's record merged into the agent's record. Each is a change in the bundle's deploy that wants its own tests. | Before the first builder's own agent takes UPI on a server. |
+| **What the desk cannot check for an agent we did not write.** Whether it tells a customer "paid" or "booked" before the desk says so, whether it takes money another way (its own UPI ID or link in a message), and the amounts in its own text. | Nothing at run time reads an agent's messages; Guard holds the WhatsApp number, not the words. | Only the crash test checks the words (`bundle/agent/crash-test/owner-marked.ts`). |
+| **A gateway's `failed` refund is reported as "may have happened" first.** The adapter turns a refund the gateway declined into a 502; the refund flow looks once, finds nothing, stops and tells the builder. | It never sends again and never tells the customer it was sent, which is what matters; a clearer "declined" outcome is a wording change. | A gateway that declines refunds often. |
+

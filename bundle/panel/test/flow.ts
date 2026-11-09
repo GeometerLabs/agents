@@ -15,7 +15,7 @@ export const MARKERS = ["MARKERTOKEN", "MARKERrzp", "MARKERwebhook", "MARKERPRIV
 export const STEP1 = { name: "Hosahalli Beauty", svc_name_0: "Haircut", svc_also_0: "hair cut, cutting", svc_price_0: "450", svc_minutes_0: "45", svc_name_1: "Facial", svc_price_1: "900", svc_minutes_1: "60", opens: "10:00", closes: "20:00", day_1: "on", day_2: "on", day_3: "on", day_4: "on", day_5: "on", day_6: "on" };
 export const STEP2 = { deposit: "200", window: "24" };
 export const STEP3 = { primary: "ml", lang_en: "on", ownerLanguage: "ml", ownerNumber: "98765 43210" };
-export const STEP4 = { waNumber: "+91 90000 11111", waNumberId: PHONE_ID, waToken: M.token, waAppSecret: M.app, calId: CALENDAR_ID, rzpMode: "live", rzpKeyId: "rzp_live_AbCdEf123456", rzpKeySecret: M.secret, rzpWebhook: M.hook };
+export const STEP4 = { payMod: "razorpay", waNumber: "+91 90000 11111", waNumberId: PHONE_ID, waToken: M.token, waAppSecret: M.app, calId: CALENDAR_ID, gwMode: "live", gwKeyId: "rzp_live_AbCdEf123456", gwKeySecret: M.secret, gwWebhook: M.hook };
 
 export interface Flow { draft: string; shop: string; replies: string[] }
 

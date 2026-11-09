@@ -250,3 +250,24 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
 - **The messages line is a planning figure, not a proven ceiling.** It uses about three messages for each order (confirmation, the owner's notice, one follow-up); the busy month's most for one order was 2 that the agent started. Revisit when: real months are in, or the template states its most messages for an order.
 - **`bundle/geometer.ts` still says `--template bookings|fees` in its usage comment**; the command itself is not hard-wired and works for `orders` (it goes through the template registry). Revisit when: the owner of that file next edits it.
 - **An Orders shop whose owner's language is not English fails four hand-check situations** (found 9 Nov while building the panel's flow test): with `owner.language` set to `hi`, `ml` or `kn`, "A customer who says they paid, with nothing paid, is not confirmed", "A payment twice counts once", "A payment after the hold ended is taken again only if the cut-off, the stock and the day still allow it" and "A UPI screenshot sent as proof is not proof" fail (held 13 of 17; 14 for `hi`), so such a shop cannot be made ready to go live. The same settings with `en` hold 17 of 17, and a Fees UPI shop with an `ml` owner holds 7 of 7, so it is Orders-only, not the shared UPI code. It is in `templates/commerce/orders/crash-test/` (the owner's reply is probably read in English only), not in the panel; the panel's Orders flow test uses an English owner line until it is fixed. Revisit when: the template's situations are fixed.
+
+## UPI by default, any other provider through one seam (B71, 10 Nov)
+
+- **Not every place says "the gateway" yet.** The panel (its payment step, keys, connection check, cost line and words), the payments flow, the templates' agents and the
+  Guard spec ask the provider registry (`modules/payments/providers`), and `modules/payments/providers/test/names.test.ts` holds them to it. These still say "razorpay"
+  where the shop's gateway id belongs, and work because Razorpay is the one gateway: the deployer's secret files and credentials (`deploy.ts`, `lib/secrets.ts`
+  INTAKE, `agent_razorpay`), the inbox's webhook route and config (`/webhooks/razorpay`, `razorpayWebhookSecret`), the generated relay and inbox configs
+  (`generate/configs.ts`), `generate/shop.ts`'s gateway variable and `server.limits.razorpayLinksPerHour`, `services/ops.ts` and `services/relay.ts`, the own agent's
+  record, facts and relay context (`agent/record.ts`, `facts.ts`, `relay-context.ts`; the payment look-up is already `providers/razorpay/runtime.ts`), the own-agent
+  crash test's gateway situations and world, `geometer.ts`'s help text, and the templates' reports, stand-in control routes and scripts. Each is the provider's id from
+  the shop's settings, mechanically; none changes what a Razorpay shop gets (the golden test pins its bytes). Revisit when: before a second gateway, in one wave.
+- **A gateway with no module (B71 step 6) is not built.** The plan, with nothing to change in `companies/`: `agent add <name> --upstreams openapi,whatsapp
+  --gateway-draft draft.json --gateway-accept accept.json --gateway-upstream api.example.com:443` builds the spec with the kit's own `specFromAccept`
+  (companies/openapi-to-spec.ts, the reviewed flow; the accept file's `tenant` must be the agent's name), keeps it in `agents/<name>/gateway.json`, and `planAgent`
+  puts a Guard in front with that spec (the deployer sets its name and version, as for any Guard), its credential handed in as `openapi_authorization`. Two things
+  it needs that are not there: the agent's settings must be allowed a payment block that names no module of this checkout (an option to the settings reader that
+  only an agent folder passes, so a template shop can never choose it), and the compose addressing must put that Guard in the gateway's slot (a shop or agent has
+  one gateway, so slot 0). Revisit when: a builder brings a gateway with no module.
+- **The owner-marked desk is not served on a server** (modules/Deferred.md, B71): `agent add --upstreams upi,...` plans an own agent on UPI with no gateway Guard and
+  `agent crash-test` drives it against the desk, but a deployed agent has nothing to call yet; `agent add` says so in plain words instead of printing an address.
+

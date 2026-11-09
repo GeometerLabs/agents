@@ -245,6 +245,35 @@ link) and leave everything that finishes money owed. The decision they record is
   instead of trying again at the next beat; Orders, when Guard refuses the advance link, lets the order go back to an enquiry and answers "Online ordering is
   paused ... contact the shop", with no "link failed" to the owner.
 
+## UPI by default, any other provider through one seam (B71, 10 Nov)
+
+The owner, 10 Nov: agents use UPI by default and add Razorpay or another provider only if needed, because paperwork stops partners onboarding shops; and "I don't
+like the idea of having our agents limited to razorpay". What changed in `payments/`, and why each part is as it is:
+
+- **The interface is neutral** (`payments.ts`). A payment request, the payments on it, refunds, and three events: `request.paid`, `payment.received`,
+  `refund.done`. Field names that were Razorpay's are not (`pay_url`, `request_id`, `part_payments`, `min_first_payment`; a payment is `received`), and the
+  stand-in gateway's ids are `req_`/`pmt_`/`rfd_`. `reference_id` and the paise amounts stay: they are no one provider's. Razorpay's own names live only where
+  its wire format is read or written (its folder), and its webhook samples in tests keep them.
+- **A module says what it can do** (`PaymentCapabilities`): confirms automatically, refunds automatically, takes part payments, cancels, can be read back. The
+  three templates ask these, never a provider's name. UPI says no to all five (the owner marks money and pays refunds; a request is for one exact amount; one
+  already sent can still be paid; the agent's own store is the only record); Razorpay says yes to all five. The owner's mark and a gateway's webhook enter the same
+  `reconcilePayments` (Bookings, Orders) or `count` (Fees): one flow, with the owner's marks as the payment record.
+- **A provider is one folder**, `payments/providers/<name>/`: `index.ts` declares it as plain data (capabilities, how its settings block reads, its Guard routes
+  and operations, its keys' shape, its words in four languages, its fee's price-list ids, its sign-up notes in `SIGNUP.md`); a gateway's wire code (adapter,
+  webhook reader, stand-in, the payment read the own-agent relay uses) is its `runtime.ts`, listed in `providers/runtime.ts`. The split is not tidiness: the
+  agent asks the capabilities, the browser demo runs the agent's import graph, and that graph may only reach `node:fs` and `node:crypto`. `providers/index.ts`
+  is the only list of providers and the only settings reader.
+- **Owner-marked payments are their own module** (`payments/owner-marked/`: the ledger, the owner's replies and buttons, the obligations, the QR picture, and the
+  desk an agent someone else wrote calls). They were `payments/upi/`; they serve any module that cannot confirm by itself, and UPI's own folder keeps only what is
+  UPI's (the `upi://pay` link and the UPI ID's checks). Persisted names keep their values: record actions (`upi_request`, `owner_marked_paid`, ...),
+  obligation kinds, button ids (`upi-received:CODE`), the store's `upi` key and message template ids, because records, reports and messages already sent use them.
+- **The Guard spec is neutral rules plus each gateway's routes** (`guard-limits.ts` `paymentLimitsSpecFrom(rules, gateway)`). Guard already takes a spec per
+  upstream, so no engine change was needed. A Razorpay shop's spec, plan, guard.toml and compose file are byte-identical to before the split: the bundle pins them
+  (`test/payment-guard-golden.test.ts`, made from the code before any of this).
+- **One contract every provider must pass** (`providers/test/contract.test.ts`): lost reply, duplicate and late events, never refunding more than was paid, a held
+  refund, a refund that fails, and B33's situations. A row that cannot apply to a provider is its own test, named "does not apply", that asserts the capability
+  making it so. `providers/test/names.test.ts` holds the places made neutral to it: they name no gateway and import a provider only through the registry.
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.

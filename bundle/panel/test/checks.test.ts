@@ -37,14 +37,14 @@ test("all three confirm against the stand-ins, and the ids they report are the p
   try {
     const report = await checkConnections({
       whatsapp: { baseUrl: w.url, phoneNumberId: PHONE_ID, businessNumber: NUMBER },
-      razorpay: { baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" },
+      gateway: { provider: "razorpay", baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" },
       calendar: { baseUrl: w.url, calendarId: CALENDAR },
     });
     assert.equal(report.allOk, true);
     assert.deepEqual(report.results.map((r) => [r.service, r.code]), [["whatsapp", "confirmed"], ["razorpay", "confirmed"], ["calendar", "confirmed"]]);
     assert.deepEqual(report.pins, {
       whatsapp: { phoneNumberId: PHONE_ID, displayNumber: NUMBER },
-      razorpay: { keyId: "rzp_live_AbCdEf123456", mode: "live" },
+      gateway: { provider: "razorpay", keyId: "rzp_live_AbCdEf123456", mode: "live" },
       calendar: { calendarId: CALENDAR },
     });
     assert.equal(report.results[0].confirmed?.verifiedName, "Glow Salon");
@@ -64,7 +64,7 @@ test("nothing is sent, charged or booked: every request is a GET, and the stand-
   try {
     await checkConnections({
       whatsapp: { baseUrl: w.url, phoneNumberId: PHONE_ID, businessNumber: NUMBER },
-      razorpay: { baseUrl: w.url, keyId: "rzp_test_AbCdEf123456", expectedMode: "test" },
+      gateway: { provider: "razorpay", baseUrl: w.url, keyId: "rzp_test_AbCdEf123456", expectedMode: "test" },
       calendar: { baseUrl: w.url, calendarId: CALENDAR },
     });
   } finally { globalThis.fetch = realFetch; }
