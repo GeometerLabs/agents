@@ -120,6 +120,8 @@ export function readState(file: string): ExportState {
 /** The decisions after the state's mark, and the state to keep once this export is written (`mark`: the newest time seen so far, from readWindow). */
 export function advance(state: ExportState, decisions: Obj[], mark: number | undefined): { fresh: Obj[]; next: ExportState } {
   const fresh = state.mark === undefined ? decisions : decisions.filter((d) => Number(d.at_ms) > state.mark! || (Number(d.at_ms) === state.mark && !state.atMark.includes(String(d.id))));
+  // Guard's times are milliseconds and several decisions can share one. Keeping their ids is what stops a tie at the mark being written twice (or dropped). When the mark
+  // has not moved, the old ids stay too: forgetting them would let a decision still in the list be written again.
   const atMark = [...new Set([...(mark === state.mark ? state.atMark : []), ...decisions.filter((d) => Number(d.at_ms) === mark).map((d) => String(d.id))])];
   return { fresh, next: { schema: 1, ...(mark !== undefined ? { mark } : {}), atMark, seq: state.seq } };
 }
