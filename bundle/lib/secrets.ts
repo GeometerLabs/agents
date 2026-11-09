@@ -32,7 +32,13 @@ export const PERSON_KEY = /^[0-9a-f]{64}$/u;
 export const AGENT_LABEL_KEY_FILE = "label_key";
 
 /** What one key derives for: a container that must not hold the shop's key itself gets a key made from it for this purpose only. The label in the HKDF must not change, or every digest and label made so far stops matching. */
-export const derivedKey = (keyHex: string, purpose: "record" | "label"): string => Buffer.from(hkdfSync("sha256", Buffer.from(keyHex, "hex"), Buffer.alloc(0), `geometer/${purpose}-key/1`, 32)).toString("hex");
+export const derivedKey = (keyHex: string, purpose: "record" | "label" | "id"): string => Buffer.from(hkdfSync("sha256", Buffer.from(keyHex, "hex"), Buffer.alloc(0), `geometer/${purpose}-key/1`, 32)).toString("hex");
+
+/**
+ * A name for a key that opens nothing: the snapshot's seal (kept in the clear) carries it, and the weekly drill compares it with the live key's, so it can say the snapshot
+ * holds the key this server uses without either key leaving its file. A purpose of its own, so it is never one of the derived keys above. 16 hex digits tell two keys apart.
+ */
+export const keyIdOf = (keyHex: string): string => derivedKey(keyHex, "id").slice(0, 16);
 
 /** The shop's key, made if it has none. 0600. */
 export function ensurePersonKey(dir: string, shop: string): string {
@@ -51,13 +57,29 @@ export function ensureShopPersonKeys(dir: string, shop: string, runtimeFolder: s
  * key, which nothing has used: it is kept beside (returned: the name), never deleted. Returns undefined when the key was already the one in place.
  */
 export function restorePersonKey(dir: string, shop: string, keyHex: string, runtimeFolder: string, panelOn: boolean, stamp: string): string | undefined {
+  const kept = putBackPersonKey(dir, shop, keyHex, stamp);
+  ensureShopPersonKeys(dir, shop, runtimeFolder, panelOn);
+  return kept;
+}
+
+/** The key itself put back, the one it replaces kept beside (its name returned). Its copies are the caller's: a shop's runtime and panel copies, or an agent's label key. */
+function putBackPersonKey(dir: string, name: string, keyHex: string, stamp: string): string | undefined {
   if (!PERSON_KEY.test(keyHex)) throw new Error("The fingerprint key in this snapshot is not a key, so it was not put back.");
-  const path = personKeyFile(dir, shop);
+  const path = personKeyFile(dir, name);
   const have = readSecretFile(path);
   let kept: string | undefined;
-  if (have && have !== keyHex) { kept = `${shop}.before-restore-${stamp}`; writeSecretFile(`${path}.before-restore-${stamp}`, have, 0o600); }
+  if (have && have !== keyHex) { kept = `${name}.before-restore-${stamp}`; writeSecretFile(`${path}.before-restore-${stamp}`, have, 0o600); }
   if (have !== keyHex) writeSecretFile(path, keyHex, 0o600);
-  ensureShopPersonKeys(dir, shop, runtimeFolder, panelOn);
+  return kept;
+}
+
+/**
+ * An agent someone else wrote (B51): its key put back as a shop's is, and its label key made again from it in ops' folder (ops reads the file at each record pass). No
+ * runtime copy and no panel copy: an agent has no runtime, and the panel does not show agents.
+ */
+export function restoreAgentKey(dir: string, agent: string, keyHex: string, stamp: string): string | undefined {
+  const kept = putBackPersonKey(dir, agent, keyHex, stamp);
+  ensureAgentLabelKey(dir, agent);
   return kept;
 }
 
