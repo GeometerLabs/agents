@@ -293,6 +293,7 @@ export const kn: Words = {
       refund_waiting: (id, amount, _hours, who) => `${id} ರ ${amount} ರೀಫಂಡ್ ${who} ಕಾಯುತ್ತಿದೆ`,
       refund_unknown: (id) => `${id} ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: Razorpay ನಲ್ಲಿ ನೋಡಿ`,
       refund_failed: (id) => `${id} ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ`,
+      message_unanswered: (id) => `ಸೇವೆಯ ಸಂಪರ್ಕ ನಿಂತುಹೋದ ಕಾರಣ ${id} ರ ಕೆಲಸ ಪೂರ್ಣವಾಗಲಿಲ್ಲ: ಪರಿಶೀಲಿಸಿ ಗ್ರಾಹಕರಿಗೆ ಉತ್ತರಿಸಿ`,
       upi_payment_unconfirmed: (id, amount) => `${id} ಗಾಗಿ ${amount} UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ`,
       upi_refund_owed: (id, amount) => `${id} ಗಾಗಿ ${amount} ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ`,
     },

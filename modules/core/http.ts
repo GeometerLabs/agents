@@ -4,7 +4,8 @@
 //
 // What a failure means for the agent (the agent looks before it retries, so the difference matters):
 //  - no reply (timeout, a connection cut after the request went out): the call MAY have happened, so a TimeoutError;
-//  - the connection was refused or the host is unknown: nothing was sent, so a NotSentError (an ApiError, 503);
+//  - the connection was refused or the host is unknown: nothing was sent, so a NotSentError (an ApiError, 503). A task's step that meets one waits for that Guard
+//    (`waitsForGuard` in faults.ts says which failures wait and why; modules/runtime/guard-wait.ts does the waiting);
 //  - an answer with a `guard` object: GUARD decided, and it is never the service's reply, whatever its HTTP status (a held call is
 //    a 202). It becomes one of the GuardError kinds in faults.ts, below, in ONE place (`classify`), before any adapter reads a body;
 //  - a 200 with `Guard-Replayed: true`: the service's first reply, from Guard's record. It comes back marked `replayed`;
@@ -145,7 +146,7 @@ export function createHttp(baseUrl: string, what: string, timeoutMs: number = DE
         response = await fetch(url, { method, headers, body, signal: AbortSignal.timeout(timeoutMs) });
       } catch (e) {
         const code = causeCode(e);
-        if (code && NOT_SENT.has(code)) throw new NotSentError(`${what}: could not connect (${code}).`);
+        if (code && NOT_SENT.has(code)) throw new NotSentError(`${what}: could not connect (${code}).`, code);
         throw new TimeoutError(what); // timed out, or the connection was cut after the request left: it may have happened
       }
       let text: string;

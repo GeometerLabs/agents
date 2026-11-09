@@ -126,4 +126,19 @@ export function latestRecovery(entries: readonly RecordEntry[], caseId: string, 
   return undefined;
 }
 
+/**
+ * The record's name for "the wait for a Guard is over and this event's work is not done" (modules/runtime/guard-wait.ts). The runtime writes one line for each such event,
+ * in the same transaction as the event's own end, so the to-do list gets it once. `refs.service` says which Guard; a line about a known case has it in `booking`.
+ */
+export const GUARD_WAIT_ENTRY = "guard_wait_over";
+
+/** The line itself, the same for every template: what went wrong, for the person reading the record. It holds no message text and no number. */
+export function guardWaitLine(event: { kind: string }, why: { service: string }, told: boolean): { inputs: unknown; notes: string; refs: Record<string, string> } {
+  return {
+    inputs: { event: event.kind, service: why.service },
+    refs: { service: why.service, event: event.kind },
+    notes: `The ${why.service} Guard could not be reached for as long as this ${event.kind === "message" ? "message" : "event"} could wait, so its work was not done.${told ? " The customer was told to try again." : ""}`,
+  };
+}
+
 export const timeOf = (e: RecordEntry | undefined): number | null => (e && Number.isFinite(Date.parse(e.time)) ? Date.parse(e.time) : null);

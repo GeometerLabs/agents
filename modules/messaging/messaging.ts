@@ -101,6 +101,11 @@ export interface Messaging {
   /** Did this person message us in the last 24 hours? */
   isWindowOpen(to: string): Promise<boolean>;
   getMessage(id: string): Promise<OutboundMessage | null>;
+  /**
+   * A plain read that reaches this service's Guard and changes nothing, so a task waiting for it can ask whether it is back (runtime/guard-wait.ts). `getMessage` cannot be
+   * the read: on the live adapter it answers from memory and never reaches Guard. Optional: a provider without it is looked at by running the step.
+   */
+  ping?(): Promise<unknown>;
 }
 
 /** lostReply: the message goes out, the reply is lost. error: the provider refuses. */
