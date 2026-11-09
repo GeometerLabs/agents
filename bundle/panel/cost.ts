@@ -3,7 +3,7 @@
 //    and nothing is a floating-point guess; each line is rounded UP once, to the next whole paisa, and the total is the sum of those lines;
 //  - an unknown price is "unknown", never INR 0: a line whose price is missing has no amount and the total says it is a subtotal;
 //  - "early estimate" until the record has real usage;
-//  - prices come from a dated, versioned file (bundle/prices/<date>.json) that says where every rate was read and how sure we are.
+//  - prices come from a dated, versioned file (prices/<date>.json at the repo's root, the only place a price is written) that says where every rate was read and how sure we are.
 // This file has no words in any language: it returns the numbers and the reasons, and views.ts says them in the shop's language.
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
@@ -35,7 +35,8 @@ export interface Exchange { paisePerUnit: number; quality: Quality; source: stri
 export type ListStatus = "in-force" | "proposed";
 export interface PriceList { date: string; file: string; sha256: string; status: ListStatus; /** Where the proposal is written (a docs/ path or an https address). Only on a proposed list. */ proposal?: string; rates: Record<string, Rate>; exchange: Partial<Record<Currency, Exchange>> }
 
-export const PRICES_DIR = new URL("../prices/", import.meta.url);
+/** The repo's one price folder (prices/README.md): every price list, never edited after it is committed. */
+export const PRICES_DIR = new URL("../../prices/", import.meta.url);
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/u;
@@ -120,6 +121,22 @@ function weakest(...q: Quality[]): Quality {
 
 export const paiseOf = (micro: bigint): number => Number(ceilDiv(micro, MICRO));
 
+/**
+ * What Geometer charges for one shop a month, before GST, from the price list: the one rule the shop page's cost line (monthlyCost), its plan block (plan.ts) and
+ * the health page (health.ts) all use, so the three agree. Two price lists (owner, 9 Nov): a shop on Geometer's server pays its plan's fee (`plan.<plan>.fee`;
+ * a list older than the plans has the flat `geometer.fee` instead); a shop on a builder's own server pays the builder licence (`licence.builder.fee`), whatever
+ * its plan. The licence is per live client business, and fleet bills it once for the shops a builder groups into one business; the panel cannot see that
+ * grouping, so it counts each shop as its own business, as fleet does for a shop with none named. `id` is the rate it used or would use; `fee` is null when
+ * the list does not have it (unknown, never INR 0, and a builder is never shown a plan fee instead), and there is no id when a hosted shop has no plan.
+ */
+export function chargeOf(prices: PriceList, plan: PlanName | null, builder: boolean): { id: string; licence: boolean; fee: ReturnType<typeof microPaise> } | null {
+  if (builder) return { id: "licence.builder.fee", licence: true, fee: microPaise(prices, "licence.builder.fee") };
+  if (!plan) return null;
+  const planId = `plan.${plan}.fee`;
+  const id = prices.rates[planId] ? planId : prices.rates["geometer.fee"] ? "geometer.fee" : planId;
+  return { id, licence: false, fee: microPaise(prices, id) };
+}
+
 /** "₹188.80", "₹1,25,000.00": paise as rupees with Indian grouping. */
 export function formatRupees(paise: number): string {
   const rupees = Math.floor(paise / 100);
@@ -150,6 +167,8 @@ export interface CostInput {
   settings: Settings;
   /** The plan fleet reports for this shop. Left out: worked out from the settings (planFromSettings). */
   plan?: PlanName;
+  /** The shop runs on a builder's own server: Geometer's line is the builder licence, whatever the plan (chargeOf). */
+  builder?: boolean;
   /** Bookings counted from the record this month. Left out: the line is an early estimate from `assumptions.bookingsPerMonth`. */
   observedBookings?: number;
   assumptions?: Partial<Assumptions>;
@@ -162,7 +181,7 @@ export interface CostInput {
 export type LineId = "whatsapp" | "whatsapp-provider" | "razorpay" | "geometer" | "hosting";
 export type LineState = "amount" | "unknown";
 /** Who pays whom. Geometer passes nothing through: its own line is the shop's plan (the AI model is in it, up to the allowance), and it never handles anyone else's money. */
-export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-razorpay" | "builder-pays-geometer" | "hosting";
+export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-razorpay" | "builder-pays-geometer" | "builder-pays-licence" | "hosting";
 export type Caveat =
   | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "fee-not-priced" | "hosting-not-measured"
   | "payment-link-fee-conflict" | "whatsapp-rate-second-hand" | "no-gateway-fee";
@@ -181,6 +200,8 @@ export interface CostLine {
   quality: Quality | null;
   /** Only on Geometer's line, when it is priced from a plan. */
   plan?: PlanName;
+  /** Only on Geometer's line, when it is the builder licence (a shop on a builder's own server). */
+  licence?: true;
 }
 
 export interface MonthlyCost {
@@ -266,19 +287,20 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     }
   }
 
-  // 4. Geometer's plan for this shop: one monthly amount for each running shop, before GST, with the AI model in it up to the plan's allowance (nothing is
-  // metered here; extra messages and WhatsApp are passed on from the partner's balance and are not in this line). It does not depend on bookings. The plan is
-  // the one fleet reports, or else the one the shop's settings point to: a deposit means Business, no money moving means Basic. It is read from the price list
-  // like every other rate, so a changed price is a new list. A list older than the plans has the flat fee instead. A list with neither makes the line unknown, never INR 0.
+  // 4. Geometer's line for this shop (chargeOf): on Geometer's server, the shop's plan, one monthly amount before GST with the AI model in it up to the plan's
+  // allowance (extra messages and WhatsApp are passed on from the partner's balance and are not in this line); on a builder's own server, the builder licence,
+  // whatever the plan, with the builder's own AI key. It does not depend on bookings. The plan is the one fleet reports, or else the one the shop's settings point
+  // to: a deposit means Business, no money moving means Basic. It is read from the price list like every other rate, so a changed price is a new list. A list
+  // without the rate makes the line unknown, never INR 0.
   {
     const plan = input.plan ?? planFromSettings(input.settings);
-    const planId = `plan.${plan}.fee`;
-    const id = prices.rates[planId] ? planId : "geometer.fee";
-    const fee = microPaise(prices, id);
-    if (!fee) { lines.push({ ...unknown("geometer", "builder-pays-geometer", { shops: 1 }, [planId]), plan }); caveats.add("fee-not-priced"); }
+    const charge = chargeOf(prices, plan, input.builder === true);
+    const payer: Payer = charge?.licence ? "builder-pays-licence" : "builder-pays-geometer";
+    const tags = { ...(charge?.licence ? { licence: true as const } : charge?.id === "geometer.fee" ? {} : { plan }) };
+    if (!charge?.fee) { lines.push({ ...unknown("geometer", payer, { shops: 1 }, [charge?.id ?? `plan.${plan}.fee`]), ...tags }); caveats.add("fee-not-priced"); }
     else {
-      lines.push({ ...known("geometer", "builder-pays-geometer", fee.value, { shops: 1 }, [id], fee.quality), ...(id === planId ? { plan } : {}) });
-      if (fee.assumedRate) caveats.add("assumed-exchange-rate");
+      lines.push({ ...known("geometer", payer, charge.fee.value, { shops: 1 }, [charge.id], charge.fee.quality), ...tags });
+      if (charge.fee.assumedRate) caveats.add("assumed-exchange-rate");
     }
   }
 

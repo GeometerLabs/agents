@@ -42,7 +42,7 @@ A template is a complete agent for one consequential job, such as bookings with 
 ## How to send a contribution
 
 1. Fork the repository and make a branch.
-2. Run the tests in the template you changed (`npm test` in its folder) and its hand check, if it has one.
+2. Run the tests in the template you changed (`npm test` in its folder) and its hand check, if it has one. A price is changed only in `prices/`, as a new dated file: then run `node prices/render.ts` and `npm test` in `prices/`.
 3. Open a pull request. Paste the hand check's result line, and say what you changed and what you didn't test.
 
 A contribution is merged when its checks pass and a maintainer has read it. A template is listed on [geometer.dev](https://geometer.dev) only after a real business has used it and its record has been measured.

@@ -14,6 +14,7 @@ Geometer catch it, a CI workflow and a prompt for your coding assistant.
 | [examples/](examples/README.md) | The fourteen example agents Geometer checks, one folder per domain: `payments/`, `commerce/`, `support/`, `games/` and `science/` |
 | [modules/](modules/README.md) | The features the templates share: language, understanding, payments, messaging, the record, reports, approvals, limits, reminders and the stand-ins |
 | [bundle/](bundle/README.md) | The deploy bundle: a folder per shop becomes one Docker Compose file; also the panel |
+| [prices/](prices/README.md) | Geometer's price lists, the only place a price is written: one dated file per change (`node prices/new.ts <date>`), read by the panel, the sell guides (`node prices/render.ts`) and fleet. `npm test` in the folder checks every list and that every guide is made from the list in force |
 | [plugin/](plugin/README.md) | The Claude Code plugin: set up, check and run shop agents from Claude Code (`/plugin marketplace add GeometerLabs/agents`); limits and go-live are confirmed by a person in the panel |
 | [companies/](companies/README.md) | The kit for a company that runs its own agents against its own APIs: from an OpenAPI file to a Guard in front of the agent |
 | [scripts/](scripts/try-broken.sh) | `try-broken.sh`: apply an example agent's one-line mistake to a copy and let Geometer check it |
@@ -28,7 +29,7 @@ A **template** is a ready, tested agent for one job a local business already pay
 
 ## Deploy bundle: run it on a small server (new)
 
-[bundle/](bundle/README.md) turns a folder per shop into one Docker Compose file: the shop's runtime, one Guard per upstream per shop, the server's model Guard, the webhook inbox, owner approvals on WhatsApp, HTTPS, a heartbeat to Geometer and a continuous copy of every record. A deploy is refused, naming the rule, unless every limit is proven to bite on the Guard. A builder runs it on their own VPS; the guide goes from an empty Ubuntu server to the first shop. The Guard image is not in a registry yet, so it is loaded from a file.
+[bundle/](bundle/README.md) turns a folder per shop into one Docker Compose file: the shop's runtime, one Guard per upstream per shop, the server's model Guard, the webhook inbox, owner approvals on WhatsApp, HTTPS, a heartbeat to Geometer and a nightly encrypted snapshot of every shop's data. A deploy is refused, naming the rule, unless every limit is proven to bite on the Guard. A builder runs it on their own VPS; the guide goes from an empty Ubuntu server to the first shop. The Guard image is not in a registry yet, so it is loaded from a file.
 
 ## Community templates: money and records that many people share
 
@@ -78,7 +79,8 @@ geo check .                              # the agent as written: "No problems fo
 again with something going wrong on purpose (a reply that never arrives, for example), and checks the
 rules in `.geometer/rules.toml` against what happened. The first run builds the container and takes a
 few minutes; later runs take about half a minute. Every folder also holds a GitHub Actions workflow
-(`.github/workflows/geometer.yml`) that runs the same check on each pull request.
+(`.github/workflows/geometer.yml`) that runs the same check on each pull request once the folder is the
+root of your own repository. This repository runs no CI itself.
 
 ## What the folders contain
 
@@ -92,7 +94,7 @@ few minutes; later runs take about half a minute. Every folder also holds a GitH
   .geometer/tools.toml     the simulated services the agent talks to
   .geometer/tasks.toml     what the agent is asked to do
   broken/*.patch           one-line mistakes to apply, and watch Geometer catch
-  .github/workflows/       the CI check
+  .github/workflows/       the CI check, to use in your own repository
   README.md                rules, how to run it for real, how to check it, a prompt for your assistant
 ```
 

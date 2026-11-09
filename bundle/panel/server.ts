@@ -71,7 +71,7 @@ const DOC_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(html|json|txt)$/u;
 const NOTICES = new Set(["report"]);
 
 export interface RunningPanel { host: string; port: number; url: string; close(): Promise<void> }
-/** `prices`: the price list in force, which prices both a shop's plan and its running-cost line. Left out: the newest in bundle/prices that is not a proposal. */
+/** `prices`: the price list in force, which prices both a shop's plan and its running-cost line. Left out: the newest in prices/ (the repo's root) that is not a proposal. */
 export interface PanelDeps { log?: (line: string) => void; prices?: PriceList }
 
 interface Req {
@@ -180,7 +180,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const data = readExport(shops.paths.exports(id));
     const observed = data ? monthlyFromExport(settings, data, monthOf(now(), settings.timezone), "live", now()).bookings.made : undefined;
     return monthlyCost({
-      settings, ...(shops.fleet(id)?.plan ? { plan: shops.fleet(id)!.plan! } : {}), ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
+      settings, ...(shops.fleet(id)?.plan ? { plan: shops.fleet(id)!.plan! } : {}), builder: config.mode === "own", ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
       ...(config.whatsappProvider ? { whatsappProvider: config.whatsappProvider } : {}), ...(config.hostingSharePaise !== undefined ? { hostingSharePaise: config.hostingSharePaise } : {}),
     }, prices);
   }
@@ -245,18 +245,18 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const status = accounts.inviteStatus(token);
     const role = accounts.inviteRole(token);
     if (status !== "ok" || !role) return page(r, status === "unknown" ? 404 : 410, errorPage(r.ctx(), 410, r.ctx().w.join.problems[`invite-${status === "ok" ? "unknown" : status}`]));
-    page(r, 200, joinPage(r.ctx(), { token, role, values: { name: "", handle: "", language: r.lang } }));
+    page(r, 200, joinPage(r.ctx(), { token, role, values: { name: "", company: "", handle: "", language: r.lang } }));
   });
   on("POST", /^\/join$/u, "public", async (r) => {
     const f = r.form;
     const w = r.ctx().w;
     const token = f.token ?? "";
-    const result = await accounts.redeem(token, { handle: f.handle ?? "", name: f.name ?? "", passphrase: f.passphrase ?? "", language: f.language ?? "en" });
+    const result = await accounts.redeem(token, { handle: f.handle ?? "", name: f.name ?? "", company: f.company ?? "", passphrase: f.passphrase ?? "", language: f.language ?? "en" });
     if (!result.ok) {
       const gone = result.reason.startsWith("invite-");
       const role = accounts.inviteRole(token);
       if (gone || !role) return page(r, 410, errorPage(r.ctx(), 410, w.join.problems[result.reason as keyof typeof w.join.problems]));
-      return page(r, 400, joinPage(r.ctx(), { token, role, error: w.join.problems[result.reason as keyof typeof w.join.problems], values: { name: (f.name ?? "").slice(0, 80), handle: (f.handle ?? "").slice(0, 40), language: f.language ?? "en" } }));
+      return page(r, 400, joinPage(r.ctx(), { token, role, error: w.join.problems[result.reason as keyof typeof w.join.problems], values: { name: (f.name ?? "").slice(0, 80), company: (f.company ?? "").slice(0, 60), handle: (f.handle ?? "").slice(0, 40), language: f.language ?? "en" } }));
     }
     redirect(r, "/shops", [sessions.issue(result.account.id, result.account.sessionVersion).setCookie]);
   });
@@ -356,7 +356,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const own = setupOf(kindId);
     const report = settings && data && !own ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
-    const plan = planView(shops.fleet(id), prices);
+    const plan = planView(shops.fleet(id), prices, config.mode === "own"); // a panel on a builder's own server: the builder licence
     const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),

@@ -94,16 +94,16 @@ test("as a program it prints the banner, listens on this computer only, and refu
   assert.ok(!err.includes("TOPSECRET") && !err.includes("shh"));
 
   const good = run(["--env", write("good.env", "RAZORPAY_KEY_ID=rzp_test_ok1\nRAZORPAY_KEY_SECRET=secretvalue\n"), "--port", "0"]);
-  const out = await new Promise<string>((resolve, reject) => {
-    let seen = "";
-    const timer = setTimeout(() => reject(new Error(`did not start: ${seen}`)), 8000);
-    good.stderr.on("data", (d) => { seen += d; if (/Press Ctrl\+C/.test(seen)) { clearTimeout(timer); resolve(seen); } });
-  });
-  try {
+  try { // the wait is inside: a slow start must not leave the child running, or node --test waits on it for ever
+    const out = await new Promise<string>((resolve, reject) => {
+      let seen = "";
+      const timer = setTimeout(() => reject(new Error(`did not start: ${seen}`)), 8000);
+      good.stderr.on("data", (d) => { seen += d; if (/Press Ctrl\+C/.test(seen)) { clearTimeout(timer); resolve(seen); } });
+    });
     assert.ok(out.includes(BANNER));
     assert.match(out, /Listening on http:\/\/127\.0\.0\.1:\d+/);
     assert.ok(!out.includes("secretvalue"));
-  } finally { good.kill("SIGTERM"); }
+  } finally { good.kill("SIGKILL"); }
 
   const nothing = run(["--env", join(dir, "missing.env")]);
   assert.equal(await new Promise((r) => nothing.on("close", r)), 2);

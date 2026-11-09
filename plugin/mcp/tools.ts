@@ -66,7 +66,8 @@ const create_pathway: Tool = {
     template: { type: "string", description: "A template id from list_modules, e.g. bookings or fees." },
     whatsapp_number_id: { type: "string", description: "The WhatsApp phone number id (digits). Optional now; the panel asks for it." },
     calendar_id: { type: "string", description: "Bookings only: the shop's Google calendar id." },
-    prepared_by: { type: "string", description: "The name the owner reads in the monthly report, e.g. 'Divya, local partner'." },
+    prepared_by: { type: "string", description: "The name the owner reads in the monthly report, e.g. 'Divya, local partner'. With `company`, the person's name alone, e.g. 'Divya'." },
+    company: { type: "string", description: "Optional. Your agency or business name; the owner then reads 'Divya, Sri Sai Digital'. Needs prepared_by." },
     settings: { type: "object", description: "Business details to start from, in the template's settings shape. Limit fields are ignored if they equal the template's, and refused if they differ." },
   } },
   async handler(args, e) {
@@ -92,6 +93,7 @@ const create_pathway: Tool = {
     if (opt(args.whatsapp_number_id, 30)) argv.push("--whatsapp-number-id", opt(args.whatsapp_number_id, 30) as string);
     if (opt(args.calendar_id, 200)) argv.push("--calendar-id", opt(args.calendar_id, 200) as string);
     if (opt(args.prepared_by, 120)) argv.push("--prepared-by", opt(args.prepared_by, 120) as string);
+    if (opt(args.company, 60)) argv.push("--company", opt(args.company, 60) as string);
     const r = await geometer(e, argv);
     if (r.code !== 0) throw new ToolError(`The shop was not made: ${(r.stderr.trim() || r.stdout.trim()).slice(0, 800)}`);
     return { made: name, template, note, said: fence(r.stdout.trim(), "geometer shop add"), next: "Draft limits if the defaults need tightening, then hand in the keys through the panel (never in the chat), then crash test." };

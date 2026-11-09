@@ -3,21 +3,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import { generateIdentity, decrypt } from "../backup/age.ts";
+import { generateIdentity } from "../backup/age.ts";
 import { exportShop, fingerprints } from "../backup/export.ts";
-import { runExports } from "../backup/jobs.ts";
-import { restoreSnapshot } from "../backup/restore-snapshot.ts";
+import { restoreShop, runExports } from "../backup/jobs.ts";
+import { openObject, restoreSnapshot, runRestoreJob } from "../backup/restore-snapshot.ts";
 import { snapshotShop } from "../backup/snapshot.ts";
 import { folderStore } from "../backup/store.ts";
 import { deploy } from "../deploy.ts";
 import { buildExport, packageTarGz } from "../export/build.ts";
 import { sourcesFor } from "../export/sources.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
-import { RECORD_KEY_FILE, derivedKey, personKeyFile, readSecretFile, secretFile } from "../lib/secrets.ts";
+import { RECORD_KEY_FILE, derivedKey, personKeyFile, readSecretFile, secretFile, writeSecretFile } from "../lib/secrets.ts";
 import { OLD_PERSON_FORM, PERSON_FORM, personLabel } from "../../modules/record/fingerprint.ts";
 import { headOf } from "../../modules/record/ledger.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
@@ -162,21 +162,71 @@ test("a package holds no byte of the key in any form, says which fingerprint for
   } finally { w.done(); }
 });
 
-test("the nightly snapshot carries the key, encrypted, so a restored shop can still match its people", async () => {
+test("the nightly snapshot carries the key inside its encrypted manifest, with no extra object, and both ways of opening a snapshot give it back", async () => {
   const dir = mkdtempSync(join(tmpdir(), "geo-keyed-"));
   try {
     const key = generateIdentity();
     const bucket = join(dir, "bucket");
-    const personKey = writePersonKey(dir);
-    const r = await snapshotShop({ name: "glow-salon", runtimeDb: shopDb(dir), personKeyFile: personKey, guards: [] }, { stamp: "20261104T013000Z", keepDays: 30, recipient: key.recipient, target: { url: bucket }, shops: [] }, folderStore(bucket), join(dir, "scratch"));
+    const stamp = "20261104T013000Z";
+    const r = await snapshotShop({ name: "glow-salon", runtimeDb: shopDb(dir), personKeyFile: writePersonKey(dir), guards: [] }, { stamp, keepDays: 30, recipient: key.recipient, target: { url: bucket }, shops: [] }, folderStore(bucket), join(dir, "scratch"));
     assert.equal(r.ok, true, r.error);
-    const sealed = readFileSync(join(bucket, "glow-salon", "20261104T013000Z", "person_key.age"));
+    assert.equal(r.files, 2, "the database and the manifest: the key costs no bucket request of its own");
+    assert.ok(!JSON.stringify(r.seal).includes(PERSON_KEY_HEX), "the seal, kept in the clear on the server, does not hold it");
+    const sealed = readFileSync(join(bucket, "glow-salon", stamp, "manifest.json.gz.age"));
     assert.equal(sealed.indexOf(Buffer.from(PERSON_KEY_HEX)), -1, "not readable in the bucket");
-    assert.equal(decrypt(sealed, key.identity).toString(), PERSON_KEY_HEX);
-    const opened = join(dir, "opened");
-    mkdirSync(join(dir, "dl"), { recursive: true });
-    writeFileSync(join(dir, "dl", "person_key.age"), sealed);
-    restoreSnapshot(join(dir, "dl"), key.identity, opened);
-    assert.equal(readFileSync(join(opened, "person_key"), "utf8"), PERSON_KEY_HEX, "restore-snapshot gives the key back with the database");
+    assert.equal(JSON.parse(openObject("manifest.json.gz.age", sealed, key.identity).get("manifest.json")!.toString()).personKey, PERSON_KEY_HEX);
+
+    const byHand = join(dir, "by-hand");
+    restoreSnapshot(join(bucket, "glow-salon", stamp), key.identity, byHand);
+    assert.equal(readFileSync(join(byHand, "person_key"), "utf8").trim(), PERSON_KEY_HEX, "a person opening a snapshot gets the key out with the database");
+
+    const identityFile = join(dir, "identity"); writeFileSync(identityFile, key.identity);
+    const out = join(dir, "job-out");
+    await runRestoreJob({ target: { url: bucket }, shop: "glow-salon", identityFile, out, nowIso: "2026-11-05T00:00:00.000Z" }, folderStore(bucket));
+    assert.equal(readFileSync(join(out, "person_key"), "utf8").trim(), PERSON_KEY_HEX, "`geometer restore` gets it out too");
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("`restore` puts the snapshot's key back, with its copies, before the runtime starts; a key a new machine made is kept beside it; a snapshot with no key leaves the shop's as it is", async () => {
+  const w = world({ "glow-salon": panelRuntime() }, { panel: { enabled: true }, backup: { snapshots: { url: "s3://snaps/a" }, ageRecipient: generateIdentity().recipient } });
+  try {
+    writeSecretFile(secretFile(w.root, "backup", "snapshots"), "A:B");
+    w.handIn("glow-salon");
+    await deploy(w.ctx);
+    const fresh = readSecretFile(personKeyFile(w.root, "glow-salon"))!; // what a first deploy on a new machine makes
+    const restored = "ab".repeat(32);
+    const identity = join(w.root, "owner-key"); writeFileSync(identity, "AGE-SECRET-KEY-1X");
+    const run = (key: string | undefined, atStart: () => void) => fakeRunner((_c, args) => {
+      if (args.includes("--job")) {
+        const work = args.find((a) => a.endsWith(":/out"))!.slice(0, -":/out".length);
+        if (key) writeFileSync(join(work, "files", "person_key"), `${key}\n`);
+        return ok(JSON.stringify({ ok: true, stamp: "20261104T013000Z", record: { records: 7, lastSeq: 7, lastEntryDigest: "d" } }));
+      }
+      if (args.includes("start")) atStart();
+      return ok("");
+    });
+
+    let atStart = "";
+    w.ctx.runner = run(restored, () => { atStart = readSecretFile(secretFile(w.root, "rt-glow-salon", RECORD_KEY_FILE))!; });
+    const said = await restoreShop(w.ctx, "glow-salon", { identity });
+    assert.equal(readSecretFile(personKeyFile(w.root, "glow-salon")), restored);
+    assert.equal(mode(personKeyFile(w.root, "glow-salon")), 0o600);
+    assert.equal(readSecretFile(secretFile(w.root, "panel", "person-keys", "glow-salon")), restored, "the panel's copy follows");
+    assert.equal(atStart, derivedKey(restored, "record"), "the runtime's key is the restored one by the time it starts");
+    assert.match(said, /fingerprint key was put back from the snapshot; the one it replaced is kept as glow-salon\.before-restore-/u);
+    const kept = readdirSync(join(w.root, "secrets", "person-keys")).find((n) => n.includes("before-restore"))!;
+    assert.equal(readFileSync(join(w.root, "secrets", "person-keys", kept), "utf8").trim(), fresh, "the key it replaced is not deleted");
+    assert.ok(!said.includes(restored), "the message never holds the key");
+
+    w.ctx.runner = run(restored, () => undefined);
+    assert.doesNotMatch(await restoreShop(w.ctx, "glow-salon", { identity }), /fingerprint key/u, "the same key again: nothing to say");
+
+    w.ctx.runner = run(undefined, () => undefined);
+    assert.match(await restoreShop(w.ctx, "glow-salon", { identity }), /holds no fingerprint key .* keeps the one it has/u);
+    assert.equal(readSecretFile(personKeyFile(w.root, "glow-salon")), restored);
+
+    w.ctx.runner = run("not a key", () => undefined);
+    await assert.rejects(restoreShop(w.ctx, "glow-salon", { identity }), /is not a key/u);
+    assert.equal(readSecretFile(personKeyFile(w.root, "glow-salon")), restored, "something that is not a key is never put in place");
+  } finally { w.done(); }
 });

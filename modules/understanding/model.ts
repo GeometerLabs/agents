@@ -61,8 +61,9 @@ export interface ParseOptionsBase {
   /** Read it with the rules only: the shop is in button mode (allowance used up, switched off from outside, or a model is down). */
   rulesOnly?: boolean;
   /**
-   * Steps not to ask this time because they keep failing and are paused (ai-state.ts). The reader sets it. The router honours it only for a step with another step
-   * after it, so a message is never left with nobody to read it except the rules because of a pause.
+   * Steps not to ask this time (ai-state.ts), set by the reader: "decision" when it keeps failing and is paused, which the router honours only when the language model
+   * is there after it, so a pause never leaves a message to the rules alone; and "model" under the month's AI cap, which the router always honours (the decision model
+   * and the rules still read the message).
    */
   skipSteps?: readonly Step[];
 }

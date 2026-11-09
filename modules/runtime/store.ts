@@ -45,6 +45,11 @@ export interface DurableStore extends WindowStore {
   loadState(): { snapshot: string | null; record: RecordEntry[] };
   /** Save one step: snapshot, new record entries and (for a task) its done mark, in one transaction. */
   commitStep(step: { taskId?: string; snapshot: string; entries: readonly RecordEntry[]; nowMs: number }): void;
+  /**
+   * The text of conversations that are over: a failed task keeps its event (the message as the person wrote it) for a person to look at, until `beforeMs`; then
+   * only its outcome is kept (its id, kind, state and error). A done task's text is emptied when it is done. Never touches the record. Returns how many were emptied.
+   */
+  compactTurns(beforeMs: number): number;
   /** Throws if the database cannot be read. */
   ping(): void;
   close(): void;
@@ -145,6 +150,7 @@ export function openStore(dataDir: string): DurableStore {
   const readRecord = db.prepare("SELECT entry FROM record ORDER BY seq");
   const saveSnapshot = db.prepare("INSERT INTO state (id, snapshot, saved_at) VALUES (1, ?, ?) ON CONFLICT (id) DO UPDATE SET snapshot = excluded.snapshot, saved_at = excluded.saved_at");
   const addEntry = db.prepare("INSERT INTO record (seq, time, conversation, booking, action, outcome, entry) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  const emptyOldFailed = db.prepare("UPDATE tasks SET payload = '{}' WHERE state = 'failed' AND payload <> '{}' AND received_at < ?");
 
   return {
     file,
@@ -192,6 +198,7 @@ export function openStore(dataDir: string): DurableStore {
     },
 
     lastInboundAt: (phone) => (lastInbound.get(phone) as { last_inbound_at: number } | undefined)?.last_inbound_at,
+    compactTurns: (beforeMs) => Number(emptyOldFailed.run(beforeMs).changes),
     ping() { db.prepare("SELECT count(*) FROM sqlite_master").get(); },
     close() { if (db.isOpen) db.close(); },
   };

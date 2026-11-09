@@ -2,9 +2,10 @@
 // (Bookings and Fees try the same code through their own agents; this is the part that does not need either.)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fakeClock } from "../../core/clock.ts";
 import { GuardSuspendedError } from "../../core/faults.ts";
 import { createFakeMessaging } from "../../messaging/messaging.ts";
@@ -161,6 +162,93 @@ test("a step that Guard refused for the shop's licence (402) is not tried again:
     await runtime.idle();
     assert.equal(tries, 1, "tried once, where anything else would have three more tries");
     assert.deepEqual(runtime.status().tasks, { pending: 0, done: 0, failed: 1 });
+    await runtime.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("after a restore from a snapshot the runtime moves every id counter on and writes one `restored` entry before any step, once; nothing else of the store changes", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-runtime-restored-"));
+  const clock = fakeClock(Date.parse("2026-11-05T04:30:00Z"));
+  const lines: string[] = [];
+  const open = () => {
+    const db = openStore(join(dir, "data"));
+    const runtime = createRuntimeCore<Toy, { timezone: string; owner: { whatsapp: string; language: "en" } }, never>({
+      settings: { timezone: "Asia/Kolkata", owner: { whatsapp: "+919800000001", language: "en" } }, store: db, clock, messaging: createFakeMessaging(clock), pathwayVersion: "0.0.1", retryDelaysMs: [0], log: (l) => lines.push(l),
+      kit: {
+        pathway: "toy", casesName: "orders",
+        createStore: () => ({ orders: new Map(), seen: new Set(), next: 1 }), serialize: codec.serialize, parse: codec.parse, skipCounters: codec.skipCounters,
+        createAgent: ({ store, record }) => ({ async handle(event) { if (event.kind !== "message") return; const id = `o-${store.next++}`; store.orders.set(id, { id, state: "open", pending: [] }); record.append({ conversation: event.message.from, booking: id, action: "receive_message", inputs: {}, outcome: "confirmed", language: "en" }); } }),
+        countCases: () => ({}), casesOf: (store) => store.orders.values(), refundContext: () => null,
+      },
+    });
+    return { runtime, db };
+  };
+  const note = JSON.stringify({ snapshot: "20261104T013000Z", restoredAt: "2026-11-05T04:00:00.000Z", lastSeq: 1 });
+  try {
+    const moved = JSON.parse(codec.skipCounters(codec.serialize({ orders: new Map(), seen: new Set(["a"]), next: 7, started: 5 }), 100_000));
+    assert.deepEqual([moved.next, moved.seen, moved.started], [100_007, ["a"], 5], "a count moves; nothing else does");
+    const first = open();
+    first.runtime.submit([{ kind: "message" as const, message: { id: "m1", from: "+919800000000", text: "x", timestamp: clock.now() } }]);
+    first.runtime.kick(); await first.runtime.idle(); await first.runtime.close();
+    writeFileSync(join(dir, "data", "restored.json"), note);
+    const second = open();
+    const saved = second.db.loadState();
+    assert.equal(codec.parse(saved.snapshot!).next, 100_002, "the next order is o-100002, not o-2, which may have been used after the snapshot");
+    assert.deepEqual(saved.record.map((e) => [e.seq, e.action, e.outcome]), [[1, "receive_message", "confirmed"], [2, "restored", "confirmed"]]);
+    assert.deepEqual(saved.record[1].refs, { snapshot: "20261104T013000Z", restoredAt: "2026-11-05T04:00:00.000Z", idGap: "100000" });
+    assert.equal(saved.record[1].conversation, "+919800000001");
+    assert.match(lines.join("\n"), /Restored from the snapshot of 20261104T013000Z: ids moved on by 100000/);
+    assert.ok(!existsSync(join(dir, "data", "restored.json")) && readdirSync(join(dir, "data")).some((f) => f.startsWith("restored.json.done-")), "the note is kept under another name");
+    second.runtime.submit([{ kind: "message" as const, message: { id: "m2", from: "+919800000000", text: "y", timestamp: clock.now() } }]);
+    second.runtime.kick(); await second.runtime.idle();
+    assert.equal(second.db.loadState().record.at(-1)!.booking, "o-100002");
+    await second.runtime.close();
+    // the process stopped after the entry was saved but before the note was renamed: the next start does not move the ids again
+    writeFileSync(join(dir, "data", "restored.json"), note);
+    const third = open();
+    assert.equal(codec.parse(third.db.loadState().snapshot!).next, 100_003);
+    assert.equal(third.db.loadState().record.filter((e) => e.action === "restored").length, 1);
+    await third.runtime.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("once a day the text of a conversation that ended more than 30 days ago is deleted (a failed message's words, a template's words on a finished case); the record is kept whole", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-runtime-compact-"));
+  const clock = fakeClock(Date.parse("2026-11-02T04:30:00Z"));
+  const compacted: number[] = [];
+  const db = openStore(join(dir, "data"));
+  const runtime = createRuntimeCore<Toy, { timezone: string }, never>({
+    settings: { timezone: "Asia/Kolkata" }, store: db, clock, messaging: createFakeMessaging(clock), pathwayVersion: "0.0.1", retryDelaysMs: [0],
+    kit: {
+      pathway: "toy", casesName: "orders",
+      createStore: () => ({ orders: new Map(), seen: new Set(), next: 1 }), serialize: codec.serialize, parse: codec.parse,
+      createAgent: ({ store, record }) => ({
+        async handle(event) {
+          if (event.kind !== "message") return;
+          if (event.message.text.startsWith("bad")) throw new Error("the agent could not read this");
+          const id = `o-${store.next++}`; store.orders.set(id, { id, state: "done", pending: [] });
+          record.append({ conversation: event.message.from, booking: id, action: "receive_message", inputs: { text: event.message.text }, outcome: "confirmed", language: "en" });
+        },
+      }),
+      countCases: () => ({}), casesOf: (store) => store.orders.values(), refundContext: () => null,
+      compactStore: (_store, before) => { compacted.push(before); return 0; },
+    },
+  });
+  const payloads = () => { const read = new DatabaseSync(db.file, { readOnly: true }); try { return read.prepare("SELECT id, state, payload FROM tasks ORDER BY seq").all() as { id: string; state: string; payload: string }[]; } finally { read.close(); } };
+  try {
+    runtime.submit([{ kind: "message" as const, message: { id: "m1", from: "+919800000000", text: "bad: my address is 12 MG Road", timestamp: clock.now() } }, { kind: "message" as const, message: { id: "m2", from: "+919800000000", text: "fine", timestamp: clock.now() } }]);
+    runtime.kick(); await runtime.idle();
+    assert.deepEqual(payloads().map((t) => [t.id, t.state, t.payload.includes("MG Road")]), [["message:m1", "failed", true], ["message:m2", "done", false]], "a failed message keeps its words for a person to look at; a done one never does");
+    await runtime.tick();
+    assert.equal(compacted.length, 1, "the first beat compacts");
+    assert.equal(payloads()[0].payload.includes("MG Road"), true, "a day old: kept");
+    clock.advance(12 * 3_600_000); await runtime.tick();
+    assert.equal(compacted.length, 1, "not again within the day");
+    clock.advance(31 * 24 * 3_600_000); await runtime.tick();
+    assert.equal(compacted.length, 2);
+    assert.equal(compacted[1], clock.now() - 30 * 24 * 3_600_000, "the template is asked about cases that ended 30 days ago");
+    assert.deepEqual(payloads().map((t) => [t.id, t.state, t.payload]), [["message:m1", "failed", "{}"], ["message:m2", "done", "{}"]], "the words are gone; what happened (the task, its state) stays");
+    assert.equal(db.loadState().record.length, 1, "the record is untouched");
     await runtime.close();
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

@@ -7,6 +7,10 @@
 //   fault      a model step failed (an error, a timeout, an answer it could not use) in the last few minutes
 // None of this changes a limit. Guard and the template's own checks hold exactly as before; only the reading of free text is done without a model.
 //
+// THE AI CAP is smaller than button mode too. The shop's config says `model: "off"` (the bundle writes it from fleet's heartbeat answer once the month's model spend
+// reaches the plan's cap, price list `ai.cap`): the language model (step 2) is left out until fleet says "normal" again, on the 1st. The rules and the decision
+// model (step 1) keep answering; a message neither can read gets what button mode sends for that turn (the menu). The shop stays in AI mode.
+//
 // A STEP PAUSE is smaller than button mode. When only the decision model (step 1) is down and the language model (step 2) answers, every message would wait out
 // the decision model's timeout and then pay step 2 anyway. So after a few failures in a short time the decision model is left out for a while and step 2 reads the
 // message at once; one message after the pause tries it again. The shop stays in AI mode; the record says so (an `ai_mode` line) and so does the status.
@@ -49,8 +53,11 @@ export interface AiState {
   pausedUntilMs?: number;
   /** How each paused-able step has been doing. Left out until a step first fails, and in a store saved before this existed. */
   steps?: Partial<Record<BreakerStep, StepHealth>>;
-  /** The notices already sent, so each is sent once: the month the allowance notice was sent for; whether the outside switch was announced; the day (local) of the last fault notice. */
-  told: { allowance?: string; override?: boolean; fault?: string };
+  /**
+   * The notices already sent, so each is sent once: the month the allowance notice was sent for; whether the outside switch was announced; the day (local) of the last fault
+   * notice; the month the record was told the AI cap left the language model out.
+   */
+  told: { allowance?: string; override?: boolean; fault?: string; modelOff?: string };
 }
 
 /** The part of a template's store that button mode needs. */
@@ -64,6 +71,8 @@ export type ButtonReason = "override" | "allowance" | "fault";
 export interface AiPolicy {
   /** "buttons" turns the model steps off. Asked on every message and every tick, so a change made while the agent runs takes effect at once. Left out: "auto". */
   override?: () => "auto" | "buttons";
+  /** The AI cap: "off" leaves the language model (step 2) out; the rules and the decision model keep answering. Asked on every message, like `override`. Left out: "normal". */
+  model?: () => "normal" | "off";
   /** The monthly allowance for steps 1 and 2. Either limit reached puts the shop in button mode for the rest of the month. Left out: no limit. */
   allowance?: { messages?: number; costMicroInr?: number };
   /** How long button mode lasts after a model step fails. Default 5 minutes. */

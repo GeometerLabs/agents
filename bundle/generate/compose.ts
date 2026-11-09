@@ -10,10 +10,10 @@
 //   per server    g-model                 the model Guard (the server's key and cap; every shop's runtime is an agent of it)
 //                 inbox, relay            webhooks in /c/<shop>/..., owners' approvals; each routes by shop and holds that shop's secrets
 //                 refresher, ops          the Google token refresher; the heartbeat sender and the admin client the deployer reaches through `docker exec`
-//                 litestream, caddy, (panel)
+//                 caddy, (panel)
 //
 // Networks. net-<shop> and admin are `internal: true`: no route out. egress and front are not. Only the Guards (and the services that must call out:
-// ops for the heartbeat, the refresher for Google, litestream for the bucket) are on egress. Caddy is on front with the inbox, the relay and the panel, so
+// ops for the heartbeat, the refresher for Google) are on egress. Caddy is on front with the inbox, the relay and the panel, so
 // it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call).
 //
 // The monthly report pages. The runtime writes them into <data volume>/data/reports/<32 random hex digits>/. Caddy mounts that one folder of each shop's data volume,
@@ -32,7 +32,7 @@
 // address on the `admin` network, passing bytes to 127.0.0.1:8082 (the Guard shares that loopback). The runtime is not on that network, so it cannot
 // see the port at all.
 import { basename, dirname, join } from "node:path";
-import { CADDY_IMAGE, LITESTREAM_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
+import { CADDY_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
 import { LICENCE_MOUNT } from "./guards.ts";
@@ -181,7 +181,7 @@ export interface PanelOptions {
   run?: boolean;
 }
 
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { backup: boolean; panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[] }): Composed {
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[] }): Composed {
   const agents = features.agents ?? [];
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
   const net = addressing(server);
@@ -275,14 +275,6 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(features.opsUser ? { user: features.opsUser } : {}),
     networks: { admin: {}, egress: {} },
   }), [`${dirs.generated}/ops/ops.json`]);
-  if (features.backup) {
-    add("litestream", {
-      image: LITESTREAM_IMAGE, user: nodeUser, ...hardened, command: ["replicate", "-config", "/etc/litestream.yml"],
-      volumes: [`${secretDir("litestream")}/litestream.yml:/etc/litestream.yml:ro`, ...shops.map((s) => `${names.dataVolume(s.name)}:/data/${s.name}`)],
-      networks: { egress: {} },
-      depends_on: Object.fromEntries(shops.map((s) => [names.runtime(s.name), { condition: "service_healthy" }])),
-    }, [`${secretDir("litestream")}/litestream.yml`]);
-  }
   if (server.panel.enabled && features.panel && features.panel.run !== false) {
     // The panel writes the desired state, the secrets inbox and stop requests; it reads the results and the exports; it keeps its own data. It sees NONE of the
     // server's other folders (not secrets/, not state/, not generated/), has no Docker socket, and its network holds only the Guards' agent ports, where it

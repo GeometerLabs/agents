@@ -3,8 +3,22 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AMIT, RAJESH, SUNITA, annapurna, annapurnaRazorpay, createWorld, sweetCrumbs } from "../src/harness.ts";
 import { takenOf } from "../src/order.ts";
+import { createRuleParser } from "../src/adapters/rule-parser.ts";
 
 const ORDER = "2 veg thali 10 nov 12:00 pm pickup";
+
+test("the month's AI cap (model: off): the language model is left out of every reading, the shop stays out of button mode, and the record says so once", async () => {
+  const rules = createRuleParser();
+  const skipped: (readonly string[] | undefined)[] = [];
+  const parser = { parse: rules.parse, parseDetailed: async (text: string, context: never, options?: { skipSteps?: readonly string[] }) => { skipped.push(options?.skipSteps); return { intent: await rules.parse(text, context) }; } };
+  const w = createWorld({ settings: annapurnaRazorpay(), parser: parser as never, ai: { model: () => "off" } });
+  await w.say("hello");
+  await w.say(ORDER);
+  assert.deepEqual(skipped, [["model"], ["model"]], "the reader asks the parser to leave the language model out");
+  assert.equal(w.orderOf(AMIT)!.state, "awaiting_advance", "the rules still take the order");
+  assert.deepEqual(w.record.entries().filter((e) => e.action === "ai_mode").map((e) => [e.refs.mode, e.refs.reason]), [["model_off", "ai_cap"]]);
+  assert.equal(w.textsTo(w.owner).filter((t) => /button/iu.test(t)).length, 0, "no button-mode notice to the owner");
+});
 
 test("an order is understood from one sentence, held, quoted at the menu price, and confirmed only by the payment record (Razorpay)", async () => {
   const w = createWorld({ settings: annapurnaRazorpay() });
