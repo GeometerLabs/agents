@@ -1012,14 +1012,20 @@ async function guardOutage() {
     const drained = await waitFor("every waiting task to finish", () => tasksOf(shop)?.pending === 0, 300);
     const answers = await latencies(load.sent, 60);
     const delivered = load.sent.filter((s) => s.ok).length;
-    const twice = repeated(await control(shop, "/_standin/state"));
+    const after = await control(shop, "/_standin/state");
+    const twice = repeated(after);
     const failedAfter = tasksOf(shop)?.failed ?? -1;
-    out[kind] = { downSeconds: Math.round((downTo - downFrom) / 1000), sent: load.sent.length, delivered, answered: answers.answered, longestWaitSeconds: Math.round((answers.waits.at(-1) ?? 0) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, pendingWhileDown, failedTasksDuring: failedAfter - failedBefore, runtimeRestartedWhileDown: backUp, twice };
+    // each payment's work done once: every paid link's booking is confirmed in the calendar, by exactly one event (the provider's own records, not the runtime's word)
+    const paidRefs = ((after.links ?? []) as { reference_id: string; status: string }[]).filter((l) => l.status === "paid").map((l) => l.reference_id);
+    const confirmedBy = ((after.calendar ?? []) as { bookingRef?: string; status?: string }[]).filter((e) => e.status === "confirmed").reduce<Record<string, number>>((m, e) => { const k = e.bookingRef ?? "?"; m[k] = (m[k] ?? 0) + 1; return m; }, {});
+    const notConfirmedOnce = paidRefs.filter((r) => confirmedBy[r] !== 1);
+    out[kind] = { downSeconds: Math.round((downTo - downFrom) / 1000), sent: load.sent.length, delivered, answered: answers.answered, longestWaitSeconds: Math.round((answers.waits.at(-1) ?? 0) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, pendingWhileDown, failedTasksDuring: failedAfter - failedBefore, runtimeRestartedWhileDown: backUp, paidLinks: paidRefs.length, paidNotConfirmedOnce: notConfirmedOnce, twice };
     say(`   ${kind}: ${JSON.stringify(out[kind])}`);
     check(`${kind} Guard down ${Math.round((downTo - downFrom) / 1000)} s: nothing reached the ${kind} provider while it was down (${atKill} -> ${beforeRestart})`, atKill >= 0 && atKill === beforeRestart, { atKill, beforeRestart });
     check(`${kind} Guard down: the messages waited on disk, through a restart of the runtime (${pendingWhileDown} pending just after the restart)`, backUp && pendingWhileDown >= 1, { pendingWhileDown, backUp });
     check(`${kind} Guard back: the waiting work finished, every message was answered (${answers.answered} of ${delivered}) and no task failed`, guardBack && drained && answers.answered === delivered && failedAfter - failedBefore === 0, { answered: answers.answered, delivered, drained, failed: failedAfter - failedBefore });
     check(`${kind} Guard back: nothing was sent to a provider twice (no second link or event for a booking, no message twice)`, twice.links.length === 0 && twice.events.length === 0 && twice.messages.length === 0, twice);
+    check(`${kind} Guard back: each payment's work was done once: every paid link's booking is confirmed in the calendar by one event (${paidRefs.length} paid)`, paidRefs.length > 0 && notConfirmedOnce.length === 0, { paid: paidRefs.length, notConfirmedOnce });
   }
   results.guardOutage = out; save();
 }
