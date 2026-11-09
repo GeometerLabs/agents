@@ -380,7 +380,9 @@ export async function restoreAgent(ctx: Context, agent: string, o: { at?: string
 /** The record from the snapshot put in place, with a `restored` entry after its last one. The file it replaces is kept beside it. Says what that means for numbers already handed out. */
 function recordPutBack(ctx: Context, agent: string, from: string, got: { stamp: string; record: RecordFacts | null }, stamp: string): string {
   const path = recordFile(ctx.dir, agent);
-  const before = loadRecord(ctx.dir, agent);
+  // only its length is read: a record file this bundle cannot read (the reason to restore, perhaps) does not stop the restore half-way, with the Guards already put back
+  let before = { entries: [] as unknown[] };
+  try { before = loadRecord(ctx.dir, agent); } catch { /* kept beside the restored one all the same */ }
   const record = existsSync(from) ? (JSON.parse(readFileSync(from, "utf8")) as ReturnType<typeof loadRecord>) : { schema: 1 as const, entries: [], seen: {} };
   if (existsSync(path)) renameSync(path, `${path}.before-restore-${stamp}`);
   // the gap on the record, as a shop's runtime writes it after a restore (modules/runtime/restored.ts): an append like any other, never a rewrite
