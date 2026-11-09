@@ -3,7 +3,7 @@
 // is found from its receipt.
 import { createAgent } from "../src/agent.ts";
 import type { AgentEvent } from "../src/agent.ts";
-import { createStore } from "../src/order.ts";
+import { compactFinishedOrders, createStore } from "../src/order.ts";
 import type { Store } from "../src/order.ts";
 import type { Messaging } from "../../../../modules/messaging/messaging.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
@@ -17,7 +17,7 @@ import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createOrdersLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
-import { parseStore, serializeStore } from "./snapshot.ts";
+import { parseStore, serializeStore, skipStoreCounters } from "./snapshot.ts";
 import type { DurableStore } from "./store.ts";
 
 export const PATHWAY = "orders";
@@ -85,6 +85,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     createStore,
     serialize: serializeStore,
     parse: parseStore,
+    skipCounters: skipStoreCounters,
+    compactStore: compactFinishedOrders,
     createAgent: ({ store, record }) => createAgent({ settings, clock, ...services, parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.orders.values(),
