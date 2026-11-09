@@ -39,7 +39,7 @@ export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
     // a UPI shop's (B33) values: its UPI ID and name, the owner's code, and what the owner marked
     upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
     // the licence's notices (B13): who set the shop up, what is still open at the final stop, and the free export's last day
-    partner: "Divya, local partner", upcomingCount: 3, openCount: 1, licenceDateMs: zonedToMs({ year: 2027, month: 3, day: 5 }, { hour: 0, minute: 0 }, TIME_ZONE),
+    partner: "Divya, Sri Sai Digital", upcomingCount: 3, openCount: 1, licenceDateMs: zonedToMs({ year: 2027, month: 3, day: 5 }, { hour: 0, minute: 0 }, TIME_ZONE),
   };
 }
 
