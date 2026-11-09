@@ -267,7 +267,9 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
   INTAKE, `agent_razorpay`), the inbox's webhook route and config (`/webhooks/razorpay`, `razorpayWebhookSecret`), the generated relay and inbox configs
   (`generate/configs.ts`), `generate/shop.ts`'s gateway variable and `server.limits.razorpayLinksPerHour`, `services/ops.ts` and `services/relay.ts`, the own agent's
   record, facts and relay context (`agent/record.ts`, `facts.ts`, `relay-context.ts`; the payment look-up is already `providers/razorpay/runtime.ts`), the own-agent
-  crash test's gateway situations and world, `geometer.ts`'s help text, and the templates' reports, stand-in control routes and scripts. Each is the provider's id from
+  crash test's gateway situations and world, `agent/deploy.ts` (`ensureCredentials`' owner notify secret, `renewRelayCredential`, the connection text's labels),
+  `geometer.ts` (`shop add --payment razorpay` is compared by name and its refusals say Razorpay; the help text), `generate/compose.ts` `SHOP_GUARD_KINDS`, and the
+  templates' reports, stand-in control routes and scripts. Each is the provider's id from
   the shop's settings, mechanically; none changes what a Razorpay shop gets (the golden test pins its bytes). Revisit when: before a second gateway, in one wave.
 - **An agent on its own gateway API (B71 step 6, `--upstreams own-api`) is checked less than one on a module** (Explanation.md says how it is built). Not done:
   (1) a rule that holds a call for a person is refused, because the owner relay asks only about refunds on a gateway it has a module for
