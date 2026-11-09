@@ -106,8 +106,8 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | ನೆನಪಿಸುವುದು: ಗ್ರಾಹಕರು +919811111111 (ಬುಕಿಂಗ್ b-3) ಅವರಿಗೆ ₹200 ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ನಂತರ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ, ಅಥವಾ "refunded P4XR9T" ಎಂದು ಉತ್ತರಿಸಿ. | Reminder: ₹200 is still owed back to customer +919811111111 (booking b-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | ಧನ್ಯವಾದ. ಬುಕಿಂಗ್ b-3 ರ ₹200 ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಾಗಿದೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. | Thank you. The ₹200 refund for booking b-3 is marked sent, and the customer has been told. |  |
 | `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ಸರಿ. ಬುಕಿಂಗ್ b-3 ರ ₹200 ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಡಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ. | Noted. The ₹200 for booking b-3 is kept for a booking you make yourself. Nothing more is owed back. |  |
-| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, local partner ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner. |  |
-| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: 3. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: 1. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್ ವರೆಗೆ Divya, local partner ನೀಡುತ್ತಾರೆ. | Notice: online booking for Glow Salon has stopped. Nothing is deleted. Bookings to come: 3. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
+| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, Sri Sai Digital ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, Sri Sai Digital. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner | ಸೂಚನೆ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ Divya, Sri Sai Digital ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿರುವ ಬುಕಿಂಗ್‌ಗಳು: 3. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ. | Notice: online booking for Glow Salon has stopped, because the service from Divya, Sri Sai Digital has ended. Bookings after today still in your calendar: 3. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you. |  |
 
 ### The words on the buttons and the lists
 
@@ -283,7 +283,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 ಖಚಿತಪಡಿಸಲು ಆಗದ್ದು: 1
 ಪರಿಶೀಲಿಸದ್ದು: ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ಕೋಡ್: 7K2M-9QXD · ಪೂರ್ಣ ವರದಿ: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html
-ಸಿದ್ಧಪಡಿಸಿದವರು: Divya, local partner · Geometer
+ಸಿದ್ಧಪಡಿಸಿದವರು: Divya, Sri Sai Digital · Geometer
 ★ ಇನ್ನೋವೇಟರ್
 ```
 
@@ -461,6 +461,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.title` | ನಿಮ್ಮ partner ಖಾತೆ ತೆರೆಯಿರಿ | Create your partner account |  |
 | `join.intro` | ನಿಮ್ಮ ಆಹ್ವಾನ ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಹೇಗೆ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ ಎಂದು ಆರಿಸಿ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | ನಿಮ್ಮ ಹೆಸರು | Your name |  |
+| `join.company` | ಕಂಪನಿ ಅಥವಾ ವ್ಯಾಪಾರದ ಹೆಸರು (ಬೇಕಿದ್ದರೆ) | Company or business name (optional) |  |
+| `join.companyHelp` | ಅಂಗಡಿಯ ಮಾಲೀಕರ ತಿಂಗಳ ವರದಿಯಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರಿನ ನಂತರ ಇದು ಕಾಣುತ್ತದೆ. ಖಾಲಿ ಬಿಟ್ಟರೆ ಬದಲಿಗೆ "local partner" ಅಥವಾ "builder" ಕಾಣುತ್ತದೆ. 60 ಅಕ್ಷರದವರೆಗೆ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local partner" or "builder" instead. Up to 60 characters. |  |
 | `join.handle` | ಸೈನ್ ಇನ್ ಮಾಡಲು ಹೆಸರು | Name to sign in with |  |
 | `join.handleHelp` | 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | 3 to 40 letters, digits, dots or dashes. |  |
 | `join.passphrase` | ಪಾಸ್‌ವರ್ಡ್ | Passphrase |  |
@@ -473,6 +475,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.problems.handle-bad` | ಸೈನ್ ಇನ್ ಹೆಸರಿಗೆ 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ ಬಳಸಿ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | Use 3 to 40 letters, digits, dots or dashes for the sign-in name. |  |
 | `join.problems.handle-taken` | ಈ ಸೈನ್ ಇನ್ ಹೆಸರನ್ನು ಬೇರೆಯವರು ಬಳಸುತ್ತಿದ್ದಾರೆ. ಬೇರೆ ಹೆಸರು ಆರಿಸಿ. | That sign-in name is taken. Choose another. |  |
 | `join.problems.name-bad` | ನಿಮ್ಮ ಹೆಸರು ಬರೆಯಿರಿ. | Write your name. |  |
+| `join.problems.company-bad` | ಕಂಪನಿಯ ಹೆಸರನ್ನು ಒಂದೇ ಸಾಲಿನಲ್ಲಿ, 60 ಅಕ್ಷರದೊಳಗೆ ಬರೆಯಿರಿ, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the company name on one line, up to 60 characters, or leave it empty. |  |
 | `join.problems.language-bad` | ಪಟ್ಟಿಯಿಂದ ಒಂದು ಭಾಷೆ ಆರಿಸಿ. | Choose a language from the list. |  |
 | `join.problems.short` | ಪಾಸ್‌ವರ್ಡ್‌ಗೆ ಕನಿಷ್ಠ 10 ಅಕ್ಷರ ಬೇಕು. | The passphrase needs at least 10 characters. |  |
 | `join.problems.long` | ಪಾಸ್‌ವರ್ಡ್ ತುಂಬಾ ಉದ್ದವಾಗಿದೆ (ಹೆಚ್ಚೆಂದರೆ 200 ಅಕ್ಷರ). | The passphrase is too long (200 characters at most). |  |
@@ -663,12 +666,12 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.means.reminder` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers yet. |  |
 | `licence.means.warning` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. ಪಾವತಿಸದಿದ್ದರೆ ಅಂಗಡಿ ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
 | `licence.means.wind_down` | ಗ್ರಾಹಕರಿಗೆ ಅಂಗಡಿಯನ್ನು ಸಂಪರ್ಕಿಸಲು ಹೇಳಲಾಗುತ್ತದೆ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಈಗಾಗಲೇ ಬುಕ್ ಅಥವಾ ಪಾವತಿಯಾದ ಕೆಲಸಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಪಾವತಿಸಿದ ಕೂಡಲೇ ಎಲ್ಲವೂ ಮರಳುತ್ತದೆ. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
-| `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಕೆಲಸಗಳನ್ನು ಮಾಲೀಕರಿಗೆ ಕಳುಹಿಸಲಾಗಿದೆ, ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ಉಚಿತವಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free. |  |
+| `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ತೆರೆದಿರುವ ಪಾವತಿ ಲಿಂಕ್‌ಗಳನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ; ಅಂಗಡಿಯ ಸ್ವಂತ ಖಾತೆಗಳು ಮತ್ತು ಕೀಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಸೇವೆ ಮುಗಿದಿದೆ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ; ಬೇರೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಸೇರಲು ಅವರು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಬಹುದು. ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records. |  |
 | `licence.paidThrough` | ಮುಂದಿನ ಪಾವತಿ: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
 | `licence.windDownOn` | ಪಾವತಿಸದಿದ್ದರೆ 7 Jan 2027 ರಿಂದ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
 | `licence.extended` | Geometer-ನ ತುರ್ತು ವಿಸ್ತರಣೆ 21 Dec 2026 ವರೆಗೆ ಇದೆ. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
 | `licence.stopOn` | ಪೂರ್ಣವಾಗಿ ನಿಲ್ಲುವ ದಿನ: 6 Feb 2027. | Final stop planned for 6 Feb 2027. |  |
-| `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು 7 May 2027 ವರೆಗೆ ಉಚಿತವಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ. | Free download of the shop's records until 7 May 2027. |  |
+| `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು 7 May 2027 ವರೆಗೆ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | ಪಾವತಿಸಿ ನವೀಕರಿಸಿ | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 ರಿಂದ ಪರವಾನಗಿ ನವೀಕರಣಗೊಂಡಿಲ್ಲ. ಈ ಸರ್ವರ್ Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |

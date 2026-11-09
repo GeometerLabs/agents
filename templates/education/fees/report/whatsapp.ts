@@ -143,7 +143,7 @@ export function monthlyReportMessage(report: Envelope<FeesReport>, language: Lan
 /** Example values for Meta's review: the sample month the review sheets use, as a live report, with a believable address and builder. */
 function exampleValues(language: Language): Record<ReportSlot, string> {
   const sample = { ...sampleReport(), source: "live" as const };
-  return reportValues(sample, language, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, local partner" });
+  return reportValues(sample, language, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, Sri Sai Digital" });
 }
 
 /** The message as the review sheets show it: the sample month, with the Innovator line, so a native reader sees every word that is sent. */

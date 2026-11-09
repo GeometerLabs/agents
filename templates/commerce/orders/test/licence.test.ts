@@ -52,7 +52,7 @@ test("the final stop closes the open advance links once and sends nothing more",
 
 test("the licence messages exist in four languages, name the partner, and are never about money", () => {
   for (const language of ["en", "hi", "ml", "kn"] as const) {
-    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Annapurna", menu: [], partner: "Divya, local partner", upcomingCount: 4, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30) };
+    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Annapurna", menu: [], partner: "Divya, local partner", upcomingCount: 4 };
     for (const id of ["orders_paused", "owner_licence_paused", "owner_licence_stopped"] as const) {
       const text = TEMPLATES[language][id](facts);
       if (id !== "orders_paused") assert.ok(text.includes("Divya, local partner"), `${language} ${id}`);
