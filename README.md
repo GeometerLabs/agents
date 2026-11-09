@@ -78,7 +78,8 @@ geo check .                              # the agent as written: "No problems fo
 again with something going wrong on purpose (a reply that never arrives, for example), and checks the
 rules in `.geometer/rules.toml` against what happened. The first run builds the container and takes a
 few minutes; later runs take about half a minute. Every folder also holds a GitHub Actions workflow
-(`.github/workflows/geometer.yml`) that runs the same check on each pull request.
+(`.github/workflows/geometer.yml`) that runs the same check on each pull request once the folder is the
+root of your own repository. This repository runs no CI itself.
 
 ## What the folders contain
 
@@ -92,7 +93,7 @@ few minutes; later runs take about half a minute. Every folder also holds a GitH
   .geometer/tools.toml     the simulated services the agent talks to
   .geometer/tasks.toml     what the agent is asked to do
   broken/*.patch           one-line mistakes to apply, and watch Geometer catch
-  .github/workflows/       the CI check
+  .github/workflows/       the CI check, to use in your own repository
   README.md                rules, how to run it for real, how to check it, a prompt for your assistant
 ```
 
