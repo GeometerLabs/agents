@@ -2,7 +2,7 @@
 // One-bit greyscale, compressed with the deflate that Node has built in (node:zlib), so no dependency. The PNG layout is the W3C's PNG specification
 // (third edition): the signature, IHDR, one IDAT, IEND, each chunk with its CRC-32.
 //
-// This file uses node:zlib, so an agent never imports it directly: the server gives the agent a way to make and host the picture (see payments/upi/qr-image.ts), and the
+// This file uses node:zlib, so an agent never imports it directly: the server gives the agent a way to make and host the picture (see payments/owner-marked/qr-image.ts), and the
 // browser demo, which has no node:zlib, simply has none.
 import { crc32, deflateSync } from "node:zlib";
 import type { QrCode } from "./qr.ts";

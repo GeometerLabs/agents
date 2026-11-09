@@ -55,7 +55,7 @@ export interface MessageFacts {
   /** UPI shops (B33): the shop's UPI ID and the name its customers see. */
   upiId?: string;
   payee?: string;
-  /** UPI: the owner's one-use code for this payment or refund (modules/payments/upi/ledger.ts). Only ever in a message to the owner. */
+  /** UPI: the owner's one-use code for this payment or refund (modules/payments/owner-marked/ledger.ts). Only ever in a message to the owner. */
   upiCode?: string;
   /** UPI: what the owner marked received, and what is still to come, in whole rupees. */
   markedInr?: number;
@@ -453,7 +453,7 @@ const kn: BaseSet = {
   owner_refund_settled: (f) => `ರೀಫಂಡ್ ಆಗಿದೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")}. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
 };
 
-// ---- UPI, marked paid by the owner (plan B33; modules/payments/upi) ------------------------------------------------------------
+// ---- UPI, marked paid by the owner (plan B33; modules/payments/owner-marked) ------------------------------------------------------------
 // A shop that takes UPI: the customer pays the shop's own UPI ID, and the order is confirmed only when the owner taps "Received" (or replies "received <code>"). These
 // messages never say a payment was checked by the agent: the owner confirms it. A refund is sent by the owner from their own UPI app, and the customer hears "sent" only
 // after the owner marks it so. The owner's lines start and end with fixed words, as every owner line does (several are WhatsApp templates: meta-templates.ts).

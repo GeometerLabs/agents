@@ -1,71 +1,91 @@
-// Payments: Razorpay-shaped (payment links, payments, refunds, events), with an in-memory fake.
-// Field names follow Razorpay's (snake_case, amounts in paise, times in epoch seconds) so a real adapter drops in.
-// The fake's store is the record the agent reads back: "a deposit counts when Razorpay's record shows it".
+// Payments, the same for every provider (B71): a payment request, the payments made on it, refunds, and three events. A provider's module maps its own API
+// onto this (modules/payments/providers/<name>/), and says what it can do (PaymentCapabilities), so a template asks that instead of branching on a provider's name.
+// Amounts are in paise and times in epoch seconds, snake_case, as JSON on the wire usually is; nothing here is any one provider's word.
+// The in-memory fake below is the stand-in gateway every crash test uses; its store is the record the agent reads back: "a deposit counts when the payment record shows it".
 import type { Clock } from "../core/clock.ts";
 import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
 import type { FaultOptions, GuardInfo, SentCall } from "../core/faults.ts";
 import type { GuardModel } from "./guard-model.ts";
 
+/**
+ * What a provider's module can do. A template asks these, never the provider's name, so a new provider is a folder, not a branch in every template.
+ *  - confirmsAutomatically: the provider itself says a payment happened (a signed webhook, and its record read back). False: a person marks it (UPI: the owner).
+ *  - refundsAutomatically: the agent can send a refund through the provider, behind Guard. False: the owner pays it back by hand and the agent tracks it until marked.
+ *  - takesPartPayments: one request stays open for the rest after a part is paid. False: a request is for one exact amount, and the rest needs a request of its own.
+ *  - cancels: a request can be closed at the provider so it can no longer be paid. False: a request already sent can still be paid (the agent only stops counting on it).
+ *  - readsBack: the provider's own record can be read, so "look first" and "read back" ask the provider. False: the agent's own store is the only record.
+ */
+export interface PaymentCapabilities {
+  confirmsAutomatically: boolean;
+  refundsAutomatically: boolean;
+  takesPartPayments: boolean;
+  cancels: boolean;
+  readsBack: boolean;
+}
+
 export interface Payment {
-  id: string; // pay_...
-  link_id: string;
+  id: string;
+  request_id: string;
   amount: number; // paise
   currency: "INR";
-  status: "captured";
+  /** Money that arrived: the provider says so, or (UPI) the owner marked it. A payment that was only started, or failed, is never listed. */
+  status: "received";
   amount_refunded: number; // paise
   created_at: number; // epoch seconds
 }
 
-export interface PaymentLink {
-  id: string; // plink_...
+export interface PaymentRequest {
+  id: string;
   reference_id: string; // ours: the booking id
   amount: number; // paise
   currency: "INR";
   description: string;
-  /** Razorpay's: "partially_paid" is a link that accepts part payments and has had some, not all. A link that does not accept them goes from created to paid on its first payment. */
+  /** "partially_paid" is a request that takes part payments and has had some, not all. One that does not take them goes from created to paid on its first payment. */
   status: "created" | "partially_paid" | "paid" | "cancelled";
-  short_url: string;
+  /** Where the customer pays: a provider's payment page, or (UPI) the `upi://pay` link. */
+  pay_url: string;
   amount_paid: number;
   payments: Payment[];
   created_at: number;
-  /** Set on a link that takes part payments (Razorpay's `accept_partial` and `first_min_partial_amount`, in paise). Left out on any other link. */
-  accept_partial?: boolean;
-  first_min_partial_amount?: number;
+  /** Set on a request that takes part payments, with the least the first may be (paise). Left out on any other request. */
+  part_payments?: boolean;
+  min_first_payment?: number;
 }
 
 export interface Refund {
-  id: string; // rfnd_...
+  id: string;
   payment_id: string;
   amount: number; // paise
-  /** "pending" is Razorpay's word for accepted, not yet paid out. A "failed" refund is not a refund and is never listed. */
-  status: "pending" | "processed";
+  /** "pending": accepted, not yet paid out (UPI: owed by the owner). "processed": paid out. "failed" is only ever a reply (the provider declined it): never listed. */
+  status: "pending" | "processed" | "failed";
   receipt?: string;
   created_at: number;
   /** Guard answered from its record: this is the first reply to the same refund, and nothing was sent again. */
   replayed?: boolean;
 }
 
-export type PaymentEventName = "payment_link.paid" | "payment.captured" | "refund.processed";
+/** request.paid: a request is paid in full. payment.received: money arrived on a request. refund.done: a refund was paid out. Each provider maps its own names onto these. */
+export type PaymentEventName = "request.paid" | "payment.received" | "refund.done";
 
 /** A webhook. The body is a snapshot at the time of the event; the agent re-fetches before it trusts it. */
 export interface PaymentEvent {
-  id: string; // evt_...
+  id: string;
   event: PaymentEventName;
   created_at: number;
   /**
-   * `payment.link_id` is missing on a real `payment.captured` event: Razorpay's body names the payment and its order, not the
-   * payment link. The agent then finds the link by the payment id (listPaymentLinks({ payment_id })).
+   * `payment.request_id` may be missing on a payment.received event: a provider's body can name the payment and not the request it paid. The agent then finds the
+   * request by the payment id (listRequests({ payment_id })).
    */
-  payload: { payment_link?: { id: string; reference_id: string }; payment?: { id: string; link_id?: string }; refund?: { id: string; payment_id: string } };
+  payload: { request?: { id: string; reference_id: string }; payment?: { id: string; request_id?: string }; refund?: { id: string; payment_id: string } };
 }
 
-export interface NewPaymentLink { amount: number; reference_id: string; description: string; accept_partial?: boolean; first_min_partial_amount?: number }
+export interface NewPaymentRequest { amount: number; reference_id: string; description: string; part_payments?: boolean; min_first_payment?: number }
 
 export interface Payments {
-  createPaymentLink(request: NewPaymentLink): Promise<PaymentLink>;
-  fetchPaymentLink(id: string): Promise<PaymentLink | null>;
-  listPaymentLinks(query?: { reference_id?: string; payment_id?: string }): Promise<PaymentLink[]>;
-  cancelPaymentLink(id: string): Promise<PaymentLink>;
+  createRequest(request: NewPaymentRequest): Promise<PaymentRequest>;
+  fetchRequest(id: string): Promise<PaymentRequest | null>;
+  listRequests(query?: { reference_id?: string; payment_id?: string }): Promise<PaymentRequest[]>;
+  cancelRequest(id: string): Promise<PaymentRequest>;
   fetchPayment(id: string): Promise<Payment | null>;
   /**
    * Refund part or all of a payment, never more than what is left on it. Through a Guard, a refund above the owner's limit is not
@@ -86,9 +106,10 @@ export interface Payments {
  *  - outcomeUnknown: the refund is stored, then Guard says the outcome is unknown (504). It is not repeated.
  *  - guardRefused: Guard refuses the call before it is sent, by a limit (the day's refund cap).
  *  - serverError: the refund is stored, then the service answers 500, which Guard passes through as it came. The refund may have happened.
+ *  - declined: the provider takes the call and declines the refund (its own "failed" status): no money moves, nothing is listed, and the reply says failed.
  */
-export type PaymentsFault = "lostReply" | "error" | "guardUnavailable" | "uncertainHold" | "outcomeUnknown" | "guardRefused" | "serverError";
-export type PaymentsOp = "createPaymentLink" | "fetchPaymentLink" | "listPaymentLinks" | "cancelPaymentLink" | "fetchPayment" | "refund" | "listRefunds";
+export type PaymentsFault = "lostReply" | "error" | "guardUnavailable" | "uncertainHold" | "outcomeUnknown" | "guardRefused" | "serverError" | "declined";
+export type PaymentsOp = "createRequest" | "fetchRequest" | "listRequests" | "cancelRequest" | "fetchPayment" | "refund" | "listRefunds";
 
 export interface FakePaymentsOptions {
   /** Refuse a second link with the same reference_id, as a provider that dedupes would. Default true. */
@@ -108,7 +129,7 @@ export interface FakePaymentsOptions {
 export interface FakePayments extends Payments {
   /** The customer pays the link (they can do it twice, from two phones). Emits events. */
   customerPays(linkId: string, options?: { amount?: number }): Payment;
-  links(): PaymentLink[];
+  links(): PaymentRequest[];
   refunds(): Refund[];
   /** Every event the service has emitted, in order. The harness decides when (and how often) to deliver them. */
   events: PaymentEvent[];
@@ -121,7 +142,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
   const guard = options.guard;
   const faults = createFaults<PaymentsOp, PaymentsFault>();
   const calls: { op: PaymentsOp }[] = [];
-  const linkStore = new Map<string, PaymentLink>();
+  const linkStore = new Map<string, PaymentRequest>();
   const refundStore: Refund[] = [];
   const events: PaymentEvent[] = [];
   let seq = 1;
@@ -135,7 +156,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     return fault;
   }
 
-  const copyLink = (l: PaymentLink): PaymentLink => ({ ...l, payments: l.payments.map((p) => ({ ...p })) });
+  const copyLink = (l: PaymentRequest): PaymentRequest => ({ ...l, payments: l.payments.map((p) => ({ ...p })) });
   const emit = (event: PaymentEvent["event"], payload: PaymentEvent["payload"]) =>
     events.push({ id: nextId("evt"), event, created_at: seconds(), payload });
   const findPayment = (id: string) => [...linkStore.values()].flatMap((l) => l.payments).find((p) => p.id === id);
@@ -186,10 +207,11 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     if (!p) throw new ApiError(404, "No such payment.");
     if (!Number.isInteger(request.amount) || request.amount <= 0) throw new ApiError(400, "The refund amount must be a positive whole number of paise.");
     if (request.amount > p.amount - p.amount_refunded) throw new ApiError(400, "The refund is more than what is left on the payment.");
+    if (fault === "declined") return { id: nextId("rfd"), payment_id: paymentId, amount: request.amount, status: "failed", receipt: request.receipt, created_at: seconds() };
     p.amount_refunded += request.amount;
-    const refund: Refund = { id: nextId("rfnd"), payment_id: paymentId, amount: request.amount, status: "processed", receipt: request.receipt, created_at: seconds() };
+    const refund: Refund = { id: nextId("rfd"), payment_id: paymentId, amount: request.amount, status: "processed", receipt: request.receipt, created_at: seconds() };
     refundStore.push(refund);
-    emit("refund.processed", { refund: { id: refund.id, payment_id: paymentId } });
+    emit("refund.done", { refund: { id: refund.id, payment_id: paymentId } });
     if (fault === "outcomeUnknown") {
       guard?.recordUnknown(paymentId, request);
       throw new GuardOutcomeUnknownError(504, "refused by the Guard: outcome unknown: the request may or may not have reached the provider. The action may have happened; it is not repeated automatically", { decision: "unknown", code: "outcome_unknown", sent: "unknown", retry: "do_not_repeat", detail: null }, sentCall);
@@ -210,7 +232,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     links: () => [...linkStore.values()].map(copyLink),
     refunds: () => refundStore.map((r) => ({ ...r })),
 
-    async createPaymentLink(request) {
+    async createRequest(request) {
       if (guard && options.guardLinks !== false) {
         // Guard bounds the amount of a link before anything is sent: the agent only ever asks for an amount its record asks for, so this is Guard saying the same on its own.
         const decision = guard.decideLink(request.amount);
@@ -219,36 +241,36 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
           throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, { decision: "deny", code: "refused_by_policy", sent: "no", retry: "no", reason: decision.reason, detail: null }, { method: "POST", path: "/v1/payment_links", body }, "rule", decision.ruleId);
         }
       }
-      const fault = begin("createPaymentLink");
+      const fault = begin("createRequest");
       if (enforceUnique && [...linkStore.values()].some((l) => l.reference_id === request.reference_id)) {
         throw new ApiError(400, `A payment link with reference_id ${request.reference_id} already exists.`);
       }
-      const id = nextId("plink");
-      const link: PaymentLink = {
+      const id = nextId("req");
+      const link: PaymentRequest = {
         id, reference_id: request.reference_id, amount: request.amount, currency: "INR", description: request.description,
-        status: "created", short_url: `https://rzp.io/l/${id.replace("_", "")}`, amount_paid: 0, payments: [], created_at: seconds(),
-        ...(request.accept_partial ? { accept_partial: true, first_min_partial_amount: request.first_min_partial_amount ?? 100 } : {}),
+        status: "created", pay_url: `https://pay.example/${id}`, amount_paid: 0, payments: [], created_at: seconds(),
+        ...(request.part_payments ? { part_payments: true, min_first_payment: request.min_first_payment ?? 100 } : {}),
       };
       linkStore.set(id, link);
       if (fault === "lostReply") throw new TimeoutError("payment link create");
       return copyLink(link);
     },
 
-    async fetchPaymentLink(id) {
-      begin("fetchPaymentLink");
+    async fetchRequest(id) {
+      begin("fetchRequest");
       const l = linkStore.get(id);
       return l ? copyLink(l) : null;
     },
 
-    async listPaymentLinks(query = {}) {
-      begin("listPaymentLinks");
+    async listRequests(query = {}) {
+      begin("listRequests");
       return [...linkStore.values()]
         .filter((l) => (query.reference_id === undefined || l.reference_id === query.reference_id) && (query.payment_id === undefined || l.payments.some((p) => p.id === query.payment_id)))
         .map(copyLink);
     },
 
-    async cancelPaymentLink(id) {
-      const fault = begin("cancelPaymentLink");
+    async cancelRequest(id) {
+      const fault = begin("cancelRequest");
       const l = linkStore.get(id);
       if (!l) throw new ApiError(404, "No such payment link.");
       if (l.status === "created") l.status = "cancelled";
@@ -280,27 +302,27 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       const l = linkStore.get(linkId);
       if (!l) throw new ApiError(404, "No such payment link.");
       if (l.status === "cancelled") throw new ApiError(400, "This payment link is cancelled.");
-      if (l.accept_partial) {
-        // A link that takes part payments, as Razorpay's does: a payment is at least the link's minimum (the first one) and at most what is left.
+      if (l.part_payments) {
+        // A request that takes part payments: a payment is at least its minimum (the first one) and at most what is left.
         const left = l.amount - l.amount_paid;
         const amount = opts.amount ?? left;
         if (left <= 0) throw new ApiError(400, "This payment link is already paid.");
-        if (!Number.isInteger(amount) || amount < Math.min(l.first_min_partial_amount ?? 0, left) || amount > left) throw new ApiError(400, "The amount is not allowed for this payment link.");
+        if (!Number.isInteger(amount) || amount < Math.min(l.min_first_payment ?? 0, left) || amount > left) throw new ApiError(400, "The amount is not allowed for this payment link.");
       }
       const payment: Payment = {
-        id: nextId("pay"), link_id: linkId, amount: opts.amount ?? (l.accept_partial ? l.amount - l.amount_paid : l.amount), currency: "INR",
-        status: "captured", amount_refunded: 0, created_at: seconds(),
+        id: nextId("pmt"), request_id: linkId, amount: opts.amount ?? (l.part_payments ? l.amount - l.amount_paid : l.amount), currency: "INR",
+        status: "received", amount_refunded: 0, created_at: seconds(),
       };
       l.payments.push(payment);
       l.amount_paid += payment.amount;
-      emit("payment.captured", { payment: { id: payment.id, link_id: linkId } });
-      if (l.accept_partial) {
+      emit("payment.received", { payment: { id: payment.id, request_id: linkId } });
+      if (l.part_payments) {
         const was = l.status;
         l.status = l.amount_paid >= l.amount ? "paid" : "partially_paid";
-        if (l.status === "paid" && was !== "paid") emit("payment_link.paid", { payment_link: { id: l.id, reference_id: l.reference_id }, payment: { id: payment.id, link_id: linkId } });
+        if (l.status === "paid" && was !== "paid") emit("request.paid", { request: { id: l.id, reference_id: l.reference_id }, payment: { id: payment.id, request_id: linkId } });
       } else if (l.status === "created") {
         l.status = "paid"; // the link counts as paid on the first payment; a second payment still lands (two phones)
-        emit("payment_link.paid", { payment_link: { id: l.id, reference_id: l.reference_id }, payment: { id: payment.id, link_id: linkId } });
+        emit("request.paid", { request: { id: l.id, reference_id: l.reference_id }, payment: { id: payment.id, request_id: linkId } });
       }
       return { ...payment };
     },

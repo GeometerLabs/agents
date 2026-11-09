@@ -27,7 +27,7 @@ import { startRelayServer } from "../../../../modules/approvals/server.ts";
 import type { RunningRelayServer } from "../../../../modules/approvals/server.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
 import { createWhatsAppMessaging } from "../../../../modules/messaging/whatsapp.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
 import { startStubGuard } from "../../../../modules/standins/guard.ts";
 import type { RunningStubGuard } from "../../../../modules/standins/guard.ts";
@@ -142,7 +142,7 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
     }, { port: options.ports?.standins ?? 0 });
     closers.push(() => standins.close());
     const guard = await startStubGuard({
-      clock, upstreamUrl: standins.url, spec: razorpayLimitsSpec(settings, { tenant: "local-stack", version: 1, reviewedBy: "local-stack" }),
+      clock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "local-stack", version: 1, reviewedBy: "local-stack" }),
       agentToken: secret("agent"), approver: { id: "owner-local", secret: secret("notify") }, readToken: secret("read"),
     });
     closers.push(() => guard.close());
@@ -226,7 +226,7 @@ async function main(args: string[]): Promise<void> {
   console.log("The agent opens a month's fees on its first reminder day (3 days before the due day in the example), so with the real clock nothing happens until then. To see a month, run the");
   console.log("end-to-end test (test/full-chain.test.ts), which moves a fake clock, or walk it by hand:");
   console.log(`  curl -s -X POST ${standins}/_standin/whatsapp/inbound -d '{"from":"${settings.students[0].parent}","text":"I already paid"}'   # a parent writes`);
-  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # they pay a fee link (the first link is plink_1; later ones are in the state)`);
+  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"request_id":"req_1"}'   # they pay a fee link (the first link is req_1; later ones are in the state)`);
   console.log(`  curl -s ${standins}/_standin/state   # what the stand-ins hold: the outbox, the links, the payments`);
   console.log(`To see an approval, start with --refund-limit ${Math.max(0, Math.min(...settings.batches.map((b) => b.monthlyFeeInr)) - 1)} (below the cheapest fee), let a parent pay, and write "refund" as that parent.`);
   console.log(`  The refund is held; within a couple of seconds the owner (${settings.owner.whatsapp}) is asked, with a code, in the state's outbox. Then:`);

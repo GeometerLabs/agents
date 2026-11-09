@@ -9,8 +9,9 @@ import type { Context, PreparedGuard } from "../deploy.ts";
 import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
 import { names } from "../generate/shop.ts";
+import { OWN_API } from "../../modules/payments/providers/index.ts";
 import { noSecretsIn, provenLine } from "../generate/rules.ts";
-import { ensureAgentLabelKey, ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
+import { INTAKE, ensureAgentLabelKey, ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
 import { loadServer, publicUrl, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { loadState, saveState, shopIndex } from "../lib/state.ts";
@@ -19,9 +20,9 @@ import { readStatus, refusalMessage, updateStatus } from "../lib/status.ts";
 import type { GuardProof } from "../lib/status.ts";
 import { ensureDir, mintGuardToken, mintSecret, sha256Hex, shopNameProblem, stableJson, writeAtomic } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { agentFromFlags, agentGuardPart, readAgent } from "./folder.ts";
+import { OWN_API_FILES, agentFromFlags, agentGuardPart, paymentUpstreamOf, readAgent } from "./folder.ts";
 import type { AgentFlags, AgentFolder } from "./folder.ts";
-import { RECORD_READS, agentNames, planAgent } from "./plan.ts";
+import { RECORD_READS, agentNames, ownApiSpec, planAgent } from "./plan.ts";
 import type { AgentPlan } from "./plan.ts";
 
 const sha = (value: string) => sha256Hex(value);
@@ -37,12 +38,18 @@ export interface AgentConnection {
   credential: string | undefined;
   /** Where WhatsApp should send the shop's webhooks (the inbox checks them, keeps the owner's replies to approval requests and passes the rest on). */
   whatsappWebhook?: string;
+  /** B71: the agent takes money with a module the owner marks (UPI): there is no API to put a Guard in front of, and the desk that offers it is not served yet. */
+  desk?: { module: string; displayName: string };
 }
 
 export function connectionOf(dir: string, server: ServerConfig, folder: AgentFolder): AgentConnection {
   const agent = folder.agent!;
+  const paying = paymentUpstreamOf(agent.upstreams);
+  const ownerMarked = paying?.ownerMarked ? paying : undefined;
   return {
-    baseUrls: Object.fromEntries(agent.upstreams.map((u) => [u, agentBaseUrl(server, folder.name, u)])),
+    // an owner-marked module has no Guard, so no address is printed for it (one would lead nowhere): the desk is said separately
+    baseUrls: Object.fromEntries(agent.upstreams.filter((u) => u !== ownerMarked?.id).map((u) => [u, agentBaseUrl(server, folder.name, u)])),
+    ...(ownerMarked ? { desk: { module: ownerMarked.id, displayName: ownerMarked.displayName } } : {}),
     credential: readSecretFile(secretFile(dir, "agents", folder.name, "agent_token")),
     ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `${publicUrl(server)}/c/${folder.name}/webhooks/whatsapp` } : {}),
   };
@@ -59,8 +66,15 @@ export function addAgent(dir: string, name: string, flags: AgentFlags, readFile:
   const waiting = paths.inbox(name);
   if (existsSync(waiting) && readdirSync(waiting).length > 0) throw new Error(`The secrets inbox for ${name} already holds files, so that name is taken by a setup in progress. Choose another name.`);
   const made = agentFromFlags(name, flags, readFile, now);
+  // an own gateway API's reviewed rules are checked now, the way every plan will check them, so a held rule or an edited draft is refused before anything is written
+  if (made.ownApi) {
+    const checked = ownApiSpec(made.ownApi, { tenant: name, name: `${name}-${OWN_API}`, version: 1 });
+    if (checked.problems.length > 0) throw new Error(`The reviewed rules for your own gateway's API need fixing:\n- ${checked.problems.join("\n- ")}`);
+  }
   writeAtomic(join(paths.agent(name), "agent.json"), made.agentText);
   writeAtomic(join(paths.agent(name), "settings.json"), made.settingsText);
+  // an own gateway API's reviewed spec: the kit's two files, byte for byte (the accept file names the draft by its hash)
+  if (made.ownApi) { writeAtomic(join(paths.agent(name), OWN_API_FILES.draft), made.ownApi.draftText); writeAtomic(join(paths.agent(name), OWN_API_FILES.accept), made.ownApi.acceptText); }
   prepareSecretsRoot(dir);
   ensureSecret(secretFile(dir, "agents", name, "agent_token"), mintGuardToken);
   return readAgent(dir, name);
@@ -100,17 +114,21 @@ function whoOf(name: string, kind: Kind, c: Credentials) {
 
 export interface PreparedAgent { folder: AgentFolder; plan: AgentPlan; guards: PreparedGuard[]; desiredHash: string }
 
-/** What an agent is asked to be: its two files. */
-export const agentDesiredHash = (f: Pick<AgentFolder, "agentText" | "settingsText">): string => sha256Hex(stableJson({ agent: agentGuardPart(f.agentText), settings: f.settingsText }));
+/** What an agent is asked to be: its two files, and an own gateway API's reviewed spec (its two files) when it has one, so a changed accept file is a change to deploy. */
+export const agentDesiredHash = (f: Pick<AgentFolder, "agentText" | "settingsText" | "ownApi">): string => sha256Hex(stableJson({ agent: agentGuardPart(f.agentText), settings: f.settingsText, ...(f.ownApi ? { ownApi: f.ownApi } : {}) }));
 
 /** What an agent needs before it can run, said by the name `agent add` printed it under. */
 function missingSecrets(dir: string, name: string, f: AgentFolder): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, ...file.split("/")) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${name}: ${handIn} has not been handed in. Put it in secrets-inbox/${name}/${handIn}; it is moved to where only the right container can read it.` }];
   const kinds = f.agent?.upstreams ?? [];
+  // each Guard's own credential, by the name it is handed in under (lib/secrets.ts INTAKE says which container each goes to): one list, so a new kind of Guard is never skipped
+  const guardCredentials = Object.entries(INTAKE).flatMap(([handIn, rule]) => {
+    const [container, ...file] = rule.to(name);
+    return kinds.some((k) => container === names.guard(name, k)) ? need(container, file.join("/"), handIn) : [];
+  });
   return [
-    ...(kinds.includes("razorpay") ? need(`g-${name}-razorpay`, "razorpay_authorization", "razorpay_key") : []),
+    ...guardCredentials,
     ...(kinds.includes("whatsapp") ? [
-      ...need(`g-${name}-whatsapp`, "whatsapp_authorization", "whatsapp_token"),
       // the owner's reply to an approval request comes to Geometer's inbox, so it has to be able to check it
       ...(have(dir, "inbox", name, "whatsapp_path_token") && !have(dir, "inbox", name, "whatsapp_app_secret") ? [] : [...need("inbox", `${name}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${name}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     ] : []),
@@ -194,7 +212,8 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   // nothing broken: no secret in any file we are about to write, then write
   const configs: Record<string, string> = {};
   for (const g of prepared.guards) { configs[`${g.plan.service}/spec.json`] = g.plan.specText; configs[`${g.plan.service}/guard.toml`] = g.toml!; }
-  const provider = kinds.flatMap((k) => (k === "razorpay" || k === "whatsapp" ? [readSecretFile(secretFile(ctx.dir, `g-${name}-${k}`, `${k}_authorization`)) ?? ""] : []));
+  // every provider credential a Guard of this agent reads (its def says which file), so none of them can end up in a file written beside it
+  const provider = prepared.guards.flatMap((g) => (g.plan.def.secretFile ? [readSecretFile(secretFile(ctx.dir, g.plan.service, g.plan.def.secretFile)) ?? ""] : []));
   const leaks = noSecretsIn(configs, [creds.agent, creds.record, creds.relay, ...Object.values(creds.admin), ...provider].filter(Boolean));
   if (leaks.length > 0) throw new Refused(leaks);
 
@@ -237,7 +256,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
 // ---- the lines `agent add` and `agent show` print ----------------------------------------------------------------------------------------
 
 export function connectionText(name: string, c: AgentConnection, withCredential: boolean): string {
-  const label: Record<string, string> = { razorpay: "Razorpay", whatsapp: "WhatsApp", calendar: "Google Calendar" };
+  const label: Record<string, string> = { razorpay: "Razorpay", [OWN_API]: "Your gateway", whatsapp: "WhatsApp", calendar: "Google Calendar" };
   return [
     `Point ${name} at these addresses instead of the services themselves. The path after each one is the service's own (for Razorpay, /v1/payment_links and so on):`,
     ...Object.entries(c.baseUrls).map(([k, url]) => `  ${(label[k] ?? k).padEnd(16)}${url}`),
@@ -245,5 +264,7 @@ export function connectionText(name: string, c: AgentConnection, withCredential:
       ? `The credential, for all of them (send it as "Authorization: Bearer <credential>" in place of the service's own key; the real keys stay in the Guards and are never given to the agent):\n  ${c.credential ?? "(not made yet)"}`
       : `The credential is in secrets/agents/${name}/agent_token on this server; \`geometer agent show ${name} --credential\` prints it.`,
     ...(c.whatsappWebhook ? [`In WhatsApp's settings, send this shop's webhooks to:\n  ${c.whatsappWebhook}`] : []),
+    ...(c.baseUrls[OWN_API] ? [`Your own gateway's API: the Guard holds its key (hand it in as secrets-inbox/${name}/gateway_authorization, the whole Authorization header) and enforces only the rules you kept in gateway-accept.json. A rule that waits for a person is not offered: nobody would be asked.`] : []),
+    ...(c.desk ? [`${c.desk.displayName}: customers pay the shop's own ${c.desk.displayName} ID and the owner marks each payment received. Your agent asks Geometer's desk for each request and reads it back (\`geometer agent crash-test ${name}\` runs it against the desk, GEOMETER_UPI_URL). The desk is not served on this server yet: until it is, take ${c.desk.displayName} payments with the crash test only.`] : []),
   ].join("\n");
 }

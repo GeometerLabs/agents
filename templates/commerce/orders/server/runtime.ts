@@ -25,7 +25,7 @@ export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 
 /** Orders calls two services: payments and messaging. It has no calendar. */
-export interface Services { payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/upi/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
+export interface Services { payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
   settings: Settings;

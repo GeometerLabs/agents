@@ -10,6 +10,7 @@
 //    from the orders as they are when the report is made (orders.json), for the orders whose day falls in the month and that are confirmed or completed.
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once. A check that stops an order and the message that tells the
 //    customer carry the same decision; they are one stop (see stopsIn).
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { existsSync, readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -208,7 +209,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   // ---- money: from entries the payments service's own record confirmed (or, for UPI, the owner's marks) ----
   const collected = emptyAmount();
   const seenPayments = new Set<string>();
-  const upi = settings.payment.module === "upi";
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
   for (const e of month.filter((x) => (x.action === "record_payment" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
     const key = e.refs.paymentId ?? `seq-${e.seq}`;
     if (seenPayments.has(key)) continue;

@@ -5,6 +5,7 @@
 // never includes it.
 // It reads in three layers: the result line and the work done by default, and "--details" (or --all) shows what was
 // done in each situation: how the stand-ins made it go wrong, and every check read from their records.
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { parseArgs } from "node:util";
 import { HAND_RUN, STAND_IN_SERVICES, notTestedOf } from "../crash-test/not-tested.ts";
 import { languageList } from "../crash-test/says.ts";
@@ -35,7 +36,7 @@ await main(async () => {
         "",
         `CRASH TEST   ${settings.name} · Bookings · ${names.replace(/, | and /g, " + ")}   (${STAND_IN_SERVICES}, ${HAND_RUN})`,
       ],
-      workDone: ({ situations, checks, tookMs: ms }) => settings.payment?.module === "upi" ? [
+      workDone: ({ situations, checks, tookMs: ms }) => !capabilitiesOf(settings.payment).confirmsAutomatically ? [
         `  Work done for you: ${situations} situations and ${checks} checks in ${ms} ms, against stand-in WhatsApp and calendar,`,
         "  with UPI marked paid by the owner: a screenshot sent as proof, the owner confirming a different amount, never, twice, or after",
         `  the hold ended, and a refund the owner owes, in ${names}.`,

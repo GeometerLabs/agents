@@ -225,13 +225,20 @@ async function quiet<T>(work: () => Promise<T>): Promise<{ result: T; out: strin
 test("shop add --template fees starts a centre from the template: the example settings, the pin to the version here, a runtime.json for the WhatsApp number, and a name for who set it up", async () => {
   const w = world({}); try {
     const add = (...a: string[]) => quiet(() => main(["shop", "add", ...a, "--server", w.root]));
-    const r = await add("bright", "--template", "fees", "--whatsapp-number-id", PHONE_NUMBER_ID, "--prepared-by", "Divya, local partner");
+    // B71: how customers pay is never the example's: UPI with the shop's own ID, or a gateway said out loud. With neither, nothing is made.
+    assert.match((await add("nopay", "--template", "fees", "--whatsapp-number-id", PHONE_NUMBER_ID)).err, /Say how this shop's customers pay\. UPI is the default/u);
+    assert.ok(!existsSync(w.paths.shop("nopay")));
+    const upi = await add("upi-centre", "--template", "fees", "--upi-id", "BrightTuition@OKHDFCBANK", "--payee", "Bright Tuition", "--whatsapp-number-id", PHONE_NUMBER_ID);
+    assert.equal(upi.result, 0, upi.err);
+    assert.deepEqual(readShop(w.root, "upi-centre").settings.payment, { module: "upi", upi: { id: "brighttuition@okhdfcbank", payee: "Bright Tuition" } });
+    assert.deepEqual(JSON.parse(readFileSync(join(w.paths.shop("upi-centre"), "runtime.json"), "utf8")).services.payments, undefined, "a UPI centre's runtime names no payments service");
+    const r = await add("bright", "--template", "fees", "--payment", "razorpay", "--whatsapp-number-id", PHONE_NUMBER_ID, "--prepared-by", "Divya, local partner");
     assert.equal(r.result, 0, r.err);
     assert.match(r.out, /somebody else's made-up centre/);
     const dir = w.paths.shop("bright");
     assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.1.0\n");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 } });
-    assert.equal(readFileSync(join(dir, "settings.json"), "utf8"), readFileSync(new URL("../../templates/education/fees/settings/bright-tuition.example.json", import.meta.url), "utf8"));
+    assert.deepEqual(JSON.parse(readFileSync(join(dir, "settings.json"), "utf8")), { ...JSON.parse(readFileSync(new URL("../../templates/education/fees/settings/bright-tuition-upi.example.json", import.meta.url), "utf8")), payment: { module: "razorpay" } }, "the example, with the gateway the person chose");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local partner" });
     assert.deepEqual(readShop(w.root, "bright").problems, [], "the shop reads cleanly");
     w.handIn("bright", feesSecrets("bright"));
@@ -250,17 +257,17 @@ test("shop add --template fees starts a centre from the template: the example se
     assert.ok(!existsSync(w.paths.shop("third")), "nothing was made");
 
     // a salon starts the same way, with its calendar
-    const salon = await add("glow", "--template", "bookings", "--whatsapp-number-id", PHONE_NUMBER_ID, "--calendar-id", "glow@group.calendar.google.com");
+    const salon = await add("glow", "--template", "bookings", "--payment", "razorpay", "--whatsapp-number-id", PHONE_NUMBER_ID, "--calendar-id", "glow@group.calendar.google.com");
     assert.equal(salon.result, 0, salon.err);
     assert.equal(JSON.parse(readFileSync(join(w.paths.shop("glow"), "runtime.json"), "utf8")).services.calendar.calendarId, "glow@group.calendar.google.com");
     assert.equal(readFileSync(join(w.paths.shop("glow"), "pathway.lock"), "utf8"), "bookings@0.1.0\n");
 
     // the refusals, each in a sentence
-    assert.match((await add("a1", "--template", "fees", "--calendar-id", "x@y")).err, /no calendar/);
+    assert.match((await add("a1", "--template", "fees", "--payment", "razorpay", "--calendar-id", "x@y")).err, /no calendar/);
     assert.match((await add("a2", "--template", "nonesuch")).err, /no template called "nonesuch".*bookings, fees/);
     assert.match((await add("a3", "--template", "fees", "--from", FEES_CLIENT)).err, /once/);
     assert.match((await add("a4")).err, /Say where the shop starts/);
-    assert.match((await add("a5", "--template", "fees", "--whatsapp-number-id", "12ab")).err, /digits only/);
+    assert.match((await add("a5", "--template", "fees", "--payment", "razorpay", "--whatsapp-number-id", "12ab")).err, /digits only/);
     assert.equal((await add("a6", "--from", FEES_CLIENT)).result, 0, "--from still copies a client folder, a Fees one too");
     assert.deepEqual(readShop(w.root, "a6").problems, []);
   } finally { w.done(); }

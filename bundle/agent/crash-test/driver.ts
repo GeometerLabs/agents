@@ -69,6 +69,8 @@ export interface ContractEnv {
   port: number;
   /** The Guards' addresses for the services the agent uses; a service it does not use has no entry. */
   razorpay?: string;
+  /** The owner-marked desk (UPI, B71), when the agent takes money that way: it has no Guard, because UPI has no API. */
+  upi?: string;
   calendar?: string;
   whatsapp?: string;
   credential: string;
@@ -91,7 +93,7 @@ export interface ContractEnv {
 export function contractEnv(c: ContractEnv): Record<string, string> {
   const env: Record<string, string | undefined> = {
     PORT: String(c.port), GEOMETER_PORT: String(c.port),
-    GEOMETER_RAZORPAY_URL: c.razorpay, GEOMETER_CALENDAR_URL: c.calendar, GEOMETER_WHATSAPP_URL: c.whatsapp, GEOMETER_CREDENTIAL: c.credential,
+    GEOMETER_RAZORPAY_URL: c.razorpay, GEOMETER_UPI_URL: c.upi, GEOMETER_CALENDAR_URL: c.calendar, GEOMETER_WHATSAPP_URL: c.whatsapp, GEOMETER_CREDENTIAL: c.credential,
     CALENDAR_ID: c.calendarId, PHONE_NUMBER_ID: c.phoneNumberId,
     GEOMETER_WHATSAPP_APP_SECRET: c.whatsappAppSecret, GEOMETER_RAZORPAY_WEBHOOK_SECRET: c.razorpayWebhookSecret,
     GEOMETER_DEPOSIT_INR: String(c.depositInr), GEOMETER_PRICE_INR: String(c.priceInr), GEOMETER_OWNER_WHATSAPP: c.ownerWhatsapp,

@@ -31,13 +31,13 @@ const e = (conversation: string, booking: string | null, action: string, outcome
 const RECORD: RecordEntry[] = [
   e(A, "b-1", "receive_message", "confirmed", { messageId: "in-1" }),
   e(A, "b-1", "hold_slot", "confirmed", { eventId: "ev_1" }),
-  e(A, "b-1", "create_deposit_link", "confirmed", { linkId: "plink_1", amountPaise: "50000" }),
-  e(B, "b-2", "record_deposit", "confirmed", { paymentId: "pay_2", amountPaise: "40000" }),
-  e(A, "b-1", "record_deposit", "confirmed", { paymentId: "pay_1", amountPaise: "50000" }),
-  e(A, "b-1", "record_deposit", "confirmed", { paymentId: "pay_1", amountPaise: "50000" }), // the same payment read twice: counted once
-  e(A, "b-1", "refund", "held_for_owner", { paymentId: "pay_1", amountPaise: "30000", approval: "appr_1" }, [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "above the ₹200 limit" }]),
+  e(A, "b-1", "create_deposit_link", "confirmed", { linkId: "req_1", amountPaise: "50000" }),
+  e(B, "b-2", "record_deposit", "confirmed", { paymentId: "pmt_2", amountPaise: "40000" }),
+  e(A, "b-1", "record_deposit", "confirmed", { paymentId: "pmt_1", amountPaise: "50000" }),
+  e(A, "b-1", "record_deposit", "confirmed", { paymentId: "pmt_1", amountPaise: "50000" }), // the same payment read twice: counted once
+  e(A, "b-1", "refund", "held_for_owner", { paymentId: "pmt_1", amountPaise: "30000", approval: "appr_1" }, [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "above the ₹200 limit" }]),
   e(OWNER, "b-1", "owner_decision", "confirmed", { command: "approve", to: "owner" }),
-  e(A, "b-1", "refund", "confirmed", { refundId: "rf_1", paymentId: "pay_1", amountPaise: "30000" }),
+  e(A, "b-1", "refund", "confirmed", { refundId: "rf_1", paymentId: "pmt_1", amountPaise: "30000" }),
   e(B, "b-3", "owner_marked_paid", "confirmed", { paymentId: "upi_1", requestId: "req_3", amountPaise: "25000", markedBy: "owner" }),
   e(B, "b-2", "send_message", "blocked", { to: "customer" }, [{ ruleId: "price-at-or-above-list", verdict: "block", reason: "a price below the list" }]),
 ];
@@ -52,11 +52,11 @@ const { privateKey } = generateKeyPairSync("ed25519");
 test("a statement holds this person's own payments and refunds, once each, and their own totals; nothing of anyone else", () => {
   const s = buildStatement({ template: TOY, shop, number: A, entries: RECORD, cases: CASES, now: t0 + 86_400_000, tenant: "glow-salon" });
   assert.equal(s.language, "hi", "the person's own language");
-  assert.deepEqual(s.items.map((i) => [i.kind, i.amountPaise, i.ref, i.by]), [["paid", 50000, "pay_1", "provider"], ["refunded", 30000, "rf_1", "provider"]]);
+  assert.deepEqual(s.items.map((i) => [i.kind, i.amountPaise, i.ref, i.by]), [["paid", 50000, "pmt_1", "provider"], ["refunded", 30000, "rf_1", "provider"]]);
   assert.deepEqual(s.totals, { paidPaise: 50000, refundedPaise: 30000, netPaise: 20000 });
   assert.deepEqual(s.person, { number: "…0001", cases: ["b-1"] });
   const text = JSON.stringify(s);
-  for (const other of ["b-2", "b-3", "pay_2", "upi_1", "40000", "25000", B, A, "9800000002"]) assert.equal(text.includes(other), false, `${other} must not be in A's statement`);
+  for (const other of ["b-2", "b-3", "pmt_2", "upi_1", "40000", "25000", B, A, "9800000002"]) assert.equal(text.includes(other), false, `${other} must not be in A's statement`);
   assert.ok(s.notTested.includes(WORDS.hi.not.others));
   assert.deepEqual(s.anchor, headOf(RECORD, "glow-salon"));
 });
@@ -94,7 +94,7 @@ test("the record of one case puts the customer, the agent, the limits and Guard,
   assert.match(col("limits"), /Guard held it for the owner \(approval appr_1\)/);
   assert.match(col("owner"), /owner answered approve/);
   assert.match(col("services"), /calendar's own record showed ev_1/);
-  assert.match(col("services"), /payments service's own record showed rf_1, pay_1 \(₹300\)/);
+  assert.match(col("services"), /payments service's own record showed rf_1, pmt_1 \(₹300\)/);
   assert.equal(r.notTested[0], WORDS.en.not.whoIsRight);
   assert.ok(r.notTested.includes(WORDS.en.not.guardLog) && r.notTested.includes(WORDS.en.not.providers) && r.notTested.includes(WORDS.en.not.words));
   assert.equal(r.case.customer, A, "the customer as the record keeps it");

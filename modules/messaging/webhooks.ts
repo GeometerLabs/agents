@@ -1,37 +1,25 @@
 // Webhooks: checking who sent them, and reading them into the events the agent understands. Pure functions; the inbox (inbox/) uses them,
 // and the stand-ins use the signing half to send what the providers send. The agent runtime never imports this: it never holds a webhook secret.
+// A payment provider's webhook is in its own folder (modules/payments/providers/<name>/webhook.ts) and uses the signing helpers here.
 //
 // Wire facts (read 3 Nov 2026):
-//  - Razorpay signs the RAW body: header X-Razorpay-Signature is the hex HMAC-SHA256 of the body with the webhook secret. The event id is the
-//    header x-razorpay-event-id (unique per event; the same event can arrive more than once). It is not in the body.
-//    https://razorpay.com/docs/webhooks/validate-test/
-//  - Meta signs the raw body too: header X-Hub-Signature-256 is "sha256=" and the hex HMAC-SHA256 of the payload with the App Secret.
+//  - Meta signs the raw body: header X-Hub-Signature-256 is "sha256=" and the hex HMAC-SHA256 of the payload with the App Secret.
 //    https://developers.facebook.com/docs/graph-api/webhooks/getting-started
-//  - Razorpay payload examples: https://razorpay.com/docs/webhooks/payloads/payment-links/ , /payments/ , /refunds/
 //  - WhatsApp payload examples: https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages.md
 //    (text.md, interactive.md, button.md, audio.md, status.md next to it)
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { InboundMessage } from "./messaging.ts";
-import type { PaymentEvent } from "../payments/payments.ts";
-import { asArray, isObject, num, str } from "../core/http.ts";
+import { asArray, isObject, str } from "../core/http.ts";
 
 // ---- signatures --------------------------------------------------------------------------------------------------------------
 
-const hmacHex = (rawBody: Buffer, secret: string) => createHmac("sha256", secret).update(rawBody).digest("hex");
+/** The hex HMAC-SHA256 of a raw body: how Meta and most payment providers sign a webhook. */
+export const hmacHex = (rawBody: Buffer, secret: string) => createHmac("sha256", secret).update(rawBody).digest("hex");
 
 /** Compare two hex strings in constant time. A missing, short, long or non-hex value is simply false. */
-function sameHex(expected: string, given: string | undefined): boolean {
+export function sameHex(expected: string, given: string | undefined): boolean {
   if (typeof given !== "string" || given.length !== expected.length || !/^[0-9a-f]+$/iu.test(given)) return false;
   return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(given, "hex"));
-}
-
-/** The signature Razorpay would send for this body: what the stand-in sends. */
-export const signRazorpay = (rawBody: Buffer, secret: string): string => hmacHex(rawBody, secret);
-
-/** Is this body what Razorpay sent? An empty secret never verifies anything. */
-export function verifyRazorpaySignature(rawBody: Buffer, header: string | undefined, secret: string): boolean {
-  if (secret.length === 0) return false;
-  return sameHex(hmacHex(rawBody, secret), header);
 }
 
 /** The X-Hub-Signature-256 value Meta would send for this body: what the stand-in sends. */
@@ -41,43 +29,6 @@ export const signMeta = (rawBody: Buffer, appSecret: string): string => `sha256=
 export function verifyMetaSignature(rawBody: Buffer, header: string | undefined, appSecret: string): boolean {
   if (appSecret.length === 0 || typeof header !== "string" || !header.startsWith("sha256=")) return false;
   return sameHex(hmacHex(rawBody, appSecret), header.slice("sha256=".length));
-}
-
-// ---- Razorpay events ---------------------------------------------------------------------------------------------------------
-
-/**
- * Read a Razorpay webhook into a PaymentEvent, or null for any event the agent does not use (payment_link.expired, payment.failed ...).
- * `eventId` is the x-razorpay-event-id header. Without it the id is a digest of the body, which a retry repeats exactly.
- *
- * A real `payment.captured` names the payment and its order, NOT its payment link, so `payment.link_id` is left out for it;
- * the agent asks the payments service which link the payment paid.
- */
-export function parseRazorpayEvent(body: unknown, eventId?: string): PaymentEvent | null {
-  if (!isObject(body) || !isObject(body.payload)) return null;
-  const event = body.event;
-  const entityOf = (name: string) => (isObject(body.payload) && isObject(body.payload[name]) && isObject(body.payload[name].entity) ? body.payload[name].entity as Record<string, unknown> : undefined);
-  const id = eventId && eventId.length > 0 ? eventId : `evt_${createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 32)}`;
-  const created_at = num(body.created_at) ?? 0;
-
-  if (event === "payment_link.paid") {
-    const link = entityOf("payment_link");
-    const payment = entityOf("payment");
-    const linkId = str(link?.id);
-    if (!linkId) return null;
-    const paymentId = str(payment?.id);
-    return { id, event, created_at, payload: { payment_link: { id: linkId, reference_id: str(link?.reference_id) ?? "" }, ...(paymentId ? { payment: { id: paymentId, link_id: linkId } } : {}) } };
-  }
-  if (event === "payment.captured") {
-    const paymentId = str(entityOf("payment")?.id);
-    return paymentId ? { id, event, created_at, payload: { payment: { id: paymentId } } } : null;
-  }
-  if (event === "refund.processed") {
-    const refund = entityOf("refund");
-    const refundId = str(refund?.id);
-    const paymentId = str(refund?.payment_id);
-    return refundId && paymentId ? { id, event, created_at, payload: { refund: { id: refundId, payment_id: paymentId } } } : null;
-  }
-  return null;
 }
 
 // ---- WhatsApp messages -------------------------------------------------------------------------------------------------------

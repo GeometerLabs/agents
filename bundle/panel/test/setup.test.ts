@@ -1,5 +1,6 @@
 // The phone setup: five short steps that write the same client folder a builder would, refuse bad input in plain words, take the shop's secrets without
 // ever showing, keeping or logging them, and end in checks and "Ready to go live".
+import { RAZORPAY_WORDS as RZW } from "../../../modules/payments/providers/razorpay/words.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -106,8 +107,8 @@ test("bad input is refused in the person's own language, in plain words, and not
     // Step 4: the owner and the shop must be different numbers, and a live key is not a practice key.
     const four = (form: Record<string, string>) => divya.post(`/setup/${d}/4`, form, `/setup/${d}/4`);
     assert.ok((await four({ ...STEP4, waNumber: "98765 43210" })).plain.includes(w.sameNumber));
-    assert.ok((await four({ ...STEP4, rzpMode: "test" })).plain.includes(WORDS.ml.setup.checks.razorpay.wrongMode));
-    assert.ok((await four({ ...STEP4, rzpKeyId: "key 123" })).plain.includes(w.keyIdBad));
+    assert.ok((await four({ ...STEP4, gwMode: "test" })).plain.includes(RZW.ml.checks.wrongMode));
+    assert.ok((await four({ ...STEP4, gwKeyId: "key 123" })).plain.includes(RZW.ml.accounts.keyIdBad));
     assert.ok((await four({ ...STEP4, waNumberId: "12ab" })).plain.includes(w.numberIdBad));
     assert.ok((await four({ ...STEP4, calId: "my calendar" })).plain.includes(w.calendarIdBad));
     // Someone else's draft is not found.
@@ -137,7 +138,7 @@ test("the secrets: written once to the inbox, exactly as given, 0600; never in a
     assert.ok(again.plain.includes(WORDS.en.setup.accounts.keepEmpty) && !again.plain.includes("rzp_live_AbCdEf123456:"));
     const all = [...f.replies, again.text, (await divya.get("/shops")).text];
     // A step 4 with the secret boxes left empty keeps what arrived and writes nothing new.
-    const keep = await divya.post(`/setup/${f.draft}/4`, { ...STEP4, waToken: "", waAppSecret: "", rzpKeySecret: "", rzpWebhook: "" }, `/setup/${f.draft}/4`);
+    const keep = await divya.post(`/setup/${f.draft}/4`, { ...STEP4, waToken: "", waAppSecret: "", gwKeySecret: "", gwWebhook: "" }, `/setup/${f.draft}/4`);
     assert.equal(keep.status, 303);
     assert.deepEqual(readdirSync(inbox).map((n) => statSync(join(inbox, n)).mtimeMs), before);
     // A box with a space in it is refused, nothing at all is written from that submission, and the page does not repeat it.
@@ -147,7 +148,7 @@ test("the secrets: written once to the inbox, exactly as given, 0600; never in a
     assert.ok(bad.plain.includes(WORDS.en.setup.problems.secretShape(WORDS.en.setup.accounts.whatsapp.token)));
     assert.equal(content("whatsapp_app_secret"), M.app, "the good app secret in the same form was not written either");
     // A changed key id needs its secret again; the old secret is never reused for it.
-    const changed = await divya.post(`/setup/${f.draft}/4`, { ...STEP4, rzpKeyId: "rzp_live_Another123456", rzpKeySecret: "" }, `/setup/${f.draft}/4`);
+    const changed = await divya.post(`/setup/${f.draft}/4`, { ...STEP4, gwKeyId: "rzp_live_Another123456", gwKeySecret: "" }, `/setup/${f.draft}/4`);
     assert.equal(changed.status, 400);
     const go = await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
     all.push((await divya.get(`/setup/${f.draft}/5`)).text);
@@ -161,7 +162,7 @@ test("the secrets: written once to the inbox, exactly as given, 0600; never in a
     // The panel remembers that each arrived, and when.
     const meta = JSON.parse(readFileSync(join(b.dir, "panel", "data", "meta", `${f.shop}.json`), "utf8"));
     assert.deepEqual(Object.keys(meta.receipts).sort(), ["razorpay_key", "razorpay_webhook_secret", "whatsapp_app_secret", "whatsapp_token"]);
-    assert.deepEqual(meta.razorpay, { mode: "live", keyId: "rzp_live_AbCdEf123456" });
+    assert.deepEqual(meta.gateway, { provider: "razorpay", mode: "live", keyId: "rzp_live_AbCdEf123456" });
     // The intake has no way to read anything back.
     const source = readFileSync(new URL("../secrets.ts", import.meta.url), "utf8");
     assert.ok(!/readFile|readdir|createReadStream|readSync|openSync/u.test(source), "secrets.ts must only write");
@@ -203,7 +204,7 @@ test("it asks only for what the template uses, and a template added to templates
   writeFileSync(join(mini, "template.json"), JSON.stringify({ schema: 1, id: "mini", setup: "bookings", accounts: ["whatsapp"], steps: ["business", "languages", "accounts", "checks"], settingsExample: "settings/x.json" }));
   mkdirSync(join(templates, "somewhere", "elsewhere"));
   writeFileSync(join(templates, "somewhere", "elsewhere", "package.json"), JSON.stringify({ name: "elsewhere", version: "0.2.0" }));
-  writeFileSync(join(templates, "somewhere", "elsewhere", "template.json"), JSON.stringify({ schema: 1, id: "elsewhere", setup: "custom-form", accounts: ["razorpay"] }));
+  writeFileSync(join(templates, "somewhere", "elsewhere", "template.json"), JSON.stringify({ schema: 1, id: "elsewhere", setup: "custom-form", accounts: ["payment"] }));
   const b = await boot({ templatesDir: templates });
   try {
     const divya = await b.account("divya", "partner");
@@ -216,7 +217,7 @@ test("it asks only for what the template uses, and a template added to templates
     assert.equal((await divya.post(`/setup/${d}/2`, STEP3, `/setup/${d}/2`)).location, `/setup/${d}/3`);
     const three = await divya.get(`/setup/${d}/3`);
     assert.ok(three.plain.includes(WORDS.en.setup.steps.accounts) && three.plain.includes('name="waToken"'));
-    assert.ok(!three.plain.includes('name="calId"') && !three.plain.includes('name="rzpKeyId"') && !three.plain.includes('name="deposit"'), "no calendar, no Razorpay and no deposit question for this template");
+    assert.ok(!three.plain.includes('name="calId"') && !three.plain.includes('name="gwKeyId"') && !three.plain.includes('name="deposit"'), "no calendar, no Razorpay and no deposit question for this template");
   } finally { await b.close(); }
 });
 

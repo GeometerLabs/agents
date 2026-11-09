@@ -2,6 +2,7 @@
 // read, not copied) plus panel.css. No page needs JavaScript: a cheap phone loads plain forms and links. Every value goes through html``, which
 // escapes by default, so a shop named <script> is text everywhere. Words come from words.ts (four languages) and, for the certificate line and
 // "Show what we did", from the report's own strings.
+import { DEFAULT_PROVIDER, GATEWAYS, providerById } from "../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
@@ -157,7 +158,9 @@ export function sentenceOf(c: Ctx, o: Obligation): string {
   const f = o.facts;
   const amount = typeof f.amountInr === "number" ? formatInr(f.amountInr) : "";
   const noun = String(f.holder ?? f.what ?? "");
-  return w.kinds[o.kind](o.caseId, amount, typeof f.hours === "number" ? f.hours : 0, Object.hasOwn(w.variants, noun) ? w.variants[noun] : "");
+  // a sentence that says where to look names the shop's gateway by its own display name (B71: from its folder); with one gateway there is no doubt which
+  const gateway = typeof f.gateway === "string" ? f.gateway : GATEWAYS.map((g) => g.displayName).join(" / ");
+  return w.kinds[o.kind](o.caseId, amount, typeof f.hours === "number" ? f.hours : 0, Object.hasOwn(w.variants, noun) ? w.variants[noun] : "").replaceAll("{gateway}", gateway);
 }
 
 function inboxItems(c: Ctx, shop: ShopInbox): Raw {
@@ -262,11 +265,11 @@ function costTable(c: Ctx, cost: MonthlyCost): Raw {
   const amount = (l: CostLine): string => (l.state === "unknown" ? w.unknown : formatRupees(l.paise as number));
   return html`<h2>${w.heading}</h2>
 <table class="cost"><tbody>
-${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.licence ? ` (${c.w.plan.builderLicence})` : l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
+${cost.lines.map((l) => html`<tr><td>${w.lines[l.id].replaceAll("{gateway}", cost.gateway ?? "")}${l.licence ? ` (${c.w.plan.builderLicence})` : l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer].replaceAll("{gateway}", cost.gateway ?? "")}</small></td><td class="n">${amount(l)}</td></tr>`)}
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>
-<ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${k === "no-gateway-fee" ? c.w.upi.noGatewayFee : w.caveats[k as keyof typeof w.caveats]}</li>`)}</ul>`;
+<ul class="note">${cost.caveats.filter((k) => k !== "early-estimate").map((k) => html`<li>${k === "no-gateway-fee" ? c.w.upi.noGatewayFee : w.caveats[k as keyof typeof w.caveats].replaceAll("{gateway}", cost.gateway ?? "")}</li>`)}</ul>`;
 }
 
 /** The settings of a Fees or Orders shop in plain words: the template's own lines (its batches, or its menu and slots), the languages and the owner, then the heading for the rules (the certificate's own lines). */
@@ -505,19 +508,24 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     ${v.shareAddress ? html`<p>${a.calendar.shareAddress}</p><code class="addr">${v.shareAddress}</code>` : html`<p class="note">${a.calendar.noAddress}</p>`}
     ${text(a.calendar.id, "calId", d.calendar.id, { max: 200 })}
     ${v.shareAddress ? "" : secret(c, a.calendar.json, "calJson", v.receipts["google_service_account.json"], "textarea")}` : ""}
-  ${t.accounts.includes("razorpay") ? html`<h2>${p.heading}</h2><p>${p.intro}</p>
+  ${t.accounts.includes("payment") ? html`<h2>${p.heading}</h2><p>${p.intro}</p>
     <div class="field"><div class="days">
-      <label><input type="radio" name="payMod" value="upi" ${paying === "upi" ? raw("checked") : ""}> ${p.optionUpi}</label>
-      <label><input type="radio" name="payMod" value="razorpay" ${paying === "razorpay" ? raw("checked") : ""}> ${p.optionRazorpay}</label></div></div>
+      <label><input type="radio" name="payMod" value="${DEFAULT_PROVIDER.id}" ${!providerById(paying)?.gateway ? raw("checked") : ""}> ${p.optionUpi}</label>
+      ${GATEWAYS.map((g) => html`<label><input type="radio" name="payMod" value="${g.id}" ${paying === g.id ? raw("checked") : ""}> ${g.gateway!.setup.words[c.lang].option}</label>`)}</div></div>
     <h2>${p.upiTitle}</h2><p>${p.upiIntro}</p>
     ${text(p.upiId, "upiId", d.payment?.upiId ?? "", { max: 80, help: p.upiIdHelp })}${text(p.payee, "upiPayee", d.payment?.payee ?? "", { max: 80, help: p.payeeHelp })}
     <p class="note">${p.noCheck}</p>
-    <h2>${a.razorpay.title}</h2><p class="note">${p.razorpayOnly}</p><p>${a.razorpay.intro}</p>${guide(a.razorpay.steps)}
-    ${v.webhookUrl ? html`<code class="addr">${a.razorpay.webhookUrl(v.webhookUrl)}</code>` : ""}
-    <div class="field"><span>${a.razorpay.mode}</span><div class="days">
-      <label><input type="radio" name="rzpMode" value="live" ${d.razorpay.mode === "live" ? raw("checked") : ""}> ${a.razorpay.modeLive}</label>
-      <label><input type="radio" name="rzpMode" value="test" ${d.razorpay.mode === "test" ? raw("checked") : ""}> ${a.razorpay.modeTest}</label></div></div>
-    ${text(a.razorpay.keyId, "rzpKeyId", d.razorpay.keyId, { max: 60 })}${secret(c, a.razorpay.keySecret, "rzpKeySecret", v.receipts.razorpay_key)}${secret(c, a.razorpay.webhookSecret, "rzpWebhook", v.receipts.razorpay_webhook_secret)}` : ""}
+    ${GATEWAYS.map((g) => {
+      // each gateway's own boxes, folded away unless it is the one chosen: the words, the key's shape and the secrets' names are its folder's (B71)
+      const gw = g.gateway!.setup;
+      const ga = gw.words[c.lang].accounts;
+      return html`<details ${paying === g.id ? raw("open") : ""}><summary>${ga.title}</summary><p>${ga.intro}</p>${guide(ga.steps)}
+    ${v.webhookUrl && paying === g.id ? html`<code class="addr">${ga.webhookUrl(v.webhookUrl)}</code>` : ""}
+    <div class="field"><span>${ga.mode}</span><div class="days">
+      <label><input type="radio" name="gwMode" value="live" ${d.gateway.mode === "live" ? raw("checked") : ""}> ${ga.modeLive}</label>
+      <label><input type="radio" name="gwMode" value="test" ${d.gateway.mode === "test" ? raw("checked") : ""}> ${ga.modeTest}</label></div></div>
+    ${text(ga.keyId, "gwKeyId", paying === g.id ? d.gateway.keyId : "", { max: 60 })}${secret(c, ga.keySecret, "gwKeySecret", v.receipts[gw.secrets.key])}${secret(c, ga.webhookSecret, "gwWebhook", v.receipts[gw.secrets.webhook])}</details>`;
+    })}` : ""}
   ${back}${next}</form>`;
   }
   return layout(c, title, html`${head}${body}`);
@@ -555,14 +563,16 @@ function checkLine(c: Ctx, r: CheckResult): Raw {
   if (r.service === "whatsapp") {
     title = w.whatsapp.title;
     text = r.code === "confirmed" ? w.whatsapp.confirmed(found?.displayNumber ?? "") : r.code === "account_mismatch" ? w.whatsapp.differs(r.foundEnding ?? "") : r.code === "not_found" ? w.whatsapp.notFound : generic(r.code);
-  } else if (r.service === "razorpay") {
-    title = w.razorpay.title;
-    text = r.code === "confirmed" ? w.razorpay.confirmed(found?.mode === "live" ? c.w.setup.accounts.razorpay.modeLive : c.w.setup.accounts.razorpay.modeTest) : r.code === "account_mismatch" ? w.razorpay.differs : r.code === "wrong_mode" ? w.razorpay.wrongMode : generic(r.code);
+  } else if (providerById(r.service)?.gateway) {
+    // a gateway's check, in its own words (its folder, B71)
+    const gw = providerById(r.service)!.gateway!.setup.words[c.lang];
+    title = gw.checks.title;
+    text = r.code === "confirmed" ? gw.checks.confirmed(found?.mode === "live" ? gw.accounts.modeLive : gw.accounts.modeTest) : r.code === "account_mismatch" ? gw.checks.differs : r.code === "wrong_mode" ? gw.checks.wrongMode : generic(r.code);
   } else {
     title = w.calendar.title;
     text = r.code === "confirmed" ? w.calendar.confirmed(found?.calendarName ?? found?.calendarId ?? "") : r.code === "account_mismatch" ? w.calendar.differs : r.code === "not_found" ? w.calendar.notFound : r.code === "not_writable" ? w.calendar.notWritable(r.detail ?? "") : generic(r.code);
   }
-  return row(r.ok ? "ok" : "bad", html`<b>${title}</b><br>${text}${r.service === "razorpay" && r.ok ? html`<br><small class="note">${w.razorpayWhose}</small>` : ""}`);
+  return row(r.ok ? "ok" : "bad", html`<b>${title}</b><br>${text}${providerById(r.service)?.gateway && r.ok ? html`<br><small class="note">${providerById(r.service)!.gateway!.setup.words[c.lang].whose}</small>` : ""}`);
 }
 
 export function setupChecksPage(c: Ctx, v: ChecksView): string {

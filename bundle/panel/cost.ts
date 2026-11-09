@@ -5,6 +5,7 @@
 //  - "early estimate" until the record has real usage;
 //  - prices come from a dated, versioned file (prices/<date>.json at the repo's root, the only place a price is written) that says where every rate was read and how sure we are.
 // This file has no words in any language: it returns the numbers and the reasons, and views.ts says them in the shop's language.
+import { gatewayOf } from "../../modules/payments/providers/index.ts";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -178,10 +179,10 @@ export interface CostInput {
   hostingSharePaise?: number;
 }
 
-export type LineId = "whatsapp" | "whatsapp-provider" | "razorpay" | "geometer" | "hosting";
+export type LineId = "whatsapp" | "whatsapp-provider" | "gateway" | "geometer" | "hosting";
 export type LineState = "amount" | "unknown";
 /** Who pays whom. Geometer passes nothing through: its own line is the shop's plan (the AI model is in it, up to the allowance), and it never handles anyone else's money. */
-export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-razorpay" | "builder-pays-geometer" | "builder-pays-licence" | "hosting";
+export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-gateway" | "builder-pays-geometer" | "builder-pays-licence" | "hosting";
 export type Caveat =
   | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "fee-not-priced" | "hosting-not-measured"
   | "payment-link-fee-conflict" | "whatsapp-rate-second-hand" | "no-gateway-fee";
@@ -213,6 +214,8 @@ export interface MonthlyCost {
   /** The sum of the known lines. `complete` is false when a line is unknown: then it is a subtotal and must be called one. */
   total: { paise: number; complete: boolean; unknown: LineId[] };
   caveats: Caveat[];
+  /** The shop's gateway by its own display name (B71), for the words that name it ("{gateway}'s fee"); left out for a shop with none. */
+  gateway?: string;
 }
 
 const need = (n: number | undefined, fallback: number): number => (n !== undefined && Number.isSafeInteger(n) && n >= 0 ? n : fallback);
@@ -267,22 +270,24 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     }
   }
 
-  // 3. Razorpay's fee: 2% of each deposit and 18% GST on that fee, paid by the shop to Razorpay, and not returned when the deposit is refunded.
-  // A UPI shop (B33) pays customers' money straight to its own UPI ID: no gateway, so no line, and a note that says so.
-  if (input.settings.payment?.module === "upi") caveats.add("no-gateway-fee");
+  // 3. The gateway's fee, for a shop that chose one (B71): its folder names the price list's ids (for one: a share of each deposit and GST on that fee, paid by the
+  // shop to the gateway, not returned when the deposit is refunded). A UPI shop (B33) pays customers' money straight to its own UPI ID: no gateway, so no line, and a note.
+  const gateway = gatewayOf(input.settings.payment);
+  if (!gateway) caveats.add("no-gateway-fee");
   else {
-    const fee = prices.rates["razorpay.platform-fee"];
-    const gst = prices.rates["razorpay.gst-on-fee"];
+    const [feeId, gstId] = gateway.gateway!.feeRates;
+    const fee = prices.rates[feeId];
+    const gst = prices.rates[gstId];
     const deposit = BigInt(input.settings.deposit.amountInr) * 100n; // paise
     const quantities = { payments: Number(bookings), depositPaise: Number(deposit) };
-    if (!fee?.basisPoints || gst?.basisPoints === undefined) lines.push(unknown("razorpay", "shop-pays-razorpay", quantities, ["razorpay.platform-fee", "razorpay.gst-on-fee"]));
+    if (!fee?.basisPoints || gst?.basisPoints === undefined) lines.push(unknown("gateway", "shop-pays-gateway", quantities, [feeId, gstId]));
     else {
       // fee = deposit x bps / 10,000; GST = fee x gstBps / 10,000. Kept exact in micropaise: x MICRO first, divide once at the end.
       const bps = BigInt(fee.basisPoints);
       const gstBps = BigInt(gst.basisPoints);
       const exact = (bookings * deposit * bps * (10_000n + gstBps) * MICRO) / (10_000n * 10_000n);
       const quality = weakest(fee.quality, gst.quality);
-      lines.push(known("razorpay", "shop-pays-razorpay", exact, quantities, ["razorpay.platform-fee", "razorpay.gst-on-fee"], quality));
+      lines.push(known("gateway", "shop-pays-gateway", exact, quantities, [feeId, gstId], quality));
       if (fee.quality === "conflicting") caveats.add("payment-link-fee-conflict");
     }
   }
@@ -313,6 +318,6 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   return {
     priceList: { date: prices.date, sha256: prices.sha256 },
     basis: observed ? "from-record" : "early-estimate",
-    bookings: Number(bookings), assumptions: a, lines, total: { paise: total, complete: unknownIds.length === 0, unknown: unknownIds }, caveats: [...caveats],
+    bookings: Number(bookings), assumptions: a, lines, total: { paise: total, complete: unknownIds.length === 0, unknown: unknownIds }, caveats: [...caveats], ...(gateway ? { gateway: gateway.displayName } : {}),
   };
 }

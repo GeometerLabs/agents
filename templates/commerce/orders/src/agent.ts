@@ -13,14 +13,16 @@
 // following Guard's hold (payments/refunds.ts) and reading a message with the month's AI allowance (understanding/reader.ts). What is left here is Orders: the menu, the
 // slot, the order's states and its words.
 //
-// A shop that takes UPI (settings "payment": {"module": "upi"}, plan B33) has no payment service the agent can read: the customer pays the shop's own UPI ID and the advance
-// counts only when the owner marks it received, from their own number, with a one-use code (modules/payments/upi). The requests and marks live in this agent's store and are
-// read through the same Payments shape, so "confirmed only when the payment record shows it" holds, with the owner's marks as that record. A mark after the hold ended never
-// confirms an order by itself, and a refund is never sent by the agent: the owner owes it, is reminded, and the customer hears "sent" only after the owner marks it.
+// What the shop's payment module can do decides every payment branch, never its name (B71: modules/payments/providers). A module that cannot confirm a payment by
+// itself (UPI, the default, plan B33) has no payment service the agent can read: the customer pays the shop directly and the advance counts only when the owner marks it
+// received, from their own number, with a one-use code (modules/payments/owner-marked). The requests and marks live in this agent's store and are read through the same
+// Payments shape, and the owner's mark goes through the same reconcilePayments a gateway's webhook does, so "confirmed only when the payment record shows it" is one flow,
+// with the owner's marks as that record. A mark after the hold ended never confirms an order by itself, and with a module that cannot refund by itself a refund is never
+// sent by the agent: the owner owes it, is reminded, and the customer hears "sent" only after the owner marks it.
 //
 // The licence (plan B13; modules/licence). While the shop's lease puts it in its WIND-DOWN, the agent takes no new orders: a customer who asks to order is answered "online
 // ordering is paused, please contact the shop", no hold or advance link is made, and nothing is kept to do later. Cancellations, refunds owed and payments from links sent
-// earlier go on as every day. In the FINAL STOP the agent also closes the open advance links (Razorpay; a UPI shop has none) and sends nothing more.
+// earlier go on as every day. In the FINAL STOP the agent also closes the open advance links (where the module can cancel one) and sends nothing more.
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
@@ -42,12 +44,12 @@ import { createSay } from "../../../../modules/messaging/say.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { PaymentEvent, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds } from "../../../../modules/payments/refunds.ts";
-import { emptyUpiState, markReceived, markRefund, oweRefund, reminded, remindersDue, upiPayments } from "../../../../modules/payments/upi/ledger.ts";
-import type { OwedRefund, UpiMark, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
-import { parseUpiReply } from "../../../../modules/payments/upi/owner.ts";
-import type { UpiReply } from "../../../../modules/payments/upi/owner.ts";
-import { UPI_ACTIONS } from "../../../../modules/payments/upi/obligations.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
+import type { OwedRefund, OwnerMark, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
+import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
+import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
+import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
@@ -57,7 +59,7 @@ import type { Intent, IntentParser, ParseContext, ParseOptions } from "./adapter
 import { isPaidClaim, parseIntent } from "./adapters/rule-parser.ts";
 import { addLine, countOf, factsFor, fixSlot, latestOrder, moveTo, newDraft, ordersOn, register, slotMoments, takenOf, totalOf } from "./order.ts";
 import type { Order, Pending, Store } from "./order.ts";
-import { buttonsFor, intentFromReply, itemList, ownerUpiButtons, slotList } from "./language/interactive.ts";
+import { buttonsFor, intentFromReply, itemList, ownerMarkButtons, slotList } from "./language/interactive.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
@@ -76,7 +78,7 @@ export interface AgentDeps {
   store: Store;
   /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
   ai?: AiPolicy;
-  /** A UPI shop: make the QR picture of a `upi://pay` link and put it where WhatsApp can fetch it; its https address, or null (modules/payments/upi/qr-image.ts). Left out, or null, the words carry the link, the UPI ID and the amount. */
+  /** An owner-marked shop: make the QR picture of its pay link and put it where WhatsApp can fetch it; its https address, or null (modules/payments/owner-marked/qr-image.ts). Left out, or null, the words carry the link, the UPI ID and the amount. */
   qrImage?: (text: string) => Promise<string | null>;
   /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
@@ -84,7 +86,7 @@ export interface AgentDeps {
 
 export type AgentEvent =
   | { kind: "message"; message: InboundMessage } // a customer's (or the owner's) WhatsApp message
-  | { kind: "payment_event"; event: PaymentEvent } // a Razorpay webhook
+  | { kind: "payment_event"; event: PaymentEvent } // a gateway's webhook, read by the inbox into the neutral events
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund only if its own record says the
   // owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
@@ -112,12 +114,21 @@ type More = Omit<SayArgs, "booking" | "phone" | "to" | "templates">;
 /** What a step tells the customer along with the words that ask for what is missing. */
 interface Ctx { prefix: TemplateId[]; shown: Decision[]; itemId?: string }
 
+/** What the owner's marks on an order's request came to: confirmed in full, a part, after the hold, beyond the advance, or nothing new. */
+type MarkOutcome = "confirmed" | "part" | "late" | "extra" | "none";
+
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
-  // UPI (B33): the requests and the owner's marks live in this agent's own store and are read through the same shape as Razorpay's; deps.payments is never called.
-  const upi = upiOf(settings.payment);
-  const upiState = upi ? (store.upi ??= emptyUpiState()) : undefined;
-  const payments: Payments = upi ? upiPayments(upiState!, upi, clock) : deps.payments;
+  // B71: what the payment module can do, asked once. A module that cannot confirm a payment by itself is marked paid by the owner: the requests and the owner's
+  // marks live in this agent's own store (its `upi` key, as it always was) and are read through the same Payments shape as a gateway's, and deps.payments is never
+  // called. One that cannot refund by itself has the owner pay refunds back, tracked in the same store.
+  const can = capabilitiesOf(settings.payment);
+  const ownerConfirms = !can.confirmsAutomatically;
+  const ownerRefunds = !can.refundsAutomatically;
+  const marked = ownerMarkedOf(settings.payment);
+  if (ownerConfirms && !marked) throw new Error("This payment module cannot confirm a payment by itself and says no way for the owner to be paid: it cannot run.");
+  const markState = ownerConfirms || ownerRefunds ? (store.upi ??= emptyMarkState()) : undefined;
+  const payments: Payments = ownerConfirms ? markedPayments(markState!, marked!.payLink, clock) : deps.payments;
   const policy: AiPolicy = deps.ai ?? {};
   const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
@@ -187,7 +198,7 @@ export function createAgent(deps: AgentDeps): Agent {
   const cancelOrOwner: Offer = { kind: "buttons", buttons: ["cancel", "owner"] };
   /** A UPI shop's customer, while their advance waits: "I have paid" (the owner is asked to look; nothing is marked paid), cancel, or talk to the owner. */
   const paidCancelOrOwner: Offer = { kind: "buttons", buttons: ["paid", "cancel", "owner"] };
-  const waitingOffer = (): Offer => (upi ? paidCancelOrOwner : cancelOrOwner);
+  const waitingOffer = (): Offer => (ownerConfirms ? paidCancelOrOwner : cancelOrOwner);
 
   // ---- the licence: no new orders in the wind-down, nothing more sent in the final stop --------------------------
 
@@ -214,17 +225,17 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, owner, "licence", "confirmed", { state: now }, { refs: { state: now, ...(l.paidThrough !== null ? { paidThrough: String(l.paidThrough) } : {}) }, notes });
   }
 
-  /** The final stop, once for each `paid_through`: close every open advance link at Razorpay through Guard, so no new payment comes in. A UPI shop has none to close. */
+  /** The final stop, once for each `paid_through`: close every open advance link at the gateway through Guard, so no new payment comes in. A module that cannot cancel a request (UPI) has none to close. */
   async function closeLinksAtStop(): Promise<void> {
     const l = licence();
-    if (l.state !== "stopped" || upi) return;
+    if (l.state !== "stopped" || !can.cancels) return;
     const key = `stop:${l.paidThrough ?? 0}`;
     for (const o of [...store.orders.values()]) {
       if (o.state !== "awaiting_advance" || !o.linkId) continue;
       if (record.entries().some((e) => e.booking === o.id && e.action === "cancel_advance_link" && e.refs.licence === key)) continue;
       const linkId = o.linkId;
-      const closed = await payments.cancelPaymentLink(linkId).then(() => payments.fetchPaymentLink(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
-      log(o, o.customer, "cancel_advance_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open advance link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or Razorpay did not answer); the owner can close it in Razorpay" });
+      const closed = await payments.cancelRequest(linkId).then(() => payments.fetchRequest(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
+      log(o, o.customer, "cancel_advance_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open advance link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or the gateway did not answer); the owner can close it in the gateway's own dashboard" });
     }
   }
 
@@ -391,19 +402,19 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- the hold and the advance --------------------------------------------------------------------------------------------
 
-  // ---- UPI, marked paid by the owner (B33; modules/payments/upi) ------------------------------------------------------------
+  // ---- owner-marked: paid when the owner marks it (B33; modules/payments/owner-marked) -------------------------------------------
   //
   // The customer pays the shop's own UPI ID. The agent cannot see that payment; the owner can, in their UPI app. So the advance counts only when the owner marks it
   // received, from their own number, with the one-use code the agent sent only to them. A screenshot, a "paid" button or the words "I paid" ask the owner to look, and mark
   // nothing. A refund is never sent by the agent: the owner owes it, is reminded, and the customer hears "sent" only after the owner marks it so.
 
-  const requestOf = (o: Order): UpiRequest | undefined => upiState?.requests.find((r) => r.id === o.linkId);
-  const receivedButtons = (request: UpiRequest, amountPaise: number): Offer | undefined =>
-    request.code ? { kind: "owner_upi", choices: ownerUpiButtons(settings.owner.language, { kind: "received", code: request.code, amountInr: amountPaise / 100 }) } : undefined;
+  const requestOf = (o: Order): MarkedRequest | undefined => markState?.requests.find((r) => r.id === o.linkId);
+  const receivedButtons = (request: MarkedRequest, amountPaise: number): Offer | undefined =>
+    request.code ? { kind: "owner_upi", choices: ownerMarkButtons(settings.owner.language, { kind: "received", code: request.code, amountInr: amountPaise / 100 }) } : undefined;
   const refundButtons = (r: OwedRefund): Offer | undefined =>
-    r.code ? { kind: "owner_upi", choices: ownerUpiButtons(settings.owner.language, { kind: "refund", code: r.code, keepAllowed: r.keepAllowed === true }) } : undefined;
+    r.code ? { kind: "owner_upi", choices: ownerMarkButtons(settings.owner.language, { kind: "refund", code: r.code, keepAllowed: r.keepAllowed === true }) } : undefined;
   /** The QR picture of the request's link, made once (best effort: without it the words carry the link, the UPI ID and the amount). */
-  async function qrOf(request: UpiRequest): Promise<SayArgs["image"]> {
+  async function qrOf(request: MarkedRequest): Promise<SayArgs["image"]> {
     if (request.imageLink === undefined && deps.qrImage) request.imageLink = (await deps.qrImage(request.link).catch(() => null)) ?? undefined;
     return request.imageLink ? { link: request.imageLink, caption: ["upi_qr_caption"] } : undefined;
   }
@@ -448,12 +459,12 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     o.linkId = link.id;
-    o.linkUrl = link.short_url;
+    o.linkUrl = link.pay_url;
     log(o, phone, "create_advance_link", "confirmed", { amountPaise: advancePaise(o) }, { refs: { linkId: link.id } });
-    if (upi) {
+    if (ownerConfirms) {
       const request = requestOf(o)!;
-      if (!record.confirmedRefs(o.id, UPI_ACTIONS.request, "requestId").includes(request.id)) {
-        log(o, phone, UPI_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId: request.id, reference: o.id, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the shop's own UPI ID; it counts as paid only when the owner marks it received" });
+      if (!record.confirmedRefs(o.id, MARK_ACTIONS.request, "requestId").includes(request.id)) {
+        log(o, phone, MARK_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId: request.id, reference: o.id, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the shop's own UPI ID; it counts as paid only when the owner marks it received" });
       }
       await tellCustomer(o, phone, [...ctx.prefix, "quote_and_link"], { shown: [...ctx.shown, ...avail.decisions], itemId: ctx.itemId, offer: paidCancelOrOwner, image: await qrOf(request) });
       await tellOwner(o, phone, "owner_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
@@ -463,7 +474,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function tellAlreadyWaiting(waiting: Order): Promise<void> {
-    const request = upi ? requestOf(waiting) : undefined;
+    const request = ownerConfirms ? requestOf(waiting) : undefined;
     await tellCustomer(waiting, waiting.customer, ["already_waiting"], { offer: waitingOffer(), ...(request ? { image: await qrOf(request) } : {}) });
   }
 
@@ -526,10 +537,10 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- the advance: look, count, confirm ------------------------------------------------------------------------------------
 
   /** Compare the payments service's record of this order's link with what the agent has counted. */
-  async function reconcilePayments(o: Order): Promise<void> {
-    if (upi) { await reconcileUpi(o); return; }
+  async function reconcilePayments(o: Order): Promise<MarkOutcome | void> {
+    if (ownerConfirms) return reconcileMarks(o); // the owner's marks are this module's payment record
     if (!o.linkId) return;
-    const link = await payments.fetchPaymentLink(o.linkId);
+    const link = await payments.fetchRequest(o.linkId);
     if (!link) { log(o, o.customer, "record_payment", "failed", { linkId: o.linkId }, { notes: "the payments service has no such link" }); return; }
     for (const payment of link.payments) {
       if (o.handledPayments.includes(payment.id)) continue;
@@ -563,7 +574,7 @@ export function createAgent(deps: AgentDeps): Agent {
     o.holdExpiresAt = undefined;
     moveTo(o, "confirmed");
     log(o, o.customer, "confirm_order", "confirmed", { lines: o.lines, date: o.date, slot: o.slotId, mode: o.mode }, { notes: "the payment record shows the whole advance" });
-    await tellCustomer(o, o.customer, [upi ? "upi_order_confirmed" : "order_confirmed"], { offer: cancelOrOwner });
+    await tellCustomer(o, o.customer, [ownerConfirms ? "upi_order_confirmed" : "order_confirmed"], { offer: cancelOrOwner });
     await tellOwner(o, o.customer, o.mode === "delivery" ? "owner_delivery_confirmed" : "owner_order_confirmed");
   }
 
@@ -594,14 +605,14 @@ export function createAgent(deps: AgentDeps): Agent {
    * the order stays held and the owner is asked for the rest; more, and the extra is owed back. A mark after the hold ended (or the order was cancelled) never confirms by
    * itself: the owner and the builder are told, and the money is owed back unless the owner takes the order by hand.
    */
-  async function reconcileUpi(o: Order): Promise<"confirmed" | "part" | "late" | "extra" | "none"> {
+  async function reconcileMarks(o: Order): Promise<MarkOutcome> {
     const request = requestOf(o);
     if (!request) return "none";
     const fresh = request.marks.filter((m) => !o.handledPayments.includes(m.id));
     if (fresh.length === 0) return "none";
     for (const m of fresh) {
       o.handledPayments.push(m.id);
-      log(o, o.customer, UPI_ACTIONS.marked, "confirmed", { requestId: request.id, amountPaise: m.amountPaise }, {
+      log(o, o.customer, MARK_ACTIONS.marked, "confirmed", { requestId: request.id, amountPaise: m.amountPaise }, {
         refs: { paymentId: m.id, requestId: request.id, amountPaise: String(m.amountPaise), markedBy: "owner" },
         notes: m.afterClose ? "marked received by the owner after the request was closed: it does not confirm by itself" : "marked paid by owner: from the owner's own number, with a one-use code",
       });
@@ -627,7 +638,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** A mark after the hold ended (or after the order was cancelled): recorded as received, never confirmed again by itself. The owner and the builder are told. */
-  async function lateMark(o: Order, mark: UpiMark, amountPaise: number): Promise<void> {
+  async function lateMark(o: Order, mark: OwnerMark, amountPaise: number): Promise<void> {
     const expired = o.state === "expired";
     (o.refundIssues ??= []).push({ paymentId: mark.id, kind: "late_upi", atMs: clock.now(), note: `The owner marked ${formatInr(amountPaise / 100)} received for ${o.id} after its ${expired ? "hold had ended" : "cancellation"}. It was not confirmed again by itself; the owner owes it back${expired ? " or takes the order by hand" : ""}.` });
     if (!expired) { await oweBack(o, mark.id, amountPaise, "marked received after the order was cancelled", { customer: "upi_refund_owed" }); return; }
@@ -636,8 +647,8 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** A refund the owner owes: recorded, the customer told it will come from the owner, the owner told what to send, with the code. The agent never sends it. */
   async function oweBack(o: Order, paymentId: string, amountPaise: number, why: string, x: { customer: TemplateId; ownerTemplate?: TemplateId; keepAllowed?: boolean; markedInr?: number; decisions?: Decision[] }): Promise<OwedRefund> {
-    const r = oweRefund(upiState!, { caseId: o.id, customer: o.customer, paymentId, amountPaise, why, keepAllowed: x.keepAllowed }, clock.now());
-    log(o, o.customer, UPI_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions: x.decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise) }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` });
+    const r = oweRefund(markState!, { caseId: o.id, customer: o.customer, paymentId, amountPaise, why, keepAllowed: x.keepAllowed }, clock.now());
+    log(o, o.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions: x.decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise) }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` });
     const refundInr = amountPaise / 100;
     await tellCustomer(o, o.customer, [x.customer], { refundInr, markedInr: x.markedInr });
     await tellOwner(o, o.customer, x.ownerTemplate ?? "owner_upi_refund_owed", { refundInr, upiCode: r.code ?? undefined, markedInr: x.markedInr, offer: refundButtons(r) });
@@ -649,7 +660,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const o = latestOrder(store, phone, ["awaiting_advance"]);
     const request = o ? requestOf(o) : undefined;
     if (!o || !request) {
-      log(null, phone, UPI_ACTIONS.claim, "blocked", { claim: "paid", via }, { notes: "the customer says they paid, and no UPI advance is waiting for them; nothing is marked paid", refs: { to: "owner", via } });
+      log(null, phone, MARK_ACTIONS.claim, "blocked", { claim: "paid", via }, { notes: "the customer says they paid, and no UPI advance is waiting for them; nothing is marked paid", refs: { to: "owner", via } });
       await tellCustomer(null, phone, ["upi_nothing_waiting"], { offer: { kind: "buttons", buttons: ["owner"] } });
       return;
     }
@@ -658,46 +669,46 @@ export function createAgent(deps: AgentDeps): Agent {
     const recently = o.claimTellAtMs !== undefined && now - o.claimTellAtMs < HOUR;
     let told = recently;
     if (!recently && request.code) { told = await tellOwner(o, phone, "owner_upi_claim", { upiCode: request.code, offer: receivedButtons(request, advancePaise(o) - request.marks.reduce((n, m) => n + m.amountPaise, 0)) }); if (told) o.claimTellAtMs = now; }
-    log(o, phone, UPI_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, requestId: request.id }, notes: `the customer says they paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
+    log(o, phone, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, requestId: request.id }, notes: `the customer says they paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
   }
 
-  /** A picture from a customer. It is never looked at or kept. On a UPI shop it is read as "I paid" (a screenshot is not proof); a Razorpay shop answers nothing. */
+  /** A picture from a customer. It is never looked at or kept. On a UPI shop it is read as "I paid" (a screenshot is not proof); a shop whose gateway confirms by itself answers nothing. */
   async function onPicture(msg: InboundMessage): Promise<void> {
     const phone = msg.from;
     log(null, phone, "receive_message", "confirmed", { image: true, id: msg.id }, { notes: "a picture: it is not looked at and nothing of it is kept; a picture is never proof of a payment", refs: { messageId: msg.id } });
-    if (!upi || customerOf(phone).optedOut) return;
+    if (!ownerConfirms || customerOf(phone).optedOut) return;
     await onPaidClaim(phone, "screenshot");
   }
 
   /** The owner's UPI reply: a mark of money received, or a refund marked sent (or kept). A code is used once; the same reply again counts nothing. */
-  async function onUpiReply(reply: UpiReply, msg: InboundMessage): Promise<void> {
+  async function onOwnerMark(reply: MarkReply, msg: InboundMessage): Promise<void> {
     const now = clock.now();
     const quietly = (outcome: "already" | "unknown", notes: string) => {
       log(null, owner, "upi_owner_reply", "blocked", { kind: reply.kind, id: msg.id }, { notes, refs: { command: reply.kind } });
       return say({ booking: null, phone: owner, to: "owner", templates: [outcome === "already" ? "owner_upi_already" : "owner_upi_unknown"] });
     };
     if (reply.kind === "received") {
-      const result = markReceived(upiState!, reply.code, reply.amountPaise, now);
+      const result = markReceived(markState!, reply.code, reply.amountPaise, now);
       if (result.kind === "already" || result.kind === "already_refund") { await quietly("already", "a code that was already used: the payment is counted once"); return; }
       if (result.kind !== "marked") { await quietly("unknown", result.kind === "bad_amount" ? "an amount that cannot be right for this payment" : "a code the agent never issued"); return; }
       const o = store.orders.get(result.request.reference);
       if (!o) { await quietly("unknown", "no order has this request"); return; }
-      const outcome = await reconcileUpi(o);
+      const outcome = await reconcilePayments(o); // the same flow a gateway's webhook takes
       if (outcome === "confirmed" || outcome === "extra") await tellOwner(o, o.customer, "owner_upi_marked", { markedInr: result.mark.amountPaise / 100 });
       return;
     }
-    const result = markRefund(upiState!, reply.code, reply.kind === "kept" ? "kept" : "done", now);
+    const result = markRefund(markState!, reply.code, reply.kind === "kept" ? "kept" : "done", now);
     if (result.kind === "already") { await quietly("already", "a refund code that was already used"); return; }
     if (result.kind !== "done" && result.kind !== "kept") { await quietly("unknown", result.kind === "not_allowed" ? "keeping this money was not offered" : "a code the agent never issued"); return; }
     const r = result.refund;
     const o = store.orders.get(r.caseId) ?? null;
     const refs = { refundId: r.id, paymentId: r.paymentId, amountPaise: String(r.amountPaise) };
     if (result.kind === "kept") {
-      log(o, r.customer, UPI_ACTIONS.refundKept, "confirmed", { refundId: r.id }, { refs, notes: "the owner keeps this money for an order they take by hand: nothing is owed back" });
+      log(o, r.customer, MARK_ACTIONS.refundKept, "confirmed", { refundId: r.id }, { refs, notes: "the owner keeps this money for an order they take by hand: nothing is owed back" });
       await tellOwner(o, r.customer, "owner_upi_refund_kept", { refundInr: r.amountPaise / 100 });
       return;
     }
-    log(o, r.customer, UPI_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs, notes: "the owner marked the refund sent from their UPI app; only now is the customer told it was sent" });
+    log(o, r.customer, MARK_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs, notes: "the owner marked the refund sent from their UPI app; only now is the customer told it was sent" });
     await tellCustomer(o, r.customer, ["upi_refund_sent"], { refundInr: r.amountPaise / 100 });
     await tellOwner(o, r.customer, "owner_upi_refund_marked", { refundInr: r.amountPaise / 100 });
   }
@@ -706,8 +717,8 @@ export function createAgent(deps: AgentDeps): Agent {
    * The unfinished-work list (B31) asks the owner again about a UPI order: each refund still owed (the reminder, with its code and button), and an advance the owner has not
    * finished confirming (the part still to come, or the customer's "I paid"). False when there is nothing UPI to ask about, so the usual asks are tried.
    */
-  async function upiAskAgain(o: Order, note: (outcome: Outcome, notes: string) => unknown): Promise<boolean> {
-    const owed = upiState!.refunds.filter((r) => r.caseId === o.id && r.state === "owed" && r.code);
+  async function markAskAgain(o: Order, note: (outcome: Outcome, notes: string) => unknown): Promise<boolean> {
+    const owed = markState!.refunds.filter((r) => r.caseId === o.id && r.state === "owed" && r.code);
     const request = requestOf(o);
     const open = request && request.code && (request.status === "created" || request.status === "partially_paid") && o.state === "awaiting_advance" ? request : undefined;
     if (owed.length === 0 && !open) return false;
@@ -727,11 +738,11 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** Refunds still owed: remind the owner, once a day, at most three times; after that they stay in the record's unfinished work. */
   async function remindOwedRefunds(now: number): Promise<void> {
-    for (const r of remindersDue(upiState!, now)) {
+    for (const r of remindersDue(markState!, now)) {
       const o = store.orders.get(r.caseId) ?? null;
       reminded(r, now);
       const told = await tellOwner(o, r.customer, "owner_upi_refund_reminder", { refundInr: r.amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
-      log(o, r.customer, UPI_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
+      log(o, r.customer, MARK_ACTIONS.refundReminder, told ? "confirmed" : "failed", { refundId: r.id }, { refs: { refundId: r.id, amountPaise: String(r.amountPaise) }, notes: `reminder ${r.reminders} of a refund the owner still owes` });
     }
   }
 
@@ -739,9 +750,9 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function closeLink(o: Order, why: string): Promise<void> {
     if (!o.linkId) return;
-    const closed = await payments.cancelPaymentLink(o.linkId).then(() => payments.fetchPaymentLink(o.linkId!)).then((l) => l?.status === "cancelled").catch(() => false);
+    const closed = await payments.cancelRequest(o.linkId).then(() => payments.fetchRequest(o.linkId!)).then((l) => l?.status === "cancelled").catch(() => false);
     log(o, o.customer, "cancel_advance_link", closed ? "confirmed" : "unconfirmed", { linkId: o.linkId }, { notes: closed ? why : "the link could not be closed: it may still be open or already paid" });
-    if (upi && closed) log(o, o.customer, UPI_ACTIONS.closed, "confirmed", { requestId: o.linkId }, { refs: { requestId: o.linkId }, notes: `${why}; a mark by the owner that comes later is still recorded, and never confirms an order by itself` });
+    if (ownerConfirms && closed) log(o, o.customer, MARK_ACTIONS.closed, "confirmed", { requestId: o.linkId }, { refs: { requestId: o.linkId }, notes: `${why}; a mark by the owner that comes later is still recorded, and never confirms an order by itself` });
   }
 
   /** Give up an order that is waiting for its advance: its stock is free again at once (it is no longer held), and the link is closed. */
@@ -762,7 +773,7 @@ export function createAgent(deps: AgentDeps): Agent {
     moveTo(o, "expired");
     log(o, o.customer, "release_stock", "confirmed", { until: o.holdExpiresAt }, { notes: "the hold ran out before an advance was recorded, so the order's stock and its place in the day's count are free again" });
     await tellCustomer(o, o.customer, ["hold_expired"]);
-    if (upi) {
+    if (ownerConfirms) {
       // part of the advance was marked, and the hold ran out: that part is the customer's, and the owner owes it back
       const marks = requestOf(o)?.marks ?? [];
       const partPaise = marks.reduce((n, m) => n + m.amountPaise, 0);
@@ -834,10 +845,10 @@ export function createAgent(deps: AgentDeps): Agent {
     await tellOwner(o, phone, "owner_order_cancelled");
     const limit = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: amountInr });
     if (limit.verdict === "block") { log(o, phone, "refund", "blocked", { paymentId: o.advancePaymentId, amountInr }, { decisions: [limit], refs: { paymentId: o.advancePaymentId!, amountPaise: String(amountInr * 100) } }); return; }
-    // UPI: inside the window the advance is owed back by the owner, whatever the limit (the owner sends every UPI refund, so there is no Guard to hold one);
-    // outside it the owner decides, as below.
-    if (upi && inWindow) { await oweBack(o, o.advancePaymentId!, amountInr * 100, "cancelled inside the cancellation window", { customer: "upi_cancelled_refund_owed", decisions: [limit] }); return; }
-    if (!inWindow && (limit.verdict === "allow" || upi)) {
+    // A module that cannot refund by itself: inside the window the advance is owed back by the owner, whatever the limit (the owner sends every such refund, so
+    // there is no Guard to hold one); outside it the owner decides, as below.
+    if (ownerRefunds && inWindow) { await oweBack(o, o.advancePaymentId!, amountInr * 100, "cancelled inside the cancellation window", { customer: "upi_cancelled_refund_owed", decisions: [limit] }); return; }
+    if (!inWindow && (limit.verdict === "allow" || ownerRefunds)) {
       const late = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: amountInr, inCancellationWindow: false });
       o.pending.push({ kind: "refund", amountInr, paymentId: o.advancePaymentId!, reason: "late_cancellation", askedAtMs: clock.now() });
       log(o, phone, "refund", "held_for_owner", { paymentId: o.advancePaymentId, amountInr }, { decisions: [late], refs: { paymentId: o.advancePaymentId!, amountPaise: String(amountInr * 100) } });
@@ -852,10 +863,10 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- the owner's answers -----------------------------------------------------------------------------------------
 
   async function onOwnerMessage(msg: InboundMessage): Promise<void> {
-    // UPI (B33): "received K7M2QX", "refunded K7M2QX" or a tap on one of those buttons. Only the owner's number reaches here.
-    const upiReply = upi ? parseUpiReply(msg) : undefined;
-    if (upiReply) return onUpiReply(upiReply, msg);
-    if (upi && msg.image) return; // a picture from the owner is not a mark: only the reply with its code is
+    // Owner-marked (B33): "received K7M2QX", "refunded K7M2QX" or a tap on one of those buttons. Only the owner's number reaches here.
+    const markReply = markState ? parseMarkReply(msg) : undefined;
+    if (markReply) return onOwnerMark(markReply, msg);
+    if (ownerConfirms && msg.image) return; // a picture from the owner is not a mark: only the reply with its code is
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent: no reply and no record, so the
     // owner is not told "I didn't understand" about an answer that was understood elsewhere.
     if (RELAY_CODE_REPLY.test(msg.text)) return;
@@ -897,7 +908,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const limit = checkRefundLimit({ amountInr: refund.amountInr, limitInr: settings.refund.limitInr, paidInr: refund.amountInr, ownerApproved: true });
     log(o, owner, "owner_decision", "confirmed", { command }, { refs: said });
     o.pending = o.pending.filter((x) => x !== pending);
-    if (upi) { await oweBack(o, refund.paymentId, refund.amountInr * 100, "the owner approved a refund after a late cancellation", { customer: "upi_refund_owed", decisions: [limit] }); return; }
+    if (ownerRefunds) { await oweBack(o, refund.paymentId, refund.amountInr * 100, "the owner approved a refund after a late cancellation", { customer: "upi_refund_owed", decisions: [limit] }); return; }
     const result = await requestRefund(o, refund.paymentId, refund.amountInr, [limit], overLimit(refund.amountInr), askedByOwner); // with other approvers the owner is named as asking: if Guard holds it, someone else approves
     await afterRefund(o, result, { paymentId: refund.paymentId, amountInr: refund.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending", requestedBy: askedByOwner });
   }
@@ -944,7 +955,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const customer = customerOf(phone);
     const mode = reader.mode();
     // UPI: "I paid" while an advance waits is read from a few plain words before any model; it is a claim, and the owner is asked to look. It marks nothing paid.
-    if (upi && !msg.reply && !customer.optedOut && isPaidClaim(msg.text) && latestOrder(store, phone, ["awaiting_advance"])) {
+    if (ownerConfirms && !msg.reply && !customer.optedOut && isPaidClaim(msg.text) && latestOrder(store, phone, ["awaiting_advance"])) {
       log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id }, { refs: { messageId: msg.id, step: "rules" } });
       return onPaidClaim(phone, "words");
     }
@@ -979,7 +990,7 @@ export function createAgent(deps: AgentDeps): Agent {
         case "refund": return await onCancelAsk(phone);
         case "owner": return await onTalkToOwner(phone);
         case "keep": return await onKeep(phone);
-        case "paid": return await (upi ? onPaidClaim(phone, "button") : onPaidOnRazorpay(phone));
+        case "paid": return await (ownerConfirms ? onPaidClaim(phone, "button") : onPaidReadBack(phone));
         case "greeting": if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["menu"], { offer: itemsOffer(["pick_items"]) }); return;
         default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) });
       }
@@ -988,8 +999,8 @@ export function createAgent(deps: AgentDeps): Agent {
     }
   }
 
-  /** "I have paid" on a Razorpay shop: the agent looks at the payment record again and says what it shows. It never confirms an order on the customer's word. */
-  async function onPaidOnRazorpay(phone: string): Promise<void> {
+  /** "I have paid" with a module that confirms by itself: the agent looks at the payment record again and says what it shows. It never confirms an order on the customer's word. */
+  async function onPaidReadBack(phone: string): Promise<void> {
     const o = latestOrder(store, phone, ["awaiting_advance"]);
     if (!o) { await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) }); return; }
     await reconcilePayments(o); // if the record shows it, the order is confirmed and the customer told, by the usual path
@@ -1002,7 +1013,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const orders = [...store.orders.values()];
-    if (event.event === "refund.processed") {
+    if (event.event === "refund.done") {
       const paymentId = event.payload.refund!.payment_id;
       const o = orders.find((x) => x.handledPayments.includes(paymentId) || x.advancePaymentId === paymentId);
       const refundId = event.payload.refund!.id;
@@ -1011,10 +1022,10 @@ export function createAgent(deps: AgentDeps): Agent {
       store.seenEvents.add(event.id);
       return;
     }
-    // A real payment.captured names the payment, not its link (Razorpay's body has the order id only): ask the payments service which link it paid.
+    // A payment.received may name the payment and not its request (a provider's body can carry its order only): ask the payments service which request it paid.
     const paymentId = event.payload.payment?.id;
-    const linkId = event.payload.payment_link?.id ?? event.payload.payment?.link_id
-      ?? (paymentId ? (await payments.listPaymentLinks({ payment_id: paymentId }))[0]?.id : undefined);
+    const linkId = event.payload.request?.id ?? event.payload.payment?.request_id
+      ?? (paymentId ? (await payments.listRequests({ payment_id: paymentId }))[0]?.id : undefined);
     const o = linkId ? orders.find((x) => x.linkId === linkId) : undefined;
     if (!o) {
       log(null, owner, "receive_payment_event", "blocked", { id: event.id, event: event.event }, { notes: "no order has this payment link, so the event is ignored" });
@@ -1030,7 +1041,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their order is in (modules/payments/refunds.ts)
-    if (upi) await remindOwedRefunds(now);
+    if (markState) await remindOwedRefunds(now);
     await closeLinksAtStop();
     for (const o of [...store.orders.values()]) {
       if (o.state === "awaiting_advance" && o.holdExpiresAt !== undefined && o.holdExpiresAt <= now) await expireHold(o);
@@ -1057,7 +1068,7 @@ export function createAgent(deps: AgentDeps): Agent {
       await reconcilePayments(o);
       return note("confirmed", "the payments service's list was read; any payment not yet counted was recorded above");
     }
-    if (e.action === "ask_owner_again" && upi && (await upiAskAgain(o, note))) return;
+    if (e.action === "ask_owner_again" && markState && (await markAskAgain(o, note))) return;
     if (e.action === "ask_owner_again") {
       const big = o.pending.find((p): p is Extract<Pending, { kind: "big_order" }> => p.kind === "big_order");
       const refund = o.pending.find((p): p is Extract<Pending, { kind: "refund" }> => p.kind === "refund");

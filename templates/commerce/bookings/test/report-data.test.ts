@@ -164,15 +164,15 @@ test("a booking moved twice is one moved booking", () => {
 test("a deposit or refund is counted once by its payment or refund id, and one with no amount is counted and noted", () => {
   seq = 0;
   const r = count([
-    e("record_deposit", "confirmed", { refs: { paymentId: "pay_1", amountPaise: "20000" } }),
-    e("record_deposit", "confirmed", { refs: { paymentId: "pay_1", amountPaise: "20000" } }),
-    e("record_deposit", "confirmed", { booking: "b-2", refs: { paymentId: "pay_2" } }),
-    e("record_deposit", "blocked", { booking: "b-2", refs: { paymentId: "pay_9", amountPaise: "20000" } }),
-    e("refund", "confirmed", { refs: { refundId: "r_1", paymentId: "pay_1", amountPaise: "20000" } }),
-    e("refund", "confirmed", { refs: { refundId: "r_1", paymentId: "pay_1", amountPaise: "20000" } }),
-    e("refund", "confirmed", { refs: { refundId: "r_2", paymentId: "pay_9", amountPaise: "5000" } }),
-    e("refund", "confirmed", { refs: { refundId: "r_3", paymentId: "pay_9" } }),
-    e("refund", "attempted", { refs: { paymentId: "pay_1", amountPaise: "20000" } }),
+    e("record_deposit", "confirmed", { refs: { paymentId: "pmt_1", amountPaise: "20000" } }),
+    e("record_deposit", "confirmed", { refs: { paymentId: "pmt_1", amountPaise: "20000" } }),
+    e("record_deposit", "confirmed", { booking: "b-2", refs: { paymentId: "pmt_2" } }),
+    e("record_deposit", "blocked", { booking: "b-2", refs: { paymentId: "pmt_9", amountPaise: "20000" } }),
+    e("refund", "confirmed", { refs: { refundId: "r_1", paymentId: "pmt_1", amountPaise: "20000" } }),
+    e("refund", "confirmed", { refs: { refundId: "r_1", paymentId: "pmt_1", amountPaise: "20000" } }),
+    e("refund", "confirmed", { refs: { refundId: "r_2", paymentId: "pmt_9", amountPaise: "5000" } }),
+    e("refund", "confirmed", { refs: { refundId: "r_3", paymentId: "pmt_9" } }),
+    e("refund", "attempted", { refs: { paymentId: "pmt_1", amountPaise: "20000" } }),
   ]);
   assert.deepEqual(r.money.deposits, { count: 2, paise: 20000 });
   assert.deepEqual(r.money.refunds, { count: 3, paise: 25000, ofDeposits: { count: 1, paise: 20000 }, ofSecondPayments: { count: 2, paise: 5000 } });
@@ -187,7 +187,7 @@ test("a limit that said no is counted once, at its own entry, not again on the m
     e("send_message", "confirmed", { decisions: [hours, block("price-at-or-above-list")], refs: { to: "customer" } }), // the same "no" shown on the reply, and a price refused
     e("reschedule_booking", "blocked", { decisions: [block("no-double-booking")] }),
     e("send_message", "blocked", { decisions: [block("opt-out"), block("no-message-after-stop")] }),
-    e("refund", "held_for_owner", { decisions: [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "x" }], refs: { paymentId: "pay_1", amountPaise: "20000" } }),
+    e("refund", "held_for_owner", { decisions: [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "x" }], refs: { paymentId: "pmt_1", amountPaise: "20000" } }),
   ]);
   assert.equal(r.stopped.byRule["within-hours"], 1);
   assert.equal(r.stopped.byRule["price-at-or-above-list"], 1);
@@ -203,7 +203,7 @@ test("only unconfirmed and failed are counted as left open, and a later confirme
   seq = 0;
   const r = count([
     e("hold_slot", "attempted"), e("confirm_booking", "unconfirmed", { booking: "b-1" }), e("confirm_booking", "confirmed", { booking: "b-1" }),
-    e("refund", "failed", { booking: "b-2", refs: { paymentId: "pay_1" } }), e("refund", "confirmed", { booking: "b-2", refs: { paymentId: "pay_2", refundId: "r_2" } }), // another payment's refund does not settle it
+    e("refund", "failed", { booking: "b-2", refs: { paymentId: "pmt_1" } }), e("refund", "confirmed", { booking: "b-2", refs: { paymentId: "pmt_2", refundId: "r_2" } }), // another payment's refund does not settle it
     e("send_message", "unconfirmed", { booking: "b-3", refs: { to: "customer" } }), e("send_message", "confirmed", { booking: "b-3", refs: { to: "customer" } }), // a later message is not the lost one
     e("hold_slot", "held_for_owner" as Outcome),
   ]);

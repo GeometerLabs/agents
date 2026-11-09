@@ -36,6 +36,7 @@ import { CADDY_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
 import { LICENCE_MOUNT } from "./guards.ts";
+import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
 
@@ -52,6 +53,16 @@ export const OPS_FLEET_DIR = "/server/fleet";
 export const HEALTH_PORT = 8081;
 /** A shop's three Guards, in the order that fixes each one's address on the admin network (the shop's door is the fourth). */
 export const SHOP_GUARD_KINDS: readonly Exclude<GuardKind, "model">[] = ["razorpay", "whatsapp", "calendar"];
+/**
+ * A Guard's place among its shop's four addresses. The way money is taken is the first, whichever it is (a gateway module, or an agent's own API, B71): a shop or an
+ * agent has one, so they never share it. A kind with no place is an error here, never a neighbour's address.
+ */
+export function slotOf(kind: Exclude<GuardKind, "model">): number {
+  if (isGatewayKind(kind) || kind === OWN_API) return 0;
+  const i = SHOP_GUARD_KINDS.indexOf(kind);
+  if (i < 0) throw new Error(`A Guard of kind ${kind} has no address slot.`);
+  return i;
+}
 export type Slot = GuardKind | "door";
 
 /** A Guard as the compose file needs to know it. */
@@ -124,11 +135,11 @@ export function addressing(server: ServerConfig): Addressing {
   return {
     subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24` },
     panelIp(kind, index) {
-      const n = 16 + index * 4 + SHOP_GUARD_KINDS.indexOf(kind);
+      const n = 16 + index * 4 + slotOf(kind);
       return `${base}.${224 + (n >> 8)}.${n & 255}`;
     },
     adminIp(_shop, slot, index = 0) {
-      const n = slot === "model" ? 8 : 16 + index * 4 + (slot === "door" ? 3 : SHOP_GUARD_KINDS.indexOf(slot));
+      const n = slot === "model" ? 8 : 16 + index * 4 + (slot === "door" ? 3 : slotOf(slot));
       return `${base}.${240 + (n >> 8)}.${n & 255}`;
     },
   };

@@ -128,3 +128,16 @@ opened; no late fee is added; and a reminder that falls due is passed over, neve
 refunds go on. **In the final stop** each open fee's link is closed through Guard once for each `paid_through` (`cancel_fee_link` with `refs.licence`; a UPI centre has
 none), and every message is held back. The owner's notices are `owner_licence_paused` and `owner_licence_stopped` (the fees still open, and that the owner can write to hello@geometer.dev to be connected with another local partner; no copy of the records goes to the owner), as the utility templates `owner_fee_service_paused` and `owner_fee_service_stopped`. Guard checks the same lease too (9 Nov, monorepo ADR-0062): a fee link it refuses with its 402 is the centre's own pause, the parent told
 to contact the centre and the reminder passed over, never tried again at the next beat.
+
+## UPI by default, and the payment module's capabilities (B71, 10 November 2026)
+
+- **No `payment` block is refused**, and asks for the shop's UPI ID (modules/payments/providers, the one reader). Before B71 it meant Razorpay. The template's
+  `settingsExample` is the UPI example; the gateway examples say `"module": "razorpay"`, and the tests about Guard's refund limits run on them.
+- **The agent asks what the module can do, never its name** (`capabilitiesOf`): a module that cannot confirm a payment by itself is marked paid by the owner
+  (modules/payments/owner-marked); one that cannot refund by itself has the owner pay refunds back; one that cannot cancel a request has nothing to close at the
+  final stop; one whose request is for one exact amount gets a new request for the rest after a part. The owner's mark and a gateway's
+  webhook both go through `count`. The store's `upi` key, the record's `upi_*` names and the `upi_*` message ids keep their values (records, reports and Meta's
+  templates use them). The live adapters take the gateway from the shop's settings (modules/payments/providers/runtime.ts).
+- **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
+  `refund.done`. The Guard spec is written for the gateway the centre chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
+

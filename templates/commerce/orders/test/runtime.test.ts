@@ -12,7 +12,7 @@ import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { AMIT, HARNESS_GUARD, annapurnaRazorpay, createWorld } from "../src/harness.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { compactFinishedOrders, takenOf } from "../src/order.ts";
@@ -29,7 +29,7 @@ test("an order paid after a restart ends exactly as it does in the in-memory har
   const opened: ReturnType<typeof openStore>[] = [];
   try {
     const clock = fakeClock(START);
-    const payments = createFakePayments(clock, { guard: createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock) });
+    const payments = createFakePayments(clock, { guard: createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock) });
     const messaging = createFakeMessaging(clock);
     for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const l of LANGUAGES) messaging.approve(name, l);
     const open = () => { const db = openStore(join(dir, "data")); opened.push(db); return { db, runtime: createRuntime({ settings, store: db, clock, services: { payments, messaging }, parser: createRuleParser(), pathwayVersion: "0.1.0", retryDelaysMs: [0, 0, 0] }) }; };

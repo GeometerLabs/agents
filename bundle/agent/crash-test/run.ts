@@ -7,7 +7,8 @@ import type { CheckResult, Skipped } from "../../../modules/crash-test/situation
 import type { HandCheckRead } from "../../handcheck.ts";
 import type { Context } from "../../deploy.ts";
 import { loadServer, serverPaths } from "../../lib/server.ts";
-import { readAgent } from "../folder.ts";
+import { paymentUpstreamOf, readAgent } from "../folder.ts";
+import { OWN_API } from "../../../modules/payments/providers/index.ts";
 import { findGuardBinary } from "../guard-process.ts";
 import { planAgent } from "../plan.ts";
 import { AgentDidNotStart, NotDrivable, commandFor, resolveDriver, workingFolder } from "./driver.ts";
@@ -65,6 +66,8 @@ export async function planCrashTest(ctx: Context, name: string, o: CrashOptions 
   const version = o.version ?? folder.agent.version;
   const command = commandFor(folder.agent, version, o.run);
   if (!command) throw new Error(`${name} has no command to start it with. Give one with \`geometer agent set ${name} --run "node my-agent/server.js"\` (the crash test starts your agent with it, once for each situation), or here with --run "<command>".`);
+  // B71 step 6: there is no stand-in for an API Geometer has no module for, so no situation could be judged on what it holds
+  if (paymentUpstreamOf(folder.agent.upstreams)?.id === OWN_API) throw new Error(`${name} takes money through its own gateway's API, and the crash test has no stand-in for it, so it cannot run. Its Guard still enforces the rules you kept (\`geometer agent check ${name}\` proves them on the running Guard); the crash test runs for an agent on UPI or on a gateway this checkout has a module for.`);
   const server = loadServer(ctx.dir);
   const planned = planAgent(server, folder);
   if (planned.problems.length > 0) throw new Error(`${name}'s Guards cannot be planned: ${planned.problems.map((p) => p.message).join(" ")}`);

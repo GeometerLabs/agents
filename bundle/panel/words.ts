@@ -133,23 +133,21 @@ export interface Words {
       nameEmpty: string; noService: string; priceBad(row: number): string; depositBad: string; depositTooBig(deposit: string, cheapest: string): string; windowBad: string;
       hoursBad: string; noDay: string; noLanguage: string; ownerNumberBad: string; sameNumber: string; serviceNameEmpty(row: number): string;
       approverNumberBad(n: number): string; approverNumberTaken(n: number): string; twoAboveBad: string; twoAboveAlone: string;
-      expectedBad: string; numberIdBad: string; businessNumberBad: string; keyIdBad: string; secretMissing(what: string): string; secretShape(what: string): string; calendarIdBad: string; jsonBad: string; modeBad: string;
+      expectedBad: string; numberIdBad: string; businessNumberBad: string; secretMissing(what: string): string; secretShape(what: string): string; calendarIdBad: string; jsonBad: string; modeBad: string;
     };
     accounts: {
       intro: string; received(at: string): string; keepEmpty: string; neverShown: string;
       whatsapp: { title: string; intro: string; steps: string[]; number: string; numberId: string; token: string; appSecret: string };
       calendar: { title: string; intro: string; steps: string[]; shareAddress: string; noAddress: string; id: string; json: string; jsonHelp: string };
-      razorpay: { title: string; intro: string; steps: string[]; mode: string; modeLive: string; modeTest: string; keyId: string; keySecret: string; webhookSecret: string; webhookUrl(url: string): string };
     };
     checks: {
       saveFirst: string; saveButton: string; saved: string; runButton: string; waiting: string; settingsOk: string; handCheck: string; handNotRun: string;
       deploy: string; deployApplied(at: string): string; deployNot: string; limitsProven(proven: number, of: number): string; limitsNot: string;
       guardNotSet: string; readOnly: string;
       whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string };
-      razorpay: { title: string; confirmed(mode: string): string; differs: string; wrongMode: string };
       calendar: { title: string; confirmed(name: string): string; differs: string; notFound: string; notWritable(role: string): string };
       generic: Record<Exclude<CheckCode, "confirmed" | "account_mismatch" | "wrong_mode" | "not_writable" | "not_found">, string>;
-      razorpayWhose: string; guardWords(detail: string): string;
+      guardWords(detail: string): string;
       bookingsExpected: string; readyButton: string; ready: string; notReady(n: number): string; certificate: string; switchOn: string;
     };
   };
@@ -179,7 +177,7 @@ export interface Words {
   errors: { notFound: string; notAllowed: string; csrf: string; tooBig: string; wrongMethod: string; tryAgain: string };
   /** UPI as the way customers pay (B33): the setup choice, its refusals in plain words, and the cost note. The inbox sentences for UPI are under `inbox.kinds`. */
   upi: {
-    setup: { heading: string; intro: string; optionUpi: string; optionRazorpay: string; upiTitle: string; upiIntro: string; upiId: string; upiIdHelp: string; payee: string; payeeHelp: string; noCheck: string; razorpayOnly: string };
+    setup: { heading: string; intro: string; optionUpi: string; upiTitle: string; upiIntro: string; upiId: string; upiIdHelp: string; payee: string; payeeHelp: string; noCheck: string };
     problems: { idEmpty: string; idNoAt(id: string): string; idShape(id: string): string; payeeEmpty: string; payeeOneLine: string; payeeLong: string };
     noGatewayFee: string;
   };
@@ -203,7 +201,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "setup.orders.problems.itemBad": [2], "setup.orders.problems.priceBad": [2], "setup.orders.problems.stockBad": [2], "setup.orders.problems.itemTwice": [3, "Veg thali"], "setup.orders.problems.tooManyItems": [30],
   "setup.orders.problems.pickupBad": [2], "setup.orders.problems.deliveryBad": [2], "setup.orders.problems.tooManySlots": [8], "setup.orders.problems.orderTooBig": ["₹12,000", "₹50,000"],
   "setup.problems.priceBad": [2], "setup.problems.depositTooBig": ["₹500", "₹450"], "setup.problems.serviceNameEmpty": [2], "setup.problems.secretMissing": ["the access token"], "setup.problems.secretShape": ["the access token"],
-  "setup.accounts.received": ["4 Nov 2026, 10:30"], "setup.accounts.razorpay.webhookUrl": ["https://shops.example.com/hooks/glow-salon/razorpay"],
+  "setup.accounts.received": ["4 Nov 2026, 10:30"],
   "setup.checks.deployApplied": ["4 Nov 2026, 10:30"], "setup.checks.limitsProven": [9, 9], "setup.checks.guardWords": ["the route is not listed"], "setup.checks.notReady": [2],
   "inbox.count": [3], "inbox.asOf": ["4 Nov 2026, 10:30"], "inbox.since": ["4 Nov 2026, 10:30"], "inbox.fallback": ["upi_unconfirmed", "b-3"],
   "inbox.kinds.deposit_no_booking": ["b-3", "₹200"], "inbox.kinds.payment_unrecorded": ["f-3"], "inbox.kinds.approval_waiting_long": ["b-3", "", 14, "[what]"],
@@ -211,7 +209,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
-  "setup.checks.razorpay.confirmed": ["Live"], "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
+  "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
 };
 
 const t1 = (n: number, one: string, many: string) => (n === 1 ? one : many);
@@ -295,9 +293,9 @@ export const en: Words = {
   },
   cost: {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,
-    lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", razorpay: "Razorpay's fee", geometer: "Geometer's plan", hosting: "Hosting share" },
+    lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", gateway: "{gateway}'s fee", geometer: "Geometer's plan", hosting: "Hosting share" },
     payer: {
-      "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-razorpay": "paid by the shop to Razorpay",
+      "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-gateway": "paid by the shop to {gateway}",
       "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included",
       "builder-pays-licence": "paid to Geometer by the builder, once for each live client business; the AI key is the builder's own", hosting: "the server's cost, shared",
     },
@@ -308,7 +306,7 @@ export const en: Words = {
       "provider-not-priced": "The price list has no price for this provider.",
       "fee-not-priced": "The price list has no price for Geometer's fee.",
       "hosting-not-measured": "The hosting share has not been measured yet.",
-      "payment-link-fee-conflict": "Razorpay's own pages disagree about the fee on payment links. The higher one (2%) is used.",
+      "payment-link-fee-conflict": "{gateway}'s own pages disagree about the fee on payment links. The higher one (2%) is used.",
       "whatsapp-rate-second-hand": "The rupee rate for WhatsApp comes from a reseller's page, not Meta's. Check it on the first invoice.",
     },
   },
@@ -436,7 +434,7 @@ export const en: Words = {
       approverNumberBad: (n) => `Person ${n}: write their number with the country code, for example +91 98765 43210.`,
       approverNumberTaken: (n) => `Person ${n}: that number is already yours, the shop's or another person's. Each person answers from their own phone.`,
       twoAboveBad: "Write the two-person amount in whole rupees, for example 5000, or leave it empty.", twoAboveAlone: "Two people can only approve if you add at least one other person.",
-      expectedBad: "Write the bookings a month as a whole number, for example 40, or leave it empty.", numberIdBad: "The phone number ID is digits only (6 to 20 of them).", businessNumberBad: "Write the shop's WhatsApp number with the country code.", keyIdBad: "The key ID starts with rzp_live_ or rzp_test_.",
+      expectedBad: "Write the bookings a month as a whole number, for example 40, or leave it empty.", numberIdBad: "The phone number ID is digits only (6 to 20 of them).", businessNumberBad: "Write the shop's WhatsApp number with the country code.",
       secretMissing: (w) => `Fill in ${w}.`, secretShape: (w) => `${w} has spaces or line breaks in it. Copy it again, without them.`,
       calendarIdBad: "Write the calendar's ID without spaces.", jsonBad: "That is not a Google service-account key file. Paste the whole file.", modeBad: "Choose live or practice.",
     },
@@ -453,12 +451,6 @@ export const en: Words = {
         steps: ["Open Google Calendar on a computer, and open the calendar's settings.", "Under “Share with specific people”, add the address below and choose “Make changes to events”.", "Under “Integrate calendar”, copy the Calendar ID and type it below."],
         shareAddress: "Share the calendar with this address:", noAddress: "This server has no shared address. Paste the key file your builder gave you, below.", id: "Calendar ID", json: "Service-account key file", jsonHelp: "Only if your builder gave you one. Paste the whole file.",
       },
-      razorpay: {
-        title: "Razorpay", intro: "Customers pay the deposit into the shop's own Razorpay account. The money goes straight to the shop's bank. Geometer never holds it.",
-        steps: ["Sign in to the shop's own Razorpay account.", "Under Settings, API keys, make a key and copy the Key ID and the Key secret.", "Under Settings, Webhooks, add the web address shown below and choose a secret of your own. Type the same secret here."],
-        mode: "Which key is this?", modeLive: "Live: real money", modeTest: "Practice: test money", keyId: "Key ID", keySecret: "Key secret", webhookSecret: "Webhook secret",
-        webhookUrl: (u) => `Web address for the webhook: ${u}`,
-      },
     },
     checks: {
       saveFirst: "Save this shop to the server first.", saveButton: "Save and connect", saved: "Saved. The server will apply it, and this page shows when it has.", runButton: "Run the checks", waiting: "Waiting for the server to apply the shop.",
@@ -470,10 +462,6 @@ export const en: Words = {
         title: "WhatsApp", confirmed: (n) => `This is the shop's number (${n}).`, differs: (e) => `The number found ends in ${e}, not the shop's. Nothing was changed.`,
         notFound: "That phone number ID is not on this account.",
       },
-      razorpay: {
-        title: "Razorpay", confirmed: (m) => `The key works (${m}).`, differs: "This is a different key from the one confirmed before. Nothing was changed.",
-        wrongMode: "This key's mode is not the one chosen above. Use the key that matches.",
-      },
       calendar: {
         title: "Calendar", confirmed: (n) => `Found “${n}”, and it can be changed.`, differs: "Google shows a different calendar from the one given. Nothing was changed.",
         notFound: "Not found. Check the ID, and that it is shared with the address above.", notWritable: (r) => `It is shared, but not with “Make changes to events” (it says ${r}).`,
@@ -482,7 +470,6 @@ export const en: Words = {
         not_allowed: "The account did not accept the check. Check the keys.", refused_by_guard: "The server's Guard did not let this check through.", unreachable: "Could not reach it. Try again in a minute.",
         unexpected_response: "The answer was not what this service gives, so it was not used.", not_configured: "Fill in the details above first.",
       },
-      razorpayWhose: "Razorpay does not say whose account a key belongs to. Open the first test payment link and look: the shop's name must be on it.",
       guardWords: (d) => `Guard said: ${d}`,
       bookingsExpected: "Bookings you expect each month (only used for the cost)", readyButton: "Ready to go live", ready: "Ready to go live. The go-live certificate is made.",
       notReady: (n) => `Not ready yet: ${n} ${t1(n, "thing needs", "things need")} fixing.`, certificate: "Open the go-live certificate", switchOn: "The server switches the shop on when it applies it.",
@@ -497,7 +484,7 @@ export const en: Words = {
       payment_unrecorded: (id) => `A payment came for fee ${id} but the fee was not updated: check the payment again`,
       approval_waiting_long: (id, _amount, hours, what) => `Waiting ${hours} hours for the owner's answer on ${id} (${what}): ask again`,
       refund_waiting: (id, amount, _hours, who) => `The refund of ${amount} for ${id} is waiting ${who}`,
-      refund_unknown: (id) => `Refund for ${id}: not sure it went through. Check it in Razorpay`,
+      refund_unknown: (id) => `Refund for ${id}: not sure it went through. Check it in {gateway}`,
       refund_failed: (id) => `The refund for ${id} did not go through: review it`,
       message_unanswered: (id) => `Work for ${id} was not finished while a service's connection was down: check it and answer the customer`,
       upi_payment_unconfirmed: (id, amount) => `UPI payment of ${amount} for ${id} is not yet confirmed by the owner: ask the owner to check their UPI app`,
@@ -534,10 +521,10 @@ export const en: Words = {
   upi: {
     setup: {
       heading: "How customers pay", intro: "Choose how customers pay the deposit or the fee. UPI is the simplest: no payment-gateway account to open.",
-      optionUpi: "UPI: customers pay the shop's own UPI ID", optionRazorpay: "Razorpay: the shop has its own Razorpay account",
+      optionUpi: "UPI: customers pay the shop's own UPI ID",
       upiTitle: "Pay by UPI", upiIntro: "Customers pay the shop's own UPI ID from their UPI app. The owner taps Received on WhatsApp when the money arrives. There is no gateway fee, and Geometer never touches the money.",
       upiId: "The shop's UPI ID", upiIdHelp: "For example glowsalon@okicici", payee: "The name customers see in their UPI app", payeeHelp: "For example Glow Salon",
-      noCheck: "A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner.", razorpayOnly: "Fill in the Razorpay boxes only if you chose Razorpay above.",
+      noCheck: "A UPI ID cannot be checked without paying it, so nothing is checked here. Type it slowly, then read it back to the owner.",
     },
     problems: {
       idEmpty: "Add the shop's UPI ID, for example glowsalon@okicici.",

@@ -4,6 +4,7 @@
 // What the relay trusts, and from where:
 //   - WHAT the owner is asked to approve (the payment and the amount in paise) comes only from Guard's held call. Never from the runtime.
 //   - the runtime's view is context: it is cross-checked against Guard's, and if the two disagree the relay does not ask.
+import { providerById } from "../payments/providers/index.ts";
 import { createHmac, randomUUID } from "node:crypto";
 
 const TIMEOUT_MS = 5_000;
@@ -59,18 +60,23 @@ const millis = (v: unknown): number | undefined => (typeof v === "string" && /^\
  * One review item as a held refund. The amount and the payment come from the item's TYPED arguments (`["int","60000"]`, `["str","pay_x"]`), and the
  * tag must be the right one: an amount that came as a string is a different call (Guard binds approval to the call's digest) and is not shown to the owner.
  */
+/** How readHeld says an item is not a gateway refund at all: the relay leaves such an item alone (it is not the owner's to answer). */
+export const NOT_A_REFUND = "not a refund on a gateway";
+
 export function readHeld(item: unknown): ReadHeld {
   if (!isRecord(item)) return { ok: false, reason: "a review item that is not an object" };
   const id = typeof item.id === "string" && item.id.length > 0 ? item.id : undefined;
   if (!id) return { ok: false, reason: "a held call with no approval id: it cannot be approved on WhatsApp, and is for the builder" };
   const no = (reason: string): ReadHeld => ({ ok: false, id, reason });
-  if (item.tool !== "razorpay" || item.operation !== "refund") return no(`it is a ${String(item.operation)} on ${String(item.tool)}, not a refund on razorpay`);
+  // a refund on the gateway this Guard is for (B71: any provider with a gateway, by its own operation and field names), and nothing else
+  const gateway = typeof item.tool === "string" ? providerById(item.tool)?.gateway?.guard : undefined;
+  if (!gateway || item.operation !== gateway.ops.refund) return no(`it is a ${String(item.operation)} on ${String(item.tool)}, ${NOT_A_REFUND}`);
   const args = Array.isArray(item.arguments) && item.arguments[0] === "map" && isRecord(item.arguments[1]) ? item.arguments[1] : undefined;
   if (!args) return no("its arguments are not in the typed form Guard writes");
   const typed = (name: string, tag: string): string | undefined => { const v = args[name]; return Array.isArray(v) && v[0] === tag && typeof v[1] === "string" ? v[1] : undefined; };
-  const amount = typed("amount", "int");
+  const amount = typed(gateway.amountField, "int");
   if (amount === undefined || !/^[1-9]\d{0,11}$/u.test(amount)) return no("its amount is not a whole number of paise written as a number");
-  const paymentId = typed("payment_id", "str");
+  const paymentId = typed(gateway.fields.paymentId, "str");
   if (paymentId === undefined || !/^[A-Za-z0-9_]{1,64}$/u.test(paymentId)) return no("it names no payment, or one that does not look like a payment id");
   const receipt = typed("receipt", "str") ?? null;
   const requestedAtMs = millis(item.requested_at_ms);

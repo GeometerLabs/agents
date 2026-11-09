@@ -5,8 +5,8 @@ import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/language
 import type { Language } from "../../../../modules/language/languages.ts";
 import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
-import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
-import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
+import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -45,10 +45,10 @@ export interface Settings {
   approvers?: ApproversSettings;
   reminders: { hoursBefore: number[] };
   /**
-   * How customers pay the deposit (modules/payments/upi/settings.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
-   * Left out: Razorpay, as every shop was before UPI (B33), and the parsed settings leave it out too, so a shop set up before stays byte for byte the same.
+   * How customers pay the deposit (modules/payments/providers/index.ts): "upi", the shop's own UPI ID, marked paid by the owner; or a gateway's id (a provider folder with an API), the shop's own account.
+   * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop. It is the last key of the parsed settings, as it always was.
    */
-  payment?: PaymentSettings;
+  payment: PaymentSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -59,7 +59,8 @@ const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !
 const isWhole = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v);
 
 /** Check a settings object (usually parsed from JSON), fill in the defaults and say what is wrong in plain words. */
-export function validateSettings(input: unknown): SettingsResult {
+/** `ownApi`: only for the settings of an agent someone else wrote, whose payments may go to its own gateway's API (modules/payments/providers OWN_API). */
+export function validateSettings(input: unknown, options: { ownApi?: boolean } = {}): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
@@ -86,10 +87,10 @@ export function validateSettings(input: unknown): SettingsResult {
   const owner = readOwner(input.owner, errors);
   const approvers = readApprovers(input.approvers, { ownerWhatsapp: owner?.whatsapp, refundLimitInr: cancellation?.refundLimitInr }, errors);
   const reminders = readReminders(input.reminders, errors);
-  const payment = readPaymentSettings(input.payment, errors);
+  const payment = readPaymentSettings(input.payment, errors, options);
 
   if (errors.length > 0) return { ok: false, errors };
-  const settings: Settings = {
+  const settings = {
     name: (name as string).trim(),
     timezone: timezone as string,
     services,
@@ -101,10 +102,10 @@ export function validateSettings(input: unknown): SettingsResult {
     languages,
     owner: owner as Settings["owner"],
     reminders,
-  };
+  } as Settings;
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
-  if (payment) settings.payment = payment;
+  settings.payment = payment as PaymentSettings; // last, as before: the order of keys is what an older settings file read back has
   return { ok: true, settings };
 }
 
