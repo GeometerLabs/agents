@@ -3,7 +3,7 @@
 // in the environment, and the service keys are never in the runtime at all (Guard holds them).
 //
 // Reading runtime.json is the same for every template except which services it calls (modules/runtime/config.ts documents every setting). Fees calls two: payments and
-// messaging. It has no calendar. `validateRuntimeConfig` accepts everything Bookings' does (`parser`, `decision`, `ai`, `allowance`, `pauseMinutes` and `report`), because
+// messaging. It has no calendar. `validateRuntimeConfig` accepts everything Bookings' does (`parser`, `decision`, `ai`, `model`, `allowance`, `pauseMinutes` and `report`), because
 // the deploy bundle writes `ai` and `report` into the config it generates and a runtime that refused them would not start (bundle/generate/shop.ts checks this).
 import { validateSettings } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
