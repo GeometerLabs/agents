@@ -103,7 +103,7 @@ test("the final stop closes the open deposit links once, through the payments se
 
 test("every licence message has its words in all four languages, and the owner's notices name the partner and are never about money", () => {
   for (const language of ["en", "hi", "ml", "kn"] as const) {
-    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Glow Salon", services: [], partner: "Divya, local partner", upcomingCount: 3, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30) };
+    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Glow Salon", services: [], partner: "Divya, local partner", upcomingCount: 3 };
     for (const id of ["booking_paused", "owner_licence_paused", "owner_licence_stopped"] as const) {
       const text = TEMPLATES[language][id](facts);
       assert.ok(text.length > 20, `${language} ${id}`);
@@ -137,7 +137,8 @@ test("the runtime sends the owner one service notice at the wind-down and one at
     const all = kit.messaging.sentTo(owner);
     assert.equal(all.length, 2);
     assert.equal(all[1].templateName, "owner_service_stopped");
-    assert.match(all[1].text, /^Notice: online booking for Glow Salon has stopped\. Nothing is deleted\. Bookings to come: 0\. Other open items: 0\. Divya, local partner can give you the full list and a free copy of all your records until /u);
+    assert.equal(all[1].text, "Notice: online booking for Glow Salon has stopped, because the service from Divya, local partner has ended. Bookings after today still in your calendar: 0. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.");
+    assert.doesNotMatch(all[1].text, /copy|export|records|owe|pay|keys/iu, "no money, no blame, no copy or export for the owner");
     now = { ...now, state: "wind_down", paidThrough: PAID_THROUGH + 40 * 86_400, exportUntil: null };
     await runtime.tick();
     assert.equal(kit.messaging.sentTo(owner).length, 3, "a later lapse is a new paid_through, and a new notice");

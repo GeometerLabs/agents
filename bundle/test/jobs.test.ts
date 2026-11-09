@@ -13,13 +13,13 @@ import { panelRuntime } from "./helpers.ts";
 import { world } from "./world.ts";
 
 async function ready() {
-  const w = world({ "glow-salon": undefined as never }, { backup: { stream: { url: "s3://stream/a" }, snapshots: { url: "s3://snaps/a" }, ageRecipient: generateIdentity().recipient } });
-  writeSecretFile(secretFile(w.root, "backup", "stream"), "A:B"); writeSecretFile(secretFile(w.root, "backup", "snapshots"), "A:B");
+  const w = world({ "glow-salon": undefined as never }, { backup: { snapshots: { url: "s3://snaps/a" }, ageRecipient: generateIdentity().recipient } });
+  writeSecretFile(secretFile(w.root, "backup", "snapshots"), "A:B");
   writeFileSync(join(w.paths.shop("glow-salon"), "runtime.json"), JSON.stringify(panelRuntime()));
   w.handIn("glow-salon"); await deploy(w.ctx);
   const docker: string[][] = [];
   const real = w.ctx.runner;
-  w.ctx.runner = fakeRunner((c, a, o) => { docker.push(a); if (a[0] === "run" && a.includes("snapshot.ts")) return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, stamp: "x", files: 1, bytes: 1 }] })); if (a[0] === "run") return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, detail: "fine" }] })); return real.run(c, a, o) as never; });
+  w.ctx.runner = fakeRunner((c, a, o) => { docker.push(a); if (a[0] === "run" && a.includes("/app/bundle/backup/snapshot.ts")) return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, stamp: "x", files: 1, bytes: 1, seal: { stamp: "20261104T023000Z", objects: [], record: null } }] })); if (a[0] === "run") return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, detail: "fine" }] })); return real.run(c, a, o) as never; });
   return { w, docker };
 }
 const at = (w: Awaited<ReturnType<typeof ready>>["w"], iso: string) => { w.ctx.now = () => new Date(iso); };
@@ -37,7 +37,7 @@ test("the relay's credential is renewed on the first pass and then once a day; t
     const week = await runDueJobs(w.ctx);
     assert.ok(week.includes("drill") || week.includes("drill FAILED"), week.join(","));
     assert.ok(loadState(w.root).jobs?.drillAt, "remembered, so a restart of the deployer does not run it again");
-    assert.ok(docker.some((a) => a.includes("restore")), "the drill restored the continuous copy");
+    assert.ok(docker.some((a) => a.includes("/app/bundle/backup/drill-check.ts")), "the drill restored the newest snapshot");
   } finally { w.done(); }
 });
 

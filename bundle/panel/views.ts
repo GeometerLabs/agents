@@ -104,13 +104,14 @@ ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <p class="note">${w.byInvitation}</p>`, { nav: false });
 }
 
-export function joinPage(c: Ctx, o: { token: string; role: "builder" | "partner"; error?: string; values: { name: string; handle: string; language: string } }): string {
+export function joinPage(c: Ctx, o: { token: string; role: "builder" | "partner"; error?: string; values: { name: string; company: string; handle: string; language: string } }): string {
   const w = c.w.join;
   return layout(c, w.title(roleWord(c, o.role)), html`<h1>${w.title(roleWord(c, o.role))}</h1>
 <p>${w.intro}</p>
 ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <form method="post" action="/join" autocomplete="off">${csrf(c)}<input type="hidden" name="token" value="${o.token}">
   <label class="field"><span>${w.name}</span><input name="name" value="${o.values.name}" maxlength="80" required></label>
+  <label class="field"><span>${w.company}</span><input name="company" value="${o.values.company}" maxlength="60"><p class="help">${w.companyHelp}</p></label>
   <label class="field"><span>${w.handle}</span><input name="handle" value="${o.values.handle}" autocapitalize="none" maxlength="40" required><p class="help">${w.handleHelp}</p></label>
   <label class="field"><span>${w.passphrase}</span><input name="passphrase" type="password" autocomplete="new-password" required><p class="help">${w.passphraseHelp}</p></label>
   <label class="field"><span>${w.language}</span><select name="language">${languageOptions().map((l) => html`<option value="${l.code}" ${l.code === o.values.language ? raw("selected") : ""}>${l.label}</option>`)}</select></label>
@@ -241,10 +242,10 @@ ${l.renewUrl ? html`<p><a class="btn primary" href="${l.renewUrl}" rel="noopener
 ${l.staleSince ? html`<div class="notice" role="status">${w.stale(day(l.staleSince))}</div>` : ""}`;
 }
 
-/** The plan: its name and included messages, the Innovator badge, the price, and what fleet wants the partner to know (button mode, warnings). */
+/** The plan: its name and included messages, the Innovator badge, the price (the plan's, or the builder licence), and what fleet wants the partner to know (button mode, warnings). */
 function planBlock(c: Ctx, p: PlanView): Raw {
   const w = c.w.plan;
-  const price = p.price ? (p.innovator && p.price.yoursPaise !== p.price.listPaise ? w.priceInnovator(formatRupees(p.price.listPaise), formatRupees(p.price.yoursPaise)) : w.price(formatRupees(p.price.listPaise))) : "";
+  const price = p.price ? (p.price.licence ? w.priceBuilder(formatRupees(p.price.paise)) : w.price(formatRupees(p.price.paise))) : "";
   const warns = p.warn.filter((k): k is keyof typeof w.warn => k in w.warn);
   return html`<h2>${w.heading}</h2>
 ${p.plan ? html`<p class="big">${w.is(w.names[p.plan])}${p.innovator ? html` <span class="state live">${w.innovator}</span>` : ""}</p>
@@ -261,7 +262,7 @@ function costTable(c: Ctx, cost: MonthlyCost): Raw {
   const amount = (l: CostLine): string => (l.state === "unknown" ? w.unknown : formatRupees(l.paise as number));
   return html`<h2>${w.heading}</h2>
 <table class="cost"><tbody>
-${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
+${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.licence ? ` (${c.w.plan.builderLicence})` : l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>

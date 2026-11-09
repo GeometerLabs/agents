@@ -1,39 +1,63 @@
 // The data duties, on the host side: the nightly snapshot, the weekly restore drill and `restore`. Each starts a short-lived container with the volumes it
-// needs (the deployer is the only process with the Docker socket) and reads one line of JSON back. Nothing here sees a secret except the bucket keys it
-// mounts into those containers.
+// needs (the deployer is the only process with the Docker socket) and reads one line of JSON back. Nothing here sees a secret except the bucket key it mounts
+// into those containers, and, for `restore` only, the owner's age key that the person restoring brings for the purpose.
 //
-//   what is copied        where                                              by
-//   runtime database      continuously, every second, off the server          Litestream (litestream.yml)
-//   runtime database      nightly, age-encrypted, kept 30 days, elsewhere     backup/snapshot.ts (VACUUM INTO: never touches the live file's checkpoints)
-//   each Guard's store    nightly with the above, Guard's own POST /admin/backup (a consistent copy of its store and its evidence ledger, checked by
-//                         geo-verify), not Litestream: Litestream has to own the checkpointing of what it streams
-//   the weekly drill      restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live one, and (B28) compares
-//                         the restored record's chain with the last daily fingerprint published for the shop (backup/fingerprints.ts)
-import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+//   what is copied        when and where                                       by
+//   runtime database      nightly, gzipped and age-encrypted to the owner      backup/snapshot.ts (VACUUM INTO: a consistent copy while the runtime writes)
+//   each Guard's store    nightly with the above, Guard's own POST /admin/backup (a consistent copy of its store and its evidence ledger, checked by geo-verify)
+//   the weekly drill      WITHOUT the key: reads the newest snapshot's objects back and compares their sha256 with what was uploaded, and checks that the copy's
+//                         record (integrity-checked when it was made) is the start of the live record and matches the published fingerprints (drill-check.ts)
+//   `restore`             with the owner's key (--identity): puts the runtime's database back from the newest snapshot at or before a time; the runtime then
+//                         starts in its restored mode. A full restore test is the same, by a person, monthly, on their own machine (restore-snapshot.ts)
+// The snapshot job hands back each snapshot's seal (object digests, record facts, chain head: no customer's words or numbers); the newest per shop is kept in
+// state/snapshots/<shop>.json for the drill.
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { adminCall, compose } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
+import { modulesOf } from "../generate/compose.ts";
 import { names } from "../generate/shop.ts";
-import { LITESTREAM_IMAGE, loadServer, serverPaths } from "../lib/server.ts";
+import { appliedPathwayDir } from "../lib/pathways.ts";
+import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
+import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { ensurePersonKey, ensureShopPersonKeys, secretFile } from "../lib/secrets.ts";
+import { ensurePersonKey, ensureShopPersonKeys, restorePersonKey, secretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
 import type { UsageTotals } from "../lib/usage.ts";
-import { ensureDir } from "../lib/util.ts";
-import type { DrillResult } from "./drill-check.ts";
-import { lastFingerprint } from "./fingerprints.ts";
-import type { ShopSnapshot } from "./snapshot.ts";
+import { ensureDir, writeAtomic } from "../lib/util.ts";
+import { readFingerprints } from "../../modules/record/publish.ts";
+import type { DrillResult, PublishedLine } from "./drill-check.ts";
+import { fingerprintFile, lastFingerprint } from "./fingerprints.ts";
+import { PERSON_KEY_OBJECT } from "./snapshot.ts";
+import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
 const volume = (server: ServerConfig, v: string) => `${project(server)}_${v}`;
 const stampOf = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/gu, "");
 const GUARD_BACKUPS = "/var/lib/geo-guard/backups";
+const NO_BACKUP = "No backup is set up: `geometer init` was not given a snapshot place and a key (see bundle/README.md, 'Backups').";
+
+/** The newest snapshot's seal for a shop, as the snapshot job handed it back: what the drill checks the snapshot by. */
+export const sealFile = (dir: string, shop: string) => join(serverPaths(dir).state, "snapshots", `${shop}.json`);
+function readSeal(dir: string, shop: string): Seal | undefined {
+  try { return JSON.parse(readFileSync(sealFile(dir, shop), "utf8")) as Seal; } catch { return undefined; }
+}
+/** What a night says when the key could not prune: the bucket's own lifecycle rule deletes old snapshots, and this was only the fallback. */
+export const PRUNE_LEFT = "pruning left to the bucket's lifecycle rule";
 
 /** The flags every job container gets: no network unless it needs the bucket, no capability but reading and writing files it does not own, the code read-only. */
 function jobFlags(ctx: Context, server: ServerConfig, network: boolean, user = "0"): string[] {
   return ["run", "--rm", "--user", user, "--cap-drop", "ALL", ...(user === "0" ? ["--cap-add", "DAC_OVERRIDE", "--cap-add", "DAC_READ_SEARCH"] : []), "--read-only", "--tmpfs", "/tmp", "--security-opt", "no-new-privileges:true",
     "--network", network ? `${project(server)}_egress` : "none", "-v", `${ctx.appDir}:/app:ro`];
+}
+
+/** How a job container reaches the snapshot place: the egress network and the bucket's key for a bucket, the folder itself for a folder. */
+function snapshotPlace(ctx: Context, server: ServerConfig): { network: boolean; mounts: string[] } {
+  const target = server.backup!.snapshots;
+  const bucket = target.url.startsWith("s3://");
+  const key = secretFile(ctx.dir, "backup", "snapshots");
+  return { network: bucket, mounts: bucket ? (existsSync(key) ? ["-v", `${key}:/run/secrets/snapshots:ro`] : []) : ["-v", `${target.url}:${target.url}`] };
 }
 
 function lastJson(text: string): any {
@@ -43,7 +67,7 @@ function lastJson(text: string): any {
 export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
   const server = loadServer(ctx.dir);
   const lines: string[] = [];
-  if (!server.backup) return { ok: false, lines: ["No backup is set up: `geometer init` was not given a stream, a snapshot place and a key (see bundle/README.md, 'Backups')."] };
+  if (!server.backup) return { ok: false, lines: [NO_BACKUP] };
   const state = loadState(ctx.dir);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied);
   const stamp = stampOf(ctx.now());
@@ -56,20 +80,23 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   }
   // 2. the snapshot container
   const jobFile = join(work, `snapshot-${stamp}.json`);
-  for (const [shop] of shops) ensurePersonKey(ctx.dir, shop); // B69: the key goes in the snapshot, so a restored shop can still match its own people (a Litestream restore on the same machine has it in place)
+  for (const [shop] of shops) ensurePersonKey(ctx.dir, shop); // B69: the key goes in the snapshot's manifest, so a restored shop can still match its own people (`restore` puts it back)
   writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipient: server.backup.ageRecipient, target: server.backup.snapshots,
     shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, personKeyFile: `/run/person-keys/${shop}`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
   const mounts = shops.flatMap(([shop, s]) => [["-v", `${volume(server, names.dataVolume(shop))}:/v/${names.dataVolume(shop)}`], ...Object.values(s.applied!.guards).map((g) => ["-v", `${volume(server, names.stateVolume(shop, g.kind as "razorpay"))}:/v/${names.stateVolume(shop, g.kind as "razorpay")}`])]).flat();
-  const bucket = server.backup.snapshots.url.startsWith("s3://");
-  const key = secretFile(ctx.dir, "backup", "snapshots");
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, bucket), "-v", `${jobFile}:/job/job.json:ro`, ...(bucket && existsSync(key) ? ["-v", `${key}:/run/secrets/snapshots:ro`] : []), ...(bucket ? [] : ["-v", `${server.backup.snapshots.url}:${server.backup.snapshots.url}`]), "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
+  const place = snapshotPlace(ctx, server);
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: ShopSnapshot[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [...lines, `The snapshot job failed: ${r.stderr.trim().split("\n").slice(-3).join(" | ") || `exit ${r.code}`}`] };
   let ok = true;
   for (const res of out.results) {
-    if (res.ok) { state.shops[res.name].lastBackupAt = ctx.now().toISOString(); updateStatus(ctx.dir, res.name, ctx.now(), (s) => { s.backups = { ...(s.backups ?? { lastDrillAt: null, drillOk: null }), lastCopyAt: ctx.now().toISOString() }; }, false); lines.push(`${res.name}: snapshot ${res.stamp} written (${res.files} files, ${res.bytes} bytes, encrypted)${res.record ? `, record at entry #${res.record.lastSeq ?? 0}` : ""}`); }
-    else { ok = false; lines.push(`${res.name}: NO snapshot (${res.error})`); }
+    if (res.ok) {
+      state.shops[res.name].lastBackupAt = ctx.now().toISOString();
+      if (res.seal) { ensureDir(join(serverPaths(ctx.dir).state, "snapshots")); writeAtomic(sealFile(ctx.dir, res.name), `${JSON.stringify(res.seal)}\n`); }
+      updateStatus(ctx.dir, res.name, ctx.now(), (s) => { s.backups = { ...(s.backups ?? { lastDrillAt: null, drillOk: null }), lastCopyAt: ctx.now().toISOString() }; }, false);
+      lines.push(`${res.name}: snapshot ${res.stamp} written (${res.files} objects, ${res.bytes} bytes, gzipped and encrypted)${res.record ? `, record at entry #${res.record.lastSeq ?? 0}` : ""}${res.pruneError ? `; ${PRUNE_LEFT} (this key may not list or delete: ${res.pruneError.slice(0, 160)})` : ""}`);
+    } else { ok = false; lines.push(`${res.name}: NO snapshot (${res.error})`); }
   }
   saveState(ctx.dir, state);
   return { ok, lines };
@@ -98,63 +125,97 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   return { ok: out.results.every((x) => x.ok || x.error === "no database yet"), lines: out.results.map((x) => (x.ok ? `${x.name}: exported ${x.entries} record entries and ${x.orders !== undefined ? `${x.orders} orders` : x.dues !== undefined ? `${x.dues} fees` : `${x.bookings} bookings`}` : `${x.name}: not exported (${x.error})`)) };
 }
 
-/** The last fingerprint published for a shop, for the drill to compare with; a fingerprint file that was changed by hand is a drill failure of its own, said in the detail. */
-function publishedOf(dir: string, shop: string): { published?: { seq: number; head: string; day: string } } {
-  try { const p = lastFingerprint(dir, shop); return p ? { published: p } : {}; } catch { return { published: { seq: 0, head: "unreadable", day: "unreadable" } }; }
+/** The fingerprints published for a shop (the last 60 days are enough for a snapshot kept 30); a fingerprint file that was changed by hand is a drill failure of its own. */
+function publishedOf(dir: string, shop: string): PublishedLine[] {
+  try { return readFingerprints(fingerprintFile(dir, shop)).filter((l) => l.tenant === shop).slice(-60).map((l) => ({ seq: l.seq, head: l.head, day: l.day, at: l.at })); } catch { return [{ seq: 0, head: "unreadable", day: "unreadable" }]; }
 }
 
-/** The weekly drill: restore the continuous copy into a scratch folder and compare it with the live record. A failure is written where the panel and `status` show it. */
+/** The weekly drill, without the key: each shop's newest snapshot read back and compared with its seal, and the seal's record with the live one. A failure is written where the panel and `status` show it. */
 export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
   const server = loadServer(ctx.dir);
   if (!server.backup) return { ok: false, lines: ["No backup is set up, so there is nothing to drill."] };
   const state = loadState(ctx.dir);
-  const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
-  const work = join(serverPaths(ctx.dir).state, "work", `drill-${stampOf(ctx.now())}`);
-  const lines: string[] = [];
-  const verdicts: DrillResult[] = [];
+  const applied = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  // a shop with no snapshot yet (added since last night) has nothing to drill: no verdict, as fleet reads "absent" (the snapshot's age alerts if none comes)
+  const seals = new Map(applied.flatMap((s): [string, Seal][] => { const seal = readSeal(ctx.dir, s); return seal ? [[s, seal]] : []; }));
+  const shops = applied.filter((s) => seals.has(s));
+  const lines: string[] = applied.filter((s) => !seals.has(s)).map((s) => `${s}: no snapshot of it yet, so no drill this time`);
+  if (shops.length === 0) return { ok: true, lines };
+  const work = join(serverPaths(ctx.dir).state, "work");
+  ensureDir(work);
+  const jobFile = join(work, `drill-${stampOf(ctx.now())}.json`);
+  let verdicts: DrillResult[] = [];
   try {
-    for (const shop of shops) {
-      const out = join(work, shop);
-      mkdirSync(out, { recursive: true, mode: 0o777 }); chmodSync(out, 0o777); // the umask would make this 0755, and Litestream runs as another user
-      const r = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", `${project(server)}_egress`, "-v", `${out}:/out`, "-v", `${secretFile(ctx.dir, "litestream", "litestream.yml")}:/etc/litestream.yml:ro`, LITESTREAM_IMAGE, "restore", "-config", "/etc/litestream.yml", "-o", "/out/agent.db", `/data/${shop}/data/agent.db`], { timeoutMs: 600_000 });
-      if (r.code !== 0) verdicts.push({ name: shop, ok: false, detail: `the continuous copy could not be restored: ${(r.stderr || r.stdout).trim().split("\n").slice(-2).join(" | ").slice(0, 200)}` });
-    }
-    const toCheck = shops.filter((s) => !verdicts.some((v) => v.name === s));
-    if (toCheck.length > 0) {
-      const jobFile = join(work, "job.json");
-      writeFileSync(jobFile, JSON.stringify({ maxLagEntries: 100, shops: toCheck.map((s) => ({ name: s, restored: `/scratch/${s}/agent.db`, live: `/v/${names.dataVolume(s)}/data/agent.db`, ...publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
-      // the scratch folder is mounted writable: a restored database in WAL mode needs its -shm beside it to be opened, even to be read
-      const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${work}:/scratch`, ...toCheck.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
-      const j = lastJson(r.stdout) as { results?: DrillResult[] } | undefined;
-      if (!j?.results) toCheck.forEach((s) => verdicts.push({ name: s, ok: false, detail: `the drill's check did not run: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 200)}` }));
-      else verdicts.push(...j.results);
-    }
-  } finally { rmSync(work, { recursive: true, force: true }); }
+    writeFileSync(jobFile, JSON.stringify({ target: server.backup.snapshots, shops: shops.map((s) => ({ name: s, live: `/v/${names.dataVolume(s)}/data/agent.db`, seal: seals.get(s), published: publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
+    const place = snapshotPlace(ctx, server);
+    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts,
+      ...shops.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
+    const j = lastJson(r.stdout) as { results?: DrillResult[] } | undefined;
+    verdicts = j?.results ?? shops.map((s) => ({ name: s, ok: false, detail: `the drill did not run: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 200) || `exit ${r.code}`}` }));
+  } finally { rmSync(jobFile, { force: true }); }
   const at = ctx.now().toISOString();
   for (const v of verdicts) {
+    if (!state.shops[v.name]) continue;
     state.shops[v.name].lastDrill = { at, ok: v.ok, detail: v.detail };
     updateStatus(ctx.dir, v.name, ctx.now(), (s) => { s.backups = { ...(s.backups ?? { lastCopyAt: null }), lastDrillAt: at, drillOk: v.ok, drillDetail: v.detail }; }, false);
     lines.push(`${v.name}: restore drill ${v.ok ? "passed" : "FAILED"}: ${v.detail}`);
   }
   saveState(ctx.dir, state);
-  return { ok: verdicts.every((v) => v.ok), lines };
+  return { ok: verdicts.length === shops.length && verdicts.every((v) => v.ok), lines };
 }
 
-/** Put a shop's record back from the continuous copy (at a moment if asked) or from a snapshot. The old file is kept beside it, never deleted. */
-export async function restoreShop(ctx: Context, shop: string, o: { at?: string; fromSnapshot?: string; identity?: string }): Promise<string> {
+/**
+ * Put a shop's runtime database back from the newest snapshot at or before `at` (the newest of all without it), opened with the owner's age key, which the person
+ * restoring brings (`identity`, a key file; it is mounted read-only into the one container that opens the snapshot, and is not kept). The file it replaces is kept
+ * beside it, never deleted. The runtime starts in its restored mode (modules/runtime/restored.ts): it moves its ids on and writes a `restored` entry before anything else.
+ */
+export async function restoreShop(ctx: Context, shop: string, o: { at?: string; identity?: string; fromSnapshot?: string }): Promise<string> {
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
   if (!state.shops[shop]?.applied) throw new Error(`${shop} has not been deployed, so there is nothing to restore into.`);
-  if (o.fromSnapshot) throw new Error("Restoring from a snapshot file is done with `node bundle/backup/restore-snapshot.ts <file> --identity <key file>` on a machine that has the key; see bundle/README.md, 'Restoring'. (The key is not kept on this server.)");
-  if (!server.backup) throw new Error("No continuous copy is set up for this server.");
+  if (o.fromSnapshot) throw new Error("--from-snapshot is gone: `restore` now reads the nightly snapshots itself. Give --identity <the owner's key file>, and --at <time> for an older one.");
+  if (!server.backup) throw new Error("No snapshot place is set up for this server, so there is nothing to restore from.");
   if (o.at && Number.isNaN(Date.parse(o.at))) throw new Error(`"${o.at}" is not a time. Use a form like 2026-11-04T10:30:00Z.`);
+  if (!o.identity) throw new Error("A snapshot opens only with the owner's age key, which is kept off this server: bring it for the restore and give its file with --identity <key file> (take it away again afterwards).");
+  if (!existsSync(o.identity)) throw new Error(`${o.identity} is not there: --identity names the file with the owner's age key (AGE-SECRET-KEY-1...).`);
+  // the runtime that will read restored.json is the one of the version the shop is pinned to: one from before 9 Nov 2026 would ignore it and reuse ids used after the
+  // snapshot, and "look first" would then take another customer's payment link or calendar event for its own
+  const applied = state.shops[shop].applied!;
+  const pinned = appliedPathwayDir(ctx.appDir, ctx.dir, applied) ?? applied.pathwayDir;
+  if (!existsSync(join(modulesOf(pinned), "runtime", "restored.ts"))) throw new Error(`${shop} runs ${applied.pathway}, whose runtime does not know a restore: it would give new bookings ids that were used after the snapshot, and could take another customer's payment link for its own. Move ${shop} to a version from 9 Nov 2026 or later first (geometer update --shops ${shop}), then restore. Nothing was touched.`);
   const stamp = stampOf(ctx.now());
+  const work = join(serverPaths(ctx.dir).state, "work", `restore-${shop}-${stamp}`);
   const dataVolume = volume(server, names.dataVolume(shop));
-  for (const svc of [names.runtime(shop), "litestream"]) await compose(ctx, ["stop", svc]);
-  const r = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", `${project(server)}_egress`, "-v", `${dataVolume}:/data/${shop}`, "-v", `${secretFile(ctx.dir, "litestream", "litestream.yml")}:/etc/litestream.yml:ro`, LITESTREAM_IMAGE, "restore", "-config", "/etc/litestream.yml", "-o", `/data/${shop}/data/agent.db.restoring`, ...(o.at ? ["-timestamp", new Date(o.at).toISOString()] : []), `/data/${shop}/data/agent.db`], { timeoutMs: 900_000 });
-  if (r.code !== 0) { for (const svc of ["litestream", names.runtime(shop)]) await compose(ctx, ["start", svc]); throw new Error(`The continuous copy could not be restored; the shop's own file is untouched and it has been started again. ${(r.stderr || r.stdout).trim().split("\n").slice(-2).join(" | ").slice(0, 300)}`); }
-  const swap = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", "none", "-v", `${dataVolume}:/data/${shop}`, "busybox:1.37.0", "sh", "-c", `cd /data/${shop}/data && mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; rm -f agent.db-wal agent.db-shm; mv agent.db.restoring agent.db`]);
-  for (const svc of ["litestream", names.runtime(shop)]) await compose(ctx, ["start", svc]);
-  if (swap.code !== 0) throw new Error(`The restored file could not be put in place: ${swap.stderr.trim().slice(0, 200)}`);
-  return `${shop}'s record is restored${o.at ? ` as it was at ${o.at}` : " to the latest copy"}. The file it replaced is kept as agent.db.before-restore-${stamp}. The shop is running again.`;
+  let got: { stamp: string; record: RecordFacts };
+  let keyNote = "";
+  try {
+    mkdirSync(join(work, "files"), { recursive: true }); chmodSync(join(work, "files"), 0o777); // the container writes here; the deployer removes it after
+    writeFileSync(join(work, "job.json"), JSON.stringify({ target: server.backup.snapshots, shop, ...(o.at ? { atMs: Date.parse(o.at) } : {}), identityFile: "/run/secrets/identity", out: "/out/files", nowIso: ctx.now().toISOString() }), { mode: 0o644 });
+    // 1. fetch, check and open the snapshot while the shop still runs (nothing of the shop's is touched yet)
+    const place = snapshotPlace(ctx, server);
+    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${work}:/out`, "-v", `${o.identity}:/run/secrets/identity:ro`, ...place.mounts, server.appImage, "node", "/app/bundle/backup/restore-snapshot.ts", "--job", "/out/job.json"], { timeoutMs: 900_000 });
+    const out = lastJson(r.stdout) as { ok?: boolean; stamp?: string; record?: RecordFacts; error?: string } | undefined;
+    if (!out?.ok || !out.stamp || !out.record) throw new Error(`No snapshot was restored; the shop was not touched and is still running. ${out?.error ?? (r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300) || `exit ${r.code}`)}`);
+    got = { stamp: out.stamp, record: out.record };
+    // 2. with the runtime stopped, put it in place as the runtime's own user; the old file is kept, and restored.json tells the runtime it was restored
+    await compose(ctx, ["stop", names.runtime(shop)]);
+    const swap = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", "none", "-v", `${work}/files:/in:ro`, "-v", `${dataVolume}:/data/${shop}`, "busybox:1.37.0", "sh", "-c",
+      `cd /data/${shop}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/${RESTORE_NOTE} ${RESTORE_NOTE}`]);
+    // B69: the snapshot's fingerprint key goes back before the runtime starts, so the shop can match the people already in its record
+    if (swap.code === 0) keyNote = keyPutBack(ctx.dir, shop, join(work, "files", PERSON_KEY_OBJECT), server.panel.enabled, stamp);
+    await compose(ctx, ["start", names.runtime(shop)]);
+    if (swap.code !== 0) throw new Error(`The restored file could not be put in place: ${swap.stderr.trim().slice(0, 200)}`);
+  } finally { rmSync(work, { recursive: true, force: true }); }
+  const published = lastFingerprint(ctx.dir, shop);
+  const behind = published && published.seq > (got.record.lastSeq ?? 0)
+    ? ` The shop's last daily fingerprint (${published.day}) covers entry ${published.seq}, after this snapshot: from now on its fingerprint and the drill's comparison will say the record no longer matches what was published (see bundle/Deferred.md).`
+    : "";
+  return `${shop}'s database is restored from the snapshot of ${got.stamp} (record up to entry #${got.record.lastSeq ?? 0}). The file it replaced is kept as agent.db.before-restore-${stamp}. The shop is running again: before anything else it moves its ids on, writes a "restored" entry, and looks at the payment service and the calendar before it sends anything again.${keyNote}${behind}`;
+}
+
+/** The fingerprint key the restore job took out of the snapshot, put back; what to say about it. A snapshot from before the key has none, and the shop keeps the one it has. */
+function keyPutBack(dir: string, shop: string, file: string, panelOn: boolean, stamp: string): string {
+  if (!existsSync(file)) return " This snapshot holds no fingerprint key (it is older than the key), so the shop keeps the one it has.";
+  const kept = restorePersonKey(dir, shop, readFileSync(file, "utf8").trim(), names.runtime(shop), panelOn, stamp);
+  return kept ? ` The shop's fingerprint key was put back from the snapshot; the one it replaced is kept as ${kept}.` : "";
 }

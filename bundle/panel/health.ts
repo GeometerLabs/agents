@@ -3,8 +3,8 @@
 //
 //  - The partner's own entries (the price they charge, a setup fee, support minutes and what an hour of their time is worth) are kept in the panel's own
 //    store, under the person's account, and are never sent to fleet: fleet keeps counts only.
-//  - The running cost is the same arithmetic as the shop page's cost line (cost.ts): whole paise, each line rounded UP once, the plan fee read from the price
-//    list in force. WhatsApp at cost and the model come from THIS MONTH's entries of the exported record (lib/usage.ts), not from the cumulative totals.
+//  - The running cost is the same arithmetic as the shop page's cost line (cost.ts): whole paise, each line rounded UP once, Geometer's charge read from the
+//    price list in force by the same rule (chargeOf: the plan's fee, or the builder licence on a builder's own server). WhatsApp at cost and the model come from THIS MONTH's entries of the exported record (lib/usage.ts), not from the cumulative totals.
 //  - Unknown stays unknown, never 0: a line with no number has no amount, the margin then says which lines it leaves out, and a missing price makes the margin unknown.
 //  - It states a margin from numbers the person typed and numbers the record holds. It never forecasts and never says what anyone could make.
 import { monthRange } from "../../modules/report/months.ts";
@@ -12,7 +12,7 @@ import { summarizeUsage, usageRatesFrom } from "../lib/usage.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 import type { Exported } from "./activity.ts";
 import type { FleetAnswer, PlanName, ShopStatus } from "./contract.ts";
-import { microPaise, paiseOf } from "./cost.ts";
+import { chargeOf, paiseOf } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
 import { STALE_AFTER_MS } from "./licence.ts";
 import type { LicenceState } from "./licence.ts";
@@ -92,7 +92,7 @@ export type EntryStore = ReturnType<typeof createEntries>;
 
 export type CostId = "plan" | "whatsapp" | "model" | "support";
 /** Why a line is what it is, as a code the view says in words. */
-export type CostNote = "innovator" | "self-host" | "included" | "floor" | "estimate" | "no-record" | "no-plan" | "no-price" | "no-minutes" | "no-rate";
+export type CostNote = "builder-licence" | "included" | "floor" | "estimate" | "no-record" | "no-plan" | "no-price" | "no-minutes" | "no-rate";
 export interface CostItem { id: CostId; /** Whole paise, rounded up once. Null exactly when the line is unknown. */ paise: number | null; notes: CostNote[]; /** Only on the model line when some calls had no price: how many. */ unpriced?: number; /** Only on the support line: the minutes. */ minutes?: number }
 
 export interface ShopMargin {
@@ -144,40 +144,19 @@ export function sumMargins(list: readonly ShopMargin[]): Sum {
 export interface PlanFeeInput {
   plan: PlanName | null;
   prices: PriceList;
-  /** The builder runs the deploy bundle on their own server: the plan fee is half (licence.self-host). */
-  selfHost: boolean;
-  /** This shop gets the Innovator discount (the person is an innovator and this shop is within the shops the discount covers). */
-  innovator: boolean;
+  /** The shop runs on a builder's own server: Geometer charges the builder licence, whatever the plan (cost.ts chargeOf). */
+  builder: boolean;
 }
 
 /**
- * Geometer's plan fee for a shop, in whole paise, before GST, from the price list; null when there is no plan or no price for it. The rule is fleet's invoice
- * (monorepo apps/fleet/src/invoice.ts): the half-price licence on a builder's own server and the Innovator discount do NOT stack, the lower of the two is charged.
- * Each share is taken once from the plan fee, then the result is rounded up once (the same arithmetic as plan.ts, so the two pages agree for one shop).
+ * Geometer's charge for a shop, in whole paise, before GST, from the price list: the plan's fee, or the builder licence on a builder's own server (the same rule as
+ * the shop page, cost.ts chargeOf, so the two pages agree). Null when a hosted shop has no plan, or the list has no price for it: unknown, never 0.
  */
 export function planFeePaise(i: PlanFeeInput): { paise: number | null; notes: CostNote[] } {
-  if (!i.plan) return { paise: null, notes: ["no-plan"] };
-  const fee = microPaise(i.prices, `plan.${i.plan}.fee`);
-  if (!fee) return { paise: null, notes: ["no-price"] };
-  let value = fee.value;
-  let notes: CostNote[] = [];
-  const half = i.prices.rates["licence.self-host"]?.basisPoints;
-  if (i.selfHost && half !== undefined) { value = (fee.value * BigInt(half)) / 10_000n; notes = ["self-host"]; }
-  const discount = i.prices.rates["innovator.discount"]?.basisPoints;
-  if (i.innovator && discount !== undefined) {
-    const price = (fee.value * BigInt(10_000 - discount)) / 10_000n;
-    if (price < value) { value = price; notes = ["innovator"]; }
-  }
-  return { paise: paiseOf(value), notes };
-}
-
-/** How many of one person's shops the Innovator discount covers (price list `innovator.max-shops`). Fleet gives no discount when the list does not say, and neither does this. */
-export const innovatorShopCap = (prices: PriceList): number => prices.rates["innovator.max-shops"]?.count ?? 0;
-
-/** The shops that get the Innovator discount: the person's innovator-flagged shops, the oldest assignments first (as fleet's invoice takes them), up to the cap. */
-export function discountedShops(flagged: readonly { id: string; since: string }[], prices: PriceList): Set<string> {
-  const ordered = [...flagged].sort((a, b) => (a.since < b.since ? -1 : a.since > b.since ? 1 : a.id < b.id ? -1 : 1));
-  return new Set(ordered.slice(0, innovatorShopCap(prices)).map((s) => s.id));
+  const charge = chargeOf(i.prices, i.plan, i.builder);
+  if (!charge) return { paise: null, notes: ["no-plan"] };
+  if (!charge.fee) return { paise: null, notes: ["no-price"] };
+  return { paise: paiseOf(charge.fee.value), notes: charge.licence ? ["builder-licence"] : [] };
 }
 
 /** This month's usage from the exported record: only the entries whose own time is in [from, to). Null when the shop has no export. */

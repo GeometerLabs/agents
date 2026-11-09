@@ -11,9 +11,9 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     language: facts.language,
     timeZone: facts.timeZone,
     amountsInr: [facts.priceInr, facts.totalInr, facts.advanceInr, facts.balanceInr, facts.refundInr, facts.markedInr, facts.leftInr, ...facts.menu.map((i) => i.priceInr)].filter((v): v is number => v !== undefined),
-    counts: [facts.leftCount, facts.holdMinutes, facts.windowHours, facts.maxItems, facts.approvalHours, facts.approvalsLeft, facts.upcomingCount, facts.openCount].filter((v): v is number => v !== undefined),
+    counts: [facts.leftCount, facts.holdMinutes, facts.windowHours, facts.maxItems, facts.approvalHours, facts.approvalsLeft, facts.upcomingCount].filter((v): v is number => v !== undefined),
     shownMs: facts.slotFromMs ?? facts.dateMs,
-    momentsMs: facts.licenceDateMs !== undefined ? [...moments, facts.licenceDateMs] : moments,
+    momentsMs: moments,
     links: facts.link ? [facts.link] : [],
     literals: [facts.businessName, facts.itemsText, facts.itemName, ...facts.menu.map((i) => i.name), facts.area, facts.address, ...(facts.areas ?? []), facts.orderRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner],
   };

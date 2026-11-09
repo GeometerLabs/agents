@@ -95,7 +95,7 @@ test("a gap is said, not hidden: when Guard's list of its 500 most recent decisi
   assert.deepEqual(foldFacts(first.state, reaches, options(newest + 600_000)).gaps, []);
 });
 
-test("a reference the agent chose that looks like a phone number reaches neither the record nor the exports; it is kept as a short hash", () => {
+test("a reference the agent chose that looks like a phone number reaches neither the record nor the exports; it is kept as a keyed fingerprint", () => {
   const phoneRef = "+91 98111 11111";
   const edited: Facts = JSON.parse(JSON.stringify(facts).replaceAll("b-1", phoneRef));
   const { state } = foldFacts(emptyRecord(), edited, options());

@@ -22,7 +22,7 @@ export function prepareSecretsRoot(dir: string): void {
 // The panel gets a copy (0600, secrets/panel/person-keys/<shop>) to match a person it is asked about. Containers that must not hold the key itself get a key derived from it for their
 // one purpose: the runtime its record key (the inputs' digest and message ids, secrets/rt-<shop>/record_key), ops a label key for an own agent (secrets/ops/<agent>/label_key). Those two
 // are 0644 like every other file a container's fixed user must read (see the top of this file); a copy of the key itself never is.
-// Knowing a derived key shows nothing about the key it came from, or about the person fingerprints the key makes. The snapshot job writes the key into the nightly backup (backup/snapshot.ts).
+// Knowing a derived key shows nothing about the key it came from, or about the person fingerprints the key makes. The snapshot job writes the key into the nightly manifest (backup/snapshot.ts), and `restore` puts it back.
 
 export const personKeyFile = (dir: string, shop: string) => secretFile(dir, "person-keys", shop);
 export const RECORD_KEY_FILE = "record_key";
@@ -41,6 +41,21 @@ export function ensureShopPersonKeys(dir: string, shop: string, runtimeFolder: s
   const key = ensurePersonKey(dir, shop);
   writeSecretFile(secretFile(dir, runtimeFolder, RECORD_KEY_FILE), derivedKey(key, "record"));
   if (panelOn) writeSecretFile(secretFile(dir, "panel", "person-keys", shop), key, 0o600);
+}
+
+/**
+ * A restore's key goes back in place of the one here, because the record it came with was fingerprinted under it. Its copies are rewritten. On a new machine the first deploy made another
+ * key, which nothing has used: it is kept beside (returned: the name), never deleted. Returns undefined when the key was already the one in place.
+ */
+export function restorePersonKey(dir: string, shop: string, keyHex: string, runtimeFolder: string, panelOn: boolean, stamp: string): string | undefined {
+  if (!/^[0-9a-f]{64}$/u.test(keyHex)) throw new Error("The fingerprint key in this snapshot is not a key, so it was not put back.");
+  const path = personKeyFile(dir, shop);
+  const have = readSecretFile(path);
+  let kept: string | undefined;
+  if (have && have !== keyHex) { kept = `${shop}.before-restore-${stamp}`; writeSecretFile(`${path}.before-restore-${stamp}`, have, 0o600); }
+  if (have !== keyHex) writeSecretFile(path, keyHex, 0o600);
+  ensureShopPersonKeys(dir, shop, runtimeFolder, panelOn);
+  return kept;
 }
 
 /** An own agent's label key in ops' folder (agent/facts.ts labels a reference that looks like a number; the deployer's fold labels it the same way). */

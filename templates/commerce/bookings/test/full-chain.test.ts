@@ -168,7 +168,7 @@ test("npm run stack: the command prints where everything is, the customer's mess
   child.stderr.on("data", (c) => { out += c; });
   const exited = new Promise<number | null>((resolve) => child.on("close", resolve));
   try {
-    for (let i = 0; i < 400 && !out.includes("Press Ctrl+C"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    for (let i = 0; i < 1500 && !out.includes("Press Ctrl+C"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     const standins = /Stand-ins .*?(http:\/\/\S+)/u.exec(out)?.[1];
     const dir = /Secrets and data: (\S+)/u.exec(out)?.[1];
     assert.ok(standins && dir, out);

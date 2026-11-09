@@ -272,6 +272,7 @@ function peopleWords(m: Manifest): string {
     "    - settings.json and history/settings-history.jsonl are the shop's own settings as written: the owner's number, any approvers' numbers and, for a Fees centre, the list of students with their parents' numbers. They are in plain text. Give those two files only to someone you would show that list; the record/, reports/ and certificates/ folders are what you can hand to an auditor.",
     "    - Free text: a number or a name the shop or a customer wrote into a note is not replaced. Only a student's name spelled exactly as the centre's list has it is.",
     `    - Entries written before the shop had its key (${f.inputsOlder ?? 0} of them) carry "inputsDigest" as a plain digest, and ${f.messageIdsOlder ?? 0} carry WhatsApp's message id as it came: those can be tested by guessing, and a WhatsApp id can carry the number. Entries written since are keyed.`,
+    "    - An Orders shop's \"area\" is the place on its delivery list, as the shop named it; the address a customer wrote is not in this package.",
     "    - accounts.json names the shop's own business number, because it is the shop's.",
   ].join("\n");
 }

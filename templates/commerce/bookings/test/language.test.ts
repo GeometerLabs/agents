@@ -31,8 +31,8 @@ const ids = Object.keys(TEMPLATES.en) as TemplateId[];
 function factsFor(language: Language, id: TemplateId): MessageFacts {
   // a UPI shop's values (B33) go only to the UPI messages, so every other message is checked against exactly the record it always was
   const upi = id.startsWith("upi_") || id.startsWith("owner_upi_") ? { upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 130, leftInr: 70 } : {};
-  // the licence's notices to the owner (B13): who to contact, what is still open at the final stop, and the free export's last day
-  const licence = id.startsWith("owner_licence_") ? { partner: "Divya, local partner", upcomingCount: 3, openCount: 1, licenceDateMs: zonedToMs({ year: 2027, month: 3, day: 5 }, { hour: 0, minute: 0 }, TZ) } : {};
+  // the licence's notices to the owner (B13): who to contact, and the bookings still to come at the final stop
+  const licence = id.startsWith("owner_licence_") ? { partner: "Divya, local partner", upcomingCount: 3 } : {};
   return id === "menu"
     ? facts(language, { services: [{ name: HAIRCUT[language], priceInr: 450 }, { name: FACIAL[language], priceInr: 900 }] })
     : facts(language, { ...upi, ...licence });

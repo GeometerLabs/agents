@@ -1,63 +1,92 @@
-// The weekly restore drill's check, inside a short-lived container: the copy Litestream restored into a scratch folder is opened, its integrity is checked,
-// and its last record entry is compared with the LIVE record's entry at the same sequence number. A backup nobody restored is not counted as a backup.
-// Then (B28) the restored record is chained into its ledger (modules/record/ledger.ts) and its hash at the last PUBLISHED fingerprint's entry must be the hash that was
-// published: a copy that was rewritten, or one that is shorter than what was published, fails. A shop with no fingerprint yet is said, not failed.
+// The weekly drill, inside a short-lived container, WITHOUT the key: the owner's age key is kept off the server, so nothing here can open a snapshot. What it checks
+// of each shop's newest snapshot, from the seal the snapshot job handed back (snapshot.ts) and the live database:
+//   1. every object of the snapshot is read back from the snapshot place and has the sha256 it had when it was uploaded. A store that refuses the read makes a drill
+//      that could not complete, with the store's reason (and fleet alerts on it as on any failed drill);
+//   2. the copy was a sound database: SQLite's integrity_check passed on the plain copy when it was made (the snapshot is not written otherwise);
+//   3. its record is the START of the live record: the live entry at the copy's last sequence number has the same digest, and the live record's hash chain at that
+//      entry is the copy's chain head (so every entry before it is the same too);
+//   4. (B28) against the daily fingerprints published for the shop: the copy holds every entry of the last fingerprint published before it was made, and the chain
+//      matches the newest fingerprint it holds.
+// What it cannot check is that the snapshot opens: that is the full restore test, done by a person with the owner's key, monthly, on their own machine
+// (bundle/README.md, "Backups").
 //
 //   node bundle/backup/drill-check.ts /job/job.json
 import { existsSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
-import { recordFacts } from "./snapshot.ts";
-import { hashAt, ledgerEntries } from "../../modules/record/ledger.ts";
-import type { RecordEntry } from "../../modules/record/record.ts";
+import { chainOf, mountedKey, recordFacts, stampMs, storeFor } from "./snapshot.ts";
+import type { Seal, SnapshotJob } from "./snapshot.ts";
+import type { ObjectStore } from "./store.ts";
+import { hashAt } from "../../modules/record/ledger.ts";
 
-const digestOf = (entry: string) => createHash("sha256").update(entry).digest("hex");
+const sha256 = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
 
-export interface DrillJob { shops: { name: string; restored: string; live: string; /** The last daily fingerprint of the shop's ledger (B28), if one was published. */ published?: { seq: number; head: string; day: string } }[]; /** The restored copy may be this many entries behind the live record (Litestream lags by about a second). */ maxLagEntries: number }
-export interface DrillResult { name: string; ok: boolean; detail: string }
+/** One published daily fingerprint (state/fingerprints/<shop>.jsonl); `at` is when it was written. A file changed by hand is passed as one line with head "unreadable". */
+export interface PublishedLine { seq: number; head: string; day: string; at?: string }
+export interface DrillShop { name: string; live: string; /** The newest snapshot's seal, as the deployer kept it; none before the first snapshot. */ seal?: Seal; /** The shop's published fingerprints, oldest first (B28). */ published?: PublishedLine[] }
+/** What the deployer hands the drill container: where the snapshots are, and per shop its live database, its newest seal and its fingerprints. */
+export interface DrillJob { target: SnapshotJob["target"]; shops: DrillShop[] }
+export interface DrillResult { name: string; ok: boolean; detail: string; /** The snapshot that was checked. */ stamp?: string }
 
-export function drillShop(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
-  try { return check(shop, maxLag); } catch (e) { return { name: shop.name, ok: false, detail: `the restored file could not be used as a database (${(e as Error).message})` }; }
+export async function drillShop(shop: DrillShop, store: ObjectStore): Promise<DrillResult> {
+  const fail = (detail: string): DrillResult => ({ name: shop.name, ok: false, detail, ...(shop.seal ? { stamp: shop.seal.stamp } : {}) });
+  const seal = shop.seal;
+  if (!seal) return fail("no snapshot of this shop has been made yet, so there is nothing to check");
+  for (const o of seal.objects) {
+    let got: Buffer | undefined;
+    try { got = await store.get(o.key); } catch (e) { return fail(`the drill could not complete: the snapshot place would not let it read ${o.key} back (${(e as Error).message})`); }
+    if (!got) return fail(`${o.key} of the snapshot of ${seal.stamp} is not in the snapshot place`);
+    if (sha256(got) !== o.sha256) return fail(`${o.key} in the snapshot place is not the object that was written (its sha256 differs)`);
+  }
+  let r: { ok: boolean; detail: string };
+  try { r = checkRecord(shop.name, seal, shop.live, shop.published ?? [], stampMs(seal.stamp)); } catch (e) { r = { ok: false, detail: `the live database could not be read (${(e as Error).message})` }; }
+  return { name: shop.name, ok: r.ok, stamp: seal.stamp, detail: `snapshot ${seal.stamp}: ${r.ok ? `its ${seal.objects.length} objects read back unchanged; ${r.detail}` : r.detail}` };
 }
 
-function check(shop: DrillJob["shops"][number], maxLag: number): DrillResult {
-  if (!existsSync(shop.restored)) return { name: shop.name, ok: false, detail: "nothing was restored: the continuous copy has no database for this shop" };
-  const restored = new DatabaseSync(shop.restored, { readOnly: true });
+/** The copy's record, as the seal says it was, against the live record and the published fingerprints. */
+export function checkRecord(tenant: string, seal: Seal, livePath: string, published: readonly PublishedLine[], snapshotAtMs: number): { ok: boolean; detail: string } {
+  const copy = seal.record;
+  if (!copy) return existsSync(livePath) ? { ok: false, detail: "the snapshot holds no runtime database, but the shop has one" } : { ok: true, detail: "no runtime database yet, in the snapshot or live" };
+  if (!existsSync(livePath)) return { ok: copy.records === 0, detail: copy.records === 0 ? "a sound empty database; the live record does not exist yet" : "the live database is missing but the snapshot's has entries" };
+  const live = new DatabaseSync(livePath, { readOnly: true });
   try {
-    const integrity = (restored.prepare("PRAGMA integrity_check").get() as { integrity_check: string }).integrity_check;
-    if (integrity !== "ok") return { name: shop.name, ok: false, detail: `the restored database failed its integrity check (${integrity})` };
-    const back = recordFacts(restored);
-    if (!existsSync(shop.live)) return { name: shop.name, ok: back.records === 0, detail: back.records === 0 ? "restored fine; the live record does not exist yet" : "the live database is missing but the copy has entries" };
-    const live = new DatabaseSync(shop.live, { readOnly: true });
-    try {
-      const now = recordFacts(live);
-      if (back.lastSeq === null) return now.records === 0 ? (shop.published ? { name: shop.name, ok: false, detail: `both records are empty, but a fingerprint of ${shop.published.seq} entries was published on ${shop.published.day}` } : { name: shop.name, ok: true, detail: "restored fine; both records are empty" }) : { name: shop.name, ok: false, detail: `the restored record is empty but the live one has ${now.records} entries` };
-      const same = live.prepare("SELECT entry FROM record WHERE seq = ?").get(back.lastSeq) as { entry: string } | undefined;
-      const liveDigest = same ? digestOf(same.entry) : null;
-      if (liveDigest !== back.lastEntryDigest) return { name: shop.name, ok: false, detail: `the restored record's last entry (#${back.lastSeq}) is not the live record's entry #${back.lastSeq}` };
-      const lag = (now.lastSeq ?? 0) - back.lastSeq;
-      if (lag > maxLag) return { name: shop.name, ok: false, detail: `the restored copy is ${lag} entries behind the live record (more than ${maxLag})` };
-      const said = `restored ${back.records} entries, integrity ok, last entry #${back.lastSeq} matches the live record${lag > 0 ? ` (${lag} newer entries not yet copied)` : ""}`;
-      const fingerprint = compareFingerprint(restored, shop.name, shop.published);
-      return fingerprint.ok ? { name: shop.name, ok: true, detail: `${said}; ${fingerprint.detail}` } : { name: shop.name, ok: false, detail: fingerprint.detail };
-    } finally { live.close(); }
-  } finally { restored.close(); }
+    const now = recordFacts(live);
+    if (copy.lastSeq === null) {
+      // made before the record's first entry: good, unless a fingerprint of some entries had been published before it was made
+      const fp = compareFingerprints([], 0, published, snapshotAtMs);
+      return fp.ok ? { ok: true, detail: `a sound empty database, made before the record's first entry${now.records > 0 ? ` (the live record has ${now.records} now)` : ""}` } : fp;
+    }
+    const same = live.prepare("SELECT entry FROM record WHERE seq = ?").get(copy.lastSeq) as { entry: string } | undefined;
+    if (!same || sha256(same.entry) !== copy.lastEntryDigest) return { ok: false, detail: `the snapshot's last entry (#${copy.lastSeq}) is not the live record's entry #${copy.lastSeq}` };
+    let chain;
+    try { chain = chainOf(live, tenant); } catch (e) { return { ok: false, detail: `the live record could not be chained into its ledger (${(e as Error).message})` }; }
+    if (copy.head === null) return { ok: false, detail: "the snapshot's record could not be chained into its ledger when it was made" };
+    if (hashAt(chain, copy.lastSeq) !== copy.head) return { ok: false, detail: `the snapshot's record is not the start of the live record: their hash chains differ before entry #${copy.lastSeq}` };
+    const since = (now.lastSeq ?? 0) - copy.lastSeq;
+    const said = `a sound database of ${copy.records} entries (integrity checked when it was made), the start of the live record (the chain matches at #${copy.lastSeq}${since > 0 ? `; ${since} newer entries since` : ""})`;
+    const fp = compareFingerprints(chain, copy.lastSeq, published, snapshotAtMs);
+    return fp.ok ? { ok: true, detail: `${said}; ${fp.detail}` } : fp;
+  } finally { live.close(); }
 }
 
-/** The restored record's ledger hash at the published fingerprint's entry, against the hash that was published. */
-function compareFingerprint(db: DatabaseSync, tenant: string, published: DrillJob["shops"][number]["published"]): { ok: boolean; detail: string } {
-  if (!published) return { ok: true, detail: "no fingerprint of its record has been published yet, so none was compared" };
-  if (published.head === "unreadable") return { ok: false, detail: "the server's fingerprint file for this shop was changed by hand or a line was taken out, so the restored record could not be compared with what was published" };
-  const rows = db.prepare("SELECT entry FROM record ORDER BY seq").all() as { entry: string }[];
-  let chain;
-  try { chain = ledgerEntries(rows.map((r) => JSON.parse(r.entry) as RecordEntry), tenant); } catch (e) { return { ok: false, detail: `the restored record could not be chained into its ledger (${(e as Error).message})` }; }
-  const hash = hashAt(chain, published.seq);
-  if (hash === null) return { ok: false, detail: `the restored record has ${chain.length} entries, fewer than the ${published.seq} its fingerprint of ${published.day} covers` };
-  if (hash !== published.head) return { ok: false, detail: `the restored record does not match the fingerprint published on ${published.day} (entry ${published.seq}): it was changed after that fingerprint` };
-  return { ok: true, detail: `its chain matches the fingerprint published on ${published.day} (entry ${published.seq})` };
+/** The snapshot must hold the last fingerprint published before it was made; and the chain it shares with the live record must match the newest fingerprint it holds. */
+function compareFingerprints(chain: ReturnType<typeof chainOf>, lastSeq: number, published: readonly PublishedLine[], snapshotAtMs: number): { ok: boolean; detail: string } {
+  if (published.length === 0) return { ok: true, detail: "no fingerprint of its record has been published yet, so none was compared" };
+  if (published.some((p) => p.head === "unreadable")) return { ok: false, detail: "the server's fingerprint file for this shop was changed by hand or a line was taken out, so the record could not be compared with what was published" };
+  // published before the snapshot was taken: the snapshot must hold all of it (a line without a time counts as before)
+  const before = published.filter((p) => p.at === undefined || Date.parse(p.at) <= snapshotAtMs).at(-1);
+  if (before && before.seq > lastSeq) return { ok: false, detail: `the snapshot has ${lastSeq} entries, fewer than the ${before.seq} its fingerprint of ${before.day} covers` };
+  const held = published.filter((p) => p.seq <= lastSeq).at(-1);
+  if (!held) return { ok: true, detail: "the fingerprints published so far are all newer than this snapshot, so none was compared" };
+  if (hashAt(chain, held.seq) !== held.head) return { ok: false, detail: `the record does not match the fingerprint published on ${held.day} (entry ${held.seq}): it was changed after that fingerprint` };
+  return { ok: true, detail: `its chain matches the fingerprint published on ${held.day} (entry ${held.seq})` };
 }
 
 if (import.meta.main) {
   const job = JSON.parse(readFileSync(process.argv[2], "utf8")) as DrillJob;
-  console.log(JSON.stringify({ results: job.shops.map((s) => { try { return drillShop(s, job.maxLagEntries); } catch (e) { return { name: s.name, ok: false, detail: (e as Error).message }; } }) }));
+  const results: DrillResult[] = [];
+  let store: ObjectStore | undefined;
+  try { store = storeFor(job.target, mountedKey()); } catch (e) { for (const s of job.shops) results.push({ name: s.name, ok: false, detail: `the drill could not complete: ${(e as Error).message}` }); }
+  if (store) for (const s of job.shops) { try { results.push(await drillShop(s, store)); } catch (e) { results.push({ name: s.name, ok: false, detail: (e as Error).message }); } }
+  console.log(JSON.stringify({ results }));
 }

@@ -332,7 +332,7 @@ lets the slot go and answers "paused, contact the shop", as for its own check, a
   `refs.licence`; a UPI shop has none to close). Then a gate in `say` holds back every message, and the record says each one. Payments already made are still recorded.
 - **Back in order**: new bookings are taken at once; nothing from the wind-down is done by itself (the customer asks again). One `licence` record line marks each change.
 - **The owner's notice** (`server/licence.ts`, sent by `modules/licence/notice.ts` from the runtime core): `owner_licence_paused` at the wind-down,
-  `owner_licence_stopped` at the final stop (bookings still to come, other to-do items, and until when the partner can give the free copy), once for each
+  `owner_licence_stopped` at the final stop (online booking has stopped because the partner's service has ended, the bookings after today still in the calendar, and that the owner can write to hello@geometer.dev to be connected with another local partner; no copy or export is offered to the owner), once for each
   `paid_through`, as the utility templates `owner_service_paused` and `owner_service_stopped` when the owner's window is closed. They name the partner and never
   mention money. Hindi, Malayalam and Kannada are machine-written and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
 
@@ -664,6 +664,7 @@ The shop is in **button mode** when any of these holds, checked in this order. I
 - **Told once.** Three new owner notices, in four languages, each a WhatsApp template (`owner_ai_allowance_used`, `owner_ai_switched_off`, `owner_ai_not_answering`; `whatsapp-templates.json` is rebuilt). The builder or partner has no WhatsApp number in the settings, so they are told by the record (`ai_mode`, with the reason and the month, in plain words in `notes`), by `status().ai` and by a start-up/runtime log line, all of which the heartbeat can carry. The "already told" flags are kept with the store, so a restart or a repeated step does not tell them again.
 - **No customer is ever left without an answer.** A message the rules cannot read gets the list of the shop's services; a time the shop cannot give gets a list of other free times; a model that fails changes nothing about the reply except that the rules read it. A new test and three hand-check situations hold this (below).
 - **A tapped message never asks a model, whatever the mode.** The router is not even called.
+- **The month's AI cap is not button mode (9 Nov).** `runtime.json` says `"model": "off"` (the bundle writes it from fleet's answer once the shop's model spend reaches the plan's cap, price list `ai.cap`): the reader passes `skipSteps: ["model"]`, so the router leaves the language model out and records `skipped: model`. The rules and the decision model keep answering; a message neither can read is the rules' reading, so it gets the list of services, which is what button mode sends for that turn. The shop stays in AI mode, the owner is not told (fleet tells the partner), and the record has one `ai_mode` line a month (`mode: model_off`, `reason: ai_cap`). A decision model that is paused is still asked under the cap, because nothing after it could read the message. The same code serves Fees and Orders.
 
 ### A pause on a decision model that keeps failing (5 Nov)
 
@@ -733,7 +734,7 @@ You were asked: 3 · You approved: 2 · You said no: 1
 Could not confirm: 1
 Not checked: phone calls · walk-ins · and 17 more (see the full report). Checks were run by hand.
 Code: 7K2M-9QXD · Full report: https://reports.example.com/r/3f9a…/report-2027-02-en.html
-Set up by: Divya, local partner · Geometer
+Set up by: Divya, Sri Sai Digital · Geometer
 ★ Innovator
 ```
 
