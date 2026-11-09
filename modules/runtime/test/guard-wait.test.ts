@@ -3,6 +3,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ApiError, ConflictError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, WindowClosedError, waitsForGuard } from "../../core/faults.ts";
 import type { GuardInfo, SentCall } from "../../core/faults.ts";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { SCHEMA_VERSION, openStore } from "../store.ts";
 
 const call: SentCall = { method: "POST", path: "/x" };
 const guard = (code: string, more: Partial<GuardInfo> = {}): GuardInfo => ({ decision: "deny", code, sent: "no", retry: "later", ...more });
@@ -35,3 +40,53 @@ const rows: [string, unknown, string][] = [
 ];
 
 for (const [name, error, expected] of rows) test(`${expected}: ${name}`, () => assert.equal(waitsForGuard(error), expected === WAIT));
+
+// ---- the store ------------------------------------------------------------------------------------------------------------------------------------------------------
+
+const message = (id: string, from = "+919800000002") => ({ kind: "message" as const, message: { id, from, text: "hello", timestamp: 1000 } });
+
+test("a parked task stays pending, says what it waits for, and does not use up a try", () => {
+  const dir = mkdtempSync(join(tmpdir(), "guard-wait-"));
+  const db = openStore(dir);
+  try {
+    db.saveEvents([message("a")], 1000);
+    const id = db.nextPending()!.id;
+    assert.equal(db.nextPending()!.waitingOn, null);
+    assert.equal(db.startAttempt(id), 1);
+    db.parkTask(id, "payments", 5000, "Razorpay: could not connect (ECONNREFUSED).");
+    const parked = db.nextPending()!;
+    assert.deepEqual([parked.state, parked.attempts, parked.waitingOn, parked.retryAt], ["pending", 0, "payments", 5000]);
+    assert.deepEqual(db.taskCounts(), { pending: 1, done: 0, failed: 0 });
+    db.postponeTask(id, 9000);
+    assert.deepEqual([db.nextPending()!.retryAt, db.nextPending()!.attempts], [9000, 0]);
+  } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("a commit clears the wait, and a commit with failedWith ends the task as failed", () => {
+  const dir = mkdtempSync(join(tmpdir(), "guard-wait-"));
+  const db = openStore(dir);
+  try {
+    db.saveEvents([message("a"), message("b")], 1000);
+    db.parkTask("message:a", "calendar", 5000, "down");
+    db.commitStep({ taskId: "message:a", snapshot: "{}", entries: [], nowMs: 2000 });
+    assert.equal(db.nextPending()!.id, "message:b");
+    assert.deepEqual([db.nextPending()!.waitingOn, db.nextPending()!.retryAt], [null, null]);
+    db.commitStep({ taskId: "message:b", snapshot: "{}", entries: [], nowMs: 3000, failedWith: "The Guard stayed down." });
+    assert.deepEqual(db.taskCounts(), { pending: 0, done: 1, failed: 1 });
+  } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("a database written by the version before this one gets the waiting columns and keeps its pending task", () => {
+  const dir = mkdtempSync(join(tmpdir(), "guard-wait-"));
+  const raw = new DatabaseSync(join(dir, "agent.db"));
+  raw.exec("PRAGMA journal_mode = WAL");
+  raw.exec("CREATE TABLE tasks (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, payload TEXT NOT NULL, received_at INTEGER NOT NULL, state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending', 'done', 'failed')), attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT); CREATE TABLE state (id INTEGER PRIMARY KEY CHECK (id = 1), snapshot TEXT NOT NULL, saved_at INTEGER NOT NULL); CREATE TABLE record (seq INTEGER PRIMARY KEY, time TEXT NOT NULL, conversation TEXT NOT NULL, booking TEXT, action TEXT NOT NULL, outcome TEXT NOT NULL, entry TEXT NOT NULL); CREATE TABLE window (phone TEXT PRIMARY KEY, last_inbound_at INTEGER NOT NULL); PRAGMA user_version = 1");
+  raw.prepare("INSERT INTO tasks (id, kind, payload, received_at) VALUES ('message:old', 'message', '{}', 1000)").run();
+  raw.close();
+  const db = openStore(dir);
+  try {
+    assert.equal(SCHEMA_VERSION, 2);
+    const t = db.nextPending()!;
+    assert.deepEqual([t.id, t.waitingOn, t.retryAt], ["message:old", null, null]);
+  } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+});
