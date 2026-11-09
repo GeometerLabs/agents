@@ -7,6 +7,7 @@ import { KIRAN_PARENT, MEERA_PARENT, ROHAN_PARENT, SHARMA_PARENT, brightTuition,
 import { parseSettings } from "../src/settings.ts";
 import { balancePaise, createStore, moveTo } from "../src/due.ts";
 import { MARKERS } from "../crash-test/says.ts";
+import { createRuleParser } from "../src/adapters/rule-parser.ts";
 
 const IST = "Asia/Kolkata";
 const at = (month: number, day: number, hour = 10, minute = 0) => zonedToMs({ year: 2026, month, day }, { hour, minute }, IST);
@@ -145,6 +146,20 @@ test("button mode: switched off from outside, the agent reads with the rules onl
   assert.equal(notices.length, 1, "told once");
   assert.ok(w.messaging.sentTo(ROHAN_PARENT).at(-1)!.interactive?.buttons);
   assert.ok(w.record.entries().some((e) => e.action === "ai_mode" && e.refs.reason === "override"));
+});
+
+test("the month's AI cap (model: off): the language model is left out of every reading, the agent still answers, and the record says so once", async () => {
+  const rules = createRuleParser();
+  const skipped: (readonly string[] | undefined)[] = [];
+  const parser = { parse: rules.parse, parseDetailed: async (text: string, context: never, options?: { skipSteps?: readonly string[] }) => { skipped.push(options?.skipSteps); return { intent: await rules.parse(text, context) }; } };
+  const w = createWorld({ parser: parser as never, ai: { model: () => "off" } });
+  await w.advance(61);
+  await w.say("hello", { from: ROHAN_PARENT });
+  await w.say("asdf qwer", { from: ROHAN_PARENT });
+  assert.deepEqual(skipped, [["model"], ["model"]], "the reader asks the parser to leave the language model out");
+  assert.match(w.lastTextTo(ROHAN_PARENT), /did not understand/u, "what the rules cannot read gets the usual answer");
+  assert.deepEqual(w.record.entries().filter((e) => e.action === "ai_mode").map((e) => [e.refs.mode, e.refs.reason]), [["model_off", "ai_cap"]]);
+  assert.equal(w.messaging.sentTo(w.owner).filter((m) => m.text.includes("switched off")).length, 0, "no button-mode notice to the owner");
 });
 
 test("a payment event for a link the agent never made is ignored, and a refund event is checked against the payments service's own list", async () => {

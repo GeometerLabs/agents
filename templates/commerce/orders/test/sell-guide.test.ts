@@ -15,6 +15,7 @@ import { runOn } from "../crash-test/situations.ts";
 import { STRINGS } from "../report/strings.ts";
 import { WALK_OFFER_INR, WALK_QTY, printed, walk, walkSettings } from "../scripts/walkthrough.ts";
 import { annapurna, annapurnaRazorpay } from "../src/harness.ts";
+import { dayWords, formatRate, listInForce, stale } from "../../../../prices/render.ts";
 
 const SELL = new URL("../sell/", import.meta.url);
 const SPEC = new URL("../../../SELL-GUIDE.md", import.meta.url);
@@ -211,12 +212,26 @@ test("sell guide: every guide carries the one allowed claim about money word for
 
 // ---- amounts and numbers ------------------------------------------------------------------------------------------------
 
-test("sell guide: the ₹ amounts are the same set in every guide, section by section, and match the plan's figures", () => {
+// ---- the price figures: from the price list in force (prices/), through each guide's source file and prices/render.ts --------------------------------------
+const LIST = listInForce();
+/** A rate as the guides write it ("₹149", "2%", "3,000"). */
+const price = (id: string): string => formatRate(id, LIST.rates[id]);
+const asSet = (ids: string[]) => ids.map((id) => price(id).replace(/[\s,]/gu, ""));
+/** Razorpay's fee and the GST on it, on an amount, to the rupee: what "about ₹N" in the guide must say. */
+const razorpayOn = (inr: number): number => Math.round((inr * LIST.rates["razorpay.platform-fee"].basisPoints! * (10_000 + LIST.rates["razorpay.gst-on-fee"].basisPoints!)) / 10_000 / 10_000);
+
+test("sell guide: every guide is made from its source file and the price list in force (run node prices/render.ts after a new list)", () => {
+  assert.deepEqual(stale().filter((f) => f.startsWith("templates/commerce/orders/")), []);
+  for (const l of LANGUAGES) assert.ok(existsSync(new URL(`../sell/guide.${l}.src.md`, import.meta.url)), `${l}: the source file is there`);
+});
+
+test("sell guide: the ₹ amounts are the same set in every guide, section by section: the price list's, and the example shop's", () => {
   const en = guide("en");
-  // The plan (bundle/prices/2026-11-07.json): Business, ₹299 a live shop (₹179 for the first 100 innovators), ₹49 for each 1,000 extra messages; the shop ₹999 to ₹1,499 a month and
-  // ₹1,999 to ₹2,999 setup, WhatsApp ₹100 to ₹300 at cost. The example shop is Annapurna Tiffins: ₹120, ₹160 and ₹20, an approval line of ₹1,000, a refund limit of ₹300; the walkthrough
-  // order of ₹240 with a ₹120 advance. (The quoted printouts are left out: see the top.)
-  same(rupees(withoutFences(en)), new Set(["₹100", "₹1000", "₹120", "₹1499", "₹160", "₹179", "₹1999", "₹20", "₹240", "₹299", "₹2999", "₹300", "₹49", "₹999"]));
+  // From the price list in force: the Business plan, extra messages, the builder licence, the suggested shop price and setup, and WhatsApp at cost for a Business shop.
+  // The example shop is Annapurna Tiffins: ₹120, ₹160 and ₹20, an approval line of ₹1,000, a refund limit of ₹300; the walkthrough order of ₹240 with a ₹120 advance.
+  // (The quoted printouts are left out: see the top.)
+  const fromList = asSet(["plan.business.fee", "overage.extra", "licence.builder.fee", "guide.business.shop-min", "guide.business.shop-max", "guide.business.setup-min", "guide.business.setup-max", "guide.business.whatsapp"]);
+  same(rupees(withoutFences(en)), new Set([...fromList, "₹1000", "₹120", "₹160", "₹20", "₹240", "₹300"]));
   for (const l of TRANSLATED) {
     same(rupees(withoutFences(guide(l))), rupees(withoutFences(en)));
     const master = sections(en);
@@ -234,22 +249,12 @@ test("sell guide: every number is the same in every language", () => {
   for (const l of TRANSLATED) same(numbers(withoutFences(guide(l))), numbers(withoutFences(guide("en"))));
 });
 
-test("sell guide: section 6 gives the Business plan's prices in every language, as the decided price list has them", () => {
-  const prices = JSON.parse(readFileSync(new URL("../../../../bundle/prices/2026-11-07.json", import.meta.url), "utf8")).rates;
-  assert.equal(prices["plan.business.fee"].micro, 299_000_000);
-  assert.equal(prices["plan.business.allowance"].count, 3000);
-  assert.equal(prices["innovator.discount"].basisPoints, 4000);
-  assert.equal(prices["innovator.max-shops"].count, 25);
-  assert.equal(prices["innovator.places"].count, 100);
-  assert.equal(prices["overage.extra"].micro, 49_000_000);
-  assert.equal(prices["licence.self-host"].basisPoints, 5000);
-  assert.equal(prices["razorpay.platform-fee"].basisPoints, 200);
-  assert.equal(299 * 0.6, 179.4, "₹179 is the plan fee less 40%, rounded down to a whole rupee");
+test("sell guide: section 6 gives the Business plan, the builder licence and WhatsApp on the shop's bill from the list in force, in every language, and no first-100 price or own-server discount", () => {
   for (const l of LANGUAGES) {
-    const price = section(l, 6);
-    for (const amount of ["₹299", "₹179", "₹49", "₹999", "₹1,499", "₹1,999", "₹2,999", "₹100", "₹300"]) assert.ok(price.includes(amount), `${l}: section 6 must give ${amount}`);
-    for (const wanted of ["3,000", "40", "15", "100", "25", "2%"]) assert.ok(price.includes(wanted), `${l}: section 6 must give ${wanted}`);
-    for (const old of ["₹199", "₹499", "₹99 "]) assert.ok(!guide(l).includes(old), `${l}: ${old} is not Orders' price`);
+    const s6 = section(l, 6);
+    for (const id of ["plan.business.fee", "plan.business.allowance", "overage.extra", "licence.builder.fee", "guide.business.shop-min", "guide.business.shop-max", "guide.business.setup-min", "guide.business.setup-max", "guide.business.whatsapp", "innovator.places", "razorpay.platform-fee"]) assert.ok(s6.includes(price(id)), `${l}: section 6 must give ${id} (${price(id)})`);
+    for (const wanted of ["15", dayWords(LIST.date)]) assert.ok(s6.includes(wanted), `${l}: section 6 must give ${wanted}`);
+    assert.ok(!/₹\s?199\b|40\s?%|half (the )?plan|आधी कीमत|വിലയുടെ പകുതി|ಬೆಲೆಯ ಅರ್ಧ/u.test(guide(l)), `${l}: no old flat fee, no first-100 discount, no own-server discount`);
   }
   assert.ok(section("en", 6).includes("Business plan"));
 });

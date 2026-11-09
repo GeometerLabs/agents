@@ -166,7 +166,7 @@ The facts behind "it depends":
 
 ### "What does it cost?"
 
-> "It's [your monthly price] a month, and [your setup price] once for setting it up. WhatsApp's message fees are small, at cost. If you choose Razorpay, Razorpay takes its own fee, about 2% plus GST, on each payment; with UPI there is no gateway fee. Nothing else. You can stop with one message."
+> "It's [your monthly price] a month, and [your setup price] once for setting it up. WhatsApp's message fees are their own line on the bill, at cost. If you choose Razorpay, Razorpay takes its own fee, about 2% plus GST, on each payment; with UPI there is no gateway fee. Nothing else. You can stop with one message."
 
 Section 6 has the numbers.
 
@@ -231,7 +231,7 @@ If the shop wants the whole price taken online, set the advance to the full amou
 
 ## 6. Price
 
-Three payments, three different people. Keep them apart.
+Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 9 November 2026.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
@@ -239,10 +239,10 @@ Three payments, three different people. Keep them apart.
 | The shop | You | The monthly service (a starting point; you decide) | ₹999 to ₹1,499 |
 | The shop | You | Setup, once. You keep all of it. | ₹1,999 to ₹2,999 |
 | The shop | Razorpay | A fee on each payment | about 2% plus GST (only if the shop chooses Razorpay) |
-| As you agree with the shop | WhatsApp, at cost | Message fees | about ₹100 to ₹300 per shop per month |
+| The shop, as its own line on your bill | WhatsApp, at cost | Message fees | about ₹295 per shop per month |
 
-1. **Geometer's fee: ₹299 per live shop per month, before GST.** Orders takes an advance, so it is on the Business plan, with 3,000 messages a month included. The first 100 innovators (builders and partners) pay ₹179, which is 40% off, locked for as long as they stay, for up to 25 shops each, and they get an Innovator badge. Extra messages are ₹49 for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost. A builder who runs it on their own server pays half the plan price. A shop counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a shop goes live.
-2. **The shop's price: a starting point; you decide.** The table gives the range. The setup is ₹1,999 to ₹2,999, and you keep all of it.
+1. **Geometer's fee: ₹299 per live shop per month, before GST.** Orders takes an advance, so it is on the Business plan, with 3,000 messages a month included. Extra messages are ₹49 for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost, and so is the payment fee when you top up the balance. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays ₹149 a month for each live client business instead. The first 100 builders and partners with a shop live get the Innovator badge: a badge, not a discount. A shop counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a shop goes live.
+2. **The shop's price: a starting point; you decide.** The table gives the range. The setup is ₹1,999 to ₹2,999, and you keep all of it. Put WhatsApp on the shop's bill as its own line, at cost: a shop that sends more messages then pays for more, and your service price stays yours.
 3. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
 4. **Tell the shop about Razorpay's fee,** if it chooses Razorpay: "Razorpay keeps its fee even when you give a payment back." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins. The shop opens and pays for its own Razorpay account, and WhatsApp's message fees are at cost. You pay for nothing else to use Orders. On UPI there is no gateway fee.
 5. **When to take money:** Orders is not live anywhere, so do not take a setup fee or a first month, and do not give a start date. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
@@ -349,3 +349,5 @@ As of 8 November 2026 the Orders agent and its checks run against stand-in servi
 - for UPI, a real UPI app paying a real UPI ID: the owner's marks were tried, not a payment
 
 So: promise no start date, take no setup fee or first month (use the letter of intent), and say plainly "it is not live anywhere yet". Never say more than this.
+
+<!-- Made by prices/render.ts from guide.en.src.md and the price list in force. Edit that file, then run: node prices/render.ts -->

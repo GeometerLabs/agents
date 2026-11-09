@@ -105,7 +105,7 @@ The three payments are as in section 6 of the main guide: Geometer's plan (a ren
 
 1. **The shop's price: a starting point; you decide.** Near ₹999 for one machine, near ₹1,499 for a bigger centre. The setup is ₹1,999 to ₹2,999.
 2. **Rental is seasonal.** Before you sign, agree with the owner whether the price is every month or only for the months the helper is on, and write it in the shop terms. A shop counts for a month when it was live on 15 or more days, so a month with fewer live days is not counted; write that in the shop terms too.
-3. **One helper books one thing at a time.** For a centre with several machines, the price is for the centre, one shop, however many helpers it has. If it runs several workflows or branches together it may be Operations, from ₹999: ask Geometer's support before you quote.
+3. **One helper books one thing at a time.** For a centre with several machines, the price is for the centre, one shop, however many helpers it has. If it runs several workflows or branches together it may be Operations, ₹999 a month: ask Geometer's support before you quote.
 4. **Razorpay's fee on a bigger deposit:** "Razorpay keeps its fee even when you give a deposit back. On a ₹1,000 deposit that is about ₹24." Check Razorpay's current page.
 5. **Money flow only,** as in the main guide. Never say how much anyone will make.
 
@@ -143,3 +143,5 @@ Do the checklist in section 8 of the main guide (the WhatsApp check, the shared 
 ## 11. Be honest about what's true today
 
 As of 3 November 2026 the rental example (a made-up centre) has been checked by hand on practice services with test money: 33 of 33 situations held, and the closed-day request was left out because the example is open every day. No hiring centre is live. It books one thing at a time for the whole business, a booking is one day at most (8 hours), prices are fixed per job, it doesn't record the field, the driver, the weather or the rest of the payment, and it does not listen to a voice note (it replies with one line asking the customer to type). Kannada and Hindi wording is machine-written and waits for a native speaker's review. Never say more than this.
+
+<!-- Made by prices/render.ts from equipment-rental.en.src.md and the price list in force. Edit that file, then run: node prices/render.ts -->

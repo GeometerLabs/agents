@@ -10,7 +10,7 @@ import type { ModelConfig, ModelParser } from "../understanding/model-llm.ts";
 import type { AiPolicy } from "../understanding/ai-state.ts";
 import { systemOneFromEnv } from "../understanding/system-one.ts";
 import type { DecisionStep, ModelStep, RouterOptions } from "../understanding/router.ts";
-import { ClientError, aiOverrideReader, reportOptionsReader } from "./config.ts";
+import { ClientError, aiOverrideReader, modelSwitchReader, reportOptionsReader } from "./config.ts";
 import type { ClientFolder } from "./config.ts";
 import type { Runtime } from "./core.ts";
 import { startServer } from "./http.ts";
@@ -67,8 +67,8 @@ export interface UnderstandingHooks<Parser, Intent extends IntentBase = IntentBa
 
 /**
  * How this client reads messages and what it may spend: the three steps from runtime.json (rules always; a System One decision model if `decision` is set; a small
- * language model if `parser` is set), and the monthly allowance and outside switch. A step whose key is named but not in the environment is OFF, with a line saying
- * so: nothing is ever sent to a paid service without its key. With neither step, the rule parser reads everything, as before.
+ * language model if `parser` is set), and the monthly allowance, the outside switch and the AI cap. A step whose key is named but not in the environment is OFF, with
+ * a line saying so: nothing is ever sent to a paid service without its key. With neither step, the rule parser reads everything, as before.
  */
 export function buildUnderstanding<Parser, Intent extends IntentBase, Context, Options extends ParseOptionsBase>(client: Pick<ClientFolder, "folder" | "runtime">, deps: { clock: Clock; env?: Record<string, string | undefined>; log: (line: string) => void }, hooks: UnderstandingHooks<Parser, Intent, Context, Options>): { parser: Parser; ai: AiPolicy } {
   const env = deps.env ?? process.env;
@@ -88,6 +88,7 @@ export function buildUnderstanding<Parser, Intent extends IntentBase, Context, O
   const parser = decision || model ? hooks.createRouter({ decision, model, now: () => deps.clock.now() }) : hooks.createRuleParser();
   const ai: AiPolicy = {
     override: aiOverrideReader(client.folder, rt.ai === "buttons" ? "buttons" : "auto"),
+    model: modelSwitchReader(client.folder, rt.model === "off" ? "off" : "normal"),
     ...(rt.allowance ? { allowance: { ...(rt.allowance.messages !== undefined ? { messages: rt.allowance.messages } : {}), ...(rt.allowance.costInr !== undefined ? { costMicroInr: Math.round(rt.allowance.costInr * 1_000_000) } : {}) } } : {}),
     ...(rt.pauseMinutes !== undefined ? { pauseMinutes: rt.pauseMinutes } : {}),
   };

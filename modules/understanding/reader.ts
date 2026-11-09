@@ -2,7 +2,8 @@
 // button mode (and tell the owner, once) when the allowance is used up, the shop was switched to buttons from outside, or a model failed.
 //
 // The parser is the router (router.ts) or the rule parser alone. Whether a message may spend at all is decided here, from the store's AI state
-// (ai-state.ts): in button mode the parser is asked to read with the rules only, and a decision model that keeps failing is left out for a while (`skipSteps`).
+// (ai-state.ts): in button mode the parser is asked to read with the rules only, a decision model that keeps failing is left out for a while, and under the AI cap
+// (`model: "off"`) the language model is left out for the rest of the month (both through `skipSteps`).
 import type { Language } from "../language/languages.ts";
 import type { Clock } from "../core/clock.ts";
 import { MINUTE } from "../core/time.ts";
@@ -10,7 +11,7 @@ import type { Action, Outcome } from "../record/record.ts";
 import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, dayLocal, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
 import type { AiPolicy, AiStore, ButtonReason } from "./ai-state.ts";
 import { RULES } from "./model.ts";
-import type { IntentBase, IntentParser, ParseOptionsBase, Understood } from "./model.ts";
+import type { IntentBase, IntentParser, ParseOptionsBase, Step, Understood } from "./model.ts";
 
 export interface ReaderDeps<I extends IntentBase, C, O extends ParseOptionsBase> {
   parser: IntentParser<I, C, O>;
@@ -33,8 +34,10 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
 
   async function readIntent(text: string, options: O): Promise<{ intent: I; note?: string; understood: Understood }> {
     try {
-      // A step that keeps failing is left out for a while: the parser is told, and the next step reads the message at once.
-      const skipSteps = pausedSteps(store, clock.now(), timeZone);
+      // A step that keeps failing is left out for a while: the parser is told, and the next step reads the message at once. Under the AI cap the language model is
+      // left out: the rules and the decision model read the message, and what neither can read stays the rules' reading (the agent then sends the menu).
+      const paused: Step[] = pausedSteps(store, clock.now(), timeZone);
+      const skipSteps: Step[] = policy.model?.() === "off" ? [...paused, "model"] : paused;
       const asked = skipSteps.length > 0 ? { ...options, skipSteps } : options;
       // A parser that can say why it fell back (the model parser) gets that said in the record.
       const read = parser.parseDetailed ? await parser.parseDetailed(text, context, asked) : { intent: await parser.parse(text, context), fallbackReason: undefined, understood: undefined };
@@ -94,6 +97,21 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     }
   }
 
+  /**
+   * The AI cap: one line in the record, once a month, when the language model is first left out. Nobody else is told from here: fleet tells the partner (its `ai_cap`
+   * alert and warning), the owner's service does not change in a way they would notice, and a customer whose message the rules cannot read gets the menu.
+   */
+  function announceModelOff(): void {
+    if (policy.model?.() !== "off") return;
+    const state = stateFor(store, clock.now(), timeZone);
+    if (state.told.modelOff === state.month) return;
+    state.told.modelOff = state.month;
+    deps.log("ai_mode", "confirmed", { reason: "ai_cap", month: state.month }, {
+      notes: `This shop has used its AI allowance for the month (${state.month}): its model spend reached the plan's cap, so the shop's config says model: off. The language model (step 2) is left out until fleet turns it back on, on the 1st. The rules and the decision model (step 1) keep answering; a message they cannot read gets the menu, as in button mode. Every limit still holds. Fleet tells the partner; no customer or owner is told.`,
+      refs: { mode: "model_off", reason: "ai_cap", month: state.month },
+    });
+  }
+
   /** Is the shop in button mode right now, and why? */
   const mode = () => modeOf(store, policy, clock.now(), timeZone);
 
@@ -104,6 +122,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
    */
   async function announceButtonMode(): Promise<void> {
     announceSteps();
+    announceModelOff();
     const now = mode();
     if (!now.buttons) return;
     const state = stateFor(store, clock.now(), timeZone);

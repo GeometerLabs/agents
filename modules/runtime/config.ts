@@ -103,6 +103,11 @@ export interface RuntimeConfig {
   decision?: DecisionConfig;
   /** "buttons" turns every model step off for this shop (written by the bundle from fleet's heartbeat answer). Read again on every message, so it takes effect without a restart. Default "on". */
   ai?: "on" | "buttons";
+  /**
+   * "off" leaves the language model (step 2) out for this shop: the month's AI cap (written by the bundle from fleet's heartbeat answer once the month's model spend reaches
+   * the plan's cap). The rules and the decision model keep answering. Read again on every message, like `ai`. Default "normal".
+   */
+  model?: "normal" | "off";
   allowance?: AllowanceConfig;
   /** Minutes of button mode after a model step fails. Default 5. */
   pauseMinutes?: number;
@@ -251,7 +256,7 @@ function readReport(raw: unknown, folder: string, dataDir: string, errors: strin
 export function readRuntimeConfig(input: unknown, folder: string, shape: ServiceShape): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "allowance", "pauseMinutes", "report"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "model", "allowance", "pauseMinutes", "report"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -283,6 +288,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
   const parser = input.parser !== undefined ? readParser(input.parser, folder, errors) : undefined;
   const decision = input.decision !== undefined ? readDecision(input.decision, errors) : undefined;
   if (input.ai !== undefined && input.ai !== "on" && input.ai !== "buttons") errors.push('"ai" must be "on" (the default) or "buttons" (no AI: the agent reads with the rules and answers with buttons and lists).');
+  if (input.model !== undefined && input.model !== "normal" && input.model !== "off") errors.push('"model" must be "normal" (the default) or "off" (the month\'s AI cap: the language model is left out; the rules and the decision model keep answering).');
   const allowance = input.allowance !== undefined ? readAllowance(input.allowance, errors) : undefined;
   if (input.pauseMinutes !== undefined && (!Number.isInteger(input.pauseMinutes) || (input.pauseMinutes as number) < 1 || (input.pauseMinutes as number) > 1440)) errors.push('"pauseMinutes" must be a whole number of minutes from 1 to 1440: how long the agent uses buttons after a model step fails. Default 5.');
 
@@ -290,7 +296,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */
@@ -335,11 +341,11 @@ export function loadClientFolder<Settings>(folder: string, running: { pathway: s
 }
 
 /**
- * The outside switch: does this client's runtime.json say `"ai": "buttons"` right now? The file is looked at again whenever it has changed (by its modified time), so the bundle
- * can write the answer from fleet's heartbeat while the agent runs and the next message obeys it. A file that cannot be read or is not valid JSON for a moment (a write in the
- * middle) leaves the last answer standing; it never turns the switch off by accident.
+ * One key of this client's runtime.json, read again whenever the file has changed (by its modified time), so the bundle can write fleet's answer while the agent runs and
+ * the next message obeys it. A file that cannot be read or is not valid JSON for a moment (a write in the middle) leaves the last answer standing; it never turns a switch
+ * off by accident.
  */
-export function aiOverrideReader(folder: string, initial: "auto" | "buttons" = "auto"): () => "auto" | "buttons" {
+function runtimeKeyReader<T>(folder: string, initial: T, read: (raw: Obj) => T): () => T {
   const file = join(resolve(folder), "runtime.json");
   let last = initial;
   let seen = -1;
@@ -347,14 +353,21 @@ export function aiOverrideReader(folder: string, initial: "auto" | "buttons" = "
     try {
       const modified = statSync(file).mtimeMs;
       if (modified !== seen) {
-        const ai = (JSON.parse(readFileSync(file, "utf8")) as Obj).ai;
-        last = ai === "buttons" ? "buttons" : "auto";
+        last = read(JSON.parse(readFileSync(file, "utf8")) as Obj);
         seen = modified;
       }
     } catch { /* keep the last answer */ }
     return last;
   };
 }
+
+/** The outside switch: does this client's runtime.json say `"ai": "buttons"` right now? */
+export const aiOverrideReader = (folder: string, initial: "auto" | "buttons" = "auto"): (() => "auto" | "buttons") =>
+  runtimeKeyReader(folder, initial, (raw) => (raw.ai === "buttons" ? "buttons" : "auto"));
+
+/** The AI cap: does this client's runtime.json say `"model": "off"` right now? */
+export const modelSwitchReader = (folder: string, initial: "normal" | "off" = "normal"): (() => "normal" | "off") =>
+  runtimeKeyReader(folder, initial, (raw) => (raw.model === "off" ? "off" : "normal"));
 
 /**
  * The shop's licence (plan B13): client/licence.json, which the bundle's deployer writes from the signed lease it keeps (bundle/lib/licence.ts), read again whenever it

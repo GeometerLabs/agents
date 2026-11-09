@@ -115,7 +115,7 @@ The facts behind "it depends":
 
 ### "What does it cost?"
 
-> "It's [your monthly price] a month, and [your setup price] once for setting it up. Razorpay takes its own fee, about 2%, on each deposit. WhatsApp's message fees are small, at cost. Nothing else. You can stop with one message."
+> "It's [your monthly price] a month, and [your setup price] once for setting it up. Razorpay takes its own fee, about 2%, on each deposit. WhatsApp's message fees are their own line on the bill, at cost. Nothing else. You can stop with one message."
 
 Section 6 has the numbers.
 
@@ -152,23 +152,23 @@ Say this, word for word: "No booking without your confirmation; every refund tra
 
 ## 6. Price
 
-Three payments, three different people. Keep them apart.
+Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 9 November 2026.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
-| You | Geometer | Each live shop, each month, before GST. Basic: no money moves. | ₹99 |
+| You | Geometer | Each live shop, each month, before GST. Basic: no money moves. | ₹149 |
 | You | Geometer | The same, Business: deposits, refunds and the monthly report | ₹299 |
-| The shop | You | The monthly service, Basic (a starting point; you decide) | ₹399 to ₹599 |
+| The shop | You | The monthly service, Basic (a starting point; you decide) | ₹499 to ₹699 |
 | The shop | You | The monthly service, Business (a starting point; you decide) | ₹999 to ₹1,499 |
 | The shop | You | Setup for Basic, once. You keep all of it. | ₹999 to ₹1,999 |
 | The shop | You | Setup for Business, once. You keep all of it. | ₹1,999 to ₹2,999 |
 | The shop | Razorpay | A fee on each deposit | about 2% plus GST (only if the shop chooses Razorpay) |
-| As you agree with the shop | WhatsApp, at cost, from your prepaid balance | Message fees | about ₹100 to ₹300 per shop per month |
+| The shop, as its own line on your bill | WhatsApp, at cost, through your prepaid balance | Message fees | about ₹90 (Basic) or ₹295 (Business) per shop per month |
 
-1. **Geometer's plan: Basic ₹99 or Business ₹299 per live shop per month, before GST.** A shop counts for a month when it was live on 15 or more days. Basic holds bookings, reminders, prices and hours, no money moves, and includes 1,000 customer messages a month. Business adds deposits, refunds, the owner's OK on refunds above the limit and the monthly report, and includes 3,000 messages. A Bookings shop that takes a deposit is Business; one where no money moves is Basic. A shop with several workflows or branches is Operations, from ₹999 and 10,000 messages: ask Geometer's support before you quote it. You pay nothing to join: no joining fee, no kit, no paid training. The plan starts when a shop goes live.
-2. **Above the allowance, and WhatsApp.** Extra messages cost ₹49 for each 1,000, from your prepaid balance, and only with your yes; you get a warning at 80%. Or you move the shop up a plan. Meta's and the provider's WhatsApp charges are passed on at cost, from the same balance. Geometer never handles the money of shops or their customers.
-3. **The first 100 builders and partners are Innovators.** They get 40% off any plan, locked for as long as they stay, for up to 25 shops: Basic ₹59, Business ₹179. They also get an Innovator badge and a vote on the next template. Running on your own server, with your own AI key and WhatsApp account, costs half the plan price.
-4. **The shop's price: a starting point; you decide.** For Basic, ₹399 to ₹599 a month and a setup of ₹999 to ₹1,999. For Business, ₹999 to ₹1,499 a month and a setup of ₹1,999 to ₹2,999. The setup is all yours. What is left each month is the shop's price minus Geometer's plan and anything you pass on.
+1. **Geometer's plan: Basic ₹149 or Business ₹299 per live shop per month, before GST.** A shop counts for a month when it was live on 15 or more days. Basic holds bookings, reminders, prices and hours, no money moves, and includes 1,000 customer messages a month. Business adds deposits, refunds, the owner's OK on refunds above the limit and the monthly report, and includes 3,000 messages. A Bookings shop that takes a deposit is Business; one where no money moves is Basic. A shop with several workflows or branches is Operations, ₹999 a month with 10,000 messages: ask Geometer's support before you quote it. You pay nothing to join: no joining fee, no kit, no paid training. The plan starts when a shop goes live. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays ₹149 a month for each live client business instead, whatever the plan. The first 100 builders and partners with a shop live get the Innovator badge and a vote on the next template: a badge, not a discount.
+2. **Above the allowance, and WhatsApp.** Extra messages cost ₹49 for each 1,000, from your prepaid balance, and only with your yes; you get a warning at 80%. Or you move the shop up a plan. Meta's and the provider's WhatsApp charges are passed on at cost, from the same balance, and so is the payment fee when you top it up (2.36%). Geometer never handles the money of shops or their customers.
+3. **Put WhatsApp on the shop's bill as its own line, at cost.** Charge your monthly service, and add WhatsApp's message fees as a separate line at what they cost you. A shop that sends more messages then pays for more, and your service price stays yours. WhatsApp platforms in India bill messages as a separate line too.
+4. **The shop's price: a starting point; you decide.** For Basic, ₹499 to ₹699 a month and a setup of ₹999 to ₹1,999. For Business, ₹999 to ₹1,499 a month and a setup of ₹1,999 to ₹2,999. The setup is all yours. What you keep each month is your service price minus Geometer's plan; WhatsApp, on its own line, passes through at cost.
 5. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
 6. **Tell the shop about Razorpay's fee:** "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins. This applies only if the shop chooses Razorpay: on UPI there is no gateway fee.
 7. **When to take money:** until Geometer tells you your town is ready, don't take the setup fee or a first month. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
@@ -245,3 +245,5 @@ You are the shop's named, accountable person. Your name is on the report and the
 ## 11. Be honest about what's true today
 
 As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and Geometer tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this. UPI is built as a payment option: the owner marks each payment paid and sends each refund. It is not checked automatically, and it has not run in a live shop.
+
+<!-- Made by prices/render.ts from guide.en.src.md and the price list in force. Edit that file, then run: node prices/render.ts -->

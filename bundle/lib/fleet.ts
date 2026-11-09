@@ -1,13 +1,15 @@
 // What fleet says back (B48), and the two small files ops keeps for it in the fleet folder (<server>/fleet, the one folder ops can write):
 //
-//   <fleet>/<shop>.json        schema 1: the last answer fleet gave about this shop. The deployer reads `ai` from it (button mode, generate/shop.ts), the panel reads
-//                              the rest (plan, allowance, innovator badge, warnings). Written by ops only, on a 200, and only for a shop that is in the answer.
+//   <fleet>/<shop>.json        schema 1: the last answer fleet gave about this shop. The deployer reads `ai` (button mode) and `model` (the AI cap) from it
+//                              (generate/shop.ts), the panel reads the rest (plan, allowance, innovator badge, warnings). Written by ops only, on a 200, and only for a
+//                              shop that is in the answer.
 //   <fleet>/usage-baseline.json  schema 1: the cumulative counts fleet has accepted for each shop, so an ops restart sends the difference and never replays history.
 //   <fleet>/lease              the licence lease token of the last 200 answer, as it came (B13). Ops trusts nothing in it: the deployer checks it with the key pinned in
 //                              geometer.json and keeps it only if it is good and newer (lib/licence.ts).
 //
 // A missing, older or unreadable answer means "keep the last mode": nothing here ever turns a shop to normal because fleet was quiet. The reading is tolerant,
-// field by field: a field of the wrong type is dropped, never guessed, and an `ai` that is neither "normal" nor "buttons" makes no entry at all.
+// field by field: a field of the wrong type is dropped, never guessed, and an `ai` that is neither "normal" nor "buttons" makes no entry at all. A `model` that is
+// neither "normal" nor "off", or none, keeps the model mode the shop's file last had (the rest of the entry is still written).
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { writeAtomic } from "./util.ts";
@@ -23,7 +25,12 @@ export interface ShopAnswer {
   ai: "normal" | "buttons";
   /** Only with "buttons": why. Today only "overage_unfunded". */
   reason?: string;
-  /** Codes the panel says in the shop's language: allowance_80, balance_80, whatsapp_unsettled, licence_due, licence_warning, licence_wind_down, licence_stopped. */
+  /**
+   * The AI cap (price list `ai.cap`): "off" once the month's model spend reaches the cap for the shop's allowance and the extra messages bought, until the month turns and
+   * fleet says "normal" again. Only for a shop on Geometer's server with a plan; left out for builders' shops, which bring their own AI key. `ai: "buttons"` outranks it.
+   */
+  model?: "normal" | "off";
+  /** Codes the panel says in the shop's language: allowance_80, balance_80, whatsapp_unsettled, ai_cap, licence_due, licence_warning, licence_wind_down, licence_stopped. */
   warn: string[];
   /**
    * Where the shop stands in the licence's wind-down, as fleet worked it out (B13), for the panel only: its days (fleet's local days) and the renew link. Not signed: what
@@ -74,6 +81,7 @@ export function parseShopAnswer(raw: unknown): ShopAnswer | undefined {
   return {
     plan, allowance, innovator: raw.innovator === true, ai: raw.ai,
     ...(raw.ai === "buttons" && typeof raw.reason === "string" && CODE.test(raw.reason) ? { reason: raw.reason } : {}),
+    ...(raw.model === "normal" || raw.model === "off" ? { model: raw.model } : {}),
     warn,
     ...(licence ? { licence } : {}),
   };
@@ -110,13 +118,17 @@ export function readAnswerFile(path: string): AnswerFile | undefined {
   } catch { return undefined; }
 }
 
-/** Write the answer for each shop that is on this server and in the answer. Others are not touched: no entry means "keep the last mode". */
+/**
+ * Write the answer for each shop that is on this server and in the answer. Others are not touched: no entry means "keep the last mode". An entry with no usable `model`
+ * keeps the one the shop's file last had, so the AI cap is never lifted because fleet left the field out; only fleet saying "normal" lifts it.
+ */
 export function writeAnswerFiles(dir: string, shops: readonly string[], answer: Record<string, ShopAnswer>, at: Date): string[] {
   const written: string[] = [];
   for (const shop of shops) {
     const a = answer[shop];
     if (!a) continue;
-    const file: AnswerFile = { schema: 1, at: at.toISOString(), ...a };
+    const last = a.model === undefined ? readAnswerFile(join(dir, `${shop}.json`))?.model : undefined;
+    const file: AnswerFile = { schema: 1, at: at.toISOString(), ...a, ...(last ? { model: last } : {}) };
     writeAtomic(join(dir, `${shop}.json`), `${JSON.stringify(file, null, 2)}\n`);
     written.push(shop);
   }

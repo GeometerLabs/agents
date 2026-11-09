@@ -10,7 +10,8 @@ import { RATES } from "../../../modules/understanding/rates.ts";
 import { PRICES_DIR, formatRupees, latestPriceList, loadPriceList, monthlyCost, planFromSettings } from "../cost.ts";
 import type { CostLine, PriceList } from "../cost.ts";
 
-const prices = latestPriceList();
+// The arithmetic below is checked on the list of 9 Nov, by name: a dated list never changes, so these numbers hold whatever list comes into force later.
+const prices = loadPriceList(new URL("2026-11-09.json", PRICES_DIR).pathname);
 const settings = glowSalon();
 const line = (c: { lines: CostLine[] }, id: CostLine["id"]) => c.lines.find((l) => l.id === id)!;
 
@@ -19,16 +20,18 @@ const PINNED: Record<string, string> = {
   "2026-11-03.json": "0d77094e78500264c426f4e587f61299ad0d8bda7f450631306a6e15fa6db64f",
   "2026-11-04.json": "6c495979cdaf40194c811e6f9716ec1286afc02a8003418c5e68bb913d8a156d",
   "2026-11-05.json": "3af9b56ca2cfac974e363acf31263b21d437e9c9e28e3575adcfc50a3b88e2b9", // the proposal: latestPriceList skips it (see plans.test.ts)
-  "2026-11-07.json": "1534f0af36e98c1ca35ee22c9e219e59240248c5396021521a4d90278fb2444a", // the owner's decision of 5 Nov, in force
+  "2026-11-07.json": "1534f0af36e98c1ca35ee22c9e219e59240248c5396021521a4d90278fb2444a", // the owner's decision of 5 Nov
+  "2026-11-09.json": "19b0afdba0f6538839895cc9dad59b0f51cd80e49044a9fafde9f3866d085f04", // the owner's decision of 9 Nov: two price lists, partners and builders
 };
 
-test("the newest price list in force is the one dated 2026-11-07, and the bytes of every list are pinned: a changed price is a new file", () => {
-  assert.equal(prices.date, "2026-11-07");
-  const files = readdirSync(PRICES_DIR).filter((f) => f.endsWith(".json")).sort();
-  assert.deepEqual(files, Object.keys(PINNED), "a price list is in bundle/prices that is not pinned here (or the reverse)");
+test("the panel reads the newest dated list that is not a proposal, and the bytes of every list are pinned: a changed price is a new file", () => {
+  const files = readdirSync(PRICES_DIR).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f)).sort();
+  const newestInForce = [...files].reverse().find((f) => loadPriceList(new URL(f, PRICES_DIR).pathname).status !== "proposed");
+  assert.equal(`${latestPriceList().date}.json`, newestInForce);
+  assert.deepEqual(files, Object.keys(PINNED), "a price list is in prices/ that is not pinned here (or the reverse): add its sha256 to PINNED");
   for (const file of files) {
     const actual = createHash("sha256").update(readFileSync(new URL(file, PRICES_DIR))).digest("hex");
-    assert.equal(actual, PINNED[file], `bundle/prices/${file} was edited. Never edit a price list after it is committed: add a new file with a new date.`);
+    assert.equal(actual, PINNED[file], `prices/${file} was edited. Never edit a price list after it is committed: add a new file with a new date (node prices/new.ts <date>).`);
   }
 });
 
@@ -40,7 +43,8 @@ test("every rate names its source, the day it was read (not after the list's own
     assert.ok(r.note.length > 20, id);
   }
   assert.equal(prices.rates["geometer.fee"], undefined, "a plan replaces the flat fee of the 4 Nov list");
-  assert.deepEqual(["basic", "business", "operations"].map((p) => [prices.rates[`plan.${p}.fee`].source, prices.rates[`plan.${p}.fee`].micro]), [["docs/product/economics-and-pricing.md", 99_000_000], ["docs/product/economics-and-pricing.md", 299_000_000], ["docs/product/economics-and-pricing.md", 999_000_000]]);
+  assert.deepEqual(["basic", "business", "operations"].map((p) => [prices.rates[`plan.${p}.fee`].source, prices.rates[`plan.${p}.fee`].micro]), [["docs/product/economics-and-pricing.md", 149_000_000], ["docs/product/economics-and-pricing.md", 299_000_000], ["docs/product/economics-and-pricing.md", 999_000_000]]);
+  assert.equal(prices.rates["licence.builder.fee"].micro, 149_000_000, "the builder licence: INR 149 a live client business a month, flat");
   assert.equal(prices.rates["whatsapp.in.utility"].quality, "second-hand");
   assert.equal(prices.rates["razorpay.platform-fee"].quality, "conflicting");
   assert.equal(prices.exchange.USD?.quality, "assumed");
@@ -75,13 +79,13 @@ test("Glow Salon, 40 bookings a month: the line, to the paisa", () => {
   assert.deepEqual(c.total, { paise: 1380 + 18880 + 29900, complete: false, unknown: ["whatsapp-provider", "hosting"] });
   assert.ok(c.caveats.includes("early-estimate") && c.caveats.includes("provider-not-chosen") && c.caveats.includes("hosting-not-measured"));
   assert.ok(c.caveats.includes("payment-link-fee-conflict") && c.caveats.includes("whatsapp-rate-second-hand") && !c.caveats.includes("fee-not-priced"));
-  assert.deepEqual(c.priceList.date, "2026-11-07");
+  assert.deepEqual(c.priceList.date, "2026-11-09");
 });
 
 test("Geometer's plan comes from the price list and nowhere else: the plan follows what the agent does, a changed price changes the line, and a list without it is unknown, never INR 0", () => {
   const noDeposit = { ...settings, deposit: { ...settings.deposit, amountInr: 0 } };
   assert.deepEqual([planFromSettings(settings), planFromSettings(noDeposit)], ["business", "basic"], "a deposit is Business, no money moving is Basic");
-  assert.deepEqual([line(monthlyCost({ settings: noDeposit }, prices), "geometer").paise, line(monthlyCost({ settings: noDeposit }, prices), "geometer").plan], [9900, "basic"]);
+  assert.deepEqual([line(monthlyCost({ settings: noDeposit }, prices), "geometer").paise, line(monthlyCost({ settings: noDeposit }, prices), "geometer").plan], [14900, "basic"]);
   assert.equal(line(monthlyCost({ settings, plan: "operations" }, prices), "geometer").paise, 99900, "fleet's plan wins over the settings");
   const fee = prices.rates["plan.business.fee"];
   const dearer: PriceList = { ...prices, rates: { ...prices.rates, "plan.business.fee": { ...fee, micro: 399_000_000 } } };
@@ -156,7 +160,7 @@ test("rupees are written with Indian grouping and two places", () => {
 
 test("every model price in a bundle price list says what the one model rate table says (modules/understanding/rates/): the lists carry no second copy that could drift", () => {
   let compared = 0;
-  for (const file of readdirSync(PRICES_DIR).filter((f) => f.endsWith(".json")).sort()) {
+  for (const file of readdirSync(PRICES_DIR).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f)).sort()) {
     const list = loadPriceList(new URL(file, PRICES_DIR).pathname);
     for (const [id, r] of Object.entries(list.rates)) {
       const m = /^model\.(.+)\.(input|output)$/u.exec(id);

@@ -158,12 +158,12 @@ test("as its own process: it refuses to start without its settings, reads secret
   assert.match(err, /RAZORPAY_WEBHOOK_SECRET_FILE/);
 
   const child = run(env);
-  const out = await new Promise<string>((resolve, reject) => {
-    let seen = "";
-    const timer = setTimeout(() => reject(new Error(`the inbox did not start: ${seen}`)), 8000);
-    child.stderr.on("data", (d) => { seen += d; if (/listening on/.test(seen)) { clearTimeout(timer); resolve(seen); } });
-  });
-  try {
+  try { // the wait is inside: a slow start must not leave the child running, or node --test waits on it for ever
+    const out = await new Promise<string>((resolve, reject) => {
+      let seen = "";
+      const timer = setTimeout(() => reject(new Error(`the inbox did not start: ${seen}`)), 8000);
+      child.stderr.on("data", (d) => { seen += d; if (/listening on/.test(seen)) { clearTimeout(timer); resolve(seen); } });
+    });
     const port = /127\.0\.0\.1:(\d+)/.exec(out)![1];
     const body = razorpayBody;
     const bad = await fetch(`http://127.0.0.1:${port}/webhooks/razorpay`, { method: "POST", body, headers: { "x-razorpay-signature": "0".repeat(64) } });
@@ -172,7 +172,7 @@ test("as its own process: it refuses to start without its settings, reads secret
     const good = await fetch(`http://127.0.0.1:${port}/webhooks/razorpay`, { method: "POST", body, headers: razorpayHeaders(body) });
     assert.equal(good.status, 503);
     for (const secret of Object.values(SECRETS)) assert.ok(!out.includes(secret));
-  } finally { child.kill("SIGTERM"); }
+  } finally { child.kill("SIGKILL"); }
 });
 
 // ---- the runtime refuses more than 100 events or 256 KiB in one request ----
@@ -335,19 +335,19 @@ test("as its own process: with no WhatsApp setting it refuses to start; path-tok
   assert.match(err, /path-token/);
 
   const child = run({ ...base, WHATSAPP_VERIFICATION: "path-token", WHATSAPP_PATH_TOKEN_FILE: file("pt", `${TOKEN}\n`), WHATSAPP_ALLOWED_SOURCES: "127.0.0.0/8, ::1" });
-  const out = await new Promise<string>((resolve, reject) => {
-    let seen = "";
-    const timer = setTimeout(() => reject(new Error(`the inbox did not start: ${seen}`)), 8000);
-    child.stderr.on("data", (d) => { seen += d; if (/listening on/.test(seen)) { clearTimeout(timer); resolve(seen); } });
-  });
-  try {
+  try { // the wait is inside: a slow start must not leave the child running, or node --test waits on it for ever
+    const out = await new Promise<string>((resolve, reject) => {
+      let seen = "";
+      const timer = setTimeout(() => reject(new Error(`the inbox did not start: ${seen}`)), 8000);
+      child.stderr.on("data", (d) => { seen += d; if (/listening on/.test(seen)) { clearTimeout(timer); resolve(seen); } });
+    });
     const port = /127\.0\.0\.1:(\d+)/.exec(out)![1];
     const status = fixtureText("whatsapp-webhook-status-delivered.json");
     assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/${TOKEN}`, { method: "POST", body: status })).status, 200); // nothing to forward, so no runtime is needed
     assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/not-the-token`, { method: "POST", body: status })).status, 404);
     assert.match(out, /path-token/);
     assert.ok(!out.includes(TOKEN));
-  } finally { child.kill("SIGTERM"); }
+  } finally { child.kill("SIGKILL"); }
 });
 
 // ---- the owner's replies also go to the approvals relay ----------------------------------------------------------------------------

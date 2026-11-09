@@ -169,11 +169,12 @@ interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]
 
 export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
-// Fleet's button mode is part of what a shop is asked to be, so a flip redeploys it. It is only added to the hash when it is on, so a shop that never had it keeps the hash it has.
+// Fleet's button mode and the month's AI cap are part of what a shop is asked to be, so a flip redeploys it. Each is only added to the hash when it is on, so a shop that never had it
+// keeps the hash it has.
 // The monthly report's two live facts (who set the shop up, the Innovator badge) are part of it too, so a change of either redeploys the shop and rewrites its runtime config. They are
 // always in the hash, so every shop deployed before the report existed is redeployed once, which is what writes its `report` block.
-export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons" }) => ({
-  settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
+export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons"; fleetModel?: "off" }) => ({
+  settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), ...(f.fleetModel ? { fleetModel: f.fleetModel } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
 });
 export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
 

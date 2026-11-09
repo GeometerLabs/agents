@@ -242,10 +242,10 @@ ${l.renewUrl ? html`<p><a class="btn primary" href="${l.renewUrl}" rel="noopener
 ${l.staleSince ? html`<div class="notice" role="status">${w.stale(day(l.staleSince))}</div>` : ""}`;
 }
 
-/** The plan: its name and included messages, the Innovator badge, the price, and what fleet wants the partner to know (button mode, warnings). */
+/** The plan: its name and included messages, the Innovator badge, the price (the plan's, or the builder licence), and what fleet wants the partner to know (button mode, warnings). */
 function planBlock(c: Ctx, p: PlanView): Raw {
   const w = c.w.plan;
-  const price = p.price ? (p.innovator && p.price.yoursPaise !== p.price.listPaise ? w.priceInnovator(formatRupees(p.price.listPaise), formatRupees(p.price.yoursPaise)) : w.price(formatRupees(p.price.listPaise))) : "";
+  const price = p.price ? (p.price.licence ? w.priceBuilder(formatRupees(p.price.paise)) : w.price(formatRupees(p.price.paise))) : "";
   const warns = p.warn.filter((k): k is keyof typeof w.warn => k in w.warn);
   return html`<h2>${w.heading}</h2>
 ${p.plan ? html`<p class="big">${w.is(w.names[p.plan])}${p.innovator ? html` <span class="state live">${w.innovator}</span>` : ""}</p>
@@ -262,7 +262,7 @@ function costTable(c: Ctx, cost: MonthlyCost): Raw {
   const amount = (l: CostLine): string => (l.state === "unknown" ? w.unknown : formatRupees(l.paise as number));
   return html`<h2>${w.heading}</h2>
 <table class="cost"><tbody>
-${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
+${cost.lines.map((l) => html`<tr><td>${w.lines[l.id]}${l.licence ? ` (${c.w.plan.builderLicence})` : l.plan ? ` (${c.w.plan.names[l.plan]})` : ""}<small>${w.payer[l.payer]}</small></td><td class="n">${amount(l)}</td></tr>`)}
 <tr class="total"><td>${cost.total.complete ? w.total : w.subtotal(cost.total.unknown.length)}</td><td class="n">${formatRupees(cost.total.paise)}</td></tr>
 </tbody></table>
 <p class="note">${cost.basis === "early-estimate" ? w.early : w.fromRecord(cost.bookings)} ${w.assumption(cost.assumptions.bookingsPerMonth)} ${w.priceList(cost.priceList.date)}</p>
