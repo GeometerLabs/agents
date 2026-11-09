@@ -10,7 +10,7 @@ import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
 import { createFakePayments } from "../../../modules/payments/payments.ts";
 import { fakeClock } from "../../../modules/core/clock.ts";
 import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
-import { checkCalendar, checkConnections, checkRazorpay, checkWhatsApp } from "../checks.ts";
+import { checkCalendar, checkConnections, checkGateway, checkWhatsApp } from "../checks.ts";
 
 const SECRETS = { razorpayWebhookSecret: "standin-rzp-secret", whatsappAppSecret: "standin-wa-secret" };
 const PHONE_ID = "100000000000001";
@@ -103,20 +103,20 @@ test("a different account is never pinned: a failed check leaves the pins empty"
 
 test("Razorpay: a practice key where a live one is needed is refused before any call; a different key than the confirmed one is an account_mismatch", async () => {
   const dead = "http://127.0.0.1:1"; // nothing listens: a call would be `unreachable`, so these codes prove no call was made
-  const test1 = await checkRazorpay({ baseUrl: dead, keyId: "rzp_test_AbCdEf123456", expectedMode: "live" });
+  const test1 = await checkGateway({ provider: "razorpay", baseUrl: dead, keyId: "rzp_test_AbCdEf123456", expectedMode: "live" });
   assert.deepEqual([test1.code, test1.confirmed?.mode], ["wrong_mode", "test"]);
-  const changed = await checkRazorpay({ baseUrl: dead, keyId: "rzp_live_Second123456", pinnedKeyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
+  const changed = await checkGateway({ provider: "razorpay", baseUrl: dead, keyId: "rzp_live_Second123456", pinnedKeyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
   assert.equal(changed.code, "account_mismatch");
-  assert.equal((await checkRazorpay({ baseUrl: dead, keyId: "not a key", expectedMode: "live" })).code, "not_configured");
+  assert.equal((await checkGateway({ provider: "razorpay", baseUrl: dead, keyId: "not a key", expectedMode: "live" })).code, "not_configured");
 });
 
 test("Razorpay: a key that no longer works is not_allowed, and the result says it could not tell whose account it is", async () => {
   const w = await world();
   try {
     w.fakes.payments.inject("listRequests", "error");
-    const bad = await checkRazorpay({ baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
+    const bad = await checkGateway({ provider: "razorpay", baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
     assert.deepEqual([bad.ok, bad.code], [false, "not_allowed"]);
-    const good = await checkRazorpay({ baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
+    const good = await checkGateway({ provider: "razorpay", baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
     assert.equal(good.ok, true);
     assert.deepEqual(good.notChecked, ["payments-account"]);
   } finally { await w.close(); }
@@ -148,7 +148,7 @@ test("a provider that shows another calendar, a reply that is not what was asked
     assert.equal((await checkCalendar({ baseUrl: other.url, calendarId: CALENDAR })).code, "account_mismatch");
     assert.equal((await checkCalendar({ baseUrl: junk.url, calendarId: CALENDAR })).code, "unexpected_response");
     assert.equal((await checkWhatsApp({ baseUrl: junk.url, phoneNumberId: PHONE_ID, businessNumber: NUMBER })).code, "unexpected_response");
-    assert.equal((await checkRazorpay({ baseUrl: junk.url, expectedMode: "live" })).code, "unexpected_response");
+    assert.equal((await checkGateway({ provider: "razorpay", baseUrl: junk.url, expectedMode: "live" })).code, "unexpected_response");
     const leak = await checkWhatsApp({ baseUrl: leaky.url, phoneNumberId: PHONE_ID, businessNumber: NUMBER }, { agentToken: "gg_0123456789abcdef" });
     assert.equal(leak.code, "unexpected_response");
     assert.equal(leak.confirmed, undefined);
@@ -175,8 +175,8 @@ test("the panel's Guard credential is sent as a bearer token, and a stand-in wit
   const seen: (string | undefined)[] = [];
   const s = await stub((req, res) => { seen.push(req.headers.authorization); json(res, 200, { payment_links: [] }); });
   try {
-    await checkRazorpay({ baseUrl: s.url, expectedMode: "live" });
-    await checkRazorpay({ baseUrl: s.url, expectedMode: "live" }, { agentToken: "gg_panel_credential_1" });
+    await checkGateway({ provider: "razorpay", baseUrl: s.url, expectedMode: "live" });
+    await checkGateway({ provider: "razorpay", baseUrl: s.url, expectedMode: "live" }, { agentToken: "gg_panel_credential_1" });
     assert.deepEqual(seen, [undefined, "Bearer gg_panel_credential_1"]);
   } finally { await s.close(); }
 });

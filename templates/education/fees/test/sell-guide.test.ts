@@ -245,8 +245,11 @@ test("sell guide: section 6 gives the Business plan, the builder licence and Wha
 
 // ---- the walkthrough the guide teaches ------------------------------------------------------------------------------------
 
-/** One line of the printout, with the numbers that the stand-in services make up (the payment link and the receipt) made the same. */
-const plain = (line: string) => line.replace(/https:\/\/rzp\.io\/l\/plink\d+/g, "LINK").replace(/\bf-\d+\b/g, "RECEIPT").replace(/\s+/g, " ").trim();
+/**
+ * One line of the printout, with the numbers that the stand-in services make up (the payment link and the receipt) made the same. The guide still quotes the
+ * stand-in's old link (rzp.io) and the walkthrough prints the neutral one (B71); either is the link.
+ */
+const plain = (line: string) => line.replace(/https:\/\/(?:rzp\.io\/l\/plink|pay\.example\/req_)\d+/g, "LINK").replace(/\bf-\d+\b/g, "RECEIPT").replace(/\s+/g, " ").trim();
 
 test("sell guide: section 4 quotes the walkthrough exactly as the script prints it, in every language (only the link and the receipt number are free)", async () => {
   for (const l of LANGUAGES) {

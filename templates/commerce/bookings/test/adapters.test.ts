@@ -70,7 +70,7 @@ test("calendar update silentFailure leaves the event as it was; faults are used 
 test("payments: a link with a reference id; a second link with the same reference is refused", async () => {
   const pay = createFakePayments(fakeClock(T0));
   const link = await pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
-  assert.match(link.pay_url, /^https:\/\/rzp\.io\/l\//);
+  assert.match(link.pay_url, /^https:\/\/pay\.example\/req_/);
   assert.equal((await pay.listRequests({ reference_id: "b1" })).length, 1);
   await assert.rejects(() => pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" }), ApiError);
   const lax = createFakePayments(fakeClock(T0), { enforceUniqueReference: false });

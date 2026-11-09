@@ -38,10 +38,10 @@ test("every call the agent made is in the record as Guard decided it, 'done' is 
   // the reading agent's reads, and its refused try at a refund, are not in it
   assert.ok(!state.entries.some((e) => e.notes.includes("record-demo")));
   const by = (action: string, outcome: string) => state.entries.filter((e) => e.action === action && e.outcome === outcome);
-  assert.deepEqual(by("refund", "confirmed")[0].refs, { paymentId: "pmt_2", amountPaise: "20000", refundId: "rfd_5", approval: by("refund", "held_for_owner")[0].refs.approval }, "the refund id is the service's, and it is the approval the owner gave that released it");
+  assert.deepEqual(by("refund", "confirmed")[0].refs, { paymentId: "pay_2", amountPaise: "20000", refundId: "rfnd_5", approval: by("refund", "held_for_owner")[0].refs.approval }, "the refund id is the service's, and it is the approval the owner gave that released it");
   assert.equal(by("refund", "blocked")[0].decisions[0].ruleId, "refund-limit");
   assert.match(by("refund", "blocked")[0].decisions[0].reason, /^refund-at-most-deposit: amount 20001 is above the highest allowed value, 20000$/u);
-  assert.deepEqual(by("record_deposit", "confirmed")[0].refs, { paymentId: "pmt_2", linkId: "req_1", amountPaise: "20000" });
+  assert.deepEqual(by("record_deposit", "confirmed")[0].refs, { paymentId: "pay_2", linkId: "plink_1", amountPaise: "20000" });
   assert.equal(by("owner_decision", "confirmed")[0].refs.command, "approve");
   assert.equal(by("confirm_booking", "confirmed")[0].booking, "ev_1");
   // no customer's number is anywhere in it
@@ -56,7 +56,7 @@ test("the record is only added to: the same facts again add nothing, a thing the
   assert.deepEqual(again.state.entries, first.state.entries);
 
   // Razorpay does not (yet) show the refund the agent made: before the grace period nothing is written for it
-  const behind: Facts = { ...facts, service: { ...facts.service, refunds: { pmt_2: [] } } };
+  const behind: Facts = { ...facts, service: { ...facts.service, refunds: { pay_2: [] } } };
   const early = foldFacts(emptyRecord(), behind, options());
   assert.equal(early.state.entries.filter((e) => e.action === "refund" && e.outcome === "confirmed").length, 0);
   assert.equal(early.state.entries.filter((e) => e.action === "refund" && e.outcome === "unconfirmed").length, 0, "not written down as unconfirmed yet");
@@ -68,10 +68,10 @@ test("the record is only added to: the same facts again add nothing, a thing the
   // and when the service shows it, a confirmed entry follows (the report marks the earlier one 'settled later')
   const caught = foldFacts(late.state, facts, options(Date.parse(facts.at) + GRACE_MS + 120_000));
   assert.equal(caught.added.length, 1);
-  assert.deepEqual([caught.added[0].action, caught.added[0].outcome, caught.added[0].refs.refundId], ["refund", "confirmed", "rfd_5"]);
+  assert.deepEqual([caught.added[0].action, caught.added[0].outcome, caught.added[0].refs.refundId], ["refund", "confirmed", "rfnd_5"]);
   assert.equal(caught.added[0].seq, late.state.entries.length + 1);
   // a service that could not be asked is not the same as one that says no: neither confirms
-  const unreadable: Facts = { ...facts, service: { links: { "b-1": null }, refunds: { pmt_2: null }, events: null } };
+  const unreadable: Facts = { ...facts, service: { links: { "b-1": null }, refunds: { pay_2: null }, events: null } };
   const none = foldFacts(emptyRecord(), unreadable, options(Date.parse(facts.at) + GRACE_MS + 60_000)).state.entries;
   for (const action of ["create_deposit_link", "refund", "confirm_booking"]) assert.equal(none.filter((e) => e.action === action && e.outcome === "confirmed").length, 0, `${action} is not confirmed by a service that could not be asked`);
   assert.equal(none.filter((e) => e.action === "record_deposit").length, 0, "no payment is shown if the link could not be read");

@@ -181,7 +181,7 @@ test("status is counts only: bookings by state, tasks, the last step, the record
     assert.deepEqual([status.steps, status.errors], [1, 0]);
     assert.match(status.startedAt, /^\d{4}-\d\d-\d\dT/);
     const text = JSON.stringify(status);
-    for (const secret of ["haircut", "6pm", CUSTOMER.slice(3), "Glow", "plink", "rzp"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
+    for (const secret of ["haircut", "6pm", CUSTOMER.slice(3), "Glow", "plink", "rzp", "req_", "pmt_", "pay.example"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
   } finally { await t.close(); }
 });
 

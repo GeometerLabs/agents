@@ -148,7 +148,7 @@ test("panel invite asks the running panel for a one-time link (the first builder
 test("agent add prints the addresses and the one credential, check says what is missing, deploy and show print the addresses again, stop and status know the agent, and a shop's name is refused", async () => {
   const w = world({ "glow-salon": panelRuntime() }); try {
     const cli = (...args: string[]) => quiet(() => main([...args, "--server", w.root], w.ctx));
-    const added = await cli("agent", "add", "my-agent", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "shop@group.calendar.google.com");
+    const added = await cli("agent", "add", "my-agent", "--upstreams", "razorpay,whatsapp,calendar", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "shop@group.calendar.google.com");
     assert.equal(added.result, 0, added.err);
     const credential = /gg_[0-9a-f]{32}/u.exec(added.out)?.[0];
     assert.ok(credential, "the credential is printed");

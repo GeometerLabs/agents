@@ -110,7 +110,7 @@ test("status counts refunds waiting for the owner, as numbers only", async () =>
     const status = await (await t.get("/status")).json() as any;
     assert.deepEqual(status.refunds, { waitingForOwner: 1, beingSentAgain: 0, needBuilder: { total: 0 } });
     const text = JSON.stringify(status);
-    for (const secret of ["haircut", CUSTOMER.slice(3), "plink", "pay_", "ap-stub"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
+    for (const secret of ["haircut", CUSTOMER.slice(3), "plink", "pay_", "req_", "pmt_", "ap-stub"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
     assert.equal(t.lines.filter((l) => /needs the builder/.test(l)).length, 0, "no line: nothing needed the builder");
   } finally { await t.close(); }
 });

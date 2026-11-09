@@ -44,7 +44,7 @@ test("a UPI shop saves the payment block, asks for no Razorpay key, writes none,
     assert.deepEqual(settings.payment, { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } });
     assert.deepEqual(readdirSync(join(b.dir, "secrets-inbox", f.shop)).sort(), ["whatsapp_app_secret", "whatsapp_token"], "no Razorpay key or webhook secret was written");
     const store = openStores(b.config).store;
-    const meta = store.read<{ razorpay?: unknown; whatsapp?: unknown }>(`meta/${f.shop}.json`)!;
+    const meta = store.read<{ gateway?: unknown; whatsapp?: unknown }>(`meta/${f.shop}.json`)!;
     assert.ok(meta.whatsapp && meta.gateway === undefined);
     await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/5`);
     const checks = store.read<{ connections: { service: string }[] | null }>(`checks/${f.shop}.json`)!;
@@ -61,14 +61,14 @@ test("a UPI shop saves the payment block, asks for no Razorpay key, writes none,
   } finally { await b.close(); }
 });
 
-test("a Razorpay shop stays as it was: no payment block in its settings, and its Razorpay key and webhook secret are written and checked", async () => {
+test("a Razorpay shop says so in its settings (B71: no block is never read as a gateway), and its Razorpay key and webhook secret are written and checked", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner");
     const f = await setUp(b, divya, [STEP1, STEP2, STEP3, { ...STEP4, payMod: "razorpay" }]);
     await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", f.shop, "settings.json"), "utf8"));
-    assert.equal("payment" in settings, false);
+    assert.deepEqual(settings.payment, { module: "razorpay" });
     assert.deepEqual(readdirSync(join(b.dir, "secrets-inbox", f.shop)).sort(), ["razorpay_key", "razorpay_webhook_secret", "whatsapp_app_secret", "whatsapp_token"]);
     await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/5`);
     const checks = openStores(b.config).store.read<{ connections: { service: string }[] }>(`checks/${f.shop}.json`)!;

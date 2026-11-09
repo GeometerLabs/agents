@@ -84,7 +84,7 @@ test("the start page offers Orders with a button, and the five steps write the f
     assert.deepEqual(s.menu[0].names, { ml: ["Veg thali"], en: ["Veg thali"] }, "the item's name is its name in every language the shop speaks");
     assert.deepEqual(s.payment, { module: "upi", upi: { id: "sunrise@okicici", payee: "Sunrise Tiffins" } });
     assert.deepEqual(s.delivery?.slots.map((x) => x.id), ["lunch-2", "dinner-2"]);
-    assert.deepEqual(JSON.parse(readFileSync(join(folder, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_ID }, timeoutMs: 20000 } });
+    assert.deepEqual(JSON.parse(readFileSync(join(folder, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { messaging: { phoneNumberId: PHONE_ID }, timeoutMs: 20000 } }, "a UPI shop names no payments service (B71)");
     assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "orders@0.1.0");
     assert.equal(JSON.parse(readFileSync(join(folder, "owner.json"), "utf8")).template, "orders");
   } finally { await b.close(); }
