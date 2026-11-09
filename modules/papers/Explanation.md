@@ -19,7 +19,7 @@ Three signed papers made from a shop's record, for every template. They are seal
 
 ## How a person is found
 
-A statement is asked for by a WhatsApp number. `isPerson` matches it against a case's customer as the number itself (the shop's store) and, given the shop's key, as the export's fingerprints of it (`p-` + 12 hex digits of its HMAC-SHA256, `modules/record/fingerprint.ts`, the same function the bundle's export uses), so the same statement comes out of either. Without the key a fingerprint matches nobody: the panel holds a copy for this, and `papers.ts statement` takes `--person-key <file>`. The panel takes the number only in a POST body: it is never in an address, a log line or a command line.
+A statement is asked for by a WhatsApp number. `isPerson` matches it against a case's customer as the number itself (the shop's store) and, given the shop's key, as the export's fingerprints of it (`p-` + 12 hex digits of its HMAC-SHA256, `modules/record/fingerprint.ts`, the same function the bundle's export uses), so the same statement comes out of either. A message id written with the shop's key (`m-…`) is not an id WhatsApp knows, so the record of one case does not list it under what WhatsApp's own record showed. Without the key a fingerprint matches nobody: the panel holds a copy for this, and `papers.ts statement` takes `--person-key <file>`. The panel takes the number only in a POST body: it is never in an address, a log line or a command line.
 
 ## What the record of one case puts side by side
 

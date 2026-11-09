@@ -18,7 +18,7 @@ import { buildExport, packageTarGz } from "../export/build.ts";
 import { sourcesFor } from "../export/sources.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
 import { RECORD_KEY_FILE, derivedKey, personKeyFile, readSecretFile, secretFile, writeSecretFile } from "../lib/secrets.ts";
-import { OLD_PERSON_FORM, PERSON_FORM, personLabel } from "../../modules/record/fingerprint.ts";
+import { OLD_PERSON_FORM, PERSON_FORM, keyIdOf, personLabel } from "../../modules/record/fingerprint.ts";
 import { headOf } from "../../modules/record/ledger.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 import { PERSON_KEY_HEX, panelRuntime, writePersonKey } from "./helpers.ts";
@@ -111,7 +111,8 @@ test("the export's fingerprints are keyed: not the plain sha256, different under
     assert.equal(JSON.parse(readFileSync(join(out, "ledger.json"), "utf8")).at(-1).hash, headOf(record, "s")!.head, "a fingerprint is not chained, so changing its form moves no hash");
 
     const form = JSON.parse(readFileSync(join(out, "person-form.json"), "utf8"));
-    assert.deepEqual(form, { schema: 1, form: PERSON_FORM, inputs: { keyed: 1, older: 0 }, messageIds: { fingerprinted: 1, older: 0 } });
+    assert.deepEqual(form, { schema: 1, form: PERSON_FORM, keyId: keyIdOf(key), inputs: { keyed: 1, older: 0 }, messageIds: { fingerprinted: 1, older: 0 } });
+    assert.ok(!PERSON_KEY_HEX.includes(form.keyId), "the id shows nothing of the key");
 
     assert.equal(exportShop({ name: "t", db, out: join(dir, "t"), personKeyFile: join(dir, "absent") }).ok, false, "no key: not exported, never exported unkeyed");
     assert.ok(!existsSync(join(dir, "t")));
@@ -225,8 +226,11 @@ test("`restore` puts the snapshot's key back, with its copies, before the runtim
     assert.match(await restoreShop(w.ctx, "glow-salon", { identity }), /holds no fingerprint key .* keeps the one it has/u);
     assert.equal(readSecretFile(personKeyFile(w.root, "glow-salon")), restored);
 
-    w.ctx.runner = run("not a key", () => undefined);
-    await assert.rejects(restoreShop(w.ctx, "glow-salon", { identity }), /is not a key/u);
+    const stopped: string[][] = [];
+    const bad = run("not a key", () => undefined);
+    w.ctx.runner = fakeRunner((c, args, o) => { stopped.push(args); return bad.run(c, args, o) as never; });
+    await assert.rejects(restoreShop(w.ctx, "glow-salon", { identity }), /No snapshot was restored; the shop was not touched and is still running\. The fingerprint key in this snapshot is not a key/u);
+    assert.ok(stopped.every((a) => !a.includes("stop")), "a bad key is refused before the shop is stopped: it is never left down");
     assert.equal(readSecretFile(personKeyFile(w.root, "glow-salon")), restored, "something that is not a key is never put in place");
   } finally { w.done(); }
 });

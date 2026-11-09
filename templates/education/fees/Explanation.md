@@ -46,6 +46,8 @@ Bugs the tests found while this was built, and what changed: reminders that fell
 
 ## The monthly report
 
+The report's digest of a record entry leaves out the note as well as the parent's number, as the record's hash chain does: a note names a child ("the fee for Rohan Mehta"), and a digest of it could be tested by guessing the name (B69). It also means a report made from the centre's own record and one made from the export have the same digest. A live runtime writes the record with `RECORD_KEY_FILE` (`bundle/Explanation.md`).
+
 The report is the Bookings design on the shared parts (page frame, seal block, signing, claim words, the monthly job), with Fees' own counts: collected, given back, still to collect, what was taken off (by the owner, and within the limit), late fees added, reminders by language, what the owner was asked, approved and refused, what each limit stopped, parents who sent STOP, and what was not counted and not tested. Choices to review:
 
 - **"Still to collect" is read from the fees as they stand when the report is made**, not from the record, because the record holds what happened, not what is owed now. A report made later for an older month would show today's balances; the report says when it was made.

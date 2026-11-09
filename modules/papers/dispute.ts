@@ -86,7 +86,8 @@ function rowOf(e: RecordEntry, d: PaperWords, extra: Record<string, string>, led
   if (e.refs.approval) row.limits.push(d.dispute.guardHeld(e.refs.approval));
   if (e.outcome === "confirmed" && !OWNER_ACTIONS.has(e.action) && !CUSTOMER_ACTIONS.has(e.action) && !RECEIVED.has(e.action) && e.refs.markedBy !== "owner") {
     const byService = new Map<string, string[]>();
-    for (const [k, v] of Object.entries(e.refs)) if (SERVICE_OF[k] && v) byService.set(SERVICE_OF[k], [...(byService.get(SERVICE_OF[k]) ?? []), v]);
+    // a message id kept as a fingerprint (m-..., B69) is not an id WhatsApp knows, so the paper does not say WhatsApp's record showed it
+    for (const [k, v] of Object.entries(e.refs)) if (SERVICE_OF[k] && v && !(k === "messageId" && /^m-[0-9a-f]{12}$/u.test(v))) byService.set(SERVICE_OF[k], [...(byService.get(SERVICE_OF[k]) ?? []), v]);
     for (const [s, ids] of byService) row.services.push(d.dispute.showed(d.dispute.service[s as keyof PaperWords["dispute"]["service"]], ids.join(", ") + amount));
   }
   return row;
