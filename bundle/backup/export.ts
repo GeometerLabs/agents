@@ -23,7 +23,8 @@ import type { RecordEntry } from "../../modules/record/record.ts";
 import type { RateSource, UsageRates, UsageTotals } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 import { ledgerEntries } from "../../modules/record/ledger.ts";
-import { PERSON_FORM, parseKey, personFingerprint } from "../../modules/record/fingerprint.ts";
+import { PERSON_FORM, personFingerprint } from "../../modules/record/fingerprint.ts";
+import { parseKey } from "../../modules/record/key-file.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string; /** The file (mounted read-only) that holds the shop's key (B69): the job file names it, never carries it. */ personKeyFile: string }[] }
 /**

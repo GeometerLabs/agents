@@ -32,6 +32,8 @@ function exportOrders(b: Boot, shop: string, orders: unknown[], entries: unknown
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "record.json"), JSON.stringify(entries));
   writeFileSync(join(dir, "orders.json"), JSON.stringify(orders));
+  b.personKey(shop); // B69: as the deployer leaves it: the shop's key with the panel, and the marker that the export is in the keyed form
+  writeFileSync(join(dir, "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
 }
 
 test("an orders@ lock is an Orders shop in every place the panel decides by template", async () => {
