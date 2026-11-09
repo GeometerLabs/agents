@@ -8,8 +8,9 @@ Owner's decision, 3 November 2026: every template comes with a guide to pitching
 
 | File | What it is |
 | --- | --- |
-| `sell/guide.en.md` | The master, in English |
-| `sell/guide.<lang>.md` | One per other language the template speaks (`LANGUAGES` in `src/settings.ts`) |
+| `sell/guide.en.src.md` | The master, in English. Every price is a placeholder from the repo's price list, `{{plan.basic.fee}}` or `{{guide.business.shop-min}}` (ids in `prices/README.md`), and `{{date}}` is the list's day |
+| `sell/guide.<lang>.src.md` | One per other language the template speaks (`LANGUAGES` in `src/settings.ts`), with the same placeholders |
+| `sell/guide.<lang>.md` | What partners read: made from the source and the price list in force by `node prices/render.ts`. Never edit it by hand; the test fails when it is behind its source or the list |
 | `sell/one-pager.<lang>.html` | A printable single page the partner leaves with the owner, one per language |
 | `test/sell-guide.test.ts` | Checks all of the above |
 
@@ -59,7 +60,7 @@ A single page the partner leaves behind. Self-contained: inline CSS, no scripts,
 ## Languages
 
 - English is the master. The other files are real translations in natural spoken register, with the loanwords locals use ("booking", "deposit", "link").
-- Amounts, numbers and the order of sections are identical in every language. Write every amount as `₹450` in Western digits, a range as `₹999 to ₹1,999`.
+- Amounts, numbers and the order of sections are identical in every language. Write every amount as `₹450` in Western digits, a range as `₹999 to ₹1,999`. A price Geometer charges or suggests is never typed: it is a placeholder, so a new price list changes every guide with one command (`node prices/render.ts`). The example shop's own prices (a ₹450 haircut) are typed.
 - Each translation starts with a banner: machine-written, needs native review, plus the date. On a one-page sheet it is an HTML comment, so the owner's printed copy stays clean. It stays until a native speaker has reviewed the file. Add a Deferred row for the review.
 - Anything the owner will tap, read or hear is quoted exactly as the product shows it, and the test checks it against the product's own strings. If a demo step is taught, the test drives the demo through it for every language, on each of the seven days a partner might start (a shop's closed day changes what the demo does).
 

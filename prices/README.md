@@ -38,11 +38,11 @@ Since 9 Nov 2026, two price lists and nothing else:
 | Reader | How |
 |---|---|
 | The deploy bundle's panel (`bundle/panel/cost.ts`) | Reads this folder directly: the running-cost line, the plan on the shop page |
-| The sell guides (`templates/*/sell/guide.*.md`) | Rendered from a source file with `{{id}}` placeholders; a test fails if a rendered guide is not current |
+| The sell guides (`templates/*/*/sell/guide.*.md` and `sell/variants/`) | Made from a source file beside each (`guide.<lang>.src.md`) with `{{id}}` placeholders and `{{date}}`, by `node prices/render.ts` (`--check` writes nothing and fails if one is behind). `render.test.ts` and each template's sell-guide test fail if a guide is not what its source and the list in force make |
 | Fleet (`monorepo/apps/fleet/prices/list/`) | A byte-for-byte copy of the lists from 9 Nov 2026 on, made by `npm run prices:sync` in `apps/fleet`. Fleet's drift test fails if its copy differs from this folder. Fleet's own cost estimates (server share, support minute) are not prices and live only in fleet |
 | The website (`public-web/src/data/price-list.json`) | A copy pulled by `npm run prices:pull` |
 
-After adding a list here, run each copy's sync and its tests.
+After adding a list here, run `node prices/render.ts`, then each copy's sync and its tests.
 
 ## The lists
 

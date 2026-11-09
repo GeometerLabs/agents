@@ -68,7 +68,7 @@ test("the list of 7 Nov carries every term of the 5 Nov proposal unchanged, as t
   assert.doesNotMatch(readFileSync(decided.file, "utf8"), new RegExp("found" + "ing|found" + "er|proposed", "iu"));
 });
 
-test("the list of 9 Nov: two price lists. Every rate of 7 Nov that is still true is carried over; only Basic's fee changes; the discount, its cap and the half price are gone", () => {
+test("the list of 9 Nov: two price lists. Every rate of 7 Nov that is still true is carried over; only Basic's fee changes; the discount, its cap and the own-server discount are gone", () => {
   const before = byName("2026-11-07");
   const now = byName("2026-11-09");
   const gone = Object.keys(before.rates).filter((id) => now.rates[id] === undefined);
