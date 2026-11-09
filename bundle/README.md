@@ -382,7 +382,7 @@ Restoring a snapshot needs the secret half of the age key, which is not on the s
 <server>/requests/<shop>.stop.json  a request to stop a shop                                          the panel writes; the deployer acts, shows it in status, removes it
 <server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads
 <server>/exports/<shop>/          record.json and bookings.json, without customers' numbers           the deployer writes; the panel's monthly report reads
-<server>/fleet/<shop>.json        fleet's last answer: plan, allowance, innovator, ai ("buttons")     ops writes (the one folder it can write); the deployer and the panel read
+<server>/fleet/<shop>.json        fleet's last answer: plan, allowance, innovator, ai, model, warn    ops writes (the one folder it can write); the deployer and the panel read
 <server>/fleet/usage-baseline.json  the cost meter's counts fleet has accepted                         ops writes and reads, so a restart does not replay history
 <server>/panel/                   the panel's own data
 <server>/state/                   the deployer's memory (Guard bundle versions, who stopped a shop, lock history, the last update and rollback step by step)
