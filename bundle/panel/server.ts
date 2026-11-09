@@ -245,18 +245,18 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const status = accounts.inviteStatus(token);
     const role = accounts.inviteRole(token);
     if (status !== "ok" || !role) return page(r, status === "unknown" ? 404 : 410, errorPage(r.ctx(), 410, r.ctx().w.join.problems[`invite-${status === "ok" ? "unknown" : status}`]));
-    page(r, 200, joinPage(r.ctx(), { token, role, values: { name: "", handle: "", language: r.lang } }));
+    page(r, 200, joinPage(r.ctx(), { token, role, values: { name: "", company: "", handle: "", language: r.lang } }));
   });
   on("POST", /^\/join$/u, "public", async (r) => {
     const f = r.form;
     const w = r.ctx().w;
     const token = f.token ?? "";
-    const result = await accounts.redeem(token, { handle: f.handle ?? "", name: f.name ?? "", passphrase: f.passphrase ?? "", language: f.language ?? "en" });
+    const result = await accounts.redeem(token, { handle: f.handle ?? "", name: f.name ?? "", company: f.company ?? "", passphrase: f.passphrase ?? "", language: f.language ?? "en" });
     if (!result.ok) {
       const gone = result.reason.startsWith("invite-");
       const role = accounts.inviteRole(token);
       if (gone || !role) return page(r, 410, errorPage(r.ctx(), 410, w.join.problems[result.reason as keyof typeof w.join.problems]));
-      return page(r, 400, joinPage(r.ctx(), { token, role, error: w.join.problems[result.reason as keyof typeof w.join.problems], values: { name: (f.name ?? "").slice(0, 80), handle: (f.handle ?? "").slice(0, 40), language: f.language ?? "en" } }));
+      return page(r, 400, joinPage(r.ctx(), { token, role, error: w.join.problems[result.reason as keyof typeof w.join.problems], values: { name: (f.name ?? "").slice(0, 80), company: (f.company ?? "").slice(0, 60), handle: (f.handle ?? "").slice(0, 40), language: f.language ?? "en" } }));
     }
     redirect(r, "/shops", [sessions.issue(result.account.id, result.account.sessionVersion).setCookie]);
   });

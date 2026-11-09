@@ -12,7 +12,7 @@ import { hide } from "../backup/export.ts";
 import { HANDOVER_ACTION, handoverHash, newHandoverCode } from "../../modules/approvals/handover.ts";
 import type { Account, Accounts } from "./accounts.ts";
 import { readExport } from "./activity.ts";
-import { HANDOVER_REASONS } from "./contract.ts";
+import { HANDOVER_REASONS, companyOf } from "./contract.ts";
 import type { AssignmentFile, HandoverReason, Person } from "./contract.ts";
 import type { Shops } from "./shops.ts";
 import type { Store } from "./store.ts";
@@ -97,7 +97,8 @@ export function createHandover(shops: Shops, accounts: Accounts, store: Store, n
       const at = now();
       const move: PendingMove = {
         schema: 1, id: `mv_${at.toString(36)}`, shop, requestedBy: { id: by.id, name: by.name }, reason: input.reason as HandoverReason,
-        from: { accountId: served.accountId, accountName: served.accountName, role: served.role }, to: { accountId: target.id, accountName: target.name, role: target.role },
+        from: { accountId: served.accountId, accountName: served.accountName, ...(served.company ? { company: served.company } : {}), role: served.role },
+        to: { accountId: target.id, accountName: target.name, ...(companyOf(target.company) ? { company: companyOf(target.company) as string } : {}), role: target.role },
         codeHash: handoverHash(code), requestedAt: iso(at), expiresAt: iso(at + HANDOVER_HOURS * 3_600_000),
       };
       store.write(key(shop), move);

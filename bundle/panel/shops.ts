@@ -12,7 +12,7 @@ import { kindFor } from "../lib/kinds.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
-import { SHOP_ID, parseAssignmentFile, parseFleetAnswer, parseOwner, parseReportFile, parseStatus, parseStopRequest, resolvePreparedBy, servedByOf, serverPaths } from "./contract.ts";
+import { SHOP_ID, companyOf, parseAssignmentFile, parseFleetAnswer, parseOwner, parseReportFile, parseStatus, parseStopRequest, resolvePreparedBy, servedByOf, serverPaths } from "./contract.ts";
 import type { AssignmentFile, FleetAnswer, HandoverReason, OwnerFile, Person, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
 import type { Store } from "./store.ts";
 
@@ -84,7 +84,7 @@ export function createShops(config: PanelConfig, store: Store) {
       const before = api.assignment(id);
       const served = api.servedBy(id);
       if (!served) throw new Error("This shop has nobody it is served by, so there is nobody to move it from.");
-      const from: Person = { accountId: served.accountId, accountName: served.accountName, role: served.role };
+      const from: Person = { accountId: served.accountId, accountName: served.accountName, ...(served.company ? { company: served.company } : {}), role: served.role };
       const at = iso(now());
       const next: AssignmentFile = { schema: 1, current: { ...to, since: at }, history: [...(before?.history ?? []), { at, from, to, reason, ownerAgreed: agreed }] };
       writeAtomic(join(paths.shop(safe(id)), "assignment.json"), `${JSON.stringify(next, null, 2)}\n`);
@@ -144,7 +144,7 @@ export function createShops(config: PanelConfig, store: Store) {
       writeAtomic(join(dir, "pathway.lock"), `${parts.lock}\n`);
       if (parts.pins) writeAtomic(join(dir, "pins.json"), `${JSON.stringify(parts.pins, null, 2)}\n`);
       if (creator) {
-        const owner: OwnerFile = { schema: 1, accountId: creator.account.id, accountName: creator.account.name, role: creator.account.role, createdAt: iso(now()), template: creator.template };
+        const owner: OwnerFile = { schema: 1, accountId: creator.account.id, accountName: creator.account.name, ...(companyOf(creator.account.company) ? { company: companyOf(creator.account.company) as string } : {}), role: creator.account.role, createdAt: iso(now()), template: creator.template };
         try { writeFileSync(join(dir, "owner.json"), `${JSON.stringify(owner, null, 2)}\n`, { flag: "wx", mode: 0o644 }); } catch (e) { if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e; }
       }
     },
