@@ -8,7 +8,7 @@
 //      certificate ("N of M limits proven to bite") is read from there. A mismatch stops the shop with the kill switch.
 //   6. write status/<shop>.json for the panel
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
-import { chownSync, existsSync, readFileSync } from "node:fs";
+import { chownSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
@@ -17,7 +17,6 @@ import type { ShopWebhooks } from "./generate/configs.ts";
 import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
 import type { GuardLicence } from "./generate/guards.ts";
 import { agentFacts } from "./agent/applied.ts";
-import { litestreamConfig } from "./generate/litestream.ts";
 import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./generate/rules.ts";
 import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
@@ -268,8 +267,7 @@ export async function serverProblems(ctx: Context, server: ServerConfig): Promis
   if (image.code !== 0) problems.push({ rule: "guard-image", message: `The Guard image ${server.guardImage} is not on this machine. It is not published to a registry yet, so it cannot be pulled: load it with \`docker load < geo-guard.tar\` (the tarball Geometer gives you), or set "guardImage" in geometer.json to the name it was loaded under.` });
   const keyFile = server.model.wire === "anthropic" ? "model_api_key" : "model_authorization";
   if (!have(ctx.dir, "g-model", keyFile)) problems.push({ rule: "secret-missing:model_key", message: `The model's API key is not in place. Run \`geometer model-key <file>\` (a file with the key on one line); it goes to the model Guard only.` });
-  if (server.backup && !have(ctx.dir, "backup", "stream")) problems.push({ rule: "secret-missing:backup-key", message: "The continuous copy's bucket key is not in place. Run `geometer backup-key stream <file>` (the file has `access-key-id:secret` on one line)." });
-  if (server.backup && !have(ctx.dir, "backup", "snapshots") && server.backup.snapshots.url.startsWith("s3://")) problems.push({ rule: "secret-missing:backup-key", message: "The snapshot bucket's key is not in place. Run `geometer backup-key snapshots <file>`." });
+  if (server.backup && !have(ctx.dir, "backup", "snapshots") && server.backup.snapshots.url.startsWith("s3://")) problems.push({ rule: "secret-missing:backup-key", message: "The snapshot bucket's key is not in place. Run `geometer backup-key snapshots <file>` (the file has `access-key-id:secret` on one line)." });
   if (server.fleet && !readSecretFile(resolve(ctx.dir, server.fleet.keyFile))) problems.push({ rule: "fleet-key", message: `The deployment key file ${server.fleet.keyFile} is missing, so no heartbeat could be sent and Geometer's alerts from outside would never fire.` });
   return problems;
 }
@@ -329,17 +327,15 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   writeAtomic(join(p.generated, "ops", "ops.json"), opsConfig(server, shops, agents));
   // the deployment key goes to the one container that sends heartbeats
   if (server.fleet) writeSecretFile(secretFile(ctx.dir, "ops", "fleet_key"), readSecretFile(resolve(ctx.dir, server.fleet.keyFile)) ?? "");
-  if (server.backup) {
-    const [accessKeyId, ...secret] = (readSecretFile(secretFile(ctx.dir, "backup", "stream")) ?? ":").split(":");
-    writeSecretFile(secretFile(ctx.dir, "litestream", "litestream.yml"), litestreamConfig(server.backup, shops.map((s) => s.name), { accessKeyId, secretAccessKey: secret.join(":") }));
-  }
+  // the continuous copy (Litestream) is gone since 9 Nov 2026: its config held a bucket key, and its own key is no longer read by anything, so neither is kept
+  for (const old of [secretFile(ctx.dir, "litestream"), secretFile(ctx.dir, "backup", "stream")]) if (existsSync(old)) { rmSync(old, { recursive: true, force: true }); ctx.log(`Removed ${old}: the continuous copy is no longer made, so its key is not kept.`); }
   // the licence folder each per-shop Guard mounts read-only (B13): made here, 0755, before compose up, or Docker would make it as root and the deployer could not write the lease
   ensureDir(licencePaths(ctx.dir).root); ensureDir(licencePaths(ctx.dir).extensions);
   // the folder ops writes fleet's answers into: made for the user ops runs as (the one who runs the deployer, like the panel), so both can read and write it
   ensureDir(p.fleet);
   const opsUser = panelUser();
   if (process.getuid?.() === 0) chownSync(p.fleet, opsUser.uid, opsUser.gid);
-  const composed = composeServer(server, dirsOf(ctx), shops, { backup: !!server.backup, opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}) });
+  const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;

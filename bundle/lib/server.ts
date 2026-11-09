@@ -1,6 +1,6 @@
 // A server folder, and the server's own settings (geometer.json). Everything the bundle reads or writes lives under one folder:
 //
-//   geometer.json            this server: its id, domain, fleet address, backup target, the model (written by `init`)
+//   geometer.json            this server: its id, domain, fleet address, snapshot place, the model (written by `init`)
 //   shops/<shop>/            DESIRED STATE. settings.json, runtime.json, pathway.lock. The panel (or `shop add`) writes these.
 //   agents/<agent>/          an agent someone else wrote, behind the same Guards: agent.json (which services, which numbers) and settings.json (`agent add` writes these).
 //   secrets-inbox/<shop>/    secrets handed in (razorpay_key, whatsapp_token, ...). The deployer moves each into the one container that needs it and deletes it.
@@ -43,9 +43,7 @@ export interface ModelConfig {
 }
 
 export interface BackupConfig {
-  /** Litestream's target for the runtime databases: an s3:// URL (Google Cloud Storage's S3 interface, Backblaze, R2, MinIO). */
-  stream: { url: string; endpoint?: string; region?: string };
-  /** Where the nightly snapshots go: a different place from the stream. An s3:// URL (with `endpoint`) or a folder on this machine. */
+  /** Where the nightly snapshots go: an s3:// URL (Google Cloud Storage's S3 interface, Backblaze, R2, MinIO; with `endpoint`) or a folder. A folder on this server's own disk is not off the server. */
   snapshots: { url: string; endpoint?: string; region?: string; keepDays?: number };
   /** The age public key (`age1...`) snapshots are encrypted to. The matching secret key is kept somewhere else (it is only needed to restore). */
   ageRecipient: string;
@@ -85,7 +83,6 @@ export interface ServerConfig {
 
 export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.2-pathways.1";
 export const DEFAULT_APP_IMAGE = "node:26-alpine";
-export const LITESTREAM_IMAGE = "litestream/litestream:0.5.17-scratch";
 export const CADDY_IMAGE = "caddy:2.8.4-alpine";
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -130,7 +127,7 @@ export function loadServer(dir: string): ServerConfig {
   return result.config;
 }
 
-export function parseServer(raw: unknown): { config: ServerConfig; errors: string[] } {
+export function parseServer(raw: unknown): { config: ServerConfig; errors: string[]; notes: string[] } {
   const errors: string[] = [];
   const o = isObj(raw) ? raw : {};
   if (!isObj(raw)) errors.push("geometer.json must be an object.");
@@ -180,12 +177,22 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
+  const notes: string[] = [];
   if (config.backup) {
-    const b = config.backup as Partial<BackupConfig>;
-    if (!isObj(b.stream) || typeof b.stream.url !== "string" || !isObj(b.snapshots) || typeof b.snapshots.url !== "string" || typeof b.ageRecipient !== "string" || !/^age1[02-9ac-hj-np-z]{58}$/u.test(b.ageRecipient)) errors.push('"backup" must say {"stream": {"url": "s3://..."}, "snapshots": {"url": "s3://..." or a folder}, "ageRecipient": "age1..."}.');
-    else if (b.stream.url === b.snapshots.url) errors.push('"backup.snapshots" must be a different place from "backup.stream": a copy in the same place is one copy.');
+    const b = config.backup as Partial<BackupConfig> & { stream?: unknown };
+    if (!isObj(b.snapshots) || typeof b.snapshots.url !== "string" || typeof b.ageRecipient !== "string" || !/^age1[02-9ac-hj-np-z]{58}$/u.test(b.ageRecipient)) errors.push('"backup" must say {"snapshots": {"url": "s3://..." or a folder}, "ageRecipient": "age1..."}.');
+    // a server set up before 9 Nov 2026 names the continuous copy's bucket: it is no longer used, and said so rather than silently ignored
+    if (b.stream !== undefined) { const { stream: _unused, ...rest } = b; notes.push(STREAM_NOTE); config.backup = rest as BackupConfig; }
   }
-  return { config, errors };
+  return { config, errors, notes };
+}
+
+/** What `check`, `deploy` and `status` say about a geometer.json that still names "backup.stream" (a server set up before 9 Nov 2026). */
+export const STREAM_NOTE = 'geometer.json still names "backup.stream", the bucket of the continuous copy (Litestream). The bundle no longer makes that copy: the nightly snapshot is the backup, and the stream bucket and its key are not used. Take "stream" out of geometer.json to stop this note; the bucket can then be emptied and deleted.';
+
+/** The plain notes about this server's geometer.json (none when it cannot be read: loadServer says why). */
+export function serverNotes(dir: string): string[] {
+  try { return parseServer(JSON.parse(readFileSync(serverPaths(dir).config, "utf8"))).notes; } catch { return []; }
 }
 
 /** Is this domain one a public certificate authority could never give a certificate to? Then Caddy makes its own (`tls internal`). */

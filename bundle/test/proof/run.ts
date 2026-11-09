@@ -124,7 +124,6 @@ function writeTestCompose(): void {
   };
   for (const svc of bundleServices()) if (!TEST_SERVICES.has(svc)) services[svc] = { ...services[svc], cgroup_parent: `/${CAP_CGROUP}` };
   if (services.refresher) services.refresher.depends_on = { standins: { condition: "service_healthy" } };
-  if (services.litestream) services.litestream.depends_on = { minio: { condition: "service_started" } };
   writeFileSync(testCompose, `${yaml({ services, networks: { egress: {}, front: {}, panel: {} } })}\n`);
 }
 
@@ -203,13 +202,13 @@ const readSecret = (container: string, file: string) => readFileSync(secretFile(
 /** The two things the design leans on, tried in a minute before anything is built: a busybox `nc` can forward into a joined container's loopback, and the images are here. */
 async function smoke(): Promise<void> {
   say("== prerequisites ==");
-  for (const image of ["busybox:1.37.0", "node:26-alpine", "caddy:2.8.4-alpine", "litestream/litestream:0.5.17-scratch", "minio/minio:latest", "alpine:3.22", GUARD_IMAGE]) {
+  for (const image of ["busybox:1.37.0", "node:26-alpine", "caddy:2.8.4-alpine", "minio/minio:latest", "alpine:3.22", GUARD_IMAGE]) {
     const have = dk(["image", "inspect", "--format", "{{.Id}}", image]).code === 0;
     const pulled = have ? { code: 0, err: "" } : GUARD_IMAGE === image ? { code: 1, err: "the Guard image is not on this machine" } : dk(["pull", "-q", image], { timeout: 900_000 });
     check(`image ${image}`, pulled.code === 0, have ? "already here" : pulled.code === 0 ? "pulled" : pulled.err.slice(0, 120));
     if (pulled.code !== 0) throw new Error(`cannot go on without ${image}`);
   }
-  results.imageVersions = Object.fromEntries(["busybox:1.37.0", "node:26-alpine", "caddy:2.8.4-alpine", "litestream/litestream:0.5.17-scratch"].map((i) => [i, dk(["image", "inspect", "--format", "{{.Size}} bytes, {{.Architecture}}", i]).out.trim()]));
+  results.imageVersions = Object.fromEntries(["busybox:1.37.0", "node:26-alpine", "caddy:2.8.4-alpine"].map((i) => [i, dk(["image", "inspect", "--format", "{{.Size}} bytes, {{.Architecture}}", i]).out.trim()]));
   say("== smoke: can a busybox nc forward into a joined container's loopback? ==");
   const net = "geometer-smoke";
   dk(["rm", "-f", `${net}-fwd`, `${net}-app`]); dk(["network", "rm", net]);
@@ -233,7 +232,7 @@ async function main_(): Promise<void> {
   const identityFile = join(SCRATCH, "age-identity.txt");
   rmSync(SERVER, { recursive: true, force: true });
   let code = await main(["init", SERVER, "--id", "proof", "--domain", "localhost", "--reviewed-by", "builder-proof", "--model-wire", "openai", "--model", "gpt-4o-mini", "--http-port", "18080", "--https-port", "18443",
-    "--stream-url", "s3://geo-stream/proof", "--stream-endpoint", "http://minio:9000", "--snapshots-url", "s3://geo-snaps/proof", "--snapshots-endpoint", "http://minio:9000", "--age-identity-out", identityFile, "--fleet-url", "http://host.docker.internal:18790", "--fleet-key-file", "fleet_key", "--guard-image", GUARD_IMAGE, "--panel"]);
+    "--snapshots-url", "s3://geo-snaps/proof", "--snapshots-endpoint", "http://minio:9000", "--age-identity-out", identityFile, "--fleet-url", "http://host.docker.internal:18790", "--fleet-key-file", "fleet_key", "--guard-image", GUARD_IMAGE, "--panel"]);
   if (code !== 0) throw new Error("init failed");
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
   conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
@@ -241,10 +240,10 @@ async function main_(): Promise<void> {
   conf.heartbeatSeconds = 10; conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
   conf.licence = { keys: [TEST_PUBLIC_HEX] }; // RFC 8032's published test key, the one built into the proof's Guard image: anyone can sign with it, never a production key
   writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
-  mkdirSync(join(SCRATCH, "minio", "geo-stream"), { recursive: true }); mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
+  mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
   writeTestCompose();
   writeFileSync(join(SCRATCH, "model-key"), "sk-proof-model-key-0123456789\n"); writeFileSync(join(SCRATCH, "bucket-key"), "proofkey:proofsecret123\n");
-  for (const a of [["model-key", join(SCRATCH, "model-key")], ["backup-key", "stream", join(SCRATCH, "bucket-key")], ["backup-key", "snapshots", join(SCRATCH, "bucket-key")]]) if (await main([...a, "--server", SERVER]) !== 0) throw new Error(`${a[0]} failed`);
+  for (const a of [["model-key", join(SCRATCH, "model-key")], ["backup-key", "snapshots", join(SCRATCH, "bucket-key")]]) if (await main([...a, "--server", SERVER]) !== 0) throw new Error(`${a[0]} failed`);
 
   // the real fleet service, on the host, with its own temp config and data (read-only use of the monorepo)
   const fleetDir = join(SCRATCH, "fleet"); mkdirSync(fleetDir, { recursive: true });
@@ -280,7 +279,7 @@ async function main_(): Promise<void> {
     results.deployOneShopSeconds = Math.round((Date.now() - t0) / 1000);
     check("deploy: every tripwire passes on the running Guards", res.length === 1 && res[0].proven.passed === res[0].proven.of && res[0].proven.of > 0, res[0]?.proven.line);
     say(`   ${res[0].proven.line}`);
-    await sleep(70_000); // steady state: Litestream has settled, the first heartbeat is in, the model Guard has been quiet
+    await sleep(70_000); // steady state: the first heartbeat is in, the model Guard has been quiet
     measure("1 shop (idle)", 1);
 
     check("every bundle container is inside one cgroup capped at 2 CPUs and 4 GiB", setCap(), results.cap);
@@ -624,26 +623,23 @@ async function stopPersists() {
 }
 
 async function dataDuties() {
-  say("\n== continuous copy, nightly snapshot, drill, restore ==");
+  say("\n== nightly snapshot, drill, restore ==");
   const objects = (dir: string) => sh("find", [join(SCRATCH, "minio", dir), "-type", "f", "-not", "-name", "xl.meta.tmp"]).out.trim().split("\n").filter(Boolean).length;
-  await waitFor("Litestream to copy", () => objects("geo-stream") > 0, 60);
-  check("Litestream is streaming the runtime database to the bucket", objects("geo-stream") > 0, { objects: objects("geo-stream") });
   const snap = await runBackup(ctxFor()); snap.lines.forEach(say);
   check("the nightly snapshot ran and every file in the bucket is age-encrypted", snap.ok && objects("geo-snaps") > 0, { objects: objects("geo-snaps") });
   // MinIO stores objects as xl.meta and part files (small ones inline); the bytes of an age file are in them as written, and a plain SQLite file would show its header
   const grep = (pattern: string, dir: string) => sh("sh", ["-c", `grep -rlaF "${pattern}" "${join(SCRATCH, "minio", dir)}" | wc -l`]).out.trim();
-  const ageFiles = Number(grep("age-encryption.org/v1", "geo-snaps")), plainFiles = Number(grep("SQLite format 3", "geo-snaps")), plainStream = Number(grep("SQLite format 3", "geo-stream"));
+  const ageFiles = Number(grep("age-encryption.org/v1", "geo-snaps")), plainFiles = Number(grep("SQLite format 3", "geo-snaps"));
   check("every snapshot object is an age file and none holds a plain SQLite database", ageFiles > 0 && plainFiles === 0, { ageFiles, plainFiles });
-  results.streamHoldsPlainSqlite = plainStream; say(`(the continuous copy is not age-encrypted by Litestream 0.5: ${plainStream} plain-SQLite-looking objects in the stream bucket)`);
   const drill = await runDrill(ctxFor()); drill.lines.forEach(say);
-  check("the weekly drill restores the continuous copy and it matches the live record", drill.ok, drill.lines);
-  // restore: add a record entry, then put the record back from the copy
-  check("restore puts the record back from the continuous copy", (await restoreShop(ctxFor(), "glow-salon", {}).then((m) => { say(m); return true; }).catch((e) => { say(String(e)); return false; })), "");
+  check("the weekly drill restores the newest snapshot with the drill key and it is the start of the live record", drill.ok, drill.lines);
+  // restore: put the shop's data back from the newest snapshot; the runtime starts in its restored mode
+  check("restore puts the shop's data back from the newest snapshot", (await restoreShop(ctxFor(), "glow-salon", {}).then((m) => { say(m); return true; }).catch((e) => { say(String(e)); return false; })), "");
   await waitFor("the runtime", () => healthy("rt-glow-salon"), 90);
   check("the shop is running again after a restore", healthy("rt-glow-salon"), "");
   // age interop with the real tool
   const k = generateIdentity(); const dir = join(SCRATCH, "age"); mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "id.txt"), k.identity); writeFileSync(join(dir, "ours.age"), encrypt(Buffer.from("hello from node ".repeat(10000)), k.recipient));
+  writeFileSync(join(dir, "id.txt"), k.identity); writeFileSync(join(dir, "ours.age"), encrypt(Buffer.from("hello from node ".repeat(10000)), [generateIdentity().recipient, k.recipient])); // two recipients, as a snapshot has
   const real = dk(["run", "--rm", "-v", `${dir}:/w`, "alpine:3.22", "sh", "-c", `apk add --no-cache age >/dev/null 2>&1 && age -d -i /w/id.txt /w/ours.age | head -c 16 && age -r ${k.recipient} -o /w/theirs.age /w/id.txt && echo && echo made`], { timeout: 180_000 });
   const theirs = (() => { try { return decrypt(readFileSync(join(dir, "theirs.age")), k.identity).toString().startsWith("AGE-SECRET-KEY"); } catch { return false; } })();
   check("the real `age` opens what this writes, and this opens what `age` writes", real.out.startsWith("hello from node") && theirs, real.err.slice(0, 120) || real.out.slice(0, 40));
@@ -845,7 +841,7 @@ async function hostileRuntime() {
   const agent = readSecret(rt, "agent_razorpay");
   // the request is written and the socket left open (a half-close before the answer can end the exchange); the answer is read until Guard closes it
   const raw = (request: string) => nodeEval(rt, `const s=require('net').connect(8080,'g-glow-salon-razorpay',()=>s.write(${JSON.stringify(request)}));let d='';s.setTimeout(8000,()=>s.destroy());s.on('data',c=>{d+=c;if(/\\r\\n\\r\\n/.test(d)&&d.length>400)s.destroy()});s.on('close',()=>{const i=d.indexOf('\\r\\n\\r\\n');console.log((d.split('\\r\\n')[0]||'NO-ANSWER')+' | '+(i<0?'':d.slice(i+4,i+200)).replace(/\\s+/g,' '))});s.on('error',e=>console.log('ERR '+e.code))`).out.trim().split("\n").at(-1) ?? "";
-  const absolute = raw(`GET http://minio:9000/geo-stream/ HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
+  const absolute = raw(`GET http://minio:9000/geo-snaps/ HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
   check("hostile runtime: Guard does not fetch an absolute-form address for it (MinIO): it answers itself, and not with MinIO's answer", /^HTTP\/1\.1 [3-5]\d\d/u.test(absolute) && !/<\?xml|ListBucket|AccessDenied|MinIO/iu.test(absolute), absolute.slice(0, 200));
   const hostTrick = raw(`GET /v1/payment_links?reference_id=x HTTP/1.1\r\nHost: minio:9000\r\nAuthorization: Bearer ${agent}\r\nConnection: close\r\n\r\n`);
   check("hostile runtime: a foreign Host header never reaches MinIO: the answer is Guard's own or its one upstream's (the Razorpay stand-in), never MinIO's", /^HTTP\/1\.1 \d{3}/u.test(hostTrick) && !/<\?xml|ListBucket|AccessDenied|MinIO/iu.test(hostTrick), hostTrick.slice(0, 200));
@@ -1079,7 +1075,7 @@ const cores = (a?: CapReading, b?: CapReading) => (a && b ? +((b.cpuUsec - a.cpu
 const loads: Record<number, any> = {};
 async function loadStep(size: number) {
   say(`\n== load at ${size} shop(s), every bundle container inside 2 CPUs and 4 GiB (B14 item 4) ==`);
-  // a quiet minute first: the CPU, and Litestream's bucket operations, with nothing asked of the shops
+  // a quiet minute first: the CPU, and the bucket's operations (none expected between nightly snapshots), with nothing asked of the shops
   const opsIdleA = await minioOps(); const idleA = readCap(); await sleep(60_000); const idleB = readCap(); const opsIdleB = await minioOps();
   const idleHours = idleA && idleB ? (idleB.atMs - idleA.atMs) / 3_600_000 : 1 / 60;
   const diskBefore = volumeSizes();
