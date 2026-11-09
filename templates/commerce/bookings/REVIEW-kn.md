@@ -939,6 +939,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_waiting` | b-3 ರ ₹200 ರೀಫಂಡ್ [who] ಕಾಯುತ್ತಿದೆ | The refund of ₹200 for b-3 is waiting [who] |  |
 | `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: Razorpay ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in Razorpay |  |
 | `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
+| `inbox.kinds.message_unanswered` | ಸೇವೆಯ ಸಂಪರ್ಕ ನಿಂತುಹೋದ ಕಾರಣ #12 ರ ಕೆಲಸ ಪೂರ್ಣವಾಗಲಿಲ್ಲ: ಪರಿಶೀಲಿಸಿ ಗ್ರಾಹಕರಿಗೆ ಉತ್ತರಿಸಿ | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3 ಗಾಗಿ ₹200 UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3 ಗಾಗಿ ₹200 ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3 ನಲ್ಲಿ ಒಬ್ಬರು ನೋಡಬೇಕಿದೆ (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
