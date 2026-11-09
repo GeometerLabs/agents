@@ -81,7 +81,7 @@ test("events are checked for shape before anything is saved, and an event's key 
 test("refunds are counted the same way for any case that has a pending list", () => {
   const counts = countRefunds([
     { pending: [{ kind: "guard_hold" }, { kind: "waiver" }] },
-    { pending: [{ kind: "refund_retry" }], refundIssues: [{ kind: "refused", paymentId: "pay_1", amountInr: 10, at: "x", note: "" } as never] },
+    { pending: [{ kind: "refund_retry" }], refundIssues: [{ kind: "refused", paymentId: "pmt_1", amountInr: 10, at: "x", note: "" } as never] },
     { pending: [] },
   ]);
   assert.deepEqual(counts, { waitingForOwner: 1, beingSentAgain: 1, needBuilder: { refused: 1, total: 1 } });

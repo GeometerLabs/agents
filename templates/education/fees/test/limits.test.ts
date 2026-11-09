@@ -7,7 +7,7 @@ import { createRecord } from "../../../../modules/record/record.ts";
 import { guardHoldsRefund, guardRefusesRefund, refundRulesOf } from "../../../../modules/payments/guard-limits.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { brightTuition } from "../src/harness.ts";
-import { razorpayLimitsSpec, razorpayNumbers } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec, paymentNumbers } from "../src/guard-limits.ts";
 import { checkFeeLink, checkNoReminderOncePaid, checkOneRefundPerPayment, checkPaidOnlyWhenRecorded, checkReminderCap, checkWaiver, recordedPaidPaise } from "../src/limits.ts";
 import { parseSettings } from "../src/settings.ts";
 
@@ -65,12 +65,12 @@ test("a waiver: within the limit in all, or the owner's call for that amount; ne
 test("a reminder cap, and one refund per payment", () => {
   assert.equal(checkReminderCap({ sent: 3, maxPerMonth: 4 }).verdict, "allow");
   assert.equal(checkReminderCap({ sent: 4, maxPerMonth: 4 }).verdict, "block");
-  assert.equal(checkOneRefundPerPayment({ paymentId: "pay_1", refundedPaise: 0 }).verdict, "allow");
-  assert.equal(checkOneRefundPerPayment({ paymentId: "pay_1", refundedPaise: 100 }).verdict, "block", "a part refund is the payment's refund");
+  assert.equal(checkOneRefundPerPayment({ paymentId: "pmt_1", refundedPaise: 0 }).verdict, "allow");
+  assert.equal(checkOneRefundPerPayment({ paymentId: "pmt_1", refundedPaise: 100 }).verdict, "block", "a part refund is the payment's refund");
 });
 
 test("the Guard spec: links in a range, refunds bounded by the dearest fee, held above the owner's limit, once per payment, no payouts, daily caps", () => {
-  const spec = razorpayLimitsSpec(settings, IDENTITY);
+  const spec = gatewayLimitsSpec(settings, IDENTITY);
   assert.equal(spec.schema, 1);
   const rule = (id: string) => spec.rules.find((r: any) => r.id === id);
   assert.deepEqual([rule("fee-amount").min, rule("fee-amount").max, rule("fee-amount").operation], ["100", "190000", "create_link"], "₹1 to ₹1,800 + ₹100");
@@ -84,7 +84,7 @@ test("the Guard spec: links in a range, refunds bounded by the dearest fee, held
   assert.match(guardRefusesRefund(spec, 190_001) ?? "", /refund-at-most-fee-paid/);
   assert.equal(guardRefusesRefund(spec, 190_000), undefined);
   assert.equal(refundRulesOf(spec).thresholdPaise, 50_000n);
-  assert.deepEqual(razorpayLimitsSpec(settings, IDENTITY), spec, "the same settings give the same spec");
+  assert.deepEqual(gatewayLimitsSpec(settings, IDENTITY), spec, "the same settings give the same spec");
 });
 
 test("changing the refund limit changes the spec's threshold, and a daily cap below the dearest fee is refused", () => {
@@ -92,18 +92,18 @@ test("changing the refund limit changes the spec's threshold, and a daily cap be
   raw.students = settings.students.map((s) => ({ name: s.name, parent: s.parent, batch: s.batchId, language: s.language }));
   raw.refund.limitInr = 900;
   const changed = parseSettings(raw);
-  assert.equal(razorpayLimitsSpec(changed, IDENTITY).rules.find((r: any) => r.id === "refund-needs-owner").threshold, "90000");
-  assert.throws(() => razorpayNumbers(settings, { caps: { refundPaisePerDay: 100_000 } }), /smaller than the dearest fee/);
-  assert.throws(() => razorpayLimitsSpec(settings, { ...IDENTITY, version: 0 }), /version must be a whole number/);
+  assert.equal(gatewayLimitsSpec(changed, IDENTITY).rules.find((r: any) => r.id === "refund-needs-owner").threshold, "90000");
+  assert.throws(() => paymentNumbers(settings, { caps: { refundPaisePerDay: 100_000 } }), /smaller than the dearest fee/);
+  assert.throws(() => gatewayLimitsSpec(settings, { ...IDENTITY, version: 0 }), /version must be a whole number/);
 });
 
 test("the in-process Guard model uses the same spec: a link outside the range, or a refund above the dearest fee, is refused with the rule's name", () => {
-  const model = createGuardModel(razorpayLimitsSpec(settings, IDENTITY), fakeClock(0));
+  const model = createGuardModel(gatewayLimitsSpec(settings, IDENTITY), fakeClock(0));
   assert.deepEqual(model.decideLink(150_000), { kind: "pass" });
   assert.equal(model.decideLink(190_001).kind, "refused");
   assert.equal(model.decideLink(99).kind, "refused");
   assert.equal(model.decideLink("1500").kind, "refused", "an amount that is not a number is never a pass");
-  const refused = model.decideRefund("pay_1", { amount: 200_000 });
+  const refused = model.decideRefund("pmt_1", { amount: 200_000 });
   assert.equal(refused.kind === "refused" && refused.ruleId, "refund-at-most-fee-paid");
 });
 
@@ -111,6 +111,6 @@ test("scripts/guard-spec.ts prints the same spec the code makes for the example 
   const script = new URL("../scripts/guard-spec.ts", import.meta.url).pathname;
   const file = new URL("../settings/bright-tuition.example.json", import.meta.url).pathname;
   const printed = JSON.parse(execFileSync("node", [script, "--settings", file, "--tenant", "bright-tuition", "--reviewed-by", "builder-arjun"], { encoding: "utf8" })) as unknown;
-  assert.deepEqual(printed, JSON.parse(JSON.stringify(razorpayLimitsSpec(settings, { tenant: "bright-tuition", version: 1, reviewedBy: "builder-arjun" }))));
+  assert.deepEqual(printed, JSON.parse(JSON.stringify(gatewayLimitsSpec(settings, { tenant: "bright-tuition", version: 1, reviewedBy: "builder-arjun" }))));
   assert.throws(() => execFileSync("node", [script, "--settings", file], { encoding: "utf8", stdio: "pipe" }), /Command failed/);
 });

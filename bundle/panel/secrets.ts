@@ -3,6 +3,7 @@
 //  - it is never logged, never put in a page or a redirect, never put in the panel's own data (only the fact that it arrived, and when);
 //  - a problem with it is described by the field's name, never by the value, so no error message can repeat it.
 // The deployer moves each file into the one container that needs it and deletes it from the inbox.
+import { GATEWAYS } from "../../modules/payments/providers/index.ts";
 import { chmodSync, existsSync, linkSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -10,7 +11,6 @@ import { SECRET_NAMES, SHOP_ID, isObj } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { Shops } from "./shops.ts";
 
-export const KEY_ID = /^rzp_(live|test)_[A-Za-z0-9]{6,40}$/u;
 const NO_SPACE = (min: number, max: number) => new RegExp(`^[^\\s]{${min},${max}}$`, "u");
 
 export type SecretCheck = { ok: true; text: string; clientEmail?: string } | { ok: false };
@@ -18,15 +18,13 @@ export type SecretCheck = { ok: true; text: string; clientEmail?: string } | { o
 /** Shape only: it cannot tell a right key from a wrong one, only one that was clearly copied badly (spaces, line breaks, a half). */
 export function checkSecret(name: SecretName, value: string): SecretCheck {
   const v = value.trim();
+  // a gateway's key and webhook secret: the shape its folder says (B71), never by its name here
+  const gateway = GATEWAYS.find((g) => g.gateway!.setup.secrets.key === name || g.gateway!.setup.secrets.webhook === name)?.gateway!.setup;
+  if (gateway) return (name === gateway.secrets.key ? gateway.checkKey(v) : gateway.checkWebhookSecret(v)) ? { ok: true, text: v } : { ok: false };
   switch (name) {
     case "whatsapp_token": return NO_SPACE(20, 2000).test(v) ? { ok: true, text: v } : { ok: false };
     case "whatsapp_app_secret": return NO_SPACE(16, 200).test(v) ? { ok: true, text: v } : { ok: false };
-    case "razorpay_webhook_secret": return NO_SPACE(8, 200).test(v) ? { ok: true, text: v } : { ok: false };
-    case "razorpay_key": {
-      // "<key id>:<key secret>" on one line, which is what the deployer turns into the Basic credential Guard holds.
-      const i = v.indexOf(":");
-      return i > 0 && KEY_ID.test(v.slice(0, i)) && NO_SPACE(10, 100).test(v.slice(i + 1)) && !v.slice(i + 1).includes(":") ? { ok: true, text: v } : { ok: false };
-    }
+
     case "google_service_account.json": {
       if (v.length === 0 || v.length > 8000) return { ok: false };
       let parsed: unknown;

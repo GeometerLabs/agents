@@ -125,8 +125,8 @@ function world(handler: (c: Ctx) => Promise<void>, overrides: { guardWaitMs?: nu
   const gate = (service: string) => { const e = errors.get(service); if (e) throw e; if (down.has(service)) throw new NotSentError(`${service}: could not connect (ECONNREFUSED).`, "ECONNREFUSED"); };
   const services = {
     payments: {
-      async listPaymentLinks(q: { reference_id: string }) { probes += q.reference_id === "guard-wait-probe" ? 1 : 0; gate("payments"); return links.filter((l) => l === q.reference_id); },
-      async createPaymentLink(r: { reference_id: string }) { gate("payments"); links.push(r.reference_id); return { id: r.reference_id }; },
+      async listRequests(q: { reference_id: string }) { probes += q.reference_id === "guard-wait-probe" ? 1 : 0; gate("payments"); return links.filter((l) => l === q.reference_id); },
+      async createRequest(r: { reference_id: string }) { gate("payments"); links.push(r.reference_id); return { id: r.reference_id }; },
     },
     messaging: {
       async sendText(_to: string, text: string) { gate("messaging"); sent.push(text); return { id: `m-${sent.length}` }; },
@@ -170,7 +170,7 @@ const run = async (w: ReturnType<typeof world>, advanceMs = 0) => { if (advanceM
 test("a step that finds its Guard down keeps nothing, waits without using up a try, and runs once when the Guard is back", async () => {
   const w = world(async ({ event, messaging, payments, id }) => {
     if (event.kind !== "message") return;
-    if ((await payments.listPaymentLinks({ reference_id: id })).length === 0) await payments.createPaymentLink({ reference_id: id });
+    if ((await payments.listRequests({ reference_id: id })).length === 0) await payments.createRequest({ reference_id: id });
     await messaging.sendText(event.message.from, `link ${id}`);
   });
   try {
@@ -193,7 +193,7 @@ test("a step that finds its Guard down keeps nothing, waits without using up a t
 test("a failure the agent swallows still stops the step: its sorry never goes out, and the rerun finds what the first try made", async () => {
   const w = world(async ({ event, messaging, payments, id }) => {
     if (event.kind !== "message") return;
-    if ((await payments.listPaymentLinks({ reference_id: id })).length === 0) await payments.createPaymentLink({ reference_id: id });
+    if ((await payments.listRequests({ reference_id: id })).length === 0) await payments.createRequest({ reference_id: id });
     // the agent's own catch-all, as in `say`, a `.catch(() => false)` beside a read, or `ensureLink`
     try { await messaging.sendText(event.message.from, `link ${id}`); } catch { await messaging.sendText(event.message.from, "sorry").catch(() => undefined); }
   });
@@ -234,7 +234,7 @@ test("a send already made means the step cannot wait or run again: it finishes a
   const w = world(async ({ event, messaging, payments }) => {
     if (event.kind !== "message") return;
     await messaging.sendText(event.message.from, "hello");
-    await payments.listPaymentLinks({ reference_id: "x" }).catch(() => undefined); // this one finds the payments Guard down, after the send
+    await payments.listRequests({ reference_id: "x" }).catch(() => undefined); // this one finds the payments Guard down, after the send
   });
   try {
     w.down.add("payments");
@@ -249,7 +249,7 @@ test("a step that sent something and then threw on a Guard that is down is not r
   const w = world(async ({ event, messaging, payments }) => {
     if (event.kind !== "message") return;
     await messaging.sendText(event.message.from, "hello");
-    await payments.listPaymentLinks({ reference_id: "x" }); // uncaught, as a read in some steps is
+    await payments.listRequests({ reference_id: "x" }); // uncaught, as a read in some steps is
   });
   try {
     w.down.add("payments");
@@ -266,7 +266,7 @@ test("past the bound the step runs once more with waiting off, the owner's list 
   let reachedPayments = 0;
   const w = world(async ({ event, messaging, payments }) => {
     if (event.kind !== "message") return;
-    try { reachedPayments++; await payments.listPaymentLinks({ reference_id: "x" }); await messaging.sendText(event.message.from, "link"); }
+    try { reachedPayments++; await payments.listRequests({ reference_id: "x" }); await messaging.sendText(event.message.from, "link"); }
     catch { await messaging.sendText(event.message.from, "could not make the link"); } // the template's own words
   });
   try {
@@ -299,7 +299,7 @@ test("past the bound the step runs once more with waiting off, the owner's list 
 });
 
 test("past the bound, a step that throws on the down Guard still ends once: the customer is told and the to-do list has it", async () => {
-  const w = world(async ({ event, payments }) => { if (event.kind === "message") await payments.listPaymentLinks({ reference_id: "x" }); });
+  const w = world(async ({ event, payments }) => { if (event.kind === "message") await payments.listRequests({ reference_id: "x" }); });
   try {
     w.down.add("payments");
     w.runtime.submit([w.msg("a")]);
@@ -315,7 +315,7 @@ test("past the bound, a step that throws on the down Guard still ends once: the 
 test("a waiting task survives a restart: it picks up, and the bound still counts from when the message arrived", async () => {
   const w = world(async ({ event, messaging, payments }) => {
     if (event.kind !== "message") return;
-    await payments.listPaymentLinks({ reference_id: "x" });
+    await payments.listRequests({ reference_id: "x" });
     await messaging.sendText(event.message.from, "done");
   });
   try {
@@ -340,7 +340,7 @@ test("a waiting task survives a restart: it picks up, and the bound still counts
 });
 
 test("a restart after the bound has passed ends the task at once rather than waiting another 15 minutes", async () => {
-  const w = world(async ({ event, payments }) => { if (event.kind === "message") await payments.listPaymentLinks({ reference_id: "x" }); });
+  const w = world(async ({ event, payments }) => { if (event.kind === "message") await payments.listRequests({ reference_id: "x" }); });
   try {
     w.down.add("payments");
     w.runtime.submit([w.msg("a")]);
@@ -359,7 +359,7 @@ test("a restart after the bound has passed ends the task at once rather than wai
 test("a busy Guard's Retry-After sets the next look, not the backing-off delay", async () => {
   const w = world(async ({ event, messaging, payments }) => {
     if (event.kind !== "message") return;
-    await payments.listPaymentLinks({ reference_id: "x" });
+    await payments.listRequests({ reference_id: "x" });
     await messaging.sendText(event.message.from, "ok");
   });
   try {
@@ -378,7 +378,7 @@ test("a tick that is thrown away does not send its reminder again on the next ti
   const w = world(async ({ event, messaging, payments }) => {
     if (event.kind !== "tick") return;
     await messaging.sendText("+919800000002", "reminder"); // a reminder, then a hold's expiry that reads a payment link
-    if (failTick) await payments.listPaymentLinks({ reference_id: "x" });
+    if (failTick) await payments.listRequests({ reference_id: "x" });
   });
   try {
     w.down.add("payments");

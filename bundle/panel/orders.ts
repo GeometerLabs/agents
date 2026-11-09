@@ -2,14 +2,15 @@
 // advance and limits), what they refuse in the person's own language, and how they become the settings a builder would write. Languages, accounts and checks are the same steps
 // as Bookings' and Fees' (setup.ts). The form is plain: one box with an item on each line, a box of slots for pickup and one for delivery, and the numbers. `validateSettings` of
 // the Orders pathway is the last gate on everything. The shop's runtime.json is the one a Fees centre has (payments and messaging, no calendar): fees.ts `runtimeForFees`.
+import { providerById } from "../../modules/payments/providers/index.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { DEFAULT_CAPS } from "../../modules/payments/guard-limits.ts";
-import { payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
+import { payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
 import { limitLinesOf, limitsOf } from "../../templates/commerce/orders/report/certificate.ts";
 import { itemName, validateSettings } from "../../templates/commerce/orders/src/settings.ts";
 import type { Settings, Slot } from "../../templates/commerce/orders/src/settings.ts";
 import { idsFrom } from "./fees.ts";
-import { approversDraftOf, approversFromDraft, newPayment, paymentBlock, paymentFromSettings } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -81,7 +82,7 @@ export function newOrdersDraft(id: string, accountId: string, template: Template
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false,
     form: emptyShopForm(), windowHours: "", primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
-    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
+    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, gateway: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
     orders: {
       address: "", menu: "", cutoffDays: String(example.cutoff.daysBefore), cutoffTime: example.cutoff.time, pickup: "", delivery: "", area: "",
       advanceMode: example.advance.mode, advancePercent: String(example.advance.mode === "part" ? example.advance.percent : 50), holdMinutes: String(example.advance.holdMinutes),
@@ -108,7 +109,7 @@ export function ordersDraftFromShop(id: string, accountId: string, templateId: s
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
     ...approversDraftOf(s.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
-    calendar: { id: "" }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
+    calendar: { id: "" }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     orders: {
       address: s.address ?? "", menu, cutoffDays: String(s.cutoff.daysBefore), cutoffTime: s.cutoff.time, pickup: slotText(s.pickup.slots, "p"), delivery: slotText(s.delivery?.slots ?? [], "d"), area: (s.delivery?.area ?? []).join(", "),
       advanceMode: s.advance.mode, advancePercent: String(s.advance.mode === "part" ? s.advance.percent : 50), holdMinutes: String(s.advance.holdMinutes),
@@ -208,10 +209,11 @@ export function buildOrdersSettings(draft: Draft, example: Settings): Built {
   const slotOf = (m: (typeof all)[number], i: number) => ({ id: slotIds[i], from: m.from, to: m.to, ...(m.name !== "" ? { names: named(m.name) } : {}), ...(keep.cutoffs[slotIds[i]] ? { cutoff: keep.cutoffs[slotIds[i]] } : {}) });
   const places = placesOf(f.area);
   const n = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
-  // The rules step shows the shop's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out as for Razorpay (they do not depend on it).
+  // The rules step shows the shop's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out with a stand-in UPI ID
+  // (PREVIEW_PAYMENT; they do not depend on it), never as a gateway shop.
   // The save cannot be reached before the accounts step has checked the UPI ID.
-  const upi = draft.payment?.module === "upi";
-  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? { module: "razorpay" } : paymentBlock(draft, true);
+  const upi = !providerById(paymentModuleOf(draft))?.gateway;
+  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
   const raw = {
     name: draft.form.name, ...(f.address !== "" ? { address: f.address } : {}), timezone: example.timezone, languages,
     menu: items.map((m, i) => ({ id: itemIds[i], names: named(m.name), priceInr: n(m.price), dailyStock: n(m.stock) })),

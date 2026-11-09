@@ -12,7 +12,7 @@ import type { Template } from "../templates.ts";
 const checked = validateSettings(JSON.parse(readFileSync(new URL("../../../templates/education/fees/settings/bright-tuition.example.json", import.meta.url), "utf8")));
 if (!checked.ok) throw new Error(checked.errors.join("; "));
 const example: Settings = checked.settings;
-const template: Template = { id: "fees", version: "0.1.0", setup: "fees", steps: ["business", "deposit", "languages", "accounts", "checks"], accounts: ["whatsapp", "razorpay"], folder: "", settingsExample: "" };
+const template: Template = { id: "fees", version: "0.1.0", setup: "fees", steps: ["business", "deposit", "languages", "accounts", "checks"], accounts: ["whatsapp", "payment"], folder: "", settingsExample: "" };
 const en = WORDS.en;
 
 const business = {

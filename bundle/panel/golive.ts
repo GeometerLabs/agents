@@ -6,7 +6,7 @@
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
 import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
-import { moduleOf } from "../../modules/payments/upi/settings.ts";
+import { gatewayOf } from "../../modules/payments/providers/index.ts";
 import { kindFor } from "../lib/kinds.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
@@ -46,17 +46,16 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
   function targetsFor(shop: string): ConnectionTargets | undefined {
     if (!config.guardUrl) return undefined;
     const meta = shops.meta(shop);
-    // A UPI shop (B33) has no Razorpay account: nothing to check, no key to pin. A shop with no payment block is a Razorpay shop, as before.
-    const upi = moduleOf(shops.settings(shop)?.payment) === "upi";
+    // Only a shop that chose a gateway has a gateway account to check and a key to pin (B71): a UPI shop, or settings with no payment block, has none.
+    const gateway = gatewayOf(shops.settings(shop)?.payment);
     const runtime = shops.runtime(shop);
     const pins = shops.pins(shop);
     const wa = guardUrlFor(config, shop, "whatsapp") as string;
-    const rz = guardUrlFor(config, shop, "razorpay") as string;
     const hasCalendar = kindOf(shop).guards.includes("calendar");
     return {
       ...(agentToken ? { agentToken } : {}),
       whatsapp: { baseUrl: wa, phoneNumberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" },
-      ...(upi ? {} : { razorpay: { baseUrl: rz, ...(meta.razorpay?.keyId ? { keyId: meta.razorpay.keyId } : {}), expectedMode: meta.razorpay?.mode ?? "live", ...(pins?.razorpay?.keyId ? { pinnedKeyId: pins.razorpay.keyId } : {}) } }),
+      ...(gateway ? { gateway: { provider: gateway.id, baseUrl: guardUrlFor(config, shop, gateway.id) as string, ...(meta.gateway?.provider === gateway.id && meta.gateway.keyId ? { keyId: meta.gateway.keyId } : {}), expectedMode: meta.gateway?.mode ?? "live", ...(pins?.gateway?.provider === gateway.id && pins.gateway.keyId ? { pinnedKeyId: pins.gateway.keyId } : {}) } } : {}),
       ...(hasCalendar ? { calendar: { baseUrl: guardUrlFor(config, shop, "calendar") as string, calendarId: String(runtime?.services?.calendar?.calendarId ?? "") } } : {}),
     };
   }

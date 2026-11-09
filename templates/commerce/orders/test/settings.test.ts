@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { advanceFor, highestOrderInr, parseSettings, validateSettings } from "../src/settings.ts";
-import { razorpayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec, refundThresholdPaise } from "../src/guard-limits.ts";
 import { annapurna } from "../src/harness.ts";
 
 const dir = new URL("../settings/", import.meta.url);
@@ -42,7 +42,7 @@ test("the advance is all of the order or a part of it, rounded up to a whole rup
 
 test("Guard's numbers come from the settings: the refund threshold is the refund limit, links are bound to the dearest order the shop can take", () => {
   const s = annapurna();
-  const spec = razorpayLimitsSpec(s, { tenant: "t", version: 1, reviewedBy: "x" });
+  const spec = gatewayLimitsSpec(s, { tenant: "t", version: 1, reviewedBy: "x" });
   assert.equal(refundThresholdPaise(s), s.refund.limitInr * 100);
   const rule = (id: string) => spec.rules.find((r: any) => r.id === id);
   assert.equal(rule("refund-needs-owner").threshold, String(s.refund.limitInr * 100));

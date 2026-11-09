@@ -8,6 +8,8 @@
 //      certificate ("N of M limits proven to bite") is read from there. A mismatch stops the shop with the kill switch.
 //   6. write status/<shop>.json for the panel
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
+import { gatewayOf } from "../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../modules/payments/providers/index.ts";
 import { chownSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composeServer } from "./generate/compose.ts";
@@ -198,13 +200,15 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
   problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay));
-  // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch.
-  const pinned = razorpay ? folder.pins.razorpay : undefined;
-  const authorization = pinned ? readSecretFile(secretFile(ctx.dir, `g-${name}-razorpay`, "razorpay_authorization")) : undefined;
+  // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
+  // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
+  const gateway = gatewayOf((folder.settings as { payment?: PaymentSettings } | undefined)?.payment);
+  const pinned = gateway && folder.pins.gateway?.provider === gateway.id ? folder.pins.gateway : undefined;
+  const authorization = pinned ? readSecretFile(secretFile(ctx.dir, `g-${name}-${gateway!.id}`, gateway!.gateway!.guard.secretFile)) : undefined;
   if (pinned && authorization) {
     const keyId = Buffer.from(authorization.replace(/^Basic /u, ""), "base64").toString("utf8").split(":")[0];
-    if (keyId !== pinned.keyId) problems.push({ rule: "razorpay-key-matches-pin", message: `${name}: the Razorpay key handed in (id ${keyId}) is not the account the connection check confirmed (id ${pinned.keyId}). Check the account again before going on.` });
-    else if (!keyId.startsWith(`rzp_${pinned.mode}_`)) problems.push({ rule: "razorpay-key-matches-pin", message: `${name}: the Razorpay key ${keyId} is not a ${pinned.mode}-mode key, which is what the connection check confirmed.` });
+    if (keyId !== pinned.keyId) problems.push({ rule: "gateway-key-matches-pin", message: `${name}: the ${gateway!.displayName} key handed in (id ${keyId}) is not the account the connection check confirmed (id ${pinned.keyId}). Check the account again before going on.` });
+    else if (gateway!.gateway!.setup.modeOf(keyId) !== pinned.mode) problems.push({ rule: "gateway-key-matches-pin", message: `${name}: the ${gateway!.displayName} key ${keyId} is not a ${pinned.mode}-mode key, which is what the connection check confirmed.` });
   }
   if (first.problems.length > 0 || !pathwayDir) return { problems, notes };
 

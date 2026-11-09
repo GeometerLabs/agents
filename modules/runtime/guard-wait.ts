@@ -46,9 +46,9 @@ export class WaitingForGuard extends Error {
 }
 
 // What a method of a service does at the provider. A method on neither list is taken as one-time: an unknown method is never assumed repeatable.
-const READS = new Set(["get", "list", "conflicts", "freeBusy", "fetchPaymentLink", "listPaymentLinks", "fetchPayment", "listRefunds", "isWindowOpen", "getMessage", "ping"]);
-/** Found again on a rerun by the booking or fee they belong to (`ensureEvent`, `removeEvents`, `ensureLink`, `cancelPaymentLink` with its read-back): repeating one finds the first. */
-const FOUND_AGAIN = new Set(["insert", "update", "delete", "createPaymentLink", "cancelPaymentLink"]);
+const READS = new Set(["get", "list", "conflicts", "freeBusy", "fetchRequest", "listRequests", "fetchPayment", "listRefunds", "isWindowOpen", "getMessage", "ping"]);
+/** Found again on a rerun by the booking or fee they belong to (`ensureEvent`, `removeEvents`, `ensureLink`, `cancelRequest` with its read-back): repeating one finds the first. */
+const FOUND_AGAIN = new Set(["insert", "update", "delete", "createRequest", "cancelRequest"]);
 
 export interface StepWatch {
   /** What the agent is given in place of `services`. */
@@ -161,7 +161,7 @@ export function watchStep(services: Record<string, unknown> | undefined, options
 /** Reads that reach a service's Guard and change nothing. The reference is one no case has, so the provider answers with an empty list. */
 const PROBE_REFERENCE = "guard-wait-probe";
 const PROBES: Record<string, (service: any) => Promise<unknown> | undefined> = {
-  payments: (s) => s.listPaymentLinks({ reference_id: PROBE_REFERENCE }),
+  payments: (s) => s.listRequests({ reference_id: PROBE_REFERENCE }),
   calendar: (s) => s.list({ bookingRef: PROBE_REFERENCE }),
   messaging: (s) => s.ping?.(),
 };

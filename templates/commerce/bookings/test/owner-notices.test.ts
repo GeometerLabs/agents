@@ -30,7 +30,7 @@ const SCENARIOS: Scenario[] = [
   { name: "the slot could not be held", template: "owner_not_booked", says: `^Could not set up ${customer}'s haircut on ${WHEN}: the calendar or the payment link did not work\\. Nothing is booked\\.$`,
     run: async (w) => { w.calendar.inject("insert", "silentFailure", { times: 2 }); await w.say(BOOK); } },
   { name: "the payment link could not be made", template: "owner_not_booked", says: `^Could not set up ${customer}'s haircut on ${WHEN}: `,
-    run: async (w) => { w.payments.inject("createPaymentLink", "error", { times: 10 }); await w.say(BOOK); } },
+    run: async (w) => { w.payments.inject("createRequest", "error", { times: 10 }); await w.say(BOOK); } },
   { name: "the calendar will not confirm a paid booking", template: "owner_cant_confirm", says: `NOT booked\\..*Reply "retry b-1" .* "approve b-1" `,
     run: async (w) => { await w.say(BOOK); w.calendar.inject("update", "silentFailure", { times: 2 }); w.payments.customerPays(w.linkFor("b-1")!.id); await w.deliverPaymentEvents(); } },
   { name: "a late cancellation, which is the owner's call", template: "owner_late_cancellation", says: `^Customer ${customer} cancelled haircut on ${WHEN} less than 24 hours before the start\\. Deposit ₹200\\. Reply "approve b-1" to refund it or "deny b-1" to keep it\\.$`,
@@ -39,7 +39,7 @@ const SCENARIOS: Scenario[] = [
     run: async (w) => { await w.say(BOOK); const id = w.linkFor("b-1")!.id; w.payments.customerPays(id); w.payments.customerPays(id); await w.deliverPaymentEvents(); } },
   { name: "a payment arrived after the hold ended and the time was taken", template: "owner_payment_unused", says: `^A ₹200 payment from ${customer} arrived for ${WHEN}, but that booking was no longer active .* ₹200 was refunded\\.$`,
     run: async (w) => {
-      w.payments.inject("cancelPaymentLink", "error"); // the link stays open, so the customer can still pay it
+      w.payments.inject("cancelRequest", "error"); // the link stays open, so the customer can still pay it
       await w.say(BOOK);
       await w.advance(16);
       await w.say(BOOK, { from: OTHER_CUSTOMER });

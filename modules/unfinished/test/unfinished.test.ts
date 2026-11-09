@@ -18,8 +18,8 @@ const kinds = (found: Obligation[]) => found.map((o) => `${o.kind}:${o.caseId}`)
 const booking = (o: Partial<CaseLike> & { id: string; state: string }): CaseLike => ({ pending: [], ...o });
 
 test("a deposit received with no confirmed booking is listed, with the recovery actions that fit it", () => {
-  const stuck = booking({ id: "b-1", state: "needs_owner", depositPaymentId: "pay_1", depositInr: 200, pending: [{ kind: "calendar" }] });
-  const done = booking({ id: "b-2", state: "confirmed", depositPaymentId: "pay_2", depositInr: 200 });
+  const stuck = booking({ id: "b-1", state: "needs_owner", depositPaymentId: "pmt_1", depositInr: 200, pending: [{ kind: "calendar" }] });
+  const done = booking({ id: "b-2", state: "confirmed", depositPaymentId: "pmt_2", depositInr: 200 });
   const { found } = detect("bookings", [stuck, done], [entry("b-1", "record_deposit", "confirmed", NOW - 2 * HOUR), entry("b-2", "record_deposit", "confirmed", NOW - 2 * HOUR)]);
   const deposit = found.filter((o) => o.kind === "deposit_no_booking");
   assert.deepEqual(deposit.map((o) => o.caseId), ["b-1"]);
@@ -29,13 +29,13 @@ test("a deposit received with no confirmed booking is listed, with the recovery 
 });
 
 test("a thing the agent is still working on (a deposit a minute old) is not listed yet", () => {
-  const fresh = booking({ id: "b-1", state: "needs_owner", depositPaymentId: "pay_1", depositInr: 200 });
+  const fresh = booking({ id: "b-1", state: "needs_owner", depositPaymentId: "pmt_1", depositInr: 200 });
   assert.deepEqual(detect("bookings", [fresh], [entry("b-1", "record_deposit", "confirmed", NOW - 60_000)]).found, []);
 });
 
 test("an answer from the owner that waited too long is listed once, as that, and not also as a refund on its way", () => {
-  const late = booking({ id: "b-3", state: "cancelled", pending: [{ kind: "guard_hold", amountInr: 800, paymentId: "pay_3", heldAtMs: NOW - 13 * HOUR }] });
-  const recent = booking({ id: "b-4", state: "cancelled", pending: [{ kind: "guard_hold", amountInr: 800, paymentId: "pay_4", heldAtMs: NOW - 1 * HOUR }] });
+  const late = booking({ id: "b-3", state: "cancelled", pending: [{ kind: "guard_hold", amountInr: 800, paymentId: "pmt_3", heldAtMs: NOW - 13 * HOUR }] });
+  const recent = booking({ id: "b-4", state: "cancelled", pending: [{ kind: "guard_hold", amountInr: 800, paymentId: "pmt_4", heldAtMs: NOW - 1 * HOUR }] });
   const { found } = detect("bookings", [late, recent]);
   assert.deepEqual(kinds(found), ["approval_waiting_long:b-3", "refund_waiting:b-4"]);
   assert.equal(found[0].facts.hours, 13);
@@ -51,7 +51,7 @@ test("the wait before an answer is 'too long' is a setting with a default of 12 
 });
 
 test("a cancellation waiting for the owner's call on a refund takes its time from the record, and the agent's own ask can be sent again", () => {
-  const c = booking({ id: "b-5", state: "cancelled", pending: [{ kind: "refund", amountInr: 200, paymentId: "pay_5", reason: "late_cancellation" }] });
+  const c = booking({ id: "b-5", state: "cancelled", pending: [{ kind: "refund", amountInr: 200, paymentId: "pmt_5", reason: "late_cancellation" }] });
   const early = detect("bookings", [c], [entry("b-5", "refund", "held_for_owner", NOW - 30 * 60_000)]).found;
   assert.deepEqual(kinds(early), ["refund_waiting:b-5"]);
   assert.deepEqual([...early[0].actions], ["ask_owner_again"]);
@@ -61,7 +61,7 @@ test("a cancellation waiting for the owner's call on a refund takes its time fro
 });
 
 test("asking the owner again starts the wait again", () => {
-  const c = booking({ id: "b-5", state: "cancelled", pending: [{ kind: "refund", amountInr: 200, paymentId: "pay_5" }] });
+  const c = booking({ id: "b-5", state: "cancelled", pending: [{ kind: "refund", amountInr: 200, paymentId: "pmt_5" }] });
   const held = entry("b-5", "refund", "held_for_owner", NOW - 20 * HOUR);
   assert.deepEqual(kinds(detect("bookings", [c], [held]).found), ["approval_waiting_long:b-5"]);
   const again = { ...entry("b-5", "recovery", "confirmed", NOW - HOUR), refs: { action: "ask_owner_again", recovery: "r-2" } };

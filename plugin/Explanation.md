@@ -24,7 +24,7 @@ Followed: <https://code.claude.com/docs/en/plugins-reference> (manifest, `userCo
 | Tool | Calls |
 | --- | --- |
 | `list_modules` | `bundle/panel/templates.ts` (the templates found in `templates/`), `bundle/lib/kinds.ts` (which the bundle can run), the `modules/` READMEs |
-| `create_pathway` | `geometer shop add --template` (the name is the code's; in prose it is an agent template) |
+| `create_pathway` | `geometer shop add --template` (the name is the code's; in prose it is an agent template). B71: it asks for the shop's own UPI ID and payee (UPI is the default); a gateway account is a person's choice in the panel, and the example's made-up UPI ID is never used |
 | `draft_limits` | `bundle/lib/limits-draft.ts`, and the template's own settings check from `kinds.ts` |
 | `confirm_limits_link` | `geometer panel confirm-link`, which runs `bundle/panel/main.ts confirm-link` inside the panel container |
 | `crash_test`, `crash_test_result` | the template's `scripts/hand-check.ts` for a shop, `geometer agent crash-test --json` for an agent someone wrote; read back through `bundle/handcheck.ts` |

@@ -47,7 +47,7 @@ export type CheckedEvents = { ok: true; events: IncomingEvent[] } | { ok: false;
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 256;
-const PAYMENT_EVENTS = ["payment_link.paid", "payment.captured", "refund.processed"];
+const PAYMENT_EVENTS = ["request.paid", "payment.received", "refund.done"];
 /** Guard's approval ids look like ap-glow-salon-razorpay-458e...-3: letters, digits and a few separators, never anything a path or a log line could be confused by. */
 const APPROVAL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u;
 
@@ -95,13 +95,13 @@ function checkOne(raw: unknown): IncomingEvent | string {
     if (!isObj(e) || !p || !isText(e.id) || !PAYMENT_EVENTS.includes(e.event as string) || typeof e.created_at !== "number") {
       return `a payment event needs event.id, event.event (${PAYMENT_EVENTS.join(", ")}), event.created_at and event.payload.`;
     }
-    const link = isObj(p.payment_link) ? p.payment_link.id : undefined;
+    const link = isObj(p.request) ? p.request.id : undefined;
     const payment = isObj(p.payment) ? p.payment : undefined;
     const refund = isObj(p.refund) ? p.refund : undefined;
-    // A real payment.captured names the payment and not its link (the agent asks the payments service which link it paid), so its payment id is enough.
-    const hasWhatItNeeds = e.event === "refund.processed" ? isText(refund?.id) && isText(refund?.payment_id)
-      : e.event === "payment.captured" ? isText(payment?.id) || isText(payment?.link_id) || isText(link)
-      : isText(link) || isText(payment?.link_id);
+    // A payment.received may name the payment and not its request (the agent asks the payments service which request it paid), so its payment id is enough.
+    const hasWhatItNeeds = e.event === "refund.done" ? isText(refund?.id) && isText(refund?.payment_id)
+      : e.event === "payment.received" ? isText(payment?.id) || isText(payment?.request_id) || isText(link)
+      : isText(link) || isText(payment?.request_id);
     if (!hasWhatItNeeds) return `a ${e.event} event is missing the ids in its payload that say which payment it is about.`;
     return { kind: "payment_event", event: e as unknown as Extract<IncomingEvent, { kind: "payment_event" }>["event"] };
   }

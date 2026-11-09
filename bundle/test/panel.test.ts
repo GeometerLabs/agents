@@ -101,11 +101,11 @@ test("pins.json wins: the Guards AND the runtime are pinned to the ids the check
 test("a Razorpay key that is not the account the check confirmed is refused by name; so is a key of the other mode", async () => {
   const w = world(); try {
     w.handIn("glow-salon");
-    writeFileSync(join(w.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, checkedAt: "2026-11-04T09:00:00Z", razorpay: { keyId: "rzp_test_someoneelse", mode: "test" } }));
-    try { await deploy(w.ctx); assert.fail("it should be refused"); } catch (e) { assert.ok(e instanceof Refused); assert.equal(e.problems[0].rule, "razorpay-key-matches-pin"); assert.match(e.problems[0].message, /not the account the connection check confirmed/); }
-    writeFileSync(join(w.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, checkedAt: "2026-11-04T09:00:00Z", razorpay: { keyId: "rzp_test_abcdefghij", mode: "live" } }));
+    writeFileSync(join(w.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, checkedAt: "2026-11-04T09:00:00Z", gateway: { provider: "razorpay", keyId: "rzp_test_someoneelse", mode: "test" } }));
+    try { await deploy(w.ctx); assert.fail("it should be refused"); } catch (e) { assert.ok(e instanceof Refused); assert.equal(e.problems[0].rule, "gateway-key-matches-pin"); assert.match(e.problems[0].message, /not the account the connection check confirmed/); }
+    writeFileSync(join(w.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, checkedAt: "2026-11-04T09:00:00Z", gateway: { provider: "razorpay", keyId: "rzp_test_abcdefghij", mode: "live" } }));
     try { await deploy(w.ctx); assert.fail("it should be refused"); } catch (e) { assert.ok(e instanceof Refused); assert.match(e.problems[0].message, /not a live-mode key/); }
-    writeFileSync(join(w.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, checkedAt: "2026-11-04T09:00:00Z", razorpay: { keyId: "rzp_test_abcdefghij", mode: "test" } }));
+    writeFileSync(join(w.paths.shop("glow-salon"), "pins.json"), JSON.stringify({ schema: 1, checkedAt: "2026-11-04T09:00:00Z", gateway: { provider: "razorpay", keyId: "rzp_test_abcdefghij", mode: "test" } }));
     await deploy(w.ctx);
   } finally { w.done(); }
 });

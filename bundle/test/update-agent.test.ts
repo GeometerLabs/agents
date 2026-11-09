@@ -20,7 +20,7 @@ import { world } from "./world.ts";
 import type { World } from "./world.ts";
 
 const EXAMPLES = new URL("../examples/own-agent/", import.meta.url).pathname;
-const flags = { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
+const flags = { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
 const TITLES = ["A normal booking", "Razorpay created the link but the reply was lost", "Razorpay made the refund but the reply was lost", "Razorpay key expired"];
 const LOST_REFUND = "Razorpay made the refund but the reply was lost";
 const ALL_TITLES = Array.from({ length: 10 }, (_, i) => `situation ${i}`);

@@ -46,7 +46,7 @@ export interface Setup {
   /** The settings the draft makes (`raw`, when there is one, is what a builder would write and what is saved). */
   build(draft: Draft, example: any): Built;
   /** runtime.json: who things are. */
-  runtime(phoneNumberId: string, serverModel?: { wire: string; model: string }): Record<string, unknown>;
+  runtime(phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway?: boolean): Record<string, unknown>;
   /** The shop's limits as one sentence each, in the person's language (the certificate's own lines). */
   limitLines(draft: Draft, example: any, language: Language, saved?: any): string[];
   /** The titles of the two forms. */

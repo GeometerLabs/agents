@@ -11,13 +11,15 @@ import type { FakePaymentsOptions } from "../../../../../modules/payments/paymen
 import { createFakeMessaging } from "../../../../../modules/messaging/messaging.ts";
 import { createFakeCalendar } from "../../src/adapters/calendar.ts";
 import { createLiveAdapters } from "../../src/adapters/live/index.ts";
-import { parseRazorpayEvent, parseWhatsAppWebhook } from "../../../../../modules/messaging/webhooks.ts";
+import { parseWhatsAppWebhook } from "../../../../../modules/messaging/webhooks.ts";
+import { parseRazorpayEvent } from "../../../../../modules/payments/providers/razorpay/webhook.ts";
 import { createRuleParser } from "../../src/adapters/rule-parser.ts";
 import { createRecord } from "../../../../../modules/record/record.ts";
 import { glowSalon } from "../../src/harness.ts";
 import { startStandins } from "../../standins/server.ts";
 import type { RunningStandins } from "../../standins/server.ts";
-import { razorpayWebhookBody, whatsappWebhookBody } from "../../standins/control.ts";
+import { whatsappWebhookBody } from "../../standins/control.ts";
+import { razorpayWebhookBody } from "../../../../../modules/payments/providers/razorpay/standin.ts";
 import { zonedToMs } from "../../../../../modules/core/time.ts";
 
 export const SECRETS = { razorpayWebhookSecret: "standin-rzp-secret", whatsappAppSecret: "standin-wa-secret" };

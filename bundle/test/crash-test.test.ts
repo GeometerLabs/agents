@@ -14,7 +14,7 @@ import { BINARY, skipWithoutBinary } from "./real-guard.ts";
 
 const EXAMPLES = new URL("../examples/own-agent/", import.meta.url).pathname;
 const NOW = new Date("2026-11-05T09:00:00Z");
-const flags = { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
+const flags = { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
 const ALL = ["booking-works", "payment-link-lost-reply", "refund-lost-reply", "duplicate-payment-event", "calendar-silent-failure", "razorpay-key-expired", "refund-above-limit", "refund-more-than-paid", "duplicate-inbound", "price-below-floor"];
 
 function agentOn(run: string, extra: Record<string, string> = {}) {
@@ -108,4 +108,11 @@ test("an agent that cannot be driven is named as not run, with the reason, and i
     assert.match(nothing.err, /No situation could be run, so there is nothing to put in a certificate/u);
   } finally { a.done(); }
   await assert.rejects(() => crashTest("sh -c 'echo cannot find the app >&2; exit 3'"), /The agent did not start: the agent stopped by itself with exit code 3 before it answered\. It printed: cannot find the app\. The command was: /u);
+});
+
+test("B71: an agent that takes UPI through the desk is booked only after the owner's own mark, counted once, and owes a refund it never says was sent; the gateway situations are named as not applying", { skip: skipWithoutBinary }, async () => {
+  const r = await crashTest(`node ${EXAMPLES}server.js`, { upstreams: "upi,whatsapp,calendar", "upi-id": "glowsalon@okicici", payee: "Glow Salon" });
+  assert.deepEqual(r.situations.map((s) => s.id), ["upi-paid-only-after-owner", "upi-marked-twice", "upi-refund-owed"]);
+  assert.deepEqual(failing(r), [], r.situations.filter((s) => !s.held).map((s) => s.checks.filter((c) => !c.passed).map((c) => `${c.label}: ${c.detail}`).join("; ")).join(" | "));
+  assert.ok(r.notRun.some((s) => s.id === "booking-works" && /takes UPI through the desk/u.test(s.reason)), "the gateway situations say why they did not run");
 });

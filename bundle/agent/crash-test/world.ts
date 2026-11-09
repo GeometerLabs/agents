@@ -8,15 +8,23 @@
 import { createFakePayments } from "../../../modules/payments/payments.ts";
 import { createGuardClient } from "../../../modules/approvals/clients.ts";
 import { systemClock } from "../../../modules/core/clock.ts";
-import { signMeta, signRazorpay } from "../../../modules/messaging/webhooks.ts";
+import { signMeta } from "../../../modules/messaging/webhooks.ts";
+import { signRazorpay } from "../../../modules/payments/providers/razorpay/webhook.ts";
 import type { InboundMessage } from "../../../modules/messaging/messaging.ts";
-import type { Payment, PaymentLink, Refund } from "../../../modules/payments/payments.ts";
-import { razorpayWebhookBody, whatsappWebhookBody } from "../../../templates/commerce/bookings/standins/control.ts";
+import type { Payment, PaymentRequest, Refund } from "../../../modules/payments/payments.ts";
+import { whatsappWebhookBody } from "../../../templates/commerce/bookings/standins/control.ts";
+import { razorpayWebhookBody } from "../../../modules/payments/providers/razorpay/standin.ts";
 import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { RunningStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { CalendarEvent } from "../../../templates/commerce/bookings/src/adapters/calendar.ts";
 import type { Settings } from "../../../templates/commerce/bookings/src/settings.ts";
 import { names } from "../../generate/shop.ts";
+import { createDesk } from "../../../modules/payments/owner-marked/desk.ts";
+import type { Desk, DeskNotice } from "../../../modules/payments/owner-marked/desk.ts";
+import { emptyMarkState } from "../../../modules/payments/owner-marked/ledger.ts";
+import type { MarkState } from "../../../modules/payments/owner-marked/ledger.ts";
+import { serveRaw } from "../../../modules/standins/http.ts";
+import { paymentUpstreamOf } from "../folder.ts";
 import type { GuardPlan } from "../../generate/shop.ts";
 import type { ServerConfig } from "../../lib/server.ts";
 import { typedText } from "../facts.ts";
@@ -80,7 +88,7 @@ export interface World {
   pay(linkId: string): Promise<Payment>;
   /** The provider sends every event so far again, each signed: a late repeat. */
   repeatPaymentEvents(): Promise<void>;
-  links(): PaymentLink[];
+  links(): PaymentRequest[];
   refunds(): Refund[];
   /** Everything the calendar holds. Nobody but the agent writes to it here (an event the agent made carries no booking reference, so the stand-in lists it as another party's). */
   events(): CalendarEvent[];
@@ -98,6 +106,10 @@ export interface World {
   until(condition: () => boolean | Promise<boolean>, ms?: number): Promise<boolean>;
   /** The agent is still running. */
   alive(): boolean;
+  /** An agent that takes UPI: the desk it calls, its state, and what it told the owner. The owner marks with `ownerMarks`. */
+  desk?: { desk: Desk; state: MarkState; notices: DeskNotice[]; entries: { action: string; outcome: string }[] };
+  /** The owner taps Received for this request's code (or, given one, sends that code again). Returns what the desk made of it. */
+  ownerMarks(requestId: string, code?: string): Promise<string>;
   close(): Promise<void>;
 }
 
@@ -106,7 +118,8 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): Promise<World> {
   const { name, folder, settings, driver } = plan;
   const agentFile = folder.agent!;
-  const uses = { razorpay: agentFile.upstreams.includes("razorpay"), whatsapp: agentFile.upstreams.includes("whatsapp"), calendar: agentFile.upstreams.includes("calendar") };
+  const uses: Record<string, boolean> = Object.fromEntries(agentFile.upstreams.map((u) => [u, true]));
+  const paying = paymentUpstreamOf(agentFile.upstreams);
   const phoneNumberId = agentFile.whatsapp?.phoneNumberId ?? "100000000000001";
   const calendarId = agentFile.calendar?.calendarId;
   const secrets = { whatsapp: `crash-test-app-secret-${credential().token.slice(0, 12)}`, razorpay: `crash-test-webhook-secret-${credential().token.slice(0, 12)}` };
@@ -120,8 +133,8 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
     closers.push(() => standins.close());
     const cred = credential();
     const guards: Partial<Record<AgentUpstream, RealGuard>> = {};
-    for (const kind of ["razorpay", "whatsapp", "calendar"] as const) {
-      if (!uses[kind]) continue;
+    for (const kind of agentFile.upstreams) {
+      if (!uses[kind] || (paying?.ownerMarked && kind === paying.id)) continue; // an owner-marked module has no API and no Guard: the desk below
       const g = plan.guards.find((x) => x.kind === kind);
       if (!g) throw new Error(`There is no ${kind} Guard in the plan for ${name}.`);
       const real = await startRealGuard({
@@ -131,11 +144,24 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
       closers.push(real.stop);
       guards[kind] = real;
     }
+    // UPI (B71): the desk on Geometer's side, as the agent will call it, with the agent's one credential. What it tells the owner is kept to read.
+    let deskParts: World["desk"];
+    let deskUrl: string | undefined;
+    if (paying?.ownerMarked) {
+      const state = emptyMarkState();
+      const notices: DeskNotice[] = [];
+      const entries: { action: string; outcome: string }[] = [];
+      const desk = createDesk({ clock: systemClock, payment: settings.payment, owner: settings.owner.whatsapp, state, save: () => undefined, record: (e) => entries.push({ action: e.action, outcome: e.outcome }), tellOwner: async (n) => { notices.push(n); return true; }, labels: { received: "Received", refundSent: "Refund sent" } });
+      const served = await serveRaw(async (r) => (r.headers.authorization === `Bearer ${cred.token}` ? desk.handle(r.method, r.path, r.query, r.body) : { status: 401, body: { error: "the agent's credential is needed" } }));
+      closers.push(() => served.close());
+      deskParts = { desk, state, notices, entries };
+      deskUrl = served.url;
+    }
     const port = await freeLocalPort();
     const agent = await startAgent({
       command: plan.command, cwd: plan.cwd, port, startMs: driver.startMs,
       env: contractEnv({
-        port, razorpay: guards.razorpay?.agentUrl, calendar: guards.calendar?.agentUrl, whatsapp: guards.whatsapp?.agentUrl, credential: cred.token, calendarId, phoneNumberId,
+        port, razorpay: guards.razorpay?.agentUrl, ...(deskUrl ? { upi: deskUrl } : {}), calendar: guards.calendar?.agentUrl, whatsapp: guards.whatsapp?.agentUrl, credential: cred.token, calendarId, phoneNumberId,
         whatsappAppSecret: secrets.whatsapp, razorpayWebhookSecret: secrets.razorpay, depositInr: settings.deposit.amountInr, priceInr: settings.services[0].priceInr,
         ownerWhatsapp: settings.owner.whatsapp, version: plan.version ?? agentFile.version, retryMs: 300,
       }),
@@ -231,7 +257,7 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
           const body = await adminGet(k, "/admin/decisions?limit=1");
           return isObj(body) && Array.isArray(body.decisions) ? String((body.decisions[0] as Decision | undefined)?.id ?? "") : "?";
         }));
-        return [...newest, fakes.payments.calls.length, fakes.calendar.calls.length, fakes.messaging.outbox().length, fakes.payments.events.length].join("|");
+        return [...newest, JSON.stringify(deskParts?.state ?? null).length, fakes.payments.calls.length, fakes.calendar.calls.length, fakes.messaging.outbox().length, fakes.payments.events.length].join("|");
       },
       async settle(from) {
         const started = Date.now();
@@ -257,6 +283,14 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
         return await condition();
       },
       alive: () => agent.alive(),
+      ...(deskParts ? { desk: deskParts } : {}),
+      async ownerMarks(requestId, code) {
+        if (!deskParts) throw new Error("This agent does not take UPI.");
+        const r = deskParts.state.requests.find((x) => x.id === requestId);
+        const use = code ?? r?.code ?? undefined;
+        if (!use) return "unknown";
+        return deskParts.desk.ownerSays({ from: settings.owner.whatsapp, text: `received ${use}` });
+      },
       close,
     };
     return world;

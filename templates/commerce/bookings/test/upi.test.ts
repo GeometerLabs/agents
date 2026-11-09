@@ -8,7 +8,7 @@ import { parseSettings } from "../src/settings.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { checkEvents } from "../../../../modules/runtime/events.ts";
 import { parseWhatsAppWebhook } from "../../../../modules/messaging/webhooks.ts";
-import { UPI_ACTIONS, upiObligations } from "../../../../modules/payments/upi/obligations.ts";
+import { MARK_ACTIONS, markObligations } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { DEFAULT_OPTIONS, obligations } from "../../../../modules/unfinished/index.ts";
 import { notTestedFor } from "../report/data.ts";
 import { STRINGS } from "../report/strings.ts";
@@ -27,8 +27,8 @@ test("a screenshot comes through the webhook and the runtime's event check as a 
   assert.equal(JSON.stringify(event).includes("media-1"), false, "no media id reaches the runtime");
   w.messaging.receive(CUSTOMER, ""); // the customer's window, as the provider would see it
   await w.agent.handle(event as never);
-  assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.claim && e.refs.via === "screenshot").length, 1);
-  assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.marked).length, 0, "a screenshot marks nothing paid");
+  assert.equal(w.record.entries().filter((e) => e.action === MARK_ACTIONS.claim && e.refs.via === "screenshot").length, 1);
+  assert.equal(w.record.entries().filter((e) => e.action === MARK_ACTIONS.marked).length, 0, "a screenshot marks nothing paid");
   assert.equal(checkEvents({ events: [{ kind: "message", message: { ...message, image: "yes" } }] }).ok, false);
   assert.equal(checkEvents({ events: [{ kind: "message", message: { ...message, text: "hi" } }] }).ok, false, "a picture carries no words");
 });
@@ -37,9 +37,9 @@ test("\"I paid\" in words asks the owner to look; \"I have not paid yet\" does n
   const w = createWorld({ settings });
   await w.say("haircut tomorrow at 6pm");
   await w.say("I have not paid yet");
-  assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.claim).length, 0);
+  assert.equal(w.record.entries().filter((e) => e.action === MARK_ACTIONS.claim).length, 0);
   await w.say("I have paid");
-  assert.equal(w.record.entries().filter((e) => e.action === UPI_ACTIONS.claim && e.refs.via === "words").length, 1);
+  assert.equal(w.record.entries().filter((e) => e.action === MARK_ACTIONS.claim && e.refs.via === "words").length, 1);
 });
 
 test("a go-live certificate of a UPI shop says that automatic payment checking does not apply, in the shop's words", () => {
@@ -79,5 +79,5 @@ test("the unfinished work is read from the record as the deployer exports it (th
   const found = obligations.detect({ template: "bookings", entries: exported, cases: JSON.parse(JSON.stringify([...w.store.bookings.values()])), nowMs: w.clock.now(), options: DEFAULT_OPTIONS }).found;
   assert.deepEqual(found.filter((o) => o.kind.startsWith("upi_")).map((o) => [o.kind, o.caseId, o.facts.amountInr]), [["upi_payment_unconfirmed", "b-1", 200], ["upi_refund_owed", "b-2", 200]]);
   assert.equal(found.filter((o) => o.kind === "refund_failed").length, 0, "nothing is listed twice");
-  assert.equal(upiObligations(exported).length, 2);
+  assert.equal(markObligations(exported).length, 2);
 });

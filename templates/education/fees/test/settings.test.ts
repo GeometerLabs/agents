@@ -52,11 +52,12 @@ test("a mistake is said in plain words, with what to do about it", () => {
   assert.match(errorsOf((s) => { s.surprise = 1; }).join("\n"), /I don't know what "surprise" means/);
 });
 
-test("the payment module: UPI needs the centre's own UPI ID and payee name, checked in plain words; Razorpay has neither; no block is Razorpay (B33)", () => {
+test("the payment module: UPI needs the centre's own UPI ID and payee name, checked in plain words; Razorpay has neither; no block is refused and asks for the UPI ID (B33, B71)", () => {
   const upi = parseSettings(raw("bright-tuition-upi"));
   assert.deepEqual(upi.payment, { module: "upi", upi: { id: "brighttuition@oksbi", payee: "Bright Tuition" } });
   assert.deepEqual(parseSettings(raw("bright-tuition")).payment, { module: "razorpay" });
-  assert.deepEqual(parseSettings({ ...raw("bright-tuition"), payment: undefined }).payment, { module: "razorpay" });
+  // B71: a file with no block is never a gateway centre; it is told to give the centre's own UPI ID
+  assert.match(errorsOf((s) => { delete s.payment; }).join("\n"), /Add how customers pay \("payment"\)\. UPI is the default/);
   assert.match(errorsOf((s) => { s.payment = { module: "upi" }; }).join("\n"), /needs its UPI ID and the payee name/);
   assert.match(errorsOf((s) => { s.payment = { module: "upi", upi: { id: "brighttuition", payee: "Bright Tuition" } }; }).join("\n"), /payment\.upi\.id.*needs an @/);
   assert.match(errorsOf((s) => { s.payment = { module: "upi", upi: { id: "bt@oksbi", payee: "" } }; }).join("\n"), /payment\.upi\.payee.*payee name/);

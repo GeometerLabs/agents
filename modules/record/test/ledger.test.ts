@@ -67,7 +67,7 @@ test("the head the runtime works out from its record in memory is the head of th
   const dir = mkdtempSync(join(tmpdir(), "geo-ledger-db-"));
   try {
     const record = createRecord(fakeClock(t0));
-    record.append({ conversation: "+919800000001", booking: "b-1", action: "refund", inputs: { amountInr: 300 }, outcome: "held_for_owner", decisions: [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "above the limit" }], language: "kn", notes: "Guard is holding it", refs: { paymentId: "pay_1", approval: undefined as unknown as string, amountPaise: "30000" } });
+    record.append({ conversation: "+919800000001", booking: "b-1", action: "refund", inputs: { amountInr: 300 }, outcome: "held_for_owner", decisions: [{ ruleId: "refund-limit", verdict: "hold_for_owner", reason: "above the limit" }], language: "kn", notes: "Guard is holding it", refs: { paymentId: "pmt_1", approval: undefined as unknown as string, amountPaise: "30000" } });
     record.append({ conversation: "+919800009999", booking: null, action: "owner_decision", inputs: { command: "approve" }, outcome: "confirmed", language: "kn" });
     const db = openStore(dir);
     db.commitStep({ snapshot: "{}", entries: record.entries(), nowMs: t0 });

@@ -113,7 +113,7 @@ test("stop switches an agent's own Guards and nothing shared: there is no model 
 
 // ---- the relay's look at the payment -----------------------------------------------------------------------------------------------------------------
 
-const heldItem = (receipt: string | null, payment = "pay_7", amount = "20000") => ({
+const heldItem = (receipt: string | null, payment = "pmt_7", amount = "20000") => ({
   id: "ap-1", agent: "agent-my-agent", tool: "razorpay", operation: "refund", requested_at_ms: "1793826609791", expires_at_ms: "1793913009791", you_may_decide: true,
   arguments: ["map", { amount: ["int", amount], payment_id: ["str", payment], ...(receipt ? { receipt: ["str", receipt] } : {}) }],
 });
@@ -122,19 +122,19 @@ const runtimeWith = (items: unknown[], answer: (url: string) => Response | Promi
 
 test("the owner is asked about the payment and the amount Guard holds, with who paid and when from Razorpay's own record; never from the agent", async () => {
   const urls: string[] = [];
-  const rt = runtimeWith([heldItem("b-1"), heldItem("b-2", "pay_8")], (url) => { urls.push(url); return Response.json({ id: "pay_7", contact: "+919876543210", created_at: 1793826600 }); });
+  const rt = runtimeWith([heldItem("b-1"), heldItem("b-2", "pmt_8")], (url) => { urls.push(url); return Response.json({ id: "pmt_7", contact: "+919876543210", created_at: 1793826600 }); });
   const found = await rt.context("b-1");
-  assert.deepEqual(urls, ["http://rzp/v1/payments/pay_7"]);
+  assert.deepEqual(urls, ["http://rzp/v1/payments/pmt_7"]);
   assert.equal(found.kind, "found");
-  if (found.kind === "found") assert.deepEqual(found.context, { booking: "b-1", customerPhone: "+919876543210", businessName: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: "en", serviceName: "payment pay_7", slotMs: 1793826600000, paymentId: "pay_7", amountPaise: 20000, approval: "ap-1", expiresAtMs: 1793913009791 });
+  if (found.kind === "found") assert.deepEqual(found.context, { booking: "b-1", customerPhone: "+919876543210", businessName: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: "en", serviceName: "payment pmt_7", slotMs: 1793826600000, paymentId: "pmt_7", amountPaise: 20000, approval: "ap-1", expiresAtMs: 1793913009791 });
   assert.deepEqual(await rt.context("b-9"), { kind: "missing" }, "no held refund has that receipt");
   assert.equal(await rt.decided(), true);
   // Razorpay shows no contact: the payment stands in. Razorpay has no such payment: nobody is asked. Razorpay is down: it is the builder's to look at.
-  const none = await runtimeWith([heldItem("b-1")], () => Response.json({ id: "pay_7", created_at: 1793826600 })).context("b-1");
-  assert.equal(none.kind === "found" && none.context.customerPhone, "the customer of pay_7");
+  const none = await runtimeWith([heldItem("b-1")], () => Response.json({ id: "pmt_7", created_at: 1793826600 })).context("b-1");
+  assert.equal(none.kind === "found" && none.context.customerPhone, "the customer of pmt_7");
   assert.deepEqual(await runtimeWith([heldItem("b-1")], () => Response.json({ error: {} }, { status: 400 })).context("b-1"), { kind: "missing" });
   assert.equal((await runtimeWith([heldItem("b-1")], () => new Response("", { status: 502 })).context("b-1")).kind, "error");
-  const twice = await runtimeWith([heldItem("b-1"), heldItem("b-1", "pay_8")], () => Response.json({})).context("b-1");
+  const twice = await runtimeWith([heldItem("b-1"), heldItem("b-1", "pmt_8")], () => Response.json({})).context("b-1");
   assert.equal(twice.kind === "error" && /more than one held refund/.test(twice.error), true, "two holds with one receipt are not guessed between");
 });
 
