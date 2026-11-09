@@ -1,5 +1,6 @@
 // The runtime's one SQLite file per client agent (Node's built-in node:sqlite, no dependencies). It holds four things:
-//   tasks   every event that has been handed to us, saved before we answer, so a restart loses none
+//   tasks   every event that has been handed to us, saved before we answer, so a restart loses none. A task that waits for a Guard stays `pending` here, with the Guard's
+//           service and when to look again, so a waiting task survives a restart and the counts a heartbeat sends do not change shape (guard-wait.ts)
 //   state   the agent's Store as one JSON snapshot (see snapshot.ts)
 //   record  the action record, append-only (the database itself refuses an update or a delete)
 //   window  when each person last messaged us, for WhatsApp's 24-hour rule
@@ -25,6 +26,10 @@ export interface Task {
   state: TaskState;
   attempts: number; // counted BEFORE a step runs, so a step that kills the process cannot loop forever
   lastError: string | null;
+  /** The service whose Guard this task is waiting for ("payments", "calendar", "messaging"), or null when it is not waiting. */
+  waitingOn: string | null;
+  /** When to look at that Guard again (epoch milliseconds). */
+  retryAt: number | null;
 }
 
 export interface TaskCounts { pending: number; done: number; failed: number }
@@ -39,12 +44,22 @@ export interface DurableStore extends WindowStore {
   startAttempt(id: string): number;
   /** Keep the error. `final` marks the task failed; otherwise it stays pending for another try. */
   failTask(id: string, error: string, final: boolean): void;
+  /**
+   * This step found a Guard unreachable and nothing of it was saved: the task stays pending and waits. The attempt `startAttempt` counted is taken back in the same write,
+   * because finding a Guard down is not the task's fault and must not use up its tries, while a process that dies inside a step still counts (startAttempt runs before it).
+   */
+  parkTask(id: string, on: string, retryAt: number, error: string): void;
+  /** The Guard still does not answer: look again later. The task's attempts are not touched. */
+  postponeTask(id: string, retryAt: number): void;
   taskCounts(): TaskCounts;
   oldestPendingAt(): number | null;
   /** What the last saved step left: the agent's snapshot (null before the first step) and the whole record. */
   loadState(): { snapshot: string | null; record: RecordEntry[] };
-  /** Save one step: snapshot, new record entries and (for a task) its done mark, in one transaction. */
-  commitStep(step: { taskId?: string; snapshot: string; entries: readonly RecordEntry[]; nowMs: number }): void;
+  /**
+   * Save one step: snapshot, new record entries and (for a task) its done mark, in one transaction. `failedWith`: the task ended without its work done (it gave up waiting
+   * for a Guard), so it is marked failed instead and keeps its event for a person, in the same transaction as the record entry that says so.
+   */
+  commitStep(step: { taskId?: string; snapshot: string; entries: readonly RecordEntry[]; nowMs: number; failedWith?: string }): void;
   /**
    * The text of conversations that are over: a failed task keeps its event (the message as the person wrote it) for a person to look at, until `beforeMs`; then
    * only its outcome is kept (its id, kind, state and error). A done task's text is emptied when it is done. Never touches the record. Returns how many were emptied.
@@ -91,6 +106,11 @@ const MIGRATIONS: string[] = [
     phone TEXT PRIMARY KEY,
     last_inbound_at INTEGER NOT NULL
   );
+  `,
+  // Waiting for a Guard (guard-wait.ts). Columns, not a new `state`: the CHECK on `state` could only change by rebuilding the table, and a waiting task IS pending.
+  `
+  ALTER TABLE tasks ADD COLUMN waiting_on TEXT;
+  ALTER TABLE tasks ADD COLUMN retry_at INTEGER;
   `,
 ];
 
@@ -140,10 +160,12 @@ export function openStore(dataDir: string): DurableStore {
   const insertTask = db.prepare("INSERT OR IGNORE INTO tasks (id, kind, payload, received_at) VALUES (?, ?, ?, ?)");
   const noteInbound = db.prepare("INSERT INTO window (phone, last_inbound_at) VALUES (?, ?) ON CONFLICT (phone) DO UPDATE SET last_inbound_at = max(last_inbound_at, excluded.last_inbound_at)");
   const lastInbound = db.prepare("SELECT last_inbound_at FROM window WHERE phone = ?");
-  const oldestPending = db.prepare("SELECT id, kind, payload, received_at, state, attempts, last_error FROM tasks WHERE state = 'pending' ORDER BY seq LIMIT 1");
+  const oldestPending = db.prepare("SELECT id, kind, payload, received_at, state, attempts, last_error, waiting_on, retry_at FROM tasks WHERE state = 'pending' ORDER BY seq LIMIT 1");
   const countAttempt = db.prepare("UPDATE tasks SET attempts = attempts + 1 WHERE id = ? RETURNING attempts");
-  const failOne = db.prepare("UPDATE tasks SET last_error = ?, state = ? WHERE id = ?");
-  const finishOne = db.prepare("UPDATE tasks SET state = 'done', payload = '{}', last_error = NULL WHERE id = ?");
+  const failOne = db.prepare("UPDATE tasks SET last_error = ?, state = ?, waiting_on = NULL, retry_at = NULL WHERE id = ?");
+  const finishOne = db.prepare("UPDATE tasks SET state = 'done', payload = '{}', last_error = NULL, waiting_on = NULL, retry_at = NULL WHERE id = ?");
+  const parkOne = db.prepare("UPDATE tasks SET waiting_on = ?, retry_at = ?, last_error = ?, attempts = max(attempts - 1, 0) WHERE id = ?");
+  const postponeOne = db.prepare("UPDATE tasks SET retry_at = ? WHERE id = ?");
   const counts = db.prepare("SELECT state, count(*) AS n FROM tasks GROUP BY state");
   const oldestAt = db.prepare("SELECT min(received_at) AS at FROM tasks WHERE state = 'pending'");
   const readSnapshot = db.prepare("SELECT snapshot FROM state WHERE id = 1");
@@ -171,11 +193,13 @@ export function openStore(dataDir: string): DurableStore {
     nextPending() {
       const row = oldestPending.get() as Record<string, string | number | null> | undefined;
       if (!row) return undefined;
-      return { id: row.id as string, kind: row.kind as Task["kind"], payload: row.payload as string, receivedAt: row.received_at as number, state: row.state as TaskState, attempts: row.attempts as number, lastError: row.last_error as string | null };
+      return { id: row.id as string, kind: row.kind as Task["kind"], payload: row.payload as string, receivedAt: row.received_at as number, state: row.state as TaskState, attempts: row.attempts as number, lastError: row.last_error as string | null, waitingOn: row.waiting_on as string | null, retryAt: row.retry_at as number | null };
     },
 
     startAttempt: (id) => (countAttempt.get(id) as { attempts: number }).attempts,
     failTask(id, error, final) { failOne.run(error.slice(0, 500), final ? "failed" : "pending", id); },
+    parkTask(id, on, retryAt, error) { parkOne.run(on, retryAt, error.slice(0, 500), id); },
+    postponeTask(id, retryAt) { postponeOne.run(retryAt, id); },
 
     taskCounts() {
       const result: TaskCounts = { pending: 0, done: 0, failed: 0 };
@@ -189,11 +213,14 @@ export function openStore(dataDir: string): DurableStore {
       return { snapshot: row?.snapshot ?? null, record: (readRecord.all() as { entry: string }[]).map((r) => JSON.parse(r.entry) as RecordEntry) };
     },
 
-    commitStep({ taskId, snapshot, entries, nowMs }) {
+    commitStep({ taskId, snapshot, entries, nowMs, failedWith }) {
       inTransaction(db, () => {
         saveSnapshot.run(snapshot, nowMs);
         for (const e of entries) addEntry.run(e.seq, e.time, e.conversation, e.booking, e.action, e.outcome, JSON.stringify(e));
-        if (taskId !== undefined) finishOne.run(taskId);
+        if (taskId !== undefined) {
+          if (failedWith === undefined) finishOne.run(taskId);
+          else failOne.run(failedWith.slice(0, 500), "failed", taskId);
+        }
       });
     },
 

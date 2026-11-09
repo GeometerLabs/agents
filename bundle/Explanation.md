@@ -399,6 +399,46 @@ The two Litestream windows of the run itself (at its default, and with the ignor
 
 `test/proof/run.ts` runs the real thing, on Docker Desktop (Apple silicon, 8 GB for the VM, Docker 29.8, Compose v2), with the real Guard image `geo-guard:0.1.0-alpha.2-pathways.1`, the stand-ins as the providers, MinIO as the bucket, the real `apps/fleet` on the host with its own temporary config and data, and `age` from Alpine for the interoperability check. The third full run, on 4 November 2026: **148 checks, none failed** (1, 5 and 10 shops, about 25 minutes). The two runs before it found real faults, now fixed and each with a test: stopping one shop had pulled the shared model Guard's kill switch for every shop; a new shop's Calendar Guard could not be created because the token folder it mounts did not exist yet; the drill could not open a restored copy on a read-only mount; and the proof's own mistakes (a stand-in's answer read as a Guard's refusal; `docker kill` read as a crash, which Docker does not restart).
 
+### The proof run of 10 November: a Guard down for minutes, the shop's key, the panel's WhatsApp check, 25 shops, and where the disk writes go
+
+**What ran:** `test/proof/run.ts --shops 1,25 --only panel,kill,outage,outputs,data,load`, on the same machine as on 9 November. The Guard image was `geo-guard:local-b14`, as before. The code was this branch with main merged in, so it includes the keyed customer fingerprints (B69). This time the heartbeat ran at its real default of 60 s, not 10 s. **Result: 64 checks, none failed**, in 32 minutes; everything it made was removed at the end.
+
+| Claim | Result |
+|---|---|
+| **A Guard down for several minutes, under traffic** (new: the `outage` phase) | **Razorpay Guard down for 189 s**, with the runtime restarted 90 s into the outage. A customer wrote every 10 s, 24 in all, and every second link was paid. Just after the restart, 10 tasks were waiting on disk. **Nothing reached the Razorpay stand-in while the Guard was down** (391 calls before, 391 after). Once it was back, **all 24 customers were answered**, the longest wait being 210 s. No task failed, and no booking got a second link or event; no customer got the same words twice. **WhatsApp Guard down for 189 s**, the same way: 9 tasks waiting after the restart, the outbox at 97 before and 97 after, all 24 answered (longest wait 210 s), none failed, nothing twice. **Run again with one more check** (`--shops 1 --only outage`, 23 checks, none failed): each payment's work done once, read from the provider's side, so that every paid link's booking is confirmed in the calendar by exactly one event. With Razorpay down 188 s: 25 of 25 answered and 12 paid links, each confirmed once. With WhatsApp down 188 s: 24 of 24 answered and 30 paid links, each confirmed once. |
+| **Each Guard killed for 17 s** (the `kill` phase again) | Razorpay 8 of 8 answered, the calendar 9 of 9, WhatsApp 10 of 10. Nothing reached a stopped Guard's provider, and nothing was sent twice. **The runtime recorded nothing while a Guard was down:** a step that finds its Guard down now waits instead of recording a "failed" link or send. On 9 November the same kills left 3 links and 5 sends recorded as `failed`. |
+| **The panel's connection check, WhatsApp included** | The shop's WhatsApp business number was written where the panel's setup keeps it (`meta/<shop>.json` in the panel's own store), using the panel's own code, inside the real container. The check then read the number through the WhatsApp Guard: **WhatsApp, Razorpay and the calendar all `confirmed`**. The shop was not made through the panel's forms; that would need an account, a sign-in and the vault, which is a proof of its own. |
+| **The shop's fingerprint key on a real server** (B69, from main) | The shop's key is 0600 and owned by the deployer (uid 501). The panel's copy is also 0600 and the deployer's, and inside the panel it is mounted 0600 for the user the panel runs as (501, not root) and is readable. The runtime gets `RECORD_KEY_FILE=/run/secrets/record_key` through compose. Inside the runtime (uid 1000, not root) the file reads as 64 hex digits, and there is no copy of the shop's key. The record key is made from the shop's key and differs from it (0644). The runtime was up and (healthy), and in live mode it does not start without that file. **Not run:** a deployer running as root, the path where the panel runs as 1000 and its files are handed to that user. This run's deployer was a normal user. |
+| Outputs and data | The status refresh, the export for the monthly report (960 record entries, 75 bookings, no phone number), the panel's stop request, the nightly snapshot (all age files), the weekly drill and a restore all passed. |
+| **The 25-shop health count** | The fix (`ps -a`, read again for up to a minute) ran: **104 listed, 104 expected, all (healthy)**. After the 25-shop deploy every Guard's limits were shown to bite (21 of 21 a shop). |
+
+**Where the disk writes come from.** Not the heartbeat, as far as this run shows: ops and the refresher wrote nothing measurable, and the load figure at 25 shops is close to the one measured with the 10-second heartbeat. This run did not measure at 10 s. At the real default of 60 s, a quiet shop wrote **3.2 to 3.3 MiB an hour**, all of it from the shop's three Guards; ops, the refresher and the runtime wrote nothing measurable. This run measured each container's own `io.stat` as well as the cgroup's, under the same load as on 9 November (a new customer every 15 s per shop, every second link paid):
+
+- **25 shops:** 279 MiB a shop an hour in all. The shop's Guards wrote 235 of it and the runtime 32; the containers account for 96% of the cgroup's count.
+- **1 shop** (the proof's first shop, which had already run every other phase): 642 MiB an hour. The runtime wrote 125 of it and the Guards 160. The rest was counted at the cgroup and not in any running container, and this run did not take it apart.
+
+- **The runtime's share follows the size of its saved state.** Every step writes the whole snapshot again, in one transaction: once into the write-ahead log, and once more when SQLite checkpoints it into the database file. At this run's 57,890-byte snapshot (75 bookings) that is about 110 KiB a step, which is what was measured.
+- **The snapshot only grows.** Every booking and every message id ever seen stay in it, at about 0.8 KiB a booking here. So a shop's writes grow with its age, not only with its traffic.
+- **The Guards' share** is their record of each provider call, about 1 MiB for one customer's conversation (about eight calls through the Guards).
+
+**What a real shop would write**, from these figures:
+
+- a fixed 3 MiB an hour;
+- plus, for each customer conversation (a message, its hold and link, and half the time a payment), about 1.2 MiB: about 1 MiB from the Guards, and the rest the runtime's while the snapshot is under 60 KiB;
+- a salon with 30 such conversations on a busy day therefore writes about 115 MiB that day while young;
+- after a year at 20 bookings a day the snapshot would be about 5 to 6 MiB, so each step would write about 11 MiB, and the same day about 1 GiB.
+
+That growth is a design limit of saving the whole store on every step, not a fault of this run. Deferred.md has it.
+
+**Load, inside 2 CPUs and 4 GiB**, as on 9 November but with the heartbeat at 60 s:
+
+| Shops | Messages | Answered | p50 ms | p95 ms | max ms | CPU, quiet (cores) | CPU, load (cores) | CPU, peak 10 s | Memory at end (MiB) | Memory peak (MiB) | Writes, quiet (MiB/shop/h) | Writes, load (MiB/shop/h) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 8 | 8 | 86 | 142 | 142 | 0.029 | 0.042 | 0.088 | 405 | 483 | 3.2 | 642 |
+| 25 | 198 | 198 | 108 | 859 | 888 | 0.324 | 0.526 | 0.694 | 1,974 | 2,058 | 3.3 | 279 |
+
+Every message was answered, no container was killed for memory, and the bound (a first answer within 5 s, 95 times in 100) held at 25 shops. At 25 shops the cap throttled the containers for 19.9 s of the 120 s, against 38.8 s with the 10-second heartbeat. Quiet CPU was 0.32 cores, against 0.37.
+
 ### The B14 checks
 
 | Claim | Result |

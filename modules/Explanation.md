@@ -245,6 +245,34 @@ link) and leave everything that finishes money owed. The decision they record is
   instead of trying again at the next beat; Orders, when Guard refuses the advance link, lets the order go back to an enquiry and answers "Online ordering is
   paused ... contact the shop", with no "link failed" to the owner.
 
+## A Guard that is down: the message waits (B14, 10 Nov)
+
+`runtime/guard-wait.ts`, `runtime/tasks.ts`, `core/faults.ts`.
+
+**Why the retries were not enough.** The agents' own failure handling cannot tell "the provider said no" from "the Guard is down". `say`, `ensureLink`, `ensureEvent` and the `.catch(() => false)` beside many reads catch the error and go on: the customer is sent "sorry", or nothing, and the step is saved as done. Only an uncaught read reached the task runner's 1, 5 and 30 s retries. A longer retry would have fixed that one path.
+
+**What happens now.** Each task's step runs over watched services (`watchStep`), which is why the wrapper goes through `kit.createAgent` and not into the HTTP client: the in-memory fakes make the same decisions as the live adapters. Whether the step is kept is decided after the agent returns, whatever it caught.
+
+| The step | What happens |
+|---|---|
+| A call finds its Guard unreachable or not ready, and nothing that cannot be repeated has gone yet | The step stops. No later call of that step leaves, so the agent's "sorry" never goes out. Nothing is saved and the task waits, at the head of the queue, with the time to look again saved on it. |
+| A WhatsApp send, a refund, a held call or a write of unknown outcome has already gone | It cannot run again, so it does not wait. If it finishes, it is saved as it is. If it throws, it ends there, once, and the to-do list has it. |
+| The wait is over (15 minutes from when the message arrived) | It runs once more with waiting off, so the agent's own "could not" words go out. Then one record line (`guard_wait_over`), which the to-do list reads as `message_unanswered`. If that last try throws, the customer gets `couldnt_tell_owner`. |
+
+What each error kind means is one table, at `waitsForGuard` in `core/faults.ts`, with one test row per kind. `provider_unreachable` does not wait: the Guard is up and the provider is away, so it keeps today's handling. Nor does the kill switch: a shop someone stopped on purpose is not an outage, and its messages must not sit for 15 minutes and then be filed as one. Guard says it only in its reason ("kill switch engaged: ..."), so that is what is read. Whether a provider's own outage should wait too is an open decision (Deferred.md).
+
+**Order stays shop-wide.** While one task waits, the shop's later messages wait behind it, including ones that do not need that Guard. Letting them go past was considered and not done. A step that is thrown away has already taken the shop's next case number and may have made a calendar hold and a payment link under it. If the next conversation ran first it would take the same number, and its "look first" would find the first customer's hold and link. Keeping them apart needs reserved ids, and a place in line for payment events that name no conversation. A Guard that stays down past the bound therefore stops holding the shop up: the runtime has given up on it, later tasks take today's path at once, and it waits again only after that Guard has answered. The cost, at its worst, is the shop's silence for one bound per outage.
+
+**When the wait ends without the Guard,** a step that threw on its last try gives the customer `couldnt_tell_owner` (Fees: `fee_couldnt_tell_owner`): "Sorry, I couldn't reach the owner just now. Please try again in a few minutes." Those are the words the templates already have for "this could not be done just now", but nobody tried the owner on WhatsApp: the owner hears through the to-do list. Words of its own, in four languages, are the owner's call (Deferred.md).
+
+**The bound is 15 minutes,** from when the message arrived, so a customer's second message cannot add a second wait. It is the whole shop's silence at its worst, so it stays short of a customer giving up; it covers a Guard restart, a redeploy and a server reboot; a Guard still down after that needs a person; and it is the deposit hold's default length.
+
+**Fixed cost while waiting.** The queue sleeps until the time saved on the task, then asks the Guard one plain read (`guardAnswers`), backing off to every 30 s. A step, and so a model call, runs again only when the Guard has answered. One outage costs about one extra model call in all, for the message at the head of the queue, which read the message before it found the Guard down; a Guard that keeps flapping costs one more each time it comes back and goes again. That extra read is paid to the provider and is not in the month's meter, because the first try's counts were thrown away with the step. No WhatsApp message and no bucket request is made by waiting.
+
+**Ticks are not tasks.** A tick cannot wait and keeps today's rules: if it throws, the next one tries. But the next tick starts from the same saved state, so a reminder it had already sent would go out again, once a tick, for as long as the outage lasts. `sendMemory` keeps what a thrown-away tick's one-time calls answered, in memory until a tick is saved, so the next tick gets the answers instead of repeating the calls.
+
+**Two things a rerun leaves as they are.** A relative date ("tomorrow") is read when the step runs, so a message that waits across midnight means the next day; the customer sees the date in the quote. A UPI request's one-use code is made again by the rerun, so if the owner was told before the Guard went down they would get a second code; that needs a send, so such a step does not wait in the first place.
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.
