@@ -107,8 +107,8 @@ Most owner messages are also WhatsApp templates, because they are sent by the ag
 | `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | याद दिलाना: ग्राहक +919811111111 (ऑर्डर o-3) को ₹120 अभी भी वापस देना है। UPI से भेजने के बाद "रिफंड भेज दिया" दबाएँ या "refunded P4XR9T" लिखकर भेजें। | Reminder: customer +919811111111 (order o-3) is still owed ₹120. After you send it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | धन्यवाद। ऑर्डर o-3 का ₹120 रिफंड भेजा हुआ दर्ज हो गया है, और ग्राहक को बता दिया गया है। | Thank you. The ₹120 refund for order o-3 is marked sent, and the customer has been told. |  |
 | `owner_upi_refund_kept` | UPI shop: the owner kept the money for an order they take by hand | ठीक है। ऑर्डर o-3 के ₹120 आपके खुद लिए गए ऑर्डर के लिए रखे गए हैं। अब कुछ वापस देना बाकी नहीं है। | Okay. The ₹120 for order o-3 is kept for an order you take by hand. Nothing more is owed back. |  |
-| `owner_licence_paused` | The one notice to the owner when the licence winds down: online ordering is paused, who to contact. Never about money | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर अभी रुके हुए हैं। पहले के ऑर्डर, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया Divya, local partner से संपर्क करें। | Notice: online ordering for Annapurna Tiffins is paused for now. Existing orders, cancellations and refunds still go through. Please contact Divya, local partner. |  |
-| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर बंद हो गए हैं। कुछ भी मिटाया नहीं गया है। आने वाले ऑर्डर: 4। बाकी खुले काम: 1। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी शुक्रवार, 5 मार्च तक Divya, local partner से मिल सकती है। | Notice: online ordering for Annapurna Tiffins has stopped. Nothing is deleted. Orders to come: 4. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
+| `owner_licence_paused` | The one notice to the owner when the licence winds down: online ordering is paused, who to contact. Never about money | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर अभी रुके हुए हैं। पहले के ऑर्डर, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया Divya, Sri Sai Digital से संपर्क करें। | Notice: online ordering for Annapurna Tiffins is paused for now. Existing orders, cancellations and refunds still go through. Please contact Divya, Sri Sai Digital. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर बंद हो गए हैं। कुछ भी मिटाया नहीं गया है। आने वाले ऑर्डर: 4। बाकी खुले काम: 1। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी शुक्रवार, 5 मार्च तक Divya, Sri Sai Digital से मिल सकती है। | Notice: online ordering for Annapurna Tiffins has stopped. Nothing is deleted. Orders to come: 4. Other open items: 1. Divya, Sri Sai Digital can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
 
 ### The words on the buttons and the lists
 
@@ -220,7 +220,7 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 जाँचा नहीं गया: पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)। जाँच हाथ से की गई।
 कोड: 7K2M-9QXD · पूरी रिपोर्ट: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html
 सपोर्ट को लिखें। एक इंसान जवाब देता है।
-तैयार किया: Divya, local partner · Geometer
+तैयार किया: Divya, Sri Sai Digital · Geometer
 ★ इनोवेटर
 ```
 

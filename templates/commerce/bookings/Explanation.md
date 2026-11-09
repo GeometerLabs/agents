@@ -733,7 +733,7 @@ You were asked: 3 · You approved: 2 · You said no: 1
 Could not confirm: 1
 Not checked: phone calls · walk-ins · and 17 more (see the full report). Checks were run by hand.
 Code: 7K2M-9QXD · Full report: https://reports.example.com/r/3f9a…/report-2027-02-en.html
-Set up by: Divya, local partner · Geometer
+Set up by: Divya, Sri Sai Digital · Geometer
 ★ Innovator
 ```
 
