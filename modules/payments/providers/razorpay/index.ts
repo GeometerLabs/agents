@@ -42,7 +42,8 @@ export const razorpay: PaymentProvider = {
         return i > 0 && KEY_ID.test(v.slice(0, i)) && NO_SPACE(10, 100).test(v.slice(i + 1)) && !v.slice(i + 1).includes(":");
       },
       checkWebhookSecret: (text) => NO_SPACE(8, 200).test(text.trim()),
-      authorization: (text) => `Basic ${Buffer.from(text.trim()).toString("base64")}`,
+      // btoa, not Buffer: this declaration is plain data the browser demo loads too (the key is ASCII)
+      authorization: (text) => `Basic ${btoa(text.trim())}`,
       // A reference nobody has: a good key answers with an empty list. Razorpay documents no call that tells an ordinary merchant key its own account, so whose
       // account it is cannot be checked here (the panel says so; the id is pinned from the first signed webhook, which carries account_id).
       probe: { path: "/v1/payment_links", query: { reference_id: "geometer-connection-check" }, looksRight: (body) => isObject(body) && Array.isArray(body.payment_links) },
