@@ -23,3 +23,5 @@ const codec = snapshotCodec<Store>(1, [
 export const serializeStore: (store: Store) => string = codec.serialize;
 /** A fresh Store from saved JSON. Never shares anything with the store it was saved from. */
 export const parseStore: (json: string) => Store = codec.parse;
+/** After a restore from a snapshot: every id counter of the saved store moved on (modules/runtime/restored.ts). */
+export const skipStoreCounters: (json: string, gap: number) => string = codec.skipCounters;

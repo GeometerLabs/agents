@@ -15,7 +15,7 @@ import { AMIT, HARNESS_GUARD, annapurnaRazorpay, createWorld } from "../src/harn
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
-import { takenOf } from "../src/order.ts";
+import { compactFinishedOrders, takenOf } from "../src/order.ts";
 import { createRuntime } from "../server/runtime.ts";
 import { openStore } from "../server/store.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
@@ -67,4 +67,13 @@ test("the order store round-trips every field, and a UPI shop's ledger with it",
   assert.deepEqual(JSON.parse(JSON.stringify([...again.orders])), JSON.parse(JSON.stringify([...w.store.orders])), "every field a saved order has comes back");
   assert.equal(again.nextOrder, w.store.nextOrder);
   assert.deepEqual(again.upi, w.store.upi);
+});
+
+test("a delivery address, as the customer wrote it, is taken off an order that is over and whose slot ended before the cutoff; its place on the list stays", () => {
+  const order = (id: string, state: string, slotEndMs: number | undefined) => ({ id, customer: AMIT, language: "en", state, lines: [], dateNeedsConfirmation: false, awaitingAddress: false, handledPayments: [], pending: [], area: "Indiranagar", address: "12, 3rd Cross, Indiranagar", ...(slotEndMs !== undefined ? { slotEndMs } : {}) });
+  const store = { orders: new Map([["o-1", order("o-1", "completed", 1_000)], ["o-2", order("o-2", "confirmed", 1_000)], ["o-3", order("o-3", "cancelled", 5_000)], ["o-4", order("o-4", "expired", 1_000)], ["o-5", order("o-5", "completed", undefined)]]) } as never;
+  assert.equal(compactFinishedOrders(store, 2_000), 2);
+  const left = [...(store as { orders: Map<string, { id: string; address?: string; area?: string }> }).orders.values()].map((o) => [o.id, o.address !== undefined, o.area]);
+  assert.deepEqual(left, [["o-1", false, "Indiranagar"], ["o-2", true, "Indiranagar"], ["o-3", true, "Indiranagar"], ["o-4", false, "Indiranagar"], ["o-5", true, "Indiranagar"]], "an order still being done, one whose slot is recent, and one with no slot keep it");
+  assert.equal(compactFinishedOrders(store, 2_000), 0, "nothing twice");
 });

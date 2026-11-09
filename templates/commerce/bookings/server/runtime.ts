@@ -20,7 +20,7 @@ import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createBookingsLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
-import { parseStore, serializeStore } from "./snapshot.ts";
+import { parseStore, serializeStore, skipStoreCounters } from "./snapshot.ts";
 import type { DurableStore } from "./store.ts";
 
 export const PATHWAY = "bookings";
@@ -86,6 +86,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     createStore,
     serialize: serializeStore,
     parse: parseStore,
+    skipCounters: skipStoreCounters,
     createAgent: ({ store, record }) => createAgent({ settings, clock, ...services, parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.bookings.values(),
