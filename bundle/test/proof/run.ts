@@ -11,7 +11,7 @@
 // its leases with it (test/licence-helpers.ts). GUARD_IMAGE names the image (default geo-guard:local-b14, built locally, never pushed).
 import { spawn, spawnSync } from "node:child_process";
 import { createHmac, generateKeyPairSync } from "node:crypto";
-import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { main } from "../../geometer.ts";
@@ -318,7 +318,7 @@ async function main_(): Promise<void> {
       for (const step of steps) { try { await step(); } catch (e) { check(`the ${name} phase ran to its end`, false, (e as Error).stack?.split("\n").slice(0, 3).join(" | ") ?? String(e)); } }
     };
     await phase("licence-block", licenceBlockOnGuards);
-    await phase("panel", panelContainer);
+    await phase("panel", panelContainer, shopKeyMounts);
     await phase("isolation", () => isolation(1), hostileRuntime);
     await phase("panelAccess", () => panelAccess(1));
     await phase("kill", killUnderLoad, killEachGuardUnderLoad);
@@ -847,6 +847,35 @@ async function panelContainer() {
   check("the connection check runs inside the real panel container, through the shop's Guards with the panel's own agent", connection.code === 0 && !parsed.raw, parsed);
   const seen = (parsed as { connections?: { service: string; code: string }[] }).connections ?? [];
   check("WhatsApp, Razorpay and the calendar are each confirmed through the shop's Guards (WhatsApp no longer not_configured)", ["whatsapp", "razorpay", "calendar"].every((k) => seen.find((c) => c.service === k)?.code === "confirmed"), seen.map((c) => `${c.service}: ${c.code}`));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- the shop's fingerprint key (B69)
+//
+// What B69's own tests could not see: the files on a real server, the containers' users, and the variable reaching the runtime through compose. The runtime refuses to start
+// in live mode without its record key, so a runtime that is up has read one; these checks say which one, and that the shop's key itself stays where it belongs.
+
+async function shopKeyMounts() {
+  say("\n== the shop's fingerprint key on a real server (B69) ==");
+  const shop = "glow-salon";
+  const me = process.getuid?.() ?? -1;
+  const keyFile = secretFile(SERVER, "person-keys", shop);
+  const recordFile = secretFile(SERVER, `rt-${shop}`, "record_key");
+  const panelCopy = secretFile(SERVER, "panel", "person-keys", shop);
+  const modeOf = (f: string) => (existsSync(f) ? (statSync(f).mode & 0o777).toString(8) : "missing");
+  check("the shop's key is 0600 and the deployer's own on the server", modeOf(keyFile) === "600" && statSync(keyFile).uid === me, { mode: modeOf(keyFile), uid: existsSync(keyFile) ? statSync(keyFile).uid : null, deployer: me });
+  check("the panel's copy is 0600 and the deployer's own (the panel runs as the deployer's user)", modeOf(panelCopy) === "600" && statSync(panelCopy).uid === me, { mode: modeOf(panelCopy) });
+  check("the runtime's record key is a key made from it, not the key itself, readable by the runtime's own user (0644)", modeOf(recordFile) === "644" && readFileSync(recordFile, "utf8").trim() !== readFileSync(keyFile, "utf8").trim(), { mode: modeOf(recordFile) });
+  const env = dk(["inspect", containerOf(`rt-${shop}`), "--format", "{{json .Config.Env}} {{.Config.User}}"]).out.trim();
+  check("compose hands the runtime RECORD_KEY_FILE=/run/secrets/record_key", env.includes("RECORD_KEY_FILE=/run/secrets/record_key"), env.replace(/[A-Za-z0-9_]*TOKEN[^",]*/gu, "…").slice(0, 200));
+  const inside = nodeEval(`rt-${shop}`, "const fs=require('fs');const f=process.env.RECORD_KEY_FILE;let k='';try{k=fs.readFileSync(f,'utf8').trim()}catch(e){k='ERR '+e.code}console.log(JSON.stringify({uid:process.getuid(),readable:/^[0-9a-f]{64}$/.test(k),shopKey:fs.existsSync('/run/secrets/person-keys')}))").out.trim().split("\n").at(-1) ?? "{}";
+  const seen = (() => { try { return JSON.parse(inside); } catch { return { raw: inside }; } })();
+  check("inside the runtime: not root, its record key readable as 64 hex digits, and no copy of the shop's key", seen.uid > 0 && seen.readable === true && seen.shopKey === false, seen);
+  check("the runtime that read it is up and (healthy): in live mode it does not start without the file", healthy(`rt-${shop}`), dc(["ps", `rt-${shop}`]).out.trim().split("\n").at(-1));
+  const panel = nodeEval("panel", `const fs=require('fs');const f='/run/secrets/person-keys/${shop}';try{const s=fs.statSync(f);console.log(JSON.stringify({uid:process.getuid(),owner:s.uid,mode:(s.mode&0o777).toString(8),readable:/^[0-9a-f]{64}$/.test(fs.readFileSync(f,'utf8').trim())}))}catch(e){console.log(JSON.stringify({error:e.code}))}`).out.trim().split("\n").at(-1) ?? "{}";
+  const p = (() => { try { return JSON.parse(panel); } catch { return { raw: panel }; } })();
+  check("inside the panel: its copy of the key is mounted 0600, owned by the user the panel runs as (not root), and readable", p.mode === "600" && p.uid > 0 && p.owner === p.uid && p.readable === true, p);
+  results.shopKey = { deployerIsRoot: me === 0, runtime: seen, panel: p, note: me === 0 ? "the deployer ran as root: the panel ran as 1000 and its files were handed to that user" : "the deployer ran as a normal user, so the root deployer's path (files chowned to 1000) was not run here" };
+  save();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- item 2: a hostile runtime
