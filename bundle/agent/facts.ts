@@ -3,6 +3,7 @@
 // Nothing here asks the agent. Run inside the `ops` container, which holds the Guards' admin credentials and is on the network where their agent ports answer; the reads
 // of the services go through the Guards with the reading agent (record-<name>), which each Guard allows to look and not to change. fetch is a parameter, so the tests run it against
 // the real Guard binary and the stand-ins.
+import { WINDOW, windowOf } from "../../companies/decision-window.ts";
 import { hide } from "../backup/export.ts";
 import type { AgentUpstream } from "./folder.ts";
 
@@ -37,8 +38,8 @@ export interface Approval { id: string; operation: string; principal: string; st
 
 /** Guard lists at most the 500 most recent decisions, newest first, with no way to ask "since". `windowFull` says the list was cut: older decisions may exist that this pass cannot see. */
 export interface GuardFacts { decisions: Decision[]; intents: Intent[]; approvals: Approval[]; counts: Record<string, number>; windowFull: boolean; oldestAtMs?: number; newestAtMs?: number; error?: string }
-/** The most decisions Guard lists at once (`GET /admin/decisions?limit=` is capped at 500). */
-export const DECISION_WINDOW = 500;
+/** The most decisions Guard lists at once (`GET /admin/decisions?limit=` is capped at 500). Shared with the companies kit's export. */
+export const DECISION_WINDOW = WINDOW;
 export interface LinkFact { id: string; status: string; amountPaid: number; payments: { paymentId: string; amount: number; createdAt: number }[] }
 export interface RefundFact { id: string; amount: number; receipt: string | null; status: string; createdAt: number }
 export interface EventFact { id: string; summary: string; start: string | null; status: string }
@@ -104,10 +105,10 @@ export async function collectFacts(cfg: FactsConfig, now: Date, fetchFn: typeof 
     if (decisions.status !== 200) { facts.problems.push(`${g.kind}'s Guard could not be read (${decisions.status === 0 ? "not reachable" : `HTTP ${decisions.status}`}), so its calls are not in this pass.`); continue; }
     const counts = isObj(status.body) && isObj(status.body.counts) ? Object.fromEntries(Object.entries(status.body.counts).filter(([, v]) => typeof v === "number")) as Record<string, number> : {};
     const all = list(decisions.body, "decisions") as Decision[];
-    const times = all.map((d) => Number(d.at_ms)).filter(Number.isFinite);
+    const w = windowOf(all);
     facts.guards[g.kind] = {
-      decisions: all, intents: list(intents.body, "intents") as Intent[], approvals: list(approvals.body, "approvals") as Approval[], counts, windowFull: all.length >= DECISION_WINDOW,
-      ...(times.length > 0 ? { oldestAtMs: Math.min(...times), newestAtMs: Math.max(...times) } : {}),
+      decisions: all, intents: list(intents.body, "intents") as Intent[], approvals: list(approvals.body, "approvals") as Approval[], counts, windowFull: w.full,
+      ...(w.oldestAtMs !== undefined ? { oldestAtMs: w.oldestAtMs, newestAtMs: w.newestAtMs } : {}),
     };
   }
 
