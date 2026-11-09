@@ -270,6 +270,12 @@ test("a failed drill is written where the panel and `status` show it, with the r
     writeSecretFile(secretFile(w.root, "backup", "snapshots"), "A:B");
     writeFileSync(join(w.paths.shop("glow-salon"), "runtime.json"), JSON.stringify(panelRuntime()));
     w.handIn("glow-salon"); await deploy(w.ctx);
+    // no snapshot yet: nothing to drill, no verdict (fleet reads "absent"), and no container
+    const idle: string[][] = [];
+    w.ctx.runner = fakeRunner((_c, args) => { idle.push(args); return ok("{}"); });
+    assert.deepEqual(await runDrill(w.ctx), { ok: true, lines: ["glow-salon: no snapshot of it yet, so no drill this time"] });
+    assert.deepEqual(idle, []);
+    assert.equal(readStatus(w.root, "glow-salon")?.backups?.lastDrillAt ?? null, null);
     mkdirSync(join(w.paths.state, "snapshots"), { recursive: true });
     writeFileSync(sealFile(w.root, "glow-salon"), JSON.stringify({ stamp: STAMP, objects: [], record: null }));
     const reason = `snapshot ${STAMP}: the drill could not complete: the snapshot place would not let it read glow-salon/${STAMP}/runtime/agent.db.gz.age back (could not read: the bucket answered 403)`;

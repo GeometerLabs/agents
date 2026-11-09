@@ -131,14 +131,18 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
   const server = loadServer(ctx.dir);
   if (!server.backup) return { ok: false, lines: ["No backup is set up, so there is nothing to drill."] };
   const state = loadState(ctx.dir);
-  const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  const applied = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
+  // a shop with no snapshot yet (added since last night) has nothing to drill: no verdict, as fleet reads "absent" (the snapshot's age alerts if none comes)
+  const seals = new Map(applied.flatMap((s): [string, Seal][] => { const seal = readSeal(ctx.dir, s); return seal ? [[s, seal]] : []; }));
+  const shops = applied.filter((s) => seals.has(s));
+  const lines: string[] = applied.filter((s) => !seals.has(s)).map((s) => `${s}: no snapshot of it yet, so no drill this time`);
+  if (shops.length === 0) return { ok: true, lines };
   const work = join(serverPaths(ctx.dir).state, "work");
   ensureDir(work);
   const jobFile = join(work, `drill-${stampOf(ctx.now())}.json`);
-  const lines: string[] = [];
   let verdicts: DrillResult[] = [];
   try {
-    writeFileSync(jobFile, JSON.stringify({ target: server.backup.snapshots, shops: shops.map((s) => ({ name: s, live: `/v/${names.dataVolume(s)}/data/agent.db`, ...(readSeal(ctx.dir, s) ? { seal: readSeal(ctx.dir, s) } : {}), published: publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
+    writeFileSync(jobFile, JSON.stringify({ target: server.backup.snapshots, shops: shops.map((s) => ({ name: s, live: `/v/${names.dataVolume(s)}/data/agent.db`, seal: seals.get(s), published: publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
     const place = snapshotPlace(ctx, server);
     const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts,
       ...shops.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });

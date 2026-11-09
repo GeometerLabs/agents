@@ -19,7 +19,7 @@ async function ready() {
   w.handIn("glow-salon"); await deploy(w.ctx);
   const docker: string[][] = [];
   const real = w.ctx.runner;
-  w.ctx.runner = fakeRunner((c, a, o) => { docker.push(a); if (a[0] === "run" && a.includes("snapshot.ts")) return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, stamp: "x", files: 1, bytes: 1 }] })); if (a[0] === "run") return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, detail: "fine" }] })); return real.run(c, a, o) as never; });
+  w.ctx.runner = fakeRunner((c, a, o) => { docker.push(a); if (a[0] === "run" && a.includes("/app/bundle/backup/snapshot.ts")) return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, stamp: "x", files: 1, bytes: 1, seal: { stamp: "20261104T023000Z", objects: [], record: null } }] })); if (a[0] === "run") return ok(JSON.stringify({ results: [{ name: "glow-salon", ok: true, detail: "fine" }] })); return real.run(c, a, o) as never; });
   return { w, docker };
 }
 const at = (w: Awaited<ReturnType<typeof ready>>["w"], iso: string) => { w.ctx.now = () => new Date(iso); };
