@@ -65,7 +65,7 @@ const FLEET = [process.env.GEOMETER_MONOREPO, join(ROOT, "..", "monorepo"), join
 const fleet = FLEET ? await import(FLEET) as { checkHeartbeat(input: unknown): { ok: boolean } } : undefined;
 
 const ownAgent: OpsOwnAgent = {
-  createdAt: "2026-11-05T09:00:00Z", recordTokenFile: "/nope", ownerWhatsapp: "+919800000001",
+  createdAt: "2026-11-05T09:00:00Z", recordTokenFile: "/nope", labelKeyFile: "/nope", ownerWhatsapp: "+919800000001",
   guards: ["razorpay", "whatsapp", "calendar"].map((k) => ({ id: `guard-${k}`, service: `g-my-agent-${k}`, adminUrl: `http://admin/${k}`, healthUrl: `http://health/${k}`, adminTokenFile: "/nope", agentUrl: `http://agent/${k}` })),
 };
 /** The Guards as they answer: ready, tripwires fine, `decisions` calls decided on, and a refund waiting at the Razorpay Guard. */

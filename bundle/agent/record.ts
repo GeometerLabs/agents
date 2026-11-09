@@ -5,16 +5,16 @@
 //   - "the owner approved" is the approval's state in Guard (decided by the owner's signed answer), not a message anyone sent.
 // A thing the service does not show (yet) is `unconfirmed`, never `confirmed`. It is written only after a short wait, so a service that is a moment behind does not leave a false
 // "unconfirmed" in a record that is append-only; when the service shows it later, a confirmed entry for the same thing is added after it (the report marks the earlier one "settled later").
-import { digest } from "../../modules/record/record.ts";
+import { canonicalJson } from "../../modules/record/record.ts";
+import { keyedDigest, personLabel } from "../../modules/record/fingerprint.ts";
 import type { Action, Outcome, RecordEntry, RuleDecision } from "../../modules/record/record.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
-import { hide } from "../backup/export.ts";
 import { label, typedMap, typedText } from "./facts.ts";
 import type { Approval, Decision, Facts } from "./facts.ts";
 
 export interface RecordState {
   schema: 1;
-  /** Append-only. A customer's number is never in it: only a short hash of it. */
+  /** Append-only. A customer's number is never in it: only a keyed fingerprint of it (B69). */
   entries: RecordEntry[];
   /** What has been written, by the thing it was about (a decision, an approval, a payment) and how it stood. */
   seen: Record<string, { seq: number; outcome: Outcome }>;
@@ -26,7 +26,7 @@ export const emptyRecord = (): RecordState => ({ schema: 1, entries: [], seen: {
 /** How long a thing the service does not show yet is given before it is written down as unconfirmed. */
 export const GRACE_MS = 10 * 60_000;
 
-export interface FoldOptions { settings: Settings; agentId: string; relayId: string; now: number }
+export interface FoldOptions { settings: Settings; agentId: string; relayId: string; now: number; /** The key the labels, the customers' fingerprints and the inputs' digests are made with (B69, derived from the agent's own). */ labelKey: Buffer }
 interface Candidate { key: string; atMs: number; entry: Omit<RecordEntry, "seq" | "time"> }
 
 const digits = (s: string) => s.replace(/\D/gu, "");
@@ -44,8 +44,9 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
   const language = o.settings.languages[0];
   const ownerDigits = digits(o.settings.owner.whatsapp);
   const mk = (key: string, atMs: number, e: { conversation: string; booking: string | null; action: Action | string; inputs: unknown; outcome: Outcome; decisions?: RuleDecision[]; language?: Settings["languages"][number]; notes?: string; refs?: Record<string, string> }) => {
-    out.push({ key, atMs, entry: { conversation: e.conversation, booking: e.booking, action: e.action as Action, inputsDigest: digest(e.inputs), outcome: e.outcome, decisions: e.decisions ?? [], language: e.language ?? language, notes: e.notes ?? "", refs: e.refs ?? {} } });
+    out.push({ key, atMs, entry: { conversation: e.conversation, booking: e.booking, action: e.action as Action, inputsDigest: keyedDigest(o.labelKey, canonicalJson(e.inputs)), outcome: e.outcome, decisions: e.decisions ?? [], language: e.language ?? language, notes: e.notes ?? "", refs: e.refs ?? {} } });
   };
+  const lab = (v: string | null | undefined) => label(o.labelKey, v);
   const failedOrNot = (d: Decision, confirmed: boolean): Outcome => { const s = answered(d); return s !== undefined && (s < 200 || s >= 300) ? "failed" : confirmed ? "confirmed" : "unconfirmed"; };
   const refused = (d: Decision, action: string, booking: string | null, conversation = "agent", decisions: RuleDecision[] = []) =>
     mk(d.id, Number(d.at_ms), { conversation, booking, action, inputs: { call: d.call }, outcome: "blocked", decisions, notes: `Guard refused it: ${d.reasons[0] ?? ""}`.slice(0, 300) });
@@ -57,15 +58,15 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
       const at = Number(d.at_ms);
       if (d.operation === "create_link") {
         const ref = typedText(d.arguments.reference_id) ?? null;
-        if (d.outcome === "deny") { refused(d, "create_deposit_link", label(ref)); continue; }
+        if (d.outcome === "deny") { refused(d, "create_deposit_link", lab(ref)); continue; }
         if (d.outcome !== "allow" || !d.dispatched) continue;
         const link = ref ? facts.service.links[ref] : undefined;
-        mk(d.id, at, { conversation: "agent", booking: label(ref), action: "create_deposit_link", inputs: { call: d.call }, outcome: failedOrNot(d, !!link), refs: { ...(link ? { linkId: link.id } : {}), ...(ref ? { referenceId: label(ref)! } : {}) } });
+        mk(d.id, at, { conversation: "agent", booking: lab(ref), action: "create_deposit_link", inputs: { call: d.call }, outcome: failedOrNot(d, !!link), refs: { ...(link ? { linkId: link.id } : {}), ...(ref ? { referenceId: lab(ref)! } : {}) } });
       } else if (d.operation === "refund") {
         const paymentId = typedText(d.arguments.payment_id) ?? "";
         const amount = typedText(d.arguments.amount) ?? "";
         const receipt = typedText(d.arguments.receipt);
-        const booking = label(receipt ?? (paymentId || null));
+        const booking = lab(receipt ?? (paymentId || null));
         if (d.outcome === "deny") { refused(d, "refund", booking, "agent", ruleDecisions(d, "block")); continue; }
         if (d.outcome === "hold") {
           // a call held again while it waits is the same hold: one entry for each approval
@@ -82,13 +83,13 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
     }
     // the deposit: a payment on a link the agent made, as Razorpay shows it
     for (const [ref, link] of Object.entries(facts.service.links)) {
-      for (const p of link?.payments ?? []) mk(`deposit:${p.paymentId}`, p.createdAt * 1000, { conversation: "customer", booking: label(ref), action: "record_deposit", inputs: { link: link!.id, payment: p.paymentId }, outcome: "confirmed", refs: { paymentId: p.paymentId, linkId: link!.id, amountPaise: String(p.amount) } });
+      for (const p of link?.payments ?? []) mk(`deposit:${p.paymentId}`, p.createdAt * 1000, { conversation: "customer", booking: lab(ref), action: "record_deposit", inputs: { link: link!.id, payment: p.paymentId }, outcome: "confirmed", refs: { paymentId: p.paymentId, linkId: link!.id, amountPaise: String(p.amount) } });
     }
     // the owner's answer, as Guard holds it: signed by the owner's approver, not a message that says so
     for (const a of rz.approvals as Approval[]) {
       if (!a.approver || !["approved", "consumed", "denied"].includes(a.state) || !a.decided_at_ms) continue;
       const args = a.arguments ?? {};
-      const booking = label(typedText(args.receipt) ?? typedText(args.payment_id) ?? null);
+      const booking = lab(typedText(args.receipt) ?? typedText(args.payment_id) ?? null);
       mk(`approval:${a.id}`, Number(a.decided_at_ms), { conversation: "owner", booking, action: "owner_decision", inputs: { approval: a.id, state: a.state }, outcome: "confirmed", language: o.settings.owner.language, refs: { command: a.state === "denied" ? "deny" : "approve", approval: a.id } });
     }
   }
@@ -135,7 +136,7 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
       const to = typedText(d.arguments.to) ?? "";
       const toOwner = digits(to) === ownerDigits;
       const fromRelay = d.principal.workload === o.relayId;
-      const conversation = toOwner ? "owner" : hide("c", to);
+      const conversation = toOwner ? "owner" : personLabel(o.labelKey, "c", to);
       if (d.outcome === "deny") { refused(d, "send_message", null, conversation); continue; }
       if (d.outcome !== "allow" || !d.dispatched) continue;
       mk(d.id, Number(d.at_ms), { conversation, booking: null, action: "send_message", inputs: { call: d.call }, outcome: failedOrNot(d, true), language: fromRelay || toOwner ? o.settings.owner.language : language, refs: { to: toOwner ? "owner" : "customer" } });
@@ -164,7 +165,7 @@ export function foldFacts(prev: RecordState, facts: Facts, o: FoldOptions): { st
     if (g.windowFull && mark !== undefined && g.oldestAtMs !== undefined && g.oldestAtMs > mark) {
       const message = `${kind}'s Guard lists only its ${g.decisions.length} most recent decisions, and the oldest it showed (${new Date(g.oldestAtMs).toISOString()}) is newer than the last this record had read (${new Date(mark).toISOString()}), so some calls fell out of the list before they were read and are missing from the record.`;
       gaps.push(message);
-      found.push({ key: `gap:${kind}:${g.oldestAtMs}`, atMs: g.oldestAtMs, entry: { conversation: "agent", booking: null, action: "record_gap" as Action, inputsDigest: digest({ kind, from: mark, to: g.oldestAtMs }), outcome: "unconfirmed", decisions: [], language: o.settings.languages[0], notes: message.slice(0, 300), refs: {} } });
+      found.push({ key: `gap:${kind}:${g.oldestAtMs}`, atMs: g.oldestAtMs, entry: { conversation: "agent", booking: null, action: "record_gap" as Action, inputsDigest: keyedDigest(o.labelKey, canonicalJson({ kind, from: mark, to: g.oldestAtMs })), outcome: "unconfirmed", decisions: [], language: o.settings.languages[0], notes: message.slice(0, 300), refs: {} } });
     }
     if (g.newestAtMs !== undefined) state.marks[kind] = Math.max(mark ?? 0, g.newestAtMs);
   }
