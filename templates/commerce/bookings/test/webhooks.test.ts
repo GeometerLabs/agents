@@ -1,7 +1,8 @@
 // Webhook signatures and the readers for Razorpay and WhatsApp payloads, tested on the providers' own sample payloads.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseRazorpayEvent, parseWhatsAppWebhook, signMeta, signRazorpay, toE164, verifyMetaSignature, verifyRazorpaySignature } from "../../../../modules/messaging/webhooks.ts";
+import { parseWhatsAppWebhook, signMeta, toE164, verifyMetaSignature } from "../../../../modules/messaging/webhooks.ts";
+import { parseRazorpayEvent, signRazorpay, verifyRazorpaySignature } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { fixture, fixtureText } from "./helpers/scripted-server.ts";
 
 const body = (s: string) => Buffer.from(s, "utf8");

@@ -1,7 +1,9 @@
 // Start one centre's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep the clock ticking. main.ts is a thin command
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Fees' reading, its report and its runtime.
-import { folderQrImages } from "../../../../modules/payments/upi/qr-image.ts";
+import { folderQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
+import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import { createFeesModelParser, createFeesRouter } from "../src/adapters/reading.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
@@ -58,10 +60,10 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     casesName: "fees",
     loadClient,
     async build(client, { store, clock, log, recordKey }) {
-      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
-      // A UPI shop's QR pictures go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
+      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment });
+      // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
-      const services = (client.settings as { payment?: { module?: string } }).payment?.module === "upi" && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;
+      const services = ownerMarkedOf((client.settings as { payment?: PaymentSettings }).payment) && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });

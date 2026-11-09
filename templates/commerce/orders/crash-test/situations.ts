@@ -12,7 +12,7 @@ import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } f
 import { LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { OutboundMessage } from "../../../../modules/messaging/messaging.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { annapurna, createWorld } from "../src/harness.ts";
 import type { World, WorldOptions } from "../src/harness.ts";
 import { checkMessage } from "../src/language/check.ts";
@@ -47,7 +47,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   const planned = planShop(settings);
   if ("problem" in planned) return { situations: [], skipped: [{ id: "all", title: "every situation", reason: planned.problem }] };
   const { shop } = planned;
-  const isUpi = upiOf(settings.payment) !== undefined;
+  const isUpi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): its own situations run
   const lang0 = settings.languages[0];
   const W = settings.cancellation.windowHours;
   const advance = shop.advanceInr;

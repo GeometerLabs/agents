@@ -5,6 +5,7 @@
 // It reads in three layers: the result line and the work done by default, and "--details" (or --all) shows what was done in each situation: how the stand-ins made it go
 // wrong, and every check read from their records.
 // The deploy bundle reads this output (bundle/handcheck.ts): "Held N of M" and the tick and cross lines. Their shape is shared (modules/crash-test/print.ts).
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { handCheckText } from "../../../../modules/crash-test/print.ts";
@@ -43,7 +44,7 @@ async function main(): Promise<number> {
   if (results.length === 0) throw new Error(`No situation could be run on these settings: ${skipped.map((s) => s.reason).join(" ")}`);
   const tookMs = Math.round(performance.now() - started);
   const names = languageList(LANGUAGES.filter((l) => settings.languages.includes(l)));
-  const upi = settings.payment.module === "upi";
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
   const out = handCheckText({
     results, skipped, showAll, tookMs,
     text: {

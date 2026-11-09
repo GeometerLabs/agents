@@ -6,7 +6,7 @@
 // The results are kept in the panel's data (counts and codes: nothing secret), so the page can show them after the redirect.
 import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
-import { moduleOf } from "../../modules/payments/upi/settings.ts";
+import { moduleOf } from "../../modules/payments/providers/index.ts";
 import { kindFor } from "../lib/kinds.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";

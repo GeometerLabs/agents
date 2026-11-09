@@ -49,7 +49,7 @@ import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
 import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
-import { moduleOf } from "../../modules/payments/upi/settings.ts";
+import { moduleOf } from "../../modules/payments/providers/index.ts";
 import { reportOf, setupOf } from "./setups.ts";
 import type { Body, Draft } from "./setup.ts";
 import { createShops } from "./shops.ts";

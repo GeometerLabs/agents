@@ -1,15 +1,16 @@
-// Razorpay's wire format in front of createFakePayments(). The paths and bodies are the ones the live adapter speaks
-// (see modules/payments/razorpay.ts for the docs they come from).
+// Razorpay's wire format in front of createFakePayments(): the stand-in every crash test of a Razorpay shop runs against. The paths and bodies are the ones the
+// live adapter speaks (see api.ts beside this file for the docs they come from), and the webhook bodies are the ones Razorpay sends.
 //
 // Where this stand-in is deliberately as awkward as the real thing, so the agent is tested against that:
 //  - the payment link list shows `payments: []` even on a paid link (the docs' own examples do), the single fetch has the payments;
 //  - a payment in a link carries `payment_id`, not `id`, and no refund figures (those are on the payment);
 //  - a missing id is HTTP 400 "The id provided does not exist", not 404;
 //  - a second link with the same reference_id is 400 "payment link creation with reference ID already attempted".
-import { ApiError, TimeoutError } from "../core/faults.ts";
-import type { FakePayments, Payment, PaymentRequest, Refund } from "../payments/payments.ts";
-import { LostReply, ok } from "./http.ts";
-import type { Handler, StandinReply } from "./http.ts";
+import { ApiError, TimeoutError } from "../../../core/faults.ts";
+import type { FakePayments, Payment, PaymentEvent, PaymentRequest, Refund } from "../../payments.ts";
+import { RAZORPAY_EVENT } from "./webhook.ts";
+import { LostReply, ok } from "../../../standins/http.ts";
+import type { Handler, StandinReply } from "../../../standins/http.ts";
 
 const error = (status: number, description: string): StandinReply => ({
   status, body: { error: { code: "BAD_REQUEST_ERROR", description, source: "NA", step: "NA", reason: "NA", metadata: {} } },
@@ -95,4 +96,26 @@ export function razorpayStandin(payments: FakePayments): Handler {
       return fromError(e);
     }
   };
+}
+
+/** A Razorpay webhook body for an event the fake emitted. `payment.captured` names the payment and its order but not its link, as the real one does. */
+export function razorpayWebhookBody(event: PaymentEvent, payments: FakePayments): string {
+  const links = payments.links();
+  const payment = (id: string | undefined) => links.flatMap((l) => l.payments).find((p) => p.id === id);
+  const head = { account_id: "acc_standin", created_at: event.created_at, entity: "event", event: RAZORPAY_EVENT[event.event] };
+  let contains: string[];
+  let payload: Record<string, unknown>;
+  if (event.event === "request.paid") {
+    const link = links.find((l) => l.id === event.payload.request?.id)!;
+    contains = ["payment_link", "payment"];
+    payload = { payment_link: { entity: wireLink(link, "full") }, payment: { entity: wirePayment(payment(event.payload.payment?.id)!) } };
+  } else if (event.event === "payment.received") {
+    contains = ["payment"];
+    payload = { payment: { entity: wirePayment(payment(event.payload.payment?.id)!) } };
+  } else {
+    const refund = payments.refunds().find((r) => r.id === event.payload.refund?.id)!;
+    contains = ["refund", "payment"];
+    payload = { refund: { entity: wireRefund(refund) }, payment: { entity: wirePayment(payment(refund.payment_id)!) } };
+  }
+  return JSON.stringify({ ...head, contains, payload });
 }

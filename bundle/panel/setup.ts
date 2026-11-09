@@ -8,8 +8,8 @@ import type { Language } from "../../modules/language/languages.ts";
 import { formatInr } from "../../modules/language/format.ts";
 import { MAX_SERVICES, formFromSettings, settingsFromForm } from "../../templates/commerce/bookings/demo/personalise.ts";
 import type { ShopForm } from "../../templates/commerce/bookings/demo/personalise.ts";
-import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
-import type { PaymentSettings } from "../../modules/payments/upi/settings.ts";
+import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/providers/upi/link.ts";
+import type { PaymentSettings } from "../../modules/payments/providers/index.ts";
 import { KEY_ID, checkSecret } from "./secrets.ts";
 import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
@@ -286,7 +286,7 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
   return { problems, secrets, ...(clientEmail ? { clientEmail } : {}) };
 }
 
-/** The shop's UPI ID and payee name, refused in the person's language. The shared checks (modules/payments/upi/link.ts) decide; this only picks the sentence that says why. */
+/** The shop's UPI ID and payee name, refused in the person's language. The shared checks (modules/payments/providers/upi/link.ts) decide; this only picks the sentence that says why. */
 export function upiProblems(id: string, payee: string, w: Words): string[] {
   const u = w.upi.problems;
   const out: string[] = [];

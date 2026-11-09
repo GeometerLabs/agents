@@ -4,7 +4,7 @@
 // the Orders pathway is the last gate on everything. The shop's runtime.json is the one a Fees centre has (payments and messaging, no calendar): fees.ts `runtimeForFees`.
 import type { Language } from "../../modules/language/languages.ts";
 import { DEFAULT_CAPS } from "../../modules/payments/guard-limits.ts";
-import { payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
+import { payeeProblem, vpaProblem } from "../../modules/payments/providers/upi/link.ts";
 import { limitLinesOf, limitsOf } from "../../templates/commerce/orders/report/certificate.ts";
 import { itemName, validateSettings } from "../../templates/commerce/orders/src/settings.ts";
 import type { Settings, Slot } from "../../templates/commerce/orders/src/settings.ts";

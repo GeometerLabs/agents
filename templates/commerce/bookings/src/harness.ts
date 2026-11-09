@@ -28,7 +28,7 @@ import { parseSettings } from "./settings.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "./settings.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
-import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
+import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 
 /** Glow Salon, the example business. */
 export function glowSalon(): Settings {
@@ -77,7 +77,7 @@ export interface World {
   /** The payment link for a booking, as the payments service holds it. */
   linkFor(bookingRef: string): PaymentRequest | undefined;
   /** UPI shops (B33): the booking's request as the agent's own ledger holds it (its code is the owner's, never the customer's). */
-  upiRequest(bookingRef: string): UpiRequest | undefined;
+  upiRequest(bookingRef: string): MarkedRequest | undefined;
   /** UPI: the refunds the owner owes for a booking, as the ledger holds them. */
   upiRefunds(bookingRef: string): OwedRefund[];
   /**
@@ -102,7 +102,7 @@ export interface WorldOptions {
    * page that cannot draw buttons yet (the demo), and for the scripted month, which is about records and money and not about taps.
    */
   interactive?: boolean;
-  /** A UPI shop: where the QR pictures go (modules/payments/upi/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
+  /** A UPI shop: where the QR pictures go (modules/payments/owner-marked/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
   qrImage?: (text: string) => Promise<string | null>;
   /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
   licence?: () => LicenceNow;

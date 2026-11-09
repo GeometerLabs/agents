@@ -8,7 +8,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startInbox } from "../inbox/server.ts";
 import type { InboxConfig, RunningInbox } from "../inbox/server.ts";
-import { signMeta, signRazorpay } from "../../../../modules/messaging/webhooks.ts";
+import { signMeta } from "../../../../modules/messaging/webhooks.ts";
+import { signRazorpay } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { fixtureText, scripted } from "./helpers/scripted-server.ts";
 import type { Answer, Recorded, Scripted } from "./helpers/scripted-server.ts";
 

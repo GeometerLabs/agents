@@ -5,7 +5,7 @@ import type { Language } from "../../modules/language/languages.ts";
 import { batchName, validateSettings } from "../../templates/education/fees/src/settings.ts";
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
-import { payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
+import { payeeProblem, vpaProblem } from "../../modules/payments/providers/upi/link.ts";
 import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";

@@ -10,6 +10,7 @@
 //  - A limit "stopped" something at ONE place in the record. A block is written twice (on hold_slot or reschedule_booking,
 //    and again as the reason shown on the message that follows), so each rule is counted at its own entry only.
 //  - Only "unconfirmed" and "failed" outcomes are counted as such, never "attempted" (an attempt is checked in the next step).
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
@@ -237,7 +238,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const deposits = emptyAmount();
   const seenDeposits = new Set<string>();
   // UPI (B33): the owner's marks are the payment record ("owner_marked_paid"), and a refund counts once the owner marks it sent ("upi_refund_marked_done")
-  const upi = settings.payment?.module === "upi";
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
   for (const e of month.filter((x) => (x.action === "record_deposit" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
     const key = e.refs.paymentId ?? `seq-${e.seq}`;
     if (seenDeposits.has(key)) continue;

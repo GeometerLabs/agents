@@ -13,7 +13,7 @@ import type { WindowStore } from "./store.ts";
 
 /** The shape of src/adapters/live/index.ts. */
 export interface LiveModule {
-  createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore }): Services;
+  createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore; payment?: unknown }): Services;
 }
 
 /** The services as the live adapters take them: each Guard's credential for this agent has been read from its file. */
@@ -42,12 +42,14 @@ export interface ServicesDeps {
   /** Where the stand-in WhatsApp shows what it "sends", so a local run can be read. */
   say?: (line: string) => void;
   loadLive?: () => Promise<LiveModule>;
+  /** The shop's payment block (settings.payment): which gateway a payments service is (B71). */
+  payment?: unknown;
 }
 
 export async function buildServices(config: Pick<RuntimeConfig, "mode" | "services">, deps: ServicesDeps): Promise<Services> {
   if (config.mode === "live") {
     const live = await (deps.loadLive ?? loadLiveModule)();
-    return live.createLiveAdapters(readAgentTokens(config.services!), { clock: deps.clock, window: deps.window });
+    return live.createLiveAdapters(readAgentTokens(config.services!), { clock: deps.clock, window: deps.window, ...(deps.payment ? { payment: deps.payment } : {}) });
   }
   return { calendar: createFakeCalendar(), payments: createFakePayments(deps.clock), messaging: standInMessaging(deps.clock, [...Object.values(TEMPLATE_NAMES), ...REPORT_TEMPLATE_NAMES], deps.say) };
 }

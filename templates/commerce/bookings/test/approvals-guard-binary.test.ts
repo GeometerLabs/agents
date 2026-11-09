@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
-import { createRazorpayPayments } from "../../../../modules/payments/razorpay.ts";
+import { createRazorpayPayments } from "../../../../modules/payments/providers/razorpay/api.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { parseSettings } from "../src/settings.ts";
