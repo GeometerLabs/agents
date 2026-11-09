@@ -461,6 +461,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.title` | നിങ്ങളുടെ partner അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create your partner account |  |
 | `join.intro` | നിങ്ങളുടെ ക്ഷണം ഒരു തവണ മാത്രമേ പ്രവർത്തിക്കൂ. എങ്ങനെ ലോഗിൻ ചെയ്യണമെന്ന് തിരഞ്ഞെടുക്കൂ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | നിങ്ങളുടെ പേര് | Your name |  |
+| `join.company` | കമ്പനിയുടെ അല്ലെങ്കിൽ ബിസിനസിന്റെ പേര് (വേണമെങ്കിൽ) | Company or business name (optional) |  |
+| `join.companyHelp` | കടയുടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിൽ നിങ്ങളുടെ പേരിനു ശേഷം ഇത് കാണും. ഒഴിച്ചിട്ടാൽ പകരം "local partner" അല്ലെങ്കിൽ "builder" കാണും. 60 അക്ഷരം വരെ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local partner" or "builder" instead. Up to 60 characters. |  |
 | `join.handle` | ലോഗിൻ ചെയ്യാനുള്ള പേര് | Name to sign in with |  |
 | `join.handleHelp` | 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ്. | 3 to 40 letters, digits, dots or dashes. |  |
 | `join.passphrase` | പാസ്ഫ്രേസ് | Passphrase |  |
@@ -473,6 +475,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.problems.handle-bad` | ലോഗിൻ പേരിന് 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ് ഉപയോഗിക്കൂ. | Use 3 to 40 letters, digits, dots or dashes for the sign-in name. |  |
 | `join.problems.handle-taken` | ആ ലോഗിൻ പേര് മറ്റൊരാൾ എടുത്തിട്ടുണ്ട്. വേറൊന്ന് തിരഞ്ഞെടുക്കൂ. | That sign-in name is taken. Choose another. |  |
 | `join.problems.name-bad` | നിങ്ങളുടെ പേര് എഴുതൂ. | Write your name. |  |
+| `join.problems.company-bad` | കമ്പനിയുടെ പേര് ഒറ്റ വരിയിൽ, 60 അക്ഷരത്തിനുള്ളിൽ എഴുതൂ, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the company name on one line, up to 60 characters, or leave it empty. |  |
 | `join.problems.language-bad` | പട്ടികയിൽ നിന്ന് ഒരു ഭാഷ തിരഞ്ഞെടുക്കൂ. | Choose a language from the list. |  |
 | `join.problems.short` | പാസ്ഫ്രേസിന് കുറഞ്ഞത് 10 അക്ഷരങ്ങൾ വേണം. | The passphrase needs at least 10 characters. |  |
 | `join.problems.long` | പാസ്ഫ്രേസ് വളരെ നീളമുള്ളതാണ് (പരമാവധി 200 അക്ഷരങ്ങൾ). | The passphrase is too long (200 characters at most). |  |

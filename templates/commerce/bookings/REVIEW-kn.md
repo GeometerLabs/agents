@@ -461,6 +461,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.title` | ನಿಮ್ಮ partner ಖಾತೆ ತೆರೆಯಿರಿ | Create your partner account |  |
 | `join.intro` | ನಿಮ್ಮ ಆಹ್ವಾನ ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಹೇಗೆ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ ಎಂದು ಆರಿಸಿ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | ನಿಮ್ಮ ಹೆಸರು | Your name |  |
+| `join.company` | ಕಂಪನಿ ಅಥವಾ ವ್ಯಾಪಾರದ ಹೆಸರು (ಬೇಕಿದ್ದರೆ) | Company or business name (optional) |  |
+| `join.companyHelp` | ಅಂಗಡಿಯ ಮಾಲೀಕರ ತಿಂಗಳ ವರದಿಯಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರಿನ ನಂತರ ಇದು ಕಾಣುತ್ತದೆ. ಖಾಲಿ ಬಿಟ್ಟರೆ ಬದಲಿಗೆ "local partner" ಅಥವಾ "builder" ಕಾಣುತ್ತದೆ. 60 ಅಕ್ಷರದವರೆಗೆ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local partner" or "builder" instead. Up to 60 characters. |  |
 | `join.handle` | ಸೈನ್ ಇನ್ ಮಾಡಲು ಹೆಸರು | Name to sign in with |  |
 | `join.handleHelp` | 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | 3 to 40 letters, digits, dots or dashes. |  |
 | `join.passphrase` | ಪಾಸ್‌ವರ್ಡ್ | Passphrase |  |
@@ -473,6 +475,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.problems.handle-bad` | ಸೈನ್ ಇನ್ ಹೆಸರಿಗೆ 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ ಬಳಸಿ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | Use 3 to 40 letters, digits, dots or dashes for the sign-in name. |  |
 | `join.problems.handle-taken` | ಈ ಸೈನ್ ಇನ್ ಹೆಸರನ್ನು ಬೇರೆಯವರು ಬಳಸುತ್ತಿದ್ದಾರೆ. ಬೇರೆ ಹೆಸರು ಆರಿಸಿ. | That sign-in name is taken. Choose another. |  |
 | `join.problems.name-bad` | ನಿಮ್ಮ ಹೆಸರು ಬರೆಯಿರಿ. | Write your name. |  |
+| `join.problems.company-bad` | ಕಂಪನಿಯ ಹೆಸರನ್ನು ಒಂದೇ ಸಾಲಿನಲ್ಲಿ, 60 ಅಕ್ಷರದೊಳಗೆ ಬರೆಯಿರಿ, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the company name on one line, up to 60 characters, or leave it empty. |  |
 | `join.problems.language-bad` | ಪಟ್ಟಿಯಿಂದ ಒಂದು ಭಾಷೆ ಆರಿಸಿ. | Choose a language from the list. |  |
 | `join.problems.short` | ಪಾಸ್‌ವರ್ಡ್‌ಗೆ ಕನಿಷ್ಠ 10 ಅಕ್ಷರ ಬೇಕು. | The passphrase needs at least 10 characters. |  |
 | `join.problems.long` | ಪಾಸ್‌ವರ್ಡ್ ತುಂಬಾ ಉದ್ದವಾಗಿದೆ (ಹೆಚ್ಚೆಂದರೆ 200 ಅಕ್ಷರ). | The passphrase is too long (200 characters at most). |  |
