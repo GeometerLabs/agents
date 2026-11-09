@@ -3,7 +3,8 @@
 // One builder serves `geometer export <shop>` and the panel's download. It reads only files (the shop's folder, the deployer's export of its record, the papers the panel
 // made) and never talks to the shop's runtime or to any service, so it works for a shop that is stopped, a server whose runtime is down, and a shop whose subscription lapsed.
 // What it leaves out on purpose: every key and secret (the secrets inbox, the panel's accounts, sessions and vault, signing keys), and the shop's own WhatsApp, payment and
-// calendar accounts, which are the shop's and not Geometer's to carry. The record's customer numbers are the short hashes the deployer's export already uses.
+// calendar accounts, which are the shop's and not Geometer's to carry. The record's customers are the keyed fingerprints the deployer's export writes (B69, modules/record/fingerprint.ts);
+// manifest.json and README.txt say which form this package uses and what it does not cover, in particular that settings.json holds the shop's own list of people as written.
 //
 // The package is a folder of plain files (JSON, JSON lines, HTML, text) and, for the download, the same folder as a .tar.gz:
 //   README.txt                       what each file is and how to check it (this file's FORMAT_README)
@@ -30,6 +31,8 @@ import { toTarGz } from "./tar.ts";
 import type { KeyObject } from "node:crypto";
 import { anchorOf, evidencePack, ledgerFile } from "../../modules/record/ledger.ts";
 import type { LedgerEntry } from "../../modules/record/ledger.ts";
+import { OLD_PERSON_FORM, PERSON_FORM } from "../../modules/record/fingerprint.ts";
+import type { PersonForm } from "../backup/export.ts";
 
 export const EXPORT_FORMAT = "geometer-shop-export/1";
 
@@ -75,6 +78,8 @@ export interface Manifest {
   /** When the deployer last exported the record this package holds. Anything after it is not in the package. */
   recordAsOf: string | null;
   counts: { recordEntries: number; cases: number; reports: number; certificates: number; settingsVersions: number };
+  /** Which form this package's fingerprints use (B69). "unkeyed" means an export from before the keyed form: its fingerprints can be worked back by trying every number. */
+  personFingerprints: { form: string; keyed: boolean; inputsKeyed?: number; inputsOlder?: number; messageIdsOlder?: number };
   notes: string[];
   files: ManifestFile[];
 }
@@ -179,7 +184,14 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   const cases = jsonLines(src.exportFile(casesName), template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
   const recordAsOf = src.exportedAt() ?? null;
   if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
-  else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are short hashes in it, as in the monthly reports.`);
+  else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are fingerprints in it, as in the monthly reports: see PEOPLE IN THE RECORD in README.txt for what that covers.`);
+  const formText = src.exportFile("person-form.json");
+  let form: PersonForm | undefined;
+  try { form = formText === undefined ? undefined : JSON.parse(formText) as PersonForm; } catch { form = undefined; }
+  const personForm: Manifest["personFingerprints"] = form?.form === PERSON_FORM
+    ? { form: PERSON_FORM, keyed: true, inputsKeyed: form.inputs.keyed, inputsOlder: form.inputs.older, messageIdsOlder: form.messageIds.older }
+    : { form: src.exportFile("record.json") === undefined ? "none: there is no record in this package" : OLD_PERSON_FORM, keyed: false };
+  if (src.exportFile("record.json") !== undefined && !personForm.keyed) warnings.push("The record in this package was exported before keyed fingerprints: its customer numbers and students' names can be worked back by anyone holding it. The server's next export (within a quarter of an hour) uses the keyed form.");
   put("record/record.jsonl", record.lines.length > 0 ? `${record.lines.join("\n")}\n` : "");
   put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
 
@@ -226,6 +238,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     ...(req.exportedBy ? { exportedBy: req.exportedBy } : {}),
     recordAsOf,
     counts: { recordEntries: record.count, cases: cases.count, reports, certificates, settingsVersions: history.length },
+    personFingerprints: personForm,
     notes,
     files: [...files].map(([path, content]) => ({ path, sha256: sha(content), bytes: content.length })),
   };
@@ -248,6 +261,22 @@ export function packageTarGz(built: BuiltExport, nowMs: number): Buffer {
 
 export { canonicalJson };
 
+function peopleWords(m: Manifest): string {
+  const f = m.personFingerprints;
+  if (!f.keyed) return f.form === OLD_PERSON_FORM
+    ? "  Made before fingerprints were keyed: the record holds a plain sha256 of each customer's number (and, for a Fees centre, each student's name). Anyone holding this package can work those back by trying every number. Do not pass it around; the server's next export uses the keyed form."
+    : "  This package has no record, so it has no fingerprints.";
+  return [
+    `  Form: ${f.form}. A customer's number is "c-..." on a record entry and "p-..." on a case; a Fees student's name is "s-...": 12 hex digits of an HMAC-SHA256 of the value, under a key that stays with the shop and its backups and is never in this package. Without the key a guess cannot be tested against a fingerprint. With it, the shop's own tools can still find one person's entries.`,
+    "  What this does not cover:",
+    "    - settings.json and history/settings-history.jsonl are the shop's own settings as written: the owner's number, any approvers' numbers and, for a Fees centre, the list of students with their parents' numbers. They are in plain text. Give those two files only to someone you would show that list; the record/, reports/ and certificates/ folders are what you can hand to an auditor.",
+    "    - Free text: a number or a name the shop or a customer wrote into a note is not replaced. Only a student's name spelled exactly as the centre's list has it is.",
+    `    - Entries written before the shop had its key (${f.inputsOlder ?? 0} of them) carry "inputsDigest" as a plain digest, and ${f.messageIdsOlder ?? 0} carry WhatsApp's message id as it came: those can be tested by guessing, and a WhatsApp id can carry the number. Entries written since are keyed.`,
+    "    - accounts.json names the shop's own business number, because it is the shop's.",
+  ].join("
+");
+}
+
 function FORMAT_README(m: Manifest): string {
   return `GEOMETER SHOP EXPORT (${EXPORT_FORMAT})
 ==========================================
@@ -266,8 +295,8 @@ WHAT IS IN IT
   accounts.json                 which WhatsApp number, calendar and payment mode the shop used. Names and ids, never keys.
   record/record.jsonl           the record of what the agent did, tried, or was stopped from doing: one JSON entry per line, in order
                                 {"seq","time","conversation","booking","action","inputsDigest","outcome","decisions","language","notes","refs"}.
-                                "booking" holds the id of the booking (or the student's fee) the entry is about. "conversation" and customers are short hashes.
-  record/cases.jsonl            the bookings (or, for a Fees centre, the fees, or, for an Orders shop, the orders), one per line, as the agent held them. Customers are short hashes; a delivery address is not in it.
+                                "booking" holds the id of the booking (or the student's fee) the entry is about. "conversation" and customers are fingerprints (see PEOPLE IN THE RECORD).
+  record/cases.jsonl            the bookings (or, for a Fees centre, the fees, or, for an Orders shop, the orders), one per line, as the agent held them. Customers are fingerprints (see PEOPLE IN THE RECORD); a delivery address is not in it.
   assignment.json               who serves the shop, and every move to another partner or builder with its date and reason (only when there has been one)
   status.json                   the deployer's last word on the shop (versions, limits proven, backups)
   reports/<month>/              each monthly report and its certificate: the signed .json and the readable .html
@@ -297,7 +326,7 @@ HOW TO CHECK IT
 WHAT IS NOT IN IT, AND WHY
   - No key and no secret: no WhatsApp token, payment key, webhook secret, calendar key, signing key, passphrase or session. A shop moved to someone new needs new ones, entered by whoever serves it.
   - The shop's own accounts. The WhatsApp number, the payment account and the calendar belong to the shop; accounts.json only says which ones they were.
-  - Customers' phone numbers and students' names: the record carries short hashes, so the package can be passed around.
+  - Customers' phone numbers and students' names in the record and the cases: these are fingerprints only the shop's key can match. See PEOPLE IN THE RECORD for what that covers and what it does not; settings.json is the main exception.
   - Anything after ${m.recordAsOf ?? "the deployer's last export of the record (it had made none)"}: the record is as the deployer last exported it.
 
 ${m.notes.map((n) => `NOTE: ${n}`).join("\n")}
