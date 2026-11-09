@@ -92,7 +92,8 @@ export const kn: Words = {
     lines: { whatsapp: "WhatsApp ಸಂದೇಶಗಳು (Meta ಶುಲ್ಕ)", "whatsapp-provider": "WhatsApp ಪ್ರೊವೈಡರ್‌ನ ಸ್ವಂತ ಶುಲ್ಕ", razorpay: "Razorpay ಶುಲ್ಕ", geometer: "Geometer ಪ್ಲಾನ್", hosting: "ಹೋಸ್ಟಿಂಗ್ ಪಾಲು" },
     payer: {
       "builder-pays-whatsapp-provider": "ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ", "shop-pays-razorpay": "ಅಂಗಡಿಯೇ Razorpay ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ",
-      "builder-pays-geometer": "ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ", hosting: "ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ",
+      "builder-pays-geometer": "ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ",
+      "builder-pays-licence": "ಬಿಲ್ಡರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ, ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ಒಮ್ಮೆ; AI ಕೀ ಬಿಲ್ಡರ್‌ನ ಸ್ವಂತದ್ದು", hosting: "ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ",
     },
     unknown: "ಗೊತ್ತಿಲ್ಲ", total: "ಒಟ್ಟು", subtotal: (n) => `ಉಪಮೊತ್ತ. ${n} ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಬೆಲೆ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಇದು ಪೂರ್ಣ ವೆಚ್ಚವಲ್ಲ.`, priceList: (d) => `ಬೆಲೆಗಳು ಈ ದಿನಾಂಕದ ಬೆಲೆ ಪಟ್ಟಿಯಿಂದ: ${d}.`,
     caveats: {
@@ -110,7 +111,7 @@ export const kn: Words = {
     names: { basic: "ಬೇಸಿಕ್", business: "ಬಿಸಿನೆಸ್", operations: "ಆಪರೇಷನ್ಸ್" },
     is: (name) => `ಈ ಅಂಗಡಿ ${name} ಪ್ಲಾನ್‌ನಲ್ಲಿದೆ.`, included: (n) => `ಪ್ರತಿ ತಿಂಗಳು ${n} ಗ್ರಾಹಕ ಸಂದೇಶಗಳು ಸೇರಿವೆ.`,
     price: (price) => `ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ${price}, GST ಬಿಟ್ಟು.`,
-    priceInnovator: (price, yours) => `ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ${price}, ಇನ್ನೋವೇಟರ್ ರಿಯಾಯಿತಿಯೊಂದಿಗೆ ${yours}, GST ಬಿಟ್ಟು.`,
+    priceBuilder: (price) => `ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ತಿಂಗಳಿಗೆ ${price}, ಪ್ಲಾನ್ ಯಾವುದೇ ಇರಲಿ, GST ಬಿಟ್ಟು.`, builderLicence: "ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್",
     priceNote: "ಒಂದು ಅಂಗಡಿ ತಿಂಗಳಲ್ಲಿ ಕನಿಷ್ಠ 15 ದಿನ ಚಾಲನೆಯಲ್ಲಿದ್ದರೆ ಆ ತಿಂಗಳಿಗೆ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ.", innovator: "ಇನ್ನೋವೇಟರ್",
     buttons: "ಈ ಅಂಗಡಿಗೆ AI ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ಈಗ ಬಟನ್ ಮೆನು ಸಿಗುತ್ತದೆ.",
     buttonsWhy: {

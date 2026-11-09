@@ -5,8 +5,8 @@ import assert from "node:assert/strict";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { LANGUAGES } from "../../../modules/language/languages.ts";
-import { latestPriceList } from "../cost.ts";
-import { discountedShops, entriesFromForm, marginOf, minutesFromText, monthUsage, paiseFromText, planFeePaise, runningCostItems, sumMargins } from "../health.ts";
+import { PRICES_DIR, loadPriceList } from "../cost.ts";
+import { entriesFromForm, marginOf, minutesFromText, monthUsage, paiseFromText, planFeePaise, runningCostItems, sumMargins } from "../health.ts";
 import type { CostItem } from "../health.ts";
 import { WORDS } from "../languages.ts";
 import { flatWords } from "../review.ts";
@@ -15,7 +15,8 @@ import { loadVoteRound } from "../votes.ts";
 import { NOW, accountIdOf, boot, tokenOf } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
-const prices = latestPriceList();
+// The arithmetic is checked on the list of 9 Nov, by name: a dated list never changes.
+const prices = loadPriceList(new URL("2026-11-09.json", PRICES_DIR).pathname);
 const AT = new Date(NOW).toISOString();
 const fleet = (b: Boot, shop: string, more: Record<string, unknown> = {}) => {
   mkdirSync(join(b.dir, "fleet"), { recursive: true });
@@ -33,21 +34,20 @@ const post = async (br: Browser, path: string, form: Record<string, string>, fro
 
 // ---- the arithmetic, on fixed numbers --------------------------------------------------------------------------------------------------------------------
 
-test("the plan fee: Business is INR 299, half on your own server, 40% off for an innovator (the lower of the two, never both), rounded up once; no plan or no price is unknown", () => {
-  const fee = (o: { plan?: "basic" | "business" | "operations" | null; selfHost?: boolean; innovator?: boolean }) => planFeePaise({ plan: o.plan === undefined ? "business" : o.plan, prices, selfHost: o.selfHost ?? false, innovator: o.innovator ?? false });
-  assert.equal(fee({}).paise, 29_900);
-  assert.equal(fee({ selfHost: true }).paise, 14_950);
-  assert.equal(fee({ innovator: true }).paise, 17_940);
-  assert.deepEqual(fee({ selfHost: true, innovator: true }), { paise: 14_950, notes: ["self-host"] }, "they do not stack: the lower of the two, as fleet's invoice charges");
-  assert.deepEqual(fee({ plan: "basic", selfHost: true, innovator: true }), { paise: 4_950, notes: ["self-host"] }, "Basic: half is INR 49.50, the innovator price INR 59.40");
-  assert.equal(fee({ plan: "basic", innovator: true }).paise, 5_940);
+test("Geometer's charge: the plan's fee on Geometer's server, the builder licence on a builder's own server whatever the plan, rounded up once; no plan or no price is unknown", () => {
+  const fee = (o: { plan?: "basic" | "business" | "operations" | null; builder?: boolean }) => planFeePaise({ plan: o.plan === undefined ? "business" : o.plan, prices, builder: o.builder ?? false });
+  assert.deepEqual(fee({}), { paise: 29_900, notes: [] });
+  assert.deepEqual(fee({ plan: "basic" }), { paise: 14_900, notes: [] });
+  for (const plan of ["basic", "business", "operations", null] as const) assert.deepEqual(fee({ plan, builder: true }), { paise: 14_900, notes: ["builder-licence"] }, `${plan}: the builder licence, flat`);
   assert.deepEqual(fee({ plan: null }), { paise: null, notes: ["no-plan"] });
+  const { "licence.builder.fee": _gone, ...without } = prices.rates;
+  assert.deepEqual(planFeePaise({ plan: "business", prices: { ...prices, rates: without }, builder: true }), { paise: null, notes: ["no-price"] }, "a list without the licence is unknown, never the plan fee and never 0");
 });
 
 test("the running cost and the margin on fixed numbers: price 1,500, plan 299, WhatsApp 23, model 12.35, support 90 minutes at 300 an hour", () => {
   const usage = { messages: 10, byStep: { rules: 5, decision: 3, model: 2 }, modelMicroInr: 12_345_678, unpriced: 0, whatsapp: { service: 4, utility: 6, marketing: 0, estMicroInr: 23_000_000, estimated: true } };
   const items = runningCostItems({
-    plan: planFeePaise({ plan: "business", prices, selfHost: false, innovator: false }), usage, modelIncluded: false, month: "2026-11",
+    plan: planFeePaise({ plan: "business", prices, builder: false }), usage, modelIncluded: false, month: "2026-11",
     entries: { schema: 1, supportMonth: "2026-11", supportMinutes: 90, supportPaisePerHour: 30_000 },
   });
   assert.deepEqual(items.map((i) => [i.id, i.paise]), [["plan", 29_900], ["whatsapp", 2_300], ["model", 1_235], ["support", 45_000]], "12.345678 rupees is 1,234.5678 paise: rounded up once to 1,235");
@@ -89,13 +89,6 @@ test("over several shops: the known margins are added, and the total says it is 
   assert.equal(sumMargins([one(null, 30_000)]).marginPaise, null, "no shop with a price: unknown, not 0");
   assert.equal(sumMargins([one(100_000, 30_000, false)]).complete, false, "a margin that leaves a cost line out is not complete");
   assert.equal(sumMargins([]).marginPaise, null);
-});
-
-test("the Innovator discount covers 25 shops of one person, the oldest assignments first, as fleet's invoice takes them", () => {
-  const flagged = Array.from({ length: 27 }, (_, i) => ({ id: `shop-${String(i).padStart(2, "0")}`, since: new Date(Date.UTC(2026, 0, 1 + (26 - i))).toISOString() }));
-  const covered = discountedShops(flagged, prices);
-  assert.equal(covered.size, 25);
-  assert.ok(covered.has("shop-26") && covered.has("shop-02") && !covered.has("shop-01") && !covered.has("shop-00"), "shop-26 is the oldest; the two newest pay the full fee");
 });
 
 test("this month's usage reads only this month's entries of the record: a message from October is not counted", () => {
@@ -160,7 +153,7 @@ test("a partner's page: the running cost from the price list, her price and minu
   } finally { await b.close(); }
 });
 
-test("on a builder's own server the plan fee is half and the model cost is the recorded one; what needs a look comes from the to-do list, the licence and the heartbeat", async () => {
+test("on a builder's own server Geometer's line is the builder licence and the model cost is the recorded one; what needs a look comes from the to-do list, the licence and the heartbeat", async () => {
   const b = await boot();
   try {
     const arjun = await b.account("arjun", "builder");
@@ -169,8 +162,8 @@ test("on a builder's own server the plan fee is half and the model cost is the r
     b.status("glow-salon", { updatedAt: AT, deploy: { state: "applied" }, backups: { lastDrillAt: new Date(NOW - 12 * 86_400_000).toISOString(), drillOk: true }, licence: { state: "warning", listed: true, paidThrough: null, windDownOn: null, stopOn: null, exportUntil: null, leaseIssuedAt: AT, extendedUntil: null } });
     exportRecord(b, "glow-salon", [entry(1, "2026-11-02T10:00:00+05:30", "receive_message", { step: "model", costMicroInr: "2000000" })]);
     const page = (await arjun.get("/health/glow-salon")).plain;
-    assert.match(page, /₹149\.50/u, "half of Business, for the builder's own server");
-    assert.match(page, /Half price for your own server/u);
+    assert.match(page, /₹149\.00/u, "the builder licence, whatever the plan (Business here)");
+    assert.match(page, /Builder licence/u);
     assert.match(page, /AI model[^]*?₹2\.00/u, "the model cost the runtime recorded this month");
     assert.match(page, /more than 2 days ago/u, "the heartbeat is old");
     assert.match(page, /Licence payment overdue/u);

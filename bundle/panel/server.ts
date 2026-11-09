@@ -180,7 +180,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const data = readExport(shops.paths.exports(id));
     const observed = data ? monthlyFromExport(settings, data, monthOf(now(), settings.timezone), "live", now()).bookings.made : undefined;
     return monthlyCost({
-      settings, ...(shops.fleet(id)?.plan ? { plan: shops.fleet(id)!.plan! } : {}), ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
+      settings, ...(shops.fleet(id)?.plan ? { plan: shops.fleet(id)!.plan! } : {}), builder: config.mode === "own", ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
       ...(config.whatsappProvider ? { whatsappProvider: config.whatsappProvider } : {}), ...(config.hostingSharePaise !== undefined ? { hostingSharePaise: config.hostingSharePaise } : {}),
     }, prices);
   }
@@ -356,7 +356,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const own = setupOf(kindId);
     const report = settings && data && !own ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
-    const plan = planView(shops.fleet(id), prices);
+    const plan = planView(shops.fleet(id), prices, config.mode === "own"); // a panel on a builder's own server: the builder licence
     const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),

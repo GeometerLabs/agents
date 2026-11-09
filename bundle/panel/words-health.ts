@@ -18,7 +18,7 @@ export interface HealthWords {
   cost: {
     heading: string; lines: { plan: string; whatsapp: string; model: string; support: string };
     unknown: string; minutes(n: number): string; total: string; subtotal(n: number): string;
-    notes: { innovator: string; selfHost: string; included: string; estimate: string; noRecord: string; noPlan: string; noPrice: string; noMinutes: string; noRate: string; floor(n: number): string };
+    notes: { builderLicence: string; included: string; estimate: string; noRecord: string; noPlan: string; noPrice: string; noMinutes: string; noRate: string; floor(n: number): string };
   };
   charge: { heading: string; price: string; setup: string; minutes: string; rate: string; save: string; privacy: string; hint: string };
   margin: { heading: string; yourPrice: string; keep: string; unknownPrice: string; before(items: string): string; notFinal: string; setupOnce(amount: string): string; negative: string };
@@ -64,7 +64,7 @@ const en: HealthWords = {
     lines: { plan: "Geometer's plan fee, before GST", whatsapp: "WhatsApp messages, at cost", model: "AI model", support: "Your support time" },
     unknown: "unknown", minutes: (n) => `${n} minutes`, total: "Running cost", subtotal: (n) => `Running cost so far (${n} not known yet)`,
     notes: {
-      innovator: "Innovator price", selfHost: "Half price for your own server", included: "Included in the plan fee", estimate: "Estimate from this month's counts, before the free replies",
+      builderLicence: "Builder licence", included: "Included in the plan fee", estimate: "Estimate from this month's counts, before the free replies",
       noRecord: "No record shared yet", noPlan: "Fleet has not set a plan", noPrice: "No price in the list", noMinutes: "No minutes entered this month", noRate: "Enter what an hour of your time is worth",
       floor: (n) => `At least this much: ${n} calls had no price`,
     },
@@ -113,7 +113,7 @@ const hi: HealthWords = {
     lines: { plan: "Geometer का प्लान शुल्क, GST से पहले", whatsapp: "WhatsApp संदेश, लागत पर", model: "AI मॉडल", support: "आपका सपोर्ट समय" },
     unknown: "पता नहीं", minutes: (n) => `${n} मिनट`, total: "चालू ख़र्च", subtotal: (n) => `अब तक का चालू ख़र्च (${n} अभी पता नहीं)`,
     notes: {
-      innovator: "इनोवेटर कीमत", selfHost: "अपने सर्वर के लिए आधी कीमत", included: "प्लान शुल्क में शामिल", estimate: "इस महीने की गिनती से अनुमान, मुफ़्त जवाबों से पहले",
+      builderLicence: "बिल्डर लाइसेंस", included: "प्लान शुल्क में शामिल", estimate: "इस महीने की गिनती से अनुमान, मुफ़्त जवाबों से पहले",
       noRecord: "रिकॉर्ड अभी साझा नहीं हुआ", noPlan: "फ़्लीट ने प्लान तय नहीं किया", noPrice: "सूची में कीमत नहीं", noMinutes: "इस महीने के मिनट नहीं भरे", noRate: "अपने एक घंटे की क़ीमत भरें",
       floor: (n) => `कम से कम इतना: ${n} कॉल की कीमत नहीं थी`,
     },
@@ -162,7 +162,7 @@ const ml: HealthWords = {
     lines: { plan: "Geometer പ്ലാൻ ഫീസ്, GST ഒഴികെ", whatsapp: "WhatsApp സന്ദേശങ്ങൾ, ചെലവ് വിലയിൽ", model: "AI മോഡൽ", support: "നിങ്ങളുടെ സപ്പോർട്ട് സമയം" },
     unknown: "അറിയില്ല", minutes: (n) => `${n} മിനിറ്റ്`, total: "പ്രവർത്തന ചെലവ്", subtotal: (n) => `ഇതുവരെയുള്ള പ്രവർത്തന ചെലവ് (${n} എണ്ണം ഇതുവരെ അറിയില്ല)`,
     notes: {
-      innovator: "ഇന്നൊവേറ്റർ വില", selfHost: "സ്വന്തം സെർവറിന് പകുതി വില", included: "പ്ലാൻ ഫീസിൽ ഉൾപ്പെടുന്നു", estimate: "ഈ മാസത്തെ എണ്ണത്തിൽ നിന്നുള്ള കണക്ക്, സൗജന്യ മറുപടികൾക്ക് മുമ്പ്",
+      builderLicence: "ബിൽഡർ ലൈസൻസ്", included: "പ്ലാൻ ഫീസിൽ ഉൾപ്പെടുന്നു", estimate: "ഈ മാസത്തെ എണ്ണത്തിൽ നിന്നുള്ള കണക്ക്, സൗജന്യ മറുപടികൾക്ക് മുമ്പ്",
       noRecord: "രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല", noPlan: "ഫ്ലീറ്റ് പ്ലാൻ നിശ്ചയിച്ചിട്ടില്ല", noPrice: "പട്ടികയിൽ വിലയില്ല", noMinutes: "ഈ മാസത്തെ മിനിറ്റ് നൽകിയിട്ടില്ല", noRate: "നിങ്ങളുടെ ഒരു മണിക്കൂറിന്റെ മൂല്യം നൽകുക",
       floor: (n) => `ഇത്രയെങ്കിലും: ${n} കോളുകൾക്ക് വിലയില്ലായിരുന്നു`,
     },
@@ -211,7 +211,7 @@ const kn: HealthWords = {
     lines: { plan: "Geometer ಪ್ಲಾನ್ ಶುಲ್ಕ, GST ಬಿಟ್ಟು", whatsapp: "WhatsApp ಸಂದೇಶಗಳು, ವೆಚ್ಚದ ಬೆಲೆಯಲ್ಲಿ", model: "AI ಮಾಡೆಲ್", support: "ನಿಮ್ಮ ಸಪೋರ್ಟ್ ಸಮಯ" },
     unknown: "ಗೊತ್ತಿಲ್ಲ", minutes: (n) => `${n} ನಿಮಿಷ`, total: "ನಡೆಸುವ ಖರ್ಚು", subtotal: (n) => `ಇಲ್ಲಿಯವರೆಗಿನ ನಡೆಸುವ ಖರ್ಚು (${n} ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲ)`,
     notes: {
-      innovator: "ಇನ್ನೋವೇಟರ್ ಬೆಲೆ", selfHost: "ನಿಮ್ಮ ಸ್ವಂತ ಸರ್ವರ್‌ಗೆ ಅರ್ಧ ಬೆಲೆ", included: "ಪ್ಲಾನ್ ಶುಲ್ಕದಲ್ಲಿ ಸೇರಿದೆ", estimate: "ಈ ತಿಂಗಳ ಎಣಿಕೆಯಿಂದ ಅಂದಾಜು, ಉಚಿತ ಉತ್ತರಗಳ ಮೊದಲು",
+      builderLicence: "ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್", included: "ಪ್ಲಾನ್ ಶುಲ್ಕದಲ್ಲಿ ಸೇರಿದೆ", estimate: "ಈ ತಿಂಗಳ ಎಣಿಕೆಯಿಂದ ಅಂದಾಜು, ಉಚಿತ ಉತ್ತರಗಳ ಮೊದಲು",
       noRecord: "ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ", noPlan: "ಫ್ಲೀಟ್ ಪ್ಲಾನ್ ಹೊಂದಿಸಿಲ್ಲ", noPrice: "ಪಟ್ಟಿಯಲ್ಲಿ ಬೆಲೆ ಇಲ್ಲ", noMinutes: "ಈ ತಿಂಗಳ ನಿಮಿಷಗಳನ್ನು ನಮೂದಿಸಿಲ್ಲ", noRate: "ನಿಮ್ಮ ಒಂದು ಗಂಟೆಯ ಮೌಲ್ಯವನ್ನು ನಮೂದಿಸಿ",
       floor: (n) => `ಕನಿಷ್ಠ ಇಷ್ಟು: ${n} ಕರೆಗಳಿಗೆ ಬೆಲೆ ಇರಲಿಲ್ಲ`,
     },

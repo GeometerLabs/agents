@@ -627,6 +627,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or partner to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-razorpay` | ಅಂಗಡಿಯೇ Razorpay ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to Razorpay |  |
 | `cost.payer.builder-pays-geometer` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ | paid to Geometer by the builder or partner; the AI model is included |  |
+| `cost.payer.builder-pays-licence` | ಬಿಲ್ಡರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ, ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ಒಮ್ಮೆ; AI ಕೀ ಬಿಲ್ಡರ್‌ನ ಸ್ವಂತದ್ದು | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
 | `cost.payer.hosting` | ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ | the server's cost, shared |  |
 | `cost.unknown` | ಗೊತ್ತಿಲ್ಲ | unknown |  |
 | `cost.total` | ಒಟ್ಟು | Total |  |
@@ -647,7 +648,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.is` | ಈ ಅಂಗಡಿ Business ಪ್ಲಾನ್‌ನಲ್ಲಿದೆ. | This shop is on the Business plan. |  |
 | `plan.included` | ಪ್ರತಿ ತಿಂಗಳು 3000 ಗ್ರಾಹಕ ಸಂದೇಶಗಳು ಸೇರಿವೆ. | 3000 customer messages a month are included. |  |
 | `plan.price` | ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, GST ಬಿಟ್ಟು. | Plan price: ₹299 a month, before GST. |  |
-| `plan.priceInnovator` | ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, ಇನ್ನೋವೇಟರ್ ರಿಯಾಯಿತಿಯೊಂದಿಗೆ ₹179, GST ಬಿಟ್ಟು. | Plan price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
+| `plan.priceBuilder` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ತಿಂಗಳಿಗೆ ₹149, ಪ್ಲಾನ್ ಯಾವುದೇ ಇರಲಿ, GST ಬಿಟ್ಟು. | Builder licence: ₹149 a month for each live client business, whatever the plan, before GST. |  |
+| `plan.builderLicence` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್ | Builder licence |  |
 | `plan.priceNote` | ಒಂದು ಅಂಗಡಿ ತಿಂಗಳಲ್ಲಿ ಕನಿಷ್ಠ 15 ದಿನ ಚಾಲನೆಯಲ್ಲಿದ್ದರೆ ಆ ತಿಂಗಳಿಗೆ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | A shop counts for a month when it was live on 15 or more days. |  |
 | `plan.innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |
 | `plan.buttons` | ಈ ಅಂಗಡಿಗೆ AI ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ಈಗ ಬಟನ್ ಮೆನು ಸಿಗುತ್ತದೆ. | AI is paused for this shop. Customers get button menus instead. |  |
@@ -1058,8 +1060,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `health.cost.minutes` | 90 ನಿಮಿಷ | 90 minutes |  |
 | `health.cost.total` | ನಡೆಸುವ ಖರ್ಚು | Running cost |  |
 | `health.cost.subtotal` | ಇಲ್ಲಿಯವರೆಗಿನ ನಡೆಸುವ ಖರ್ಚು (1 ಇನ್ನೂ ಗೊತ್ತಿಲ್ಲ) | Running cost so far (1 not known yet) |  |
-| `health.cost.notes.innovator` | ಇನ್ನೋವೇಟರ್ ಬೆಲೆ | Innovator price |  |
-| `health.cost.notes.selfHost` | ನಿಮ್ಮ ಸ್ವಂತ ಸರ್ವರ್‌ಗೆ ಅರ್ಧ ಬೆಲೆ | Half price for your own server |  |
+| `health.cost.notes.builderLicence` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್ | Builder licence |  |
 | `health.cost.notes.included` | ಪ್ಲಾನ್ ಶುಲ್ಕದಲ್ಲಿ ಸೇರಿದೆ | Included in the plan fee |  |
 | `health.cost.notes.estimate` | ಈ ತಿಂಗಳ ಎಣಿಕೆಯಿಂದ ಅಂದಾಜು, ಉಚಿತ ಉತ್ತರಗಳ ಮೊದಲು | Estimate from this month's counts, before the free replies |  |
 | `health.cost.notes.noRecord` | ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ | No record shared yet |  |

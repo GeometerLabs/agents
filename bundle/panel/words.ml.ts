@@ -90,7 +90,8 @@ export const ml: Words = {
     lines: { whatsapp: "WhatsApp സന്ദേശങ്ങൾ (Meta-യുടെ ഫീസ്)", "whatsapp-provider": "WhatsApp പ്രൊവൈഡറുടെ സ്വന്തം ഫീസ്", razorpay: "Razorpay-യുടെ ഫീസ്", geometer: "Geometer-ന്റെ പ്ലാൻ", hosting: "ഹോസ്റ്റിംഗ് വിഹിതം" },
     payer: {
       "builder-pays-whatsapp-provider": "ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും", "shop-pays-razorpay": "കട Razorpay-ക്ക് നേരിട്ട് അടയ്ക്കും",
-      "builder-pays-geometer": "ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു", hosting: "സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത്",
+      "builder-pays-geometer": "ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു",
+      "builder-pays-licence": "ബിൽഡർ Geometer-ന് അടയ്ക്കും, പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും ഒരിക്കൽ; AI കീ ബിൽഡറുടെ സ്വന്തം", hosting: "സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത്",
     },
     unknown: "അറിയില്ല", total: "ആകെ", subtotal: (n) => `ഇതുവരെയുള്ള തുക. വില ഇല്ലാത്ത കാര്യങ്ങൾ: ${n}. അതിനാൽ ഇത് മുഴുവൻ ചെലവല്ല.`, priceList: (d) => `വിലകൾ എടുത്തത് ഈ തീയതിയിലെ ലിസ്റ്റിൽ നിന്ന്: ${d}.`,
     caveats: {
@@ -108,7 +109,7 @@ export const ml: Words = {
     names: { basic: "ബേസിക്", business: "ബിസിനസ്", operations: "ഓപ്പറേഷൻസ്" },
     is: (name) => `ഈ കട ${name} പ്ലാനിലാണ്.`, included: (n) => `ഓരോ മാസവും ${n} ഉപഭോക്തൃ സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു.`,
     price: (price) => `പ്ലാൻ വില: മാസം ${price}, GST ഒഴികെ.`,
-    priceInnovator: (price, yours) => `പ്ലാൻ വില: മാസം ${price}, ഇന്നൊവേറ്റർ ഇളവോടെ ${yours}, GST ഒഴികെ.`,
+    priceBuilder: (price) => `ബിൽഡർ ലൈസൻസ്: പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും മാസം ${price}, പ്ലാൻ ഏതായാലും, GST ഒഴികെ.`, builderLicence: "ബിൽഡർ ലൈസൻസ്",
     priceNote: "ഒരു കട ആ മാസം കുറഞ്ഞത് 15 ദിവസം പ്രവർത്തിച്ചാൽ ആ മാസം കണക്കിൽ വരും.", innovator: "ഇന്നൊവേറ്റർ",
     buttons: "ഈ കടയ്ക്ക് AI നിർത്തിവച്ചിരിക്കുന്നു. ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ബട്ടൺ മെനു ലഭിക്കും.",
     buttonsWhy: {
