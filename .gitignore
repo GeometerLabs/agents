@@ -17,3 +17,9 @@ templates/commerce/bookings/demo/web/dist/
 
 # working copies of background jobs
 .claude/worktrees/
+
+# Debug output: build folders, test results and logs are never committed
+**/target/
+**/test-results/
+**/playwright-report/
+*.log
