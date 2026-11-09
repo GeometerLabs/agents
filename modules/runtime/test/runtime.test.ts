@@ -186,8 +186,9 @@ test("after a restore from a snapshot the runtime moves every id counter on and 
     assert.match(lines.join("\n"), /Restored from the snapshot of 20261104T013000Z: ids moved on by 100000/);
     assert.ok(!existsSync(join(dir, "data", "restored.json")) && readdirSync(join(dir, "data")).some((f) => f.startsWith("restored.json.done-")), "the note is kept under another name");
     second.runtime.submit([{ kind: "message" as const, message: { id: "m2", from: "+919800000000", text: "y", timestamp: clock.now() } }]);
-    second.runtime.kick(); await second.runtime.idle(); await second.runtime.close();
+    second.runtime.kick(); await second.runtime.idle();
     assert.equal(second.db.loadState().record.at(-1)!.booking, "o-100002");
+    await second.runtime.close();
     // the process stopped after the entry was saved but before the note was renamed: the next start does not move the ids again
     writeFileSync(join(dir, "data", "restored.json"), note);
     const third = open();
