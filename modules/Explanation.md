@@ -273,6 +273,10 @@ like the idea of having our agents limited to razorpay". What changed in `paymen
 - **One contract every provider must pass** (`providers/test/contract.test.ts`): lost reply, duplicate and late events, never refunding more than was paid, a held
   refund, a refund that fails, and B33's situations. A row that cannot apply to a provider is its own test, named "does not apply", that asserts the capability
   making it so. `providers/test/names.test.ts` holds the places made neutral to it: they name no gateway and import a provider only through the registry.
+- **An agent's own gateway API is not a provider** (`OWN_API`, `"own-api"`). `readPaymentSettings(v, errors, {ownApi: true})` accepts
+  `{"module": "own-api"}` only when an agent folder reads its settings (bundle/agent/folder.ts); a template's shop can never choose it, because no template
+  code knows such an API. It has no capabilities, words or stand-in here: its Guard spec is the one the builder reviewed with the companies kit, and the bundle
+  says what it cannot check (bundle/Deferred.md).
 
 ## Adding to a module later
 
