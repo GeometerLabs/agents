@@ -224,7 +224,10 @@ export const mayHaveHappened = (e: unknown): boolean => e instanceof TimeoutErro
  *
  *   NotSentError, a network code                 waits: the connection never opened, so the Guard is down and the provider saw nothing. Trying later cannot do the work twice.
  *   NotSentError, ERR_INVALID_URL                ends now: the address is wrong, and waiting does not mend it.
- *   GuardUnavailableError guard_unavailable      waits: kill switch, no policy, store down, failed self-check. Guard says `sent: no`, `retry: later`.
+ *   GuardUnavailableError guard_unavailable      waits: no policy, store down, failed self-check. Guard says `sent: no`, `retry: later`.
+ *   ... with the kill switch engaged             does not wait: a person stopped the shop on purpose (`geometer stop`, a stop from the panel, a deploy that found a
+ *                                                mismatch). It is not an outage, so a message must not sit 15 minutes and then be filed as one; today's handling stays.
+ *                                                Guard says so only in its reason ("kill switch engaged: <why>", monorepo docs/guard-for-pathways.md), so that is what is read.
  *   GuardUnavailableError busy                   waits: Guard is at capacity for a moment, and says `sent: no`.
  *   GuardUnavailableError provider_unreachable   ends now: the Guard is up and it is the provider that is away, so it is not this rule's case. Today's handling stays.
  *   TimeoutError                                 never waits: the call may have reached the provider, and waiting means running it again.
@@ -241,6 +244,9 @@ export const mayHaveHappened = (e: unknown): boolean => e instanceof TimeoutErro
  */
 export function waitsForGuard(e: unknown): boolean {
   if (e instanceof NotSentError) return e.code !== "ERR_INVALID_URL";
-  if (e instanceof GuardUnavailableError) return e.guard.code !== "provider_unreachable";
+  if (e instanceof GuardUnavailableError) return e.guard.code !== "provider_unreachable" && !KILL_SWITCH.test(e.guard.reason ?? "");
   return false;
 }
+
+/** Guard's reason when its kill switch is on: "kill switch engaged: <the reason given>". */
+const KILL_SWITCH = /^kill switch engaged\b/iu;
