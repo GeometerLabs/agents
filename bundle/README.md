@@ -72,7 +72,7 @@ node bundle/geometer.ts check glow-salon                # starts nothing; says w
 node bundle/geometer.ts deploy glow-salon
 ```
 
-`--prepared-by` is the name the owner reads in the monthly report ("Set up by: Divya, local partner"). Leave it out and the message says "your builder"; `deploy` tells you when it had to use that. A shop made in the panel needs no flag: the panel already knows who made it.
+`--prepared-by` is the name the owner reads in the monthly report ("Set up by: Divya, local partner"). With `--company` it is the person alone and the owner reads the company after the name (`--prepared-by Divya --company "Sri Sai Digital"` gives "Divya, Sri Sai Digital"). Leave it out and the message says "your builder"; `deploy` tells you when it had to use that. A shop made in the panel needs no flag: the panel already knows who made it.
 
 `deploy` prints the proof, read from the running Guards: `12 of 12 limits proven to bite`. That line is what the shop's go-live certificate quotes. If a rule cannot be proven, the deploy is refused and **nothing is started**:
 
@@ -343,7 +343,7 @@ So a shop stays paused even if someone changes its agent or the agent's licence 
 On the first morning of the month each shop's agent sends its owner last month's report on WhatsApp, with a link to the full page. The bundle turns this on for every shop it deploys. You do nothing for it. Three things make it work, and all three come from the bundle:
 
 - **The page opens.** Caddy serves each shop's report pages at `https://<your domain>/r/<shop>/<32 random letters and digits>/<file>`. It can read that one folder of the shop's data and nothing else of it, and only to read. The folder itself, the shop's folder, `/r`, and any other address under `/r` answer 404, so nobody can list the pages or guess their way to another shop's. The only secret in an address is the random part, so treat a link like a key: whoever has it can read that month's report.
-- **The name.** "Set up by: Divya, local partner" comes from `shops/<shop>/report.json` if the shop has one (`shop add --prepared-by` writes it), otherwise from the panel's record of who made the shop (`owner.json`: "Divya, local partner" or "Divya, builder"). With neither it says "your builder".
+- **The name.** "Set up by: Divya, local partner" comes from `shops/<shop>/report.json` if the shop has one (`shop add --prepared-by` writes it), otherwise from the panel's record of who made the shop (`owner.json`: "Divya, Sri Sai Digital" when that account gave a company or business name when it joined, else "Divya, local partner" or "Divya, builder"). With neither it says "your builder".
 - **The Innovator badge.** On the message, the page and the certificate when Geometer's fleet service says the shop's builder or partner has it (`fleet/<shop>.json`). It follows what fleet says: a change redeploys the shop. The report you make from the panel carries the same name and badge.
 
 Good to know:
@@ -374,8 +374,8 @@ Restoring a snapshot needs the secret half of the age key, which is not on the s
 
 ```
 <server>/geometer.json            this server (written by init)
-<server>/shops/<shop>/            settings.json, runtime.json, pathway.lock, owner.json, pins.json   the panel writes; the deployer applies
-<server>/shops/<shop>/report.json  {"schema": 1, "preparedBy": "Divya, local partner"}: who the owner's monthly report says set the shop up (optional; wins over owner.json)
+<server>/shops/<shop>/            settings.json, runtime.json, pathway.lock, owner.json (account name, optional company, role), pins.json   the panel writes; the deployer applies
+<server>/shops/<shop>/report.json  {"schema": 1, "preparedBy": "Divya, local partner"}: who the owner's monthly report says set the shop up (optional; wins over owner.json; `shop add --prepared-by Divya --company "Sri Sai Digital"` writes "Divya, Sri Sai Digital")
 <server>/secrets-inbox/<shop>/    razorpay_key ("<key id>:<key secret>"), whatsapp_token, ...        the panel writes, mode 0600; the deployer moves and deletes
 <server>/requests/<shop>.stop.json  a request to stop a shop                                          the panel writes; the deployer acts, shows it in status, removes it
 <server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads

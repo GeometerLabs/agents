@@ -104,13 +104,14 @@ ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <p class="note">${w.byInvitation}</p>`, { nav: false });
 }
 
-export function joinPage(c: Ctx, o: { token: string; role: "builder" | "partner"; error?: string; values: { name: string; handle: string; language: string } }): string {
+export function joinPage(c: Ctx, o: { token: string; role: "builder" | "partner"; error?: string; values: { name: string; company: string; handle: string; language: string } }): string {
   const w = c.w.join;
   return layout(c, w.title(roleWord(c, o.role)), html`<h1>${w.title(roleWord(c, o.role))}</h1>
 <p>${w.intro}</p>
 ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <form method="post" action="/join" autocomplete="off">${csrf(c)}<input type="hidden" name="token" value="${o.token}">
   <label class="field"><span>${w.name}</span><input name="name" value="${o.values.name}" maxlength="80" required></label>
+  <label class="field"><span>${w.company}</span><input name="company" value="${o.values.company}" maxlength="60"><p class="help">${w.companyHelp}</p></label>
   <label class="field"><span>${w.handle}</span><input name="handle" value="${o.values.handle}" autocapitalize="none" maxlength="40" required><p class="help">${w.handleHelp}</p></label>
   <label class="field"><span>${w.passphrase}</span><input name="passphrase" type="password" autocomplete="new-password" required><p class="help">${w.passphraseHelp}</p></label>
   <label class="field"><span>${w.language}</span><select name="language">${languageOptions().map((l) => html`<option value="${l.code}" ${l.code === o.values.language ? raw("selected") : ""}>${l.label}</option>`)}</select></label>
