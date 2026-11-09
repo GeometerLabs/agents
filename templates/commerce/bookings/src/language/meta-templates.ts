@@ -20,12 +20,11 @@ import type { MetaTemplate } from "../../../../../modules/language/meta-template
 import { serviceName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { inr, need, slot } from "./templates.ts";
-import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
-import { localParts } from "../../../../../modules/core/time.ts";
+import { formatInr } from "../../../../../modules/language/format.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming" | "open" | "until";
+export type Slot = "business" | "service" | "slot" | "deposit" | "refund" | "hours" | "phone" | "ref" | "code" | "approvalHours" | "upiCode" | "marked" | "left" | "partner" | "upcoming";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   service: (f) => need(f, "serviceName"),
@@ -42,8 +41,6 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   left: (f) => formatInr(need(f, "leftInr")),
   partner: (f) => need(f, "partner"),
   upcoming: (f) => String(need(f, "upcomingCount")),
-  open: (f) => String(need(f, "openCount")),
-  until: (f) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language),
 };
 
 
@@ -266,10 +263,10 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   {
     name: "owner_service_stopped", usedFor: "owner_licence_stopped", audience: "owner",
     bodies: {
-      en: "Notice: online booking for {business} has stopped. Nothing is deleted. Bookings to come: {upcoming}. Other open items: {open}. {partner} can give you the full list and a free copy of all your records until {until}.",
-      hi: "सूचना: {business} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: {upcoming}। बाकी खुले काम: {open}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {until} तक {partner} से मिल सकती है।",
-      ml: "അറിയിപ്പ്: {business}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: {upcoming}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {open}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {until} വരെ {partner} നൽകും.",
-      kn: "ಸೂಚನೆ: {business}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: {upcoming}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {open}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {until} ವರೆಗೆ {partner} ನೀಡುತ್ತಾರೆ.",
+      en: "Notice: online booking for {business} has stopped, because the service from {partner} has ended. Bookings after today still in your calendar: {upcoming}. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.",
+      hi: "सूचना: {business} की ऑनलाइन बुकिंग बंद हो गई है, क्योंकि {partner} की सेवा समाप्त हो गई है। आज के बाद की जो बुकिंग आपके कैलेंडर में हैं: {upcoming}। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा।",
+      ml: "അറിയിപ്പ്: {business}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി, കാരണം {partner} നൽകിയിരുന്ന സേവനം അവസാനിച്ചു. ഇന്നിന് ശേഷം നിങ്ങളുടെ കലണ്ടറിലുള്ള ബുക്കിംഗുകൾ: {upcoming}. മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ഇത് തുടരാൻ hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതൂ, Geometer നിങ്ങളെ ബന്ധിപ്പിക്കും.",
+      kn: "ಸೂಚನೆ: {business}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {partner} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿರುವ ಬುಕಿಂಗ್‌ಗಳು: {upcoming}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
     },
   },
   // UPI shops (B33). The messages that can go when the person has not written today: the customer's "booked", "after the hold", "your refund is coming" and
@@ -383,7 +380,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     upiId: "glowsalon@okicici", payee: settings.name, upiCode: "P4XR9T", markedInr: settings.deposit.amountInr, leftInr: settings.deposit.amountInr,
-    partner: "Divya, local partner", upcomingCount: 3, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30), // Fri 5 Mar 2027 in India
+    partner: "Divya, local partner", upcomingCount: 3,
   };
 }
 

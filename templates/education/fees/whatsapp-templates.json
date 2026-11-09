@@ -2283,15 +2283,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "सूचना: {{1}} की ऑनलाइन फ़ीस वसूली बंद हो गई है। कुछ भी मिटाया नहीं गया है। बाकी फ़ीस: {{2}}। बाकी खुले काम: {{3}}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {{4}} तक {{5}} से मिल सकती है।",
+        "text": "सूचना: {{1}} की ऑनलाइन फ़ीस वसूली बंद हो गई है, क्योंकि {{2}} की सेवा समाप्त हो गई है। आपके विद्यार्थियों की बाकी फ़ीस: {{3}}। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा।",
         "example": {
           "body_text": [
             [
               "Bright Tuition Centre",
-              "4",
-              "1",
-              "शुक्रवार, 5 मार्च",
-              "Divya, local partner"
+              "Divya, local partner",
+              "4"
             ]
           ]
         }
@@ -2306,15 +2304,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Notice: online fee collection for {{1}} has stopped. Nothing is deleted. Fees still open: {{2}}. Other open items: {{3}}. {{4}} can give you the full list and a free copy of all your records until {{5}}.",
+        "text": "Notice: online fee collection for {{1}} has stopped, because the service from {{2}} has ended. Fees from your students still open: {{3}}. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.",
         "example": {
           "body_text": [
             [
               "Bright Tuition Centre",
-              "4",
-              "1",
               "Divya, local partner",
-              "Fri 5 Mar"
+              "4"
             ]
           ]
         }
@@ -2329,15 +2325,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ഫീസ് പിരിവ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള ഫീസുകൾ: {{2}}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {{3}}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {{4}} വരെ {{5}} നൽകും.",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ഫീസ് പിരിവ് നിർത്തി, കാരണം {{2}} നൽകിയിരുന്ന സേവനം അവസാനിച്ചു. നിങ്ങളുടെ വിദ്യാർത്ഥികളുടെ ബാക്കിയുള്ള ഫീസുകൾ: {{3}}. മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ഇത് തുടരാൻ hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതൂ, Geometer നിങ്ങളെ ബന്ധിപ്പിക്കും.",
         "example": {
           "body_text": [
             [
               "Bright Tuition Centre",
-              "4",
-              "1",
-              "വെള്ളി, 5 മാർച്ച്",
-              "Divya, local partner"
+              "Divya, local partner",
+              "4"
             ]
           ]
         }
@@ -2352,15 +2346,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಬಾಕಿ ಶುಲ್ಕಗಳು: {{2}}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {{3}}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {{4}} ವರೆಗೆ {{5}} ನೀಡುತ್ತಾರೆ.",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {{2}} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ನಿಮ್ಮ ವಿದ್ಯಾರ್ಥಿಗಳ ಬಾಕಿ ಶುಲ್ಕಗಳು: {{3}}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
         "example": {
           "body_text": [
             [
               "Bright Tuition Centre",
-              "4",
-              "1",
-              "ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್",
-              "Divya, local partner"
+              "Divya, local partner",
+              "4"
             ]
           ]
         }
