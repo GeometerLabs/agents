@@ -156,6 +156,8 @@ export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: C
 
     async isWindowOpen(to) { return windowOpen(to); },
 
+    async ping() { return http.request("GET", `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}`); },
+
     /** Not a read from WhatsApp (there is none): the copy of what the send call accepted. Null after a restart. */
     async getMessage(id) {
       const m = sent.get(id);

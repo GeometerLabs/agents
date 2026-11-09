@@ -264,6 +264,8 @@ test("the calendar saves nothing: the agent does not say booked, and tells the o
   });
 });
 
+// A wide reply window on purpose (9 Nov: failed once on a loaded machine, the refund list empty). The look at the refunds took more than the world's usual 2 s, so it "failed",
+// and the refund rightly waited for the clock (the next test), which left this test reading an empty list. Not a race in the agent: this test is about paying twice.
 test("a deposit paid twice: the second payment is refunded once, even though a real payment.captured does not say which link it paid", async () => {
   await withWorld(async (w) => {
     await w.say(BOOK);
@@ -278,7 +280,23 @@ test("a deposit paid twice: the second payment is refunded once, even though a r
     assert.equal(w.confirmedEvents().length, 1);
     await w.deliverPaymentEvents({ twice: true });
     assert.equal(w.fakes.payments.refunds().length, 1);
-  });
+  }, { timeoutMs: 20_000 });
+});
+
+test("a look at the refunds that fails is not a refund: nothing is sent blind, and the clock sends it once", async () => {
+  await withWorld(async (w) => {
+    await w.say(BOOK);
+    const id = w.linkFor("b-1")!.id;
+    await w.control("/_standin/razorpay/pay", { request_id: id, deliver: false });
+    const second = (await w.control("/_standin/razorpay/pay", { request_id: id, deliver: false })).payment;
+    await w.control("/_standin/fault", { service: "payments", op: "listRefunds", mode: "error", times: 1 });
+    await w.deliverPaymentEvents();
+    assert.deepEqual(w.fakes.payments.refunds(), [], "what cannot be looked at is not sent");
+    await w.advance(2);
+    assert.deepEqual(w.fakes.payments.refunds().map((r) => r.payment_id), [second.id]);
+    await w.advance(2);
+    assert.equal(w.fakes.payments.refunds().length, 1, "once");
+  }, { timeoutMs: 20_000 });
 });
 
 test("an expired Razorpay key: no link is made, nothing is held, and the customer and owner are told", async () => {

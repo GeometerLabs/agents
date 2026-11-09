@@ -26,7 +26,7 @@
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
-import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
+import { GUARD_WAIT_ENTRY, RECOVERY_ENTRY, guardWaitLine } from "../../../../modules/unfinished/registry.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, daysBetween, localParts } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
@@ -94,7 +94,11 @@ export type AgentEvent =
   | { kind: "recovery"; id: string; case: string; action: string }
   | { kind: "tick" }; // time has passed: let holds expire and finish the day's orders
 
-export interface Agent { handle(event: AgentEvent): Promise<void> }
+export interface Agent {
+  handle(event: AgentEvent): Promise<void>;
+  /** The wait for a Guard is over and this event's work is not done (modules/runtime/guard-wait.ts). With `tell`, the customer also gets the shop's words for it. */
+  giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void>;
+}
 
 /** "I paid" while an advance waits, on a UPI shop: it asks the owner to look. It never marks anything paid. */
 type Offer =
@@ -1093,5 +1097,13 @@ export function createAgent(deps: AgentDeps): Agent {
     return onTick();
   }
 
-  return { handle };
+  /** `couldnt_tell_owner`: the words this template already has for "this could not be done just now", and they ask the customer to try again rather than promise anything. */
+  async function giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void> {
+    const phone = event.kind === "message" ? event.message.from : owner;
+    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["couldnt_tell_owner"]) : false;
+    const line = guardWaitLine(event, why, told);
+    log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
+  }
+
+  return { handle, giveUp };
 }

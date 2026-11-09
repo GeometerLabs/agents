@@ -8,9 +8,10 @@
 //   refund_failed          a refund that did not go, and will not go on its own (Guard said no, it ran out, it failed)
 //   upi_payment_unconfirmed  a UPI shop: the customer says they paid, or the owner marked part, and the owner has not confirmed the rest (modules/payments/owner-marked, B33)
 //   upi_refund_owed        a UPI shop: a refund the owner owes and has not marked done (the agent never sends a UPI refund)
+//   message_unanswered     the wait for a Guard ended and the work of a message or payment event was not done (modules/runtime/guard-wait.ts)
 //
 // A case shows once for one cause: a waiting answer that is overdue is listed as that, and not also as a refund on its way.
-import { latestEntry, latestRecovery, timeOf } from "./registry.ts";
+import { GUARD_WAIT_ENTRY, latestEntry, latestRecovery, timeOf } from "./registry.ts";
 import { MARK_OBLIGATION_KINDS } from "../payments/owner-marked/obligations.ts";
 import type { CaseLike, DetectInput, Obligation, ObligationKind } from "./registry.ts";
 
@@ -64,6 +65,26 @@ const paymentUnrecorded: ObligationKind = {
       const since = timeOf(bad);
       if (since !== null && input.nowMs - since < input.options.graceMs) continue;
       out.push({ kind: "payment_unrecorded", caseId: c.id, sinceMs: since, facts: { case: c.id }, actions: ["recheck_payment"] });
+    }
+    return out;
+  },
+};
+
+/** How long an item stays listed. It has no "done" of its own (the person answers on WhatsApp, which the record does not see), so it leaves by age rather than staying for ever. */
+const UNANSWERED_KEEP_MS = 7 * 24 * 3_600_000;
+
+const messageUnanswered: ObligationKind = {
+  id: "message_unanswered",
+  templates: "all",
+  detect(input) {
+    const out: Obligation[] = [];
+    for (const e of input.entries) {
+      if (e.action !== GUARD_WAIT_ENTRY) continue;
+      const since = timeOf(e);
+      if (since !== null && input.nowMs - since >= UNANSWERED_KEEP_MS) continue;
+      // Most such events are about no case yet, so a booking id cannot be asked for: the line's own number names it, the same on every read of the same record.
+      const ref = e.booking ?? `#${e.seq}`;
+      out.push({ kind: "message_unanswered", caseId: ref, sinceMs: since, facts: { case: ref }, actions: [] });
     }
     return out;
   },
@@ -125,4 +146,4 @@ function refundIssues(id: "refund_unknown" | "refund_failed", unknown: boolean):
   };
 }
 
-export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), ...MARK_OBLIGATION_KINDS];
+export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), messageUnanswered, ...MARK_OBLIGATION_KINDS];
