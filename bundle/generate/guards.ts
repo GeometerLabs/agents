@@ -11,7 +11,8 @@ import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-l
 import type { LimitsSpec, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
-import { GATEWAYS, GATEWAY_KINDS, providerById } from "../../modules/payments/providers/index.ts";
+import { GATEWAYS, GATEWAY_KINDS, OWN_API, providerById } from "../../modules/payments/providers/index.ts";
+import { OWN_API_SECRET } from "../lib/secrets.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
 export const GUARD_UPSTREAM_TIMEOUT_MS = 15_000;
@@ -31,6 +32,14 @@ export interface GuardDef {
 }
 
 export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "model"];
+
+/**
+ * The Guard in front of an agent's own gateway API, which has no module here (B71 step 6): its tool is the reviewed spec's, its upstream is where the builder said the
+ * API is. Everything else is the same as a gateway module's Guard: one credential file, sent as the Authorization header.
+ */
+export function ownApiGuardDef(tool: string, upstream: string): GuardDef {
+  return { kind: OWN_API, tool, upstream, secretFile: OWN_API_SECRET, headers: { Authorization: `\${file:/run/secrets/${OWN_API_SECRET}}` } };
+}
 
 export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
   const gateway = providerById(kind)?.gateway?.guard;

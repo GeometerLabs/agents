@@ -19,6 +19,9 @@ import { upi } from "./upi/index.ts";
  */
 export const PROVIDERS: readonly PaymentProvider[] = [upi, razorpay];
 
+/** An agent's own gateway with no module here (B71 step 6): its Guard spec is the one the builder reviewed through the companies kit. Never a template shop's. */
+export const OWN_API = "own-api";
+
 /** The default for a shop that has not chosen: the first provider, which needs no account. */
 export const DEFAULT_PROVIDER: PaymentProvider = PROVIDERS[0];
 
@@ -37,10 +40,18 @@ export const MISSING_PAYMENT = `Add how customers pay ("payment"). ${DEFAULT_PRO
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** Read the "payment" block. Pushes plain-words problems and returns undefined when it is missing or wrong. A missing block asks for the UPI ID; it never picks a gateway. */
-export function readPaymentSettings(v: unknown, errors: string[]): PaymentSettings | undefined {
+export function readPaymentSettings(v: unknown, errors: string[], options: { ownApi?: boolean } = {}): PaymentSettings | undefined {
   if (v === undefined) { errors.push(MISSING_PAYMENT); return undefined; }
   const shape = `The payment module ("payment") must look like ${PROVIDERS.map((p) => p.example).join(" or ")}.`;
   if (!isObj(v)) { errors.push(shape); return undefined; }
+  // B71 step 6: an agent someone else wrote may take money through its own gateway's API, with no module here: Guard stands in front of it with a spec the builder
+  // reviewed (companies/openapi-to-spec.ts, kept in the agent's folder). Only an agent folder passes `ownApi`, so a template's shop can never choose it: no template
+  // code knows such an API. Nothing else goes in the block; the API's address and rules are the folder's.
+  if (options.ownApi && v.module === OWN_API) {
+    const extra = Object.keys(v).filter((k) => k !== "module");
+    if (extra.length > 0) { errors.push(`An agent's own gateway is just {"module": "${OWN_API}"}: its address is agent.json's ownApi.upstream and its rules are the reviewed spec. Leave out ${extra.join(", ")}.`); return undefined; }
+    return { module: OWN_API };
+  }
   const provider = PROVIDERS.find((p) => p.id === v.module);
   if (!provider) { errors.push(`The payment module ${JSON.stringify(v.module)} is not one I know. Use ${PROVIDERS.map((p) => `"${p.id}"`).join(" or ")}: ${PROVIDERS.map((p) => p.example).join(" or ")}.`); return undefined; }
   return provider.readSettings(v, errors);

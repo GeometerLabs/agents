@@ -5,6 +5,7 @@ import { hkdfSync } from "node:crypto";
 import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { serverPaths } from "./server.ts";
+import { OWN_API } from "../../modules/payments/providers/index.ts";
 import { ensureDir, mintSecret, writeAtomic } from "./util.ts";
 import type { Problem } from "./util.ts";
 
@@ -107,6 +108,9 @@ export function ensureSecret(path: string, make: () => string, mode?: number): s
   return value;
 }
 
+/** The credential file of an agent's own gateway API Guard (B71 step 6, generate/guards.ts ownApiGuardDef): the whole Authorization header value, as handed in. */
+export const OWN_API_SECRET = "gateway_authorization";
+
 /**
  * What the panel may hand in (secrets-inbox/<shop>/<name>), where each goes, and what it becomes. The runtime never sees any of them: a provider's
  * credential goes only to that shop's Guard for that provider, a webhook secret only to the inbox, the Google key only to the token refresher.
@@ -121,6 +125,11 @@ export const INTAKE: Record<string, { to: (shop: string) => string[]; make?: (te
     to: (shop) => [`g-${shop}-whatsapp`, "whatsapp_authorization"],
     make: (t) => `Bearer ${t.trim()}`,
     check: (t) => (t.trim().length >= 16 && !/\s/u.test(t.trim()) ? undefined : "whatsapp_token must be the access token, on one line, with no spaces."),
+  },
+  // B71 step 6: an agent's own gateway API. Its Authorization header, whole and as handed in ("Bearer ..." or "Basic ..."), for that Guard only: no module here knows the API's key shape
+  gateway_authorization: {
+    to: (shop) => [`g-${shop}-${OWN_API}`, OWN_API_SECRET],
+    check: (t) => (/^[A-Za-z]+ [^\s]{8,}$/u.test(t.trim()) ? undefined : "gateway_authorization must be your API's whole Authorization header value on one line, for example Bearer sk_live_... or Basic ...."),
   },
   razorpay_webhook_secret: { to: (shop) => ["inbox", shop, "razorpay_webhook_secret"], check: (t) => (t.trim().length >= 8 ? undefined : "razorpay_webhook_secret is too short.") },
   whatsapp_app_secret: { to: (shop) => ["inbox", shop, "whatsapp_app_secret"], check: (t) => (t.trim().length >= 8 ? undefined : "whatsapp_app_secret is too short.") },

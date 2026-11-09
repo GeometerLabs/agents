@@ -134,7 +134,7 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
     const cred = credential();
     const guards: Partial<Record<AgentUpstream, RealGuard>> = {};
     for (const kind of agentFile.upstreams) {
-      if (!uses[kind] || (paying && !paying.gateway && kind === paying.id)) continue; // an owner-marked module has no API and no Guard: the desk below
+      if (!uses[kind] || (paying?.ownerMarked && kind === paying.id)) continue; // an owner-marked module has no API and no Guard: the desk below
       const g = plan.guards.find((x) => x.kind === kind);
       if (!g) throw new Error(`There is no ${kind} Guard in the plan for ${name}.`);
       const real = await startRealGuard({
@@ -147,7 +147,7 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
     // UPI (B71): the desk on Geometer's side, as the agent will call it, with the agent's one credential. What it tells the owner is kept to read.
     let deskParts: World["desk"];
     let deskUrl: string | undefined;
-    if (paying && !paying.gateway) {
+    if (paying?.ownerMarked) {
       const state = emptyMarkState();
       const notices: DeskNotice[] = [];
       const entries: { action: string; outcome: string }[] = [];

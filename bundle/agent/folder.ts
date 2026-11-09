@@ -5,12 +5,15 @@
 //   agents/<name>/settings.json   the SAME settings file the templates use (templates/commerce/bookings/src/settings.ts), checked by the same validator. Guard's limits come from it exactly as
 //                                 they do for a template: the deposit, the refund limit. Guard has no rule for prices or opening hours, so those two are kept in the file (the report's
 //                                 policy digest covers them) but nothing in Guard checks them for an agent we did not write.
+//   agents/<name>/gateway-draft.json, gateway-accept.json
+//                                 only for an agent that takes money through its own gateway's API (B71 step 6, "own-api"): the companies kit's draft of that API and the file in
+//                                 which the builder kept the rules (companies/openapi-to-spec.ts). The Guard's spec is built from the two on every plan, so an edited draft is refused.
 //
 // No code here runs the agent. Geometer never rebuilds or hosts it (plan decision 5): the folder only says what to put in front of the services it calls.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { rupeesToPaise } from "../../modules/payments/guard-limits.ts";
-import { DEFAULT_PROVIDER, PAYMENT_MODULES, providerById } from "../../modules/payments/providers/index.ts";
+import { DEFAULT_PROVIDER, OWN_API, PAYMENT_MODULES, providerById } from "../../modules/payments/providers/index.ts";
 import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
@@ -20,14 +23,28 @@ import { stableJson, writeAtomic } from "../lib/util.ts";
 
 /**
  * The services an agent can call (B71): any payment module in modules/payments/providers (a gateway gets a Guard in front of its API; an owner-marked one, UPI, is the
- * desk, modules/payments/owner-marked/desk.ts), WhatsApp and Calendar. Exactly one payment module; UPI when --upstreams is left out.
+ * desk, modules/payments/owner-marked/desk.ts), the agent's own gateway API with no module ("own-api", a Guard with the spec its builder reviewed), WhatsApp and
+ * Calendar. Exactly one way to take money; UPI when --upstreams is left out.
  */
-export const AGENT_UPSTREAMS: readonly string[] = [...PAYMENT_MODULES, "whatsapp", "calendar"];
+export const AGENT_UPSTREAMS: readonly string[] = [...PAYMENT_MODULES, OWN_API, "whatsapp", "calendar"];
 export type AgentUpstream = string;
 /** What `agent add` uses when --upstreams is left out: the default payment module (UPI: no gateway account), WhatsApp and Calendar. */
 export const DEFAULT_UPSTREAMS: readonly string[] = [DEFAULT_PROVIDER.id, "whatsapp", "calendar"];
-/** The agent's payment module: the one upstream that is a provider. */
-export const paymentUpstreamOf = (upstreams: readonly string[]) => upstreams.map(providerById).find((p) => p !== undefined);
+
+/** How an agent takes money, as everything about agents asks it: a Guard in front of an API (a gateway module, or its own API), or the owner marks it (the desk). */
+export interface AgentPayment { id: string; displayName: string; guarded: boolean; ownerMarked: boolean }
+const OWN_API_PAYMENT: AgentPayment = { id: OWN_API, displayName: "your own gateway's API", guarded: true, ownerMarked: false };
+const paymentOf = (u: string): AgentPayment | undefined => {
+  if (u === OWN_API) return OWN_API_PAYMENT;
+  const p = providerById(u);
+  return p ? { id: p.id, displayName: p.displayName, guarded: p.gateway !== undefined, ownerMarked: p.ownerMarked !== undefined } : undefined;
+};
+/** The upstreams that take money (one, in a good agent.json). */
+const paymentUpstreamsIn = (upstreams: readonly string[]): AgentPayment[] => upstreams.map(paymentOf).filter((p) => p !== undefined);
+/** The agent's one way to take money; the one question every agent reader asks, so none of them compares a provider's name. */
+export const paymentUpstreamOf = (upstreams: readonly string[]): AgentPayment | undefined => paymentUpstreamsIn(upstreams)[0];
+/** An own-API agent's host:port. A name or an address with its port; the scheme is always https (a test server's stand-in is the server's `upstreams` setting). */
+const HOST_PORT = /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?:\d{1,5}$/u;
 
 /** Caps that settings do not carry. Left out, the template's defaults (and the server's, for the three counts) are used. */
 export interface AgentCaps {
@@ -75,6 +92,8 @@ export interface AgentFile {
     forwardTo?: string;
   };
   calendar?: { calendarId: string };
+  /** Only for an agent whose upstreams name own-api: where its own gateway's API is (host:port, https). Its rules are the reviewed spec beside agent.json. */
+  ownApi?: { upstream: string };
   caps?: AgentCaps;
   createdAt: string;
 }
@@ -85,6 +104,8 @@ export interface AgentFolder {
   agent: AgentFile | undefined;
   settingsText: string;
   settings: Settings | undefined;
+  /** An own-API agent's reviewed spec, as the two files the companies kit works from: the draft (its bytes are what the accept file names) and the accept file. */
+  ownApi?: { draftText: string; acceptText: string };
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
   problems: string[];
 }
@@ -140,7 +161,10 @@ export function parseAgentFile(raw: unknown, name: string): { agent?: AgentFile;
   const upstreams = Array.isArray(raw.upstreams) ? raw.upstreams : [];
   if (upstreams.length === 0 || !upstreams.every((u) => (AGENT_UPSTREAMS as readonly unknown[]).includes(u)) || new Set(upstreams).size !== upstreams.length) errors.push(`agent.json: "upstreams" must list some of ${AGENT_UPSTREAMS.join(", ")}, each once.`);
   const list = upstreams as AgentUpstream[];
-  if (list.filter((u) => providerById(u)).length > 1) errors.push(`agent.json: "upstreams" names more than one payment module (${list.filter((u) => providerById(u)).join(", ")}): a shop takes money one way.`);
+  if (paymentUpstreamsIn(list).length > 1) errors.push(`agent.json: "upstreams" names more than one payment module (${paymentUpstreamsIn(list).map((p) => p.id).join(", ")}): a shop takes money one way.`);
+  const ownApi = isObj(raw.ownApi) ? raw.ownApi : undefined;
+  if (list.includes(OWN_API) && !(ownApi && typeof ownApi.upstream === "string" && HOST_PORT.test(ownApi.upstream))) errors.push(`agent.json: "ownApi.upstream" must be where your own gateway's API is, as host:port (for example api.example.com:443). Its Guard calls it over https.`);
+  if (!list.includes(OWN_API) && raw.ownApi !== undefined) errors.push(`agent.json: "ownApi" is only for an agent whose upstreams name ${OWN_API}.`);
   const whatsapp = isObj(raw.whatsapp) ? raw.whatsapp : undefined;
   const calendar = isObj(raw.calendar) ? raw.calendar : undefined;
   if (list.includes("whatsapp") && !(whatsapp && typeof whatsapp.phoneNumberId === "string" && /^\d{6,20}$/u.test(whatsapp.phoneNumberId))) errors.push('agent.json: "whatsapp.phoneNumberId" must be the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.');
@@ -160,7 +184,7 @@ export function parseAgentFile(raw: unknown, name: string): { agent?: AgentFile;
   const driver = raw.driver === undefined ? undefined : parseDriver(raw.driver, errors);
   if (typeof raw.createdAt !== "string" || Number.isNaN(Date.parse(raw.createdAt))) errors.push('agent.json: "createdAt" must be a time.');
   if (errors.length > 0) return { errors };
-  return { errors, agent: { schema: 1, name, upstreams: list, ...(typeof raw.run === "string" ? { run: raw.run } : {}), ...(typeof raw.version === "string" ? { version: raw.version } : {}), ...(driver ? { driver } : {}),...(list.includes("whatsapp") ? { whatsapp: { phoneNumberId: whatsapp!.phoneNumberId as string, ...(typeof whatsapp!.forwardTo === "string" ? { forwardTo: whatsapp!.forwardTo } : {}) } } : {}), ...(list.includes("calendar") ? { calendar: { calendarId: calendar!.calendarId as string } } : {}), ...(Object.keys(caps).length > 0 ? { caps } : {}), createdAt: raw.createdAt as string } };
+  return { errors, agent: { schema: 1, name, upstreams: list, ...(typeof raw.run === "string" ? { run: raw.run } : {}), ...(typeof raw.version === "string" ? { version: raw.version } : {}), ...(driver ? { driver } : {}),...(list.includes("whatsapp") ? { whatsapp: { phoneNumberId: whatsapp!.phoneNumberId as string, ...(typeof whatsapp!.forwardTo === "string" ? { forwardTo: whatsapp!.forwardTo } : {}) } } : {}), ...(list.includes("calendar") ? { calendar: { calendarId: calendar!.calendarId as string } } : {}), ...(list.includes(OWN_API) ? { ownApi: { upstream: ownApi!.upstream as string } } : {}), ...(Object.keys(caps).length > 0 ? { caps } : {}), createdAt: raw.createdAt as string } };
 }
 
 /** Read one agent's folder. Never throws: what is wrong comes back as `problems`. */
@@ -181,12 +205,20 @@ export function readAgent(dir: string, name: string): AgentFolder {
   let settings: Settings | undefined;
   if (settingsText) {
     try {
-      const checked = validateSettings(JSON.parse(settingsText));
+      const checked = validateSettings(JSON.parse(settingsText), { ownApi: true });
       if (checked.ok) settings = checked.settings; else problems.push(...checked.errors.map((e) => `settings.json: ${e}`));
     } catch (e) { problems.push(`settings.json is not valid JSON: ${(e as Error).message}`); }
   }
-  return { name, agentText, agent, settingsText, settings, problems };
+  // the settings and the services must agree on how money is taken: a Guard is made only for the way the settings chose (B71)
+  const paying = agent ? paymentUpstreamOf(agent.upstreams) : undefined;
+  const chosen = (settings as { payment?: { module?: string } } | undefined)?.payment?.module;
+  if (paying && chosen !== undefined && chosen !== paying.id) problems.push(`settings.json says customers pay with "${chosen}", but agent.json's upstreams name ${paying.id}. Make them the same.`);
+  const ownApi = paying?.id === OWN_API ? { draftText: read(OWN_API_FILES.draft), acceptText: read(OWN_API_FILES.accept) } : undefined;
+  return { name, agentText, agent, settingsText, settings, ...(ownApi ? { ownApi } : {}), problems };
 }
+
+/** Where an own-API agent's reviewed spec is kept, beside agent.json (the companies kit's two files, byte for byte as the builder gave them). */
+export const OWN_API_FILES = { draft: "gateway-draft.json", accept: "gateway-accept.json" } as const;
 
 /**
  * `agent set <name> --run "<command>" --version <v>`: the two things about the agent that only the crash test uses. They live in agent.json, so a builder can also edit the file;
@@ -230,6 +262,8 @@ export interface AgentFlags {
   hours?: string; timezone?: string; "whatsapp-number-id"?: string; "calendar-id"?: string; "forward-whatsapp-to"?: string;
   /** How the shop's customers pay when the agent calls no gateway (B71): the shop's own UPI ID and the name customers see. */
   "upi-id"?: string; payee?: string;
+  /** B71 step 6, --upstreams own-api: the companies kit's draft of the agent's own gateway API, the accept file the builder filled in, and where the API is (host:port). */
+  "gateway-draft"?: string; "gateway-accept"?: string; "gateway-upstream"?: string;
   /** For the crash test (README, "A crash test for your agent"): the command that starts the agent, and the version it is at. */
   run?: string; version?: string;
   "refund-inr-per-day"?: string; "refunds-per-day"?: string; "links-per-hour"?: string; "messages-per-hour"?: string; "events-per-hour"?: string; "events-deleted-per-day"?: string;
@@ -246,23 +280,25 @@ const whole = (flag: string, text: string | undefined): number | undefined => {
  * hours is taken from flags). Without it, a one-service settings file is made from `--deposit`, `--refund-limit`, `--price-floor`, `--hours`, `--owner-whatsapp` and the rest,
  * then checked by the same validator, so a number the templates would refuse is refused here in the same words.
  */
-export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path: string) => string, now: Date): { agentText: string; settingsText: string; agent: AgentFile; settings: Settings } {
+export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path: string) => string, now: Date): { agentText: string; settingsText: string; agent: AgentFile; settings: Settings; ownApi?: { draftText: string; acceptText: string } } {
   const upstreams = (flags.upstreams ?? DEFAULT_UPSTREAMS.join(",")).split(",").map((s) => s.trim()).filter(Boolean);
   const bad = upstreams.filter((u) => !(AGENT_UPSTREAMS as readonly string[]).includes(u));
   if (bad.length > 0) throw new Error(`I don't know the service${bad.length > 1 ? "s" : ""} ${bad.map((b) => `"${b}"`).join(", ")}. An agent can call: ${AGENT_UPSTREAMS.join(", ")}. (Any other web service is on the list of things not built yet.)`);
   if (new Set(upstreams).size !== upstreams.length) throw new Error("--upstreams names the same service twice.");
   const list = upstreams as AgentUpstream[];
-  const paying = list.map(providerById).filter((p) => p !== undefined);
-  if (paying.length !== 1) throw new Error(`Say how this shop's customers pay: --upstreams names exactly one of ${PAYMENT_MODULES.join(", ")} (${DEFAULT_PROVIDER.id} is the default and needs no gateway account).`);
+  const paying = paymentUpstreamsIn(list);
+  if (paying.length !== 1) throw new Error(`Say how this shop's customers pay: --upstreams names exactly one of ${[...PAYMENT_MODULES, OWN_API].join(", ")} (${DEFAULT_PROVIDER.id} is the default and needs no gateway account).`);
   const module = paying[0]!;
   // the owner is asked on WhatsApp: to approve a refund above the limit (a gateway), or to mark money received and refunds sent (UPI). Without it nobody could ever be asked
-  if (!list.includes("whatsapp")) throw new Error(`The owner is asked on WhatsApp (${module.gateway ? "to approve a refund above the limit" : "to mark each payment received and each refund sent"}), so --upstreams must include whatsapp as well.`);
+  if (!list.includes("whatsapp")) throw new Error(`The owner is asked on WhatsApp (${module.ownerMarked ? "to mark each payment received and each refund sent" : "to approve a refund above the limit"}), so --upstreams must include whatsapp as well.`);
+  const ownApi = module.id === OWN_API ? ownApiFromFlags(flags, readFile) : undefined;
+  if (!ownApi && (flags["gateway-draft"] !== undefined || flags["gateway-accept"] !== undefined || flags["gateway-upstream"] !== undefined)) throw new Error(`--gateway-draft, --gateway-accept and --gateway-upstream are for an agent whose --upstreams name ${OWN_API}.`);
 
   let settings: Settings;
   let settingsText: string;
   if (flags.settings) {
     const raw = (() => { try { return JSON.parse(readFile(flags.settings!)) as unknown; } catch (e) { throw new Error(`${flags.settings} could not be read as JSON: ${(e as Error).message}`); } })();
-    const checked = validateSettings(raw);
+    const checked = validateSettings(raw, { ownApi: true });
     if (!checked.ok) throw new Error(`The settings file needs fixing:\n- ${checked.errors.join("\n- ")}`);
     settings = checked.settings;
     settingsText = stableJson(raw);
@@ -279,12 +315,12 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
     const deposit = whole("deposit", flags.deposit);
     const refundLimit = whole("refund-limit", flags["refund-limit"]);
     const priceFloor = whole("price-floor", flags["price-floor"]);
-    if (deposit === undefined || refundLimit === undefined) throw new Error(`Say the deposit and the refund limit in rupees: --deposit 200 --refund-limit 200 (or give a settings file with --settings). ${module.gateway ? "Guard enforces both on the payment link and the refund." : "The deposit is what each request asks for, and the owner owes back no more than was marked."}`);
+    if (deposit === undefined || refundLimit === undefined) throw new Error(`Say the deposit and the refund limit in rupees: --deposit 200 --refund-limit 200 (or give a settings file with --settings). ${module.ownerMarked ? "The deposit is what each request asks for, and the owner owes back no more than was marked." : module.id === OWN_API ? "Your own API's limits are the ones you kept in the accept file; these two go in the settings the report reads." : "Guard enforces both on the payment link and the refund."}`);
     if (!flags["owner-whatsapp"]) throw new Error("Say the owner's WhatsApp number: --owner-whatsapp +919800000001. It is the only number whose replies can approve a refund.");
     // B71: how customers pay is the payment module --upstreams names. A gateway needs nothing more here; the owner-marked module (UPI) needs the shop's own UPI ID.
-    if (module.gateway && (flags["upi-id"] !== undefined || flags.payee !== undefined)) throw new Error(`--upstreams names ${module.id}, so the shop takes payments on its own ${module.displayName} account: leave out --upi-id and --payee.`);
-    if (!module.gateway && (flags["upi-id"] === undefined || flags.payee === undefined)) throw new Error(`Say where this shop's customers pay. ${module.displayName} needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee "<the name customers see>". A shop with its own gateway account names it in --upstreams instead.`);
-    const payment = module.gateway ? { module: module.id } : { module: module.id, upi: { id: flags["upi-id"], payee: flags.payee } };
+    if (!module.ownerMarked && (flags["upi-id"] !== undefined || flags.payee !== undefined)) throw new Error(`--upstreams names ${module.id}, so the shop takes payments on its own account there: leave out --upi-id and --payee.`);
+    if (module.ownerMarked && (flags["upi-id"] === undefined || flags.payee === undefined)) throw new Error(`Say where this shop's customers pay. ${module.displayName} needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee "<the name customers see>". A shop with its own gateway account names it in --upstreams instead.`);
+    const payment = module.ownerMarked ? { module: module.id, upi: { id: flags["upi-id"], payee: flags.payee } } : { module: module.id };
     const raw = {
       name: businessName, timezone: flags.timezone ?? "Asia/Kolkata", languages: [language],
       services: [{ id: "service", names: { [language]: [businessName] }, priceInr: priceFloor ?? deposit ?? 1, durationMinutes: 30 }],
@@ -292,7 +328,7 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
       deposit: { amountInr: deposit ?? 1, holdMinutes: 15 }, cancellation: { windowHours: 24, refundLimitInr: refundLimit ?? 0 },
       owner: { whatsapp: flags["owner-whatsapp"], language }, reminders: { hoursBefore: [] }, payment,
     };
-    const checked = validateSettings(raw);
+    const checked = validateSettings(raw, { ownApi: true });
     if (!checked.ok) throw new Error(`These settings need fixing:\n- ${checked.errors.join("\n- ")}`);
     settings = checked.settings;
     settingsText = stableJson(raw);
@@ -309,12 +345,22 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
     schema: 1, name, upstreams: list,
     ...(list.includes("whatsapp") ? { whatsapp: { phoneNumberId: flags["whatsapp-number-id"], ...(flags["forward-whatsapp-to"] ? { forwardTo: flags["forward-whatsapp-to"] } : {}) } } : {}),
     ...(list.includes("calendar") ? { calendar: { calendarId: flags["calendar-id"] } } : {}),
+    ...(ownApi ? { ownApi: { upstream: ownApi.upstream } } : {}),
     ...(flags.run ? { run: flags.run } : {}), ...(flags.version ? { version: flags.version } : {}),
     ...(Object.keys(caps).length > 0 ? { caps } : {}), createdAt: now.toISOString(),
   };
   const checked = parseAgentFile(raw, name);
   if (!checked.agent) throw new Error(`These need fixing:\n- ${checked.errors.join("\n- ")}`);
-  return { agentText: stableJson(raw), settingsText, agent: checked.agent, settings };
+  return { agentText: stableJson(raw), settingsText, agent: checked.agent, settings, ...(ownApi ? { ownApi: { draftText: ownApi.draftText, acceptText: ownApi.acceptText } } : {}) };
+}
+
+/** --gateway-draft, --gateway-accept, --gateway-upstream, read as given. Whether the two files make a spec Guard can enforce is the plan's question (plan.ts, ownApiSpec). */
+function ownApiFromFlags(flags: AgentFlags, readFile: (path: string) => string): { draftText: string; acceptText: string; upstream: string } {
+  const draft = flags["gateway-draft"], accept = flags["gateway-accept"], upstream = flags["gateway-upstream"];
+  if (!draft || !accept || !upstream) throw new Error(`An agent that takes money through its own gateway's API needs the reviewed rules for it. Make them with the companies kit (node companies/openapi-to-spec.ts draft <openapi.json> --out draft.json, then fill in the accept file) and pass --gateway-draft draft.json --gateway-accept accept.json --gateway-upstream <host:port of the API>.`);
+  if (!HOST_PORT.test(upstream)) throw new Error(`--gateway-upstream must be host:port, for example api.example.com:443.`);
+  const text = (path: string, what: string) => { try { return readFile(path); } catch (e) { throw new Error(`${what} at ${path} could not be read: ${(e as Error).message}`); } };
+  return { draftText: text(draft, "The draft"), acceptText: text(accept, "The accept file"), upstream };
 }
 
 /** The refund cap in paise, for the template's spec (agent.json carries rupees). */

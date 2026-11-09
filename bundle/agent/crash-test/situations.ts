@@ -91,7 +91,7 @@ async function cancelAndWaitForRefundCall(w: World, text: string, line: "cancel"
 export function buildSituations(plan: CrashPlan): Built {
   // an agent that takes UPI through the owner-marked desk has its own situations: there is no gateway for the ones below (B71)
   const paying = paymentUpstreamOf(plan.folder.agent!.upstreams);
-  if (paying && !paying.gateway) return buildOwnerMarkedSituations(plan);
+  if (paying?.ownerMarked) return buildOwnerMarkedSituations(plan);
   const { settings, driver } = plan;
   const uses = { calendar: plan.folder.agent!.upstreams.includes("calendar") };
   const D = settings.deposit.amountInr;

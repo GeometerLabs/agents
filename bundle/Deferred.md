@@ -261,13 +261,15 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
   record, facts and relay context (`agent/record.ts`, `facts.ts`, `relay-context.ts`; the payment look-up is already `providers/razorpay/runtime.ts`), the own-agent
   crash test's gateway situations and world, `geometer.ts`'s help text, and the templates' reports, stand-in control routes and scripts. Each is the provider's id from
   the shop's settings, mechanically; none changes what a Razorpay shop gets (the golden test pins its bytes). Revisit when: before a second gateway, in one wave.
-- **A gateway with no module (B71 step 6) is not built.** The plan, with nothing to change in `companies/`: `agent add <name> --upstreams openapi,whatsapp
-  --gateway-draft draft.json --gateway-accept accept.json --gateway-upstream api.example.com:443` builds the spec with the kit's own `specFromAccept`
-  (companies/openapi-to-spec.ts, the reviewed flow; the accept file's `tenant` must be the agent's name), keeps it in `agents/<name>/gateway.json`, and `planAgent`
-  puts a Guard in front with that spec (the deployer sets its name and version, as for any Guard), its credential handed in as `openapi_authorization`. Two things
-  it needs that are not there: the agent's settings must be allowed a payment block that names no module of this checkout (an option to the settings reader that
-  only an agent folder passes, so a template shop can never choose it), and the compose addressing must put that Guard in the gateway's slot (a shop or agent has
-  one gateway, so slot 0). Revisit when: a builder brings a gateway with no module.
+- **An agent on its own gateway API (B71 step 6, `--upstreams own-api`) is checked less than one on a module** (Explanation.md says how it is built). Not done:
+  (1) a rule that holds a call for a person is refused, because the owner relay asks only about refunds on a gateway it has a module for
+  (`modules/approvals/clients.ts` `readHeld`); keep a bound or forbid the call instead. An uncertain call under an at-most-once rule is still held by Guard and
+  nobody is asked about it: it waits until it expires, and the builder checks with the API (`/admin/intents/resolve`). (2) There is no stand-in for the API, so
+  `agent crash-test` refuses to run and no go-live certificate can be made for it. (3) The providers' contract test does not apply: there is no module to run it
+  on. (4) `RECORD_READS` has no entry for it, so the record job reads none of the API's own state: the record and the report show the Guard's decisions on the
+  agent's calls, never what the API holds (no "done" for a refund, no payment received). (5) Guard enforces only what the accept file kept: a route left out is
+  refused as unlisted, a rule left out does not exist. Revisit when: a builder brings a gateway with no module and wants holds, the record or a certificate;
+  each needs that gateway's reads and events described (its own module, or reads named in the accept file).
 - **The owner-marked desk is not served on a server** (modules/Deferred.md, B71): `agent add --upstreams upi,...` plans an own agent on UPI with no gateway Guard and
   `agent crash-test` drives it against the desk, but a deployed agent has nothing to call yet; `agent add` says so in plain words instead of printing an address.
 

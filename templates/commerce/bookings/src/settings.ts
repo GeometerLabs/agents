@@ -59,7 +59,8 @@ const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !
 const isWhole = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v);
 
 /** Check a settings object (usually parsed from JSON), fill in the defaults and say what is wrong in plain words. */
-export function validateSettings(input: unknown): SettingsResult {
+/** `ownApi`: only for the settings of an agent someone else wrote, whose payments may go to its own gateway's API (modules/payments/providers OWN_API). */
+export function validateSettings(input: unknown, options: { ownApi?: boolean } = {}): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
@@ -86,7 +87,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const owner = readOwner(input.owner, errors);
   const approvers = readApprovers(input.approvers, { ownerWhatsapp: owner?.whatsapp, refundLimitInr: cancellation?.refundLimitInr }, errors);
   const reminders = readReminders(input.reminders, errors);
-  const payment = readPaymentSettings(input.payment, errors);
+  const payment = readPaymentSettings(input.payment, errors, options);
 
   if (errors.length > 0) return { ok: false, errors };
   const settings = {
