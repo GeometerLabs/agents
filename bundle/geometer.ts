@@ -37,9 +37,9 @@
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
 //   status                       every shop: running or not, what its Guards enforce, the last snapshot and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
-//   restore <shop> [--at TIME] [--identity FILE]   put the shop's runtime database back from the newest nightly snapshot (at or before TIME, if given). The server's
-//                                drill key opens it; --identity is the owner's age key, for a snapshot from before the server had one or on a new server. The shop is
-//                                then up to a day behind: before it sends anything it moves its ids on and looks at the payment service and the calendar
+//   restore <shop> --identity FILE [--at TIME]   put the shop's runtime database back from the newest nightly snapshot (at or before TIME, if given). FILE is the
+//                                owner's age key, which is kept off the server: bring it for the restore and take it away after. The shop is then up to a day behind:
+//                                before it sends anything it moves its ids on and looks at the payment service and the calendar
 //   update [--to V] [--shops a,b] [--dry-run]   move clients to a new template version, one at a time, each hand-checked on its own settings first; a client with any situation
 //                                that held before and fails now is held back with the reason. Stopped half-way, the same command again carries on. --dry-run changes nothing.
 //   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
@@ -348,7 +348,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "restore") {
-      if (!shop) throw new Error("Say which shop: restore <shop> [--at <time>]");
+      if (!shop) throw new Error("Say which shop: restore <shop> --identity <the owner's key file> [--at <time>]");
       console.log(await restoreShop(ctx, shop, { at: str("at"), fromSnapshot: str("from-snapshot"), ...(str("identity") ? { identity: resolve(str("identity")!) } : {}) }));
       return 0;
     }
@@ -408,7 +408,7 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     const key = generateIdentity();
     writeFileSync(resolve(out), `${key.identity}\n`, { mode: 0o600 });
     recipient = key.recipient;
-    console.log(`A new age key pair was made. The secret half is in ${resolve(out)} (mode 0600). Move it off this machine: it opens every snapshot, and after the loss of this server it is the only key that does (the server's own drill key, which opens what it makes, goes with it).`);
+    console.log(`A new age key pair was made. The secret half is in ${resolve(out)} (mode 0600). Move it off this machine: it is the only key that opens a snapshot, and it is needed only to restore.`);
   }
   if (s("stream-url") || s("stream-endpoint")) console.log("note: --stream-url and --stream-endpoint are not used any more: the continuous copy was removed on 9 Nov 2026, and the nightly snapshot (--snapshots-url) is the backup.");
   const raw = {

@@ -8,14 +8,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generateIdentity } from "../backup/age.ts";
 import { fetchSnapshot } from "../backup/restore-snapshot.ts";
+import { drillShop } from "../backup/drill-check.ts";
 import { snapshotShop } from "../backup/snapshot.ts";
 import { s3Store } from "../backup/store.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 
 type Counts = { PUT: number; GET: number; LIST: number; DELETE: number };
 
-/** An S3-compatible bucket in memory, behind a fetch: PUT, GET, DELETE of an object, and ListObjectsV2 in pages of 1,000 keys, each request counted. */
-function countingBucket() {
+/**
+ * An S3-compatible bucket in memory, behind a fetch: PUT, GET, DELETE of an object, and ListObjectsV2 in pages of 1,000 keys, each request counted. `createOnly`: the
+ * key may write and nothing else (Google Cloud's objectCreator): a LIST, a GET or a DELETE is counted and answered 403, as the bucket would.
+ */
+function countingBucket(createOnly = false) {
   const objects = new Map<string, Buffer>();
   const counts: Counts = { PUT: 0, GET: 0, LIST: 0, DELETE: 0 };
   const fetchFn = (async (input: URL | string, init?: RequestInit) => {
@@ -23,7 +27,9 @@ function countingBucket() {
     const [, , ...rest] = url.pathname.split("/");
     const key = rest.map(decodeURIComponent).join("/");
     const method = init?.method ?? "GET";
+    const refuse = () => new Response("<Error><Code>AccessDenied</Code></Error>", { status: 403 });
     if (method === "GET" && key === "") {
+      if (createOnly) { counts.LIST++; return refuse(); }
       counts.LIST++;
       const prefix = url.searchParams.get("prefix") ?? "";
       const all = [...objects.keys()].filter((k) => k.startsWith(prefix)).sort();
@@ -34,8 +40,9 @@ function countingBucket() {
       return new Response(xml, { status: 200 });
     }
     if (method === "PUT") { counts.PUT++; objects.set(key, Buffer.from(init!.body as Uint8Array)); return new Response("", { status: 200 }); }
-    if (method === "DELETE") { counts.DELETE++; objects.delete(key); return new Response(null, { status: 204 }); }
+    if (method === "DELETE") { counts.DELETE++; if (createOnly) return refuse(); objects.delete(key); return new Response(null, { status: 204 }); }
     counts.GET++;
+    if (createOnly) return refuse();
     const o = objects.get(key);
     return o ? new Response(o, { status: 200 }) : new Response("", { status: 404 });
   }) as typeof fetch;
@@ -59,18 +66,19 @@ function shopFiles(dir: string, records: number, segments: number, guards: strin
 
 const stampOf = (day: number) => new Date(Date.UTC(2026, 9, 1 + day, 1, 30)).toISOString().replace(/[-:]|\.\d{3}/gu, "");
 
-async function nights(records: number, segments: number, guards: string[], n: number): Promise<Counts[]> {
+async function nights(records: number, segments: number, guards: string[], n: number, createOnly = false): Promise<Counts[]> {
   const dir = mkdtempSync(join(tmpdir(), "geo-cost-"));
   try {
     const files = shopFiles(dir, records, segments, guards);
-    const bucket = countingBucket();
-    const recipients = [generateIdentity().recipient, generateIdentity().recipient];
+    const bucket = countingBucket(createOnly);
+    const recipient = generateIdentity().recipient;
     const per: Counts[] = [];
     for (let day = 0; day < n; day++) {
       const before = { ...bucket.counts };
-      const r = await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, { stamp: stampOf(day), keepDays: 30, recipients, target: { url: "s3://snaps" }, shops: [] }, bucket.store, join(dir, "scratch"));
+      const r = await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, { stamp: stampOf(day), keepDays: 30, recipient, target: { url: "s3://snaps" }, shops: [] }, bucket.store, join(dir, "scratch"));
       assert.equal(r.ok, true, r.error);
-      assert.equal(r.pruneError, undefined, r.pruneError);
+      if (createOnly) assert.match(r.pruneError ?? "", /403/, "a key that may not list: pruning is left to the bucket, the night is not a failure");
+      else assert.equal(r.pruneError, undefined, r.pruneError);
       per.push({ PUT: bucket.counts.PUT - before.PUT, GET: bucket.counts.GET - before.GET, LIST: bucket.counts.LIST - before.LIST, DELETE: bucket.counts.DELETE - before.DELETE });
     }
     return per;
@@ -89,18 +97,28 @@ test("one night's bucket requests per shop are a fixed constant times its databa
   empty.forEach((c, day) => assert.deepEqual(c, expected(guards.length, day > 30), `night ${day}`));
   // a shop with two Guards (Fees: Razorpay and WhatsApp) costs one object less a night
   assert.deepEqual((await nights(10, 3, ["razorpay", "whatsapp"], 1))[0], expected(2, false));
+  // a create-only key (old snapshots deleted by the bucket's lifecycle rule): the same writes, one refused LIST, no DELETE, every night
+  const createOnly = await nights(3000, 40, guards, 35, true);
+  assert.deepEqual(createOnly, await nights(0, 1, guards, 35, true), "the shop's size changes nothing here either");
+  createOnly.forEach((c, day) => assert.deepEqual(c, expected(guards.length, false), `night ${day}`));
 });
 
-test("the weekly drill and `restore` read one snapshot with one LIST and two GETs (the manifest and the runtime's database), whatever the shop holds", async () => {
+test("the weekly drill reads back each object of the newest snapshot once, by the keys in its seal (no LIST), and `restore` one LIST and two GETs, whatever the shop holds", async () => {
   const dir = mkdtempSync(join(tmpdir(), "geo-cost-"));
   try {
     const files = shopFiles(dir, 3000, 40, ["razorpay", "whatsapp", "calendar"]);
     const bucket = countingBucket();
-    const drill = generateIdentity();
-    for (let day = 0; day < 5; day++) await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, { stamp: stampOf(day), keepDays: 30, recipients: [generateIdentity().recipient, drill.recipient], target: { url: "s3://snaps" }, shops: [] }, bucket.store, join(dir, "scratch"));
-    const before = { ...bucket.counts };
-    const got = await fetchSnapshot(bucket.store, "glow-salon", drill.identity);
+    const owner = generateIdentity();
+    let seal;
+    for (let day = 0; day < 5; day++) seal = (await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, { stamp: stampOf(day), keepDays: 30, recipient: owner.recipient, target: { url: "s3://snaps" }, shops: [] }, bucket.store, join(dir, "scratch"))).seal;
+    const delta = (before: Counts) => ({ PUT: bucket.counts.PUT - before.PUT, GET: bucket.counts.GET - before.GET, LIST: bucket.counts.LIST - before.LIST, DELETE: bucket.counts.DELETE - before.DELETE });
+    let before = { ...bucket.counts };
+    const drill = await drillShop({ name: "glow-salon", live: files.runtimeDb, seal }, bucket.store);
+    assert.equal(drill.ok, true, drill.detail);
+    assert.deepEqual(delta(before), { PUT: 0, GET: 5, LIST: 0, DELETE: 0 }, "the runtime's database, three Guards' folders and the manifest");
+    before = { ...bucket.counts };
+    const got = await fetchSnapshot(bucket.store, "glow-salon", owner.identity);
     assert.equal(got.stamp, stampOf(4));
-    assert.deepEqual({ PUT: bucket.counts.PUT - before.PUT, GET: bucket.counts.GET - before.GET, LIST: bucket.counts.LIST - before.LIST, DELETE: bucket.counts.DELETE - before.DELETE }, { PUT: 0, GET: 2, LIST: 1, DELETE: 0 });
+    assert.deepEqual(delta(before), { PUT: 0, GET: 2, LIST: 1, DELETE: 0 });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

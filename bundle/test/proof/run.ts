@@ -632,14 +632,14 @@ async function dataDuties() {
   const ageFiles = Number(grep("age-encryption.org/v1", "geo-snaps")), plainFiles = Number(grep("SQLite format 3", "geo-snaps"));
   check("every snapshot object is an age file and none holds a plain SQLite database", ageFiles > 0 && plainFiles === 0, { ageFiles, plainFiles });
   const drill = await runDrill(ctxFor()); drill.lines.forEach(say);
-  check("the weekly drill restores the newest snapshot with the drill key and it is the start of the live record", drill.ok, drill.lines);
+  check("the weekly drill, without the key, reads the newest snapshot back unchanged and its record is the start of the live record", drill.ok, drill.lines);
   // restore: put the shop's data back from the newest snapshot; the runtime starts in its restored mode
-  check("restore puts the shop's data back from the newest snapshot", (await restoreShop(ctxFor(), "glow-salon", {}).then((m) => { say(m); return true; }).catch((e) => { say(String(e)); return false; })), "");
+  check("restore puts the shop's data back from the newest snapshot", (await restoreShop(ctxFor(), "glow-salon", { identity: join(SCRATCH, "age-identity.txt") }).then((m) => { say(m); return true; }).catch((e) => { say(String(e)); return false; })), "");
   await waitFor("the runtime", () => healthy("rt-glow-salon"), 90);
   check("the shop is running again after a restore", healthy("rt-glow-salon"), "");
   // age interop with the real tool
   const k = generateIdentity(); const dir = join(SCRATCH, "age"); mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "id.txt"), k.identity); writeFileSync(join(dir, "ours.age"), encrypt(Buffer.from("hello from node ".repeat(10000)), [generateIdentity().recipient, k.recipient])); // two recipients, as a snapshot has
+  writeFileSync(join(dir, "id.txt"), k.identity); writeFileSync(join(dir, "ours.age"), encrypt(Buffer.from("hello from node ".repeat(10000)), k.recipient));
   const real = dk(["run", "--rm", "-v", `${dir}:/w`, "alpine:3.22", "sh", "-c", `apk add --no-cache age >/dev/null 2>&1 && age -d -i /w/id.txt /w/ours.age | head -c 16 && age -r ${k.recipient} -o /w/theirs.age /w/id.txt && echo && echo made`], { timeout: 180_000 });
   const theirs = (() => { try { return decrypt(readFileSync(join(dir, "theirs.age")), k.identity).toString().startsWith("AGE-SECRET-KEY"); } catch { return false; } })();
   check("the real `age` opens what this writes, and this opens what `age` writes", real.out.startsWith("hello from node") && theirs, real.err.slice(0, 120) || real.out.slice(0, 40));

@@ -1,19 +1,17 @@
 // The data duties, on the host side: the nightly snapshot, the weekly restore drill and `restore`. Each starts a short-lived container with the volumes it
-// needs (the deployer is the only process with the Docker socket) and reads one line of JSON back. Nothing here sees a secret except the bucket key and the
-// drill key it mounts into those containers.
+// needs (the deployer is the only process with the Docker socket) and reads one line of JSON back. Nothing here sees a secret except the bucket key it mounts
+// into those containers, and, for `restore` only, the owner's age key that the person restoring brings for the purpose.
 //
 //   what is copied        when and where                                       by
-//   runtime database      nightly, gzipped and age-encrypted, kept 30 days     backup/snapshot.ts (VACUUM INTO: a consistent copy while the runtime writes)
+//   runtime database      nightly, gzipped and age-encrypted to the owner      backup/snapshot.ts (VACUUM INTO: a consistent copy while the runtime writes)
 //   each Guard's store    nightly with the above, Guard's own POST /admin/backup (a consistent copy of its store and its evidence ledger, checked by geo-verify)
-//   the weekly drill      restores the newest snapshot into a scratch folder, checks integrity, checks that its record is the start of the live one, and (B28)
-//                         compares its chain with the daily fingerprints published for the shop (backup/fingerprints.ts)
-//   `restore`             puts the runtime's database back from the newest snapshot at or before a time; the runtime then starts in its restored mode
-//
-// The drill key. Snapshots are encrypted to two public keys: the owner's (geometer.json; its secret half is kept OFF the server and opens every snapshot) and the
-// server's own drill key (secrets/backup/drill_identity, made on first use). The drill key is what lets the weekly drill and `restore` open a snapshot here without
-// the owner's key. It is a trade (Explanation.md, 9 Nov 2026): whoever takes the server can read up to 30 days of its snapshots too, not only the live data they
-// already have. A copy of the bucket alone still opens with neither. A snapshot made before a server had its drill key opens only with the owner's key (--identity).
-import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+//   the weekly drill      WITHOUT the key: reads the newest snapshot's objects back and compares their sha256 with what was uploaded, and checks that the copy's
+//                         record (integrity-checked when it was made) is the start of the live record and matches the published fingerprints (drill-check.ts)
+//   `restore`             with the owner's key (--identity): puts the runtime's database back from the newest snapshot at or before a time; the runtime then
+//                         starts in its restored mode. A full restore test is the same, by a person, monthly, on their own machine (restore-snapshot.ts)
+// The snapshot job hands back each snapshot's seal (object digests, record facts, chain head: no customer's words or numbers); the newest per shop is kept in
+// state/snapshots/<shop>.json for the drill.
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { adminCall, compose } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
@@ -23,16 +21,15 @@ import { appliedPathwayDir } from "../lib/pathways.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
 import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { ensureSecret, secretFile } from "../lib/secrets.ts";
+import { secretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
 import type { UsageTotals } from "../lib/usage.ts";
-import { ensureDir } from "../lib/util.ts";
+import { ensureDir, writeAtomic } from "../lib/util.ts";
 import { readFingerprints } from "../../modules/record/publish.ts";
-import { generateIdentity, recipientOf } from "./age.ts";
 import type { DrillResult, PublishedLine } from "./drill-check.ts";
 import { fingerprintFile, lastFingerprint } from "./fingerprints.ts";
-import type { RecordFacts, ShopSnapshot } from "./snapshot.ts";
+import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
 const volume = (server: ServerConfig, v: string) => `${project(server)}_${v}`;
@@ -40,9 +37,13 @@ const stampOf = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/gu, "");
 const GUARD_BACKUPS = "/var/lib/geo-guard/backups";
 const NO_BACKUP = "No backup is set up: `geometer init` was not given a snapshot place and a key (see bundle/README.md, 'Backups').";
 
-/** The server's drill key file (made on first use), and its public half. */
-export const drillKeyFile = (dir: string) => secretFile(dir, "backup", "drill_identity");
-export function drillRecipient(dir: string): string { return recipientOf(ensureSecret(drillKeyFile(dir), () => generateIdentity().identity)); }
+/** The newest snapshot's seal for a shop, as the snapshot job handed it back: what the drill checks the snapshot by. */
+export const sealFile = (dir: string, shop: string) => join(serverPaths(dir).state, "snapshots", `${shop}.json`);
+function readSeal(dir: string, shop: string): Seal | undefined {
+  try { return JSON.parse(readFileSync(sealFile(dir, shop), "utf8")) as Seal; } catch { return undefined; }
+}
+/** What a night says when the key could not prune: the bucket's own lifecycle rule deletes old snapshots, and this was only the fallback. */
+export const PRUNE_LEFT = "pruning left to the bucket's lifecycle rule";
 
 /** The flags every job container gets: no network unless it needs the bucket, no capability but reading and writing files it does not own, the code read-only. */
 function jobFlags(ctx: Context, server: ServerConfig, network: boolean, user = "0"): string[] {
@@ -78,7 +79,7 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   }
   // 2. the snapshot container
   const jobFile = join(work, `snapshot-${stamp}.json`);
-  writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipients: [server.backup.ageRecipient, drillRecipient(ctx.dir)], target: server.backup.snapshots,
+  writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipient: server.backup.ageRecipient, target: server.backup.snapshots,
     shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
   const mounts = shops.flatMap(([shop, s]) => [["-v", `${volume(server, names.dataVolume(shop))}:/v/${names.dataVolume(shop)}`], ...Object.values(s.applied!.guards).map((g) => ["-v", `${volume(server, names.stateVolume(shop, g.kind as "razorpay"))}:/v/${names.stateVolume(shop, g.kind as "razorpay")}`])]).flat();
   const place = snapshotPlace(ctx, server);
@@ -90,8 +91,9 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   for (const res of out.results) {
     if (res.ok) {
       state.shops[res.name].lastBackupAt = ctx.now().toISOString();
+      if (res.seal) { ensureDir(join(serverPaths(ctx.dir).state, "snapshots")); writeAtomic(sealFile(ctx.dir, res.name), `${JSON.stringify(res.seal)}\n`); }
       updateStatus(ctx.dir, res.name, ctx.now(), (s) => { s.backups = { ...(s.backups ?? { lastDrillAt: null, drillOk: null }), lastCopyAt: ctx.now().toISOString() }; }, false);
-      lines.push(`${res.name}: snapshot ${res.stamp} written (${res.files} objects, ${res.bytes} bytes, gzipped and encrypted)${res.record ? `, record at entry #${res.record.lastSeq ?? 0}` : ""}${res.pruneError ? `; older snapshots were NOT deleted (${res.pruneError.slice(0, 160)}): a lifecycle rule on the bucket must do it` : ""}`);
+      lines.push(`${res.name}: snapshot ${res.stamp} written (${res.files} objects, ${res.bytes} bytes, gzipped and encrypted)${res.record ? `, record at entry #${res.record.lastSeq ?? 0}` : ""}${res.pruneError ? `; ${PRUNE_LEFT} (this key may not list or delete: ${res.pruneError.slice(0, 160)})` : ""}`);
     } else { ok = false; lines.push(`${res.name}: NO snapshot (${res.error})`); }
   }
   saveState(ctx.dir, state);
@@ -124,28 +126,25 @@ function publishedOf(dir: string, shop: string): PublishedLine[] {
   try { return readFingerprints(fingerprintFile(dir, shop)).filter((l) => l.tenant === shop).slice(-60).map((l) => ({ seq: l.seq, head: l.head, day: l.day, at: l.at })); } catch { return [{ seq: 0, head: "unreadable", day: "unreadable" }]; }
 }
 
-/** The weekly drill: restore each shop's newest snapshot into a scratch folder and compare it with the live record. A failure is written where the panel and `status` show it. */
+/** The weekly drill, without the key: each shop's newest snapshot read back and compared with its seal, and the seal's record with the live one. A failure is written where the panel and `status` show it. */
 export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
   const server = loadServer(ctx.dir);
   if (!server.backup) return { ok: false, lines: ["No backup is set up, so there is nothing to drill."] };
   const state = loadState(ctx.dir);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
-  const work = join(serverPaths(ctx.dir).state, "work", `drill-${stampOf(ctx.now())}`);
+  const work = join(serverPaths(ctx.dir).state, "work");
+  ensureDir(work);
+  const jobFile = join(work, `drill-${stampOf(ctx.now())}.json`);
   const lines: string[] = [];
   let verdicts: DrillResult[] = [];
-  drillRecipient(ctx.dir); // the key exists before the container mounts it
   try {
-    // each shop's scratch folder is made here, open to the container's user, so the deployer can remove what the container wrote in it
-    for (const s of shops) { mkdirSync(join(work, s), { recursive: true }); chmodSync(join(work, s), 0o777); }
-    const jobFile = join(work, "job.json");
-    writeFileSync(jobFile, JSON.stringify({ target: server.backup.snapshots, identityFile: "/run/secrets/identity", shops: shops.map((s) => ({ name: s, restored: `/scratch/${s}/agent.db`, live: `/v/${names.dataVolume(s)}/data/agent.db`, published: publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
+    writeFileSync(jobFile, JSON.stringify({ target: server.backup.snapshots, shops: shops.map((s) => ({ name: s, live: `/v/${names.dataVolume(s)}/data/agent.db`, ...(readSeal(ctx.dir, s) ? { seal: readSeal(ctx.dir, s) } : {}), published: publishedOf(ctx.dir, s) })) }), { mode: 0o644 });
     const place = snapshotPlace(ctx, server);
-    // the scratch folder is writable: the restored copy is written there, and SQLite may want its -shm beside it to read it
-    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${work}:/scratch`, "-v", `${drillKeyFile(ctx.dir)}:/run/secrets/identity:ro`, ...place.mounts,
+    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts,
       ...shops.flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
     const j = lastJson(r.stdout) as { results?: DrillResult[] } | undefined;
     verdicts = j?.results ?? shops.map((s) => ({ name: s, ok: false, detail: `the drill did not run: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 200) || `exit ${r.code}`}` }));
-  } finally { rmSync(work, { recursive: true, force: true }); }
+  } finally { rmSync(jobFile, { force: true }); }
   const at = ctx.now().toISOString();
   for (const v of verdicts) {
     if (!state.shops[v.name]) continue;
@@ -158,18 +157,19 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
 }
 
 /**
- * Put a shop's runtime database back from the newest snapshot at or before `at` (the newest of all without it). The server's drill key opens it, or the owner's key with
- * `identity` (a key file: needed for a snapshot made before the server had its drill key, and on a new server after the old one was lost). The file it replaces is kept
+ * Put a shop's runtime database back from the newest snapshot at or before `at` (the newest of all without it), opened with the owner's age key, which the person
+ * restoring brings (`identity`, a key file; it is mounted read-only into the one container that opens the snapshot, and is not kept). The file it replaces is kept
  * beside it, never deleted. The runtime starts in its restored mode (modules/runtime/restored.ts): it moves its ids on and writes a `restored` entry before anything else.
  */
 export async function restoreShop(ctx: Context, shop: string, o: { at?: string; identity?: string; fromSnapshot?: string }): Promise<string> {
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
   if (!state.shops[shop]?.applied) throw new Error(`${shop} has not been deployed, so there is nothing to restore into.`);
-  if (o.fromSnapshot) throw new Error("--from-snapshot is gone: `restore` now reads the nightly snapshots itself. Give --at <time> for an older one, and --identity <key file> if the server's drill key cannot open it.");
+  if (o.fromSnapshot) throw new Error("--from-snapshot is gone: `restore` now reads the nightly snapshots itself. Give --identity <the owner's key file>, and --at <time> for an older one.");
   if (!server.backup) throw new Error("No snapshot place is set up for this server, so there is nothing to restore from.");
   if (o.at && Number.isNaN(Date.parse(o.at))) throw new Error(`"${o.at}" is not a time. Use a form like 2026-11-04T10:30:00Z.`);
-  if (o.identity && !existsSync(o.identity)) throw new Error(`${o.identity} is not there: --identity names the file with the owner's age key (AGE-SECRET-KEY-1...).`);
+  if (!o.identity) throw new Error("A snapshot opens only with the owner's age key, which is kept off this server: bring it for the restore and give its file with --identity <key file> (take it away again afterwards).");
+  if (!existsSync(o.identity)) throw new Error(`${o.identity} is not there: --identity names the file with the owner's age key (AGE-SECRET-KEY-1...).`);
   // the runtime that will read restored.json is the one of the version the shop is pinned to: one from before 9 Nov 2026 would ignore it and reuse ids used after the
   // snapshot, and "look first" would then take another customer's payment link or calendar event for its own
   const applied = state.shops[shop].applied!;
@@ -178,14 +178,13 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   const stamp = stampOf(ctx.now());
   const work = join(serverPaths(ctx.dir).state, "work", `restore-${shop}-${stamp}`);
   const dataVolume = volume(server, names.dataVolume(shop));
-  if (!o.identity) drillRecipient(ctx.dir);
   let got: { stamp: string; record: RecordFacts };
   try {
     mkdirSync(join(work, "files"), { recursive: true }); chmodSync(join(work, "files"), 0o777); // the container writes here; the deployer removes it after
     writeFileSync(join(work, "job.json"), JSON.stringify({ target: server.backup.snapshots, shop, ...(o.at ? { atMs: Date.parse(o.at) } : {}), identityFile: "/run/secrets/identity", out: "/out/files", nowIso: ctx.now().toISOString() }), { mode: 0o644 });
     // 1. fetch, check and open the snapshot while the shop still runs (nothing of the shop's is touched yet)
     const place = snapshotPlace(ctx, server);
-    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${work}:/out`, "-v", `${o.identity ?? drillKeyFile(ctx.dir)}:/run/secrets/identity:ro`, ...place.mounts, server.appImage, "node", "/app/bundle/backup/restore-snapshot.ts", "--job", "/out/job.json"], { timeoutMs: 900_000 });
+    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${work}:/out`, "-v", `${o.identity}:/run/secrets/identity:ro`, ...place.mounts, server.appImage, "node", "/app/bundle/backup/restore-snapshot.ts", "--job", "/out/job.json"], { timeoutMs: 900_000 });
     const out = lastJson(r.stdout) as { ok?: boolean; stamp?: string; record?: RecordFacts; error?: string } | undefined;
     if (!out?.ok || !out.stamp || !out.record) throw new Error(`No snapshot was restored; the shop was not touched and is still running. ${out?.error ?? (r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300) || `exit ${r.code}`)}`);
     got = { stamp: out.stamp, record: out.record };
