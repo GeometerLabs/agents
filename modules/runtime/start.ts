@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { systemClock } from "../core/clock.ts";
 import type { Clock } from "../core/clock.ts";
 import { loadPrivateKey } from "../report/sign.ts";
-import { parseKey } from "../record/fingerprint.ts";
+import { parseKey } from "../record/key-file.ts";
 import type { IntentBase, ParseOptionsBase } from "../understanding/model.ts";
 import type { ModelConfig, ModelParser } from "../understanding/model-llm.ts";
 import type { AiPolicy } from "../understanding/ai-state.ts";

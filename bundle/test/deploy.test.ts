@@ -36,7 +36,7 @@ test("a good deploy: files written, compose brought up, the running Guards asked
     assert.ok(existsSync(join(w.paths.secrets, "inbox", "glow-salon", "razorpay_webhook_secret")));
     assert.ok(existsSync(join(w.paths.secrets, "refresher", "glow-salon", "google_service_account.json")));
     assert.ok(!existsSync(join(w.paths.secrets, "rt-glow-salon", "razorpay_authorization")), "the runtime never holds a provider key");
-    assert.ok(readdirSync(join(w.paths.secrets, "rt-glow-salon")).every((f) => f === "internal_token" || f.startsWith("agent_")));
+    assert.ok(readdirSync(join(w.paths.secrets, "rt-glow-salon")).every((f) => f === "internal_token" || f === "record_key" || f.startsWith("agent_")), "only its own tokens and the key for its record (B69)");
   } finally { w.done(); }
 });
 

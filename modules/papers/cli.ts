@@ -14,7 +14,7 @@ import { parseArgs } from "node:util";
 import type { Language } from "../language/languages.ts";
 import { LANGUAGES } from "../language/languages.ts";
 import type { RecordEntry } from "../record/record.ts";
-import { parseKey } from "../record/fingerprint.ts";
+import { parseKey } from "../record/key-file.ts";
 import { anchorOf, evidencePack, ledgerEntries, ledgerFile, tenantOf } from "../record/ledger.ts";
 import { lastPublished } from "../record/publish.ts";
 import { writer } from "../report/months.ts";

@@ -14,15 +14,6 @@ import { createHmac } from "node:crypto";
 export const PERSON_FORM = "hmac-sha256/shop-key/12-hex";
 export const OLD_PERSON_FORM = "sha256/unkeyed/12-hex";
 
-export const KEY_BYTES = 32;
-
-/** A key file's text as a key: 64 hex digits, however it is padded with newlines. Anything else is refused, never used as a key. */
-export function parseKey(text: string, what = "The fingerprint key"): Buffer {
-  const hex = text.trim();
-  if (!/^[0-9a-fA-F]+$/u.test(hex) || hex.length !== KEY_BYTES * 2) throw new Error(`${what} is not ${KEY_BYTES} bytes written as hex.`);
-  return Buffer.from(hex, "hex");
-}
-
 const hmac = (key: Buffer, domain: string, text: string): string => createHmac("sha256", key).update(`${domain}\n${text}`).digest("hex");
 
 /** A person's value as 12 hex digits. The same value always gives the same digits under the same key, so the shop's tools can match it; a different key gives different digits. */

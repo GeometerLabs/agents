@@ -10,7 +10,7 @@
 //     issue-approver <shop> <ttl-seconds>              a fresh reading credential for the shop's relay, printed once on stdout
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
-import { parseKey } from "../../modules/record/fingerprint.ts";
+import { parseKey } from "../../modules/record/key-file.ts";
 import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";

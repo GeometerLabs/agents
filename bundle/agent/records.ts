@@ -7,7 +7,7 @@ import { ops } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
 import { serverPaths } from "../lib/server.ts";
 import { ensureAgentLabelKey } from "../lib/secrets.ts";
-import { parseKey } from "../../modules/record/fingerprint.ts";
+import { parseKey } from "../../modules/record/key-file.ts";
 import { loadState } from "../lib/state.ts";
 import { writeAtomic } from "../lib/util.ts";
 import type { Facts, Skip } from "./facts.ts";
