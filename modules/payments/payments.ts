@@ -248,7 +248,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
       const id = nextId("req");
       const link: PaymentRequest = {
         id, reference_id: request.reference_id, amount: request.amount, currency: "INR", description: request.description,
-        status: "created", pay_url: `https://pay.stand-in/${id}`, amount_paid: 0, payments: [], created_at: seconds(),
+        status: "created", pay_url: `https://pay.example/${id}`, amount_paid: 0, payments: [], created_at: seconds(),
         ...(request.part_payments ? { part_payments: true, min_first_payment: request.min_first_payment ?? 100 } : {}),
       };
       linkStore.set(id, link);
