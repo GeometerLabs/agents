@@ -3,7 +3,7 @@
 // Nothing here asks the agent. Run inside the `ops` container, which holds the Guards' admin credentials and is on the network where their agent ports answer; the reads
 // of the services go through the Guards with the reading agent (record-<name>), which each Guard allows to look and not to change. fetch is a parameter, so the tests run it against
 // the real Guard binary and the stand-ins.
-import { hide } from "../backup/export.ts";
+import { personLabel } from "../../modules/record/fingerprint.ts";
 import type { AgentUpstream } from "./folder.ts";
 
 export interface GuardAccess { kind: AgentUpstream; adminUrl: string; adminToken: string; agentUrl: string }
@@ -12,6 +12,8 @@ export interface FactsConfig {
   agentId: string;
   relayId: string;
   recordToken: string;
+  /** The key a reference that looks like a phone number is labelled with (B69, derived from the agent's own; the deployer's fold uses the same one). */
+  labelKey: Buffer;
   guards: GuardAccess[];
   calendarId?: string;
 }
@@ -66,10 +68,10 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 
 /**
  * A reference the builder's agent chose (a receipt, a reference_id) can be anything, a customer's number included. One that looks like a phone number (seven digits in a row, with at
- * most a space, dot, dash or bracket between them: the rule fleet applies) is kept as a short hash of itself, so no number reaches the record, the exports or a signed report.
+ * most a space, dot, dash or bracket between them: the rule fleet applies) is kept as a keyed fingerprint of itself (B69, under a key derived from the agent's), so no number reaches the record, the exports or a signed report.
  */
 const PHONE_SHAPE = /\d(?:[ .\-()]?\d){6,}/u;
-export const label = (v: string | null | undefined): string | null => (typeof v === "string" ? (PHONE_SHAPE.test(v) ? hide("b", v) : v) : null);
+export const label = (key: Buffer, v: string | null | undefined): string | null => (typeof v === "string" ? (PHONE_SHAPE.test(v) ? personLabel(key, "b", v) : v) : null);
 
 /** The string inside a typed argument (["str","pay_1"]), or the number inside ["int","20000"]; undefined for anything else. */
 export function typedText(v: unknown): string | undefined { return Array.isArray(v) && (v[0] === "str" || v[0] === "int") && typeof v[1] === "string" ? v[1] : undefined; }
@@ -124,7 +126,7 @@ export async function collectFacts(cfg: FactsConfig, now: Date, fetchFn: typeof 
       if (d.operation === "create_link") {
         // asked about until the link is in the record AND its deposit is, or until nobody has paid for a day and a half
         const ref = typedText(d.arguments.reference_id);
-        if (ref && (!settled.has(d.id) || (!paid.has(label(ref)!) && now.getTime() - Number(d.at_ms) < UNPAID_FOR))) refs.add(ref);
+        if (ref && (!settled.has(d.id) || (!paid.has(label(cfg.labelKey, ref)!) && now.getTime() - Number(d.at_ms) < UNPAID_FOR))) refs.add(ref);
       } else if (d.operation === "refund" && !settled.has(d.id)) {
         const p = typedText(d.arguments.payment_id);
         if (p) payments.add(p);
