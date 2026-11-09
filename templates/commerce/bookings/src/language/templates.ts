@@ -2,8 +2,7 @@
 // and every amount, date, time, service and link in it is rendered from the record (the facts), never typed by hand
 // and never translated. Adding a language means adding one more object below; the type makes sure none is missing.
 import type { Language } from "../../../../../modules/language/languages.ts";
-import { formatDate, formatInr, formatSlot } from "../../../../../modules/language/format.ts";
-import { localParts } from "../../../../../modules/core/time.ts";
+import { formatInr, formatSlot } from "../../../../../modules/language/format.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -38,11 +37,9 @@ export interface MessageFacts {
   /** UPI: what the owner marked received, and what is still to come, in whole rupees. */
   markedInr?: number;
   leftInr?: number;
-  /** The licence's service notices (B13): who the owner should contact (the partner who set the shop up), the counts the final stop's notice states, and the free export's last day. */
+  /** The licence's service notices (B13): who the owner should contact (the partner who set the shop up), and the count the final stop's notice states. */
   partner?: string;
   upcomingCount?: number;
-  openCount?: number;
-  licenceDateMs?: number;
 }
 
 export type TemplateId =
@@ -500,32 +497,30 @@ const upiKn: UpiSet = {
 
 // ---- the licence's wind-down and final stop (plan B13) --------------------------------------------------------------------------------------------------
 // The customer hears that online booking is paused and to contact the shop: no promise to book later. The owner hears once, plainly, and is told who to contact; the
-// final stop's notice says nothing is deleted, what is still open, and until when the free copy of the records can be had. Hindi, Malayalam and Kannada are
+// final stop's notice says the partner's service has ended, how many bookings are still in the calendar, and that hello@geometer.dev will connect the owner with another local partner (no copy of the records goes to the owner: it goes only to the builder or partner). Hindi, Malayalam and Kannada are
 // machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
 const partner = (f: MessageFacts) => need(f, "partner");
-const until = (f: MessageFacts) => formatDate(localParts(need(f, "licenceDateMs"), f.timeZone), f.language);
 const upcoming = (f: MessageFacts) => need(f, "upcomingCount");
-const open = (f: MessageFacts) => need(f, "openCount");
 
 const licenceEn: LicenceSet = {
   booking_paused: (f) => `Online booking is paused for now. Please contact ${f.businessName} directly.`,
   owner_licence_paused: (f) => `Notice: online booking for ${f.businessName} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact ${partner(f)}.`,
-  owner_licence_stopped: (f) => `Notice: online booking for ${f.businessName} has stopped. Nothing is deleted. Bookings to come: ${upcoming(f)}. Other open items: ${open(f)}. ${partner(f)} can give you the full list and a free copy of all your records until ${until(f)}.`,
+  owner_licence_stopped: (f) => `Notice: online booking for ${f.businessName} has stopped, because the service from ${partner(f)} has ended. Bookings after today still in your calendar: ${upcoming(f)}. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.`,
 };
 const licenceHi: LicenceSet = {
   booking_paused: (f) => `ऑनलाइन बुकिंग अभी रुकी हुई है। कृपया सीधे ${f.businessName} से संपर्क करें।`,
   owner_licence_paused: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग अभी रुकी हुई है। पहले की बुकिंग, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया ${partner(f)} से संपर्क करें।`,
-  owner_licence_stopped: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: ${upcoming(f)}। बाकी खुले काम: ${open(f)}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी ${until(f)} तक ${partner(f)} से मिल सकती है।`,
+  owner_licence_stopped: (f) => `सूचना: ${f.businessName} की ऑनलाइन बुकिंग बंद हो गई है, क्योंकि ${partner(f)} की सेवा समाप्त हो गई है। आज के बाद की जो बुकिंग आपके कैलेंडर में हैं: ${upcoming(f)}। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा।`,
 };
 const licenceMl: LicenceSet = {
   booking_paused: (f) => `ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
   owner_licence_paused: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി ${partner(f)}-നെ ബന്ധപ്പെടൂ.`,
-  owner_licence_stopped: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: ${upcoming(f)}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: ${open(f)}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും ${until(f)} വരെ ${partner(f)} നൽകും.`,
+  owner_licence_stopped: (f) => `അറിയിപ്പ്: ${f.businessName}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി, കാരണം ${partner(f)} നൽകിയിരുന്ന സേവനം അവസാനിച്ചു. ഇന്നിന് ശേഷം നിങ്ങളുടെ കലണ്ടറിലുള്ള ബുക്കിംഗുകൾ: ${upcoming(f)}. മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ഇത് തുടരാൻ hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതൂ, Geometer നിങ്ങളെ ബന്ധിപ്പിക്കും.`,
 };
 const licenceKn: LicenceSet = {
   booking_paused: (f) => `ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
   owner_licence_paused: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು ${partner(f)} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
-  owner_licence_stopped: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: ${upcoming(f)}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: ${open(f)}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು ${until(f)} ವರೆಗೆ ${partner(f)} ನೀಡುತ್ತಾರೆ.`,
+  owner_licence_stopped: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ ${partner(f)} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿರುವ ಬುಕಿಂಗ್‌ಗಳು: ${upcoming(f)}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.`,
 };
 
 export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn }, hi: { ...hi, ...upiHi, ...licenceHi }, ml: { ...ml, ...upiMl, ...licenceMl }, kn: { ...kn, ...upiKn, ...licenceKn } };

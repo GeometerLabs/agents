@@ -23,7 +23,7 @@ export interface LeaseShop {
   expires: number;
   /** The planned final stop, from the wind-down on; null before. */
   stop_at: number | null;
-  /** After the final stop, the end of the free export; null before. */
+  /** After the final stop, the end of the 90-day export for the builder or partner (never sent to the owner); null before. */
   export_until: number | null;
   /** The one notice the shop owner is due now ("wind_down" or "stop"), or null. */
   notice: "wind_down" | "stop" | null;

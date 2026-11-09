@@ -337,10 +337,10 @@ export const en: Words = {
       reminder: "Nothing changes for customers yet.",
       warning: "Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests.",
       wind_down: "Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once.",
-      stopped: "Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free.",
+      stopped: "Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records.",
     },
     paidThrough: (day) => `Next payment due: ${day}.`, windDownOn: (day) => `If it is not paid, new bookings pause on ${day}.`, extended: (day) => `Geometer's emergency extension covers it until ${day}.`,
-    stopOn: (day) => `Final stop planned for ${day}.`, exportUntil: (day) => `Free download of the shop's records until ${day}.`,
+    stopOn: (day) => `Final stop planned for ${day}.`, exportUntil: (day) => `You can download the shop's records until ${day}.`,
     renew: "Pay to renew", stale: (day) => `Licence not refreshed since ${day}. Check that this server reaches Geometer. Write to support. A person answers.`,
   },
   setup: {

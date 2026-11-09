@@ -332,7 +332,7 @@ lets the slot go and answers "paused, contact the shop", as for its own check, a
   `refs.licence`; a UPI shop has none to close). Then a gate in `say` holds back every message, and the record says each one. Payments already made are still recorded.
 - **Back in order**: new bookings are taken at once; nothing from the wind-down is done by itself (the customer asks again). One `licence` record line marks each change.
 - **The owner's notice** (`server/licence.ts`, sent by `modules/licence/notice.ts` from the runtime core): `owner_licence_paused` at the wind-down,
-  `owner_licence_stopped` at the final stop (bookings still to come, other to-do items, and until when the partner can give the free copy), once for each
+  `owner_licence_stopped` at the final stop (online booking has stopped because the partner's service has ended, the bookings after today still in the calendar, and that the owner can write to hello@geometer.dev to be connected with another local partner; no copy or export is offered to the owner), once for each
   `paid_through`, as the utility templates `owner_service_paused` and `owner_service_stopped` when the owner's window is closed. They name the partner and never
   mention money. Hindi, Malayalam and Kannada are machine-written and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
 

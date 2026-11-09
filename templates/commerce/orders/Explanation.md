@@ -29,7 +29,7 @@ The reading steps (rules, then the decision model, then the small language model
 
 ## The address
 
-A delivery address is the customer's, written for the owner. It is kept in the order, is in the one message to the owner when the order is confirmed (a template of its own), and goes to the customer's chat never (they are told the *place*). The export for the panel and the free copy removes it. The record does not keep it either: it notes the place that matched.
+A delivery address is the customer's, written for the owner. It is kept in the order, is in the one message to the owner when the order is confirmed (a template of its own), and goes to the customer's chat never (they are told the *place*). The export (for the panel, and the builder's or partner's copy) removes it. The record does not keep it either: it notes the place that matched.
 
 ## Choices worth knowing
 

@@ -68,7 +68,7 @@ test("the final stop closes the open fee links once and sends nothing more", asy
 
 test("every licence message has its words in all four languages; the owner's notices name the partner and are never about money", () => {
   for (const language of ["en", "hi", "ml", "kn"] as const) {
-    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Bright Tuition", partner: "Divya, local partner", openFeesCount: 4, openCount: 1, licenceDateMs: Date.UTC(2027, 2, 4, 18, 30) };
+    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Bright Tuition", partner: "Divya, local partner", openFeesCount: 4 };
     for (const id of ["fee_paused", "owner_licence_paused", "owner_licence_stopped"] as const) {
       const text = TEMPLATES[language][id](facts);
       if (id !== "fee_paused") assert.ok(text.includes("Divya, local partner"), `${language} ${id}`);
