@@ -8,12 +8,14 @@
 // The functions take base URLs and the ids the shop gave. They never take a provider key: in production the base URL is a Guard that holds the
 // keys, and the panel presents only its own Guard credential (`agentToken`). The calls go through the same createHttp the live adapters use, so
 // Guard's answers (refused, held, unavailable) are told apart in the same one place.
+import { providerById } from "../../modules/payments/providers/index.ts";
 import { ApiError, GuardError, GuardUnauthenticatedError, NotSentError, TimeoutError } from "../../modules/core/faults.ts";
 import { GRAPH_VERSION } from "../../modules/messaging/whatsapp.ts";
 import { createHttp, isObject, str } from "../../modules/core/http.ts";
 import type { Http, HttpReply } from "../../modules/core/http.ts";
 
-export type Service = "whatsapp" | "razorpay" | "calendar";
+/** "whatsapp", "calendar", or a gateway's id (modules/payments/providers). */
+export type Service = string;
 export type CheckCode =
   | "confirmed"
   | "account_mismatch" // the provider shows a different account from the one the shop gave
@@ -49,14 +51,15 @@ export interface ConnectionTargets {
   /** The credential the panel presents to Guard (a Guard bearer). Never a provider key; left out, no Authorization header is sent (a stand-in). */
   agentToken?: string;
   whatsapp?: { baseUrl: string; phoneNumberId: string; /** The number customers write to, with +country code. NOT the owner's number. */ businessNumber: string };
-  razorpay?: { baseUrl: string; /** The key id the shop gave (it is public, not the secret). */ keyId?: string; expectedMode: "test" | "live"; /** The key id confirmed earlier: a different one now is an error. */ pinnedKeyId?: string };
+  /** B71: the shop's gateway (its provider id), only for a shop that chose one. */
+  gateway?: { provider: string; baseUrl: string; /** The key id the shop gave (it is public, not the secret). */ keyId?: string; expectedMode: "test" | "live"; /** The key id confirmed earlier: a different one now is an error. */ pinnedKeyId?: string };
   calendar?: { baseUrl: string; calendarId: string };
 }
 
 export interface Pins {
   whatsapp?: { phoneNumberId: string; displayNumber: string };
   calendar?: { calendarId: string };
-  razorpay?: { keyId: string; mode: "test" | "live" };
+  gateway?: { provider: string; keyId: string; mode: "test" | "live" };
 }
 
 export interface ConnectionReport {
@@ -68,7 +71,6 @@ export interface ConnectionReport {
 }
 
 const digits = (s: string) => s.replace(/\D/gu, "");
-const KEY_ID = /^rzp_(live|test)_[A-Za-z0-9]{6,40}$/u;
 const NUMBER_ID = /^\d{6,20}$/u;
 
 function result(service: Service, code: CheckCode, rest: Partial<CheckResult> = {}): CheckResult {
@@ -125,32 +127,32 @@ export async function checkWhatsApp(target: NonNullable<ConnectionTargets["whats
   }
 }
 
-// ---- Razorpay: the key works, in the right mode, and is the key already confirmed ------------------------------------------------------
-// GET /v1/payment_links?reference_id=geometer-connection-check  (a reference nobody has: the answer is an empty list when the key is good)
-// https://razorpay.com/docs/api/payments/payment-links/fetch-all-standard/
-// What this does NOT prove: whose account the key belongs to. Razorpay documents no call that tells an ordinary merchant key its own account
-// (GET /v2/accounts/:id is for Route linked accounts and partner sub-merchants). So the result says `payments-account` was not checked; the id
-// is pinned from the first signed webhook, whose payload carries `account_id` (Deferred.md).
+// ---- a gateway: the key works, in the right mode, and is the key already confirmed -----------------------------------------------------------
+// One read its folder names (providers/<name>/index.ts, setup.probe): a call only a working key answers, through Guard with the panel's reading credential. What this
+// does NOT prove: whose account the key belongs to (a gateway may document no call that tells an ordinary key its own account). So the result says
+// `payments-account` was not checked, and the panel shows the gateway's own sentence about it (its words.whose).
 
-export async function checkRazorpay(target: NonNullable<ConnectionTargets["razorpay"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
+export async function checkGateway(target: NonNullable<ConnectionTargets["gateway"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
   const notChecked: NotChecked[] = ["payments-account"];
+  const provider = providerById(target.provider);
+  const setup = provider?.gateway?.setup;
+  if (!provider || !setup) return result(target.provider, "not_configured", { notChecked });
   let mode: "test" | "live" | undefined;
   if (target.keyId !== undefined) {
-    const m = KEY_ID.exec(target.keyId);
-    if (!m) return result("razorpay", "not_configured", { notChecked });
-    mode = m[1] as "test" | "live";
-    if (mode !== target.expectedMode) return result("razorpay", "wrong_mode", { notChecked, confirmed: { mode } });
-    if (target.pinnedKeyId !== undefined && target.pinnedKeyId !== target.keyId) return result("razorpay", "account_mismatch", { notChecked });
+    mode = setup.keyId.test(target.keyId) ? setup.modeOf(target.keyId) : undefined;
+    if (!mode) return result(provider.id, "not_configured", { notChecked });
+    if (mode !== target.expectedMode) return result(provider.id, "wrong_mode", { notChecked, confirmed: { mode } });
+    if (target.pinnedKeyId !== undefined && target.pinnedKeyId !== target.keyId) return result(provider.id, "account_mismatch", { notChecked });
   }
   try {
-    const http = options.http ?? createHttp(target.baseUrl, "Razorpay", options.timeoutMs, options.agentToken);
-    const reply = await http.request("GET", "/v1/payment_links", { query: { reference_id: "geometer-connection-check" } });
-    const bad = providerStatus(reply, "razorpay", notChecked);
+    const http = options.http ?? createHttp(target.baseUrl, provider.displayName, options.timeoutMs, options.agentToken);
+    const reply = await http.request("GET", setup.probe.path, { query: setup.probe.query });
+    const bad = providerStatus(reply, provider.id, notChecked);
     if (bad) return bad;
-    if (!isObject(reply.body) || !Array.isArray(reply.body.payment_links) || holdsSecret(reply.body, [options.agentToken])) return result("razorpay", "unexpected_response", { notChecked });
-    return result("razorpay", "confirmed", { notChecked, confirmed: { ...(target.keyId ? { keyId: target.keyId } : {}), ...(mode ? { mode } : {}) } });
+    if (!setup.probe.looksRight(reply.body) || holdsSecret(reply.body, [options.agentToken])) return result(provider.id, "unexpected_response", { notChecked });
+    return result(provider.id, "confirmed", { notChecked, confirmed: { ...(target.keyId ? { keyId: target.keyId } : {}), ...(mode ? { mode } : {}) } });
   } catch (e) {
-    return failure("razorpay", e, notChecked);
+    return failure(provider.id, e, notChecked);
   }
 }
 
@@ -195,7 +197,7 @@ export async function checkConnections(targets: ConnectionTargets): Promise<Conn
   const o = { timeoutMs: targets.timeoutMs, agentToken: targets.agentToken };
   const jobs: Promise<CheckResult>[] = [];
   if (targets.whatsapp) jobs.push(checkWhatsApp(targets.whatsapp, o));
-  if (targets.razorpay) jobs.push(checkRazorpay(targets.razorpay, o));
+  if (targets.gateway) jobs.push(checkGateway(targets.gateway, o));
   if (targets.calendar) jobs.push(checkCalendar(targets.calendar, o));
   const results = await Promise.all(jobs);
   const pins: Pins = {};
@@ -204,7 +206,7 @@ export async function checkConnections(targets: ConnectionTargets): Promise<Conn
     if (!r.ok || !c) continue;
     if (r.service === "whatsapp" && c.phoneNumberId && c.displayNumber) pins.whatsapp = { phoneNumberId: c.phoneNumberId, displayNumber: c.displayNumber };
     if (r.service === "calendar" && c.calendarId) pins.calendar = { calendarId: c.calendarId };
-    if (r.service === "razorpay" && c.keyId && c.mode) pins.razorpay = { keyId: c.keyId, mode: c.mode };
+    if (targets.gateway && r.service === targets.gateway.provider && c.keyId && c.mode) pins.gateway = { provider: r.service, keyId: c.keyId, mode: c.mode };
   }
   return { results, allOk: results.length > 0 && results.every((r) => r.ok), pins };
 }

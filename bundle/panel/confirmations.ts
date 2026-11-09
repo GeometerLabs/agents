@@ -6,6 +6,7 @@
 //   limits   a change that makes limits tighter or leaves them (bundle/lib/limits-draft.ts). Anything that loosens a limit, or is not on that list, is refused
 //            here as well, whatever was written into this file: a person loosens a limit in the panel's own edit form, never through a link.
 //   go-live  "ready to go live": the same hand check, connection checks and certificate as the panel's own button, plus the person's statement about the WhatsApp templates.
+import { gatewayOf } from "../../modules/payments/providers/index.ts";
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -89,7 +90,7 @@ export function planLimits(shops: Shops, shop: string, changes: readonly Change[
   if (refused.length > 0) return { ok: false, problems: refused.map(refusalText) };
   const checked = kind.validateSettings(applied.settings);
   if (!checked.ok) return { ok: false, problems: checked.errors };
-  if (guardsOf(kind, checked.settings).includes("razorpay")) {
+  if (gatewayOf(checked.settings.payment)) {
     try { kind.gatewaySpec(checked.settings, { tenant: shop, version: 1, reviewedBy: "confirm-check" }, { approvalTtlSeconds: 86_400 }); } catch (e) { return { ok: false, problems: [(e as Error).message] }; }
   }
   return { ok: true, raw, proposed: applied.settings, rows, digest };

@@ -95,7 +95,7 @@ export interface AgentDeps {
 
 export type AgentEvent =
   | { kind: "message"; message: InboundMessage } // a customer's (or the owner's) WhatsApp message
-  | { kind: "payment_event"; event: PaymentEvent } // a Razorpay webhook
+  | { kind: "payment_event"; event: PaymentEvent } // a gateway's webhook, read by the inbox into the neutral events
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund
   // only if its own record says the owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
@@ -482,7 +482,7 @@ export function createAgent(deps: AgentDeps): Agent {
     log(b, phone, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, requestId: request.id }, notes: `the customer says they paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
   }
 
-  /** A picture from a customer. It is never looked at or kept. On a UPI shop it is read as "I paid" (a screenshot is not proof); a Razorpay shop answers nothing, as before. */
+  /** A picture from a customer. It is never looked at or kept. On a UPI shop it is read as "I paid" (a screenshot is not proof); a shop whose gateway confirms by itself answers nothing, as before. */
   async function onPicture(msg: InboundMessage): Promise<void> {
     const phone = msg.from;
     log(null, phone, "receive_message", "confirmed", { image: true, id: msg.id }, { notes: "a picture: it is not looked at and nothing of it is kept; a picture is never proof of a payment", refs: { messageId: msg.id } });
@@ -673,7 +673,7 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, owner, "licence", "confirmed", { state: now }, { refs: { state: now, ...(l.paidThrough !== null ? { paidThrough: String(l.paidThrough) } : {}) }, notes });
   }
 
-  /** The final stop, once for each `paid_through`: close every open deposit link at Razorpay through Guard, so no new payment comes in. A UPI shop has none to close. */
+  /** The final stop, once for each `paid_through`: close every open deposit link at the gateway through Guard, so no new payment comes in. A module that cannot cancel a request (UPI) has none to close. */
   async function closeLinksAtStop(): Promise<void> {
     const l = licence();
     if (l.state !== "stopped" || !can.cancels) return;
@@ -683,7 +683,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (record.entries().some((e) => e.booking === b.id && e.action === "cancel_deposit_link" && e.refs.licence === key)) continue;
       const linkId = b.linkId;
       const closed = await payments.cancelRequest(linkId).then(() => payments.fetchRequest(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
-      log(b, b.customer, "cancel_deposit_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open deposit link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or Razorpay did not answer); the owner can close it in Razorpay" });
+      log(b, b.customer, "cancel_deposit_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open deposit link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or the gateway did not answer); the owner can close it in the gateway's own dashboard" });
     }
   }
 

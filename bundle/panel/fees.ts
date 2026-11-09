@@ -1,11 +1,12 @@
 // The phone setup for a Fees centre: what its two steps take from the form (the centre with its batches, fees and students; then the rules of the month), what they refuse
 // in the person's own language, and how they become the settings a builder would write. Languages, accounts and checks are the same steps as Bookings' (setup.ts). The form
 // is plain: a few rows for batches, one box with a student on each line, and the numbers. `validateSettings` of the Fees pathway is the last gate on everything.
+import { providerById } from "../../modules/payments/providers/index.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { batchName, validateSettings } from "../../templates/education/fees/src/settings.ts";
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
-import { payeeProblem, vpaProblem } from "../../modules/payments/providers/upi/link.ts";
+import { payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
 import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
@@ -43,7 +44,7 @@ export function newFeesDraft(id: string, accountId: string, template: Template, 
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false,
     form: emptyShopForm(), windowHours: "", primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
-    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
+    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, gateway: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
     fees: {
       address: "", batches: blankBatches(), students: "",
       dueDay: String(example.due.day), graceDays: String(example.due.graceDays), lateFee: String(example.lateFeeInr),
@@ -64,7 +65,7 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
     ...approversDraftOf(s.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
-    calendar: { id: "" }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
+    calendar: { id: "" }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     fees: {
       address: s.address ?? "", batches, students,
       dueDay: String(s.due.day), graceDays: String(s.due.graceDays), lateFee: String(s.lateFeeInr), reminderDays: s.reminders.daysFromDue.join(", "), reminderHour: String(s.reminders.hour), reminderMost: String(s.reminders.maxPerMonth),
@@ -174,7 +175,7 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
   // The rules step shows the centre's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out with a stand-in UPI ID
   // (PREVIEW_PAYMENT; they do not depend on it), never as a gateway centre.
   // The save cannot be reached before the accounts step has checked the UPI ID.
-  const upi = paymentModuleOf(draft) === "upi";
+  const upi = !providerById(paymentModuleOf(draft))?.gateway;
   const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
   const raw = {
     name: draft.form.name, ...(fees.address !== "" ? { address: fees.address } : {}), timezone: example.timezone, languages,

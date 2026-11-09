@@ -14,7 +14,7 @@ export interface LinkRequest {
   /** In paise: the only amount this link may be for. */
   amountPaise: number;
   description: string;
-  /** Let the customer pay part of it (the link stays open for the rest). Razorpay's `accept_partial`. */
+  /** Let the customer pay part of it (the request stays open for the rest), where the module takes part payments (PaymentCapabilities.takesPartPayments). */
   acceptPartial?: boolean;
   /** With `acceptPartial`: the least the first payment may be, in paise. */
   minPartialPaise?: number;

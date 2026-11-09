@@ -61,7 +61,7 @@ export interface Settings {
   /** The agent refunds up to and including this amount alone (an overpayment); anything above needs the owner (Guard holds it). */
   refund: { limitInr: number };
   /**
-   * How parents pay (modules/payments/providers/index.ts): "upi", the centre's own UPI ID, marked paid by the owner; or "razorpay", the centre's own account.
+   * How parents pay (modules/payments/providers/index.ts): "upi", the centre's own UPI ID, marked paid by the owner; or a gateway's id (a provider folder with an API), the centre's own account.
    * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway centre.
    */
   payment: PaymentSettings;
@@ -275,7 +275,7 @@ function readLimit(v: unknown, key: "waiver" | "refund", label: string, max: num
   return limitInr === undefined ? undefined : { limitInr };
 }
 
-/** The shared reader (B71): no block, or an empty one, is refused and asked for the UPI ID. Before B71 both were read as Razorpay. */
+/** The shared reader (B71): no block, or an empty one, is refused and asked for the UPI ID. Before B71 both were read as the gateway. */
 function readPayment(v: unknown, errors: string[]): Settings["payment"] | undefined {
   return readPaymentSettings(isObj(v) && Object.keys(v).length === 0 ? undefined : v, errors);
 }

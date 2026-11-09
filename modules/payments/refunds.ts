@@ -161,7 +161,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     async function maybeDone(why: string): Promise<RefundResult> {
       const found = await findRefund(paymentId, receipt).catch(() => undefined);
       if (found) { log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, notes: `${why}; the payments service's own list shows the refund, and it is not sent again` }); return "done"; }
-      const note = `${why}. The refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`;
+      const note = `${why}. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`;
       log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
       raise(b, paymentId, "unknown", note);
       return "stopped";
@@ -173,7 +173,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       if (found) {
         log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, ...(note ? { notes: note } : {}) });
         if (expectHold) {
-          const why = `A refund of ${formatInr(amountInr)} is above the ${formatInr(deps.limitInr())} limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the Razorpay limits spec.`;
+          const why = `A refund of ${formatInr(amountInr)} is above the ${formatInr(deps.limitInr())} limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the gateway's limits spec.`;
           log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
           raise(b, paymentId, "unheld", why);
         }
@@ -207,7 +207,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
           case "already_done": await settledByPerson(b, paymentId, amountInr, refs, sorted.error); return "done";
           case "held": {
             if (sorted.error.approval === null || sorted.error.call.body === undefined) {
-              const note = `Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`;
+              const note = `Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`;
               log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
               raise(b, paymentId, "uncertain", note);
               return "stopped";
@@ -293,7 +293,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
         b.refundIssues = issuesOf(b).filter((x) => x !== issue);
         settled++;
       } else {
-        log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: "looked again: the payments service's own list still does not show the refund. It was not sent again; check Razorpay" });
+        log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: "looked again: the payments service's own list still does not show the refund. It was not sent again; check the payment gateway's own records" });
       }
     }
     return { settled, looked };
@@ -383,7 +383,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
           return;
         }
         case "held":
-          if (sorted.error.approval === null) return stop("uncertain", `After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check Razorpay for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`, "unconfirmed");
+          if (sorted.error.approval === null) return stop("uncertain", `After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`, "unconfirmed");
           hold.approved = false;
           if (sorted.error.approval === hold.approval) { // Guard has no approval on record for this call: the owner's answer was not recorded there, and the owner was already asked
             log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { refs, notes: "Guard still holds the refund: its record does not show the owner's approval. It waits; the owner is not asked again" });
@@ -403,7 +403,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
           released(); // the call went out: Guard does not send an unapproved one
           const found = await findRefund(paymentId, hold.receipt).catch(() => undefined);
           if (found) return finish(found.id, `${sorted.why}; the payments service's own list shows the refund, and it is not sent again`);
-          return stop("unknown", `${sorted.why}. The approved refund may or may not have been made. It was NOT sent again. Check Razorpay for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`, "unconfirmed");
+          return stop("unknown", `${sorted.why}. The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`, "unconfirmed");
         }
         case "not_sent": return later(sorted.why);
       }

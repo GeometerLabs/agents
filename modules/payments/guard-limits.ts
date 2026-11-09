@@ -6,7 +6,7 @@
 //
 // The rules are the same for every gateway (B71): a bound on a request's amount, a bound and the owner's approval on a refund, one refund per payment, the calls no
 // agent may make, and the day's caps. What is the gateway's own (its routes, the names of its operations, the amount field and its unit, the once-only key) comes
-// from its declaration (modules/payments/providers/<name>/guard.ts), so a client's spec is generated, not edited, and a Razorpay shop's comes out byte for byte as
+// from its declaration (modules/payments/providers/<name>/guard.ts), so a client's spec is generated, not edited, and a gateway shop's comes out byte for byte as
 // it did before the split (bundle/test/payment-guard-golden.test.ts).
 import type { GatewayGuard } from "./providers/types.ts";
 

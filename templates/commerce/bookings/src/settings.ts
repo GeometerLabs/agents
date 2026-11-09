@@ -45,7 +45,7 @@ export interface Settings {
   approvers?: ApproversSettings;
   reminders: { hoursBefore: number[] };
   /**
-   * How customers pay the deposit (modules/payments/providers/index.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
+   * How customers pay the deposit (modules/payments/providers/index.ts): "upi", the shop's own UPI ID, marked paid by the owner; or a gateway's id (a provider folder with an API), the shop's own account.
    * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop. It is the last key of the parsed settings, as it always was.
    */
   payment: PaymentSettings;

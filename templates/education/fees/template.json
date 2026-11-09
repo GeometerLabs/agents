@@ -3,6 +3,6 @@
   "id": "fees",
   "setup": "fees",
   "steps": ["business", "deposit", "languages", "accounts", "checks"],
-  "accounts": ["whatsapp", "razorpay"],
+  "accounts": ["whatsapp", "payment"],
   "settingsExample": "settings/bright-tuition-upi.example.json"
 }
