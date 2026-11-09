@@ -361,7 +361,8 @@ export async function restoreAgent(ctx: Context, agent: string, o: { at?: string
   const fresh = loadState(ctx.dir).agents![agent];
   if (fresh.stopped) await ops(ctx, ["stop", agent, "on", "-", fresh.stopped.reason]);
   else if ([...statuses.values()].some((s) => s.body?.kill_switch?.on === true)) { await ops(ctx, ["stop", agent, "off", "the deployer", "restore: the snapshot was taken while the agent was stopped; it is not stopped now"]); lines.push("The snapshot was taken while the agent was stopped; it is not stopped now, so its Guards' kill switch was released again."); }
-  if (restored.some((s) => s.endsWith("-razorpay"))) await renewRelayCredential(ctx, agent);
+  // the approvals relay serves an agent with a Razorpay Guard (agent/deploy.ts renews it on the same condition)
+  if (guards.some((g) => g.kind === "razorpay" && restored.includes(g.service))) await renewRelayCredential(ctx, agent);
   const behind = [...statuses.entries()].filter(([kind, s]) => s.body?.policy?.digest !== fresh.guards[kind]?.digest);
   if (behind.length > 0) {
     // the restored store holds a policy of the same or a higher version than the deployed one (a server whose versions started again at 1): deploy above it

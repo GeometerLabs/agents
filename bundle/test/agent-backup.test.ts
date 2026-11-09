@@ -32,7 +32,8 @@ const STAMP = "20261104T013000Z";
 const AGENT = "my-agent";
 /** The order the deployed agent's Guards are in on the server (its state keeps them by kind), which is the order the jobs walk them. */
 const ON_SERVER = ["calendar", "razorpay", "whatsapp"];
-const flags: AgentFlags = { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
+// on Razorpay: an agent on the default UPI module has no payment Guard (the owner-marked desk is not served on a server yet), so the Razorpay one is the agent with the most Guards to back up
+const flags: AgentFlags = { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
 const agentSecrets = (): Record<string, string> => { const s = secretsFor("x"); return { razorpay_key: s.razorpay_key, whatsapp_token: s.whatsapp_token, whatsapp_app_secret: s.whatsapp_app_secret, whatsapp_verify_token: s.whatsapp_verify_token, "google_service_account.json": s["google_service_account.json"] }; };
 const tmp = () => { const dir = mkdtempSync(join(tmpdir(), "geo-agent-backup-")); return { dir, done: () => rmSync(dir, { recursive: true, force: true }) }; };
 const job = (recipient: string, stamp = STAMP): SnapshotJob => ({ stamp, keepDays: 30, recipient, target: { url: "x" }, shops: [] });
@@ -85,12 +86,14 @@ test("an agent's restore job fetches everything of the newest snapshot at or bef
     const keyFile = join(t.dir, "key"); writeFileSync(keyFile, "ab".repeat(32));
     for (const [stamp, n] of [["20261102T013000Z", 2], ["20261103T013000Z", 3], [STAMP, 5]] as const) {
       const f = join(t.dir, `r-${stamp}.json`); writeFileSync(f, recordText(n));
-      await snapshotAgent({ name: AGENT, recordFile: f, personKeyFile: keyFile, guards: ["razorpay", "whatsapp", "calendar"].map((k) => ({ kind: k, dir: guardBackup(join(t.dir, `g-${stamp}`), k) })) }, job(owner.recipient, stamp), store);
+      // B71: an agent's own gateway API has a Guard of its own (`own-api`), backed up and put back like the others
+      await snapshotAgent({ name: AGENT, recordFile: f, personKeyFile: keyFile, guards: ["razorpay", "own-api", "whatsapp", "calendar"].map((k) => ({ kind: k, dir: guardBackup(join(t.dir, `g-${stamp}`), k) })) }, job(owner.recipient, stamp), store);
     }
     writeFileSync(join(t.dir, "identity"), owner.identity);
     const base: RestoreJob = { target: { url: join(t.dir, "bucket") }, shop: AGENT, identityFile: join(t.dir, "identity"), out: join(t.dir, "out"), nowIso: "2026-11-04T12:00:00.000Z", ownAgent: true };
     const got = await runAgentRestoreJob({ ...base, atMs: Date.parse("2026-11-03T20:00:00Z") }, store);
-    assert.deepEqual([got.stamp, got.record?.lastSeq, got.guards], ["20261103T013000Z", 3, ["calendar", "razorpay", "whatsapp"]]);
+    assert.deepEqual([got.stamp, got.record?.lastSeq, got.guards], ["20261103T013000Z", 3, ["calendar", "own-api", "razorpay", "whatsapp"]]);
+    assert.equal(readFileSync(join(t.dir, "out", "guard-own-api", "state.db"), "utf8"), "own-api-store");
     assert.equal(readFileSync(join(t.dir, "out", "record.json"), "utf8"), recordText(3), "the record file, byte for byte");
     assert.equal(readFileSync(join(t.dir, "out", "person_key"), "utf8"), `${"ab".repeat(32)}\n`);
     assert.equal(readFileSync(join(t.dir, "out", "guard-razorpay", "evidence", "seg-1.jsonl"), "utf8"), "razorpay-ledger");
