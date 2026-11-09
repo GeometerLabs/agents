@@ -27,6 +27,7 @@ test("init makes a server folder, a key pair for the snapshots (the secret half 
     const r = await quiet(() => main(["init", folder, "--domain", "shops.example.com", "--reviewed-by", "builder-arjun", "--model-wire", "openai", "--model", "gpt-4o-mini", "--stream-url", "s3://stream/acme", "--snapshots-url", "s3://snaps/acme", "--age-identity-out", identity]));
     assert.equal(r.result, 0, r.err);
     assert.match(r.out, /secret half is in .*age-identity\.txt/);
+    assert.match(r.out, /--stream-url and --stream-endpoint are not used any more/, "an old flag is said, not silently dropped");
     assert.match(readFileSync(identity, "utf8"), /^AGE-SECRET-KEY-1/);
     assert.equal(statSync(identity).mode & 0o777, 0o600);
     const server = loadServer(folder);

@@ -106,8 +106,8 @@ const nets = (c: ReturnType<typeof composeServer>, svc: string): string[] => { c
 
 test("an agent's Guards are on the gate network with Caddy and nothing else; the agent has no runtime, door or model Guard, and the shops' networks are as they were", () => {
   const server = serverConfig();
-  const plain = composeServer(server, dirs, [shopDeploy("glow-salon", 1)], { backup: false });
-  const withAgent = composeServer(server, dirs, [shopDeploy("glow-salon", 1)], { backup: false, agents: [agentDeploy("my-agent", 2)] });
+  const plain = composeServer(server, dirs, [shopDeploy("glow-salon", 1)], {});
+  const withAgent = composeServer(server, dirs, [shopDeploy("glow-salon", 1)], { agents: [agentDeploy("my-agent", 2)] });
   const members = (c: typeof withAgent, net: string) => Object.keys(c.services).filter((s) => nets(c, s).includes(net)).sort();
   assert.deepEqual(members(withAgent, "gate"), ["caddy", "fwd-my-agent-calendar", "fwd-my-agent-razorpay", "fwd-my-agent-whatsapp"]);
   assert.match(withAgent.compose, /\n  gate:\n    internal: true/, "the gate has no way out");
@@ -135,7 +135,7 @@ test("an agent's Guards are on the gate network with Caddy and nothing else; the
 });
 
 test("an agent that calls only some services gets only those Guards and routes", () => {
-  const c = composeServer(serverConfig(), dirs, [], { backup: false, agents: [agentDeploy("calendar-only", 1, ["calendar"])] });
+  const c = composeServer(serverConfig(), dirs, [], { agents: [agentDeploy("calendar-only", 1, ["calendar"])] });
   assert.deepEqual(Object.keys(c.services).filter((s) => s.includes("calendar-only")).sort(), ["fwd-calendar-only-calendar", "g-calendar-only-calendar"]);
   assert.equal([...c.caddyfile.matchAll(/handle_path/gu)].length, 1);
   assert.match(String((c.services["g-calendar-only-calendar"].block.volumes as unknown[]).map((v) => JSON.stringify(v)).join()), /"subpath":"calendar-only"/, "its calendar Guard reads only its own token folder");

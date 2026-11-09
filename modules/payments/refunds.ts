@@ -415,8 +415,18 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     return stop("unconfirmed", "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again", "unconfirmed");
   }
 
-  /** Guard's approval ran out before the owner answered (or before the approved call could be used). Nothing was refunded; the customer is told. */
+  /**
+   * Guard's approval ran out before the owner answered (or before the approved call could be used). Nothing was refunded; the customer is told. But look first: a hold
+   * put back from a snapshot (a restore) may have been approved and sent after that snapshot, and then the payments service's own list shows the refund.
+   */
   async function expireGuardHold(b: C, hold: GuardHold, why = "the owner did not answer before Guard's approval ran out"): Promise<void> {
+    const made = await findRefund(hold.paymentId, hold.receipt).catch(() => undefined);
+    if (made) {
+      dropHold(b, hold);
+      log(b, b.customer, "refund", "confirmed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval, refundId: made.id }, notes: "the hold's time ran out here, but the payments service's own list shows the refund: it was made. It is not sent again" });
+      await tellCustomer(b, b.customer, [deps.ids.approved], { refundInr: hold.amountInr });
+      return;
+    }
     dropHold(b, hold);
     const note = `${why}. Nothing was refunded. A new request for payment ${hold.paymentId} has to be made by the builder.`;
     log(b, b.customer, "refund", "failed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: note });

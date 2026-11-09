@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { createWorld } from "../src/harness.ts";
 import { createStore } from "../src/due.ts";
-import { parseStore, serializeStore } from "../server/snapshot.ts";
+import { parseStore, serializeStore, skipStoreCounters } from "../server/snapshot.ts";
 import { PARENT, createKit } from "./runtime-kit.ts";
 
 const at = (day: number, hour: number, minute = 0, month = 11) => zonedToMs({ year: 2026, month, day }, { hour, minute }, "Asia/Kolkata");
@@ -88,6 +88,10 @@ test("every field of the store is saved: a store the agent has been using is wri
   const back = parseStore(serializeStore(w.store));
   assert.equal(back.startedAtMs, w.store.startedAtMs);
   assert.equal(back.nextRequest, w.store.nextRequest);
+  // after a restore from a snapshot both id counters move on (a fee's id is its payment link's reference), and nothing else changes
+  const moved = parseStore(skipStoreCounters(serializeStore(w.store), 100_000));
+  assert.deepEqual([moved.nextDue, moved.nextRequest, moved.startedAtMs], [w.store.nextDue + 100_000, w.store.nextRequest + 100_000, w.store.startedAtMs]);
+  assert.deepEqual([...moved.dues.keys()], [...w.store.dues.keys()]);
   assert.deepEqual([...back.dues.keys()], [...w.store.dues.keys()], "the fees come back in the same order");
   // a snapshot from before the AI counts or the day of the first run existed still loads
   const bare = JSON.parse(serializeStore(createStore())) as Record<string, unknown>;
