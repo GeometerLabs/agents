@@ -231,7 +231,7 @@ async function main(args: string[]): Promise<void> {
   console.log(`  Secrets and data: ${stack.dir} (removed when you stop)`);
   console.log("Try it, in another terminal:");
   console.log(`  curl -s -X POST ${standins}/_standin/whatsapp/inbound -d '{"from":"+919811111111","text":"haircut ${tomorrowOpen ? "tomorrow" : "the day after tomorrow"} at 6pm"}'   # a customer writes`);
-  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # they pay the deposit link (the first link is plink_1; later ones are in the state)`);
+  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"req_1"}'   # they pay the deposit link (the first link is req_1; later ones are in the state)`);
   console.log(`  curl -s ${standins}/_standin/state   # what the stand-ins hold: the outbox, the links, the calendar`);
   console.log(`To see an approval, start with --refund-limit ${Math.max(0, settings.deposit.amountInr - 1)} (below the ₹${settings.deposit.amountInr} deposit), book, pay, and cancel ("please cancel my booking").`);
   console.log(`  The refund is held; within a couple of seconds the owner (${settings.owner.whatsapp}) is asked, with a code, in the state's outbox. Then:`);

@@ -49,7 +49,8 @@ export function verifyMetaSignature(rawBody: Buffer, header: string | undefined,
  * Read a Razorpay webhook into a PaymentEvent, or null for any event the agent does not use (payment_link.expired, payment.failed ...).
  * `eventId` is the x-razorpay-event-id header. Without it the id is a digest of the body, which a retry repeats exactly.
  *
- * A real `payment.captured` names the payment and its order, NOT its payment link, so `payment.link_id` is left out for it;
+ * Razorpay's event names become the neutral ones (payments.ts): payment_link.paid is request.paid, payment.captured is payment.received, refund.processed is refund.done.
+ * A real `payment.captured` names the payment and its order, NOT its payment link, so `payment.request_id` is left out for it;
  * the agent asks the payments service which link the payment paid.
  */
 export function parseRazorpayEvent(body: unknown, eventId?: string): PaymentEvent | null {
@@ -65,17 +66,17 @@ export function parseRazorpayEvent(body: unknown, eventId?: string): PaymentEven
     const linkId = str(link?.id);
     if (!linkId) return null;
     const paymentId = str(payment?.id);
-    return { id, event, created_at, payload: { payment_link: { id: linkId, reference_id: str(link?.reference_id) ?? "" }, ...(paymentId ? { payment: { id: paymentId, link_id: linkId } } : {}) } };
+    return { id, event: "request.paid", created_at, payload: { request: { id: linkId, reference_id: str(link?.reference_id) ?? "" }, ...(paymentId ? { payment: { id: paymentId, request_id: linkId } } : {}) } };
   }
   if (event === "payment.captured") {
     const paymentId = str(entityOf("payment")?.id);
-    return paymentId ? { id, event, created_at, payload: { payment: { id: paymentId } } } : null;
+    return paymentId ? { id, event: "payment.received", created_at, payload: { payment: { id: paymentId } } } : null;
   }
   if (event === "refund.processed") {
     const refund = entityOf("refund");
     const refundId = str(refund?.id);
     const paymentId = str(refund?.payment_id);
-    return refundId && paymentId ? { id, event, created_at, payload: { refund: { id: refundId, payment_id: paymentId } } } : null;
+    return refundId && paymentId ? { id, event: "refund.done", created_at, payload: { refund: { id: refundId, payment_id: paymentId } } } : null;
   }
   return null;
 }

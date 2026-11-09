@@ -21,7 +21,7 @@ function exportBookings(b: Boot, shop: string, bookings: unknown[], entries: unk
   writeFileSync(join(dir, "record.json"), JSON.stringify(entries));
   writeFileSync(join(dir, "bookings.json"), JSON.stringify(bookings));
 }
-const stuckBooking = (id: string) => ({ id, customer: "p-aaaaaaaaaaaa", language: "en", state: "needs_owner", depositPaymentId: "pay_1", depositInr: 200, handledPayments: ["pay_1"], reminders: [], pending: [{ kind: "calendar" }], dateNeedsConfirmation: false, timeInferred: false });
+const stuckBooking = (id: string) => ({ id, customer: "p-aaaaaaaaaaaa", language: "en", state: "needs_owner", depositPaymentId: "pmt_1", depositInr: 200, handledPayments: ["pmt_1"], reminders: [], pending: [{ kind: "calendar" }], dateNeedsConfirmation: false, timeInferred: false });
 
 test("the list holds the shops a person can see: a partner sees only their own, a builder sees every shop", async () => {
   const b = await boot();
@@ -79,7 +79,7 @@ test("a kind with no words (a module added one) is still listed, under the fallb
 });
 
 test("the wait before an answer is 'too long' is the panel's setting (PANEL_APPROVAL_WAIT_HOURS), 12 hours by default", async () => {
-  const held = { ...stuckBooking("b-2"), state: "cancelled", depositPaymentId: "pay_2", pending: [{ kind: "guard_hold", amountInr: 900, paymentId: "pay_2", receipt: "b-2:pay_2", approval: "ap-1", body: "{}", expiresAtMs: null, heldAtMs: NOW - 5 * HOUR }] };
+  const held = { ...stuckBooking("b-2"), state: "cancelled", depositPaymentId: "pmt_2", pending: [{ kind: "guard_hold", amountInr: 900, paymentId: "pmt_2", receipt: "b-2:pmt_2", approval: "ap-1", body: "{}", expiresAtMs: null, heldAtMs: NOW - 5 * HOUR }] };
   for (const [hours, expect] of [[undefined, "refund_waiting"], [4, "approval_waiting_long"]] as const) {
     const b = await boot(hours === undefined ? {} : { approvalWaitHours: hours });
     try {

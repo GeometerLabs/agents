@@ -65,8 +65,8 @@ test("a waiver: within the limit in all, or the owner's call for that amount; ne
 test("a reminder cap, and one refund per payment", () => {
   assert.equal(checkReminderCap({ sent: 3, maxPerMonth: 4 }).verdict, "allow");
   assert.equal(checkReminderCap({ sent: 4, maxPerMonth: 4 }).verdict, "block");
-  assert.equal(checkOneRefundPerPayment({ paymentId: "pay_1", refundedPaise: 0 }).verdict, "allow");
-  assert.equal(checkOneRefundPerPayment({ paymentId: "pay_1", refundedPaise: 100 }).verdict, "block", "a part refund is the payment's refund");
+  assert.equal(checkOneRefundPerPayment({ paymentId: "pmt_1", refundedPaise: 0 }).verdict, "allow");
+  assert.equal(checkOneRefundPerPayment({ paymentId: "pmt_1", refundedPaise: 100 }).verdict, "block", "a part refund is the payment's refund");
 });
 
 test("the Guard spec: links in a range, refunds bounded by the dearest fee, held above the owner's limit, once per payment, no payouts, daily caps", () => {
@@ -103,7 +103,7 @@ test("the in-process Guard model uses the same spec: a link outside the range, o
   assert.equal(model.decideLink(190_001).kind, "refused");
   assert.equal(model.decideLink(99).kind, "refused");
   assert.equal(model.decideLink("1500").kind, "refused", "an amount that is not a number is never a pass");
-  const refused = model.decideRefund("pay_1", { amount: 200_000 });
+  const refused = model.decideRefund("pmt_1", { amount: 200_000 });
   assert.equal(refused.kind === "refused" && refused.ruleId, "refund-at-most-fee-paid");
 });
 

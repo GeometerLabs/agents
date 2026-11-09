@@ -38,7 +38,7 @@ import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
-import type { Payment, PaymentEvent, PaymentLink, Payments } from "../../../../modules/payments/payments.ts";
+import type { Payment, PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds } from "../../../../modules/payments/refunds.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { takeDue } from "../../../../modules/reminders/reminders.ts";
@@ -292,7 +292,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (const l of due.links) {
       const request = requestById(l.id);
       if (!request || (request.status !== "created" && request.status !== "partially_paid")) continue;
-      await payments.cancelPaymentLink(l.id);
+      await payments.cancelRequest(l.id);
       log(due, due.customer, UPI_ACTIONS.closed, "confirmed", { requestId: l.id }, { refs: { requestId: l.id }, notes: "the fee is settled, so nothing more is asked on this request" });
     }
   }
@@ -331,8 +331,8 @@ export function createAgent(deps: AgentDeps): Agent {
     const fresh: CountedPayment[] = [];
     let ok = true;
     for (const link of due.links) {
-      let found: PaymentLink | null;
-      try { found = await payments.fetchPaymentLink(link.id); } catch (e) {
+      let found: PaymentRequest | null;
+      try { found = await payments.fetchRequest(link.id); } catch (e) {
         if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
         ok = false;
         log(due, due.customer, "record_payment", "failed", { linkId: link.id }, { notes: `the payments service could not be read just now (${(e as Error).message})`, refs: { linkId: link.id } });
@@ -442,7 +442,7 @@ export function createAgent(deps: AgentDeps): Agent {
       const linkId = due.state === "open" ? due.currentLinkId : undefined;
       if (!linkId) continue;
       if (record.entries().some((e) => e.booking === due.id && e.action === "cancel_fee_link" && e.refs.licence === key)) continue;
-      const closed = await payments.cancelPaymentLink(linkId).then(() => payments.fetchPaymentLink(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
+      const closed = await payments.cancelRequest(linkId).then(() => payments.fetchRequest(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
       log(due, due.customer, "cancel_fee_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the centre's licence: the open fee link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the centre's licence: the link could not be closed (it may have a payment on it, or Razorpay did not answer); the owner can close it in Razorpay" });
     }
   }
@@ -474,12 +474,12 @@ export function createAgent(deps: AgentDeps): Agent {
       return { ok: false, why: error ?? "the payments service does not show the link" };
     }
     due.linkSeq = sequence;
-    due.links.push({ id: link.id, url: link.short_url, reference, amountPaise: link.amount });
+    due.links.push({ id: link.id, url: link.pay_url, reference, amountPaise: link.amount });
     due.currentLinkId = link.id;
     log(due, due.customer, "create_fee_link", "confirmed", { amountPaise: balance, reference }, { refs: { linkId: link.id, reference, amountPaise: String(balance) } });
     if (upi) await upiRequestMade(due, link.id, paidPaise(due) > 0);
     if (old) {
-      const closed = await payments.cancelPaymentLink(old.id).then(() => payments.fetchPaymentLink(old.id)).then((l) => l?.status === "cancelled").catch(() => false);
+      const closed = await payments.cancelRequest(old.id).then(() => payments.fetchRequest(old.id)).then((l) => l?.status === "cancelled").catch(() => false);
       log(due, due.customer, "cancel_fee_link", closed ? "confirmed" : "unconfirmed", { linkId: old.id }, { refs: { linkId: old.id }, notes: closed ? "the amount owed changed, so the old link was closed" : "the old link could not be closed (it has a part payment on it, or the payments service did not answer): it stays open, and anything it collects beyond what is owed is given back" });
       if (upi && closed) log(due, due.customer, UPI_ACTIONS.closed, "confirmed", { requestId: old.id }, { refs: { requestId: old.id }, notes: "the amount owed changed, so a new request was made; a mark the owner makes on this one later still counts toward the fee" });
     }
@@ -869,7 +869,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const dues = [...store.dues.values()];
-    if (event.event === "refund.processed") {
+    if (event.event === "refund.done") {
       const paymentId = event.payload.refund!.payment_id;
       const due = dues.find((x) => x.payments.some((p) => p.id === paymentId));
       const refundId = event.payload.refund!.id;
@@ -878,10 +878,10 @@ export function createAgent(deps: AgentDeps): Agent {
       store.seenEvents.add(event.id);
       return;
     }
-    // A real payment.captured names the payment, not its link: ask the payments service which link it paid.
+    // A payment.received may name the payment and not its request: ask the payments service which request it paid.
     const paymentId = event.payload.payment?.id;
-    const linkId = event.payload.payment_link?.id ?? event.payload.payment?.link_id
-      ?? (paymentId ? (await payments.listPaymentLinks({ payment_id: paymentId }))[0]?.id : undefined);
+    const linkId = event.payload.request?.id ?? event.payload.payment?.request_id
+      ?? (paymentId ? (await payments.listRequests({ payment_id: paymentId }))[0]?.id : undefined);
     const due = linkId ? dues.find((x) => x.links.some((l) => l.id === linkId)) : undefined;
     if (!due) {
       log(null, owner, "receive_payment_event", "blocked", { id: event.id, event: event.event }, { notes: "no fee has this payment link, so the event is ignored" });

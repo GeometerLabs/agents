@@ -95,69 +95,69 @@ test("calendar update silentFailure leaves the event as it was; faults are used 
 
 test("payments over HTTP: a link with a reference id; a second link with the same reference is refused, and the first is found by reference or by payment", async () => {
   await withWorld(async ({ adapters: { payments }, fakes, control }) => {
-    const link = await payments.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" });
-    assert.match(link.short_url, /^https:\/\/rzp\.io\/l\//);
+    const link = await payments.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
+    assert.match(link.pay_url, /^https:\/\/rzp\.io\/l\//);
     assert.equal(link.amount, 20000);
     assert.equal(link.status, "created");
-    assert.equal((await payments.listPaymentLinks({ reference_id: "b1" })).length, 1);
-    assert.equal((await payments.listPaymentLinks({ reference_id: "b2" })).length, 0);
-    await assert.rejects(() => payments.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" }), (e: any) => e instanceof ApiError && e.status === 400 && /already attempted/.test(e.message));
-    const paid = await control("/_standin/razorpay/pay", { link_id: link.id, deliver: false });
-    assert.equal((await payments.listPaymentLinks({ payment_id: paid.payment.id }))[0]?.id, link.id);
-    assert.equal((await payments.listPaymentLinks({ payment_id: "pay_nope" })).length, 0);
+    assert.equal((await payments.listRequests({ reference_id: "b1" })).length, 1);
+    assert.equal((await payments.listRequests({ reference_id: "b2" })).length, 0);
+    await assert.rejects(() => payments.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" }), (e: any) => e instanceof ApiError && e.status === 400 && /already attempted/.test(e.message));
+    const paid = await control("/_standin/razorpay/pay", { request_id: link.id, deliver: false });
+    assert.equal((await payments.listRequests({ payment_id: paid.payment.id }))[0]?.id, link.id);
+    assert.equal((await payments.listRequests({ payment_id: "pay_nope" })).length, 0);
     assert.equal(fakes.payments.links().length, 1);
   });
   await withWorld(async ({ adapters: { payments }, fakes }) => {
-    await payments.createPaymentLink({ amount: 1, reference_id: "b1", description: "x" });
-    await payments.createPaymentLink({ amount: 1, reference_id: "b1", description: "x" });
+    await payments.createRequest({ amount: 1, reference_id: "b1", description: "x" });
+    await payments.createRequest({ amount: 1, reference_id: "b1", description: "x" });
     assert.equal(fakes.payments.links().length, 2);
   }, { payments: { enforceUniqueReference: false } });
 });
 
 test("payments lostReply on create: the link exists although the client saw a timeout", async () => {
   await withWorld(async ({ adapters: { payments }, fakes, control }) => {
-    await control("/_standin/fault", { service: "payments", op: "createPaymentLink", mode: "lostReply" });
-    await assert.rejects(() => payments.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" }), TimeoutError);
+    await control("/_standin/fault", { service: "payments", op: "createRequest", mode: "lostReply" });
+    await assert.rejects(() => payments.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" }), TimeoutError);
     assert.equal(fakes.payments.links().length, 1);
-    assert.equal((await payments.listPaymentLinks({ reference_id: "b1" })).length, 1); // the look-before-retry finds it
+    assert.equal((await payments.listRequests({ reference_id: "b1" })).length, 1); // the look-before-retry finds it
   }, { timeoutMs: 300 });
 });
 
 test("payments: one link paid twice shows two payments on a fetch (not on a list); the events carry no link id; refunds are bounded and show on the payment and on the link", async () => {
   await withWorld(async ({ adapters: { payments }, fakes, control }) => {
-    const link = await payments.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" });
-    const p1 = (await control("/_standin/razorpay/pay", { link_id: link.id, deliver: false })).payment;
-    const p2 = (await control("/_standin/razorpay/pay", { link_id: link.id, deliver: false })).payment;
-    const fetched = await payments.fetchPaymentLink(link.id);
+    const link = await payments.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
+    const p1 = (await control("/_standin/razorpay/pay", { request_id: link.id, deliver: false })).payment;
+    const p2 = (await control("/_standin/razorpay/pay", { request_id: link.id, deliver: false })).payment;
+    const fetched = await payments.fetchRequest(link.id);
     assert.equal(fetched?.status, "paid");
-    assert.deepEqual(fetched?.payments.map((p) => [p.id, p.link_id, p.amount]), [[p1.id, link.id, 20000], [p2.id, link.id, 20000]]);
+    assert.deepEqual(fetched?.payments.map((p) => [p.id, p.request_id, p.amount]), [[p1.id, link.id, 20000], [p2.id, link.id, 20000]]);
     assert.equal(fetched?.amount_paid, 40000);
-    assert.deepEqual((await payments.listPaymentLinks({ reference_id: "b1" }))[0].payments, []); // as the docs' own list example shows
-    assert.deepEqual(fakes.payments.events.map((e) => e.event), ["payment.captured", "payment_link.paid", "payment.captured"]);
+    assert.deepEqual((await payments.listRequests({ reference_id: "b1" }))[0].payments, []); // as the docs' own list example shows
+    assert.deepEqual(fakes.payments.events.map((e) => e.event), ["payment.received", "request.paid", "payment.received"]);
     await payments.refund(p2.id, { amount: 15000, receipt: "r1" });
     await assert.rejects(() => payments.refund(p2.id, { amount: 6000 }), (e: any) => e instanceof ApiError && /more than what is left/.test(e.message));
     await payments.refund(p2.id, { amount: 5000, receipt: "r2" });
     assert.equal((await payments.fetchPayment(p2.id))?.amount_refunded, 20000);
     assert.deepEqual((await payments.listRefunds(p2.id)).map((r) => [r.amount, r.receipt, r.status]), [[15000, "r1", "processed"], [5000, "r2", "processed"]]);
-    assert.equal((await payments.fetchPaymentLink(link.id))?.payments.find((p) => p.id === p2.id)?.amount_refunded, 20000);
-    assert.equal(fakes.payments.events.filter((e) => e.event === "refund.processed").length, 2);
+    assert.equal((await payments.fetchRequest(link.id))?.payments.find((p) => p.id === p2.id)?.amount_refunded, 20000);
+    assert.equal(fakes.payments.events.filter((e) => e.event === "refund.done").length, 2);
   });
 });
 
 test("payments: a missing link or payment is null (Razorpay answers 400), a paid link cannot be cancelled, a cancelled link cannot be paid, and an expired key refuses with 401 until it works again", async () => {
   await withWorld(async ({ adapters: { payments }, control }) => {
-    assert.equal(await payments.fetchPaymentLink("plink_nope"), null);
+    assert.equal(await payments.fetchRequest("plink_nope"), null);
     assert.equal(await payments.fetchPayment("pay_nope"), null);
-    await assert.rejects(() => payments.cancelPaymentLink("plink_nope"), (e: any) => e.status === 404);
-    const a = await payments.createPaymentLink({ amount: 20000, reference_id: "a", description: "x" });
-    const b = await payments.createPaymentLink({ amount: 20000, reference_id: "b", description: "x" });
-    await control("/_standin/razorpay/pay", { link_id: a.id, deliver: false });
-    await assert.rejects(() => payments.cancelPaymentLink(a.id), (e: any) => e instanceof ApiError && e.status === 400 && /already paid/.test(e.message));
-    assert.equal((await payments.cancelPaymentLink(b.id)).status, "cancelled");
-    assert.match((await control("/_standin/razorpay/pay", { link_id: b.id })).error, /cancelled/);
-    await control("/_standin/fault", { service: "payments", op: "createPaymentLink", mode: "error", times: 2 });
-    for (let i = 0; i < 2; i++) await assert.rejects(() => payments.createPaymentLink({ amount: 1, reference_id: "c", description: "x" }), (e: any) => e instanceof ApiError && e.status === 401);
-    await payments.createPaymentLink({ amount: 1, reference_id: "c", description: "x" }); // the key works again
+    await assert.rejects(() => payments.cancelRequest("plink_nope"), (e: any) => e.status === 404);
+    const a = await payments.createRequest({ amount: 20000, reference_id: "a", description: "x" });
+    const b = await payments.createRequest({ amount: 20000, reference_id: "b", description: "x" });
+    await control("/_standin/razorpay/pay", { request_id: a.id, deliver: false });
+    await assert.rejects(() => payments.cancelRequest(a.id), (e: any) => e instanceof ApiError && e.status === 400 && /already paid/.test(e.message));
+    assert.equal((await payments.cancelRequest(b.id)).status, "cancelled");
+    assert.match((await control("/_standin/razorpay/pay", { request_id: b.id })).error, /cancelled/);
+    await control("/_standin/fault", { service: "payments", op: "createRequest", mode: "error", times: 2 });
+    for (let i = 0; i < 2; i++) await assert.rejects(() => payments.createRequest({ amount: 1, reference_id: "c", description: "x" }), (e: any) => e instanceof ApiError && e.status === 401);
+    await payments.createRequest({ amount: 1, reference_id: "c", description: "x" }); // the key works again
   });
 });
 
@@ -210,7 +210,7 @@ test("messaging lostReply: the message went out although the client saw a timeou
 
 test("a live adapter never sends an Authorization header, whatever it calls", async () => {
   await withWorld(async (w) => {
-    await w.adapters.payments.listPaymentLinks();
+    await w.adapters.payments.listRequests();
     await w.adapters.calendar.list();
     w.listen(PHONE, "hi");
     await w.adapters.messaging.sendText(PHONE, "hello");
@@ -228,8 +228,8 @@ test("a normal booking over HTTP: held, link sent, paid, confirmed in the calend
     assert.equal(w.fakes.calendar.events().length, 1);
     assert.equal(w.fakes.calendar.events()[0].status, "tentative");
     const link = w.linkFor("b-1")!;
-    assert.match(w.textsTo(CUSTOMER).at(-1)!, new RegExp(link.short_url.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")));
-    await w.control("/_standin/razorpay/pay", { link_id: link.id, deliver: false });
+    assert.match(w.textsTo(CUSTOMER).at(-1)!, new RegExp(link.pay_url.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")));
+    await w.control("/_standin/razorpay/pay", { request_id: link.id, deliver: false });
     await w.deliverPaymentEvents();
     assert.equal(w.confirmedEvents().length, 1);
     assert.equal(w.linkFor("b-1")!.payments.length, 1);
@@ -242,10 +242,10 @@ test("a normal booking over HTTP: held, link sent, paid, confirmed in the calend
 
 test("lost reply on the payment link: exactly one link exists and the agent asked to create it once (it looked before it retried)", async () => {
   await withWorld(async (w) => {
-    await w.control("/_standin/fault", { service: "payments", op: "createPaymentLink", mode: "lostReply" });
+    await w.control("/_standin/fault", { service: "payments", op: "createRequest", mode: "lostReply" });
     await w.say(BOOK);
     assert.equal(w.fakes.payments.links().length, 1);
-    assert.equal(w.fakes.payments.calls.filter((c) => c.op === "createPaymentLink").length, 1);
+    assert.equal(w.fakes.payments.calls.filter((c) => c.op === "createRequest").length, 1);
     assert.match(w.textsTo(CUSTOMER).at(-1)!, /rzp\.io/);
   }, { timeoutMs: 300 });
 });
@@ -256,7 +256,7 @@ test("the calendar saves nothing: the agent does not say booked, and tells the o
     await w.say(BOOK);
     const link = w.linkFor("b-1")!;
     await w.control("/_standin/fault", { service: "calendar", op: "update", mode: "silentFailure", times: 3 });
-    await w.control("/_standin/razorpay/pay", { link_id: link.id, deliver: false });
+    await w.control("/_standin/razorpay/pay", { request_id: link.id, deliver: false });
     await w.deliverPaymentEvents();
     assert.equal(w.confirmedEvents().length, 0);
     assert.ok(!w.textsTo(CUSTOMER).some((t) => /Booked!/.test(t)), w.textsTo(CUSTOMER).join(" | "));
@@ -268,8 +268,8 @@ test("a deposit paid twice: the second payment is refunded once, even though a r
   await withWorld(async (w) => {
     await w.say(BOOK);
     const id = w.linkFor("b-1")!.id;
-    const first = (await w.control("/_standin/razorpay/pay", { link_id: id, deliver: false })).payment;
-    const second = (await w.control("/_standin/razorpay/pay", { link_id: id, deliver: false })).payment;
+    const first = (await w.control("/_standin/razorpay/pay", { request_id: id, deliver: false })).payment;
+    const second = (await w.control("/_standin/razorpay/pay", { request_id: id, deliver: false })).payment;
     await w.deliverPaymentEvents();
     const refunds = w.fakes.payments.refunds();
     assert.equal(w.linkFor("b-1")!.payments.length, 2);
@@ -284,7 +284,7 @@ test("a deposit paid twice: the second payment is refunded once, even though a r
 test("an expired Razorpay key: no link is made, nothing is held, and the customer and owner are told", async () => {
   await withWorld(async (w) => {
     w.listen(w.owner);
-    await w.control("/_standin/fault", { service: "payments", op: "createPaymentLink", mode: "error", times: 10 });
+    await w.control("/_standin/fault", { service: "payments", op: "createRequest", mode: "error", times: 10 });
     await w.say(BOOK);
     assert.equal(w.fakes.payments.links().length, 0);
     assert.equal(w.fakes.calendar.events().length, 0, "the hold was given back");
@@ -297,8 +297,8 @@ test("a refund whose reply is lost is looked up by its receipt, not made twice",
   await withWorld(async (w) => {
     await w.say(BOOK);
     const id = w.linkFor("b-1")!.id;
-    await w.control("/_standin/razorpay/pay", { link_id: id, deliver: false });
-    await w.control("/_standin/razorpay/pay", { link_id: id, deliver: false });
+    await w.control("/_standin/razorpay/pay", { request_id: id, deliver: false });
+    await w.control("/_standin/razorpay/pay", { request_id: id, deliver: false });
     await w.control("/_standin/fault", { service: "payments", op: "refund", mode: "lostReply" });
     await w.deliverPaymentEvents();
     assert.equal(w.fakes.payments.refunds().length, 1);
@@ -309,7 +309,7 @@ test("a refund whose reply is lost is looked up by its receipt, not made twice",
 test("a reminder sent after the 24-hour window goes as the real template, over HTTP, with the approved wording as the outbox text", async () => {
   await withWorld(async (w) => {
     await w.say(BOOK);
-    await w.control("/_standin/razorpay/pay", { link_id: w.linkFor("b-1")!.id, deliver: false });
+    await w.control("/_standin/razorpay/pay", { request_id: w.linkFor("b-1")!.id, deliver: false });
     await w.deliverPaymentEvents();
     await w.advance(24 * 60 + 5);
     const last = w.fakes.messaging.sentTo(CUSTOMER).at(-1)!;
@@ -321,7 +321,7 @@ test("a reminder sent after the 24-hour window goes as the real template, over H
 
 test("an owner who has not written in 24 hours is told by the real template, over HTTP: the notice is accepted, read back as sent, and holds the approved wording", async () => {
   await withWorld(async (w) => {
-    await w.control("/_standin/fault", { service: "payments", op: "createPaymentLink", mode: "error", times: 10 });
+    await w.control("/_standin/fault", { service: "payments", op: "createRequest", mode: "error", times: 10 });
     await w.say(BOOK); // the owner has not written to the number, so a plain message cannot reach them
     const told = w.fakes.messaging.sentTo(w.owner);
     assert.equal(told.length, 1);

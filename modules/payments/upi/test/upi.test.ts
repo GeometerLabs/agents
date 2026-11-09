@@ -46,17 +46,17 @@ test("the request is a payment link to the template: made once (look first), its
   const again = await ensureLink(payments, { reference: "b-1", amountPaise: 20_000, description: "deposit" });
   assert.equal(made.link!.id, again.link!.id);
   assert.equal(state.requests.length, 1);
-  assert.equal(made.link!.short_url, "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-1&cu=INR");
-  assert.ok(state.requests[0].code && !made.link!.short_url.includes(state.requests[0].code));
+  assert.equal(made.link!.pay_url, "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-1&cu=INR");
+  assert.ok(state.requests[0].code && !made.link!.pay_url.includes(state.requests[0].code));
   await assert.rejects(payments.refund("upi-pay-1", { amount: 100 }), /never sends a refund/);
-  await assert.rejects(noRazorpay.createPaymentLink({ amount: 1, reference_id: "x", description: "" }), /no Razorpay account/);
+  await assert.rejects(noRazorpay.createRequest({ amount: 1, reference_id: "x", description: "" }), /no Razorpay account/);
 });
 
 test("marks: the button's amount is what is still asked; another amount leaves the rest with a new code; the same code twice counts once", async () => {
   const state = emptyUpiState();
   const clock = fakeClock(0);
   const payments = upiPayments(state, payee, clock);
-  const link = (await payments.createPaymentLink({ amount: 20_000, reference_id: "b-1", description: "" }));
+  const link = (await payments.createRequest({ amount: 20_000, reference_id: "b-1", description: "" }));
   const first = state.requests[0].code!;
   const part = markReceived(state, first, 15_000, 1);
   assert.equal(part.kind, "marked");
@@ -64,11 +64,11 @@ test("marks: the button's amount is what is still asked; another amount leaves t
   const second = state.requests[0].code!;
   assert.notEqual(second, first, "the rest has its own code");
   assert.equal(markReceived(state, first, undefined, 2).kind, "already", "the first code again counts nothing");
-  assert.equal((await payments.fetchPaymentLink(link.id))!.status, "partially_paid");
+  assert.equal((await payments.fetchRequest(link.id))!.status, "partially_paid");
   const rest = markReceived(state, second, undefined, 3);
   assert.ok(rest.kind === "marked" && rest.full && rest.mark.amountPaise === 5_000, "the button for the rest is for the rest");
   assert.equal(markReceived(state, second, undefined, 4).kind, "already");
-  const after = (await payments.fetchPaymentLink(link.id))!;
+  const after = (await payments.fetchRequest(link.id))!;
   assert.equal(after.status, "paid");
   assert.equal(after.amount_paid, 20_000);
   assert.deepEqual(after.payments.map((p) => p.amount), [15_000, 5_000]);
@@ -78,12 +78,12 @@ test("marks: the button's amount is what is still asked; another amount leaves t
 test("a request closed by the agent keeps its code: a later mark is recorded, as after the close", async () => {
   const state = emptyUpiState();
   const payments = upiPayments(state, payee, fakeClock(0));
-  const link = await payments.createPaymentLink({ amount: 20_000, reference_id: "b-1", description: "" });
+  const link = await payments.createRequest({ amount: 20_000, reference_id: "b-1", description: "" });
   const code = state.requests[0].code!;
-  await payments.cancelPaymentLink(link.id);
+  await payments.cancelRequest(link.id);
   const late = markReceived(state, code, undefined, 10);
   assert.ok(late.kind === "marked" && late.afterClose && late.mark.afterClose);
-  assert.equal((await payments.fetchPaymentLink(link.id))!.status, "cancelled", "the request stays closed");
+  assert.equal((await payments.fetchRequest(link.id))!.status, "cancelled", "the request stays closed");
   assert.equal(state.requests[0].code, null);
   closeRequest(state.requests[0], 11);
 });
@@ -91,7 +91,7 @@ test("a request closed by the agent keeps its code: a later mark is recorded, as
 test("a refund owed: never sent by the agent, marked done once with its own code, reminded at most three times, and counted against the payment", async () => {
   const state = emptyUpiState();
   const payments = upiPayments(state, payee, fakeClock(0));
-  await payments.createPaymentLink({ amount: 20_000, reference_id: "b-1", description: "" });
+  await payments.createRequest({ amount: 20_000, reference_id: "b-1", description: "" });
   const marked = markReceived(state, state.requests[0].code!, undefined, 0);
   assert.equal(marked.kind, "marked");
   const paymentId = marked.kind === "marked" ? marked.mark.id : "";

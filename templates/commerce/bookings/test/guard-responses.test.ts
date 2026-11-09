@@ -116,7 +116,7 @@ test("a payment link Guard refuses for the licence is asked for ONCE: no second 
   try {
     const payments = createRazorpayPayments({ baseUrl: s.url });
     const listed: unknown[] = [];
-    const counting = { ...payments, listPaymentLinks: async (q: { reference_id?: string }) => { listed.push(q); return []; } };
+    const counting = { ...payments, listRequests: async (q: { reference_id?: string }) => { listed.push(q); return []; } };
     const r = await ensureLink(counting, { reference: "b-1", amountPaise: 20000, description: "deposit" });
     assert.equal(r.link, null);
     assert.ok(r.suspended instanceof GuardSuspendedError);
@@ -135,7 +135,7 @@ test("a decision this code does not know is still a GuardError: a 2xx with a gua
 test("a provider's own reply is not Guard's: a 5xx, a 4xx and a success pass through for the adapter to read", () => {
   const w = guardWire("provider_500");
   assert.equal(classify(w.status, headersOf(w), w.body, CALL), undefined);
-  assert.equal(classify(200, { get: () => null }, { id: "rfnd_1", entity: "refund" }, CALL), undefined);
+  assert.equal(classify(200, { get: () => null }, { id: "rfd_1", entity: "refund" }, CALL), undefined);
   assert.equal(classify(400, { get: () => null }, { error: { code: "BAD_REQUEST_ERROR", description: "x" } }, CALL), undefined);
 });
 
@@ -190,11 +190,11 @@ test("over HTTP, a replay is the service's first reply, marked replayed", async 
 
 test("a refund the service itself answered is not marked replayed", async () => {
   const server = await serve("provider_500");
-  const ok = await scripted(() => ({ status: 200, json: { id: "rfnd_2", entity: "refund", amount: 100, payment_id: "pay_1", status: "processed", created_at: 1 } }));
+  const ok = await scripted(() => ({ status: 200, json: { id: "rfd_2", entity: "refund", amount: 100, payment_id: "pmt_1", status: "processed", created_at: 1 } }));
   try {
-    const refund = await createRazorpayPayments({ baseUrl: ok.url }).refund("pay_1", { amount: 100 });
+    const refund = await createRazorpayPayments({ baseUrl: ok.url }).refund("pmt_1", { amount: 100 });
     assert.equal(refund.replayed, undefined);
-    await assert.rejects(() => createRazorpayPayments({ baseUrl: server.url }).refund("pay_1", { amount: 100 }), (e: any) => e instanceof ApiError && !(e instanceof GuardError) && e.status === 500, "a provider 5xx stays a plain ApiError: it may have happened, and the agent knows that of a refund");
+    await assert.rejects(() => createRazorpayPayments({ baseUrl: server.url }).refund("pmt_1", { amount: 100 }), (e: any) => e instanceof ApiError && !(e instanceof GuardError) && e.status === 500, "a provider 5xx stays a plain ApiError: it may have happened, and the agent knows that of a refund");
   } finally { await server.close(); await ok.close(); }
 });
 
@@ -207,14 +207,14 @@ test("every adapter raises Guard's decisions: Razorpay, Google Calendar and What
     const at = (server: { url: string }) => createLiveAdapters({ payments: { baseUrl: server.url }, calendar: { baseUrl: server.url, calendarId: "c" }, messaging: { baseUrl: server.url, phoneNumberId: "1" } }, { clock, window: { lastInboundAt: () => clock.now() } });
     // held (a 2xx): none of them may call it done
     const h = at(held);
-    await assert.rejects(() => h.payments.createPaymentLink({ amount: 20000, reference_id: "b-1", description: "x" }), GuardHeldError);
-    await assert.rejects(() => h.payments.listPaymentLinks({ reference_id: "b-1" }), GuardHeldError);
+    await assert.rejects(() => h.payments.createRequest({ amount: 20000, reference_id: "b-1", description: "x" }), GuardHeldError);
+    await assert.rejects(() => h.payments.listRequests({ reference_id: "b-1" }), GuardHeldError);
     await assert.rejects(() => h.calendar.insert({ summary: "s", start: clock.now(), end: clock.now() + 3600_000, status: "tentative", bookingRef: "b-1" }), GuardHeldError);
     await assert.rejects(() => h.calendar.list({ bookingRef: "b-1" }), GuardHeldError);
     await assert.rejects(() => h.messaging.sendText("+919800000001", "hi"), GuardHeldError);
     // refused
     const r = at(refused);
-    await assert.rejects(() => r.payments.fetchPayment("pay_1"), GuardRefusedError);
+    await assert.rejects(() => r.payments.fetchPayment("pmt_1"), GuardRefusedError);
     await assert.rejects(() => r.calendar.delete("evt_1"), GuardRefusedError);
     await assert.rejects(() => r.messaging.sendTemplate("+919800000001", { name: "booking_update", language: "en", text: "x" }), GuardRefusedError);
     // outcome unknown
@@ -227,7 +227,7 @@ test("every adapter raises Guard's decisions: Razorpay, Google Calendar and What
 test("a payment record that Guard will not show is raised, not quietly read as 'no refunds yet'", async () => {
   const { createServer } = await import("node:http");
   const refusedWire = guardWire("refused_rule");
-  const link = { id: "plink_1", reference_id: "b-1", amount: 20000, currency: "INR", description: "d", status: "paid", short_url: "https://rzp.io/l/x", amount_paid: 20000, created_at: 1, payments: [{ payment_id: "pay_1", amount: 20000, status: "captured", created_at: 1 }] };
+  const link = { id: "req_1", reference_id: "b-1", amount: 20000, currency: "INR", description: "d", status: "paid", pay_url: "https://rzp.io/l/x", amount_paid: 20000, created_at: 1, payments: [{ payment_id: "pmt_1", amount: 20000, status: "captured", created_at: 1 }] };
   const server = createServer((req, res) => {
     if ((req.url ?? "").startsWith("/v1/payments/")) { res.writeHead(refusedWire.status, refusedWire.headers); res.end(JSON.stringify(refusedWire.body)); return; }
     res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(link));
@@ -235,7 +235,7 @@ test("a payment record that Guard will not show is raised, not quietly read as '
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   try {
     const payments = createRazorpayPayments({ baseUrl: `http://127.0.0.1:${(server.address() as { port: number }).port}` });
-    await assert.rejects(() => payments.fetchPaymentLink("plink_1"), GuardRefusedError);
+    await assert.rejects(() => payments.fetchRequest("req_1"), GuardRefusedError);
   } finally { server.closeAllConnections(); server.close(); }
 });
 
@@ -253,8 +253,8 @@ test("no Guard answer at all: refused is 'nothing was sent', a timeout is 'it ma
 test("the agent credential is sent to Guard only when one is given, and it is never a service key", async () => {
   const server = await scripted(() => ({ json: { payment_links: [] } }));
   try {
-    await createRazorpayPayments({ baseUrl: server.url }).listPaymentLinks();
-    await createRazorpayPayments({ baseUrl: server.url, agentToken: "gg_agent_token" }).listPaymentLinks();
+    await createRazorpayPayments({ baseUrl: server.url }).listRequests();
+    await createRazorpayPayments({ baseUrl: server.url, agentToken: "gg_agent_token" }).listRequests();
     assert.equal(server.requests[0].headers.authorization, undefined);
     assert.equal(server.requests[1].headers.authorization, "Bearer gg_agent_token");
   } finally { await server.close(); }

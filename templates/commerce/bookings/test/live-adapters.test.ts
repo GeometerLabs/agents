@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { ApiError, ConflictError, TimeoutError, WindowClosedError } from "../../../../modules/core/faults.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
-import { createRazorpayPayments, toPayment, toPaymentLink, toRefund } from "../../../../modules/payments/razorpay.ts";
+import { createRazorpayPayments, toPayment, toPaymentRequest, toRefund } from "../../../../modules/payments/razorpay.ts";
 import { toEvent, toRfc3339 } from "../src/adapters/live/google-calendar.ts";
 import { GRAPH_VERSION, templateBody } from "../../../../modules/messaging/whatsapp.ts";
 import { checkBaseUrl, joinUrl } from "../../../../modules/core/http.ts";
@@ -25,11 +25,11 @@ test("the base URL keeps its path prefix, and a key in it is refused", () => {
 test("an adapter never sends an Authorization header, and a call that cannot connect is an ApiError, not a lost reply", async () => {
   const server = await scripted(() => ({ json: { payment_links: [] } }));
   const { payments } = createLiveAdapters({ payments: { baseUrl: `${server.url}/razorpay` }, calendar: { baseUrl: server.url, calendarId: "c" }, messaging: { baseUrl: server.url, phoneNumberId: "1" } }, { clock: fakeClock(T0), window: { lastInboundAt: () => undefined } });
-  await payments.listPaymentLinks({ reference_id: "b-1" });
+  await payments.listRequests({ reference_id: "b-1" });
   assert.equal(server.requests[0].url, "/razorpay/v1/payment_links?reference_id=b-1");
   assert.equal(server.requests[0].headers.authorization, undefined);
   await server.close();
-  await assert.rejects(() => payments.listPaymentLinks(), (e: any) => e instanceof ApiError && e.status === 503 && !(e instanceof TimeoutError));
+  await assert.rejects(() => payments.listRequests(), (e: any) => e instanceof ApiError && e.status === 503 && !(e instanceof TimeoutError));
 });
 
 test("no reply in time, or a connection cut after the request, is a TimeoutError (the call may have happened)", async () => {
@@ -39,7 +39,7 @@ test("no reply in time, or a connection cut after the request, is a TimeoutError
   try {
     for (const server of [slow, cut, unreadable]) {
       const { payments } = createLiveAdapters({ payments: { baseUrl: server.url }, calendar: { baseUrl: server.url, calendarId: "c" }, messaging: { baseUrl: server.url, phoneNumberId: "1" }, timeoutMs: 100 }, { clock: fakeClock(T0), window: { lastInboundAt: () => undefined } });
-      await assert.rejects(() => payments.createPaymentLink({ amount: 20000, reference_id: "b-1", description: "x" }), TimeoutError);
+      await assert.rejects(() => payments.createRequest({ amount: 20000, reference_id: "b-1", description: "x" }), TimeoutError);
     }
   } finally { await Promise.all([slow.close(), cut.close(), unreadable.close()]); }
 });
@@ -47,19 +47,19 @@ test("no reply in time, or a connection cut after the request, is a TimeoutError
 // ---- Razorpay ----
 
 test("razorpay: a payment link entity becomes ours, and its embedded payments are the thin ones the docs show", () => {
-  const link = toPaymentLink(fixture("razorpay-payment-link-fetch.json"), []);
-  assert.deepEqual({ id: link.id, reference_id: link.reference_id, amount: link.amount, status: link.status, short_url: link.short_url, amount_paid: link.amount_paid }, { id: "plink_KBnb7I424Rc1R9", reference_id: "111", amount: 10000, status: "paid", short_url: "https://rzp.io/i/alaBxs0i", amount_paid: 10000 });
-  assert.equal(toPaymentLink(fixture("razorpay-payment-link-create.json"), []).payments.length, 0); // `payments: null` before any payment
+  const link = toPaymentRequest(fixture("razorpay-payment-link-fetch.json"), []);
+  assert.deepEqual({ id: link.id, reference_id: link.reference_id, amount: link.amount, status: link.status, pay_url: link.pay_url, amount_paid: link.amount_paid }, { id: "plink_KBnb7I424Rc1R9", reference_id: "111", amount: 10000, status: "paid", pay_url: "https://rzp.io/i/alaBxs0i", amount_paid: 10000 });
+  assert.equal(toPaymentRequest(fixture("razorpay-payment-link-create.json"), []).payments.length, 0); // `payments: null` before any payment
   for (const [wire, ours] of [["created", "created"], ["paid", "paid"], ["partially_paid", "partially_paid"], ["cancelled", "cancelled"], ["expired", "cancelled"]] as const) {
-    assert.equal(toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), status: wire }, []).status, ours);
+    assert.equal(toPaymentRequest({ ...fixture("razorpay-payment-link-fetch.json"), status: wire }, []).status, ours);
   }
-  assert.throws(() => toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), status: "weird" }, []), ApiError);
-  assert.throws(() => toPaymentLink({ ...fixture("razorpay-payment-link-fetch.json"), currency: "USD" }, []), /only INR/);
+  assert.throws(() => toPaymentRequest({ ...fixture("razorpay-payment-link-fetch.json"), status: "weird" }, []), ApiError);
+  assert.throws(() => toPaymentRequest({ ...fixture("razorpay-payment-link-fetch.json"), currency: "USD" }, []), /only INR/);
 });
 
 test("razorpay: a payment record, a refunded payment, and a refund", () => {
-  const p = toPayment(fixture("razorpay-payment.json"), "plink_1");
-  assert.deepEqual(p, { id: "pay_DG4ZdRK8ZnXC3k", link_id: "plink_1", amount: 100, currency: "INR", status: "captured", amount_refunded: 0, created_at: 1605871409 });
+  const p = toPayment(fixture("razorpay-payment.json"), "req_1");
+  assert.deepEqual(p, { id: "pay_DG4ZdRK8ZnXC3k", request_id: "req_1", amount: 100, currency: "INR", status: "received", amount_refunded: 0, created_at: 1605871409 });
   assert.equal(toPayment({ ...fixture("razorpay-payment.json"), status: "refunded", amount_refunded: 100 }, "")?.amount_refunded, 100); // a refunded payment still captured the money
   assert.equal(toPayment({ ...fixture("razorpay-payment.json"), status: "failed", captured: false }, ""), null);
   const r = toRefund(fixture("razorpay-refund-create.json"));
@@ -78,17 +78,17 @@ test("razorpay: create sends paise, INR, the booking id and no keys; fetch fills
   });
   try {
     const payments = createRazorpayPayments({ baseUrl: server.url });
-    await payments.createPaymentLink({ amount: 20000, reference_id: "b-1", description: "Glow deposit" });
+    await payments.createRequest({ amount: 20000, reference_id: "b-1", description: "Glow deposit" });
     const sent = JSON.parse(server.requests[0].body);
     assert.equal(sent.amount, 20000);
     assert.equal(sent.currency, "INR");
     assert.equal(sent.reference_id, "b-1");
     assert.equal(sent.description, "Glow deposit");
     assert.equal(server.requests[0].headers.authorization, undefined);
-    const fetched = await payments.fetchPaymentLink(link.id);
+    const fetched = await payments.fetchRequest(link.id);
     assert.equal(fetched?.payments.length, 1);
-    assert.deepEqual({ id: fetched?.payments[0].id, link_id: fetched?.payments[0].link_id, amount_refunded: fetched?.payments[0].amount_refunded }, { id: "pay_KBnebtRrhTEatJ", link_id: link.id, amount_refunded: 4000 });
-    assert.equal(await payments.fetchPaymentLink("plink_missing"), null); // Razorpay says 400 "does not exist", not 404
+    assert.deepEqual({ id: fetched?.payments[0].id, request_id: fetched?.payments[0].request_id, amount_refunded: fetched?.payments[0].amount_refunded }, { id: "pay_KBnebtRrhTEatJ", request_id: link.id, amount_refunded: 4000 });
+    assert.equal(await payments.fetchRequest("plink_missing"), null); // Razorpay says 400 "does not exist", not 404
     assert.equal(await payments.fetchPayment("pay_missing"), null);
   } finally { await server.close(); }
 });
@@ -102,8 +102,8 @@ test("razorpay: a duplicate reference_id and a bad key are ApiErrors with the st
   });
   try {
     const payments = createRazorpayPayments({ baseUrl: server.url });
-    await assert.rejects(() => payments.createPaymentLink({ amount: 20000, reference_id: "b-1", description: "x" }), (e: any) => e instanceof ApiError && e.status === 400 && /already attempted/.test(e.message));
-    await assert.rejects(() => payments.fetchPayment("pay_1"), (e: any) => e.status === 401 && /api key/.test(e.message));
+    await assert.rejects(() => payments.createRequest({ amount: 20000, reference_id: "b-1", description: "x" }), (e: any) => e instanceof ApiError && e.status === 400 && /already attempted/.test(e.message));
+    await assert.rejects(() => payments.fetchPayment("pmt_1"), (e: any) => e.status === 401 && /api key/.test(e.message));
     const refund = await payments.refund("pay_29QQoUBi66xm2f", { amount: 500100, receipt: "b-1:pay_29QQoUBi66xm2f" });
     assert.equal(refund.id, "rfnd_FP8QHiV938haTz");
     assert.deepEqual(JSON.parse(server.requests.at(-1)!.body), { amount: 500100, receipt: "b-1:pay_29QQoUBi66xm2f" });

@@ -12,7 +12,7 @@ import type { FakeMessaging, InboundMessage } from "../../../../modules/messagin
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import type { GuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { FakePayments, FakePaymentsOptions, PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
 import type { ActionRecord } from "../../../../modules/record/record.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -75,7 +75,7 @@ export interface World {
   /** The fee of a student, by name. */
   dueOf(student: string): Due | undefined;
   /** The payment link a parent should pay now for a student's fee, as the payments service holds it. */
-  linkFor(student: string): PaymentLink | undefined;
+  linkFor(student: string): PaymentRequest | undefined;
   /** The parent pays the current link (all of it, or part). */
   pays(student: string, options?: { amountInr?: number }): void;
   /** UPI centres (B33): the student's fee's current request, as the agent's own ledger holds it (its code is the owner's, never the parent's). */

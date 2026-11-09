@@ -53,15 +53,15 @@ test("a customer's WhatsApp message and a payment reach the runtime as signed, p
     assert.equal(first.message.timestamp, Math.floor(w.clock.now() / 1000) * 1000); // epoch milliseconds, not the seconds WhatsApp wrote
 
     seen.length = 0;
-    const link = await w.adapters.payments.createPaymentLink({ amount: 20000, reference_id: "b-1", description: "Deposit" });
-    const paid = await w.control("/_standin/razorpay/pay", { link_id: link.id });
-    assert.deepEqual(paid.delivered.map((d: any) => [d.event, d.status]), [["payment.captured", 200], ["payment_link.paid", 200]]);
+    const link = await w.adapters.payments.createRequest({ amount: 20000, reference_id: "b-1", description: "Deposit" });
+    const paid = await w.control("/_standin/razorpay/pay", { request_id: link.id });
+    assert.deepEqual(paid.delivered.map((d: any) => [d.event, d.status]), [["payment.received", 200], ["request.paid", 200]]);
     const events = seen as Extract<AgentEvent, { kind: "payment_event" }>[];
-    assert.deepEqual(events.map((e) => e.event.event), ["payment.captured", "payment_link.paid"]);
+    assert.deepEqual(events.map((e) => e.event.event), ["payment.received", "request.paid"]);
     assert.deepEqual(events.map((e) => e.event.id), w.fakes.payments.events.map((e) => e.id)); // the id is Razorpay's x-razorpay-event-id
-    assert.equal(events[0].event.payload.payment?.link_id, undefined); // a real payment.captured does not name the link
-    assert.equal(events[1].event.payload.payment_link?.id, link.id);
-    assert.equal(events[1].event.payload.payment_link?.reference_id, "b-1");
+    assert.equal(events[0].event.payload.payment?.request_id, undefined); // a real payment.captured does not name the link
+    assert.equal(events[1].event.payload.request?.id, link.id);
+    assert.equal(events[1].event.payload.request?.reference_id, "b-1");
   });
 });
 
@@ -74,8 +74,8 @@ test("a webhook signed with the wrong secret is turned away at the inbox, and th
     world = await liveWorld({ inboxUrl: inbox.url });
     const sent = await world.control("/_standin/whatsapp/inbound", { from: CUSTOMER, text: "hello" });
     assert.deepEqual(sent.delivered.map((d: any) => d.status), [401]);
-    const link = await world.adapters.payments.createPaymentLink({ amount: 20000, reference_id: "b-1", description: "Deposit" });
-    const paid = await world.control("/_standin/razorpay/pay", { link_id: link.id });
+    const link = await world.adapters.payments.createRequest({ amount: 20000, reference_id: "b-1", description: "Deposit" });
+    const paid = await world.control("/_standin/razorpay/pay", { request_id: link.id });
     assert.deepEqual(paid.delivered.map((d: any) => d.status), [401, 401]);
     assert.equal(seen.length, 0);
   } finally { await world?.close(); await inbox.close(); await runtime.close(); }
@@ -115,15 +115,15 @@ test("a whole booking through every piece: WhatsApp message -> signed webhook ->
     const link = w.linkFor("b-1")!;
     const sent = w.fakes.messaging.sentTo(CUSTOMER);
     assert.equal(sent.length, 1);
-    assert.ok(sent[0].text.includes(link.short_url));
+    assert.ok(sent[0].text.includes(link.pay_url));
 
-    await w.control("/_standin/razorpay/pay", { link_id: link.id });
+    await w.control("/_standin/razorpay/pay", { request_id: link.id });
     assert.equal(w.confirmedEvents().length, 1);
     assert.equal(w.linkFor("b-1")!.payments.length, 1);
     assert.match(w.textsTo(CUSTOMER).at(-1)!, /Booked!/);
 
     // a second payment on the same link, and the provider sending its webhooks twice
-    await w.control("/_standin/razorpay/pay", { link_id: link.id, twice: true });
+    await w.control("/_standin/razorpay/pay", { request_id: link.id, twice: true });
     assert.equal(w.fakes.payments.refunds().length, 1);
     assert.equal(w.fakes.payments.refunds()[0].amount, 20000);
     await w.control("/_standin/razorpay/deliver", { twice: true }); // the refund.processed event

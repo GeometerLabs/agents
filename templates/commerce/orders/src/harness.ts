@@ -12,7 +12,7 @@ import type { FakeMessaging, InboundMessage } from "../../../../modules/messagin
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import type { GuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { FakePayments, FakePaymentsOptions, PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
 import type { ActionRecord } from "../../../../modules/record/record.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -78,7 +78,7 @@ export interface World {
   /** A customer's latest order. */
   orderOf(customer: string): Order | undefined;
   /** The payment link a customer should pay now, as the payments service holds it. */
-  linkFor(customer: string): PaymentLink | undefined;
+  linkFor(customer: string): PaymentRequest | undefined;
   /** The customer pays the current link (all of it, or an amount). */
   pays(customer: string, options?: { amountInr?: number }): void;
   /** UPI shops (B33): the order's current request, as the agent's own ledger holds it (its code is the owner's, never the customer's). */

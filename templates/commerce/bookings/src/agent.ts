@@ -42,7 +42,7 @@ import { bookingsReading } from "./adapters/reading.ts";
 import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
-import type { PaymentEvent, PaymentLink, Payments } from "../../../../modules/payments/payments.ts";
+import type { PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
 import { ATTEMPTS, ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import { createRefunds } from "../../../../modules/payments/refunds.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
@@ -630,7 +630,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     b.linkId = link.id;
-    b.linkUrl = link.short_url;
+    b.linkUrl = link.pay_url;
     log(b, phone, "create_deposit_link", "confirmed", { amountPaise: depositPaise }, { refs: { linkId: link.id } });
     moveTo(b, "awaiting_deposit");
     if (upi) { await sendUpiRequest(b, prefix, [...shown, ...held.decisions]); return; }
@@ -671,7 +671,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (b.state !== "awaiting_deposit" || !b.linkId) continue;
       if (record.entries().some((e) => e.booking === b.id && e.action === "cancel_deposit_link" && e.refs.licence === key)) continue;
       const linkId = b.linkId;
-      const closed = await payments.cancelPaymentLink(linkId).then(() => payments.fetchPaymentLink(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
+      const closed = await payments.cancelRequest(linkId).then(() => payments.fetchRequest(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
       log(b, b.customer, "cancel_deposit_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open deposit link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or Razorpay did not answer); the owner can close it in Razorpay" });
     }
   }
@@ -751,7 +751,7 @@ export function createAgent(deps: AgentDeps): Agent {
   async function reconcilePayments(b: Booking): Promise<void> {
     if (upi) { await reconcileUpi(b); return; }
     if (!b.linkId) return;
-    const link = await payments.fetchPaymentLink(b.linkId);
+    const link = await payments.fetchRequest(b.linkId);
     if (!link) { log(b, b.customer, "record_deposit", "failed", { linkId: b.linkId }, { notes: "the payments service has no such link" }); return; }
     for (const payment of link.payments) {
       if (b.handledPayments.includes(payment.id)) continue;
@@ -826,7 +826,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function closeLink(b: Booking, why: string): Promise<void> {
     if (!b.linkId) return;
-    const closed = await payments.cancelPaymentLink(b.linkId).then(() => payments.fetchPaymentLink(b.linkId!)).then((l) => l?.status === "cancelled").catch(() => false);
+    const closed = await payments.cancelRequest(b.linkId).then(() => payments.fetchRequest(b.linkId!)).then((l) => l?.status === "cancelled").catch(() => false);
     log(b, b.customer, "cancel_deposit_link", closed ? "confirmed" : "unconfirmed", { linkId: b.linkId }, { notes: closed ? why : "the link could not be closed: it may still be open or already paid" });
     if (upi && closed) log(b, b.customer, UPI_ACTIONS.closed, "confirmed", { requestId: b.linkId }, { refs: { requestId: b.linkId }, notes: `${why}; a mark by the owner that comes later is still recorded, and never books by itself` });
   }
@@ -1149,7 +1149,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const bookings = [...store.bookings.values()];
-    if (event.event === "refund.processed") {
+    if (event.event === "refund.done") {
       const paymentId = event.payload.refund!.payment_id;
       const b = bookings.find((x) => x.handledPayments.includes(paymentId) || x.depositPaymentId === paymentId);
       const refundId = event.payload.refund!.id;
@@ -1158,10 +1158,10 @@ export function createAgent(deps: AgentDeps): Agent {
       store.seenEvents.add(event.id);
       return;
     }
-    // A real payment.captured names the payment, not its link (Razorpay's body has the order id only): ask the payments service which link it paid.
+    // A payment.received may name the payment and not its request (a provider's body can carry its order only): ask the payments service which request it paid.
     const paymentId = event.payload.payment?.id;
-    const linkId = event.payload.payment_link?.id ?? event.payload.payment?.link_id
-      ?? (paymentId ? (await payments.listPaymentLinks({ payment_id: paymentId }))[0]?.id : undefined);
+    const linkId = event.payload.request?.id ?? event.payload.payment?.request_id
+      ?? (paymentId ? (await payments.listRequests({ payment_id: paymentId }))[0]?.id : undefined);
     const b = linkId ? bookings.find((x) => x.linkId === linkId) : undefined;
     if (!b) {
       log(null, owner, "receive_payment_event", "blocked", { id: event.id, event: event.event }, { notes: "no booking has this payment link, so the event is ignored" });
