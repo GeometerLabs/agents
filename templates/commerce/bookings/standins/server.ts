@@ -5,8 +5,7 @@
 //
 // A fault the fake plans as "lost reply" makes the server cut the connection AFTER the fake stored the change, so the client sees no answer
 // (and the live adapter raises TimeoutError), exactly the case the agent must look before it retries.
-import { createServer } from "node:http";
-import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import type { Server } from "node:http";
 import { systemClock } from "../../../../modules/core/clock.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
@@ -15,9 +14,9 @@ import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import { controlStandin } from "./control.ts";
 import type { Fakes } from "./control.ts";
 import { calendarStandin } from "./google-calendar.ts";
-import { LostReply } from "../../../../modules/standins/http.ts";
-import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
-import { razorpayStandin } from "../../../../modules/standins/razorpay.ts";
+import { serveHandlers } from "../../../../modules/standins/http.ts";
+import type { Handler } from "../../../../modules/standins/http.ts";
+import { razorpayStandin } from "../../../../modules/payments/providers/razorpay/standin.ts";
 import { ruleDecider } from "./rule-decider.ts";
 import { systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import type { SystemOneStandin, SystemOneStandinOptions } from "../../../../modules/standins/system-one.ts";
@@ -51,29 +50,6 @@ export interface RunningStandins { server: Server; port: number; url: string; fa
 /** The templates the provider has approved: the booking messages and the owner's monthly report. */
 const STANDIN_TEMPLATES = { templates: [...META_TEMPLATES, ...REPORT_TEMPLATES] };
 
-const MAX_BODY = 1024 * 1024;
-
-function readJson(req: IncomingMessage): Promise<{ ok: true; body: unknown } | { ok: false }> {
-  return new Promise((resolve) => {
-    const chunks: Buffer[] = [];
-    let size = 0;
-    req.on("data", (c: Buffer) => { size += c.length; if (size > MAX_BODY) { resolve({ ok: false }); req.destroy(); } else chunks.push(c); });
-    req.on("end", () => {
-      const text = Buffer.concat(chunks).toString("utf8");
-      if (text.length === 0) { resolve({ ok: true, body: undefined }); return; }
-      try { resolve({ ok: true, body: JSON.parse(text) }); } catch { resolve({ ok: false }); }
-    });
-    req.on("error", () => resolve({ ok: false }));
-  });
-}
-
-function send(res: ServerResponse, reply: StandinReply): void {
-  if (reply.body === undefined) { res.writeHead(reply.status); res.end(); return; }
-  const text = JSON.stringify(reply.body);
-  res.writeHead(reply.status, { "content-type": "application/json; charset=UTF-8", "content-length": Buffer.byteLength(text) });
-  res.end(text);
-}
-
 export async function startStandins(config: StandinsConfig, listen: { port: number; host?: string }): Promise<RunningStandins> {
   const clock = config.clock ?? systemClock;
   const fakes: Fakes = {
@@ -92,24 +68,7 @@ export async function startStandins(config: StandinsConfig, listen: { port: numb
     controlStandin({ fakes, inboxUrl: config.inboxUrl, razorpayWebhookSecret: config.razorpayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, phoneNumberId: config.phoneNumberId, authorizationSeen: () => authorizationSeen }),
   ];
 
-  const server = createServer(async (req, res) => {
-    if (req.headers.authorization !== undefined) authorizationSeen++;
-    const url = new URL(req.url ?? "/", "http://standin");
-    const parsed = await readJson(req);
-    if (!parsed.ok) { send(res, { status: 400, body: { error: "the body is not JSON, or is too large" } }); return; }
-    try {
-      for (const handler of handlers) {
-        const reply = await handler({ method: req.method ?? "GET", path: url.pathname, query: url.searchParams, body: parsed.body, headers: req.headers });
-        if (reply) { send(res, reply); return; }
-      }
-      send(res, { status: 404, body: { error: `the stand-ins have no ${req.method} ${url.pathname}` } });
-    } catch (e) {
-      if (e instanceof LostReply) { req.socket.destroy(); return; }
-      send(res, { status: 500, body: { error: (e as Error).message } });
-    }
-  });
-
-  await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(listen.port, listen.host ?? "127.0.0.1", resolve); });
-  const port = (server.address() as { port: number }).port;
-  return { server, port, url: `http://127.0.0.1:${port}`, fakes, ...(systemOne ? { systemOne } : {}), close: () => new Promise<void>((resolve) => { server.closeAllConnections(); server.close(() => resolve()); }) };
+  const served = await serveHandlers(handlers, listen, (req) => { if (req.headers.authorization !== undefined) authorizationSeen++; });
+  const { server, port } = served;
+  return { server, port, url: served.url, fakes, ...(systemOne ? { systemOne } : {}), close: served.close };
 }

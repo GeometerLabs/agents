@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { ApiError, GuardHeldError, TimeoutError } from "../../../../modules/core/faults.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { createWorld, glowSalon, CUSTOMER, HARNESS_GUARD } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
@@ -224,7 +224,7 @@ test("outcome unknown on a refund within the limit: never sent again, recorded a
   assert.deepEqual(issues(w).map((i) => i.kind), ["unknown"]);
   const note = entries(w, "refund", "unconfirmed").at(-1)!.notes;
   assert.match(note, /NOT sent again/);
-  assert.match(note, /Check Razorpay/);
+  assert.match(note, /Check the payment gateway.s own records/);
   assert.deepEqual(w.textsTo(w.owner), [], "the owner cannot settle it");
   assert.match(w.lastTextTo(CUSTOMER), /checking your ₹200 refund/);
   await w.advance(5 * 60); // time passing does not send it either
@@ -329,7 +329,7 @@ test("Guard refuses a refund by a limit (the day's cap): nothing is refunded, it
 test("the deposit was lowered after a booking paid the old one: Guard refuses the older, larger refund, nothing is refunded, and the builder is told", async () => {
   const lowered = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), deposit: { ...JSON.parse(JSON.stringify(glowSalon())).deposit, amountInr: 150 } });
   assert.equal(lowered.deposit.amountInr, 150);
-  const w = createWorld({ payments: { guard: createGuardModel(razorpayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)), guardLinks: false } }); // the ₹200 link was made before Guard had the new rules
+  const w = createWorld({ payments: { guard: createGuardModel(gatewayLimitsSpec(lowered, HARNESS_GUARD), fakeClock(0)), guardLinks: false } }); // the ₹200 link was made before Guard had the new rules
   let asked = 0; // a call Guard refuses never reaches the service, so the service's own call list cannot count it
   const sendRefund = w.payments.refund;
   w.payments.refund = async (id, request) => { asked++; return sendRefund(id, request); };

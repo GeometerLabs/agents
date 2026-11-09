@@ -70,10 +70,10 @@ test("confirm-only-when-recorded needs BOTH the calendar and the deposit, read b
 test("one-deposit-per-booking: the first payment is the deposit, a second payment is not counted", () => {
   const record = createRecord(fakeClock(at(10, 9)));
   const check = (paymentId: string) => checkOneDepositPerBooking({ record, booking: "b-1", paymentId });
-  assert.equal(check("pay_1").verdict, "allow");
-  record.append({ conversation: "c", booking: "b-1", action: "record_deposit", inputs: {}, outcome: "confirmed", language: "en", refs: { paymentId: "pay_1" } });
-  assert.equal(check("pay_1").verdict, "allow"); // the same payment seen again
-  const second = check("pay_2");
+  assert.equal(check("pmt_1").verdict, "allow");
+  record.append({ conversation: "c", booking: "b-1", action: "record_deposit", inputs: {}, outcome: "confirmed", language: "en", refs: { paymentId: "pmt_1" } });
+  assert.equal(check("pmt_1").verdict, "allow"); // the same payment seen again
+  const second = check("pmt_2");
   assert.deepEqual([second.verdict, second.ruleId], ["block", "one-deposit-per-booking"]);
   assert.match(second.reason, /refunded and the owner is told/);
 });

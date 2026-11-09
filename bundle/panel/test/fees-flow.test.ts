@@ -1,6 +1,7 @@
 // The Fees template in the panel: a partner sets up a tuition centre on a phone in the same five steps, and the folder written is the one `geometer shop add --template fees`
 // writes (Fees settings, a runtime.json with no calendar, fees@<version> in the lock). The checks, "Ready to go live", the monthly report and the shop page work for it
 // in four languages, and nothing of Bookings (a calendar, a cost table of bookings) leaks onto a Fees centre's pages.
+import { RAZORPAY_WORDS as RZW } from "../../../modules/payments/providers/razorpay/words.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -18,7 +19,7 @@ const FEES1 = {
   students: "Aarav Sharma, 98111 11111, Class 10\nMeera Nair, +91 98222 22222, class 8",
 };
 const FEES2 = { dueDay: "5", graceDays: "5", lateFee: "100", reminderDays: "-3, 0, 5", reminderHour: "10", reminderMost: "4", partAllowed: "on", partMin: "300", waiver: "500", refund: "1200" };
-const FEES4 = { waNumber: "+91 90000 11111", waNumberId: PHONE_ID, waToken: M.token, waAppSecret: M.app, rzpMode: "live", rzpKeyId: "rzp_live_AbCdEf123456", rzpKeySecret: M.secret, rzpWebhook: M.hook };
+const FEES4 = { payMod: "razorpay", waNumber: "+91 90000 11111", waNumberId: PHONE_ID, waToken: M.token, waAppSecret: M.app, gwMode: "live", gwKeyId: "rzp_live_AbCdEf123456", gwKeySecret: M.secret, gwWebhook: M.hook };
 
 const applied = (o: Record<string, unknown> = {}) => ({
   updatedAt: new Date(NOW - 5 * 60_000).toISOString(), deploy: { state: "applied", at: new Date(NOW - 3600_000).toISOString() }, limits: { proven: 6, of: 6, unprovable: [] },
@@ -116,7 +117,7 @@ test("the checks for a Fees centre have no calendar, 'Ready to go live' makes th
     assert.equal((await divya.post(`/setup/${draft}/check`, {}, checks)).location, checks);
     const page = (await divya.get(checks)).plain;
     const w = WORDS.en.setup.checks;
-    assert.ok(page.includes(w.whatsapp.confirmed("+919000011111")) && page.includes(w.razorpay.confirmed(WORDS.en.setup.accounts.razorpay.modeLive)), page.slice(page.indexOf("Checks"), page.indexOf("Checks") + 1500));
+    assert.ok(page.includes(w.whatsapp.confirmed("+919000011111")) && page.includes(RZW.en.checks.confirmed(RZW.en.accounts.modeLive)), page.slice(page.indexOf("Checks"), page.indexOf("Checks") + 1500));
     assert.ok(!page.includes(w.calendar.title), "no calendar check");
     assert.ok(/Held 26 of 26 situations\. 0 failed\. \d+ not tested\./u.test(page), "the Fees hand check's own sentence");
     assert.ok(page.includes(w.readyButton));
@@ -180,7 +181,7 @@ test("changing a Fees centre's settings is the same steps from what it has, and 
     const first = (await divya.get(`/setup/${d2}/1`)).plain;
     assert.ok(first.includes("Sunrise Tuition") && first.includes("Aarav Sharma") && first.includes("Class 10"), "the form comes back as it was saved");
     assert.equal((await divya.post(`/setup/${d2}/1`, { ...FEES1, batch_fee_0: "1300" }, `/setup/${d2}/1`)).status, 303);
-    for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? FEES2 : n === 3 ? STEP3 : { ...FEES4, waToken: "", waAppSecret: "", rzpKeySecret: "", rzpWebhook: "" }, `/setup/${d2}/${n}`);
+    for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? FEES2 : n === 3 ? STEP3 : { ...FEES4, waToken: "", waAppSecret: "", gwKeySecret: "", gwWebhook: "" }, `/setup/${d2}/${n}`);
     assert.equal((await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/5`)).status, 303);
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8"));
     assert.equal(settings.batches[0].monthlyFeeInr, 1300);

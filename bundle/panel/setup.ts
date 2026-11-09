@@ -8,9 +8,10 @@ import type { Language } from "../../modules/language/languages.ts";
 import { formatInr } from "../../modules/language/format.ts";
 import { MAX_SERVICES, formFromSettings, settingsFromForm } from "../../templates/commerce/bookings/demo/personalise.ts";
 import type { ShopForm } from "../../templates/commerce/bookings/demo/personalise.ts";
-import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/upi/link.ts";
-import type { PaymentSettings } from "../../modules/payments/upi/settings.ts";
-import { KEY_ID, checkSecret } from "./secrets.ts";
+import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../../modules/payments/providers/index.ts";
+import { checkSecret } from "./secrets.ts";
+import { DEFAULT_PROVIDER, gatewayOf, ownerMarkedOf, providerById } from "../../modules/payments/providers/index.ts";
 import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
@@ -38,33 +39,42 @@ export interface Draft {
   twoAboveInr?: string;
   whatsapp: { businessNumber: string; numberId: string };
   calendar: { id: string };
-  razorpay: { mode: string; keyId: string };
-  /** How customers pay (B33). A draft made before UPI has none, which is a Razorpay shop; a new shop starts on UPI. */
+  /** B71: the gateway key as typed, for a shop that chose a gateway: its mode and id. */
+  gateway: { mode: string; keyId: string };
+  /** How customers pay (B33). A new shop starts on UPI, and a draft with none is a UPI shop that has not given its UPI ID yet (B71): never a gateway shop. */
   payment?: PaymentDraft;
   expectedBookings: string;
   /** How many steps have been filled in (0 for a new draft). A later step and the save need the earlier ones. A draft made from an existing shop starts with all of them done. */
   done: number;
 }
 
-/** `explicit` is true when the shop's saved settings already carried a "payment" block, so saving them again writes the block back as it was. */
-export interface PaymentDraft { module: "upi" | "razorpay"; upiId: string; payee: string; explicit?: boolean }
+/** The module is a provider's id (modules/payments/providers): UPI's ID and payee are kept here, a gateway's key in `Draft.gateway`. */
+export interface PaymentDraft { module: string; upiId: string; payee: string }
 
-/** The module a draft takes: no choice recorded is a Razorpay shop, as every shop was before UPI. */
-export const paymentModuleOf = (d: Draft): "upi" | "razorpay" => d.payment?.module ?? "razorpay";
+/** The module a draft takes. No choice recorded is UPI (B71): the gateway is only ever what the person picked. */
+export const paymentModuleOf = (d: Draft): string => d.payment?.module ?? DEFAULT_PROVIDER.id;
 
-/** A new shop starts on UPI (no gateway account, no gateway fee). */
-export const newPayment = (): PaymentDraft => ({ module: "upi", upiId: "", payee: "" });
+/** A new shop starts on UPI (no gateway account, no gateway fee, no paperwork). */
+export const newPayment = (): PaymentDraft => ({ module: DEFAULT_PROVIDER.id, upiId: "", payee: "" });
 
-/** The draft of a shop that exists: its payment block when it has one, else Razorpay. */
+/** The draft of a shop that exists: its payment block, or, with none, UPI with the ID still to give (the accounts step then asks for it, in the person's language). */
 export function paymentFromSettings(p: PaymentSettings | undefined): PaymentDraft {
-  return p?.module === "upi" ? { module: "upi", upiId: p.upi.id, payee: p.upi.payee, explicit: true } : { module: "razorpay", upiId: "", payee: "", ...(p ? { explicit: true } : {}) };
+  const owner = ownerMarkedOf(p);
+  if (p && owner) return { module: p.module, upiId: owner.payTo.id, payee: owner.payTo.name };
+  return p && gatewayOf(p) ? { module: p.module, upiId: "", payee: "" } : newPayment();
 }
 
-/** The "payment" block the settings get, or undefined when they should not carry one (a Razorpay shop whose settings never did). `always` writes the Razorpay block too (Fees does). */
-export function paymentBlock(d: Draft, always = false): PaymentSettings | undefined {
-  const p = d.payment;
-  if (p?.module === "upi") return { module: "upi", upi: { id: normaliseVpa(p.upiId), payee: p.payee.trim() } };
-  return always || p?.explicit ? { module: "razorpay" } : undefined;
+/**
+ * A stand-in UPI block for the limits shown on a step before the accounts step has asked for the real UPI ID (the lines do not depend on it). It is never saved: the save
+ * cannot be reached before the accounts step has checked the shop's own UPI ID. It is UPI, not a gateway, so even a preview never shows a shop as on a gateway it did not pick.
+ */
+export const PREVIEW_PAYMENT: PaymentSettings = { module: "upi", upi: { id: "preview@upi", payee: "Preview" } };
+
+/** The "payment" block the settings get: always written (B71), since a file without one is refused rather than read as a gateway shop. */
+export function paymentBlock(d: Draft): PaymentSettings {
+  const p = d.payment ?? newPayment();
+  if (providerById(p.module)?.gateway) return { module: p.module };
+  return { module: DEFAULT_PROVIDER.id, upi: { id: normaliseVpa(p.upiId), payee: p.payee.trim() } };
 }
 
 /** What the example settings of the template say, as the form's starting point. */
@@ -76,7 +86,7 @@ export function newDraft(id: string, accountId: string, template: Template, exam
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false, form, windowHours: String(example.cancellation.windowHours),
     primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
-    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, razorpay: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
+    whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, gateway: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
   };
 }
 
@@ -87,7 +97,7 @@ export function draftFromShop(id: string, accountId: string, templateId: string,
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
     ...approversDraftOf(settings.approvers),
     whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
-    calendar: { id: String(runtime?.services?.calendar?.calendarId ?? "") }, razorpay: { mode: meta.razorpay?.mode ?? "live", keyId: meta.razorpay?.keyId ?? "" },
+    calendar: { id: String(runtime?.services?.calendar?.calendarId ?? "") }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" },
     payment: paymentFromSettings(settings.payment),
     expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings), done: Number.MAX_SAFE_INTEGER,
   };
@@ -218,7 +228,7 @@ export interface AccountsResult extends StepResult { secrets: SecretToWrite[]; c
  * Every account the template uses, checked together. A secret left empty is kept if one already arrived (and a changed key id needs its secret
  * again). Nothing is returned for the page to show back: the caller writes `secrets` to the inbox only when `problems` is empty.
  */
-export function applyAccounts(draft: Draft, body: Body, template: Template, meta: ShopMeta, calendarShared: boolean, w: Words): AccountsResult {
+export function applyAccounts(draft: Draft, body: Body, template: Template, meta: ShopMeta, calendarShared: boolean, w: Words, lang: Language = "en"): AccountsResult {
   const s = w.setup.problems;
   const problems: string[] = [];
   const secrets: SecretToWrite[] = [];
@@ -250,27 +260,32 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
     // A server with its own shared address needs nothing more; without one, the shop's own key file is needed once.
     take("google_service_account.json", body.calJson, label.calendar.json, !calendarShared);
   }
-  if (template.accounts.includes("razorpay")) {
-    // The choice comes from the form; a form without it (not a browser) is a Razorpay shop, as before UPI existed. Typed UPI boxes are kept when the form is sent back.
-    const module = body.payMod === "upi" ? "upi" : "razorpay";
+  if (template.accounts.includes("payment")) {
+    // The choice comes from the form: a provider's id. A form without one (not a browser), or with one this checkout does not have, is UPI (B71), so its UPI ID is
+    // asked for: a gateway is never picked for anyone. Typed UPI boxes are kept when the form is sent back.
+    const chosen = providerById(String(body.payMod ?? ""));
+    const module = chosen?.gateway ? chosen : DEFAULT_PROVIDER;
     const before = draft.payment;
-    draft.payment = { module, upiId: body.upiId === undefined ? before?.upiId ?? "" : text(body.upiId, 80), payee: body.upiPayee === undefined ? before?.payee ?? "" : text(body.upiPayee, 80), ...(before?.explicit ? { explicit: true } : {}) };
-    if (module === "upi") problems.push(...upiProblems(draft.payment.upiId, draft.payment.payee, w));
+    draft.payment = { module: module.id, upiId: body.upiId === undefined ? before?.upiId ?? "" : text(body.upiId, 80), payee: body.upiPayee === undefined ? before?.payee ?? "" : text(body.upiPayee, 80) };
+    if (!module.gateway) problems.push(...upiProblems(draft.payment.upiId, draft.payment.payee, w));
     else {
-      const mode = text(body.rzpMode, 5);
-      const keyId = text(body.rzpKeyId, 60);
+      // a gateway's key, in the shape its own folder says (B71); its words come from the same place
+      const setup = module.gateway.setup;
+      const words = setup.words[lang];
+      const mode = text(body.gwMode, 5);
+      const keyId = text(body.gwKeyId, 60);
       if (mode !== "live" && mode !== "test") problems.push(s.modeBad);
-      if (!KEY_ID.test(keyId)) problems.push(s.keyIdBad);
-      else if ((mode === "live" || mode === "test") && !keyId.startsWith(`rzp_${mode}_`)) problems.push(w.setup.checks.razorpay.wrongMode);
-      draft.razorpay = { mode: mode === "test" ? "test" : "live", keyId: KEY_ID.test(keyId) ? keyId : text(body.rzpKeyId, 60) };
-      const secret = (body.rzpKeySecret ?? "").trim();
-      const keyChanged = meta.razorpay?.keyId !== keyId;
-      if (secret === "" && (keyChanged || meta.receipts.razorpay_key === undefined)) problems.push(s.secretMissing(label.razorpay.keySecret));
-      else if (secret !== "" && KEY_ID.test(keyId)) {
-        const checked = checkSecret("razorpay_key", `${keyId}:${secret}`);
-        if (checked.ok) secrets.push({ name: "razorpay_key", text: checked.text }); else problems.push(s.secretShape(label.razorpay.keySecret));
+      if (!setup.keyId.test(keyId)) problems.push(words.accounts.keyIdBad);
+      else if ((mode === "live" || mode === "test") && setup.modeOf(keyId) !== mode) problems.push(words.checks.wrongMode);
+      draft.gateway = { mode: mode === "test" ? "test" : "live", keyId: setup.keyId.test(keyId) ? keyId : text(body.gwKeyId, 60) };
+      const secret = (body.gwKeySecret ?? "").trim();
+      const keyChanged = meta.gateway?.keyId !== keyId || meta.gateway?.provider !== module.id;
+      if (secret === "" && (keyChanged || meta.receipts[setup.secrets.key] === undefined)) problems.push(s.secretMissing(words.accounts.keySecret));
+      else if (secret !== "" && setup.keyId.test(keyId)) {
+        const checked = checkSecret(setup.secrets.key, `${keyId}:${secret}`);
+        if (checked.ok) secrets.push({ name: setup.secrets.key, text: checked.text }); else problems.push(s.secretShape(words.accounts.keySecret));
       }
-      take("razorpay_webhook_secret", body.rzpWebhook, label.razorpay.webhookSecret, true);
+      take(setup.secrets.webhook, body.gwWebhook, words.accounts.webhookSecret, true);
     }
   }
   const expected = text(body.expectedBookings, 6);
@@ -279,7 +294,7 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
   return { problems, secrets, ...(clientEmail ? { clientEmail } : {}) };
 }
 
-/** The shop's UPI ID and payee name, refused in the person's language. The shared checks (modules/payments/upi/link.ts) decide; this only picks the sentence that says why. */
+/** The shop's UPI ID and payee name, refused in the person's language. The shared checks (modules/payments/providers/upi/link.ts) decide; this only picks the sentence that says why. */
 export function upiProblems(id: string, payee: string, w: Words): string[] {
   const u = w.upi.problems;
   const out: string[] = [];
@@ -299,10 +314,9 @@ export function buildSettings(draft: Draft, example: Settings): Built {
   const s = first.settings;
   const deposit = s.deposit.amountInr;
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
-  const payment = paymentBlock(draft);
   const raw = {
     ...s,
-    ...(payment ? { payment } : {}),
+    payment: paymentBlock(draft),
     languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
@@ -311,11 +325,11 @@ export function buildSettings(draft: Draft, example: Settings): Built {
   return validateSettings(raw);
 }
 
-/** runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. */
-export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }): Record<string, unknown> {
+/** runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. A payments service is named only for a shop that chose a gateway (B71). */
+export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {
     mode: "live", tickSeconds: 30,
-    services: { payments: {}, calendar: { calendarId }, messaging: { phoneNumberId }, timeoutMs: 20_000 },
+    services: { ...(gateway ? { payments: {} } : {}), calendar: { calendarId }, messaging: { phoneNumberId }, timeoutMs: 20_000 },
     ...(serverModel ? { parser: { wire: serverModel.wire, model: serverModel.model } } : {}),
   };
 }

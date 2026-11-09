@@ -8,7 +8,7 @@ import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts"
 import type { InboundMessage } from "../../../../modules/messaging/messaging.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { CUSTOMER, glowSalon } from "../src/harness.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
@@ -34,7 +34,7 @@ export interface Kit {
   say(runtime: Runtime, text: string, options?: { from?: string; id?: string }): Promise<InboundMessage>;
   /** The payment provider's webhooks that were not delivered yet reach the runtime, and it handles them. */
   deliverPaymentEvents(runtime: Runtime): Promise<void>;
-  linkFor(ref: string): PaymentLink | undefined;
+  linkFor(ref: string): PaymentRequest | undefined;
   cleanup(): void;
 }
 

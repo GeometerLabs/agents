@@ -17,8 +17,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { addDays, localParts, sameDate, zonedToMs, parseClock, timeFromMinutes } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
-import type { UpiState } from "../../../../modules/payments/upi/ledger.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import { advanceFor, cutoffOf, itemName, itemOf, slotOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
@@ -116,8 +116,8 @@ export interface Store {
   nextOrder: number;
   /** The month's AI spend and button-mode notices. Left out until the first message. */
   ai?: AiState;
-  /** A UPI shop's requests, the owner's marks and the refunds the owner owes (modules/payments/upi/ledger.ts). Left out until the first request. */
-  upi?: UpiState;
+  /** An owner-marked shop's requests, the owner's marks and the refunds the owner owes (modules/payments/owner-marked/ledger.ts). Kept under `upi`, as it always was. Left out until the first request. */
+  upi?: MarkState;
 }
 
 export function createStore(): Store {
@@ -217,7 +217,7 @@ export const itemsText = (settings: Settings, lines: readonly OrderLine[], langu
 
 /** The values of this order's record that a message may use. Everything comes from the order and the settings, never from message text. */
 export function factsFor(settings: Settings, order: Order | null, language: Language, extra: { customerPhone?: string; refundInr?: number; menu?: boolean; areas?: boolean; slotChoices?: { fromMs: number; toMs: number }[]; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; nowMs?: number } = {}): MessageFacts {
-  const upi = upiOf(settings.payment);
+  const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   const item = extra.itemId ? itemOf(settings, extra.itemId) : undefined;
   const dateMs = order?.date ? zonedToMs(order.date, { hour: 0, minute: 0 }, settings.timezone) : undefined;
   const total = order?.totalInr ?? (order && order.lines.length > 0 ? totalOf(settings, order.lines) : undefined);
@@ -250,7 +250,7 @@ export function factsFor(settings: Settings, order: Order | null, language: Lang
     maxItems: settings.orders.maxItemsPerOrder,
     orderRef: order?.id || undefined,
     customerPhone: extra.customerPhone ?? order?.customer,
-    ...(upi ? { upiId: upi.id, payee: upi.payee } : {}),
+    ...(payTo ? { upiId: payTo.id, payee: payTo.name } : {}),
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
     ...(extra.markedInr !== undefined ? { markedInr: extra.markedInr } : {}),
     ...(extra.leftInr !== undefined ? { leftInr: extra.leftInr } : {}),

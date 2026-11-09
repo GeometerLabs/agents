@@ -63,5 +63,6 @@
   "cancellation": { "windowHours": 24, "refundLimitInr": 200 },
   "languages": ["hi", "en", "ml", "kn"],
   "owner": { "whatsapp": "+919000000000", "language": "en" },
-  "reminders": { "hoursBefore": [24, 2] }
+  "reminders": { "hoursBefore": [24, 2] },
+  "payment": { "module": "razorpay" }
 }

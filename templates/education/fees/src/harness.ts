@@ -1,7 +1,7 @@
 // The dev harness: the Fees agent wired to the in-memory fakes, with a clock you can move and helpers that play the part of the parent, the payment provider's
 // webhooks and the owner. The crash-test situations, the hand check and the walkthrough build on this.
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import type { OwedRefund, UpiRequest } from "../../../../modules/payments/upi/ledger.ts";
+import type { OwedRefund, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { readFileSync } from "node:fs";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import type { FakeClock } from "../../../../modules/core/clock.ts";
@@ -12,7 +12,7 @@ import type { FakeMessaging, InboundMessage } from "../../../../modules/messagin
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import type { GuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { FakePayments, FakePaymentsOptions, PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
 import type { ActionRecord } from "../../../../modules/record/record.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -22,7 +22,7 @@ import { createRuleParser } from "./adapters/rule-parser.ts";
 import type { IntentParser } from "./adapters/model.ts";
 import { createStore } from "./due.ts";
 import type { Due, Store } from "./due.ts";
-import { razorpayLimitsSpec } from "./guard-limits.ts";
+import { gatewayLimitsSpec } from "./guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
 import { parseSettings } from "./settings.ts";
@@ -75,11 +75,11 @@ export interface World {
   /** The fee of a student, by name. */
   dueOf(student: string): Due | undefined;
   /** The payment link a parent should pay now for a student's fee, as the payments service holds it. */
-  linkFor(student: string): PaymentLink | undefined;
+  linkFor(student: string): PaymentRequest | undefined;
   /** The parent pays the current link (all of it, or part). */
   pays(student: string, options?: { amountInr?: number }): void;
   /** UPI centres (B33): the student's fee's current request, as the agent's own ledger holds it (its code is the owner's, never the parent's). */
-  upiRequest(student: string): UpiRequest | undefined;
+  upiRequest(student: string): MarkedRequest | undefined;
   /** UPI: the refunds the owner owes for the student's fee. */
   upiRefunds(student: string): OwedRefund[];
   /** UPI: the owner marks money received on the student's current request (by tapping the newest "Received" button with `tap`), or another amount with `amountInr`. `code` replays a code. */
@@ -98,7 +98,7 @@ export interface WorldOptions {
   ai?: AiPolicy;
   /** Whether the stand-in WhatsApp takes buttons. Default true. */
   interactive?: boolean;
-  /** A UPI centre: where the QR pictures go (modules/payments/upi/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
+  /** A UPI centre: where the QR pictures go (modules/payments/owner-marked/qr-image.ts memoryQrImages). Left out: no picture, the words alone. */
   qrImage?: (text: string) => Promise<string | null>;
   /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
   licence?: () => LicenceNow;
@@ -110,7 +110,7 @@ export const HARNESS_GUARD = { tenant: "bright-tuition", version: 1, reviewedBy:
 export function createWorld(options: WorldOptions = {}): World {
   const settings = options.settings ?? brightTuition();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 2 }, { hour: 9, minute: 0 }, settings.timezone));
-  const guard = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock);
+  const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock);
   const payments = createFakePayments(clock, { guard, ...options.payments });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);

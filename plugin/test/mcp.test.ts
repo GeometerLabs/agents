@@ -111,13 +111,18 @@ test("list_modules names the templates and the shared modules", async () => {
 test("create_pathway makes a shop from a template, keeps limits at the template's, and refuses limits in the details", async () => {
   const w = world();
   try {
-    const made = await w.call("create_pathway", { name: "bright", template: "fees", prepared_by: "Divya, local partner", settings: { name: "Bright Tuition", address: "1 Temple Road" } });
+    // B71: the shop's own UPI ID is asked for; the example's made-up one is never used, and a gateway is a person's choice in the panel
+    const noUpi = await w.call("create_pathway", { name: "bright", template: "fees", settings: { name: "Bright Tuition" } });
+    assert.equal(noUpi.isError, true);
+    assert.match(noUpi.text, /shop's own UPI ID/u);
+    const made = await w.call("create_pathway", { name: "bright", template: "fees", prepared_by: "Divya, local partner", upi_id: "brighttuition@okhdfcbank", payee: "Bright Tuition", settings: { name: "Bright Tuition", address: "1 Temple Road" } });
     assert.equal(made.isError, false, made.text);
     const settings = JSON.parse(readFileSync(join(w.server.paths.shop("bright"), "settings.json"), "utf8"));
     assert.equal(settings.name, "Bright Tuition");
+    assert.deepEqual(settings.payment, { module: "upi", upi: { id: "brighttuition@okhdfcbank", payee: "Bright Tuition" } });
     assert.equal(settings.refund.limitInr, 500, "the limit is the template's");
     assert.equal(readFileSync(join(w.server.paths.shop("bright"), "pathway.lock"), "utf8").split("@")[0], "fees");
-    const refused = await w.call("create_pathway", { name: "other", template: "fees", settings: { refund: { limitInr: 5000 } } });
+    const refused = await w.call("create_pathway", { name: "other", template: "fees", upi_id: "other@okicici", payee: "Other", settings: { refund: { limitInr: 5000 } } });
     assert.equal(refused.isError, true);
     assert.match(refused.text, /limits or money rules/u);
     assert.equal(existsSync(w.server.paths.shop("other")), false);
@@ -213,7 +218,7 @@ test("crash_test starts a run with its budget and crash_test_result reads 'Held 
 test("a crash test of an agent that cannot start says so, and counts nothing", async () => {
   const w = world();
   try {
-    const add = await import("node:child_process").then((m) => m.spawnSync(process.execPath, [join(AGENTS, "bundle/geometer.ts"), "agent", "add", "my-agent", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "x@group.calendar.google.com", "--server", w.server.root], { encoding: "utf8" }));
+    const add = await import("node:child_process").then((m) => m.spawnSync(process.execPath, [join(AGENTS, "bundle/geometer.ts"), "agent", "add", "my-agent", "--upstreams", "razorpay,whatsapp,calendar", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "x@group.calendar.google.com", "--server", w.server.root], { encoding: "utf8" }));
     assert.equal(add.status, 0, add.stderr + add.stdout);
     const started = await w.call("crash_test", { name: "my-agent" });
     let result: any;

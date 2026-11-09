@@ -115,9 +115,9 @@ test("a bad body is refused whole with 400: a tick, a half-formed event, not JSO
       { events: [] },
       { events: [{ kind: "tick" }] },
       { events: [{ kind: "message", message: { id: "m", from: CUSTOMER } }] },
-      { events: [{ kind: "payment_event", event: { id: "e", event: "payment_link.paid", created_at: 1, payload: {} } }] },
-      { events: [{ kind: "payment_event", event: { id: "e", event: "refund.processed", created_at: 1, payload: { refund: { id: "r" } } } }] },
-      { events: [{ kind: "payment_event", event: { id: "e", event: "payment.captured", created_at: 1, payload: { payment: {} } } }] },
+      { events: [{ kind: "payment_event", event: { id: "e", event: "request.paid", created_at: 1, payload: {} } }] },
+      { events: [{ kind: "payment_event", event: { id: "e", event: "refund.done", created_at: 1, payload: { refund: { id: "r" } } } }] },
+      { events: [{ kind: "payment_event", event: { id: "e", event: "payment.received", created_at: 1, payload: { payment: {} } } }] },
       { events: [good, { kind: "nonsense" }] },
     ];
     for (const body of bad) assert.equal((await t.post(body)).status, 400, JSON.stringify(body)?.slice(0, 80));
@@ -130,7 +130,7 @@ test("a bad body is refused whole with 400: a tick, a half-formed event, not JSO
 test("a real payment.captured, which names the payment and not its link, is accepted (the inbox would otherwise answer its provider 503 for ever)", async () => {
   const t = await boot();
   try {
-    const captured = { kind: "payment_event", event: { id: "evt_captured", event: "payment.captured", created_at: 1, payload: { payment: { id: "pay_1" } } } };
+    const captured = { kind: "payment_event", event: { id: "evt_captured", event: "payment.received", created_at: 1, payload: { payment: { id: "pmt_1" } } } };
     assert.deepEqual(await (await t.post({ events: [captured] })).json(), { saved: 1, duplicates: 0 });
   } finally { await t.close(); }
 });
@@ -182,7 +182,7 @@ test("status is counts only: bookings by state, tasks, the last step, the record
     assert.deepEqual([status.steps, status.errors], [1, 0]);
     assert.match(status.startedAt, /^\d{4}-\d\d-\d\dT/);
     const text = JSON.stringify(status);
-    for (const secret of ["haircut", "6pm", CUSTOMER.slice(3), "Glow", "plink", "rzp"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
+    for (const secret of ["haircut", "6pm", CUSTOMER.slice(3), "Glow", "plink", "rzp", "req_", "pmt_", "pay.example"]) assert.ok(!text.includes(secret), `status leaked ${secret}`);
   } finally { await t.close(); }
 });
 

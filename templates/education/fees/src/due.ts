@@ -12,8 +12,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
-import type { UpiState } from "../../../../modules/payments/upi/ledger.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { Reminder } from "../../../../modules/reminders/reminders.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import { batchName, batchOf } from "./settings.ts";
@@ -103,8 +103,8 @@ export interface Store {
   startedAtMs?: number;
   /** The month's AI spend and button-mode notices. Left out until the first message. */
   ai?: AiState;
-  /** A UPI centre's requests, the owner's marks and the refunds the owner owes (modules/payments/upi/ledger.ts). Left out until the first request. */
-  upi?: UpiState;
+  /** An owner-marked centre's requests, the owner's marks and the refunds the owner owes (modules/payments/owner-marked/ledger.ts). Kept under `upi`, as it always was. Left out until the first request. */
+  upi?: MarkState;
 }
 
 export function createStore(): Store {
@@ -151,7 +151,7 @@ export function monthLabel(due: { month: string }, language: Language): string {
 /** The values of this fee's record that a message may use. Everything comes from the fee and the settings, never from message text. */
 export function factsFor(settings: Settings, due: Due | null, language: Language, extra: { customerPhone?: string; refundInr?: number; receivedInr?: number; waiverInr?: number; requestRef?: string; paidInr?: number; upiCode?: string } = {}): MessageFacts {
   const batch: Batch | undefined = due ? settings.batches.find((b) => b.id === due.batchId) : undefined;
-  const upi = upiOf(settings.payment);
+  const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   return {
     language,
     timeZone: settings.timezone,
@@ -173,7 +173,7 @@ export function factsFor(settings: Settings, due: Due | null, language: Language
     dueRef: due?.id,
     requestRef: extra.requestRef,
     customerPhone: extra.customerPhone ?? due?.customer,
-    ...(upi ? { upiId: upi.id, payee: upi.payee } : {}),
+    ...(payTo ? { upiId: payTo.id, payee: payTo.name } : {}),
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
   };
 }

@@ -9,7 +9,7 @@ import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, razorpaySpec, whatsappSpec } from "./guards.ts";
+import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, gatewaySpec, whatsappSpec } from "./guards.ts";
 import type { GuardDef, GuardKind } from "./guards.ts";
 
 /** What the runtime waits for a call when runtime.json says nothing: longer than Guard's own wait for the provider. */
@@ -174,7 +174,7 @@ export interface ReportFacts {
   innovator: boolean;
   /** Where Caddy serves this shop's pages (reportBaseUrl). */
   pageBaseUrl: string;
-  /** What the numbers were counted from: "live" only when the connection checks confirmed a live Razorpay account, otherwise test money. */
+  /** What the numbers were counted from: "live" for a shop with no gateway (the owner's real marks) or when the checks confirmed a live gateway key; otherwise test money. */
   source: "live" | "test-mode";
   /** The shop's id: the tenant of its record's ledger (B28), so the report is anchored under the same id the daily fingerprint uses. */
   tenant?: string;
@@ -214,7 +214,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined };
     const kinds = guardsOf(template, shop.settings); // a UPI shop (B33) has no Razorpay Guard
     const razorpay = kinds.includes("razorpay");
-    if (razorpay) { try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.razorpaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
+    if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
     specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour });
     if (template.guards.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {
@@ -237,7 +237,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     };
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
-    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.razorpay?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks
+    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };

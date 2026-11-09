@@ -10,8 +10,12 @@
 //                 answer to a refund never came back, it LOOKS at Razorpay's refunds and never sends the refund again.
 //   anything else with a price in it gets the list price back
 //
+// With GEOMETER_UPI_URL set (UPI, B71) there is no gateway: "book" asks Geometer's desk for a request and sends its upi:// link; "I paid" (or a picture) only asks the owner
+// to look; the agent looks at the desk until the OWNER has marked the money received, and only then books and says so; "cancel" owes the deposit back through the desk,
+// and the customer hears that the owner will send it, never that it was sent.
+//
 // What it reads from the environment (the crash test sets all of these; so can you):
-//   PORT, GEOMETER_RAZORPAY_URL, GEOMETER_CALENDAR_URL, GEOMETER_WHATSAPP_URL, GEOMETER_CREDENTIAL, CALENDAR_ID, PHONE_NUMBER_ID,
+//   PORT, GEOMETER_RAZORPAY_URL or GEOMETER_UPI_URL, GEOMETER_CALENDAR_URL, GEOMETER_WHATSAPP_URL, GEOMETER_CREDENTIAL, CALENDAR_ID, PHONE_NUMBER_ID,
 //   GEOMETER_WHATSAPP_APP_SECRET, GEOMETER_RAZORPAY_WEBHOOK_SECRET, GEOMETER_DEPOSIT_INR, GEOMETER_PRICE_INR, GEOMETER_RETRY_MS (wait between sends of a held refund, default 5 minutes)
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
@@ -41,7 +45,7 @@ export async function retryWithNewKey({ agent, refund, done, giveUp }) {
  * The agent as an http.Server (not listening yet). `agent` is the calls to the three services (agent.js). `onRefundUnknown` is the one place the good and the broken
  * example differ. Everything is kept in memory: it is an example.
  */
-export function createApp({ agent, appSecret, webhookSecret, depositInr, priceInr, hasCalendar = true, retryMs = 5 * 60_000, onRefundUnknown = lookBeforeRetrying, log = () => undefined }) {
+export function createApp({ agent, appSecret, webhookSecret, depositInr, priceInr, hasCalendar = true, retryMs = 5 * 60_000, onRefundUnknown = lookBeforeRetrying, log = () => undefined, upi = false }) {
   const seenMessages = new Set();
   const seenEvents = new Set();
   const bookings = new Map(); // customer -> booking
@@ -63,7 +67,37 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
     return null;
   }
 
+  /** UPI: a request at the desk, its link to the customer, and a look at the desk now and then until the owner has marked the money received. */
+  async function bookByUpi(customer) {
+    const open = bookings.get(customer);
+    if (open?.state === "link") return say(customer, `Pay the Rs ${depositInr} deposit by UPI to ${open.payee}: ${open.shortUrl}`);
+    if (open) return say(customer, "You already have a booking with us.");
+    const booking = { customer, ref: `b-${++counter}`, state: "creating" };
+    bookings.set(customer, booking);
+    const made = await agent.upiRequest({ reference: booking.ref, amountInr: depositInr, customer }).catch(() => ({ status: 0 }));
+    if (made.status !== 200) { bookings.delete(customer); return say(customer, "Sorry, we cannot take a booking right now. Please try again later."); }
+    Object.assign(booking, { linkId: made.json.id, shortUrl: made.json.pay_url, payee: `${made.json.pay_to.name} (${made.json.pay_to.id})`, state: "link" });
+    await say(customer, `Pay the Rs ${depositInr} deposit by UPI to ${booking.payee}: ${booking.shortUrl}`);
+    const look = setInterval(async () => {
+      if (booking.state !== "link") { clearInterval(look); return; }
+      const now = await agent.upiRead(booking.linkId).catch(() => ({ status: 0 }));
+      if (now.status !== 200 || !now.json?.paid) return; // only the owner's mark makes it paid
+      clearInterval(look);
+      Object.assign(booking, { state: "paid", paymentId: now.json.payments[0]?.id, amountPaise: now.json.paid_paise });
+      await confirm(booking);
+    }, Math.max(200, Math.min(retryMs, 5_000)));
+    return undefined;
+  }
+
+  async function claimPaid(customer, via) {
+    const booking = bookings.get(customer);
+    if (booking?.state !== "link") return say(customer, "I cannot find a payment we are waiting for.");
+    await agent.upiClaim(booking.linkId, via).catch(() => undefined);
+    return say(customer, "Thank you. The owner will check the payment in their UPI app. You will hear from us once the owner has checked it.");
+  }
+
   async function book(customer) {
+    if (upi) return bookByUpi(customer);
     const open = bookings.get(customer);
     if (open?.state === "link") return say(customer, `Pay the Rs ${depositInr} deposit to book: ${open.shortUrl}`);
     if (open && open.state !== "creating") return say(customer, "You already have a booking with us.");
@@ -95,6 +129,11 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
     const booking = bookings.get(customer);
     if (!booking?.paymentId || !["booked", "unconfirmed"].includes(booking.state)) return say(customer, "I cannot find a paid booking for you.");
     booking.state = "refunding";
+    if (upi) {
+      // the owner sends it from their own UPI app; the agent never sends money and never says it was sent
+      const owed = await agent.upiOwe({ paymentId: booking.paymentId, amountPaise: booking.amountPaise, why: "cancelled" }).catch(() => ({ status: 0 }));
+      return say(customer, owed.status === 200 ? "OK. The owner will send your deposit back by UPI." : "I could not ask the owner yet. The owner will write to you.");
+    }
     await say(customer, "OK. I am asking for your deposit back.");
     // not waited for: a refund the owner has to approve can take hours
     refund(booking).catch((e) => log(`refund: ${e.message}`));
@@ -124,6 +163,7 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
 
   async function onText(customer, text) {
     if (/cancel/iu.test(text)) return cancel(customer);
+    if (upi && /\b(i have |i've |i )?paid\b/iu.test(text)) return claimPaid(customer, "words");
     if (/book/iu.test(text)) return book(customer);
     if (/[₹]|\brs\b|rupee/iu.test(text)) return say(customer, `The price is Rs ${priceInr}. I cannot change it.`);
     return say(customer, "Write 'book' to book, or 'cancel' to cancel.");
@@ -142,7 +182,9 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
       if (path === "/webhooks/whatsapp") {
         if (!same(req.headers["x-hub-signature-256"], `sha256=${hmac(appSecret, raw)}`)) return reply(401);
         for (const entry of body.entry ?? []) for (const change of entry.changes ?? []) for (const m of change.value?.messages ?? []) {
-          if (m.type !== "text" || seenMessages.has(m.id)) continue; // the provider sends a message again when it is not sure it was taken: once is enough
+          if (seenMessages.has(m.id)) continue; // the provider sends a message again when it is not sure it was taken: once is enough
+          if (upi && m.type === "image") { seenMessages.add(m.id); await claimPaid(`+${m.from}`, "screenshot"); continue; } // a screenshot is not proof: the owner looks
+          if (m.type !== "text") continue;
           seenMessages.add(m.id);
           await onText(`+${m.from}`, m.text?.body ?? "");
         }
@@ -170,12 +212,13 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
 /** Start the agent from the environment (the list at the top of this file). `extra` replaces parts of it: the broken example gives its own `onRefundUnknown`. */
 export function startFromEnv(extra = {}) {
   const env = (name, fallback) => { const v = process.env[name] ?? fallback; if (v === undefined || v === "") { console.error(`Set ${name} (see the top of this file).`); process.exit(2); } return v; };
+  const upi = process.env.GEOMETER_UPI_URL;
   const agent = createAgent({
-    razorpay: env("GEOMETER_RAZORPAY_URL"), calendar: process.env.GEOMETER_CALENDAR_URL ?? "", whatsapp: env("GEOMETER_WHATSAPP_URL"), credential: env("GEOMETER_CREDENTIAL"),
+    razorpay: upi ? "" : env("GEOMETER_RAZORPAY_URL"), upi, calendar: process.env.GEOMETER_CALENDAR_URL ?? "", whatsapp: env("GEOMETER_WHATSAPP_URL"), credential: env("GEOMETER_CREDENTIAL"),
     calendarId: process.env.CALENDAR_ID ?? "", phoneNumberId: env("PHONE_NUMBER_ID"),
   });
   const app = createApp({
-    agent, appSecret: env("GEOMETER_WHATSAPP_APP_SECRET"), webhookSecret: env("GEOMETER_RAZORPAY_WEBHOOK_SECRET"), depositInr: Number(env("GEOMETER_DEPOSIT_INR")), priceInr: Number(env("GEOMETER_PRICE_INR", env("GEOMETER_DEPOSIT_INR"))),
+    agent, upi: !!upi, appSecret: env("GEOMETER_WHATSAPP_APP_SECRET"), webhookSecret: upi ? "" : env("GEOMETER_RAZORPAY_WEBHOOK_SECRET"), depositInr: Number(env("GEOMETER_DEPOSIT_INR")), priceInr: Number(env("GEOMETER_PRICE_INR", env("GEOMETER_DEPOSIT_INR"))),
     hasCalendar: !!process.env.GEOMETER_CALENDAR_URL, retryMs: Number(process.env.GEOMETER_RETRY_MS ?? 5 * 60_000), log: (line) => console.error(line), ...extra,
   });
   app.listen(Number(env("PORT")), "127.0.0.1", () => console.log(`own agent listening on ${env("PORT")}`));

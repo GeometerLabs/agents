@@ -8,7 +8,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startInbox } from "../inbox/server.ts";
 import type { InboxConfig, RunningInbox } from "../inbox/server.ts";
-import { signMeta, signRazorpay } from "../../../../modules/messaging/webhooks.ts";
+import { signMeta } from "../../../../modules/messaging/webhooks.ts";
+import { signRazorpay } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { fixtureText, scripted } from "./helpers/scripted-server.ts";
 import type { Answer, Recorded, Scripted } from "./helpers/scripted-server.ts";
 
@@ -42,8 +43,8 @@ test("razorpay: a good signature is parsed, handed to the runtime with the inter
     assert.deepEqual(Object.keys(sent), ["events"]);
     assert.equal(sent.events[0].kind, "payment_event");
     assert.equal(sent.events[0].event.id, "evt_abc"); // the id is the header's
-    assert.equal(sent.events[0].event.event, "payment_link.paid");
-    assert.equal(sent.events[0].event.payload.payment_link.id, "plink_QflcnnZqCekuvL");
+    assert.equal(sent.events[0].event.event, "request.paid");
+    assert.equal(sent.events[0].event.payload.request.id, "plink_QflcnnZqCekuvL");
   });
 });
 

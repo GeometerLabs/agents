@@ -188,6 +188,6 @@ test("the status is counts only, names the cases `fees`, and has no `bookings`",
     assert.equal("bookings" in status, false);
     assert.deepEqual(status.refunds, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } });
     const text = JSON.stringify(status);
-    for (const private_ of [PARENT, "Aarav", "Sharma", "Bright", "rzp.io"]) assert.ok(!text.includes(private_), `${private_} is not in the status`);
+    for (const private_ of [PARENT, "Aarav", "Sharma", "Bright", "pay.example"]) assert.ok(!text.includes(private_), `${private_} is not in the status`);
   } finally { kit.cleanup(); }
 });

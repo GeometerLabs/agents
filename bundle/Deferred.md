@@ -258,3 +258,28 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
 - **The messages line is a planning figure, not a proven ceiling.** It uses about three messages for each order (confirmation, the owner's notice, one follow-up); the busy month's most for one order was 2 that the agent started. Revisit when: real months are in, or the template states its most messages for an order.
 - **`bundle/geometer.ts` still says `--template bookings|fees` in its usage comment**; the command itself is not hard-wired and works for `orders` (it goes through the template registry). Revisit when: the owner of that file next edits it.
 - **An Orders shop whose owner's language is not English fails four hand-check situations** (found 9 Nov while building the panel's flow test): with `owner.language` set to `hi`, `ml` or `kn`, "A customer who says they paid, with nothing paid, is not confirmed", "A payment twice counts once", "A payment after the hold ended is taken again only if the cut-off, the stock and the day still allow it" and "A UPI screenshot sent as proof is not proof" fail (held 13 of 17; 14 for `hi`), so such a shop cannot be made ready to go live. The same settings with `en` hold 17 of 17, and a Fees UPI shop with an `ml` owner holds 7 of 7, so it is Orders-only, not the shared UPI code. It is in `templates/commerce/orders/crash-test/` (the owner's reply is probably read in English only), not in the panel; the panel's Orders flow test uses an English owner line until it is fixed. Revisit when: the template's situations are fixed.
+
+## UPI by default, any other provider through one seam (B71, 10 Nov)
+
+- **Not every place says "the gateway" yet.** The panel (its payment step, keys, connection check, cost line and words), the payments flow, the templates' agents and the
+  Guard spec ask the provider registry (`modules/payments/providers`), and `modules/payments/providers/test/names.test.ts` holds them to it. These still say "razorpay"
+  where the shop's gateway id belongs, and work because Razorpay is the one gateway: the deployer's secret files and credentials (`deploy.ts`, `lib/secrets.ts`
+  INTAKE, `agent_razorpay`), the inbox's webhook route and config (`/webhooks/razorpay`, `razorpayWebhookSecret`), the generated relay and inbox configs
+  (`generate/configs.ts`), `generate/shop.ts`'s gateway variable and `server.limits.razorpayLinksPerHour`, `services/ops.ts` and `services/relay.ts`, the own agent's
+  record, facts and relay context (`agent/record.ts`, `facts.ts`, `relay-context.ts`; the payment look-up is already `providers/razorpay/runtime.ts`), the own-agent
+  crash test's gateway situations and world, `agent/deploy.ts` (`ensureCredentials`' owner notify secret, `renewRelayCredential`, the connection text's labels),
+  `geometer.ts` (`shop add --payment razorpay` is compared by name and its refusals say Razorpay; the help text), `generate/compose.ts` `SHOP_GUARD_KINDS`, and the
+  templates' reports, stand-in control routes and scripts. Each is the provider's id from
+  the shop's settings, mechanically; none changes what a Razorpay shop gets (the golden test pins its bytes). Revisit when: before a second gateway, in one wave.
+- **An agent on its own gateway API (B71 step 6, `--upstreams own-api`) is checked less than one on a module** (Explanation.md says how it is built). Not done:
+  (1) a rule that holds a call for a person is refused, because the owner relay asks only about refunds on a gateway it has a module for
+  (`modules/approvals/clients.ts` `readHeld`); keep a bound or forbid the call instead. An uncertain call under an at-most-once rule is still held by Guard and
+  nobody is asked about it: it waits until it expires, and the builder checks with the API (`/admin/intents/resolve`). (2) There is no stand-in for the API, so
+  `agent crash-test` refuses to run and no go-live certificate can be made for it. (3) The providers' contract test does not apply: there is no module to run it
+  on. (4) `RECORD_READS` has no entry for it, so the record job reads none of the API's own state: the record and the report show the Guard's decisions on the
+  agent's calls, never what the API holds (no "done" for a refund, no payment received). (5) Guard enforces only what the accept file kept: a route left out is
+  refused as unlisted, a rule left out does not exist. Revisit when: a builder brings a gateway with no module and wants holds, the record or a certificate;
+  each needs that gateway's reads and events described (its own module, or reads named in the accept file).
+- **The owner-marked desk is not served on a server** (modules/Deferred.md, B71): `agent add --upstreams upi,...` plans an own agent on UPI with no gateway Guard and
+  `agent crash-test` drives it against the desk, but a deployed agent has nothing to call yet; `agent add` says so in plain words instead of printing an address.
+

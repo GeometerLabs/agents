@@ -80,7 +80,7 @@ test("with no parser in runtime.json the rules read the messages; with one the m
     await rules.stop();
     assert.equal(stub.requests.length, 0, "no parser configured: nothing asked a model");
     assert.ok(lines.some((l) => /I didn't understand/.test(l)), lines.join("\n"));
-    assert.ok(!lines.some((l) => /rzp\.io/.test(l)), "the rules did not book it");
+    assert.ok(!lines.some((l) => /pay\.example/.test(l)), "the rules did not book it");
 
     lines.length = 0;
     const model = await startClient({ clientFolder: withModel.folder, tokenFile: withModel.tokenFile, log: (l) => lines.push(l) });
@@ -92,7 +92,7 @@ test("with no parser in runtime.json the rules read the messages; with one the m
     assert.equal(request.path, "/model/v1/chat/completions", "the call goes to the configured base URL");
     assert.equal(request.body.model, "stub-model");
     assert.equal(request.headers.authorization, undefined, "no key: Guard adds it");
-    assert.ok(lines.some((l) => /rzp\.io/.test(l)), `the model's reading was used, and the agent quoted and sent a link: ${lines.join(" | ")}`);
+    assert.ok(lines.some((l) => /pay\.example/.test(l)), `the model's reading was used, and the agent quoted and sent a link: ${lines.join(" | ")}`);
   } finally { await stub.close(); withModel.done(); withoutModel.done(); }
 });
 

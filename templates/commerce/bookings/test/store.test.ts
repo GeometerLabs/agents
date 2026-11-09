@@ -10,7 +10,7 @@ import type { IncomingEvent } from "../server/events.ts";
 import { createKit } from "./runtime-kit.ts";
 
 const message = (id: string, from = CUSTOMER, timestamp = 1_000): IncomingEvent => ({ kind: "message", message: { id, from, text: "hi", timestamp } });
-const payment = (id: string): IncomingEvent => ({ kind: "payment_event", event: { id, event: "payment_link.paid", created_at: 1, payload: { payment_link: { id: "plink_1", reference_id: "b-1" } } } });
+const payment = (id: string): IncomingEvent => ({ kind: "payment_event", event: { id, event: "request.paid", created_at: 1, payload: { request: { id: "req_1", reference_id: "b-1" } } } });
 
 test("the store survives a round trip through JSON with its Maps, Sets, order and counter", async () => {
   const w = createWorld();

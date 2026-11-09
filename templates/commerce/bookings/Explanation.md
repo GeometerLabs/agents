@@ -859,3 +859,16 @@ The papers themselves are shared (`modules/papers/`, its Explanation says how ea
 - **The monthly report's anchor slot** is filled when a tenant is named: `report.tenant` in runtime.json (the bundle writes the shop's id), `--tenant` on `client-report.ts` (default: a slug of the shop's name, so the same settings give the same tenant every time). The monthly certificate copies it. With none named, `anchor` stays `null` and the bytes of every report made before are unchanged.
 
 Tests: `test/papers.test.ts` (5) on the busy month the report tests use: a customer's statement is their own deposits and refunds, each once, and nothing of another customer's; the anchor slot; the record of the refunded booking in every language with the refund's own id and every row's ledger hash; the identity paper from a go-live certificate; and the script run for real, with every signed file checked against the key.
+
+## UPI by default, and the payment module's capabilities (B71, 10 November 2026)
+
+- **No `payment` block is refused**, and asks for the shop's UPI ID (modules/payments/providers, the one reader). Before B71 it meant Razorpay. The template's
+  `settingsExample` is the UPI example; the gateway examples say `"module": "razorpay"`, and the tests about Guard's refund limits run on them.
+- **The agent asks what the module can do, never its name** (`capabilitiesOf`): a module that cannot confirm a payment by itself is marked paid by the owner
+  (modules/payments/owner-marked); one that cannot refund by itself has the owner pay refunds back; one that cannot cancel a request has nothing to close at the
+  final stop. The owner's mark and a gateway's
+  webhook both go through `reconcilePayments`. The store's `upi` key, the record's `upi_*` names and the `upi_*` message ids keep their values (records, reports and Meta's
+  templates use them). The live adapters take the gateway from the shop's settings (modules/payments/providers/runtime.ts).
+- **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
+  `refund.done`. The Guard spec is written for the gateway the shop chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
+

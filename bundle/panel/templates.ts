@@ -29,7 +29,7 @@ export function discoverTemplates(templatesDir: string): Template[] {
     try {
       const m: unknown = JSON.parse(readFileSync(join(folder, "template.json"), "utf8"));
       if (!isObj(m) || m.schema !== 1 || typeof m.id !== "string" || !/^[a-z][a-z0-9-]{0,39}$/u.test(m.id) || typeof m.setup !== "string") continue;
-      const accounts = Array.isArray(m.accounts) ? m.accounts.filter((a): a is AccountKind => a === "whatsapp" || a === "calendar" || a === "razorpay") : [];
+      const accounts = Array.isArray(m.accounts) ? m.accounts.filter((a): a is AccountKind => a === "whatsapp" || a === "calendar" || a === "payment") : [];
       const steps = Array.isArray(m.steps) ? STEP_IDS.filter((s) => (m.steps as unknown[]).includes(s)) : [...STEP_IDS];
       const pkg = JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as { version?: string };
       found.push({ id: m.id, version: pkg.version ?? "0.0.0", setup: m.setup, steps, accounts, folder, settingsExample: typeof m.settingsExample === "string" ? m.settingsExample : "" });

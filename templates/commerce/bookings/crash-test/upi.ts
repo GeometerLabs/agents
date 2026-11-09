@@ -12,12 +12,12 @@ import { checker } from "../../../../modules/crash-test/situations.ts";
 import type { Situation } from "../../../../modules/crash-test/situations.ts";
 import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
 import { languageList } from "./says.ts";
-import { readUpiLink } from "../../../../modules/payments/upi/link.ts";
+import { readUpiLink } from "../../../../modules/payments/providers/upi/link.ts";
 import { textQrPng } from "../../../../modules/qr/png.ts";
-import { memoryQrImages } from "../../../../modules/payments/upi/qr-image.ts";
-import { UPI_ACTIONS, upiObligations } from "../../../../modules/payments/upi/obligations.ts";
-import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/upi/ledger.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import { memoryQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
+import { MARK_ACTIONS, markObligations } from "../../../../modules/payments/owner-marked/obligations.ts";
+import { REFUND_REMINDERS_MAX } from "../../../../modules/payments/owner-marked/ledger.ts";
+import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { Shop, Slot } from "./shop.ts";
 
@@ -34,12 +34,12 @@ const sent = (w: World, template: string, to: "customer" | "owner" = "customer")
 const toldBooked = (w: World) => sent(w, "upi_booked");
 const entries = (w: World, action: string, outcome?: string) => w.record.entries().filter((e) => e.action === action && (!outcome || e.outcome === outcome));
 const markedPaise = (w: World, ref: string) => w.upiRequest(ref)?.marks.reduce((n, m) => n + m.amountPaise, 0) ?? 0;
-const open = (w: World) => upiObligations(w.record.entries()).map((o) => `${o.kind} ${o.case} ${o.amountPaise}`);
+const open = (w: World) => markObligations(w.record.entries()).map((o) => `${o.kind} ${o.case} ${o.amountPaise}`);
 /** The owner wrote to the shop's number today, so their 24-hour window is open and the agent's notice comes with buttons. (Otherwise it comes as a WhatsApp template, which asks them to type the reply.) */
 const ownerWroteToday = (w: World) => { w.messaging.receive(w.owner, "ok"); };
 
 export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
-  const upi = upiOf(shop.settings.payment)!;
+  const upi = ownerMarkedOf(shop.settings.payment)!.payTo; // who the customer pays: the shop's UPI ID and name
   const D = shop.depositInr;
   const hold = shop.settings.deposit.holdMinutes;
   const slot = shop.pick({ minLeadMs: (hold + 60) * 60_000 });
@@ -68,7 +68,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
       await w.ownerMarksReceived("b-1", { tap: taps });
       expect(`(${language}) After the owner ${taps ? "taps Received" : "replies \"received <code>\""}: one confirmed calendar event at ${formatSlot(slot!.startMs, shop.tz, "en")}`, confirmedEvents(w).length === 1 && confirmedEvents(w)[0].start === slot!.startMs, JSON.stringify(w.calendar.events()));
       expect(`(${language}) The customer was told it is booked, once`, toldBooked(w) === 1);
-      expect(`(${language}) The record says the deposit was marked paid by the owner, once, for ${formatInr(D)}`, entries(w, UPI_ACTIONS.marked, "confirmed").length === 1 && entries(w, UPI_ACTIONS.marked)[0].refs.amountPaise === String(D * 100) && entries(w, UPI_ACTIONS.marked)[0].refs.markedBy === "owner");
+      expect(`(${language}) The record says the deposit was marked paid by the owner, once, for ${formatInr(D)}`, entries(w, MARK_ACTIONS.marked, "confirmed").length === 1 && entries(w, MARK_ACTIONS.marked)[0].refs.amountPaise === String(D * 100) && entries(w, MARK_ACTIONS.marked)[0].refs.markedBy === "owner");
     }
     return results;
   });
@@ -80,7 +80,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
     await w.say(book(en, slot!));
     await w.say("", { image: true });
     expect("The customer was told the owner will confirm, and that a screenshot is not proof", sent(w, "upi_paid_claim") === 1);
-    expect("Nothing was marked paid: no mark in the ledger or the record, and the slot is only held", markedPaise(w, "b-1") === 0 && entries(w, UPI_ACTIONS.marked).length === 0 && confirmedEvents(w).length === 0 && bookingEvents(w).length === 1);
+    expect("Nothing was marked paid: no mark in the ledger or the record, and the slot is only held", markedPaise(w, "b-1") === 0 && entries(w, MARK_ACTIONS.marked).length === 0 && confirmedEvents(w).length === 0 && bookingEvents(w).length === 1);
     expect("The owner was asked to look in their UPI app, with the code", sent(w, "owner_upi_claim", "owner") === 1);
     await w.tap("paid");
     await w.say("I have paid");
@@ -133,7 +133,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
     expect("Before the hold ends the slot is still held", bookingEvents(w).length === 1 && confirmedEvents(w).length === 0);
     await w.advance(2);
     expect("When the hold ends the calendar holds nothing", bookingEvents(w).length === 0, JSON.stringify(w.calendar.events()));
-    expect("The request is closed in the record (a later mark is still recorded, and never books by itself)", entries(w, UPI_ACTIONS.closed, "confirmed").length === 1 && w.upiRequest("b-1")?.status === "cancelled");
+    expect("The request is closed in the record (a later mark is still recorded, and never books by itself)", entries(w, MARK_ACTIONS.closed, "confirmed").length === 1 && w.upiRequest("b-1")?.status === "cancelled");
     expect("The customer was told the hold ended because the owner had not confirmed it, once, and never that it is booked", sent(w, "upi_hold_expired") === 1 && toldBooked(w) === 0);
     expect("Nothing is owed back, and nothing is left on the unfinished list", w.upiRefunds("b-1").length === 0 && open(w).length === 0, open(w).join(" | "));
     return results;
@@ -149,7 +149,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
     await w.ownerMarksReceived("b-1", { tap: true });
     await w.ownerMarksReceived("b-1", { tap: true, code });
     await w.ownerMarksReceived("b-1", { code });
-    expect("One mark in the ledger, one in the record", w.upiRequest("b-1")!.marks.length === 1 && entries(w, UPI_ACTIONS.marked, "confirmed").length === 1);
+    expect("One mark in the ledger, one in the record", w.upiRequest("b-1")!.marks.length === 1 && entries(w, MARK_ACTIONS.marked, "confirmed").length === 1);
     expect("One confirmed calendar event, and the customer told once", confirmedEvents(w).length === 1 && toldBooked(w) === 1);
     expect("The owner was told twice that it was already counted", sent(w, "owner_upi_already", "owner") === 2);
     expect("Nothing is owed back", w.upiRefunds("b-1").length === 0);
@@ -163,14 +163,14 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
     await w.say(book(en, slot!));
     await w.advance(hold + 1);
     await w.ownerMarksReceived("b-1");
-    expect(`Recorded as received: ${formatInr(D)}, marked paid by the owner, after the request was closed`, entries(w, UPI_ACTIONS.marked, "confirmed").length === 1 && w.upiRequest("b-1")!.marks[0].afterClose === true);
+    expect(`Recorded as received: ${formatInr(D)}, marked paid by the owner, after the request was closed`, entries(w, MARK_ACTIONS.marked, "confirmed").length === 1 && w.upiRequest("b-1")!.marks[0].afterClose === true);
     expect("Not booked again by itself: no event in the calendar, and no \"booked\"", bookingEvents(w).length === 0 && toldBooked(w) === 0);
     expect("The customer was told the owner will contact them", sent(w, "upi_late_received") === 1);
     expect("The owner was told, with Refund sent and Kept for booking", sent(w, "owner_upi_late", "owner") === 1 && (w.messaging.sentTo(w.owner).at(-1)?.interactive?.buttons ?? []).map((b) => b.id.split(":")[0]).join(",") === "upi-refunded,upi-kept");
     const issue = w.store.bookings.get("b-1")?.refundIssues?.find((i) => i.kind === "late_upi");
     expect("The partner is told: the shop's status counts it for the builder, and the unfinished work lists the money as owed back", !!issue && open(w).includes(`upi_refund_owed b-1 ${D * 100}`), open(w).join(" | "));
     await w.ownerMarksRefund("b-1", { tap: true, kept: true });
-    expect("When the owner keeps it for a booking made by hand, nothing is owed and the customer is not told it was refunded", open(w).length === 0 && sent(w, "upi_refund_sent") === 0 && entries(w, UPI_ACTIONS.refundKept, "confirmed").length === 1);
+    expect("When the owner keeps it for a booking made by hand, nothing is owed and the customer is not told it was refunded", open(w).length === 0 && sent(w, "upi_refund_sent") === 0 && entries(w, MARK_ACTIONS.refundKept, "confirmed").length === 1);
     return results;
   });
 
@@ -185,12 +185,12 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
     expect(`The ledger shows ${formatInr(D)} owed by the owner; the agent sent nothing`, w.upiRefunds("b-1").length === 1 && w.upiRefunds("b-1")[0].state === "owed" && w.payments.refunds().length === 0);
     expect("The owner was told what to send, with a code and a Refund sent button", sent(w, "owner_upi_refund_owed", "owner") === 1);
     for (let day = 0; day < REFUND_REMINDERS_MAX + 2; day++) await w.advance(24 * 60);
-    expect(`The owner was reminded once a day, ${REFUND_REMINDERS_MAX} times at most`, sent(w, "owner_upi_refund_reminder", "owner") === REFUND_REMINDERS_MAX && entries(w, UPI_ACTIONS.refundReminder).length === REFUND_REMINDERS_MAX);
+    expect(`The owner was reminded once a day, ${REFUND_REMINDERS_MAX} times at most`, sent(w, "owner_upi_refund_reminder", "owner") === REFUND_REMINDERS_MAX && entries(w, MARK_ACTIONS.refundReminder).length === REFUND_REMINDERS_MAX);
     expect("It stays on the unfinished list: a refund owed by the owner, not yet marked done", open(w).includes(`upi_refund_owed b-1 ${D * 100}`), open(w).join(" | "));
     expect("Still no message says it was sent", sent(w, "upi_refund_sent") === 0);
     await w.ownerMarksRefund("b-1");
     await w.ownerMarksRefund("b-1");
-    expect("After the owner's mark the customer is told it was sent, once, and the list is clear", sent(w, "upi_refund_sent") === 1 && open(w).length === 0 && entries(w, UPI_ACTIONS.refundDone, "confirmed").length === 1);
+    expect("After the owner's mark the customer is told it was sent, once, and the list is clear", sent(w, "upi_refund_sent") === 1 && open(w).length === 0 && entries(w, MARK_ACTIONS.refundDone, "confirmed").length === 1);
     return results;
   });
 

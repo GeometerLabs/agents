@@ -195,7 +195,7 @@ test("Guard refuses the hold for the licence while the runtime's own file says '
 test("Guard refuses the deposit link for the licence: asked once, the slot is let go, and the customer is told 'paused'", async () => {
   const w = world();
   let creates = 0;
-  w.payments.createPaymentLink = async () => { creates++; throw suspended("create_link"); };
+  w.payments.createRequest = async () => { creates++; throw suspended("create_link"); };
   await w.say(BOOK);
   assert.equal(creates, 1, "never tried again");
   assert.equal(w.lastTextTo(CUSTOMER), PAUSED);

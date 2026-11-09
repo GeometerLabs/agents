@@ -561,7 +561,7 @@ async function heldRefundSurvives() {
   const stand = (path: string, body?: unknown) => JSON.parse(nodeEval("ops", `fetch('http://standins:8790${path}',{${body ? `method:'POST',headers:{'content-type':'application/json'},body:${JSON.stringify(JSON.stringify(body))}` : ""}}).then(r=>r.text()).then(t=>console.log(t))`).out.trim().split("\n").at(-1) ?? "{}");
   const created = call("POST", "/v1/payment_links", { amount: 20000, currency: "INR", description: "deposit", reference_id: "held-1" });
   const linkId = created.body?.id;
-  const paid = stand("/_standin/razorpay/pay", { link_id: linkId, deliver: false });
+  const paid = stand("/_standin/razorpay/pay", { request_id: linkId, deliver: false });
   const paymentId = paid.payment?.id;
   const refund = { amount: 15000, speed: "normal", receipt: "b-1:pay" };
   const held = call("POST", `/v1/payments/${paymentId}/refund`, refund);
@@ -750,7 +750,7 @@ async function drive(shops: number, seconds: number, perMinute: number, label: s
       for (const l of (st.links ?? []) as { id: string; status: string }[]) {
         if (l.status !== "created" || seen.has(l.id)) continue;
         seen.add(l.id);
-        if (seen.size % 2 === 0) { const r = await control(shopName(i), "/_standin/razorpay/pay", { link_id: l.id }); if (r.payment) paid++; }
+        if (seen.size % 2 === 0) { const r = await control(shopName(i), "/_standin/razorpay/pay", { request_id: l.id }); if (r.payment) paid++; }
       }
     }
   };
@@ -1038,12 +1038,12 @@ async function heldRefundThroughRuntime() {
   const st = () => control(shop, "/_standin/state");
   const c = nextCustomer(1);
   const wrote = await customerWrites(shop, c.from, c.text);
-  let link: { id: string; short_url: string } | undefined;
+  let link: { id: string; pay_url: string } | undefined;
   // the link's address exactly as the message gives it (plink3 is the start of plink381, so a "contains" would find the wrong one)
-  await waitFor("the deposit link", async () => { const s = await st(); const urls = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).flatMap((m) => m.text.match(/https:\/\/rzp\.io\/l\/[A-Za-z0-9_]+/gu) ?? []); link = ((s.links ?? []) as { id: string; short_url: string }[]).find((l) => urls.includes(l.short_url)); return !!link; }, 60);
+  await waitFor("the deposit link", async () => { const s = await st(); const urls = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).flatMap((m) => m.text.match(/https:\/\/rzp\.io\/l\/[A-Za-z0-9_]+/gu) ?? []); link = ((s.links ?? []) as { id: string; pay_url: string }[]).find((l) => urls.includes(l.pay_url)); return !!link; }, 60);
   if (!link) { check("a booking through the runtime gets its deposit link (the start of the held-refund check)", false, { wrote }); return; }
   const refundsBefore = ((await st()).refunds ?? []).length;
-  await control(shop, "/_standin/razorpay/pay", { link_id: link.id });
+  await control(shop, "/_standin/razorpay/pay", { request_id: link.id });
   const booked = await waitFor("'Booked!'", async () => ((await st()).outbox ?? []).some((m: { to: string; text: string }) => digits(m.to) === digits(c.from) && /^Booked!/u.test(m.text)), 60);
   check("the customer paid the deposit and the runtime booked it (the calendar and the payment record agree)", booked, link.id);
   await customerWrites(shop, c.from, "please cancel my booking");
@@ -1099,7 +1099,7 @@ async function licenceWindDown() {
   const suspended = (r: { status: number; body: any }) => r.status === 402 && r.body?.guard?.code === "subscription_suspended" && r.body?.guard?.reason_code === "subscription_suspended" && r.body?.guard?.sent === "no";
   // a link made and paid while the shop is in order (not handed to the runtime), so a refund is owed during the wind-down
   const before = newLink("lic-before");
-  const paid = await control(shop, "/_standin/razorpay/pay", { link_id: before.body?.id, deliver: false });
+  const paid = await control(shop, "/_standin/razorpay/pay", { request_id: before.body?.id, deliver: false });
   const second = newLink("lic-cancel-me");
   const now = nowS();
   const lines = handLease(1, { state: "wind_down", paid_through: now - 35 * DAY_S, expires: now - 5 * DAY_S, stop_at: now + 25 * DAY_S, export_until: null, notice: "wind_down" });

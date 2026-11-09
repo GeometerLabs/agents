@@ -6,10 +6,12 @@
 // file that no runtime loads, until the shared stand-ins (modules/standins) carry them.
 import type { FakeMessaging } from "../../../../modules/messaging/messaging.ts";
 import type { FakePayments } from "../../../../modules/payments/payments.ts";
-import { signMeta, signRazorpay } from "../../../../modules/messaging/webhooks.ts";
+import { signMeta } from "../../../../modules/messaging/webhooks.ts";
+import { signRazorpay } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { ok } from "../../../../modules/standins/http.ts";
 import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
-import { razorpayWebhookBody, whatsappWebhookBody } from "../../../commerce/bookings/standins/control.ts";
+import { whatsappWebhookBody } from "../../../commerce/bookings/standins/control.ts";
+import { razorpayWebhookBody } from "../../../../modules/payments/providers/razorpay/standin.ts";
 
 export { razorpayWebhookBody, whatsappWebhookBody };
 
@@ -76,9 +78,9 @@ export function controlStandin(config: ControlConfig): Handler {
     }
 
     if (path === "/_standin/razorpay/pay" && method === "POST") {
-      if (typeof body?.link_id !== "string") return bad("send { link_id } (and optionally amount, twice, deliver)");
+      if (typeof body?.request_id !== "string") return bad("send { request_id } (and optionally amount, twice, deliver)");
       let payment;
-      try { payment = fakes.payments.customerPays(body.link_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
+      try { payment = fakes.payments.customerPays(body.request_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
       return ok({ payment, delivered: body.deliver === false ? [] : await deliverPaymentEvents(body.twice === true) });
     }
 

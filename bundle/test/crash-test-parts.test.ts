@@ -28,7 +28,7 @@ import { readGoLiveCertificate } from "../../templates/commerce/bookings/report/
 import { CALENDAR_ID, PHONE_NUMBER_ID, tempServer } from "./helpers.ts";
 
 const NOW = new Date("2026-11-05T09:00:00Z");
-const flags = { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
+const flags = { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
 const BANNED = /\b(safe|safely|guaranteed?|proves?|proven|certified)\b/iu;
 
 function server(extra: Record<string, string> = {}, name = "my-agent") {

@@ -225,7 +225,8 @@ export interface PanelRuntime {
 export interface Pins {
   whatsapp?: { phoneNumberId: string };
   calendar?: { calendarId: string };
-  razorpay?: { keyId: string; mode: "test" | "live" };
+  /** B71: the gateway key the panel's check confirmed, and whose (the provider's id). Only for a shop that chose a gateway. */
+  gateway?: { provider: string; keyId: string; mode: "test" | "live" };
 }
 
 export interface ShopFolder {
@@ -299,7 +300,7 @@ export function readShop(dir: string, name: string): ShopFolder {
       if (!isObj(p) || p.schema !== 1) throw new Error("it is not a pins file (schema 1)");
       if (isObj(p.whatsapp) && typeof p.whatsapp.phoneNumberId === "string") pins.whatsapp = { phoneNumberId: p.whatsapp.phoneNumberId };
       if (isObj(p.calendar) && typeof p.calendar.calendarId === "string") pins.calendar = { calendarId: p.calendar.calendarId };
-      if (isObj(p.razorpay) && typeof p.razorpay.keyId === "string" && (p.razorpay.mode === "test" || p.razorpay.mode === "live")) pins.razorpay = { keyId: p.razorpay.keyId, mode: p.razorpay.mode };
+      if (isObj(p.gateway) && typeof p.gateway.provider === "string" && typeof p.gateway.keyId === "string" && (p.gateway.mode === "test" || p.gateway.mode === "live")) pins.gateway = { provider: p.gateway.provider, keyId: p.gateway.keyId, mode: p.gateway.mode };
     } catch (e) { problems.push(`pins.json is not usable: ${(e as Error).message}`); }
   }
   // who set the shop up, for the owner's monthly report: report.json (a person's word), else owner.json (the panel's attribution), else a plain default

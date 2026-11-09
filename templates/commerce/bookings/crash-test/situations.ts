@@ -37,7 +37,7 @@ import { checker, runAllSituations, runSituation } from "../../../../modules/cra
 import type { CheckResult, HandCheckRun, Situation, SituationResult, Skipped } from "../../../../modules/crash-test/situations.ts";
 import { planShop } from "./shop.ts";
 import { RAZORPAY_ONLY, buildUpiSituations } from "./upi.ts";
-import { upiOf } from "../../../../modules/payments/upi/settings.ts";
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import type { Shop, Slot } from "./shop.ts";
 
 export { SAYS } from "./says.ts";
@@ -212,12 +212,12 @@ function build(shop: Shop): Built[] {
     async run() {
       const { results, expect } = checker();
       const w = world({ payments: { enforceUniqueReference: false } });
-      w.payments.inject("createPaymentLink", "lostReply");
+      w.payments.inject("createRequest", "lostReply");
       await w.say(sayings(shop, en, normalSlot).book);
       expect("The payments service holds exactly one link for the booking (not two)", w.payments.links().length === 1, `links: ${w.payments.links().length}`);
-      expect("The agent asked the payments service to create a link once", w.payments.calls.filter((c) => c.op === "createPaymentLink").length === 1);
+      expect("The agent asked the payments service to create a link once", w.payments.calls.filter((c) => c.op === "createRequest").length === 1);
       const link = w.linkFor("b-1");
-      expect("The customer was sent that very link", link !== undefined && w.lastTextTo(CUSTOMER).includes(link.short_url), w.lastTextTo(CUSTOMER));
+      expect("The customer was sent that very link", link !== undefined && w.lastTextTo(CUSTOMER).includes(link.pay_url), w.lastTextTo(CUSTOMER));
       expect("The calendar holds the slot (tentative) once", bookingEvents(w).length === 1 && bookingEvents(w)[0].status === "tentative");
       return results;
     },
@@ -306,7 +306,7 @@ function build(shop: Shop): Built[] {
       expect("One reply to the customer", w.textsTo(CUSTOMER).length === 1, `replies: ${w.textsTo(CUSTOMER).length}`);
       await w.say(text); // the customer sends the same words again, a new message
       expect("Repeating the words still gives one event and one link", bookingEvents(w).length === 1 && w.payments.links().length === 1);
-      expect("The customer is sent the same link again, not a second one", w.lastTextTo(CUSTOMER).includes(w.linkFor("b-1")!.short_url));
+      expect("The customer is sent the same link again, not a second one", w.lastTextTo(CUSTOMER).includes(w.linkFor("b-1")!.pay_url));
       return results;
     },
   });
@@ -343,7 +343,7 @@ function build(shop: Shop): Built[] {
 
       // (a) the slot is still free: take it again and confirm
       const free = world(options);
-      free.payments.inject("cancelPaymentLink", "error");
+      free.payments.inject("cancelRequest", "error");
       await free.say(text);
       await free.advance(hold + 1); // the hold ends
       expect("The hold was released: the calendar holds nothing", bookingEvents(free).length === 0);
@@ -355,7 +355,7 @@ function build(shop: Shop): Built[] {
 
       // (b) someone else took the slot: refund the deposit
       const taken = world(options);
-      taken.payments.inject("cancelPaymentLink", "error");
+      taken.payments.inject("cancelRequest", "error");
       await taken.say(text);
       await taken.advance(hold + 1);
       await taken.say(text, { from: OTHER_CUSTOMER }); // the slot is free again, and the next customer holds it
@@ -416,9 +416,9 @@ function build(shop: Shop): Built[] {
         const texts = w.textsTo(CUSTOMER);
         expect(`No message to the customer ever mentions ${money(shop.offerInr)}`, texts.every((t) => !offer.some((o) => t.includes(o))), texts.join(" | "));
         expect(`The customer was told the list price, ${money(P)}, and that it cannot be lower`, texts[0].includes(money(P)) && texts[0].includes(SAYS[language].cantGoLower), texts[0]);
-        expect("The second push got the held slot's deposit link again (it was read as a push for the price, not as 'no' or nothing)", w.linkFor("b-1") !== undefined && texts.length === 2 && texts[1].includes(w.linkFor("b-1")!.short_url), texts[1] ?? "no second reply");
+        expect("The second push got the held slot's deposit link again (it was read as a push for the price, not as 'no' or nothing)", w.linkFor("b-1") !== undefined && texts.length === 2 && texts[1].includes(w.linkFor("b-1")!.pay_url), texts[1] ?? "no second reply");
         expect("The price is stated once in the reply, not twice", (texts[0].match(priceRe) ?? []).length === 1, texts[0]);
-        expect(`The reply is in the customer's own language and still offers the slot with the ${money(D)} deposit link`, texts[0].includes(money(D)) && texts[0].includes(w.linkFor("b-1")?.short_url ?? "no link"), texts[0]);
+        expect(`The reply is in the customer's own language and still offers the slot with the ${money(D)} deposit link`, texts[0].includes(money(D)) && texts[0].includes(w.linkFor("b-1")?.pay_url ?? "no link"), texts[0]);
         expect(`The only payment link is the ${money(D)} deposit`, w.payments.links().length === 1 && w.payments.links()[0].amount === D * 100, JSON.stringify(w.payments.links()));
         expect("Nothing in the calendar is a cheaper booking: still one hold", bookingEvents(w).length === 1);
         w.payments.customerPays(w.linkFor("b-1")!.id);
@@ -763,7 +763,7 @@ function build(shop: Shop): Built[] {
     async run() {
       const { results, expect } = checker();
       const w = world();
-      w.payments.inject("createPaymentLink", "error", { times: 10 });
+      w.payments.inject("createRequest", "error", { times: 10 });
       await w.say(sayings(shop, en, normalSlot).book);
       expect("No link exists", w.payments.links().length === 0);
       expect("The slot was not left held: the calendar holds nothing", bookingEvents(w).length === 0, JSON.stringify(w.calendar.events()));
@@ -1162,7 +1162,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   const situations: Situation[] = [];
   const skipped: Skipped[] = [];
   // A UPI shop (B33): the situations written around a Razorpay payment link are named as not run, and the UPI ones run instead (crash-test/upi.ts).
-  const all = upiOf(settings.payment)
+  const all = !capabilitiesOf(settings.payment).confirmsAutomatically
     ? [...build(planned.shop).map((b): Built => ("skip" in b ? b : skip(b.id, b.title, RAZORPAY_ONLY))), ...buildUpiSituations(planned.shop, (language, slot) => sayings(planned.shop, language, slot).book)]
     : build(planned.shop);
   for (const built of all) {

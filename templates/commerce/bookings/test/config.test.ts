@@ -180,7 +180,7 @@ test("fakes mode wires the stand-ins and says what the stand-in WhatsApp sends",
   const services = await buildServices({ mode: "fakes" }, { clock, window: { lastInboundAt: () => undefined }, say: (l) => lines.push(l) });
   await services.messaging.sendTemplate("+91900", { name: TEMPLATE_NAMES.customer, language: "en", text: "hello there" });
   assert.equal((await services.calendar.list()).length, 0);
-  assert.equal((await services.payments.listPaymentLinks()).length, 0);
+  assert.equal((await services.payments.listRequests()).length, 0);
   assert.equal(await services.messaging.isWindowOpen("+91900"), false);
   assert.deepEqual(lines, ["[stand-in WhatsApp] to +91900: hello there"]);
 });

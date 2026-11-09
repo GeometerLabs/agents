@@ -58,7 +58,7 @@ RUNTIME_URL=http://127.0.0.1:8787 INTERNAL_TOKEN_FILE=/tmp/geometer-dev/token RA
 # a customer writes (the stand-in delivers a signed webhook to the inbox, which hands it to the runtime at RUNTIME_URL):
 curl -s -X POST localhost:8790/_standin/whatsapp/inbound -d '{"from":"+919811111111","text":"haircut tomorrow at 6pm"}'
 curl -s localhost:8790/_standin/state                  # the outbox, links, refunds, events and calendar the fakes hold
-curl -s -X POST localhost:8790/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # the customer pays a link (use an id from "links" in the state)
+curl -s -X POST localhost:8790/_standin/razorpay/pay -d '{"request_id":"req_1"}'   # the customer pays a request (use an id from "links" in the state)
 curl -s -X POST localhost:8790/_standin/fault -d '{"service":"calendar","op":"insert","mode":"silentFailure"}'   # make the next calendar save do nothing
 ```
 

@@ -125,10 +125,10 @@ test("a service name in a language the business does not list is allowed (it is 
   assert.match(typo.join("\n"), /I don't know what "mal" means/);
 });
 
-test("the payment module (B33): a UPI shop names its own UPI ID and payee, checked in plain words; with no block it is a Razorpay shop and the parsed settings have no block either", () => {
+test("the payment module (B33, B71): a UPI shop names its own UPI ID and payee, checked in plain words; with no block it is refused and asked for the UPI ID, never read as a gateway shop", () => {
   const upi = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")));
   assert.deepEqual(upi.payment, { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } });
-  assert.equal("payment" in parseSettings(example), false, "a shop set up before UPI parses to the same object as before");
+  assert.match(errorsFor((s) => { delete s.payment; }).join("\n"), /Add how customers pay \("payment"\)\. UPI is the default/);
   assert.deepEqual(parseSettings({ ...copy(), payment: { module: "razorpay" } }).payment, { module: "razorpay" });
   assert.match(errorsFor((s) => { s.payment = { module: "upi", upi: { id: "GlowSalon", payee: "Glow Salon" } }; }).join("\n"), /needs an @/);
   assert.match(errorsFor((s) => { s.payment = { module: "upi" }; }).join("\n"), /needs its UPI ID and the payee name/);

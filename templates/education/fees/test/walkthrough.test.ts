@@ -17,7 +17,7 @@ for (const language of LANGUAGES) {
 
     assert.equal(reminder.lines.length, 1);
     assert.ok(reminder.lines[0].text.startsWith(MARKERS[language].reminder), reminder.lines[0].text);
-    assert.match(reminder.lines[0].text, /https:\/\/rzp\.io\/l\/plink\d+/);
+    assert.match(reminder.lines[0].text, /https:\/\/pay\.example\/req_\d+/);
 
     assert.deepEqual(claim.lines.map((l) => l.from), ["parent", "agent", "agent to owner"]);
     assert.ok(claim.lines[1].text.includes(MARKERS[language].cannotSee), claim.lines[1].text);

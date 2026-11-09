@@ -2,19 +2,23 @@
 // generated from that one definition. The tool name in a spec and the tool name in its guard.toml come from the same line here, so they
 // cannot disagree (Guard refuses a pair that does, and the generator checks it again, see rules.ts).
 //
-// The Razorpay spec has one source: razorpayLimitsSpec in templates/commerce/bookings/src/guard-limits.ts, which turns the shop's own settings into
-// the deposit bound and the refund threshold. The others are generated here from the shop's runtime.json (the WhatsApp number, the calendar)
-// and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
+// A gateway's Guard (B71: only for a shop that chose one) is defined by the gateway's own folder (modules/payments/providers/<name>/guard.ts): its tool name,
+// upstream and credential file. Its spec has one source: the template's gatewayLimitsSpec (templates/commerce/bookings/src/guard-limits.ts for Bookings), which
+// turns the shop's own settings into the deposit bound and the refund threshold. The others are generated here from the shop's runtime.json (the WhatsApp
+// number, the calendar) and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
 import { ANTHROPIC_VERSION } from "../../modules/understanding/model-llm.ts";
-import { razorpayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
-import type { LimitsSpec, RazorpayCaps } from "../../modules/payments/guard-limits.ts";
+import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
+import type { LimitsSpec, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
+import { GATEWAYS, GATEWAY_KINDS, OWN_API, providerById } from "../../modules/payments/providers/index.ts";
+import { OWN_API_SECRET } from "../lib/secrets.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
 export const GUARD_UPSTREAM_TIMEOUT_MS = 15_000;
 
-export type GuardKind = "razorpay" | "whatsapp" | "calendar" | "model";
+/** A gateway's id (providers/index.ts GATEWAY_KINDS), "whatsapp", "calendar" or "model". */
+export type GuardKind = string;
 
 export interface GuardDef {
   kind: GuardKind;
@@ -27,11 +31,21 @@ export interface GuardDef {
   secretFile?: string;
 }
 
-export const GUARD_KINDS: readonly GuardKind[] = ["razorpay", "whatsapp", "calendar", "model"];
+export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "model"];
+
+/**
+ * The Guard in front of an agent's own gateway API, which has no module here (B71 step 6): its tool is the reviewed spec's, its upstream is where the builder said the
+ * API is. Everything else is the same as a gateway module's Guard: one credential file, sent as the Authorization header.
+ */
+export function ownApiGuardDef(tool: string, upstream: string): GuardDef {
+  return { kind: OWN_API, tool, upstream, secretFile: OWN_API_SECRET, headers: { Authorization: `\${file:/run/secrets/${OWN_API_SECRET}}` } };
+}
 
 export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
+  const gateway = providerById(kind)?.gateway?.guard;
+  // a gateway's Guard is its folder's: the key order is the deployed definition's, and the bytes of every Razorpay shop's plan are pinned (payment-guard-golden)
+  if (gateway) return { kind, tool: gateway.tool, upstream: gateway.upstream, secretFile: gateway.secretFile, headers: { Authorization: `\${file:/run/secrets/${gateway.secretFile}}` } };
   switch (kind) {
-    case "razorpay": return { kind, tool: "razorpay", upstream: "api.razorpay.com:443", secretFile: "razorpay_authorization", headers: { Authorization: "${file:/run/secrets/razorpay_authorization}" } };
     case "whatsapp": return { kind, tool: "whatsapp", upstream: "graph.facebook.com:443", secretFile: "whatsapp_authorization", headers: { Authorization: "${file:/run/secrets/whatsapp_authorization}" } };
     case "calendar": return { kind, tool: "google-calendar", upstream: "www.googleapis.com:443", headers: { Authorization: "${file:/run/google/authorization}" } };
     case "model":
@@ -47,20 +61,20 @@ const count = (id: string, operation: string, cap: number, windowSeconds: number
 
 /**
  * `caps` is for an agent we did not write, whose builder sets the daily refund caps too (agent.json); a shop passes none and gets the template's. `build` is the template's own
- * way of turning its settings into the Razorpay numbers (lib/kinds.ts): Bookings' unless a shop of another template is planned.
+ * way of turning its settings into the gateway's numbers (lib/kinds.ts): Bookings' unless a shop of another template is planned.
  */
-export function razorpaySpec(settings: Settings, id: SpecIdentity, approvalHours: number, linksPerHour?: number, caps?: Partial<RazorpayCaps>, build: (settings: any, identity: Parameters<typeof razorpayLimitsSpec>[1], options: { approvalTtlSeconds: number; caps?: Partial<RazorpayCaps> }) => LimitsSpec = razorpayLimitsSpec): LimitsSpec {
+export function gatewaySpec(settings: Settings, id: SpecIdentity, approvalHours: number, linksPerHour?: number, caps?: Partial<PaymentCaps>, build: (settings: any, identity: Parameters<typeof gatewayLimitsSpec>[1], options: { approvalTtlSeconds: number; caps?: Partial<PaymentCaps> }) => LimitsSpec = gatewayLimitsSpec): LimitsSpec {
   const merged = { ...(linksPerHour !== undefined ? { linksPerHour } : {}), ...caps };
   return build(settings, { tenant: id.tenant, name: id.name, version: id.version, reviewedBy: id.reviewedBy }, { approvalTtlSeconds: approvalHours * 3600, ...(Object.keys(merged).length > 0 ? { caps: merged } : {}) });
 }
 
 /**
  * What the panel's own agent (`panel-<shop>`) may call at each Guard: the READ operations its connection checks use, and nothing else. The agent is limited to these
- * operations in guard.toml; the routes are in the specs below (Razorpay's `list_links` and the calendar's `list` were already there). The calendar check reads the
+ * operations in guard.toml; the routes are in the specs below (a gateway's own, from its folder, and the calendar's `list` were already there). The calendar check reads the
  * calendar (`get_calendar`) and then asks for ONE event (`list`, `maxResults=1`) because the access role (can it write?) only comes back with an events list: so the
  * panel's agent can list that one calendar's events, which Guard's exact-id rule confines to the shop's own calendar and which its checker throws away (it keeps the role).
  */
-export const PANEL_READS: Record<Exclude<GuardKind, "model">, string[]> = { razorpay: ["list_links"], whatsapp: ["read_number"], calendar: ["get_calendar", "list"] };
+export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GATEWAYS.map((g) => [g.id, g.gateway!.guard.reads.panel])), whatsapp: ["read_number"], calendar: ["get_calendar", "list"] };
 
 /** The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own. */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number }): LimitsSpec {
