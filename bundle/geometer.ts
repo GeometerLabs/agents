@@ -15,7 +15,8 @@
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
-//   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams razorpay,whatsapp,calendar] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
+//   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams upi|razorpay|own-api,whatsapp,calendar] [--upi-id ID --payee "Name"]
+//                    [--gateway-draft D --gateway-accept A --gateway-upstream host:port] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
 //                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses and the one credential it must use instead
 //   agent check|deploy|show <name> [--credential]      the same checks and checked deploy as a shop's; show prints the addresses again
 //   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every five minutes)
@@ -118,6 +119,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
+      "gateway-draft": { type: "string" }, "gateway-accept": { type: "string" }, "gateway-upstream": { type: "string" },
       "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
       credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" }, case: { type: "string" }, lang: { type: "string" },
       // agent crash-test / go-live / set (and --run, --version on agent add)
@@ -456,6 +458,7 @@ async function init(folder: string | undefined, v: Record<string, string | boole
 }
 
 const AGENT_FLAG_NAMES = ["settings", "upstreams", "owner-whatsapp", "owner-language", "business-name", "deposit", "refund-limit", "price-floor", "hours", "timezone", "whatsapp-number-id", "calendar-id", "forward-whatsapp-to", "upi-id", "payee",
+  "gateway-draft", "gateway-accept", "gateway-upstream",
   "refund-inr-per-day", "refunds-per-day", "links-per-hour", "messages-per-hour", "events-per-hour", "events-deleted-per-day", "run", "version"] as const;
 
 /** `agent add|check|deploy|show <name>`: an agent someone else wrote, behind the same Guards. */
