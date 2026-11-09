@@ -7,7 +7,8 @@
 //   3. Otherwise: claim it (`attempted`), save, send (as text in the owner's open window, else the approved utility template), read it back, write how it ended, save.
 //      A refusal before anything went out is tried again an hour later, three tries in all.
 //
-// The template gives the words (`message`): what the notice says, in the owner's language, naming the partner. It is about the service, never about money. It runs on the
+// The template gives the words (`message`): what the notice says, in the owner's language, naming the partner. It is about the service, never about money. The stop's says
+// the partner's service has ended and that the owner can write to hello@geometer.dev to be connected with another local partner; it offers no copy or export (that is the builder's or partner's). It runs on the
 // clock's beat after the agent's own work, from the runtime core, like the monthly report. In the final stop it is the one message that still goes from the shop.
 import { WindowClosedError } from "../core/faults.ts";
 import { HOUR } from "../core/time.ts";

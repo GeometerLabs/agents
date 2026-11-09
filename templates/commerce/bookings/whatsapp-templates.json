@@ -1832,7 +1832,7 @@
           "body_text": [
             [
               "Glow Salon",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -1852,7 +1852,7 @@
           "body_text": [
             [
               "Glow Salon",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -1872,7 +1872,7 @@
           "body_text": [
             [
               "Glow Salon",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -1892,7 +1892,7 @@
           "body_text": [
             [
               "Glow Salon",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -1907,15 +1907,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "सूचना: {{1}} की ऑनलाइन बुकिंग बंद हो गई है। कुछ भी मिटाया नहीं गया है। आने वाली बुकिंग: {{2}}। बाकी खुले काम: {{3}}। पूरी सूची और आपके सभी रिकॉर्ड की मुफ़्त कॉपी {{4}} तक {{5}} से मिल सकती है।",
+        "text": "सूचना: {{1}} की ऑनलाइन बुकिंग बंद हो गई है, क्योंकि {{2}} की सेवा समाप्त हो गई है। आज के बाद की जो बुकिंग आपके कैलेंडर में हैं: {{3}}। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा।",
         "example": {
           "body_text": [
             [
               "Glow Salon",
-              "3",
-              "1",
-              "शुक्रवार, 5 मार्च",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital",
+              "3"
             ]
           ]
         }
@@ -1930,15 +1928,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Notice: online booking for {{1}} has stopped. Nothing is deleted. Bookings to come: {{2}}. Other open items: {{3}}. {{4}} can give you the full list and a free copy of all your records until {{5}}.",
+        "text": "Notice: online booking for {{1}} has stopped, because the service from {{2}} has ended. Bookings after today still in your calendar: {{3}}. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.",
         "example": {
           "body_text": [
             [
               "Glow Salon",
-              "3",
-              "1",
-              "Divya, local partner",
-              "Fri 5 Mar"
+              "Divya, Sri Sai Digital",
+              "3"
             ]
           ]
         }
@@ -1953,15 +1949,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: {{2}}. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: {{3}}. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും {{4}} വരെ {{5}} നൽകും.",
+        "text": "അറിയിപ്പ്: {{1}}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി, കാരണം {{2}} നൽകിയിരുന്ന സേവനം അവസാനിച്ചു. ഇന്നിന് ശേഷം നിങ്ങളുടെ കലണ്ടറിലുള്ള ബുക്കിംഗുകൾ: {{3}}. മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ഇത് തുടരാൻ hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതൂ, Geometer നിങ്ങളെ ബന്ധിപ്പിക്കും.",
         "example": {
           "body_text": [
             [
               "Glow Salon",
-              "3",
-              "1",
-              "വെള്ളി, 5 മാർച്ച്",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital",
+              "3"
             ]
           ]
         }
@@ -1976,15 +1970,13 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು: {{2}}. ಉಳಿದ ಬಾಕಿ ಕೆಲಸಗಳು: {{3}}. ಪೂರ್ಣ ಪಟ್ಟಿ ಮತ್ತು ನಿಮ್ಮ ಎಲ್ಲಾ ದಾಖಲೆಗಳ ಉಚಿತ ಪ್ರತಿಯನ್ನು {{4}} ವರೆಗೆ {{5}} ನೀಡುತ್ತಾರೆ.",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {{2}} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿರುವ ಬುಕಿಂಗ್‌ಗಳು: {{3}}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
         "example": {
           "body_text": [
             [
               "Glow Salon",
-              "3",
-              "1",
-              "ಶುಕ್ರವಾರ, 5 ಮಾರ್ಚ್",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital",
+              "3"
             ]
           ]
         }
@@ -2796,7 +2788,7 @@
               "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -2828,7 +2820,7 @@
               "phone calls · walk-ins · and 17 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -2860,7 +2852,7 @@
               "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -2892,7 +2884,7 @@
               "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -2924,7 +2916,7 @@
               "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -2956,7 +2948,7 @@
               "phone calls · walk-ins · and 17 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -2988,7 +2980,7 @@
               "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3020,7 +3012,7 @@
               "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3052,7 +3044,7 @@
               "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3084,7 +3076,7 @@
               "phone calls · walk-ins · and 17 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3116,7 +3108,7 @@
               "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3148,7 +3140,7 @@
               "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3180,7 +3172,7 @@
               "फ़ोन कॉल · वॉक-इन ग्राहक · और 17 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3212,7 +3204,7 @@
               "phone calls · walk-ins · and 17 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3244,7 +3236,7 @@
               "ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }
@@ -3276,7 +3268,7 @@
               "ಫೋನ್ ಕರೆಗಳು · ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್) · ಇನ್ನೂ 17 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
-              "Divya, local partner"
+              "Divya, Sri Sai Digital"
             ]
           ]
         }

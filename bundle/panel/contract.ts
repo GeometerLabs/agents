@@ -216,7 +216,16 @@ export function liveView(read: StatusRead, stop: StopRequest | undefined, runtim
 // ---- attribution and pins ----------------------------------------------------------------------------------------------------------------------
 
 /** shops/<shop>/owner.json: who set the shop up. Written once, with flag wx, and never changed: the permanent attribution. */
-export interface OwnerFile { schema: 1; accountId: string; accountName: string; role: "builder" | "partner"; createdAt: string; template: string }
+export interface OwnerFile { schema: 1; accountId: string; accountName: string; company?: string; role: "builder" | "partner"; createdAt: string; template: string }
+
+/** The longest company or business name an account may give; the owner reads it after the person's name, as in "Divya, Sri Sai Digital". */
+export const COMPANY_LIMIT = 60;
+/** A company name as it is kept: one line, single spaces, 1 to COMPANY_LIMIT characters; undefined when empty or not usable. */
+export function companyOf(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const c = v.replace(/\s+/gu, " ").trim();
+  return c !== "" && [...c].length <= COMPANY_LIMIT ? c : undefined;
+}
 
 export function parseOwner(textOrNothing: string | undefined): OwnerFile | undefined {
   if (textOrNothing === undefined) return undefined;
@@ -231,11 +240,28 @@ export function parseOwner(textOrNothing: string | undefined): OwnerFile | undef
 export const PREPARED_BY_LIMIT = 120;
 const oneLine = (v: string): string => v.replace(/\s+/gu, " ").trim();
 
-/** "Divya, local partner" or "Divya, builder": the one way the owner is told who set the shop up, cut to what the runtime accepts, on one line. */
-export function preparedByOf(owner: Pick<OwnerFile, "accountName" | "role">): string {
+const graphemes = (v: string): string[] => [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(v)].map((g) => g.segment);
+/** Cut to at most `max` string length (what the runtime counts) without splitting a character as people see it (a letter with its marks stays whole), then trim. */
+function cut(v: string, max: number): string {
+  let out = "";
+  for (const g of graphemes(v)) { if (out.length + g.length > max) break; out += g; }
+  return out.trim();
+}
+
+/**
+ * "Divya, Sri Sai Digital" when the account gave a company or business name, else "Divya, local partner" or "Divya, builder": the one way the owner is told who set the shop up, on
+ * one line and cut to what the runtime accepts. When it is too long the company is shortened first, then the name; a company that cannot keep even one character is left out for the role.
+ */
+export function preparedByOf(owner: Pick<OwnerFile, "accountName" | "role"> & { company?: string }): string {
   const role = owner.role === "partner" ? "local partner" : "builder";
   let name = oneLine(owner.accountName);
-  while (name !== "" && `${name}, ${role}`.length > PREPARED_BY_LIMIT) name = [...name].slice(0, -1).join("").trim();
+  const company = companyOf(owner.company);
+  if (company !== undefined && name !== "") {
+    const room = PREPARED_BY_LIMIT - name.length - 2;
+    const kept = cut(company, room);
+    if (kept !== "") return `${name}, ${kept}`;
+  }
+  while (name !== "" && `${name}, ${role}`.length > PREPARED_BY_LIMIT) name = graphemes(name).slice(0, -1).join("").trim();
   return name === "" ? role : `${name}, ${role}`;
 }
 
@@ -260,7 +286,7 @@ export const HANDOVER_REASONS = ["stopped_paying", "stopped_serving", "owner_req
 export type HandoverReason = (typeof HANDOVER_REASONS)[number];
 
 /** Someone who serves a shop: an account of the panel. */
-export interface Person { accountId: string; accountName: string; role: "builder" | "partner" }
+export interface Person { accountId: string; accountName: string; company?: string; role: "builder" | "partner" }
 
 /**
  * shops/<shop>/assignment.json: who serves the shop NOW, once it has been moved to someone else, and every move. owner.json stays as it is (who set the shop up, written once);
@@ -288,7 +314,7 @@ export function parseAssignmentFile(textOrNothing: string | undefined): Assignme
 /** Who serves the shop in the panel's terms (an OwnerFile-shaped record): the latest move if there has been one, else who set it up. */
 export function servedByOf(owner: OwnerFile | undefined, assignment: AssignmentFile | undefined): OwnerFile | undefined {
   if (!assignment) return owner;
-  return { schema: 1, accountId: assignment.current.accountId, accountName: assignment.current.accountName, role: assignment.current.role, createdAt: assignment.current.since, template: owner?.template ?? "bookings" };
+  return { schema: 1, accountId: assignment.current.accountId, accountName: assignment.current.accountName, ...(companyOf(assignment.current.company) ? { company: companyOf(assignment.current.company) as string } : {}), role: assignment.current.role, createdAt: assignment.current.since, template: owner?.template ?? "bookings" };
 }
 
 /** Who set the shop up, for the monthly report: a handover's new person first (the owner agreed to it), then report.json, then the shop's attribution. Undefined when none says. */

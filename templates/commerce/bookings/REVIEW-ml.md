@@ -106,8 +106,8 @@ Every owner message but the last is also a WhatsApp template, because the owner 
 | `owner_upi_refund_reminder` | UPI shop: a reminder of a refund still owed (once a day, three times at most) | ഓർമ്മപ്പെടുത്തൽ: ഉപഭോക്താവ് +919811111111-ന് (ബുക്കിംഗ് b-3) ₹200 ഇനിയും തിരികെ നൽകാനുണ്ട്. UPI വഴി അയച്ച ശേഷം "റീഫണ്ട് അയച്ചു" അമർത്തുക, അല്ലെങ്കിൽ "refunded P4XR9T" എന്ന് മറുപടി അയക്കുക. | Reminder: ₹200 is still owed back to customer +919811111111 (booking b-3). When you have sent it by UPI, tap Refund sent or reply "refunded P4XR9T". |  |
 | `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | നന്ദി. ബുക്കിംഗ് b-3-ന്റെ ₹200 റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, ഉപഭോക്താവിനെ അറിയിച്ചു. | Thank you. The ₹200 refund for booking b-3 is marked sent, and the customer has been told. |  |
 | `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ശരി. ബുക്കിംഗ് b-3-ന്റെ ₹200 നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല. | Noted. The ₹200 for booking b-3 is kept for a booking you make yourself. Nothing more is owed back. |  |
-| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി Divya, local partner-നെ ബന്ധപ്പെടൂ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner. |  |
-| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: nothing is deleted, what is still open, and until when the free copy of the records can be had | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി. ഒന്നും മായ്ച്ചിട്ടില്ല. വരാനുള്ള ബുക്കിംഗുകൾ: 3. മറ്റ് തീരാത്ത കാര്യങ്ങൾ: 1. മുഴുവൻ പട്ടികയും നിങ്ങളുടെ എല്ലാ രേഖകളുടെയും സൗജന്യ പകർപ്പും വെള്ളി, 5 മാർച്ച് വരെ Divya, local partner നൽകും. | Notice: online booking for Glow Salon has stopped. Nothing is deleted. Bookings to come: 3. Other open items: 1. Divya, local partner can give you the full list and a free copy of all your records until Fri 5 Mar. |  |
+| `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി Divya, Sri Sai Digital-നെ ബന്ധപ്പെടൂ. | Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, Sri Sai Digital. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner | അറിയിപ്പ്: Glow Salon-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് നിർത്തി, കാരണം Divya, Sri Sai Digital നൽകിയിരുന്ന സേവനം അവസാനിച്ചു. ഇന്നിന് ശേഷം നിങ്ങളുടെ കലണ്ടറിലുള്ള ബുക്കിംഗുകൾ: 3. മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ഇത് തുടരാൻ hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതൂ, Geometer നിങ്ങളെ ബന്ധിപ്പിക്കും. | Notice: online booking for Glow Salon has stopped, because the service from Divya, Sri Sai Digital has ended. Bookings after today still in your calendar: 3. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you. |  |
 
 ### The words on the buttons and the lists
 
@@ -283,7 +283,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 ഉറപ്പിക്കാൻ കഴിയാത്തത്: 1
 പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 കോഡ്: 7K2M-9QXD · പൂർണ്ണ റിപ്പോർട്ട്: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html
-തയ്യാറാക്കിയത്: Divya, local partner · Geometer
+തയ്യാറാക്കിയത്: Divya, Sri Sai Digital · Geometer
 ★ ഇന്നൊവേറ്റർ
 ```
 
@@ -461,6 +461,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.title` | നിങ്ങളുടെ partner അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create your partner account |  |
 | `join.intro` | നിങ്ങളുടെ ക്ഷണം ഒരു തവണ മാത്രമേ പ്രവർത്തിക്കൂ. എങ്ങനെ ലോഗിൻ ചെയ്യണമെന്ന് തിരഞ്ഞെടുക്കൂ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | നിങ്ങളുടെ പേര് | Your name |  |
+| `join.company` | കമ്പനിയുടെ അല്ലെങ്കിൽ ബിസിനസിന്റെ പേര് (വേണമെങ്കിൽ) | Company or business name (optional) |  |
+| `join.companyHelp` | കടയുടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിൽ നിങ്ങളുടെ പേരിനു ശേഷം ഇത് കാണും. ഒഴിച്ചിട്ടാൽ പകരം "local partner" അല്ലെങ്കിൽ "builder" കാണും. 60 അക്ഷരം വരെ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local partner" or "builder" instead. Up to 60 characters. |  |
 | `join.handle` | ലോഗിൻ ചെയ്യാനുള്ള പേര് | Name to sign in with |  |
 | `join.handleHelp` | 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ്. | 3 to 40 letters, digits, dots or dashes. |  |
 | `join.passphrase` | പാസ്ഫ്രേസ് | Passphrase |  |
@@ -473,6 +475,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.problems.handle-bad` | ലോഗിൻ പേരിന് 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ് ഉപയോഗിക്കൂ. | Use 3 to 40 letters, digits, dots or dashes for the sign-in name. |  |
 | `join.problems.handle-taken` | ആ ലോഗിൻ പേര് മറ്റൊരാൾ എടുത്തിട്ടുണ്ട്. വേറൊന്ന് തിരഞ്ഞെടുക്കൂ. | That sign-in name is taken. Choose another. |  |
 | `join.problems.name-bad` | നിങ്ങളുടെ പേര് എഴുതൂ. | Write your name. |  |
+| `join.problems.company-bad` | കമ്പനിയുടെ പേര് ഒറ്റ വരിയിൽ, 60 അക്ഷരത്തിനുള്ളിൽ എഴുതൂ, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the company name on one line, up to 60 characters, or leave it empty. |  |
 | `join.problems.language-bad` | പട്ടികയിൽ നിന്ന് ഒരു ഭാഷ തിരഞ്ഞെടുക്കൂ. | Choose a language from the list. |  |
 | `join.problems.short` | പാസ്ഫ്രേസിന് കുറഞ്ഞത് 10 അക്ഷരങ്ങൾ വേണം. | The passphrase needs at least 10 characters. |  |
 | `join.problems.long` | പാസ്ഫ്രേസ് വളരെ നീളമുള്ളതാണ് (പരമാവധി 200 അക്ഷരങ്ങൾ). | The passphrase is too long (200 characters at most). |  |
@@ -663,12 +666,12 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.means.reminder` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. | Nothing changes for customers yet. |  |
 | `licence.means.warning` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. പണം അടച്ചില്ലെങ്കിൽ കട പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ എടുക്കില്ല. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
 | `licence.means.wind_down` | ഉപഭോക്താക്കളോട് കടയെ ബന്ധപ്പെടാൻ പറയുന്നു. റീഫണ്ടുകളും റദ്ദാക്കലുകളും നേരത്തെ ബുക്ക് ചെയ്തതോ പണം അടച്ചതോ ആയ കാര്യങ്ങളും തുടരും. പണം അടച്ചാൽ ഉടൻ എല്ലാം തിരിച്ചുവരും. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
-| `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. ഒന്നും മായ്ച്ചിട്ടില്ല. ബാക്കിയുള്ള കാര്യങ്ങൾ ഉടമയ്ക്ക് അയച്ചു, കടയുടെ രേഖകൾ സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം. | Nothing more is sent from the shop. Nothing is deleted. The owner was sent what is still open, and the shop's records can be downloaded free. |  |
+| `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. തുറന്നിരിക്കുന്ന പണമടയ്ക്കൽ ലിങ്കുകൾ റദ്ദാക്കി; കടയുടെ സ്വന്തം അക്കൗണ്ടുകളും കീകളും കടയുടേതായി തുടരും. ഒന്നും മായ്ച്ചിട്ടില്ല. സേവനം അവസാനിച്ചെന്ന് ഉടമയെ അറിയിച്ചു; മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ബന്ധപ്പെടാൻ ഉടമയ്ക്ക് hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതാം. കടയുടെ രേഖകൾ നിങ്ങൾക്ക് മാത്രമേ ഡൗൺലോഡ് ചെയ്യാനാകൂ. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records. |  |
 | `licence.paidThrough` | അടുത്ത പണം അടയ്ക്കേണ്ടത്: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
 | `licence.windDownOn` | പണം അടച്ചില്ലെങ്കിൽ 7 Jan 2027 മുതൽ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
 | `licence.extended` | Geometer-ന്റെ അടിയന്തര നീട്ടൽ 21 Dec 2026 വരെയുണ്ട്. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
 | `licence.stopOn` | പൂർണ്ണമായി നിർത്തുന്നത്: 6 Feb 2027. | Final stop planned for 6 Feb 2027. |  |
-| `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ സൗജന്യമായി ഡൗൺലോഡ് ചെയ്യാം. | Free download of the shop's records until 7 May 2027. |  |
+| `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ നിങ്ങൾക്ക് ഡൗൺലോഡ് ചെയ്യാം. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | പണം അടച്ച് പുതുക്കുക | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 മുതൽ ലൈസൻസ് പുതുക്കിയിട്ടില്ല. ഈ സർവർ Geometer-ൽ എത്തുന്നുണ്ടോ എന്ന് നോക്കൂ. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
