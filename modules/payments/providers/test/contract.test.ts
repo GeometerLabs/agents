@@ -31,6 +31,7 @@ import { closeRequest, emptyMarkState, markReceived, markRefund, markedPayments,
 import type { MarkState } from "../../owner-marked/ledger.ts";
 import { MARK_ACTIONS, markObligations } from "../../owner-marked/obligations.ts";
 import { PROVIDERS, ownerMarkedOf } from "../index.ts";
+import { gatewayRuntime } from "../runtime.ts";
 import type { PaymentProvider } from "../types.ts";
 
 const T0 = Date.UTC(2026, 10, 10, 4, 30);
@@ -50,20 +51,22 @@ function blockOf(p: PaymentProvider) {
 
 // ---- a gateway, over its own wire format, behind the stub Guard ------------------------------------------------------------------------
 
-interface GatewayKit { clock: FakeClock; fake: FakePayments; payments: Payments; guard: Awaited<ReturnType<typeof startStubGuard>>; close(): Promise<void> }
+/** `payments` goes through the stub Guard, as an agent's does; `direct` speaks to the stand-in with no Guard, for what Guard does not stand in front of here (a create). */
+interface GatewayKit { clock: FakeClock; fake: FakePayments; payments: Payments; direct: Payments; guard: Awaited<ReturnType<typeof startStubGuard>>; close(): Promise<void> }
 
 async function gatewayKit(p: PaymentProvider): Promise<GatewayKit> {
   const g = p.gateway!;
+  const wire = gatewayRuntime(p.id);
   const clock = fakeClock(T0);
   const fake = createFakePayments(clock);
-  const served = await serveHandlers([g.standin.handler(fake)]);
+  const served = await serveHandlers([wire.standin.handler(fake)]);
   const spec = paymentLimitsSpecFrom({
     identity: { tenant: "contract", version: 1, reviewedBy: "contract-test" }, approvalTtlSeconds: 86_400, caps: DEFAULT_CAPS,
     link: { ruleId: "deposit-amount", minPaise: DEPOSIT, maxPaise: DEPOSIT }, refundBound: { ruleId: "refund-at-most-deposit", maxPaise: DEPOSIT }, refundThresholdPaise: LIMIT_INR * 100,
   }, g.guard);
   const guard = await startStubGuard({ clock, upstreamUrl: served.url, spec, approver: { id: "owner", secret: SECRET }, readToken: "contract-read" });
-  const payments = g.adapter({ baseUrl: guard.agentUrl, timeoutMs: 3_000 });
-  return { clock, fake, payments, guard, close: async () => { await guard.close(); await served.close(); } };
+  const payments = wire.adapter({ baseUrl: guard.agentUrl, timeoutMs: 3_000 });
+  return { clock, fake, payments, direct: wire.adapter({ baseUrl: served.url, timeoutMs: 3_000 }), guard, close: async () => { await guard.close(); await served.close(); } };
 }
 
 interface Booking extends RefundCase { linkId?: string }
@@ -117,6 +120,7 @@ for (const p of PROVIDERS) {
       for (const f of g.forbidden) assert.ok(ops.has(f.operation), `the forbidden ${f.operation} is routed, so Guard can refuse it by name`);
       assert.ok(g.reads.record.every((op) => ops.has(op)) && g.reads.panel.every((op) => ops.has(op)), "the reading credentials only read routed operations");
       assert.equal(p.id, g.tool, "the module's id is its Guard's tool name");
+      assert.doesNotThrow(() => gatewayRuntime(p.id), "a gateway has its wire code in providers/runtime.ts");
     }
     assert.match(p.signup, /SIGNUP\.md$/u);
   });
@@ -127,7 +131,7 @@ for (const p of PROVIDERS) {
       const kit = await gatewayKit(p);
       try {
         kit.fake.inject("createRequest", "lostReply");
-        const made = await ensureLink(kit.payments, { reference: "b-1", amountPaise: DEPOSIT, description: "Deposit b-1" });
+        const made = await ensureLink(kit.direct, { reference: "b-1", amountPaise: DEPOSIT, description: "Deposit b-1" });
         assert.ok(made.link, "the request is found by its reference after the lost reply");
         assert.equal(kit.fake.links().length, 1, "one request at the provider");
         kit.fake.customerPays(made.link!.id);
@@ -157,9 +161,9 @@ for (const p of PROVIDERS) {
     test(`${p.id}: duplicate and late events: the same signed body twice is one event with one id; a tampered one fails; a late one is judged by reading the provider back`, async () => {
       const kit = await gatewayKit(p);
       try {
-        const w = p.gateway!.webhook;
+        const w = gatewayRuntime(p.id).webhook;
         const { requestId, paymentId } = await paidDeposit(kit);
-        const bodies = kit.fake.events.map((e) => p.gateway!.standin.webhookBody(e, kit.fake));
+        const bodies = kit.fake.events.map((e) => gatewayRuntime(p.id).standin.webhookBody(e, kit.fake));
         assert.ok(bodies.length >= 2, "a payment and a paid request were announced");
         const raw = Buffer.from(bodies[0]);
         const sig = w.sign(raw, "webhook-secret-123");
@@ -264,28 +268,43 @@ for (const p of PROVIDERS) {
 
   // ---- a refund that fails ----
   if (can.refundsAutomatically) {
-    test(`${p.id}: a refund that fails: the provider's 5xx may have happened, so it is looked for once and never sent again; Guard's refusal stops it with nothing refunded`, async () => {
+    test(`${p.id}: a refund that fails: a provider 5xx is looked for once and never repeated; a declined refund moves nothing and is not sent again; Guard down sends nothing`, async () => {
+      // the provider stored the refund and answered 500: it may have happened, so the agent looks once, finds it, and sends nothing more
       const kit = await gatewayKit(p);
       try {
         const { paymentId } = await paidDeposit(kit);
-        const { b, log, flow } = refundFlow(kit.payments, kit.clock);
+        const { b, flow } = refundFlow(kit.payments, kit.clock);
         kit.fake.inject("refund", "serverError");
-        const first = await flow.requestRefund(b, paymentId, 100, [], false);
-        assert.ok(first === "done" || first === "stopped", `looked once, ${first}`);
-        const sent = kit.fake.refunds().length;
-        assert.ok(sent <= 1);
-        assert.equal(await flow.requestRefund(b, paymentId, 100, [], false), first === "done" ? "done" : "stopped", "never sent again");
-        assert.equal(kit.fake.refunds().length, sent);
-        const second = await gatewayKit(p);
-        try {
-          const paid = await paidDeposit(second);
-          const again = refundFlow(second.payments, second.clock);
-          second.guard.killSwitch(true);
-          assert.equal(await again.flow.requestRefund(again.b, paid.paymentId, 100, [], false), "retry", "Guard could not decide: nothing went out, tried again later");
-          assert.equal(second.fake.refunds().length, 0);
-        } finally { await second.close(); }
-        assert.ok(log.length > 0);
+        assert.equal(await flow.requestRefund(b, paymentId, 100, [], false), "done", "looked for once, and found on the provider's own list");
+        assert.equal(kit.fake.refunds().length, 1);
+        assert.equal(await flow.requestRefund(b, paymentId, 100, [], false), "done", "asked again, found, never sent");
+        assert.equal(kit.fake.refunds().length, 1);
       } finally { await kit.close(); }
+      // the provider declines the refund: no money moves, the customer is not told it was sent, and it is not tried again by itself
+      const declined = await gatewayKit(p);
+      try {
+        const { paymentId } = await paidDeposit(declined);
+        const { b, log, told, flow } = refundFlow(declined.payments, declined.clock);
+        declined.fake.inject("refund", "declined");
+        const result = await flow.requestRefund(b, paymentId, 100, [], false);
+        assert.equal(result, "stopped", "a declined refund is for the builder to look at, not something to send again");
+        await flow.afterRefund(b, result, { paymentId, amountInr: 100, done: { customer: "refund_done" }, held: "refund_held" });
+        assert.equal(declined.fake.refunds().length, 0, "nothing was refunded");
+        assert.equal((await declined.payments.fetchPayment(paymentId))?.amount_refunded, 0);
+        assert.ok(!told.includes("refund_done"), "the customer was never told it was sent");
+        assert.ok(log.some((e) => e.outcome === "unconfirmed" && /NOT sent again/u.test(e.notes ?? "")), "the record says it was not sent again");
+        assert.equal(await flow.requestRefund(b, paymentId, 100, [], false), "stopped", "a second ask is blocked, not sent");
+        assert.equal(declined.fake.calls.filter((c) => c.op === "refund").length, 1, "the provider was asked once");
+      } finally { await declined.close(); }
+      // Guard cannot decide: nothing went out, and it is tried again later by the clock, never at once in a loop
+      const down = await gatewayKit(p);
+      try {
+        const paid = await paidDeposit(down);
+        const again = refundFlow(down.payments, down.clock);
+        down.guard.killSwitch(true);
+        assert.equal(await again.flow.requestRefund(again.b, paid.paymentId, 100, [], false), "retry");
+        assert.equal(down.fake.refunds().length, 0);
+      } finally { await down.close(); }
     });
   } else {
     test(`${p.id}: a refund that fails: does not apply: the owner pays every refund; one never marked is reminded at most ${REFUND_REMINDERS_MAX} times and stays on the owner's list`, () => {

@@ -56,8 +56,8 @@ export interface Refund {
   id: string;
   payment_id: string;
   amount: number; // paise
-  /** "pending": accepted, not yet paid out (UPI: owed by the owner). "processed": paid out. A failed refund is not a refund and is never listed. */
-  status: "pending" | "processed";
+  /** "pending": accepted, not yet paid out (UPI: owed by the owner). "processed": paid out. "failed" is only ever a reply (the provider declined it): never listed. */
+  status: "pending" | "processed" | "failed";
   receipt?: string;
   created_at: number;
   /** Guard answered from its record: this is the first reply to the same refund, and nothing was sent again. */
@@ -106,8 +106,9 @@ export interface Payments {
  *  - outcomeUnknown: the refund is stored, then Guard says the outcome is unknown (504). It is not repeated.
  *  - guardRefused: Guard refuses the call before it is sent, by a limit (the day's refund cap).
  *  - serverError: the refund is stored, then the service answers 500, which Guard passes through as it came. The refund may have happened.
+ *  - declined: the provider takes the call and declines the refund (its own "failed" status): no money moves, nothing is listed, and the reply says failed.
  */
-export type PaymentsFault = "lostReply" | "error" | "guardUnavailable" | "uncertainHold" | "outcomeUnknown" | "guardRefused" | "serverError";
+export type PaymentsFault = "lostReply" | "error" | "guardUnavailable" | "uncertainHold" | "outcomeUnknown" | "guardRefused" | "serverError" | "declined";
 export type PaymentsOp = "createRequest" | "fetchRequest" | "listRequests" | "cancelRequest" | "fetchPayment" | "refund" | "listRefunds";
 
 export interface FakePaymentsOptions {
@@ -206,6 +207,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
     if (!p) throw new ApiError(404, "No such payment.");
     if (!Number.isInteger(request.amount) || request.amount <= 0) throw new ApiError(400, "The refund amount must be a positive whole number of paise.");
     if (request.amount > p.amount - p.amount_refunded) throw new ApiError(400, "The refund is more than what is left on the payment.");
+    if (fault === "declined") return { id: nextId("rfd"), payment_id: paymentId, amount: request.amount, status: "failed", receipt: request.receipt, created_at: seconds() };
     p.amount_refunded += request.amount;
     const refund: Refund = { id: nextId("rfd"), payment_id: paymentId, amount: request.amount, status: "processed", receipt: request.receipt, created_at: seconds() };
     refundStore.push(refund);

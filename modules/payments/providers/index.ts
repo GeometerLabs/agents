@@ -1,6 +1,7 @@
 // The payment modules a shop can choose, and the one way every template, the panel and the bundle read that choice (B71). A provider is a folder beside this file
 // (providers/<name>/index.ts, declared as in types.ts); this list is the only place that names them all. Everything else asks `providerOf(settings.payment)` for its
-// capabilities, its Guard, its webhook or its words, and never compares a provider's name.
+// capabilities, its Guard routes or its words, and never compares a provider's name. Everything here is plain data, because the agent's import graph (and the browser
+// demo's) reaches it; a gateway's wire code (adapter, webhook, stand-in) is in providers/runtime.ts, for servers and tests.
 //
 // In the settings it is
 //   "payment": { "module": "upi", "upi": { "id": "glowsalon@okicici", "payee": "Glow Salon" } }      the default: the shop's own UPI ID, marked paid by the owner
@@ -12,7 +13,10 @@ import type { GatewayGuard, PaymentProvider, ProviderSettings } from "./types.ts
 import { razorpay } from "./razorpay/index.ts";
 import { upi } from "./upi/index.ts";
 
-/** Every provider, the default first. A new gateway is one more folder and one more entry here; its Guard gets the next free address (bundle/generate/compose.ts). */
+/**
+ * Every provider, the default first. A new gateway is one more folder, one more entry here, and its runtime.ts in providers/runtime.ts. A shop has at most one gateway,
+ * so every gateway's Guard takes the same address slot a shop's gateway Guard always had (bundle/generate/compose.ts).
+ */
 export const PROVIDERS: readonly PaymentProvider[] = [upi, razorpay];
 
 /** The default for a shop that has not chosen: the first provider, which needs no account. */
@@ -61,17 +65,6 @@ export const gatewayOf = (payment: PaymentSettings | undefined): PaymentProvider
   const p = providerOf(payment);
   return p?.gateway ? p : undefined;
 };
-
-/**
- * The live adapter of the gateway a shop's runtime talks to. The runtime is told the shop's payment block (its settings); without it (a test, or a template built before
- * B71) a payments service is only ever configured for a gateway shop, and the gateway is the only one there is. With more than one and none named, it refuses rather than guess.
- */
-export function gatewayAdapter(payment: PaymentSettings | undefined, config: { baseUrl: string; timeoutMs?: number; agentToken?: string }) {
-  const named = payment ? gatewayOf(payment) : undefined;
-  if (payment && !named) throw new Error(`This shop's payment module (${payment.module}) has no gateway, so its runtime.json must not name a payments service.`);
-  if (!named && GATEWAYS.length !== 1) throw new Error("runtime.json names a payments service, but the shop's settings were not given to say which gateway it is.");
-  return (named ?? GATEWAYS[0]).gateway!.adapter(config);
-}
 
 /**
  * The Guard declaration a shop's limits spec is written for: the gateway it chose. A shop with no gateway (UPI) runs no gateway Guard and never deploys this spec; a

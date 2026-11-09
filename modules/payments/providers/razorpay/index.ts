@@ -4,14 +4,12 @@
 //   webhook.ts  the signature and the events, read into the neutral events
 //   guard.ts    the routes and operations the neutral Guard rules (guard-limits.ts) are written for
 //   standin.ts  the stand-in every crash test runs against, and the webhook bodies it sends
+//   runtime.ts  the wire code above as one GatewayRuntime (node only; this file stays plain data, because the agent and the browser demo read it)
 //   words.ts    what a person reads about Razorpay, in four languages
 //   SIGNUP.md   what a shop must open, and what it costs
-import { isObject, str } from "../../../core/http.ts";
+import { isObject } from "../../../core/http.ts";
 import type { PaymentProvider } from "../types.ts";
-import { createRazorpayPayments } from "./api.ts";
 import { RAZORPAY_GUARD } from "./guard.ts";
-import { razorpayStandin, razorpayWebhookBody } from "./standin.ts";
-import { EVENT_ID_HEADER, SIGNATURE_HEADER, parseRazorpayEvent, signRazorpay, verifyRazorpaySignature } from "./webhook.ts";
 import { RAZORPAY_WORDS } from "./words.ts";
 
 /** A Razorpay key id: rzp_live_... or rzp_test_..., which also says the key's mode. It is public; the key secret is not. */
@@ -32,12 +30,6 @@ export const razorpay: PaymentProvider = {
   },
   gateway: {
     guard: RAZORPAY_GUARD,
-    adapter: (config) => createRazorpayPayments(config),
-    webhook: {
-      signatureHeader: SIGNATURE_HEADER, eventIdHeader: EVENT_ID_HEADER, sign: signRazorpay, verify: verifyRazorpaySignature, read: parseRazorpayEvent,
-      // 256 KB is far above any Razorpay event; Razorpay waits 5 seconds for an answer (the inbox answers within 4).
-      maxBodyBytes: 256 * 1024, answerWithinMs: 5_000,
-    },
     setup: {
       secrets: { key: "razorpay_key", webhook: "razorpay_webhook_secret" },
       keyId: KEY_ID,
@@ -56,23 +48,8 @@ export const razorpay: PaymentProvider = {
       probe: { path: "/v1/payment_links", query: { reference_id: "geometer-connection-check" }, looksRight: (body) => isObject(body) && Array.isArray(body.payment_links) },
       words: RAZORPAY_WORDS,
     },
-    standin: { handler: razorpayStandin, webhookBody: razorpayWebhookBody },
     // The price list's ids for Razorpay's fee on a payment (prices/): 2% and 18% GST on it, not returned on a refund.
     feeRates: ["razorpay.platform-fee", "razorpay.gst-on-fee"],
-    async paymentContext(baseUrl, token, paymentId, fetchFn, timeoutMs) {
-      try {
-        const r = await fetchFn(`${baseUrl.replace(/\/+$/u, "")}/v1/payments/${encodeURIComponent(paymentId)}`, { headers: { authorization: `Bearer ${token}`, accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs) });
-        const text = await r.text();
-        if (r.status === 400 || r.status === 404) return { kind: "missing" }; // Razorpay says it has no such payment
-        if (r.status !== 200) return { kind: "error", error: `Razorpay answered ${r.status} when asked about the payment` };
-        const p = JSON.parse(text) as { contact?: unknown; created_at?: unknown };
-        const atMs = typeof p.created_at === "number" ? p.created_at * 1000 : NaN;
-        if (!Number.isFinite(atMs)) return { kind: "error", error: "Razorpay's record of the payment has no time" };
-        // who paid, as Razorpay has it: the number the customer gave when paying, when it shows one
-        const contact = isObject(p) ? str(p.contact)?.trim() : undefined;
-        return { kind: "found", ...(contact ? { customer: contact } : {}), atMs };
-      } catch (e) { return { kind: "error", error: `Razorpay could not be asked (${(e as { cause?: { code?: string } })?.cause?.code ?? (e as Error)?.name ?? "error"})` }; }
-    },
   },
   signup: "modules/payments/providers/razorpay/SIGNUP.md",
 };
