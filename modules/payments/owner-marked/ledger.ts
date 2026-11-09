@@ -46,6 +46,10 @@ export interface MarkedRequest {
   marks: OwnerMark[];
   /** Where the QR picture of the link is, once it was made (https, for WhatsApp to fetch). */
   imageLink?: string;
+  /** Set by the desk (desk.ts) for an agent someone else wrote, which has no booking of ours to name them: the customer, and what the money is for. */
+  customer?: string;
+  service?: string;
+  slotMs?: number;
 }
 
 export interface OwedRefund {
