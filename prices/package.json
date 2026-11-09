@@ -1,0 +1,11 @@
+{
+  "name": "geometer-prices",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geometer's price lists: the only place a price is written. One dated file per change; everything else reads this folder or a copy a test compares with it. No dependencies.",
+  "scripts": {
+    "test": "node --test",
+    "new": "node new.ts"
+  }
+}

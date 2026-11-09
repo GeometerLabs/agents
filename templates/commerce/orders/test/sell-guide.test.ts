@@ -213,7 +213,7 @@ test("sell guide: every guide carries the one allowed claim about money word for
 
 test("sell guide: the ₹ amounts are the same set in every guide, section by section, and match the plan's figures", () => {
   const en = guide("en");
-  // The plan (bundle/prices/2026-11-07.json): Business, ₹299 a live shop (₹179 for the first 100 innovators), ₹49 for each 1,000 extra messages; the shop ₹999 to ₹1,499 a month and
+  // The plan (prices/2026-11-07.json): Business, ₹299 a live shop (₹179 for the first 100 innovators), ₹49 for each 1,000 extra messages; the shop ₹999 to ₹1,499 a month and
   // ₹1,999 to ₹2,999 setup, WhatsApp ₹100 to ₹300 at cost. The example shop is Annapurna Tiffins: ₹120, ₹160 and ₹20, an approval line of ₹1,000, a refund limit of ₹300; the walkthrough
   // order of ₹240 with a ₹120 advance. (The quoted printouts are left out: see the top.)
   same(rupees(withoutFences(en)), new Set(["₹100", "₹1000", "₹120", "₹1499", "₹160", "₹179", "₹1999", "₹20", "₹240", "₹299", "₹2999", "₹300", "₹49", "₹999"]));
@@ -235,7 +235,7 @@ test("sell guide: every number is the same in every language", () => {
 });
 
 test("sell guide: section 6 gives the Business plan's prices in every language, as the decided price list has them", () => {
-  const prices = JSON.parse(readFileSync(new URL("../../../../bundle/prices/2026-11-07.json", import.meta.url), "utf8")).rates;
+  const prices = JSON.parse(readFileSync(new URL("../../../../prices/2026-11-07.json", import.meta.url), "utf8")).rates;
   assert.equal(prices["plan.business.fee"].micro, 299_000_000);
   assert.equal(prices["plan.business.allowance"].count, 3000);
   assert.equal(prices["innovator.discount"].basisPoints, 4000);

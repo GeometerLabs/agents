@@ -71,7 +71,7 @@ const DOC_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(html|json|txt)$/u;
 const NOTICES = new Set(["report"]);
 
 export interface RunningPanel { host: string; port: number; url: string; close(): Promise<void> }
-/** `prices`: the price list in force, which prices both a shop's plan and its running-cost line. Left out: the newest in bundle/prices that is not a proposal. */
+/** `prices`: the price list in force, which prices both a shop's plan and its running-cost line. Left out: the newest in prices/ (the repo's root) that is not a proposal. */
 export interface PanelDeps { log?: (line: string) => void; prices?: PriceList }
 
 interface Req {

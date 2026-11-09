@@ -3,7 +3,7 @@
 //    and nothing is a floating-point guess; each line is rounded UP once, to the next whole paisa, and the total is the sum of those lines;
 //  - an unknown price is "unknown", never INR 0: a line whose price is missing has no amount and the total says it is a subtotal;
 //  - "early estimate" until the record has real usage;
-//  - prices come from a dated, versioned file (bundle/prices/<date>.json) that says where every rate was read and how sure we are.
+//  - prices come from a dated, versioned file (prices/<date>.json at the repo's root, the only place a price is written) that says where every rate was read and how sure we are.
 // This file has no words in any language: it returns the numbers and the reasons, and views.ts says them in the shop's language.
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
@@ -35,7 +35,8 @@ export interface Exchange { paisePerUnit: number; quality: Quality; source: stri
 export type ListStatus = "in-force" | "proposed";
 export interface PriceList { date: string; file: string; sha256: string; status: ListStatus; /** Where the proposal is written (a docs/ path or an https address). Only on a proposed list. */ proposal?: string; rates: Record<string, Rate>; exchange: Partial<Record<Currency, Exchange>> }
 
-export const PRICES_DIR = new URL("../prices/", import.meta.url);
+/** The repo's one price folder (prices/README.md): every price list, never edited after it is committed. */
+export const PRICES_DIR = new URL("../../prices/", import.meta.url);
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/u;
