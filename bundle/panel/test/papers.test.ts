@@ -10,7 +10,7 @@ import { runBusyMonth } from "../../../templates/commerce/bookings/report/exampl
 import { buildGoLiveCertificate } from "../../../templates/commerce/bookings/report/certificate.ts";
 import { ledgerEntries } from "../../../modules/record/ledger.ts";
 import { envelopeFile, seal, verifyEnvelopeText } from "../../../modules/report/sign.ts";
-import { personLabel } from "../../../modules/record/fingerprint.ts";
+import { keyIdOf, personLabel } from "../../../modules/record/fingerprint.ts";
 import { NOW, accountIdOf, boot, papers } from "./helpers.ts";
 
 const month = await runBusyMonth();
@@ -30,7 +30,7 @@ test("the papers of a partner's own shop: one case, a statement by POST, the ide
     const personKey = b.personKey("glow-salon"); // the export as the deployer writes it: numbers as the shop's keyed fingerprints, the ledger made before anything is hidden
     writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(entries.map((e) => ({ ...e, conversation: personLabel(personKey, "c", e.conversation) }))));
     writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), JSON.stringify(bookings.map((x) => ({ ...x, customer: personLabel(personKey, "p", x.customer) }))));
-    writeFileSync(join(b.dir, "exports", "glow-salon", "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
+    writeFileSync(join(b.dir, "exports", "glow-salon", "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", keyId: keyIdOf(personKey), inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
     writeFileSync(join(b.dir, "exports", "glow-salon", "ledger.json"), JSON.stringify(ledgerEntries(entries, "glow-salon")));
     papers(b, "glow-salon").make("glow-salon", "go-live", (dir) => {
       const cert = buildGoLiveCertificate({ settings: month.world.settings, handCheck: { held: 38, total: 38, checks: 120, failedTitles: [] }, issuedAt: NOW - 86_400_000 });
@@ -114,7 +114,12 @@ test("B69: a statement needs the shop's key and a keyed export: without either t
     const oldForm = await ask();
     assert.equal(oldForm.status, 409);
     assert.match(oldForm.plain, /older form/u);
-    writeFileSync(join(b.dir, "exports", "glow-salon", "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
+    const marker = (keyId: string) => writeFileSync(join(b.dir, "exports", "glow-salon", "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", keyId, inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
+    marker("000000000000"); // the export still made under another key, after a restore: it would match nobody
+    const otherKey = await ask();
+    assert.equal(otherKey.status, 409);
+    assert.match(otherKey.plain, /under another fingerprint key/u);
+    marker(keyIdOf(b.personKey("glow-salon")));
     assert.equal((await ask()).status, 200);
   } finally { await b.close(); }
 });

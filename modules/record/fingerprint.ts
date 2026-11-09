@@ -22,6 +22,9 @@ export const personFingerprint = (key: Buffer, value: string): string => hmac(ke
 /** The form a record or a case field carries: "<prefix>-<12 hex>". */
 export const personLabel = (key: Buffer, prefix: "c" | "p" | "s" | "b", value: unknown): string => `${prefix}-${personFingerprint(key, String(value))}`;
 
+/** Which key an export was made with, in a form that shows nothing about the key: the panel will not search an export made under another key (after a restore). */
+export const keyIdOf = (key: Buffer): string => hmac(key, "geometer/key-id/1", "").slice(0, 12);
+
 /** The inputs' digest under a key: same content, same digest; without the key, a guess cannot be tested against it. Sixteen hex digits, as the unkeyed digest has, with "k-" in front so a reader can tell the two apart. */
 export const keyedDigest = (key: Buffer, canonicalText: string): string => `k-${hmac(key, "geometer/inputs/1", canonicalText).slice(0, 16)}`;
 

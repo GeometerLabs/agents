@@ -110,6 +110,12 @@ test("the record of a UPI case says marked paid by owner and that no payment ser
   assert.ok(r.notTested.includes(WORDS.en.not.upi));
 });
 
+test("B69: a message id kept as a fingerprint is not said to be in WhatsApp's own record; one kept as it came still is", () => {
+  const sent = (id: string) => buildDisputeRecord({ template: TOY, shop, case: CASES[0], entries: [{ seq: 1, time: new Date(t0).toISOString(), conversation: A, booking: "b-1", action: "send_message", inputsDigest: "k-0123456789abcdef", outcome: "confirmed", decisions: [], language: "en", notes: "", refs: { messageId: id } }], language: "en", now: t0 }).rows.flatMap((r) => r.services);
+  assert.deepEqual(sent("m-0123456789ab"), []);
+  assert.match(sent("wamid.1").join(), /WhatsApp service's own record showed wamid\.1/u);
+});
+
 test("no paper decides who is right, grades or promises: no such field, and no such word in any language", () => {
   const verdictWords = /\b(fault|guilty|liable|liability|to blame|wins?|loses?|in the right|wrong|score|grade|rank|rating|level|trust ?score)\b/i;
   for (const language of LANGUAGES) {

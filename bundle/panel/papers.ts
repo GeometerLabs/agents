@@ -6,10 +6,11 @@
 // The agent's stable id lives in shops/<shop>/identity.json, written once (never overwritten) the first time it is asked for; the operator's choice of public fields
 // is the `public` list in the same file (left out: the facts about the agent, not about the business), chosen on the papers page by whoever serves the shop.
 import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Language } from "../../modules/language/languages.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
+import { keyIdOf } from "../../modules/record/fingerprint.ts";
 import { anchorOf, evidencePack, ledgerFile } from "../../modules/record/ledger.ts";
 import type { LedgerEntry } from "../../modules/record/ledger.ts";
 import { loadPrivateKey, envelopeFile, verifyEnvelopeText } from "../../modules/report/sign.ts";
@@ -38,6 +39,7 @@ export interface MadePaper { file: string; type: string; text: string }
 export class PaperError extends Error {}
 
 const readText = (file: string): string | undefined => { try { return readFileSync(file, "utf8"); } catch { return undefined; } };
+const readJson = (file: string): { keyId?: string } | undefined => { try { return JSON.parse(readFileSync(file, "utf8")) as { keyId?: string }; } catch { return undefined; } };
 
 export function createPapers(config: PanelConfig, shops: Shops, docs: Documents, now: () => number) {
   const key = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined;
@@ -108,7 +110,9 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
       // B69: a person is found by the shop's key; an export from before B69 used another form, so it cannot be searched at all
       const personKey = shops.personKey(id);
       if (!personKey) throw new PaperError("This shop's fingerprint key has not reached the panel yet. It arrives with the shop's next export (within a quarter of an hour) or deploy; try again after that.");
-      if (!existsSync(join(shops.paths.exports(id), "person-form.json"))) throw new PaperError("This shop's record was last exported in the older form, which cannot be matched to a number. The next export (within a quarter of an hour) uses the keyed form; try again after that.");
+      const form = readJson(join(shops.paths.exports(id), "person-form.json"));
+      if (!form) throw new PaperError("This shop's record was last exported in the older form, which cannot be matched to a number. The next export (within a quarter of an hour) uses the keyed form; try again after that.");
+      if (form.keyId !== keyIdOf(personKey)) throw new PaperError("This shop's record was last exported under another fingerprint key (after a restore, for example), so a number cannot be matched to it yet. The next export (within a quarter of an hour) uses the key in place; try again after that.");
       const env = sealStatement({ template: b.kind.papers, shop: b.shop, number: digits, personKey, entries: b.data.entries, cases: b.kind.cases(b.data, b.settings), ...(language ? { language: lang(language, "en") } : {}), now: now(), tenant: id }, key);
       return [{ file: "statement.json", type: "application/json; charset=utf-8", text: envelopeFile(env) }, { file: `statement-${env.document.language}.html`, type: "text/html; charset=utf-8", text: statementPage(env) }];
     },

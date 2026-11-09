@@ -26,6 +26,8 @@ export function prepareSecretsRoot(dir: string): void {
 
 export const personKeyFile = (dir: string, shop: string) => secretFile(dir, "person-keys", shop);
 export const RECORD_KEY_FILE = "record_key";
+/** What a shop's fingerprint key looks like on disk. */
+export const PERSON_KEY = /^[0-9a-f]{64}$/u;
 export const AGENT_LABEL_KEY_FILE = "label_key";
 
 /** What one key derives for: a container that must not hold the shop's key itself gets a key made from it for this purpose only. */
@@ -48,7 +50,7 @@ export function ensureShopPersonKeys(dir: string, shop: string, runtimeFolder: s
  * key, which nothing has used: it is kept beside (returned: the name), never deleted. Returns undefined when the key was already the one in place.
  */
 export function restorePersonKey(dir: string, shop: string, keyHex: string, runtimeFolder: string, panelOn: boolean, stamp: string): string | undefined {
-  if (!/^[0-9a-f]{64}$/u.test(keyHex)) throw new Error("The fingerprint key in this snapshot is not a key, so it was not put back.");
+  if (!PERSON_KEY.test(keyHex)) throw new Error("The fingerprint key in this snapshot is not a key, so it was not put back.");
   const path = personKeyFile(dir, shop);
   const have = readSecretFile(path);
   let kept: string | undefined;

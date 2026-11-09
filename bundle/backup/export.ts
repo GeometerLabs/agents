@@ -23,7 +23,7 @@ import type { RecordEntry } from "../../modules/record/record.ts";
 import type { RateSource, UsageRates, UsageTotals } from "../lib/usage.ts";
 import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 import { ledgerEntries } from "../../modules/record/ledger.ts";
-import { PERSON_FORM, personFingerprint } from "../../modules/record/fingerprint.ts";
+import { PERSON_FORM, keyIdOf, personFingerprint } from "../../modules/record/fingerprint.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string; /** The file (mounted read-only) that holds the shop's key (B69): the job file names it, never carries it. */ personKeyFile: string }[] }
@@ -37,7 +37,7 @@ export interface ExportJob { shops: { name: string; db: string; out: string; /**
 export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; ledger?: { seq: number; head: string } | { error: string } }
 
 /** What person-form.json holds: which form this export's fingerprints use. `inputs` and `messageIds` count the record's entries by how they were written (older entries keep what they were). */
-export interface PersonForm { schema: 1; form: typeof PERSON_FORM; inputs: { keyed: number; older: number }; messageIds: { fingerprinted: number; older: number } }
+export interface PersonForm { schema: 1; form: typeof PERSON_FORM; /** Which key made this export's fingerprints (keyIdOf). */ keyId: string; inputs: { keyed: number; older: number }; messageIds: { fingerprinted: number; older: number } }
 
 /**
  * Fingerprints for one export, under the shop's key: `(prefix, value) => "<prefix>-<12 hex>"`. Twelve digits are enough with a key in place (nobody outside can try values, so only two people
@@ -67,7 +67,8 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   if (!existsSync(shop.db)) return { name: shop.name, ok: false, error: "no database yet" };
   let keyText: string;
   try { keyText = readFileSync(shop.personKeyFile, "utf8"); } catch { return { name: shop.name, ok: false, error: "the shop's fingerprint key is missing, so it was not exported" }; }
-  const hide = fingerprints(parseKey(keyText, "The shop's fingerprint key"));
+  const personKey = parseKey(keyText, "The shop's fingerprint key");
+  const hide = fingerprints(personKey);
   const db = new DatabaseSync(shop.db, { readOnly: true });
   let rows: { entry: string }[]; let state: { snapshot: string } | undefined;
   try {
@@ -103,7 +104,7 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   } catch (e) { ledgerSaid = { error: (e as Error).message }; }
   const digests = raw.map((e) => String(e.inputsDigest ?? ""));
   const ids = raw.map((e) => (e.refs as { messageId?: string } | undefined)?.messageId).filter((m): m is string => typeof m === "string");
-  const form: PersonForm = { schema: 1, form: PERSON_FORM, inputs: { keyed: digests.filter((d) => d.startsWith("k-")).length, older: digests.filter((d) => !d.startsWith("k-")).length }, messageIds: { fingerprinted: ids.filter((m) => /^m-[0-9a-f]{12}$/u.test(m)).length, older: ids.filter((m) => !/^m-[0-9a-f]{12}$/u.test(m)).length } };
+  const form: PersonForm = { schema: 1, form: PERSON_FORM, keyId: keyIdOf(personKey), inputs: { keyed: digests.filter((d) => d.startsWith("k-")).length, older: digests.filter((d) => !d.startsWith("k-")).length }, messageIds: { fingerprinted: ids.filter((m) => /^m-[0-9a-f]{12}$/u.test(m)).length, older: ids.filter((m) => !/^m-[0-9a-f]{12}$/u.test(m)).length } };
   for (const [file, value] of [["record.json", entries], [casesFile, cases], ["person-form.json", form], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
