@@ -107,10 +107,13 @@ test("a client pinned to another version does not start, and does not even creat
 test("live mode without live adapters does not start, and leaves the data folder usable", async () => {
   const live = { mode: "live", port: 0, services: { payments: { baseUrl: "http://g1" }, calendar: { baseUrl: "http://g2", calendarId: "c" }, messaging: { baseUrl: "http://g3", phoneNumberId: "p" } } };
   const s = setup(live);
+  const recordKeyFile = join(s.folder, "record.key");
+  writeFileSync(recordKeyFile, "ab".repeat(32));
   try {
     const refuse = async () => { throw new ClientError("no live adapters here"); };
-    await assert.rejects(startClient({ clientFolder: s.folder, tokenFile: s.tokenFile, log: () => undefined, loadLive: refuse }), /no live adapters here/);
-    const again = await startClient({ clientFolder: s.folder, tokenFile: s.tokenFile, log: () => undefined, loadLive: async () => ({ createLiveAdapters: () => { throw new ClientError("second try"); } }) }).catch((e: Error) => e);
+    await assert.rejects(startClient({ clientFolder: s.folder, tokenFile: s.tokenFile, log: () => undefined, loadLive: refuse }), /RECORD_KEY_FILE/, "B69: a live record needs its key before anything starts");
+    await assert.rejects(startClient({ clientFolder: s.folder, tokenFile: s.tokenFile, recordKeyFile, log: () => undefined, loadLive: refuse }), /no live adapters here/);
+    const again = await startClient({ clientFolder: s.folder, tokenFile: s.tokenFile, recordKeyFile, log: () => undefined, loadLive: async () => ({ createLiveAdapters: () => { throw new ClientError("second try"); } }) }).catch((e: Error) => e);
     assert.match((again as Error).message, /second try/); // the store was closed the first time, so it opens again
   } finally { s.done(); }
 });

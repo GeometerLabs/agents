@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { hide } from "../../backup/export.ts";
+import { personLabel } from "../../../modules/record/fingerprint.ts";
 import { handoverHash } from "../../../modules/approvals/handover.ts";
 import { readShop } from "../../lib/server.ts";
 import { WORDS } from "../languages.ts";
@@ -20,7 +20,7 @@ function writeRecord(b: Boot, shop: string, entries: unknown[]): void {
 }
 const ownerNumber = (b: Boot, shop: string): string => JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8")).owner.whatsapp;
 const agreed = (b: Boot, shop: string, code: string, at: number, o: { conversation?: string; action?: string; outcome?: string } = {}) => ({
-  seq: 1, time: new Date(at).toISOString(), conversation: o.conversation ?? hide("c", ownerNumber(b, shop)), booking: null, action: o.action ?? "handover_agreed", inputsDigest: "0", outcome: o.outcome ?? "confirmed",
+  seq: 1, time: new Date(at).toISOString(), conversation: o.conversation ?? personLabel(b.personKey(shop), "c", ownerNumber(b, shop)), booking: null, action: o.action ?? "handover_agreed", inputsDigest: "0", outcome: o.outcome ?? "confirmed",
   decisions: [], language: "en", notes: "", refs: { command: "handover", handover: handoverHash(code) },
 });
 const codeOf = (page: string): string => /move ([A-Z2-9]{6})</u.exec(page)?.[1] ?? "";
@@ -74,7 +74,7 @@ test("the shop moves only when the owner's own number has sent the code: not fro
     assert.ok(!kept.includes(code) && kept.includes(handoverHash(code)));
     assert.ok(!(await meera.get("/shops")).plain.includes("Glow Salon"), "nothing has moved yet");
     writeRecord(b, "glow-salon", [
-      agreed(b, "glow-salon", code, NOW + HOUR, { conversation: hide("c", "+919800099999") }), // a customer's number, not the owner's
+      agreed(b, "glow-salon", code, NOW + HOUR, { conversation: personLabel(b.personKey("glow-salon"), "c", "+919800099999") }), // a customer's number, not the owner's
       agreed(b, "glow-salon", "ZZZZZZ", NOW + HOUR), // another code
       agreed(b, "glow-salon", code, NOW - HOUR), // before the ask
       agreed(b, "glow-salon", code, NOW + 80 * HOUR), // after it ran out

@@ -15,7 +15,7 @@ import { sha256Hex } from "../lib/util.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
-import { CALENDAR_ID, EXAMPLE_CLIENT, PHONE_NUMBER_ID, panelRuntime } from "./helpers.ts";
+import { CALENDAR_ID, EXAMPLE_CLIENT, PHONE_NUMBER_ID, panelRuntime, writePersonKey } from "./helpers.ts";
 import { read, secretsFor, world } from "./world.ts";
 
 const CONTRACT = [process.env.GEOMETER_PANEL_CONTRACT, new URL("../panel/contract.ts", import.meta.url).pathname].find((p) => p && existsSync(p));
@@ -40,7 +40,8 @@ test("each Guard has the panel's own agent, allowed its connection-check reads a
     const token = read(tokenFile).trim();
     assert.match(token, /^gg_[0-9a-f]{32}$/);
     assert.equal(statSync(tokenFile).mode & 0o777, 0o600);
-    assert.equal(readdirSync(join(w.paths.secrets, "panel")).sort().join(), "data_key,guard_agent_token,signing_key", "one folder, three files: no per-shop folders");
+    assert.equal(readdirSync(join(w.paths.secrets, "panel")).sort().join(), "data_key,guard_agent_token,person-keys,signing_key", "one folder, three files and the fingerprint keys: no per-shop token folders");
+    assert.equal(readdirSync(join(w.paths.secrets, "panel", "person-keys")).sort().join(), "bright-tuition,glow-salon", "B69: one fingerprint key per shop, and nothing else in that folder");
     for (const shop of ["glow-salon", "bright-tuition"]) for (const [kind, ops] of [["razorpay", '["list_links"]'], ["whatsapp", '["read_number"]'], ["calendar", '["get_calendar", "list"]']] as const) {
       const toml = tomlOf(w, `g-${shop}-${kind}`);
       const block = agentBlock(toml, `panel-${shop}`)!;
@@ -234,13 +235,16 @@ test("the export for the monthly report has the record and the bookings and no c
     const data = join(dir, "rt"); const store = openStore(data);
     store.commitStep({ snapshot: JSON.stringify({ format: 1, bookings: [["b-1", { id: "b-1", customer: "+919811111111", state: "confirmed", serviceId: "haircut", depositInr: 200, reminders: [], pending: [], handledPayments: [] }]], customers: [], seenMessages: [], seenEvents: [], nextBooking: 2 }), entries: [{ seq: 1, time: "2026-11-04T10:00:00Z", conversation: "+919811111111", booking: "b-1", action: "send_message", inputsDigest: "d", outcome: "confirmed", decisions: [], language: "en", notes: "", refs: {} } as never], nowMs: Date.now() });
     store.close();
-    const r = exportShop({ name: "s", db: join(data, "agent.db"), out: join(dir, "out", "s") });
+    const personKeyFile = writePersonKey(dir);
+    const r = exportShop({ name: "s", db: join(data, "agent.db"), out: join(dir, "out", "s"), personKeyFile });
     assert.deepEqual([r.ok, r.entries, r.bookings], [true, 1, 1]);
     const record = JSON.parse(readFileSync(join(dir, "out", "s", "record.json"), "utf8")); const bookings = JSON.parse(readFileSync(join(dir, "out", "s", "bookings.json"), "utf8"));
     assert.ok(!JSON.stringify([record, bookings]).includes("919811111111"), "no number in either file");
     assert.match(record[0].conversation, /^c-[0-9a-f]{12}$/); assert.match(bookings[0].customer, /^p-[0-9a-f]{12}$/);
     assert.deepEqual([record[0].seq, bookings[0].id, bookings[0].state], [1, "b-1", "confirmed"]);
-    assert.equal(exportShop({ name: "n", db: join(dir, "absent.db"), out: join(dir, "out", "n") }).ok, false);
+    assert.equal(exportShop({ name: "n", db: join(dir, "absent.db"), out: join(dir, "out", "n"), personKeyFile }).ok, false);
+    assert.equal(exportShop({ name: "s", db: join(data, "agent.db"), out: join(dir, "out", "t"), personKeyFile: join(dir, "no-such-key") }).ok, false, "a shop without its key is not exported, never exported unkeyed");
+    assert.ok(!existsSync(join(dir, "out", "t")));
     assert.ok(!existsSync(join(dir, "out", "n")), "nothing is written for a shop with no database yet: the panel says 'not shared yet'");
     assert.ok(DatabaseSync);
   } finally { rmSync(dir, { recursive: true, force: true }); }

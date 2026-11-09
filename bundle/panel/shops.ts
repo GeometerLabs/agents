@@ -6,6 +6,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renam
 import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
 import { canonicalJson } from "../../modules/record/record.ts";
+import { parseKey } from "../../modules/record/key-file.ts";
 import { parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
 import { PATHWAY } from "../../templates/commerce/bookings/server/runtime.ts";
 import { kindFor } from "../lib/kinds.ts";
@@ -91,6 +92,13 @@ export function createShops(config: PanelConfig, store: Store) {
       return next;
     },
     exists: (id: string) => SHOP_ID.test(id) && existsSync(paths.shop(id)),
+    /** The shop's fingerprint key (B69): what matches a person's number to the record's fingerprints. Undefined when the server has not given it to the panel yet (the next deploy or export does). */
+    personKey(id: string): Buffer | undefined {
+      const dir = config.personKeysDir;
+      if (!dir || !SHOP_ID.test(id)) return undefined;
+      const text = readText(join(dir, id));
+      try { return text ? parseKey(text, `The fingerprint key of ${id}`) : undefined; } catch { return undefined; }
+    },
 
     /** The shop's settings, judged by the template its lock names (Bookings when there is no lock yet), in that template's own shape. */
     settings(id: string): any | undefined {

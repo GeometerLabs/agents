@@ -114,6 +114,8 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
     const path = (name: keyof typeof files) => join(dir, "secrets", files[name]);
     for (const name of Object.keys(files) as (keyof typeof files)[]) writeFileSync(path(name), `${randomBytes(24).toString("hex")}\n`, { mode: 0o600 });
     const secret = (name: keyof typeof files) => readFileSync(path(name), "utf8").trim();
+    const recordKeyFile = join(dir, "secrets", "record-key"); // B69: the runtime's key for what it writes in the record, as the deploy bundle gives it on a server
+    writeFileSync(recordKeyFile, `${randomBytes(32).toString("hex")}\n`, { mode: 0o600 });
 
     // A copy of the client, in live mode against the stand-ins. Its old data folder is left behind: this stack starts empty.
     const source = resolve(options.clientFolder ?? EXAMPLE_CLIENT);
@@ -169,7 +171,7 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
         try { given = JSON.parse(readFileSync(join(clientFolder, "runtime.json"), "utf8")); } catch { /* no runtime.json: the client check says so below */ }
         const services = { payments: { baseUrl: guard.agentUrl, agentTokenFile: path("agent") }, messaging: { baseUrl: standins.url, phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 3000 };
         writeFileSync(join(clientFolder, "runtime.json"), JSON.stringify({ ...given, mode: "live", host: "127.0.0.1", port: runtimePort, dataDir: "data", services }, null, 2));
-        stack.runtime = await startClient({ clientFolder, tokenFile: path("token"), clock, parser: options.parser, log });
+        stack.runtime = await startClient({ clientFolder, tokenFile: path("token"), recordKeyFile, clock, parser: options.parser, log });
         return stack.runtime;
       },
       settle: async () => { await stack.runtime?.runtime.idle(); },

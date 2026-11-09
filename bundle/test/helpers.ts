@@ -15,6 +15,10 @@ export function serverConfig(change: Record<string, unknown> = {}): ServerConfig
   return parsed.config;
 }
 
+/** B69: a shop's fingerprint key for an export test: 64 hex digits in a file, as the deployer's job mounts it. */
+export const PERSON_KEY_HEX = "0f".repeat(32);
+export function writePersonKey(dir: string): string { const file = join(dir, "person-key"); writeFileSync(file, PERSON_KEY_HEX, { mode: 0o600 }); return file; }
+
 export const panelRuntime = (change: PanelRuntime = {}): PanelRuntime => ({
   mode: "live", tickSeconds: 30,
   services: { payments: {}, calendar: { calendarId: CALENDAR_ID }, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 },

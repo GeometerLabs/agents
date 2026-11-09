@@ -10,6 +10,7 @@ import { runBusyMonth } from "../../../templates/commerce/bookings/report/exampl
 import { buildGoLiveCertificate } from "../../../templates/commerce/bookings/report/certificate.ts";
 import { ledgerEntries } from "../../../modules/record/ledger.ts";
 import { envelopeFile, seal, verifyEnvelopeText } from "../../../modules/report/sign.ts";
+import { keyIdOf, personLabel } from "../../../modules/record/fingerprint.ts";
 import { NOW, accountIdOf, boot, papers } from "./helpers.ts";
 
 const month = await runBusyMonth();
@@ -26,8 +27,10 @@ test("the papers of a partner's own shop: one case, a statement by POST, the ide
     b.addShop("glow-salon", { name: "Glow Salon", ownerId: accountIdOf(b, "divya"), ownerName: "Divya" });
     b.status("glow-salon", { updatedAt: new Date(NOW).toISOString(), deploy: { state: "applied" }, fingerprint: { at: new Date(NOW).toISOString(), ok: true, day: "2026-11-04", seq: 5, head: ledgerEntries(entries, "glow-salon")[4].hash, signed: true } });
     mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
-    writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(entries));
-    writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), JSON.stringify(bookings));
+    const personKey = b.personKey("glow-salon"); // the export as the deployer writes it: numbers as the shop's keyed fingerprints, the ledger made before anything is hidden
+    writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(entries.map((e) => ({ ...e, conversation: personLabel(personKey, "c", e.conversation) }))));
+    writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), JSON.stringify(bookings.map((x) => ({ ...x, customer: personLabel(personKey, "p", x.customer) }))));
+    writeFileSync(join(b.dir, "exports", "glow-salon", "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", keyId: keyIdOf(personKey), inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
     writeFileSync(join(b.dir, "exports", "glow-salon", "ledger.json"), JSON.stringify(ledgerEntries(entries, "glow-salon")));
     papers(b, "glow-salon").make("glow-salon", "go-live", (dir) => {
       const cert = buildGoLiveCertificate({ settings: month.world.settings, handCheck: { held: 38, total: 38, checks: 120, failedTitles: [] }, issuedAt: NOW - 86_400_000 });
@@ -92,6 +95,32 @@ test("the papers of a partner's own shop: one case, a statement by POST, the ide
       assert.equal((await meena.get(path)).status, 404, `${path} for another partner`);
     }
     assert.equal((await meena.post("/shops/glow-salon/papers/statement", { number: refunded.customer }, "/shops")).status, 404);
+  } finally { await b.close(); }
+});
+
+test("B69: a statement needs the shop's key and a keyed export: without either the panel says why, and does not hand back an empty statement", async () => {
+  const b = await boot({}, { key: true });
+  try {
+    const divya = await b.account("divya", "partner");
+    b.addShop("glow-salon", { name: "Glow Salon", ownerId: accountIdOf(b, "divya"), ownerName: "Divya" });
+    mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
+    writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), "[]");
+    writeFileSync(join(b.dir, "exports", "glow-salon", "bookings.json"), "[]");
+    const ask = () => divya.post("/shops/glow-salon/papers/statement", { number: "+919811122233", as: "json" }, "/shops/glow-salon/papers");
+    const noKey = await ask();
+    assert.equal(noKey.status, 409);
+    assert.match(noKey.plain, /fingerprint key has not reached the panel/u);
+    b.personKey("glow-salon");
+    const oldForm = await ask();
+    assert.equal(oldForm.status, 409);
+    assert.match(oldForm.plain, /older form/u);
+    const marker = (keyId: string) => writeFileSync(join(b.dir, "exports", "glow-salon", "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", keyId, inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
+    marker("000000000000"); // the export still made under another key, after a restore: it would match nobody
+    const otherKey = await ask();
+    assert.equal(otherKey.status, 409);
+    assert.match(otherKey.plain, /under another fingerprint key/u);
+    marker(keyIdOf(b.personKey("glow-salon")));
+    assert.equal((await ask()).status, 200);
   } finally { await b.close(); }
 });
 

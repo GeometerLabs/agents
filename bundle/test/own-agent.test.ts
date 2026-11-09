@@ -139,7 +139,7 @@ test("a refund above the limit is held, the owner approves once on WhatsApp, the
 
     // ---- the record: what the Guards decided and what the services hold ------------------------------------------------------------------------------
     const facts = await collectFacts({
-      agentId: agentNames.agentId(NAME), relayId: names.relayAgentId(NAME), recordToken: record.token, calendarId: CALENDAR_ID,
+      agentId: agentNames.agentId(NAME), relayId: names.relayAgentId(NAME), recordToken: record.token, labelKey: Buffer.alloc(32, 3), calendarId: CALENDAR_ID,
       guards: [{ kind: "razorpay", adminUrl: rz.adminUrl, adminToken: rz.adminToken, agentUrl: rz.agentUrl }, { kind: "whatsapp", adminUrl: wa.adminUrl, adminToken: wa.adminToken, agentUrl: wa.agentUrl }, { kind: "calendar", adminUrl: cal.adminUrl, adminToken: cal.adminToken, agentUrl: cal.agentUrl }],
     }, new Date());
     assert.deepEqual(facts.problems, []);
