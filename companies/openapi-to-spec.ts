@@ -86,13 +86,19 @@ function moneyFields(op: ApiOperation): Field[] {
   return op.fields.filter((f) => f.numeric && f.in !== "path" && isMoneyName(f.name));
 }
 
-/** The money fields a bound can read: the ones above, and a money number in the path too. A path value is bounded only: this draft never holds or counts a call on it. */
+/** A money field the API's schema types as a string, at the top of a JSON body (`"amount": "500"`). A number written inside quotes. Nested ones are not read (see Deferred.md). */
+const stringBodyMoney = (f: Field): boolean => f.in === "body" && f.type === "string" && !f.nested && isMoneyName(f.name);
+
+/** The money fields a bound can read: the numeric ones above, a money number in the path too, and a money string in the body. A path value or a string in the body is bounded only: this draft never holds or counts a call on it. */
 function boundFields(op: ApiOperation): Field[] {
-  return op.fields.filter((f) => f.numeric && isMoneyName(f.name));
+  return op.fields.filter((f) => (f.numeric && isMoneyName(f.name)) || stringBodyMoney(f));
 }
 
-/** A query or path value is text on the wire, whatever its schema says, so its bound reads text that spells the number exactly (`"encoding": "string"`). */
-const readAsText = (f: Field): boolean => f.in === "query" || f.in === "path";
+/**
+ * A query or path value is text on the wire, whatever its schema says, and a body field the schema types as a string is text too, so its bound reads text that spells
+ * the number exactly (`"encoding": "string"`, Guard's ADR-0060). Without it Guard wants a JSON number.
+ */
+const readAsText = (f: Field): boolean => f.in === "query" || f.in === "path" || stringBodyMoney(f);
 
 /** The one money field a hold or a spend limit can read: a top-level one, preferring `amount`. A nested one can be bounded but not held or counted. */
 function primaryMoney(fields: Field[]): Field | undefined {
@@ -111,6 +117,14 @@ function guessKeyFields(op: ApiOperation): { fields: string[]; basis: string } {
   return { fields: chosen.map((f) => f.name), basis: chosen.length > 0 ? `the ${where} field${chosen.length > 1 ? "s" : ""} that look like ids` : "" };
 }
 
+/** The part of a bound's review note that explains the text encoding, by where the field travels. */
+function textNote(f: Field, name: string): string {
+  if (f.in === "body") {
+    return ` "${f.name}" is typed as a string in the API's schema, so it travels as text inside the JSON body ("500", not 500). The bound is written with "encoding": "string": Guard then takes only text that spells the number exactly (no "+", no leading zero, no spaces, no exponent, and no fraction where min and max are whole) and REFUSES a JSON number (500 without quotes), even one in range. Check that your agent sends this field as text. If the API also accepts a bare number, the agent's calls that use it will be refused: ask the API's owner, do not remove the encoding to make them pass. If the amounts have decimals ("12.50"), write min and max with decimals too. This draft does not hold or count a call on a text amount; it bounds it only.`;
+  }
+  return ` "${f.name}" is a ${f.in} parameter, so it always reaches Guard as text ("500"), whatever its schema says. The bound is written with "encoding": "string": Guard then takes only text that spells the number exactly (no "+", no leading zero, no spaces, no exponent, and no fraction where min and max are whole). Without it Guard would want a JSON number, which a ${f.in} parameter never is, so every ${name} call would be refused${f.in === "path" ? " (geo-guard compile refuses such a spec outright). A path value is bounded only: this draft does not hold or count a call on it" : " (geo-guard compile refuses such a spec outright when the call is made only by GET; for this call it cannot tell, so the draft writes the encoding for you)"}.`;
+}
+
 const q = (names: string[]) => names.map((n) => `"${n}"`).join(", ");
 
 function suggestionsFor(op: ApiOperation, destructive: boolean): Suggestion[] {
@@ -124,7 +138,7 @@ function suggestionsFor(op: ApiOperation, destructive: boolean): Suggestion[] {
     const text = readAsText(f);
     out.push({
       id: `${name}-${f.name.replaceAll(".", "-")}-bound`, kind: "argument_bound", operation: name, field: f.name, ...(text ? { encoding: "string" as const } : {}),
-      review: `Refuses a ${name} call whose "${f.name}" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out.${apiLimits ? ` The API's own schema says ${apiLimits}; that is the API's limit, not yours.` : ""}${f.nested ? ` "${f.name}" sits inside an object in the body. Guard can bound it, but cannot hold a call on it or count it in a limit.` : ""}${text ? ` "${f.name}" is a ${f.in} parameter, so it always reaches Guard as text ("500"), whatever its schema says. The bound is written with "encoding": "string": Guard then takes only text that spells the number exactly (no "+", no leading zero, no spaces, no exponent, and no fraction where min and max are whole). Without it Guard would want a JSON number, which a ${f.in} parameter never is, so every ${name} call would be refused${f.in === "path" ? " (geo-guard compile refuses such a spec outright). A path value is bounded only: this draft does not hold or count a call on it" : " (geo-guard compile refuses such a spec outright when the call is made only by GET; for this call it cannot tell, so the draft writes the encoding for you)"}.` : ""} A call with no "${f.name}" is refused, never passed.`,
+      review: `Refuses a ${name} call whose "${f.name}" is outside min..max, before it is sent. Fill in the highest amount ONE call may move, in the API's own units (cents, paise, whole currency: check its docs). Fill in min as well: 0 or 1 keeps zero and negative amounts out.${apiLimits ? ` The API's own schema says ${apiLimits}; that is the API's limit, not yours.` : ""}${f.nested ? ` "${f.name}" sits inside an object in the body. Guard can bound it, but cannot hold a call on it or count it in a limit.` : ""}${text ? textNote(f, name) : ""} A call with no "${f.name}" is refused, never passed.`,
       fill: [
         { name: "min", required: true, help: "The lowest amount one call may carry, as a string, for example \"1\"." },
         { name: "max", required: true, help: "The highest amount one call may carry, as a string, for example \"50000\"." },
@@ -191,7 +205,7 @@ function suggestionsFor(op: ApiOperation, destructive: boolean): Suggestion[] {
 
 function classify(op: ApiOperation): { consequential: boolean; destructive: boolean; why: string } {
   if (op.method === "GET") return { consequential: false, destructive: false, why: "a read" };
-  const money = moneyFields(op).map((f) => f.name);
+  const money = [...moneyFields(op), ...op.fields.filter(stringBodyMoney)].map((f) => f.name);
   const named = [...new Set([...words(op.operationId ?? ""), ...words(op.operation), ...literalWords(op.path)].filter((w) => CONSEQUENTIAL.has(w)))];
   const reasons = [
     op.method === "DELETE" ? "it removes something" : "",

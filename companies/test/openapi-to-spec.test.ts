@@ -66,7 +66,7 @@ test("the suggestions for the example: bounds, approvals, once, forbidden, spend
   assert.deepEqual(d.suggestions.find((s) => s.id === "create_transfer-once")!.fill[0]!.default, ["from_account_id", "to_account_id"]);
 });
 
-test("numbers that are not money get no bound; a string amount gets none; a nested amount is bounded but not held or counted", () => {
+test("numbers that are not money get no bound; a string amount in the body gets the text bound only; a nested amount is bounded but not held or counted", () => {
   const body = (props: Record<string, unknown>) => ({ requestBody: { content: { "application/json": { schema: { type: "object", properties: props } } } }, responses: {} });
   const d = draftFromText(JSON.stringify({
     openapi: "3.1.0", info: { title: "Odd API", version: "1" },
@@ -76,8 +76,9 @@ test("numbers that are not money get no bound; a string amount gets none; a nest
       "/prices": { put: { operationId: "setPrice", ...body({ unitPriceCents: { type: ["integer", "null"] } }) } },
     },
   }));
-  assert.equal(d.routes.find((r) => r.operation === "create_order")!.consequential, false, "no money field, no word like refund: not consequential");
-  assert.deepEqual(d.suggestions.filter((s) => s.operation === "create_order"), []);
+  // (the string `amount` above makes this route look consequential since 10 November 2026: it gets the text bound and nothing else money-related)
+  assert.deepEqual(d.suggestions.filter((s) => s.operation === "create_order").map((s) => s.id).filter((id) => !/-(once|count-per-day)$/u.test(id)), ["create_order-amount-bound"], "only the string amount is bounded: not quantity, page_size, fee_rate or an id");
+  assert.equal(d.suggestions.find((s) => s.id === "create_order-amount-bound")!.encoding, "string");
   const charge = d.suggestions.filter((s) => s.operation === "create_charge").map((s) => s.id);
   assert.ok(charge.includes("create_charge-amount-value-bound"));
   assert.ok(!charge.includes("create_charge-needs-approval") && !charge.includes("create_charge-spend-per-day"));
