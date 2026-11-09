@@ -107,7 +107,7 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
       if (!/^\+?[0-9 ]{8,16}$/u.test(number.trim())) throw new PaperError("Type the person's WhatsApp number, with the country code (like +91 98...).");
       const b = base(id);
       const digits = `+${number.replace(/\D/gu, "")}`;
-      // B69: a person is found by the shop's key; an export from before B69 used another form, so it cannot be searched at all
+      // B69: a person is found by the shop's key. An export from before B69, or one made under another key (after a restore), would match nobody and read as a person with no payments, so each is refused and said
       const personKey = shops.personKey(id);
       if (!personKey) throw new PaperError("This shop's fingerprint key has not reached the panel yet. It arrives with the shop's next export (within a quarter of an hour) or deploy; try again after that.");
       const form = readJson(join(shops.paths.exports(id), "person-form.json"));

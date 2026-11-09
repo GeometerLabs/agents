@@ -1,6 +1,7 @@
 // The data duties, on the host side: the nightly snapshot, the weekly restore drill and `restore`. Each starts a short-lived container with the volumes it
 // needs (the deployer is the only process with the Docker socket) and reads one line of JSON back. Nothing here sees a secret except the bucket key it mounts
-// into those containers, and, for `restore` only, the owner's age key that the person restoring brings for the purpose.
+// into those containers, the shop's fingerprint key (B69: mounted read-only into the export and snapshot jobs, and put back by `restore`), and, for `restore` only, the owner's age
+// key that the person restoring brings for the purpose.
 //
 //   what is copied        when and where                                       by
 //   runtime database      nightly, gzipped and age-encrypted to the owner      backup/snapshot.ts (VACUUM INTO: a consistent copy while the runtime writes)

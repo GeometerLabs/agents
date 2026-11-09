@@ -24,13 +24,14 @@ export function prepareSecretsRoot(dir: string): void {
 // are 0644 like every other file a container's fixed user must read (see the top of this file); a copy of the key itself never is.
 // Knowing a derived key shows nothing about the key it came from, or about the person fingerprints the key makes. The snapshot job writes the key into the nightly manifest (backup/snapshot.ts), and `restore` puts it back.
 
+/** The one copy of a shop's key every other is made from. Deleting it, or letting a new machine mint another, leaves the shop unable to match the fingerprints it already handed out. */
 export const personKeyFile = (dir: string, shop: string) => secretFile(dir, "person-keys", shop);
 export const RECORD_KEY_FILE = "record_key";
 /** What a shop's fingerprint key looks like on disk. */
 export const PERSON_KEY = /^[0-9a-f]{64}$/u;
 export const AGENT_LABEL_KEY_FILE = "label_key";
 
-/** What one key derives for: a container that must not hold the shop's key itself gets a key made from it for this purpose only. */
+/** What one key derives for: a container that must not hold the shop's key itself gets a key made from it for this purpose only. The label in the HKDF must not change, or every digest and label made so far stops matching. */
 export const derivedKey = (keyHex: string, purpose: "record" | "label"): string => Buffer.from(hkdfSync("sha256", Buffer.from(keyHex, "hex"), Buffer.alloc(0), `geometer/${purpose}-key/1`, 32)).toString("hex");
 
 /** The shop's key, made if it has none. 0600. */

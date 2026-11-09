@@ -54,6 +54,7 @@ export function restoreSnapshot(from: string, identity: string, out: string): st
   if (manifest) {
     const m = JSON.parse(manifest.toString("utf8")) as { personKey?: string; files?: { path?: string; key?: string; sha256: string }[] };
     check(files, m);
+    // as a file of its own, so the person restoring by hand can copy it into place rather than pick it out of the manifest
     if (m.personKey) files.set(PERSON_KEY_OBJECT, Buffer.from(`${m.personKey}\n`));
   }
   const written: string[] = [];
