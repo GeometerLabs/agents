@@ -111,6 +111,8 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   kit: RuntimeKit<Store, Settings, Context>;
   /** The monthly AI allowance and the outside switch for this shop (modules/understanding/ai-state.ts). Left out: no limit and no switch. */
   ai?: AiPolicy;
+  /** The record's key (B69, RECORD_KEY_FILE): the inputs' digest and message ids are written with it. Left out (fakes mode): written plain. */
+  recordKey?: Buffer;
   /** The monthly report job, made from the template's report. Left out: none is made and nothing is sent. */
   monthly?: MonthlyRunner<Store, Settings>;
   /**
@@ -159,7 +161,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
 
   async function step(event: RuntimeEvent, taskId?: string): Promise<void> {
     const store = kit.parse(snapshot);
-    const record = createRecord(clock, entries);
+    const record = createRecord(clock, entries, options.recordKey ? { key: options.recordKey } : {});
     const agent = kit.createAgent({ store, record });
     const run = () => agent.handle(event);
     await (options.aroundStep ? options.aroundStep(event, run) : run());

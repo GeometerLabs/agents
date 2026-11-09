@@ -2,7 +2,7 @@
 // (Bookings and Fees try the same code through their own agents; this is the part that does not need either.)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fakeClock } from "../../core/clock.ts";
@@ -12,6 +12,7 @@ import { createRecord } from "../../record/record.ts";
 import { BOOKINGS_SERVICES, FEES_SERVICES, readRuntimeConfig } from "../config.ts";
 import { countRefunds, createRuntimeCore } from "../core.ts";
 import { checkEvents, eventKey } from "../events.ts";
+import { readRecordKey } from "../start.ts";
 import { snapshotCodec } from "../snapshot.ts";
 import { openStore } from "../store.ts";
 
@@ -32,6 +33,19 @@ test("a snapshot writes the fields in the order given, reads them back, and refu
   delete bare.started;
   assert.equal(codec.parse(JSON.stringify(bare)).started, undefined, "an optional field may be missing");
   for (const broken of [{ ...bare, format: 2 }, { ...bare, orders: {} }, { ...bare, next: "3" }, { ...bare, next: 1.5 }]) assert.throws(() => codec.parse(JSON.stringify(broken)), /not in a format this version can read/);
+});
+
+test("B69: a live runtime refuses to start without the record's key; a local run with stand-in services needs none; a key file that is not a key is refused", () => {
+  assert.throws(() => readRecordKey("live", undefined), /RECORD_KEY_FILE/u);
+  assert.equal(readRecordKey("fakes", undefined), undefined);
+  const dir = mkdtempSync(join(tmpdir(), "geo-record-key-"));
+  try {
+    const good = join(dir, "good"); writeFileSync(good, `${"ab".repeat(32)}\n`);
+    assert.deepEqual(readRecordKey("live", good), Buffer.alloc(32, 0xab));
+    const bad = join(dir, "bad"); writeFileSync(bad, "not a key");
+    assert.throws(() => readRecordKey("live", bad), /32 bytes/u);
+    assert.throws(() => readRecordKey("fakes", join(dir, "absent")), /could not read/u, "a named file that is missing is a mistake, even locally");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("a runtime config is read the same way for every template; only the services it must name differ", () => {
