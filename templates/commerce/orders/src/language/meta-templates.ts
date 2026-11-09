@@ -143,7 +143,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     dateMs: at("00:00"), slotFromMs: at(slot.from), slotToMs: at(slot.to), cutoffMs: at(settings.cutoff.time, { year: 2026, month: 11, day: 11 }),
     mode: "pickup", area: settings.delivery?.area[0] ?? "Kakkanad", address: "Flat 4, Lake View Apartments, Kakkanad",
     link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
-    partner: "Divya, local partner", upcomingCount: 4,
+    partner: "Divya, Sri Sai Digital", upcomingCount: 4,
   };
 }
 

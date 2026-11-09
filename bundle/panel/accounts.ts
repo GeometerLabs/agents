@@ -6,11 +6,12 @@ import type { ScryptOptions } from "node:crypto";
 import type { Store } from "./store.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
+import { companyOf } from "./contract.ts";
 
 export type Role = "builder" | "partner";
 export const ROLES: readonly Role[] = ["builder", "partner"];
 
-export interface Account { id: string; handle: string; name: string; role: Role; language: Language; hash: string; sessionVersion: number; createdAt: string; invitedBy: string }
+export interface Account { id: string; handle: string; name: string; company?: string; role: Role; language: Language; hash: string; sessionVersion: number; createdAt: string; invitedBy: string }
 export interface Invite { id: string; tokenHash: string; role: Role; note: string; createdBy: string; createdAt: string; expiresAt: string; usedAt?: string; usedBy?: string }
 
 const SCRYPT = { N: 16384, r: 8, p: 1 } as const;
@@ -46,7 +47,7 @@ const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 // A hash to compare against when the handle is unknown, so a wrong handle takes as long as a wrong passphrase.
 let dummy: Promise<string> | undefined;
 
-export type RedeemResult = { ok: true; account: Account } | { ok: false; reason: "invite-unknown" | "invite-used" | "invite-expired" | "handle-bad" | "handle-taken" | "name-bad" | "language-bad" | PassphraseProblem };
+export type RedeemResult = { ok: true; account: Account } | { ok: false; reason: "invite-unknown" | "invite-used" | "invite-expired" | "handle-bad" | "handle-taken" | "name-bad" | "company-bad" | "language-bad" | PassphraseProblem };
 
 export function createAccounts(store: Store, now: () => number = Date.now) {
   const load = () => store.read<{ schema: 1; accounts: Account[] }>("accounts.json")?.accounts ?? [];
@@ -81,7 +82,7 @@ export function createAccounts(store: Store, now: () => number = Date.now) {
     },
     inviteRole: (token: string): Role | undefined => findInvite(token)?.role,
 
-    async redeem(token: string, o: { handle: string; name: string; passphrase: string; language: string }): Promise<RedeemResult> {
+    async redeem(token: string, o: { handle: string; name: string; company?: string; passphrase: string; language: string }): Promise<RedeemResult> {
       const invite = findInvite(token);
       if (!invite) return { ok: false, reason: "invite-unknown" };
       if (invite.usedAt) return { ok: false, reason: "invite-used" };
@@ -90,6 +91,10 @@ export function createAccounts(store: Store, now: () => number = Date.now) {
       const name = o.name.trim();
       if (!HANDLE.test(handle)) return { ok: false, reason: "handle-bad" };
       if (name === "" || name.length > 80) return { ok: false, reason: "name-bad" };
+      // the company or business name is optional: empty means none, anything else must be a usable one-line name
+      const typed = (o.company ?? "").trim();
+      const company = companyOf(typed);
+      if (typed !== "" && !company) return { ok: false, reason: "company-bad" };
       if (!(LANGUAGES as readonly string[]).includes(o.language)) return { ok: false, reason: "language-bad" };
       const problem = passphraseProblem(o.passphrase, handle);
       if (problem) return { ok: false, reason: problem };
@@ -99,7 +104,7 @@ export function createAccounts(store: Store, now: () => number = Date.now) {
       const fresh = findInvite(token);
       if (!fresh || fresh.usedAt) return { ok: false, reason: "invite-used" };
       if (load().some((a) => a.handle === handle)) return { ok: false, reason: "handle-taken" };
-      const account: Account = { id: `acc_${randomBytes(8).toString("hex")}`, handle, name, role: invite.role, language: o.language as Language, hash, sessionVersion: 1, createdAt: iso(now()), invitedBy: invite.createdBy };
+      const account: Account = { id: `acc_${randomBytes(8).toString("hex")}`, handle, name, ...(company ? { company } : {}), role: invite.role, language: o.language as Language, hash, sessionVersion: 1, createdAt: iso(now()), invitedBy: invite.createdBy };
       save([...load(), account]);
       saveInvites(loadInvites().map((i) => (i.id === invite.id ? { ...i, usedAt: iso(now()), usedBy: account.id } : i)));
       return { ok: true, account };

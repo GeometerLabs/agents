@@ -380,7 +380,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     link: "https://rzp.io/i/example", holdMinutes: settings.deposit.holdMinutes, windowHours: settings.cancellation.windowHours,
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     upiId: "glowsalon@okicici", payee: settings.name, upiCode: "P4XR9T", markedInr: settings.deposit.amountInr, leftInr: settings.deposit.amountInr,
-    partner: "Divya, local partner", upcomingCount: 3,
+    partner: "Divya, Sri Sai Digital", upcomingCount: 3,
   };
 }
 
