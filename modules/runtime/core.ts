@@ -136,6 +136,8 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   kit: RuntimeKit<Store, Settings, Context>;
   /** The monthly AI allowance and the outside switch for this shop (modules/understanding/ai-state.ts). Left out: no limit and no switch. */
   ai?: AiPolicy;
+  /** The record's key (B69, RECORD_KEY_FILE): the inputs' digest and message ids are written with it. Left out (fakes mode): written plain. */
+  recordKey?: Buffer;
   /** The monthly report job, made from the template's report. Left out: none is made and nothing is sent. */
   monthly?: MonthlyRunner<Store, Settings>;
   /**
@@ -186,7 +188,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   const restoreNote = readRestoreNote(db.file);
   if (restoreNote) {
     const owner = (settings as { owner?: { whatsapp?: string; language?: Language } }).owner;
-    const done = afterRestore({ note: restoreNote.note, snapshot, entries, clock, ...(kit.skipCounters ? { skipCounters: (json, gap) => kit.skipCounters!(json, gap) } : {}), ...(owner ? { owner } : {}) });
+    const done = afterRestore({ note: restoreNote.note, snapshot, entries, clock, ...(kit.skipCounters ? { skipCounters: (json, gap) => kit.skipCounters!(json, gap) } : {}), ...(owner ? { owner } : {}), ...(options.recordKey ? { recordKey: options.recordKey } : {}) });
     if (done) {
       kit.parse(done.snapshot); // it must still read
       db.commitStep({ snapshot: done.snapshot, entries: done.fresh, nowMs: clock.now() });
@@ -230,7 +232,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const lastTry = stepOptions?.lastTry === true;
     const isTask = taskId !== undefined;
     const store = kit.parse(snapshot);
-    const record = createRecord(clock, entries);
+    const record = createRecord(clock, entries, options.recordKey ? { key: options.recordKey } : {});
     if (!isTask) tickMemory.begin();
     const watch = watchStep(kit.services, { mode: isTask && !lastTry ? "wait" : "observe", givenUp, ...(isTask ? {} : { memory: tickMemory }) });
     const agent = kit.createAgent({ store, record, services: watch.services });
@@ -278,7 +280,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   async function endTask(event: RuntimeEvent, taskId: string, service: string, tell: boolean): Promise<void> {
     givenUp.add(service);
     const store = kit.parse(snapshot);
-    const record = createRecord(clock, entries);
+    const record = createRecord(clock, entries, options.recordKey ? { key: options.recordKey } : {});
     const agent = kit.createAgent({ store, record, services: kit.services });
     try { await agent.giveUp?.(event, { service, tell }); }
     catch (e) { log(`The note that a task gave up waiting for its Guard could not be written: ${(e as Error).message}`); }

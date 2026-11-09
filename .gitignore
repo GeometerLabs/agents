@@ -14,3 +14,12 @@ templates/education/fees/report-sample/
 
 # the browser build of the Bookings demo, made by templates/commerce/bookings/scripts/build-web-demo.ts (npm run build:web-demo)
 templates/commerce/bookings/demo/web/dist/
+
+# working copies of background jobs
+.claude/worktrees/
+
+# Debug output: build folders, test results and logs are never committed
+**/target/
+**/test-results/
+**/playwright-report/
+*.log

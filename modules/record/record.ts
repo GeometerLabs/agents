@@ -11,6 +11,7 @@
 import { createHash } from "node:crypto";
 import type { Clock } from "../core/clock.ts";
 import type { Language } from "../language/languages.ts";
+import { keyedDigest, messageFingerprint } from "./fingerprint.ts";
 
 export type Outcome = "attempted" | "confirmed" | "unconfirmed" | "failed" | "blocked" | "held_for_owner";
 
@@ -74,9 +75,13 @@ export interface ActionRecord extends RecordView {
   append(entry: NewEntry): RecordEntry;
 }
 
+/** The shop's key for what it writes (B69, the runtime's `RECORD_KEY_FILE`): the inputs' digest is keyed and a WhatsApp message id is kept only as a fingerprint of itself. Left out (a demo, a test): the plain digest and the id itself. */
+export interface RecordOptions { key?: Buffer }
+
 /** `saved` are entries an earlier run already wrote (the server reloads its record from disk); new entries continue after them. */
-export function createRecord(clock: Clock, saved: readonly RecordEntry[] = []): ActionRecord {
+export function createRecord(clock: Clock, saved: readonly RecordEntry[] = [], options: RecordOptions = {}): ActionRecord {
   const list: RecordEntry[] = saved.map(frozen);
+  const key = options.key;
 
   const view: RecordView = {
     entries: () => [...list],
@@ -97,12 +102,13 @@ export function createRecord(clock: Clock, saved: readonly RecordEntry[] = []): 
         conversation: entry.conversation,
         booking: entry.booking ?? null,
         action: entry.action,
-        inputsDigest: digest(entry.inputs),
+        inputsDigest: key ? keyedDigest(key, canonicalJson(entry.inputs)) : digest(entry.inputs),
         outcome: entry.outcome,
         decisions: Object.freeze((entry.decisions ?? []).map((d) => Object.freeze({ ...d }))),
         language: entry.language,
         notes: entry.notes ?? "",
-        refs: Object.freeze({ ...(entry.refs ?? {}) }),
+        // here, not at export: refs and the digest are in the hash chain (ledger.ts), so an export could not rewrite them without changing every hash after them
+        refs: Object.freeze(key && entry.refs?.messageId !== undefined ? { ...entry.refs, messageId: messageFingerprint(key, entry.refs.messageId) } : { ...(entry.refs ?? {}) }),
       });
       list.push(stored);
       return stored;

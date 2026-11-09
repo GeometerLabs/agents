@@ -74,7 +74,7 @@ test("the unfinished work is read from the record as the deployer exports it (th
   await w.ownerMarksReceived("b-2");
   await w.say("cancel", { from: "+919822222222" });
   w.clock.advanceMinutes(15);
-  // what bundle/backup/export.ts writes: every entry, with its refs, and the conversation turned into a short hash
+  // what bundle/backup/export.ts writes: every entry, with its refs, and the conversation turned into a fingerprint
   const exported = JSON.parse(JSON.stringify(w.record.entries().map((e) => ({ ...e, conversation: "c-aaaaaaaaaaaa" }))));
   const found = obligations.detect({ template: "bookings", entries: exported, cases: JSON.parse(JSON.stringify([...w.store.bookings.values()])), nowMs: w.clock.now(), options: DEFAULT_OPTIONS }).found;
   assert.deepEqual(found.filter((o) => o.kind.startsWith("upi_")).map((o) => [o.kind, o.caseId, o.facts.amountInr]), [["upi_payment_unconfirmed", "b-1", 200], ["upi_refund_owed", "b-2", 200]]);

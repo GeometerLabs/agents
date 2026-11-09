@@ -961,7 +961,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `takeOut.heading` | എല്ലാം കൂടെ കൊണ്ടുപോകൂ | Take everything with you |  |
 | `takeOut.text` | ഈ കടയുടെ സെറ്റിങ്ങുകൾ, പരിധികൾ, റെക്കോർഡ്, റിപ്പോർട്ടുകൾ, സർട്ടിഫിക്കറ്റുകൾ എന്നിവയുടെ ഒരു പകർപ്പ്, Geometer ഇല്ലാതെയും തുറക്കാവുന്ന സാധാരണ ഫയലുകളായി. പ്ലാൻ നിലച്ചാലും ഇത് പ്രവർത്തിക്കും. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
 | `takeOut.button` | എക്സ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യുക | Download the export |  |
-| `takeOut.notIn` | ഇതിൽ ഒരു കീയോ രഹസ്യമോ ഇല്ല; കടയുടെ സ്വന്തം WhatsApp, പേയ്മെന്റ്, കലണ്ടർ അക്കൗണ്ടുകൾ കടയുടേതായി തന്നെ തുടരും. ഉപഭോക്താക്കളുടെ നമ്പറുകൾ ചെറിയ കോഡുകളാണ്. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.notIn` | ഇതിൽ ഒരു കീയോ രഹസ്യമോ ഇല്ല; കടയുടെ സ്വന്തം WhatsApp, പേയ്മെന്റ്, കലണ്ടർ അക്കൗണ്ടുകൾ കടയുടേതായി തന്നെ തുടരും. രേഖയിൽ ഉപഭോക്താക്കളുടെ നമ്പറുകൾ ഈ കടയുടെ കീ കൊണ്ട് മാത്രം ഒത്തുനോക്കാവുന്ന കോഡുകളാണ്; സെറ്റിങ്സ് ഫയലിൽ കടയുടെ സ്വന്തം ആളുകളുടെ പേരും നമ്പറും അതേപടി ഉണ്ട്. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. In the record, customers' numbers are codes only this shop's key can match; the settings file lists the shop's own people as written. |  |
 | `takeOut.check` | ഫയലുകൾ പരിശോധിക്കാൻ അകത്തെ README നോക്കുക. | To check the files, use the README inside. |  |
 | `handover.heading` | ഈ കട മറ്റൊരാൾക്ക് കൈമാറുക | Move this shop to someone else |  |
 | `handover.button` | ഈ കട കൈമാറുക… | Move this shop… |  |
