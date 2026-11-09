@@ -196,7 +196,7 @@ test("Guard's words: a vote's 409 names the voter and the count; a decided reque
 });
 
 test("a review item with the B37 keys is read whole, and one with some of them is refused, not guessed", () => {
-  const base = { id: "ap-1", agent: "a", tool: "razorpay", operation: "refund", arguments: ["map", { amount: ["int", "20000"], payment_id: ["str", "pay_1"], receipt: ["str", "b-1:pay_1"] }], requested_at_ms: "1", expires_at_ms: "2" };
+  const base = { id: "ap-1", agent: "a", tool: "razorpay", operation: "refund", arguments: ["map", { amount: ["int", "20000"], payment_id: ["str", "pmt_1"], receipt: ["str", "b-1:pmt_1"] }], requested_at_ms: "1", expires_at_ms: "2" };
   const whole = readHeld({ ...base, approvals_needed: 2, approvals_given: 1, votes: [{ approver: "asha", decision: "approve", role: "committee", at_ms: "5" }], requested_by: ["ravi"], may_still_decide: ["meena"] });
   assert.ok(whole.ok && whole.held.group);
   if (whole.ok) assert.deepEqual(whole.held.group, { needed: 2, given: 1, votes: [{ approver: "asha", decision: "approve" }], requestedBy: ["ravi"], mayStillDecide: ["meena"] });
@@ -235,13 +235,13 @@ test("the relay's data from before B37 opens and carries on: an ask written then
       CREATE TABLE alerts (approval TEXT NOT NULL, kind TEXT NOT NULL, note TEXT NOT NULL, at_ms INTEGER NOT NULL, PRIMARY KEY (approval, kind));
       CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       PRAGMA user_version = 1;`);
-    db.prepare("INSERT INTO asks (approval, state, code_hash, receipt, payment_id, amount_paise, first_seen_ms, guard_expires_at_ms, approval_hours, code_expires_at_ms) VALUES (?, 'asked', ?, 'b-1:pay_1', 'pay_1', 20000, 1, 999999, 24, 999000)").run("ap-old-1", hashCode("K7M2QX"));
+    db.prepare("INSERT INTO asks (approval, state, code_hash, receipt, payment_id, amount_paise, first_seen_ms, guard_expires_at_ms, approval_hours, code_expires_at_ms) VALUES (?, 'asked', ?, 'b-1:pmt_1', 'pmt_1', 20000, 1, 999999, 24, 999000)").run("ap-old-1", hashCode("K7M2QX"));
     db.prepare("INSERT INTO meta (key, value) VALUES ('owner_last_inbound', '5')").run();
     db.close();
     const store = openRelayStore(dir);
     const ask = store.askByCode("K7M2QX")!;
     assert.deepEqual([ask.approval, ask.approver, ask.state, ask.approvalsLeft], ["ap-old-1", "", "asked", null]);
-    assert.equal(store.ask("ap-old-1")!.receipt, "b-1:pay_1");
+    assert.equal(store.ask("ap-old-1")!.receipt, "b-1:pmt_1");
     assert.equal(store.moveAsk("ap-old-1", ["asked"], "deciding", { decision: "approve" }), true, "it carries on where it was");
     assert.equal(store.getMeta("owner_last_inbound"), "5");
     assert.deepEqual(store.outcomes(), []);

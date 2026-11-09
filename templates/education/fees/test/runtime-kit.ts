@@ -10,7 +10,7 @@ import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts"
 import type { InboundMessage } from "../../../../modules/messaging/messaging.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { HARNESS_GUARD, SHARMA_PARENT, brightTuition } from "../src/harness.ts";
 import { razorpayLimitsSpec } from "../src/guard-limits.ts";
@@ -37,7 +37,7 @@ export interface Kit {
   say(runtime: Runtime, text: string, options?: { from?: string; id?: string }): Promise<InboundMessage>;
   /** The payment provider's webhooks that were not delivered yet reach the runtime, and it handles them. */
   deliverPaymentEvents(runtime: Runtime): Promise<void>;
-  linkFor(ref: string): PaymentLink | undefined;
+  linkFor(ref: string): PaymentRequest | undefined;
   cleanup(): void;
 }
 

@@ -10,7 +10,7 @@ import { createGuardClient } from "../../../modules/approvals/clients.ts";
 import { systemClock } from "../../../modules/core/clock.ts";
 import { signMeta, signRazorpay } from "../../../modules/messaging/webhooks.ts";
 import type { InboundMessage } from "../../../modules/messaging/messaging.ts";
-import type { Payment, PaymentLink, Refund } from "../../../modules/payments/payments.ts";
+import type { Payment, PaymentRequest, Refund } from "../../../modules/payments/payments.ts";
 import { razorpayWebhookBody, whatsappWebhookBody } from "../../../templates/commerce/bookings/standins/control.ts";
 import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { RunningStandins } from "../../../templates/commerce/bookings/standins/server.ts";
@@ -80,7 +80,7 @@ export interface World {
   pay(linkId: string): Promise<Payment>;
   /** The provider sends every event so far again, each signed: a late repeat. */
   repeatPaymentEvents(): Promise<void>;
-  links(): PaymentLink[];
+  links(): PaymentRequest[];
   refunds(): Refund[];
   /** Everything the calendar holds. Nobody but the agent writes to it here (an event the agent made carries no booking reference, so the stand-in lists it as another party's). */
   events(): CalendarEvent[];

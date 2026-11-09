@@ -75,7 +75,7 @@ test("nothing is sent, charged or booked: every request is a GET, and the stand-
     assert.equal(w.fakes.payments.links().length, 0);
     assert.equal(w.fakes.payments.refunds().length, 0);
     assert.equal(w.fakes.calendar.events().length, 0);
-    assert.ok(w.fakes.payments.calls.every((c) => c.op === "listPaymentLinks"));
+    assert.ok(w.fakes.payments.calls.every((c) => c.op === "listRequests"));
   } finally { await w.close(); }
 });
 
@@ -113,7 +113,7 @@ test("Razorpay: a practice key where a live one is needed is refused before any 
 test("Razorpay: a key that no longer works is not_allowed, and the result says it could not tell whose account it is", async () => {
   const w = await world();
   try {
-    w.fakes.payments.inject("listPaymentLinks", "error");
+    w.fakes.payments.inject("listRequests", "error");
     const bad = await checkRazorpay({ baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" });
     assert.deepEqual([bad.ok, bad.code], [false, "not_allowed"]);
     const good = await checkRazorpay({ baseUrl: w.url, keyId: "rzp_live_AbCdEf123456", expectedMode: "live" });

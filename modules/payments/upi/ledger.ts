@@ -18,7 +18,7 @@
 import { newCode } from "../../approvals/code.ts";
 import type { Clock } from "../../core/clock.ts";
 import { HOUR } from "../../core/time.ts";
-import type { NewPaymentLink, Payment, PaymentLink, Payments, Refund } from "../payments.ts";
+import type { NewPaymentRequest, Payment, PaymentRequest, Payments, Refund } from "../payments.ts";
 import { upiPayLink } from "./link.ts";
 
 /** The shop's UPI ID and the name its customers see. From the shop's settings (`payments.upi`). */
@@ -94,11 +94,11 @@ function freshCode(state: UpiState): string {
 }
 
 /** Make a request. The note in the link is the reference, so the owner sees it beside the money in their UPI app. */
-export function createRequest(state: UpiState, payee: UpiPayee, r: NewPaymentLink, nowMs: number): UpiRequest {
+export function openRequest(state: UpiState, payee: UpiPayee, r: NewPaymentRequest, nowMs: number): UpiRequest {
   const request: UpiRequest = {
     id: `upi-${++state.seq}`, reference: r.reference_id, amountPaise: r.amount, description: r.description,
     link: upiPayLink({ vpa: payee.id, payee: payee.payee, amountPaise: r.amount, note: r.reference_id }),
-    code: freshCode(state), usedCodes: [], status: "created", createdAtMs: nowMs, marks: [], ...(r.accept_partial ? { acceptPartial: true } : {}),
+    code: freshCode(state), usedCodes: [], status: "created", createdAtMs: nowMs, marks: [], ...(r.part_payments ? { acceptPartial: true } : {}),
   };
   state.requests.push(request);
   return request;
@@ -191,19 +191,19 @@ export class UpiCannotError extends Error {}
  */
 export function upiPayments(state: UpiState, payee: UpiPayee, clock: Clock): Payments {
   const seconds = (ms: number) => Math.floor(ms / 1000);
-  const asPayment = (r: UpiRequest, m: UpiMark): Payment => ({ id: m.id, link_id: r.id, amount: m.amountPaise, currency: "INR", status: "captured", amount_refunded: owedOn(state, m.id), created_at: seconds(m.atMs) });
-  const asLink = (r: UpiRequest): PaymentLink => ({
-    id: r.id, reference_id: r.reference, amount: r.amountPaise, currency: "INR", description: r.description, status: r.status, short_url: r.link,
-    amount_paid: paidOf(r), payments: r.marks.map((m) => asPayment(r, m)), created_at: seconds(r.createdAtMs), ...(r.acceptPartial ? { accept_partial: true, first_min_partial_amount: 100 } : {}),
+  const asPayment = (r: UpiRequest, m: UpiMark): Payment => ({ id: m.id, request_id: r.id, amount: m.amountPaise, currency: "INR", status: "received", amount_refunded: owedOn(state, m.id), created_at: seconds(m.atMs) });
+  const asLink = (r: UpiRequest): PaymentRequest => ({
+    id: r.id, reference_id: r.reference, amount: r.amountPaise, currency: "INR", description: r.description, status: r.status, pay_url: r.link,
+    amount_paid: paidOf(r), payments: r.marks.map((m) => asPayment(r, m)), created_at: seconds(r.createdAtMs), ...(r.acceptPartial ? { part_payments: true, min_first_payment: 100 } : {}),
   });
   const refundsOf = (paymentId: string): Refund[] => state.refunds.filter((r) => r.paymentId === paymentId && r.state !== "kept").map((r) => ({ id: r.id, payment_id: r.paymentId, amount: r.amountPaise, status: r.state === "done" ? "processed" : "pending", receipt: `${r.caseId}:${r.paymentId}`, created_at: seconds(r.owedAtMs) }));
   return {
-    async createPaymentLink(request) { return asLink(createRequest(state, payee, request, clock.now())); },
-    async fetchPaymentLink(id) { const r = state.requests.find((x) => x.id === id); return r ? asLink(r) : null; },
-    async listPaymentLinks(query = {}) {
+    async createRequest(request) { return asLink(openRequest(state, payee, request, clock.now())); },
+    async fetchRequest(id) { const r = state.requests.find((x) => x.id === id); return r ? asLink(r) : null; },
+    async listRequests(query = {}) {
       return state.requests.filter((r) => (query.reference_id === undefined || r.reference === query.reference_id) && (query.payment_id === undefined || r.marks.some((m) => m.id === query.payment_id))).map(asLink);
     },
-    async cancelPaymentLink(id) {
+    async cancelRequest(id) {
       const r = state.requests.find((x) => x.id === id);
       if (!r) throw new UpiCannotError(`No UPI request ${id}.`);
       closeRequest(r, clock.now());

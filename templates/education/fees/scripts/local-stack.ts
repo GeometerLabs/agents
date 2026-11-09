@@ -226,7 +226,7 @@ async function main(args: string[]): Promise<void> {
   console.log("The agent opens a month's fees on its first reminder day (3 days before the due day in the example), so with the real clock nothing happens until then. To see a month, run the");
   console.log("end-to-end test (test/full-chain.test.ts), which moves a fake clock, or walk it by hand:");
   console.log(`  curl -s -X POST ${standins}/_standin/whatsapp/inbound -d '{"from":"${settings.students[0].parent}","text":"I already paid"}'   # a parent writes`);
-  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # they pay a fee link (the first link is plink_1; later ones are in the state)`);
+  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"req_1"}'   # they pay a fee link (the first link is req_1; later ones are in the state)`);
   console.log(`  curl -s ${standins}/_standin/state   # what the stand-ins hold: the outbox, the links, the payments`);
   console.log(`To see an approval, start with --refund-limit ${Math.max(0, Math.min(...settings.batches.map((b) => b.monthlyFeeInr)) - 1)} (below the cheapest fee), let a parent pay, and write "refund" as that parent.`);
   console.log(`  The refund is held; within a couple of seconds the owner (${settings.owner.whatsapp}) is asked, with a code, in the state's outbox. Then:`);

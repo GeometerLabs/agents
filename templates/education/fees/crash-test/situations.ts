@@ -97,15 +97,15 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
 
   // ---- 1. Razorpay made the link, the reply was lost ------------------------------------------------------------------
   add({
-    id: "link-reply-lost", title: "Razorpay made the payment link but the reply was lost", how: "createPaymentLink: the link is stored, then the reply is lost",
+    id: "link-reply-lost", title: "Razorpay made the payment link but the reply was lost", how: "createRequest: the link is stored, then the reply is lost",
     async run() {
       const { results, expect } = checker();
       const w = world();
-      w.payments.inject("createPaymentLink", "lostReply", { after: shop.settings.students.indexOf(shop.student) });
+      w.payments.inject("createRequest", "lostReply", { after: shop.settings.students.indexOf(shop.student) });
       await atReminder(w, 0);
       expect("Exactly one link exists for the fee: the retry looked first and did not make a second", linksOf(w).length === 1, `${linksOf(w).length} links`);
       expect("The link is for the fee and nothing else", lastLink(w)?.amount === fee * 100, `${lastLink(w)?.amount}`);
-      expect("The parent was sent one reminder, and it carries that link", reminders(w).length === 1 && reminders(w)[0].text.includes(lastLink(w)?.short_url ?? "no link"), `${reminders(w).length} reminders`);
+      expect("The parent was sent one reminder, and it carries that link", reminders(w).length === 1 && reminders(w)[0].text.includes(lastLink(w)?.pay_url ?? "no link"), `${reminders(w).length} reminders`);
       expect("The reminder states the fee and no other amount", amountsIn(reminders(w)[0]?.text ?? "").every((n) => n === fee), `${amountsIn(reminders(w)[0]?.text ?? "")}`);
       return results;
     },
@@ -186,7 +186,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       await w.say(says.paid, { from: shop.parent });
       const reply = w.lastTextTo(shop.parent);
       expect("The fee is not marked paid", due(w).state === "open" && recorded(w, "record_payment").length === 0);
-      expect("The reply says no payment can be seen, and offers the link", reply.includes(mark.cannotSee) && reply.includes(lastLink(w)?.short_url ?? "no link"), reply);
+      expect("The reply says no payment can be seen, and offers the link", reply.includes(mark.cannotSee) && reply.includes(lastLink(w)?.pay_url ?? "no link"), reply);
       expect("The reply does not say \"received\"", !reply.includes(mark.received) && !reply.includes(mark.canSee));
       expect("The owner was told, once", aboutParent(w).length === 1, `${aboutParent(w).length}`);
       await w.say(says.paid, { from: shop.parent });
@@ -265,7 +265,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       await atReminder(w, 0);
       w.pays(name);
       const before = reminders(w).length;
-      w.payments.inject("fetchPaymentLink", "error", { times: 1 });
+      w.payments.inject("fetchRequest", "error", { times: 1 });
       await at(w, later(0)[0] + MINUTE);
       expect("No reminder went out while the record could not be read", reminders(w).length === before, `${reminders(w).length} / ${before}`);
       expect("The record says the reminder is waiting", w.record.entries().some((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "no-reminder-once-paid")));
@@ -299,7 +299,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
         await w.ownerSays("approve q-1");
         expect("The owner's yes took off exactly the amount asked", due(w).waivedInr === ask && recorded(w, "waive_fee", "confirmed").length === 1, `${due(w).waivedInr}`);
         expect("A new link was made for what is left, and the old one closed", lastLink(w)?.amount === (fee - ask) * 100 && w.payments.links().find((l) => l.id === link.id)?.status === "cancelled", `${lastLink(w)?.amount}`);
-        expect("The parent was sent the new amount and the new link", amountsIn(w.lastTextTo(shop.parent)).includes(fee - ask) && w.lastTextTo(shop.parent).includes(lastLink(w)?.short_url ?? "no link"), w.lastTextTo(shop.parent));
+        expect("The parent was sent the new amount and the new link", amountsIn(w.lastTextTo(shop.parent)).includes(fee - ask) && w.lastTextTo(shop.parent).includes(lastLink(w)?.pay_url ?? "no link"), w.lastTextTo(shop.parent));
         await w.ownerSays("approve q-1");
         expect("The same yes again does nothing: it is used up", due(w).waivedInr === ask && recorded(w, "waive_fee", "confirmed").length === 1);
         });
@@ -380,7 +380,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
         const w = world();
         await atReminder(w, 0);
         if (later(0).length > 0) {
-          w.payments.inject("fetchPaymentLink", "error", { times: 1 });
+          w.payments.inject("fetchRequest", "error", { times: 1 });
           await at(w, later(0)[0] + MINUTE);
         }
         const before = aboutParent(w).length;
@@ -445,7 +445,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       if (later(0).length > 0) {
         await at(w, later(0)[0] + MINUTE);
         const last = reminders(w).at(-1)?.text ?? "";
-        expect("The next reminder asks for the balance, not the whole fee, on the same link", amountsIn(last).includes(fee - part) && !amountsIn(last).includes(fee) && last.includes(link.short_url) && linksOf(w).length === 1, last);
+        expect("The next reminder asks for the balance, not the whole fee, on the same link", amountsIn(last).includes(fee - part) && !amountsIn(last).includes(fee) && last.includes(link.pay_url) && linksOf(w).length === 1, last);
       }
       w.pays(name);
       await w.deliverPaymentEvents();
@@ -504,7 +504,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       expect("A model step failed: the parent got an answer anyway, with buttons", (reply.interactive?.buttons?.length ?? 0) >= 1, JSON.stringify(reply.interactive));
       expect("The record says the agent moved to buttons", w.record.entries().some((e) => e.action === "ai_mode" && e.refs.reason === "fault"));
       await w.tap(reply.interactive!.buttons!.find((b) => b.id.startsWith("pay:"))!.id, { from: shop.parent });
-      expect("A tap on a button is read without asking a model", decisionAsked === asked[0] && modelAsked === asked[1] && w.lastTextTo(shop.parent).includes(lastLink(w)?.short_url ?? "no link"), `${decisionAsked}/${modelAsked}`);
+      expect("A tap on a button is read without asking a model", decisionAsked === asked[0] && modelAsked === asked[1] && w.lastTextTo(shop.parent).includes(lastLink(w)?.pay_url ?? "no link"), `${decisionAsked}/${modelAsked}`);
       if (ask !== undefined) {
         await w.say(says.discountOff(ask), { from: shop.parent });
         expect("A waiver above the limit still goes to the owner, with no model asked", due(w).waivedInr === 0 && toOwner(w).some((m) => m.text.includes("approve q-1")) && decisionAsked === asked[0], `${due(w).waivedInr}`);
@@ -609,7 +609,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       const linksBefore = w.payments.links().length;
       let refused = 0;
       for (const amount of [(highest + 1) * 100, 0]) {
-        try { await w.payments.createPaymentLink({ amount, reference_id: `x-${amount}`, description: "d" }); } catch (e) { if (e instanceof GuardRefusedError && e.ruleId === "fee-amount") refused++; }
+        try { await w.payments.createRequest({ amount, reference_id: `x-${amount}`, description: "d" }); } catch (e) { if (e instanceof GuardRefusedError && e.ruleId === "fee-amount") refused++; }
       }
       expect("A link above the dearest fee with its late fee, or for nothing, was refused by the rule fee-amount", refused === 2 && w.payments.links().length === linksBefore, `${refused} refused`);
       let refundRefused = false;
@@ -647,7 +647,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       const message = w.messaging.receive(shop.parent, "pay", { reply: { id: `pay:${theirs.id}`, kind: "button" } });
       await w.agent.handle({ kind: "message", message });
       const reply = w.lastTextTo(shop.parent);
-      expect("The reply is about the sender's own fee: their link and their amount", reply.includes(lastLink(w)?.short_url ?? "no link") && !reply.includes(other.name), reply);
+      expect("The reply is about the sender's own fee: their link and their amount", reply.includes(lastLink(w)?.pay_url ?? "no link") && !reply.includes(other.name), reply);
       expect("The other family's fee was not touched: no new link, still open", w.payments.links().length === before && theirs.state === "open");
       return results;
     },

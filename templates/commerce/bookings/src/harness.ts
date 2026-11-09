@@ -17,7 +17,7 @@ import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import type { GuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { FakePayments, FakePaymentsOptions, PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { FakePayments, FakePaymentsOptions, PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRuleParser } from "./adapters/rule-parser.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
@@ -75,7 +75,7 @@ export interface World {
   textsTo(number: string): string[];
   lastTextTo(number: string): string;
   /** The payment link for a booking, as the payments service holds it. */
-  linkFor(bookingRef: string): PaymentLink | undefined;
+  linkFor(bookingRef: string): PaymentRequest | undefined;
   /** UPI shops (B33): the booking's request as the agent's own ledger holds it (its code is the owner's, never the customer's). */
   upiRequest(bookingRef: string): UpiRequest | undefined;
   /** UPI: the refunds the owner owes for a booking, as the ledger holds them. */

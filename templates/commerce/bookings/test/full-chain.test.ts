@@ -42,7 +42,7 @@ function witnesses(s: LocalStack) {
     holds: calendar.events().filter((e) => e.bookingRef !== "foreign"),
     confirmed: calendar.events().filter((e) => e.status === "confirmed" && e.bookingRef !== "foreign"),
     links: payments.links(),
-    captured: payments.links().flatMap((l) => l.payments).filter((p) => p.status === "captured"),
+    captured: payments.links().flatMap((l) => l.payments).filter((p) => p.status === "received"),
     refunds: payments.refunds(),
     toldBooked: (who: string) => messaging.sentTo(who).filter((m) => BOOKED.test(m.text)).length,
     // everything a repeat could change, in one value
@@ -63,7 +63,7 @@ async function bookInHindi(s: LocalStack, id = "wamid.hindi-1") {
   assert.deepEqual([link.reference_id, link.amount, link.status], ["b-1", 20000, "created"]);
   const sent = s.standins.fakes.messaging.sentTo(CUSTOMER);
   assert.equal(sent.length, 1);
-  assert.ok(sent[0].text.includes(link.short_url), sent[0].text);
+  assert.ok(sent[0].text.includes(link.pay_url), sent[0].text);
   assert.equal(languageOfScript(sent[0].text), "hi");
   assert.notEqual(sent[0].kind, "template", "the customer wrote a moment ago, so a session message is allowed (text, or buttons and a list)");
   return link;
@@ -72,8 +72,8 @@ async function bookInHindi(s: LocalStack, id = "wamid.hindi-1") {
 test("a customer books in Hindi and pays: the calendar, the payments and the outbox all show it, and the provider's repeat changes nothing", async () => {
   await withStack(async (s) => {
     const link = await bookInHindi(s);
-    const paid = await control(s, "/_standin/razorpay/pay", { link_id: link.id });
-    assert.deepEqual(paid.delivered.map((d: any) => [d.event, d.status]), [["payment.captured", 200], ["payment_link.paid", 200]]);
+    const paid = await control(s, "/_standin/razorpay/pay", { request_id: link.id });
+    assert.deepEqual(paid.delivered.map((d: any) => [d.event, d.status]), [["payment.received", 200], ["request.paid", 200]]);
     await s.settle();
 
     const w = witnesses(s);
@@ -102,7 +102,7 @@ test("the runtime stops after the link and before the payment: the inbox says 50
     await s.stopRuntime();
 
     // The customer pays while the runtime is down. The money is at the provider; the inbox cannot hand the events on, so it refuses them.
-    const paid = await control(s, "/_standin/razorpay/pay", { link_id: link.id });
+    const paid = await control(s, "/_standin/razorpay/pay", { request_id: link.id });
     assert.deepEqual(statuses(paid), [503, 503]);
     let w = witnesses(s);
     assert.equal(w.captured.length, 1, "the payment is real at the provider");
@@ -154,7 +154,7 @@ test("a webhook with a bad signature changes nothing: a forged payment does not 
     assert.equal(witnesses(s).confirmed.length, 0);
 
     // The real payment afterwards still confirms the booking.
-    assert.deepEqual(statuses(await control(s, "/_standin/razorpay/pay", { link_id: link.id })), [200, 200]);
+    assert.deepEqual(statuses(await control(s, "/_standin/razorpay/pay", { request_id: link.id })), [200, 200]);
     await s.settle();
     assert.equal(witnesses(s).confirmed.length, 1);
     assert.equal(witnesses(s).toldBooked(CUSTOMER), 1);
@@ -196,7 +196,7 @@ test("npm run stack: the command prints where everything is, the customer's mess
 test("a refund above the limit: the stub Guard holds it, the relay asks the owner once on WhatsApp, the owner's signed-in reply reaches the relay from the inbox, and the refund is made once", async () => {
   await withStack(async (s) => {
     const link = await bookInHindi(s);
-    await control(s, "/_standin/razorpay/pay", { link_id: link.id });
+    await control(s, "/_standin/razorpay/pay", { request_id: link.id });
     await s.settle();
     assert.equal(witnesses(s).confirmed.length, 1);
 

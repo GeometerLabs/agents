@@ -107,7 +107,7 @@ test("the monthly report of a month with a wind-down is made, and never counts a
 test("Guard refuses the fee link for the licence (402) while the runtime's own file says 'in order': each link is asked for once, the reminder is passed over, and a parent who asks to pay is told to contact the centre", async () => {
   const w = world();
   let creates = 0;
-  w.payments.createPaymentLink = async () => {
+  w.payments.createRequest = async () => {
     creates++;
     throw new GuardSuspendedError(402, "refused by the Guard: subscription_suspended: the licence for shop bright-tuition is in its wind-down, so create_link (new work) is refused",
       { decision: "deny", code: "subscription_suspended", reason_code: "subscription_suspended", sent: "no", retry: "no", reason: "subscription_suspended: the licence for shop bright-tuition is in its wind-down, so create_link (new work) is refused" }, { method: "POST", path: "/v1/payment_links" });

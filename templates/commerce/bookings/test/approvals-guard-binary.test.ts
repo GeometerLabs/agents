@@ -119,7 +119,7 @@ test("the generated spec compiles, and the agent's limit and the real Guard's th
     assert.equal(above.status, 202);
     assert.match(above.headers.get("guard-held") ?? "", /^ap-/u);
     // the deposit bound is the settings' deposit, and nothing else
-    const link = (amount: number) => fetch(`${guard.agentUrl}/v1/payment_links`, { method: "POST", headers: { authorization: `Bearer ${guard.agentToken}`, "content-type": "application/json" }, body: JSON.stringify({ amount, currency: "INR", reference_id: `b-${amount}`, description: "x", accept_partial: false }) });
+    const link = (amount: number) => fetch(`${guard.agentUrl}/v1/payment_links`, { method: "POST", headers: { authorization: `Bearer ${guard.agentToken}`, "content-type": "application/json" }, body: JSON.stringify({ amount, currency: "INR", reference_id: `b-${amount}`, description: "x", part_payments: false }) });
     assert.equal((await link(20_000)).status, 200, "the deposit (₹200) is allowed");
     assert.equal((await link(20_100)).status, 403, "any other amount is refused");
     assert.equal((await link(19_900)).status, 403);

@@ -165,7 +165,7 @@ test("the month's AI cap (model: off): the language model is left out of every r
 test("a payment event for a link the agent never made is ignored, and a refund event is checked against the payments service's own list", async () => {
   const w = createWorld();
   await w.advance(61);
-  w.payments.events.push({ id: "evt_x", event: "payment_link.paid", created_at: 1, payload: { payment_link: { id: "plink_unknown", reference_id: "zzz" } } });
+  w.payments.events.push({ id: "evt_x", event: "request.paid", created_at: 1, payload: { request: { id: "plink_unknown", reference_id: "zzz" } } });
   await w.deliverPaymentEvents();
   assert.ok(w.record.entries().some((e) => e.action === "receive_payment_event" && e.outcome === "blocked" && e.notes.includes("no fee has this payment link")));
   assert.equal([...w.store.dues.values()].filter((d) => d.state !== "open").length, 0);

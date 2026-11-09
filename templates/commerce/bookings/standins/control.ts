@@ -29,17 +29,20 @@ const bad = (message: string): StandinReply => ({ status: 400, body: { error: me
 // ---- the webhooks the providers would send ----------------------------------------------------------------------------------
 
 /** A Razorpay webhook body for an event the fake emitted. `payment.captured` names the payment and its order but not its link, as the real one does. */
+/** The neutral events (payments.ts) under Razorpay's own names, as its webhooks carry them. */
+const RAZORPAY_EVENT = { "request.paid": "payment_link.paid", "payment.received": "payment.captured", "refund.done": "refund.processed" } as const;
+
 export function razorpayWebhookBody(event: PaymentEvent, payments: FakePayments): string {
   const links = payments.links();
   const payment = (id: string | undefined) => links.flatMap((l) => l.payments).find((p) => p.id === id);
-  const head = { account_id: "acc_standin", created_at: event.created_at, entity: "event", event: event.event };
+  const head = { account_id: "acc_standin", created_at: event.created_at, entity: "event", event: RAZORPAY_EVENT[event.event] };
   let contains: string[];
   let payload: Record<string, unknown>;
-  if (event.event === "payment_link.paid") {
-    const link = links.find((l) => l.id === event.payload.payment_link?.id)!;
+  if (event.event === "request.paid") {
+    const link = links.find((l) => l.id === event.payload.request?.id)!;
     contains = ["payment_link", "payment"];
     payload = { payment_link: { entity: wireLink(link, "full") }, payment: { entity: wirePayment(payment(event.payload.payment?.id)!) } };
-  } else if (event.event === "payment.captured") {
+  } else if (event.event === "payment.received") {
     contains = ["payment"];
     payload = { payment: { entity: wirePayment(payment(event.payload.payment?.id)!) } };
   } else {
@@ -112,9 +115,9 @@ export function controlStandin(config: ControlConfig): Handler {
     }
 
     if (path === "/_standin/razorpay/pay" && method === "POST") {
-      if (typeof body?.link_id !== "string") return bad("send { link_id } (and optionally amount, twice, deliver)");
+      if (typeof body?.request_id !== "string") return bad("send { request_id } (and optionally amount, twice, deliver)");
       let payment;
-      try { payment = fakes.payments.customerPays(body.link_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
+      try { payment = fakes.payments.customerPays(body.request_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
       return ok({ payment, delivered: body.deliver === false ? [] : await deliverPaymentEvents(body.twice === true) });
     }
 

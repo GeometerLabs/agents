@@ -23,7 +23,7 @@ function fakeRuntime() {
 
 const SHARED_APP_SECRET = "one-meta-app-for-both-shops";
 const metaBody = (phoneNumberId: string, from = "919811111111", id = "wamid.1") => JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "w", changes: [{ field: "messages", value: { messaging_product: "whatsapp", metadata: { display_phone_number: "1", phone_number_id: phoneNumberId }, messages: [{ from, id, timestamp: "1793700000", type: "text", text: { body: "hello" } }] } }] }] });
-const razorpayBody = JSON.stringify({ event: "payment.captured", created_at: 1793700000, payload: { payment: { entity: { id: "pay_1", order_id: "o", amount: 20000, currency: "INR", status: "captured", notes: {} } } } });
+const razorpayBody = JSON.stringify({ event: "payment.captured", created_at: 1793700000, payload: { payment: { entity: { id: "pmt_1", order_id: "o", amount: 20000, currency: "INR", status: "captured", notes: {} } } } });
 
 async function setup() {
   const a = fakeRuntime(); const b = fakeRuntime();

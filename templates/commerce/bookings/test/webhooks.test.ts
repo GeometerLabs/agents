@@ -40,12 +40,12 @@ test("signatures: a wrong secret, a changed body, a missing, short, long, non-he
 
 test("razorpay: payment_link.paid, payment.captured and refund.processed become events; the id is the header, or a digest a retry repeats", () => {
   const paid = parseRazorpayEvent(fixture("razorpay-webhook-payment_link.paid.json"), "evt_header_1");
-  assert.deepEqual(paid, { id: "evt_header_1", event: "payment_link.paid", created_at: 1749618314, payload: { payment_link: { id: "plink_QflcnnZqCekuvL", reference_id: "23" }, payment: { id: "pay_Qfldmt5StKZFCB", link_id: "plink_QflcnnZqCekuvL" } } });
+  assert.deepEqual(paid, { id: "evt_header_1", event: "request.paid", created_at: 1749618314, payload: { request: { id: "plink_QflcnnZqCekuvL", reference_id: "23" }, payment: { id: "pay_Qfldmt5StKZFCB", request_id: "plink_QflcnnZqCekuvL" } } });
   const captured = parseRazorpayEvent(fixture("razorpay-webhook-payment.captured.json"), "evt_header_2");
-  assert.deepEqual(captured, { id: "evt_header_2", event: "payment.captured", created_at: 1567675356, payload: { payment: { id: "pay_DESyzxuld02Zul" } } });
-  assert.equal(captured?.payload.payment?.link_id, undefined); // the real body does not name the link
+  assert.deepEqual(captured, { id: "evt_header_2", event: "payment.received", created_at: 1567675356, payload: { payment: { id: "pay_DESyzxuld02Zul" } } });
+  assert.equal(captured?.payload.payment?.request_id, undefined); // the real body does not name the link
   const refund = parseRazorpayEvent(fixture("razorpay-webhook-refund.processed.json"), "evt_header_3");
-  assert.deepEqual(refund, { id: "evt_header_3", event: "refund.processed", created_at: 1597734071, payload: { refund: { id: "rfnd_FS8TWyPrCsa0OB", payment_id: "pay_FPoJKWQQ8lK13n" } } });
+  assert.deepEqual(refund, { id: "evt_header_3", event: "refund.done", created_at: 1597734071, payload: { refund: { id: "rfnd_FS8TWyPrCsa0OB", payment_id: "pay_FPoJKWQQ8lK13n" } } });
   const a = parseRazorpayEvent(fixture("razorpay-webhook-payment.captured.json"));
   const b = parseRazorpayEvent(fixture("razorpay-webhook-payment.captured.json"));
   assert.match(a!.id, /^evt_[0-9a-f]{32}$/);
@@ -55,7 +55,7 @@ test("razorpay: payment_link.paid, payment.captured and refund.processed become 
 
 test("razorpay: events the agent does not use, and things that are not events, give null", () => {
   assert.equal(parseRazorpayEvent(fixture("razorpay-webhook-payment_link.expired.json"), "e"), null);
-  for (const junk of [null, 5, "x", [], {}, { event: "payment.captured" }, { event: "payment.captured", payload: {} }, { event: "refund.processed", payload: { refund: { entity: { id: "r" } } } }, { event: "payment_link.paid", payload: { payment_link: { entity: {} } } }]) {
+  for (const junk of [null, 5, "x", [], {}, { event: "payment.captured" }, { event: "payment.captured", payload: {} }, { event: "refund.processed", payload: { refund: { entity: { id: "r" } } } }, { event: "payment_link.paid", payload: { request: { entity: {} } } }]) {
     assert.equal(parseRazorpayEvent(junk, "e"), null, JSON.stringify(junk));
   }
 });

@@ -133,7 +133,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       expect("Nothing was marked paid", recorded(w, "record_payment", "confirmed").length === 0 && recorded(w, "owner_marked_paid", "confirmed").length === 0);
       expect("The customer was not told the order is confirmed", !recorded(w, "confirm_order", "confirmed").length && told(w, "order_confirmed") + told(w, "upi_order_confirmed") === 0);
       if (isUpi) expect("The owner was asked to look in their UPI app (with a code), and only once an hour", told(w, "owner_upi_claim", "owner") === 1, `${toOwner(w).length}`);
-      else expect("The agent looked at the payments service's own list and found no payment", w.payments.calls.some((c) => c.op === "fetchPaymentLink") && w.payments.links().every((l) => l.payments.length === 0));
+      else expect("The agent looked at the payments service's own list and found no payment", w.payments.calls.some((c) => c.op === "fetchRequest") && w.payments.links().every((l) => l.payments.length === 0));
       return results;
     },
   });
@@ -325,7 +325,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
         }
         // (a) the stock is still free: take the order again and confirm
         const free = world();
-        free.payments.inject("cancelPaymentLink", "error");
+        free.payments.inject("cancelRequest", "error");
         await place(free);
         await free.advance(hold + 1);
         expect("(a) The hold was released: the stock is free", order(free).state === "expired" && taken(free) === 0, `${order(free).state} / ${taken(free)}`);
@@ -335,7 +335,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
         expect("(a) Nothing was refunded", refundedPaise(free) === 0);
         // (b) the stock was taken meanwhile: give the advance back
         const gone = world();
-        gone.payments.inject("cancelPaymentLink", "error");
+        gone.payments.inject("cancelRequest", "error");
         await place(gone);
         await gone.advance(hold + 1);
         const possible = await exhaust(gone);
@@ -351,7 +351,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
         } else expect("(b) Other orders could not take the stock on this shop's limits", true);
         // (c) after the cut-off: give it back too
         const closed = world({ nowMs: shop.at.cutoffMs - 5 * MINUTE });
-        closed.payments.inject("cancelPaymentLink", "error");
+        closed.payments.inject("cancelRequest", "error");
         await place(closed);
         await closed.advance(10); // the hold ended at the cut-off, and a few minutes have gone
         closed.pays(shop.customer);
@@ -546,15 +546,15 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
   if (isUpi) skip("lost-link-reply", "Razorpay made the payment link but the reply was lost", "this shop takes UPI: there is no payment service to lose a reply from");
   else add({
     id: "lost-link-reply", planNumber: 17, title: "Razorpay made the payment link but the reply was lost",
-    how: "createPaymentLink: the link is stored, then the reply is lost",
+    how: "createRequest: the link is stored, then the reply is lost",
     async run() {
       const { results, expect } = checker();
       const w = world();
-      w.payments.inject("createPaymentLink", "lostReply");
+      w.payments.inject("createRequest", "lostReply");
       await place(w);
       expect("Exactly one link exists: the retry looked first and did not make a second", linksOf(w).length === 1, `${linksOf(w).length}`);
       expect("The link is for the advance and nothing else", linksOf(w)[0]?.amount === advance * 100, `${linksOf(w)[0]?.amount}`);
-      expect("The customer was sent that link", sent(w).some((m) => m.text.includes(linksOf(w)[0]?.short_url ?? "no link")));
+      expect("The customer was sent that link", sent(w).some((m) => m.text.includes(linksOf(w)[0]?.pay_url ?? "no link")));
       return results;
     },
   });

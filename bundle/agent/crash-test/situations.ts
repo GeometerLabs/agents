@@ -11,7 +11,7 @@
 import { formatInr } from "../../../modules/language/format.ts";
 import { checker } from "../../../modules/crash-test/situations.ts";
 import type { CheckResult, Situation, Skipped } from "../../../modules/crash-test/situations.ts";
-import type { PaymentLink } from "../../../modules/payments/payments.ts";
+import type { PaymentRequest } from "../../../modules/payments/payments.ts";
 import { haggleOffer } from "../../../templates/commerce/bookings/crash-test/shop.ts";
 import { NotDrivable } from "./driver.ts";
 import { buildWorld, sleep } from "./world.ts";
@@ -54,20 +54,20 @@ async function writeBooking(w: World): Promise<{ id: string; text: string }> {
 }
 
 /** The agent has made a payment link, or the situation cannot be run. */
-function requireLink(w: World): PaymentLink {
+function requireLink(w: World): PaymentRequest {
   const link = w.links().at(-1);
   if (!link) throw new NotDrivable(`the agent made no payment link when the customer wrote ${quote(w.plan.driver.says.book)}. If it needs other words to start a booking, set driver.says.book in agent.json`);
   return link;
 }
 
 /** The customer asks to book, and the agent makes a payment link. */
-async function bookAndLink(w: World): Promise<PaymentLink> {
+async function bookAndLink(w: World): Promise<PaymentRequest> {
   await writeBooking(w);
   return requireLink(w);
 }
 
 /** ... and pays it, and the provider tells the agent. */
-async function bookAndPay(w: World): Promise<{ link: PaymentLink; paymentId: string; mark: number }> {
+async function bookAndPay(w: World): Promise<{ link: PaymentRequest; paymentId: string; mark: number }> {
   const link = await bookAndLink(w);
   const mark = w.toCustomer().length;
   const payment = await w.pay(link.id);
@@ -110,7 +110,7 @@ export function buildSituations(plan: CrashPlan): Built {
         const { link, mark } = await bookAndPay(w);
         const paid = w.links()[0];
         expect(`One payment link, for the deposit of ${money(D)}`, w.links().length === 1 && paid.amount === deposit, JSON.stringify(w.links().map((l) => l.amount)));
-        expect("The customer was sent that very link", w.toCustomer().some((t) => t.includes(link.short_url)), w.toCustomer().join(" | "));
+        expect("The customer was sent that very link", w.toCustomer().some((t) => t.includes(link.pay_url)), w.toCustomer().join(" | "));
         expect(`Razorpay shows one payment of ${money(D)} on the link`, paid.payments.length === 1 && paid.payments[0].amount === deposit, JSON.stringify(paid.payments));
         if (uses.calendar) expect("The calendar holds one confirmed event", confirmed(w).length === 1 && w.events().length === 1, JSON.stringify(w.events()));
         expect("The customer was told it is booked, once", bookedTexts(w, mark).length === 1, w.toCustomer().slice(mark).join(" | ") || "no message after the payment");
@@ -125,14 +125,14 @@ export function buildSituations(plan: CrashPlan): Built {
     how: "Razorpay saves the link and the answer never comes back, from a provider that does not refuse a repeated reference. Guard says the outcome is unknown (HTTP 504)",
     async run() {
       return inWorld(plan, { uniqueReference: false }, async (w, expect) => {
-        w.standins.fakes.payments.inject("createPaymentLink", "lostReply");
+        w.standins.fakes.payments.inject("createRequest", "lostReply");
         await writeBooking(w);
         const asked = calls(await w.calls("razorpay"), "create_link").filter((c) => c.dispatched);
         if (asked.length === 0) throw new NotDrivable(`the agent did not ask Razorpay for a link when the customer wrote ${quote(driver.says.book)}. If it needs other words, set driver.says.book in agent.json`);
         const link = w.links()[0];
         expect("Razorpay holds exactly one link for the booking (not two)", w.links().length === 1, `links: ${w.links().length}`);
         expect("The agent asked Razorpay to create the link once, and looked before asking again", asked.length === 1, `Guard let ${asked.length} create requests through`);
-        expect("The customer was sent that very link", link !== undefined && w.toCustomer().some((t) => t.includes(link.short_url)), w.toCustomer().join(" | ") || "no message to the customer");
+        expect("The customer was sent that very link", link !== undefined && w.toCustomer().some((t) => t.includes(link.pay_url)), w.toCustomer().join(" | ") || "no message to the customer");
       });
     },
   });
@@ -216,7 +216,7 @@ export function buildSituations(plan: CrashPlan): Built {
     async run() {
       return inWorld(plan, {}, async (w, expect) => {
         const payments = w.standins.fakes.payments;
-        for (const op of ["createPaymentLink", "listPaymentLinks", "fetchPaymentLink", "fetchPayment"] as const) payments.inject(op, "error", { times: 40 });
+        for (const op of ["createRequest", "listRequests", "fetchRequest", "fetchPayment"] as const) payments.inject(op, "error", { times: 40 });
         await writeBooking(w);
         const tries = calls(await w.calls("razorpay"), "create_link");
         if (tries.length === 0) throw new NotDrivable(`the agent did not ask Razorpay for a link when the customer wrote ${quote(driver.says.book)}. If it needs other words, set driver.says.book in agent.json`);

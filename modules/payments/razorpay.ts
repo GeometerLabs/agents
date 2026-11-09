@@ -21,7 +21,7 @@
 //  - a missing id is HTTP 400 "The id provided does not exist", not 404.
 //  - errors: { error: { code, description, source, step, reason, metadata } }.
 import { ApiError, GuardError } from "../core/faults.ts";
-import type { NewPaymentLink, Payment, PaymentLink, Payments, Refund } from "./payments.ts";
+import type { NewPaymentRequest, Payment, PaymentRequest, Payments, Refund } from "./payments.ts";
 import { asArray, createHttp, isObject, num, str } from "../core/http.ts";
 import type { Http, HttpReply, Json } from "../core/http.ts";
 
@@ -67,8 +67,8 @@ export function toPayment(raw: Json, linkId: string): Payment | null {
   const captured = raw.captured === true || raw.status === "captured" || raw.status === "refunded";
   if (!captured) return null;
   return {
-    id: needStr(raw.id, "payment id"), link_id: linkId, amount: needNum(raw.amount, "payment amount"), currency: needInr(raw.currency),
-    status: "captured", amount_refunded: num(raw.amount_refunded) ?? 0, created_at: needNum(raw.created_at, "payment time"),
+    id: needStr(raw.id, "payment id"), request_id: linkId, amount: needNum(raw.amount, "payment amount"), currency: needInr(raw.currency),
+    status: "received", amount_refunded: num(raw.amount_refunded) ?? 0, created_at: needNum(raw.created_at, "payment time"),
   };
 }
 
@@ -76,13 +76,13 @@ export function toPayment(raw: Json, linkId: string): Payment | null {
 function embeddedPayment(raw: Json, linkId: string): Payment | null {
   if (raw.status !== undefined && raw.status !== "captured") return null;
   return {
-    id: needStr(raw.payment_id, "payment id"), link_id: linkId, amount: needNum(raw.amount, "payment amount"), currency: "INR",
-    status: "captured", amount_refunded: 0, created_at: num(raw.created_at) ?? 0,
+    id: needStr(raw.payment_id, "payment id"), request_id: linkId, amount: needNum(raw.amount, "payment amount"), currency: "INR",
+    status: "received", amount_refunded: 0, created_at: num(raw.created_at) ?? 0,
   };
 }
 
 /** Razorpay's link statuses: created, partially_paid, expired, cancelled, paid. An expired link can no longer be paid, so it reads as cancelled. */
-function linkStatus(raw: unknown): PaymentLink["status"] {
+function linkStatus(raw: unknown): PaymentRequest["status"] {
   switch (raw) {
     case "created": return "created";
     case "partially_paid": return "partially_paid";
@@ -92,12 +92,12 @@ function linkStatus(raw: unknown): PaymentLink["status"] {
   }
 }
 
-export function toPaymentLink(raw: Json, payments: Payment[]): PaymentLink {
+export function toPaymentRequest(raw: Json, payments: Payment[]): PaymentRequest {
   return {
     id: needStr(raw.id, "link id"), reference_id: str(raw.reference_id) ?? "", amount: needNum(raw.amount, "link amount"), currency: needInr(raw.currency),
-    description: str(raw.description) ?? "", status: linkStatus(raw.status), short_url: needStr(raw.short_url, "short_url"),
+    description: str(raw.description) ?? "", status: linkStatus(raw.status), pay_url: needStr(raw.short_url, "short_url"),
     amount_paid: num(raw.amount_paid) ?? 0, payments, created_at: needNum(raw.created_at, "link time"),
-    ...(raw.accept_partial === true ? { accept_partial: true, first_min_partial_amount: num(raw.first_min_partial_amount) ?? 0 } : {}),
+    ...(raw.accept_partial === true ? { part_payments: true, min_first_payment: num(raw.first_min_partial_amount) ?? 0 } : {}),
   };
 }
 
@@ -124,7 +124,7 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
       if (!thin) continue;
       // A payment that cannot be read keeps what the link says. A Guard that refuses or cannot answer is not "cannot be read": that is raised.
       const full = await fetchPaymentRecord(thin.id).catch((e) => { if (e instanceof GuardError) throw e; return null; });
-      out.push(full ? { ...full, link_id: thin.link_id } : thin);
+      out.push(full ? { ...full, request_id: thin.request_id } : thin);
     }
     return out;
   }
@@ -145,34 +145,34 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
   }
 
   return {
-    async createPaymentLink(request: NewPaymentLink) {
+    async createRequest(request: NewPaymentRequest) {
       const reply = await http.request("POST", "/v1/payment_links", {
-        body: { amount: request.amount, currency: "INR", reference_id: request.reference_id, description: request.description, accept_partial: request.accept_partial === true, ...(request.accept_partial ? { first_min_partial_amount: request.first_min_partial_amount ?? 100 } : {}), notify: { sms: false, email: false }, reminder_enable: false },
+        body: { amount: request.amount, currency: "INR", reference_id: request.reference_id, description: request.description, accept_partial: request.part_payments === true, ...(request.part_payments ? { first_min_partial_amount: request.min_first_payment ?? 100 } : {}), notify: { sms: false, email: false }, reminder_enable: false },
       });
       // A reference_id used before answers 400 "payment link creation with reference ID already attempted": an ApiError, and the agent looks the link up before it tries again.
       const raw = expectOk(reply);
-      return toPaymentLink(raw, []);
+      return toPaymentRequest(raw, []);
     },
 
-    async fetchPaymentLink(id) {
+    async fetchRequest(id) {
       const reply = await http.request("GET", `/v1/payment_links/${encodeURIComponent(id)}`);
       if (isMissing(reply)) return null;
       const raw = expectOk(reply);
-      return toPaymentLink(raw, await paymentsOf(raw));
+      return toPaymentRequest(raw, await paymentsOf(raw));
     },
 
-    async listPaymentLinks(query = {}) {
+    async listRequests(query = {}) {
       const reply = await http.request("GET", "/v1/payment_links", { query: { reference_id: query.reference_id, payment_id: query.payment_id } });
       const raw = expectOk(reply);
-      // Payments inside a list are as thin as the docs show them (often empty): they are passed on without refund figures. fetchPaymentLink has the full record.
-      return asArray(raw.payment_links).filter(isObject).map((l) => toPaymentLink(l, asArray(l.payments).filter(isObject).map((p) => embeddedPayment(p, String(l.id))).filter((p): p is Payment => p !== null)));
+      // Payments inside a list are as thin as the docs show them (often empty): they are passed on without refund figures. fetchRequest has the full record.
+      return asArray(raw.payment_links).filter(isObject).map((l) => toPaymentRequest(l, asArray(l.payments).filter(isObject).map((p) => embeddedPayment(p, String(l.id))).filter((p): p is Payment => p !== null)));
     },
 
-    async cancelPaymentLink(id) {
+    async cancelRequest(id) {
       const reply = await http.request("POST", `/v1/payment_links/${encodeURIComponent(id)}/cancel`);
       if (isMissing(reply)) throw new ApiError(404, "No such payment link.");
       const raw = expectOk(reply);
-      return toPaymentLink(raw, await paymentsOf(raw));
+      return toPaymentRequest(raw, await paymentsOf(raw));
     },
 
     fetchPayment: fetchPaymentRecord,

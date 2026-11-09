@@ -76,9 +76,9 @@ export function controlStandin(config: ControlConfig): Handler {
     }
 
     if (path === "/_standin/razorpay/pay" && method === "POST") {
-      if (typeof body?.link_id !== "string") return bad("send { link_id } (and optionally amount, twice, deliver)");
+      if (typeof body?.request_id !== "string") return bad("send { request_id } (and optionally amount, twice, deliver)");
       let payment;
-      try { payment = fakes.payments.customerPays(body.link_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
+      try { payment = fakes.payments.customerPays(body.request_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
       return ok({ payment, delivered: body.deliver === false ? [] : await deliverPaymentEvents(body.twice === true) });
     }
 

@@ -40,7 +40,7 @@ async function paid(kit: Kit, runtime: Runtime, payments: FakePayments, text: st
   await kit.say(runtime, text, { from });
   const link = payments.links().at(-1)!;
   payments.customerPays(link.id);
-  runtime.submit(payments.events.filter((e) => e.event === "payment_link.paid" && e.payload.payment_link?.id === link.id).map((event) => ({ kind: "payment_event" as const, event })));
+  runtime.submit(payments.events.filter((e) => e.event === "request.paid" && e.payload.request?.id === link.id).map((event) => ({ kind: "payment_event" as const, event })));
   runtime.kick(); await runtime.idle();
 }
 

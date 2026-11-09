@@ -219,7 +219,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (o.state !== "awaiting_advance" || !o.linkId) continue;
       if (record.entries().some((e) => e.booking === o.id && e.action === "cancel_advance_link" && e.refs.licence === key)) continue;
       const linkId = o.linkId;
-      const closed = await payments.cancelPaymentLink(linkId).then(() => payments.fetchPaymentLink(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
+      const closed = await payments.cancelRequest(linkId).then(() => payments.fetchRequest(linkId)).then((x) => x?.status === "cancelled").catch(() => false);
       log(o, o.customer, "cancel_advance_link", closed ? "confirmed" : "unconfirmed", { linkId }, { refs: { linkId, licence: key }, notes: closed ? "the final stop of the shop's licence: the open advance link is closed, so no new payment comes in; a payment already made is still recorded" : "the final stop of the shop's licence: the link could not be closed (it may be paid already, or Razorpay did not answer); the owner can close it in Razorpay" });
     }
   }
@@ -444,7 +444,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     o.linkId = link.id;
-    o.linkUrl = link.short_url;
+    o.linkUrl = link.pay_url;
     log(o, phone, "create_advance_link", "confirmed", { amountPaise: advancePaise(o) }, { refs: { linkId: link.id } });
     if (upi) {
       const request = requestOf(o)!;
@@ -525,7 +525,7 @@ export function createAgent(deps: AgentDeps): Agent {
   async function reconcilePayments(o: Order): Promise<void> {
     if (upi) { await reconcileUpi(o); return; }
     if (!o.linkId) return;
-    const link = await payments.fetchPaymentLink(o.linkId);
+    const link = await payments.fetchRequest(o.linkId);
     if (!link) { log(o, o.customer, "record_payment", "failed", { linkId: o.linkId }, { notes: "the payments service has no such link" }); return; }
     for (const payment of link.payments) {
       if (o.handledPayments.includes(payment.id)) continue;
@@ -735,7 +735,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function closeLink(o: Order, why: string): Promise<void> {
     if (!o.linkId) return;
-    const closed = await payments.cancelPaymentLink(o.linkId).then(() => payments.fetchPaymentLink(o.linkId!)).then((l) => l?.status === "cancelled").catch(() => false);
+    const closed = await payments.cancelRequest(o.linkId).then(() => payments.fetchRequest(o.linkId!)).then((l) => l?.status === "cancelled").catch(() => false);
     log(o, o.customer, "cancel_advance_link", closed ? "confirmed" : "unconfirmed", { linkId: o.linkId }, { notes: closed ? why : "the link could not be closed: it may still be open or already paid" });
     if (upi && closed) log(o, o.customer, UPI_ACTIONS.closed, "confirmed", { requestId: o.linkId }, { refs: { requestId: o.linkId }, notes: `${why}; a mark by the owner that comes later is still recorded, and never confirms an order by itself` });
   }
@@ -998,7 +998,7 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const orders = [...store.orders.values()];
-    if (event.event === "refund.processed") {
+    if (event.event === "refund.done") {
       const paymentId = event.payload.refund!.payment_id;
       const o = orders.find((x) => x.handledPayments.includes(paymentId) || x.advancePaymentId === paymentId);
       const refundId = event.payload.refund!.id;
@@ -1007,10 +1007,10 @@ export function createAgent(deps: AgentDeps): Agent {
       store.seenEvents.add(event.id);
       return;
     }
-    // A real payment.captured names the payment, not its link (Razorpay's body has the order id only): ask the payments service which link it paid.
+    // A payment.received may name the payment and not its request (a provider's body can carry its order only): ask the payments service which request it paid.
     const paymentId = event.payload.payment?.id;
-    const linkId = event.payload.payment_link?.id ?? event.payload.payment?.link_id
-      ?? (paymentId ? (await payments.listPaymentLinks({ payment_id: paymentId }))[0]?.id : undefined);
+    const linkId = event.payload.request?.id ?? event.payload.payment?.request_id
+      ?? (paymentId ? (await payments.listRequests({ payment_id: paymentId }))[0]?.id : undefined);
     const o = linkId ? orders.find((x) => x.linkId === linkId) : undefined;
     if (!o) {
       log(null, owner, "receive_payment_event", "blocked", { id: event.id, event: event.event }, { notes: "no order has this payment link, so the event is ignored" });

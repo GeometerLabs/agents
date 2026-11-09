@@ -69,57 +69,57 @@ test("calendar update silentFailure leaves the event as it was; faults are used 
 
 test("payments: a link with a reference id; a second link with the same reference is refused", async () => {
   const pay = createFakePayments(fakeClock(T0));
-  const link = await pay.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" });
-  assert.match(link.short_url, /^https:\/\/rzp\.io\/l\//);
-  assert.equal((await pay.listPaymentLinks({ reference_id: "b1" })).length, 1);
-  await assert.rejects(() => pay.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" }), ApiError);
+  const link = await pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
+  assert.match(link.pay_url, /^https:\/\/rzp\.io\/l\//);
+  assert.equal((await pay.listRequests({ reference_id: "b1" })).length, 1);
+  await assert.rejects(() => pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" }), ApiError);
   const lax = createFakePayments(fakeClock(T0), { enforceUniqueReference: false });
-  await lax.createPaymentLink({ amount: 1, reference_id: "b1", description: "x" });
-  await lax.createPaymentLink({ amount: 1, reference_id: "b1", description: "x" });
+  await lax.createRequest({ amount: 1, reference_id: "b1", description: "x" });
+  await lax.createRequest({ amount: 1, reference_id: "b1", description: "x" });
   assert.equal(lax.links().length, 2);
 });
 
 test("payments lostReply on create: the link exists although the client saw a timeout", async () => {
   const pay = createFakePayments(fakeClock(T0));
-  pay.inject("createPaymentLink", "lostReply");
-  await assert.rejects(() => pay.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" }), TimeoutError);
+  pay.inject("createRequest", "lostReply");
+  await assert.rejects(() => pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" }), TimeoutError);
   assert.equal(pay.links().length, 1);
 });
 
 test("payments: one link can be paid twice; events are emitted but not delivered", async () => {
   const pay = createFakePayments(fakeClock(T0));
-  const link = await pay.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" });
+  const link = await pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
   const p1 = pay.customerPays(link.id);
   const p2 = pay.customerPays(link.id);
-  const fetched = await pay.fetchPaymentLink(link.id);
+  const fetched = await pay.fetchRequest(link.id);
   assert.equal(fetched?.status, "paid");
   assert.equal(fetched?.payments.length, 2);
   assert.equal(fetched?.amount_paid, 40000);
-  assert.deepEqual(pay.events.map((e) => e.event), ["payment.captured", "payment_link.paid", "payment.captured"]);
+  assert.deepEqual(pay.events.map((e) => e.event), ["payment.received", "request.paid", "payment.received"]);
   assert.notEqual(p1.id, p2.id);
 });
 
 test("payments: a refund cannot be more than what is left on the payment", async () => {
   const pay = createFakePayments(fakeClock(T0));
-  const link = await pay.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" });
+  const link = await pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
   const p = pay.customerPays(link.id);
   await pay.refund(p.id, { amount: 15000 });
   await assert.rejects(() => pay.refund(p.id, { amount: 6000 }), /more than what is left/);
   await pay.refund(p.id, { amount: 5000 });
   assert.equal((await pay.fetchPayment(p.id))?.amount_refunded, 20000);
   assert.equal((await pay.listRefunds(p.id)).length, 2);
-  assert.equal(pay.events.filter((e) => e.event === "refund.processed").length, 2);
+  assert.equal(pay.events.filter((e) => e.event === "refund.done").length, 2);
 });
 
 test("payments: a cancelled link cannot be paid; an expired key refuses every call", async () => {
   const pay = createFakePayments(fakeClock(T0));
-  const link = await pay.createPaymentLink({ amount: 20000, reference_id: "b1", description: "Deposit" });
-  await pay.cancelPaymentLink(link.id);
+  const link = await pay.createRequest({ amount: 20000, reference_id: "b1", description: "Deposit" });
+  await pay.cancelRequest(link.id);
   assert.throws(() => pay.customerPays(link.id), /cancelled/);
-  pay.inject("createPaymentLink", "error", { times: 2 });
-  await assert.rejects(() => pay.createPaymentLink({ amount: 1, reference_id: "b2", description: "x" }), (e: any) => e.status === 401);
-  await assert.rejects(() => pay.createPaymentLink({ amount: 1, reference_id: "b2", description: "x" }), (e: any) => e.status === 401);
-  await pay.createPaymentLink({ amount: 1, reference_id: "b2", description: "x" }); // the key works again
+  pay.inject("createRequest", "error", { times: 2 });
+  await assert.rejects(() => pay.createRequest({ amount: 1, reference_id: "b2", description: "x" }), (e: any) => e.status === 401);
+  await assert.rejects(() => pay.createRequest({ amount: 1, reference_id: "b2", description: "x" }), (e: any) => e.status === 401);
+  await pay.createRequest({ amount: 1, reference_id: "b2", description: "x" }); // the key works again
 });
 
 // ---- messaging ----

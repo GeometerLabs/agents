@@ -64,7 +64,7 @@ test("the licence messages exist in four languages, name the partner, and are ne
 test("Guard refuses the advance link for the licence (402) while the runtime's own file says 'in order': asked once, the customer told 'contact the shop', the owner not asked to do anything", async () => {
   const w = world();
   let creates = 0;
-  w.payments.createPaymentLink = async () => {
+  w.payments.createRequest = async () => {
     creates++;
     throw new GuardSuspendedError(402, "refused by the Guard: subscription_suspended: the licence for shop annapurna-tiffins is in its wind-down, so create_link (new work) is refused",
       { decision: "deny", code: "subscription_suspended", reason_code: "subscription_suspended", sent: "no", retry: "no", reason: "subscription_suspended: the licence for shop annapurna-tiffins is in its wind-down, so create_link (new work) is refused" }, { method: "POST", path: "/v1/payment_links" });
