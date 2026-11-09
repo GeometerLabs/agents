@@ -10,10 +10,10 @@ import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts"
 import type { InboundMessage } from "../../../../modules/messaging/messaging.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
-import type { PaymentLink } from "../../../../modules/payments/payments.ts";
+import type { PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { HARNESS_GUARD, SHARMA_PARENT, brightTuition } from "../src/harness.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { createRuntime } from "../server/runtime.ts";
@@ -37,7 +37,7 @@ export interface Kit {
   say(runtime: Runtime, text: string, options?: { from?: string; id?: string }): Promise<InboundMessage>;
   /** The payment provider's webhooks that were not delivered yet reach the runtime, and it handles them. */
   deliverPaymentEvents(runtime: Runtime): Promise<void>;
-  linkFor(ref: string): PaymentLink | undefined;
+  linkFor(ref: string): PaymentRequest | undefined;
   cleanup(): void;
 }
 
@@ -45,7 +45,7 @@ export function createKit(): Kit {
   const dir = mkdtempSync(join(tmpdir(), "geo-fees-runtime-"));
   const settings = brightTuition();
   const clock = fakeClock(START);
-  const payments = createFakePayments(clock, { guard: createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock) });
+  const payments = createFakePayments(clock, { guard: createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock) });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   const opened: { runtime: Runtime; db: DurableStore }[] = [];

@@ -158,7 +158,7 @@ test("a running Guard built with other licence keys than geometer.json pins refu
 test("an agent someone else wrote is restricted by the lease at its Guards too: its id is the shop in the block", async () => {
   const w = world({}, PIN); try {
     w.guardLicence.reads = true; w.guardLicence.kids = [TEST_KID];
-    addAgent(w.root, "my-agent", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, (p) => { throw new Error(`no file ${p}`); }, new Date("2026-11-05T09:00:00Z"));
+    addAgent(w.root, "my-agent", { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, (p) => { throw new Error(`no file ${p}`); }, new Date("2026-11-05T09:00:00Z"));
     const s = secretsFor("x");
     w.handIn("my-agent", { razorpay_key: s.razorpay_key, whatsapp_token: s.whatsapp_token, whatsapp_app_secret: s.whatsapp_app_secret, whatsapp_verify_token: s.whatsapp_verify_token, "google_service_account.json": s["google_service_account.json"] });
     await deployAgent(w.ctx, "my-agent");

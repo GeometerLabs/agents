@@ -12,7 +12,7 @@ import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import type { FakePayments } from "../../../../modules/payments/payments.ts";
 import { MINUTE } from "../../../../modules/core/time.ts";
 import { CUSTOMER, HARNESS_GUARD, OTHER_CUSTOMER, glowSalon } from "../src/harness.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
 import { createKit } from "./runtime-kit.ts";
 import type { Kit } from "./runtime-kit.ts";
@@ -40,7 +40,7 @@ async function paid(kit: Kit, runtime: Runtime, payments: FakePayments, text: st
   await kit.say(runtime, text, { from });
   const link = payments.links().at(-1)!;
   payments.customerPays(link.id);
-  runtime.submit(payments.events.filter((e) => e.event === "payment_link.paid" && e.payload.payment_link?.id === link.id).map((event) => ({ kind: "payment_event" as const, event })));
+  runtime.submit(payments.events.filter((e) => e.event === "request.paid" && e.payload.request?.id === link.id).map((event) => ({ kind: "payment_event" as const, event })));
   runtime.kick(); await runtime.idle();
 }
 
@@ -79,7 +79,7 @@ test("a refund that was waiting to be sent again in last night's snapshot, and w
 test("a refund Guard held in last night's snapshot, which the owner approved and Guard sent today, is not called 'nothing was refunded' when its time runs out after the restore", async () => {
   const kit = createKit();
   const settings = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), cancellation: { windowHours: 24, refundLimitInr: 100 } });
-  const guard = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), kit.clock);
+  const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), kit.clock);
   const payments = createFakePayments(kit.clock, { guard }); // Guard's own store is not part of the shop's database: a restore does not touch it
   const open = () => kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging } });
   try {

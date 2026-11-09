@@ -28,7 +28,7 @@ export interface Decision {
   dispatched: boolean;
   prevented: boolean;
   principal: { workload: string };
-  /** Typed values: ["int","20000"], ["str","pay_1"], ["map",{...}]. */
+  /** Typed values: ["int","20000"], ["str","pmt_1"], ["map",{...}]. */
   arguments: Record<string, unknown>;
   call: string;
   approval?: string;
@@ -74,7 +74,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 const PHONE_SHAPE = /\d(?:[ .\-()]?\d){6,}/u;
 export const label = (key: Buffer, v: string | null | undefined): string | null => (typeof v === "string" ? (PHONE_SHAPE.test(v) ? personLabel(key, "b", v) : v) : null);
 
-/** The string inside a typed argument (["str","pay_1"]), or the number inside ["int","20000"]; undefined for anything else. */
+/** The string inside a typed argument (["str","pmt_1"]), or the number inside ["int","20000"]; undefined for anything else. */
 export function typedText(v: unknown): string | undefined { return Array.isArray(v) && (v[0] === "str" || v[0] === "int") && typeof v[1] === "string" ? v[1] : undefined; }
 export function typedMap(v: unknown): Record<string, unknown> | undefined { return Array.isArray(v) && v[0] === "map" && isObj(v[1]) ? v[1] : undefined; }
 

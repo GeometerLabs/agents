@@ -9,7 +9,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { signMeta, signRazorpay } from "../../../../modules/messaging/webhooks.ts";
+import { signMeta } from "../../../../modules/messaging/webhooks.ts";
+import { signRazorpay } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { languageOfScript } from "../../../../modules/language/format.ts";
@@ -53,7 +54,7 @@ function witnesses(s: LocalStack) {
   const { payments, messaging } = s.standins.fakes;
   return {
     links: payments.links(),
-    captured: payments.links().flatMap((l) => l.payments).filter((p) => p.status === "captured"),
+    captured: payments.links().flatMap((l) => l.payments).filter((p) => p.status === "received"),
     refunds: payments.refunds(),
     sentTo: (who: string) => messaging.sentTo(who),
     // everything a repeat could change, in one value
@@ -78,7 +79,7 @@ test("the month opens: a reminder with a payment link goes to each parent, in th
     assert.equal(languageOfScript(w.sentTo(SHARMA_PARENT)[0].text), "hi");
     assert.equal(languageOfScript(w.sentTo(MEERA_PARENT)[0].text), "ml");
     assert.equal(languageOfScript(w.sentTo(KIRAN_PARENT)[0].text), "kn");
-    assert.ok(w.sentTo(ROHAN_PARENT)[0].text.includes(linkOf(s, ROHAN).short_url));
+    assert.ok(w.sentTo(ROHAN_PARENT)[0].text.includes(linkOf(s, ROHAN).pay_url));
     assert.deepEqual(s.runtime!.runtime.status().fees, { open: 5 });
     assert.equal((await control(s, "/_standin/state")).authorizationSeen, 0, "no credential left the runtime: Guard holds those");
   });
@@ -87,8 +88,8 @@ test("the month opens: a reminder with a payment link goes to each parent, in th
 test("a parent pays: the payments, the fee and the outbox all show it, and the provider's repeat changes nothing", async () => {
   await withStack(async (s) => {
     await openTheMonth(s);
-    const paid = await control(s, "/_standin/razorpay/pay", { link_id: linkOf(s, ROHAN).id });
-    assert.deepEqual(paid.delivered.map((d: any) => [d.event, d.status]), [["payment.captured", 200], ["payment_link.paid", 200]]);
+    const paid = await control(s, "/_standin/razorpay/pay", { request_id: linkOf(s, ROHAN).id });
+    assert.deepEqual(paid.delivered.map((d: any) => [d.event, d.status]), [["payment.received", 200], ["request.paid", 200]]);
     await s.settle();
 
     const w = witnesses(s);
@@ -121,7 +122,7 @@ test("the runtime stops after the reminders and before the payment: the inbox sa
     await s.stopRuntime();
 
     // The parent pays while the runtime is down. The money is at the provider; the inbox cannot hand the events on, so it refuses them.
-    const paid = await control(s, "/_standin/razorpay/pay", { link_id: linkOf(s, ROHAN).id });
+    const paid = await control(s, "/_standin/razorpay/pay", { request_id: linkOf(s, ROHAN).id });
     assert.deepEqual(statuses(paid), [503, 503]);
     let w = witnesses(s);
     assert.equal(w.captured.length, 1, "the payment is real at the provider");
@@ -183,7 +184,7 @@ test("a webhook with a bad signature changes nothing: a forged payment does not 
     assert.deepEqual(s.runtime!.runtime.status().fees, { open: 5 }, "the fee is still open");
 
     // the real payment afterwards still settles it
-    assert.deepEqual(statuses(await control(s, "/_standin/razorpay/pay", { link_id: link.id })), [200, 200]);
+    assert.deepEqual(statuses(await control(s, "/_standin/razorpay/pay", { request_id: link.id })), [200, 200]);
     await s.settle();
     assert.deepEqual(s.runtime!.runtime.status().fees, { open: 4, paid: 1 });
   });
@@ -216,7 +217,7 @@ test("a waiver above the limit is the owner's call and does not go through the r
 test("a refund above the limit: the stub Guard holds it, the relay asks the owner once on WhatsApp, the owner's reply reaches the relay from the inbox, and the refund is made once", async () => {
   await withStack(async (s) => {
     await openTheMonth(s);
-    await control(s, "/_standin/razorpay/pay", { link_id: linkOf(s, ROHAN).id });
+    await control(s, "/_standin/razorpay/pay", { request_id: linkOf(s, ROHAN).id });
     await s.settle();
     assert.deepEqual(s.runtime!.runtime.status().fees, { open: 4, paid: 1 });
 
@@ -264,7 +265,7 @@ test("a refund above the limit: the stub Guard holds it, the relay asks the owne
 test("a refund the owner denies is never sent, and the parent is told", async () => {
   await withStack(async (s) => {
     await openTheMonth(s);
-    await control(s, "/_standin/razorpay/pay", { link_id: linkOf(s, "f-3.1").id }); // Meera, ₹1,500
+    await control(s, "/_standin/razorpay/pay", { request_id: linkOf(s, "f-3.1").id }); // Meera, ₹1,500
     await s.settle();
     await control(s, "/_standin/whatsapp/inbound", { from: MEERA_PARENT, text: "എനിക്ക് ₹1500 റീഫണ്ട് വേണം", id: "wamid.refund-ml" });
     await s.settle();

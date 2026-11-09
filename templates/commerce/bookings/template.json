@@ -3,6 +3,6 @@
   "id": "bookings",
   "setup": "bookings",
   "steps": ["business", "deposit", "languages", "accounts", "checks"],
-  "accounts": ["whatsapp", "calendar", "razorpay"],
-  "settingsExample": "settings/glow-salon.example.json"
+  "accounts": ["whatsapp", "calendar", "payment"],
+  "settingsExample": "settings/glow-salon-upi.example.json"
 }

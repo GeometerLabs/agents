@@ -27,7 +27,7 @@ export const PATHWAY = "bookings";
 export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 
-export interface Services { calendar: Calendar; payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/upi/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
+export interface Services { calendar: Calendar; payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
   settings: Settings;

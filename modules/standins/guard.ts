@@ -1,4 +1,4 @@
-// A stub Guard in front of the Razorpay stand-in: it speaks Guard's documented shapes (monorepo docs/guard-for-pathways.md) for the
+// A stub Guard in front of a gateway's stand-in: it speaks Guard's documented shapes (monorepo docs/guard-for-pathways.md) for the
 // refund route, so the runtime, the approvals relay and the tests can be run end to end without the real Guard. It is not Guard:
 // the behaviour it has is the model in modules/payments/guard-model.ts (built from the generated spec), which is checked against the
 // real binary in test/approvals-guard-binary.test.ts. Every other route is passed through to the stand-in unchanged.
@@ -81,6 +81,11 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
   const nonces = new Set<string>();
   let killed = false;
   let failure: "unreachable" | "outcome_unknown" | undefined;
+  // The refund route is the spec's own (B71: whichever gateway the spec is for): the route of the operation the owner's approval rule is about, its {param} the payment.
+  const refundOp = (config.spec.rules as { id: string; operation: string }[]).find((r) => r.id === "refund-needs-owner")?.operation;
+  const refundRoute = (config.spec.routes as { method: string; path: string; operation: string }[]).find((r) => r.operation === refundOp);
+  if (!refundRoute) throw new Error("The spec has no route for its refund operation, so this stub Guard cannot stand in front of it.");
+  const refundPath = new RegExp(`^${refundRoute.path.replace(/[.*+?^$()|[\]\\]/gu, "\\$&").replace(/\\?\{[^}]+\\?\}/gu, "([^/?]+)")}$`, "u");
 
   const decision = (code: string, sent: string, retry: string, reason?: string, detail: unknown = null) => ({ decision: code === "outcome_unknown" ? "unknown" : code === "held_for_approval" ? "hold" : "deny", code, sent, retry, ...(reason ? { reason } : {}), detail });
 
@@ -106,7 +111,7 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
     }
     if (killed) { json(res, 503, { error: "refused by the Guard: kill switch engaged: test", guard: decision("guard_unavailable", "no", "later", "kill switch engaged: test") }); return; }
 
-    const refund = req.method === "POST" ? /^\/v1\/payments\/([^/?]+)\/refund$/u.exec(path) : null;
+    const refund = req.method === refundRoute.method ? refundPath.exec(path) : null;
     if (!refund) {
       const answer = await forward(req, res, path, raw);
       if (!answer) { json(res, 502, { error: "refused by the Guard: the provider is unreachable; nothing was sent", guard: decision("provider_unreachable", "no", "later", "the provider is unreachable; nothing was sent") }); return; }
@@ -192,7 +197,7 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
       const a = decided.approval;
       // a single owner's answer reads as it always did; a vote (B37) is the request itself: its state, the number needed and the votes so far (`approve` a boolean)
       const several = a.needed !== undefined ? { approvals_needed: a.needed, votes: (a.votes ?? []).map((v) => ({ approver: v.approver, approve: v.approve, role: v.role, at_ms: String(v.atMs) })) } : {};
-      json(res, 200, { id: a.id, state: a.needed !== undefined ? a.state : body.decision === "approve" ? "approved" : "denied", approver: a.approver ?? signer.id, role: "shop-owner", operation: "refund", tool: "razorpay", expires_at_ms: String(a.expiresAtMs), ...several });
+      json(res, 200, { id: a.id, state: a.needed !== undefined ? a.state : body.decision === "approve" ? "approved" : "denied", approver: a.approver ?? signer.id, role: "shop-owner", operation: "refund", tool: config.spec.tool, expires_at_ms: String(a.expiresAtMs), ...several });
       return;
     }
     if (!same(bearer(req), config.readToken)) { json(res, 401, { error: "an admin or approver credential is required (agent credentials do not work here)" }); return; }

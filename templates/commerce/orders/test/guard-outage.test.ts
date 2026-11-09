@@ -15,7 +15,7 @@ import { GUARD_WAIT_MS } from "../../../../modules/runtime/guard-wait.ts";
 import { outage } from "../../../../modules/runtime/test/outage.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { AMIT, HARNESS_GUARD, annapurnaRazorpay } from "../src/harness.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { createRuntime } from "../server/runtime.ts";
@@ -28,7 +28,7 @@ const ORDER = "2 veg thali 10 nov 12:00 pm pickup";
 function world() {
   const dir = mkdtempSync(join(tmpdir(), "geo-orders-outage-"));
   const clock = fakeClock(START);
-  const payments = createFakePayments(clock, { guard: createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock) });
+  const payments = createFakePayments(clock, { guard: createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock) });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const l of LANGUAGES) messaging.approve(name, l);
   const paymentsOut = outage(payments, "Razorpay");

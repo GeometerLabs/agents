@@ -5,10 +5,11 @@
 import type { FakeCalendar } from "../src/adapters/calendar.ts";
 import type { FakeMessaging } from "../../../../modules/messaging/messaging.ts";
 import type { FakePayments, PaymentEvent } from "../../../../modules/payments/payments.ts";
-import { signMeta, signRazorpay } from "../../../../modules/messaging/webhooks.ts";
+import { signMeta } from "../../../../modules/messaging/webhooks.ts";
+import { signRazorpay } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { ok } from "../../../../modules/standins/http.ts";
 import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
-import { wireLink, wirePayment, wireRefund } from "../../../../modules/standins/razorpay.ts";
+import { razorpayWebhookBody } from "../../../../modules/payments/providers/razorpay/standin.ts";
 
 export interface Fakes { payments: FakePayments; calendar: FakeCalendar; messaging: FakeMessaging }
 
@@ -27,28 +28,6 @@ export interface ControlConfig {
 const bad = (message: string): StandinReply => ({ status: 400, body: { error: message } });
 
 // ---- the webhooks the providers would send ----------------------------------------------------------------------------------
-
-/** A Razorpay webhook body for an event the fake emitted. `payment.captured` names the payment and its order but not its link, as the real one does. */
-export function razorpayWebhookBody(event: PaymentEvent, payments: FakePayments): string {
-  const links = payments.links();
-  const payment = (id: string | undefined) => links.flatMap((l) => l.payments).find((p) => p.id === id);
-  const head = { account_id: "acc_standin", created_at: event.created_at, entity: "event", event: event.event };
-  let contains: string[];
-  let payload: Record<string, unknown>;
-  if (event.event === "payment_link.paid") {
-    const link = links.find((l) => l.id === event.payload.payment_link?.id)!;
-    contains = ["payment_link", "payment"];
-    payload = { payment_link: { entity: wireLink(link, "full") }, payment: { entity: wirePayment(payment(event.payload.payment?.id)!) } };
-  } else if (event.event === "payment.captured") {
-    contains = ["payment"];
-    payload = { payment: { entity: wirePayment(payment(event.payload.payment?.id)!) } };
-  } else {
-    const refund = payments.refunds().find((r) => r.id === event.payload.refund?.id)!;
-    contains = ["refund", "payment"];
-    payload = { refund: { entity: wireRefund(refund) }, payment: { entity: wirePayment(payment(refund.payment_id)!) } };
-  }
-  return JSON.stringify({ ...head, contains, payload });
-}
 
 /** A WhatsApp webhook body for one customer text. `from` has no plus and the time is epoch seconds as a string, as Meta writes them. */
 export function whatsappWebhookBody(message: { id: string; from: string; text: string; timestamp: number }, phoneNumberId: string): string {
@@ -112,9 +91,9 @@ export function controlStandin(config: ControlConfig): Handler {
     }
 
     if (path === "/_standin/razorpay/pay" && method === "POST") {
-      if (typeof body?.link_id !== "string") return bad("send { link_id } (and optionally amount, twice, deliver)");
+      if (typeof body?.request_id !== "string") return bad("send { request_id } (and optionally amount, twice, deliver)");
       let payment;
-      try { payment = fakes.payments.customerPays(body.link_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
+      try { payment = fakes.payments.customerPays(body.request_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
       return ok({ payment, delivered: body.deliver === false ? [] : await deliverPaymentEvents(body.twice === true) });
     }
 

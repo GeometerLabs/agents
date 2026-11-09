@@ -39,7 +39,7 @@ const periodsOf = (language: "hi" | "ml" | "kn") => alternation(Object.values(DA
 const DATE_RE = new RegExp(`(?:${WEEKDAYS})\\s*,?\\s*\\d{1,2}\\s+(?:${MONTHS})`, "giu");
 const TIME_RE = new RegExp(`(?:${periodsOf("hi")})\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:${periodsOf("ml")}|${periodsOf("kn")})\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
 const URL_RE = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s)]*/giu;
-/** A UPI payment request (modules/payments/upi/link.ts). It holds the shop's UPI ID and an amount, so it is read before anything else and must be the record's own, whole. */
+/** A UPI payment request (modules/payments/providers/upi/link.ts). It holds the shop's UPI ID and an amount, so it is read before anything else and must be the record's own, whole. */
 const UPI_RE = /upi:\/\/[^\s)]*/giu;
 const AMOUNT_RE = /₹\s*(\d[\d,]*(?:\.\d+)?)/gu;
 const QUANTITY_WORD_RE = wordRe(["hundred", "thousand", "lakh", "crore", "सौ", "हज़ार", "हजार", "लाख", "करोड़"], "iu");

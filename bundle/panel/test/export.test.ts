@@ -50,7 +50,7 @@ async function bookingsShop(b: Boot, arjun: Browser) {
   b.addShop("glow-salon", { name: "Glow Salon" });
   b.status("glow-salon", applied());
   plantSecrets(b, "glow-salon");
-  writeFileSync(join(b.dir, "shops", "glow-salon", "pins.json"), JSON.stringify({ schema: 1, checkedAt: new Date(NOW).toISOString(), whatsapp: { phoneNumberId: "100000000000001", displayNumber: "+919000011111" }, calendar: { calendarId: "glowsalon@group.calendar.google.com" }, razorpay: { keyId: "rzp_test_SENTINELKEYID1", mode: "test" } }));
+  writeFileSync(join(b.dir, "shops", "glow-salon", "pins.json"), JSON.stringify({ schema: 1, checkedAt: new Date(NOW).toISOString(), whatsapp: { phoneNumberId: "100000000000001", displayNumber: "+919000011111" }, calendar: { calendarId: "glowsalon@group.calendar.google.com" }, gateway: { provider: "razorpay", keyId: "rzp_test_SENTINELKEYID1", mode: "test" } }));
   const month = busyMonth;
   mkdirSync(join(b.dir, "exports", "glow-salon"), { recursive: true });
   writeFileSync(join(b.dir, "exports", "glow-salon", "record.json"), JSON.stringify(month.world.record.entries()));
@@ -93,7 +93,7 @@ test("the download is a folder of open files with a manifest, and it is whole: e
     assert.equal(d.files.get("settings.json")!.toString("utf8"), readFileSync(join(b.dir, "shops", "glow-salon", "settings.json"), "utf8"));
     const limits = JSON.parse(d.files.get("limits.json")!.toString("utf8"));
     assert.match(limits.policyDigest, /^sha256:|^[0-9a-f]{16,}/u);
-    assert.ok(limits.razorpay && typeof limits.razorpay === "object");
+    assert.ok(limits.gateway && typeof limits.gateway === "object");
     assert.deepEqual(limits.provenAtLastDeploy, { proven: 9, of: 9, unprovable: [] });
     const accounts = JSON.parse(d.files.get("accounts.json")!.toString("utf8"));
     assert.equal(accounts.whatsapp.phoneNumberId, "100000000000001");

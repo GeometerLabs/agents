@@ -29,7 +29,7 @@ ${o.done ? html`<div class="notice"><p class="big">The new limits are saved.</p>
 
 const unmetText: Record<Unmet, string> = {
   "hand-check": "The hand check has not been run, or something in it did not hold.", deploy: "The deployer has not applied the shop's latest settings yet.",
-  limits: "Not every limit is shown to hold on the running Guards yet.", connections: "The connection checks (WhatsApp, Razorpay, calendar, through the Guards) have not all passed.", "settings-changed": "The settings changed after the hand check ran.",
+  limits: "Not every limit is shown to hold on the running Guards yet.", connections: "The connection checks (WhatsApp, the payment gateway if the shop has one, the calendar, through the Guards) have not all passed.", "settings-changed": "The settings changed after the hand check ran.",
 };
 
 export function confirmGoLivePage(c: Ctx, o: {

@@ -72,7 +72,7 @@ test("a service with no credentials answers 503, a dead upstream 502, and the ad
   try {
     assert.equal((await fetch(`${fwd.url}/google/calendar/v3/freeBusy`, { method: "POST", body: "{}" })).status, 503);
     const { payments } = createLiveAdapters({ payments: { baseUrl: `${fwd.url}/razorpay` }, calendar: { baseUrl: `${fwd.url}/google`, calendarId: "c" }, messaging: { baseUrl: `${fwd.url}/whatsapp`, phoneNumberId: "1" } }, { clock: fakeClock(0), window: { lastInboundAt: () => undefined } });
-    const links = await payments.listPaymentLinks({ reference_id: "111" });
+    const links = await payments.listRequests({ reference_id: "111" });
     assert.equal(links[0].id, "plink_KBnb7I424Rc1R9");
     assert.match(upstream.requests[0].headers.authorization ?? "", /^Basic /); // the adapter sent none; the forwarder added it
     await upstream.close();

@@ -9,8 +9,8 @@
 //   <server>/shops/<shop>/owner.json           PROPOSAL, panel, once     who set the shop up (permanent attribution), written with flag wx
 //   <server>/shops/<shop>/pins.json            PROPOSAL, panel           the ids the connection checks confirmed (none of them secret)
 //   <server>/shops/<shop>/report.json          optional, by hand         who the owner's monthly report says set the shop up (`shop add --prepared-by`); wins over owner.json. See ReportFile.
-//   <server>/secrets-inbox/<shop>/<name>       written by the panel      razorpay_key ("<key id>:<key secret>"), whatsapp_token, whatsapp_app_secret,
-//                                                                        razorpay_webhook_secret, google_service_account.json. Write-only: never read back.
+//   <server>/secrets-inbox/<shop>/<name>       written by the panel      whatsapp_token, whatsapp_app_secret, google_service_account.json, and for a shop that
+//                                                                        chose a gateway its key ("<key id>:<key secret>") and webhook secret, named by its folder. Write-only.
 //   <server>/status/<shop>.json                written by the deployer   see ShopStatus. A missing or unreadable file is "not confirmed yet", never "live".
 //   <server>/fleet/<shop>.json                 written by ops (read-only here)   fleet's last answer about the shop: its plan, the included messages, the Innovator badge,
 //                                                                        button mode and warnings. See FleetAnswer. A missing or unreadable file is "fleet has said nothing", never "no plan".
@@ -18,6 +18,7 @@
 //   <server>/requests/<shop>.recover.<id>.json  panel                    a request that the shop's agent look again or ask again about one booking or fee (the to-do list); the deployer carries it to the runtime, then removes it
 //   <server>/exports/<shop>/{record,bookings}.json   PROPOSAL, deployer  what scripts/client-report.ts reads, for the monthly report
 //   <server>/panel/                            the panel's own data (accounts, invites, drafts, receipts, audit trail, documents)
+import { GATEWAYS } from "../../modules/payments/providers/index.ts";
 import { join, resolve } from "node:path";
 
 export const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -60,12 +61,14 @@ export function shopIdFromName(name: string, taken: ReadonlySet<string>): string
 
 // ---- the accounts a template uses, and the secrets each one takes ----------------------------------------------------------------------
 
-export type AccountKind = "whatsapp" | "razorpay" | "calendar";
-export const SECRET_NAMES = ["razorpay_key", "whatsapp_token", "whatsapp_app_secret", "razorpay_webhook_secret", "google_service_account.json"] as const;
-export type SecretName = (typeof SECRET_NAMES)[number];
+/** "payment" is how customers pay (B71): UPI asks for no secret; a gateway asks for the ones its folder names (providers/<name>/index.ts, setup.secrets). */
+export type AccountKind = "whatsapp" | "payment" | "calendar";
+const GATEWAY_SECRETS: readonly string[] = GATEWAYS.flatMap((g) => [g.gateway!.setup.secrets.key, g.gateway!.setup.secrets.webhook]);
+export const SECRET_NAMES: readonly string[] = ["whatsapp_token", "whatsapp_app_secret", "google_service_account.json", ...GATEWAY_SECRETS];
+export type SecretName = string;
 export const SECRETS_OF: Record<AccountKind, readonly SecretName[]> = {
   whatsapp: ["whatsapp_token", "whatsapp_app_secret"],
-  razorpay: ["razorpay_key", "razorpay_webhook_secret"],
+  payment: GATEWAY_SECRETS,
   calendar: ["google_service_account.json"],
 };
 
@@ -331,5 +334,6 @@ export interface PinsFile {
   checkedAt: string;
   whatsapp?: { phoneNumberId: string; displayNumber: string };
   calendar?: { calendarId: string };
-  razorpay?: { keyId: string; mode: "test" | "live" };
+  /** B71: the gateway key the connection check confirmed, and whose (the provider's id). */
+  gateway?: { provider: string; keyId: string; mode: "test" | "live" };
 }

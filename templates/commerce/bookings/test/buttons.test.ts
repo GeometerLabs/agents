@@ -171,7 +171,7 @@ test("hello shows the services to tap; a service tap shows free times; a time ta
   await w.tap(times[0]);
   assert.equal(w.calendar.events().filter((e) => e.status === "tentative").length, 1);
   assert.equal(w.calendar.events()[0].start, first);
-  assert.match(lastOf(w).text, /rzp\.io/);
+  assert.match(lastOf(w).text, /pay\.example/);
   assert.deepEqual((lastOf(w).interactive?.buttons ?? []).map((b) => b.id), ["cancel", "owner"]);
   assert.equal(w.textsTo(CUSTOMER).length, 3, "three taps, three replies");
 });
@@ -227,7 +227,7 @@ test("a read-back that needs a yes comes with Yes and No buttons, and the button
   assert.deepEqual((lastOf(w).interactive?.buttons ?? []).map((b) => b.id), ["yes", "no"]);
   assert.match(lastOf(w).text, /Is that right\?/);
   await w.tap("yes");
-  assert.match(lastOf(w).text, /rzp\.io/);
+  assert.match(lastOf(w).text, /pay\.example/);
   const v = createWorld();
   await v.say("haircut next Tuesday at 6pm");
   await v.tap("no");

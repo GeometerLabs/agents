@@ -239,5 +239,5 @@ test("the agent answers in the language the customer wrote, and the date and tim
   assert.match(world.lastTextTo(OTHER_CUSTOMER), /ಬುಧವಾರ, 4 ನವೆಂಬರ್, ಸಂಜೆ 7:00 ಖಾಲಿ ಇದೆ/u);
   await world.say("ok"); // says nothing about language: a customer who wrote in Malayalam keeps getting Malayalam
   assert.equal(languageOfScript(world.lastTextTo(CUSTOMER)), "ml", world.lastTextTo(CUSTOMER));
-  assert.match(world.lastTextTo(CUSTOMER), /\/l\/plink/u);
+  assert.match(world.lastTextTo(CUSTOMER), /pay\.example\/req_/u);
 });

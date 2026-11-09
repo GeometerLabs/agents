@@ -6,8 +6,8 @@ import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
 import { DEFAULT_CAPS } from "../../../../modules/payments/guard-limits.ts";
-import { readPaymentSettings } from "../../../../modules/payments/upi/settings.ts";
-import type { PaymentSettings } from "../../../../modules/payments/upi/settings.ts";
+import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
+import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -65,8 +65,8 @@ export interface Settings {
   /** The agent refunds up to and including this amount alone; anything above needs the owner (Guard holds it). It is the same number Guard's threshold is made from. */
   refund: { limitInr: number };
   /**
-   * How customers pay the advance (modules/payments/upi/settings.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
-   * Left out: Razorpay (written into the parsed settings).
+   * How customers pay the advance (modules/payments/providers/index.ts): "upi", the shop's own UPI ID, marked paid by the owner; or a gateway's id (a provider folder with an API), the shop's own account.
+   * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop.
    */
   payment: PaymentSettings;
   owner: {
@@ -329,8 +329,8 @@ function readRefund(v: unknown, errors: string[]): Settings["refund"] | undefine
   return limitInr === undefined ? undefined : { limitInr };
 }
 
+/** The shared reader: a missing block is refused with the same words in every template (B71), asking for the UPI ID first. */
 function readPayment(v: unknown, errors: string[]): Settings["payment"] | undefined {
-  if (v === undefined) { errors.push("Add how customers pay (\"payment\"). UPI is the usual: {\"module\": \"upi\", \"upi\": {\"id\": \"annapurna@okicici\", \"payee\": \"Annapurna Tiffins\"}}; or {\"module\": \"razorpay\"}."); return undefined; }
   return readPaymentSettings(v, errors);
 }
 

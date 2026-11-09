@@ -27,7 +27,7 @@ import { startRelayServer } from "../../../../modules/approvals/server.ts";
 import type { RunningRelayServer } from "../../../../modules/approvals/server.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
 import { createWhatsAppMessaging } from "../../../../modules/messaging/whatsapp.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
 import { startStubGuard } from "../../../../modules/standins/guard.ts";
 import type { RunningStubGuard } from "../../../../modules/standins/guard.ts";
@@ -144,7 +144,7 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
     }, { port: options.ports?.standins ?? 0 });
     closers.push(() => standins.close());
     const guard = await startStubGuard({
-      clock, upstreamUrl: standins.url, spec: razorpayLimitsSpec(settings, { tenant: "local-stack", version: 1, reviewedBy: "local-stack" }),
+      clock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "local-stack", version: 1, reviewedBy: "local-stack" }),
       agentToken: secret("agent"), approver: { id: "owner-local", secret: secret("notify") }, readToken: secret("read"),
     });
     closers.push(() => guard.close());
@@ -231,7 +231,7 @@ async function main(args: string[]): Promise<void> {
   console.log(`  Secrets and data: ${stack.dir} (removed when you stop)`);
   console.log("Try it, in another terminal:");
   console.log(`  curl -s -X POST ${standins}/_standin/whatsapp/inbound -d '{"from":"+919811111111","text":"haircut ${tomorrowOpen ? "tomorrow" : "the day after tomorrow"} at 6pm"}'   # a customer writes`);
-  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"link_id":"plink_1"}'   # they pay the deposit link (the first link is plink_1; later ones are in the state)`);
+  console.log(`  curl -s -X POST ${standins}/_standin/razorpay/pay -d '{"request_id":"req_1"}'   # they pay the deposit link (the first link is req_1; later ones are in the state)`);
   console.log(`  curl -s ${standins}/_standin/state   # what the stand-ins hold: the outbox, the links, the calendar`);
   console.log(`To see an approval, start with --refund-limit ${Math.max(0, settings.deposit.amountInr - 1)} (below the ₹${settings.deposit.amountInr} deposit), book, pay, and cancel ("please cancel my booking").`);
   console.log(`  The refund is held; within a couple of seconds the owner (${settings.owner.whatsapp}) is asked, with a code, in the state's outbox. Then:`);

@@ -8,13 +8,15 @@
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
 //                                pathway.lock); --prepared-by is the name the owner's monthly report message says set the shop up (written to report.json; without it the message says "your
 //                                builder"). With --company, --prepared-by is the person's name alone and the message says "Divya, Sri Sai Digital".
-//   shop add <name> --template bookings|fees|orders [--settings F] [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ... [--company ...]]      start a shop from a template of this checkout: its example
-//                                settings (or the file --settings names, checked first), a pin to the template's version here, and a runtime.json that names the WhatsApp number (and, for
-//                                a template with a calendar, the calendar). The settings start as the template's made-up example: change them to the real ones.
+//   shop add <name> --template bookings|fees|orders (--upi-id ID --payee "Name" | --payment razorpay | --settings F) [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ... [--company ...]]
+//                                start a shop from a template of this checkout: its example settings (or the file --settings names, checked first), a pin to the template's version here, and a
+//                                runtime.json that names the WhatsApp number (and, for a template with a calendar, the calendar). The settings start as the template's made-up example: change
+//                                them to the real ones. How customers pay is never the example's (B71): the shop's own UPI ID, the default, or --payment razorpay for its own gateway account.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
-//   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams razorpay,whatsapp,calendar] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
+//   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams upi|razorpay|own-api,whatsapp,calendar] [--upi-id ID --payee "Name"]
+//                    [--gateway-draft D --gateway-accept A --gateway-upstream host:port] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
 //                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses and the one credential it must use instead
 //   agent check|deploy|show <name> [--credential]      the same checks and checked deploy as a shop's; show prints the addresses again
 //   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every five minutes)
@@ -73,7 +75,7 @@ import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverNotes, serverPaths } from "./lib/server.ts";
-import { kindFor } from "./lib/kinds.ts";
+import { guardsOf, kindFor } from "./lib/kinds.ts";
 import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
 import { discoverTemplates } from "./panel/templates.ts";
 import { loadState, saveState } from "./lib/state.ts";
@@ -113,10 +115,11 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" }, // stream-*: only to say they are no longer used
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" },
-      "prepared-by": { type: "string" }, company: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
+      "prepared-by": { type: "string" }, company: { type: "string" }, "upi-id": { type: "string" }, payee: { type: "string" }, payment: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
       "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
+      "gateway-draft": { type: "string" }, "gateway-accept": { type: "string" }, "gateway-upstream": { type: "string" },
       "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
       credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" }, case: { type: "string" }, lang: { type: "string" },
       // agent crash-test / go-live / set (and --run, --version on agent add)
@@ -199,6 +202,20 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         try { settingsText = readFileSync(resolve(settingsFile), "utf8"); } catch { throw new Error(`I could not read the settings file ${settingsFile}.`); }
         let parsed: unknown;
         try { parsed = JSON.parse(settingsText); } catch (e) { throw new Error(`${settingsFile} is not valid JSON: ${(e as Error).message}`); }
+        // B71: how the shop takes money is never the example's. With --settings the file says it; otherwise the shop's own UPI ID (the default) or an explicit gateway.
+        // Without either it is refused: an example's made-up UPI ID would send customers' money to nobody the shop knows.
+        const upiId = str("upi-id");
+        const payee = str("payee");
+        const paymentFlag = str("payment");
+        if (str("settings") !== undefined && (upiId !== undefined || payee !== undefined || paymentFlag !== undefined)) throw new Error("The settings file you gave says how customers pay (\"payment\"), so --upi-id, --payee and --payment mean nothing here. Change the file instead.");
+        if (str("settings") === undefined) {
+          if (paymentFlag !== undefined && paymentFlag !== "razorpay" && paymentFlag !== "upi") throw new Error(`--payment ${paymentFlag} is not a payment module I know. Leave it out for UPI (the default), or say --payment razorpay for a shop with its own Razorpay account.`);
+          if (paymentFlag === "razorpay" && (upiId !== undefined || payee !== undefined)) throw new Error("A shop on its own Razorpay account has no UPI ID here: leave out --upi-id and --payee, or leave out --payment razorpay.");
+          if (paymentFlag !== "razorpay" && (upiId === undefined || payee === undefined)) throw new Error("Say how this shop's customers pay. UPI is the default and needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee \"<the name customers see, for example Glow Salon>\". A shop with its own Razorpay account says --payment razorpay instead.");
+          const block = paymentFlag === "razorpay" ? { module: "razorpay" } : { module: "upi", upi: { id: upiId, payee } };
+          parsed = { ...(parsed as Record<string, unknown>), payment: block };
+          settingsText = `${JSON.stringify(parsed, null, 2)}\n`;
+        }
         const checked = kind.validateSettings(parsed);
         if (!checked.ok) throw new Error(`These ${found.id} settings need fixing (${settingsFile}):\n- ${checked.errors.join("\n- ")}`);
         const numberId = str("whatsapp-number-id");
@@ -207,7 +224,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         if (numberId !== undefined && !/^\d{6,20}$/u.test(numberId)) throw new Error("--whatsapp-number-id must be the shop's WhatsApp phone number id: digits only.");
         fromTemplate = {
           settings: settingsText.endsWith("\n") ? settingsText : `${settingsText}\n`,
-          runtime: { mode: "live", tickSeconds: 30, services: { payments: {}, ...(kind.guards.includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
+          runtime: { mode: "live", tickSeconds: 30, services: { ...(guardsOf(kind, checked.settings).includes("razorpay") ? { payments: {} } : {}), ...(kind.guards.includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
           lock: `${found.id}@${found.version}\n`,
           where: str("settings") ? "the settings file you gave" : `the ${found.id} template's example (${found.settingsExample}), which is somebody else's made-up centre: change it to the real one`,
         };
@@ -440,7 +457,8 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   return 0;
 }
 
-const AGENT_FLAG_NAMES = ["settings", "upstreams", "owner-whatsapp", "owner-language", "business-name", "deposit", "refund-limit", "price-floor", "hours", "timezone", "whatsapp-number-id", "calendar-id", "forward-whatsapp-to",
+const AGENT_FLAG_NAMES = ["settings", "upstreams", "owner-whatsapp", "owner-language", "business-name", "deposit", "refund-limit", "price-floor", "hours", "timezone", "whatsapp-number-id", "calendar-id", "forward-whatsapp-to", "upi-id", "payee",
+  "gateway-draft", "gateway-accept", "gateway-upstream",
   "refund-inr-per-day", "refunds-per-day", "links-per-hour", "messages-per-hour", "events-per-hour", "events-deleted-per-day", "run", "version"] as const;
 
 /** `agent add|check|deploy|show <name>`: an agent someone else wrote, behind the same Guards. */

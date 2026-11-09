@@ -6,13 +6,13 @@
 //   refund_waiting         a refund is on its way: with the owner, held by Guard for the owner, or being sent again
 //   refund_unknown         a refund whose outcome nobody can state: it may or may not have gone
 //   refund_failed          a refund that did not go, and will not go on its own (Guard said no, it ran out, it failed)
-//   upi_payment_unconfirmed  a UPI shop: the customer says they paid, or the owner marked part, and the owner has not confirmed the rest (modules/payments/upi, B33)
+//   upi_payment_unconfirmed  a UPI shop: the customer says they paid, or the owner marked part, and the owner has not confirmed the rest (modules/payments/owner-marked, B33)
 //   upi_refund_owed        a UPI shop: a refund the owner owes and has not marked done (the agent never sends a UPI refund)
 //   message_unanswered     the wait for a Guard ended and the work of a message or payment event was not done (modules/runtime/guard-wait.ts)
 //
 // A case shows once for one cause: a waiting answer that is overdue is listed as that, and not also as a refund on its way.
 import { GUARD_WAIT_ENTRY, latestEntry, latestRecovery, timeOf } from "./registry.ts";
-import { UPI_OBLIGATION_KINDS } from "../payments/upi/obligations.ts";
+import { MARK_OBLIGATION_KINDS } from "../payments/owner-marked/obligations.ts";
 import type { CaseLike, DetectInput, Obligation, ObligationKind } from "./registry.ts";
 
 type Pending = CaseLike["pending"][number];
@@ -146,4 +146,4 @@ function refundIssues(id: "refund_unknown" | "refund_failed", unknown: boolean):
   };
 }
 
-export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), messageUnanswered, ...UPI_OBLIGATION_KINDS];
+export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), messageUnanswered, ...MARK_OBLIGATION_KINDS];

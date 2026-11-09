@@ -270,7 +270,7 @@ run("a hold with no approval to give is never shown to the owner; it is counted 
 
 run("an amount that came as text, or a call that is not a refund, is not shown to the owner", async (w) => {
   w.guardClient.reviews = async () => ({ ok: true, items: [
-    { id: "ap-1", tool: "razorpay", operation: "refund", agent: "runtime-glow-salon", arguments: ["map", { amount: ["str", "20000"], payment_id: ["str", "pay_1"], receipt: ["str", "b-1:pay_1"] }], requested_at_ms: "1", expires_at_ms: "2", you_may_decide: true },
+    { id: "ap-1", tool: "razorpay", operation: "refund", agent: "runtime-glow-salon", arguments: ["map", { amount: ["str", "20000"], payment_id: ["str", "pmt_1"], receipt: ["str", "b-1:pmt_1"] }], requested_at_ms: "1", expires_at_ms: "2", you_may_decide: true },
     { id: "ap-2", tool: "razorpay", operation: "payout", arguments: ["map", {}] },
     { id: "ap-3", tool: "google-calendar", operation: "delete", arguments: ["map", {}] },
   ] });

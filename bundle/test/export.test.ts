@@ -168,8 +168,8 @@ test("limits.json holds the spec the deployer's own generator makes for this ser
     const w = world({ "glow-salon": panelRuntime() }, change);
     try {
       const limits = JSON.parse(buildExport(sourcesFor(w.root, "glow-salon"), { shop: "glow-salon", now: NOW }).files.get("limits.json")!.toString("utf8"));
-      assert.equal(limits.razorpay.approval_ttl_seconds, ttl);
-      assert.equal(limits.razorpay.name, "glow-salon-razorpay");
+      assert.equal(limits.gateway.approval_ttl_seconds, ttl);
+      assert.equal(limits.gateway.name, "glow-salon-razorpay");
       assert.ok(!/could not be read/u.test(limits.note));
     } finally { w.done(); }
   }
@@ -178,7 +178,7 @@ test("limits.json holds the spec the deployer's own generator makes for this ser
     rmSync(join(w.root, "geometer.json"));
     const built = buildExport(sourcesFor(w.root, "glow-salon"), { shop: "glow-salon", now: NOW });
     const limits = JSON.parse(built.files.get("limits.json")!.toString("utf8"));
-    assert.ok(limits.razorpay, "still made, with the defaults");
+    assert.ok(limits.gateway, "still made, with the defaults");
     assert.match(limits.note, /could not be read, so it was made with the default approval time and caps/u);
     assert.ok(built.warnings.some((x) => /could not be read/u.test(x)));
   } finally { w.done(); }

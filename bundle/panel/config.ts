@@ -23,7 +23,7 @@ export interface PanelConfig {
   /** Where to ask a shop's runtime for /status, and the file holding its bearer token. `{shop}` is filled in. Left out: not asked. */
   runtimeUrl?: string;
   runtimeTokenFile?: string;
-  /** Where the panel reads the shop's Guards for connection checks (`{shop}` and `{kind}`: whatsapp, razorpay, calendar) and the panel's own credential for them. */
+  /** Where the panel reads the shop's Guards for connection checks (`{shop}` and `{kind}`: whatsapp, calendar, or the gateway's id) and the panel's own credential for them. */
   guardUrl?: string;
   guardAgentTokenFile?: string;
   /** Where a provider's webhook should point, for the guide (`{shop}`, `{kind}`). */

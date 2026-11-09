@@ -346,7 +346,7 @@ const kn: BaseSet = {
   owner_refund_settled: (f) => `ರೀಫಂಡ್ ಆಗಿದೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")}. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
 };
 
-// ---- UPI, marked paid by the owner (plan B33; modules/payments/upi) ------------------------------------------------------------
+// ---- UPI, marked paid by the owner (plan B33; modules/payments/owner-marked) ------------------------------------------------------------
 // A centre that takes UPI: the parent pays the centre's own UPI ID (the QR picture, and the link with the UPI ID in every message that asks for money), and a
 // payment counts only when the owner marks it received (the "Received" button, or "received <code>"). These messages never say the agent checked a payment. A
 // refund is sent by the owner, and the parent hears "sent" only after the owner marks it so. Hindi, Malayalam and Kannada are machine-written and wait for a native

@@ -12,7 +12,7 @@ import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts"
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import { LostReply } from "../../../../modules/standins/http.ts";
 import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
-import { razorpayStandin } from "../../../../modules/standins/razorpay.ts";
+import { razorpayStandin } from "../../../../modules/payments/providers/razorpay/standin.ts";
 import { approveTemplates, whatsappStandin } from "../../../../modules/standins/whatsapp.ts";
 import { META_TEMPLATES } from "../src/language/meta-templates.ts";
 import { REPORT_TEMPLATES } from "../report/whatsapp.ts";

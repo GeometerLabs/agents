@@ -1,5 +1,5 @@
 // ONE settings value, two places that act on it. The agent's refund limit (settings.refund.limitInr, whole rupees) and Guard's `call_bound_approval` threshold
-// (paise) must be the same number (modules/payments/guard-limits.ts says why). This file turns the Fees settings into the numbers of the Razorpay limits spec; the
+// (paise) must be the same number (modules/payments/guard-limits.ts says why). This file turns the Fees settings into the numbers of the shop's gateway limits spec (B71: the gateway it chose, modules/payments/providers); the
 // spec itself is built by modules/payments/guard-limits.ts, the same one Bookings uses.
 //
 // What Guard can and cannot say here, plainly:
@@ -11,8 +11,10 @@
 //    is the agent's own check (`checkRefundLimit` with the payment's amount, read from the payments service), and the payments service refuses a refund above the payment.
 import type { Settings } from "./settings.ts";
 import { highestDueInr, LOWEST_LINK_INR } from "./settings.ts";
-import { approvalTtlFrom, capsFrom, razorpayLimitsSpecFrom, rupeesToPaise } from "../../../../modules/payments/guard-limits.ts";
-import type { LimitsSpec, LimitsSpecIdentity, RazorpayCaps } from "../../../../modules/payments/guard-limits.ts";
+import { approvalTtlFrom, capsFrom, paymentLimitsSpecFrom, rupeesToPaise } from "../../../../modules/payments/guard-limits.ts";
+import type { LimitsSpec, LimitsSpecIdentity, PaymentCaps } from "../../../../modules/payments/guard-limits.ts";
+import { gatewayGuardOf } from "../../../../modules/payments/providers/index.ts";
+import type { GatewayGuard } from "../../../../modules/payments/providers/types.ts";
 
 /** The refund amount (paise) above which Guard holds the call for the owner. The agent holds above `refund.limitInr`; the two are this one value. */
 export const refundThresholdPaise = (settings: Settings): number => rupeesToPaise(settings.refund.limitInr);
@@ -20,15 +22,15 @@ export const refundThresholdPaise = (settings: Settings): number => rupeesToPais
 /** The dearest amount any link or refund can be, in paise. */
 export const highestPaise = (settings: Settings): number => rupeesToPaise(highestDueInr(settings));
 
-export interface RazorpayNumbers {
+export interface PaymentNumbers {
   lowestLinkPaise: number;
   highestPaise: number;
   refundThresholdPaise: number;
-  caps: RazorpayCaps;
+  caps: PaymentCaps;
   approvalTtlSeconds: number;
 }
 
-export function razorpayNumbers(settings: Settings, options: { caps?: Partial<RazorpayCaps>; approvalTtlSeconds?: number } = {}): RazorpayNumbers {
+export function paymentNumbers(settings: Settings, options: { caps?: Partial<PaymentCaps>; approvalTtlSeconds?: number } = {}): PaymentNumbers {
   const caps = capsFrom(options.caps);
   const approvalTtlSeconds = approvalTtlFrom(options.approvalTtlSeconds);
   const highest = highestPaise(settings);
@@ -37,14 +39,14 @@ export function razorpayNumbers(settings: Settings, options: { caps?: Partial<Ra
   return { lowestLinkPaise: rupeesToPaise(LOWEST_LINK_INR), highestPaise: highest, refundThresholdPaise: refundThresholdPaise(settings), caps, approvalTtlSeconds };
 }
 
-/** The Razorpay limits spec for one centre. Same settings, same bytes. */
-export function razorpayLimitsSpec(settings: Settings, identity: LimitsSpecIdentity, options: { caps?: Partial<RazorpayCaps>; approvalTtlSeconds?: number } = {}): LimitsSpec {
+/** The limits spec of the gateway this centre chose (or `options.gateway`). Same settings, same bytes. */
+export function gatewayLimitsSpec(settings: Settings, identity: LimitsSpecIdentity, options: { caps?: Partial<PaymentCaps>; approvalTtlSeconds?: number; gateway?: GatewayGuard } = {}): LimitsSpec {
   if (!Number.isInteger(identity.version) || identity.version < 1) throw new Error("The spec's version must be a whole number, 1 or more.");
-  const n = razorpayNumbers(settings, options);
-  return razorpayLimitsSpecFrom({
+  const n = paymentNumbers(settings, options);
+  return paymentLimitsSpecFrom({
     identity, approvalTtlSeconds: n.approvalTtlSeconds, caps: n.caps,
     link: { ruleId: "fee-amount", minPaise: n.lowestLinkPaise, maxPaise: n.highestPaise },
     refundBound: { ruleId: "refund-at-most-fee-paid", maxPaise: n.highestPaise },
     refundThresholdPaise: n.refundThresholdPaise,
-  });
+  }, options.gateway ?? gatewayGuardOf(settings.payment));
 }

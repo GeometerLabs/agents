@@ -69,12 +69,18 @@ const create_pathway: Tool = {
     prepared_by: { type: "string", description: "The name the owner reads in the monthly report, e.g. 'Divya, local partner'. With `company`, the person's name alone, e.g. 'Divya'." },
     company: { type: "string", description: "Optional. Your agency or business name; the owner then reads 'Divya, Sri Sai Digital'. Needs prepared_by." },
     settings: { type: "object", description: "Business details to start from, in the template's settings shape. Limit fields are ignored if they equal the template's, and refused if they differ." },
+    upi_id: { type: "string", description: "The shop's own UPI ID (for example glowsalon@okicici). Customers pay it by UPI, the default; the owner confirms each payment. Required: a shop never starts on a gateway or on the example's made-up UPI ID." },
+    payee: { type: "string", description: "The name customers see in their UPI app, for example Glow Salon. Required with upi_id." },
   } },
   async handler(args, e) {
     const name = shopName(args.name);
     const template = str(args.template, "template", 40);
     const argv = ["shop", "add", name, "--template", template];
     let note = "";
+    // B71: UPI is the default and a gateway account is a person's choice in the panel. The shop's own UPI ID is asked for here; the example's is never used.
+    const upiId = opt(args.upi_id, 80);
+    const payee = opt(args.payee, 60);
+    if (!upiId || !payee) throw new ToolError("Say the shop's own UPI ID (upi_id, for example glowsalon@okicici) and the name its customers see (payee). UPI is the default and needs no gateway account; a shop that wants its own gateway account chooses it in the panel.");
     if (args.settings !== undefined) {
       if (args.settings === null || typeof args.settings !== "object" || Array.isArray(args.settings)) throw new ToolError("settings must be an object.");
       const { discoverTemplates } = await load(e, "bundle/panel/templates.ts");
@@ -84,12 +90,13 @@ const create_pathway: Tool = {
       const given = args.settings as Record<string, unknown>;
       const changed = KEPT_AS_TEMPLATE.filter((k) => k in given && JSON.stringify(given[k]) !== JSON.stringify(example[k]));
       if (changed.length > 0) throw new ToolError(`These are limits or money rules, so they start at the template's own values and are not set here: ${changed.join(", ")}. Create the shop without them; tighten limits with draft_limits, and a person changes the rest in the panel.`);
-      const merged = { ...example, ...given };
+      const merged = { ...example, ...given, payment: { module: "upi", upi: { id: upiId, payee } } };
       const file = join(ensure(pluginState(e, "tmp")), `${randomBytes(6).toString("hex")}.json`);
       writeFileSync(file, `${JSON.stringify(merged, null, 2)}\n`, { mode: 0o600 });
       argv.push("--settings", file);
       note = "Your business details were used; limits are the template's.";
     }
+    else argv.push("--upi-id", upiId, "--payee", payee);
     if (opt(args.whatsapp_number_id, 30)) argv.push("--whatsapp-number-id", opt(args.whatsapp_number_id, 30) as string);
     if (opt(args.calendar_id, 200)) argv.push("--calendar-id", opt(args.calendar_id, 200) as string);
     if (opt(args.prepared_by, 120)) argv.push("--prepared-by", opt(args.prepared_by, 120) as string);
@@ -284,9 +291,10 @@ const report: Tool = {
       const settings = readJson(settingsFile);
       const ex = p.exportsOf(name);
       if (!existsSync(join(ex, "record.json"))) throw new ToolError(`There is no saved record for ${name} yet (exports/${name}/record.json). The deployer writes it once the shop is running.`);
-      // what the numbers were counted from, as the panel works it out: a live Razorpay key or UPI is "live"; otherwise test mode. Never assumed.
+      // what the numbers were counted from, as the panel works it out: a live gateway key, or a shop with no gateway (UPI, the owner's real marks), is "live"; otherwise test mode.
       const pins = readJson(join(p.shop(name), "pins.json"));
-      const source = settings?.payment?.module === "upi" || pins?.razorpay?.mode === "live" ? "live" : "test-mode";
+      const gatewayIds: string[] = (await load(e, "modules/payments/providers/index.ts")).GATEWAY_KINDS;
+      const source = !gatewayIds.includes(settings?.payment?.module) || pins?.gateway?.mode === "live" ? "live" : "test-mode";
       const dataFlag = existsSync(join(ex, "dues.json")) && !existsSync(join(ex, "bookings.json")) ? ["--dues", join(ex, "dues.json")] : ["--bookings", join(ex, "bookings.json")];
       r = await run(process.execPath, [join(kind.folder, "scripts", "client-report.ts"), "--settings", settingsFile, "--record", join(ex, "record.json"), ...dataFlag, "--month", month, "--lang", language ?? settings?.owner?.language ?? "en", "--out", out, "--source", source, "--tenant", name], { timeoutMs: 120_000 });
     }
