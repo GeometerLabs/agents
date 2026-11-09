@@ -238,6 +238,11 @@ export interface ShopFolder {
    */
   fleetAi?: "buttons";
   /**
+   * Fleet's last word on the month's AI cap (fleet/<shop>.json): "off" only when fleet said so for a shop that has a plan; then the generated runtime config gets
+   * `"model": "off"` and the shop's language model is left out. Anything else is undefined and adds nothing, as for `fleetAi`.
+   */
+  fleetModel?: "off";
+  /**
    * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local partner"), else
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
@@ -304,5 +309,6 @@ export function readShop(dir: string, name: string): ShopFolder {
   if (lock && !kind) problems.push(`pathway.lock is pinned to "${lock.pathway}", which this bundle does not run. It runs: ${kindNames()}.`);
   const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
   const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
+  const fleetModel = answer?.model === "off" && answer.plan !== null ? "off" as const : undefined;
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }

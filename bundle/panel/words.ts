@@ -70,7 +70,7 @@ export interface Words {
     heading: string; none: string; names: Record<PlanName, string>; is(name: string): string; included(n: number): string;
     price(price: string): string; priceInnovator(price: string, yours: string): string; priceNote: string; innovator: string;
     buttons: string; buttonsWhy: Record<"overage_unfunded" | "other", string>;
-    warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled", string>;
+    warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled" | "ai_cap", string>;
   };
   /**
    * The shop's licence (B13), from the signed lease the server keeps: where it stands and what that means for customers, its dates, fleet's renew link, and a note
@@ -327,6 +327,7 @@ export const en: Words = {
       allowance_80: "80% of this month's included messages are used.",
       balance_80: "80% of the recharge balance is used. Recharge before it runs out.",
       whatsapp_unsettled: "Some WhatsApp charges are not paid from the balance yet. Recharge to settle them.",
+      ai_cap: "This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st.",
     },
   },
   licence: {

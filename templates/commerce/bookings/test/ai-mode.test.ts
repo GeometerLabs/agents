@@ -175,6 +175,69 @@ test("the outside switch ai:buttons turns the models off at once, tells the owne
   assert.equal(w.textsTo(w.owner).length, 2);
 });
 
+// ---- the month's AI cap (model: off) ---------------------------------------------------------------------------------------------------------------
+
+test("the AI cap (model: off) leaves the language model out: the rules and the decision model keep answering, what they cannot read gets the menu, and the record says so once a month", async () => {
+  const unsure = steps({ decider: (name) => ({ choice: name === "intent" ? "greeting" : "no_service", p: 0.5 }) }); // unsure: without the cap the language model reads it
+  let model: "normal" | "off" = "off";
+  const w = world(unsure, { ai: { model: () => model } });
+  await w.say(UNCLEAR);
+  assert.deepEqual([unsure.state.decision, unsure.state.model], [1, 0], "the decision model was asked; the language model was not");
+  const refs = received(w)[0].refs;
+  assert.deepEqual([refs.step, refs.tried, refs.skipped, refs.failed], ["rules", "rules+decision", "model", undefined], "the rules' reading stands, and the record says the language model was skipped");
+  assert.match(w.lastTextTo(CUSTOMER), /understand/u, "the customer gets the menu, as button mode would send for that turn");
+  assert.ok(w.messaging.sentTo(CUSTOMER).at(-1)!.interactive, "with the shop's services to tap");
+  await w.say("hello", { from: OTHER_CUSTOMER }); // the rules are sure: nothing is asked
+  await w.say(UNCLEAR, { from: OTHER_CUSTOMER });
+  assert.equal(unsure.state.model, 0);
+  assert.deepEqual(modeEntries(w).map((e) => [e.refs.mode, e.refs.reason, e.refs.month]), [["model_off", "ai_cap", "2026-11"]], "one line in the record, not one per message");
+  assert.equal(w.textsTo(w.owner).length, 0, "the owner is not told: fleet tells the partner");
+  assert.equal(modeOf(w.store, { model: () => model }, w.clock.now(), IST).buttons, false, "the shop is not in button mode");
+
+  const sure = steps(); // the decision model is sure: it answers under the cap as ever
+  const v = world(sure, { ai: { model: () => "off" } });
+  await v.say(UNCLEAR);
+  assert.deepEqual([received(v)[0].refs.step, sure.state.model], ["decision", 0]);
+
+  model = "normal"; // fleet says normal again on the 1st
+  await w.say(UNCLEAR);
+  assert.equal(unsure.state.model, 1, "the language model reads again");
+  model = "off";
+  w.clock.set(zonedToMs({ year: 2026, month: 12, day: 3 }, { hour: 10, minute: 0 }, IST)); // capped again in a new month: said again, once
+  await w.say(UNCLEAR);
+  assert.deepEqual(modeEntries(w).map((e) => e.refs.month), ["2026-11", "2026-12"]);
+});
+
+test("under the AI cap a paused decision model is still asked: nothing is left to the rules alone because of a pause", async () => {
+  const s = steps();
+  const { services, languages } = createWorld().settings;
+  const r = await s.router.parseDetailed!(UNCLEAR, { services, languages }, { skipSteps: ["decision", "model"] });
+  assert.deepEqual([r.understood!.step, r.understood!.tried, r.understood!.skipped], ["decision", ["rules", "decision"], ["model"]]);
+  assert.deepEqual([s.state.decision, s.state.model], [1, 0]);
+});
+
+test("runtime.json takes model: normal or off, and the switch is read again whenever the file changes", () => {
+  for (const model of ["normal", "off"]) {
+    const r = validateRuntimeConfig({ mode: "fakes", model }, "/x");
+    assert.ok(r.ok && r.config.model === model, model);
+  }
+  const bad = validateRuntimeConfig({ mode: "fakes", model: "capped" }, "/x");
+  assert.ok(!bad.ok && /"model" must be "normal".*"off"/u.test(bad.errors.join()));
+  const folder = mkdtempSync(join(tmpdir(), "geo-model-"));
+  after(() => rmSync(folder, { recursive: true, force: true }));
+  const file = join(folder, "runtime.json");
+  const write = (text: string, second: number) => { writeFileSync(file, text); utimesSync(file, second, second); };
+  write('{"mode":"fakes"}', 1000);
+  const built = buildUnderstanding(client({}, folder), { clock: fakeClock(TEN_NOV), env: {}, log: () => {} });
+  assert.equal(built.ai.model!(), "normal");
+  write('{"mode":"fakes","model":"off"}', 2000);
+  assert.equal(built.ai.model!(), "off");
+  write('{"mode":"fakes","model":', 3000);
+  assert.equal(built.ai.model!(), "off", "a file caught in the middle of a write changes nothing");
+  write('{"mode":"fakes","model":"normal"}', 4000);
+  assert.equal(built.ai.model!(), "normal");
+});
+
 // ---- a model that fails -------------------------------------------------------------------------------------------------------------------------
 
 test("a failing model puts the agent on buttons for the pause and then tries again; the owner hears once a day", async () => {

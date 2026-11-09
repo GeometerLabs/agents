@@ -656,6 +656,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ഈ മാസത്തെ ഉൾപ്പെട്ട സന്ദേശങ്ങളിൽ 80% ഉപയോഗിച്ചു. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | റീചാർജ് ബാലൻസിന്റെ 80% ഉപയോഗിച്ചു. തീരുന്നതിന് മുമ്പ് റീചാർജ് ചെയ്യുക. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp-ന്റെ ചില ചെലവുകൾ ബാലൻസിൽ നിന്ന് ഇതുവരെ അടച്ചിട്ടില്ല. അവ തീർക്കാൻ റീചാർജ് ചെയ്യുക. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `plan.warn.ai_cap` | ഈ കട ഈ മാസത്തെ AI പരിധി ഉപയോഗിച്ചുകഴിഞ്ഞു. നിയമങ്ങളും മെനുവും ഉപയോഗിച്ച് മറുപടി തുടരും; മുഴുവൻ AI അടുത്ത മാസം 1-ന് തിരികെ വരും. | This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st. |  |
 | `licence.heading` | ലൈസൻസ് | Licence |  |
 | `licence.states.active` | ലൈസൻസ് ശരിയാണ് | Licence in order |  |
 | `licence.states.reminder` | ലൈസൻസ് പണം അടയ്ക്കാനുണ്ട് | Licence payment due |  |

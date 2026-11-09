@@ -656,6 +656,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ಈ ತಿಂಗಳ ಸೇರಿದ ಸಂದೇಶಗಳಲ್ಲಿ 80% ಬಳಕೆಯಾಗಿದೆ. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | ರೀಚಾರ್ಜ್ ಬ್ಯಾಲೆನ್ಸ್‌ನ 80% ಬಳಕೆಯಾಗಿದೆ. ಮುಗಿಯುವ ಮೊದಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp ನ ಕೆಲವು ವೆಚ್ಚಗಳನ್ನು ಇನ್ನೂ ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಪಾವತಿಸಿಲ್ಲ. ಅವನ್ನು ತೀರಿಸಲು ರೀಚಾರ್ಜ್ ಮಾಡಿ. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `plan.warn.ai_cap` | ಈ ಅಂಗಡಿ ಈ ತಿಂಗಳ AI ಮಿತಿಯನ್ನು ಬಳಸಿಯಾಗಿದೆ. ಇದು ನಿಯಮಗಳು ಮತ್ತು ಮೆನುಗಳಿಂದ ಉತ್ತರಿಸುವುದನ್ನು ಮುಂದುವರಿಸುತ್ತದೆ; ಪೂರ್ಣ AI ಮುಂದಿನ ತಿಂಗಳ 1ನೇ ತಾರೀಖು ಮರಳಿ ಬರುತ್ತದೆ. | This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st. |  |
 | `licence.heading` | ಪರವಾನಗಿ | Licence |  |
 | `licence.states.active` | ಪರವಾನಗಿ ಸರಿಯಾಗಿದೆ | Licence in order |  |
 | `licence.states.reminder` | ಪರವಾನಗಿ ಪಾವತಿ ಬಾಕಿ ಇದೆ | Licence payment due |  |
