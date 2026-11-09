@@ -17,7 +17,10 @@ import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs
 import { join } from "node:path";
 import { adminCall, compose } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
+import { modulesOf } from "../generate/compose.ts";
 import { names } from "../generate/shop.ts";
+import { appliedPathwayDir } from "../lib/pathways.ts";
+import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
 import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { ensureSecret, secretFile } from "../lib/secrets.ts";
@@ -167,6 +170,11 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   if (!server.backup) throw new Error("No snapshot place is set up for this server, so there is nothing to restore from.");
   if (o.at && Number.isNaN(Date.parse(o.at))) throw new Error(`"${o.at}" is not a time. Use a form like 2026-11-04T10:30:00Z.`);
   if (o.identity && !existsSync(o.identity)) throw new Error(`${o.identity} is not there: --identity names the file with the owner's age key (AGE-SECRET-KEY-1...).`);
+  // the runtime that will read restored.json is the one of the version the shop is pinned to: one from before 9 Nov 2026 would ignore it and reuse ids used after the
+  // snapshot, and "look first" would then take another customer's payment link or calendar event for its own
+  const applied = state.shops[shop].applied!;
+  const pinned = appliedPathwayDir(ctx.appDir, ctx.dir, applied) ?? applied.pathwayDir;
+  if (!existsSync(join(modulesOf(pinned), "runtime", "restored.ts"))) throw new Error(`${shop} runs ${applied.pathway}, whose runtime does not know a restore: it would give new bookings ids that were used after the snapshot, and could take another customer's payment link for its own. Move ${shop} to a version from 9 Nov 2026 or later first (geometer update --shops ${shop}), then restore. Nothing was touched.`);
   const stamp = stampOf(ctx.now());
   const work = join(serverPaths(ctx.dir).state, "work", `restore-${shop}-${stamp}`);
   const dataVolume = volume(server, names.dataVolume(shop));
@@ -184,7 +192,7 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
     // 2. with the runtime stopped, put it in place as the runtime's own user; the old file is kept, and restored.json tells the runtime it was restored
     await compose(ctx, ["stop", names.runtime(shop)]);
     const swap = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", "none", "-v", `${work}/files:/in:ro`, "-v", `${dataVolume}:/data/${shop}`, "busybox:1.37.0", "sh", "-c",
-      `cd /data/${shop}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/restored.json restored.json`]);
+      `cd /data/${shop}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/${RESTORE_NOTE} ${RESTORE_NOTE}`]);
     await compose(ctx, ["start", names.runtime(shop)]);
     if (swap.code !== 0) throw new Error(`The restored file could not be put in place: ${swap.stderr.trim().slice(0, 200)}`);
   } finally { rmSync(work, { recursive: true, force: true }); }

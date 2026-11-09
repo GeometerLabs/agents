@@ -20,7 +20,7 @@ import { folderStore } from "../backup/store.ts";
 import type { ObjectStore } from "../backup/store.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 import { deploy } from "../deploy.ts";
-import { loadState } from "../lib/state.ts";
+import { loadState, saveState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { readSecretFile, writeSecretFile, secretFile } from "../lib/secrets.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
@@ -319,6 +319,13 @@ test("`restore` fetches the snapshot while the shop runs, then stops only the ru
     assert.ok(seen.every((a) => !a.includes("stop")), "nothing was stopped");
     assert.match(seen[0].join(" "), /owner-key:\/run\/secrets\/identity:ro/);
     await assert.rejects(restoreShop(w.ctx, "glow-salon", { fromSnapshot: "x" }), /--from-snapshot is gone/);
+    // a shop pinned to a version from before the restored mode would ignore the note and reuse ids: refused before anything is fetched or stopped
+    const old = join(w.root, "templates", "commerce", "bookings@0.0.9"); mkdirSync(old, { recursive: true }); writeFileSync(join(old, "package.json"), JSON.stringify({ version: "0.0.9" }));
+    mkdirSync(join(w.root, "modules", "runtime"), { recursive: true });
+    const state = loadState(w.root); state.shops["glow-salon"].applied = { ...state.shops["glow-salon"].applied!, pathway: "bookings@0.0.9", pathwayDir: old }; saveState(w.root, state);
+    seen.length = 0;
+    await assert.rejects(restoreShop(w.ctx, "glow-salon", {}), /glow-salon runs bookings@0\.0\.9, whose runtime does not know a restore.*geometer update --shops glow-salon.*Nothing was touched/su);
+    assert.deepEqual(seen, [], "nothing was run");
   } finally { w.done(); }
 });
 
