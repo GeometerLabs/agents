@@ -23,6 +23,8 @@ export interface SnapshotCodec<S> {
   serialize(store: S): string;
   /** A fresh store from saved JSON. Never shares anything with the store it was saved from. */
   parse(json: string): S;
+  /** The saved JSON with every `count` field (the id counters: nextBooking, nextDue, ...) moved on by `gap`. Used once after a restore (restored.ts). */
+  skipCounters(json: string, gap: number): string;
 }
 
 /** `format` is the number written first; change it only with a migration, because a runtime refuses a snapshot it cannot read. */
@@ -58,6 +60,12 @@ export function snapshotCodec<S extends object>(format: number, fields: readonly
         } else if (value && typeof value === "object") out[f.name] = value as AiState;
       }
       return out as S;
+    },
+
+    skipCounters(json, gap) {
+      const raw = JSON.parse(json) as Record<string, unknown>;
+      for (const f of fields) if (f.kind === "count" && Number.isInteger(raw[f.name])) raw[f.name] = (raw[f.name] as number) + gap;
+      return JSON.stringify(raw);
     },
   };
 }

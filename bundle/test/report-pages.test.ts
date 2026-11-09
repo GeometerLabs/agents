@@ -11,7 +11,7 @@ import { serverConfig, tempServer } from "./helpers.ts";
 
 const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence" };
 const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/templates/commerce/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
-const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup: false, panel: { user: "501:20" } });
+const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { panel: { user: "501:20" } });
 const mounts = (c: ReturnType<typeof build>, svc: string): unknown[] => (c.services[svc].block.volumes as unknown[]) ?? [];
 const HEX = "3f9a1c7d2b8e4f60a1b2c3d4e5f60718";
 const OTHER = "00112233445566778899aabbccddeeff";
