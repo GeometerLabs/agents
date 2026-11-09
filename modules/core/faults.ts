@@ -21,9 +21,12 @@ export class ApiError extends Error {
 
 /** Nothing was sent: the connection was refused or the host is unknown. (A timeout or a cut connection is a TimeoutError: that call may have happened.) */
 export class NotSentError extends ApiError {
-  constructor(message: string) {
+  /** Node's network error code, when one caused this. `waitsForGuard` reads it to tell an unreachable Guard from an address that was wrong to begin with. */
+  code?: string;
+  constructor(message: string, code?: string) {
     super(503, message);
     this.name = "NotSentError";
+    if (code !== undefined) this.code = code;
   }
 }
 
@@ -214,3 +217,30 @@ export class GuardSuspendedError extends GuardError {
 
 /** True for an error that says the call may have gone through: no reply came back, or Guard said the outcome is unknown. */
 export const mayHaveHappened = (e: unknown): boolean => e instanceof TimeoutError || e instanceof GuardOutcomeUnknownError;
+
+/**
+ * Does this failure keep a saved task waiting for its Guard (modules/runtime/guard-wait.ts) instead of ending now? Only "the Guard could not be reached or is not ready, and
+ * nothing was sent" does. This is the one table of what each kind means for waiting; modules/runtime/test/guard-wait.test.ts has one row per kind.
+ *
+ *   NotSentError, a network code                 waits: the connection never opened, so the Guard is down and the provider saw nothing. Trying later cannot do the work twice.
+ *   NotSentError, ERR_INVALID_URL                ends now: the address is wrong, and waiting does not mend it.
+ *   GuardUnavailableError guard_unavailable      waits: kill switch, no policy, store down, failed self-check. Guard says `sent: no`, `retry: later`.
+ *   GuardUnavailableError busy                   waits: Guard is at capacity for a moment, and says `sent: no`.
+ *   GuardUnavailableError provider_unreachable   ends now: the Guard is up and it is the provider that is away, so it is not this rule's case. Today's handling stays.
+ *   TimeoutError                                 never waits: the call may have reached the provider, and waiting means running it again.
+ *   GuardOutcomeUnknownError                     never waits, never repeated: 504 `Guard-Outcome: unknown`, the provider may have acted.
+ *   GuardSuspendedError                          never waits: the shop's licence (402). It stays refused until a newer lease and keeps its once-only handling.
+ *   GuardHeldError                               never waits: a person decides it. The agent keeps the held call and sends it only after approval.
+ *   GuardRefusedError, GuardConflictError        never waits: a rule, a limit or a different action said no, and the same call gets the same answer.
+ *   GuardAlreadyDoneError                        never waits: a person settled it as done, so nothing is left to do.
+ *   GuardUnauthenticatedError                    never waits: a mistake in this deployment's credential, not an outage.
+ *   GuardError (any other)                       never waits: a decision this code does not know is not taken to mean "try later".
+ *   ApiError, ConflictError, WindowClosedError   never waits: the service itself answered.
+ *
+ * Anything else (a bug in the agent) is not a Guard's, so it does not wait either: the task runner's usual retries apply.
+ */
+export function waitsForGuard(e: unknown): boolean {
+  if (e instanceof NotSentError) return e.code !== "ERR_INVALID_URL";
+  if (e instanceof GuardUnavailableError) return e.guard.code !== "provider_unreachable";
+  return false;
+}
