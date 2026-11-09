@@ -24,7 +24,7 @@ import { composeCalls, read, secretsFor, world } from "./world.ts";
 
 const NOW = new Date("2026-11-05T09:00:00Z");
 const noFiles = (path: string): string => { throw new Error(`no file ${path}`); };
-const flags = (change: AgentFlags = {}): AgentFlags => ({ "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID, ...change });
+const flags = (change: AgentFlags = {}): AgentFlags => ({ upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID, ...change });
 const agentSecrets = (): Record<string, string> => { const s = secretsFor("x"); return { razorpay_key: s.razorpay_key, whatsapp_token: s.whatsapp_token, whatsapp_app_secret: s.whatsapp_app_secret, whatsapp_verify_token: s.whatsapp_verify_token, "google_service_account.json": s["google_service_account.json"] }; };
 const refusedWith = async (p: Promise<unknown>) => { try { await p; } catch (e) { if (e instanceof Refused) return e.problems; throw e; } assert.fail("it should have been refused"); };
 
@@ -36,7 +36,7 @@ test("agent add from flags makes the same settings a template uses, checked by t
   assert.deepEqual(made.agent.upstreams, ["razorpay", "whatsapp", "calendar"]);
   assert.equal(made.agent.whatsapp?.phoneNumberId, PHONE_NUMBER_ID);
   const throws = (change: AgentFlags, message: RegExp) => assert.throws(() => agentFromFlags("my-agent", flags(change), noFiles, NOW), message);
-  throws({ upstreams: "razorpay,calendar" }, /needs --upstreams to include whatsapp/);
+  throws({ upstreams: "razorpay,calendar" }, /--upstreams must include whatsapp/);
   throws({ upstreams: "razorpay,whatsapp,stripe" }, /don't know the service "stripe"/);
   throws({ deposit: undefined }, /Say the deposit and the refund limit/);
   throws({ "owner-whatsapp": undefined }, /Say the owner's WhatsApp number/);
@@ -51,6 +51,25 @@ test("agent add from flags makes the same settings a template uses, checked by t
   assert.equal(fromFile.settings.name, "Glow Salon");
   assert.equal(fromFile.agent.calendar, undefined, "no calendar was asked for, so none is pinned");
   assert.throws(() => agentFromFlags("my-agent", { upstreams: "razorpay,whatsapp", settings: "s.json", "whatsapp-number-id": PHONE_NUMBER_ID }, () => '{"name": ""}', NOW), /The settings file needs fixing/);
+});
+
+test("B71: an agent takes UPI by default, through the desk: no gateway Guard, the shop's own UPI ID asked for, and one payment module only", () => {
+  const upi = { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID } as AgentFlags;
+  assert.throws(() => agentFromFlags("my-agent", upi, noFiles, NOW), /Say where this shop's customers pay\. UPI needs no gateway account: --upi-id/u, "UPI is the default, and its ID is asked for");
+  const made = agentFromFlags("my-agent", { ...upi, "upi-id": "GlowSalon@OKICICI", payee: "Glow Salon" }, noFiles, NOW);
+  assert.deepEqual(made.agent.upstreams, ["upi", "whatsapp", "calendar"]);
+  assert.deepEqual(made.settings.payment, { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } });
+  assert.throws(() => agentFromFlags("my-agent", { ...upi, upstreams: "upi,razorpay,whatsapp" }, noFiles, NOW), /exactly one of upi, razorpay/u);
+  assert.throws(() => agentFromFlags("my-agent", { ...upi, upstreams: "upi,calendar", "upi-id": "glowsalon@okicici", payee: "Glow Salon" }, noFiles, NOW), /to mark each payment received/u);
+  assert.throws(() => agentFromFlags("my-agent", { ...upi, upstreams: "razorpay,whatsapp,calendar", "upi-id": "glowsalon@okicici", payee: "Glow Salon" }, noFiles, NOW), /leave out --upi-id and --payee/u);
+  const t = tempServer({});
+  try {
+    addAgent(t.root, "upi-agent", { ...upi, "upi-id": "glowsalon@okicici", payee: "Glow Salon" }, noFiles, NOW);
+    const plan = planAgent(serverConfig(), readAgent(t.root, "upi-agent"));
+    assert.deepEqual(plan.problems, []);
+    assert.deepEqual(plan.guards.map((g) => g.kind), ["whatsapp", "calendar"], "UPI has no API, so no Guard: the desk instead");
+    assert.deepEqual(plan.desk, { module: "upi" });
+  } finally { t.done(); }
 });
 
 test("the same settings give the same Guard specs, byte for byte, whether a template or an agent someone else wrote is behind them", () => {

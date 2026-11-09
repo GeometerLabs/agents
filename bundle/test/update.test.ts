@@ -293,7 +293,7 @@ test("a refused deploy puts that client's earlier pin back and stops the rollout
 test("an agent you wrote that Geometer has no command to start is skipped with a plain note, and the clients beside it are updated (the agents that can be crash-tested: update-agent.test.ts)", async () => {
   const w = await threeClients(); try {
     standIn(w, () => holdsAll());
-    addAgent(w.root, "my-agent", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => { throw new Error("no file"); }, new Date("2026-11-05T09:00:00Z"));
+    addAgent(w.root, "my-agent", { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => { throw new Error("no file"); }, new Date("2026-11-05T09:00:00Z"));
     const r = await update(w, "--to", "0.2.0");
     assert.equal(r.result, 0, r.out);
     assert.match(r.out, /- my-agent +skipped\. It has no command to start it with, so it cannot be crash-tested\. Give one: geometer agent set my-agent --run "<command>" --version <version>\. Until then you update it yourself\./);

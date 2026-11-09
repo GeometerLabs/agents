@@ -38,6 +38,11 @@ function send(res: ServerResponse, reply: StandinReply): void {
   res.end(text);
 }
 
+/** One handler for every request, answering a status and a JSON body: the owner-marked desk in a crash test. */
+export async function serveRaw(handle: (r: StandinRequest) => Promise<StandinReply>, listen: { port: number; host?: string } = { port: 0 }): Promise<ServedHandlers> {
+  return serveHandlers([handle], listen);
+}
+
 export interface ServedHandlers { server: Server; port: number; url: string; close(): Promise<void> }
 
 /**

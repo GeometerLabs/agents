@@ -19,7 +19,7 @@ import { readStatus, refusalMessage, updateStatus } from "../lib/status.ts";
 import type { GuardProof } from "../lib/status.ts";
 import { ensureDir, mintGuardToken, mintSecret, sha256Hex, shopNameProblem, stableJson, writeAtomic } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { agentFromFlags, agentGuardPart, readAgent } from "./folder.ts";
+import { agentFromFlags, agentGuardPart, paymentUpstreamOf, readAgent } from "./folder.ts";
 import type { AgentFlags, AgentFolder } from "./folder.ts";
 import { RECORD_READS, agentNames, planAgent } from "./plan.ts";
 import type { AgentPlan } from "./plan.ts";
@@ -37,12 +37,18 @@ export interface AgentConnection {
   credential: string | undefined;
   /** Where WhatsApp should send the shop's webhooks (the inbox checks them, keeps the owner's replies to approval requests and passes the rest on). */
   whatsappWebhook?: string;
+  /** B71: the agent takes money with a module the owner marks (UPI): there is no API to put a Guard in front of, and the desk that offers it is not served yet. */
+  desk?: { module: string; displayName: string };
 }
 
 export function connectionOf(dir: string, server: ServerConfig, folder: AgentFolder): AgentConnection {
   const agent = folder.agent!;
+  const paying = paymentUpstreamOf(agent.upstreams);
+  const ownerMarked = paying && !paying.gateway ? paying : undefined;
   return {
-    baseUrls: Object.fromEntries(agent.upstreams.map((u) => [u, agentBaseUrl(server, folder.name, u)])),
+    // an owner-marked module has no Guard, so no address is printed for it (one would lead nowhere): the desk is said separately
+    baseUrls: Object.fromEntries(agent.upstreams.filter((u) => u !== ownerMarked?.id).map((u) => [u, agentBaseUrl(server, folder.name, u)])),
+    ...(ownerMarked ? { desk: { module: ownerMarked.id, displayName: ownerMarked.displayName } } : {}),
     credential: readSecretFile(secretFile(dir, "agents", folder.name, "agent_token")),
     ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `${publicUrl(server)}/c/${folder.name}/webhooks/whatsapp` } : {}),
   };
@@ -245,5 +251,6 @@ export function connectionText(name: string, c: AgentConnection, withCredential:
       ? `The credential, for all of them (send it as "Authorization: Bearer <credential>" in place of the service's own key; the real keys stay in the Guards and are never given to the agent):\n  ${c.credential ?? "(not made yet)"}`
       : `The credential is in secrets/agents/${name}/agent_token on this server; \`geometer agent show ${name} --credential\` prints it.`,
     ...(c.whatsappWebhook ? [`In WhatsApp's settings, send this shop's webhooks to:\n  ${c.whatsappWebhook}`] : []),
+    ...(c.desk ? [`${c.desk.displayName}: customers pay the shop's own ${c.desk.displayName} ID and the owner marks each payment received. Your agent asks Geometer's desk for each request and reads it back (\`geometer agent crash-test ${name}\` runs it against the desk, GEOMETER_UPI_URL). The desk is not served on this server yet: until it is, take ${c.desk.displayName} payments with the crash test only.`] : []),
   ].join("\n");
 }

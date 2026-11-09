@@ -14,7 +14,7 @@
 //     finds the right booking.
 
 /** An agent for one shop. `fetchFn` is for a test; everything else is where the three services' addresses are now. */
-export function createAgent({ razorpay, calendar, whatsapp, credential, calendarId, phoneNumberId, fetchFn = fetch }) {
+export function createAgent({ razorpay, upi, calendar, whatsapp, credential, calendarId, phoneNumberId, fetchFn = fetch }) {
   const call = async (method, url, body, extraHeaders = {}) => {
     const response = await fetchFn(url, { method, headers: { authorization: `Bearer ${credential}`, "content-type": "application/json", ...extraHeaders }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
     const text = await response.text();
@@ -39,6 +39,15 @@ export function createAgent({ razorpay, calendar, whatsapp, credential, calendar
     getEvent: (id) => call("GET", `${events}/${encodeURIComponent(id)}`),
     /** What Razorpay holds as refunds against a payment: how to know a refund whose answer was lost was made. */
     listRefunds: (paymentId) => call("GET", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refunds`),
+    // UPI (B71): no gateway. Geometer's desk keeps the request, the owner's marks and the refunds owed; "paid" is true only after the owner marks the money received.
+    /** A UPI request for the deposit: the shop's own upi:// link and who is paid. Asked again for the same reference and amount, the same request. */
+    upiRequest: ({ reference, amountInr, customer }) => call("POST", `${upi}/requests`, { reference, amount_paise: amountInr * 100, customer }),
+    /** The desk's own record of one request: `paid` is the owner's word, never the customer's. */
+    upiRead: (id) => call("GET", `${upi}/requests/${encodeURIComponent(id)}`),
+    /** The customer says they paid: the owner is asked to look. It marks nothing paid. */
+    upiClaim: (id, via) => call("POST", `${upi}/requests/${encodeURIComponent(id)}/claim`, { via }),
+    /** A refund the owner owes and sends from their own UPI app: never sent by the agent, never more than was marked. */
+    upiOwe: ({ paymentId, amountPaise, why }) => call("POST", `${upi}/refunds`, { payment_id: paymentId, amount_paise: amountPaise, why }),
     /** Keep sending the identical refund until it is no longer held, or `timeoutMs` is up. Nothing else is done to hurry it: only the owner can approve. */
     async refundUntilDone(refund, { everyMs = 5_000, timeoutMs = 24 * 3_600_000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now } = {}) {
       const stop = now() + timeoutMs;
