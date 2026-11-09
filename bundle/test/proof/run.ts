@@ -44,7 +44,11 @@ const KEEP = args.includes("--keep");
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
 const runs = (phase: string) => !ONLY || ONLY.has(phase);
 const LOAD_SECONDS = args.includes("--load-seconds") ? Number(args[args.indexOf("--load-seconds") + 1]) : 120;
+/** `--heartbeat 10`: the heartbeat every 10 s. Left out, the real default: the disk-write and CPU figures are then what a real shop would see. */
+const HEARTBEAT = args.includes("--heartbeat") ? Number(args[args.indexOf("--heartbeat") + 1]) : undefined;
 const SERVER = join(SCRATCH, "server");
+/** What the stand-in WhatsApp answers for any phone number id (modules/standins/whatsapp.ts). */
+const STANDIN_BUSINESS_NUMBER = "+15550000000";
 const PROJECT = "geometer-proof";
 const results: Record<string, unknown> = { startedAt: new Date().toISOString(), guardImage: GUARD_IMAGE, checks: [] as unknown[] };
 const text = join(SCRATCH, "results.txt");
@@ -147,6 +151,30 @@ function readCap(): CapReading | undefined {
   const io = /^io (\d+) (\d+)/mu.exec(r.out);
   return { atMs: Date.now(), cpuUsec: v("usage_usec"), memoryBytes: v("mem"), peakBytes: v("peak"), readBytes: Number(io?.[1] ?? NaN), writeBytes: Number(io?.[2] ?? NaN), oomKills: v("oom"), throttledUsec: v("throttled_usec") };
 }
+/**
+ * What each bundle container has written so far (`io.stat`, its own cgroup), so the writes can be told apart: the runtime's SQLite, a Guard's evidence, ops. A container's cgroup
+ * directory carries its id, which `docker ps` gives.
+ */
+function writesByContainer(): Map<string, number> {
+  const out = new Map<string, number>();
+  if (!capDir) return out;
+  const names = dk(["ps", "--format", "{{.ID}} {{.Names}}", "--filter", `name=${PROJECT}-`]).out.trim().split("\n").map((l) => l.split(" "));
+  const r = inVm(`cd ${capDir} && for d in */; do n=\${d%/}; w=$(awk '{for(i=2;i<=NF;i++){split($i,a,"=");if(a[1]=="wbytes")w+=a[2]}}END{print w+0}' "$d/io.stat" 2>/dev/null); echo "$n $w"; done`);
+  for (const line of r.out.trim().split("\n")) {
+    const [dir, w] = line.split(" ");
+    const found = names.find(([id]) => dir?.includes(id));
+    if (found) out.set(found[1].replace(`${PROJECT}-`, "").replace(/-1$/u, ""), Number(w));
+  }
+  return out;
+}
+
+/** MiB per hour per shop written in this window, by kind of container. */
+function writesPerGroup(a: Map<string, number>, b: Map<string, number>, hours: number, shops: number): Record<string, number> {
+  const by: Record<string, number> = {};
+  for (const [name, after] of b) { const g = group(name); by[g] = (by[g] ?? 0) + (after - (a.get(name) ?? after)); }
+  return Object.fromEntries(Object.entries(by).map(([g, bytes]) => [g, +((bytes / MiB) / shops / hours).toFixed(1)]));
+}
+
 const removeCap = () => inVm(`for d in $(find /sys/fs/cgroup -maxdepth 4 -type d -name ${CAP_CGROUP}); do rmdir $d; done; echo done`);
 
 const GiB = 1024;
@@ -237,7 +265,8 @@ async function main_(): Promise<void> {
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
   conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
   // the load must not meet the shops' own hourly caps (the proof measures the server, not the caps): every count is raised, and the report says so
-  conf.heartbeatSeconds = 10; conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
+  if (HEARTBEAT !== undefined) conf.heartbeatSeconds = HEARTBEAT;
+  conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
   conf.licence = { keys: [TEST_PUBLIC_HEX] }; // RFC 8032's published test key, the one built into the proof's Guard image: anyone can sign with it, never a production key
   writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
   mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
@@ -293,6 +322,7 @@ async function main_(): Promise<void> {
     await phase("isolation", () => isolation(1), hostileRuntime);
     await phase("panelAccess", () => panelAccess(1));
     await phase("kill", killUnderLoad, killEachGuardUnderLoad);
+    await phase("outage", guardOutage);
     await phase("held", heldRefundSurvives, heldRefundThroughRuntime);
     await phase("licence", licenceWindDown);
     await phase("tripwire", () => tripwireForced(fleetAdmin, fleetLog));
@@ -806,10 +836,17 @@ async function panelContainer() {
   check("Caddy reaches it: https://localhost:18443/healthz answers 200", viaCaddy === "200", viaCaddy);
   const invite = exec("panel", ["node", "/app/bundle/panel/main.ts", "invite", "--role", "builder"]);
   check("`invite --role builder` inside the container prints a sign-in link", /https:\/\/localhost:18443\/\S+/u.test(invite.out), (invite.out || invite.err).trim().slice(0, 160).replace(/\/join\/\S+/u, "/join/..."));
+  // The shop was added from the command line, so the panel's store has no WhatsApp business number and the check would say not_configured without asking the Guard. The number
+  // goes where the panel's own setup keeps it, in the real container, with the panel's own code: making the whole shop through the panel's forms would need an account, a
+  // sign-in and the vault, which is another proof.
+  const number = exec("panel", ["node", "--input-type=module", "-e", `import { configFromEnv } from '/app/bundle/panel/config.ts'; import { createShops } from '/app/bundle/panel/shops.ts'; import { openStores } from '/app/bundle/panel/server.ts'; const c = configFromEnv(process.env); const { store } = openStores(c); const shops = createShops(c, store); const m = shops.meta('glow-salon'); shops.saveMeta('glow-salon', { ...m, whatsapp: { ...m.whatsapp, businessNumber: '${STANDIN_BUSINESS_NUMBER}' } }); console.log('saved');`]);
+  check("the shop's WhatsApp number is in the panel's store, where its setup keeps it", number.out.trim().endsWith("saved"), number.out.trim().slice(-80) || number.err.slice(0, 200));
   const connection = exec("panel", ["node", "/app/bundle/services/connection-check.ts", "glow-salon"], { timeout: 120_000 });
   const parsed = (() => { try { return JSON.parse(connection.out.trim().split("\n").at(-1) ?? "{}"); } catch { return { raw: (connection.out || connection.err).slice(0, 300) }; } })();
   results.panelConnectionCheck = parsed;
   check("the connection check runs inside the real panel container, through the shop's Guards with the panel's own agent", connection.code === 0 && !parsed.raw, parsed);
+  const seen = (parsed as { connections?: { service: string; code: string }[] }).connections ?? [];
+  check("WhatsApp, Razorpay and the calendar are each confirmed through the shop's Guards (WhatsApp no longer not_configured)", ["whatsapp", "razorpay", "calendar"].every((k) => seen.find((c) => c.service === k)?.code === "confirmed"), seen.map((c) => `${c.service}: ${c.code}`));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- item 2: a hostile runtime
@@ -888,11 +925,7 @@ async function killEachGuardUnderLoad() {
     const record = recordOf(shop);
     const window = record.filter((e) => { const t = Date.parse(e.time); return t >= downFrom + 1500 && t <= downTo - 500 && KIND_ACTIONS[kind].includes(e.action); });
     const outcomes = window.reduce<Record<string, number>>((m, e) => { m[e.outcome] = (m[e.outcome] ?? 0) + 1; return m; }, {});
-    const links = ((st.links ?? []) as { reference_id: string }[]).reduce<Record<string, number>>((m, l) => { m[l.reference_id] = (m[l.reference_id] ?? 0) + 1; return m; }, {});
-    const events = ((st.calendar ?? []) as { bookingRef?: string; status?: string }[]).filter((e) => e.status !== "cancelled").reduce<Record<string, number>>((m, e) => { const k = e.bookingRef ?? "?"; m[k] = (m[k] ?? 0) + 1; return m; }, {});
-    // a customer's messages (the owner's notices name each booking, but a template could repeat itself word for word for two bookings, so they are left out)
-    const texts = ((st.outbox ?? []) as { to: string; text: string }[]).filter((x) => digits(x.to) !== digits(OWNER)).reduce<Record<string, number>>((m, x) => { const k = `${digits(x.to)}|${x.text}`; m[k] = (m[k] ?? 0) + 1; return m; }, {});
-    const twice = { links: Object.entries(links).filter(([, n]) => n > 1).map(([k]) => k), events: Object.entries(events).filter(([, n]) => n > 1).map(([k]) => k), messages: Object.entries(texts).filter(([, n]) => n > 1).map(([k]) => k.slice(0, 80)) };
+    const twice = repeated(st);
     out[kind] = { sent: load.sent.length, delivered: load.sent.filter((s) => s.ok).length, answered: answers.answered, downSeconds: Math.round((downTo - downFrom) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, entriesWhileDown: window.length, outcomesWhileDown: outcomes, twice };
     say(`   ${kind}: ${JSON.stringify(out[kind])}`);
     check(`${kind} Guard killed under load: nothing reached the ${kind} stand-in while it was down (${atKill} -> ${beforeRestart} over ${Math.round((downTo - downFrom) / 1000)} s)`, atKill >= 0 && atKill === beforeRestart, { atKill, beforeRestart });
@@ -905,6 +938,61 @@ async function killEachGuardUnderLoad() {
     check(`${kind} Guard restarted: it is ready again, and nothing was sent twice (no second link or event for a booking, no message twice)`, back && twice.links.length === 0 && twice.events.length === 0 && twice.messages.length === 0, twice);
   }
   results.killEachGuard = out; save();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- a Guard down for minutes
+//
+// The kill phase's Guards are back within 17 s, inside what the runner used to retry. This one is longer than any retry budget: the Guard stays down for several minutes while
+// customers keep writing and links keep being paid, and the runtime is restarted once while it is down. What decides it is the provider's own side, read back from the stand-ins.
+
+/** What went to the provider twice: a booking's second link or event, or the same words to the same customer twice (the owner's notices can repeat for two bookings, so they are left out). */
+function repeated(st: any): { links: string[]; events: string[]; messages: string[] } {
+  const links = ((st.links ?? []) as { reference_id: string }[]).reduce<Record<string, number>>((m, l) => { m[l.reference_id] = (m[l.reference_id] ?? 0) + 1; return m; }, {});
+  const events = ((st.calendar ?? []) as { bookingRef?: string; status?: string }[]).filter((e) => e.status !== "cancelled").reduce<Record<string, number>>((m, e) => { const k = e.bookingRef ?? "?"; m[k] = (m[k] ?? 0) + 1; return m; }, {});
+  const texts = ((st.outbox ?? []) as { to: string; text: string }[]).filter((x) => digits(x.to) !== digits(OWNER)).reduce<Record<string, number>>((m, x) => { const k = `${digits(x.to)}|${x.text}`; m[k] = (m[k] ?? 0) + 1; return m; }, {});
+  return { links: Object.entries(links).filter(([, n]) => n > 1).map(([k]) => k), events: Object.entries(events).filter(([, n]) => n > 1).map(([k]) => k), messages: Object.entries(texts).filter(([, n]) => n > 1).map(([k]) => k.slice(0, 80)) };
+}
+
+const tasksOf = (shop: string): { pending?: number; done?: number; failed?: number } | undefined => {
+  try { return (JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "observe"]).out.trim().split("\n").at(-1) ?? "{}") as { shops: { id: string; status?: { tasks?: { pending?: number; done?: number; failed?: number } } }[] }).shops.find((x) => x.id === shop)?.status?.tasks; } catch { return undefined; }
+};
+
+async function guardOutage() {
+  say("\n== a Guard down for several minutes under traffic, the runtime restarted while it is down ==");
+  const shop = "glow-salon";
+  const out: Record<string, unknown> = {};
+  for (const kind of ["razorpay", "whatsapp"]) {
+    const svc = `g-${shop}-${kind}`;
+    const failedBefore = tasksOf(shop)?.failed ?? 0;
+    const driving = drive(1, 240, 6, `outage ${kind}`);
+    await sleep(20_000);
+    dk(["kill", containerOf(svc)]); // by hand: Docker does not restart it, so it stays down until it is started again
+    const downFrom = Date.now();
+    await sleep(1500);
+    const atKill = await providerCount(shop, kind);
+    await sleep(90_000);
+    dc(["restart", `rt-${shop}`], { timeout: 120_000 }); // the wait is on disk: the restart must not lose it
+    const backUp = await waitFor(`rt-${shop} to be ready again`, () => healthy(`rt-${shop}`), 90);
+    const pendingWhileDown = tasksOf(shop)?.pending ?? -1;
+    await sleep(90_000);
+    const beforeRestart = await providerCount(shop, kind);
+    const downTo = Date.now();
+    dc(["up", "-d", "--no-deps", svc]);
+    const guardBack = await waitFor(`${svc} to be ready again`, () => healthy(svc), 90);
+    const load = await driving;
+    const drained = await waitFor("every waiting task to finish", () => tasksOf(shop)?.pending === 0, 300);
+    const answers = await latencies(load.sent, 60);
+    const delivered = load.sent.filter((s) => s.ok).length;
+    const twice = repeated(await control(shop, "/_standin/state"));
+    const failedAfter = tasksOf(shop)?.failed ?? -1;
+    out[kind] = { downSeconds: Math.round((downTo - downFrom) / 1000), sent: load.sent.length, delivered, answered: answers.answered, longestWaitSeconds: Math.round((answers.waits.at(-1) ?? 0) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, pendingWhileDown, failedTasksDuring: failedAfter - failedBefore, runtimeRestartedWhileDown: backUp, twice };
+    say(`   ${kind}: ${JSON.stringify(out[kind])}`);
+    check(`${kind} Guard down ${Math.round((downTo - downFrom) / 1000)} s: nothing reached the ${kind} provider while it was down (${atKill} -> ${beforeRestart})`, atKill >= 0 && atKill === beforeRestart, { atKill, beforeRestart });
+    check(`${kind} Guard down: the messages waited on disk, through a restart of the runtime (${pendingWhileDown} pending just after the restart)`, backUp && pendingWhileDown >= 1, { pendingWhileDown, backUp });
+    check(`${kind} Guard back: the waiting work finished, every message was answered (${answers.answered} of ${delivered}) and no task failed`, guardBack && drained && answers.answered === delivered && failedAfter - failedBefore === 0, { answered: answers.answered, delivered, drained, failed: failedAfter - failedBefore });
+    check(`${kind} Guard back: nothing was sent to a provider twice (no second link or event for a booking, no message twice)`, twice.links.length === 0 && twice.events.length === 0 && twice.messages.length === 0, twice);
+  }
+  results.guardOutage = out; save();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- item 3: a held refund, through the runtime
@@ -1072,16 +1160,22 @@ async function minioOps(): Promise<Record<string, number>> {
 const opsDelta = (a: Record<string, number>, b: Record<string, number>) => Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((k) => [k, (b[k] ?? 0) - (a[k] ?? 0)]).filter(([, v]) => (v as number) > 0));
 const cores = (a?: CapReading, b?: CapReading) => (a && b ? +((b.cpuUsec - a.cpuUsec) / ((b.atMs - a.atMs) * 1000)).toFixed(3) : NaN);
 
+/** The size of the agent's saved state: every step writes all of it, so this is what a shop's disk writes grow with. */
+function snapshotBytes(shop: string): number {
+  const r = dk(["run", "--rm", "--network", "none", "--user", "1000:1000", "-v", `${PROJECT}_rt-data-${shop}:/d`, "node:26-alpine", "node", "-e", "const {DatabaseSync}=require('node:sqlite');const db=new DatabaseSync('/d/data/agent.db',{readOnly:true});console.log(db.prepare('SELECT length(snapshot) AS n FROM state').get()?.n ?? 0)"], { timeout: 60_000 });
+  return Number(r.out.trim().split("\n").at(-1) ?? NaN);
+}
+
 const loads: Record<number, any> = {};
 async function loadStep(size: number) {
   say(`\n== load at ${size} shop(s), every bundle container inside 2 CPUs and 4 GiB (B14 item 4) ==`);
   // a quiet minute first: the CPU, and the bucket's operations (none expected between nightly snapshots), with nothing asked of the shops
-  const opsIdleA = await minioOps(); const idleA = readCap(); await sleep(60_000); const idleB = readCap(); const opsIdleB = await minioOps();
+  const opsIdleA = await minioOps(); const idleA = readCap(); const writesIdleA = writesByContainer(); await sleep(60_000); const idleB = readCap(); const writesIdleB = writesByContainer(); const opsIdleB = await minioOps();
   const idleHours = idleA && idleB ? (idleB.atMs - idleA.atMs) / 3_600_000 : 1 / 60;
   const diskBefore = volumeSizes();
-  const opsA = await minioOps(); const capA = readCap();
+  const opsA = await minioOps(); const capA = readCap(); const writesA = writesByContainer();
   const load = await drive(size, LOAD_SECONDS, LOAD_PER_MINUTE, `load ${size}`);
-  const capB = readCap(); const opsB = await minioOps();
+  const capB = readCap(); const writesB = writesByContainer(); const opsB = await minioOps();
   const answers = await latencies(load.sent);
   const diskAfter = volumeSizes();
   const hours = (capB && capA ? capB.atMs - capA.atMs : LOAD_SECONDS * 1000) / 3_600_000;
@@ -1093,6 +1187,12 @@ async function loadStep(size: number) {
     memoryMiB: { atEnd: capB ? +(capB.memoryBytes / MiB).toFixed(0) : NaN, peakSinceStart: capB ? +(capB.peakBytes / MiB).toFixed(0) : NaN, oomKills: capB?.oomKills },
     diskMiB: { runtimesNow: +(diskAfter.runtimes / MiB).toFixed(2), guardsNow: +(diskAfter.guards / MiB).toFixed(2), growthDuringLoad: +(((diskAfter.runtimes + diskAfter.guards) - (diskBefore.runtimes + diskBefore.guards)) / MiB).toFixed(2) },
     diskWritesMiBPerShopPerHour: capA && capB ? +(((capB.writeBytes - capA.writeBytes) / MiB) / size / hours).toFixed(1) : NaN,
+    diskWritesIdleMiBPerShopPerHour: idleA && idleB ? +(((idleB.writeBytes - idleA.writeBytes) / MiB) / size / idleHours).toFixed(1) : NaN,
+    // each message's share: the load's writes above the quiet rate, spread over the messages. Fixed amount per hour + this per message is a real shop's figure.
+    diskWritesPerMessageMiB: capA && capB && idleA && idleB && load.sent.length > 0 ? +((((capB.writeBytes - capA.writeBytes) - (idleB.writeBytes - idleA.writeBytes) * (hours / idleHours)) / MiB) / load.sent.length).toFixed(3) : NaN,
+    writesIdleByGroup: writesPerGroup(writesIdleA, writesIdleB, idleHours, size),
+    writesLoadByGroup: writesPerGroup(writesA, writesB, hours, size),
+    snapshotBytes: snapshotBytes(shopName(1)),
     bucketOpsPerShopPerHour: Object.fromEntries(Object.entries(opsDelta(opsA, opsB)).map(([k, v]) => [k, Math.round((v as number) / size / hours)])),
     bucketOpsIdlePerShopPerHour: Object.fromEntries(Object.entries(opsDelta(opsIdleA, opsIdleB)).map(([k, v]) => [k, Math.round((v as number) / size / idleHours)])),
     topContainersCpu: load.stats.filter((c) => !TEST_SERVICES.has(c.name)).sort((a, b) => b.cpu - a.cpu).slice(0, 6),
