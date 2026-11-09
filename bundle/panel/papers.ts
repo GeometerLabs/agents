@@ -6,7 +6,7 @@
 // The agent's stable id lives in shops/<shop>/identity.json, written once (never overwritten) the first time it is asked for; the operator's choice of public fields
 // is the `public` list in the same file (left out: the facts about the agent, not about the business), chosen on the papers page by whoever serves the shop.
 import { randomBytes } from "node:crypto";
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Language } from "../../modules/language/languages.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
@@ -105,7 +105,11 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
       if (!/^\+?[0-9 ]{8,16}$/u.test(number.trim())) throw new PaperError("Type the person's WhatsApp number, with the country code (like +91 98...).");
       const b = base(id);
       const digits = `+${number.replace(/\D/gu, "")}`;
-      const env = sealStatement({ template: b.kind.papers, shop: b.shop, number: digits, entries: b.data.entries, cases: b.kind.cases(b.data, b.settings), ...(language ? { language: lang(language, "en") } : {}), now: now(), tenant: id }, key);
+      // B69: a person is found by the shop's key; an export from before B69 used another form, so it cannot be searched at all
+      const personKey = shops.personKey(id);
+      if (!personKey) throw new PaperError("This shop's fingerprint key has not reached the panel yet. It arrives with the shop's next export (within a quarter of an hour) or deploy; try again after that.");
+      if (!existsSync(join(shops.paths.exports(id), "person-form.json"))) throw new PaperError("This shop's record was last exported in the older form, which cannot be matched to a number. The next export (within a quarter of an hour) uses the keyed form; try again after that.");
+      const env = sealStatement({ template: b.kind.papers, shop: b.shop, number: digits, personKey, entries: b.data.entries, cases: b.kind.cases(b.data, b.settings), ...(language ? { language: lang(language, "en") } : {}), now: now(), tenant: id }, key);
       return [{ file: "statement.json", type: "application/json; charset=utf-8", text: envelopeFile(env) }, { file: `statement-${env.document.language}.html`, type: "text/html; charset=utf-8", text: statementPage(env) }];
     },
     /** The identity paper, full and public. */

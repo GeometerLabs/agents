@@ -15,6 +15,8 @@ export interface PanelConfig {
   trustProxy: boolean;
   dataKeyFile?: string;
   signingKeyFile?: string;
+  /** Where each shop's fingerprint key (B69) is, as secrets/panel/person-keys/<shop>: what matches a typed number to the record's fingerprints. Left out: a person's statement is refused, and the panel says why. */
+  personKeysDir?: string;
   /** The Google address a calendar is shared with (a service account's), when the server has one for every shop. */
   calendarShareAddress?: string;
   templatesDir: string;
@@ -79,6 +81,7 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
     trustProxy: env.PANEL_TRUST_PROXY === "1",
     ...(env.PANEL_DATA_KEY_FILE ? { dataKeyFile: env.PANEL_DATA_KEY_FILE } : {}),
     ...(env.PANEL_SIGNING_KEY_FILE ? { signingKeyFile: env.PANEL_SIGNING_KEY_FILE } : {}),
+    ...(env.PANEL_PERSON_KEYS_DIR ? { personKeysDir: env.PANEL_PERSON_KEYS_DIR } : {}),
     ...(env.PANEL_CALENDAR_SHARE_ADDRESS ? { calendarShareAddress: env.PANEL_CALENDAR_SHARE_ADDRESS } : {}),
     templatesDir: env.PANEL_TEMPLATES_DIR ? resolve(env.PANEL_TEMPLATES_DIR) : new URL("../../templates/", import.meta.url).pathname,
     ...(env.PANEL_RUNTIME_URL ? { runtimeUrl: env.PANEL_RUNTIME_URL } : {}), ...(env.PANEL_RUNTIME_TOKEN_FILE ? { runtimeTokenFile: env.PANEL_RUNTIME_TOKEN_FILE } : {}),
