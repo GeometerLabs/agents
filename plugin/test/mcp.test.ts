@@ -111,13 +111,18 @@ test("list_modules names the templates and the shared modules", async () => {
 test("create_pathway makes a shop from a template, keeps limits at the template's, and refuses limits in the details", async () => {
   const w = world();
   try {
-    const made = await w.call("create_pathway", { name: "bright", template: "fees", prepared_by: "Divya, local partner", settings: { name: "Bright Tuition", address: "1 Temple Road" } });
+    // B71: the shop's own UPI ID is asked for; the example's made-up one is never used, and a gateway is a person's choice in the panel
+    const noUpi = await w.call("create_pathway", { name: "bright", template: "fees", settings: { name: "Bright Tuition" } });
+    assert.equal(noUpi.isError, true);
+    assert.match(noUpi.text, /shop's own UPI ID/u);
+    const made = await w.call("create_pathway", { name: "bright", template: "fees", prepared_by: "Divya, local partner", upi_id: "brighttuition@okhdfcbank", payee: "Bright Tuition", settings: { name: "Bright Tuition", address: "1 Temple Road" } });
     assert.equal(made.isError, false, made.text);
     const settings = JSON.parse(readFileSync(join(w.server.paths.shop("bright"), "settings.json"), "utf8"));
     assert.equal(settings.name, "Bright Tuition");
+    assert.deepEqual(settings.payment, { module: "upi", upi: { id: "brighttuition@okhdfcbank", payee: "Bright Tuition" } });
     assert.equal(settings.refund.limitInr, 500, "the limit is the template's");
     assert.equal(readFileSync(join(w.server.paths.shop("bright"), "pathway.lock"), "utf8").split("@")[0], "fees");
-    const refused = await w.call("create_pathway", { name: "other", template: "fees", settings: { refund: { limitInr: 5000 } } });
+    const refused = await w.call("create_pathway", { name: "other", template: "fees", upi_id: "other@okicici", payee: "Other", settings: { refund: { limitInr: 5000 } } });
     assert.equal(refused.isError, true);
     assert.match(refused.text, /limits or money rules/u);
     assert.equal(existsSync(w.server.paths.shop("other")), false);
