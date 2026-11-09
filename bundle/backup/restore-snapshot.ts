@@ -17,6 +17,7 @@ import { fromTarGz } from "../export/tar.ts";
 import { mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
 import type { RecordFacts, SnapshotJob } from "./snapshot.ts";
 import type { ObjectStore } from "./store.ts";
+import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
 
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
 const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? walk(join(dir, n)) : [join(dir, n)]));
@@ -118,7 +119,7 @@ export async function runRestoreJob(job: RestoreJob, store: ObjectStore): Promis
     if (integrity !== "ok") throw new Error(`the database in the snapshot of ${got.stamp} failed its integrity check (${integrity})`);
     record = recordFacts(db);
   } finally { db.close(); }
-  writeFileSync(join(job.out, "restored.json"), `${JSON.stringify({ snapshot: got.stamp, restoredAt: job.nowIso, lastSeq: record.lastSeq })}\n`, { mode: 0o644 });
+  writeFileSync(join(job.out, RESTORE_NOTE), `${JSON.stringify({ snapshot: got.stamp, restoredAt: job.nowIso, lastSeq: record.lastSeq })}\n`, { mode: 0o644 });
   return { ok: true, stamp: got.stamp, record };
 }
 
