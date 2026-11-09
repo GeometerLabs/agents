@@ -107,6 +107,7 @@ export function createRecord(clock: Clock, saved: readonly RecordEntry[] = [], o
         decisions: Object.freeze((entry.decisions ?? []).map((d) => Object.freeze({ ...d }))),
         language: entry.language,
         notes: entry.notes ?? "",
+        // here, not at export: refs and the digest are in the hash chain (ledger.ts), so an export could not rewrite them without changing every hash after them
         refs: Object.freeze(key && entry.refs?.messageId !== undefined ? { ...entry.refs, messageId: messageFingerprint(key, entry.refs.messageId) } : { ...(entry.refs ?? {}) }),
       });
       list.push(stored);

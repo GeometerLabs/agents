@@ -185,6 +185,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   const recordAsOf = src.exportedAt() ?? null;
   if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
   else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are fingerprints in it, as in the monthly reports: see PEOPLE IN THE RECORD in README.txt for what that covers.`);
+  // B69: the form is what the export job says it wrote, never guessed from the fingerprints' shape: the old and the new look the same. No marker means an export from before the keyed form.
   const formText = src.exportFile("person-form.json");
   let form: PersonForm | undefined;
   try { form = formText === undefined ? undefined : JSON.parse(formText) as PersonForm; } catch { form = undefined; }
@@ -261,6 +262,7 @@ export function packageTarGz(built: BuiltExport, nowMs: number): Buffer {
 
 export { canonicalJson };
 
+/** What the README says about the people in the record. It is built from the manifest's form, so a package never claims more than its own record holds. */
 function peopleWords(m: Manifest): string {
   const f = m.personFingerprints;
   if (!f.keyed) return f.form === OLD_PERSON_FORM

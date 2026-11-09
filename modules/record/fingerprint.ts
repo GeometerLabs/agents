@@ -14,6 +14,7 @@ import { createHmac } from "node:crypto";
 export const PERSON_FORM = "hmac-sha256/shop-key/12-hex";
 export const OLD_PERSON_FORM = "sha256/unkeyed/12-hex";
 
+// The domain string keeps the uses apart: the same text fingerprinted as a person and digested as inputs gives two unrelated values. These strings are part of every fingerprint already written: changing one makes the shop's tools stop matching its own people.
 const hmac = (key: Buffer, domain: string, text: string): string => createHmac("sha256", key).update(`${domain}\n${text}`).digest("hex");
 
 /** A person's value as 12 hex digits. The same value always gives the same digits under the same key, so the shop's tools can match it; a different key gives different digits. */
