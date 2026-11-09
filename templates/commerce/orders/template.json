@@ -3,6 +3,6 @@
   "id": "orders",
   "setup": "orders",
   "steps": ["business", "deposit", "languages", "accounts", "checks"],
-  "accounts": ["whatsapp", "razorpay"],
+  "accounts": ["whatsapp", "payment"],
   "settingsExample": "settings/annapurna-tiffins.example.json"
 }

@@ -22,7 +22,8 @@ export interface ShopMeta {
   schema: 1;
   expectedBookings?: number;
   whatsapp?: { businessNumber: string };
-  razorpay?: { mode: "live" | "test"; keyId: string };
+  /** B71: the gateway the shop chose (its provider id), the key's mode and its id (public, not the secret). Left out for a shop with none. */
+  gateway?: { provider: string; mode: "live" | "test"; keyId: string };
   calendar?: { shareAddress?: string };
   receipts: Partial<Record<SecretName, string>>;
   readyAt?: string;

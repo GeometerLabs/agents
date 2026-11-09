@@ -293,7 +293,8 @@ const report: Tool = {
       if (!existsSync(join(ex, "record.json"))) throw new ToolError(`There is no saved record for ${name} yet (exports/${name}/record.json). The deployer writes it once the shop is running.`);
       // what the numbers were counted from, as the panel works it out: a live gateway key, or a shop with no gateway (UPI, the owner's real marks), is "live"; otherwise test mode.
       const pins = readJson(join(p.shop(name), "pins.json"));
-      const source = settings?.payment?.module !== "razorpay" || pins?.razorpay?.mode === "live" ? "live" : "test-mode";
+      const gatewayIds: string[] = (await load(e, "modules/payments/providers/index.ts")).GATEWAY_KINDS;
+      const source = !gatewayIds.includes(settings?.payment?.module) || pins?.gateway?.mode === "live" ? "live" : "test-mode";
       const dataFlag = existsSync(join(ex, "dues.json")) && !existsSync(join(ex, "bookings.json")) ? ["--dues", join(ex, "dues.json")] : ["--bookings", join(ex, "bookings.json")];
       r = await run(process.execPath, [join(kind.folder, "scripts", "client-report.ts"), "--settings", settingsFile, "--record", join(ex, "record.json"), ...dataFlag, "--month", month, "--lang", language ?? settings?.owner?.language ?? "en", "--out", out, "--source", source, "--tenant", name], { timeoutMs: 120_000 });
     }

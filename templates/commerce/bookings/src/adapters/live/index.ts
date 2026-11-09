@@ -1,5 +1,5 @@
-// The live services: the same Payments, Calendar and Messaging the agent already uses, over the real wire formats of Razorpay,
-// Google Calendar and WhatsApp. They hold NO keys and send NO Authorization header. Each points at a base URL, which in production
+// The live services: the same Payments, Calendar and Messaging the agent already uses, over the real wire formats of the shop's gateway (its folder's
+// runtime.ts), Google Calendar and WhatsApp. They hold NO keys and send NO Authorization header. Each points at a base URL, which in production
 // is a Guard instance in front of that one service (Guard adds the credential), and in a test or a demo is a stand-in
 // (templates/commerce/bookings/standins). Same code for all three; only the base URL changes.
 import type { Clock } from "../../../../../../modules/core/clock.ts";

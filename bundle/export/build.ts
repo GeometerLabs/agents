@@ -26,7 +26,8 @@
 //   record/ledger/fingerprints.jsonl the shop's daily fingerprints as the server kept them, each line with its own anchor when it was signed
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../../modules/record/record.ts";
-import { guardsOf, kindFor } from "../lib/kinds.ts";
+import { kindFor } from "../lib/kinds.ts";
+import { GATEWAYS, gatewayOf, providerOf } from "../../modules/payments/providers/index.ts";
 import { toTarGz } from "./tar.ts";
 import type { KeyObject } from "node:crypto";
 import { anchorOf, evidencePack, ledgerFile } from "../../modules/record/ledger.ts";
@@ -54,8 +55,8 @@ export interface ExportSources {
   /** The papers the panel made, as it keeps them: `go-live/<file>` or `monthly/<month>/<file>`. */
   papers(): { path: string; text: string }[];
   /** The pins the checks confirmed (ids, never keys), and the panel's own memory of the shop's accounts. */
-  pins(): { whatsapp?: { phoneNumberId?: string; displayNumber?: string }; calendar?: { calendarId?: string }; razorpay?: { mode?: string } } | undefined;
-  meta(): { whatsapp?: { businessNumber?: string }; razorpay?: { mode?: string }; calendar?: { shareAddress?: string } } | undefined;
+  pins(): { whatsapp?: { phoneNumberId?: string; displayNumber?: string }; calendar?: { calendarId?: string }; gateway?: { provider?: string; mode?: string } } | undefined;
+  meta(): { whatsapp?: { businessNumber?: string }; gateway?: { provider?: string; mode?: string }; calendar?: { shareAddress?: string } } | undefined;
   /** The key that signs the record's evidence pack and its anchor (the panel's). Left out, the pack is the chain alone, which geo-verify can check only against an anchor that names a key in a key log: so it is said, not hidden. */
   signingKey?(): KeyObject | undefined;
 }
@@ -102,7 +103,8 @@ const SECRET_SHAPES: { name: string; pattern: RegExp }[] = [
   { name: "a private key", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/u },
   { name: "a service-account key", pattern: /private_key\\?"\s*:\s*\\?"[^"\\]{20,}/u },
   { name: "an access token", pattern: /\bEAA[A-Za-z0-9]{40,}\b/u },
-  { name: "a Razorpay key with its secret", pattern: /\brzp_(?:live|test)_[A-Za-z0-9]{6,}:[A-Za-z0-9]{10,}/u },
+  // a gateway key with its secret, in the shape each gateway's folder gives (B71)
+  ...GATEWAYS.map((g) => ({ name: `a ${g.displayName} key with its secret`, pattern: new RegExp(`${g.gateway!.setup.keyId.source.replace(/^\^|\$$/gu, "")}:[A-Za-z0-9]{10,}`, "u") })),
 ];
 
 function jsonLines(text: string | undefined, what: string, warnings: string[]): { lines: string[]; count: number } {
@@ -140,11 +142,11 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     if (checked.ok) {
       try { policyDigest = kind.papers.policyDigest(checked.settings); } catch { warnings.push("The policy digest could not be worked out."); }
       // B71: only a shop that chose the gateway has a gateway Guard; a UPI shop's limits are the agent's own, and the file says so rather than show a spec nobody enforces
-      if (!guardsOf(kind, checked.settings).includes("razorpay")) { guardSpec = null; specNote = " This shop takes UPI, marked paid by the owner: no gateway Guard holds limits for it, so there is no gateway spec (null). Its limits are the agent's own, in settings.json."; }
+      if (!gatewayOf(checked.settings.payment)) { guardSpec = null; specNote = " This shop takes UPI, marked paid by the owner: no gateway Guard holds limits for it, so there is no gateway spec (null). Its limits are the agent's own, in settings.json."; }
       else try {
         guardSpec = src.limitsSpec?.(checked.settings, kind.id);
         if (guardSpec === undefined) {
-          guardSpec = kind.gatewaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-razorpay`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
+          guardSpec = kind.gatewaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-${gatewayOf(checked.settings.payment)!.id}`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
           specNote = " This server's own settings (geometer.json) could not be read, so it was made with the default approval time and caps: it may differ from the one Guard enforces.";
           warnings.push("The server's own settings could not be read, so the limits were made with the defaults.");
         }
@@ -153,8 +155,8 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   }
   put("limits.json", json({
     schema: 1,
-    note: `The limits the settings give. razorpay is the spec made the way the deployer makes the one Guard enforces for refunds and payment links (amounts in paise); policyDigest is what the go-live certificate names. history/settings-history.jsonl has every saved version.${specNote}`,
-    policyDigest, razorpay: guardSpec,
+    note: `The limits the settings give. gateway is the spec made the way the deployer makes the one Guard enforces for refunds and payment links (amounts in paise), for a shop that chose a gateway; policyDigest is what the go-live certificate names. history/settings-history.jsonl has every saved version.${specNote}`,
+    policyDigest, gateway: guardSpec,
     provenAtLastDeploy: status?.limits && typeof status.limits === "object" ? { proven: status.limits.proven ?? null, of: status.limits.of ?? null, unprovable: Array.isArray(status.limits.unprovable) ? status.limits.unprovable : [] } : null,
   }));
 
@@ -177,7 +179,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     note: "Which accounts the shop used. These are the shop's own accounts, not Geometer's, and they stay the shop's: no key or secret is in this package, and whoever serves the shop next must be given new ones.",
     whatsapp: { businessNumber: meta?.whatsapp?.businessNumber ?? pins?.whatsapp?.displayNumber ?? null, phoneNumberId: pins?.whatsapp?.phoneNumberId ?? null },
     calendar: { calendarId: pins?.calendar?.calendarId ?? null },
-    payments: { provider: "Razorpay", mode: pins?.razorpay?.mode ?? meta?.razorpay?.mode ?? null },
+    payments: { provider: providerOf((settings as { payment?: { module: string } } | undefined)?.payment)?.displayName ?? null, mode: gatewayOf((settings as { payment?: { module: string } } | undefined)?.payment) ? pins?.gateway?.mode ?? meta?.gateway?.mode ?? null : null },
   }));
 
   // ---- the record and the cases, as JSON lines

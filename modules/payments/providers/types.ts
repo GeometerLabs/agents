@@ -62,7 +62,7 @@ export interface GatewayWords {
   /** The choice in the panel's payment step. */
   option: string;
   /** The accounts step: how to get the key and the webhook secret. */
-  accounts: { title: string; intro: string; steps: string[]; mode: string; modeLive: string; modeTest: string; keyId: string; keySecret: string; webhookSecret: string; webhookUrl(url: string): string };
+  accounts: { title: string; intro: string; steps: string[]; mode: string; modeLive: string; modeTest: string; keyId: string; keySecret: string; webhookSecret: string; webhookUrl(url: string): string; /** The key id is not in the gateway's shape. */ keyIdBad: string };
   /** The connection check's result. */
   checks: { title: string; confirmed(mode: string): string; differs: string; wrongMode: string };
   /** What the check cannot say about whose account a key is. */

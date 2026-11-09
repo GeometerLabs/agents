@@ -84,3 +84,6 @@ export function ownerMarkedOf(payment: PaymentSettings | undefined): { payTo: { 
   const om = p.ownerMarked;
   return { payTo: om.payTo(payment), payLink: (r) => om.payLink(payment, r) };
 }
+
+/** The default module's own checks of what a person types (the shop's UPI ID and the payee name), for the panel's payment step: plain words, never a payment. */
+export { normaliseVpa, payeeProblem, vpaProblem } from "./upi/link.ts";

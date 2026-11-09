@@ -49,7 +49,7 @@ import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
 import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
-import { moduleOf } from "../../modules/payments/providers/index.ts";
+import { gatewayOf, providerById } from "../../modules/payments/providers/index.ts";
 import { reportOf, setupOf } from "./setups.ts";
 import type { Body, Draft } from "./setup.ts";
 import { createShops } from "./shops.ts";
@@ -511,10 +511,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const certificate = goLive.docs.get(ref.id, "go-live/go-live-certificate.json");
     const reports = reportOf(shops.kind(ref.id));
     const reading = certificate !== undefined ? reports.readGoLive(certificate, settings) : undefined;
-    const pins = shops.pins(ref.id); // a UPI shop has no test mode and no Razorpay pin: its report reads "live"
+    const pins = shops.pins(ref.id); // a shop with no gateway has no test mode and no gateway pin: its report reads "live"
     goLive.docs.make(ref.id, `monthly/${month}`, (scratch) => reports.write({
       settings, data, month, language: settings.owner.language, out: scratch,
-      source: pins?.razorpay?.mode === "live" || moduleOf(settings.payment) !== "razorpay" ? "live" : "test-mode",...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
+      source: pins?.gateway?.mode === "live" || !gatewayOf(settings.payment) ? "live" : "test-mode",...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
       // the Innovator badge is fleet's answer for the shop (fleet/<shop>.json, written by ops): the same file the owner's monthly message reads, so the builder's copy and the owner's agree
       innovator: shops.fleet(ref.id)?.innovator === true,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
@@ -576,7 +576,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const meta = d.shopId ? shops.meta(d.shopId) : undefined;
     const own = setupOf(template.setup);
     return { draft: d, template, steps: template.steps, now: n - 1, problems, limits: limitList(c, d), ...(own ? { ownLines: own.limitLines(d, exampleOf(template), c.lang) } : {}), receipts: (meta?.receipts ?? {}) as Partial<Record<string, string>>,
-      shareAddress: config.calendarShareAddress ?? meta?.calendar?.shareAddress, webhookUrl: d.shopId ? webhookUrlFor(config, d.shopId, "razorpay") : undefined };
+      shareAddress: config.calendarShareAddress ?? meta?.calendar?.shareAddress, webhookUrl: d.shopId && providerById(paymentModuleOf(d))?.gateway ? webhookUrlFor(config, d.shopId, paymentModuleOf(d)) : undefined };
   };
 
   function checksView(r: Req, d: Draft, template: Template, problems: string[]): ChecksView {
@@ -629,7 +629,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     else {
       if (!d.editing) d.shopId = unusedId(d, SECRET_NAMES as unknown as SecretName[]);
       const meta = shops.meta(d.shopId as string);
-      const result = applyAccounts(d, r.form, template, meta, Boolean(config.calendarShareAddress), w);
+      const result = applyAccounts(d, r.form, template, meta, Boolean(config.calendarShareAddress), w, r.ctx().lang);
       problems = result.problems;
       if (problems.length === 0) {
         // Everything checked first, then written: a form with one bad box writes nothing to the inbox.
@@ -638,9 +638,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
           problems = [w.setup.fallback("A file for this shop is already waiting in the server's inbox, so nothing was written. Start the setup again.")];
         }
         const after = shops.meta(d.shopId as string);
-        // A UPI shop has no Razorpay key to remember (and one it had before is dropped from its notes: the secrets inbox is write-only and is not touched).
-        const { razorpay: _kept, ...withoutRazorpay } = after;
-        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...(paymentModuleOf(d) === "upi" && template.accounts.includes("razorpay") ? withoutRazorpay : { ...after, razorpay: { mode: d.razorpay.mode as "live" | "test", keyId: d.razorpay.keyId } }), whatsapp: { businessNumber: d.whatsapp.businessNumber },
+        // A shop with no gateway has no gateway key to remember (and one it had before is dropped from its notes: the secrets inbox is write-only and is not touched).
+        const { gateway: _kept, ...withoutGateway } = after;
+        const chosen = providerById(paymentModuleOf(d));
+        if (problems.length === 0) shops.saveMeta(d.shopId as string, { ...(!chosen?.gateway || !template.accounts.includes("payment") ? withoutGateway : { ...after, gateway: { provider: chosen.id, mode: d.gateway.mode as "live" | "test", keyId: d.gateway.keyId } }), whatsapp: { businessNumber: d.whatsapp.businessNumber },
           calendar: { shareAddress: result.clientEmail ?? after.calendar?.shareAddress }, ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
       }
     }
@@ -663,7 +664,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     // What is written is what a builder would write: Fees' settings are checked into another shape (a student's "batch" becomes "batchId"), so its form keeps the shape it was checked from.
     const written = (b: typeof built): unknown => (b.ok ? ((b as { raw?: unknown }).raw ?? b.settings) : undefined);
     const w = r.ctx().w;
-    const gateway = paymentModuleOf(d) === "razorpay"; // B71: a payments service is named only for a shop that chose the gateway
+    const gateway = providerById(paymentModuleOf(d))?.gateway !== undefined; // B71: a payments service is named only for a shop that chose a gateway
     const runtime = own ? own.runtime(d.whatsapp.numberId, config.serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel, gateway);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
