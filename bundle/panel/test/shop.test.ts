@@ -1,5 +1,6 @@
 // A shop in the panel: its live status in plain words (never "live" without the deployer's word), Stop, the checks and "Ready to go live", the monthly
 // cost line, the papers, and the report that reads the go-live certificate.
+import { RAZORPAY_WORDS as RZW } from "../../../modules/payments/providers/razorpay/words.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -129,7 +130,7 @@ test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; 
     assert.ok(rowOf(WORDS.en.cost.lines.whatsapp).includes(WORDS.en.cost.payer["builder-pays-whatsapp-provider"]));
     const totalRow = page.split('<tr class="total">')[1].split("</tr>")[0];
     assert.ok(totalRow.includes(WORDS.en.cost.subtotal(2)) && !totalRow.includes(`<td>${WORDS.en.cost.total}</td>`), "unknown lines make a subtotal");
-    assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-razorpay"]) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
+    assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-gateway"]) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
     assert.ok(page.includes(WORDS.en.cost.priceList(live.date)));
     assert.ok(!/unknown\s*₹0/u.test(page));
   } finally { await b.close(); }
@@ -190,13 +191,13 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     const page = (await divya.get(checks)).plain;
     const w = WORDS.en.setup.checks;
     assert.ok(page.includes(w.whatsapp.confirmed("+919000011111")), page.slice(page.indexOf("Checks"), page.indexOf("Checks") + 1500));
-    assert.ok(page.includes(w.calendar.confirmed("Stand-in calendar")) && page.includes(w.razorpay.confirmed(WORDS.en.setup.accounts.razorpay.modeLive)) && page.includes(w.razorpayWhose));
+    assert.ok(page.includes(w.calendar.confirmed("Stand-in calendar")) && page.includes(RZW.en.checks.confirmed(RZW.en.accounts.modeLive)) && page.includes(w.razorpayWhose));
     assert.ok(/Held \d+ of \d+ situations\. 0 failed\. \d+ not tested\./u.test(page), "the certificate's own sentence");
     assert.ok(page.includes(w.limitsProven(9, 9)) && page.includes(w.readOnly));
     assert.ok(page.includes(w.readyButton));
     // The ids the providers reported are pinned for Guard's exact allowlists.
     const pins = JSON.parse(readFileSync(join(folder, "pins.json"), "utf8"));
-    assert.deepEqual([pins.whatsapp, pins.calendar, pins.razorpay], [{ phoneNumberId: STEP4.waNumberId, displayNumber: "+919000011111" }, { calendarId: STEP4.calId }, { keyId: "rzp_live_AbCdEf123456", mode: "live" }]);
+    assert.deepEqual([pins.whatsapp, pins.calendar, pins.gateway], [{ phoneNumberId: STEP4.waNumberId, displayNumber: "+919000011111" }, { calendarId: STEP4.calId }, { keyId: "rzp_live_AbCdEf123456", mode: "live" }]);
 
     const ready = await divya.post(`/setup/${f.draft}/ready`, {}, checks);
     assert.equal(ready.status, 303);
@@ -221,7 +222,7 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     const edit = await divya.post(`/shops/${f.shop}/edit`, {}, `/shops/${f.shop}`);
     const d2 = edit.location!.split("/")[2];
     await divya.post(`/setup/${d2}/1`, { ...STEP1, svc_price_0: "500" }, `/setup/${d2}/1`);
-    for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : { ...STEP4, waToken: "", waAppSecret: "", rzpKeySecret: "", rzpWebhook: "" }, `/setup/${d2}/${n}`);
+    for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : { ...STEP4, waToken: "", waAppSecret: "", gwKeySecret: "", gwWebhook: "" }, `/setup/${d2}/${n}`);
     await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/5`);
     const changed = (await divya.get(`/setup/${d2}/5`)).plain;
     assert.ok(!changed.includes(w.readyButton) && changed.includes(w.notReady(1)), "the settings changed after the checks ran");

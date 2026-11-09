@@ -12,7 +12,7 @@ import type { Template } from "../templates.ts";
 const checked = validateSettings(JSON.parse(readFileSync(new URL("../../../templates/commerce/orders/settings/annapurna-tiffins.example.json", import.meta.url), "utf8")));
 if (!checked.ok) throw new Error(checked.errors.join("; "));
 const example: Settings = checked.settings;
-const template: Template = { id: "orders", version: "0.1.0", setup: "orders", steps: ["business", "deposit", "languages", "accounts", "checks"], accounts: ["whatsapp", "razorpay"], folder: "", settingsExample: "" };
+const template: Template = { id: "orders", version: "0.1.0", setup: "orders", steps: ["business", "deposit", "languages", "accounts", "checks"], accounts: ["whatsapp", "payment"], folder: "", settingsExample: "" };
 const en = WORDS.en;
 const blank = () => newOrdersDraft("d1", "a1", template, example, "2026-11-05T00:00:00Z");
 
@@ -43,7 +43,7 @@ test("a filled form becomes settings the Orders pathway accepts: item ids from t
   assert.deepEqual(s.advance, { mode: "part", percent: 50, holdMinutes: 30 });
   assert.deepEqual([s.orders.maxPerDay, s.orders.maxItemsPerOrder, s.orders.daysAhead, s.cancellation.windowHours, s.refund.limitInr, s.owner.approveOverInr], [8, 10, 7, 6, 300, 1000]);
   assert.deepEqual(s.owner, { whatsapp: "+919876543210", language: example.owner.language, approveOverInr: 1000 });
-  assert.equal(s.payment.module, "razorpay", "until the accounts step has a UPI ID, the limits are worked out as for Razorpay");
+  assert.equal(s.payment.module, "upi", "until the accounts step has a UPI ID, the limits are worked out with a stand-in UPI ID, never as a gateway (B71)");
 });
 
 test("no delivery slots and no places is a shop that does not deliver; all of the order is an advance of the whole", () => {
