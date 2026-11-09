@@ -74,10 +74,10 @@ test("button mode is said in plain words with its reason, and so are the warning
   const b = await boot();
   try {
     const arjun = await b.account("arjun", "builder"); b.addShop("glow-salon", { name: "Glow Salon" });
-    fleet(b, answer({ ai: "buttons", reason: "overage_unfunded", warn: ["allowance_80", "balance_80", "whatsapp_unsettled", "from_the_future"] }));
+    fleet(b, answer({ ai: "buttons", reason: "overage_unfunded", warn: ["allowance_80", "balance_80", "whatsapp_unsettled", "ai_cap", "from_the_future"] }));
     const plain = (await arjun.get("/shops/glow-salon")).plain;
     assert.ok(plain.includes(en.buttons) && plain.includes(en.buttonsWhy.overage_unfunded));
-    for (const k of ["allowance_80", "balance_80", "whatsapp_unsettled"] as const) assert.ok(plain.includes(en.warn[k]), k);
+    for (const k of ["allowance_80", "balance_80", "whatsapp_unsettled", "ai_cap"] as const) assert.ok(plain.includes(en.warn[k]), k);
     assert.ok(!plain.includes("from_the_future"));
     fleet(b, answer({ ai: "buttons", reason: "something_new" }));
     assert.ok((await arjun.get("/shops/glow-salon")).plain.includes(en.buttonsWhy.other), "any other reason is said generally");
