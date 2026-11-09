@@ -25,6 +25,8 @@ export interface StartOptions {
   clientFolder: string;
   /** A file holding the internal bearer token (INTERNAL_TOKEN_FILE). */
   tokenFile: string | undefined;
+  /** A file holding the record's key (RECORD_KEY_FILE, B69); needed in live mode. Left out: the environment's. */
+  recordKeyFile?: string;
   clock?: Clock;
   /** Instead of what runtime.json says (its `parser`, or the rule parser when it has none). A test seam. */
   parser?: IntentParser;
@@ -55,7 +57,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   return await startRuntimeClient<ClientFolder["settings"], Runtime>(options, {
     casesName: "orders",
     loadClient,
-    async build(client, { store, clock, log }) {
+    async build(client, { store, clock, log, recordKey }) {
       const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
       // A UPI shop's QR pictures go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
@@ -63,7 +65,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
-      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), log });
+      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), ...(recordKey ? { recordKey } : {}), log });
     },
   }) as RunningClient;
 }

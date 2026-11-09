@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { systemClock } from "../core/clock.ts";
 import type { Clock } from "../core/clock.ts";
 import { loadPrivateKey } from "../report/sign.ts";
+import { parseKey } from "../record/key-file.ts";
 import type { IntentBase, ParseOptionsBase } from "../understanding/model.ts";
 import type { ModelConfig, ModelParser } from "../understanding/model-llm.ts";
 import type { AiPolicy } from "../understanding/ai-state.ts";
@@ -23,6 +24,8 @@ export interface StartOptions<Services = unknown> {
   clientFolder: string;
   /** A file holding the internal bearer token (INTERNAL_TOKEN_FILE). */
   tokenFile: string | undefined;
+  /** A file holding the record's key (RECORD_KEY_FILE, B69), or the environment's; needed in live mode (see `readRecordKey`). */
+  recordKeyFile?: string;
   clock?: Clock;
   log?: (line: string) => void;
   /** A test seam: how the live adapters are loaded. */
@@ -137,12 +140,26 @@ export function readToken(file: string | undefined): string {
   return token;
 }
 
+/**
+ * The record's key (B69, a key derived from the shop's own): in live mode it is required, because a live record must not write a customer's words as a plain digest that can be tested by
+ * guessing, or a WhatsApp message id that can carry the number. The deployer writes the file and names it in RECORD_KEY_FILE. A local run with stand-in services needs none.
+ */
+export function readRecordKey(mode: "fakes" | "live", file: string | undefined): Buffer | undefined {
+  if (!file) {
+    if (mode === "live") throw new ClientError("Set RECORD_KEY_FILE to a file that holds the record's key: 64 hex digits, made once and kept with the shop's backups (for example: openssl rand -hex 32 > record.key). The deploy bundle makes and names it.");
+    return undefined;
+  }
+  let text: string;
+  try { text = readFileSync(file, "utf8"); } catch { throw new ClientError(`I could not read the record's key file ${file} (RECORD_KEY_FILE).`); }
+  try { return parseKey(text, `The record's key in ${file}`); } catch (e) { throw new ClientError((e as Error).message); }
+}
+
 /** What a template gives the start: how to read its client folder, and how to build its runtime from the opened store. */
 export interface StartHooks<Settings, Rt extends StartableRuntime> {
   /** What this template calls its cases, for the one warning that names them: "bookings", "fees". */
   casesName: string;
   loadClient(folder: string): ClientFolder<Settings>;
-  build(client: ClientFolder<Settings>, ctx: { store: DurableStore; clock: Clock; log: (line: string) => void }): Promise<Rt>;
+  build(client: ClientFolder<Settings>, ctx: { store: DurableStore; clock: Clock; log: (line: string) => void; recordKey?: Buffer }): Promise<Rt>;
 }
 
 /** The part of a runtime the start uses. */
@@ -153,11 +170,12 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const clock = options.clock ?? systemClock;
   const client = hooks.loadClient(options.clientFolder); // refuses a wrong pathway version before anything is opened
   const token = readToken(options.tokenFile);
+  const recordKey = readRecordKey(client.runtime.mode, options.recordKeyFile ?? process.env.RECORD_KEY_FILE);
 
   const store = openStore(client.runtime.dataDir);
   let runtime: Rt;
   try {
-    runtime = await hooks.build(client, { store, clock, log });
+    runtime = await hooks.build(client, { store, clock, log, ...(recordKey ? { recordKey } : {}) });
   } catch (e) {
     store.close();
     throw e;

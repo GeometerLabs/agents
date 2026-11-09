@@ -1,5 +1,5 @@
 // A panel started on a temporary server folder, and a small browser (cookies, forms, CSRF tokens) to use it with.
-import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -34,6 +34,8 @@ export interface Boot {
   account(handle: string, role: Role, language?: string): Promise<Browser>;
   addShop(id: string, o?: { ownerId?: string; ownerName?: string; ownerRole?: "builder" | "partner"; name?: string }): void;
   status(shop: string, status: unknown): void;
+  /** B69: the shop's fingerprint key, as secrets/panel/person-keys/<shop> holds it. Made on first use. */
+  personKey(shop: string): Buffer;
   standins?: RunningStandins;
   close(): Promise<void>;
 }
@@ -60,7 +62,7 @@ export async function boot(change: Partial<PanelConfig> = {}, o: { standins?: bo
   }
   const config: PanelConfig = {
     serverDir: dir, mode: o.mode ?? "own", host: "127.0.0.1", port: 0, trustProxy: false, templatesDir: new URL("../../../templates/", import.meta.url).pathname, staleMinutes: 30, now: () => NOW,
-    calendarShareAddress: SHARE_ADDRESS, ...(dataKeyFile ? { dataKeyFile } : {}), ...(signingKeyFile ? { signingKeyFile } : {}),
+    calendarShareAddress: SHARE_ADDRESS, ...(dataKeyFile ? { dataKeyFile } : {}), ...(signingKeyFile ? { signingKeyFile } : {}), personKeysDir: join(outside, "person-keys"),
     ...(standins ? { guardUrl: standins.url } : {}), ...change,
   };
   const logs: string[] = [];
@@ -91,6 +93,11 @@ export async function boot(change: Partial<PanelConfig> = {}, o: { standins?: bo
         writeFileSync(join(shop, "settings.json"), JSON.stringify(settings));
       }
       if (s.ownerId) writeFileSync(join(shop, "owner.json"), JSON.stringify({ schema: 1, accountId: s.ownerId, accountName: s.ownerName ?? "Divya", role: s.ownerRole ?? "partner", createdAt: "2026-11-01T10:00:00Z", template: "bookings" }));
+    },
+    personKey(shop) {
+      const file = join(outside, "person-keys", shop);
+      if (!existsSync(file)) { mkdirSync(join(outside, "person-keys"), { recursive: true }); writeFileSync(file, randomBytes(32).toString("hex"), { mode: 0o600 }); }
+      return Buffer.from(readFileSync(file, "utf8").trim(), "hex");
     },
     status(shop, status) {
       mkdirSync(join(dir, "status"), { recursive: true });

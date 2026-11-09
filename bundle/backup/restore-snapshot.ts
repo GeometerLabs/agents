@@ -1,7 +1,8 @@
 // Open a nightly snapshot, with the owner's key (the secret half is kept OFF the server: a person brings it). Two callers:
 //   - a person, on their own machine, from one snapshot's folder as downloaded from the bucket: the full restore test, monthly (bundle/README.md, "Backups"):
 //       node bundle/backup/restore-snapshot.ts <folder> --identity <key file> --out <empty folder>
-//     The runtime's database comes out as `runtime/agent.db`, each Guard's backup as `guard-<kind>/...`, and every file is checked against `manifest.json` first.
+//     The runtime's database comes out as `runtime/agent.db`, each Guard's backup as `guard-<kind>/...`, and every file is checked against `manifest.json` first. The shop's
+//     fingerprint key (B69) comes out as `person_key`: on a new machine put it at `secrets/person-keys/<shop>` (mode 0600), or `geometer restore` does that for you.
 //   - `geometer restore <shop> [--at TIME] --identity <key file>` on the server: the deployer runs this file in a short-lived container with a job file (`--job`) and
 //     the key file mounted read-only; it fetches the newest snapshot at or before the time and writes the runtime's database and a `restored.json` note into a folder
 //     the deployer then puts in place.
@@ -14,7 +15,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { decrypt } from "./age.ts";
 import { fromTarGz } from "../export/tar.ts";
-import { mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
+import { PERSON_KEY_OBJECT, mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
 import type { RecordFacts, SnapshotJob } from "./snapshot.ts";
 import type { ObjectStore } from "./store.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
@@ -50,7 +51,12 @@ export function restoreSnapshot(from: string, identity: string, out: string): st
   for (const file of walk(from).filter((f) => f.endsWith(".age"))) for (const [p, d] of openObject(relative(from, file).split(sep).join("/"), readFileSync(file), identity)) files.set(p, d);
   if (files.size === 0) throw new Error(`There are no .age files under ${from}.`);
   const manifest = files.get("manifest.json");
-  if (manifest) check(files, JSON.parse(manifest.toString("utf8")));
+  if (manifest) {
+    const m = JSON.parse(manifest.toString("utf8")) as { personKey?: string; files?: { path?: string; key?: string; sha256: string }[] };
+    check(files, m);
+    // as a file of its own, so the person restoring by hand can copy it into place rather than pick it out of the manifest
+    if (m.personKey) files.set(PERSON_KEY_OBJECT, Buffer.from(`${m.personKey}\n`));
+  }
   const written: string[] = [];
   for (const [p, d] of files) {
     const target = resolve(out, p);
@@ -69,7 +75,7 @@ export async function snapshotsOf(store: ObjectStore, shop: string): Promise<Map
   return out;
 }
 
-export interface Fetched { stamp: string; db: Buffer; record: RecordFacts | null }
+export interface Fetched { stamp: string; db: Buffer; record: RecordFacts | null; /** The shop's fingerprint key, from the manifest (B69). A snapshot older than the key has none. */ personKey?: string }
 
 /**
  * The runtime's database from the newest whole snapshot of a shop (one whose manifest was written: it is written last), at or before `atMs` if given. Only the database
@@ -94,10 +100,10 @@ export async function fetchSnapshot(store: ObjectStore, shop: string, identity: 
     }
     for (const [p, d] of opened) files.set(p, d);
   }
-  const manifest = JSON.parse(files.get("manifest.json")!.toString("utf8")) as { files?: { path?: string; key?: string; sha256: string }[]; runtime?: RecordFacts | null };
+  const manifest = JSON.parse(files.get("manifest.json")!.toString("utf8")) as { files?: { path?: string; key?: string; sha256: string }[]; runtime?: RecordFacts | null; personKey?: string };
   check(files, manifest);
   if (!digests(manifest).has("runtime/agent.db")) throw new Error(`the snapshot of ${stamp}'s manifest does not describe its runtime database`);
-  return { stamp, db: files.get("runtime/agent.db")!, record: manifest.runtime ?? null };
+  return { stamp, db: files.get("runtime/agent.db")!, record: manifest.runtime ?? null, ...(manifest.personKey ? { personKey: manifest.personKey } : {}) };
 }
 
 /** What `geometer restore` hands the restore container. */
@@ -119,6 +125,8 @@ export async function runRestoreJob(job: RestoreJob, store: ObjectStore): Promis
     if (integrity !== "ok") throw new Error(`the database in the snapshot of ${got.stamp} failed its integrity check (${integrity})`);
     record = recordFacts(db);
   } finally { db.close(); }
+  // for the deployer, which runs as another user and takes it from here: the folder holds the whole database too, and it removes the folder when the restore is done
+  if (got.personKey) writeFileSync(join(job.out, PERSON_KEY_OBJECT), `${got.personKey}\n`, { mode: 0o644 });
   writeFileSync(join(job.out, RESTORE_NOTE), `${JSON.stringify({ snapshot: got.stamp, restoredAt: job.nowIso, lastSeq: record.lastSeq })}\n`, { mode: 0o644 });
   return { ok: true, stamp: got.stamp, record };
 }

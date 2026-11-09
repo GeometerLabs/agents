@@ -1,10 +1,11 @@
 // Secrets are files, each in the folder of the one container that needs it (secrets/<container>/), and the secrets intake that moves what the panel was
 // handed into those folders. File modes: every folder under secrets/ is 0755 and every file 0644 so a container's own non-root user can read it, while
 // secrets/ itself is 0700, so no other user of the machine can get to any of them. Docker mounts one container's folder into that container only.
+import { hkdfSync } from "node:crypto";
 import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { serverPaths } from "./server.ts";
-import { ensureDir, writeAtomic } from "./util.ts";
+import { ensureDir, mintSecret, writeAtomic } from "./util.ts";
 import type { Problem } from "./util.ts";
 
 export const secretFile = (dir: string, container: string, ...rest: string[]) => join(serverPaths(dir).secrets, container, ...rest);
@@ -12,6 +13,59 @@ export const secretFile = (dir: string, container: string, ...rest: string[]) =>
 /** Make `secrets/` private to this machine's user and each container's folder readable inside its container. */
 export function prepareSecretsRoot(dir: string): void {
   ensureDir(serverPaths(dir).secrets, 0o700);
+}
+
+// ---- the shop's fingerprint key (B69) -----------------------------------------------------------------------------------------------------------------------
+//
+// One key per shop (or own agent), 32 random bytes as hex, made the first time it is needed: at deploy, or by the next export job for a shop made before B69, so such a shop gets one
+// and nothing crashes. secrets/person-keys/<shop> is 0600: only the deployer's user and the root job containers read it; it is mounted read-only into the export and snapshot jobs only.
+// The panel gets a copy (0600, secrets/panel/person-keys/<shop>) to match a person it is asked about. Containers that must not hold the key itself get a key derived from it for their
+// one purpose: the runtime its record key (the inputs' digest and message ids, secrets/rt-<shop>/record_key), ops a label key for an own agent (secrets/ops/<agent>/label_key). Those two
+// are 0644 like every other file a container's fixed user must read (see the top of this file); a copy of the key itself never is.
+// Knowing a derived key shows nothing about the key it came from, or about the person fingerprints the key makes. The snapshot job writes the key into the nightly manifest (backup/snapshot.ts), and `restore` puts it back.
+
+/** The one copy of a shop's key every other is made from. Deleting it, or letting a new machine mint another, leaves the shop unable to match the fingerprints it already handed out. */
+export const personKeyFile = (dir: string, shop: string) => secretFile(dir, "person-keys", shop);
+export const RECORD_KEY_FILE = "record_key";
+/** What a shop's fingerprint key looks like on disk. */
+export const PERSON_KEY = /^[0-9a-f]{64}$/u;
+export const AGENT_LABEL_KEY_FILE = "label_key";
+
+/** What one key derives for: a container that must not hold the shop's key itself gets a key made from it for this purpose only. The label in the HKDF must not change, or every digest and label made so far stops matching. */
+export const derivedKey = (keyHex: string, purpose: "record" | "label"): string => Buffer.from(hkdfSync("sha256", Buffer.from(keyHex, "hex"), Buffer.alloc(0), `geometer/${purpose}-key/1`, 32)).toString("hex");
+
+/** The shop's key, made if it has none. 0600. */
+export function ensurePersonKey(dir: string, shop: string): string {
+  return ensureSecret(personKeyFile(dir, shop), mintSecret, 0o600);
+}
+
+/** The key's copies for a shop: the runtime's derived record key, and the panel's copy of the key (only when the panel is on). */
+export function ensureShopPersonKeys(dir: string, shop: string, runtimeFolder: string, panelOn: boolean): void {
+  const key = ensurePersonKey(dir, shop);
+  writeSecretFile(secretFile(dir, runtimeFolder, RECORD_KEY_FILE), derivedKey(key, "record"));
+  if (panelOn) writeSecretFile(secretFile(dir, "panel", "person-keys", shop), key, 0o600);
+}
+
+/**
+ * A restore's key goes back in place of the one here, because the record it came with was fingerprinted under it. Its copies are rewritten. On a new machine the first deploy made another
+ * key, which nothing has used: it is kept beside (returned: the name), never deleted. Returns undefined when the key was already the one in place.
+ */
+export function restorePersonKey(dir: string, shop: string, keyHex: string, runtimeFolder: string, panelOn: boolean, stamp: string): string | undefined {
+  if (!PERSON_KEY.test(keyHex)) throw new Error("The fingerprint key in this snapshot is not a key, so it was not put back.");
+  const path = personKeyFile(dir, shop);
+  const have = readSecretFile(path);
+  let kept: string | undefined;
+  if (have && have !== keyHex) { kept = `${shop}.before-restore-${stamp}`; writeSecretFile(`${path}.before-restore-${stamp}`, have, 0o600); }
+  if (have !== keyHex) writeSecretFile(path, keyHex, 0o600);
+  ensureShopPersonKeys(dir, shop, runtimeFolder, panelOn);
+  return kept;
+}
+
+/** An own agent's label key in ops' folder (agent/facts.ts labels a reference that looks like a number; the deployer's fold labels it the same way). */
+export function ensureAgentLabelKey(dir: string, agent: string): string {
+  const label = derivedKey(ensurePersonKey(dir, agent), "label");
+  writeSecretFile(secretFile(dir, "ops", agent, AGENT_LABEL_KEY_FILE), label);
+  return label;
 }
 
 /** `mode` 0600 is for what a program insists on being private to its user (the panel's keys); the panel then runs as the user who wrote them (see panelUser). */

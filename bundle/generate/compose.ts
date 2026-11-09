@@ -231,7 +231,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     add(names.reportsDir(shop.name), node(["mkdir", "-p", REPORTS_DIR], { restart: "no", network_mode: "none", volumes: [`${names.dataVolume(shop.name)}:${HOME_DIR}`] }));
     const own = shop.guards.map((g) => g.service);
     add(names.runtime(shop.name), node(["node", "/pathway/server/main.ts", "--client", "/client"], {
-      environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token" },
+      // RECORD_KEY_FILE: the record's key (a key derived from the shop's own, B69; lib/secrets.ts): the runtime writes the inputs' digest and message ids with it, and never holds the key itself
+      environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token", RECORD_KEY_FILE: "/run/secrets/record_key" },
       volumes: [`${shop.pathwayDir}:/pathway:ro`, `${modulesOf(shop.pathwayDir)}:/modules:ro`, `${dirs.generated}/shops/${shop.name}/client:/client:ro`, `${secretDir(names.runtime(shop.name))}:/run/secrets:ro`, `${names.dataVolume(shop.name)}:/home/node`],
       networks: { [names.net(shop.name)]: {} },
       healthcheck: healthWget(RUNTIME_PORT, "/readyz"),
@@ -282,7 +283,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       image: server.appImage, user: features.panel.user, init: true, ...hardened, command: ["node", "/app/bundle/panel/main.ts"],
       environment: {
         PANEL_SERVER_DIR: "/server", PANEL_MODE: server.panel.mode, PANEL_HOST: "0.0.0.0", PANEL_PORT: String(PANEL_PORT), PANEL_PUBLIC_URL: publicUrl(server), PANEL_TRUST_PROXY: "1",
-        PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_TEMPLATES_DIR: "/app/templates",
+        PANEL_DATA_KEY_FILE: "/run/secrets/data_key", PANEL_SIGNING_KEY_FILE: "/run/secrets/signing_key", PANEL_TEMPLATES_DIR: "/app/templates", PANEL_PERSON_KEYS_DIR: "/run/secrets/person-keys",
         PANEL_GUARD_URL: `http://g-{shop}-{kind}:${GUARD_PORT}`, PANEL_GUARD_AGENT_TOKEN_FILE: `/run/secrets/${names.panelGuardToken}`, PANEL_WEBHOOK_URL: `${publicUrl(server)}/c/{shop}/webhooks/{kind}`,
         ...(features.panel.shareAddress ? { PANEL_CALENDAR_SHARE_ADDRESS: features.panel.shareAddress } : {}),
       },

@@ -17,7 +17,8 @@
 // What an entry's body holds (BODY_TYPE): the entry's own fields EXCEPT the three that the deployer's export does not carry as the shop holds
 // them: `conversation` (a customer's number), `notes` (free text, which names a child in a Fees record) and `refs.page` (the secret folder of a
 // served report page). So the head worked out from the shop's own database and the head worked out from the bundle's export are the same, and
-// a pack can be handed to an auditor without a phone number, a name or a secret in it. Those three are NOT chained: changing them does not
+// a pack can be handed to an auditor without a phone number, a name or a secret in it (the inputs' digest and a WhatsApp message id are keyed in entries written with the shop's key,
+// B69; an entry from before that key keeps a plain digest and the id as it came, because it is chained and cannot be rewritten). Those three are NOT chained: changing them does not
 // change a hash. The rest (the time, the action, the outcome, the case id, the inputs' fingerprint, the limits' decisions, the language, the
 // services' ids and amounts) is.
 //

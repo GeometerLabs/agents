@@ -1,12 +1,12 @@
 // What the three papers share: how a person is matched in the shop's own record and in the bundle's export, how a time is written, the page around a paper,
 // and the hand-in a template gives (its cases, its money actions, its words). A module imports nothing from a template: the template hands these in.
-import { createHash } from "node:crypto";
 import { localParts } from "../core/time.ts";
 import type { LocalDate } from "../core/time.ts";
 import { formatDate, formatTime } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import type { RecordEntry } from "../record/record.ts";
 import type { LedgerHead } from "../record/ledger.ts";
+import { personFingerprint } from "../record/fingerprint.ts";
 import { esc, list, page, sealBlock } from "../report/page.ts";
 import type { Envelope } from "../report/sign.ts";
 import { REVIEW_STATUS, WORDS } from "./words.ts";
@@ -14,7 +14,7 @@ import { REVIEW_STATUS, WORDS } from "./words.ts";
 /** One case as the papers need it: a booking or a fee, in the shape every template can give. */
 export interface PaperCase {
   id: string; // "b-3", "f-2"
-  /** The customer's (or parent's) number as the record holds it: the number itself in the shop's own store, a short hash ("p-…") in the bundle's export. */
+  /** The customer's (or parent's) number as the record holds it: the number itself in the shop's own store, a keyed fingerprint ("p-…") in the bundle's export. */
   customer: string;
   language: Language;
   /** The case in a few words, in a language ("Haircut, Tue 4 Nov, 10:00 am"; "Fee for November 2026, Class 8"). Never anyone's name. */
@@ -39,13 +39,12 @@ export interface TemplatePapers {
 export const UPI_PAID = "owner_marked_paid";
 export const UPI_REFUNDED = "upi_refund_marked_done";
 
-/** The same short hash the bundle's export writes in place of a number ("c-" on a record entry, "p-" on a case): sha256 of the text, 12 hex digits. */
-export const shortHash = (value: string): string => createHash("sha256").update(value).digest("hex").slice(0, 12);
-
-/** Does a record or case field name this person? It matches the number itself (the shop's own store) and the export's short hashes of it. */
-export function isPerson(field: string, number: string): boolean {
-  const h = shortHash(number);
-  return field === number || field === `p-${h}` || field === `c-${h}`;
+/** Does a record or case field name this person? It matches the number itself (the shop's own store) and, given the shop's key, the export's fingerprints of it. Without the key an export's fingerprint matches no one (B69: the key stays with the shop). */
+export function isPerson(field: string, number: string, personKey?: Buffer): boolean {
+  if (field === number) return true;
+  if (!personKey) return false;
+  const h = personFingerprint(personKey, number);
+  return field === `p-${h}` || field === `c-${h}`;
 }
 
 /** "…4321": enough for a person to see it is their number, and no more. */
