@@ -47,7 +47,7 @@ test("fleet's real answer is read by the bundle: plan and allowance, then button
   base = first.nextUsage as never;
   const r1 = await sendHeartbeat(server.url, key, first.body);
   assert.equal(r1.accepted, true, JSON.stringify(r1));
-  assert.deepEqual(r1.answer?.["glow-salon"], { plan: "basic", allowance: 1000, innovator: false, ai: "normal", warn: [] }, "plan and allowance, nothing to pay yet");
+  assert.deepEqual(r1.answer?.["glow-salon"], { plan: "basic", allowance: 1000, innovator: false, ai: "normal", model: "normal", warn: [] }, "plan and allowance, nothing to pay yet, and the AI cap not reached (a hosted shop with a plan)");
 
   // 1,100 more messages in the month fleet has counted (the first 900 were history, not replayed): fleet's own validator accepted the usage block; the shop is over its allowance and the balance is empty.
   const second = buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now: new Date(NOW.getTime() + 60_000), shops: [shop(totals(2000))], baseline: {}, usageBaseline: base as never });
@@ -71,7 +71,7 @@ test("fleet's real heartbeat takes the three counts, and the lease it signs (RFC
   store.addDeployment({ id: "acme-vps-1", keyHash: fleet.hashSecret(key), contact: "b@example.com", founderCopy: false, hosting: "self" }, NOW.getTime());
   const api = fleet.createBillingApi({ store, now: () => NOW.getTime(), liveDayMinMinutes: 60, config: { prices_dir: null, whatsapp_route: "gupshup", razorpay: null },
     licence: { key: keyFromSeed(Buffer.from(VECTORS.test_key.seed_hex, "hex")), dueDays: 7, stopDay: 60, notifiers: [], founderContact: null } });
-  api.billing.registry.addPartner({ id: "asha", name: "Asha Digital", contact: "asha@example.com", kind: "partner" }, NOW.getTime());
+  api.billing.registry.addPartner({ id: "asha", name: "Asha Digital", contact: "asha@example.com", kind: "builder" }, NOW.getTime()); // a self-hosted deployment is a builder's (fleet's pairing rule of 9 Nov)
   api.billing.registry.setShopPlan({ deployment: "acme-vps-1", agent: "glow-salon", partner: "asha", plan: "business" }, NOW.getTime());
   const server = await fleet.startServer({ store, now: () => NOW.getTime(), quietAfterS: 180, port: 0, billing: api });
   const s = tempServer({}, PIN);
