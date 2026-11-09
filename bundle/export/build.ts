@@ -273,8 +273,7 @@ function peopleWords(m: Manifest): string {
     "    - Free text: a number or a name the shop or a customer wrote into a note is not replaced. Only a student's name spelled exactly as the centre's list has it is.",
     `    - Entries written before the shop had its key (${f.inputsOlder ?? 0} of them) carry "inputsDigest" as a plain digest, and ${f.messageIdsOlder ?? 0} carry WhatsApp's message id as it came: those can be tested by guessing, and a WhatsApp id can carry the number. Entries written since are keyed.`,
     "    - accounts.json names the shop's own business number, because it is the shop's.",
-  ].join("
-");
+  ].join("\n");
 }
 
 function FORMAT_README(m: Manifest): string {
@@ -328,6 +327,9 @@ WHAT IS NOT IN IT, AND WHY
   - The shop's own accounts. The WhatsApp number, the payment account and the calendar belong to the shop; accounts.json only says which ones they were.
   - Customers' phone numbers and students' names in the record and the cases: these are fingerprints only the shop's key can match. See PEOPLE IN THE RECORD for what that covers and what it does not; settings.json is the main exception.
   - Anything after ${m.recordAsOf ?? "the deployer's last export of the record (it had made none)"}: the record is as the deployer last exported it.
+
+PEOPLE IN THE RECORD
+${peopleWords(m)}
 
 ${m.notes.map((n) => `NOTE: ${n}`).join("\n")}
 
