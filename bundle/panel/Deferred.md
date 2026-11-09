@@ -57,7 +57,7 @@ Not built, or built only as far as said. The first block needs another part of t
 - The new person does not accept the shop; the person moving it and the owner agree. A partner could be handed a shop they do not want. Add an accept step if that happens.
 - A move is within one server. Moving a shop between two servers (a builder's own server to Geometer's hosted one, or the other way) is an export and a new `shop add` there; the keys are entered again. There is no import.
 - Hindi, Malayalam and Kannada for the new pages (to do, export, handover) are machine-written like the rest, listed in section 7 of the review sheets; the new lines wait for a native reader.
-- The export holds the record as the deployer exports it (customers as short hashes). A copy with the raw numbers, for the owner who asks for it, is the shop's own database (`geometer restore` makes one from the backup); an export mode that reads the database inside the shop's volume and keeps the numbers is not built.
+- The export holds the record as the deployer exports it (customers as keyed fingerprints). A copy with the raw numbers, for the owner who asks for it, is the shop's own database (`geometer restore` makes one from the backup); an export mode that reads the database inside the shop's volume and keeps the numbers is not built.
 
 ## UPI in the panel (B33)
 

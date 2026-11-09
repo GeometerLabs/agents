@@ -1,6 +1,7 @@
 // The papers' command line, shared by every template's `scripts/papers.ts` (which hands in how to read its settings and its cases):
 //
 //   papers.ts statement --number +9198... --settings shop.json --record entries.json --cases bookings.json --out <folder> [--lang hi] [--key key.pem] [--tenant glow-salon] [--now T]
+//                       [--person-key <file>]  the shop's fingerprint key (B69), so a record from the deployer's export matches the number; without it, only a number kept as itself matches
 //   papers.ts dispute   --case b-3        --settings ... --record ... --cases ... --out <folder> [--lang en] [--key ...] [--tenant ...]
 //   papers.ts identity  --agent-id agt_... --operator "Divya" --role partner --go-live go-live-certificate.json --settings ... --record ... --out <folder>
 //                       [--history settings-history.jsonl] [--show limits,checks,limitChanges] [--lang en] [--key ...] [--tenant ...] [--published fingerprints.jsonl]
@@ -13,6 +14,7 @@ import { parseArgs } from "node:util";
 import type { Language } from "../language/languages.ts";
 import { LANGUAGES } from "../language/languages.ts";
 import type { RecordEntry } from "../record/record.ts";
+import { parseKey } from "../record/key-file.ts";
 import { anchorOf, evidencePack, ledgerEntries, ledgerFile, tenantOf } from "../record/ledger.ts";
 import { lastPublished } from "../record/publish.ts";
 import { writer } from "../report/months.ts";
@@ -58,7 +60,7 @@ export async function runPapersCli<Settings, Cert>(argv: string[], a: PapersAdap
     parsed = parseArgs({ args: rest, options: {
       settings: { type: "string" }, record: { type: "string" }, cases: { type: "string" }, out: { type: "string" }, lang: { type: "string" }, key: { type: "string" }, tenant: { type: "string" }, now: { type: "string" },
       number: { type: "string" }, case: { type: "string" }, "agent-id": { type: "string" }, operator: { type: "string" }, role: { type: "string" }, "go-live": { type: "string" },
-      history: { type: "string" }, show: { type: "string" }, published: { type: "string" },
+      history: { type: "string" }, show: { type: "string" }, published: { type: "string" }, "person-key": { type: "string" },
     } });
   } catch (e) { throw new UsageError(`${(e as Error).message}\nSee the first lines of modules/papers/cli.ts for the options.`); }
   const o = parsed.values;
@@ -88,7 +90,11 @@ export async function runPapersCli<Settings, Cert>(argv: string[], a: PapersAdap
 
   if (command === "statement") {
     if (!o.number) throw new UsageError("Say whose statement: --number <their WhatsApp number>.");
-    const env = sealStatement({ template: a.papers, shop, number: o.number, entries, cases, ...(o.lang ? { language: lang(o.lang, "en") } : {}), now, ...(tenant ? { tenant } : {}) }, key);
+    let personKey: Buffer | undefined;
+    if (o["person-key"]) {
+      try { personKey = parseKey(readFileSync(o["person-key"], "utf8"), `The person key in ${o["person-key"]}`); } catch (e) { throw new UsageError((e as Error).message); }
+    }
+    const env = sealStatement({ template: a.papers, shop, number: o.number, entries, cases, ...(personKey ? { personKey } : {}), ...(o.lang ? { language: lang(o.lang, "en") } : {}), now, ...(tenant ? { tenant } : {}) }, key);
     const l = env.document.language;
     w.write("statement.json", envelopeFile(env));
     w.write(`statement-${l}.html`, statementPage(env));

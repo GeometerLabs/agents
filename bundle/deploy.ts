@@ -26,7 +26,7 @@ import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
-import { ensureSecret, panelUser, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { RECORD_KEY_FILE, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
@@ -146,6 +146,8 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   }
   // The panel's agent token lives ONLY in the panel's folder (every Guard keeps its hash, under the agent `panel-<shop>`, allowed the reads and nothing else). 0600: the
   // panel runs as the user who wrote it. One token for the panel, not one per Guard: the panel reads a single token file and presents it to each Guard it checks.
+  // B69: the shop's fingerprint key and its copies (lib/secrets.ts)
+  ensureShopPersonKeys(dir, shop, rt, panelOn);
   const panel = panelOn ? ensureSecret(secretFile(dir, "panel", names.panelGuardToken), mintGuardToken, 0o600) : undefined;
   return { agent, admin, ...(panel ? { panel } : {}) };
 }
@@ -444,7 +446,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
     for (const g of p.guards) { configs[`${g.plan.service}/spec.json`] = g.plan.specText; configs[`${g.plan.service}/guard.toml`] = g.toml!; }
   }
   configs["g-model/guard.toml"] = model.toml!;
-  const secretValues = prepared.flatMap((p) => { const c = creds.get(p.folder.name)!; return [...Object.values(c.agent), ...Object.values(c.admin), ...Object.values(c.panel ?? {}), ...["razorpay_authorization", "whatsapp_authorization"].map((f) => readSecretFile(secretFile(ctx.dir, `g-${p.folder.name}-${f.split("_")[0]}`, f)) ?? ""), readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), "internal_token")) ?? ""]; });
+  const secretValues = prepared.flatMap((p) => { const c = creds.get(p.folder.name)!; return [...Object.values(c.agent), ...Object.values(c.admin), ...Object.values(c.panel ?? {}), ...["razorpay_authorization", "whatsapp_authorization"].map((f) => readSecretFile(secretFile(ctx.dir, `g-${p.folder.name}-${f.split("_")[0]}`, f)) ?? ""), readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), "internal_token")) ?? "", readSecretFile(personKeyFile(ctx.dir, p.folder.name)) ?? "", readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), RECORD_KEY_FILE)) ?? ""]; });
   const leaks = noSecretsIn(configs, secretValues.filter(Boolean));
   if (leaks.length > 0) throw new Refused(leaks);
 

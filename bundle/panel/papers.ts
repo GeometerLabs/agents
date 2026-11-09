@@ -1,6 +1,6 @@
 // The panel's side of the three papers (B28 statement, B35 record of one case, B36 identity paper) and of the record's evidence pack, for one shop the account may
 // see (the routes in server.ts ask shops.find first: a partner gets a 404 for a shop that is not theirs). Everything is made from files the panel already reads: the
-// deployer's export of the record and the cases (numbers already short hashes there), the shop's settings and their history, the go-live certificate the panel keeps,
+// deployer's export of the record and the cases (numbers already keyed fingerprints there), the shop's settings and their history, the go-live certificate the panel keeps,
 // and the last daily fingerprint the deployer wrote into the shop's status. The panel's signing key signs them; without one they say they are not signed.
 //
 // The agent's stable id lives in shops/<shop>/identity.json, written once (never overwritten) the first time it is asked for; the operator's choice of public fields
@@ -10,6 +10,7 @@ import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Language } from "../../modules/language/languages.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
+import { keyIdOf } from "../../modules/record/fingerprint.ts";
 import { anchorOf, evidencePack, ledgerFile } from "../../modules/record/ledger.ts";
 import type { LedgerEntry } from "../../modules/record/ledger.ts";
 import { loadPrivateKey, envelopeFile, verifyEnvelopeText } from "../../modules/report/sign.ts";
@@ -38,6 +39,7 @@ export interface MadePaper { file: string; type: string; text: string }
 export class PaperError extends Error {}
 
 const readText = (file: string): string | undefined => { try { return readFileSync(file, "utf8"); } catch { return undefined; } };
+const readJson = (file: string): { keyId?: string } | undefined => { try { return JSON.parse(readFileSync(file, "utf8")) as { keyId?: string }; } catch { return undefined; } };
 
 export function createPapers(config: PanelConfig, shops: Shops, docs: Documents, now: () => number) {
   const key = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined;
@@ -105,7 +107,13 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
       if (!/^\+?[0-9 ]{8,16}$/u.test(number.trim())) throw new PaperError("Type the person's WhatsApp number, with the country code (like +91 98...).");
       const b = base(id);
       const digits = `+${number.replace(/\D/gu, "")}`;
-      const env = sealStatement({ template: b.kind.papers, shop: b.shop, number: digits, entries: b.data.entries, cases: b.kind.cases(b.data, b.settings), ...(language ? { language: lang(language, "en") } : {}), now: now(), tenant: id }, key);
+      // B69: a person is found by the shop's key. An export from before B69, or one made under another key (after a restore), would match nobody and read as a person with no payments, so each is refused and said
+      const personKey = shops.personKey(id);
+      if (!personKey) throw new PaperError("This shop's fingerprint key has not reached the panel yet. It arrives with the shop's next export (within a quarter of an hour) or deploy; try again after that.");
+      const form = readJson(join(shops.paths.exports(id), "person-form.json"));
+      if (!form) throw new PaperError("This shop's record was last exported in the older form, which cannot be matched to a number. The next export (within a quarter of an hour) uses the keyed form; try again after that.");
+      if (form.keyId !== keyIdOf(personKey)) throw new PaperError("This shop's record was last exported under another fingerprint key (after a restore, for example), so a number cannot be matched to it yet. The next export (within a quarter of an hour) uses the key in place; try again after that.");
+      const env = sealStatement({ template: b.kind.papers, shop: b.shop, number: digits, personKey, entries: b.data.entries, cases: b.kind.cases(b.data, b.settings), ...(language ? { language: lang(language, "en") } : {}), now: now(), tenant: id }, key);
       return [{ file: "statement.json", type: "application/json; charset=utf-8", text: envelopeFile(env) }, { file: `statement-${env.document.language}.html`, type: "text/html; charset=utf-8", text: statementPage(env) }];
     },
     /** The identity paper, full and public. */

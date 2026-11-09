@@ -10,7 +10,8 @@ import { headOf, ledgerEntries } from "../../record/ledger.ts";
 import { bannedIn } from "../../report/claims.ts";
 import { envelopeFile, verifyEnvelopeText } from "../../report/sign.ts";
 import type { PaperCase, TemplatePapers } from "../common.ts";
-import { isPerson, shortHash, visibleText } from "../common.ts";
+import { isPerson, visibleText } from "../common.ts";
+import { personLabel } from "../../record/fingerprint.ts";
 import { buildDisputeRecord, disputePage, disputeText, sealDisputeRecord } from "../dispute.ts";
 import { AGENT_ID, CHOOSABLE, identityPage, newAgentId, sealIdentity, widenedLimits } from "../identity.ts";
 import type { LimitFact } from "../identity.ts";
@@ -42,9 +43,10 @@ const RECORD: RecordEntry[] = [
 ];
 const caseOf = (id: string, customer: string, language: Language = "hi"): PaperCase => ({ id, customer, language, state: "confirmed", label: (l) => `Haircut (${l}) ${id}` });
 const CASES = [caseOf("b-1", A), caseOf("b-2", B, "kn"), caseOf("b-3", B, "kn")];
-/** The same record and cases as the bundle's export writes them: numbers as short hashes, notes scrubbed. */
-const EXPORTED = RECORD.map((x) => ({ ...x, conversation: `c-${shortHash(x.conversation)}`, notes: "scrubbed" }));
-const EXPORTED_CASES = CASES.map((c) => ({ ...c, customer: `p-${shortHash(c.customer)}` }));
+/** The same record and cases as the bundle's export writes them: numbers as the shop's keyed fingerprints, notes scrubbed. */
+const PERSON_KEY = Buffer.alloc(32, 7);
+const EXPORTED = RECORD.map((x) => ({ ...x, conversation: personLabel(PERSON_KEY, "c", x.conversation), notes: "scrubbed" }));
+const EXPORTED_CASES = CASES.map((c) => ({ ...c, customer: personLabel(PERSON_KEY, "p", c.customer) }));
 const { privateKey } = generateKeyPairSync("ed25519");
 
 test("a statement holds this person's own payments and refunds, once each, and their own totals; nothing of anyone else", () => {
@@ -61,13 +63,15 @@ test("a statement holds this person's own payments and refunds, once each, and t
 
 test("the same statement comes out of the bundle's export (hashed numbers, scrubbed notes), and the ledger head is the same", () => {
   const raw = buildStatement({ template: TOY, shop, number: B, entries: RECORD, cases: CASES, now: t0, tenant: "glow-salon" });
-  const fromExport = buildStatement({ template: TOY, shop, number: B, entries: EXPORTED, cases: EXPORTED_CASES, now: t0, tenant: "glow-salon" });
+  const fromExport = buildStatement({ template: TOY, shop, number: B, entries: EXPORTED, cases: EXPORTED_CASES, personKey: PERSON_KEY, now: t0, tenant: "glow-salon" });
   assert.deepEqual(fromExport, raw);
   assert.equal(raw.language, "kn");
   assert.deepEqual(raw.items.map((i) => [i.kind, i.by]), [["paid", "provider"], ["paid", "owner-marked"]]);
   assert.ok(raw.notTested.includes(WORDS.kn.not.upi), "a UPI amount says it was marked by the owner, and the paper says what that does not show");
   assert.equal(headOf(EXPORTED, "glow-salon")!.head, headOf(RECORD, "glow-salon")!.head);
-  assert.ok(isPerson(`p-${shortHash(B)}`, B) && isPerson(B, B) && !isPerson(`p-${shortHash(A)}`, B));
+  assert.ok(isPerson(personLabel(PERSON_KEY, "p", B), B, PERSON_KEY) && isPerson(B, B) && !isPerson(personLabel(PERSON_KEY, "p", A), B, PERSON_KEY));
+  assert.ok(!isPerson(personLabel(PERSON_KEY, "p", B), B), "without the key a fingerprint in an export matches nobody");
+  assert.ok(!isPerson(personLabel(Buffer.alloc(32, 8), "p", B), B, PERSON_KEY), "another shop's key gives another fingerprint");
 });
 
 test("a number with nothing recorded gets a statement that says so, not someone else's", () => {
@@ -95,7 +99,7 @@ test("the record of one case puts the customer, the agent, the limits and Guard,
   assert.ok(r.notTested.includes(WORDS.en.not.guardLog) && r.notTested.includes(WORDS.en.not.providers) && r.notTested.includes(WORDS.en.not.words));
   assert.equal(r.case.customer, A, "the customer as the record keeps it");
   const fromExport = buildDisputeRecord({ template: TOY, shop, case: EXPORTED_CASES[0], entries: EXPORTED, language: "en", now: t0, tenant: "glow-salon" });
-  assert.equal(fromExport.case.customer, `p-${shortHash(A)}`, "hashed where the record hashes it");
+  assert.equal(fromExport.case.customer, personLabel(PERSON_KEY, "p", A), "the fingerprint where the export holds one");
   assert.deepEqual(fromExport.rows, r.rows);
 });
 
@@ -104,6 +108,12 @@ test("the record of a UPI case says marked paid by owner and that no payment ser
   assert.match(r.rows[0].owner.join(" "), /owner marked the payment received \(no payment service record\) \(₹250\)/);
   assert.deepEqual(r.rows[0].services, []);
   assert.ok(r.notTested.includes(WORDS.en.not.upi));
+});
+
+test("B69: a message id kept as a fingerprint is not said to be in WhatsApp's own record; one kept as it came still is", () => {
+  const sent = (id: string) => buildDisputeRecord({ template: TOY, shop, case: CASES[0], entries: [{ seq: 1, time: new Date(t0).toISOString(), conversation: A, booking: "b-1", action: "send_message", inputsDigest: "k-0123456789abcdef", outcome: "confirmed", decisions: [], language: "en", notes: "", refs: { messageId: id } }], language: "en", now: t0 }).rows.flatMap((r) => r.services);
+  assert.deepEqual(sent("m-0123456789ab"), []);
+  assert.match(sent("wamid.1").join(), /WhatsApp service's own record showed wamid\.1/u);
 });
 
 test("no paper decides who is right, grades or promises: no such field, and no such word in any language", () => {

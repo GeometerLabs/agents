@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { ops } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
 import { serverPaths } from "../lib/server.ts";
+import { ensureAgentLabelKey } from "../lib/secrets.ts";
+import { parseKey } from "../../modules/record/key-file.ts";
 import { loadState } from "../lib/state.ts";
 import { writeAtomic } from "../lib/util.ts";
 import type { Facts, Skip } from "./facts.ts";
@@ -35,7 +37,7 @@ export async function recordAgent(ctx: Context, agent: string, facts?: Facts): P
     try { seen = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? "") as Facts; } catch { /* handled below */ }
     if (!seen || typeof seen.guards !== "object" || typeof seen.service !== "object") return { added: 0, total: loadRecord(ctx.dir, agent).entries.length, problems: [`The Guards could not be asked (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 200)}). Is the server up?`] };
   }
-  const { state, added, gaps } = foldFacts(before, seen, { settings: folder.settings, agentId: `agent-${agent}`, relayId: `relay-${agent}`, now: ctx.now().getTime() });
+  const { state, added, gaps } = foldFacts(before, seen, { settings: folder.settings, agentId: `agent-${agent}`, relayId: `relay-${agent}`, now: ctx.now().getTime(), labelKey: parseKey(ensureAgentLabelKey(ctx.dir, agent), "The agent's label key") });
   const out = serverPaths(ctx.dir).exportsOf(agent);
   mkdirSync(out, { recursive: true });
   writeAtomic(recordFile(ctx.dir, agent), `${JSON.stringify(state)}\n`, 0o600);
