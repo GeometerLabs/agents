@@ -1,16 +1,22 @@
 // The nightly snapshot, as it runs INSIDE a short-lived container started by the deployer (it has the volumes mounted, and the snapshot bucket's key).
 // For each shop it makes a consistent copy of the runtime's SQLite file (VACUUM INTO on a read-only connection: SQLite's own copy, consistent while the runtime
-// writes), takes the Guards' own backups from where Guard wrote them (POST /admin/backup, run just before), and writes ONE object per database file: the runtime's
-// copy, and each Guard's backup folder as one tar. Every object is gzipped (node:zlib) and then age-encrypted to the recipients: the owner's key, kept off the server,
-// and the server's drill key (backup/jobs.ts). Then it deletes what is older than the keep period. The plain text never leaves this container's memory and temp folder.
+// writes) and checks it (integrity_check), takes the Guards' own backups from where Guard wrote them (POST /admin/backup, run just before), and writes ONE object per
+// database file: the runtime's copy, and each Guard's backup folder as one tar. Every object is gzipped (node:zlib) and then age-encrypted to the owner's public key;
+// the secret half is kept OFF the server, so nothing on the server can open a snapshot. The plain text never leaves this container's memory and temp folder.
 //
 //   <shop>/<stamp>/runtime/agent.db.gz.age     the runtime's database
 //   <shop>/<stamp>/guard-<kind>.tar.gz.age     one Guard's backup folder (its store, its evidence ledger, anchor and pack), as one tar
 //   <shop>/<stamp>/manifest.json.gz.age        every file's size and sha256 (before compression), and the record's length and last entry
 //
+// What it hands back besides, in the clear, is the snapshot's SEAL: each object's key, size and sha256 as uploaded, and what the copy's record was (its length, last
+// entry's digest and the head of its hash chain). No customer's words or numbers are in it. The weekly drill checks a snapshot with it, without the key (drill-check.ts).
+//
+// Old snapshots are deleted by the bucket's own lifecycle rule. Deleting them from here is only a fallback: a key that may not list or delete (a create-only one) is
+// said beside the night's result ("pruning left to the bucket's lifecycle rule"), never a failed night.
+//
 // What one night costs in bucket operations, per shop, whatever the shop holds (bundle/test/backup-cost.test.ts): one PUT per database file (the runtime and each Guard)
-// and one for the manifest; one LIST of the shop's folder (one page per 1,000 objects; 30 nights of a shop with three Guards is 150); and, once the keep period is
-// full, one DELETE per object of the night that ages out. A Guard's evidence ledger grows by a file every 500 decisions, which is why its folder goes up as ONE tar.
+// and one for the manifest; one LIST of the shop's folder (one page per 1,000 objects); and, when the key may delete and the keep period is full, one DELETE per object
+// of the night that ages out. A Guard's evidence ledger grows by a file every 500 decisions, which is why its folder goes up as ONE tar.
 // Snapshots written before 9 Nov 2026 have one plain `.age` object per file, not gzipped; restore-snapshot.ts opens both kinds, told apart by the name.
 //
 //   node bundle/backup/snapshot.ts /job/job.json
@@ -23,18 +29,22 @@ import { encrypt } from "./age.ts";
 import { folderStore, s3Store } from "./store.ts";
 import type { ObjectStore } from "./store.ts";
 import { toTarGz } from "../export/tar.ts";
+import { ledgerEntries } from "../../modules/record/ledger.ts";
+import type { RecordEntry } from "../../modules/record/record.ts";
 
 export interface SnapshotJob {
   stamp: string;
   keepDays: number;
-  /** The owner's public key (geometer.json) and the server's drill key: either identity opens a snapshot. */
-  recipients: string[];
+  /** The owner's public key (geometer.json). Its secret half is not on the server. */
+  recipient: string;
   target: { url: string; endpoint?: string; region?: string };
   shops: { name: string; runtimeDb: string; guards: { kind: string; dir: string }[] }[];
 }
 
 export interface RecordFacts { records: number; lastSeq: number | null; lastEntryDigest: string | null }
-export interface ShopSnapshot { name: string; ok: boolean; stamp: string; files: number; bytes: number; record?: RecordFacts; error?: string; /** The snapshot was written, but older ones could not be deleted (the bucket's own lifecycle rule may do it). */ pruneError?: string }
+/** What the drill checks a snapshot by, without opening it: the objects as uploaded, and the copy's record (checked with integrity_check when it was made). */
+export interface Seal { stamp: string; objects: { key: string; bytes: number; sha256: string }[]; record: (RecordFacts & { head: string | null }) | null }
+export interface ShopSnapshot { name: string; ok: boolean; stamp: string; files: number; bytes: number; record?: RecordFacts; seal?: Seal; error?: string; /** Old snapshots were not deleted from here: the bucket's lifecycle rule does it. */ pruneError?: string }
 /** One file of a snapshot, as it was before compression and encryption. `path` is relative to the snapshot's folder (runtime/agent.db, guard-razorpay/state.db). */
 export interface ManifestFile { path: string; bytes: number; sha256: string }
 export interface Manifest { format: 2; shop: string; stamp: string; files: ManifestFile[]; objects: { key: string; bytes: number }[]; runtime: RecordFacts | null }
@@ -55,13 +65,19 @@ export function recordFacts(db: DatabaseSync): RecordFacts {
   return { records: Number(n.n), lastSeq: n.last === null ? null : Number(n.last), lastEntryDigest: row ? sha256(row.entry) : null };
 }
 
+/** The record chained into its ledger (modules/record/ledger.ts, B28), as the daily fingerprint chains it. Throws if an entry cannot be chained. */
+export function chainOf(db: DatabaseSync, tenant: string): ReturnType<typeof ledgerEntries> {
+  const rows = db.prepare("SELECT entry FROM record ORDER BY seq").all() as { entry: string }[];
+  return ledgerEntries(rows.map((r) => JSON.parse(r.entry) as RecordEntry), tenant);
+}
+
 const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]);
 
 export async function snapshotShop(shop: SnapshotJob["shops"][number], job: SnapshotJob, store: ObjectStore, scratch: string): Promise<ShopSnapshot> {
   const objects: { name: string; plain: Buffer }[] = [];
   const files: ManifestFile[] = [];
   const note = (path: string, data: Buffer) => files.push({ path, bytes: data.length, sha256: sha256(data) });
-  let record: RecordFacts | undefined;
+  let record: (RecordFacts & { head: string | null }) | undefined;
   if (existsSync(shop.runtimeDb)) {
     // a read-only connection and VACUUM INTO: a consistent copy while the runtime goes on writing, and nothing done to the live file
     mkdirSync(scratch, { recursive: true });
@@ -73,7 +89,9 @@ export async function snapshotShop(shop: SnapshotJob["shops"][number], job: Snap
     try {
       const check = (made.prepare("PRAGMA integrity_check").get() as { integrity_check: string }).integrity_check;
       if (check !== "ok") throw new Error(`the copy of the record failed its integrity check (${check})`);
-      record = recordFacts(made);
+      let head: string | null = null;
+      try { head = chainOf(made, shop.name).at(-1)?.hash ?? null; } catch { head = null; } // the drill then says the record could not be chained
+      record = { ...recordFacts(made), head };
     } finally { made.close(); }
     const data = readFileSync(copy);
     rmSync(copy, { force: true });
@@ -89,14 +107,15 @@ export async function snapshotShop(shop: SnapshotJob["shops"][number], job: Snap
   }
   if (objects.length === 0) return { name: shop.name, ok: false, stamp: job.stamp, files: 0, bytes: 0, error: "there was nothing to copy (no record yet, and no Guard backup)" };
   const folder = `${shop.name}/${job.stamp}/`;
-  const sealed = objects.map((o) => ({ key: folder + o.name, data: encrypt(o.plain, job.recipients) }));
-  const manifest: Manifest = { format: 2, shop: shop.name, stamp: job.stamp, files, objects: sealed.map((o) => ({ key: o.key, bytes: o.data.length })), runtime: record ?? null };
-  sealed.push({ key: folder + MANIFEST_OBJECT, data: encrypt(gzipSync(Buffer.from(JSON.stringify(manifest, null, 2))), job.recipients) });
+  const sealed = objects.map((o) => ({ key: folder + o.name, data: encrypt(o.plain, job.recipient) }));
+  const facts = record ? { records: record.records, lastSeq: record.lastSeq, lastEntryDigest: record.lastEntryDigest } : null;
+  const manifest: Manifest = { format: 2, shop: shop.name, stamp: job.stamp, files, objects: sealed.map((o) => ({ key: o.key, bytes: o.data.length })), runtime: facts };
+  sealed.push({ key: folder + MANIFEST_OBJECT, data: encrypt(gzipSync(Buffer.from(JSON.stringify(manifest, null, 2))), job.recipient) });
   let bytes = 0;
   for (const o of sealed) { await store.put(o.key, o.data); bytes += o.data.length; }
   for (const g of shop.guards) rmSync(g.dir, { recursive: true, force: true });
-  // keep `keepDays` days: the stamp is in the key, so the age of a snapshot never depends on a clock inside the bucket. A bucket key that may not list or delete
-  // (a write-only one, with the bucket's own lifecycle rule deleting old snapshots) does not make tonight's snapshot a failure: it is said beside it.
+  const seal: Seal = { stamp: job.stamp, objects: sealed.map((o) => ({ key: o.key, bytes: o.data.length, sha256: sha256(o.data) })), record: record ?? null };
+  // the fallback for a bucket with no lifecycle rule: keep `keepDays` days (the stamp is in the key, so the age never depends on a clock inside the bucket)
   const cutoff = stampMs(job.stamp) - job.keepDays * 86_400_000;
   let pruneError: string | undefined;
   try {
@@ -105,7 +124,7 @@ export async function snapshotShop(shop: SnapshotJob["shops"][number], job: Snap
       if (stamp && stampMs(stamp) < cutoff) await store.delete(o.key);
     }
   } catch (e) { pruneError = (e as Error).message; }
-  return { name: shop.name, ok: true, stamp: job.stamp, files: sealed.length, bytes, ...(record ? { record } : {}), ...(pruneError ? { pruneError } : {}) };
+  return { name: shop.name, ok: true, stamp: job.stamp, files: sealed.length, bytes, ...(facts ? { record: facts } : {}), seal, ...(pruneError ? { pruneError } : {}) };
 }
 
 export function storeFor(target: SnapshotJob["target"], keyText: string | undefined): ObjectStore {

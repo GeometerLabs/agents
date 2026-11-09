@@ -1,12 +1,12 @@
-// Open a nightly snapshot. Three callers:
-//   - a person, on any machine that has the owner's key (the secret half, kept off the server), from one snapshot's folder as downloaded from the bucket:
+// Open a nightly snapshot, with the owner's key (the secret half is kept OFF the server: a person brings it). Two callers:
+//   - a person, on their own machine, from one snapshot's folder as downloaded from the bucket: the full restore test, monthly (bundle/README.md, "Backups"):
 //       node bundle/backup/restore-snapshot.ts <folder> --identity <key file> --out <empty folder>
 //     The runtime's database comes out as `runtime/agent.db`, each Guard's backup as `guard-<kind>/...`, and every file is checked against `manifest.json` first.
-//   - `geometer restore <shop> [--at TIME]` on the server: the deployer runs this file in a short-lived container with a job file (`--job`); it fetches the newest
-//     snapshot at or before the time and writes the runtime's database and a `restored.json` note into a folder the deployer then puts in place.
-//   - the weekly drill (drill-check.ts), through fetchSnapshot.
-// The server's drill key opens every snapshot made since the server had one; the owner's key opens all of them. Each object is opened by its name: `.tar.gz.age` is a
-// folder (a Guard's backup), `.gz.age` one gzipped file, and a plain `.age` one file as snapshots before 9 Nov 2026 were written (not gzipped).
+//   - `geometer restore <shop> [--at TIME] --identity <key file>` on the server: the deployer runs this file in a short-lived container with a job file (`--job`) and
+//     the key file mounted read-only; it fetches the newest snapshot at or before the time and writes the runtime's database and a `restored.json` note into a folder
+//     the deployer then puts in place.
+// Each object is opened by its name: `.tar.gz.age` is a folder (a Guard's backup), `.gz.age` one gzipped file, and a plain `.age` one file as snapshots before
+// 9 Nov 2026 were written (not gzipped).
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -89,7 +89,7 @@ export async function fetchSnapshot(store: ObjectStore, shop: string, identity: 
     if (!sealed) throw new Error(`${key} was listed but could not be read`);
     let opened: Map<string, Buffer>;
     try { opened = openObject(key.slice(folder.length), sealed, identity); } catch (e) {
-      if (/cannot open/u.test((e as Error).message)) throw new Error(`the snapshot of ${stamp} cannot be opened with this key: a snapshot made before the server had its drill key (9 Nov 2026) opens only with the owner's key`);
+      if (/cannot open/u.test((e as Error).message)) throw new Error(`the snapshot of ${stamp} cannot be opened with this key: it opens with the owner's age key whose public half is in geometer.json`);
       throw e;
     }
     for (const [p, d] of opened) files.set(p, d);

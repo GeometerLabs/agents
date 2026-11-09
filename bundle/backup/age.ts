@@ -59,25 +59,18 @@ export function recipientOf(identity: string): string {
 const CHUNK = 64 * 1024;
 const nonceFor = (counter: number, last: boolean) => { const n = Buffer.alloc(12); n.writeBigUInt64BE(BigInt(counter), 3); n[11] = last ? 1 : 0; return n; };
 
-/** One X25519 stanza: the file key wrapped for one recipient. */
-function stanza(fileKey: Buffer, recipient: string): string {
+export function encrypt(plain: Uint8Array, recipient: string): Buffer {
   const rpk = bech32Decode(recipient.trim(), "age");
   if (rpk.length !== 32) throw new Error("that is not an age recipient (a public key is 32 bytes)");
+  const fileKey = randomBytes(16);
   const { privateKey: esk, publicKey: epkKey } = generateKeyPairSync("x25519");
   const epk = rawPublic(epkKey);
   const shared = diffieHellman({ privateKey: esk, publicKey: publicKeyFrom(rpk) });
   const wrapKey = hkdf(shared, Buffer.concat([epk, rpk]), "age-encryption.org/v1/X25519");
   const wrap = createCipheriv("chacha20-poly1305", wrapKey, Buffer.alloc(12), { authTagLength: 16 });
   const wrapped = Buffer.concat([wrap.update(fileKey), wrap.final(), wrap.getAuthTag()]);
-  return `-> X25519 ${b64(epk)}\n${b64(wrapped).match(/.{1,64}/gu)?.join("\n") ?? ""}`;
-}
-
-/** Encrypt to one recipient or several (any one of their identities opens it, as with `age -r A -r B`). */
-export function encrypt(plain: Uint8Array, recipients: string | readonly string[]): Buffer {
-  const list = typeof recipients === "string" ? [recipients] : recipients;
-  if (list.length === 0) throw new Error("there is no recipient to encrypt to");
-  const fileKey = randomBytes(16);
-  const head = `age-encryption.org/v1\n${list.map((r) => stanza(fileKey, r)).join("\n")}\n---`;
+  const body = b64(wrapped).match(/.{1,64}/gu)?.join("\n") ?? "";
+  const head = `age-encryption.org/v1\n-> X25519 ${b64(epk)}\n${body}\n---`;
   const mac = createHmac("sha256", hkdf(fileKey, Buffer.alloc(0), "header")).update(head).digest();
   const nonce = randomBytes(16);
   const payloadKey = hkdf(fileKey, nonce, "payload");
