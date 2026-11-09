@@ -15,6 +15,8 @@ import type { PaymentRequest } from "../../../modules/payments/payments.ts";
 import { haggleOffer } from "../../../templates/commerce/bookings/crash-test/shop.ts";
 import { NotDrivable } from "./driver.ts";
 import { buildWorld, sleep } from "./world.ts";
+import { buildOwnerMarkedSituations } from "./owner-marked.ts";
+import { paymentUpstreamOf } from "../folder.ts";
 import type { CrashPlan, GuardCall, World, WorldOptions } from "./world.ts";
 
 export interface Built { situations: Situation[]; skipped: Skipped[] }
@@ -87,6 +89,9 @@ async function cancelAndWaitForRefundCall(w: World, text: string, line: "cancel"
 // ---- the situations ----------------------------------------------------------------------------------------------------------------------------
 
 export function buildSituations(plan: CrashPlan): Built {
+  // an agent that takes UPI through the owner-marked desk has its own situations: there is no gateway for the ones below (B71)
+  const paying = paymentUpstreamOf(plan.folder.agent!.upstreams);
+  if (paying && !paying.gateway) return buildOwnerMarkedSituations(plan);
   const { settings, driver } = plan;
   const uses = { calendar: plan.folder.agent!.upstreams.includes("calendar") };
   const D = settings.deposit.amountInr;

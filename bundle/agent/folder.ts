@@ -1,6 +1,7 @@
 // An agent someone else wrote ("bring your own agent"): its folder on the server, and how `geometer agent add` makes one from flags or a settings file.
 //
-//   agents/<name>/agent.json      which of Razorpay, WhatsApp and Calendar the agent calls, the shop's own WhatsApp number id and calendar id, and the caps that settings do not carry
+//   agents/<name>/agent.json      the services the agent calls (one payment module from modules/payments/providers, UPI by default; WhatsApp; Calendar), the shop's own WhatsApp
+//                                 number id and calendar id, and the caps that settings do not carry
 //   agents/<name>/settings.json   the SAME settings file the templates use (templates/commerce/bookings/src/settings.ts), checked by the same validator. Guard's limits come from it exactly as
 //                                 they do for a template: the deposit, the refund limit. Guard has no rule for prices or opening hours, so those two are kept in the file (the report's
 //                                 policy digest covers them) but nothing in Guard checks them for an agent we did not write.
@@ -9,6 +10,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { rupeesToPaise } from "../../modules/payments/guard-limits.ts";
+import { DEFAULT_PROVIDER, PAYMENT_MODULES, providerById } from "../../modules/payments/providers/index.ts";
 import { validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
@@ -16,9 +18,16 @@ import type { Language } from "../../modules/language/languages.ts";
 import { serverPaths } from "../lib/server.ts";
 import { stableJson, writeAtomic } from "../lib/util.ts";
 
-/** The three services a first-slice agent can call: the ones the templates already use. */
-export const AGENT_UPSTREAMS = ["razorpay", "whatsapp", "calendar"] as const;
-export type AgentUpstream = (typeof AGENT_UPSTREAMS)[number];
+/**
+ * The services an agent can call (B71): any payment module in modules/payments/providers (a gateway gets a Guard in front of its API; an owner-marked one, UPI, is the
+ * desk, modules/payments/owner-marked/desk.ts), WhatsApp and Calendar. Exactly one payment module; UPI when --upstreams is left out.
+ */
+export const AGENT_UPSTREAMS: readonly string[] = [...PAYMENT_MODULES, "whatsapp", "calendar"];
+export type AgentUpstream = string;
+/** What `agent add` uses when --upstreams is left out: the default payment module (UPI: no gateway account), WhatsApp and Calendar. */
+export const DEFAULT_UPSTREAMS: readonly string[] = [DEFAULT_PROVIDER.id, "whatsapp", "calendar"];
+/** The agent's payment module: the one upstream that is a provider. */
+export const paymentUpstreamOf = (upstreams: readonly string[]) => upstreams.map(providerById).find((p) => p !== undefined);
 
 /** Caps that settings do not carry. Left out, the template's defaults (and the server's, for the three counts) are used. */
 export interface AgentCaps {
@@ -131,6 +140,7 @@ export function parseAgentFile(raw: unknown, name: string): { agent?: AgentFile;
   const upstreams = Array.isArray(raw.upstreams) ? raw.upstreams : [];
   if (upstreams.length === 0 || !upstreams.every((u) => (AGENT_UPSTREAMS as readonly unknown[]).includes(u)) || new Set(upstreams).size !== upstreams.length) errors.push(`agent.json: "upstreams" must list some of ${AGENT_UPSTREAMS.join(", ")}, each once.`);
   const list = upstreams as AgentUpstream[];
+  if (list.filter((u) => providerById(u)).length > 1) errors.push(`agent.json: "upstreams" names more than one payment module (${list.filter((u) => providerById(u)).join(", ")}): a shop takes money one way.`);
   const whatsapp = isObj(raw.whatsapp) ? raw.whatsapp : undefined;
   const calendar = isObj(raw.calendar) ? raw.calendar : undefined;
   if (list.includes("whatsapp") && !(whatsapp && typeof whatsapp.phoneNumberId === "string" && /^\d{6,20}$/u.test(whatsapp.phoneNumberId))) errors.push('agent.json: "whatsapp.phoneNumberId" must be the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.');
@@ -237,13 +247,16 @@ const whole = (flag: string, text: string | undefined): number | undefined => {
  * then checked by the same validator, so a number the templates would refuse is refused here in the same words.
  */
 export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path: string) => string, now: Date): { agentText: string; settingsText: string; agent: AgentFile; settings: Settings } {
-  const upstreams = (flags.upstreams ?? AGENT_UPSTREAMS.join(",")).split(",").map((s) => s.trim()).filter(Boolean);
+  const upstreams = (flags.upstreams ?? DEFAULT_UPSTREAMS.join(",")).split(",").map((s) => s.trim()).filter(Boolean);
   const bad = upstreams.filter((u) => !(AGENT_UPSTREAMS as readonly string[]).includes(u));
-  if (bad.length > 0) throw new Error(`I don't know the service${bad.length > 1 ? "s" : ""} ${bad.map((b) => `"${b}"`).join(", ")}. This first version can put Guard in front of: ${AGENT_UPSTREAMS.join(", ")}. (Any other web service is on the list of things not built yet.)`);
+  if (bad.length > 0) throw new Error(`I don't know the service${bad.length > 1 ? "s" : ""} ${bad.map((b) => `"${b}"`).join(", ")}. An agent can call: ${AGENT_UPSTREAMS.join(", ")}. (Any other web service is on the list of things not built yet.)`);
   if (new Set(upstreams).size !== upstreams.length) throw new Error("--upstreams names the same service twice.");
   const list = upstreams as AgentUpstream[];
-  // a refund the owner has to approve is asked on WhatsApp, through the shop's WhatsApp Guard: without it nobody could ever be asked
-  if (list.includes("razorpay") && !list.includes("whatsapp")) throw new Error("A refund above the limit waits for the owner's answer on WhatsApp, so an agent that calls Razorpay needs --upstreams to include whatsapp as well.");
+  const paying = list.map(providerById).filter((p) => p !== undefined);
+  if (paying.length !== 1) throw new Error(`Say how this shop's customers pay: --upstreams names exactly one of ${PAYMENT_MODULES.join(", ")} (${DEFAULT_PROVIDER.id} is the default and needs no gateway account).`);
+  const module = paying[0]!;
+  // the owner is asked on WhatsApp: to approve a refund above the limit (a gateway), or to mark money received and refunds sent (UPI). Without it nobody could ever be asked
+  if (!list.includes("whatsapp")) throw new Error(`The owner is asked on WhatsApp (${module.gateway ? "to approve a refund above the limit" : "to mark each payment received and each refund sent"}), so --upstreams must include whatsapp as well.`);
 
   let settings: Settings;
   let settingsText: string;
@@ -254,9 +267,8 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
     settings = checked.settings;
     settingsText = stableJson(raw);
     // the settings and the services must agree on how money is taken: a gateway Guard is made only for a shop whose settings chose the gateway (B71)
-    const gatewayChosen = (settings as { payment?: { module?: string } }).payment?.module === "razorpay";
-    if (gatewayChosen && !list.includes("razorpay")) throw new Error("The settings file says the shop takes payments on its own Razorpay account, but --upstreams does not include razorpay. Add it, or change \"payment\" in the file to the shop's UPI ID.");
-    if (!gatewayChosen && list.includes("razorpay")) throw new Error("--upstreams includes razorpay, but the settings file does not choose it (\"payment\": {\"module\": \"razorpay\"}). Guard is put in front of a gateway only for a shop that chose it.");
+    const chosen = (settings as { payment?: { module?: string } }).payment?.module;
+    if (chosen !== module.id) throw new Error(`The settings file says customers pay with "${chosen}", but --upstreams names ${module.id}. Make them the same: a gateway's Guard is made only for a shop that chose that gateway.`);
   } else {
     const businessName = flags["business-name"] ?? name;
     const language = (flags["owner-language"] ?? "en") as Language;
@@ -267,12 +279,12 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
     const deposit = whole("deposit", flags.deposit);
     const refundLimit = whole("refund-limit", flags["refund-limit"]);
     const priceFloor = whole("price-floor", flags["price-floor"]);
-    if (list.includes("razorpay") && (deposit === undefined || refundLimit === undefined)) throw new Error("Say the deposit and the refund limit in rupees: --deposit 200 --refund-limit 200 (or give a settings file with --settings). Guard enforces both on the payment link and the refund.");
+    if (deposit === undefined || refundLimit === undefined) throw new Error(`Say the deposit and the refund limit in rupees: --deposit 200 --refund-limit 200 (or give a settings file with --settings). ${module.gateway ? "Guard enforces both on the payment link and the refund." : "The deposit is what each request asks for, and the owner owes back no more than was marked."}`);
     if (!flags["owner-whatsapp"]) throw new Error("Say the owner's WhatsApp number: --owner-whatsapp +919800000001. It is the only number whose replies can approve a refund.");
-    // B71: how customers pay. A gateway only when --upstreams names it; otherwise the shop's own UPI ID, asked for here, never a gateway nobody chose.
-    if (list.includes("razorpay") && (flags["upi-id"] !== undefined || flags.payee !== undefined)) throw new Error("--upstreams includes razorpay, so the shop takes payments on its own Razorpay account: leave out --upi-id and --payee.");
-    if (!list.includes("razorpay") && (flags["upi-id"] === undefined || flags.payee === undefined)) throw new Error("Say how this shop's customers pay. UPI is the default and needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee \"<the name customers see>\". A shop with its own Razorpay account adds razorpay to --upstreams instead.");
-    const payment = list.includes("razorpay") ? { module: "razorpay" } : { module: "upi", upi: { id: flags["upi-id"], payee: flags.payee } };
+    // B71: how customers pay is the payment module --upstreams names. A gateway needs nothing more here; the owner-marked module (UPI) needs the shop's own UPI ID.
+    if (module.gateway && (flags["upi-id"] !== undefined || flags.payee !== undefined)) throw new Error(`--upstreams names ${module.id}, so the shop takes payments on its own ${module.displayName} account: leave out --upi-id and --payee.`);
+    if (!module.gateway && (flags["upi-id"] === undefined || flags.payee === undefined)) throw new Error(`Say where this shop's customers pay. ${module.displayName} needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee "<the name customers see>". A shop with its own gateway account names it in --upstreams instead.`);
+    const payment = module.gateway ? { module: module.id } : { module: module.id, upi: { id: flags["upi-id"], payee: flags.payee } };
     const raw = {
       name: businessName, timezone: flags.timezone ?? "Asia/Kolkata", languages: [language],
       services: [{ id: "service", names: { [language]: [businessName] }, priceInr: priceFloor ?? deposit ?? 1, durationMinutes: 30 }],

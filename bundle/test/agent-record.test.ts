@@ -16,7 +16,7 @@ import { PHONE_NUMBER_ID, CALENDAR_ID } from "./helpers.ts";
 import { world } from "./world.ts";
 
 const facts = JSON.parse(readFileSync(new URL("./fixtures/own-agent-facts.json", import.meta.url), "utf8")) as Facts;
-const settings = agentFromFlags("demo", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => "", new Date("2026-11-05T00:00:00Z")).settings;
+const settings = agentFromFlags("demo", { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => "", new Date("2026-11-05T00:00:00Z")).settings;
 const labelKey = Buffer.alloc(32, 9);
 const options = (now = Date.parse(facts.at)) => ({ settings, agentId: "agent-demo", relayId: "relay-demo", now, labelKey });
 const tally = (entries: readonly { action: string; outcome: string }[]) => Object.fromEntries(Object.entries(entries.reduce((m: Record<string, number>, e) => { const k = `${e.action}/${e.outcome}`; m[k] = (m[k] ?? 0) + 1; return m; }, {})).sort());
@@ -178,7 +178,7 @@ test("a refund Guard is holding is 'waiting for the owner' in the report's booki
 test("the report counts it the way it counts a template's record: the deposit, the refund the owner approved, what was refused; and it says which agent it is of", async () => {
   const w = world({}); const out = mkdtempSync(join(tmpdir(), "geo-agent-report-"));
   try {
-    addAgent(w.root, "demo", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => "", new Date("2026-11-05T00:00:00Z"));
+    addAgent(w.root, "demo", { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => "", new Date("2026-11-05T00:00:00Z"));
     const ctx = { ...w.ctx, now: () => new Date(facts.at) };
     const r = await recordAgent(ctx, "demo", facts);
     assert.deepEqual([r.added, r.total], [11, 11]);
