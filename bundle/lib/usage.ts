@@ -130,7 +130,7 @@ export interface UsageTotals {
   reportsSent?: number;
   /**
    * Messages sent to customers (never the owner's), read back from WhatsApp (`confirmed`), by the language they were written in (the record entry's `language`). A UPI
-   * QR picture is logged as its own `send_message` beside the words (`refs.image`) and is not counted, so one reply counts once. For fleet's Second language badge
+   * QR picture is logged as its own `send_message` beside the words (`refs.image`) and is not counted, so one reply counts once. Sent to fleet as counts
    * (heartbeat `usage.replies_by_language`). Optional, like `reportsSent`.
    */
   repliesByLanguage?: Record<Language, number>;
