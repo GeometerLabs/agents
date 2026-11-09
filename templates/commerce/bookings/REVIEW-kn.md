@@ -961,7 +961,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `takeOut.heading` | ಎಲ್ಲವನ್ನೂ ನಿಮ್ಮೊಂದಿಗೆ ತೆಗೆದುಕೊಂಡು ಹೋಗಿ | Take everything with you |  |
 | `takeOut.text` | ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ಮಿತಿಗಳು, ರೆಕಾರ್ಡ್, ವರದಿಗಳು ಮತ್ತು ಪ್ರಮಾಣಪತ್ರಗಳ ಒಂದು ಪ್ರತಿ, Geometer ಇಲ್ಲದೆಯೂ ತೆರೆಯುವ ಸರಳ ಫೈಲ್‌ಗಳಲ್ಲಿ. ಪ್ಲಾನ್ ನಿಂತುಹೋದರೂ ಇದು ಕೆಲಸ ಮಾಡುತ್ತದೆ. | A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed. |  |
 | `takeOut.button` | ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ | Download the export |  |
-| `takeOut.notIn` | ಇದರಲ್ಲಿ ಯಾವುದೇ ಕೀ ಅಥವಾ ರಹಸ್ಯ ಇಲ್ಲ; ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp, ಪಾವತಿ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಖಾತೆಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಗ್ರಾಹಕರ ಸಂಖ್ಯೆಗಳು ಚಿಕ್ಕ ಕೋಡ್‌ಗಳು. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes. |  |
+| `takeOut.notIn` | ಇದರಲ್ಲಿ ಯಾವುದೇ ಕೀ ಅಥವಾ ರಹಸ್ಯ ಇಲ್ಲ; ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp, ಪಾವತಿ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಖಾತೆಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ದಾಖಲೆಯಲ್ಲಿ ಗ್ರಾಹಕರ ಸಂಖ್ಯೆಗಳು ಈ ಅಂಗಡಿಯ ಕೀಯಿಂದ ಮಾತ್ರ ಹೊಂದಿಸಬಹುದಾದ ಕೋಡ್‌ಗಳು; ಸೆಟ್ಟಿಂಗ್ಸ್ ಫೈಲ್‌ನಲ್ಲಿ ಅಂಗಡಿಯ ಸ್ವಂತ ಜನರ ಹೆಸರು ಮತ್ತು ಸಂಖ್ಯೆಗಳು ಇದ್ದಂತೆಯೇ ಇವೆ. | No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. In the record, customers' numbers are codes only this shop's key can match; the settings file lists the shop's own people as written. |  |
 | `takeOut.check` | ಫೈಲ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಒಳಗಿರುವ README ನೋಡಿ. | To check the files, use the README inside. |  |
 | `handover.heading` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೊಬ್ಬರಿಗೆ ವರ್ಗಾಯಿಸಿ | Move this shop to someone else |  |
 | `handover.button` | ಈ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ… | Move this shop… |  |

@@ -40,11 +40,13 @@ export function afterRestore(o: {
   /** The template's own: every counter of its store moved on by `gap` (modules/runtime/snapshot.ts). */
   skipCounters?: (json: string, gap: number) => string;
   owner?: { whatsapp?: string; language?: Language };
+  /** The record's key (B69), as the runtime writes every other entry with. */
+  recordKey?: Buffer;
 }): { snapshot: string; fresh: RecordEntry[]; said: string } | undefined {
   const refs = { snapshot: o.note.snapshot ?? "unknown", restoredAt: o.note.restoredAt ?? "unknown", idGap: String(o.skipCounters ? RESTORE_ID_GAP : 0) };
   if (o.entries.some((e) => e.action === RESTORED_ENTRY && e.refs.snapshot === refs.snapshot && e.refs.restoredAt === refs.restoredAt)) return undefined;
   const snapshot = o.skipCounters ? o.skipCounters(o.snapshot, RESTORE_ID_GAP) : o.snapshot;
-  const record = createRecord(o.clock, o.entries);
+  const record = createRecord(o.clock, o.entries, o.recordKey ? { key: o.recordKey } : {});
   const lastSeq = o.note.lastSeq ?? o.entries.length;
   record.append({
     conversation: o.owner?.whatsapp ?? "", booking: null, action: RESTORED_ENTRY, outcome: "confirmed", inputs: o.note, language: o.owner?.language ?? "en", refs,

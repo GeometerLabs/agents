@@ -1,4 +1,4 @@
-// Stand-in for the two things the template takes from node:crypto, for the browser build. The build points `node:crypto` here.
+// Stand-in for the things the template takes from node:crypto, for the browser build (createHmac is only named, never used there: a demo has no shop key). The build points `node:crypto` here.
 //
 //  - createHash("sha256").update(text).digest("hex"): the action record fingerprints its inputs (modules/record/record.ts), and it does so
 //    synchronously, so WebCrypto (which answers later) cannot be used without changing the record. This is plain SHA-256 in JavaScript.
@@ -70,6 +70,11 @@ export function createHash(algorithm: string): Hash {
     },
   };
   return hash;
+}
+
+/** A demo in the browser has no shop key, so the record never asks for an HMAC (modules/record/fingerprint.ts); the name has to exist for the build to load, and the browser never calls it. */
+export function createHmac(): never {
+  throw new Error("The browser build has no shop key, so it cannot make a keyed fingerprint.");
 }
 
 /** A whole number from min up to but not including max (or from 0 up to the one argument), drawn without bias. */

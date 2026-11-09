@@ -10,6 +10,7 @@
 //     issue-approver <shop> <ttl-seconds>              a fresh reading credential for the shop's relay, printed once on stdout
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
+import { parseKey } from "../../modules/record/key-file.ts";
 import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
@@ -18,7 +19,7 @@ import type { AdminStatus, BackupFacts, Baseline, GuardObservation, RuntimeStatu
 
 export interface OpsGuard { id: string; service: string; adminUrl: string; healthUrl: string; adminTokenFile: string; /** The Guard's agent port (an agent someone else wrote: where the reading agent looks at the service's state). */ agentUrl?: string }
 /** An agent someone else wrote: its Guards, and nothing the bundle runs (no runtime). */
-export interface OpsOwnAgent { createdAt: string; recordTokenFile: string; ownerWhatsapp: string; calendarId?: string; guards: OpsGuard[] }
+export interface OpsOwnAgent { createdAt: string; recordTokenFile: string; /** The label key (B69): see agent/facts.ts. */ labelKeyFile: string; ownerWhatsapp: string; calendarId?: string; guards: OpsGuard[] }
 export interface OpsConfig {
   deploymentId: string;
   bundleVersion: string;
@@ -189,7 +190,7 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     let skip: { settled: string[]; paid: string[] } | undefined;
     try { skip = args[1] ? JSON.parse(args[1]) : undefined; } catch { /* ask about everything */ }
     out(await collectFacts({
-      agentId: `agent-${args[0]}`, relayId: `relay-${args[0]}`, recordToken: readSecret(c.recordTokenFile), ...(c.calendarId ? { calendarId: c.calendarId } : {}),
+      agentId: `agent-${args[0]}`, relayId: `relay-${args[0]}`, recordToken: readSecret(c.recordTokenFile), labelKey: parseKey(readSecret(c.labelKeyFile), `The label key of ${args[0]}`), ...(c.calendarId ? { calendarId: c.calendarId } : {}),
       guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, "") as "razorpay", adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
     }, new Date(), fetch, skip));
     return 0;

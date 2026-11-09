@@ -24,7 +24,7 @@ import { validateRuntimeConfig } from "../../templates/education/fees/server/con
 import { createKit } from "../../templates/education/fees/test/runtime-kit.ts";
 import { PARENT } from "../../templates/education/fees/test/runtime-kit.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
-import { PHONE_NUMBER_ID, serverConfig } from "./helpers.ts";
+import { PHONE_NUMBER_ID, serverConfig, writePersonKey } from "./helpers.ts";
 import { secretsFor, world } from "./world.ts";
 import type { World } from "./world.ts";
 
@@ -174,7 +174,7 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     assert.ok(!("calendar" in onDisk.services));
     assert.ok(!existsSync(join(w.paths.secrets, "refresher", "bright")) && !existsSync(join(w.paths.secrets, "g-bright-calendar")), "no calendar credentials or folders were made");
     assert.deepEqual(readdirSync(join(w.paths.secrets, "ops", "bright")).filter((f) => f.startsWith("admin_")).sort(), ["admin_razorpay", "admin_whatsapp"]);
-    assert.deepEqual(readdirSync(join(w.paths.secrets, "rt-bright")).sort(), ["agent_model", "agent_razorpay", "agent_whatsapp", "internal_token"]);
+    assert.deepEqual(readdirSync(join(w.paths.secrets, "rt-bright")).sort(), ["agent_model", "agent_razorpay", "agent_whatsapp", "internal_token", "record_key"]);
     const ops = JSON.parse(readFileSync(join(w.paths.generated, "ops", "ops.json"), "utf8"));
     assert.equal(ops.shops.bright.pathway, "fees");
     const state = loadState(w.root);
@@ -280,10 +280,10 @@ test("the export for a Fees centre is dues.json: the parent's number and the chi
     const wrote = db.loadState().record.map((e) => e.notes).join("\n");
     assert.ok(names.some((n) => wrote.includes(n)), "the record's own notes do name a student (that is what the export has to hide)");
 
-    const result = exportShop({ name: "bright", db: db.file, out });
+    const result = exportShop({ name: "bright", db: db.file, out, personKeyFile: writePersonKey(mkdtempSync(join(tmpdir(), "geo-key-"))) });
     assert.equal(result.ok, true);
     assert.deepEqual([result.dues, result.bookings], [5, undefined]);
-    assert.deepEqual(readdirSync(out).sort(), ["dues.json", "ledger.json", "record.json"]);
+    assert.deepEqual(readdirSync(out).sort(), ["dues.json", "ledger.json", "person-form.json", "record.json"]);
     const exported = readFileSync(join(out, "dues.json"), "utf8") + readFileSync(join(out, "record.json"), "utf8") + readFileSync(join(out, "ledger.json"), "utf8");
     // B28: the ledger is chained from the centre's OWN record (names in its notes), and its head is the head of the exported record (names hashed): one fingerprint for both
     const own = headOf(db.loadState().record, "bright")!;

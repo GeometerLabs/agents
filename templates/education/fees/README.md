@@ -36,6 +36,7 @@ Every situation is judged from the stand-ins' own records (what the payments ser
 A centre is a folder like [`clients/bright-tuition.example`](clients/bright-tuition.example) (`settings.json`, `runtime.json`, `pathway.lock`). On a Geometer server the deploy bundle makes it for you and runs it; by hand:
 
 ```sh
+# in live mode also RECORD_KEY_FILE=<a file of 64 hex digits, openssl rand -hex 32>: the record is written with it, and the runtime refuses to start without it; the deploy bundle makes it
 INTERNAL_TOKEN_FILE=token.txt node templates/education/fees/server/main.ts --client templates/education/fees/clients/bright-tuition.example   # npm run serve
 node templates/education/fees/inbox/main.ts        # the inbox: Razorpay's and WhatsApp's signed webhooks in, the owner's replies to the relay (modules/inbox/main.ts lists the environment)
 node templates/education/fees/approvals/main.ts    # the approvals relay: asks the owner about a refund Guard is holding (modules/approvals/main.ts lists the environment)
