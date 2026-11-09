@@ -20,6 +20,7 @@ import { createMonthlyReport } from "../../templates/commerce/bookings/report/mo
 import { REPORT_TEMPLATE_NAMES } from "../../templates/commerce/bookings/report/whatsapp.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { zonedToMs } from "../../modules/core/time.ts";
+import { writePersonKey } from "./helpers.ts";
 import { world } from "./world.ts";
 
 const RATES = usageRatesFrom([latestPriceList()]);
@@ -137,12 +138,13 @@ test("the export job counts the shop's record: the totals come back with the exp
     const entries = [understood("decision", 6), understood("model", 14_000), entry("receive_message", "confirmed"), reply("customer", "booked"), reply("owner", "owner_message_held")].map((e, i) => ({ ...e, seq: i + 1, conversation: "+919811111111" }));
     store.commitStep({ snapshot: JSON.stringify({ format: 1, bookings: [], customers: [], seenMessages: [], seenEvents: [], nextBooking: 1 }), entries: entries as never, nowMs: Date.now() });
     store.close();
-    const r = exportShop({ name: "s", db: join(dir, "rt", "agent.db"), out: join(dir, "out", "s") }, RATES);
+    const personKeyFile = writePersonKey(dir);
+    const r = exportShop({ name: "s", db: join(dir, "rt", "agent.db"), out: join(dir, "out", "s"), personKeyFile }, RATES);
     assert.deepEqual([r.ok, r.entries], [true, 5]);
     assert.deepEqual([r.usage!.messages, r.usage!.byStep, r.usage!.modelMicroInr, r.usage!.whatsapp.service, r.usage!.whatsapp.utility], [3, { rules: 1, decision: 1, model: 1 }, 14_006, 1, 1]);
     assert.ok(!readFileSync(join(dir, "out", "s", "record.json"), "utf8").includes("919811111111"));
     // with no rates passed it reads the bundle's own price lists, the way the export container does
-    assert.equal(exportShop({ name: "s", db: join(dir, "rt", "agent.db"), out: join(dir, "out", "s") }).usage!.whatsapp.estimated, true);
+    assert.equal(exportShop({ name: "s", db: join(dir, "rt", "agent.db"), out: join(dir, "out", "s"), personKeyFile }).usage!.whatsapp.estimated, true);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

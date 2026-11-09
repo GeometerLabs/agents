@@ -15,7 +15,7 @@ import { sha256Hex } from "../lib/util.ts";
 import { loadState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
-import { CALENDAR_ID, EXAMPLE_CLIENT, PHONE_NUMBER_ID, panelRuntime } from "./helpers.ts";
+import { CALENDAR_ID, EXAMPLE_CLIENT, PHONE_NUMBER_ID, panelRuntime, writePersonKey } from "./helpers.ts";
 import { read, secretsFor, world } from "./world.ts";
 
 const CONTRACT = [process.env.GEOMETER_PANEL_CONTRACT, new URL("../panel/contract.ts", import.meta.url).pathname].find((p) => p && existsSync(p));
@@ -234,13 +234,16 @@ test("the export for the monthly report has the record and the bookings and no c
     const data = join(dir, "rt"); const store = openStore(data);
     store.commitStep({ snapshot: JSON.stringify({ format: 1, bookings: [["b-1", { id: "b-1", customer: "+919811111111", state: "confirmed", serviceId: "haircut", depositInr: 200, reminders: [], pending: [], handledPayments: [] }]], customers: [], seenMessages: [], seenEvents: [], nextBooking: 2 }), entries: [{ seq: 1, time: "2026-11-04T10:00:00Z", conversation: "+919811111111", booking: "b-1", action: "send_message", inputsDigest: "d", outcome: "confirmed", decisions: [], language: "en", notes: "", refs: {} } as never], nowMs: Date.now() });
     store.close();
-    const r = exportShop({ name: "s", db: join(data, "agent.db"), out: join(dir, "out", "s") });
+    const personKeyFile = writePersonKey(dir);
+    const r = exportShop({ name: "s", db: join(data, "agent.db"), out: join(dir, "out", "s"), personKeyFile });
     assert.deepEqual([r.ok, r.entries, r.bookings], [true, 1, 1]);
     const record = JSON.parse(readFileSync(join(dir, "out", "s", "record.json"), "utf8")); const bookings = JSON.parse(readFileSync(join(dir, "out", "s", "bookings.json"), "utf8"));
     assert.ok(!JSON.stringify([record, bookings]).includes("919811111111"), "no number in either file");
     assert.match(record[0].conversation, /^c-[0-9a-f]{12}$/); assert.match(bookings[0].customer, /^p-[0-9a-f]{12}$/);
     assert.deepEqual([record[0].seq, bookings[0].id, bookings[0].state], [1, "b-1", "confirmed"]);
-    assert.equal(exportShop({ name: "n", db: join(dir, "absent.db"), out: join(dir, "out", "n") }).ok, false);
+    assert.equal(exportShop({ name: "n", db: join(dir, "absent.db"), out: join(dir, "out", "n"), personKeyFile }).ok, false);
+    assert.equal(exportShop({ name: "s", db: join(data, "agent.db"), out: join(dir, "out", "t"), personKeyFile: join(dir, "no-such-key") }).ok, false, "a shop without its key is not exported, never exported unkeyed");
+    assert.ok(!existsSync(join(dir, "out", "t")));
     assert.ok(!existsSync(join(dir, "out", "n")), "nothing is written for a shop with no database yet: the panel says 'not shared yet'");
     assert.ok(DatabaseSync);
   } finally { rmSync(dir, { recursive: true, force: true }); }

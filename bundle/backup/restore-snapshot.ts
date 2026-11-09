@@ -4,7 +4,8 @@
 //
 // Every `*.age` file under the first folder is decrypted to the same relative path (without `.age`) under --out. The shop's runtime database comes out as
 // `runtime/agent.db`; put it in the shop's data volume as `data/agent.db` (with the runtime stopped) to restore from it, and check it against
-// `manifest.json`, which lists every file's size and sha256 and the record's length and last entry.
+// `manifest.json`, which lists every file's size and sha256 and the record's length and last entry. `person_key` is the shop's fingerprint key (B69): on a new machine put it at
+// `secrets/person-keys/<shop>` (mode 0600) BEFORE the first deploy or export runs, or the server makes a new key and the shop can no longer match the people already in its record.
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { decrypt } from "./age.ts";

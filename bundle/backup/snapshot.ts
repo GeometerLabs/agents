@@ -17,7 +17,8 @@ export interface SnapshotJob {
   keepDays: number;
   recipient: string;
   target: { url: string; endpoint?: string; region?: string };
-  shops: { name: string; runtimeDb: string; guards: { kind: string; dir: string }[] }[];
+  /** `personKeyFile`: the shop's fingerprint key (B69), mounted read-only, so it travels (encrypted to the age recipient) with the rest of the shop's backup. Left out by an older job: no key file is copied. */
+  shops: { name: string; runtimeDb: string; personKeyFile?: string; guards: { kind: string; dir: string }[] }[];
 }
 
 export interface RecordFacts { records: number; lastSeq: number | null; lastEntryDigest: string | null }
@@ -53,6 +54,7 @@ export async function snapshotShop(shop: SnapshotJob["shops"][number], job: Snap
     files.push({ key: `${shop.name}/${job.stamp}/runtime/agent.db.age`, plain: readFileSync(copy) });
     rmSync(copy, { force: true });
   }
+  if (shop.personKeyFile && existsSync(shop.personKeyFile)) files.push({ key: `${shop.name}/${job.stamp}/person_key.age`, plain: readFileSync(shop.personKeyFile) });
   for (const g of shop.guards) if (existsSync(g.dir)) for (const f of walk(g.dir)) files.push({ key: `${shop.name}/${job.stamp}/guard-${g.kind}/${relative(g.dir, f)}.age`, plain: readFileSync(f) });
   if (files.length === 0) return { name: shop.name, ok: false, stamp: job.stamp, files: 0, bytes: 0, error: "there was nothing to copy (no record yet, and no Guard backup)" };
   const manifest = Buffer.from(JSON.stringify({ shop: shop.name, stamp: job.stamp, files: files.map((f) => ({ key: f.key, bytes: f.plain.length, sha256: sha256(f.plain) })), runtime: record ?? null }, null, 2));

@@ -16,7 +16,7 @@ import type { Context } from "../deploy.ts";
 import { names } from "../generate/shop.ts";
 import { LITESTREAM_IMAGE, loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { secretFile } from "../lib/secrets.ts";
+import { ensurePersonKey, ensureShopPersonKeys, secretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
 import type { UsageTotals } from "../lib/usage.ts";
@@ -56,12 +56,13 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   }
   // 2. the snapshot container
   const jobFile = join(work, `snapshot-${stamp}.json`);
+  for (const [shop] of shops) ensurePersonKey(ctx.dir, shop); // B69: the key goes in the snapshot, so a restored shop can still match its own people (a Litestream restore on the same machine has it in place)
   writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipient: server.backup.ageRecipient, target: server.backup.snapshots,
-    shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
+    shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, personKeyFile: `/run/person-keys/${shop}`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
   const mounts = shops.flatMap(([shop, s]) => [["-v", `${volume(server, names.dataVolume(shop))}:/v/${names.dataVolume(shop)}`], ...Object.values(s.applied!.guards).map((g) => ["-v", `${volume(server, names.stateVolume(shop, g.kind as "razorpay"))}:/v/${names.stateVolume(shop, g.kind as "razorpay")}`])]).flat();
   const bucket = server.backup.snapshots.url.startsWith("s3://");
   const key = secretFile(ctx.dir, "backup", "snapshots");
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, bucket), "-v", `${jobFile}:/job/job.json:ro`, ...(bucket && existsSync(key) ? ["-v", `${key}:/run/secrets/snapshots:ro`] : []), ...(bucket ? [] : ["-v", `${server.backup.snapshots.url}:${server.backup.snapshots.url}`]), ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, bucket), "-v", `${jobFile}:/job/job.json:ro`, ...(bucket && existsSync(key) ? ["-v", `${key}:/run/secrets/snapshots:ro`] : []), ...(bucket ? [] : ["-v", `${server.backup.snapshots.url}:${server.backup.snapshots.url}`]), "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: ShopSnapshot[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [...lines, `The snapshot job failed: ${r.stderr.trim().split("\n").slice(-3).join(" | ") || `exit ${r.code}`}`] };
@@ -83,8 +84,10 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   const work = join(serverPaths(ctx.dir).state, "work");
   ensureDir(work);
   const jobFile = join(work, `export-${stampOf(ctx.now())}.json`);
-  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}` })) }), { mode: 0o644 });
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
+  // B69: every shop has its fingerprint key before the job starts (a shop made before B69 gets one now, and the panel's copy with it). The job file only names the file: the key itself is mounted read-only, for this job only.
+  for (const n of shops) ensureShopPersonKeys(ctx.dir, n, names.runtime(n), server.panel.enabled);
+  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}`, personKeyFile: `/run/person-keys/${n}` })) }), { mode: 0o644 });
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string }[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
