@@ -61,7 +61,7 @@ The suggestions are:
 | `forbidden_call` | Always refused, by name | nothing |
 | `spend` and `count` limits | Cap the total or the number of calls in a window (a day by default) | `cap` |
 
-A bound reads a JSON number unless it says otherwise. An amount in the **query or the path** always arrives as text, so the draft writes `"encoding": "string"` on its bound (Guard then takes only text that spells the number exactly: `500`, never `+500`, `0500` or `500.0`). Leave it in: without it every such call is refused for being text.
+A bound reads a JSON number unless it says otherwise. An amount in the **query or the path** always arrives as text, so the draft writes `"encoding": "string"` on its bound (Guard then takes only text that spells the number exactly: `500`, never `+500`, `0500` or `500.0`). Leave it in: without it every such call is refused for being text. The same goes for an amount the API types as a **string in a JSON body** (`"amount": "500"`): the draft writes the encoding, and the review note says that a bare JSON number is then refused, even in range.
 
 ### 2. Review and accept
 
@@ -204,6 +204,8 @@ writes, to `review/2026-11-05/` (a **new folder every time**; it refuses a folde
 - `manifest.json`: the sha256 of each of the files above;
 - with `--backup-dir`, `evidence/evidence-pack.json` and `evidence/anchor.json`.
 
+**Every month, or every week: add `--state-file`.** Guard lists only its 500 most recent decisions, so a plain export of a busy Guard misses what came before. With `--state-file review/export-state.json` the file keeps how far the last export read; each run then writes only the decisions after that point (its `seq` numbers carry on), and no decision is written twice. If more than 500 were decided between two runs, the first line of `record.jsonl` is a `record_gap` line that says which stretch is missing, `summary.txt` starts with `MISSING CALLS`, and the command prints it too. The evidence pack still holds every decision Guard kept. Keep the state file with the exports, and do not edit it. Use the same state file for the same Guard each time.
+
 **What reviewers get, and what they do not.** With `--backup-dir`, the export asks Guard for a **backup** in a new subfolder of that folder (the path as Guard sees it; Guard must be able to write there, and `--backup-read-dir` says where this process sees the same folder when that differs). A Guard backup holds Guard's store and its **evidence keys**. It is for restoring Guard and stays with the operator. The export copies only the two files a reviewer needs, the evidence pack and the anchor, and the tests check that no key and no store land in the review folder. Hand reviewers the review folder, never the backup folder.
 
 The pack is the tamper-evident part. A reviewer checks it with the open verifier, [`geo-verify`](https://github.com/GeometerLabs/geometer-verify) (Apache-2.0):
@@ -259,7 +261,8 @@ cd companies && npm test          # node --test, one file at a time
 | `openapi-read.ts` | reads the OpenAPI JSON: calls, what each carries, local `$ref`s |
 | `guard-binary.ts` | finds and runs `geo-guard compile`, `verify-bundle`, `credential`; finds `geo-verify` |
 | `guard-config.ts` | writes `guard.toml` (production profile, no secret in it) |
-| `export-record.ts` | the reviewers' export |
+| `export-record.ts` | the reviewers' export (incremental with `--state-file`) |
+| `decision-window.ts` | what Guard's list of 500 recent decisions can show, and when calls fell out of it (also used by the bring-your-own-agent record) |
 | `deploy/` | `compose.yaml`, `.env.example`, `kubernetes-sidecar.yaml`, `kubernetes-network-policy.yaml` |
 | `examples/refunds-api/` | the made-up API: its OpenAPI file, `draft.json`, `accept.template.json`, `accept.json`, `spec.json`, `bundle.json`, and `fake-api.ts` |
 | `test/` | the tests |
