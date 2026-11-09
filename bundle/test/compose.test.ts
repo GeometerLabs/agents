@@ -9,7 +9,7 @@ import { serverConfig } from "./helpers.ts";
 
 const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence" };
 const shop = (name: string, index: number): ShopDeploy => ({ name, index, pathwayDir: "/repo/templates/commerce/bookings", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, service: names.guard(name, kind), tenant: name })) });
-const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}, backup = true) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { backup, panel: { user: "501:20", shareAddress: "calendar@x.iam.gserviceaccount.com" } });
+const build = (shops: ShopDeploy[], change: Record<string, unknown> = {}) => composeServer(serverConfig({ panel: { enabled: true }, ...change }), dirs, shops, { panel: { user: "501:20", shareAddress: "calendar@x.iam.gserviceaccount.com" } });
 const nets = (c: ReturnType<typeof build>, svc: string): string[] => { const n = c.services[svc].block.networks as Record<string, unknown> | string[] | undefined; return n === undefined ? [] : Array.isArray(n) ? n : Object.keys(n); };
 const mounts = (c: ReturnType<typeof build>, svc: string): string[] => ((c.services[svc].block.volumes as unknown[]) ?? []).map((v) => typeof v === "string" ? v : JSON.stringify(v));
 const two = () => build([shop("glow-salon", 1), shop("bright-tuition", 2)]);
@@ -27,7 +27,7 @@ test("a runtime is on ONE internal network, shared with its own Guards and the m
 test("only Guards (and the few services that must call out) are on the egress network; the runtime and Caddy never are", () => {
   const c = two();
   const onEgress = Object.keys(c.services).filter((s) => nets(c, s).includes("egress")).sort();
-  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "litestream", "ops", "refresher"]);
+  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "ops", "refresher"]);
   for (const g of ["g-glow-salon-razorpay", "g-model"]) assert.match(String(c.services[g].block.network_mode), /^service:fwd-/, `${g} joins its forwarder's namespace`);
   assert.deepEqual(nets(c, "caddy"), ["front"]);
   assert.deepEqual(nets(c, "inbox").sort(), ["admin", "front"]);
@@ -68,7 +68,7 @@ test("each secret folder is mounted into the one container that needs it, and no
   assert.deepEqual(holders("g-glow-salon-razorpay"), ["g-glow-salon-razorpay"]);
   assert.deepEqual(holders("g-glow-salon-whatsapp"), ["g-glow-salon-whatsapp"]);
   assert.deepEqual(holders("rt-glow-salon"), ["rt-glow-salon"]);
-  for (const f of ["inbox", "relay", "refresher", "ops", "litestream", "g-model"]) assert.equal(holders(f).length, 1, f);
+  for (const f of ["inbox", "relay", "refresher", "ops", "g-model"]) assert.equal(holders(f).length, 1, f);
   assert.deepEqual(holders("inbox"), ["inbox"]);
   assert.deepEqual(holders("panel"), ["panel"], "the panel's keys and its agent token are in a folder only the panel mounts");
   assert.ok(!mounts(c, "caddy").some((m) => m.includes("/srv/secrets/")), "Caddy sees no secrets folder");
@@ -123,10 +123,10 @@ test("the lease's folder is mounted read-only on every shop Guard, and on nothin
   assert.ok(Object.keys(c.services).every((s) => holders.includes(s) || !mounts(c, s).some((m) => m.includes("/srv/state"))), "no other service sees state/");
 });
 
-test("litestream streams only the runtimes' databases: no Guard store is mounted into it", () => {
+test("no service copies a database continuously: the nightly snapshot is a short-lived job, not a container that runs all the time", () => {
   const c = two();
-  assert.deepEqual(mounts(c, "litestream").filter((m) => !m.includes("litestream.yml")), ["rt-data-glow-salon:/data/glow-salon", "rt-data-bright-tuition:/data/bright-tuition"]);
-  assert.equal(build([shop("a", 1)], {}, false).services.litestream, undefined, "no backup configured, no litestream");
+  assert.equal(c.services.litestream, undefined);
+  assert.ok(!JSON.stringify(c).includes("litestream"), "nothing in compose names Litestream");
 });
 
 test("Caddy sends /c/* to the inbox and everything else to the panel (it serves from the root), and makes its own certificate only for a local name", () => {
@@ -153,7 +153,7 @@ test("ops sees the deployer's status files read-only (for the backup times and t
   assert.doesNotMatch(JSON.stringify(c.services.ops.block), /docker\.sock|\/srv\/state|\/srv\/shops|\/srv\/secrets-inbox/);
   assert.deepEqual(mounts(c, "ops").filter((m) => !m.endsWith(":ro")), ["/srv/fleet:/server/fleet"], "the only writable bind mount");
   assert.equal(c.services.ops.block.user, "1000:1000", "the node user unless the deployer says who runs ops");
-  const own = composeServer(serverConfig({ panel: { enabled: true } }), dirs, [], { backup: false, opsUser: "501:20" });
+  const own = composeServer(serverConfig({ panel: { enabled: true } }), dirs, [], { opsUser: "501:20" });
   assert.equal(own.services.ops.block.user, "501:20", "the user who runs the deployer, as the panel does, so both can read what ops writes");
 });
 

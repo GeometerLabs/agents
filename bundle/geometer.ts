@@ -35,9 +35,11 @@
 //   licence extension <file>     an emergency extension from Geometer (gx1.), checked with the pinned key and kept: until it ends, no shop here winds down because fleet could
 //                                not renew its lease. It never lifts a wind-down or a stop the lease states.
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
-//   status                       every shop: running or not, what its Guards enforce, the last backup and drill
+//   status                       every shop: running or not, what its Guards enforce, the last snapshot and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
-//   restore <shop> [--at TIME]   put the shop's record back from the continuous copy (or --from-snapshot FILE --identity FILE)
+//   restore <shop> [--at TIME] [--identity FILE]   put the shop's runtime database back from the newest nightly snapshot (at or before TIME, if given). The server's
+//                                drill key opens it; --identity is the owner's age key, for a snapshot from before the server had one or on a new server. The shop is
+//                                then up to a day behind: before it sends anything it moves its ids on and looks at the payment service and the calendar
 //   update [--to V] [--shops a,b] [--dry-run]   move clients to a new template version, one at a time, each hand-checked on its own settings first; a client with any situation
 //                                that held before and fails now is held back with the reason. Stopped half-way, the same command again carries on. --dry-run changes nothing.
 //   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
@@ -69,7 +71,7 @@ import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
-import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverPaths } from "./lib/server.ts";
+import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverNotes, serverPaths } from "./lib/server.ts";
 import { kindFor } from "./lib/kinds.ts";
 import { parseReportFile } from "./panel/contract.ts";
 import { discoverTemplates } from "./panel/templates.ts";
@@ -107,7 +109,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     options: {
       server: { type: "string" }, domain: { type: "string" }, id: { type: "string" }, "reviewed-by": { type: "string" }, "model-wire": { type: "string" }, model: { type: "string" },
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
-      tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" },
+      tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" }, // stream-*: only to say they are no longer used
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" },
       "prepared-by": { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
@@ -142,12 +144,13 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     if (command === "backup-key") {
       const which = positionals[0];
-      if (which !== "stream" && which !== "snapshots") throw new Error("backup-key stream|snapshots <file>   (the file has access-key-id:secret on one line)");
+      if (which === "stream") throw new Error("There is no continuous copy any more (since 9 Nov 2026), so the stream bucket's key is not needed. The nightly snapshot is the backup: backup-key snapshots <file>.");
+      if (which !== "snapshots") throw new Error("backup-key snapshots <file>   (the file has access-key-id:secret on one line)");
       const key = readFileSync(resolve(positionals[1] ?? ""), "utf8").trim();
       if (!/^[^:\s]+:\S+$/u.test(key)) throw new Error("The file must have the key as access-key-id:secret, on one line.");
       prepareSecretsRoot(dir);
       writeSecretFile(secretFile(dir, "backup", which), key);
-      console.log(`The ${which} bucket's key is in place (it is read by the ${which === "stream" ? "continuous copy" : "snapshot job"} only).`);
+      console.log("The snapshot bucket's key is in place (it is read by the snapshot job, the drill and `restore` only).");
       return 0;
     }
 
@@ -229,7 +232,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     if (command === "check") {
       if (!shop) throw new Error("Say which shop: check <shop>");
       const r = await checkShop(ctx, shop);
-      r.notes.forEach((n) => console.log(`note: ${n}`));
+      [...serverNotes(dir), ...r.notes].forEach((n) => console.log(`note: ${n}`));
       r.lines.forEach((l) => console.log(l));
       const c = await connectionChecks(ctx, shop);
       console.log(c.text);
@@ -278,6 +281,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "deploy") {
+      serverNotes(dir).forEach((n) => console.log(`note: ${n}`));
       // with no name: every shop, then every agent someone else wrote
       const agents = shop ? [] : listAgents(dir);
       if (shop || listShops(dir).length > 0 || agents.length === 0) {
@@ -345,7 +349,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     if (command === "restore") {
       if (!shop) throw new Error("Say which shop: restore <shop> [--at <time>]");
-      console.log(await restoreShop(ctx, shop, { at: str("at"), fromSnapshot: str("from-snapshot"), identity: str("identity") }));
+      console.log(await restoreShop(ctx, shop, { at: str("at"), fromSnapshot: str("from-snapshot"), ...(str("identity") ? { identity: resolve(str("identity")!) } : {}) }));
       return 0;
     }
 
@@ -404,15 +408,16 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     const key = generateIdentity();
     writeFileSync(resolve(out), `${key.identity}\n`, { mode: 0o600 });
     recipient = key.recipient;
-    console.log(`A new age key pair was made. The secret half is in ${resolve(out)} (mode 0600). Move it off this machine: it is the only way to read a snapshot.`);
+    console.log(`A new age key pair was made. The secret half is in ${resolve(out)} (mode 0600). Move it off this machine: it opens every snapshot, and after the loss of this server it is the only key that does (the server's own drill key, which opens what it makes, goes with it).`);
   }
+  if (s("stream-url") || s("stream-endpoint")) console.log("note: --stream-url and --stream-endpoint are not used any more: the continuous copy was removed on 9 Nov 2026, and the nightly snapshot (--snapshots-url) is the backup.");
   const raw = {
     schema: 1, id, domain: s("domain") ?? "localhost", reviewedBy: s("reviewed-by") ?? "", guardImage: s("guard-image") ?? DEFAULT_GUARD_IMAGE, appImage: DEFAULT_APP_IMAGE,
     approvalHours: s("approval-hours") ? Number(s("approval-hours")) : 24,
     model: { wire: s("model-wire") ?? "openai", model: s("model") ?? "" },
     ...(s("fleet-url") ? { fleet: { url: s("fleet-url"), keyFile: s("fleet-key-file") ?? "" } } : {}),
     ...(s("licence-key") ? { licence: { keys: s("licence-key")!.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean) } } : {}),
-    ...(s("stream-url") && s("snapshots-url") && recipient ? { backup: { stream: { url: s("stream-url"), ...(s("stream-endpoint") ? { endpoint: s("stream-endpoint") } : {}) }, snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
+    ...(s("snapshots-url") && recipient ? { backup: { snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
     panel: { enabled: v.panel === true, mode: v["panel-mode"] === "hosted" ? "hosted" : "own" },
     ports: { http: s("http-port") ? Number(s("http-port")) : 80, https: s("https-port") ? Number(s("https-port")) : 443 },
   };
@@ -480,6 +485,7 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
 }
 
 async function status(ctx: Context): Promise<number> {
+  serverNotes(ctx.dir).forEach((n) => console.log(`note: ${n}\n`));
   const state = loadState(ctx.dir);
   const shops = Object.keys(state.shops).sort();
   const agents = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n).sort();
