@@ -9,6 +9,7 @@ import { canonicalJson } from "../../modules/record/record.ts";
 import { keyedDigest, personLabel } from "../../modules/record/fingerprint.ts";
 import type { Action, Outcome, RecordEntry, RuleDecision } from "../../modules/record/record.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import { readWindow } from "../../companies/decision-window.ts";
 import { label, typedMap, typedText } from "./facts.ts";
 import type { Approval, Decision, Facts } from "./facts.ts";
 
@@ -161,13 +162,12 @@ export function foldFacts(prev: RecordState, facts: Facts, o: FoldOptions): { st
   state.marks = { ...prev.marks };
   for (const [kind, g] of Object.entries(facts.guards)) {
     if (!g) continue;
-    const mark = prev.marks?.[kind];
-    if (g.windowFull && mark !== undefined && g.oldestAtMs !== undefined && g.oldestAtMs > mark) {
-      const message = `${kind}'s Guard lists only its ${g.decisions.length} most recent decisions, and the oldest it showed (${new Date(g.oldestAtMs).toISOString()}) is newer than the last this record had read (${new Date(mark).toISOString()}), so some calls fell out of the list before they were read and are missing from the record.`;
-      gaps.push(message);
-      found.push({ key: `gap:${kind}:${g.oldestAtMs}`, atMs: g.oldestAtMs, entry: { conversation: "agent", booking: null, action: "record_gap" as Action, inputsDigest: keyedDigest(o.labelKey, canonicalJson({ kind, from: mark, to: g.oldestAtMs })), outcome: "unconfirmed", decisions: [], language: o.settings.languages[0], notes: message.slice(0, 300), refs: {} } });
+    const r = readWindow(prev.marks?.[kind], { count: g.decisions.length, full: g.windowFull, ...(g.oldestAtMs !== undefined ? { oldestAtMs: g.oldestAtMs } : {}), ...(g.newestAtMs !== undefined ? { newestAtMs: g.newestAtMs } : {}) }, `${kind}'s Guard`);
+    if (r.gap) {
+      gaps.push(r.gap.message);
+      found.push({ key: `gap:${kind}:${r.gap.toMs}`, atMs: r.gap.toMs, entry: { conversation: "agent", booking: null, action: "record_gap" as Action, inputsDigest: keyedDigest(o.labelKey, canonicalJson({ kind, from: r.gap.fromMs, to: r.gap.toMs })), outcome: "unconfirmed", decisions: [], language: o.settings.languages[0], notes: r.gap.message.slice(0, 300), refs: {} } });
     }
-    if (g.newestAtMs !== undefined) state.marks[kind] = Math.max(mark ?? 0, g.newestAtMs);
+    if (r.mark !== undefined) state.marks[kind] = r.mark;
   }
   for (const c of [...candidates(facts, o), ...found].sort((a, b) => a.atMs - b.atMs || (a.key < b.key ? -1 : 1))) {
     const was = state.seen[c.key];

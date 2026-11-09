@@ -5,10 +5,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { specFromAccept } from "../openapi-to-spec.ts";
+import { draftFromText, specFromAccept } from "../openapi-to-spec.ts";
 import type { Draft } from "../openapi-to-spec.ts";
 import { sha256 } from "../openapi-read.ts";
-import { exampleJson, exampleText, skipWithoutGuard, tempDir, textMoneySpec } from "./helpers.ts";
+import { customerApi, exampleJson, exampleText, skipWithoutGuard, specWith, stringBodyApi, tempDir, textMoneySpec } from "./helpers.ts";
 import { API_KEY, startStack } from "./real-guard.ts";
 import type { Stack } from "./real-guard.ts";
 
@@ -243,3 +243,96 @@ test("the API's key lives only in Guard: the agent's token is no good at the API
   assert.equal((await s.call("GET", "/v1/charges/ch_1")).status, 200);
   assert.deepEqual(s.api.seen.map((x) => x.authorization), [`Bearer ${API_KEY}`]);
 }));
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+// A string-typed amount in a JSON body (Guard's ADR-0060: a bound reads text only with "encoding": "string")
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
+test("the draft suggests the text bound for an amount the API types as a string in the body, with a note; it offers no hold or spend on it", () => {
+  const d = draftFromText(stringBodyApi(), { tool: "refunds" });
+  const bound = d.suggestions.find((s) => s.id === "create_refund-amount-bound")!;
+  assert.equal(bound.kind, "argument_bound");
+  assert.equal(bound.encoding, "string");
+  assert.match(bound.review, /typed as a string.*travels as text inside the JSON body \("500", not 500\).*"encoding": "string".*REFUSES a JSON number/u);
+  assert.match(bound.review, /does not hold or count a call on a text amount/u);
+  assert.equal(d.suggestions.some((s) => s.id === "create_refund-needs-approval" || s.id === "create_refund-spend-per-day"), false, "a hold or a spend limit cannot read a text amount");
+  assert.equal(d.routes.find((r) => r.operation === "create_refund")!.consequential, true, "the string amount counts as money, so the route looks consequential");
+  assert.deepEqual(specWith(stringBodyApi()).rules.find((r: any) => r.kind === "argument_bound"), { id: "create_refund-amount-bound", kind: "argument_bound", operation: "create_refund", field: "amount", min: "1", max: "50000", encoding: "string" });
+  // a number-typed amount in the body gets no encoding
+  assert.equal(draftFromText(customerApi(), { tool: "refunds" }).suggestions.find((s) => s.id === "create_refund-amount-bound")!.encoding, undefined);
+});
+
+test("through the real Guard: text that spells the number within bounds passes, outside is refused, and a JSON number is refused", opts, async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, "spec.json"), JSON.stringify(specWith(stringBodyApi())));
+  const s = await startStack({ spec: join(dir, "spec.json") });
+  try {
+    const body = (amount: unknown) => ({ charge_id: "ch_S", customer_id: "cu_1", amount });
+    // the made-up API wants a whole-number amount and says 422 itself: that answer, with no "guard" part, is how a call that passed the bound looks here
+    for (const ok of ["500", "1", "50000"]) {
+      const r = await s.call("POST", "/v1/refunds", body(ok));
+      assert.equal(r.json?.guard, undefined, `${JSON.stringify(ok)} passed the bound and reached the API: ${JSON.stringify(r.json)}`);
+      assert.equal(r.status, 422);
+    }
+    assert.equal(posts(s).length, 3);
+    const over = await s.call("POST", "/v1/refunds", body("60000"));
+    assert.equal(over.status, 403);
+    assert.match(over.json.guard.reason, /create_refund-amount-bound: amount 60000 is above the highest allowed value, 50000/u);
+    const under = await s.call("POST", "/v1/refunds", body("0"));
+    assert.equal(under.status, 403);
+    assert.match(under.json.guard.reason, /create_refund-amount-bound/u);
+    // a JSON number is refused even when it is in range: under this encoding Guard reads text only
+    const number = await s.call("POST", "/v1/refunds", body(500));
+    assert.equal(number.status, 403);
+    assert.match(number.json.guard.reason, /create_refund-amount-bound/u);
+    for (const odd of ["+500", "0500", "500.0", "5e2", " 500"]) {
+      const r = await s.call("POST", "/v1/refunds", body(odd));
+      assert.equal(r.status, 403, `${JSON.stringify(odd)} is not the number written exactly`);
+    }
+    assert.equal(posts(s).length, 3, "nothing else reached the API");
+  } finally { await s.stop(); }
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+// `scope`: a counter for each customer
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+
+const refundFor = (s: Stack, customer: string, n: number, amount = 100) => s.call("POST", "/v1/refunds", { charge_id: `ch_${customer}_${n}`, customer_id: customer, amount });
+const through = (r: { status: number }) => r.status === 201;
+
+test("a count limit with scope [customer_id]: one customer reaches the limit and is refused, another customer is not affected", opts, async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, "spec.json"), JSON.stringify(specWith(customerApi(), { "create_refund-count-per-day": { cap: 2, scope: ["customer_id"] } })));
+  const s = await startStack({ spec: join(dir, "spec.json") });
+  try {
+    assert.ok(through(await refundFor(s, "cu_A", 1)));
+    assert.ok(through(await refundFor(s, "cu_A", 2)));
+    const third = await refundFor(s, "cu_A", 3);
+    assert.equal(third.json.guard.decision, "deny", JSON.stringify(third.json));
+    assert.match(third.json.guard.reason, /create_refund-count-per-day/u);
+    assert.ok(through(await refundFor(s, "cu_B", 1)), "cu_B has a counter of its own");
+    assert.ok(through(await refundFor(s, "cu_B", 2)));
+    assert.match((await refundFor(s, "cu_B", 3)).json.guard.reason, /create_refund-count-per-day/u, "and reaches the same cap on its own");
+    assert.match((await refundFor(s, "cu_A", 4)).json.guard.reason, /create_refund-count-per-day/u, "cu_A stays refused");
+    assert.equal(posts(s).length, 4, "two for each customer reached the API");
+    // a call that does not name the customer cannot be counted for anyone, and is refused rather than passed
+    const none = await s.call("POST", "/v1/refunds", { charge_id: "ch_x", amount: 100 });
+    assert.equal(none.json.guard.decision, "deny", JSON.stringify(none.json));
+    assert.equal(posts(s).length, 4);
+  } finally { await s.stop(); }
+});
+
+test("a spend limit with scope [customer_id]: each customer's total is counted on its own", opts, async () => {
+  const dir = tempDir();
+  writeFileSync(join(dir, "spec.json"), JSON.stringify(specWith(customerApi(), { "create_refund-spend-per-day": { cap: "1000", scope: ["customer_id"] } })));
+  const s = await startStack({ spec: join(dir, "spec.json") });
+  try {
+    assert.ok(through(await refundFor(s, "cu_A", 1, 600)));
+    const over = await refundFor(s, "cu_A", 2, 600);
+    assert.equal(over.json.guard.decision, "deny", JSON.stringify(over.json));
+    assert.match(over.json.guard.reason, /create_refund-spend-per-day/u);
+    assert.ok(through(await refundFor(s, "cu_B", 1, 600)), "cu_B has spent nothing yet");
+    assert.ok(through(await refundFor(s, "cu_A", 3, 400)), "cu_A can still spend what is left of its own cap");
+    assert.equal(posts(s).length, 3);
+  } finally { await s.stop(); }
+});
