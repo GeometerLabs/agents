@@ -97,7 +97,8 @@ export const hi: Words = {
     lines: { whatsapp: "WhatsApp संदेश (Meta की फ़ीस)", "whatsapp-provider": "WhatsApp प्रोवाइडर की अपनी फ़ीस", razorpay: "Razorpay की फ़ीस", geometer: "Geometer का प्लान", hosting: "होस्टिंग का हिस्सा" },
     payer: {
       "builder-pays-whatsapp-provider": "बिल्डर या पार्टनर अपने WhatsApp प्रोवाइडर को देता है", "shop-pays-razorpay": "दुकान सीधे Razorpay को देती है",
-      "builder-pays-geometer": "बिल्डर या पार्टनर Geometer को देता है; AI मॉडल इसमें शामिल है", hosting: "सर्वर का ख़र्च, बाँटकर",
+      "builder-pays-geometer": "बिल्डर या पार्टनर Geometer को देता है; AI मॉडल इसमें शामिल है",
+      "builder-pays-licence": "बिल्डर Geometer को देता है, हर चालू क्लाइंट बिज़नेस के लिए एक बार; AI कुंजी बिल्डर की अपनी है", hosting: "सर्वर का ख़र्च, बाँटकर",
     },
     unknown: "पता नहीं", total: "कुल", subtotal: (n) => `अभी का जोड़। ${n} ${t1(n, "चीज़ की", "चीज़ों की")} कीमत अभी पता नहीं है, इसलिए यह पूरा ख़र्च नहीं है।`, priceList: (d) => `कीमतें ${d} की सूची से ली गई हैं।`,
     caveats: {
@@ -115,7 +116,7 @@ export const hi: Words = {
     names: { basic: "बेसिक", business: "बिज़नेस", operations: "ऑपरेशंस" },
     is: (name) => `यह दुकान ${name} प्लान पर है।`, included: (n) => `हर महीने ${n} ग्राहक संदेश शामिल हैं।`,
     price: (price) => `प्लान की कीमत: ${price} प्रति माह, GST से पहले।`,
-    priceInnovator: (price, yours) => `प्लान की कीमत: ${price} प्रति माह, इनोवेटर छूट के बाद ${yours}, GST से पहले।`,
+    priceBuilder: (price) => `बिल्डर लाइसेंस: हर चालू क्लाइंट बिज़नेस के लिए ${price} प्रति माह, प्लान चाहे जो हो, GST से पहले।`, builderLicence: "बिल्डर लाइसेंस",
     priceNote: "कोई दुकान उस महीने गिनी जाती है जब वह कम से कम 15 दिन चालू रही हो।", innovator: "इनोवेटर",
     buttons: "इस दुकान के लिए AI रुका हुआ है। ग्राहकों को अभी बटन वाले मेन्यू मिलते हैं।",
     buttonsWhy: {
@@ -126,6 +127,7 @@ export const hi: Words = {
       allowance_80: "इस महीने के शामिल संदेशों में से 80% इस्तेमाल हो चुके हैं।",
       balance_80: "रीचार्ज बैलेंस का 80% इस्तेमाल हो चुका है। ख़त्म होने से पहले रीचार्ज करें।",
       whatsapp_unsettled: "WhatsApp के कुछ ख़र्च अभी बैलेंस से चुकाए नहीं गए हैं। उन्हें चुकाने के लिए रीचार्ज करें।",
+      ai_cap: "इस दुकान ने इस महीने की अपनी AI सीमा पूरी कर ली है। यह नियमों और मेन्यू से जवाब देती रहती है; पूरा AI अगले महीने की 1 तारीख को लौटता है।",
     },
   },
   licence: {

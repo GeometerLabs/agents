@@ -68,9 +68,9 @@ export interface Words {
   /** The shop's plan (B48): what fleet says about it, with its price. The warning codes are fleet's (apps/fleet/README.md, "What fleet tells each shop"). */
   plan: {
     heading: string; none: string; names: Record<PlanName, string>; is(name: string): string; included(n: number): string;
-    price(price: string): string; priceInnovator(price: string, yours: string): string; priceNote: string; innovator: string;
+    price(price: string): string; priceBuilder(price: string): string; builderLicence: string; priceNote: string; innovator: string;
     buttons: string; buttonsWhy: Record<"overage_unfunded" | "other", string>;
-    warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled", string>;
+    warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled" | "ai_cap", string>;
   };
   /**
    * The shop's licence (B13), from the signed lease the server keeps: where it stands and what that means for customers, its dates, fleet's renew link, and a note
@@ -192,7 +192,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
   "cost.fromRecord": [38], "cost.assumption": [40], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
-  "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceInnovator": ["₹299", "₹179"],
+  "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceBuilder": ["₹149"],
   "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
@@ -298,7 +298,8 @@ export const en: Words = {
     lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", razorpay: "Razorpay's fee", geometer: "Geometer's plan", hosting: "Hosting share" },
     payer: {
       "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-razorpay": "paid by the shop to Razorpay",
-      "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included", hosting: "the server's cost, shared",
+      "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included",
+      "builder-pays-licence": "paid to Geometer by the builder, once for each live client business; the AI key is the builder's own", hosting: "the server's cost, shared",
     },
     unknown: "unknown", total: "Total", subtotal: (n) => `Subtotal. ${n} ${t1(n, "item has", "items have")} no price yet, so this is not the whole cost.`, priceList: (d) => `Prices from the list of ${d}.`,
     caveats: {
@@ -316,7 +317,7 @@ export const en: Words = {
     names: { basic: "Basic", business: "Business", operations: "Operations" },
     is: (name) => `This shop is on the ${name} plan.`, included: (n) => `${n} customer messages a month are included.`,
     price: (price) => `Plan price: ${price} a month, before GST.`,
-    priceInnovator: (price, yours) => `Plan price: ${price} a month, ${yours} with the Innovator discount, before GST.`,
+    priceBuilder: (price) => `Builder licence: ${price} a month for each live client business, whatever the plan, before GST.`, builderLicence: "Builder licence",
     priceNote: "A shop counts for a month when it was live on 15 or more days.", innovator: "Innovator",
     buttons: "AI is paused for this shop. Customers get button menus instead.",
     buttonsWhy: {
@@ -327,6 +328,7 @@ export const en: Words = {
       allowance_80: "80% of this month's included messages are used.",
       balance_80: "80% of the recharge balance is used. Recharge before it runs out.",
       whatsapp_unsettled: "Some WhatsApp charges are not paid from the balance yet. Recharge to settle them.",
+      ai_cap: "This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st.",
     },
   },
   licence: {

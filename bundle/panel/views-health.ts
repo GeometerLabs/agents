@@ -19,8 +19,7 @@ const amountText = (paise: number | null | undefined): string => (paise === null
 const noteWord = (h: HealthWords, n: CostNote, item: CostItem): string => {
   const w = h.cost.notes;
   switch (n) {
-    case "innovator": return w.innovator;
-    case "self-host": return w.selfHost;
+    case "builder-licence": return w.builderLicence;
     case "included": return w.included;
     case "estimate": return w.estimate;
     case "no-record": return w.noRecord;

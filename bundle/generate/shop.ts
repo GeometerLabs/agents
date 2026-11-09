@@ -153,6 +153,19 @@ export function withFleetAi(runtime: Record<string, unknown>, fleetAi: "buttons"
   return runtime;
 }
 
+/**
+ * The month's AI cap: when fleet said `model: "off"` for this shop, the GENERATED runtime config gets `"model": "off"` (the runtime leaves the language model out; the rules
+ * and the decision model keep answering; every limit still holds). Like `ai` above: the generated config only, and only if the pathway's own validator accepts the key,
+ * because a runtime that does not know it refuses to start. Then the shop keeps its model and a note says so.
+ */
+export function withFleetModel(runtime: Record<string, unknown>, fleetModel: "off" | undefined, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (fleetModel !== "off" || Object.keys(runtime).length === 0) return runtime;
+  const withIt = { ...runtime, model: "off" };
+  if (validate(withIt, "/").ok) return withIt;
+  if (validate(runtime, "/").ok) notes.push("fleet says this shop has used its AI allowance for the month, but this template version does not know the model setting yet, so the shop keeps its language model. Update the template, and the setting is written on the next deploy.");
+  return runtime;
+}
+
 /** What the monthly report block is made from. */
 export interface ReportFacts {
   /** "Divya, local partner": who the owner is told set the agent up (the shop's report.json, else the panel's attribution). */
@@ -223,6 +236,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
+    runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.razorpay?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }

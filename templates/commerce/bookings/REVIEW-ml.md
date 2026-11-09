@@ -627,6 +627,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or partner to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-razorpay` | കട Razorpay-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to Razorpay |  |
 | `cost.payer.builder-pays-geometer` | ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു | paid to Geometer by the builder or partner; the AI model is included |  |
+| `cost.payer.builder-pays-licence` | ബിൽഡർ Geometer-ന് അടയ്ക്കും, പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും ഒരിക്കൽ; AI കീ ബിൽഡറുടെ സ്വന്തം | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
 | `cost.payer.hosting` | സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത് | the server's cost, shared |  |
 | `cost.unknown` | അറിയില്ല | unknown |  |
 | `cost.total` | ആകെ | Total |  |
@@ -647,7 +648,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.is` | ഈ കട Business പ്ലാനിലാണ്. | This shop is on the Business plan. |  |
 | `plan.included` | ഓരോ മാസവും 3000 ഉപഭോക്തൃ സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | 3000 customer messages a month are included. |  |
 | `plan.price` | പ്ലാൻ വില: മാസം ₹299, GST ഒഴികെ. | Plan price: ₹299 a month, before GST. |  |
-| `plan.priceInnovator` | പ്ലാൻ വില: മാസം ₹299, ഇന്നൊവേറ്റർ ഇളവോടെ ₹179, GST ഒഴികെ. | Plan price: ₹299 a month, ₹179 with the Innovator discount, before GST. |  |
+| `plan.priceBuilder` | ബിൽഡർ ലൈസൻസ്: പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും മാസം ₹149, പ്ലാൻ ഏതായാലും, GST ഒഴികെ. | Builder licence: ₹149 a month for each live client business, whatever the plan, before GST. |  |
+| `plan.builderLicence` | ബിൽഡർ ലൈസൻസ് | Builder licence |  |
 | `plan.priceNote` | ഒരു കട ആ മാസം കുറഞ്ഞത് 15 ദിവസം പ്രവർത്തിച്ചാൽ ആ മാസം കണക്കിൽ വരും. | A shop counts for a month when it was live on 15 or more days. |  |
 | `plan.innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
 | `plan.buttons` | ഈ കടയ്ക്ക് AI നിർത്തിവച്ചിരിക്കുന്നു. ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ബട്ടൺ മെനു ലഭിക്കും. | AI is paused for this shop. Customers get button menus instead. |  |
@@ -656,6 +658,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.warn.allowance_80` | ഈ മാസത്തെ ഉൾപ്പെട്ട സന്ദേശങ്ങളിൽ 80% ഉപയോഗിച്ചു. | 80% of this month's included messages are used. |  |
 | `plan.warn.balance_80` | റീചാർജ് ബാലൻസിന്റെ 80% ഉപയോഗിച്ചു. തീരുന്നതിന് മുമ്പ് റീചാർജ് ചെയ്യുക. | 80% of the recharge balance is used. Recharge before it runs out. |  |
 | `plan.warn.whatsapp_unsettled` | WhatsApp-ന്റെ ചില ചെലവുകൾ ബാലൻസിൽ നിന്ന് ഇതുവരെ അടച്ചിട്ടില്ല. അവ തീർക്കാൻ റീചാർജ് ചെയ്യുക. | Some WhatsApp charges are not paid from the balance yet. Recharge to settle them. |  |
+| `plan.warn.ai_cap` | ഈ കട ഈ മാസത്തെ AI പരിധി ഉപയോഗിച്ചുകഴിഞ്ഞു. നിയമങ്ങളും മെനുവും ഉപയോഗിച്ച് മറുപടി തുടരും; മുഴുവൻ AI അടുത്ത മാസം 1-ന് തിരികെ വരും. | This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st. |  |
 | `licence.heading` | ലൈസൻസ് | Licence |  |
 | `licence.states.active` | ലൈസൻസ് ശരിയാണ് | Licence in order |  |
 | `licence.states.reminder` | ലൈസൻസ് പണം അടയ്ക്കാനുണ്ട് | Licence payment due |  |
@@ -1057,8 +1060,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `health.cost.minutes` | 90 മിനിറ്റ് | 90 minutes |  |
 | `health.cost.total` | പ്രവർത്തന ചെലവ് | Running cost |  |
 | `health.cost.subtotal` | ഇതുവരെയുള്ള പ്രവർത്തന ചെലവ് (1 എണ്ണം ഇതുവരെ അറിയില്ല) | Running cost so far (1 not known yet) |  |
-| `health.cost.notes.innovator` | ഇന്നൊവേറ്റർ വില | Innovator price |  |
-| `health.cost.notes.selfHost` | സ്വന്തം സെർവറിന് പകുതി വില | Half price for your own server |  |
+| `health.cost.notes.builderLicence` | ബിൽഡർ ലൈസൻസ് | Builder licence |  |
 | `health.cost.notes.included` | പ്ലാൻ ഫീസിൽ ഉൾപ്പെടുന്നു | Included in the plan fee |  |
 | `health.cost.notes.estimate` | ഈ മാസത്തെ എണ്ണത്തിൽ നിന്നുള്ള കണക്ക്, സൗജന്യ മറുപടികൾക്ക് മുമ്പ് | Estimate from this month's counts, before the free replies |  |
 | `health.cost.notes.noRecord` | രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല | No record shared yet |  |

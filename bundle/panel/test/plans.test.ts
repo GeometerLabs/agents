@@ -1,16 +1,20 @@
-// The price list of 5 Nov (B48): the plans, the allowances, the extra-message price, the licence, the innovators' discount. It was written as a proposal; the owner decided it
-// the same day, and the list of 7 Nov puts it in force. The proposal must still load and be skipped by the running-cost line, and the list in force must carry its terms.
+// The plan lists (B48). The list of 5 Nov was written as a proposal; the owner decided it the same day and the list of 7 Nov put it in force. On 9 Nov the owner made it two
+// price lists, partners and builders, and the list of 9 Nov is in force. A proposal must still load and be skipped by the running-cost line; each list in force carries the
+// terms it was decided with; and fleet's copy of every list from 9 Nov on is this repo's file, byte for byte (prices/README.md).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { glowSalon } from "../../../templates/commerce/bookings/src/harness.ts";
 import { PRICES_DIR, latestPriceList, latestProposedPriceList, loadPriceList, monthlyCost } from "../cost.ts";
 import { fleetFile } from "../../test/monorepo.ts";
 
-const proposed = loadPriceList(new URL("2026-11-05.json", PRICES_DIR).pathname);
+const byName = (date: string) => loadPriceList(new URL(`${date}.json`, PRICES_DIR).pathname);
+const proposed = byName("2026-11-05");
 const rate = (id: string) => proposed.rates[id];
+const NUMBERS = ["currency", "micro", "basisPoints", "count", "freePerMonth", "per"] as const;
+const numbersOf = (r: unknown) => Object.fromEntries(NUMBERS.map((k) => [k, (r as Record<string, unknown> | undefined)?.[k]]));
 
 test("the list of 5 Nov loads, is marked proposed and links the economics document", () => {
   assert.equal(proposed.status, "proposed");
@@ -19,27 +23,22 @@ test("the list of 5 Nov loads, is marked proposed and links the economics docume
   assert.match(readFileSync(proposed.file, "utf8"), /"status": "proposed"/u);
 });
 
-test("its numbers are the economics document's (sections 1, 2, 4 and 7)", () => {
+test("its plan numbers are the economics document's of 5 Nov (sections 1, 2 and 4)", () => {
   const rupees = (id: string) => rate(id).micro! / 1_000_000;
   assert.deepEqual(["basic", "business", "operations"].map((p) => rupees(`plan.${p}.fee`)), [99, 299, 999]);
   assert.deepEqual(["basic", "business", "operations"].map((p) => rate(`plan.${p}.allowance`).count), [1000, 3000, 10_000]);
   assert.equal(rupees("overage.extra"), 49);
   assert.equal(rate("overage.extra").per, "1000 messages");
-  assert.equal(rate("licence.self-host").basisPoints, 5000, "half the plan price");
-  assert.equal(rate("innovator.discount").basisPoints, 4000);
-  assert.equal(rate("innovator.max-shops").count, 25);
   assert.equal(rate("innovator.places").count, 100);
   assert.equal(rate("whatsapp.pass-through").basisPoints, 10_000, "at cost");
   assert.equal(rate("whatsapp.in.gst").basisPoints, 1800);
   assert.equal(rate("whatsapp.in.utility").micro, 115_000);
   assert.equal(rate("whatsapp.in.service").freePerMonth, 1000);
   assert.equal(proposed.exchange.USD?.paisePerUnit, 8800, "the economics document assumes 88 to the dollar");
-  // 40% off Basic and Business leaves INR 59 and INR 179 (the document's table, rounded down to the rupee)
-  assert.deepEqual([99, 299].map((p) => Math.floor(p * (10_000 - 4000) / 10_000)), [59, 179]);
 });
 
 test("every other rate of the 4 Nov list is carried over unchanged, each with the day it was read; the flat fee is not carried", () => {
-  const before = loadPriceList(new URL("2026-11-04.json", PRICES_DIR).pathname);
+  const before = byName("2026-11-04");
   for (const [id, r] of Object.entries(before.rates)) {
     if (id === "geometer.fee") assert.equal(proposed.rates[id], undefined, "a plan replaces the flat fee");
     else assert.deepEqual(proposed.rates[id], r, id);
@@ -47,14 +46,14 @@ test("every other rate of the 4 Nov list is carried over unchanged, each with th
   assert.doesNotMatch(readFileSync(proposed.file, "utf8"), new RegExp("found" + "ing", "iu"), "the word is not used for the innovators");
 });
 
-test("a proposed list never prices the running costs: the 5 Nov proposal is skipped, and the list that puts the owner's decision in force (7 Nov) is the one the cost line reads", () => {
+test("a proposed list never prices the running costs: the 5 Nov proposal is skipped, and the cost line reads the newest list in force", () => {
   const live = latestPriceList();
-  assert.equal(live.date, "2026-11-07");
   assert.equal(live.status, "in-force");
   assert.equal(live.proposal, undefined);
+  assert.ok(live.date >= "2026-11-09", "the owner's decision of 9 Nov or later is in force");
   const c = monthlyCost({ settings: glowSalon() }, live);
-  assert.equal(c.priceList.date, "2026-11-07");
-  assert.equal(c.lines.find((l) => l.id === "geometer")!.paise, 29_900, "Glow Salon takes a deposit: Business");
+  assert.equal(c.priceList.date, live.date);
+  assert.equal(c.lines.find((l) => l.id === "geometer")!.paise, live.rates["plan.business.fee"].micro! / 10_000, "Glow Salon takes a deposit: Business, at the list's price");
   assert.equal(latestProposedPriceList(), null, "nothing newer than the list in force is waiting");
   const dir = mkdtempSync(join(tmpdir(), "geo-prices-"));
   copyFileSync(new URL("2026-11-04.json", PRICES_DIR).pathname, join(dir, "2026-11-04.json"));
@@ -63,12 +62,28 @@ test("a proposed list never prices the running costs: the 5 Nov proposal is skip
   assert.equal(latestProposedPriceList(dir)?.date, "2026-11-05");
 });
 
-test("the list in force carries every plan term of the proposal unchanged, as the owner decided them", () => {
-  const live = latestPriceList();
-  for (const [id, r] of Object.entries(proposed.rates)) {
-    for (const key of ["currency", "micro", "basisPoints", "count", "freePerMonth", "per"] as const) assert.equal((live.rates[id] as unknown as Record<string, unknown>)?.[key], (r as unknown as Record<string, unknown>)[key], `${id}.${key}`);
+test("the list of 7 Nov carries every term of the 5 Nov proposal unchanged, as the owner decided them", () => {
+  const decided = byName("2026-11-07");
+  for (const [id, r] of Object.entries(proposed.rates)) assert.deepEqual(numbersOf(decided.rates[id]), numbersOf(r), id);
+  assert.doesNotMatch(readFileSync(decided.file, "utf8"), new RegExp("found" + "ing|found" + "er|proposed", "iu"));
+});
+
+test("the list of 9 Nov: two price lists. Every rate of 7 Nov that is still true is carried over; only Basic's fee changes; the discount, its cap and the own-server discount are gone", () => {
+  const before = byName("2026-11-07");
+  const now = byName("2026-11-09");
+  const gone = Object.keys(before.rates).filter((id) => now.rates[id] === undefined);
+  assert.equal(gone.length, 3);
+  for (const id of gone) assert.match(id, /^(licence\.(?!builder\.)|innovator\.(?!places$))/u, `${id}: only the old licence and the Innovator price terms are dropped`);
+  for (const id of Object.keys(before.rates).filter((x) => now.rates[x] !== undefined && x !== "plan.basic.fee")) {
+    const { per: _a, ...was } = numbersOf(before.rates[id]);
+    const { per: _b, ...is } = numbersOf(now.rates[id]);
+    assert.deepEqual(is, was, id);
   }
-  assert.doesNotMatch(readFileSync(live.file, "utf8"), new RegExp("found" + "ing|found" + "er|proposed", "iu"));
+  assert.deepEqual(["basic", "business", "operations"].map((p) => now.rates[`plan.${p}.fee`].micro! / 1_000_000), [149, 299, 999]);
+  assert.equal(now.rates["licence.builder.fee"].micro, 149_000_000);
+  assert.equal(now.rates["ai.cap"].micro, 15_000_000);
+  assert.equal(now.status, "in-force");
+  assert.doesNotMatch(readFileSync(now.file, "utf8"), new RegExp("found" + "ing|found" + "er", "iu"));
 });
 
 test("with no newer proposal there is none to show, and a folder of proposals alone is refused", () => {
@@ -95,20 +110,16 @@ test("the loader checks the new forms: a count is a whole number, a rate has exa
   assert.equal(loadPriceList(write({ ...base, status: "proposed", proposal: "docs/x.md" })).status, "proposed");
 });
 
-// Fleet keeps the same plan terms in its own dated table (apps/fleet/prices/). The panel's list in force and fleet's newest table must be the same date and say the same
-// numbers. (On 5 Nov this compared the proposal; fleet's table in force since 7 Nov is apps/fleet/prices/2026-11-07.json.)
-const FLEET_DIR = fleetFile("prices");
-const newestFleetTable = (): string | undefined => (FLEET_DIR && existsSync(FLEET_DIR) ? readdirSync(FLEET_DIR).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f)).sort().at(-1) : undefined);
-const FLEET_PRICES = newestFleetTable() ? join(FLEET_DIR!, newestFleetTable()!) : undefined;
-const TERMS = ["plan.basic.fee", "plan.business.fee", "plan.operations.fee", "plan.basic.allowance", "plan.business.allowance", "plan.operations.allowance", "overage.extra", "licence.self-host", "innovator.discount", "innovator.max-shops", "innovator.places", "whatsapp.pass-through", "whatsapp.in.gst", "whatsapp.in.marketing", "whatsapp.in.utility", "whatsapp.in.service"];
-test("fleet's newest cost table and the panel's list in force agree on every plan term", { skip: FLEET_PRICES ? false : "the monorepo's apps/fleet is not at a sibling path (set GEOMETER_MONOREPO)" }, (t) => {
-  let fleet: { rates?: Record<string, Record<string, unknown>> };
-  try { fleet = JSON.parse(readFileSync(FLEET_PRICES!, "utf8")); } catch { t.skip("fleet's newest price table cannot be read"); return; }
-  const live = latestPriceList();
-  assert.equal(basename(FLEET_PRICES!, ".json"), live.date, "fleet's newest table and the panel's list in force are the same date: when one gets a new table, the other must follow");
-  for (const id of TERMS) {
-    const theirs = fleet.rates?.[id];
-    assert.ok(theirs, `fleet's table has no ${id}`);
-    for (const key of ["micro", "basisPoints", "count", "freePerMonth"] as const) assert.equal(theirs[key], (live.rates[id] as unknown as Record<string, unknown>)[key], `${id}.${key}`);
+// Fleet keeps a byte-for-byte copy of every list from 9 Nov 2026 on (apps/fleet/prices/list/<date>.json, made by `npm run prices:sync` in apps/fleet). Fleet's own drift
+// test compares the same files from its side. The lists of 3 to 7 Nov are not copied: fleet's own tables of 5 and 7 Nov priced those months.
+const FLEET_LIST = fleetFile("prices", "list");
+const FIRST_SHARED = "2026-11-09";
+test("fleet's copy of every price list from 9 Nov on is this repo's file, byte for byte", { skip: FLEET_LIST && existsSync(FLEET_LIST) ? false : "the monorepo's apps/fleet/prices/list/ is not here (set GEOMETER_MONOREPO, or it is not synced yet)" }, () => {
+  const ours = readdirSync(PRICES_DIR).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/u.test(f) && f.slice(0, 10) >= FIRST_SHARED).sort();
+  assert.ok(ours.length >= 1);
+  for (const f of ours) {
+    const theirs = join(FLEET_LIST!, f);
+    assert.ok(existsSync(theirs), `fleet has no copy of prices/${f}: run npm run prices:sync in apps/fleet`);
+    assert.ok(readFileSync(theirs).equals(readFileSync(new URL(f, PRICES_DIR))), `fleet's copy of ${f} differs from prices/${f}: a list is never edited, so one side is wrong`);
   }
 });

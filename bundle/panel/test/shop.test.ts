@@ -7,9 +7,9 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from "node:path";
 import { runBusyMonth } from "../../../templates/commerce/bookings/report/example-month.ts";
 import { WORDS } from "../languages.ts";
-import { formatRupees } from "../cost.ts";
+import { formatRupees, latestPriceList } from "../cost.ts";
 import { M, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
-import { NOW, boot, papers } from "./helpers.ts";
+import { NOW, accountIdOf, boot, papers } from "./helpers.ts";
 import type { Boot } from "./helpers.ts";
 
 const applied = (o: Record<string, unknown> = {}) => ({
@@ -122,14 +122,15 @@ test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; 
       const row = rowOf(WORDS.en.cost.lines[line]);
       assert.ok(row.includes(`>${WORDS.en.cost.unknown}<`) && !row.includes(">₹0"), `${line} is unknown, not zero: ${row.slice(0, 200)}`);
     }
-    // Geometer's plan (Glow Salon takes a deposit: Business), read from the price list, with the AI model in it and nothing passed through.
+    // A panel on a builder's own server: Geometer's line is the builder licence from the price list in force, whatever the plan, with the builder's own AI key.
+    const live = latestPriceList();
     const fee = rowOf(WORDS.en.cost.lines.geometer);
-    assert.ok(fee.includes(formatRupees(29900)) && fee.includes(WORDS.en.cost.payer["builder-pays-geometer"]) && WORDS.en.cost.payer["builder-pays-geometer"].includes("AI model"), fee.slice(0, 300));
+    assert.ok(fee.includes(formatRupees(live.rates["licence.builder.fee"].micro! / 10_000)) && fee.includes(WORDS.en.plan.builderLicence) && fee.includes(WORDS.en.cost.payer["builder-pays-licence"]), fee.slice(0, 300));
     assert.ok(rowOf(WORDS.en.cost.lines.whatsapp).includes(WORDS.en.cost.payer["builder-pays-whatsapp-provider"]));
     const totalRow = page.split('<tr class="total">')[1].split("</tr>")[0];
     assert.ok(totalRow.includes(WORDS.en.cost.subtotal(2)) && !totalRow.includes(`<td>${WORDS.en.cost.total}</td>`), "unknown lines make a subtotal");
     assert.ok(page.includes(WORDS.en.cost.payer["shop-pays-razorpay"]) && page.includes(WORDS.en.cost.caveats["hosting-not-measured"]) && page.includes(WORDS.en.cost.caveats["provider-not-chosen"]));
-    assert.ok(page.includes(WORDS.en.cost.priceList("2026-11-07")));
+    assert.ok(page.includes(WORDS.en.cost.priceList(live.date)));
     assert.ok(!/unknown\s*₹0/u.test(page));
   } finally { await b.close(); }
   const full = await boot({ whatsappProvider: "gupshup", hostingSharePaise: 5000 });
@@ -140,8 +141,17 @@ test("the monthly cost line on the shop page: unknown is 'unknown', never ₹0; 
     assert.ok(totalRow.includes(`<td>${WORDS.en.cost.total}</td>`) && totalRow.includes("₹") && !page.includes("Subtotal") && !page.includes(`>${WORDS.en.cost.unknown}<`), "no cost row is unknown once everything is priced");
     const hindi = await full.account("hindi", "builder", "hi");
     const hiPage = (await hindi.get("/shops/glow-salon")).plain;
-    assert.ok(hiPage.includes(WORDS.hi.cost.heading) && hiPage.includes(WORDS.hi.cost.payer["builder-pays-geometer"]));
+    assert.ok(hiPage.includes(WORDS.hi.cost.heading) && hiPage.includes(WORDS.hi.cost.payer["builder-pays-licence"]));
   } finally { await full.close(); }
+  // On Geometer's server the line is the shop's plan (Glow Salon takes a deposit: Business), with the AI model in it.
+  const hosted = await boot({}, { mode: "hosted" });
+  try {
+    const divya = await hosted.account("divya", "partner");
+    hosted.addShop("glow-salon", { name: "Glow Salon", ownerId: accountIdOf(hosted, "divya"), ownerName: "Divya", ownerRole: "partner" });
+    const page = (await divya.get("/shops/glow-salon")).plain;
+    const fee = page.split("<tr").find((r) => r.includes(WORDS.en.cost.lines.geometer)) ?? "";
+    assert.ok(fee.includes(formatRupees(latestPriceList().rates["plan.business.fee"].micro! / 10_000)) && fee.includes(`(${WORDS.en.plan.names.business})`) && fee.includes(WORDS.en.cost.payer["builder-pays-geometer"]) && WORDS.en.cost.payer["builder-pays-geometer"].includes("AI model"), fee.slice(0, 300));
+  } finally { await hosted.close(); }
 });
 
 test("the checks, then 'Ready to go live': a different account stops it and is never silently switched to; with the right accounts it makes the certificate", async () => {

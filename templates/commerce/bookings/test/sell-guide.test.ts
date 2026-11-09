@@ -16,6 +16,7 @@ import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { runOn } from "../crash-test/situations.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
+import { dayWords, formatRate, listInForce, stale } from "../../../../prices/render.ts";
 
 const SELL = new URL("../sell/", import.meta.url);
 const SPEC = new URL("../../../SELL-GUIDE.md", import.meta.url);
@@ -156,12 +157,27 @@ test("sell guide: every guide teaches the UPI option, each carries the one allow
 
 // ---- amounts and numbers ------------------------------------------------------------------------------------------------
 
-test("sell guide: the ₹ amounts are the same set in every guide, section by section, and match the plan's figures", () => {
+// ---- the price figures: from the price list in force (prices/), through each guide's source file and prices/render.ts --------------------------------------
+const LIST = listInForce();
+/** A rate as the guides write it ("₹149", "2%", "3,000"). */
+const price = (id: string): string => formatRate(id, LIST.rates[id]);
+const asSet = (ids: string[]) => ids.map((id) => price(id).replace(/[\s,]/gu, ""));
+/** Razorpay's fee and the GST on it, on an amount, to the rupee: what "about ₹N" in the guide must say. */
+const razorpayOn = (inr: number): number => Math.round((inr * LIST.rates["razorpay.platform-fee"].basisPoints! * (10_000 + LIST.rates["razorpay.gst-on-fee"].basisPoints!)) / 10_000 / 10_000);
+
+test("sell guide: every guide and variant is made from its source file and the price list in force (run node prices/render.ts after a new list)", () => {
+  assert.deepEqual(stale().filter((f) => f.startsWith("templates/commerce/bookings/")), []);
+  for (const l of LANGUAGES) assert.ok(existsSync(new URL(`guide.${l}.src.md`, SELL)) && existsSync(new URL(`variants/equipment-rental.${l}.src.md`, SELL)), `${l}: the source files are there`);
+});
+
+test("sell guide: the ₹ amounts are the same set in every guide, section by section: the price list's, and the example shop's", () => {
   const en = guide("en");
-  // The owner's pricing of 5 Nov 2026 (docs/product/economics-and-pricing.md, section 2): Geometer's plans Basic ₹99 and Business ₹299, ₹49 for each 1,000 extra messages,
-  // the Innovators' 40% off (Basic ₹59, Business ₹179); the shop's price as the partner's example, Basic ₹399 to ₹599 and Business ₹999 to ₹1,499 a month, setup ₹999 to ₹1,999 and ₹1,999 to ₹2,999; WhatsApp ₹100 to ₹300 at cost.
-  // The example shop is Glow Salon: haircut ₹450, a customer asking ₹300, deposit and refund limit ₹200, Razorpay's fee on that deposit about ₹5.
-  same(rupees(en), new Set(["₹100", "₹179", "₹200", "₹299", "₹300", "₹399", "₹450", "₹49", "₹5", "₹59", "₹599", "₹99", "₹999", "₹1499", "₹1999", "₹2999"]));
+  // From the price list in force: Geometer's Basic, Business and Operations plans, extra messages, the builder licence, the suggested shop prices and setups for Basic and
+  // Business, and WhatsApp at cost for a Basic and a Business shop. The example shop is Glow Salon: haircut ₹450, a customer asking ₹300, deposit and refund limit ₹200,
+  // and Razorpay's fee on that deposit.
+  const fromList = asSet(["plan.basic.fee", "plan.business.fee", "plan.operations.fee", "overage.extra", "licence.builder.fee", "guide.basic.shop-min", "guide.basic.shop-max", "guide.business.shop-min", "guide.business.shop-max", "guide.basic.setup-min", "guide.basic.setup-max", "guide.business.setup-min", "guide.business.setup-max", "guide.basic.whatsapp", "guide.business.whatsapp"]);
+  same(rupees(en), new Set([...fromList, "₹450", "₹300", "₹200", `₹${razorpayOn(200)}`]));
+  assert.ok(en.includes(`On a ₹200 deposit that is about ₹${razorpayOn(200)}.`), "the Razorpay example is the list's fee and GST on ₹200");
   for (const l of TRANSLATED) {
     same(rupees(guide(l)), rupees(en));
     const master = sections(en);
@@ -175,15 +191,16 @@ test("sell guide: the ₹ amounts are the same set in every guide, section by se
   }
 });
 
-test("sell guide: it states the owner's pricing of 5 Nov (Basic, Business, the allowance, the Innovators), and the old flat fee and the word 'founding' are gone from every guide and variant", () => {
+test("sell guide: section 6 states the two price lists of the list in force (partners' plans, the builder licence, WhatsApp on the shop's bill), and the first-100 price, the own-server discount, the old flat fee and the word 'founding' are gone from every guide and variant", () => {
   for (const l of LANGUAGES) {
     for (const [name, text] of [["guide", guide(l)], ["variant", variant(l)]] as const) {
-      assert.ok(!/₹\s?199\b|₹\s?499\b/u.test(text), `${l} ${name}: the 4 Nov flat fee ₹199 and the later ₹199 to ₹499 are out of date`);
+      assert.ok(!/₹\s?199\b/u.test(text), `${l} ${name}: the 4 Nov flat fee ₹199 is out of date`);
+      assert.ok(!/40\s?%|half (the )?plan|आधी कीमत|വിലയുടെ പകുതി|ಬೆಲೆಯ ಅರ್ಧ|ರಿಯಾಯಿತಿಯೊಂದಿಗೆ|from ₹|₹999 से:|₹999 മുതൽ:|₹999 ರಿಂದ:/u.test(text), `${l} ${name}: no first-100 discount, no own-server discount, and Operations is not "from"`);
       assert.ok(!/found(ing|er)|संस्थापक|फ़ाउंडिंग|ಸಂಸ್ಥಾಪಕ|ಫೌಂಡಿಂಗ್|സ്ഥാപക|ഫൗണ്ടിംഗ്/iu.test(text), `${l} ${name}: no "founding" and no "founder" in anything we offer`);
     }
     const section6 = sections(guide(l))[5].body;
-    for (const figure of ["₹99", "₹299", "₹59", "₹179", "₹49"]) assert.ok(section6.includes(figure), `${l}: section 6 states ${figure}`);
-    for (const n of ["1,000", "3,000", "15", "80%", "40%", "25", "100"]) assert.ok(section6.includes(n), `${l}: section 6 states ${n}`);
+    for (const id of ["plan.basic.fee", "plan.business.fee", "plan.operations.fee", "overage.extra", "licence.builder.fee", "guide.basic.whatsapp", "guide.business.whatsapp", "plan.basic.allowance", "plan.business.allowance", "plan.operations.allowance", "recharge.warn", "recharge.payment-fee", "innovator.places", "razorpay.platform-fee"]) assert.ok(section6.includes(price(id)), `${l}: section 6 states ${id} (${price(id)})`);
+    assert.ok(section6.includes(dayWords(LIST.date)), `${l}: section 6 names the list it is from`);
   }
 });
 
@@ -413,9 +430,10 @@ test("variant guide: no banned word in any language (the Never say column is the
 
 test("variant guide: the ₹ amounts are the same set in every language, section by section, and are the ones the shop and the plan give", () => {
   const en = variant("en");
-  // The pricing figures the main guide uses (Business ₹299 for a shop that takes a deposit, the shop ₹999 to ₹1,499, setup ₹1,999 to ₹2,999, Operations from ₹999), the example shop's price ₹3,200, deposit and refund limit ₹1,000,
-  // the demo's haggle ₹2,130, and Razorpay's fee on a ₹1,000 deposit, about ₹24.
-  same(rupees(en), new Set(["₹24", "₹299", "₹999", "₹1000", "₹1499", "₹1999", "₹2130", "₹2999", "₹3200"]));
+  // From the price list in force, as the main guide has them: Business (a rental centre takes a deposit), the shop's price and setup, Operations. The example shop's price ₹3,200,
+  // deposit and refund limit ₹1,000, the demo's haggle ₹2,130, and Razorpay's fee on a ₹1,000 deposit.
+  same(rupees(en), new Set([...asSet(["plan.business.fee", "plan.operations.fee", "guide.business.shop-min", "guide.business.shop-max", "guide.business.setup-min", "guide.business.setup-max"]), "₹1000", "₹2130", "₹3200", `₹${razorpayOn(1000)}`]));
+  assert.ok(en.includes(`On a ₹1,000 deposit that is about ₹${razorpayOn(1000)}.`));
   for (const l of TRANSLATED) {
     same(rupees(variant(l)), rupees(en));
     const master = sections(en);

@@ -234,7 +234,12 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     snapshot = after;
     entries = all;
     // The builder or partner is told once, here, when the agent moves to buttons: the agent writes one ai_mode line per episode (its reason is in the line and in /status).
-    for (const e of fresh) if (e.action === "ai_mode") log(`The agent now answers with buttons and lists, no AI (${e.refs.reason}). The record's ai_mode line says why; /status counts the month.`);
+    // The AI cap is not button mode: only the language model is left out, for the rest of the month.
+    for (const e of fresh) {
+      if (e.action !== "ai_mode") continue;
+      if (e.refs.mode === "model_off") log("The month's AI cap is reached: the language model is left out until the 1st; the rules and the decision model keep answering. The record's ai_mode line says so.");
+      else log(`The agent now answers with buttons and lists, no AI (${e.refs.reason}). The record's ai_mode line says why; /status counts the month.`);
+    }
     cases = kit.countCases(store);
     const was = refunds.needBuilder.total;
     refunds = countRefunds(kit.casesOf(store));

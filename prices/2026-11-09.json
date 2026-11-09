@@ -1,0 +1,481 @@
+{
+  "format": "geometer-price-list/1",
+  "date": "2026-11-09",
+  "about": "Geometer's price list of 9 Nov 2026, the one that puts the owner's decision of 9 Nov in force (docs/product/economics-and-pricing.md): two price lists and nothing else. Partners (Geometer's templates on Geometer's servers, AI included up to an allowance, WhatsApp at cost): Basic INR 149, Business INR 299, Operations INR 999 flat, extra messages INR 49 per 1,000, WhatsApp and the recharge's payment fee at cost, and a model-spend cap. Builders (always their own server, AI key and WhatsApp): INR 149 per live client business a month, flat, with a fair-use line. The first-100 discount, its 25-shop cap and the half-price self-host licence are gone; the Innovator badge and its 100 places stay. The guide.* entries are what Geometer suggests a partner or builder charges, for the sell guides and the website's calculators; they are not Geometer's prices. Every rate of the 7 Nov list that is still true is carried over unchanged. This is the only place a price is written (prices/README.md): everything else reads this folder or a generated copy that a test compares with it. Amounts are whole numbers in micro-units of the rate's own currency (1,000,000 micro-rupees = INR 1), counts are whole numbers, and shares are basis points (10,000 = 100%). This file is never edited after it is committed: a changed price is a new file with a new date (node prices/new.ts <date>).",
+  "quality": {
+    "official": "Read on the provider's own current page.",
+    "official-undated": "Read on the provider's own page, but the page carries no date.",
+    "second-hand": "From a blog, a news item or a reseller's rate card, not the provider's own page. Confirm on an invoice.",
+    "assumed": "A round number chosen for the estimate, not read anywhere.",
+    "conflicting": "The provider's own pages disagree. The higher reading is used."
+  },
+  "exchange": {
+    "USD": {
+      "paisePerUnit": 9400,
+      "quality": "assumed",
+      "source": "docs/plans/implementation-plan.md",
+      "read": "2026-11-07",
+      "note": "The owner's rate of 7 Nov 2026: INR 94 to the US dollar (plan, decisions). The 5 Nov list used 88 (the economics document's assumption) and the 4 Nov list 90."
+    },
+    "EUR": {
+      "paisePerUnit": 10000,
+      "quality": "assumed",
+      "source": "docs/research/2026-11-phase0-providers-and-accounts.md (a Geometer document, section 3.6)",
+      "read": "2026-11-03",
+      "note": "The research used INR 100 per EUR 1 as a round number and did not check the day's rate."
+    }
+  },
+  "rates": {
+    "whatsapp.in.utility": {
+      "currency": "INR",
+      "micro": 115000,
+      "per": "message",
+      "quality": "second-hand",
+      "source": "https://www.ibtimes.co.in/whatsapp-business-messages-become-paid-october-1-india-prices-rules-what-changes-906727",
+      "alsoSeen": [
+        "https://ecorpit.com/whatsapp-business-api-cost-india-d2c-2026/",
+        "https://docs.gallabox.com/pricing-and-billing/whatsapp-pricing/rate-card.md (INR 0.1323)",
+        "https://m.aisensy.com/blog/whatsapp-pricing-update-october-2026/ (INR 0.145)"
+      ],
+      "official": "https://developers.facebook.com/docs/whatsapp/pricing",
+      "read": "2026-11-03",
+      "note": "INR 0.115 a utility message (reminders, owner notices) before 18% GST. Meta's own INR rate card is interactive and could not be read; three vendors show three figures, and the research reads INR 0.115 as Meta's base and the others as base plus a provider margin. Confirm on the chosen provider's invoice."
+    },
+    "whatsapp.in.service": {
+      "currency": "INR",
+      "micro": 115000,
+      "per": "message",
+      "freePerMonth": 1000,
+      "quality": "second-hand",
+      "source": "https://www.wati.io/en/blog/whatsapp-service-message-pricing/",
+      "official": "https://developers.facebook.com/docs/whatsapp/pricing",
+      "read": "2026-11-03",
+      "note": "Replies inside the 24-hour window. From 1 Oct 2026 the first 1,000 a month per number are free and later ones cost the same as a utility message. The change is on Meta's developer page; the rupee figure is second-hand. whatsappbusiness.com still says they are free and looks stale."
+    },
+    "whatsapp.in.marketing": {
+      "currency": "INR",
+      "micro": 860000,
+      "per": "message",
+      "quality": "second-hand",
+      "source": "https://dev.to/preciousky_45d956626d31c3/whatsapp-business-platform-pricing-in-rupees-and-the-two-things-that-change-on-1-october-2026-4ko0",
+      "official": "https://developers.facebook.com/docs/whatsapp/pricing",
+      "read": "2026-11-05",
+      "note": "About INR 0.86 a marketing message before 18% GST (about INR 1.02 with it), as the economics document's section 4.1 reads it from third-party pages. Broadcasts are never inside a plan, and today's templates send none, so this only prices a message that should not exist."
+    },
+    "whatsapp.in.gst": {
+      "basisPoints": 1800,
+      "per": "Meta charge",
+      "quality": "second-hand",
+      "source": "https://dev.to/preciousky_45d956626d31c3/whatsapp-business-platform-pricing-in-rupees-and-the-two-things-that-change-on-1-october-2026-4ko0",
+      "official": "https://developers.facebook.com/docs/whatsapp/pricing",
+      "read": "2026-11-05",
+      "note": "18% GST on Meta's charge per message, so a utility or charged service message costs about INR 0.136. The earlier lists left GST out of the WhatsApp rates; the plans pass the charge on with it."
+    },
+    "whatsapp.provider.gupshup": {
+      "currency": "USD",
+      "micro": 1000,
+      "per": "message",
+      "quality": "official",
+      "source": "https://www.gupshup.ai/isv-partners/whatsapp-api/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.001 a message, outgoing and incoming text, no monthly fee on the self-serve page. The page's table of Meta fees showed 0.0000 and may be a display problem. Partner terms are not public. Gupshup is the pilot pick only if it can sign its webhooks (research, question 1)."
+    },
+    "whatsapp.provider.360dialog": {
+      "currency": "EUR",
+      "micro": 49000000,
+      "per": "number-month",
+      "quality": "official",
+      "source": "https://360dialog.com/pricing",
+      "read": "2026-11-03",
+      "note": "EUR 49 a number a month (regular plan), no markup on Meta's fees. The fallback if Gupshup cannot sign its webhooks."
+    },
+    "razorpay.platform-fee": {
+      "basisPoints": 200,
+      "per": "successful payment",
+      "quality": "conflicting",
+      "source": "https://razorpay.com/pricing/",
+      "read": "2026-11-03",
+      "note": "2% of each successful payment. The page is dated May 2026. One line says Payment Links cost nothing extra and another says the no-code tools cost 0.2% plus gateway fees, so 2% is assumed until Razorpay confirms in writing. Paid by the shop to Razorpay, never by Geometer or the builder. Not returned when a payment is refunded."
+    },
+    "razorpay.gst-on-fee": {
+      "basisPoints": 1800,
+      "per": "fee",
+      "quality": "official",
+      "source": "https://razorpay.com/pricing/",
+      "read": "2026-11-03",
+      "note": "18% GST on Razorpay's fee, as the pricing page (May 2026) states it. Confirm on a settlement statement."
+    },
+    "model.claude-haiku-5-5.input": {
+      "currency": "USD",
+      "micro": 100000,
+      "per": "million tokens",
+      "quality": "official",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.10 per million input tokens for prompts up to 100,000 tokens. Cache reads (US$0.01) are not used in the estimate."
+    },
+    "model.claude-haiku-5-5.output": {
+      "currency": "USD",
+      "micro": 500000,
+      "per": "million tokens",
+      "quality": "official",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.50 per million output tokens. It reasons by default, and reasoning is billed as output, so real usage can be higher."
+    },
+    "model.gemini-3.1-flash-lite.input": {
+      "currency": "USD",
+      "micro": 250000,
+      "per": "million tokens",
+      "quality": "official-undated",
+      "source": "https://aistudio.google.com/docs/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.25 per million input tokens, paid tier only (the free tier's text is used for training, which WhatsApp's terms forbid). The page has no date."
+    },
+    "model.gemini-3.1-flash-lite.output": {
+      "currency": "USD",
+      "micro": 1500000,
+      "per": "million tokens",
+      "quality": "official-undated",
+      "source": "https://aistudio.google.com/docs/pricing",
+      "read": "2026-11-03",
+      "note": "US$1.50 per million output tokens."
+    },
+    "model.gemini-3.5-flash-lite.input": {
+      "currency": "USD",
+      "micro": 300000,
+      "per": "million tokens",
+      "quality": "official-undated",
+      "source": "https://aistudio.google.com/docs/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.30 per million input tokens."
+    },
+    "model.gemini-3.5-flash-lite.output": {
+      "currency": "USD",
+      "micro": 2500000,
+      "per": "million tokens",
+      "quality": "official-undated",
+      "source": "https://aistudio.google.com/docs/pricing",
+      "read": "2026-11-03",
+      "note": "US$2.50 per million output tokens; thinking tokens count as output."
+    },
+    "model.gpt-6-luna.input": {
+      "currency": "USD",
+      "micro": 100000,
+      "per": "million tokens",
+      "quality": "official-undated",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.10 per million input tokens. The page has no date."
+    },
+    "model.gpt-6-luna.output": {
+      "currency": "USD",
+      "micro": 500000,
+      "per": "million tokens",
+      "quality": "official-undated",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "read": "2026-11-03",
+      "note": "US$0.50 per million output tokens."
+    },
+    "plan.basic.fee": {
+      "currency": "INR",
+      "micro": 149000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: Basic, no money moves, INR 149 a month for each shop that counts as live (was INR 99). Geometer's price to the partner, before GST."
+    },
+    "plan.business.fee": {
+      "currency": "INR",
+      "micro": 299000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: Business, deposits, refunds, fee collection or order advances with the owner's OK, INR 299 a month for each shop that counts as live (unchanged). Before GST."
+    },
+    "plan.operations.fee": {
+      "currency": "INR",
+      "micro": 999000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: Operations, one shop running two or three templates together or one usually above 3,000 messages, INR 999 a month flat (no longer \"from\", no bands). Each branch is its own shop. Before GST."
+    },
+    "plan.basic.allowance": {
+      "count": 1000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov (unchanged): customer messages a month included in Basic. A message is one the agent handles; WhatsApp's own charges are separate and passed on at cost."
+    },
+    "plan.business.allowance": {
+      "count": 3000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov (unchanged): customer messages a month included in Business."
+    },
+    "plan.operations.allowance": {
+      "count": 10000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov (unchanged): customer messages a month included in Operations. Above it, extra messages at overage.extra, like every plan."
+    },
+    "overage.extra": {
+      "currency": "INR",
+      "micro": 49000000,
+      "per": "1000 messages",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov (unchanged): INR 49 for each 1,000 customer messages above a shop's allowance, paid from the partner's recharge balance in blocks of overage.block. Nothing is charged without the balance; an empty balance switches the shop to button menus, never to silence."
+    },
+    "overage.block": {
+      "count": 100,
+      "per": "messages",
+      "quality": "assumed",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "Fleet's own choice: messages above the allowance are paid for 100 at a time (INR 4.90 at overage.extra), ahead of use, so each charge has a fixed name (shop, month, block number) and a repeated heartbeat cannot charge twice. An unused part of the last block is not given back at month end."
+    },
+    "ai.cap": {
+      "currency": "INR",
+      "micro": 15000000,
+      "per": "1000 messages",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: at most INR 15 of model spend for each 1,000 messages a shop has (its allowance plus the extra messages bought this month), so INR 15 for Basic, 45 for Business and 150 for Operations before any extra. Once the month's model spend reaches it, the small language model (step 3) is off for the rest of the month; rules and the decision model keep answering, and the partner is told once. The planned mix spends INR 1.5-7 per 1,000, so an ordinary shop never reaches it."
+    },
+    "whatsapp.pass-through": {
+      "basisPoints": 10000,
+      "per": "Meta charge, GST included",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov (unchanged since 5 Nov): WhatsApp is passed on at cost, never inside a plan price. 10,000 basis points is 100%: the partner's balance pays what Meta charges, with GST, plus the provider's per-message fee while the pilot uses Gupshup, at the exchange rate in this list. The recharge's payment fee is passed on too (recharge.payment-fee). No markup."
+    },
+    "recharge.payment-fee": {
+      "basisPoints": 236,
+      "per": "recharge",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: the payment fee on the partner's balance top-up is passed on at cost and shown before paying. Razorpay's 2% (razorpay.platform-fee) plus 18% GST on it (razorpay.gst-on-fee) is 2.36%, on UPI too. It is taken off what is paid: a recharge of INR 1,000 adds INR 976.40 to the balance."
+    },
+    "recharge.min": {
+      "currency": "INR",
+      "micro": 100000000,
+      "per": "recharge",
+      "quality": "assumed",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "Fleet's own choice: the smallest recharge is INR 100 (what the partner pays, before the payment fee comes off). A recharge is a one-off Razorpay order and is never charged again on its own."
+    },
+    "recharge.max": {
+      "currency": "INR",
+      "micro": 50000000000,
+      "per": "recharge",
+      "quality": "assumed",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "Fleet's own choice: the largest recharge is INR 50,000, so a typing mistake cannot become a large order."
+    },
+    "recharge.expiry-months": {
+      "count": 12,
+      "per": "recharge",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "Decided by the owner, 5 Nov: a recharge expires 12 months after it was granted."
+    },
+    "recharge.warn": {
+      "basisPoints": 8000,
+      "per": "unexpired recharge",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "Decided by the owner, 5 Nov: the partner is warned once 80% of the unexpired recharge is used, and a shop is warned once 80% of its included messages are used."
+    },
+    "licence.builder.fee": {
+      "currency": "INR",
+      "micro": 149000000,
+      "per": "live client business a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: a builder pays INR 149 a month, flat, for each client business that counts as live (15 or more live days, the partners' rule), for all of that business's agents, templates or the builder's own. No allowance, no balance, no volume discount, no agency plan. Before GST. Replaces the half-price self-host licence and the Innovator discount of 5 Nov."
+    },
+    "licence.builder.fair-use.agents": {
+      "count": 5,
+      "per": "client business",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: the licence covers up to 5 live agents for one client business. Above that, or for a company running agents for itself, it is a Guard contract."
+    },
+    "licence.builder.fair-use.actions": {
+      "count": 25000,
+      "per": "client business a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov: the licence covers up to 25,000 guarded actions a month for one client business (a typical salon makes about 1,750, a busy one about 6,000). Above that it is a Guard contract."
+    },
+    "innovator.places": {
+      "count": 100,
+      "per": "registry",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Decided by the owner, 9 Nov (kept from 5 Nov): the Innovator badge and the template vote go to the first 100 builders and partners with a shop live; the registry refuses a 101st. A badge, not a discount: there is no first-100 price."
+    },
+    "guide.basic.shop-min": {
+      "currency": "INR",
+      "micro": 499000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Geometer's suggested shop price for Basic, lower end: INR 499 a month (the partner decides)."
+    },
+    "guide.basic.shop-max": {
+      "currency": "INR",
+      "micro": 699000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Geometer's suggested shop price for Basic, upper end: INR 699 a month."
+    },
+    "guide.business.shop-min": {
+      "currency": "INR",
+      "micro": 999000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Geometer's suggested shop price for Business, lower end: INR 999 a month."
+    },
+    "guide.business.shop-max": {
+      "currency": "INR",
+      "micro": 1499000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Geometer's suggested shop price for Business, upper end: INR 1,499 a month."
+    },
+    "guide.operations.shop-min": {
+      "currency": "INR",
+      "micro": 3499000000,
+      "per": "shop a month",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Geometer's suggested shop price for Operations: INR 3,499 a month and up."
+    },
+    "guide.basic.setup-min": {
+      "currency": "INR",
+      "micro": 999000000,
+      "per": "shop, once",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Suggested one-time setup fee for Basic, lower end: INR 999. The partner keeps all of it."
+    },
+    "guide.basic.setup-max": {
+      "currency": "INR",
+      "micro": 1999000000,
+      "per": "shop, once",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Suggested one-time setup fee for Basic, upper end: INR 1,999."
+    },
+    "guide.business.setup-min": {
+      "currency": "INR",
+      "micro": 1999000000,
+      "per": "shop, once",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Suggested one-time setup fee for Business, lower end: INR 1,999. The partner keeps all of it."
+    },
+    "guide.business.setup-max": {
+      "currency": "INR",
+      "micro": 2999000000,
+      "per": "shop, once",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Suggested one-time setup fee for Business, upper end: INR 2,999."
+    },
+    "guide.operations.setup-min": {
+      "currency": "INR",
+      "micro": 4999000000,
+      "per": "shop, once",
+      "quality": "official",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-09",
+      "note": "Suggested one-time setup fee for Operations: INR 4,999 and up, quoted by the partner (an estimate)."
+    },
+    "guide.builder.client-fee": {
+      "currency": "INR",
+      "micro": 2500000000,
+      "per": "client a month",
+      "quality": "assumed",
+      "source": "docs/research/2026-11-09-two-price-lists.md",
+      "read": "2026-11-09",
+      "note": "The builder calculator's default monthly fee a builder charges a client: INR 2,500. The builder sets it."
+    },
+    "guide.builder.own-costs": {
+      "currency": "INR",
+      "micro": 300000000,
+      "per": "client a month",
+      "quality": "assumed",
+      "source": "docs/research/2026-11-09-two-price-lists.md",
+      "read": "2026-11-09",
+      "note": "An estimate of a builder's own running costs per client: a server share of about INR 100, a model key of about INR 100 and Meta's messages of about INR 60-100. A WhatsApp platform with a monthly fee per number adds about INR 1,350-2,800."
+    },
+    "guide.basic.whatsapp": {
+      "currency": "INR",
+      "micro": 90000000,
+      "per": "shop a month",
+      "quality": "assumed",
+      "source": "docs/research/2026-11-09-two-price-lists.md",
+      "read": "2026-11-09",
+      "note": "An estimate of WhatsApp at cost for a small (Basic) shop on the pilot route (Meta plus Gupshup's fee), with the recharge's payment fee: about INR 90 a month."
+    },
+    "guide.business.whatsapp": {
+      "currency": "INR",
+      "micro": 295000000,
+      "per": "shop a month",
+      "quality": "assumed",
+      "source": "docs/research/2026-11-09-two-price-lists.md",
+      "read": "2026-11-09",
+      "note": "An estimate of WhatsApp at cost for a typical (Business) shop on the pilot route, with the recharge's payment fee: about INR 295 a month."
+    },
+    "guide.operations.whatsapp": {
+      "currency": "INR",
+      "micro": 1316000000,
+      "per": "shop a month",
+      "quality": "assumed",
+      "source": "docs/research/2026-11-09-two-price-lists.md",
+      "read": "2026-11-09",
+      "note": "An estimate of WhatsApp at cost for a busy (Operations) shop on the pilot route, with the recharge's payment fee: about INR 1,316 a month."
+    }
+  },
+  "notPriced": {
+    "sarvam-105b-conversations": "Sarvam's price page shows display names only, so which listed price belongs to this model is not confirmed. https://www.sarvam.ai/api-pricing",
+    "groq-gpt-oss-20b": "No price was read.",
+    "meta-rate-card": "Meta's own INR rate card (interactive) could not be read."
+  }
+}

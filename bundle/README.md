@@ -374,7 +374,7 @@ A failed drill, or a snapshot that did not happen, shows in `status` and in `sta
 
 The heartbeat carries two optional facts per shop, so a snapshot that stopped or a drill that failed alerts from outside the server: the age of the last good snapshot (alert after 36 hours) and the age and verdict of the last drill (alert if it failed, or after 8 days without one). It sends ages and a yes/no, never the drill's reason (that stays in `status`). Geometer's fleet service must be new enough to know these two fields before a bundle sends them; an older one refuses every heartbeat as malformed. A shop whose very first snapshot never succeeds sends nothing about backups until one does (see [Deferred.md](Deferred.md)).
 
-The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the template knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
+The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the template knows the setting; see [Explanation.md](Explanation.md)). Once a shop's model spend reaches the month's AI cap, fleet answers `model: "off"` and the deployer writes `"model": "off"` the same way: the language model is left out until the 1st, and the rules and the decision model keep answering. Deploy a fleet that knows these before a bundle that sends them.
 
 ## The folder, for the panel
 
@@ -386,7 +386,7 @@ The heartbeat also carries **the cost meter's counts** per shop (messages by und
 <server>/requests/<shop>.stop.json  a request to stop a shop                                          the panel writes; the deployer acts, shows it in status, removes it
 <server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads
 <server>/exports/<shop>/          record.json and bookings.json, without customers' numbers           the deployer writes; the panel's monthly report reads
-<server>/fleet/<shop>.json        fleet's last answer: plan, allowance, innovator, ai ("buttons")     ops writes (the one folder it can write); the deployer and the panel read
+<server>/fleet/<shop>.json        fleet's last answer: plan, allowance, innovator, ai, model, warn    ops writes (the one folder it can write); the deployer and the panel read
 <server>/fleet/usage-baseline.json  the cost meter's counts fleet has accepted                         ops writes and reads, so a restart does not replay history
 <server>/panel/                   the panel's own data
 <server>/state/                   the deployer's memory (Guard bundle versions, who stopped a shop, lock history, the last update and rollback step by step)
