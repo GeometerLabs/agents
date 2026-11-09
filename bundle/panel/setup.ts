@@ -39,32 +39,38 @@ export interface Draft {
   whatsapp: { businessNumber: string; numberId: string };
   calendar: { id: string };
   razorpay: { mode: string; keyId: string };
-  /** How customers pay (B33). A draft made before UPI has none, which is a Razorpay shop; a new shop starts on UPI. */
+  /** How customers pay (B33). A new shop starts on UPI, and a draft with none is a UPI shop that has not given its UPI ID yet (B71): never a gateway shop. */
   payment?: PaymentDraft;
   expectedBookings: string;
   /** How many steps have been filled in (0 for a new draft). A later step and the save need the earlier ones. A draft made from an existing shop starts with all of them done. */
   done: number;
 }
 
-/** `explicit` is true when the shop's saved settings already carried a "payment" block, so saving them again writes the block back as it was. */
-export interface PaymentDraft { module: "upi" | "razorpay"; upiId: string; payee: string; explicit?: boolean }
+export interface PaymentDraft { module: "upi" | "razorpay"; upiId: string; payee: string }
 
-/** The module a draft takes: no choice recorded is a Razorpay shop, as every shop was before UPI. */
-export const paymentModuleOf = (d: Draft): "upi" | "razorpay" => d.payment?.module ?? "razorpay";
+/** The module a draft takes. No choice recorded is UPI (B71): the gateway is only ever what the person picked. */
+export const paymentModuleOf = (d: Draft): "upi" | "razorpay" => d.payment?.module ?? "upi";
 
-/** A new shop starts on UPI (no gateway account, no gateway fee). */
+/** A new shop starts on UPI (no gateway account, no gateway fee, no paperwork). */
 export const newPayment = (): PaymentDraft => ({ module: "upi", upiId: "", payee: "" });
 
-/** The draft of a shop that exists: its payment block when it has one, else Razorpay. */
+/** The draft of a shop that exists: its payment block, or, with none, UPI with the ID still to give (the accounts step then asks for it, in the person's language). */
 export function paymentFromSettings(p: PaymentSettings | undefined): PaymentDraft {
-  return p?.module === "upi" ? { module: "upi", upiId: p.upi.id, payee: p.upi.payee, explicit: true } : { module: "razorpay", upiId: "", payee: "", ...(p ? { explicit: true } : {}) };
+  if (p?.module === "razorpay") return { module: "razorpay", upiId: "", payee: "" };
+  return p?.module === "upi" ? { module: "upi", upiId: p.upi.id, payee: p.upi.payee } : newPayment();
 }
 
-/** The "payment" block the settings get, or undefined when they should not carry one (a Razorpay shop whose settings never did). `always` writes the Razorpay block too (Fees does). */
-export function paymentBlock(d: Draft, always = false): PaymentSettings | undefined {
-  const p = d.payment;
-  if (p?.module === "upi") return { module: "upi", upi: { id: normaliseVpa(p.upiId), payee: p.payee.trim() } };
-  return always || p?.explicit ? { module: "razorpay" } : undefined;
+/**
+ * A stand-in UPI block for the limits shown on a step before the accounts step has asked for the real UPI ID (the lines do not depend on it). It is never saved: the save
+ * cannot be reached before the accounts step has checked the shop's own UPI ID. It is UPI, not a gateway, so even a preview never shows a shop as on a gateway it did not pick.
+ */
+export const PREVIEW_PAYMENT: PaymentSettings = { module: "upi", upi: { id: "preview@upi", payee: "Preview" } };
+
+/** The "payment" block the settings get: always written (B71), since a file without one is refused rather than read as a gateway shop. */
+export function paymentBlock(d: Draft): PaymentSettings {
+  const p = d.payment ?? newPayment();
+  if (p.module === "razorpay") return { module: "razorpay" };
+  return { module: "upi", upi: { id: normaliseVpa(p.upiId), payee: p.payee.trim() } };
 }
 
 /** What the example settings of the template say, as the form's starting point. */
@@ -251,10 +257,11 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
     take("google_service_account.json", body.calJson, label.calendar.json, !calendarShared);
   }
   if (template.accounts.includes("razorpay")) {
-    // The choice comes from the form; a form without it (not a browser) is a Razorpay shop, as before UPI existed. Typed UPI boxes are kept when the form is sent back.
-    const module = body.payMod === "upi" ? "upi" : "razorpay";
+    // The choice comes from the form. A form without it (not a browser) is UPI (B71), so its UPI ID is asked for: the gateway is never picked for anyone. Typed UPI boxes
+    // are kept when the form is sent back.
+    const module = body.payMod === "razorpay" ? "razorpay" : "upi";
     const before = draft.payment;
-    draft.payment = { module, upiId: body.upiId === undefined ? before?.upiId ?? "" : text(body.upiId, 80), payee: body.upiPayee === undefined ? before?.payee ?? "" : text(body.upiPayee, 80), ...(before?.explicit ? { explicit: true } : {}) };
+    draft.payment = { module, upiId: body.upiId === undefined ? before?.upiId ?? "" : text(body.upiId, 80), payee: body.upiPayee === undefined ? before?.payee ?? "" : text(body.upiPayee, 80) };
     if (module === "upi") problems.push(...upiProblems(draft.payment.upiId, draft.payment.payee, w));
     else {
       const mode = text(body.rzpMode, 5);
@@ -299,10 +306,9 @@ export function buildSettings(draft: Draft, example: Settings): Built {
   const s = first.settings;
   const deposit = s.deposit.amountInr;
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
-  const payment = paymentBlock(draft);
   const raw = {
     ...s,
-    ...(payment ? { payment } : {}),
+    payment: paymentBlock(draft),
     languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
@@ -311,11 +317,11 @@ export function buildSettings(draft: Draft, example: Settings): Built {
   return validateSettings(raw);
 }
 
-/** runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. */
-export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }): Record<string, unknown> {
+/** runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. A payments service is named only for a shop that chose a gateway (B71). */
+export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {
     mode: "live", tickSeconds: 30,
-    services: { payments: {}, calendar: { calendarId }, messaging: { phoneNumberId }, timeoutMs: 20_000 },
+    services: { ...(gateway ? { payments: {} } : {}), calendar: { calendarId }, messaging: { phoneNumberId }, timeoutMs: 20_000 },
     ...(serverModel ? { parser: { wire: serverModel.wire, model: serverModel.model } } : {}),
   };
 }

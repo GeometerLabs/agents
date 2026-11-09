@@ -218,6 +218,8 @@ export function listAgents(dir: string): string[] {
 export interface AgentFlags {
   settings?: string; upstreams?: string; "owner-whatsapp"?: string; "owner-language"?: string; "business-name"?: string; deposit?: string; "refund-limit"?: string; "price-floor"?: string;
   hours?: string; timezone?: string; "whatsapp-number-id"?: string; "calendar-id"?: string; "forward-whatsapp-to"?: string;
+  /** How the shop's customers pay when the agent calls no gateway (B71): the shop's own UPI ID and the name customers see. */
+  "upi-id"?: string; payee?: string;
   /** For the crash test (README, "A crash test for your agent"): the command that starts the agent, and the version it is at. */
   run?: string; version?: string;
   "refund-inr-per-day"?: string; "refunds-per-day"?: string; "links-per-hour"?: string; "messages-per-hour"?: string; "events-per-hour"?: string; "events-deleted-per-day"?: string;
@@ -251,6 +253,10 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
     if (!checked.ok) throw new Error(`The settings file needs fixing:\n- ${checked.errors.join("\n- ")}`);
     settings = checked.settings;
     settingsText = stableJson(raw);
+    // the settings and the services must agree on how money is taken: a gateway Guard is made only for a shop whose settings chose the gateway (B71)
+    const gatewayChosen = (settings as { payment?: { module?: string } }).payment?.module === "razorpay";
+    if (gatewayChosen && !list.includes("razorpay")) throw new Error("The settings file says the shop takes payments on its own Razorpay account, but --upstreams does not include razorpay. Add it, or change \"payment\" in the file to the shop's UPI ID.");
+    if (!gatewayChosen && list.includes("razorpay")) throw new Error("--upstreams includes razorpay, but the settings file does not choose it (\"payment\": {\"module\": \"razorpay\"}). Guard is put in front of a gateway only for a shop that chose it.");
   } else {
     const businessName = flags["business-name"] ?? name;
     const language = (flags["owner-language"] ?? "en") as Language;
@@ -263,12 +269,16 @@ export function agentFromFlags(name: string, flags: AgentFlags, readFile: (path:
     const priceFloor = whole("price-floor", flags["price-floor"]);
     if (list.includes("razorpay") && (deposit === undefined || refundLimit === undefined)) throw new Error("Say the deposit and the refund limit in rupees: --deposit 200 --refund-limit 200 (or give a settings file with --settings). Guard enforces both on the payment link and the refund.");
     if (!flags["owner-whatsapp"]) throw new Error("Say the owner's WhatsApp number: --owner-whatsapp +919800000001. It is the only number whose replies can approve a refund.");
+    // B71: how customers pay. A gateway only when --upstreams names it; otherwise the shop's own UPI ID, asked for here, never a gateway nobody chose.
+    if (list.includes("razorpay") && (flags["upi-id"] !== undefined || flags.payee !== undefined)) throw new Error("--upstreams includes razorpay, so the shop takes payments on its own Razorpay account: leave out --upi-id and --payee.");
+    if (!list.includes("razorpay") && (flags["upi-id"] === undefined || flags.payee === undefined)) throw new Error("Say how this shop's customers pay. UPI is the default and needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee \"<the name customers see>\". A shop with its own Razorpay account adds razorpay to --upstreams instead.");
+    const payment = list.includes("razorpay") ? { module: "razorpay" } : { module: "upi", upi: { id: flags["upi-id"], payee: flags.payee } };
     const raw = {
       name: businessName, timezone: flags.timezone ?? "Asia/Kolkata", languages: [language],
       services: [{ id: "service", names: { [language]: [businessName] }, priceInr: priceFloor ?? deposit ?? 1, durationMinutes: 30 }],
       openingHours: { mon: day, tue: day, wed: day, thu: day, fri: day, sat: day, sun: null }, slotMinutes: 30, bufferMinutes: 0,
       deposit: { amountInr: deposit ?? 1, holdMinutes: 15 }, cancellation: { windowHours: 24, refundLimitInr: refundLimit ?? 0 },
-      owner: { whatsapp: flags["owner-whatsapp"], language }, reminders: { hoursBefore: [] },
+      owner: { whatsapp: flags["owner-whatsapp"], language }, reminders: { hoursBefore: [] }, payment,
     };
     const checked = validateSettings(raw);
     if (!checked.ok) throw new Error(`These settings need fixing:\n- ${checked.errors.join("\n- ")}`);

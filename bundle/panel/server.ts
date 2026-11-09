@@ -514,7 +514,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const pins = shops.pins(ref.id); // a UPI shop has no test mode and no Razorpay pin: its report reads "live"
     goLive.docs.make(ref.id, `monthly/${month}`, (scratch) => reports.write({
       settings, data, month, language: settings.owner.language, out: scratch,
-      source: pins?.razorpay?.mode === "live" || moduleOf(settings.payment) === "upi" ? "live" : "test-mode",...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
+      source: pins?.razorpay?.mode === "live" || moduleOf(settings.payment) !== "razorpay" ? "live" : "test-mode",...(signingKey ? { key: signingKey } : {}), preparedBy: shops.preparedBy(ref.id),
       // the Innovator badge is fleet's answer for the shop (fleet/<shop>.json, written by ops): the same file the owner's monthly message reads, so the builder's copy and the owner's agree
       innovator: shops.fleet(ref.id)?.innovator === true,
       ...(reading ? { goLive: reading.finding } : {}), now: now(),
@@ -663,7 +663,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     // What is written is what a builder would write: Fees' settings are checked into another shape (a student's "batch" becomes "batchId"), so its form keeps the shape it was checked from.
     const written = (b: typeof built): unknown => (b.ok ? ((b as { raw?: unknown }).raw ?? b.settings) : undefined);
     const w = r.ctx().w;
-    const runtime = own ? own.runtime(d.whatsapp.numberId, config.serverModel) : runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel);
+    const gateway = paymentModuleOf(d) === "razorpay"; // B71: a payments service is named only for a shop that chose the gateway
+    const runtime = own ? own.runtime(d.whatsapp.numberId, config.serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel, gateway);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;

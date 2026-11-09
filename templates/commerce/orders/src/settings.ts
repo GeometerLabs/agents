@@ -66,7 +66,7 @@ export interface Settings {
   refund: { limitInr: number };
   /**
    * How customers pay the advance (modules/payments/upi/settings.ts): "upi", the shop's own UPI ID, marked paid by the owner; or "razorpay", the shop's own account.
-   * Left out: Razorpay (written into the parsed settings).
+   * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop.
    */
   payment: PaymentSettings;
   owner: {
@@ -329,8 +329,8 @@ function readRefund(v: unknown, errors: string[]): Settings["refund"] | undefine
   return limitInr === undefined ? undefined : { limitInr };
 }
 
+/** The shared reader: a missing block is refused with the same words in every template (B71), asking for the UPI ID first. */
 function readPayment(v: unknown, errors: string[]): Settings["payment"] | undefined {
-  if (v === undefined) { errors.push("Add how customers pay (\"payment\"). UPI is the usual: {\"module\": \"upi\", \"upi\": {\"id\": \"annapurna@okicici\", \"payee\": \"Annapurna Tiffins\"}}; or {\"module\": \"razorpay\"}."); return undefined; }
   return readPaymentSettings(v, errors);
 }
 

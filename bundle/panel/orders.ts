@@ -9,7 +9,7 @@ import { limitLinesOf, limitsOf } from "../../templates/commerce/orders/report/c
 import { itemName, validateSettings } from "../../templates/commerce/orders/src/settings.ts";
 import type { Settings, Slot } from "../../templates/commerce/orders/src/settings.ts";
 import { idsFrom } from "./fees.ts";
-import { approversDraftOf, approversFromDraft, newPayment, paymentBlock, paymentFromSettings } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -208,10 +208,11 @@ export function buildOrdersSettings(draft: Draft, example: Settings): Built {
   const slotOf = (m: (typeof all)[number], i: number) => ({ id: slotIds[i], from: m.from, to: m.to, ...(m.name !== "" ? { names: named(m.name) } : {}), ...(keep.cutoffs[slotIds[i]] ? { cutoff: keep.cutoffs[slotIds[i]] } : {}) });
   const places = placesOf(f.area);
   const n = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
-  // The rules step shows the shop's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out as for Razorpay (they do not depend on it).
+  // The rules step shows the shop's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out with a stand-in UPI ID
+  // (PREVIEW_PAYMENT; they do not depend on it), never as a gateway shop.
   // The save cannot be reached before the accounts step has checked the UPI ID.
-  const upi = draft.payment?.module === "upi";
-  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? { module: "razorpay" } : paymentBlock(draft, true);
+  const upi = paymentModuleOf(draft) === "upi";
+  const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
   const raw = {
     name: draft.form.name, ...(f.address !== "" ? { address: f.address } : {}), timezone: example.timezone, languages,
     menu: items.map((m, i) => ({ id: itemIds[i], names: named(m.name), priceInr: n(m.price), dailyStock: n(m.stock) })),

@@ -26,7 +26,7 @@
 //   record/ledger/fingerprints.jsonl the shop's daily fingerprints as the server kept them, each line with its own anchor when it was signed
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../../modules/record/record.ts";
-import { kindFor } from "../lib/kinds.ts";
+import { guardsOf, kindFor } from "../lib/kinds.ts";
 import { toTarGz } from "./tar.ts";
 import type { KeyObject } from "node:crypto";
 import { anchorOf, evidencePack, ledgerFile } from "../../modules/record/ledger.ts";
@@ -139,7 +139,9 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     const checked = kind.validateSettings(settings);
     if (checked.ok) {
       try { policyDigest = kind.papers.policyDigest(checked.settings); } catch { warnings.push("The policy digest could not be worked out."); }
-      try {
+      // B71: only a shop that chose the gateway has a gateway Guard; a UPI shop's limits are the agent's own, and the file says so rather than show a spec nobody enforces
+      if (!guardsOf(kind, checked.settings).includes("razorpay")) { guardSpec = null; specNote = " This shop takes UPI, marked paid by the owner: no gateway Guard holds limits for it, so there is no gateway spec (null). Its limits are the agent's own, in settings.json."; }
+      else try {
         guardSpec = src.limitsSpec?.(checked.settings, kind.id);
         if (guardSpec === undefined) {
           guardSpec = kind.razorpaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-razorpay`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
