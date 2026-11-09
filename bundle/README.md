@@ -359,7 +359,7 @@ Good to know:
 | Layer | How often | Where | Encrypted |
 |---|---|---|---|
 | Every runtime database | about every second | your stream bucket, by Litestream | by your bucket and TLS. **Not age**: Litestream 0.5 no longer supports client-side encryption; see [Explanation.md](Explanation.md) |
-| Every runtime database, and each Guard's own store and evidence ledger | every night, kept 30 days | your snapshot place | age, to the public key in `geometer.json` |
+| Every runtime database, each Guard's own store and evidence ledger, and the shop's fingerprint key (`person_key`) | every night, kept 30 days | your snapshot place | age, to the public key in `geometer.json` |
 | Restore drill | every week | restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live record | |
 
 A failed drill, or a snapshot that did not happen, shows in `status` and in `status/<shop>.json` (`backups`). The record and bookings the panel's monthly report reads are exported every quarter of an hour to `exports/<shop>/`.
@@ -368,7 +368,7 @@ The heartbeat carries two optional facts per shop, so a snapshot that stopped or
 
 The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the template knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
 
-Restoring a snapshot needs the secret half of the age key, which is not on the server: `restore` uses the continuous copy; a snapshot is decrypted on the machine that has the key.
+Restoring a snapshot needs the secret half of the age key, which is not on the server: `restore` uses the continuous copy; a snapshot is decrypted on the machine that has the key. On a new machine, put the opened `person_key` at `secrets/person-keys/<shop>` (mode 0600) before the first deploy or export. Otherwise the server makes a new key, and the shop can no longer match the people already in its record.
 
 ## The folder, for the panel
 
@@ -379,13 +379,13 @@ Restoring a snapshot needs the secret half of the age key, which is not on the s
 <server>/secrets-inbox/<shop>/    razorpay_key ("<key id>:<key secret>"), whatsapp_token, ...        the panel writes, mode 0600; the deployer moves and deletes
 <server>/requests/<shop>.stop.json  a request to stop a shop                                          the panel writes; the deployer acts, shows it in status, removes it
 <server>/status/<shop>.json       deploy, limits {proven, of, unprovable}, versions, stopped, backups  the deployer writes; the panel reads
-<server>/exports/<shop>/          record.json and bookings.json, without customers' numbers           the deployer writes; the panel's monthly report reads
+<server>/exports/<shop>/          record.json and bookings.json, customers as keyed fingerprints     the deployer writes; the panel's monthly report reads
 <server>/fleet/<shop>.json        fleet's last answer: plan, allowance, innovator, ai ("buttons")     ops writes (the one folder it can write); the deployer and the panel read
 <server>/fleet/usage-baseline.json  the cost meter's counts fleet has accepted                         ops writes and reads, so a restart does not replay history
 <server>/panel/                   the panel's own data
 <server>/state/                   the deployer's memory (Guard bundle versions, who stopped a shop, lock history, the last update and rollback step by step)
 <server>/generated/               compose.yaml, Caddyfile, per-container config: rewritten on every deploy, never edited
-<server>/secrets/                 one folder per container
+<server>/secrets/                 one folder per container; secrets/person-keys/<shop> (0600) is the shop's fingerprint key: the export and snapshot jobs read it, and the panel keeps a copy
 ```
 
 **The panel** is a container named `panel` that runs `bundle/panel/main.ts` (set `"panel": {"enabled": true, "mode": "own"}` in `geometer.json`, or `--panel` at `init`; Geometer's partner server uses `"mode": "hosted"`). It is served at the root of your domain (the inbox keeps `/c/...`). It is mounted with exactly the folders above that it writes or reads, plus `geometer.json` read-only: **not** `secrets/`, `state/` or `generated/`, no Docker socket. It runs as the user who runs the deployer, because it insists on keeping its keys and the files it writes private to its user (0600); a deployer run as root hands those files to uid 1000 and the panel runs as that. Its keys are made for it in `secrets/panel/`: `data_key` (32 random bytes as hex, which encrypts what it keeps), `signing_key` (an Ed25519 private key in PEM, which signs the go-live certificate) and `guard_agent_token` (below).

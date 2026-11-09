@@ -3,7 +3,7 @@
 // when the agent read them back (or "marked paid by owner" for UPI), and what was not checked. It never says who is right: it has no field and no word for it.
 //
 // Everything comes from the record's entries for this case, as the record keeps them: the customer's number as the record has it (the number in the shop's
-// own store, a short hash in the bundle's export), each message only as its fingerprint, and each service's ids. Nothing is looked up again, and the paper
+// own store, a fingerprint under the shop's key in the bundle's export), each message only as its fingerprint, and each service's ids. Nothing is looked up again, and the paper
 // says so. Each row names its entry number and, when the ledger is given, the entry's hash in the ledger, so the paper can be held against the evidence pack.
 import type { KeyObject } from "node:crypto";
 import type { Language } from "../language/languages.ts";

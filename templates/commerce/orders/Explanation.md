@@ -40,7 +40,7 @@ A delivery address is the customer's, written for the owner. It is kept in the o
 ## Edits outside the template
 
 1. `modules/unfinished/builtin.ts`: `payment_unrecorded` also applies to Orders (an order waiting for its advance), and a `big_order` waiting for the owner counts as an answer the owner owes.
-2. `bundle/lib/kinds.ts`, `bundle/backup/export.ts`, `bundle/export/build.ts`, `bundle/services/{relay,heartbeat}.ts`: Orders is one more kind; the export writes `orders.json` with the customer hashed and the address removed.
+2. `bundle/lib/kinds.ts`, `bundle/backup/export.ts`, `bundle/export/build.ts`, `bundle/services/{relay,heartbeat}.ts`: Orders is one more kind; the export writes `orders.json` with the customer as a keyed fingerprint and the address removed.
 3. `bundle/panel/`: see `bundle/panel/Explanation.md`.
 
 ## Size
