@@ -40,7 +40,8 @@
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
 //   restore <shop> --identity FILE [--at TIME]   put the shop's runtime database back from the newest nightly snapshot (at or before TIME, if given). FILE is the
 //                                owner's age key, which is kept off the server: bring it for the restore and take it away after. The shop is then up to a day behind:
-//                                before it sends anything it moves its ids on and looks at the payment service and the calendar
+//                                before it sends anything it moves its ids on and looks at the payment service and the calendar. For an agent someone else wrote,
+//                                its Guards' stores, its record and its key go back (the Guards are stopped only after the snapshot has been checked and tried)
 //   update [--to V] [--shops a,b] [--dry-run]   move clients to a new template version, one at a time, each hand-checked on its own settings first; a client with any situation
 //                                that held before and fails now is held back with the reason. Stopped half-way, the same command again carries on. --dry-run changes nothing.
 //   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
@@ -55,7 +56,7 @@ import { parseArgs } from "node:util";
 import { applyOnce, runLicence, watch } from "./apply.ts";
 import { takeExtension } from "./lib/licence.ts";
 import { kidOf } from "../modules/licence/token.ts";
-import { runBackup, runDrill, restoreShop } from "./backup/jobs.ts";
+import { runBackup, runDrill, restoreAgent, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
 import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
@@ -357,7 +358,9 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     if (command === "restore") {
       if (!shop) throw new Error("Say which shop: restore <shop> --identity <the owner's key file> [--at <time>]");
-      console.log(await restoreShop(ctx, shop, { at: str("at"), fromSnapshot: str("from-snapshot"), ...(str("identity") ? { identity: resolve(str("identity")!) } : {}) }));
+      const how = { at: str("at"), fromSnapshot: str("from-snapshot"), ...(str("identity") ? { identity: resolve(str("identity")!) } : {}) };
+      // a name is a shop's or an agent's someone else wrote, never both (agent add refuses a shop's name)
+      console.log(loadState(ctx.dir).agents?.[shop] ? await restoreAgent(ctx, shop, how) : await restoreShop(ctx, shop, how));
       return 0;
     }
 
