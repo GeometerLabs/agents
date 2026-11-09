@@ -70,11 +70,11 @@ test("an age is a count: a time set in the future is 0, an old one stops at 999,
 });
 
 test("a failed drill is its own fact: the shop is still ready, no Guard changes, and the drill's reason never travels", () => {
-  const a = agentOf([shop({ backups: { ...BACKUPS, drillOk: false, drillDetail: "the continuous copy could not be restored: litestream: no snapshots found for 9876543210" } as never })]);
+  const a = agentOf([shop({ backups: { ...BACKUPS, drillOk: false, drillDetail: "the newest snapshot could not be restored: no snapshot of 9876543210" } as never })]);
   assert.deepEqual([(a.runtime as { up: boolean }).up, (a.runtime as { ready: boolean }).ready], [true, true]);
   assert.deepEqual((a.guards as { ready: boolean }[]).map((g) => g.ready), [true, true]);
   assert.deepEqual(a.drill, { age_s: 198_000, ok: false });
-  assert.doesNotMatch(JSON.stringify(build([shop({ backups: { ...BACKUPS, drillOk: false, drillDetail: "litestream: no snapshots found" } as never })]).body), /litestream|snapshots found|detail/u);
+  assert.doesNotMatch(JSON.stringify(build([shop({ backups: { ...BACKUPS, drillOk: false, drillDetail: "the newest snapshot could not be restored" } as never })]).body), /could not be restored|detail/u);
 });
 
 test("fleet's own validator accepts the backup fields, a failed drill, and a shop with only one of them", { skip: skipUnlessFleetKnows }, () => {

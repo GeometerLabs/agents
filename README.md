@@ -29,7 +29,7 @@ A **template** is a ready, tested agent for one job a local business already pay
 
 ## Deploy bundle: run it on a small server (new)
 
-[bundle/](bundle/README.md) turns a folder per shop into one Docker Compose file: the shop's runtime, one Guard per upstream per shop, the server's model Guard, the webhook inbox, owner approvals on WhatsApp, HTTPS, a heartbeat to Geometer and a continuous copy of every record. A deploy is refused, naming the rule, unless every limit is proven to bite on the Guard. A builder runs it on their own VPS; the guide goes from an empty Ubuntu server to the first shop. The Guard image is not in a registry yet, so it is loaded from a file.
+[bundle/](bundle/README.md) turns a folder per shop into one Docker Compose file: the shop's runtime, one Guard per upstream per shop, the server's model Guard, the webhook inbox, owner approvals on WhatsApp, HTTPS, a heartbeat to Geometer and a nightly encrypted snapshot of every shop's data. A deploy is refused, naming the rule, unless every limit is proven to bite on the Guard. A builder runs it on their own VPS; the guide goes from an empty Ubuntu server to the first shop. The Guard image is not in a registry yet, so it is loaded from a file.
 
 ## Community templates: money and records that many people share
 

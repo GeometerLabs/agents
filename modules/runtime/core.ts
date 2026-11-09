@@ -23,6 +23,7 @@ import type { LicenceNow } from "../licence/rules.ts";
 import type { NoticeContext } from "../licence/notice.ts";
 import type { DurableStore, TaskCounts, WindowStore } from "./store.ts";
 import { createRunner } from "./tasks.ts";
+import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
 
 /** Wait before the first, second and third retry; so four tries in all. */
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000];
@@ -100,7 +101,17 @@ export interface RuntimeKit<Store extends { ai?: AiState }, Settings extends { t
   casesOf(store: Store): Iterable<{ pending: { kind: string }[]; refundIssues?: RefundIssue[] }>;
   /** What the approvals relay may know about the held refund with this receipt; null if none is held. */
   refundContext(store: Store, settings: Settings, receipt: string): Context | null;
+  /** The saved store with every id counter moved on by `gap` (the codec's own, modules/runtime/snapshot.ts): used once after a restore from a snapshot (restored.ts). */
+  skipCounters?(json: string, gap: number): string;
+  /**
+   * Words a customer wrote that the store keeps on a case (Orders: the delivery address), taken off the cases that ended before `beforeMs`; the outcome stays. Returns
+   * how many cases it changed. A template whose store keeps no such words has none.
+   */
+  compactStore?(store: Store, beforeMs: number): number;
 }
+
+/** How long the text of a finished conversation is kept, when the shop sets nothing else: the chat itself is on the customer's and the owner's WhatsApp. */
+export const CONVERSATION_RETENTION_DAYS = 30;
 
 export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings extends { timezone: string }, Context> {
   settings: Settings;
@@ -120,6 +131,8 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   licence?: () => LicenceNow;
   licenceNotice?: { run(ctx: NoticeContext<Store>): Promise<unknown> };
   retryDelaysMs?: number[];
+  /** Days the text of a finished conversation is kept (CONVERSATION_RETENTION_DAYS when not given). The record is kept whole, always. */
+  retentionDays?: number;
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: RuntimeEvent, run: () => Promise<void>) => Promise<void>;
   log?: (line: string) => void;
@@ -151,11 +164,39 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   const saved = db.loadState();
   let snapshot = saved.snapshot ?? kit.serialize(kit.createStore());
   let entries: readonly RecordEntry[] = saved.record;
+  // Put back from a nightly snapshot? Then, before any step, the ids move on and the record says so (restored.ts).
+  const restoreNote = readRestoreNote(db.file);
+  if (restoreNote) {
+    const owner = (settings as { owner?: { whatsapp?: string; language?: Language } }).owner;
+    const done = afterRestore({ note: restoreNote.note, snapshot, entries, clock, ...(kit.skipCounters ? { skipCounters: (json, gap) => kit.skipCounters!(json, gap) } : {}), ...(owner ? { owner } : {}) });
+    if (done) {
+      kit.parse(done.snapshot); // it must still read
+      db.commitStep({ snapshot: done.snapshot, entries: done.fresh, nowMs: clock.now() });
+      snapshot = done.snapshot;
+      entries = [...entries, ...done.fresh];
+      log(done.said);
+    }
+    retireRestoreNote(restoreNote.file, clock.now());
+  }
   let cases = kit.countCases(kit.parse(snapshot));
   let refunds = countRefunds(kit.casesOf(kit.parse(snapshot)));
 
   const monthly = options.monthly;
   let lastReportError = { same: "", at: 0 };
+  let lastCompactAt = Number.NEGATIVE_INFINITY;
+
+  /**
+   * Once a day, on the clock's beat: the text of conversations that ended more than the retention ago is deleted (a failed task's message, and words the template keeps
+   * on a finished case); what happened stays (the case, its state, the record). The record is never compacted, rewritten or pruned: it is not touched here.
+   */
+  function compact(store: Store): void {
+    if (clock.now() - lastCompactAt < 24 * HOUR) return;
+    lastCompactAt = clock.now();
+    const before = clock.now() - (options.retentionDays ?? CONVERSATION_RETENTION_DAYS) * 24 * HOUR;
+    const cases = kit.compactStore?.(store, before) ?? 0;
+    const turns = db.compactTurns?.(before) ?? 0;
+    if (cases + turns > 0) log(`Deleted the text of conversations that ended more than ${options.retentionDays ?? CONVERSATION_RETENTION_DAYS} days ago: ${turns} failed message(s), ${cases} finished case(s). The record is kept whole.`);
+  }
 
   async function step(event: RuntimeEvent, taskId?: string): Promise<void> {
     const store = kit.parse(snapshot);
@@ -163,6 +204,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const agent = kit.createAgent({ store, record });
     const run = () => agent.handle(event);
     await (options.aroundStep ? options.aroundStep(event, run) : run());
+    if (event.kind === "tick") compact(store);
 
     // The owner's licence notice rides on the clock's beat too, after the agent's own work, and saves around its send the same way (modules/licence/notice.ts).
     if (event.kind === "tick" && options.licenceNotice) {

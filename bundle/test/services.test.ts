@@ -88,10 +88,10 @@ test("ops reads three backup facts from the deployer's status file and nothing e
   const f = folder(); try {
     const file = join(f.dir, "glow-salon.json");
     writeFileSync(file, JSON.stringify({ shop: "glow-salon", deploy: { state: "applied", message: "9876543210" }, webhooks: { razorpay: "https://x/c/glow-salon/webhooks/razorpay" },
-      backups: { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: "2026-11-02T03:00:00.000Z", drillOk: false, drillDetail: "the continuous copy could not be restored: litestream: no snapshots found" } }));
+      backups: { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: "2026-11-02T03:00:00.000Z", drillOk: false, drillDetail: "the newest snapshot could not be restored: the snapshot place could not be read" } }));
     const got = readBackups(file);
     assert.deepEqual(got, { lastCopyAt: "2026-11-04T01:00:00.000Z", lastDrillAt: "2026-11-02T03:00:00.000Z", drillOk: false });
-    assert.doesNotMatch(JSON.stringify(got), /litestream|9876543210|webhooks/);
+    assert.doesNotMatch(JSON.stringify(got), /could not be restored|9876543210|webhooks/);
     writeFileSync(file, JSON.stringify({ backups: { lastCopyAt: 5, lastDrillAt: ["x"], drillOk: "yes" } }));
     assert.deepEqual(readBackups(file), { lastCopyAt: null, lastDrillAt: null, drillOk: null }, "wrong types are nothing, not coerced");
     writeFileSync(file, JSON.stringify({ shop: "glow-salon" }));
