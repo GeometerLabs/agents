@@ -9,7 +9,7 @@ import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, razorpaySpec, whatsappSpec } from "./guards.ts";
+import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, gatewaySpec, whatsappSpec } from "./guards.ts";
 import type { GuardDef, GuardKind } from "./guards.ts";
 
 /** What the runtime waits for a call when runtime.json says nothing: longer than Guard's own wait for the provider. */
@@ -214,7 +214,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined };
     const kinds = guardsOf(template, shop.settings); // a UPI shop (B33) has no Razorpay Guard
     const razorpay = kinds.includes("razorpay");
-    if (razorpay) { try { specs.razorpay = razorpaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.razorpaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
+    if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
     specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour });
     if (template.guards.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {

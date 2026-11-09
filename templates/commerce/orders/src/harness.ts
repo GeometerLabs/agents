@@ -22,7 +22,7 @@ import { createRuleParser } from "./adapters/rule-parser.ts";
 import type { IntentParser } from "./adapters/model.ts";
 import { createStore } from "./order.ts";
 import type { Order, Store } from "./order.ts";
-import { razorpayLimitsSpec } from "./guard-limits.ts";
+import { gatewayLimitsSpec } from "./guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
 import { parseSettings } from "./settings.ts";
@@ -113,7 +113,7 @@ export const HARNESS_GUARD = { tenant: "annapurna", version: 1, reviewedBy: "han
 export function createWorld(options: WorldOptions = {}): World {
   const settings = options.settings ?? annapurna();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone));
-  const guard = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock);
+  const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock);
   const payments = createFakePayments(clock, { guard, ...options.payments });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);

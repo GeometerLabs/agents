@@ -1,10 +1,11 @@
 import { test } from "node:test";
+import { gatewayGuardOf } from "../providers/index.ts";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../core/clock.ts";
 import { GuardRefusedError } from "../../core/faults.ts";
 import { MINUTE } from "../../core/time.ts";
 import { createGuardModel } from "../guard-model.ts";
-import { DEFAULT_CAPS, razorpayLimitsSpecFrom } from "../guard-limits.ts";
+import { DEFAULT_CAPS, paymentLimitsSpecFrom } from "../guard-limits.ts";
 import { ensureLink } from "../links.ts";
 import { createFakePayments } from "../payments.ts";
 
@@ -39,10 +40,10 @@ test("a link that takes part payments is paid in pieces: partially paid until th
 
 test("Guard bounds the amount of a link: a link outside the range is refused before anything is sent", async () => {
   const clk = clock();
-  const spec = razorpayLimitsSpecFrom({
+  const spec = paymentLimitsSpecFrom({
     identity: { tenant: "t", version: 1, reviewedBy: "test" }, approvalTtlSeconds: 86_400, caps: DEFAULT_CAPS,
     link: { ruleId: "fee-amount", minPaise: 10_000, maxPaise: 200_000 }, refundBound: { ruleId: "refund-at-most-fee", maxPaise: 200_000 }, refundThresholdPaise: 50_000,
-  });
+  }, gatewayGuardOf(undefined));
   const payments = createFakePayments(clk, { guard: createGuardModel(spec, clk) });
   await payments.createRequest({ amount: 150_000, reference_id: "ok", description: "d" });
   for (const amount of [9_999, 200_001, 0]) {

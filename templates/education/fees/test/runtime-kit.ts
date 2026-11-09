@@ -13,7 +13,7 @@ import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import type { PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
 import { HARNESS_GUARD, SHARMA_PARENT, brightTuition } from "../src/harness.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { createRuntime } from "../server/runtime.ts";
@@ -45,7 +45,7 @@ export function createKit(): Kit {
   const dir = mkdtempSync(join(tmpdir(), "geo-fees-runtime-"));
   const settings = brightTuition();
   const clock = fakeClock(START);
-  const payments = createFakePayments(clock, { guard: createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock) });
+  const payments = createFakePayments(clock, { guard: createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock) });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   const opened: { runtime: Runtime; db: DurableStore }[] = [];

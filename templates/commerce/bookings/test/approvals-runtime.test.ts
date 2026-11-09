@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import { createGuardModel } from "../../../../modules/payments/guard-model.ts";
 import { CUSTOMER, glowSalon, HARNESS_GUARD } from "../src/harness.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
 import { checkEvents, eventKey } from "../server/events.ts";
 import { startServer } from "../server/server.ts";
@@ -17,7 +17,7 @@ const settings = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), can
 
 async function boot() {
   const kit = createKit();
-  const guard = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), kit.clock);
+  const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), kit.clock);
   const payments = createFakePayments(kit.clock, { guard });
   const lines: string[] = [];
   const { runtime } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(l) });
@@ -118,7 +118,7 @@ test("status counts refunds waiting for the owner, as numbers only", async () =>
 test("a refund that needs the builder is counted by why, logged in a plain line, and the owner hears nothing", async () => {
   const kit = createKit();
   const lines: string[] = [];
-  const guard = createGuardModel(razorpayLimitsSpec(glowSalon(), HARNESS_GUARD), kit.clock);
+  const guard = createGuardModel(gatewayLimitsSpec(glowSalon(), HARNESS_GUARD), kit.clock);
   const payments = createFakePayments(kit.clock, { guard });
   const { runtime } = kit.open({ services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(l) });
   try {

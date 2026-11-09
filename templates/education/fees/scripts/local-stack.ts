@@ -27,7 +27,7 @@ import { startRelayServer } from "../../../../modules/approvals/server.ts";
 import type { RunningRelayServer } from "../../../../modules/approvals/server.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
 import { createWhatsAppMessaging } from "../../../../modules/messaging/whatsapp.ts";
-import { razorpayLimitsSpec } from "../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { parseSettings } from "../src/settings.ts";
 import { startStubGuard } from "../../../../modules/standins/guard.ts";
 import type { RunningStubGuard } from "../../../../modules/standins/guard.ts";
@@ -142,7 +142,7 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
     }, { port: options.ports?.standins ?? 0 });
     closers.push(() => standins.close());
     const guard = await startStubGuard({
-      clock, upstreamUrl: standins.url, spec: razorpayLimitsSpec(settings, { tenant: "local-stack", version: 1, reviewedBy: "local-stack" }),
+      clock, upstreamUrl: standins.url, spec: gatewayLimitsSpec(settings, { tenant: "local-stack", version: 1, reviewedBy: "local-stack" }),
       agentToken: secret("agent"), approver: { id: "owner-local", secret: secret("notify") }, readToken: secret("read"),
     });
     closers.push(() => guard.close());

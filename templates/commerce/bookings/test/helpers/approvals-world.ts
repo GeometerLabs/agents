@@ -14,7 +14,7 @@ import { fakeClock } from "../../../../../modules/core/clock.ts";
 import type { FakeClock } from "../../../../../modules/core/clock.ts";
 import { glowSalon, HARNESS_GUARD } from "../../src/harness.ts";
 import type { RecordEntry } from "../../../../../modules/record/record.ts";
-import { razorpayLimitsSpec } from "../../src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../../src/language/templates.ts";
 import { parseSettings } from "../../src/settings.ts";
@@ -91,7 +91,7 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; ap
   const settings = parseSettings({ ...base, cancellation: { windowHours: 24, refundLimitInr: options.refundLimitInr ?? 100 }, owner: { ...base.owner, language: options.ownerLanguage ?? base.owner.language }, ...approvers });
   const kit = createKit();
   const clock = kit.clock;
-  const spec = razorpayLimitsSpec(settings, HARNESS_GUARD, options.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: options.approvalTtlSeconds } : {});
+  const spec = gatewayLimitsSpec(settings, HARNESS_GUARD, options.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: options.approvalTtlSeconds } : {});
   // with other approvers the owner is `owner` in Guard's directory (bundle/generate/shop.ts ownerApproverId), as the runtime names them in Geo-Requested-By
   const ownerId = options.group ? "owner" : APPROVER_ID;
   const model = createGuardModel(spec, clock, options.group ? { approvers: { owner: ownerId, people: people.map((p) => p.id), ...(options.group.twoAboveInr !== undefined ? { twoAbovePaise: options.group.twoAboveInr * 100 } : {}), reader: READER_ID } } : {});

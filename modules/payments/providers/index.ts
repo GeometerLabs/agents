@@ -8,7 +8,7 @@
 // Geometer never opens either for a shop. A settings file without the block is NOT a gateway shop: it is refused and told to give the shop's UPI ID (owner, 10 Nov:
 // no paperwork for partners), so a shop can never end up behind a gateway nobody chose for it. Nothing was live when this flipped (before it, no block meant Razorpay).
 import type { PaymentCapabilities } from "../payments.ts";
-import type { PaymentProvider, ProviderSettings } from "./types.ts";
+import type { GatewayGuard, PaymentProvider, ProviderSettings } from "./types.ts";
 import { razorpay } from "./razorpay/index.ts";
 import { upi } from "./upi/index.ts";
 
@@ -71,6 +71,17 @@ export function gatewayAdapter(payment: PaymentSettings | undefined, config: { b
   if (payment && !named) throw new Error(`This shop's payment module (${payment.module}) has no gateway, so its runtime.json must not name a payments service.`);
   if (!named && GATEWAYS.length !== 1) throw new Error("runtime.json names a payments service, but the shop's settings were not given to say which gateway it is.");
   return (named ?? GATEWAYS[0]).gateway!.adapter(config);
+}
+
+/**
+ * The Guard declaration a shop's limits spec is written for: the gateway it chose. A shop with no gateway (UPI) runs no gateway Guard and never deploys this spec; a
+ * spec is still made for it in a harness or an export, and then it is the one gateway there is, so the numbers can be read the same way.
+ */
+export function gatewayGuardOf(payment: PaymentSettings | undefined): GatewayGuard {
+  const chosen = gatewayOf(payment);
+  if (chosen) return chosen.gateway!.guard;
+  if (GATEWAYS.length !== 1) throw new Error("This shop chose no gateway, and there is more than one: say which gateway's spec to make.");
+  return GATEWAYS[0].gateway!.guard;
 }
 
 /** Who the customer pays and the link for one request, for a module whose payments a person confirms; undefined for a gateway. */

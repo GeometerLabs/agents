@@ -90,7 +90,7 @@ export function planLimits(shops: Shops, shop: string, changes: readonly Change[
   const checked = kind.validateSettings(applied.settings);
   if (!checked.ok) return { ok: false, problems: checked.errors };
   if (guardsOf(kind, checked.settings).includes("razorpay")) {
-    try { kind.razorpaySpec(checked.settings, { tenant: shop, version: 1, reviewedBy: "confirm-check" }, { approvalTtlSeconds: 86_400 }); } catch (e) { return { ok: false, problems: [(e as Error).message] }; }
+    try { kind.gatewaySpec(checked.settings, { tenant: shop, version: 1, reviewedBy: "confirm-check" }, { approvalTtlSeconds: 86_400 }); } catch (e) { return { ok: false, problems: [(e as Error).message] }; }
   }
   return { ok: true, raw, proposed: applied.settings, rows, digest };
 }

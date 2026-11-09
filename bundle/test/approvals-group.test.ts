@@ -18,7 +18,7 @@ import { createRazorpayPayments } from "../../modules/payments/providers/razorpa
 import { createRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
 import { startServer } from "../../templates/commerce/bookings/server/server.ts";
 import { glowSalon, HARNESS_GUARD } from "../../templates/commerce/bookings/src/harness.ts";
-import { razorpayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
+import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../../templates/commerce/bookings/src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../../templates/commerce/bookings/src/language/templates.ts";
 import { parseSettings } from "../../templates/commerce/bookings/src/settings.ts";
@@ -54,7 +54,7 @@ async function world() {
   const recorderPort = await new Promise<number>((resolve) => recorder.listen(0, "127.0.0.1", () => resolve((recorder.address() as { port: number }).port)));
   const agent = credential();
   const guard = await startRealGuard({
-    def: guardDef("razorpay"), spec: razorpayLimitsSpec(settings, HARNESS_GUARD), tenant: HARNESS_GUARD.tenant, deployment: "glow-salon-razorpay", upstreamPort: recorderPort,
+    def: guardDef("razorpay"), spec: gatewayLimitsSpec(settings, HARNESS_GUARD), tenant: HARNESS_GUARD.tenant, deployment: "glow-salon-razorpay", upstreamPort: recorderPort,
     agents: [{ id: "runtime-glow-salon", token: agent.token }], approver: { id: "owner", group: { people: [RAVI.id, MEENA.id], twoAbovePaise: 15_000 } },
   });
   const admin = (path: string, init: RequestInit = {}) => fetch(`${guard.adminUrl}${path}`, { ...init, headers: { authorization: `Bearer ${guard.adminToken}`, "content-type": "application/json" } });

@@ -21,7 +21,7 @@ import type { FakePayments, FakePaymentsOptions, PaymentRequest } from "../../..
 import { createRuleParser } from "./adapters/rule-parser.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
-import { razorpayLimitsSpec } from "./guard-limits.ts";
+import { gatewayLimitsSpec } from "./guard-limits.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
 import type { ActionRecord } from "../../../../modules/record/record.ts";
 import { parseSettings } from "./settings.ts";
@@ -115,7 +115,7 @@ export function createWorld(options: WorldOptions = {}): World {
   const settings = options.settings ?? glowSalon();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, settings.timezone));
   const calendar = createFakeCalendar();
-  const guard = createGuardModel(razorpayLimitsSpec(settings, HARNESS_GUARD), clock);
+  const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock);
   const payments = createFakePayments(clock, { guard, ...options.payments });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);

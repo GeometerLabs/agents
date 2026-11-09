@@ -53,7 +53,8 @@ export interface ModelApprovers { owner: string; people: string[]; twoAbovePaise
 export interface ReviewItem {
   id: string;
   agent: string;
-  tool: "razorpay";
+  /** The gateway's tool, from the spec (B71: whichever gateway the shop chose). */
+  tool: string;
   operation: "refund";
   arguments: ["map", Record<string, [string, string]>];
   plain_arguments: string[];
@@ -181,7 +182,7 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { appr
           const fields = { ...(body as Record<string, unknown>), payment_id: paymentId };
           const tier = tierOf(amount);
           const created: Approval = {
-            id: `ap-stub-razorpay-${++seq}`, state: "pending", callKey, paymentId, fields, amountPaise: amount, requestedAtMs: now, expiresAtMs: now + ttlMs,
+            id: `ap-stub-${spec.tool}-${++seq}`, state: "pending", callKey, paymentId, fields, amountPaise: amount, requestedAtMs: now, expiresAtMs: now + ttlMs,
             ...(tier.needed ? { needed: tier.needed } : {}), ...(asked.length > 0 ? { requestedBy: [...new Set(asked)].sort() } : {}),
           };
           approvals.push(created);
@@ -220,7 +221,7 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { appr
         const typed = Object.fromEntries(Object.entries(a.fields).map(([k, v]): [string, [string, string]] => [k, [typeof v === "number" ? "int" : "str", String(v)]]));
         const role = tierOf(a.amountPaise).role;
         const item: ReviewItem = {
-          id: a.id, agent, tool: "razorpay", operation: "refund", arguments: ["map", typed],
+          id: a.id, agent, tool: spec.tool, operation: "refund", arguments: ["map", typed],
           plain_arguments: Object.entries(a.fields).map(([k, v]) => `${k}: ${v}`), amount: String(a.amountPaise), rule: "refund-needs-owner",
           summary: `refund: ${Object.entries(a.fields).map(([k, v]) => `${k} ${v}`).join(", ")} (refund-needs-owner: above the threshold: a person must approve this exact call)`,
           requested_at_ms: String(a.requestedAtMs), expires_at_ms: String(a.expiresAtMs), waiting_for: role,
