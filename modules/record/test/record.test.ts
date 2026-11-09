@@ -2,12 +2,31 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../core/clock.ts";
 import { createRecord, digest } from "../record.ts";
+import { ledgerEntries } from "../ledger.ts";
 
 const clock = fakeClock(Date.UTC(2026, 10, 3, 4, 30));
 
 function newRecord() {
   return createRecord(clock);
 }
+
+test("B69: with the shop's key the inputs' digest is keyed and marked, a WhatsApp message id is kept only as a fingerprint, and the chain commits to those forms alone", () => {
+  const key = Buffer.alloc(32, 5);
+  const inputs = { text: "haan book kar do", id: "wamid.HBgMOTE5ODExMTIyMjMzFQIAERgS" };
+  const keyed = createRecord(clock, [], { key });
+  const e = keyed.append({ conversation: "+919811122233", booking: "b1", action: "receive_message", inputs, outcome: "confirmed", language: "hi", refs: { messageId: inputs.id, step: "rules" } });
+  assert.match(e.inputsDigest, /^k-[0-9a-f]{16}$/u);
+  assert.notEqual(e.inputsDigest.slice(2), digest(inputs), "not the plain digest anyone could test a guess against");
+  assert.equal(keyed.append({ conversation: "+919811122233", booking: "b1", action: "receive_message", inputs: { id: inputs.id, text: inputs.text }, outcome: "confirmed", language: "hi" }).inputsDigest, e.inputsDigest, "same content, same digest, whatever the key order");
+  assert.notEqual(createRecord(clock, [], { key: Buffer.alloc(32, 6) }).append({ conversation: "x", action: "a", inputs, outcome: "confirmed", language: "hi" }).inputsDigest, e.inputsDigest, "another shop's key gives another digest");
+  assert.match(e.refs.messageId, /^m-[0-9a-f]{12}$/u);
+  assert.equal(e.refs.step, "rules", "other references stay as they are");
+  const body = ledgerEntries(keyed.entries(), "glow-salon")[0].body;
+  assert.ok(!body.includes("wamid") && !body.includes("919811122233"), "the chain holds neither the id nor the number");
+  const plain = newRecord().append({ conversation: "x", action: "a", inputs, outcome: "confirmed", language: "hi", refs: { messageId: inputs.id } });
+  assert.equal(plain.inputsDigest, digest(inputs), "a demo or a test, with no key, writes the plain digest as before");
+  assert.equal(plain.refs.messageId, inputs.id);
+});
 
 test("an entry gets a sequence number, a time and a digest of its inputs, and cannot be changed", () => {
   const record = newRecord();

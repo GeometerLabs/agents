@@ -54,8 +54,10 @@ export interface Statement {
 export interface StatementInput {
   template: TemplatePapers;
   shop: { name: string; timeZone: string };
-  /** The person's WhatsApp number, as they or the shop gave it. Matched against the record as the shop holds it, and against the export's short hashes. */
+  /** The person's WhatsApp number, as they or the shop gave it. Matched against the record as the shop holds it, and against the export's fingerprints when `personKey` is given. */
   number: string;
+  /** The shop's fingerprint key (B69): what lets a number be matched against the export's fingerprints. Left out, only a number kept as itself (the shop's own store) matches. */
+  personKey?: Buffer;
   /** The whole record, oldest first. */
   entries: readonly RecordEntry[];
   /** Every case of the shop; only this person's are used. */
@@ -68,7 +70,7 @@ export interface StatementInput {
 }
 
 export function buildStatement(input: StatementInput): Statement {
-  const mine = input.cases.filter((c) => isPerson(c.customer, input.number));
+  const mine = input.cases.filter((c) => isPerson(c.customer, input.number, input.personKey));
   const language = input.language ?? mine.at(-1)?.language ?? "en";
   const w = WORDS[language];
   const ids = new Set(mine.map((c) => c.id));
