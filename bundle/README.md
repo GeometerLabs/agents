@@ -1,6 +1,6 @@
 # Geometer deploy bundle
 
-One folder per server, one Docker Compose file generated from it. Every shop gets its own runtime and its own Guards (Razorpay, WhatsApp, and Calendar for a template that has one: Bookings does, **Fees does not**); the server adds one model Guard, one inbox, one approvals relay, one Google token refresher, a continuous copy of every record (Litestream), HTTPS (Caddy) and a heartbeat to Geometer. Builders run it on their own small server. Geometer runs it on one server for the partners' shops.
+One folder per server, one Docker Compose file generated from it. Every shop gets its own runtime and its own Guards (Razorpay, WhatsApp, and Calendar for a template that has one: Bookings does, **Fees does not**); the server adds one model Guard, one inbox, one approvals relay, one Google token refresher, a nightly snapshot of every shop's data (gzipped, age-encrypted, kept 30 days), HTTPS (Caddy) and a heartbeat to Geometer. Builders run it on their own small server. Geometer runs it on one server for the partners' shops.
 
 The runtime holds no key, and the only things it can connect to are its own Guards and the model Guard. If a Guard is down, nothing goes out. Before anything starts, every Guard's limits are compiled and **every tripwire is proven on the Guard** (a forbidden call, derived from each rule, must be refused); a deploy that cannot prove them is refused, and says which rule.
 
@@ -15,7 +15,7 @@ The runtime holds no key, and the only things it can connect to are its own Guar
 | A domain | An `A` record pointing at the server. Caddy gets the certificate by itself. |
 | Per shop | The shop's Razorpay key and webhook secret, its WhatsApp provider token and app secret, its Google service account (the shop's calendar is shared with it), and the shop's settings. The panel (or you, by hand) hands them in; see "Secrets". |
 | For the model | One API key for the one model every shop on the server may use. |
-| For backups | Two places that are not this server: a bucket for the continuous copy and another place for nightly snapshots (any S3-compatible bucket: Google Cloud Storage's S3 interface in Mumbai, Backblaze, Cloudflare R2, MinIO). |
+| For backups | One place that is not this server, for the nightly snapshots: any S3-compatible bucket (Google Cloud Storage's S3 interface in Mumbai, Backblaze, Cloudflare R2, MinIO). Its key must be able to write, list and read (the drill and `restore` read it); deleting is optional, if the bucket deletes old snapshots itself. A folder works for a trial, but a folder on this server's own disk is not a backup. |
 | Alerts from outside | A deployment key from Geometer (`gfk_...`) and the fleet address. Without it the server can still run, but nobody outside hears if it dies. |
 
 ## From an empty server to the first shop
@@ -46,12 +46,11 @@ node bundle/geometer.ts init ~/geometer-server \
   --domain shops.example.com --reviewed-by your-name \
   --model-wire openai --model gpt-4o-mini \
   --fleet-url https://fleet.geometer.dev --fleet-key-file ~/geometer-server/fleet_key \
-  --stream-url s3://my-bucket/stream --stream-endpoint https://storage.googleapis.com \
-  --snapshots-url s3://my-other-bucket/snapshots --snapshots-endpoint https://s3.us-west-000.backblazeb2.com \
+  --snapshots-url s3://my-bucket/snapshots --snapshots-endpoint https://storage.googleapis.com \
   --age-identity-out ~/age-identity.txt
 ```
 
-`init` makes a key pair for the snapshots. **The secret half is written to `~/age-identity.txt`: move it off this server** (a password manager, your laptop). It is only needed to restore a snapshot, and it must not sit beside the snapshots. Put the deployment key Geometer gave you in `~/geometer-server/fleet_key`.
+`init` makes a key pair for the snapshots. **The secret half is written to `~/age-identity.txt`: move it off this server** (a password manager, your laptop). It opens every snapshot; if this server is lost, it is the only key that does, so it must not sit beside the snapshots. (The server also makes a drill key of its own, for the weekly drill and `restore`; see "Backups".) Put the deployment key Geometer gave you in `~/geometer-server/fleet_key`.
 
 **5. Hand in the keys that belong to the server.**
 
@@ -59,8 +58,7 @@ node bundle/geometer.ts init ~/geometer-server \
 export GEOMETER_SERVER=~/geometer-server
 node bundle/geometer.ts model-key ~/model-key.txt                    # one line; goes to the model Guard only
 node bundle/geometer.ts google-key ~/google-key.json                 # optional: one service account for every shop that hands in none of its own
-node bundle/geometer.ts backup-key stream ~/stream-key.txt           # access-key-id:secret
-node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt
+node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt     # access-key-id:secret
 ```
 
 **6. Add the first shop.** A client folder has `settings.json`, `runtime.json` and `pathway.lock` (see `templates/commerce/bookings/clients/glow-salon.example`, or `templates/education/fees/clients/bright-tuition.example` for a tuition centre). In `runtime.json` the panel (or you) names the shop's own WhatsApp number id and, for a template with a calendar, the Google calendar; the bundle sets everything about where things are. The `pathway.lock` names the **template** (`bookings@0.1.0`, `fees@0.1.0`): the shop's settings are checked by that template, its Guards are the ones that template calls (Fees has no calendar Guard, asks for no Google key and has nothing for the token refresher), and its runtime, inbox and approvals relay are that template's (`lib/kinds.ts` is the one place that lists them). Or start from a template: `node bundle/geometer.ts shop add bright --template fees --whatsapp-number-id <id> --prepared-by "Divya, local partner"` (`--template bookings` takes `--calendar-id` too; `--settings <file>` replaces the template's made-up example, and is checked first).
@@ -126,7 +124,7 @@ node bundle/geometer.ts start glow-salon
 node bundle/geometer.ts update --dry-run     # a new template version for every client: what would move and what would be held back (changes nothing)
 node bundle/geometer.ts update                # do it, each client checked on its own settings first
 node bundle/geometer.ts rollback              # put the clients the last update moved back on their previous version
-node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the record as it was, from the continuous copy
+node bundle/geometer.ts restore glow-salon --at 2026-11-04T10:30:00Z    # the shop's data from the newest nightly snapshot at or before that time
 node bundle/geometer.ts licence extension extension.gx1                  # an emergency extension from Geometer, if fleet cannot renew the licence for a while
 ```
 
@@ -358,17 +356,22 @@ Good to know:
 
 | Layer | How often | Where | Encrypted |
 |---|---|---|---|
-| Every runtime database | about every second | your stream bucket, by Litestream | by your bucket and TLS. **Not age**: Litestream 0.5 no longer supports client-side encryption; see [Explanation.md](Explanation.md) |
-| Every runtime database, and each Guard's own store and evidence ledger | every night, kept 30 days | your snapshot place | age, to the public key in `geometer.json` |
-| Restore drill | every week | restores the continuous copy into a scratch folder, checks integrity, compares the last record entry with the live record | |
+| Every runtime database, and each Guard's own store and evidence ledger | every night, kept 30 days | your snapshot place: one object per database file, gzipped first | age, to the public key in `geometer.json` and to the server's drill key |
+| Restore drill | every week | restores each shop's newest snapshot into a scratch folder, checks integrity, checks that its record is the start of the live record, and compares it with the shop's published daily fingerprints | |
+
+There is no continuous copy any more (since 9 November 2026): a shop's data in a snapshot is up to a day old. A WhatsApp shop's conversations are on the customer's and the owner's phones, every decision is in the hash-chained record and its daily fingerprint, and the providers keep their own records of payments, refunds and calendar events. A restored shop starts by looking at those (below), so a day-old snapshot does not send anything twice.
+
+**What the backup costs.** One night writes a fixed number of objects per shop, whatever the shop holds: one per database file (the runtime and each Guard; a Guard's backup folder, ledger and all, goes up as one tar) and one manifest. So a shop with three Guards writes 5 objects a night, about **150 writes a month**, makes **one list** a night (about 30 a month), and, once the 30 days are full, deletes 5 a night (deletes are free on Google Cloud Storage; a bucket's own lifecycle rule can do them instead). The weekly drill reads one list and two objects per shop. `bundle/test/backup-cost.test.ts` holds that count to the request, for an empty shop and one with thousands of records. At Google Cloud Storage's Class A price as remembered (about $0.005 per 1,000; to be checked against the pricing page) that is a small fraction of a rupee a shop a month, where the continuous copy measured about ₹410. Storage is the snapshots' gzipped size times 30.
+
+**The drill key.** Every snapshot is encrypted to two keys: yours (the secret half off the server) and the server's own drill key (`secrets/backup/drill_identity`, made on first use). The drill key is what lets the weekly drill and `restore` open a snapshot on the server. It is a trade: whoever takes over the server can read up to 30 days of its snapshots, not only the live data they would already have. A copy of the bucket alone opens with neither key. If the server is lost, its drill key goes with it: restore on the new server with your key (`--identity`).
+
+**Restoring.** `restore <shop> [--at TIME] [--identity FILE]` fetches the newest snapshot at or before the time (the newest of all without one), checks it against its manifest and SQLite's integrity check while the shop still runs, then stops only the shop's runtime, puts the file in place (the one it replaces is kept as `agent.db.before-restore-<time>`) and starts it. The runtime then starts in its restored mode before it does anything else: every id moves on by 100,000 (so a new booking can never take an id used after the snapshot, and with it another customer's payment link or calendar event), a `restored` entry goes into the record, and every payment link, refund and calendar write is looked up at the provider before anything is sent (a refund already on Razorpay's list is recorded as made, not sent again; Guard's own store, which a restore does not touch, refuses a second refund of the same payment too). What happened after the snapshot is not in the shop's record, and if the restored record is shorter than the last daily fingerprint, the fingerprint and the drill will say from then on that the record no longer matches what was published ([Deferred.md](Deferred.md)). A Guard's own store is not put back by `restore`; the snapshot has its files (`geo-guard restore`, with the Guard stopped). On a machine with your key, `node bundle/backup/restore-snapshot.ts <one snapshot's folder> --identity <key file> --out <empty folder>` opens a downloaded snapshot, old or new, and checks every file against its manifest.
 
 A failed drill, or a snapshot that did not happen, shows in `status` and in `status/<shop>.json` (`backups`). The record and bookings the panel's monthly report reads are exported every quarter of an hour to `exports/<shop>/`.
 
 The heartbeat carries two optional facts per shop, so a snapshot that stopped or a drill that failed alerts from outside the server: the age of the last good snapshot (alert after 36 hours) and the age and verdict of the last drill (alert if it failed, or after 8 days without one). It sends ages and a yes/no, never the drill's reason (that stays in `status`). Geometer's fleet service must be new enough to know these two fields before a bundle sends them; an older one refuses every heartbeat as malformed. A shop whose very first snapshot never succeeds sends nothing about backups until one does (see [Deferred.md](Deferred.md)).
 
 The heartbeat also carries **the cost meter's counts** per shop (messages by understanding step, model spend in micro-rupees, WhatsApp by type), as a difference since the last heartbeat fleet accepted. Fleet answers with each shop's plan, its allowance, whether its owner is an innovator, and `ai: "buttons"` when the partner's recharge cannot cover the shop's messages above its allowance; the deployer then writes `"ai": "buttons"` into that shop's generated runtime config (only when the template knows the setting; see [Explanation.md](Explanation.md)). Deploy a fleet that knows these before a bundle that sends them.
-
-Restoring a snapshot needs the secret half of the age key, which is not on the server: `restore` uses the continuous copy; a snapshot is decrypted on the machine that has the key.
 
 ## The folder, for the panel
 
@@ -404,4 +407,4 @@ The first builder's way in is `node bundle/geometer.ts panel invite --role build
 
 ## Running it on your laptop
 
-Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test of the whole server on real Docker is `bundle/test/proof/run.ts`. It needs `node:26-alpine`, Caddy, Litestream, MinIO, and a Guard image that reads `[licence]` with RFC 8032's published test key built in (`GUARD_IMAGE`, default `geo-guard:local-b14`; that key is for tests only). It runs every bundle container inside one cgroup capped at 2 CPUs and 4 GiB. At 1, 5, 10 and 25 shops it takes about an hour; `--only <phase,...>` runs some phases. The ordinary tests (`cd bundle && npm test`) need no Docker.
+Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test of the whole server on real Docker is `bundle/test/proof/run.ts`. It needs `node:26-alpine`, Caddy, MinIO, and a Guard image that reads `[licence]` with RFC 8032's published test key built in (`GUARD_IMAGE`, default `geo-guard:local-b14`; that key is for tests only). It runs every bundle container inside one cgroup capped at 2 CPUs and 4 GiB. At 1, 5, 10 and 25 shops it takes about an hour; `--only <phase,...>` runs some phases. The ordinary tests (`cd bundle && npm test`) need no Docker.
