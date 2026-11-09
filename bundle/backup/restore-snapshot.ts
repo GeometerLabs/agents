@@ -143,7 +143,8 @@ export async function fetchAgentSnapshot(store: ObjectStore, agent: string, iden
   for (const path of digests(manifest).keys()) if (!files.has(path)) throw new Error(`the snapshot of ${stamp} is missing ${path}, which its manifest names`);
   files.delete("manifest.json");
   if (files.has(AGENT_RECORD_FILE)) agentRecordOf(files.get(AGENT_RECORD_FILE)!.toString("utf8"), agent);
-  const guards = [...files.keys()].flatMap((p) => /^guard-([a-z]+)\/backup\.json$/u.exec(p)?.[1] ?? []).sort();
+  // a Guard's kind may hold a hyphen (B71's own gateway API is `own-api`)
+  const guards = [...files.keys()].flatMap((p) => /^guard-([a-z][a-z-]*)\/backup\.json$/u.exec(p)?.[1] ?? []).sort();
   for (const kind of guards) {
     let tenant: unknown;
     try { tenant = (JSON.parse(files.get(`guard-${kind}/backup.json`)!.toString("utf8")) as { tenant?: unknown }).tenant; } catch { tenant = undefined; }
