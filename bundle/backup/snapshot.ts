@@ -6,7 +6,7 @@
 //
 //   <shop>/<stamp>/runtime/agent.db.gz.age     the runtime's database
 //   <shop>/<stamp>/guard-<kind>.tar.gz.age     one Guard's backup folder (its store, its evidence ledger, anchor and pack), as one tar
-//   <shop>/<stamp>/manifest.json.gz.age        every file's size and sha256 (before compression), and the record's length and last entry
+//   <shop>/<stamp>/manifest.json.gz.age        every file's size and sha256 (before compression), the record's length and last entry, and the shop's fingerprint key (B69)
 //
 // What it hands back besides, in the clear, is the snapshot's SEAL: each object's key, size and sha256 as uploaded, and what the copy's record was (its length, last
 // entry's digest and the head of its hash chain). No customer's words or numbers are in it. The weekly drill checks a snapshot with it, without the key (drill-check.ts).
@@ -38,7 +38,8 @@ export interface SnapshotJob {
   /** The owner's public key (geometer.json). Its secret half is not on the server. */
   recipient: string;
   target: { url: string; endpoint?: string; region?: string };
-  shops: { name: string; runtimeDb: string; guards: { kind: string; dir: string }[] }[];
+  /** `personKeyFile`: the shop's fingerprint key (B69), mounted read-only, so it travels in the manifest (encrypted to the age recipient). Left out: the manifest has no key. */
+  shops: { name: string; runtimeDb: string; personKeyFile?: string; guards: { kind: string; dir: string }[] }[];
 }
 
 export interface RecordFacts { records: number; lastSeq: number | null; lastEntryDigest: string | null }
@@ -47,10 +48,12 @@ export interface Seal { stamp: string; objects: { key: string; bytes: number; sh
 export interface ShopSnapshot { name: string; ok: boolean; stamp: string; files: number; bytes: number; record?: RecordFacts; seal?: Seal; error?: string; /** Old snapshots were not deleted from here: the bucket's lifecycle rule does it. */ pruneError?: string }
 /** One file of a snapshot, as it was before compression and encryption. `path` is relative to the snapshot's folder (runtime/agent.db, guard-razorpay/state.db). */
 export interface ManifestFile { path: string; bytes: number; sha256: string }
-export interface Manifest { format: 2; shop: string; stamp: string; files: ManifestFile[]; objects: { key: string; bytes: number }[]; runtime: RecordFacts | null }
+export interface Manifest { format: 2; shop: string; stamp: string; files: ManifestFile[]; objects: { key: string; bytes: number }[]; runtime: RecordFacts | null; /** The shop's fingerprint key (B69), so a restored shop can match its own people. The manifest is encrypted to the owner. */ personKey?: string }
 
 export const RUNTIME_OBJECT = "runtime/agent.db.gz.age";
 export const MANIFEST_OBJECT = "manifest.json.gz.age";
+/** What the fingerprint key is called when a restore takes it out of the manifest. */
+export const PERSON_KEY_OBJECT = "person_key";
 
 const sha256 = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
 /** A stamp (20261104T013000Z) as a time. */
@@ -109,7 +112,9 @@ export async function snapshotShop(shop: SnapshotJob["shops"][number], job: Snap
   const folder = `${shop.name}/${job.stamp}/`;
   const sealed = objects.map((o) => ({ key: folder + o.name, data: encrypt(o.plain, job.recipient) }));
   const facts = record ? { records: record.records, lastSeq: record.lastSeq, lastEntryDigest: record.lastEntryDigest } : null;
-  const manifest: Manifest = { format: 2, shop: shop.name, stamp: job.stamp, files, objects: sealed.map((o) => ({ key: o.key, bytes: o.data.length })), runtime: facts };
+  // B69: the shop's fingerprint key rides in the manifest: encrypted to the owner like everything here, no extra object, and `restore` reads the manifest anyway
+  const personKey = shop.personKeyFile && existsSync(shop.personKeyFile) ? readFileSync(shop.personKeyFile, "utf8").trim() : undefined;
+  const manifest: Manifest = { format: 2, shop: shop.name, stamp: job.stamp, files, objects: sealed.map((o) => ({ key: o.key, bytes: o.data.length })), runtime: facts, ...(personKey ? { personKey } : {}) };
   sealed.push({ key: folder + MANIFEST_OBJECT, data: encrypt(gzipSync(Buffer.from(JSON.stringify(manifest, null, 2))), job.recipient) });
   let bytes = 0;
   for (const o of sealed) { await store.put(o.key, o.data); bytes += o.data.length; }

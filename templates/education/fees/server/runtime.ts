@@ -38,6 +38,8 @@ export interface RuntimeOptions {
   pathwayVersion: string;
   /** The monthly AI allowance and the outside switch for this centre (modules/understanding/ai-state.ts). Left out: no limit and no switch. */
   ai?: AiPolicy;
+  /** The record's key (B69, RECORD_KEY_FILE): the inputs' digest and message ids are written with it. Left out (fakes mode): written plain. */
+  recordKey?: Buffer;
   /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
   report?: MonthlyReportSetup;
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
@@ -114,6 +116,6 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     ...(options.licence ? { licence: options.licence, licenceNotice: createFeesLicenceNotice(settings, options.licence) } : {}),
-    retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
+    ...(options.recordKey ? { recordKey: options.recordKey } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
   }) as unknown as Runtime;
 }

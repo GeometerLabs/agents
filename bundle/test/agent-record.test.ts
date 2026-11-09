@@ -17,7 +17,8 @@ import { world } from "./world.ts";
 
 const facts = JSON.parse(readFileSync(new URL("./fixtures/own-agent-facts.json", import.meta.url), "utf8")) as Facts;
 const settings = agentFromFlags("demo", { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID }, () => "", new Date("2026-11-05T00:00:00Z")).settings;
-const options = (now = Date.parse(facts.at)) => ({ settings, agentId: "agent-demo", relayId: "relay-demo", now });
+const labelKey = Buffer.alloc(32, 9);
+const options = (now = Date.parse(facts.at)) => ({ settings, agentId: "agent-demo", relayId: "relay-demo", now, labelKey });
 const tally = (entries: readonly { action: string; outcome: string }[]) => Object.fromEntries(Object.entries(entries.reduce((m: Record<string, number>, e) => { const k = `${e.action}/${e.outcome}`; m[k] = (m[k] ?? 0) + 1; return m; }, {})).sort());
 
 test("every call the agent made is in the record as Guard decided it, 'done' is what the service holds, and the reading agent's own reads are not the agent's record", () => {
@@ -94,7 +95,7 @@ test("a gap is said, not hidden: when Guard's list of its 500 most recent decisi
   assert.deepEqual(foldFacts(first.state, reaches, options(newest + 600_000)).gaps, []);
 });
 
-test("a reference the agent chose that looks like a phone number reaches neither the record nor the exports; it is kept as a short hash", () => {
+test("a reference the agent chose that looks like a phone number reaches neither the record nor the exports; it is kept as a keyed fingerprint", () => {
   const phoneRef = "+91 98111 11111";
   const edited: Facts = JSON.parse(JSON.stringify(facts).replaceAll("b-1", phoneRef));
   const { state } = foldFacts(emptyRecord(), edited, options());
@@ -123,7 +124,7 @@ test("settled things are not asked of the services again, a calendar is read aro
     if (/\/events\/ev_9$/u.test(u.pathname)) return Response.json({ error: "gone" }, { status: 404 });
     return Response.json({});
   }) as typeof fetch;
-  const cfg = { agentId: "agent-demo", relayId: "relay-demo", recordToken: "gg_reader", calendarId: "c@group.calendar.google.com", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, adminUrl: `http://${kind}.admin`, adminToken: "x", agentUrl: `http://${kind}.agent` })) };
+  const cfg = { agentId: "agent-demo", relayId: "relay-demo", recordToken: "gg_reader", labelKey, calendarId: "c@group.calendar.google.com", guards: (["razorpay", "whatsapp", "calendar"] as const).map((kind) => ({ kind, adminUrl: `http://${kind}.admin`, adminToken: "x", agentUrl: `http://${kind}.agent` })) };
   const now = new Date(facts.at);
   // nothing settled yet: the link, the payment's refunds and the calendar are all asked about
   const all = await collectFacts(cfg, now, fetchFn);

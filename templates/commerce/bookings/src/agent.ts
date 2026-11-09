@@ -1103,7 +1103,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function onMessage(msg: InboundMessage): Promise<void> {
     if (store.seenMessages.has(msg.id)) {
-      log(null, msg.from, "receive_message", "blocked", { id: msg.id }, { notes: `the same WhatsApp message (${msg.id}) was delivered again, so it is ignored` });
+      log(null, msg.from, "receive_message", "blocked", { id: msg.id }, { notes: "the same WhatsApp message was delivered again, so it is ignored" });
       return;
     }
     store.seenMessages.add(msg.id);

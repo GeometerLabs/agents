@@ -1,5 +1,6 @@
 // Everywhere the panel decides by template, a shop whose lock says `orders@…` is an Orders shop. Each assertion is one a shop that fell back to Bookings would fail: the kind of the shop,
 // the hand check and its digest, the cases the export is read for (the unfinished-work list, the case list, the papers), the monthly report, the shop page, and the setup drafts.
+import { keyIdOf } from "../../../modules/record/fingerprint.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, mkdirSync, writeFileSync } from "node:fs";
@@ -32,6 +33,8 @@ function exportOrders(b: Boot, shop: string, orders: unknown[], entries: unknown
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "record.json"), JSON.stringify(entries));
   writeFileSync(join(dir, "orders.json"), JSON.stringify(orders));
+  // B69: as the deployer leaves it: the shop's key with the panel, and the marker that the export is in the keyed form, made under that key
+  writeFileSync(join(dir, "person-form.json"), JSON.stringify({ schema: 1, form: "hmac-sha256/shop-key/12-hex", keyId: keyIdOf(b.personKey(shop)), inputs: { keyed: 0, older: 0 }, messageIds: { fingerprinted: 0, older: 0 } }));
 }
 
 test("an orders@ lock is an Orders shop in every place the panel decides by template", async () => {

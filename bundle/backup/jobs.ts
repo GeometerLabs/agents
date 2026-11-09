@@ -1,6 +1,7 @@
 // The data duties, on the host side: the nightly snapshot, the weekly restore drill and `restore`. Each starts a short-lived container with the volumes it
 // needs (the deployer is the only process with the Docker socket) and reads one line of JSON back. Nothing here sees a secret except the bucket key it mounts
-// into those containers, and, for `restore` only, the owner's age key that the person restoring brings for the purpose.
+// into those containers, the shop's fingerprint key (B69: mounted read-only into the export and snapshot jobs, and put back by `restore`), and, for `restore` only, the owner's age
+// key that the person restoring brings for the purpose.
 //
 //   what is copied        when and where                                       by
 //   runtime database      nightly, gzipped and age-encrypted to the owner      backup/snapshot.ts (VACUUM INTO: a consistent copy while the runtime writes)
@@ -21,7 +22,7 @@ import { appliedPathwayDir } from "../lib/pathways.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
 import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { secretFile } from "../lib/secrets.ts";
+import { PERSON_KEY, ensurePersonKey, ensureShopPersonKeys, restorePersonKey, secretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
 import type { UsageTotals } from "../lib/usage.ts";
@@ -29,6 +30,7 @@ import { ensureDir, writeAtomic } from "../lib/util.ts";
 import { readFingerprints } from "../../modules/record/publish.ts";
 import type { DrillResult, PublishedLine } from "./drill-check.ts";
 import { fingerprintFile, lastFingerprint } from "./fingerprints.ts";
+import { PERSON_KEY_OBJECT } from "./snapshot.ts";
 import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
@@ -79,11 +81,12 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   }
   // 2. the snapshot container
   const jobFile = join(work, `snapshot-${stamp}.json`);
+  for (const [shop] of shops) ensurePersonKey(ctx.dir, shop); // B69: the key goes in the snapshot's manifest, so a restored shop can still match its own people (`restore` puts it back)
   writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipient: server.backup.ageRecipient, target: server.backup.snapshots,
-    shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
+    shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, personKeyFile: `/run/person-keys/${shop}`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
   const mounts = shops.flatMap(([shop, s]) => [["-v", `${volume(server, names.dataVolume(shop))}:/v/${names.dataVolume(shop)}`], ...Object.values(s.applied!.guards).map((g) => ["-v", `${volume(server, names.stateVolume(shop, g.kind as "razorpay"))}:/v/${names.stateVolume(shop, g.kind as "razorpay")}`])]).flat();
   const place = snapshotPlace(ctx, server);
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts, ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: ShopSnapshot[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [...lines, `The snapshot job failed: ${r.stderr.trim().split("\n").slice(-3).join(" | ") || `exit ${r.code}`}`] };
@@ -109,8 +112,10 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   const work = join(serverPaths(ctx.dir).state, "work");
   ensureDir(work);
   const jobFile = join(work, `export-${stampOf(ctx.now())}.json`);
-  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}` })) }), { mode: 0o644 });
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
+  // B69: every shop has its fingerprint key before the job starts (a shop made before B69 gets one now, and the panel's copy with it). The job file only names the file: the key itself is mounted read-only, for this job only.
+  for (const n of shops) ensureShopPersonKeys(ctx.dir, n, names.runtime(n), server.panel.enabled);
+  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}`, personKeyFile: `/run/person-keys/${n}` })) }), { mode: 0o644 });
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string }[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
@@ -183,6 +188,8 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   const work = join(serverPaths(ctx.dir).state, "work", `restore-${shop}-${stamp}`);
   const dataVolume = volume(server, names.dataVolume(shop));
   let got: { stamp: string; record: RecordFacts };
+  let keyNote = "";
+  let snapshotKey: string | undefined;
   try {
     mkdirSync(join(work, "files"), { recursive: true }); chmodSync(join(work, "files"), 0o777); // the container writes here; the deployer removes it after
     writeFileSync(join(work, "job.json"), JSON.stringify({ target: server.backup.snapshots, shop, ...(o.at ? { atMs: Date.parse(o.at) } : {}), identityFile: "/run/secrets/identity", out: "/out/files", nowIso: ctx.now().toISOString() }), { mode: 0o644 });
@@ -192,10 +199,16 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
     const out = lastJson(r.stdout) as { ok?: boolean; stamp?: string; record?: RecordFacts; error?: string } | undefined;
     if (!out?.ok || !out.stamp || !out.record) throw new Error(`No snapshot was restored; the shop was not touched and is still running. ${out?.error ?? (r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300) || `exit ${r.code}`)}`);
     got = { stamp: out.stamp, record: out.record };
+    // B69: the snapshot's fingerprint key, checked now, while nothing of the shop's has been touched
+    const keyFile = join(work, "files", PERSON_KEY_OBJECT);
+    snapshotKey = existsSync(keyFile) ? readFileSync(keyFile, "utf8").trim() : undefined;
+    if (snapshotKey !== undefined && !PERSON_KEY.test(snapshotKey)) throw new Error("No snapshot was restored; the shop was not touched and is still running. The fingerprint key in this snapshot is not a key.");
     // 2. with the runtime stopped, put it in place as the runtime's own user; the old file is kept, and restored.json tells the runtime it was restored
     await compose(ctx, ["stop", names.runtime(shop)]);
     const swap = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", "none", "-v", `${work}/files:/in:ro`, "-v", `${dataVolume}:/data/${shop}`, "busybox:1.37.0", "sh", "-c",
       `cd /data/${shop}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/${RESTORE_NOTE} ${RESTORE_NOTE}`]);
+    // B69: the snapshot's fingerprint key goes back before the runtime starts, so the shop can match the people already in its record
+    if (swap.code === 0) keyNote = keyPutBack(ctx.dir, shop, snapshotKey, server.panel.enabled, stamp);
     await compose(ctx, ["start", names.runtime(shop)]);
     if (swap.code !== 0) throw new Error(`The restored file could not be put in place: ${swap.stderr.trim().slice(0, 200)}`);
   } finally { rmSync(work, { recursive: true, force: true }); }
@@ -203,5 +216,14 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   const behind = published && published.seq > (got.record.lastSeq ?? 0)
     ? ` The shop's last daily fingerprint (${published.day}) covers entry ${published.seq}, after this snapshot: from now on its fingerprint and the drill's comparison will say the record no longer matches what was published (see bundle/Deferred.md).`
     : "";
-  return `${shop}'s database is restored from the snapshot of ${got.stamp} (record up to entry #${got.record.lastSeq ?? 0}). The file it replaced is kept as agent.db.before-restore-${stamp}. The shop is running again: before anything else it moves its ids on, writes a "restored" entry, and looks at the payment service and the calendar before it sends anything again.${behind}`;
+  return `${shop}'s database is restored from the snapshot of ${got.stamp} (record up to entry #${got.record.lastSeq ?? 0}). The file it replaced is kept as agent.db.before-restore-${stamp}. The shop is running again: before anything else it moves its ids on, writes a "restored" entry, and looks at the payment service and the calendar before it sends anything again.${keyNote}${behind}`;
+}
+
+/** The fingerprint key the restore job took out of the snapshot, put back; what to say about it. It never throws: the database is already in place and the runtime must still start. */
+function keyPutBack(dir: string, shop: string, key: string | undefined, panelOn: boolean, stamp: string): string {
+  if (key === undefined) return " This snapshot holds no fingerprint key (it is older than the key), so the shop keeps the one it has.";
+  try {
+    const kept = restorePersonKey(dir, shop, key, names.runtime(shop), panelOn, stamp);
+    return kept ? ` The shop's fingerprint key was put back from the snapshot; the one it replaced is kept as ${kept}.` : "";
+  } catch (e) { return ` The shop's fingerprint key could NOT be put back (${(e as Error).message}): open the snapshot with restore-snapshot.ts and put its person_key at secrets/person-keys/${shop}, mode 0600, then deploy.`; }
 }

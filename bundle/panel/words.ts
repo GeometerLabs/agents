@@ -512,7 +512,7 @@ export const en: Words = {
   },
   takeOut: {
     heading: "Take everything with you", text: "A copy of this shop's settings, limits, record, reports and certificates, as plain files that open without Geometer. It works even when the plan has lapsed.",
-    button: "Download the export", notIn: "No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. Customers' numbers are short codes.", check: "To check the files, use the README inside.",
+    button: "Download the export", notIn: "No key or secret is in it, and the shop's own WhatsApp, payment and calendar accounts stay the shop's. In the record, customers' numbers are codes only this shop's key can match; the settings file lists the shop's own people as written.", check: "To check the files, use the README inside.",
   },
   handover: {
     heading: "Move this shop to someone else", button: "Move this shop…",

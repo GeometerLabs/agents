@@ -10,7 +10,7 @@ import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
 import { names } from "../generate/shop.ts";
 import { noSecretsIn, provenLine } from "../generate/rules.ts";
-import { ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
+import { ensureAgentLabelKey, ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
 import { loadServer, publicUrl, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { loadState, saveState, shopIndex } from "../lib/state.ts";
@@ -74,6 +74,7 @@ interface Credentials { agent: string; record: string; relay: string; admin: Rec
 function ensureCredentials(dir: string, name: string, kinds: Kind[]): Credentials {
   const agent = ensureSecret(secretFile(dir, "agents", name, "agent_token"), mintGuardToken);
   const record = ensureSecret(secretFile(dir, "ops", name, "record_token"), mintGuardToken);
+  ensureAgentLabelKey(dir, name); // B69: the label key in ops' folder, derived from the agent's own
   const relay = ensureSecret(secretFile(dir, "relay", name, "agent_whatsapp"), mintGuardToken);
   writeSecretFile(secretFile(dir, "relay", name, "record_token"), record);
   const admin = Object.fromEntries(kinds.map((k) => [k, ensureSecret(secretFile(dir, "ops", name, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];

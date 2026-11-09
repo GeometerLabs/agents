@@ -131,7 +131,7 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
     // Agents someone else wrote: their Guards only. `agentUrl` is where the reading agent (record-<name>) looks at the service's own state through the Guard.
     ...(agents.length > 0 ? {
       ownAgents: Object.fromEntries(agents.map((a) => [a.name, {
-        createdAt: a.createdAt, recordTokenFile: `/run/secrets/${a.name}/record_token`, ownerWhatsapp: a.ownerWhatsapp, ...(a.calendarId ? { calendarId: a.calendarId } : {}),
+        createdAt: a.createdAt, recordTokenFile: `/run/secrets/${a.name}/record_token`, labelKeyFile: `/run/secrets/${a.name}/label_key`, ownerWhatsapp: a.ownerWhatsapp, ...(a.calendarId ? { calendarId: a.calendarId } : {}),
         guards: a.guards.map((g) => ({
           id: `guard-${g.kind}`, service: g.service, ...guardAdmin(server, a, g.kind as Three), agentUrl: url(agentIp(server, a, g.kind as Three), GUARD_PORT), adminTokenFile: `/run/secrets/${a.name}/admin_${g.kind}`,
         })),
