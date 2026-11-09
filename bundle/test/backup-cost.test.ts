@@ -34,7 +34,7 @@ function countingBucket() {
       return new Response(xml, { status: 200 });
     }
     if (method === "PUT") { counts.PUT++; objects.set(key, Buffer.from(init!.body as Uint8Array)); return new Response("", { status: 200 }); }
-    if (method === "DELETE") { counts.DELETE++; objects.delete(key); return new Response("", { status: 204 }); }
+    if (method === "DELETE") { counts.DELETE++; objects.delete(key); return new Response(null, { status: 204 }); }
     counts.GET++;
     const o = objects.get(key);
     return o ? new Response(o, { status: 200 }) : new Response("", { status: 404 });
@@ -70,6 +70,7 @@ async function nights(records: number, segments: number, guards: string[], n: nu
       const before = { ...bucket.counts };
       const r = await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, { stamp: stampOf(day), keepDays: 30, recipients, target: { url: "s3://snaps" }, shops: [] }, bucket.store, join(dir, "scratch"));
       assert.equal(r.ok, true, r.error);
+      assert.equal(r.pruneError, undefined, r.pruneError);
       per.push({ PUT: bucket.counts.PUT - before.PUT, GET: bucket.counts.GET - before.GET, LIST: bucket.counts.LIST - before.LIST, DELETE: bucket.counts.DELETE - before.DELETE });
     }
     return per;
