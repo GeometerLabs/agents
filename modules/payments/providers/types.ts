@@ -90,20 +90,27 @@ export interface GatewaySetup {
   words: Record<Language, GatewayWords>;
 }
 
-/** A provider with an API (B71: Razorpay first; Cashfree is the likely next). */
+/**
+ * A provider with an API (B71: Razorpay first; Cashfree is the likely next): what everything outside the runtime reads, as plain data. The agent's own import graph
+ * reaches this (it asks the capabilities), and the browser demo runs that graph, so nothing here may load node:http or a server: the wire code is GatewayRuntime.
+ */
 export interface GatewayDeclaration {
   guard: GatewayGuard;
+  setup: GatewaySetup;
+  /** Ids in the price list for the provider's fee on each payment (the cost line), e.g. its platform fee and the GST on it. */
+  feeRates: string[];
+}
+
+/** A gateway's wire code, for the runtime, the inbox, the relay and the stand-ins (providers/runtime.ts lists them). Node only. */
+export interface GatewayRuntime {
   /** The live adapter: the provider's wire format mapped onto Payments. `baseUrl` is the shop's Guard, never the provider. */
   adapter(config: { baseUrl: string; timeoutMs?: number; agentToken?: string }): Payments;
   webhook: GatewayWebhook;
-  setup: GatewaySetup;
   /** The stand-in for crash tests: the provider's wire format in front of the in-memory fake (payments.ts), and the webhook body it sends for each event. */
   standin: {
     handler(fake: FakePayments): Handler;
     webhookBody(event: PaymentEvent, fake: FakePayments): string;
   };
-  /** Ids in the price list for the provider's fee on each payment (the cost line), e.g. its platform fee and the GST on it. */
-  feeRates: string[];
   /** Read a payment's own record through Guard, for the approvals relay of an agent we did not write: who paid and when. */
   paymentContext(baseUrl: string, token: string, paymentId: string, fetchFn: typeof fetch, timeoutMs: number): Promise<{ kind: "found"; customer?: string; atMs: number } | { kind: "missing" } | { kind: "error"; error: string }>;
 }

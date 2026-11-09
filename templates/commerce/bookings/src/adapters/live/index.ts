@@ -9,7 +9,7 @@ import type { Payments } from "../../../../../../modules/payments/payments.ts";
 import { DEFAULT_TIMEOUT_MS } from "../../../../../../modules/core/http.ts";
 import { createGoogleCalendar } from "./google-calendar.ts";
 import { noGateway } from "../../../../../../modules/payments/owner-marked/ledger.ts";
-import { gatewayAdapter } from "../../../../../../modules/payments/providers/index.ts";
+import { gatewayAdapter } from "../../../../../../modules/payments/providers/runtime.ts";
 import type { PaymentSettings } from "../../../../../../modules/payments/providers/index.ts";
 import { createWhatsAppMessaging } from "../../../../../../modules/messaging/whatsapp.ts";
 import type { WindowStore } from "../../../../../../modules/messaging/whatsapp.ts";
