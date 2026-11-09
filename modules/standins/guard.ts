@@ -81,6 +81,11 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
   const nonces = new Set<string>();
   let killed = false;
   let failure: "unreachable" | "outcome_unknown" | undefined;
+  // The refund route is the spec's own (B71: whichever gateway the spec is for): the route of the operation the owner's approval rule is about, its {param} the payment.
+  const refundOp = (config.spec.rules as { id: string; operation: string }[]).find((r) => r.id === "refund-needs-owner")?.operation;
+  const refundRoute = (config.spec.routes as { method: string; path: string; operation: string }[]).find((r) => r.operation === refundOp);
+  if (!refundRoute) throw new Error("The spec has no route for its refund operation, so this stub Guard cannot stand in front of it.");
+  const refundPath = new RegExp(`^${refundRoute.path.replace(/[.*+?^$()|[\]\\]/gu, "\\$&").replace(/\\?\{[^}]+\\?\}/gu, "([^/?]+)")}$`, "u");
 
   const decision = (code: string, sent: string, retry: string, reason?: string, detail: unknown = null) => ({ decision: code === "outcome_unknown" ? "unknown" : code === "held_for_approval" ? "hold" : "deny", code, sent, retry, ...(reason ? { reason } : {}), detail });
 
@@ -106,7 +111,7 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
     }
     if (killed) { json(res, 503, { error: "refused by the Guard: kill switch engaged: test", guard: decision("guard_unavailable", "no", "later", "kill switch engaged: test") }); return; }
 
-    const refund = req.method === "POST" ? /^\/v1\/payments\/([^/?]+)\/refund$/u.exec(path) : null;
+    const refund = req.method === refundRoute.method ? refundPath.exec(path) : null;
     if (!refund) {
       const answer = await forward(req, res, path, raw);
       if (!answer) { json(res, 502, { error: "refused by the Guard: the provider is unreachable; nothing was sent", guard: decision("provider_unreachable", "no", "later", "the provider is unreachable; nothing was sent") }); return; }
