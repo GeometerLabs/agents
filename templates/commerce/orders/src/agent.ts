@@ -570,7 +570,7 @@ export function createAgent(deps: AgentDeps): Agent {
     o.holdExpiresAt = undefined;
     moveTo(o, "confirmed");
     log(o, o.customer, "confirm_order", "confirmed", { lines: o.lines, date: o.date, slot: o.slotId, mode: o.mode }, { notes: "the payment record shows the whole advance" });
-    await tellCustomer(o, o.customer, [upi ? "upi_order_confirmed" : "order_confirmed"], { offer: cancelOrOwner });
+    await tellCustomer(o, o.customer, [ownerConfirms ? "upi_order_confirmed" : "order_confirmed"], { offer: cancelOrOwner });
     await tellOwner(o, o.customer, o.mode === "delivery" ? "owner_delivery_confirmed" : "owner_order_confirmed");
   }
 
