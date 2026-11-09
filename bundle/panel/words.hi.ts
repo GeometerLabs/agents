@@ -287,6 +287,7 @@ export const hi: Words = {
       refund_waiting: (id, amount, _hours, who) => `${id} का ${amount} का रिफंड ${who} रुका है`,
       refund_unknown: (id) => `${id} का रिफंड हुआ या नहीं, पता नहीं: {gateway} में देखिए`,
       refund_failed: (id) => `${id} का रिफंड नहीं हो पाया: देखिए`,
+      message_unanswered: (id) => `सेवा का कनेक्शन बंद होने से ${id} का काम पूरा नहीं हुआ: जाँचिए और ग्राहक को जवाब दीजिए`,
       upi_payment_unconfirmed: (id, amount) => `${id} के लिए ${amount} का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए`,
       upi_refund_owed: (id, amount) => `${id} का ${amount} का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए`,
     },

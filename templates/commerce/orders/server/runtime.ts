@@ -43,6 +43,8 @@ export interface RuntimeOptions {
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
   retryDelaysMs?: number[];
+  guardWaitMs?: number;
+  guardLookAgainMs?: number[];
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: AgentEvent, run: () => Promise<void>) => Promise<void>;
   log?: (line: string) => void;
@@ -89,7 +91,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     parse: parseStore,
     skipCounters: skipStoreCounters,
     compactStore: compactFinishedOrders,
-    createAgent: ({ store, record }) => createAgent({ settings, clock, ...services, parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
+    services: services as unknown as Record<string, unknown>,
+    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.orders.values(),
     refundContext(store, _settings, receipt) {
@@ -109,6 +112,6 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     ...(options.licence ? { licence: options.licence, licenceNotice: createOrdersLicenceNotice(settings, options.licence) } : {}),
-    ...(options.recordKey ? { recordKey: options.recordKey } : {}), retryDelaysMs: options.retryDelaysMs, aroundStep: options.aroundStep as never, log: options.log,
+    ...(options.recordKey ? { recordKey: options.recordKey } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
   }) as unknown as Runtime;
 }
