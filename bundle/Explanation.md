@@ -634,7 +634,7 @@ The Guards' stores go back too, unlike a shop's (whose `restore` leaves Guard al
 
 | | |
 |---|---|
-| Deploy | 3 Guards, 21 of 21 limits proven to bite on the running Guards (7 not testable without writing), in 20 s; the `gate` network is internal |
+| Deploy | 3 Guards, every tripwire passed on the running Guards (21 of 21 limits; 7 more cannot be tested without writing), in 20 s; the `gate` network is internal |
 | Caddy's `handle_path` | the agent's calls reached its Guards with the prefix cut (the service's own paths): a link, a payment read, a calendar event, a message |
 | The story | the link paid at the stand-in, the slot booked, the customer told; the refund above the ₹100 limit answered 202 and nothing refunded; the relay asked the owner on WhatsApp once; the owner's "approve CODE" through the inbox; the agent's identical retry went through: **one** refund at Razorpay, one approval used |
 | The record | built by the real ops container from the Guards' decisions and the stand-ins' state: the link, the deposit, the booking, the hold, the owner's approval, the refund (with Razorpay's refund id) and three messages, 9 entries, no phone number in it |
