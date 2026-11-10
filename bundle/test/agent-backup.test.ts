@@ -18,6 +18,7 @@ import { addAgent, deployAgent } from "../agent/deploy.ts";
 import type { AgentFlags } from "../agent/folder.ts";
 import { loadRecord, recordFile } from "../agent/records.ts";
 import { runDueJobs } from "../apply.ts";
+import { main } from "../geometer.ts";
 import { AGENT_LABEL_KEY_FILE, derivedKey, keyIdOf, personKeyFile, secretFile, writeSecretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
@@ -270,6 +271,10 @@ test("`restore <agent>` refuses, with nothing stopped, when the Guard image it i
     await assert.rejects(restoreAgent(w.ctx, AGENT, { identity: identityFile }), /No snapshot was restored; my-agent was not touched and its Guards still run\. The whatsapp Guard's backup could not be restored by the Guard image my-agent runs .*schema 9 is newer than this Guard knows.*restore again/su);
     assert.ok(!seen.some((s) => s.startsWith("stop") || s.startsWith("restore")), seen.join(", "));
     assert.ok(!existsSync(recordFile(w.root, AGENT)), "the record was not touched");
+    // the command a person types takes the agent's restore by its name (only the agent's tries each Guard's backup first)
+    const viaCli = restoringRunner(w, bucket, identityFile, { failTrial: `g-${AGENT}-whatsapp` });
+    assert.equal(await main(["restore", AGENT, "--identity", identityFile, "--server", w.root], w.ctx), 1);
+    assert.ok(viaCli.includes(`try g-${AGENT}-calendar`) && !viaCli.some((s) => s.startsWith("stop")), viaCli.join(", "));
     // a shop's restore is not an agent's: the name decides, and a shop's `restore` does not take an agent
     await assert.rejects(restoreShop(w.ctx, AGENT, { identity: identityFile }), /has not been deployed/);
     // an agent stopped on this server is stopped again after its Guards' stores come back
