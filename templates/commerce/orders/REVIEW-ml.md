@@ -307,6 +307,7 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `notCounted.kitchen-and-delivery` | ഭക്ഷണം ഉണ്ടാക്കിയോ, എടുത്തോ, എത്തിച്ചോ എന്നത് | Whether the food was made, collected or delivered |  |
 | `notCounted.read-receipts` | ഉപഭോക്താവ് സന്ദേശം വായിച്ചോ ഇല്ലയോ | Whether a customer read a message |  |
 | `notCounted.outside-agent` | ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ Razorpay-യിലോ UPI ആപ്പിലോ WhatsApp-ലോ ചെയ്തത്) | Anything done outside the agent (by you or anyone else, in Razorpay, your UPI app or WhatsApp) |  |
+| `notCounted.outside-agent-upi` | ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ UPI ആപ്പിലോ WhatsApp-ലോ ചെയ്തത്) | Anything done outside the agent (by you or anyone else, in your UPI app or WhatsApp) |  |
 | `notCounted.rule-breaks` | ഏജന്റ് കാണാത്ത നിയമലംഘനങ്ങൾ: ഏജന്റ് ചെയ്തതും തടഞ്ഞതും മാത്രമാണ് രേഖയിലുള്ളത് | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
 | `cert.date` | തീയതി | Date |  |
 | `cert.held` | 26 സാഹചര്യങ്ങളിൽ 25 എണ്ണം ശരിയായി നിന്നു. 1 എണ്ണം പിഴച്ചു. 12 കാര്യങ്ങൾ പരിശോധിച്ചിട്ടില്ല. | Held 25 of 26 situations. 1 failed. 12 not tested. |  |

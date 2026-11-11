@@ -138,6 +138,15 @@ to contact the centre and the reminder passed over, never tried again at the nex
   final stop; one whose request is for one exact amount gets a new request for the rest after a part. The owner's mark and a gateway's
   webhook both go through `count`. The store's `upi` key, the record's `upi_*` names and the `upi_*` message ids keep their values (records, reports and Meta's
   templates use them). The live adapters take the gateway from the shop's settings (modules/payments/providers/runtime.ts).
+- **`owner_link_failed` names no gateway (11 Nov, checkpoint item 7).** It told the owner to check one gateway by name and said "No reminder went out", which was
+  wrong for a UPI centre and for two of its three senders (a parent asking for the link, a waiver whose new link failed). It now says what is true in all three:
+  the parent has not been sent the link, it is tried again at the next reminder or when the parent asks again, and if it keeps happening the owner checks the
+  payment account or tells the person who set up the agent. Hindi, Malayalam and Kannada are machine-written and wait for native review (REVIEW-ml/kn; Fees has no
+  Hindi sheet). Its Meta template follows the text (whatsapp-templates.json is regenerated); submitting the templates to Meta is checkpoint item 12.
+- **A UPI centre's report names no gateway (11 Nov).** "Fees paid in cash or by bank transfer: the record only holds Razorpay payments" and "in Razorpay or
+  WhatsApp" have UPI lines of their own (`cash-and-transfers-upi`, `outside-agent-upi`), and the certificate's and the panel's limit line "No reminder once
+  Razorpay's record shows a fee paid" is "No reminder once you have marked a fee paid" (`limits.ownerMarks`); a gateway centre's report and certificate keep
+  their bytes. `bundle/test/upi-names.test.ts` renders all three templates' UPI documents in four languages and finds no gateway's name.
 - **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
   `refund.done`. The Guard spec is written for the gateway the centre chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
 

@@ -87,7 +87,7 @@ export const guardUrl = (service: string) => `http://${service}:${GUARD_PORT}`;
 /** In the runtime container, the folder that holds the agent's credentials for its Guards, one file per Guard. */
 const SECRETS = "/run/secrets";
 
-export const upstreamOf = (server: ServerConfig, kind: GuardKind, def: GuardDef): Upstream => server.upstreams?.[kind] ?? { host: def.upstream, tls: true };
+export const upstreamOf = (server: ServerConfig, kind: GuardKind, def: GuardDef): Upstream => server.upstreams?.[kind] ?? { host: def.upstream, tls: def.plain !== true };
 
 /** The model's address for a runtime: the Guard's base, plus whatever the provider puts before /chat/completions. */
 export function modelBaseUrl(model: ModelConfig): string {
