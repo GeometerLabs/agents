@@ -162,20 +162,39 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
   const maxBytes = config.maxRequestBytes ?? 200 * 1024;
   const limits = { razorpay: config.maxBodyBytes?.razorpay ?? DEFAULT_RAZORPAY_MAX, whatsapp: config.maxBodyBytes?.whatsapp ?? DEFAULT_WHATSAPP_MAX };
 
-  /** Give the runtime the events, in order, in as many requests as its limits need. True only if it answered 2xx to every one (it has saved them all). */
-  async function forward(events: IncomingEvent[]): Promise<boolean> {
-    for (const batch of batches(events, maxEvents, maxBytes)) {
-      try {
-        const response = await fetch(config.runtimeUrl.replace(/\/+$/u, "") + "/internal/events", {
-          method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${config.internalToken}` },
-          body: JSON.stringify({ events: batch }), signal: AbortSignal.timeout(forwardTimeoutMs),
-        });
-        await response.arrayBuffer().catch(() => undefined);
-        if (response.status < 200 || response.status >= 300) return false;
-      } catch {
-        return false;
-      }
+  /** One request to the runtime: its answer's status, or undefined when it could not be reached in time. */
+  async function post(batch: IncomingEvent[]): Promise<number | undefined> {
+    try {
+      const response = await fetch(config.runtimeUrl.replace(/\/+$/u, "") + "/internal/events", {
+        method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${config.internalToken}` },
+        body: JSON.stringify({ events: batch }), signal: AbortSignal.timeout(forwardTimeoutMs),
+      });
+      await response.arrayBuffer().catch(() => undefined);
+      return response.status;
+    } catch {
+      return undefined;
     }
+  }
+
+  /**
+   * Give the runtime the events, in order, in as many requests as its limits need. True only if it answered 2xx to every one (it has saved them all). WhatsApp's delivery
+   * reports go after everything else, in requests of their own: a runtime of a template version from before they existed (a shop pinned to an older version runs it, with
+   * the server's older modules) refuses their kind with a 400. Sending them again could never change that, so they are dropped and said once per webhook, and the
+   * provider is not made to retry; the messages and payments in the same webhook are not held up by them.
+   */
+  async function forward(events: IncomingEvent[]): Promise<boolean> {
+    const reports = events.filter((e) => e.kind === "message_status");
+    for (const batch of batches(events.filter((e) => e.kind !== "message_status"), maxEvents, maxBytes)) {
+      const status = await post(batch);
+      if (status === undefined || status < 200 || status >= 300) return false;
+    }
+    let dropped = 0;
+    for (const batch of batches(reports, maxEvents, maxBytes)) {
+      const status = await post(batch);
+      if (status === 400) { dropped += batch.length; continue; }
+      if (status === undefined || status < 200 || status >= 300) return false;
+    }
+    if (dropped > 0) log(`the runtime refused ${dropped} WhatsApp delivery report(s) as an event it does not know (a template version from before 11 Nov 2026?); they were dropped`);
     return true; // if a later batch failed, the provider sends the whole webhook again and the runtime skips what it already saved (same message ids)
   }
 
@@ -191,10 +210,15 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
     const app = (json as { gs_app_id?: unknown } | null)?.gs_app_id;
     return !config.whatsappAppId || app === undefined || app === config.whatsappAppId;
   };
-  /** The customers' messages first, then the reports on what the shop sent, as one body gives them. */
-  const messagesIn = (json: unknown): IncomingEvent[] => ownNumber(json) && ownApp(json)
-    ? [...parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })), ...parseWhatsAppStatuses(json).map((status): IncomingEvent => ({ kind: "message_status", status }))]
-    : [];
+  /**
+   * The customers' messages first, then the reports on what the shop sent, as one body gives them. A body that names another number or another app is not this shop's:
+   * it is answered 200 and dropped, and the log says why (a wrong number id in the shop's config would otherwise look like a quiet shop).
+   */
+  const messagesIn = (json: unknown): IncomingEvent[] | string => {
+    if (!ownNumber(json)) return "it names another WhatsApp number id than this shop's";
+    if (!ownApp(json)) return "it names another Gupshup app than this shop's";
+    return [...parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })), ...parseWhatsAppStatuses(json).map((status): IncomingEvent => ({ kind: "message_status", status }))];
+  };
 
   /** The owner's messages in these events (B37: and the other approvers'): from those numbers, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */
   const fromOwner = (events: IncomingEvent[]): IncomingEvent[] => (relay ? events.filter((e) => e.kind === "message" && relayDigits.has(e.message.from.replace(/\D/gu, ""))) : []);
@@ -214,8 +238,8 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
     }
   }
 
-  /** The steps every POST webhook shares. `read` gets the verified, parsed JSON and says which events to forward. */
-  async function webhook(req: IncomingMessage, res: ServerResponse, limit: number, verify: (raw: Buffer) => boolean, read: (json: unknown) => IncomingEvent[]): Promise<string> {
+  /** The steps every POST webhook shares. `read` gets the verified, parsed JSON and says which events to forward, or why the body is not this shop's (a string). */
+  async function webhook(req: IncomingMessage, res: ServerResponse, limit: number, verify: (raw: Buffer) => boolean, read: (json: unknown) => IncomingEvent[] | string): Promise<string> {
     let raw: Buffer;
     try { raw = await readBody(req, limit); } catch (e) {
       if (e instanceof TooLarge) { reply(res, 413, { error: "body too large" }, { connection: "close" }); req.destroy(); return "413"; }
@@ -226,6 +250,7 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
     let json: unknown;
     try { json = JSON.parse(raw.toString("utf8")); } catch { reply(res, 400, { error: "not JSON" }); return "400"; }
     const events = read(json);
+    if (typeof events === "string") { reply(res, 200, { forwarded: 0 }); return `200 not forwarded: ${events}`; }
     if (events.length === 0) { reply(res, 200, { forwarded: 0 }); return "200 nothing to forward"; } // a "sent" status, Gupshup's set-callback check, or an event the agent does not use: do not make the provider retry it
     if (!(await forward(events))) { reply(res, 503, { error: "the runtime did not take the events; send them again" }); return `503 ${events.length} event(s) not taken`; }
     // An owner's reply may be an answer to an approval request. The relay is told directly; if it cannot take it, the provider sends the webhook again

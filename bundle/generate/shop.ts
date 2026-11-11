@@ -242,6 +242,12 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
+    // Item 11b: the provider must be read by the runtime of the version the shop is pinned to. One from before 11 Nov 2026 refuses `provider` as an unknown key and would not
+    // start; unlike `ai` or `report` there is nothing to fall back to (Meta's paths with Gupshup's token behind them), so the deploy is refused instead.
+    if (facts.whatsappRoute && !check(runtime, "/").ok) {
+      const { provider: _p, appId: _a, ...meta } = (runtime.services as { messaging: Record<string, unknown> }).messaging;
+      if (check({ ...runtime, services: { ...(runtime.services as object), messaging: meta } }, "/").ok) problems.push({ rule: "whatsapp-provider-pinned", message: `${shop.name} is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime does not know services.messaging.provider, so it cannot send through Gupshup. Move the shop to a version from 11 Nov 2026 or later (geometer update).` });
+    }
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks

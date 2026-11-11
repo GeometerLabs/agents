@@ -3,7 +3,11 @@
 // the token is handed in as `gupshup_authorization`. A Meta shop's plan stays exactly as it was. Nothing here touches the real service.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { Server } from "node:http";
 import { guardDef, guardToml, whatsappGuardDef, whatsappSpec } from "../generate/guards.ts";
 import { noSecretsIn, toolNamesMatch } from "../generate/rules.ts";
@@ -13,7 +17,9 @@ import { INTAKE, readSecretFile, secretFile } from "../lib/secrets.ts";
 import { loadRouter } from "../services/inbox.ts";
 import { serverConfig, panelRuntime, tempServer, PHONE_NUMBER_ID } from "./helpers.ts";
 import { checkShop } from "../deploy.ts";
+import { keepWhatsAppProvider, runtimeFor } from "../panel/setup.ts";
 import { secretsFor, world } from "./world.ts";
+import { BINARY, skipWithoutBinary } from "./real-guard.ts";
 
 const APP = "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8";
 const plan = (messaging: Record<string, unknown>) => {
@@ -119,4 +125,44 @@ test("checking a Gupshup shop asks for gupshup_authorization and a path token, n
     assert.equal(readSecretFile(secretFile(w.root, "g-glow-salon-whatsapp", "whatsapp_authorization")), "gupshup-partner-app-token-0123456789", "as handed in: no Bearer added");
     assert.equal(readSecretFile(secretFile(w.root, "rt-glow-salon", "whatsapp_authorization")), undefined, "the runtime never has it");
   } finally { w.done(); }
+});
+
+test("a Gupshup shop pinned to a template version whose runtime does not know the provider is refused, by name: its runtime would not start, and Meta's paths are no fallback", () => {
+  const t = tempServer({ "glow-salon": panelRuntime({ services: { payments: {}, calendar: { calendarId: "glow@example.com" }, messaging: { phoneNumberId: PHONE_NUMBER_ID, provider: "gupshup", appId: APP }, timeoutMs: 20_000 } }) });
+  try {
+    // an older version's check: services.messaging takes only what it took before 11 Nov 2026
+    const older = (config: unknown) => {
+      const m = (config as { services?: { messaging?: Record<string, unknown> } }).services?.messaging ?? {};
+      const unknown = Object.keys(m).filter((k) => !["baseUrl", "phoneNumberId", "agentTokenFile"].includes(k));
+      return unknown.length === 0 ? { ok: true } : { ok: false, errors: unknown.map((k) => `I don't know what "${k}" means in services.messaging.`) };
+    };
+    const p = planShop(serverConfig(), t.shop("glow-salon"), {}, older);
+    assert.deepEqual(p.problems.map((x) => x.rule), ["whatsapp-provider-pinned"]);
+    assert.match(p.problems[0].message, /cannot send through Gupshup/);
+    assert.deepEqual(planShop(serverConfig(), t.shop("glow-salon")).problems, [], "the current version takes it");
+  } finally { t.done(); }
+});
+
+test("editing a shop in the panel keeps the WhatsApp provider runtime.json names: a Gupshup shop is not saved back to Meta's paths", () => {
+  const fresh = runtimeFor("glow@example.com", PHONE_NUMBER_ID);
+  assert.deepEqual(keepWhatsAppProvider(fresh, undefined), fresh, "a new shop: as made");
+  assert.deepEqual(keepWhatsAppProvider(fresh, { services: { messaging: { phoneNumberId: PHONE_NUMBER_ID } } }), fresh, "a Meta shop: as made");
+  const kept = keepWhatsAppProvider(fresh, { services: { messaging: { phoneNumberId: "999", provider: "gupshup", appId: APP } } }) as any;
+  assert.deepEqual(kept.services.messaging, { phoneNumberId: PHONE_NUMBER_ID, provider: "gupshup", appId: APP }, "the number id is the form's; the provider and app are kept");
+  assert.deepEqual(kept.services.calendar, (fresh as any).services.calendar);
+});
+
+test("the real Guard compiles a Gupshup shop's WhatsApp spec and its tripwires show both app allowlists bite", { skip: skipWithoutBinary }, () => {
+  const p = plan({ provider: "gupshup", appId: APP });
+  const wa = p.guards.find((g) => g.kind === "whatsapp")!;
+  const dir = mkdtempSync(join(tmpdir(), "geo-gupshup-guard-"));
+  try {
+    writeFileSync(join(dir, "spec.json"), wa.specText);
+    const compiled = JSON.parse(execFileSync(BINARY, ["compile", "--spec", join(dir, "spec.json"), "--out", join(dir, "bundle.json")], { encoding: "utf8" })) as { digest: string; tool: string; tripwires: { passed: number; of: number } };
+    assert.equal(compiled.tool, "whatsapp");
+    assert.deepEqual([compiled.tripwires.passed, compiled.tripwires.of], [2, 2]);
+    writeFileSync(join(dir, "guard.toml"), guardToml({ def: wa.def, tenant: wa.tenant, deployment: wa.deployment, bundleDigest: compiled.digest, upstream: wa.upstream, adminSha: "b".repeat(64), agents: [{ id: "runtime-glow-salon", sha: "c".repeat(64) }] }));
+    const verified = execFileSync(BINARY, ["verify-bundle", join(dir, "bundle.json"), "--config", join(dir, "guard.toml")], { encoding: "utf8" });
+    assert.match(verified, /tripwires: passed 2 of 2/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

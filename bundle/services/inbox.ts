@@ -47,9 +47,9 @@ export function shopHandler(name: string, c: InboxShopConfig, read: (path: strin
     runtimeUrl: c.runtimeUrl!, internalToken: need("internal_token"), razorpayWebhookSecret: need("razorpay_webhook_secret"),
     whatsappVerification: c.verification,
     ...(c.verification === "meta-signature" ? { whatsappAppSecret: need("whatsapp_app_secret"), whatsappVerifyToken: need("whatsapp_verify_token") } : { whatsappPathToken: need("whatsapp_path_token") }),
-    // Several shops can share one Meta app, and so one app secret: a valid signature does not say whose message it is, the phone number does.
-    whatsappPhoneNumberId: c.phoneNumberId,
-    ...(c.gupshupAppId ? { whatsappAppId: c.gupshupAppId } : {}),
+    // Several shops can share one Meta app, and so one app secret: a valid signature does not say whose message it is, the phone number does. A Gupshup shop's callbacks
+    // name its Gupshup app, which is checked instead (item 11b): the app id is what its Guard allows, and Meta's number id is not something Gupshup shows a partner plainly.
+    ...(c.gupshupAppId ? { whatsappAppId: c.gupshupAppId } : { whatsappPhoneNumberId: c.phoneNumberId }),
     // a shop with no approvals relay (a UPI shop, B33) sends its owner's messages to the runtime only; B37: the other approvers' replies go to the relay too
     ...(c.relayUrl ? { relayUrl: c.relayUrl, relayToken: need("relay_token"), ownerWhatsapp: c.ownerWhatsapp, ...(c.approverWhatsapps && c.approverWhatsapps.length > 0 ? { approverWhatsapps: c.approverWhatsapps } : {}) } : {}),
     log: (line) => log(`[${name}] ${line}`),
