@@ -129,6 +129,7 @@ const sameNumber = (a: string, b: string) => digitsOf(a) === digitsOf(b);
 /** The meta key that keeps when a number last wrote (WhatsApp's 24-hour window). The owner's is the one it always was. */
 export const lastInboundKey = (phone: string, owner: string): string => (sameNumber(phone, owner) ? "owner_last_inbound" : `last_inbound:${digitsOf(phone)}`);
 
+// Runs outside the runtime on purpose: the process the agent lives in cannot approve its own held refund.
 export function createRelay(options: RelayOptions): Relay {
   const { clock, guard, runtime, messaging, store, voice } = options;
   const log = options.log ?? (() => undefined);

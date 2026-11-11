@@ -8,8 +8,11 @@ import type { RuleDecision, Verdict } from "../record/record.ts";
 
 export type Decision = RuleDecision; // { ruleId, verdict, reason }
 
+// Small constructors for Decision so every rule returns the same shape and a rule id always travels with its reason.
 export const allow = (ruleId: Decision["ruleId"], reason: string): Decision => ({ ruleId, verdict: "allow", reason });
+// See allow: a block is final, the action does not happen.
 export const block = (ruleId: Decision["ruleId"], reason: string): Decision => ({ ruleId, verdict: "block", reason });
+// See allow: a hold sends the action to the owner instead of deciding for them.
 export const hold = (ruleId: Decision["ruleId"], reason: string): Decision => ({ ruleId, verdict: "hold_for_owner", reason });
 
 const RANK: Record<Verdict, number> = { allow: 0, hold_for_owner: 1, block: 2 };

@@ -18,12 +18,14 @@ const SCRYPT = { N: 16384, r: 8, p: 1 } as const;
 const KEYLEN = 64;
 const scryptAsync = (pw: string, salt: Buffer, opts: ScryptOptions): Promise<Buffer> => new Promise((resolve, reject) => scrypt(pw, salt, KEYLEN, opts, (e, key) => (e ? reject(e) : resolve(key))));
 
+// scrypt with a fresh random salt per passphrase, so two equal passphrases look different on disk and a stolen file is slow to guess against.
 export async function hashPassphrase(passphrase: string): Promise<string> {
   const salt = randomBytes(16);
   const key = await scryptAsync(passphrase.normalize("NFKC"), salt, SCRYPT);
   return `scrypt$${SCRYPT.N}$${SCRYPT.r}$${SCRYPT.p}$${salt.toString("base64url")}$${key.toString("base64url")}`;
 }
 
+// Compares in constant time so the check does not leak how much of a guess was right.
 export async function verifyPassphrase(passphrase: string, stored: string): Promise<boolean> {
   const [kind, n, r, p, salt, hash] = stored.split("$");
   if (kind !== "scrypt" || !salt || !hash) return false;
@@ -35,6 +37,7 @@ export async function verifyPassphrase(passphrase: string, stored: string): Prom
 /** Checked once, in the form's language by the caller: a code, not a sentence. */
 export type PassphraseProblem = "short" | "long" | "same-as-handle";
 export const MIN_PASSPHRASE = 10;
+// Returns a code (not a sentence) for why a passphrase is refused, so the caller can say it in the form's language.
 export function passphraseProblem(passphrase: string, handle: string): PassphraseProblem | undefined {
   if ([...passphrase].length < MIN_PASSPHRASE) return "short";
   if (passphrase.length > 200) return "long";
@@ -49,6 +52,7 @@ let dummy: Promise<string> | undefined;
 
 export type RedeemResult = { ok: true; account: Account } | { ok: false; reason: "invite-unknown" | "invite-used" | "invite-expired" | "handle-bad" | "handle-taken" | "name-bad" | "company-bad" | "language-bad" | PassphraseProblem };
 
+// The account and invite store over the panel's data folder. `now` is injectable so tests can expire invites without waiting; invites are single-use and only their sha256 is stored.
 export function createAccounts(store: Store, now: () => number = Date.now) {
   const load = () => store.read<{ schema: 1; accounts: Account[] }>("accounts.json")?.accounts ?? [];
   const save = (accounts: Account[]) => store.write("accounts.json", { schema: 1, accounts });

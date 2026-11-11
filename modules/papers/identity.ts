@@ -133,6 +133,7 @@ function liveCounts(entries: readonly RecordEntry[], t: TemplatePapers): Exclude
   };
 }
 
+// Makes the full paper and the public one together from the same facts, so the public copy can only differ by what the operator chose to hide.
 export function buildIdentity(input: IdentityInput): { full: IdentityPaper; public: IdentityPaper } {
   const w = WORDS[input.language];
   const show = new Set((input.show ?? DEFAULT_PUBLIC).filter((f) => (CHOOSABLE as readonly string[]).includes(f)));
@@ -167,6 +168,7 @@ export function buildIdentity(input: IdentityInput): { full: IdentityPaper; publ
   return { full, public: pub };
 }
 
+// Signs both copies in one step; the public copy is what gets shared, the full one stays with the operator.
 export function sealIdentity(input: IdentityInput, key?: KeyObject): { full: Envelope<IdentityPaper>; public: Envelope<IdentityPaper> } {
   const papers = buildIdentity(input);
   return { full: seal(papers.full, key), public: seal(papers.public, key) };
@@ -174,6 +176,7 @@ export function sealIdentity(input: IdentityInput, key?: KeyObject): { full: Env
 
 const isHidden = (v: unknown): v is Hidden => typeof v === "object" && v !== null && (v as Hidden).shown === false;
 
+// Hidden fields render as 'not shown by the operator', never blank, so a reader cannot take hidden for none.
 export function identityPage(envelope: Envelope<IdentityPaper>): string {
   const p = envelope.document;
   const w = WORDS[p.language];

@@ -103,6 +103,7 @@ function readDeskFile(path: string): DeskFile {
   return raw;
 }
 
+// Starts the owner-marked desk for one shop. Refuses a payment block it cannot use rather than running a desk that would mark the wrong amounts.
 export function createDeskHost(o: DeskHostOptions): DeskHost {
   const errors: string[] = [];
   const payment = readPaymentSettings(o.config.payment, errors);

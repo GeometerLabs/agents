@@ -19,6 +19,7 @@ export interface PanelParts {
 
 const readText = (file: string): string | undefined => { try { return readFileSync(file, "utf8"); } catch { return undefined; } };
 
+// Maps a shop name to the readers the export uses. Checks the name first so a crafted name cannot walk out of the shops folder.
 export function sourcesFor(serverDir: string, shop: string, panel?: PanelParts): ExportSources {
   if (!SHOP_ID.test(shop)) throw new Error(`"${shop}" is not a shop name.`);
   const p = serverPaths(serverDir);

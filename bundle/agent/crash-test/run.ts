@@ -89,6 +89,7 @@ export function chooseSituations(built: Built, ids: string[] | undefined): Built
   return { situations: built.situations.filter((s) => ids.includes(s.id)), skipped: built.skipped.filter((s) => ids.includes(s.id)) };
 }
 
+// Runs the chosen situations one after another, each in its own world, and totals what held. A situation that cannot run is listed as not run, never counted as passed.
 export async function runCrashTest(plan: CrashPlan, o: CrashOptions = {}): Promise<CrashResult> {
   const built = chooseSituations(buildSituations(plan), o.situations);
   const started = performance.now();

@@ -23,6 +23,7 @@ function stateLine(c: Ctx, o: { done?: string; pending?: boolean; refused?: { me
   return o.done ? html`<p><span class="state">Done</span> ${o.done}</p>` : html`<p><span class="state unknown">To do</span> ${o.todo}</p>`;
 }
 
+// The "This server" page (model, backup, Google) with each part's request status; `problems` and `notice` show the result of the last form without putting any secret back into the page.
 export function serverPage(c: Ctx, v: ServerSetupView, o: { problems?: Problem[]; notice?: string } = {}): string {
   const s = v.status;
   const m = v.model;

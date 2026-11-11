@@ -41,6 +41,7 @@ export function checkSecret(name: SecretName, value: string): SecretCheck {
 /** A file with this name is already waiting in the shop's inbox and the panel did not put it there. Nothing was overwritten. */
 export class InboxTaken extends Error { override name = "InboxTaken"; }
 
+// The write-only secrets intake: it can put a value into the inbox and note that one arrived, but has no way to read one back, so a bug or log line cannot leak a key.
 export function createInbox(shops: Shops, now: () => number = Date.now) {
   return {
     /** Would a first write of any of these names land on a file that is already there? (Existence only; nothing is opened.) */

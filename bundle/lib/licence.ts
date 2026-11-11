@@ -27,10 +27,12 @@ import type { ServerConfig } from "./server.ts";
 import { readStatus, updateStatus } from "./status.ts";
 import { sha256Hex, stableJson, writeAtomic } from "./util.ts";
 
+// Where the licence files live on the server, in one place for the deployer and the status writer; `inbox` is the one folder ops may write, so nothing in it is trusted until checked.
 export const licencePaths = (dir: string) => {
   const root = join(serverPaths(dir).state, "licence");
   return { root, lease: join(root, "lease"), seen: join(root, "seen.json"), extensions: join(root, "extensions"), inbox: join(serverPaths(dir).fleet, "lease") };
 };
+// The licence.json copy placed in a shop's generated client folder, so the shop's own agent can read its licence state without reaching the server's state folder.
 export const clientLicenceFile = (dir: string, shop: string): string => join(serverPaths(dir).generated, "shops", shop, "client", "licence.json");
 
 interface Mark { serial: number; issued_at: number }
@@ -38,6 +40,7 @@ export interface Seen { schema: 1; newest_issued_at: number; kept: Mark | null; 
 
 const whole = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0;
 
+// Reads the remembered newest issue time; a missing or damaged file falls back to zeros, which can only make the server stricter about old leases, never accept one it should not.
 export function readSeen(dir: string): Seen {
   try {
     const r = JSON.parse(readFileSync(licencePaths(dir).seen, "utf8")) as Record<string, any>;
@@ -118,6 +121,7 @@ export function takeExtension(dir: string, server: Pick<ServerConfig, "licence" 
 /** Everything the server holds about its licence, checked again: the kept lease, the newest issue time taken, and the latest `until` of the extensions that cover it. */
 export interface KeptLicence { lease?: LeasePayload; newestIssuedAt: number; extensionUntil: number; pinned: boolean }
 
+// Re-checks everything held (lease and extensions) against the pinned keys each time, so a file edited by hand after being stored stops counting.
 export function keptLicence(dir: string, server: Pick<ServerConfig, "licence" | "id">): KeptLicence {
   const lease = keptLease(dir, server);
   const extensions = keptExtensions(dir, server);
@@ -153,6 +157,7 @@ export interface StatusLicence {
 
 const iso = (s: number | null | undefined): string | null => (typeof s === "number" && s > 0 ? new Date(s * 1000).toISOString() : null);
 
+// Turns the checked licence into the small block written to the status file and shown by the panel, with dates as ISO strings and the wind-down extended by any kept extension.
 export function statusLicence(kept: KeptLicence, file: LicenceFile, nowMs: number): StatusLicence {
   const now = licenceNow(file, nowMs);
   const s = file.shop;

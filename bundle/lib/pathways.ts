@@ -25,6 +25,7 @@ export function checkoutDirOf(appDir: string, name: string): string | undefined 
   return foldersCalled(appDir, name).find((f) => versionOf(f) !== undefined);
 }
 
+// Finds the code folder for the exact version a shop is pinned to: the current checkout if it is that version, else the side-by-side copy beside the server. Undefined means the version is not installed, which the deployer reports instead of guessing.
 export function pathwayDirFor(appDir: string, serverDir: string, lock: { pathway: string; version: string }): string | undefined {
   const current = foldersCalled(appDir, lock.pathway).find((f) => versionOf(f) === lock.version);
   if (current) return current;

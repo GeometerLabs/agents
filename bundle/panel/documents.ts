@@ -8,6 +8,7 @@ import type { Store } from "./store.ts";
 
 export const DOC_NAME = /^[a-z0-9][a-z0-9._-]{0,80}\.(html|json|txt)$/u;
 
+// Keeps generated papers in the panel store (sealed when there is a key) rather than loose files; report code writes into a temp folder that is read back and removed.
 export function createDocuments(store: Store) {
   const base = (shop: string) => `documents/${shop}`;
   return {

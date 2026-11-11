@@ -6,8 +6,10 @@ import type { Language } from "../language/languages.ts";
 /** "both" is Hindi and English, one message after the other. */
 export type ReportLanguage = Language | "both";
 export const BOTH: readonly Language[] = ["hi", "en"];
+// 'both' expands to Hindi then English so the same message code serves one language or two.
 export const languagesOf = (language: ReportLanguage): readonly Language[] => (language === "both" ? BOTH : [language]);
 
+// Amounts are kept in paise everywhere; this is the one place that turns them into rupee text.
 export const rupees = (paise: number): string => formatInr(paise / 100);
 
 /** Text typed into the settings (a shop's name, who set it up) on one line, so a line break in it cannot make a sixth line. */

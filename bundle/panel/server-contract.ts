@@ -19,6 +19,7 @@ export const SERVER_NAME = "_server";
 export const SERVER_SECRET_NAMES = ["model_key", "backup_key", "google_service_account.json"] as const;
 export type ServerSecretName = (typeof SERVER_SECRET_NAMES)[number];
 
+// Folders for the server-settings requests, status and key inbox, from one root so panel and deployer name the same files.
 export function serverSettingsPaths(dir: string) {
   const root = resolve(dir);
   return {
@@ -131,12 +132,15 @@ export function serverKeyShapeOk(name: "model_key" | "backup_key", value: string
 const requester = (v: unknown): v is Requester => isObj(v) && typeof v.id === "string" && typeof v.name === "string" && (v.role === "builder" || v.role === "partner");
 const header = (r: Record<string, unknown>): boolean => r.schema === 1 && typeof r.requestId === "string" && /^[a-z0-9_]{6,64}$/u.test(r.requestId) && typeof r.requestedAt === "string" && requester(r.requestedBy);
 
+// Checks a "use this model" request file before the deployer acts on it; anything malformed is ignored rather than half applied.
 export function parseModelRequest(text: string | undefined): ServerModelRequest | undefined {
   try { const r: unknown = text === undefined ? undefined : JSON.parse(text); return isObj(r) && header(r) && isObj(r.model) ? r as unknown as ServerModelRequest : undefined; } catch { return undefined; }
 }
+// Checks a backup-destination request file; same reason as parseModelRequest.
 export function parseBackupRequest(text: string | undefined): ServerBackupRequest | undefined {
   try { const r: unknown = text === undefined ? undefined : JSON.parse(text); return isObj(r) && header(r) && isObj(r.backup) ? r as unknown as ServerBackupRequest : undefined; } catch { return undefined; }
 }
+// Reads the deployer's account of what happened to those requests; undefined means "no answer yet", which the page shows as waiting.
 export function parseServerStatus(text: string | undefined): ServerStatus | undefined {
   try { const r: unknown = text === undefined ? undefined : JSON.parse(text); return isObj(r) && r.schema === 1 && typeof r.updatedAt === "string" && isObj(r.requests) && isObj(r.keys) ? r as unknown as ServerStatus : undefined; } catch { return undefined; }
 }
