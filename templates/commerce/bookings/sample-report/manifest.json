@@ -21,5 +21,12 @@
     "held": 9,
     "total": 9
   },
-  "priceList": "2026-11-11"
+  "priceList": "2026-11-11",
+  "ownerLines": [
+    "Sample Salon · Nov 2026 · stand-in services, test money",
+    "Bookings made: 7 · Cancelled: 3 · Deposits marked paid by owner: ₹1,400 · Refunds marked sent by owner: ₹400",
+    "You were asked: 2 · You approved: 1 · You said no: 0",
+    "Stopped by your limits: 1 (Outside opening hours: 1)",
+    "Not checked: phone calls · walk-ins · automatic payment checking: with UPI the owner marks each payment received · and 16 more (see the full report). Checks were run by hand."
+  ]
 }
