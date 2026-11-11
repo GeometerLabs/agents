@@ -95,6 +95,7 @@ export const LAYOUTS: readonly Layout[] = [
   { id: 5, paper: "monthly-report", template: "orders", figures: [money("collected"), money("givenBack"), money("stillToCollect"), count("ordersTaken"), count("cancelled"), count("asked"), count("approved"), count("saidNo"), count("stoppedByLimits")] },
 ];
 
+// The parser reads a layout id off the wire; an unknown id gives undefined so a newer or forged link is refused instead of misread.
 export const layoutOf = (id: number): Layout | undefined => LAYOUTS.find((l) => l.id === id);
 
 /** A summary, as the encoder takes it and the parser gives it back. */
@@ -115,6 +116,7 @@ export interface PaperSummary {
   digest: string;
 }
 
+// A separate class so callers can tell a bad or unknown link (show 'cannot check') from a bug in the code.
 export class SummaryError extends Error {}
 
 // ---- text ------------------------------------------------------------------------------------------------------------------------------------------
@@ -181,6 +183,7 @@ export function fitText(text: string, maxBytes: number): string {
 
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
+// Hand-written (no Buffer) because this file must also run in the website, which has no node: imports; url-safe so it survives in a link and a QR.
 export function toBase64url(bytes: Uint8Array): string {
   let out = "";
   for (let i = 0; i < bytes.length; i += 3) {
