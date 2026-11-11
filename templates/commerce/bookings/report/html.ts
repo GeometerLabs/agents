@@ -17,16 +17,16 @@ import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { esc, list, page, sealBlock as sharedSealBlock, table } from "../../../../modules/report/page.ts";
 
-/** The verification block (modules/report/page.ts) with this template's words. */
-export const sealBlock = (s: Strings, envelope: Envelope, extra: [string, string][] = []): string => sharedSealBlock(s.page, envelope, extra);
+/** The verification block (modules/report/page.ts) with this template's words; `check` is the paper's signed summary link, when it is signed. */
+export const sealBlock = (s: Strings, envelope: Envelope, extra: [string, string][] = [], check?: string): string => sharedSealBlock(s.page, envelope, extra, check);
 
 /** The go-live checks, in sentences: green when a go-live certificate shows they ran on this shop's own settings, amber for everything else. */
 export function goLiveBlock(goLive: GoLiveFinding, language: Language): string {
   return `<div class="${goLive.status === "own" ? "note" : "warn"}">${goLiveLines(goLive, language).map((line) => `<p>${esc(line)}</p>`).join("")}</div>`;
 }
 
-/** One language's section of the report page. */
-export function reportSection(envelope: Envelope<MonthlyReport>, language: Language): string {
+/** One language's section of the report page. `check` is the report's signed summary link (report/run.ts), left out for a report that is not signed. */
+export function reportSection(envelope: Envelope<MonthlyReport>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const r = envelope.document;
   const p = s.page;
@@ -85,7 +85,7 @@ ${missing.length > 0 ? `<div class="warn"><p><b>${esc(p.missingHeading)}</b></p>
 <h2>${esc(s.goLive.heading)}</h2>${goLiveBlock(r.goLive, language)}
 <div class="warn"><h2>${esc(p.notCountedHeading)}</h2>${list(r.notCounted.map((id) => s.notCounted[id]))}<h2>${esc(p.notTestedHeading)}</h2>${list(r.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(p.notAGrade)}</p>
-${sealBlock(s, envelope, [[p.countedFrom, s.sourceTag[r.source] || s.sourceLong[r.source]], [p.period, periodLabel(r.period, language)], [p.agentVersion, `${r.pathway.name} ${r.pathway.version}`], [p.madeOn, madeOn], ...(r.preparedBy ? [[p.setUpBy, r.preparedBy] as [string, string]] : []), [p.limitsDigest, r.policyDigest], [p.recordDigest, r.record.digest]])}
+${sealBlock(s, envelope, [[p.countedFrom, s.sourceTag[r.source] || s.sourceLong[r.source]], [p.period, periodLabel(r.period, language)], [p.agentVersion, `${r.pathway.name} ${r.pathway.version}`], [p.madeOn, madeOn], ...(r.preparedBy ? [[p.setUpBy, r.preparedBy] as [string, string]] : []), [p.limitsDigest, r.policyDigest], [p.recordDigest, r.record.digest]], check)}
 <details><summary>${esc(p.showWhatWeDid)}</summary>
 <h2>${esc(p.byActionHeading)}</h2>${byAction}
 <h2>${esc(p.entriesHeading)}</h2>${entries}
@@ -94,7 +94,7 @@ ${sealBlock(s, envelope, [[p.countedFrom, s.sourceTag[r.source] || s.sourceLong[
 }
 
 /** The report page for one language, or Hindi and English together. */
-export function reportPage(envelope: Envelope<MonthlyReport>, language: ReportLanguage): string {
+export function reportPage(envelope: Envelope<MonthlyReport>, language: ReportLanguage, check?: string): string {
   const langs = languagesOf(language);
-  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].monthlyReport}`, langs[0], langs.map((l) => reportSection(envelope, l)));
+  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].monthlyReport}`, langs[0], langs.map((l) => reportSection(envelope, l, check)));
 }

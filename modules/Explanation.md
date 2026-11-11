@@ -417,6 +417,71 @@ The plan asks that "we're checking, don't do it again yet" comes from saved stat
 
 **Built on 11 Nov:** the case ids of a step the runtime ends after a wait (`endTask`) are kept, so a fresh attempt cannot take over the original operation's hold and link there, and a test pins the refund's unknown state through the runtime (restart, a fresh attempt, three days of silence, then the provider's list; written, not yet run). A task the runner fails after its ordinary retries still gives its id out again (Deferred.md). **Found and left** (Deferred.md has each, with its trigger): the provider's own `refund.done` webhook is recorded but does not settle an unknown refund, only a person's look does; `refund_checking` tells the customer "I will message you as soon as it is confirmed", but the look that settles it messages nobody; the monthly report counts a refund a person settled as a refund made; a step that throws after a one-time call loses the case's saved unknown state with the rest of the step (Guard's record still refuses a second identical refund; no path in the three templates throws there today); and a payment on a link no booking has is recorded and ignored, with no refund and no to-do item.
 
+## A signed summary in the link: /verify for shop owners (item 17b, decision 40; 11 Nov)
+
+A shop owner could not check a paper on a phone: the QR opened /verify with the paper's digest, and the page then needed the paper's `.json` file. Now a
+**signed** report or certificate carries a compact signed summary of itself in its QR and link, and the page (part 2, public-web) checks it with no file.
+`report/summary.ts` is the format (no `node:` imports, so the website can use the same file); `report/summary-sign.ts` signs it, checks it the way the page
+will, and makes the claim a server sends Geometer's fleet. The templates' `report/summary.ts` say which figures each paper carries.
+
+**The link.** `https://geometer.dev/verify/#s1.<payload>.<signature>`, both parts base64url without padding. `s1` is the format's version: a later format is
+`s2`, and the page reads every version it knows. Everything is after the `#`, which a browser never sends, so nothing about the paper reaches Geometer. The older
+`#sha256:<digest>` and `#<code>` links still work and are still printed on every paper that is not signed and on the other papers (`papers/`).
+
+**What is signed.** Ed25519 over `geo-summary/1\n` followed by the payload bytes exactly as they sit in the link. The prefix keeps a summary's signature apart
+from a document's (`geo-document/1\n`), the fleet claim's (`geo-paper-signer/1\n`) and anything else the same key signs. A checker verifies the bytes it decoded
+from the link before it reads them, and never re-encodes first. A summary is made only for a signed paper and only with the key in that paper's own signature
+(`summaryFor` refuses another key), so the summary and the paper always have the same signer.
+
+**The payload,** in order: the layout (one byte: which paper, which figures), the source (live, test mode, stand-in services: so a sample never reads as real
+money), a flag for money the owner marked (a UPI shop, `paidBy: "owner-marked"`), the period (`2026-11`, a go-live certificate's day `2026-11-03`, or a range
+`2026-11-01..2026-11-15`), the agent's name, the shop's name (up to 64 bytes), who set it up as the paper says it (up to 64: on Geometer's partner server it is the only place the
+page names the partner, so it gets the same room), the figures (unsigned LEB128,
+money in paise), the first 8 bytes of the signer's key id (a hint: which listed key to try), and the full paper's sha256 (so a file, when someone has it, can be
+matched to the summary). Layouts: 1 Bookings' monthly report, 2 Bookings' monthly record certificate, 3 any template's go-live certificate, 4 Fees' monthly
+report, 5 Orders' monthly report (Fees and Orders have no monthly record certificate yet). Each carries the figures the printed page and the owner's WhatsApp
+message lead with. A layout number is never reused or changed; a new set of figures gets the next number, and a page that does not know a layout says the
+paper is genuine and shows no figures rather than guessing.
+
+**One spelling only.** The parser refuses anything the encoder would not write byte for byte: base64url with stray bits or padding, a number in more bytes
+than it needs, an unknown flag or source, a figure count that does not match a known layout, bytes after the end, text with control or direction-changing
+characters. A name in Hindi, Malayalam or Kannada takes three bytes a letter in UTF-8 and two in UTF-16, so a text travels as UTF-16 when (and only when) that
+is strictly shorter; the high bit of its length byte says which. A name too long is cut at a whole letter and ends with "…", so the page shows it was cut.
+
+**Size, measured 11 Nov** (level M, as every QR here): Glow Salon with a Latin "set up by" is 262 characters, version 12 (65 modules); names in Hindi 326
+characters, version 13; Malayalam and Kannada 347 to 359 characters, version 14 (73 modules). The most any summary can reach (both names at their caps, a range,
+nine figures near ₹1 crore) is 449 characters, version 16; names longer than the caps (64 bytes: 64 Latin letters, or 32 in an Indian script) are cut. The QR beside a summary link is drawn at 12rem (about 51 mm printed), so each module of a version
+14 code is about 0.63 mm; the older digest QR stays at 9.5rem.
+
+**On the paper and in WhatsApp.** `sealBlock` (`report/page.ts`) takes the summary link: it draws its QR, prints it as a link a phone can tap (opened with no
+referrer, and the page now sends none: the report page's own address holds the secret folder it is served from), and uses `scanSummary` (no file needed,
+nothing sent, and it does not show the numbers are true) instead of `scanToCheck`. A certificate's short text ends with "Check it is genuine: <link>". The
+owner's monthly WhatsApp message gets one line, "Check it is genuine: {check}", before "Set up by": the longest link that lets the whole filled message stay
+within 1,024 characters (`messageCheckLink`), chosen once so the plain text and the template agree: the summary link, else the paper's `#sha256:` link, else
+its `#<code>` link (38 characters; used even when nothing fits, so a message that fitted before this line still fits). Measured on 11 Nov over all 48
+template variants (3 templates, 4 variants, 4 languages): with the sample names every Bookings message carries the summary, Fees in Malayalam and Orders in
+Malayalam and Kannada take the digest link; with long names in the shop's own script (about 50 letters for the shop and 40 for the partner), 8 of Bookings' 16
+take the summary and the rest the digest link, Fees' and Orders' take the digest link, and 5 (Orders in Malayalam, Fees' UPI-and-Innovator message in
+Malayalam) need the code link; the longest is 1,013 characters. The new
+words are in `report/text.ts` (`CHECK_GENUINE`, `SCAN_SUMMARY`), taken into each template's strings so the review sheets list them; Hindi, Malayalam and
+Kannada are machine-written.
+
+**Who signs, and who the page names.** A server's panel holds one key (`secrets/panel/signing_key`) and signs every paper it makes. On a builder's server that
+is the builder's key; on Geometer's partner server it is Geometer's, for every partner's shop. Fleet's public list (monorepo `apps/fleet/src/paper-signers.ts`)
+names each key: Geometer for its partner server, never the partner, since the partner does not hold that key; a builder's key by the account that owned the
+server when the key was listed, by default by name, or as "a Geometer builder" if they asked. The partner who set a shop up is still named on the page, from
+the summary's `by`: the line the paper itself prints, shown as what the paper says, apart from who signed. The key hint in the link only says which entry to
+try; what counts is that the signature verifies under the public key the list gives.
+
+**How a key gets on the list.** `signerClaim(key, deploymentId)` makes `{public_key, proof}`: a signature by the key over `geo-paper-signer/1\n`, the deployment
+id, `\n` and the public key in hex. The server sends it to fleet's `POST /v1/paper-signers` with its deployment key. Fleet lists a key only with that proof,
+so nobody lists someone else's key under their own name, and a claim made for one server cannot be replayed for another.
+
+**Tests** (written 11 Nov, not run: the owner runs every suite once, together): `test/report-summary.test.ts` (the format, the signature, every
+one-character change, forged and re-signed summaries, the list as the trust, the committed vectors in `test/summary-vectors.json`, the QR size, the page block,
+the WhatsApp rule, the claim) and each template's `test/report-summary.test.ts` (signed papers' summaries genuine and saying what the paper says, unsigned
+papers unchanged, every message variant and language with long names in the shop's script within 1,024 characters).
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.
