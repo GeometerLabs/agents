@@ -283,7 +283,9 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
   `agent crash-test` refuses to run and no go-live certificate can be made for it. (3) The providers' contract test does not apply: there is no module to run it
   on. (4) `RECORD_READS` has no entry for it, so the record job reads none of the API's own state: the record and the report show the Guard's decisions on the
   agent's calls, never what the API holds (no "done" for a refund, no payment received). (5) Guard enforces only what the accept file kept: a route left out is
-  refused as unlisted, a rule left out does not exist. Revisit when: a builder brings a gateway with no module and wants the record or a certificate;
+  refused as unlisted, a rule left out does not exist. (6) Found 11 Nov: the record job reads the own API's Guard (facts.ts) but folds none of its decisions
+  (agent/record.ts has no own-API section), so neither the agent's calls nor the owner's answers to a held call are in the record or the report yet; Guard's own
+  decisions and approvals hold them. Revisit when: a builder brings a gateway with no module and wants the record or a certificate;
   each needs that gateway's reads and events described (its own module, or reads named in the accept file).
 - **The owner-marked desk is served (11 Nov, checkpoint item 7), not yet proven in Docker** (modules/Deferred.md): `agent deploy` of an own agent on UPI makes its
   desk Guard (`g-<agent>-upi`, upstream `relay:8796` in plain HTTP on the server's own network), the desk token (`relay/<agent>/desk_token`, and the whole header in
