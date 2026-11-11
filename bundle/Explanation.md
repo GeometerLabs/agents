@@ -261,8 +261,9 @@ Everything in the bundle used to import Bookings: its settings check, its Razorp
   a relay that was never there.
 - **Tests.** `test/desk-served.test.ts` (the deploy's files and secrets, the desk over HTTP with its token, a tapped reply through the relay's intake, a redelivery,
   a restart, every notice in four languages, the record and report, and the real Guard in front of the desk); `test/agent-own-api.test.ts` (the held rule kept, the
-  approver role, the relay entry, and against the real Guard: asked once, a changed amount held again, the identical call through once after the yes). The full
-  Docker proof was not run for this change.
+  approver role, the relay entry, and against the real Guard: asked once, a changed amount held again, the identical call through once after the yes),
+  `test/upi-names.test.ts` (a UPI shop's documents name no gateway). Most of these ran during the work; the last fixes' tests were written and not run (the
+  owner, 11 Nov: every suite runs once on the integration branch). The full Docker proof was not run for this change.
 
 ## Several named people approve (8 November, B37)
 
