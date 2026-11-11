@@ -35,7 +35,7 @@ import { basename, dirname, join } from "node:path";
 import { CADDY_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
-import { DESK_PORT, LICENCE_MOUNT, OWNER_MARKED_KINDS } from "./guards.ts";
+import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS } from "./guards.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
@@ -87,6 +87,8 @@ export interface ShopDeploy {
   guards: GuardRef[];
   /** The folder with the template at the version the shop is pinned to. The shared modules (agents/modules) are the folder called modules above it (`modulesOf`). */
   pathwayDir: string;
+  /** Follow-up 2: its WhatsApp Guard reads a Gupshup app token the refresher renews (from the `gupshup-auth` volume), as a Calendar Guard reads Google's. */
+  gupshupRenewed?: boolean;
 }
 
 /**
@@ -173,6 +175,9 @@ export function yaml(value: Y, indent = 0): string {
 
 type Service = Record<string, Y | undefined>;
 const hardened = { restart: "unless-stopped", read_only: true, cap_drop: ["ALL"], security_opt: ["no-new-privileges:true"], tmpfs: ["/tmp"] };
+/** Follow-up 2: the volume the refresher writes renewed Gupshup app tokens into (one sub-folder per shop), and where it is inside the refresher. */
+export const GUPSHUP_AUTH_VOLUME = "gupshup-auth";
+export const REFRESHER_GUPSHUP_DIR = "/run/gupshup-out";
 /** The `node` user of the node image: every node service runs as it, and the backup jobs write the relay's volume as it (backup/jobs.ts). */
 export const nodeUser = "1000:1000";
 /** The relay's volume (its home folder): the approvals relay's store and each owner-marked desk's ledger (state/<name>/desk.json), which the nightly snapshot reads. */
@@ -231,8 +236,10 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     for (const g of shop.guards) {
       guard(
         g, [names.net(shop.name)], net.adminIp(shop.name, g.kind, shop.index),
-        [licenceVolume, ...(g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: shop.name } }] : [])],
-        g.kind === "calendar" ? { refresher: { condition: "service_healthy" } } : undefined,
+        [licenceVolume, ...(g.kind === "calendar" ? [{ type: "volume", source: "google-auth", target: "/run/google", read_only: true, volume: { subpath: shop.name } }] : []),
+          // a renewed Gupshup shop's WhatsApp Guard: its own sub-folder of the refresher's Gupshup tokens, read-only, as the Calendar Guard's Google token
+          ...(g.kind === "whatsapp" && shop.gupshupRenewed ? [{ type: "volume", source: GUPSHUP_AUTH_VOLUME, target: GUPSHUP_TOKEN_MOUNT, read_only: true, volume: { subpath: shop.name } }] : [])],
+        g.kind === "calendar" || (g.kind === "whatsapp" && shop.gupshupRenewed) ? { refresher: { condition: "service_healthy" } } : undefined,
         features.panel ? net.panelIp(g.kind as Exclude<GuardKind, "model">, shop.index) : undefined,
       );
     }
@@ -279,10 +286,13 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     volumes: [appVolume, `${dirs.generated}/relay:/etc/geometer:ro`, `${secretDir("relay")}:/run/secrets:ro`, `${RELAY_STATE_VOLUME}:/home/node`],
     networks: { front: {}, admin: {} }, healthcheck: healthWget(RELAY_PORT, "/healthz"),
   }), [`${dirs.generated}/relay/relay.json`]);
+  // follow-up 2: with a renewed Gupshup shop the refresher also writes its app tokens (gupshup-auth), and its first start may take a minute or two (Gupshup's limit of
+  // mints a minute), so it is given longer before it counts as unhealthy. A server with none keeps exactly the block it had.
+  const gupshupRenewed = shops.some((s) => s.gupshupRenewed);
   add("refresher", node(["node", "/app/bundle/services/refresher.ts"], {
     environment: { CONFIG: "/etc/geometer/refresher.json", PORT: String(REFRESHER_PORT), HOST: "0.0.0.0" },
-    volumes: [appVolume, `${dirs.generated}/refresher:/etc/geometer:ro`, `${secretDir("refresher")}:/run/secrets:ro`, "google-auth:/home/node"],
-    networks: { admin: {}, egress: {} }, healthcheck: { ...healthWget(REFRESHER_PORT, "/healthz"), start_period: "30s" },
+    volumes: [appVolume, `${dirs.generated}/refresher:/etc/geometer:ro`, `${secretDir("refresher")}:/run/secrets:ro`, "google-auth:/home/node", ...(gupshupRenewed ? [`${GUPSHUP_AUTH_VOLUME}:${REFRESHER_GUPSHUP_DIR}`] : [])],
+    networks: { admin: {}, egress: {} }, healthcheck: { ...healthWget(REFRESHER_PORT, "/healthz"), start_period: gupshupRenewed ? "180s" : "30s" },
   }), [`${dirs.generated}/refresher/refresher.json`]);
   add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
     environment: { CONFIG: "/etc/geometer/ops.json" },
@@ -326,7 +336,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
-  const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {} };
+  const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };
   for (const s of shops) {
     volumes[names.dataVolume(s.name)] = {};
     for (const g of s.guards) volumes[names.stateVolume(s.name, g.kind as Exclude<GuardKind, "model">)] = {};

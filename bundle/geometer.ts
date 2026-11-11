@@ -17,6 +17,9 @@
 //                                fleet.deploymentId) and the trial lease taken. A pairing kept but not added is added by running it again, with no new code.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
+//   gupshup-token <file>         the Gupshup partner's Universal Token (follow-up 2): the token refresher mints and renews each Gupshup shop's app token with it, for every
+//                                Gupshup shop that hands in no static gupshup_authorization. Only on a server run by that Gupshup partner: it acts for every app linked
+//                                to the partner. It lasts at most 60 days; hand in a new one before then (the panel's to-do list says when).
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
 //                                pathway.lock); --prepared-by is the name the owner's monthly report message says set the shop up (written to report.json; without it the message says "your
 //                                builder"). With --company, --prepared-by is the person's name alone and the message says "Divya, Sri Sai Digital".
@@ -80,6 +83,8 @@ import { applyOnce, runLicence, watch } from "./apply.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { takeExtension, takeLease } from "./lib/licence.ts";
 import { joinPairing, latePairingProblem, pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
+import { GUPSHUP_UNIVERSAL_TOKEN_FILE } from "./generate/configs.ts";
+import { jwtExpiryMs } from "./services/gupshup-tokens.ts";
 import type { PairingFile } from "./lib/pairing.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreAgent, restoreShop } from "./backup/jobs.ts";
@@ -191,6 +196,17 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       prepareSecretsRoot(dir);
       writeSecretFile(secretFile(dir, "refresher", "_server", "google_service_account.json"), file.trim());
       console.log(`The server-wide Google key is in place (${(JSON.parse(file) as { client_email: string }).client_email}). A shop that hands in no key of its own uses it; share each shop's calendar with that address.`);
+      return 0;
+    }
+
+    if (command === "gupshup-token") {
+      // follow-up 2: the partner's Universal Token, kept only in the refresher's folder; never printed, only its end (read from the token itself, not checked)
+      const token = readFileSync(resolve(positionals[0] ?? ""), "utf8").trim();
+      if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(token)) throw new Error("The file must hold Gupshup's Universal Token on one line, as Gupshup gave it (three parts with dots between, like eyJ...).");
+      prepareSecretsRoot(dir);
+      writeSecretFile(secretFile(dir, "refresher", "_server", GUPSHUP_UNIVERSAL_TOKEN_FILE), token);
+      const ends = jwtExpiryMs(token);
+      console.log(`The Gupshup universal token is in place${ends ? ` (it says it ends ${new Date(ends).toISOString().slice(0, 10)}; hand in a new one before then)` : ""}. Each Gupshup shop that hands in no gupshup_authorization of its own gets its app token renewed by the refresher from the next \`geometer deploy\`.`);
       return 0;
     }
 

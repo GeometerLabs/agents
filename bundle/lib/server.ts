@@ -129,6 +129,11 @@ export interface ServerConfig {
    * renaming would leave its data behind), while heartbeats, leases, extensions, the Guards' `[licence]` and the paper-signer claim use fleet's (fleetIdOf).
    */
   fleet?: { url: string; keyFile: string; deploymentId?: string };
+  /**
+   * Follow-up 2: how a renewed Gupshup app token goes in the WhatsApp Guard's Authorization header: "bearer" (left out: the default) or "bare". Gupshup does not
+   * document which its message API takes; this is the one place to change it once a real app has answered (modules/Deferred.md).
+   */
+  gupshupTokenHeader?: "bearer" | "bare";
   /** How long a held refund waits for the owner, in hours. The one setting behind Guard's bundle AND the words in the owner's message. */
   approvalHours: number;
   model: ModelConfig;
@@ -243,12 +248,14 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   if (o.fleet !== undefined && (!fleet || typeof fleet.url !== "string" || typeof fleet.keyFile !== "string")) errors.push('"fleet" must say {"url": "https://...", "keyFile": "<a file that holds this server\'s deployment key>"}.');
   if (fleet && typeof fleet.url === "string" && !/^https:\/\//u.test(fleet.url) && !/^http:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)/u.test(fleet.url)) errors.push('"fleet.url" must be https:// (the deployment key is a bearer secret).');
   const fleetId = fleet?.deploymentId;
+  if (o.gupshupTokenHeader !== undefined && o.gupshupTokenHeader !== "bearer" && o.gupshupTokenHeader !== "bare") errors.push('"gupshupTokenHeader" must be "bearer" or "bare": how a renewed Gupshup app token is sent.');
   if (fleetId !== undefined && (typeof fleetId !== "string" || serverIdProblem(fleetId))) errors.push('"fleet.deploymentId" must be the server id fleet gave this server when it was paired (pairing.json).');
   const config: ServerConfig = {
     schema: 1, id, domain, reviewedBy,
     guardImage: typeof o.guardImage === "string" ? o.guardImage : DEFAULT_GUARD_IMAGE,
     appImage: typeof o.appImage === "string" ? o.appImage : DEFAULT_APP_IMAGE,
     ...(fleet && typeof fleet.url === "string" && typeof fleet.keyFile === "string" ? { fleet: { url: fleet.url, keyFile: fleet.keyFile, ...(typeof fleetId === "string" && !serverIdProblem(fleetId) ? { deploymentId: fleetId } : {}) } } : {}),
+    ...(o.gupshupTokenHeader === "bearer" || o.gupshupTokenHeader === "bare" ? { gupshupTokenHeader: o.gupshupTokenHeader } : {}),
     approvalHours: typeof approvalHours === "number" ? approvalHours : 24,
     model: (model ?? { wire: "openai", model: "" }) as unknown as ModelConfig,
     ...(isObj(o.backup) ? { backup: o.backup as unknown as BackupConfig } : {}),

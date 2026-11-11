@@ -24,6 +24,8 @@ export interface Snapshot {
   pathwayDir: string;
   /** Hash of the files the shop was applied from. A shop is "up to date" when its desired state hashes to this. */
   desiredHash: string;
+  /** Follow-up 2: "renewed" when its WhatsApp Guard was compiled to read a Gupshup app token the refresher renews; left out otherwise (every state written before). */
+  whatsappTokens?: "renewed";
 }
 
 export interface ShopState {

@@ -3,7 +3,7 @@
 import { agentNames } from "../agent/plan.ts";
 import { BUNDLE_VERSION, fleetIdOf, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
+import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_GUPSHUP_DIR, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
@@ -132,26 +132,41 @@ export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWh
   });
 }
 
-export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks })[], overrides: { scope?: string } = {}, agents: AgentFacts[] = []): string {
+/** Follow-up 2: the server's Gupshup universal token, as the refresher reads it (handed in with `geometer gupshup-token <file>`). */
+export const GUPSHUP_UNIVERSAL_TOKEN_FILE = "gupshup_universal_token";
+/** And the copy of each renewed shop's WhatsApp Guard admin token, for its /admin/reload after a new app token (the calendar's is `admin_token`). */
+export const GUPSHUP_GUARD_ADMIN_FILE = "whatsapp_admin_token";
+
+export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; whatsappRoute?: WhatsAppRoute })[], overrides: { scope?: string } = {}, agents: AgentFacts[] = []): string {
   const entry = (s: Pick<ShopDeploy, "name" | "index">, own: boolean) => [s.name, {
     serviceAccountFile: own ? `/run/secrets/${s.name}/google_service_account.json` : "/run/secrets/_server/google_service_account.json",
     guardAdminUrl: guardAdmin(server, s, "calendar").adminUrl, adminTokenFile: `/run/secrets/${s.name}/admin_token`,
   }];
+  // follow-up 2: the shops whose Gupshup app token is renewed here; left out entirely on a server with none, so its config is exactly as it was
+  const renewed = shops.filter((s) => s.gupshupRenewed && s.whatsappRoute?.provider === "gupshup");
   return stableJson({
     outDir: "/home/node", refreshMinutes: 45, scope: overrides.scope ?? "https://www.googleapis.com/auth/calendar",
     shops: Object.fromEntries([
       ...shops.filter((s) => s.webhooks.hasGoogle).map((s) => entry(s, s.webhooks.ownGoogleKey)),
       ...agents.filter((a) => a.hasGoogle && hasGuard(a, "calendar")).map((a) => entry(a, a.ownGoogleKey)),
     ]),
+    ...(renewed.length > 0 ? {
+      gupshup: {
+        outDir: REFRESHER_GUPSHUP_DIR, universalTokenFile: `/run/secrets/_server/${GUPSHUP_UNIVERSAL_TOKEN_FILE}`, header: server.gupshupTokenHeader ?? "bearer",
+        shops: Object.fromEntries(renewed.map((s) => [s.name, { appId: s.whatsappRoute!.appId, guardAdminUrl: guardAdmin(server, s, "whatsapp").adminUrl, adminTokenFile: `/run/secrets/${s.name}/${GUPSHUP_GUARD_ADMIN_FILE}` }])),
+      },
+    } : {}),
   });
 }
 
 export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string; pathway?: string })[], agents: AgentFacts[] = []): string {
+  // follow-up 2: where ops asks how the Gupshup token renewals are doing (the refresher's /healthz, on the admin network); only on a server that renews any
+  const refresherUrl = shops.some((s) => s.gupshupRenewed) ? { refresherUrl: `http://refresher:${REFRESHER_PORT}` } : {};
   const net = addressing(server);
   const modelGuard = { id: "guard-model", service: names.modelGuard, adminUrl: url(net.adminIp(undefined, "model"), ADMIN_FORWARD_PORT), healthUrl: url(net.adminIp(undefined, "model"), HEALTH_PORT), adminTokenFile: "/run/secrets/_model/admin_token" };
   return stableJson({
     // the id fleet knows this server by: a server paired late keeps its own `id` for everything local (lib/server.ts fleetIdOf)
-    deploymentId: fleetIdOf(server), bundleVersion: BUNDLE_VERSION, heartbeatSeconds: server.heartbeatSeconds,
+    deploymentId: fleetIdOf(server), bundleVersion: BUNDLE_VERSION, heartbeatSeconds: server.heartbeatSeconds, ...refresherUrl,
     ...(server.fleet ? { fleet: { url: server.fleet.url, keyFile: "/run/secrets/fleet_key" } } : {}),
     // the panel's address, for the "Open panel" link on the builder's account page (fleet's GET /v1/me/servers); a link only, signing in stays the panel's
     ...(server.panel.enabled ? { panelUrl: publicUrl(server) } : {}),
