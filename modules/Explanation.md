@@ -278,6 +278,49 @@ like the idea of having our agents limited to razorpay". What changed in `paymen
   code knows such an API. It has no capabilities, words or stand-in here: its Guard spec is the one the builder reviewed with the companies kit, and the bundle
   says what it cannot check (bundle/Deferred.md).
 
+## B71 part 2 and B74: the desk on servers, holds on an own API, one checked action (11 Nov)
+
+**The owner-marked desk behind a Guard** (`payments/owner-marked/desk-guard.ts`). On a server an agent someone else wrote reaches the desk the way it reaches
+everything else: through a Guard of its own, `g-<agent>-upi`, whose upstream is the desk. So the agent's one credential, the kill switch, the licence's wind-down
+(a new request is `create_link`, which the wind-down refuses; a refund owed never is), the record of every call and the limits hold for UPI as for a gateway. The
+limits are the gateway's neutral numbers from the same settings (the deposit is the only amount a request may be for, a refund owed is 1 paisa to one deposit,
+refunds and requests per day and hour, and claims per hour so an agent cannot fill the owner's phone). Two of the gateway's rules are left out on purpose: no hold
+above a refund limit (the owner sends every UPI refund from their own app, so they already decide each one) and no once-only rule (the desk never owes more than
+the owner marked on a payment). The desk's request and refund views now carry when and by whom each mark was made (`marked_by: "owner"`), which the own agent's
+record job reads through the same Guard. A mark made after the agent closed a request is now owed back with its own code (or kept), as a template does; the desk
+used to send the owner a message with no code, which could not be worded on a server.
+
+**Holds on an agent's own API** (`approvals/held-call.ts`, `approvals/own-api-voice.ts`). The relay takes a reader (`RelayOptions.readHeld`): left out it reads
+a gateway's held refund as before; for an own API it reads the calls the reviewed spec holds (`call_bound_approval`: the operation, the amount field and its unit).
+What the owner is shown is Guard's held call and nothing else: the operation by its name in the spec, the amount typed (an amount sent as text is a different call
+and is never shown), in the API's own unit (rupees only when the unit is paise), and at most three of the call's other plain fields, each from a small safe alphabet
+(a link, a line break or the words "approve"/"deny" leave the field out rather than being cleaned). A request that names several approvers is the builder's: an own
+API's Guard has the owner alone. The words are their own (a template's voice talks about a booking's refund; this call may be a payout): ask, done, denied, expired,
+failed, in four languages, each checked so that no number is in the text that the held call does not have. **After the owner's yes** nothing is sent by the relay:
+it gives Guard the owner's signed answer for that approval id, and Guard lets the call through when the agent sends the identical call again, which is what a
+template's held refund does today. A changed amount is a new call, held again under an approval the owner has not given (tested against the real Guard).
+
+**B74: what the code already binds (the inventory).**
+
+| Path | What the owner reads is written from | What executes after the yes | What a change after the yes does |
+|---|---|---|---|
+| A refund Guard holds (all templates, own agents on a gateway; `approvals/relay.ts`) | Guard's held call (amount and payment, typed) plus the runtime's case, which must show the same payment, amount and approval id or nobody is asked; the out-of-window template is the same facts and must fill back to the checked text | The runtime re-sends the saved bytes of the held call (`payments/refunds.ts`, `resendRefund`); nothing is rebuilt | Guard binds the approval to the call's digest: another amount, payment or receipt is held again under a new approval (pinned against the real Guard). A refund body has no currency or fee field |
+| B37, several people | The same, each in their own language, with their own code and secret | The same re-send, only once Guard says "approved" | The same; votes and the count are Guard's |
+| Fees waiver above the limit (runtime command `approve q-N`) | The saved request (amount) and the live fee | The saved amount, applied only if the fee is open and its balance is the one the owner was asked at | A changed balance is refused and the owner told (`owner_request_stale`; crash-test situation `waiver-balance-changed`) |
+| Fees, Bookings, Orders refund the owner decides (`approve f-/b-/o-N`) | The case's saved refund (Bookings shows the booking's deposit, which is the amount saved) | The saved payment and amount, through the same limits again and, above the limit, through Guard's hold | The saved amount goes through the limits again (Fees also reads the payment again, and one refund per payment); nothing compares it to what was shown, but both come from the same saved refund |
+| Orders big order (`approve o-N`) | The order's total | The advance link for the order as it stands | The order cannot be edited while it waits for the owner (`awaiting_owner`); the total is not compared again (Deferred.md) |
+| UPI marks (`owner-marked/ledger.ts`, desk) | The request's own amount and code | Nothing is sent: the owner's mark is recorded | A code belongs to one request or refund; a changed amount is a new request with a new code |
+
+Cross-checked but not bound: the customer's number, the service, the slot and the student shown beside a held refund come from the runtime's case and are checked
+only by payment, amount and approval id. The tests added (B74): the real-Guard test in `templates/commerce/bookings/test/approvals-guard-binary.test.ts`, the
+three voices in four languages in `bundle/test/approval-binding.test.ts`, and the own API's in `bundle/test/agent-own-api.test.ts`.
+
+**B74: a UPI mark is the owner's statement.** Every writer records it as `owner_marked_paid` with `markedBy: "owner"` (the templates, the desk, and now the own
+agent's record, which never writes `record_deposit` for UPI money). The readers: the papers put it in the owner's column ("marked paid by owner", with what that does
+not show); each template's report labels the money "marked paid by owner" (`paidBy: "owner-marked"`) and lists automatic payment checking as not checked; the
+unfinished-work list reads it as the owner's mark. `bundle/test/desk-served.test.ts` pins it for the own agent's record and report; `papers.test.ts` and the
+templates' report tests pin the rest. A UPI shop's report, certificate and papers now name no gateway in any language (three lines still did; they have UPI words).
+
 ## A Guard that is down: the message waits (B14, 10 Nov)
 
 `runtime/guard-wait.ts`, `runtime/tasks.ts`, `core/faults.ts`.
