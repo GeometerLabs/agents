@@ -27,13 +27,17 @@ test("the panel reads fleet's file field by field: a wrong field is dropped, an 
 });
 
 test("the plan view: fleet's facts and Geometer's charge, the plan's fee on Geometer's server and the builder licence on a builder's own, the same for an innovator, and no price when there is no list", () => {
-  const list = loadPriceList(new URL("2026-11-09.json", PRICES_DIR).pathname); // by name: a dated list never changes
+  // By name: a dated list never changes. The 11 Nov list's builder licence differs from every plan's fee (on 9 Nov it equalled Basic's), so a builder's price
+  // below can only be the licence. It is read from the list, never written here.
+  const list = loadPriceList(new URL("2026-11-11.json", PRICES_DIR).pathname);
+  const licence = list.rates["licence.builder.fee"].micro! / 10_000;
   const read = (more: Record<string, unknown>) => parseFleetAnswer(JSON.stringify(answer(more)));
   assert.equal(planView(undefined, list), undefined);
   assert.deepEqual(planView(read({}), list)!.price, { paise: 29_900, licence: false });
   assert.deepEqual(planView(read({ innovator: true }), list)!.price, { paise: 29_900, licence: false }, "the Innovator badge is a badge, not a price");
   assert.deepEqual(planView(read({ plan: "basic", allowance: 1000 }), list)!.price, { paise: 14_900, licence: false });
-  for (const plan of ["basic", "business", "operations"]) assert.deepEqual(planView(read({ plan }), list, true)!.price, { paise: 14_900, licence: true }, plan);
+  assert.ok(!["basic", "business", "operations"].some((p) => list.rates[`plan.${p}.fee`].micro! / 10_000 === licence), "the licence is not a plan's fee on this list");
+  for (const plan of ["basic", "business", "operations"]) assert.deepEqual(planView(read({ plan }), list, true)!.price, { paise: licence, licence: true }, plan);
   assert.equal(planView(read({}), null)!.price, undefined);
   assert.equal(planView(read({ plan: null, allowance: null }), list)!.price, undefined, "no plan, no price");
 });

@@ -254,7 +254,10 @@ test("sell guide: section 6 gives the Business plan, the builder licence and Wha
     const s6 = section(l, 6);
     for (const id of ["plan.business.fee", "plan.business.allowance", "overage.extra", "licence.builder.fee", "guide.business.shop-min", "guide.business.shop-max", "guide.business.setup-min", "guide.business.setup-max", "guide.business.whatsapp", "innovator.places", "razorpay.platform-fee"]) assert.ok(s6.includes(price(id)), `${l}: section 6 must give ${id} (${price(id)})`);
     for (const wanted of ["15", dayWords(LIST.date)]) assert.ok(s6.includes(wanted), `${l}: section 6 must give ${wanted}`);
-    assert.ok(!/₹\s?199\b|40\s?%|half (the )?plan|आधी कीमत|വിലയുടെ പകുതി|ಬೆಲೆಯ ಅರ್ಧ/u.test(guide(l)), `${l}: no old flat fee, no first-100 discount, no own-server discount`);
+    // The 4 Nov flat fee was ₹199, written by hand. Since decision 36 (10 Nov) the builder licence is ₹199 too, and it reaches a guide only through
+    // {{licence.builder.fee}}. So the ₹199 check reads the source: a hand-written ₹199 there is the old fee; a ₹199 in the made guide is the list's licence.
+    assert.ok(!/₹\s?199\b/u.test(readFileSync(new URL(`guide.${l}.src.md`, SELL), "utf8")), `${l}: no old flat fee written by hand (a price comes from the list: {{id}})`);
+    assert.ok(!/40\s?%|half (the )?plan|आधी कीमत|വിലയുടെ പകുതി|ಬೆಲೆಯ ಅರ್ಧ/u.test(guide(l)), `${l}: no first-100 discount, no own-server discount`);
   }
   assert.ok(section("en", 6).includes("Business plan"));
 });

@@ -11,6 +11,7 @@
 import { uiFor } from "../../templates/commerce/bookings/demo/strings.ts";
 import type { Why, LiveCode, PlanName } from "./contract.ts";
 import type { CheckCode } from "./checks.ts";
+import { latestPriceList } from "./cost.ts";
 import type { Caveat, LineId, Payer } from "./cost.ts";
 
 const demo = uiFor("en");
@@ -183,6 +184,12 @@ export interface Words {
   };
 }
 
+/**
+ * A price from the list in force, in whole rupees as a sample sentence shows it ("₹299"). Prices are written only in prices/<date>.json, so the samples read
+ * them too: a new list changes the review sheet's sentence, and the sheet's test says when it is behind (node bundle/panel/review-sheet.ts).
+ */
+const listRupees = (id: string): string => `₹${(latestPriceList().rates[id].micro! / 1_000_000).toLocaleString("en-IN")}`;
+
 /** Sample arguments for the functions in a Words set, so the review sheet can show one real sentence per line. */
 export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "login.wait": [30], "join.title": ["partner"], "shops.version": ["bookings@0.1.0"], "shops.limits": [9, 9], "shops.setUpBy": ["Divya"],
@@ -190,7 +197,9 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
   "cost.fromRecord": [38], "cost.assumption": [40], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
-  "plan.is": ["Business"], "plan.included": [3000], "plan.price": ["₹299"], "plan.priceBuilder": ["₹149"],
+  "plan.is": ["Business"], "plan.included": [3000],
+  // Getters: the list is read when a sample is used (the review sheet, the words test), not whenever the panel loads its words.
+  get "plan.price"() { return [listRupees("plan.business.fee")]; }, get "plan.priceBuilder"() { return [listRupees("licence.builder.fee")]; },
   "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
