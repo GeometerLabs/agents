@@ -149,8 +149,9 @@ export interface TomlOptions {
   /** Where this Guard listens and keeps its files. The defaults are the container's; a test that runs the real binary on this computer gives its own. */
   paths?: Partial<typeof CONTAINER_PATHS>;
   /**
-   * Fleet's licence lease (plan B13, monorepo ADR-0062), for a per-shop Guard only (never the model Guard, which serves the whole server). Given only when the
-   * Guard image reads `[licence]` (an older one ignores the table: it would do nothing while reading as if it did) and geometer.json pins `licence.keys`.
+   * Fleet's licence lease (plan B13, monorepo ADR-0062 and ADR-0070), for a per-shop Guard only (never the model Guard, which serves the whole server). The deploy
+   * gives it to every per-shop Guard, always: a release's Guard refuses to start a shop's Guard without it, and the deploy refuses a server with no key pinned or
+   * an image that does not read the block (deploy.ts guardLicenceOn). Left out here only for files that are not a shop's (the model Guard, fixtures).
    */
   licence?: GuardLicence;
 }
@@ -188,8 +189,9 @@ function licenceLines(l: GuardLicence): string[] {
   const list = (xs: readonly string[]) => `[${xs.map(q).join(", ")}]`;
   return [
     ``,
-    `# Fleet's signed licence lease (plan B13, monorepo ADR-0059 and ADR-0062), checked offline with the public keys built into Guard's binary. Read again`,
-    `# when the files change; never a restart. No lease file, or a shop the lease does not list, restricts nothing. The folder is this server's state/licence/.`,
+    `# Fleet's signed licence lease (plan B13, monorepo ADR-0059, ADR-0062 and ADR-0070), checked offline with the public keys built into Guard's binary. Read`,
+    `# again when the files change; never a restart. With no good lease that lists this shop, it has no licence: only refunds, cancellations, reads and a send to`,
+    `# the owner go through. A release of Guard does not start a shop's Guard without this block. The folder is this server's state/licence/.`,
     `[licence]`,
     `lease_file = ${q(`${LICENCE_MOUNT}/lease`)}`,
     `seen_file = ${q(`${LICENCE_MOUNT}/seen.json`)}`,

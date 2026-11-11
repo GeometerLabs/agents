@@ -239,13 +239,17 @@ export function approverOf(shop: string, approvers: ApproversSettings | undefine
 /** B37: the ids of a shop's other approvers, from its Razorpay Guard's plan. */
 const peopleOf = (guards: { plan: GuardPlan }[]): string[] => guards.find((g) => g.plan.kind === "razorpay")?.plan.approvers?.people.map((p) => p.id) ?? [];
 
+/** The words a refused deploy says when the server has no licence key (plan decision 39). `init` says the same, so the two never differ. */
+export const NO_LICENCE_KEY = "This server has no licence key from Geometer (geometer.json \"licence\"). Guard runs a builder's shop only under Geometer's licence (decision 39, monorepo ADR-0070): without it, no shop here would take new work. Pair the server with Geometer: the install command does it, and writes the key and the server's first lease. By hand: `geometer init <folder> --licence-key <the 64 hex characters Geometer gave you>`.";
+
 /**
- * Plan B13 (monorepo ADR-0062): does this server's Guard image check fleet's lease? Only when geometer.json pins a key (`licence.keys`) AND the image reads `[licence]`
- * (asked of the image itself, once: an older one ignores the table, and a block it ignores would read as if it did something). `why` says why not, for the log.
+ * Plan B13 and decision 39 (monorepo ADR-0062, ADR-0070): every per-shop Guard is given `[licence]`, always. So the deploy is refused, in plain words, when
+ * geometer.json pins no key (`licence.keys`, which `init` now requires) or when the image does not read the block (asked of the image itself, once: an older one
+ * ignores the table, so a block it ignores would read as if it did something). A shop is never run without the licence.
  */
-export async function guardLicenceOn(ctx: Context, server: ServerConfig): Promise<{ on: boolean; why?: string }> {
-  if (!server.licence?.keys.length) return { on: false };
-  if (!ctx.tool.readsLicence || !(await ctx.tool.readsLicence())) return { on: false, why: `the Guard image ${server.guardImage} does not read the licence lease (it is older than monorepo ADR-0062), so only the runtime refuses new work in the wind-down. Use a Guard image built from that change or later.` };
+export async function guardLicenceOn(ctx: Context, server: ServerConfig): Promise<{ on: true } | { on: false; problem: Problem }> {
+  if (!server.licence?.keys.length) return { on: false, problem: { rule: "licence-key", message: NO_LICENCE_KEY } };
+  if (!ctx.tool.readsLicence || !(await ctx.tool.readsLicence())) return { on: false, problem: { rule: "guard-image-licence", message: `The Guard image ${server.guardImage} does not check Geometer's licence lease (it is older than monorepo ADR-0062), and a shop is never run without it. Use the Guard image this release of the bundle names (geometer.json \"guardImage\").` } };
   return { on: true };
 }
 
@@ -289,7 +293,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   if (prepared) {
     const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards));
     const licence = await guardLicenceOn(ctx, server);
-    if (licence.why) notes.push(licence.why);
+    if (!licence.on) problems.push(licence.problem);
     for (const g of prepared.guards) {
       problems.push(...await compileAndVerify(ctx, server, name, g, { admin: sha(creds.admin[g.plan.kind as "razorpay"]), agents: agentsOf(name, g.plan.kind, creds) }, licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
@@ -431,7 +435,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
   const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards))]));
   const licence = await guardLicenceOn(ctx, server);
-  if (licence.why) ctx.log(`note: ${licence.why}`);
+  if (!licence.on) problems.push(licence.problem);
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);

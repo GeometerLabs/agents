@@ -8,7 +8,9 @@
 // is named geometer-proof-* and is removed at the end (volumes, networks, containers, the cgroup); it never deletes an image.
 //
 // The Guard image must read `[licence]` and have RFC 8032's published test key built in (monorepo ADR-0062): the proof pins that key in geometer.json and signs
-// its leases with it (test/licence-helpers.ts). GUARD_IMAGE names the image (default geo-guard:local-b14, built locally, never pushed).
+// its leases with it (test/licence-helpers.ts). GUARD_IMAGE names the image (default geo-guard:local-b14, built locally, never pushed). Since decision 39 (monorepo
+// ADR-0070) a shop the lease does not list has no licence at its Guards, so the proof sets the server up the new way: `init --licence-key` (what pairing gives),
+// then the lease pairing and the first heartbeat would bring, listing every shop the proof may add, written before the first deploy.
 import { spawn, spawnSync } from "node:child_process";
 import { createHmac, generateKeyPairSync } from "node:crypto";
 import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
@@ -259,16 +261,19 @@ async function main_(): Promise<void> {
   // ------------------------------------------------------------------ the server folder, the stand-ins, the bucket, the fleet
   const identityFile = join(SCRATCH, "age-identity.txt");
   rmSync(SERVER, { recursive: true, force: true });
+  // --licence-key: RFC 8032's published test key, the one built into the proof's Guard image (anyone can sign with it, never a production key); pairing gives a server its key
   let code = await main(["init", SERVER, "--id", "proof", "--domain", "localhost", "--reviewed-by", "builder-proof", "--model-wire", "openai", "--model", "gpt-4o-mini", "--http-port", "18080", "--https-port", "18443",
-    "--snapshots-url", "s3://geo-snaps/proof", "--snapshots-endpoint", "http://minio:9000", "--age-identity-out", identityFile, "--fleet-url", "http://host.docker.internal:18790", "--fleet-key-file", "fleet_key", "--guard-image", GUARD_IMAGE, "--panel"]);
+    "--snapshots-url", "s3://geo-snaps/proof", "--snapshots-endpoint", "http://minio:9000", "--age-identity-out", identityFile, "--fleet-url", "http://host.docker.internal:18790", "--fleet-key-file", "fleet_key", "--guard-image", GUARD_IMAGE, "--panel",
+    "--licence-key", TEST_PUBLIC_HEX]);
   if (code !== 0) throw new Error("init failed");
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
   conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
   // the load must not meet the shops' own hourly caps (the proof measures the server, not the caps): every count is raised, and the report says so
   if (HEARTBEAT !== undefined) conf.heartbeatSeconds = HEARTBEAT;
   conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
-  conf.licence = { keys: [TEST_PUBLIC_HEX] }; // RFC 8032's published test key, the one built into the proof's Guard image: anyone can sign with it, never a production key
   writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
+  // the lease pairing and the first heartbeat would bring (the proof's fleet signs none: it has no licence key), every proof shop in order, before the first deploy
+  handLease(1).forEach((l) => say(`   ${l}`));
   mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
   writeTestCompose();
   writeFileSync(join(SCRATCH, "model-key"), "sk-proof-model-key-0123456789\n"); writeFileSync(join(SCRATCH, "bucket-key"), "proofkey:proofsecret123\n");
@@ -1076,11 +1081,20 @@ async function heldRefundThroughRuntime() {
 
 // ---------------------------------------------------------------------------------------------------------------------------------- item 5: the licence
 
-/** A lease for this server, signed with RFC 8032's published test key (the key built into the proof's Guard), handed in as fleet's answer, and taken by the deployer. */
-function handLease(serial: number, entry: Record<string, unknown>): string[] {
-  const token = signTest({ v: 1, kind: "lease", deployment: "proof", serial, issued_at: nowS(), shops: [{ id: "glow-salon", plan: "business", grace_days: 30, ...entry }] });
+/** Every shop the proof may add, up to its largest load step: a lease must list each, or a release's Guard has no licence for it (decision 39). */
+const PROOF_SHOPS = Array.from({ length: Math.max(1, ...SIZES) }, (_, i) => shopName(i + 1));
+/** A shop in order for 30 days, as fleet lists a shop its trial covers (monorepo ADR-0070). */
+const inOrder = (id: string) => ({ id, plan: "business", state: "active", paid_through: nowS() + 30 * DAY_S, grace_days: 0, expires: nowS() + 30 * DAY_S, stop_at: null, export_until: null, notice: null });
+/**
+ * A lease for this server, signed with RFC 8032's published test key (the key built into the proof's Guard), handed in as fleet's answer, and taken by the deployer.
+ * It lists every proof shop in order; `glowEntry` puts glow-salon in another state (the licence phase's wind-down, stop and restore).
+ */
+function handLease(serial: number, glowEntry?: Record<string, unknown>): string[] {
+  const shops = PROOF_SHOPS.map((id) => (id === "glow-salon" && glowEntry ? { id, plan: "business", grace_days: 30, ...glowEntry } : inOrder(id)));
+  const token = signTest({ v: 1, kind: "lease", deployment: "proof", serial, issued_at: nowS(), shops });
+  mkdirSync(join(SERVER, "fleet"), { recursive: true });
   writeFileSync(join(SERVER, "fleet", "lease"), `${token}\n`);
-  return syncLicence(SERVER, loadServer(SERVER), ["glow-salon"], new Date());
+  return syncLicence(SERVER, loadServer(SERVER), PROOF_SHOPS, new Date());
 }
 const guardView = (svc: string) => JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", svc, "GET", "/admin/licence"]).out.trim().split("\n").at(-1) ?? "{}").body ?? {};
 const SHOP_GUARDS = ["razorpay", "whatsapp", "calendar"].map((k) => `g-glow-salon-${k}`);
@@ -1102,12 +1116,12 @@ async function licenceWindDown() {
   const paid = await control(shop, "/_standin/razorpay/pay", { request_id: before.body?.id, deliver: false });
   const second = newLink("lic-cancel-me");
   const now = nowS();
-  const lines = handLease(1, { state: "wind_down", paid_through: now - 35 * DAY_S, expires: now - 5 * DAY_S, stop_at: now + 25 * DAY_S, export_until: null, notice: "wind_down" });
+  const lines = handLease(2, { state: "wind_down", paid_through: now - 35 * DAY_S, expires: now - 5 * DAY_S, stop_at: now + 25 * DAY_S, export_until: null, notice: "wind_down" });
   lines.forEach((l) => say(`   ${l}`));
   const panel = readStatus(SERVER, shop)?.licence?.state;
   const agree = await guardsSay("wind_down");
   const views = Object.fromEntries(SHOP_GUARDS.map((g) => [g, guardView(g)]));
-  check("a wind-down lease (signed with the test key, handed in as fleet's answer): every Guard's GET /admin/licence shows the state the panel shows", panel === "wind_down" && agree && SHOP_GUARDS.every((g) => views[g].lease?.serial === 1 && views[g].keys?.[0]?.test_key === true),
+  check("a wind-down lease (signed with the test key, handed in as fleet's answer): every Guard's GET /admin/licence shows the state the panel shows", panel === "wind_down" && agree && SHOP_GUARDS.every((g) => views[g].lease?.serial === 2 && views[g].keys?.[0]?.test_key === true),
     { panel, guards: Object.fromEntries(SHOP_GUARDS.map((g) => [g, { state: views[g].state, refuses_now: views[g].refuses_now, serial: views[g].lease?.serial }])) });
   const counts0 = await st();
   const link = newLink("lic-new-work"); const event = insert("lic-new-work");
@@ -1149,13 +1163,13 @@ async function licenceWindDown() {
   syncLicence(SERVER, loadServer(SERVER), [shop], new Date()); // the deployer puts the runtime's file back
   check("the deployer puts the runtime's licence file back on its next pass", readFileSync(file, "utf8") === kept, "");
   // the final stop: sends are held back too, except to the owner
-  handLease(2, { state: "stopped", paid_through: now - 70 * DAY_S, expires: now - 9 * DAY_S, stop_at: now - DAY_S, export_until: now + 150 * DAY_S, notice: "stop" });
+  handLease(3, { state: "stopped", paid_through: now - 70 * DAY_S, expires: now - 9 * DAY_S, stop_at: now - DAY_S, export_until: now + 150 * DAY_S, notice: "stop" });
   const stopped = await guardsSay("stopped");
   const toCustomer = sendTo("919811199999"); const toOwner = sendTo(digits(OWNER));
   check("the final stop: every Guard says stopped, as the panel does; a send to a customer is refused (402), a send to the owner's number goes", stopped && readStatus(SERVER, shop)?.licence?.state === "stopped" && suspended(toCustomer) && !suspended(toOwner) && toOwner.status !== 0,
     { panel: readStatus(SERVER, shop)?.licence?.state, toCustomer: toCustomer.status, toOwner: toOwner.status });
   // in order again: a newer lease lifts it, at Guard and at the runtime
-  handLease(3, { state: "active", paid_through: now + 30 * DAY_S, expires: now + 30 * DAY_S, stop_at: null, export_until: null, notice: null });
+  handLease(4, { state: "active", paid_through: now + 30 * DAY_S, expires: now + 30 * DAY_S, stop_at: null, export_until: null, notice: null });
   const active = await guardsSay("active");
   const again = newLink("lic-after");
   check("a newer lease in order lifts it: every Guard says active, as the panel does, and a new link is made again", active && readStatus(SERVER, shop)?.licence?.state === "active" && (again.status === 200 || again.status === 201), { panel: readStatus(SERVER, shop)?.licence?.state, link: again.status });

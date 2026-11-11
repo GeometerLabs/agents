@@ -1,6 +1,6 @@
 // The shop's licence on the panel (B13): the state the server worked out from the signed lease, in plain words and in the partner's language, the dates from fleet's copy,
-// fleet's renew link, a note when the lease has not been refreshed for more than 2 days, and nothing at all for a shop the lease does not list. A partner sees only their
-// own shops' licences.
+// fleet's renew link, a note when the lease has not been refreshed for more than 2 days, "no licence yet" for a shop the lease does not list (decision 39), and the day a
+// builder's trial ends. A partner sees only their own shops' licences.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -21,7 +21,13 @@ test("the view: the signed state, fleet's days, the renew link only when somethi
   assert.deepEqual(v, { state: "warning", paidThrough: "2026-12-08", windDownOn: "2027-01-07", renewUrl: "https://rzp.io/i/abc123" });
   assert.equal(licenceView({ ...statusLicence({ state: "active" }) } as never, fleet?.licence, NOW)!.renewUrl, undefined, "nothing owed, no renew link");
   assert.equal(licenceView(statusLicence({ leaseIssuedAt: new Date(NOW - 3 * 86_400_000).toISOString() }) as never, undefined, NOW)!.staleSince, new Date(NOW - 3 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
-  assert.equal(licenceView(statusLicence({ listed: false }) as never, fleet?.licence, NOW), undefined, "a shop the lease does not list shows nothing");
+  assert.deepEqual(licenceView(statusLicence({ listed: false }) as never, fleet?.licence, NOW), { state: "none" }, "a shop the lease does not list has no licence (decision 39): said, not hidden");
+  assert.equal(licenceView(undefined, fleet?.licence, NOW), undefined, "no licence block in the status at all: nothing to say");
+  // a shop the builder's trial covers: fleet's unsigned copy says when the trial ends
+  const trial = parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "active", paid_through: "2026-12-11", wind_down_on: "2026-12-11", stop_on: null, export_until: null, notice: null, renew_url: null, trial_ends: "2026-12-11" })));
+  assert.equal(trial?.licence?.trial_ends, "2026-12-11");
+  assert.equal(licenceView(statusLicence({ state: "active" }) as never, trial?.licence, NOW)!.trialEnds, "2026-12-11");
+  assert.equal(parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "active", trial_ends: "11 Dec" })))?.licence?.trial_ends, undefined, "a day or nothing");
   assert.equal(parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "warning", renew_url: "javascript:alert(1)" })))?.licence?.renew_url, null, "a renew link is https or nothing");
 });
 
@@ -47,6 +53,27 @@ test("the shop page and the list show the licence to the partner whose shop it i
     assert.equal((await meena.get("/shops/divya-shop")).status, 404, "another partner's shop is not there for her");
     assert.doesNotMatch((await meena.get("/shops")).plain, /rzp\.io|Paused/u);
     const own = await meena.get("/shops/meena-shop");
-    assert.doesNotMatch(own.plain, /<h2>Licence<\/h2>/u, "no lease lists her shop: nothing is said about a licence");
+    assert.doesNotMatch(own.plain, /<h2>Licence<\/h2>/u, "her shop's status has no licence block (never deployed): nothing is said about a licence");
+  } finally { await b.close(); }
+});
+
+test("decision 39: a shop the lease does not list says it has no licence yet, on its page and in the list; a trial shop says when its trial ends", async () => {
+  const b = await boot();
+  try {
+    const dev = await b.account("dev", "partner");
+    b.addShop("new-shop", { ownerId: accountIdOf(b, "dev"), ownerName: "Dev", ownerRole: "partner" });
+    b.addShop("trial-shop", { ownerId: accountIdOf(b, "dev"), ownerName: "Dev", ownerRole: "partner" });
+    b.status("new-shop", { updatedAt: new Date(NOW).toISOString(), deploy: { state: "applied" }, licence: statusLicence({ state: "active", listed: false, paidThrough: null, windDownOn: null, leaseIssuedAt: null }) });
+    b.status("trial-shop", { updatedAt: new Date(NOW).toISOString(), deploy: { state: "applied" }, licence: statusLicence({ state: "active", paidThrough: day("2026-12-11"), windDownOn: day("2026-12-11") }) });
+    mkdirSync(join(b.dir, "fleet"), { recursive: true });
+    writeFileSync(join(b.dir, "fleet", "trial-shop.json"), JSON.stringify({ ...fleetAnswer({ state: "active", paid_through: "2026-12-11", wind_down_on: "2026-12-11", stop_on: null, export_until: null, notice: null, renew_url: null, trial_ends: "2026-12-11" }), warn: [] }));
+    const none = await dev.get("/shops/new-shop");
+    assert.match(none.plain, /<h2>Licence<\/h2>/u);
+    assert.match(none.plain, /No licence yet: no new bookings or payment requests/u);
+    assert.match(none.plain, /Refunds, cancellations and reading what is there still go through/u);
+    assert.match((await dev.get("/shops")).plain, /No licence yet/u, "the card says it too");
+    const trial = await dev.get("/shops/trial-shop");
+    assert.match(trial.plain, /Licence in order/u);
+    assert.match(trial.plain, /Trial licence: ends on 11 Dec 2026\. After that, new bookings pause until the shop is on a plan\./u);
   } finally { await b.close(); }
 });

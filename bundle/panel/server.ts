@@ -280,7 +280,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
         id, name: settings?.name ?? id, live: liveOf(id),
         ...(read.ok && read.status.limits ? { limits: { proven: read.status.limits.proven, of: read.status.limits.of } } : {}),
         ...(read.ok && read.status.versions?.pathway ? { version: read.status.versions.pathway } : {}), ...(owner ? { setUpBy: owner.accountName } : {}),
-        ...(read.ok && read.status.licence?.listed ? { licence: read.status.licence.state } : {}),
+        // decision 39: a shop the lease does not list has no licence, and its Guards take no new work, so the card says so
+        ...(read.ok && read.status.licence ? { licence: read.status.licence.listed ? read.status.licence.state : "none" as const } : {}),
       };
     });
     page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards }));

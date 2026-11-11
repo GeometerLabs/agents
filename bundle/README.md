@@ -45,12 +45,13 @@ docker load < ~/geo-guard-0.1.0-alpha.2-pathways.1-x86_64.tar      # the file Ge
 node bundle/geometer.ts init ~/geometer-server \
   --domain shops.example.com --reviewed-by your-name \
   --model-wire openai --model gpt-4o-mini \
+  --licence-key <the 64 characters Geometer gave you> \
   --fleet-url https://fleet.geometer.dev --fleet-key-file ~/geometer-server/fleet_key \
   --snapshots-url s3://my-bucket/snapshots --snapshots-endpoint https://storage.googleapis.com \
   --age-identity-out ~/age-identity.txt
 ```
 
-`init` makes a key pair for the snapshots. **The secret half is written to `~/age-identity.txt`: move it off this server** (a password manager, your laptop). It is the only key that opens a snapshot, so it must not sit beside the snapshots or on this server: you bring it for a restore, and for the monthly restore test on your own machine (see "Backups"). Put the deployment key Geometer gave you in `~/geometer-server/fleet_key`.
+`init` makes a key pair for the snapshots. **The secret half is written to `~/age-identity.txt`: move it off this server** (a password manager, your laptop). It is the only key that opens a snapshot, so it must not sit beside the snapshots or on this server: you bring it for a restore, and for the monthly restore test on your own machine (see "Backups"). Put the deployment key Geometer gave you in `~/geometer-server/fleet_key`, and the trial lease Geometer gave you (one line starting `gl1.`) in `~/geometer-server/fleet/lease`. Pairing the server will do all three for you; until it is live, Geometer sends them. `init` refuses to make a server folder without `--licence-key`: see "The licence".
 
 **5. Hand in the keys that belong to the server.**
 
@@ -287,7 +288,7 @@ Its calls to the services go where `agent add` printed: it is started with these
 
 `{version}` in `run` is the version (also `GEOMETER_AGENT_VERSION`), so one command starts any version: `git worktree add ../my-agent-{version} {version} && ...`, or `docker run ... my-agent:{version}`. `--run` and `--version` on `agent crash-test` try one without recording it. The agent is started by `sh -c` in its own process group and stopped, with everything it started, when the situation ends.
 
-**The geo-guard program.** The Guards are the real ones, so the crash test needs the `geo-guard` program: `--guard-bin <path>`, `GEO_GUARD_BIN`, `geo-guard` on the PATH, or, **on a Linux server that has the Guard image loaded, out of the image** (`docker create`, `docker cp`: the image is a static Linux program, and the server's image already matches its CPU). On a laptop without one, the message says so. About 35 seconds for ten situations on a laptop.
+**The geo-guard program.** The Guards are the real ones, so the crash test needs the `geo-guard` program: `--guard-bin <path>`, `GEO_GUARD_BIN`, `geo-guard` on the PATH, or, **on a Linux server that has the Guard image loaded, out of the image** (`docker create`, `docker cp`: the image is a static Linux program, and the server's image already matches its CPU). On a laptop without one, the message says so. A release Guard image's program runs a shop's Guard only under Geometer's lease (see "The licence"), and a crash test has none: with a release image, give the `geo-guard` of the `geo` downloads, which holds nobody to a lease; the crash test says so if it was given the image's. About 35 seconds for ten situations on a laptop.
 
 **The go-live certificate** has the template's format (so `agent report` reads it the same way: it must be signed with the server's key, and its checks must have run on this agent's settings), in English: "Held N of M situations. K failed. J not tested.", what did not hold, the limits Guard enforces for this agent, the list of what was not tested (the situations that could not be run here named in it), that it was run by hand against stand-in services with the real Guards in front, and the version of the agent. It is written whatever the result, and says what failed. The version is recorded as the one in service only when everything held.
 
@@ -295,15 +296,26 @@ An example agent that passes all ten is `bundle/examples/own-agent/server.js` (p
 
 ## The licence
 
-Each shop on your server is covered by a **licence lease**: a short signed note from Geometer's fleet service that says which shops are paid for and until when. It comes back with every heartbeat, and your server keeps the newest one. Nothing here talks to Razorpay: fleet decides what is paid.
+Each shop on your server is covered by a **licence lease**: a short signed note from Geometer's fleet service that says which shops are covered and until when. It comes back with every heartbeat, and your server keeps the newest one. Nothing here talks to Razorpay: fleet decides what is paid.
 
-**Set up once.** Fleet's operator gives you the public half of fleet's licence key (64 letters and digits; fleet prints it with `licence key show`). Pin it when you make the server folder:
+**Guard runs a shop only under the lease.** The release's Guard image has Geometer's licence key built into it, and it checks the lease itself:
+
+- each shop's Guards (payments, WhatsApp, calendar, and the Guard in front of an agent's own API; not the server's model Guard, which serves every shop) get a `[licence]` block in their `guard.toml` and the folder `state/licence/`, read-only. The deploy always writes the block. Guard will not start a shop's Guard without it;
+- a lease counts only when it is signed by a key built into the image. A lease signed with any other key, a file that is missing or broken, or a lease that does not name the shop means **no licence** for that shop: its Guards refuse new work (a new payment link, a new booking, a message to a customer) with their own answer, `subscription_suspended`. Refunds, cancellations, reading what is there, and a message to the shop's owner still go through, so money owed to a customer is never held back;
+- a lease that has run out is the gentle wind-down below, as before: new bookings and payment links pause, messages still go;
+- an agent you run yourself (`geometer agent add`) is checked the same way, under its own name.
+
+**Pairing gives you the key and a trial.** When you pair a server with Geometer (the install command does it; until it is live, Geometer gives you the key and the first lease by hand), you get fleet's public licence key and a **trial**: your shops are covered for a while so you can test them, with no plan needed. A shop is added to the trial the first time your server's heartbeat reports it, which is within a minute or two of its first deploy; until then its Guards take no new work, so deploy it before you try it. A second server on the same account joins the same trial with the days that are left. When the trial ends, its shops pause new bookings (the wind-down) until each is on a plan, and the panel's shop page shows the day the trial ends. Write to support if you need longer. A person answers.
+
+**Set up once.** `init` needs the key (64 letters and digits; fleet prints it with `licence key show`):
 
 ```sh
-node bundle/geometer.ts init /srv/geometer --domain shops.example.com ... --licence-key <the 64 characters fleet printed>
+node bundle/geometer.ts init /srv/geometer --domain shops.example.com ... --licence-key <the 64 characters Geometer gave you>
 ```
 
-`init` prints the key's id; it should be the id fleet printed. A lease is only ever checked with this key, never with one that comes inside a lease. Without it, no lease is kept and no shop is ever paused by one. To add a second key while Geometer changes keys, add it to `"licence": {"keys": [...]}` in `geometer.json`.
+`init` prints the key's id; it should be the id Geometer gave you. A lease is only ever checked with this key, never with one that comes inside a lease, and the running Guards must have the same key built in (the deploy checks it). Without the key, `init` refuses, and so does `deploy` for an older server folder. To add a second key while Geometer changes keys, add it to `"licence": {"keys": [...]}` in `geometer.json`.
+
+**What this stops, and what it does not.** It stops a shop's Guards from taking new work for a shop Geometer's lease does not cover, and no setting in `guard.toml` turns that off in the release's image. It does not lock your server: you run it, and the agents and templates are open source. Your server's runtime holds no keys, so going around Guard means rewriting the open templates to call the providers directly, and then the shop has none of Guard's limits, none of its record of what was done, and no papers (the go-live certificate and the monthly report come from them). That is what the licence is: the limits, the record and the papers come with the lease.
 
 **What a shop's owner and customers see.**
 
@@ -329,14 +341,7 @@ It is checked with the same pinned key. Until the date it names, no shop here pa
 
 **Where it is kept:** `state/licence/` (the lease, `seen.json`, `extensions/`). `geometer status` shows each shop's licence line. The panel shows it on the shop's page, with the renew link and a note if the lease has not been refreshed for more than 2 days.
 
-**Guard checks it too, with a new enough Guard image.** The shop's agent reads the lease and stops taking new work. A Guard image built from Guard's licence change (monorepo ADR-0062) or later, with fleet's key built into it, checks the same lease on its own:
-
-- each shop's Guards (Razorpay, WhatsApp, Calendar; not the server's model Guard) get a `[licence]` block in their `guard.toml` and the folder `state/licence/`, read-only;
-- in the wind-down they refuse a new payment link and a new calendar event with their own answer, `subscription_suspended`; in the final stop, a message too, except to the owner's number;
-- refunds, cancellations, reads and changes to existing bookings always go through;
-- an agent you run yourself (`geometer agent add`) is checked the same way, under its own name.
-
-So a shop stays paused even if someone changes its agent or the agent's licence file. `deploy` asks the Guard image whether it reads the block: an older image gets none, and the deploy says so. After the start, each Guard must report the same key ids that `geometer.json` pins (`licence.keys`). If one does not, the deploy is refused and says which. The shop keeps running and nothing is stopped, because refunds owed must still go through. Write to support. A person answers.
+**Guard and the agent both check it.** The shop's agent reads the lease and stops taking new work in the wind-down; Guard checks the same lease on its own, so a shop stays paused even if someone changes its agent or the agent's licence file. In the wind-down Guard refuses a new payment link and a new calendar event; in the final stop, a message too, except to the owner's number. `deploy` asks the Guard image whether it reads the block and refuses an image that does not. After the start, each Guard must report the same key ids that `geometer.json` pins (`licence.keys`). If one does not, the deploy is refused and says which. The shop keeps running and nothing is stopped, because refunds owed must still go through. Write to support. A person answers.
 
 ## The owner's monthly report
 
@@ -410,4 +415,4 @@ The first builder's way in is `node bundle/geometer.ts panel invite --role build
 
 ## Running it on your laptop
 
-Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test of the whole server on real Docker is `bundle/test/proof/run.ts`. It needs `node:26-alpine`, Caddy, MinIO, and a Guard image that reads `[licence]` with RFC 8032's published test key built in (`GUARD_IMAGE`, default `geo-guard:local-b14`; that key is for tests only). It runs every bundle container inside one cgroup capped at 2 CPUs and 4 GiB. At 1, 5, 10 and 25 shops it takes about an hour; `--only <phase,...>` runs some phases. The ordinary tests (`cd bundle && npm test`) need no Docker.
+Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test of the whole server on real Docker is `bundle/test/proof/run.ts`. It needs `node:26-alpine`, Caddy, MinIO, and a Guard image that reads `[licence]` with RFC 8032's published test key built in (`GUARD_IMAGE`, default `geo-guard:local-b14`; that key is for tests only). It sets the server up the way pairing does: `init --licence-key` with that key, then a lease listing every shop it adds, before the first deploy. It runs every bundle container inside one cgroup capped at 2 CPUs and 4 GiB. At 1, 5, 10 and 25 shops it takes about an hour; `--only <phase,...>` runs some phases. The ordinary tests (`cd bundle && npm test`) need no Docker.

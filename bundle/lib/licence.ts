@@ -11,8 +11,12 @@
 //                                    `until`, and the partner's name. The runtime works the state out itself with its own clock (modules/licence/rules.ts, licenceNow).
 //   status/<shop>.json `licence`     the same state, for the panel and `geometer status`.
 //
-// A key that comes inside a token is never trusted: the kid only picks among the pinned keys. With no key pinned, no lease is kept and no shop is restricted. A refused
-// lease, a missing one or a quiet fleet changes nothing: the kept lease stays in force until it expires, and then the shop winds down at most (never the final stop).
+// A key that comes inside a token is never trusted: the kid only picks among the pinned keys. A refused lease, a missing one or a quiet fleet changes nothing: the kept
+// lease stays in force until it expires, and then the shop winds down at most (never the final stop).
+//
+// Decision 39 (monorepo ADR-0070): `init` requires the key and the deploy refuses a server without one, and a release's Guard holds a shop to the lease. A shop the
+// kept lease does not list, or a server with no lease kept yet, has NO LICENCE at its Guards: only refunds, cancellations, reads and a send to the owner go through.
+// Its runtime is handed `shop: null` (it does not restrict itself; Guard's 402 is its pause), and its status says `listed: false`, which the panel shows as no licence.
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { checkToken, CHECK_WORDS, keysFromHex } from "../../modules/licence/token.ts";
@@ -122,7 +126,10 @@ export function keptLicence(dir: string, server: Pick<ServerConfig, "licence" | 
   return { ...(lease ? { lease } : {}), newestIssuedAt: newest, extensionUntil: Math.max(0, ...extensions.map((e) => e.until)), pinned: pinned(server).length > 0 };
 }
 
-/** What one shop's runtime is handed. A shop the kept lease does not list, or no lease at all, gets `shop: null`: not restricted. */
+/**
+ * What one shop's runtime is handed. A shop the kept lease does not list, or no lease at all, gets `shop: null`: the runtime does not restrict itself, and Guard (which
+ * has no licence for the shop, ADR-0070) refuses its new work with the 402 the runtime takes as its pause.
+ */
 export const licenceFileFor = (kept: KeptLicence, shop: string, partner: string): LicenceFile => ({
   schema: 1, shop: kept.lease?.shops.find((s) => s.id === shop) ?? null, newest_issued_at: kept.newestIssuedAt, extension_until: kept.extensionUntil, partner,
 });
@@ -130,7 +137,10 @@ export const licenceFileFor = (kept: KeptLicence, shop: string, partner: string)
 /** The licence block of status/<shop>.json (the panel reads it with its own checker). Times are ISO; `leaseIssuedAt` says how fresh the kept lease is. */
 export interface StatusLicence {
   state: LeaseState;
-  /** False for a shop the lease does not list, and when no lease is kept: nothing is restricted. */
+  /**
+   * False for a shop the lease does not list, and when no lease is kept: the shop has no licence, so a release's Guard takes no new work for it (ADR-0070). It comes
+   * with the answer to the heartbeat that first reports the shop, when the account's trial or a plan covers it.
+   */
   listed: boolean;
   paidThrough: string | null;
   windDownOn: string | null;

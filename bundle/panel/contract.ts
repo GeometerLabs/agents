@@ -144,8 +144,11 @@ export type PlanName = (typeof PLAN_NAMES)[number];
 /** fleet/<shop>.json, as the panel reads it (the bundle's lib/fleet.ts writes it). Read field by field: a wrong field is dropped, never guessed. */
 export interface FleetAnswer {
   at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[];
-  /** Fleet's unsigned copy of the licence for the panel (B13): its days and the renew link. The state that restricts the shop is the signed one in the status file. */
-  licence?: { state: string; paid_through: string | null; wind_down_on: string | null; stop_on: string | null; export_until: string | null; renew_url: string | null };
+  /**
+   * Fleet's unsigned copy of the licence for the panel (B13): its days and the renew link, and for a shop the builder's trial covers, the day the trial ends
+   * (decision 39). The state that restricts the shop is the signed one in the status file.
+   */
+  licence?: { state: string; paid_through: string | null; wind_down_on: string | null; stop_on: string | null; export_until: string | null; renew_url: string | null; trial_ends?: string };
 }
 
 export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer | undefined {
@@ -171,7 +174,8 @@ export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer
 function fleetLicence(l: Record<string, unknown>): NonNullable<FleetAnswer["licence"]> {
   const day = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(v) ? v : null);
   const url = typeof l.renew_url === "string" && l.renew_url.length <= 300 && /^https:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:\/[A-Za-z0-9._~!$&'()*+,;=:@%/?#-]*)?$/u.test(l.renew_url) ? l.renew_url : null;
-  return { state: l.state as string, paid_through: day(l.paid_through), wind_down_on: day(l.wind_down_on), stop_on: day(l.stop_on), export_until: day(l.export_until), renew_url: url };
+  const trial = day(l.trial_ends);
+  return { state: l.state as string, paid_through: day(l.paid_through), wind_down_on: day(l.wind_down_on), stop_on: day(l.stop_on), export_until: day(l.export_until), renew_url: url, ...(trial ? { trial_ends: trial } : {}) };
 }
 
 export interface StopRequest { schema: 1; requestId: string; shop: string; requestedAt: string; requestedBy: { id: string; name: string; role: string } }

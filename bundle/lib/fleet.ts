@@ -49,6 +49,8 @@ export interface ShopLicence {
   notice: "wind_down" | "stop" | null;
   /** The partner's payment link for the invoice holding the shop back: https only, or null. */
   renew_url: string | null;
+  /** Only for a shop the builder's trial covers (no plan; decision 39, monorepo ADR-0070): the day the trial's cover ends, which the panel shows as "trial, ends <day>". */
+  trial_ends?: string;
 }
 
 export interface AnswerFile extends ShopAnswer { schema: 1; at: string }
@@ -66,6 +68,7 @@ export function parseShopLicence(raw: unknown): ShopLicence | undefined {
     state: raw.state as ShopLicence["state"], paid_through: day(raw.paid_through), wind_down_on: day(raw.wind_down_on), stop_on: day(raw.stop_on), export_until: day(raw.export_until),
     notice: raw.notice === "wind_down" || raw.notice === "stop" ? raw.notice : null,
     renew_url: typeof raw.renew_url === "string" && raw.renew_url.length <= 300 && RENEW_URL.test(raw.renew_url) ? raw.renew_url : null,
+    ...(day(raw.trial_ends) ? { trial_ends: day(raw.trial_ends)! } : {}),
   };
 }
 /** Fleet's agent ids: the heartbeat's id rule. The first character is never `_`, so no `__proto__`. */
