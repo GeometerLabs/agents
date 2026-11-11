@@ -89,6 +89,9 @@ export const en: Strings = {
     "cash-and-transfers": "Fees paid in cash or by bank transfer: the record only holds Razorpay payments",
     "read-receipts": "Whether a parent read a message",
     "outside-agent": "Anything done outside the agent (by you or anyone else, in Razorpay or WhatsApp)",
+    // B71 part 2: a UPI centre's own words for the two lines above (machine-written hi/ml/kn wait for native review, like the rest)
+    "cash-and-transfers-upi": "Fees paid in cash or by bank transfer: the record only holds the payments you marked received",
+    "outside-agent-upi": "Anything done outside the agent (by you or anyone else, in your UPI app or WhatsApp)",
     "rule-breaks": "Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing",
   },
   cert: {
@@ -160,6 +163,8 @@ export const hi: Strings = {
     "cash-and-transfers": "नकद या बैंक ट्रांसफर से दी गई फीस: रिकॉर्ड में सिर्फ़ Razorpay के भुगतान हैं",
     "read-receipts": "अभिभावक ने संदेश पढ़ा या नहीं",
     "outside-agent": "एजेंट के बाहर किया गया कोई भी काम (आपने या किसी और ने Razorpay या WhatsApp में किया)",
+    "cash-and-transfers-upi": "नकद या बैंक ट्रांसफर से दी गई फीस: रिकॉर्ड में सिर्फ़ वे भुगतान हैं जिन्हें आपने मिला हुआ दर्ज किया",
+    "outside-agent-upi": "एजेंट के बाहर किया गया कोई भी काम (आपने या किसी और ने अपने UPI ऐप या WhatsApp में किया)",
     "rule-breaks": "वे नियम-उल्लंघन जो एजेंट ने देखे नहीं: रिकॉर्ड में वही है जो एजेंट ने किया या जिससे उसे रोका गया",
   },
   cert: {
@@ -231,6 +236,8 @@ export const ml: Strings = {
     "cash-and-transfers": "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്: രേഖയിൽ Razorpay പേയ്മെന്റുകൾ മാത്രമേയുള്ളൂ",
     "read-receipts": "രക്ഷിതാവ് സന്ദേശം വായിച്ചോ ഇല്ലയോ",
     "outside-agent": "ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ Razorpay-യിലോ WhatsApp-ലോ ചെയ്തത്)",
+    "cash-and-transfers-upi": "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്: നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തിയ പേയ്മെന്റുകൾ മാത്രമേ രേഖയിലുള്ളൂ",
+    "outside-agent-upi": "ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ നിങ്ങളുടെ UPI ആപ്പിലോ WhatsApp-ലോ ചെയ്തത്)",
     "rule-breaks": "ഏജന്റ് കാണാത്ത നിയമലംഘനങ്ങൾ: ഏജന്റ് ചെയ്തതും തടഞ്ഞതും മാത്രമാണ് രേഖയിലുള്ളത്",
   },
   cert: {
@@ -302,6 +309,8 @@ export const kn: Strings = {
     "cash-and-transfers": "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ: ದಾಖಲೆಯಲ್ಲಿ Razorpay ಪಾವತಿಗಳು ಮಾತ್ರ ಇವೆ",
     "read-receipts": "ಪೋಷಕರು ಸಂದೇಶ ಓದಿದರೇ ಇಲ್ಲವೇ",
     "outside-agent": "ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು Razorpay ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು)",
+    "cash-and-transfers-upi": "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ: ನೀವು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಪಾವತಿಗಳು ಮಾತ್ರ ದಾಖಲೆಯಲ್ಲಿ ಇವೆ",
+    "outside-agent-upi": "ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು)",
     "rule-breaks": "ಏಜೆಂಟ್ ನೋಡದ ನಿಯಮ ಉಲ್ಲಂಘನೆಗಳು: ದಾಖಲೆಯಲ್ಲಿ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು ಮತ್ತು ಅದನ್ನು ತಡೆದದ್ದು ಮಾತ್ರ ಇದೆ",
   },
   cert: {

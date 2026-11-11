@@ -296,6 +296,8 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `notCounted.cash-and-transfers` | ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ: ದಾಖಲೆಯಲ್ಲಿ Razorpay ಪಾವತಿಗಳು ಮಾತ್ರ ಇವೆ | Fees paid in cash or by bank transfer: the record only holds Razorpay payments |  |
 | `notCounted.read-receipts` | ಪೋಷಕರು ಸಂದೇಶ ಓದಿದರೇ ಇಲ್ಲವೇ | Whether a parent read a message |  |
 | `notCounted.outside-agent` | ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು Razorpay ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು) | Anything done outside the agent (by you or anyone else, in Razorpay or WhatsApp) |  |
+| `notCounted.cash-and-transfers-upi` | ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ: ನೀವು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಪಾವತಿಗಳು ಮಾತ್ರ ದಾಖಲೆಯಲ್ಲಿ ಇವೆ | Fees paid in cash or by bank transfer: the record only holds the payments you marked received |  |
+| `notCounted.outside-agent-upi` | ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು) | Anything done outside the agent (by you or anyone else, in your UPI app or WhatsApp) |  |
 | `notCounted.rule-breaks` | ಏಜೆಂಟ್ ನೋಡದ ನಿಯಮ ಉಲ್ಲಂಘನೆಗಳು: ದಾಖಲೆಯಲ್ಲಿ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು ಮತ್ತು ಅದನ್ನು ತಡೆದದ್ದು ಮಾತ್ರ ಇದೆ | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
 | `cert.date` | ದಿನಾಂಕ | Date |  |
 | `cert.held` | 26 ಸಂದರ್ಭಗಳಲ್ಲಿ 25 ಸರಿಯಾಗಿ ನಿಂತವು. 1 ತಪ್ಪಿದವು. 12 ವಿಷಯಗಳನ್ನು ಪರಿಶೀಲಿಸಿಲ್ಲ. | Held 25 of 26 situations. 1 failed. 12 not tested. |  |

@@ -296,6 +296,8 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `notCounted.cash-and-transfers` | പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്: രേഖയിൽ Razorpay പേയ്മെന്റുകൾ മാത്രമേയുള്ളൂ | Fees paid in cash or by bank transfer: the record only holds Razorpay payments |  |
 | `notCounted.read-receipts` | രക്ഷിതാവ് സന്ദേശം വായിച്ചോ ഇല്ലയോ | Whether a parent read a message |  |
 | `notCounted.outside-agent` | ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ Razorpay-യിലോ WhatsApp-ലോ ചെയ്തത്) | Anything done outside the agent (by you or anyone else, in Razorpay or WhatsApp) |  |
+| `notCounted.cash-and-transfers-upi` | പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്: നിങ്ങൾ കിട്ടിയതായി രേഖപ്പെടുത്തിയ പേയ്മെന്റുകൾ മാത്രമേ രേഖയിലുള്ളൂ | Fees paid in cash or by bank transfer: the record only holds the payments you marked received |  |
+| `notCounted.outside-agent-upi` | ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ നിങ്ങളുടെ UPI ആപ്പിലോ WhatsApp-ലോ ചെയ്തത്) | Anything done outside the agent (by you or anyone else, in your UPI app or WhatsApp) |  |
 | `notCounted.rule-breaks` | ഏജന്റ് കാണാത്ത നിയമലംഘനങ്ങൾ: ഏജന്റ് ചെയ്തതും തടഞ്ഞതും മാത്രമാണ് രേഖയിലുള്ളത് | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
 | `cert.date` | തീയതി | Date |  |
 | `cert.held` | 26 സാഹചര്യങ്ങളിൽ 25 എണ്ണം ശരിയായി നിന്നു. 1 എണ്ണം പിഴച്ചു. 12 കാര്യങ്ങൾ പരിശോധിച്ചിട്ടില്ല. | Held 25 of 26 situations. 1 failed. 12 not tested. |  |

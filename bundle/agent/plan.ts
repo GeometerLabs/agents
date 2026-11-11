@@ -24,7 +24,7 @@ import { Refusal, specFromAccept } from "../../companies/openapi-to-spec.ts";
 import type { Draft } from "../../companies/openapi-to-spec.ts";
 import { sha256 } from "../../companies/openapi-read.ts";
 
-/** Names of everything an agent owns, in one place. The Guards and their forwarders are named as a shop's are (`g-<name>-razorpay`), so one name can never be both. */
+/** Names of everything an agent owns, in one place. The Guards and their forwarders are named as a shop's are (`g-<name>-<kind>`), so one name can never be both. */
 export const agentNames = {
   /** The credential the builder's own agent presents at its Guards. */
   agentId: (name: string) => `agent-${name}`,
@@ -81,7 +81,7 @@ export function planAgent(server: ServerConfig, folder: AgentFolder, versions: P
   const make = (kind: AgentUpstream): LimitsSpec | undefined => {
     try {
       // a gateway's limits come from the settings the same way a shop's do: the template's own numbers in the neutral rules, written for that gateway
-      if (isGatewayKind(kind)) return gatewaySpec(settings, identity(kind), server.approvalHours, caps.linksPerHour ?? server.limits.razorpayLinksPerHour,
+      if (isGatewayKind(kind)) return gatewaySpec(settings, identity(kind), server.approvalHours, caps.linksPerHour ?? server.limits.razorpayLinksPerHour, // geometer.json's key keeps its old name (lib/server.ts): an outside contract
         { ...(caps.refundInrPerDay !== undefined ? { refundPaisePerDay: rupeesToPaise(caps.refundInrPerDay) } : {}), ...(caps.refundsPerDay !== undefined ? { refundsPerDay: caps.refundsPerDay } : {}) });
       if (kind === OWN_API) {
         const made = ownApiSpec(folder.ownApi ?? { draftText: "", acceptText: "" }, identity(kind));

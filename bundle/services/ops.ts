@@ -56,6 +56,9 @@ async function get(url: string, headers: Record<string, string> = {}, fetchFn: t
   } catch { return { status: 0, json: null }; }
 }
 
+/** Whether a Guard can hold a call for the owner, so the heartbeat counts what it holds: a gateway's (refunds), or an agent's own API's (B71 part 2). By its kind, never a provider's name. */
+const holdsCalls = (guardId: string): boolean => { const kind = guardId.replace(/^guard-/u, ""); return isGatewayKind(kind) || kind === OWN_API; };
+
 export async function observeGuard(g: OpsGuard, withHeld: boolean, fetchFn: typeof fetch = fetch): Promise<GuardObservation> {
   const [health, status, held] = await Promise.all([
     get(`${g.healthUrl}/readyz`, {}, fetchFn),
@@ -117,7 +120,7 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
   const [healthz, readyz, status, guards] = await Promise.all([
     get(`${c.runtimeUrl}/healthz`, {}, fetchFn), get(`${c.runtimeUrl}/readyz`, {}, fetchFn),
     get(`${c.runtimeUrl}/status`, { authorization: `Bearer ${token}` }, fetchFn),
-    Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn))),
+    Promise.all(c.guards.map((g) => observeGuard(g, holdsCalls(g.id), fetchFn))),
   ]);
   const backups = readBackups(c.statusFile);
   const usage = readUsage(c.statusFile);
@@ -133,7 +136,7 @@ type WithCounts = AdminStatus & { counts?: { decisions?: number } };
  * grows; nothing is said about what a call was (counts only). `errors` is 0: Guard's status does not carry the provider's failures as a count (see Deferred.md).
  */
 export async function observeAgent(c: OpsOwnAgent, version: string, id: string, fetchFn: typeof fetch = fetch): Promise<ShopObservation> {
-  const guards = await Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn)));
+  const guards = await Promise.all(c.guards.map((g) => observeGuard(g, holdsCalls(g.id), fetchFn)));
   const up = guards.every((g) => g.admin !== null);
   const ready = up && guards.every((g) => g.healthReady && g.admin?.tripwires?.ok !== false);
   const steps = guards.reduce((n, g) => n + ((g.admin as WithCounts | null)?.counts?.decisions ?? 0), 0);
@@ -192,7 +195,7 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     try { skip = args[1] ? JSON.parse(args[1]) : undefined; } catch { /* ask about everything */ }
     out(await collectFacts({
       agentId: `agent-${args[0]}`, relayId: `relay-${args[0]}`, recordToken: readSecret(c.recordTokenFile), labelKey: parseKey(readSecret(c.labelKeyFile), `The label key of ${args[0]}`), ...(c.calendarId ? { calendarId: c.calendarId } : {}),
-      guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, "") as "razorpay", adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
+      guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, ""), adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
     }, new Date(), fetch, skip));
     return 0;
   }
