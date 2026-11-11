@@ -28,7 +28,8 @@ import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
-import { RECORD_KEY_FILE, RUNTIME_SIGNING_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, runtimeReadsPrivateKeys, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { placeRuntimeReportKey } from "./lib/report-key.ts";
 import { NO_MODEL, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
@@ -151,13 +152,8 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   // panel runs as the user who wrote it. One token for the panel, not one per Guard: the panel reads a single token file and presents it to each Guard it checks.
   // B69: the shop's fingerprint key and its copies (lib/secrets.ts)
   ensureShopPersonKeys(dir, shop, rt, panelOn);
-  // Item 17b: the owner's WhatsApp monthly report is signed with the server's one paper key (the panel's: the signer fleet's list names), so its summary link checks
-  // on /verify. The runtime gets its own copy, 0600 for its own user, in the folder already mounted at /run/secrets (a bind mount of the panel's file would hand
-  // the runtime a file owned by another user, or make a directory where the key is missing). Only where the runtime can read it: generate/shop.ts sets
-  // report.signingKeyFile on the same condition, and a copy left from before is taken away when it no longer holds.
-  const reportKey = secretFile(dir, rt, RUNTIME_SIGNING_KEY_FILE);
-  if (panelOn && runtimeReadsPrivateKeys()) writeSecretFile(reportKey, ensurePanelSigningKey(dir), 0o600);
-  else rmSync(reportKey, { force: true });
+  // Item 17b's runtime copy of the server's paper key is not made here: a deploy places it through a short-lived container (lib/report-key.ts, from prepareShop), so it
+  // is the runtime's own whoever runs the deployer (follow-up 6, 12 Nov 2026).
   const panel = panelOn ? ensureSecret(secretFile(dir, "panel", names.panelGuardToken), mintGuardToken, 0o600) : undefined;
   return { agent, admin, ...(panel ? { panel } : {}) };
 }
@@ -190,8 +186,12 @@ export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lock
 });
 export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
 
-/** Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. */
-export async function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string): Promise<{ prepared?: Prepared; problems: Problem[]; notes: string[] }> {
+/**
+ * Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. `o.placeReportKey` (a deploy,
+ * not `check`, which starts nothing): first put the server's paper key where the shop's runtime reads it, through a short-lived container (lib/report-key.ts), so the plan
+ * names the key only when the copy is there and the runtime's own; a copy that failed is said in a note and the report goes out unsigned.
+ */
+export async function prepareShop(ctx: Context, server: ServerConfig, state: State, name: string, o: { placeReportKey?: boolean } = {}): Promise<{ prepared?: Prepared; problems: Problem[]; notes: string[] }> {
   const folder = readShop(ctx.dir, name);
   const taken = takeSecrets(ctx.dir, name);
   const problems: Problem[] = [...taken.problems];
@@ -203,7 +203,9 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   // The settings the bundle adds to the generated config (`ai`, `report`) are judged by the check of the version the shop is PINNED to, not by this checkout's: a client held back
   // on an older version has a runtime that refuses a key it does not know.
   const check = pathwayDir ? await pinnedRuntimeCheck(pathwayDir) : undefined;
-  const first = planShop(server, folder, {}, check, { reportKeyReadable: runtimeReadsPrivateKeys() });
+  const placed = o.placeReportKey ? await placeRuntimeReportKey({ runner: ctx.runner, docker: ctx.docker, image: server.appImage, dir: ctx.dir, runtimeFolder: names.runtime(name), panelOn: server.panel.enabled }) : undefined;
+  const reportKey = placed === undefined ? {} : placed.readable ? { reportKeyReadable: true } : { reportKeyReadable: false, reportKeyWhy: placed.why };
+  const first = planShop(server, folder, {}, check, reportKey);
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
@@ -224,7 +226,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const prev = state.shops[name]?.guards ?? {};
   const versions: Record<string, number> = {};
   for (const g of first.guards) versions[g.kind] = prev[g.kind]?.contentHash === contentHash(g.spec) ? prev[g.kind].version : (prev[g.kind]?.version ?? 0) + 1;
-  const plan = planShop(server, folder, versions, check, { reportKeyReadable: runtimeReadsPrivateKeys() });
+  const plan = planShop(server, folder, versions, check, reportKey);
   // reserve the network index now, so two shops added together never share one (it is saved only when the deploy goes through)
   const index = (state.shops[name] ??= { index: shopIndex(state, name), guards: {}, lockHistory: [] }).index;
   return {
@@ -440,7 +442,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const prepared: Prepared[] = [];
   const problems: Problem[] = await serverProblems(ctx, server);
   for (const name of targets) {
-    const r = await prepareShop(ctx, server, state, name);
+    const r = await prepareShop(ctx, server, state, name, { placeReportKey: true });
     problems.push(...r.problems);
     r.notes.forEach((n) => ctx.log(`note: ${n}`));
     if (r.prepared) prepared.push(r.prepared);

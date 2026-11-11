@@ -252,10 +252,10 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
 
 /**
  * Plan one shop. `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). `o.reportKeyReadable` (item 17b): whether the
- * deployer can hand this shop's runtime the server's paper key (lib/secrets.ts runtimeReadsPrivateKeys); deploy and check pass it. Left out, the plan does not
- * depend on who runs it: no key, and nothing said (the generator's own tests and goldens).
+ * server's paper key was put where this shop's runtime reads it, as its own user's (lib/report-key.ts, which a deploy runs first), and if not `o.reportKeyWhy`.
+ * Left out (the generator's own tests and goldens, and `check`, which places nothing): no key, and nothing said.
  */
-export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean } = {}): ShopPlan {
+export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean; reportKeyWhy?: string } = {}): ShopPlan {
   // The template is the one the shop's pathway.lock names (a lock that is missing is a problem readShop already said; Bookings is assumed until it is fixed).
   const template: Kind = kindFor(shop.lock?.pathway) ?? KINDS.bookings;
   const check: RuntimeValidator = validate ?? template.validateRuntimeConfig;
@@ -300,9 +300,10 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     runtime = withModelProvider(runtime, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
-    // 17b: the server's paper key exists where the panel is on (deploy.ts mints it, and copies it for the runtime on the same condition as here: ensureCredentials)
+    // 17b: the server's paper key exists where the panel is on, and a deploy has just copied it for the runtime, as the runtime's own (lib/report-key.ts, any deployer uid).
+    // Named only when that copy is there: a runtime told about a key it cannot read would not start, which is worse than an unsigned report.
     const signingKeyFile = server.panel.enabled && o.reportKeyReadable === true ? `${SECRETS}/${RUNTIME_SIGNING_KEY_FILE}` : undefined;
-    if (server.panel.enabled && o.reportKeyReadable === false) notes.push(`the owner's monthly WhatsApp report is not signed on this server: ${shop.name}'s runtime runs as the node image's user (uid 1000) and can use only a private key that user owns, which a deployer running as uid ${process.getuid?.() ?? "?"} cannot give it. Run the deployer as uid 1000 or as root to sign it; the report still carries its digest and code link.`);
+    if (server.panel.enabled && o.reportKeyReadable === false) notes.push(`the owner's monthly WhatsApp report is not signed on this server: the server's paper key could not be copied for ${shop.name}'s runtime (${o.reportKeyWhy ?? "no reason was given"}). The report still carries its digest and code link; the next deploy tries again.`);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name, ...(signingKeyFile ? { signingKeyFile } : {}) }, check, notes); // a UPI shop's money is the owner's real marks
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
