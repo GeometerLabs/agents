@@ -46,6 +46,8 @@ const KEEP = args.includes("--keep");
 /** `--only kill,licence`: run those phases (and the deploy of one shop they need); the default is every phase. */
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
 const runs = (phase: string) => !ONLY || ONLY.has(phase);
+/** The reference_id prefix of the payment links the kill phase makes by calling a Guard directly (no runtime, no booking): the outage phase's per-booking check leaves them out. */
+const RAW_LOAD_REF = "load-";
 const LOAD_SECONDS = args.includes("--load-seconds") ? Number(args[args.indexOf("--load-seconds") + 1]) : 120;
 /** `--heartbeat 10`: the heartbeat every 10 s. Left out, the real default: the disk-write and CPU figures are then what a real shop would see. */
 const HEARTBEAT = args.includes("--heartbeat") ? Number(args[args.indexOf("--heartbeat") + 1]) : undefined;
@@ -526,7 +528,7 @@ async function killUnderLoad() {
   const before = link();
   // 12 requests a second for 24 s from inside the runtime; the Guard is killed 8 s in
   const load = `let ok=0,refused=0,unreachable=0,other=0;const t0=Date.now();const log=[];
-(async()=>{while(Date.now()-t0<24000){const started=Date.now()-t0;try{const r=await fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{method:'POST',headers:{authorization:'Bearer ${agent}','content-type':'application/json'},body:JSON.stringify({amount:20000,currency:'INR',description:'load',reference_id:'load-'+started+'-'+Math.random()}),signal:AbortSignal.timeout(2500)});if(r.status===200||r.status===201)ok++;else if(r.status===403||r.status===503)refused++;else other++;await r.arrayBuffer()}catch(e){unreachable++}await new Promise(r=>setTimeout(r,80))}
+(async()=>{while(Date.now()-t0<24000){const started=Date.now()-t0;try{const r=await fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{method:'POST',headers:{authorization:'Bearer ${agent}','content-type':'application/json'},body:JSON.stringify({amount:20000,currency:'INR',description:'load',reference_id:'${RAW_LOAD_REF}'+started+'-'+Math.random()}),signal:AbortSignal.timeout(2500)});if(r.status===200||r.status===201)ok++;else if(r.status===403||r.status===503)refused++;else other++;await r.arrayBuffer()}catch(e){unreachable++}await new Promise(r=>setTimeout(r,80))}
 console.log(JSON.stringify({ok,refused,unreachable,other}))})()`;
   const child = spawn("docker", ["compose", "-f", composeFile, "-f", testCompose, "--project-directory", join(SERVER, "generated"), "exec", "-T", rt, "node", "-e", load], { stdio: ["ignore", "pipe", "pipe"] });
   let out = ""; child.stdout.on("data", (c: Buffer) => { out += c.toString(); });
@@ -1146,7 +1148,8 @@ async function guardOutage() {
     const twice = repeated(after);
     const failedAfter = tasksOf(shop)?.failed ?? -1;
     // each payment's work done once: every paid link's booking is confirmed in the calendar, by exactly one event (the provider's own records, not the runtime's word)
-    const paidRefs = ((after.links ?? []) as { reference_id: string; status: string }[]).filter((l) => l.status === "paid").map((l) => l.reference_id);
+    // Only links that belong to a booking: the kill phase's raw Guard calls (RAW_LOAD_REF) make links with no booking behind them, by design, and the drive()'s payer pays any open link, those too; booking ids are "b-N", so the prefix cannot match a booking's link.
+    const paidRefs = ((after.links ?? []) as { reference_id: string; status: string }[]).filter((l) => l.status === "paid" && !l.reference_id.startsWith(RAW_LOAD_REF)).map((l) => l.reference_id);
     const confirmedBy = ((after.calendar ?? []) as { bookingRef?: string; status?: string }[]).filter((e) => e.status === "confirmed").reduce<Record<string, number>>((m, e) => { const k = e.bookingRef ?? "?"; m[k] = (m[k] ?? 0) + 1; return m; }, {});
     const notConfirmedOnce = paidRefs.filter((r) => confirmedBy[r] !== 1);
     out[kind] = { downSeconds: Math.round((downTo - downFrom) / 1000), sent: load.sent.length, delivered, answered: answers.answered, longestWaitSeconds: Math.round((answers.waits.at(-1) ?? 0) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, pendingWhileDown, failedTasksDuring: failedAfter - failedBefore, runtimeRestartedWhileDown: backUp, paidLinks: paidRefs.length, paidNotConfirmedOnce: notConfirmedOnce, twice };
