@@ -273,6 +273,13 @@ test("a pairing code file must hold a code; the questions are never asked when n
     assert.equal(r.code, 1); assert.match(r.out, /--pairing-code-file <file>, or --skip-pairing/u);
     r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE="" DOMAIN=shops.example.com; ask_questions`);
     assert.equal(r.code, 1); assert.match(r.out, /no terminal to ask on/u);
+    // decision 39: init makes no folder without fleet's licence key, so a skipped pairing or the by-hand path without one stops here, before Docker or Node
+    r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE=skip YES=1 DOMAIN=shops.example.com; ask_questions`);
+    assert.equal(r.code, 1); assert.match(r.out, /Without pairing, give fleet's licence key yourself: --licence-key .*Nothing was changed/u);
+    r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE=hand DEPLOYMENT_ID=acme-vps-1 YES=1 DOMAIN=shops.example.com; ask_questions`);
+    assert.equal(r.code, 1); assert.match(r.out, /With --fleet-key-file, also give fleet's licence key .*Nothing was changed/u);
+    r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE=skip LICENCE_KEY=${"ab".repeat(32)} YES=1 DOMAIN=shops.example.com; ask_questions; echo "mode $PAIR_MODE"`);
+    assert.equal(r.code, 0, r.out); assert.match(r.out, /^mode skip$/mu);
   } finally { s.done(); }
 });
 
@@ -285,13 +292,13 @@ test("a whole dry run says each step and changes nothing: no root command, no se
   try {
     const osFile = join(s.root, "os"); writeFileSync(osFile, "ID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n");
     const r = await new Promise<{ code: number; out: string }>((resolve) => {
-      const child = spawn(BASH, [INSTALL, "--dry-run", "--yes", "--use-this-checkout", "--domain", "localhost", "--skip-pairing", "--http-port", "8080", "--https-port", "8443"], { env: { PATH: `${s.bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: join(s.root, "home"), USER: "builder", STUB_LOG: join(s.root, "calls.log"), OS_RELEASE: osFile, TMPDIR: s.root }, detached: true, stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(BASH, [INSTALL, "--dry-run", "--yes", "--use-this-checkout", "--domain", "localhost", "--skip-pairing", "--licence-key", "ab".repeat(32), "--http-port", "8080", "--https-port", "8443"], { env: { PATH: `${s.bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: join(s.root, "home"), USER: "builder", STUB_LOG: join(s.root, "calls.log"), OS_RELEASE: osFile, TMPDIR: s.root }, detached: true, stdio: ["ignore", "pipe", "pipe"] });
       let out = ""; child.stdout.on("data", (c: Buffer) => { out += c; }); child.stderr.on("data", (c: Buffer) => { out += c; });
       child.on("close", (code) => resolve({ code: code ?? 1, out }));
     });
     assert.equal(r.code, 0, r.out);
     for (const said of [/Dry run: each step is printed, nothing is changed, and no code is sent/u, /NOT A RELEASE/u, /What the install will do/u, /no pairing: the panel starts, but no alerts from outside and no licence lease/u,
-      /would run: env GEOMETER_SERVER=.*geometer-server .*bundle\/geometer\.ts init .*geometer-server --domain localhost --reviewed-by builder@.* --guard-image geo-guard:0\.1\.0-alpha\.2-pathways\.1 --panel --http-port 8080 --https-port 8443/u,
+      /would run: env GEOMETER_SERVER=.*geometer-server .*bundle\/geometer\.ts init .*geometer-server --domain localhost --reviewed-by builder@.* --guard-image geo-guard:0\.1\.0-alpha\.2-pathways\.1 --panel --http-port 8080 --https-port 8443 --licence-key (ab){32}/u,
       /would run: .*bundle\/geometer\.ts up/u, /Left for the panel's first run/u, /Not paired: nobody outside hears if this server goes down/u]) assert.match(r.out, said);
     assert.ok(!s.calls().some((c) => c.startsWith("sudo")), `no root command: ${s.calls().filter((c) => c.startsWith("sudo")).join("; ")}`);
     assert.ok(!existsSync(join(s.root, "home", "geometer-server")), "no server folder");

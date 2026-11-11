@@ -129,6 +129,20 @@ test("init --pairing takes the id, fleet's address, the key file and the licence
   } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
 });
 
+test("init --pairing refuses a pairing that brought no licence key (decision 39) in words of its own, and keeps the pairing", async () => {
+  // fleet's licence was off when the server paired: no key to pin, so no shop here could ever take new work; the builder already paired, so the words say whose it is to fix
+  const fleet = await fakeFleet(() => ({ status: 200, body: { ...goodAnswer().body, licence_keys: [], trial_lease: null } }));
+  const root = mkdtempSync(join(tmpdir(), "geo-pair-"));
+  const dir = join(root, "server");
+  try {
+    await pairServer({ dir, fleetUrl: fleet.url, code: CODE, now: new Date() });
+    const r = await quiet(() => main(["init", dir, "--pairing", "--domain", "shops.example.com", "--reviewed-by", "ravi@vps", "--panel"]));
+    assert.equal(r.result, 1);
+    assert.match(r.err, /Fleet sent no licence key when this server was paired.*write to support and give this server's id, ravi-abcdef\. The pairing is kept/u);
+    assert.ok(!existsSync(join(dir, "geometer.json")) && existsSync(join(dir, "pairing.json")), "no folder made; the pairing kept");
+  } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
+});
+
 test("a folder with no model loads; a deploy refuses until the model is chosen, and model-key asks for the model first", async () => {
   assert.deepEqual(parseServer({ schema: 1, id: "acme", domain: "shops.example.com", reviewedBy: "ravi" }).errors, []);
   assert.match(parseServer({ schema: 1, id: "acme", domain: "shops.example.com", reviewedBy: "ravi", model: { wire: "openai" } }).errors.join(" "), /"model" must say/u);

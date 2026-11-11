@@ -479,9 +479,11 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   const id = paired?.deploymentId ?? s("id") ?? basename(dir).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^-+/u, "").slice(0, 64);
   const problem = serverIdProblem(id);
   if (problem) throw new Error(problem);
-  // Decision 39: no server folder without Geometer's licence key, so no shop is set up that its Guards would then refuse to run. Same words as a refused deploy.
-  // With --pairing the key is the one fleet sent when the server was paired (a pairing that brought none is refused the same way); by hand it is --licence-key.
-  if (paired ? paired.licenceKeys.length === 0 : !s("licence-key")) throw new Error(NO_LICENCE_KEY);
+  // Decision 39: no server folder without Geometer's licence key, so no shop is set up that its Guards would then refuse to run. By hand it is --licence-key,
+  // refused in the same words as a refused deploy. With --pairing it is the key fleet sent when the server was paired; a pairing that brought none (fleet's
+  // licence was off) is refused in words of its own, since "pair the server" is what the builder just did: the way out is Geometer's, and the pairing is kept.
+  if (paired && paired.licenceKeys.length === 0) throw new Error(`Fleet sent no licence key when this server was paired (its licence is off), and Guard runs a builder's shop only under Geometer's licence (decision 39), so the server folder was not made. This is Geometer's to fix: write to support and give this server's id, ${paired.deploymentId}. The pairing is kept in this folder, so no new code is needed.`);
+  if (!paired && !s("licence-key")) throw new Error(NO_LICENCE_KEY);
   let recipient = s("age-recipient");
   if (s("snapshots-url") && !recipient) {
     const out = s("age-identity-out");
