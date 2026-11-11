@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (54)
+## 1. Messages to the customer (55)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `refund_approved` | The owner approved the refund | मालिक ने आपके रिफंड को मंज़ूरी दे दी है। ₹120 आपको वापस भेजा जा रहा है। | The owner approved your refund. ₹120 is on its way. |  |
 | `refund_denied` | The owner said no to the refund | मालिक ने ₹120 का एडवांस वापस न करने का फ़ैसला किया है। | The owner has decided not to refund the ₹120 advance. |  |
 | `refund_checking` | A refund could not be sent yet: it is being checked | आपके ₹120 के रिफंड की जाँच हो रही है। पुष्टि होते ही मैं आपको संदेश भेजूँगा। | We are checking your ₹120 refund and will message you as soon as it is confirmed. |  |
+| `refund_confirmed` | A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised | आपके ₹120 के रिफंड की पुष्टि हो गई है। यह आपको वापस भेजा जा रहा है। | Your ₹120 refund is confirmed and is on its way back to you. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | मालिक ने समय पर आपके ₹120 के रिफंड पर जवाब नहीं दिया, इसलिए वह अभी नहीं भेजा गया है। कृपया Annapurna Tiffins से सीधे संपर्क करें। | The owner did not answer in time about your ₹120 refund, so it has not been sent. Please contact Annapurna Tiffins directly. |  |
 | `big_order_asked` | A big order (above the owner's line) waits for the owner | आपका ऑर्डर (2 × वेज थाली, गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक) बड़ा है, इसलिए मैंने मालिक से मंज़ूरी माँगी है। जवाब यहीं मिलेगा। | Your order (2 × veg thali, Thu 12 Nov, 12:00 pm to 1:00 pm) is a big one, so I have asked the owner to approve it. You will hear back here. |  |
 | `big_order_denied` | The owner said no to a big order | माफ़ कीजिए, मालिक गुरुवार, 12 नवंबर का आपका ऑर्डर नहीं ले पाएँगे। कोई शुल्क नहीं लिया गया। | Sorry, the owner cannot take your order for Thu 12 Nov. Nothing was charged. |  |

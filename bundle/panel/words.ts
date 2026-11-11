@@ -81,7 +81,7 @@ export interface Words {
     heading: string; states: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>; means: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>;
     paidThrough(day: string): string; windDownOn(day: string): string; extended(day: string): string; stopOn(day: string): string; exportUntil(day: string): string;
     renew: string; stale(day: string): string;
-    /** Decision 39: the day the builder's trial ends, for a shop it covers. */
+    /** Decision 39: the builder's trial's LAST DAY, for a shop it covers (fleet's `trial_ends`; new work pauses from the day after). */
     trial(day: string): string;
   };
   setup: {
@@ -147,7 +147,8 @@ export interface Words {
       saveFirst: string; saveButton: string; saved: string; runButton: string; waiting: string; settingsOk: string; handCheck: string; handNotRun: string;
       deploy: string; deployApplied(at: string): string; deployNot: string; limitsProven(proven: number, of: number): string; limitsNot: string;
       guardNotSet: string; readOnly: string;
-      whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string };
+      /** `gupshupConfirmed` and `gupshupNotFound`: a shop on Gupshup, whose check is Gupshup's app read: it confirms the app, never the number (checks.ts checkGupshup). */
+      whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string; gupshupConfirmed(appId: string): string; gupshupNotFound(said: string): string };
       calendar: { title: string; confirmed(name: string): string; differs: string; notFound: string; notWritable(role: string): string };
       generic: Record<Exclude<CheckCode, "confirmed" | "account_mismatch" | "wrong_mode" | "not_writable" | "not_found">, string>;
       guardWords(detail: string): string;
@@ -202,7 +203,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "plan.is": ["Business"], "plan.included": [3000],
   // Getters: the list is read when a sample is used (the review sheet, the words test), not whenever the panel loads its words.
   get "plan.price"() { return [listRupees("plan.business.fee")]; }, get "plan.priceBuilder"() { return [listRupees("licence.builder.fee")]; },
-  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["11 Dec 2026"],
+  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["10 Dec 2026"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
@@ -217,9 +218,10 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "inbox.count": [3], "inbox.asOf": ["4 Nov 2026, 10:30"], "inbox.since": ["4 Nov 2026, 10:30"], "inbox.fallback": ["upi_unconfirmed", "b-3"],
   "inbox.kinds.deposit_no_booking": ["b-3", "₹200"], "inbox.kinds.payment_unrecorded": ["f-3"], "inbox.kinds.approval_waiting_long": ["b-3", "", 14, "[what]"],
   "inbox.kinds.refund_waiting": ["b-3", "₹200", 0, "[who]"], "inbox.kinds.refund_unknown": ["b-3"], "inbox.kinds.refund_failed": ["b-3"],
-  "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
+  "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.whatsapp_token_renewal": ["WhatsApp", "", 6], "inbox.kinds.whatsapp_token_credential": ["WhatsApp", "", 120], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
+  "setup.checks.whatsapp.gupshupConfirmed": ["07c7c72d-20e3-4ff9-a5a1-14d1186eeec8"], "setup.checks.whatsapp.gupshupNotFound": ["Invalid App Details"],
   "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
 };
 
@@ -354,7 +356,7 @@ export const en: Words = {
     paidThrough: (day) => `Next payment due: ${day}.`, windDownOn: (day) => `If it is not paid, new bookings pause on ${day}.`, extended: (day) => `Geometer's emergency extension covers it until ${day}.`,
     stopOn: (day) => `Final stop planned for ${day}.`, exportUntil: (day) => `You can download the shop's records until ${day}.`,
     renew: "Pay to renew", stale: (day) => `Licence not refreshed since ${day}. Check that this server reaches Geometer. Write to support. A person answers.`,
-    trial: (day) => `Trial licence: ends on ${day}. After that, new bookings pause until the shop is on a plan.`,
+    trial: (day) => `Trial licence: the last day is ${day}. From the next day, new bookings pause until the shop is on a plan.`,
   },
   setup: {
     title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
@@ -474,6 +476,8 @@ export const en: Words = {
       whatsapp: {
         title: "WhatsApp", confirmed: (n) => `This is the shop's number (${n}).`, differs: (e) => `The number found ends in ${e}, not the shop's. Nothing was changed.`,
         notFound: "That phone number ID is not on this account.",
+        gupshupConfirmed: (id) => `Gupshup answered for app ${id}. This check does not show which number the app sends from.`,
+        gupshupNotFound: (said) => (said ? `Gupshup did not accept that app with this token (it said: ${said}).` : "Gupshup did not accept that app with this token."),
       },
       calendar: {
         title: "Calendar", confirmed: (n) => `Found “${n}”, and it can be changed.`, differs: "Google shows a different calendar from the one given. Nothing was changed.",
@@ -481,6 +485,7 @@ export const en: Words = {
       },
       generic: {
         not_allowed: "The account did not accept the check. Check the keys.", refused_by_guard: "The server's Guard did not let this check through.", unreachable: "Could not reach it. Try again in a minute.",
+        rate_limited: "Too many checks just now. Try again in a minute.",
         unexpected_response: "The answer was not what this service gives, so it was not used.", not_configured: "Fill in the details above first.",
       },
       guardWords: (d) => `Guard said: ${d}`,
@@ -500,6 +505,9 @@ export const en: Words = {
       refund_unknown: (id) => `Refund for ${id}: not sure it went through. Check it in {gateway}`,
       refund_failed: (id) => `The refund for ${id} did not go through: review it`,
       message_unanswered: (id) => `Work for ${id} was not finished while a service's connection was down: check it and answer the customer`,
+      // follow-up 2: the shop's Gupshup token (not a case: `id` is "WhatsApp"); `hours` is how long the token in use, or the server's universal token, has left
+      whatsapp_token_renewal: (_id, _amount, hours) => `WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in ${hours} hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token.`,
+      whatsapp_token_credential: (_id, _amount, hours) => `WhatsApp through Gupshup: the server's Gupshup universal token ends in ${Math.floor(hours / 24)} days. Hand in a new one before then (geometer gupshup-token <file>).`,
       message_not_delivered: (id) => `A WhatsApp message for ${id} never reached the phone (WhatsApp reported it failed): reach the person another way`,
       upi_payment_unconfirmed: (id, amount) => `UPI payment of ${amount} for ${id} is not yet confirmed by the owner: ask the owner to check their UPI app`,
       upi_refund_owed: (id, amount) => `Refund of ${amount} for ${id} is owed by the owner and not yet marked done: remind the owner`,

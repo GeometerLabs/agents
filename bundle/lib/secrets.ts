@@ -96,24 +96,12 @@ export function ensureAgentLabelKey(dir: string, agent: string): string {
 
 /** The server's one paper signing key: an Ed25519 private key in PEM (modules/report/sign.ts loadPrivateKey). The panel signs go-live certificates, monthly reports and evidence packs with it, and fleet's public list of signers names it (lib/signer-claim.ts). */
 export const panelSigningKeyFile = (dir: string) => secretFile(dir, "panel", "signing_key");
-/** The same key as the shop runtime reads it (secrets/rt-<shop>/report_signing_key, /run/secrets/report_signing_key inside), for the owner's WhatsApp monthly report. */
+/** The same key as the shop runtime reads it (secrets/rt-<shop>/report_signing_key, /run/secrets/report_signing_key inside), for the owner's WhatsApp monthly report. lib/report-key.ts puts it there. */
 export const RUNTIME_SIGNING_KEY_FILE = "report_signing_key";
-/** The user every node service runs as, the shop runtimes included (generate/compose.ts nodeUser, the node image's `node`). */
-const RUNTIME_UID = 1000;
 
 /** The panel's signing key, made the first time it is needed (the panel's first start, or the first shop's deploy): 0600, as loadPrivateKey insists. */
 export function ensurePanelSigningKey(dir: string): string {
   return ensureSecret(panelSigningKeyFile(dir), mintSigningKey, 0o600);
-}
-
-/**
- * Can this deployer give a shop runtime a private key it can read? loadPrivateKey refuses a key file anyone but its owner could read, and the runtime runs as uid
- * 1000. So only a deployer that is that user, or root (which hands the file to it: writeSecretFile), can; otherwise the report goes out unsigned and the deploy
- * says why. A key the runtime is told about and cannot read would stop the runtime from starting, which is worse than an unsigned report.
- */
-export function runtimeReadsPrivateKeys(): boolean {
-  const uid = process.getuid?.();
-  return uid === 0 || uid === RUNTIME_UID;
 }
 
 /** `mode` 0600 is for what a program insists on being private to its user (the panel's keys); the panel then runs as the user who wrote them (see panelUser). */

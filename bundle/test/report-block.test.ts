@@ -11,7 +11,10 @@ import { checkShop, deploy, desiredHashOf } from "../deploy.ts";
 import { main } from "../geometer.ts";
 import { withReport, planShop } from "../generate/shop.ts";
 import type { ReportFacts } from "../generate/shop.ts";
-import { failed, ok } from "../lib/runner.ts";
+import { failed, fakeRunner, ok } from "../lib/runner.ts";
+import { COPY_SCRIPT, REPORT_KEY_JOB, placeRuntimeReportKey } from "../lib/report-key.ts";
+import { panelSigningKeyFile } from "../lib/secrets.ts";
+import { createHash } from "node:crypto";
 import { DEFAULT_PREPARED_BY, readShop } from "../lib/server.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { preparedByOf } from "../panel/contract.ts";
@@ -322,9 +325,10 @@ test("17b: planShop signs the report only on a server with the panel (its key) a
     const panelOn = serverConfig({ panel: { enabled: true } });
     const keyOf = (p: { runtime: Record<string, unknown> }) => (p.runtime.report as Record<string, unknown> | undefined)?.signingKeyFile;
     assert.equal(keyOf(planShop(panelOn, t.shop("glow-salon"), {}, undefined, { reportKeyReadable: true })), "/run/secrets/report_signing_key");
-    const cannot = planShop(panelOn, t.shop("glow-salon"), {}, undefined, { reportKeyReadable: false });
+    const cannot = planShop(panelOn, t.shop("glow-salon"), {}, undefined, { reportKeyReadable: false, reportKeyWhy: "the copy job did not run (no docker)" });
     assert.equal(keyOf(cannot), undefined);
-    assert.match(cannot.notes.join(" "), /monthly WhatsApp report is not signed on this server: glow-salon's runtime runs as the node image's user \(uid 1000\)/u);
+    assert.match(cannot.notes.join(" "), /monthly WhatsApp report is not signed on this server: the server's paper key could not be copied for glow-salon's runtime \(the copy job did not run \(no docker\)\)/u);
+    assert.ok(!cannot.notes.join(" ").includes("uid"), "no uid condition is left to name (follow-up 6)");
     // the generator's own tests and goldens: no option, no key, nothing said, whoever runs them
     const plain = planShop(panelOn, t.shop("glow-salon"));
     assert.equal(keyOf(plain), undefined);
@@ -335,3 +339,73 @@ test("17b: planShop signs the report only on a server with the panel (its key) a
     assert.deepEqual(noPanel.notes, []);
   } finally { t.done(); }
 });
+
+// ---- follow-up 6 (12 Nov 2026): the runtime's copy of the paper key is made by a short-lived container, so any deployer uid can sign ------------------------------
+
+test("follow-up 6: the key goes to a short-lived root container on standard input, never on a command line; the copy is the runtime's (1000:1000, 0600) for any deployer", async () => {
+  const t = tempServer(); try {
+    const seen: { args: string[]; input?: string; env?: Record<string, string> }[] = [];
+    const runner = fakeRunner((_c, args, options) => {
+      seen.push({ args, input: options.input, env: options.env });
+      return ok(JSON.stringify({ sha256: createHash("sha256").update(options.input ?? "").digest("hex"), uid: 1000, gid: 1000, mode: 0o600 }));
+    });
+    const placed = await placeRuntimeReportKey({ runner, docker: "docker", image: "geometer-app:test", dir: t.root, runtimeFolder: "rt-glow-salon", panelOn: true });
+    assert.deepEqual(placed, { readable: true });
+    const key = readFileSync(panelSigningKeyFile(t.root), "utf8");
+    assert.match(key, /BEGIN PRIVATE KEY/u, "the server's paper key was made for it");
+    assert.equal(seen.length, 1);
+    const [{ args, input, env }] = seen;
+    assert.equal(input?.trim(), key.trim(), "the key goes in on standard input");
+    assert.ok(!args.some((a) => a.includes("PRIVATE KEY")) && JSON.stringify(env ?? {}).indexOf("PRIVATE KEY") === -1, "and never on the command line or in the environment");
+    for (const flag of ["--rm", "-i", REPORT_KEY_JOB, "none", "--read-only", "no-new-privileges:true"]) assert.ok(args.includes(flag), flag);
+    assert.deepEqual(args.slice(args.indexOf("--user"), args.indexOf("--user") + 2), ["--user", "0"], "root inside, so it can hand the file to uid 1000 whoever the deployer is");
+    assert.deepEqual(args.filter((_a, i) => args[i - 1] === "--cap-add").sort(), ["CHOWN", "DAC_OVERRIDE"], "every other capability dropped");
+    assert.ok(args.includes("ALL") && args[args.indexOf("ALL") - 1] === "--cap-drop");
+    assert.ok(args.includes(`${join(t.paths.secrets, "rt-glow-salon")}:/out`), "only the runtime's own secrets folder is mounted");
+    assert.ok(args.includes("geometer-app:test"), "the runtime's own image");
+    assert.deepEqual(args.slice(args.indexOf(COPY_SCRIPT) + 1), ["report_signing_key", "1000", "1000"]);
+  } finally { t.done(); }
+});
+
+test("follow-up 6: a copy that did not happen, or is not the runtime's, is never used: the file is taken away and the reason given; no panel, no key", async () => {
+  const t = tempServer(); try {
+    const target = join(t.paths.secrets, "rt-glow-salon", "report_signing_key");
+    const leftover = () => { mkdirSync(join(t.paths.secrets, "rt-glow-salon"), { recursive: true }); writeFileSync(target, "an old copy\n", { mode: 0o600 }); };
+    const place = (answer: (input: string) => ReturnType<typeof ok>, panelOn = true) => placeRuntimeReportKey({ runner: fakeRunner((_c, _a, o) => answer(o.input ?? "")), docker: "docker", image: "geometer-app:test", dir: t.root, runtimeFolder: "rt-glow-salon", panelOn });
+    const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+
+    leftover();
+    const refused = await place(() => failed("permission denied while trying to connect to the Docker daemon socket"));
+    assert.equal(refused.readable, false);
+    assert.match((refused as { why: string }).why, /the copy job did not run \(permission denied/u);
+    assert.equal(existsSync(target), false, "a copy left from before is taken away, so runtime.json and the disk agree");
+
+    leftover();
+    const rootless = await place((input) => ok(JSON.stringify({ sha256: sha(input), uid: 101000, gid: 101000, mode: 0o600 })));
+    assert.match((rootless as { why: string }).why, /owned by 101000:101000 .* not 1000:1000 600 \(rootless Docker\?\)/u);
+    assert.equal(existsSync(target), false);
+
+    const wrong = await place(() => ok(JSON.stringify({ sha256: "0".repeat(64), uid: 1000, gid: 1000, mode: 0o600 })));
+    assert.deepEqual(wrong, { readable: false, why: "the copy is not the key that was sent" });
+    const garbled = await place(() => ok("not json"));
+    assert.deepEqual(garbled, { readable: false, why: "the copy job's answer could not be read" });
+
+    leftover();
+    const noPanel = await place(() => { throw new Error("no container without a panel"); }, false);
+    assert.equal(noPanel.readable, false);
+    assert.equal(existsSync(target), false, "no panel, no paper key: the old copy goes");
+  } finally { t.done(); }
+});
+
+test("follow-up 6: a deploy on a server with the panel signs the owner's report whoever runs it: runtime.json names the key the container copied", async () => {
+  const w = world(undefined, { panel: { enabled: true } }); try {
+    w.handIn("glow-salon");
+    await deploy(w.ctx, "glow-salon");
+    const job = w.calls.find((c) => c.args[0] === "run" && c.args.includes(REPORT_KEY_JOB));
+    assert.ok(job, "the copy job ran");
+    const onDisk = JSON.parse(readFileSync(join(w.paths.generated, "shops", "glow-salon", "client", "runtime.json"), "utf8"));
+    assert.equal(onDisk.report?.signingKeyFile, "/run/secrets/report_signing_key", "signed on any deployer uid (this test's included)");
+    assert.equal(readFileSync(join(w.paths.secrets, "rt-glow-salon", "report_signing_key"), "utf8"), readFileSync(panelSigningKeyFile(w.root), "utf8"), "the runtime's copy is the server's one paper key");
+  } finally { w.done(); }
+});
+

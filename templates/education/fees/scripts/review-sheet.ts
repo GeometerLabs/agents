@@ -46,6 +46,7 @@ const WHEN: Record<TemplateId, string> = {
   fee_refund_done: "A refund was sent (the payments service's own list shows it)",
   fee_refund_pending: "A refund above the limit is waiting for the owner's one-use code",
   fee_refund_checking: "A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner",
+  fee_refund_confirmed: "A refund that was being checked now shows on the payment service's own list: the parent is told, once, as fee_refund_checking promised",
   fee_refund_approved: "The owner approved the refund",
   fee_refund_denied: "The owner said no to the refund",
   fee_refund_expired: "The owner did not answer a refund request in time: nothing was sent",

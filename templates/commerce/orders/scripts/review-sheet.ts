@@ -56,6 +56,7 @@ const WHEN: Record<TemplateId, string> = {
   refund_approved: "The owner approved the refund",
   refund_denied: "The owner said no to the refund",
   refund_checking: "A refund could not be sent yet: it is being checked",
+  refund_confirmed: "A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised",
   refund_expired: "The owner did not answer a refund request in time: nothing was sent",
   big_order_asked: "A big order (above the owner's line) waits for the owner",
   big_order_denied: "The owner said no to a big order",

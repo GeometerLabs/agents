@@ -249,13 +249,13 @@ export function licenceBlock(c: Ctx, l: LicenceView): Raw {
   const w = c.w.licence;
   const day = (d: string) => dayWords(d, c.lang);
   const lines = [
-    // a trial shop owes nothing yet: its trial line below says when its cover ends, not a payment date
-    l.paidThrough && !l.trialEnds && (l.state === "active" || l.state === "reminder" || l.state === "warning") ? w.paidThrough(day(l.paidThrough)) : "",
+    // a trial shop owes nothing yet: its trial line below says its last day, not a payment date
+    l.paidThrough && !l.trialLastDay && (l.state === "active" || l.state === "reminder" || l.state === "warning") ? w.paidThrough(day(l.paidThrough)) : "",
     l.windDownOn && (l.state === "reminder" || l.state === "warning") ? w.windDownOn(day(l.windDownOn)) : "",
     l.extendedUntil && l.state !== "wind_down" && l.state !== "stopped" ? w.extended(day(l.extendedUntil)) : "",
     l.stopOn && l.state === "wind_down" ? w.stopOn(day(l.stopOn)) : "",
     l.exportUntil && l.state === "stopped" ? w.exportUntil(day(l.exportUntil)) : "",
-    l.trialEnds ? w.trial(day(l.trialEnds)) : "",
+    l.trialLastDay ? w.trial(day(l.trialLastDay)) : "",
   ].filter(Boolean);
   const urgent = l.state === "warning" || l.state === "wind_down" || l.state === "stopped" || l.state === "none";
   return html`<h2>${w.heading}</h2>
@@ -589,7 +589,11 @@ function checkLine(c: Ctx, r: CheckResult): Raw {
   let title: string;
   let text: string;
   const generic = (code: CheckResult["code"]): string => (code === "refused_by_guard" && r.detail ? w.guardWords(r.detail) : w.generic[code as keyof typeof w.generic] ?? w.generic.unexpected_response);
-  if (r.service === "whatsapp") {
+  if (r.service === "whatsapp" && r.notChecked.includes("which-number")) {
+    // a shop on Gupshup: its check confirms the app Gupshup answered for, never a number (checks.ts checkGupshup), and its words say exactly that
+    title = w.whatsapp.title;
+    text = r.code === "confirmed" ? w.whatsapp.gupshupConfirmed(found?.appId ?? "") : r.code === "not_found" ? w.whatsapp.gupshupNotFound(r.detail ?? "") : generic(r.code);
+  } else if (r.service === "whatsapp") {
     title = w.whatsapp.title;
     text = r.code === "confirmed" ? w.whatsapp.confirmed(found?.displayNumber ?? "") : r.code === "account_mismatch" ? w.whatsapp.differs(r.foundEnding ?? "") : r.code === "not_found" ? w.whatsapp.notFound : generic(r.code);
   } else if (providerById(r.service)?.gateway) {

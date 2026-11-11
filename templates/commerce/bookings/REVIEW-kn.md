@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (55)
+## 1. Messages to the customer (56)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -42,6 +42,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `rescheduled` | Booking moved to the new time | ಆಯಿತು. ಹೇರ್ ಕಟ್ ಹೊಸ ಸಮಯ: ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. | Done. Your haircut is moved to Tue 10 Nov, 6:00 pm. |  |
 | `reminder` | Reminder before the booking | ನೆನಪಿಸುವುದು: Glow Salon-ನಲ್ಲಿ ನಿಮ್ಮ ಹೇರ್ ಕಟ್ ಬುಕಿಂಗ್ ಸಮಯ: ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. | Reminder: your haircut at Glow Salon is on Tue 10 Nov, 6:00 pm. |  |
 | `refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ. ಖಚಿತವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | We are checking your ₹200 refund and will message you as soon as it is confirmed. |  |
+| `refund_confirmed` | A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised | ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ. | Your ₹200 refund is confirmed and is on its way back to you. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Glow Salon ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
 | `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I can't listen to voice notes yet. |  |
@@ -684,7 +685,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು 7 May 2027 ವರೆಗೆ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | ಪಾವತಿಸಿ ನವೀಕರಿಸಿ | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 ರಿಂದ ಪರವಾನಗಿ ನವೀಕರಣಗೊಂಡಿಲ್ಲ. ಈ ಸರ್ವರ್ Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
-| `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: 11 Dec 2026 ರಂದು ಮುಗಿಯುತ್ತದೆ. ಅದರ ನಂತರ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: ends on 11 Dec 2026. After that, new bookings pause until the shop is on a plan. |  |
+| `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: ಕೊನೆಯ ದಿನ 10 Dec 2026. ಮರುದಿನದಿಂದ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
@@ -899,6 +900,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ಇದು ಅಂಗಡಿಯ ನಂಬರ್ (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | ಸಿಕ್ಕ ನಂಬರ್‌ನ ಕೊನೆಯ ಅಂಕಿಗಳು: 3210. ಇದು ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ಆ ಫೋನ್ ನಂಬರ್ ID ಈ ಖಾತೆಯಲ್ಲಿ ಇಲ್ಲ. | That phone number ID is not on this account. |  |
+| `setup.checks.whatsapp.gupshupConfirmed` | ಆ್ಯಪ್ 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8ಗಾಗಿ Gupshup ಉತ್ತರಿಸಿತು. ಆ್ಯಪ್ ಯಾವ ಸಂಖ್ಯೆಯಿಂದ ಕಳುಹಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಈ ಪರಿಶೀಲನೆ ತೋರಿಸುವುದಿಲ್ಲ. | Gupshup answered for app 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8. This check does not show which number the app sends from. |  |
+| `setup.checks.whatsapp.gupshupNotFound` | ಈ ಟೋಕನ್‌ನೊಂದಿಗೆ Gupshup ಆ ಆ್ಯಪ್ ಅನ್ನು ಒಪ್ಪಲಿಲ್ಲ (ಅದು ಹೇಳಿದ್ದು: Invalid App Details). | Gupshup did not accept that app with this token (it said: Invalid App Details). |  |
 | `setup.checks.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
 | `setup.checks.calendar.confirmed` | “Glow Salon bookings” ಸಿಕ್ಕಿದೆ, ಮತ್ತು ಇದನ್ನು ಬದಲಾಯಿಸಬಹುದು. | Found “Glow Salon bookings”, and it can be changed. |  |
 | `setup.checks.calendar.differs` | Google ಬೇರೆ ಕ್ಯಾಲೆಂಡರ್ ತೋರಿಸುತ್ತಿದೆ, ಕೊಟ್ಟಿದ್ದನ್ನಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | Google shows a different calendar from the one given. Nothing was changed. |  |
@@ -907,6 +910,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.generic.not_allowed` | ಖಾತೆ ಪರಿಶೀಲನೆಯನ್ನು ಒಪ್ಪಲಿಲ್ಲ. ಕೀಗಳನ್ನು ನೋಡಿ. | The account did not accept the check. Check the keys. |  |
 | `setup.checks.generic.refused_by_guard` | ಸರ್ವರ್‌ನ Guard ಈ ಪರಿಶೀಲನೆಗೆ ಅವಕಾಶ ಕೊಡಲಿಲ್ಲ. | The server's Guard did not let this check through. |  |
 | `setup.checks.generic.unreachable` | ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Could not reach it. Try again in a minute. |  |
+| `setup.checks.generic.rate_limited` | ಈಗ ತುಂಬಾ ಪರಿಶೀಲನೆಗಳು ಆಗಿವೆ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Too many checks just now. Try again in a minute. |  |
 | `setup.checks.generic.unexpected_response` | ಉತ್ತರ ಈ ಸೇವೆ ಕೊಡುವ ರೀತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಬಳಸಲಿಲ್ಲ. | The answer was not what this service gives, so it was not used. |  |
 | `setup.checks.generic.not_configured` | ಮೊದಲು ಮೇಲಿನ ವಿವರಗಳನ್ನು ತುಂಬಿ. | Fill in the details above first. |  |
 | `setup.checks.guardWords` | Guard ಹೇಳಿದ್ದು: the route is not listed | Guard said: the route is not listed |  |
@@ -932,6 +936,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: {gateway} ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
 | `inbox.kinds.message_unanswered` | ಸೇವೆಯ ಸಂಪರ್ಕ ನಿಂತುಹೋದ ಕಾರಣ #12 ರ ಕೆಲಸ ಪೂರ್ಣವಾಗಲಿಲ್ಲ: ಪರಿಶೀಲಿಸಿ ಗ್ರಾಹಕರಿಗೆ ಉತ್ತರಿಸಿ | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
+| `inbox.kinds.whatsapp_token_renewal` | Gupshup ಮೂಲಕ WhatsApp: ಈ ಅಂಗಡಿಯ ಟೋಕನ್ ಅನ್ನು ನವೀಕರಿಸಲು ಆಗಲಿಲ್ಲ. ಈಗಿನದು 6 ಗಂಟೆಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ, ಅದರ ನಂತರ ಯಾವ ಸಂದೇಶವೂ ಹೋಗುವುದಿಲ್ಲ. ಸರ್ವರ್ ನೋಡಿ (geometer logs refresher) ಅಥವಾ ಹೊಸ Gupshup universal token ಕೊಡಿ. | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
+| `inbox.kinds.whatsapp_token_credential` | Gupshup ಮೂಲಕ WhatsApp: ಸರ್ವರ್‌ನ Gupshup universal token 5 ದಿನಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ಹೊಸದನ್ನು ಕೊಡಿ (geometer gupshup-token <file>). | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
 | `inbox.kinds.message_not_delivered` | b-3 ಗಾಗಿ ಕಳುಹಿಸಿದ WhatsApp ಸಂದೇಶ ಫೋನ್ ತಲುಪಲಿಲ್ಲ (ಅದು ವಿಫಲವಾಯಿತು ಎಂದು WhatsApp ತಿಳಿಸಿತು): ಆ ವ್ಯಕ್ತಿಯನ್ನು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಸಂಪರ್ಕಿಸಿ | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3 ಗಾಗಿ ₹200 UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3 ಗಾಗಿ ₹200 ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |

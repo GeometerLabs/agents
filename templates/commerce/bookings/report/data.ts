@@ -28,6 +28,8 @@ import { headOf } from "../../../../modules/record/ledger.ts";
 import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import type { LedgerHead } from "../../../../modules/record/ledger.ts";
 import { SOURCES } from "../../../../modules/report/text.ts";
+import { isSettledByWord, settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
+import type { SettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import type { Source } from "../../../../modules/report/text.ts";
 
 /** What the numbers were counted from. Always stated, never assumed: a report made from stand-ins must say so. */
@@ -114,11 +116,17 @@ export interface MonthlyReport {
   policyDigest: string;
   record: { entries: number; digest: string; byAction: Record<string, Record<string, number>>; rows: RecordRow[] };
   bookings: { made: number; cancelled: number; moved: number; droppedBeforeBooked: number };
-  money: { deposits: Amount; refunds: Amount & { ofDeposits: Amount; ofSecondPayments: Amount } };
+  /**
+   * `refunds` are refunds the payments service's own record confirmed (or, UPI, the owner marked sent). `settledByWord` (B75, 12 Nov 2026) are refunds a person at
+   * the server settled as made by their word (Guard's already_done): never counted as refunds made, grouped by who said so. Left out when there are none, which keeps
+   * the bytes of every report made before.
+   */
+  money: { deposits: Amount; refunds: Amount & { ofDeposits: Amount; ofSecondPayments: Amount }; settledByWord?: SettledByWord[] };
   owner: { asked: number; approved: number; denied: number; retried: number };
   stopped: { total: number; byRule: Record<RuleId, number> };
   messages: { toCustomers: { total: number; byLanguage: ByLanguage }; toOwner: { total: number; byLanguage: ByLanguage }; heldBack: number };
-  unconfirmed: { open: number; /** The open ones that touch a booking, a payment or the calendar: everything but a message. This is what the owner's line counts. */ openOnBookings: number; settledLater: number; rows: { seq: number; action: Action; outcome: "unconfirmed" | "failed"; booking: string | null; settledLater: boolean }[] };
+  /** A row settled later by a person's word (a refund Guard's already_done settled) says who in `settledByWord`; left out otherwise, so older reports keep their bytes. */
+  unconfirmed: { open: number; /** The open ones that touch a booking, a payment or the calendar: everything but a message. This is what the owner's line counts. */ openOnBookings: number; settledLater: number; rows: { seq: number; action: Action; outcome: "unconfirmed" | "failed"; booking: string | null; settledLater: boolean; settledByWord?: string }[] };
   atReportTime: { waitingForOwner: number; paidNotBooked: number };
   /** Entries that should carry a detail (an amount, a command, who a message went to) and do not, so that count is incomplete. */
   missing: { depositAmounts: number; refundAmounts: number; ownerCommands: number; messageTargets: number };
@@ -248,13 +256,16 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   }
   const refunds = { ...emptyAmount(), ofDeposits: emptyAmount(), ofSecondPayments: emptyAmount() };
   const seenRefunds = new Set<string>();
-  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed")) {
+  // a refund a person settled by their word is not a refund made: it is counted on its own below (settledByWord), never here
+  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed" && !isSettledByWord(x))) {
     const key = e.refs.refundId ?? `seq-${e.seq}`;
     if (seenRefunds.has(key)) continue;
     seenRefunds.add(key);
     const part = depositPayments.has(e.refs.paymentId) || e.action === "upi_refund_marked_done" ? refunds.ofDeposits : refunds.ofSecondPayments;
     if (!tally([refunds, part], e.refs.amountPaise)) missing.refundAmounts++;
   }
+  const byWord = settledByWordOf(month);
+  missing.refundAmounts += byWord.missingAmounts;
 
   // ---- the owner's part ----
   const asked = new Set(month.filter((e) => e.action === "refund" && e.outcome === "held_for_owner").map((e) => `${e.booking}|${e.refs.paymentId ?? e.seq}`)).size;
@@ -292,11 +303,15 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   }
 
   // ---- left unconfirmed or failed (an entry that a later confirmed entry settled is marked, not hidden) ----
-  const rows = month.filter((e) => e.outcome === "unconfirmed" || e.outcome === "failed").map((e) => ({
-    seq: e.seq, action: e.action, outcome: e.outcome as "unconfirmed" | "failed", booking: e.booking,
-    settledLater: SETTLEABLE.includes(e.action) && all.some((later) => later.seq > e.seq && later.outcome === "confirmed" && later.action === e.action && later.booking === e.booking
-      && (e.action !== "refund" || later.refs.paymentId === e.refs.paymentId)),
-  }));
+  // A refund row a person later settled by their word is settled (nothing is open), and says whose word it was: it is not the payments service's confirmation.
+  const rows = month.filter((e) => e.outcome === "unconfirmed" || e.outcome === "failed").map((e) => {
+    const settler = SETTLEABLE.includes(e.action) ? all.find((later) => later.seq > e.seq && later.outcome === "confirmed" && later.action === e.action && later.booking === e.booking
+      && (e.action !== "refund" || later.refs.paymentId === e.refs.paymentId)) : undefined;
+    return {
+      seq: e.seq, action: e.action, outcome: e.outcome as "unconfirmed" | "failed", booking: e.booking, settledLater: settler !== undefined,
+      ...(settler && isSettledByWord(settler) ? { settledByWord: settler.refs.confirmedBy as string } : {}),
+    };
+  });
   const settledLater = rows.filter((r) => r.settledLater).length;
 
   // ---- the record itself ----
@@ -323,7 +338,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(recordRows.map((r) => r.digest)), byAction, rows: recordRows },
     bookings: { made, cancelled, moved, droppedBeforeBooked: dropped },
-    money: { deposits, refunds },
+    money: { deposits, refunds, ...(byWord.rows.length > 0 ? { settledByWord: byWord.rows } : {}) },
     owner,
     stopped: { total: stoppedTotal, byRule },
     messages: { toCustomers, toOwner, heldBack },

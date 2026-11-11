@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (55)
+## 1. Messages to the customer (56)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -42,6 +42,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `rescheduled` | Booking moved to the new time | മാറ്റിയിട്ടുണ്ട്. ഹെയർകട്ട് പുതിയ സമയം: ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. | Done. Your haircut is moved to Tue 10 Nov, 6:00 pm. |  |
 | `reminder` | Reminder before the booking | ഓർമ്മപ്പെടുത്തൽ: Glow Salon-ൽ നിങ്ങളുടെ ഹെയർകട്ട് ബുക്കിംഗ് സമയം: ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. | Reminder: your haircut at Glow Salon is on Tue 10 Nov, 6:00 pm. |  |
 | `refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | നിങ്ങളുടെ ₹200 റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം. | We are checking your ₹200 refund and will message you as soon as it is confirmed. |  |
+| `refund_confirmed` | A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised | നിങ്ങളുടെ ₹200 റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്. | Your ₹200 refund is confirmed and is on its way back to you. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ₹200 റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി Glow Salon-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
 | `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല. | Please type your message; I can't listen to voice notes yet. |  |
@@ -684,7 +685,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ നിങ്ങൾക്ക് ഡൗൺലോഡ് ചെയ്യാം. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | പണം അടച്ച് പുതുക്കുക | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 മുതൽ ലൈസൻസ് പുതുക്കിയിട്ടില്ല. ഈ സർവർ Geometer-ൽ എത്തുന്നുണ്ടോ എന്ന് നോക്കൂ. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
-| `licence.trial` | ട്രയൽ ലൈസൻസ്: 11 Dec 2026-ന് അവസാനിക്കും. അതിനുശേഷം, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: ends on 11 Dec 2026. After that, new bookings pause until the shop is on a plan. |  |
+| `licence.trial` | ട്രയൽ ലൈസൻസ്: അവസാന ദിവസം 10 Dec 2026 ആണ്. പിറ്റേന്ന് മുതൽ, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
@@ -899,6 +900,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ഇത് ഈ കടയുടെ നമ്പർ ആണ് (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | കിട്ടിയ നമ്പറിന്റെ അവസാന അക്കങ്ങൾ 3210 ആണ്; ഇത് കടയുടെ നമ്പർ അല്ല. ഒന്നും മാറ്റിയിട്ടില്ല. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ആ ഫോൺ നമ്പർ ഐഡി ഈ അക്കൗണ്ടിൽ ഇല്ല. | That phone number ID is not on this account. |  |
+| `setup.checks.whatsapp.gupshupConfirmed` | ആപ്പ് 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8-നായി Gupshup മറുപടി നൽകി. ആപ്പ് ഏത് നമ്പറിൽ നിന്നാണ് അയയ്ക്കുന്നതെന്ന് ഈ പരിശോധന കാണിക്കുന്നില്ല. | Gupshup answered for app 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8. This check does not show which number the app sends from. |  |
+| `setup.checks.whatsapp.gupshupNotFound` | ഈ ടോക്കണിനൊപ്പം Gupshup ആ ആപ്പ് സ്വീകരിച്ചില്ല (അത് പറഞ്ഞത്: Invalid App Details). | Gupshup did not accept that app with this token (it said: Invalid App Details). |  |
 | `setup.checks.calendar.title` | Google കലണ്ടർ | Calendar |  |
 | `setup.checks.calendar.confirmed` | “Glow Salon bookings” കണ്ടെത്തി. ഇതിൽ മാറ്റങ്ങൾ വരുത്താൻ കഴിയും. | Found “Glow Salon bookings”, and it can be changed. |  |
 | `setup.checks.calendar.differs` | Google കാണിക്കുന്ന കലണ്ടർ നൽകിയതിൽ നിന്ന് വ്യത്യസ്തമാണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | Google shows a different calendar from the one given. Nothing was changed. |  |
@@ -907,6 +910,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.generic.not_allowed` | അക്കൗണ്ട് ഈ പരിശോധന സ്വീകരിച്ചില്ല. കീകൾ നോക്കൂ. | The account did not accept the check. Check the keys. |  |
 | `setup.checks.generic.refused_by_guard` | സെർവറിന്റെ Guard ഈ പരിശോധന കടത്തിവിട്ടില്ല. | The server's Guard did not let this check through. |  |
 | `setup.checks.generic.unreachable` | ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Could not reach it. Try again in a minute. |  |
+| `setup.checks.generic.rate_limited` | ഇപ്പോൾ വളരെയധികം പരിശോധനകൾ നടന്നു. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Too many checks just now. Try again in a minute. |  |
 | `setup.checks.generic.unexpected_response` | കിട്ടിയ മറുപടി ഈ സേവനം സാധാരണ തരാറുള്ളതല്ല, അതിനാൽ അത് ഉപയോഗിച്ചില്ല. | The answer was not what this service gives, so it was not used. |  |
 | `setup.checks.generic.not_configured` | ആദ്യം മുകളിലെ വിവരങ്ങൾ പൂരിപ്പിക്കൂ. | Fill in the details above first. |  |
 | `setup.checks.guardWords` | Guard പറഞ്ഞത്: the route is not listed | Guard said: the route is not listed |  |
@@ -932,6 +936,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: {gateway}-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
 | `inbox.kinds.message_unanswered` | സേവനത്തിന്റെ കണക്ഷൻ നിലച്ചതിനാൽ #12-ന്റെ ജോലി പൂർത്തിയായില്ല: പരിശോധിച്ച് ഉപഭോക്താവിന് മറുപടി നൽകുക | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
+| `inbox.kinds.whatsapp_token_renewal` | Gupshup വഴിയുള്ള WhatsApp: ഈ കടയുടെ ടോക്കൺ പുതുക്കാനായില്ല. ഇപ്പോഴത്തേത് 6 മണിക്കൂറിൽ തീരും, അതിനുശേഷം ഒരു സന്ദേശവും പോകില്ല. സെർവർ നോക്കൂ (geometer logs refresher), അല്ലെങ്കിൽ പുതിയ Gupshup universal token നൽകൂ. | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
+| `inbox.kinds.whatsapp_token_credential` | Gupshup വഴിയുള്ള WhatsApp: സെർവറിന്റെ Gupshup universal token 5 ദിവസത്തിൽ തീരും. അതിനുമുമ്പ് പുതിയത് നൽകൂ (geometer gupshup-token <file>). | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
 | `inbox.kinds.message_not_delivered` | b-3-നുള്ള WhatsApp സന്ദേശം ഫോണിൽ എത്തിയില്ല (അത് പരാജയപ്പെട്ടെന്ന് WhatsApp അറിയിച്ചു): ആ വ്യക്തിയെ മറ്റൊരു വഴിക്ക് ബന്ധപ്പെടുക | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3-നുള്ള ₹200 UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3-ന്റെ ₹200 റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |

@@ -148,8 +148,8 @@ export type PlanName = (typeof PLAN_NAMES)[number];
 export interface FleetAnswer {
   at: string; plan: PlanName | null; allowance: number | null; innovator: boolean; ai: "normal" | "buttons"; reason?: string; warn: string[];
   /**
-   * Fleet's unsigned copy of the licence for the panel (B13): its days and the renew link, and for a shop the builder's trial covers, the day the trial ends
-   * (decision 39). The state that restricts the shop is the signed one in the status file.
+   * Fleet's unsigned copy of the licence for the panel (B13): its days and the renew link, and for a shop the builder's trial covers, the trial's last day
+   * (`trial_ends`, decision 39; the last day since 12 Nov 2026). The state that restricts the shop is the signed one in the status file.
    */
   licence?: { state: string; paid_through: string | null; wind_down_on: string | null; stop_on: string | null; export_until: string | null; renew_url: string | null; trial_ends?: string };
 }

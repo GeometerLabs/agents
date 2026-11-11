@@ -84,12 +84,19 @@ export interface WhatsAppRoute { provider: "gupshup"; appId: string }
 
 /**
  * The WhatsApp Guard: Meta's Graph API, or (item 11b) Gupshup's partner API, which takes Meta's bodies. Either way one credential file, sent as the whole
- * Authorization header and never seen by the runtime: Meta's "Bearer <token>" (`whatsapp_token`), or Gupshup's header value as handed in (`gupshup_authorization`).
+ * Authorization header and never seen by the runtime: Meta's "Bearer <token>" (`whatsapp_token`), or Gupshup's header value as handed in (`gupshup_authorization`), or
+ * (`renewed`, follow-up 2) the app token the refresher mints and renews with the server's Gupshup universal token.
  * The tool name stays "whatsapp", so the licence's final stop and the hourly cap read the same operation ("send") and the same recipient field ("to").
  */
-export function whatsappGuardDef(route?: WhatsAppRoute): GuardDef {
+export function whatsappGuardDef(route?: WhatsAppRoute, renewed = false): GuardDef {
+  // follow-up 2: a Gupshup shop whose token the refresher renews reads it from the refresher's volume, like the Calendar Guard reads Google's (services/gupshup-tokens.ts)
+  if (route?.provider === "gupshup" && renewed) return { kind: "whatsapp", tool: "whatsapp", upstream: GUPSHUP_UPSTREAM, headers: { Authorization: `\${file:${GUPSHUP_TOKEN_FILE}}` } };
   return { kind: "whatsapp", tool: "whatsapp", upstream: route?.provider === "gupshup" ? GUPSHUP_UPSTREAM : "graph.facebook.com:443", secretFile: "whatsapp_authorization", headers: { Authorization: "${file:/run/secrets/whatsapp_authorization}" } };
 }
+
+/** Where a renewed Gupshup shop's WhatsApp Guard reads its app token: its own sub-folder of the refresher's `gupshup-auth` volume, mounted read-only (compose.ts). */
+export const GUPSHUP_TOKEN_MOUNT = "/run/gupshup";
+export const GUPSHUP_TOKEN_FILE = `${GUPSHUP_TOKEN_MOUNT}/authorization`;
 
 export interface SpecIdentity { tenant: string; name: string; version: number; reviewedBy: string }
 
@@ -116,7 +123,8 @@ export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GAT
 /**
  * The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own.
  * Through Gupshup (`route`) the same two operations name the shop's own Gupshup app instead, exactly: Gupshup's paths carry the app, not the number
- * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number (the panel's check is Meta's: Deferred.md).
+ * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number: the panel's check for such a shop says "Gupshup
+ * answered for app <id>", never that the number is confirmed (panel/checks.ts checkGupshup).
  */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute }): LimitsSpec {
   if (o.route?.provider === "gupshup") {
