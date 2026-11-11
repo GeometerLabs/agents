@@ -109,12 +109,18 @@ test("a name is used once: an agent cannot take a shop's name, or another agent'
     addAgent(t.root, "my-agent", flags(), noFiles, NOW);
     assert.throws(() => addAgent(t.root, "my-agent", flags(), noFiles, NOW), /already an agent called my-agent/);
     assert.throws(() => addAgent(t.root, "My Agent", flags(), noFiles, NOW), /not a usable agent name/);
-    const credential = read(join(t.paths.secrets, "agents", "my-agent", "agent_token")).trim();
-    assert.match(credential, /^gg_[0-9a-f]{32}$/u, "one credential, made when the agent is added");
-    const text = connectionText("my-agent", connectionOf(t.root, serverConfig(), readAgent(t.root, "my-agent")), true);
+    // one credential per Guard, made when the agent is added (12 Nov 2026), and the file that hands them to the agent
+    const credentials = ["razorpay", "whatsapp", "calendar"].map((k) => read(join(t.paths.secrets, "agents", "my-agent", `${k}_token`)).trim());
+    for (const c of credentials) assert.match(c, /^gg_[0-9a-f]{32}$/u);
+    assert.equal(new Set(credentials).size, 3, "each Guard has its own");
+    assert.equal(existsSync(join(t.paths.secrets, "agents", "my-agent", "agent_token")), false, "no shared credential for a new agent");
+    const env = read(join(t.paths.secrets, "agents", "my-agent", "credentials.env"));
+    assert.ok(env.includes(`GEOMETER_RAZORPAY_URL=https://shops.example.com/g/my-agent/razorpay\nGEOMETER_RAZORPAY_CREDENTIAL=${credentials[0]}`), "the file holds each Guard's address and credential, in the names the crash test uses");
+    assert.ok(!env.includes("GEOMETER_CREDENTIAL="), "no shared name for an agent whose Guards each have their own");
+    const text = connectionText("my-agent", connectionOf(t.root, serverConfig(), readAgent(t.root, "my-agent")));
     for (const kind of ["razorpay", "whatsapp", "calendar"]) assert.ok(text.includes(`https://shops.example.com/g/my-agent/${kind}`), `${kind}'s address is printed`);
-    assert.ok(text.includes(credential) && text.includes("https://shops.example.com/c/my-agent/webhooks/whatsapp"));
-    assert.ok(!connectionText("my-agent", connectionOf(t.root, serverConfig(), readAgent(t.root, "my-agent")), false).includes(credential), "show does not print it unless asked");
+    assert.ok(text.includes("https://shops.example.com/c/my-agent/webhooks/whatsapp") && text.includes("secrets/agents/my-agent/credentials.env"), "it says where the credentials are");
+    for (const c of credentials) assert.ok(!text.includes(c), "and never prints one");
   } finally { t.done(); }
 });
 
@@ -178,13 +184,18 @@ test("agent deploy: the same checked deploy, the credential in every Guard, the 
     assert.deepEqual([status.deploy.state, status.limits?.proven, status.limits?.of, status.versions?.pathway], ["applied", 12, 12, "own-agent"]);
     assert.equal(status.own?.baseUrls.razorpay, "https://shops.example.com/g/my-agent/razorpay");
     assert.equal(status.own?.whatsappWebhook, "https://shops.example.com/c/my-agent/webhooks/whatsapp");
-    const credential = read(join(w.paths.secrets, "agents", "my-agent", "agent_token")).trim();
-    assert.equal(r.connection.credential, credential);
+    const credentialOf = (kind: string) => read(join(w.paths.secrets, "agents", "my-agent", `${kind}_token`)).trim();
+    const credential = credentialOf("razorpay");
+    assert.ok(!JSON.stringify(r.connection).includes(credential), "the connection the commands print holds no credential");
+    assert.equal(r.connection.credentials.file, "secrets/agents/my-agent/credentials.env");
     const toml = (kind: string) => read(join(w.paths.generated, "guards", `g-my-agent-${kind}`, "guard.toml"));
     for (const kind of ["razorpay", "whatsapp", "calendar"]) {
-      assert.ok(toml(kind).includes(`token_sha256 = "${sha256Hex(credential)}"`), `the agent's credential is in ${kind}'s Guard (as a hash)`);
-      assert.ok(!toml(kind).includes(credential), "never in the clear");
+      assert.ok(toml(kind).includes(`token_sha256 = "${sha256Hex(credentialOf(kind))}"`), `the agent's own credential for ${kind} is in that Guard (as a hash)`);
+      assert.ok(!toml(kind).includes(credentialOf(kind)), "never in the clear");
+      for (const other of ["razorpay", "whatsapp", "calendar"].filter((k) => k !== kind)) assert.ok(!toml(kind).includes(sha256Hex(credentialOf(other))), `${other}'s credential opens nothing at ${kind}'s Guard`);
     }
+    assert.deepEqual(Object.keys(status.own?.credentials?.guards ?? {}).sort(), ["calendar", "razorpay", "whatsapp"], "the panel is told since when each Guard's credential is in force");
+    assert.equal(status.own?.credentials?.shared, false);
     assert.match(toml("razorpay"), /id = "record-my-agent"[^[]*operations = \["list_links", "read_link", "read_payment", "list_refunds"\]/u, "the reading agent can look and cannot refund");
     assert.match(toml("razorpay"), /\[\[approvers\]\]\nid = "owner-my-agent"/u, "the owner is the one who approves a held refund");
     assert.match(toml("whatsapp"), /id = "relay-my-agent"[^[]*operations = \["send"\]/u);

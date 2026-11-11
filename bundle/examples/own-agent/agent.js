@@ -1,22 +1,43 @@
 // A tiny agent that is NOT one of Geometer's templates: plain Node, no dependencies, the kind of thing a builder writes (or has Claude Code write). It takes a booking and a
 // deposit, and then tries to refund the deposit. Its only link to Geometer is where it sends its calls: instead of api.razorpay.com, www.googleapis.com and graph.facebook.com it
-// calls the three addresses `geometer agent add` printed, with the one credential printed beside them. Geometer does not run it, rebuild it or look inside it.
+// calls the addresses `geometer agent add` printed, with the credential Geometer made for each (in secrets/agents/<name>/credentials.env on the server). Geometer does not run it,
+// rebuild it or look inside it.
 //
-//   GEOMETER_RAZORPAY_URL=https://shops.example.com/g/my-agent/razorpay  GEOMETER_CALENDAR_URL=.../calendar  GEOMETER_WHATSAPP_URL=.../whatsapp \
-//   GEOMETER_CREDENTIAL=gg_...  CALENDAR_ID=name@group.calendar.google.com  PHONE_NUMBER_ID=123456789012345  CUSTOMER=+919811111111 \
-//   node bundle/examples/own-agent/agent.js
+//   node --env-file=$HOME/geometer-server/secrets/agents/my-agent/credentials.env bundle/examples/own-agent/agent.js     (the addresses and the credentials, one per Guard)
+//   with CALENDAR_ID=name@group.calendar.google.com  PHONE_NUMBER_ID=123456789012345  CUSTOMER=+919811111111 in the environment as well
 //
 // What it shows (and what any agent behind Guard has to do):
-//   - It sends the credential Geometer printed, as `Authorization: Bearer ...`. It never holds Razorpay's, Google's or WhatsApp's own key.
+//   - It sends each Guard its own credential, as `Authorization: Bearer ...` (GEOMETER_RAZORPAY_CREDENTIAL to the Razorpay address, and so on). It never holds Razorpay's,
+//     Google's or WhatsApp's own key. Given GEOMETER_CREDENTIALS_FILE it reads the file on each call, so a rotation (`geometer agent rotate`) needs no restart.
 //   - A deposit link is only ever for the shop's deposit, a calendar event only on the shop's own calendar, a message only from the shop's own number: anything else is refused (HTTP 403).
 //   - A refund above the owner's limit is held (HTTP 202). The owner is asked on WhatsApp. The agent sends the IDENTICAL call again until it is made (HTTP 200), and then stops:
 //     the refund is made once, and a repeat of a refund already made would be held again as a new request to the owner. A refund carries a `receipt`: it is how the owner's request
-//     finds the right booking.
+//     finds the right booking. Guard's 202 names its request for the owner and when it runs out (`detail.approval`, `detail.expires_at_ms`): a 202 naming ANOTHER request means
+//     the first ended without a yes (the owner said no, or it ran out), and the agent stops; it never sends after the end, because every new request asks the owner again.
 
-/** An agent for one shop. `fetchFn` is for a test; everything else is where the three services' addresses are now. */
-export function createAgent({ razorpay, upi, calendar, whatsapp, credential, calendarId, phoneNumberId, fetchFn = fetch }) {
-  const call = async (method, url, body, extraHeaders = {}) => {
-    const response = await fetchFn(url, { method, headers: { authorization: `Bearer ${credential}`, "content-type": "application/json", ...extraHeaders }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+import { readFileSync } from "node:fs";
+
+/** The last send of a held call goes this long before Guard's end for it, so it reaches Guard in time; nothing is sent after the end. */
+export const LAST_SEND_MS = 2_000;
+
+/** Guard's request for the owner, from a 202: its id and when it runs out (Guard's clock). A Guard that names no end is taken to give the shop's 24 hours. */
+export const heldOf = (result, now = Date.now) => ({ id: result.json?.guard?.detail?.approval ?? result.held, until: Number(result.json?.guard?.detail?.expires_at_ms) || now() + 24 * 3_600_000 });
+
+/** KEY=value lines (credentials.env's form): `#` lines and blank ones are skipped. */
+export const readEnvFile = (path) => Object.fromEntries(readFileSync(path, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#") && l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
+
+/**
+ * An agent for one shop. `credentials` has each Guard's own credential by service (razorpay, upi, calendar, whatsapp); `credentialsFile`, when given, is read on each call
+ * instead, so new credentials are picked up without a restart; `credential` is the one shared credential of an agent made before 12 Nov 2026. `fetchFn` is for a test.
+ */
+export function createAgent({ razorpay, upi, calendar, whatsapp, credentials = {}, credentialsFile, credential, calendarId, phoneNumberId, fetchFn = fetch }) {
+  const credentialFor = (service) => {
+    const name = `GEOMETER_${service.toUpperCase()}_CREDENTIAL`;
+    if (credentialsFile) { try { const v = readEnvFile(credentialsFile)[name]; if (v) return v; } catch { /* the file is being replaced: use what we had */ } }
+    return credentials[service] ?? credential;
+  };
+  const call = async (service, method, url, body, extraHeaders = {}) => {
+    const response = await fetchFn(url, { method, headers: { authorization: `Bearer ${credentialFor(service)}`, "content-type": "application/json", ...extraHeaders }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
     const text = await response.text();
     let json = null;
     try { json = JSON.parse(text); } catch { /* not JSON */ }
@@ -26,36 +47,44 @@ export function createAgent({ razorpay, upi, calendar, whatsapp, credential, cal
 
   return {
     /** A payment link for the deposit. Any other amount is refused by Guard, however the agent asks. */
-    createDepositLink: ({ reference, amountInr }) => call("POST", `${razorpay}/v1/payment_links`, { amount: amountInr * 100, currency: "INR", reference_id: reference, description: `Deposit ${reference}`, accept_partial: false }),
+    createDepositLink: ({ reference, amountInr }) => call("razorpay", "POST", `${razorpay}/v1/payment_links`, { amount: amountInr * 100, currency: "INR", reference_id: reference, description: `Deposit ${reference}`, accept_partial: false }),
     /** Has the customer paid? The payment id is in Razorpay's record of the link. */
-    readLink: (id) => call("GET", `${razorpay}/v1/payment_links/${encodeURIComponent(id)}`),
-    bookSlot: ({ summary, startsAt, minutes = 30 }) => call("POST", events, { summary, start: { dateTime: new Date(startsAt).toISOString() }, end: { dateTime: new Date(startsAt + minutes * 60_000).toISOString() } }),
-    tell: ({ to, text }) => call("POST", `${whatsapp}/v26.0/${phoneNumberId}/messages`, { messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
+    readLink: (id) => call("razorpay", "GET", `${razorpay}/v1/payment_links/${encodeURIComponent(id)}`),
+    bookSlot: ({ summary, startsAt, minutes = 30 }) => call("calendar", "POST", events, { summary, start: { dateTime: new Date(startsAt).toISOString() }, end: { dateTime: new Date(startsAt + minutes * 60_000).toISOString() } }),
+    tell: ({ to, text }) => call("whatsapp", "POST", `${whatsapp}/v26.0/${phoneNumberId}/messages`, { messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
     /** One try at a refund. 202 means the owner has been asked and the call is waiting; 200 means it was made. `idempotencyKey` is Razorpay's own header, which Guard replaces with a key it derives. */
-    refundOnce: ({ paymentId, amountPaise, receipt, idempotencyKey }) => call("POST", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refund`, { amount: amountPaise, receipt }, idempotencyKey ? { "X-Refund-Idempotency": idempotencyKey } : {}),
+    refundOnce: ({ paymentId, amountPaise, receipt, idempotencyKey }) => call("razorpay", "POST", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refund`, { amount: amountPaise, receipt }, idempotencyKey ? { "X-Refund-Idempotency": idempotencyKey } : {}),
     /** What Razorpay holds as links with this reference: how to find a link whose creation answer was lost (HTTP 504 from Guard) without making a second one. */
-    findLink: (reference) => call("GET", `${razorpay}/v1/payment_links?reference_id=${encodeURIComponent(reference)}`),
+    findLink: (reference) => call("razorpay", "GET", `${razorpay}/v1/payment_links?reference_id=${encodeURIComponent(reference)}`),
     /** The calendar's own record of one event: how to know that a booking was really saved. */
-    getEvent: (id) => call("GET", `${events}/${encodeURIComponent(id)}`),
+    getEvent: (id) => call("calendar", "GET", `${events}/${encodeURIComponent(id)}`),
     /** What Razorpay holds as refunds against a payment: how to know a refund whose answer was lost was made. */
-    listRefunds: (paymentId) => call("GET", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refunds`),
+    listRefunds: (paymentId) => call("razorpay", "GET", `${razorpay}/v1/payments/${encodeURIComponent(paymentId)}/refunds`),
     // UPI (B71): no gateway. Geometer's desk keeps the request, the owner's marks and the refunds owed; "paid" is true only after the owner marks the money received.
     /** A UPI request for the deposit: the shop's own upi:// link and who is paid. Asked again for the same reference and amount, the same request. */
-    upiRequest: ({ reference, amountInr, customer }) => call("POST", `${upi}/requests`, { reference, amount_paise: amountInr * 100, customer }),
+    upiRequest: ({ reference, amountInr, customer }) => call("upi", "POST", `${upi}/requests`, { reference, amount_paise: amountInr * 100, customer }),
     /** The desk's own record of one request: `paid` is the owner's word, never the customer's. */
-    upiRead: (id) => call("GET", `${upi}/requests/${encodeURIComponent(id)}`),
+    upiRead: (id) => call("upi", "GET", `${upi}/requests/${encodeURIComponent(id)}`),
     /** The customer says they paid: the owner is asked to look. It marks nothing paid. */
-    upiClaim: (id, via) => call("POST", `${upi}/requests/${encodeURIComponent(id)}/claim`, { via }),
+    upiClaim: (id, via) => call("upi", "POST", `${upi}/requests/${encodeURIComponent(id)}/claim`, { via }),
     /** A refund the owner owes and sends from their own UPI app: never sent by the agent, never more than was marked. */
-    upiOwe: ({ paymentId, amountPaise, why }) => call("POST", `${upi}/refunds`, { payment_id: paymentId, amount_paise: amountPaise, why }),
-    /** Keep sending the identical refund until it is no longer held, or `timeoutMs` is up. Nothing else is done to hurry it: only the owner can approve. */
-    async refundUntilDone(refund, { everyMs = 5_000, timeoutMs = 24 * 3_600_000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now } = {}) {
-      const stop = now() + timeoutMs;
+    upiOwe: ({ paymentId, amountPaise, why }) => call("upi", "POST", `${upi}/refunds`, { payment_id: paymentId, amount_paise: amountPaise, why }),
+    /**
+     * Keep sending the identical refund while Guard holds it for the owner, and stop at the first of: it is made (200, or any other answer); Guard names another request (the
+     * owner said no, or it ran out: `ended: "no"`); the request's own end, Guard's `expires_at_ms` (`ended: "ran-out"`; the last send goes LAST_SEND_MS before it, never after).
+     * Nothing else is done to hurry it: only the owner can approve.
+     */
+    async refundUntilDone(refund, { everyMs = 5_000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now } = {}) {
+      let asked;
       for (;;) {
         const result = await this.refundOnce(refund);
         if (result.status !== 202) return result;
-        if (now() >= stop) return result;
-        await sleep(everyMs);
+        const held = heldOf(result, now);
+        if (asked && held.id !== asked.id) return { ...result, ended: "no" };
+        asked ??= held;
+        const left = asked.until - now();
+        if (left <= LAST_SEND_MS) { await sleep(Math.max(0, left) + 1000); return { ...result, ended: "ran-out" }; }
+        await sleep(Math.min(everyMs, left - LAST_SEND_MS));
       }
     },
   };
@@ -79,9 +108,18 @@ export async function run(agent, { customer, reference, depositInr, startsAt, pa
   return { link, booked, first, result };
 }
 
+/**
+ * Where the credentials come from, in the names Geometer uses (credentials.env, and the crash test's environment): the file on each call when GEOMETER_CREDENTIALS_FILE names
+ * it, each Guard's own (GEOMETER_<SERVICE>_CREDENTIAL), or the one shared credential of an agent made before 12 Nov 2026 (GEOMETER_CREDENTIAL).
+ */
+export function credentialsFromEnv(env = process.env) {
+  const credentials = Object.fromEntries(["razorpay", "upi", "calendar", "whatsapp"].map((s) => [s, env[`GEOMETER_${s.toUpperCase()}_CREDENTIAL`]]).filter(([, v]) => v));
+  return { credentials, ...(env.GEOMETER_CREDENTIALS_FILE ? { credentialsFile: env.GEOMETER_CREDENTIALS_FILE } : {}), ...(env.GEOMETER_CREDENTIAL ? { credential: env.GEOMETER_CREDENTIAL } : {}) };
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const env = (name) => { const v = process.env[name]; if (!v) { console.error(`Set ${name} (see the top of this file).`); process.exit(2); } return v; };
-  const agent = createAgent({ razorpay: env("GEOMETER_RAZORPAY_URL"), calendar: env("GEOMETER_CALENDAR_URL"), whatsapp: env("GEOMETER_WHATSAPP_URL"), credential: env("GEOMETER_CREDENTIAL"), calendarId: env("CALENDAR_ID"), phoneNumberId: env("PHONE_NUMBER_ID") });
+  const agent = createAgent({ razorpay: env("GEOMETER_RAZORPAY_URL"), calendar: env("GEOMETER_CALENDAR_URL"), whatsapp: env("GEOMETER_WHATSAPP_URL"), ...credentialsFromEnv(), calendarId: env("CALENDAR_ID"), phoneNumberId: env("PHONE_NUMBER_ID") });
   // Looking at the link until Razorpay says it is paid. Every look is a call through Guard, so not every second; a Razorpay webhook is better still.
   const paidLink = async (id) => {
     for (let i = 0; i < 120; i++) {

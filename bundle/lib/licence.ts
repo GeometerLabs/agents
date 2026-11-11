@@ -204,3 +204,21 @@ export function syncLicence(dir: string, server: ServerConfig, shops: readonly s
   }
   return lines;
 }
+
+/**
+ * An own agent's licence line for the panel (12 Nov 2026): the same state its Guards act on (an agent's id is a shop's id in the lease), written into status/<agent>.json
+ * when it changes. An agent has no runtime, so there is no client licence file to hand it; its Guards read the lease themselves. Returns what changed state, said once.
+ */
+export function syncAgentLicences(dir: string, server: ServerConfig, agents: readonly string[], now: Date): string[] {
+  const lines: string[] = [];
+  const kept = keptLicence(dir, server);
+  if (!kept.pinned) return lines;
+  for (const agent of agents) {
+    const next = statusLicence(kept, licenceFileFor(kept, agent, ""), now.getTime());
+    const was = readStatus(dir, agent)?.licence;
+    if (sameLicence(was, next)) continue;
+    updateStatus(dir, agent, now, (s) => { s.licence = { ...next, at: now.toISOString() }; }, false);
+    if (was && was.state !== next.state) lines.push(`${agent}: licence ${was.state.replace("_", " ")} -> ${next.state.replace("_", " ")}.`);
+  }
+  return lines;
+}

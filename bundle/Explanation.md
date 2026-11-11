@@ -9,7 +9,7 @@ November 2026. Plan items B9, parts of B9a, B14 (the fail-closed minimum), B19, 
 | `geometer.ts` | the command line: `init`, `model-key`, `backup-key`, `shop add`, `agent add\|check\|deploy\|show\|record\|report`, `check`, `deploy`, `status`, `stop`, `start`, `restore`, `update`, `rollback`, `logs`, `apply [--watch]`, `backup now`, `backup drill`, `licence extension`, `licence lease`, `pair`, `up`, `server status\|start\|stop`, `invite` |
 | `../install.sh`, `release.json`, `cloud-init.yaml`, `lib/pairing.ts` | the one-step install (plan item 14b): the script, its pins, the cloud-init file that runs it, and this server's side of pairing with fleet |
 | `lib/licence.ts` | the licence lease on this server (B13): the newest good lease, the extensions, what each shop's runtime is handed (`client/licence.json`) and what the panel shows |
-| `agent/` | an agent someone else wrote (B51): its folder and flags (`folder.ts`), its Guards (`plan.ts`, `deploy.ts`, `applied.ts`), the record from the Guards' decisions and the services' state (`facts.ts`, `record.ts`, `records.ts`), the report (`report.ts`), the relay's look at a payment (`relay-context.ts`) and the inbox (`inbox.ts`) |
+| `agent/` | an agent someone else wrote (B51): its folder and flags (`folder.ts`), its Guards (`plan.ts`, `deploy.ts`, `applied.ts`), the record from the Guards' decisions and the services' state (`facts.ts`, `record.ts`, `records.ts`), the report (`report.ts`), the relay's look at a payment (`relay-context.ts`) and the inbox (`inbox.ts`); since 12 Nov its credentials, one per Guard (`credentials.ts`), `agent rotate` (`rotate.ts`), `agent remove` (`remove.ts`), the commands for both (`manage-cli.ts`) and what the panel asks for (`requests.ts`) |
 | `examples/own-agent/agent.js` | a tiny agent that is not a template: plain Node, no dependencies; what the end-to-end test runs |
 | `deploy.ts` | the checked deploy: plan, compile, verify, write, `docker compose up`, then ask the running Guards |
 | `update.ts`, `handcheck.ts` | update every client at once and roll back (B53): the hand check run at two versions on a client's own settings and compared, the walk over clients with each step written to the state file, the summary |
@@ -151,7 +151,7 @@ The builders' headline: an agent built with Claude Code, Lovable, n8n or the bui
 
 **The network.** The builder's agent is not on our network: it may be a laptop, Lovable's cloud or n8n's. It reaches a Guard through Caddy at `https://<domain>/g/<agent>/<service>/...` (`handle_path` cuts the prefix; the Guard sees the service's own path). The Guards' forwarders join a new internal network, `gate`, with Caddy and no one else; they are **not** put on `front`, so the existing claim that Caddy reaches the inbox, the relay and the panel and the Guards' agent ports are on no network those can reach stays true (the inbox, relay, panel and ops are not on `gate`, and `gate` has no way out). A Guard still reaches its service through `egress`, and the deployer and the relay reach its admin and agent ports on the `admin` network, as for a shop. The Guard's agent port is therefore reachable from the internet through Caddy, and what protects it is the credential (a long random token Guard stores as a hash), the limits, and Guard's own caps. A server that holds only agents has no model Guard in its compose file and needs no model key (the deploy of an agent does not ask for one unless a shop is deployed).
 
-**Credentials.** One token for the builder's agent, the same hash in all three Guards (`secrets/agents/<name>/agent_token`, printed by `agent add`, never in a generated file). Three more are the bundle's own and are never given to the agent: `relay-<name>`, allowed `send` at the WhatsApp Guard; `record-<name>`, allowed `list_links`, `read_link`, `read_payment` and `list_refunds` at the Razorpay Guard and `list` and `get` at the Calendar Guard (it can look, and Guard refuses it a refund: seen in the captured output, "agent record-demo is not authorized for refund"); and the owner's approver `owner-<name>`, whose secret signs the owner's answers. The service's own keys (`razorpay_key`, `whatsapp_token`, the Google key) go in the same inbox names as a shop's and to the same one container each.
+**Credentials.** One token for the builder's agent, the same hash in all three Guards (`secrets/agents/<name>/agent_token`, printed by `agent add`, never in a generated file). **Changed 12 Nov 2026:** one per Guard, handed over in a file and never printed ("B51's rest", below). Three more are the bundle's own and are never given to the agent: `relay-<name>`, allowed `send` at the WhatsApp Guard; `record-<name>`, allowed `list_links`, `read_link`, `read_payment` and `list_refunds` at the Razorpay Guard and `list` and `get` at the Calendar Guard (it can look, and Guard refuses it a refund: seen in the captured output, "agent record-demo is not authorized for refund"); and the owner's approver `owner-<name>`, whose secret signs the owner's answers. The service's own keys (`razorpay_key`, `whatsapp_token`, the Google key) go in the same inbox names as a shop's and to the same one container each.
 
 **What Guard's own lists give, found by running the real binary** (`test/fixtures/own-agent-facts.json` is a capture, 5 November 2026, production profile, the bundle's specs, the stand-ins behind): `GET /admin/decisions` (newest first, at most 500, no "since") has for each call its id, the agent that made it (`principal.workload`), the operation, `allow`, `deny` or `hold`, whether it was sent, the arguments in typed form (`["int","20000"]`, `["map",{...}]`; a calendar event's title and start are in it), each rule's verdict with its words, and in `reasons` the answer the service gave as words: `dispatched once; the provider answered 200`. `GET /admin/approvals` has each hold's state (`pending`, `approved`, `consumed`, `denied`), the approver who decided it, when, and the decision that used it. `GET /admin/intents` has the refund's state and the service's refund id. Two things the capture showed that were not obvious: a call held again while it waits is the same approval (one hold, however often the agent sends it); and **a refund sent again after it was made is held again under a new approval**, so the owner would be asked a second time. The README tells the builder to stop at HTTP 200, and the example does.
 
@@ -784,6 +784,79 @@ Item 17b put a signed summary in each paper's link (`#s1.`, modules/Explanation.
 **Each server lists its key.** Fleet lists a key only when the server shows it holds it: the claim (`signerClaim`) signs the deployment id and the public half with the key. The deployer sends it (`lib/signer-claim.ts`), because it is the one process holding both the panel's key and the deployment key: when it starts and once a day (`runDueJobs`, before the early return of a server with no shop). A refusal or an unreachable fleet is a log line; a repeat changes nothing at fleet. Not the heartbeat: its contract is counts, versions and health, and fleet refuses a field it does not know.
 
 **Tests** (written, not run): `test/report-block.test.ts` (the key in the report block when deploy says the runtime can read it; the note when it cannot; nothing from the planner alone, so goldens do not depend on who runs them), `test/signer-claim.test.ts` (the claim against a stand-in fleet, its proof checked as fleet checks it, nothing sent without fleet or a key, failures as lines, at start and once a day).
+
+## B51's rest: a credential per Guard, rotation, remove, own agents in the panel, two more crash-test situations (12 November 2026, plan item 14)
+
+The builder's own agents get what a long-lived service needs: credentials that can be changed without stopping it, a way off the server that keeps the record, a page in
+the panel, and the two held-refund endings the crash test did not try. **Guard is not changed** (monorepo untouched): Guard already lets one agent id have two credentials
+side by side and retires a configured one at a time it is told (monorepo ADR-0041 item 4, `adapters/boundaries/guard/tests/reload.rs`), reloads its agent list without a
+restart, and opens a new request when a call held for the owner is sent again after a no or after its end (`tests/approvals.rs`, `one_deny_refuses_and_nobody_who_asked_decides`).
+What that last rule costs is under "The owner's no", below.
+
+**A credential per Guard** (`agent/credentials.ts`). `secrets/agents/<name>/<kind>_token` for each Guard, under the agent's one id (`agent-<name>`), so Guard keys its held
+calls (`pending_for`: tenant, principal, call, policy) and the record (`facts.ts` filters on the id) the same as before. **They reach the agent in one file**,
+`secrets/agents/<name>/credentials.env` (0600, the deployer's user, who is the agent's user on the builder's server: README step 8): each Guard's address and credential
+as `GEOMETER_<KIND>_URL` / `GEOMETER_<KIND>_CREDENTIAL`, the names the crash test already gave the addresses. Nothing prints a credential any more: `agent add`, `deploy`
+and `show` print the file's path and the names, `show --credential` says it prints nothing, and the connection object the commands print from holds none. The file is
+rewritten only after a deploy whose Guards all run what was checked, so the agent never reads a credential its Guard refuses. **An agent added before today** had one
+`agent_token` for all its Guards: each Guard's file starts as a copy of it (so the deploy that brings this in changes nothing for a running agent), the file keeps
+`GEOMETER_CREDENTIAL` while every Guard still has the same one, `agent check` notes it, and the shared file is deleted once no Guard uses it. The crash test gives the agent
+its credentials in the shape it has on the server: one per Guard (and `GEOMETER_CREDENTIALS_FILE`), or the one shared credential for an agent not rotated yet.
+
+**Rotation** (`agent/rotate.ts`). The order, each step in the state file before the next: (1) the old credential's sha256 and the end of its overlap go into
+`state.agents[name].credentials[kind].previous` (a hash, never a credential); (2) a new credential in that Guard's file, not yet in `credentials.env`; (3) the checked deploy
+with both hashes in guard.toml under the one id, **the old one first**, because Guard's `retire-static` retires the first configured entry with that id
+(`admin.rs`, `find(|a| a.id == subject)`); the running Guards are asked to read their guard.toml again (`POST /admin/reload`), and only a Guard whose reload is refused or
+needs a restart is restarted (`bringUp`'s `reload` list, passed by the rotation only, so a shop's deploy is unchanged); (4) `credentials.env` is rewritten once every Guard
+runs what was checked; (5) each rotated Guard is told to retire the old one at the end of the overlap (`after_seconds`), so **Guard's own clock** ends it even if the deployer
+is down then; (6) the deployer's loop (`finishRotations`, last in `runDueJobs`, after its own save so its deploy's state is not overwritten) tells Guard to retire it again
+(a store put back by `restore` may have lost the first instruction), while the old entry is still first, then drops the hash and deploys; a deploy that fails puts the
+hash back (retired, still first) and is tried again after 10 minutes. A deploy refused in (3) puts the old credential back in the Guard's file and
+forgets the rotation; the agent's file never changed. A second rotation of a Guard is refused while its overlap runs. **The overlap is 15 minutes by default**: it covers a
+call in flight, a held refund sent again every few minutes, and an agent that re-reads its file on each call or is restarted to load it; `--overlap-minutes 0` ends a leaked
+credential at once, and up to 1440 serves an agent whose file is copied to another machine by hand. The panel's "New credentials" button is the same rotation, asked for
+through a request file.
+
+**Remove** (`agent/remove.ts`). Open means: a call Guard holds for the owner (pending, not run out), one the owner approved that the agent has not sent again, an effect
+whose outcome Guard does not know (`/admin/intents` in received, reserved, dispatched or outcome_unknown), or an item on the unfinished-work list read from the agent's
+exported record with the panel's own detectors (`modules/unfinished`, Bookings' kinds, which the export's shape is). The Guards are asked fresh; **a Guard that cannot be
+asked refuses the removal** rather than count as nothing open. `--force` goes on and says plainly what stays open and that nothing will finish it. The order matters: the
+kill switch first; then `agents/<name>/` moves out (the deployer's `applyOnce` and a bare `deploy` deploy any folder there), with its state entry, status file, record and
+exports, into `removed/<name>-<time>/` with a README; a tombstone in `state.removed` keeps the name and its network index, because the Guards' kept volumes carry the name
+and a new shop or agent under it would start on their stores (`agent add` and `shopIndex` refuse it, in words; a panel stop request for the name is left alone, because the
+shop branch it would take throws there); the panel's waiting requests for it are dropped; every credential the bundle made for it is deleted and the kept README written,
+**before** the configuration without it is brought up (`--remove-orphans` takes its Guards and forwarders down), so a server that cannot bring it up at that moment leaves no
+credential behind and says that `geometer deploy` finishes it. Kept and listed: the shop's own keys, its fingerprint key and the
+label key (the kept record's labels were made with them), the Guards' Docker volumes, the desk's ledger for a UPI agent, and its snapshots in the bucket, whose lifecycle
+rule deletes them after its days as for any snapshot.
+
+**The owner's no, and the 24 hours** (`agent/crash-test/situations.ts`, `owner-denies` and `approval-expires`). Guard's 202 names the request it opened for the owner and when
+it runs out (`detail.approval`, `detail.expires_at_ms`). Sent again while it waits, the identical call gets the same request; after a no or after the end, Guard opens a new one.
+So an agent learns of a no by **one more send that gets a 202 naming another request**, and stops; and it must never send after `expires_at_ms`. The judges allow exactly that:
+after the no, at most one more refund request and at most one new request, no refund of another amount or for another payment and no payout, nothing at Razorpay; after the
+end, one request in all and no refund request, nothing at Razorpay; in both, a message to the customer after the no (or after the agent's last request) and none that says
+the deposit was refunded. That last is the second thing read as words (`driver.refundedWords`; "not" and "nothing" before the words do not count). The end is made to come
+in the test: Guard's request is compiled to run out after 60 seconds, the shortest its compiler takes (`approval_ttl_seconds`, 60 to 604800), said in the situation's own
+words as standing in for the shop's hours. **The cost of finding out by sending once more**: the new request it opens is one the relay would ask the owner about, minutes
+after their no. Closing that needs the relay (not ask about a call identical to one denied within the hour) or Guard (answer a call whose last request was denied with a
+refusal); neither is changed here (Deferred.md). The example agent follows the contract; `server-asks-again.js` (never looks at which request) and `server-past-end.js` (a
+24-hour clock of its own) each fail one of the two situations and no other.
+
+**Own agents in the panel** (`panel/agents.ts`, `panel/views-agents.ts`, `panel/words-agents.ts`). The panel has no `agents/` folder and no state file, so everything it shows
+is in files the deployer writes for it: `status/<agent>.json`'s `own` block (the addresses, each Guard's credential's dates, the calls held at the last minute's look, from
+`refreshStatuses`, which now confirms own agents too, so the page is not "not confirmed" for good) and `exports/<agent>/` (the record, `crash-test.json`, `in-service.json`,
+`rotation.json`), each written by one writer. A builder sees each agent beside the shops; a partner sees none, and the address is a 404, as a shop that is not theirs is. The
+three actions are request files with a name and an id (`requests/<agent>.stop.json`, the shop's stop request; `.crash-test.json`; `.rotate.json`, with a Guard's kind that
+must be one of the agent's): nothing the panel writes reaches a command line, and the crash test runs the command in the agent's own agent.json. The crash test runs beside
+the deployer's loop, one at a time per server, so a stop request never waits behind it; a summary left "running" by a restarted deployer is marked as having no result. The
+page shows counts and situation titles only, never a check's detail, which can carry the agent's own output. The licence line is the lease's state for the agent
+(`syncAgentLicences`) and the builder licence's price from the price list in force.
+
+**What was run.** Nothing but type checks of the touched files (the owner's instruction of 11 Nov: tests are written and run together later). Not run: every test named
+below, the crash test against the real Guard for the two new situations and the two new wrong examples, the Docker proof's new check (the agent's Razorpay credential opens
+nothing at its WhatsApp Guard), and a reload of a real Guard's agent list from the bundle. Tests written: `test/agent-rotate.test.ts`, `test/agent-remove.test.ts`,
+`test/agent-requests.test.ts`, `panel/test/agents.test.ts` (new); `test/agent.test.ts`, `test/cli.test.ts`, `test/crash-test.test.ts`, `test/crash-test-parts.test.ts`,
+`test/update-agent.test.ts`, `test/proof/run.ts` and the fake machine (`test/world.ts`) changed.
 
 ## B72: less paperwork to put a shop live (12 Nov 2026)
 

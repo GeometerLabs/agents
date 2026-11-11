@@ -24,6 +24,10 @@ export interface World {
   calls: { command: string; args: string[] }[];
   /** Admin calls the fake ops container was asked for, as `service METHOD path`. */
   admin: string[];
+  /** The JSON body of each admin call that had one, as `service METHOD path body` (a rotation's retire call says when the old credential stops). */
+  adminBodies: string[];
+  /** What an admin call answers, by `service METHOD path` (the path as asked, query included). Left out: 200 with an empty body (or the Guard's status, for /admin/status). */
+  adminAnswers: Map<string, { status: number; body: unknown }>;
   /** Make verify-bundle fail for a service, naming rules. */
   failVerify(service: string, rules: string[]): void;
   /** Make the "running" Guard report another policy than the one compiled. */
@@ -58,6 +62,8 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
   writeSecretFile(secretFile(t.root, "g-model", serverChange.model && (serverChange.model as { wire: string }).wire === "anthropic" ? "model_api_key" : "model_authorization"), "Bearer sk-test-model-key-0123456789");
   const calls: { command: string; args: string[] }[] = [];
   const admin: string[] = [];
+  const adminBodies: string[] = [];
+  const adminAnswers = new Map<string, { status: number; body: unknown }>();
   const observe: { shops: unknown[] } = { shops: [] };
   const stopStatuses: number[] = [200, 200, 200, 200];
   const recover = { status: 200 };
@@ -90,8 +96,11 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
       const i = args.findIndex((a) => a.endsWith("/ops.ts"));
       const [verb, ...rest] = args.slice(i + 1);
       if (verb === "admin") {
-        const [service, method, path] = rest;
+        const [service, method, path, body] = rest;
         admin.push(`${service} ${method} ${path}`);
+        if (body !== undefined) adminBodies.push(`${service} ${method} ${path} ${body}`);
+        const preset = adminAnswers.get(`${service} ${method} ${path}`);
+        if (preset) return ok(JSON.stringify(preset));
         if (path === "/admin/status") {
           const name = service === "g-model" ? [...digestByName.keys()].find((n) => n.endsWith("-model")) : service.slice(2);
           const spec = [...digestByName.entries()].find(([n]) => n === name);
@@ -111,7 +120,7 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
   });
   const ctx: Context = { dir: t.root, appDir: new URL("../../", import.meta.url).pathname.replace(/\/$/u, ""), runner, tool, log: () => undefined, now: () => new Date("2026-11-04T10:00:00Z"), sleep: async () => undefined, docker: "docker", waitSeconds: 1 };
   return {
-    ctx, root: t.root, paths: t.paths, calls, admin, runningDigest, observe, stopStatuses, recover, guardLicence, tomls,
+    ctx, root: t.root, paths: t.paths, calls, admin, adminBodies, adminAnswers, runningDigest, observe, stopStatuses, recover, guardLicence, tomls,
     failVerify: (service, rules) => failing.set(service, rules),
     handIn(shop, files = secretsFor(shop)) { const dir = join(t.paths.secretsInbox, shop); mkdirSync(dir, { recursive: true }); for (const [n, v] of Object.entries(files)) writeFileSync(join(dir, n), v); },
     done: t.done,

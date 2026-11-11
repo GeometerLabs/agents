@@ -117,8 +117,17 @@ test("the driver contract: defaults for a plain agent, the builder's own lines w
   const own = resolveDriver({ says: { book: "hello", haggle: "cheaper?" }, bookedWords: "\\bdone\\b", situationSeconds: 90, cwd: "app" });
   assert.deepEqual([own.says.book, own.says.haggle, own.own], [["hello"], "cheaper?", { book: true, cancel: false, haggle: true, refundMore: false }]);
   assert.ok(own.bookedWords.test("all DONE") && !own.bookedWords.test("Booked!"));
-  const env = contractEnv({ port: 4100, razorpay: "http://127.0.0.1:1", whatsapp: "http://127.0.0.1:2", credential: "gg_x", phoneNumberId: "123456789012345", whatsappAppSecret: "wa", razorpayWebhookSecret: "rz", depositInr: 200, priceInr: 450, ownerWhatsapp: "+919800000001", retryMs: 300 });
-  assert.deepEqual(Object.keys(env).sort(), ["GEOMETER_CRASH_TEST", "GEOMETER_CREDENTIAL", "GEOMETER_DEPOSIT_INR", "GEOMETER_OWNER_WHATSAPP", "GEOMETER_PORT", "GEOMETER_PRICE_INR", "GEOMETER_RAZORPAY_URL", "GEOMETER_RAZORPAY_WEBHOOK_SECRET", "GEOMETER_RETRY_MS", "GEOMETER_WHATSAPP_APP_SECRET", "GEOMETER_WHATSAPP_URL", "PHONE_NUMBER_ID", "PORT"].sort(), "a service the agent does not use has no address, and an unset value is not passed as 'undefined'");
+  // the words that say a refund was made (the held-refund situations check no message says it): "not" and "nothing" before them do not count
+  const words = resolveDriver(undefined).refundedWords;
+  for (const yes of ["Your deposit of Rs 200 is refunded.", "It has been refunded", "Your refund was sent"]) assert.ok(words.test(yes), yes);
+  for (const no of ["The owner decided not to refund your Rs 200 deposit.", "so your Rs 200 refund was not sent", "nothing was refunded", "it was not refunded"]) assert.ok(!words.test(no), no);
+  assert.ok(resolveDriver({ refundedWords: "\\bmoney back\\b" }).refundedWords.test("your money back is on its way"));
+  // one credential per Guard (12 Nov 2026), under the names credentials.env uses; GEOMETER_CREDENTIAL only while every Guard has the same one (an agent made before)
+  const env = contractEnv({ port: 4100, razorpay: "http://127.0.0.1:1", whatsapp: "http://127.0.0.1:2", credentials: { razorpay: "gg_r", whatsapp: "gg_w" }, phoneNumberId: "123456789012345", whatsappAppSecret: "wa", razorpayWebhookSecret: "rz", depositInr: 200, priceInr: 450, ownerWhatsapp: "+919800000001", retryMs: 300 });
+  assert.deepEqual([env.GEOMETER_RAZORPAY_CREDENTIAL, env.GEOMETER_WHATSAPP_CREDENTIAL, env.GEOMETER_CREDENTIAL], ["gg_r", "gg_w", undefined]);
+  const shared = contractEnv({ port: 4100, razorpay: "http://127.0.0.1:1", whatsapp: "http://127.0.0.1:2", credentials: { razorpay: "gg_x", whatsapp: "gg_x" }, credentialsFile: "/tmp/c.env", phoneNumberId: "123456789012345", whatsappAppSecret: "wa", razorpayWebhookSecret: "rz", depositInr: 200, priceInr: 450, ownerWhatsapp: "+919800000001", retryMs: 300 });
+  assert.deepEqual([shared.GEOMETER_CREDENTIAL, shared.GEOMETER_CREDENTIALS_FILE], ["gg_x", "/tmp/c.env"]);
+  assert.deepEqual(Object.keys(env).sort(), ["GEOMETER_CRASH_TEST", "GEOMETER_DEPOSIT_INR", "GEOMETER_RAZORPAY_CREDENTIAL", "GEOMETER_WHATSAPP_CREDENTIAL", "GEOMETER_OWNER_WHATSAPP", "GEOMETER_PORT", "GEOMETER_PRICE_INR", "GEOMETER_RAZORPAY_URL", "GEOMETER_RAZORPAY_WEBHOOK_SECRET", "GEOMETER_RETRY_MS", "GEOMETER_WHATSAPP_APP_SECRET", "GEOMETER_WHATSAPP_URL", "PHONE_NUMBER_ID", "PORT"].sort(), "a service the agent does not use has no address, and an unset value is not passed as 'undefined'");
   assert.equal(env.PORT, "4100");
 });
 

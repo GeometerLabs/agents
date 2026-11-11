@@ -9,6 +9,7 @@ import { loadPrivateKey } from "../../../modules/report/sign.ts";
 import { readAgent } from "../folder.ts";
 import { writeAgentCertificate } from "./certificate.ts";
 import type { CrashResult } from "./run.ts";
+import { writeInService } from "../requests.ts";
 
 export interface Issued { files: string[]; code: string; text: string; signed: boolean }
 
@@ -33,4 +34,5 @@ export function recordService(ctx: Context, name: string, result: CrashResult, c
   agents[name] ??= { index: shopIndex(state, name), guards: {} };
   agents[name].service = { version: result.version, at: ctx.now().toISOString(), held: result.held, of: result.total, code };
   saveState(ctx.dir, state);
+  writeInService(ctx.dir, name); // the panel's copy (agent/requests.ts)
 }
