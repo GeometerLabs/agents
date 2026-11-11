@@ -2,8 +2,9 @@
 // made neutral are held to it here: a file in them that names a gateway, or imports a provider's folder instead of the registry, fails, so the seam cannot quietly
 // close again. Each exception is listed with the reason it stays; an exception that no longer names one fails too, so the list only ever shrinks.
 //
-// Not yet held to it (bundle/Deferred.md, B71): the deployer's secret file names and the inbox's webhook route, the own agent's record and relay, the crash test of
-// an own agent on a gateway, the templates' reports and stand-ins. Those still say "razorpay" where the gateway's id belongs.
+// Not yet held to it (bundle/Deferred.md, B71): the deployer's secret file names and the inbox's webhook route, the own agent's record and facts, the crash test of
+// an own agent on a gateway, the templates' report strings of a gateway shop and the stand-ins. Those still say "razorpay" where the gateway's id belongs (some on
+// purpose: a name on disk or in an outside contract keeps its value).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -12,9 +13,10 @@ import { GATEWAYS } from "../index.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..", "..");
 /** Where the rule holds: the panel, the payments flow and the owner-marked module, the shared Guard and approvals code, the templates' agents. */
-const HELD = [/^bundle\/panel\//u, /^modules\/payments\/(?!providers\/)/u, /^modules\/messaging\//u, /^modules\/approvals\/(clients|relay)\.ts$/u, /^modules\/standins\//u, /^templates\/[a-z]+\/[a-z-]+\/src\//u];
+const HELD = [/^bundle\/panel\//u, /^modules\/payments\/(?!providers\/)/u, /^modules\/messaging\//u, /^modules\/approvals\//u, /^modules\/standins\//u, /^templates\/[a-z]+\/[a-z-]+\/src\//u,
+  // B71 part 2: the relay and the desk on a server, the own agent's relay context, the shared services' configs and ops
+  /^bundle\/services\/(relay|desk|ops)\.ts$/u, /^bundle\/agent\/relay-context\.ts$/u, /^bundle\/generate\/configs\.ts$/u];
 const EXCEPT: Record<string, string> = {
-  "templates/education/fees/src/language/templates.ts": "owner_link_failed (\"... Please check Razorpay\") is the text of a Meta-approved message template; changing it needs Meta's re-review, so it waits for the owner (B71 report)",
   "templates/commerce/orders/src/harness.ts": "the test harness names its gateway example by the example's own file name (annapurna-tiffins-razorpay.example.json)",
 };
 const isTest = (rel: string) => /(^|\/)test\//u.test(rel) || /\.test\.ts$/u.test(rel);
@@ -30,7 +32,8 @@ function files(dir: string): string[] {
   return out;
 }
 
-const held = [...files(join(ROOT, "modules")), ...files(join(ROOT, "bundle", "panel")), ...files(join(ROOT, "templates"))]
+// the folders read; HELD says which files in them are held (B71 part 2 added bundle/services, bundle/agent and bundle/generate, for the files named in HELD)
+const held = [...files(join(ROOT, "modules")), ...files(join(ROOT, "bundle", "panel")), ...files(join(ROOT, "templates")), ...["services", "agent", "generate"].flatMap((d) => files(join(ROOT, "bundle", d)))]
   .map((p) => relative(ROOT, p).split("\\").join("/")).filter((rel) => !isTest(rel) && HELD.some((r) => r.test(rel)));
 
 test("the neutral places name no gateway: a gateway's name, key shape or id is only in its own folder", () => {

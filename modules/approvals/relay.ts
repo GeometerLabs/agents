@@ -33,7 +33,7 @@ import type { CheckResult } from "../language/check.ts";
 import type { TemplateMessage } from "../messaging/messaging.ts";
 import { HOUR } from "../core/time.ts";
 import { NOT_A_REFUND, readHeld } from "./clients.ts";
-import type { GuardClient, Held, Notified, RefundContext, RuntimeClient } from "./clients.ts";
+import type { GuardClient, Held, Notified, ReadHeld, RefundContext, RuntimeClient } from "./clients.ts";
 import { hashCode } from "./store.ts";
 import type { Ask, AskState, RelayStore } from "./store.ts";
 
@@ -81,6 +81,11 @@ export interface RelayOptions {
   ownerApproverId?: string;
   /** If given, a hold made by any other agent is not shown to the owner. */
   expectedAgent?: string;
+  /**
+   * How a review item is read as a held call the owner may answer. Left out: a refund on a gateway a payment module declares (clients.ts readHeld). An agent's own
+   * API (B71 part 2) gives approvals/held-call.ts readHeldCall, with the calls its reviewed spec holds. Either way the amount and what it is for come from Guard.
+   */
+  readHeld?: (item: unknown) => ReadHeld;
   /** How long a hold may wait for the runtime to show the booking before the builder is told. Default 2 minutes. */
   contextGraceMs?: number;
   /** A code stops working this long before Guard's approval does: Guard needs time to spare when the call is sent again. Default 60 seconds. */
@@ -109,7 +114,7 @@ export interface RelayStatus {
 
 export interface Relay {
   /** The owner's messages from the inbox: saved at once (so the inbox can be answered), handled right after. */
-  receive(messages: { id: string; from: string; text: string; timestamp: number }[]): { saved: number; duplicates: number };
+  receive(messages: { id: string; from: string; text: string; timestamp: number; /** A tapped button's id; the relay does not read it (the owner-marked desk does). */ reply?: { id: string } }[]): { saved: number; duplicates: number };
   /** One pass: the owner's messages, then Guard's held calls, then whatever is left to tell Guard, the runtime or the owner. */
   poll(): Promise<void>;
   /** Resolves when everything started has been handled. */
@@ -341,7 +346,7 @@ export function createRelay(options: RelayOptions): Relay {
       return;
     }
     for (const item of reviews.items) {
-      const parsed = readHeld(item);
+      const parsed = (options.readHeld ?? readHeld)(item);
       if (parsed.ok) { await consider(parsed.held); continue; }
       if (!parsed.id) {
         // a hold with no approval to give: only a person at the server can settle it, so it is the builder's

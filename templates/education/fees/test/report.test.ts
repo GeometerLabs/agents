@@ -158,12 +158,15 @@ test("every string the report says is there in all four languages, and none of t
 });
 
 test("the page is one self-contained file that lists what was not counted and not tested, escapes the centre's name, and carries the code and digests", () => {
-  const sealed = seal(November(month, { innovator: true }));
+  const report = November(month, { innovator: true });
+  const sealed = seal(report);
+  // B71 part 2: a UPI centre's report has its own words for the lines that named a gateway, so the page lists the report's own ids
+  assert.ok(report.notCounted.every((id) => !(report.paidBy === "owner-marked" && (id === "outside-agent" || id === "cash-and-transfers"))), "a UPI centre gets its UPI lines");
   for (const language of LANGUAGES) {
     const html = reportPage(sealed, language);
     assert.ok(html.includes(sealed.code) && html.includes(sealed.digest), language);
     assert.ok(!/<script|src=|href=|@import|url\(/i.test(html.replace(/<style>[\s\S]*?<\/style>/, "")), `${language}: one file, nothing fetched`);
-    for (const id of NOT_COUNTED) assert.ok(html.includes(esc(STRINGS[language].notCounted[id])), `${language} lists ${id}`);
+    for (const id of report.notCounted) assert.ok(html.includes(esc(STRINGS[language].notCounted[id])), `${language} lists ${id}`);
     for (const n of NOT_TESTED) assert.ok(html.includes(esc(STRINGS[language].notTested[n.id])), `${language} lists ${n.id}`);
     assert.ok(html.includes(badgeText(language)), `${language} shows the badge`);
     assert.ok(html.includes("₹5,300"), language);

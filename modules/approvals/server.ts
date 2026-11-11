@@ -32,8 +32,12 @@ function readBody(req: IncomingMessage): Promise<string | undefined> {
 
 export interface RunningRelayServer { port: number; url: string; close(): Promise<void> }
 
-/** The relay's routes as a request handler with nothing listening, for a caller that serves several relays itself (the deploy bundle: one per shop, behind /c/<shop>). */
-export function relayHandler(relay: Relay, token: string): (req: IncomingMessage, res: ServerResponse) => void {
+/**
+ * The relay's routes as a request handler with nothing listening, for a caller that serves several relays itself (the deploy bundle: one per shop, behind /c/<shop>).
+ * What takes the owner's messages is anything with `receive` and `status`: the relay, or (B71 part 2) the owner-marked desk of an agent someone else wrote, which also
+ * reads a tapped button's id (`reply.id`, the button that carries the one-use code). The relay ignores it.
+ */
+export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receive: Relay["receive"]; status(): unknown }, token: string): (req: IncomingMessage, res: ServerResponse) => void {
   const wanted = sha256(token);
   const authorised = (req: IncomingMessage) => {
     const given = /^bearer\s+(\S+)$/iu.exec(req.headers.authorization ?? "")?.[1];
@@ -55,7 +59,8 @@ export function relayHandler(relay: Relay, token: string): (req: IncomingMessage
         for (const m of list) {
           const r = m as Record<string, unknown>;
           if (typeof r?.id !== "string" || r.id.length === 0 || r.id.length > 256 || typeof r.from !== "string" || r.from.length > 32 || typeof r.text !== "string" || r.text.length > 4096 || typeof r.timestamp !== "number") return send(res, 400, { error: "Each message needs id, from, text and timestamp." });
-          messages.push({ id: r.id, from: r.from, text: r.text, timestamp: r.timestamp });
+          const tapped = typeof r.reply === "object" && r.reply !== null && typeof (r.reply as { id?: unknown }).id === "string" && ((r.reply as { id: string }).id.length <= 256) ? { reply: { id: (r.reply as { id: string }).id } } : {};
+          messages.push({ id: r.id, from: r.from, text: r.text, timestamp: r.timestamp, ...tapped });
         }
         return send(res, 200, relay.receive(messages)); // saved before this answer
       }

@@ -35,7 +35,7 @@ test("the shared services' config files are as they were without agents, and nam
   const relay = JSON.parse(relayConfig(server, [], [facts])).shops["my-agent"];
   const net = addressing(server);
   assert.deepEqual([relay.kind, relay.agentId, relay.approverId], ["own-agent", "agent-my-agent", "owner-my-agent"]);
-  assert.equal(relay.razorpayGuardUrl, `http://${net.adminIp("my-agent", "razorpay", 3)}:8080`);
+  assert.deepEqual(relay.gateway, { id: "razorpay", guardUrl: `http://${net.adminIp("my-agent", "razorpay", 3)}:8080` }, "the gateway by its id, from the registry (B71 part 2: no gateway's name in the key)");
   assert.equal(relay.runtimeUrl, undefined, "there is no runtime to ask");
   assert.equal(relay.guardAdminUrl, `http://${net.adminIp("my-agent", "razorpay", 3)}:8190`);
   assert.deepEqual(JSON.parse(refresherConfig(server, [], {}, [facts])).shops["my-agent"].adminTokenFile, "/run/secrets/my-agent/admin_token");
@@ -136,7 +136,7 @@ const heldItem = (receipt: string | null, payment = "pmt_7", amount = "20000") =
   arguments: ["map", { amount: ["int", amount], payment_id: ["str", payment], ...(receipt ? { receipt: ["str", receipt] } : {}) }],
 });
 const guardWith = (items: unknown[]) => ({ reviews: async () => ({ ok: true as const, items }), notify: async () => ({ kind: "recorded" as const }) });
-const runtimeWith = (items: unknown[], answer: (url: string) => Response | Promise<Response>) => ownAgentRuntime({ guard: guardWith(items), razorpay: { baseUrl: "http://rzp", token: () => "gg_reader" }, business: { name: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: "en" }, fetchFn: (async (url: string | URL | Request, init?: RequestInit) => { assert.equal((init?.headers as Record<string, string>).authorization, "Bearer gg_reader"); return answer(String(url)); }) as typeof fetch });
+const runtimeWith = (items: unknown[], answer: (url: string) => Response | Promise<Response>) => ownAgentRuntime({ guard: guardWith(items), gateway: { id: "razorpay", baseUrl: "http://rzp", token: () => "gg_reader" }, business: { name: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: "en" }, fetchFn: (async (url: string | URL | Request, init?: RequestInit) => { assert.equal((init?.headers as Record<string, string>).authorization, "Bearer gg_reader"); return answer(String(url)); }) as typeof fetch });
 
 test("the owner is asked about the payment and the amount Guard holds, with who paid and when from Razorpay's own record; never from the agent", async () => {
   const urls: string[] = [];

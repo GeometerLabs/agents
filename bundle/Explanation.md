@@ -225,12 +225,46 @@ Everything in the bundle used to import Bookings: its settings check, its Razorp
   filled in), byte for byte, into `agents/<name>/gateway-draft.json` and `gateway-accept.json`; `agent.json` says `ownApi.upstream`, the settings say
   `"payment": {"module": "own-api"}` (only an agent folder's settings may: `readPaymentSettings(..., {ownApi: true})`). Every plan builds the spec with the kit's own
   `specFromAccept`, so the draft's hash is checked each time and an edited draft is refused; the deployment's tenant, name and version replace the accept file's, as
-  for any Guard (the deployer raises the version on each change, and the two files are in the agent's desired hash). A rule that holds a call for a person is
-  refused, by name, at `agent add` and at every plan (Deferred.md says why). The Guard (`generate/guards.ts` `ownApiGuardDef`) sends the credential handed in as
+  for any Guard (the deployer raises the version on each change, and the two files are in the agent's desired hash). A rule that holds a call for a person was
+  refused at first; since 11 Nov (part 2, below) it is kept and the relay asks the owner. The Guard (`generate/guards.ts` `ownApiGuardDef`) sends the credential handed in as
   `gateway_authorization` (the whole Authorization header, used as given) and takes the payment address slot (`generate/compose.ts` `slotOf`). The deploy's
   leak check reads every Guard's own credential file from its def, and `missingSecrets` asks for each Guard credential `lib/secrets.ts` INTAKE knows, so a new
   kind of Guard is never skipped. Tested in `test/agent-own-api.test.ts`, the last part on the real `geo-guard`.
-- **An agent someone else wrote on UPI.** `agent add` takes any payment module (`--upstreams upi,whatsapp,calendar` is the default; exactly one payment module). UPI has no API, so it gets no Guard: the plan names the owner-marked desk instead (`modules/payments/owner-marked/desk.ts`: requests with the shop's own `upi://` link, a claim that marks nothing, refunds owed and never sent, the owner's replies, the templates' own record names). `agent crash-test` starts the desk with the agent's one credential (`GEOMETER_UPI_URL`) and plays the owner's Received; three situations judge from the desk and the WhatsApp outbox (booked only after the owner's mark, a mark twice counts once, a refund owed and never said to be sent), and the gateway situations are named as not applying. The example agent has a UPI mode. The desk is not served on a server yet (Deferred).
+- **An agent someone else wrote on UPI.** `agent add` takes any payment module (`--upstreams upi,whatsapp,calendar` is the default; exactly one payment module). UPI has no API on the internet, so the plan names the owner-marked desk (part 2: with a Guard of its own in front of it) (`modules/payments/owner-marked/desk.ts`: requests with the shop's own `upi://` link, a claim that marks nothing, refunds owed and never sent, the owner's replies, the templates' own record names). `agent crash-test` starts the desk with the agent's one credential (`GEOMETER_UPI_URL`) and plays the owner's Received; three situations judge from the desk and the WhatsApp outbox (booked only after the owner's mark, a mark twice counts once, a refund owed and never said to be sent), and the gateway situations are named as not applying. The example agent has a UPI mode. 11 Nov (part 2): the desk is served on a server, behind a Guard of its own, and the crash test runs that Guard too (below).
+
+## The desk on a server, and holds on an agent's own API (B71 part 2, 11 Nov)
+
+- **The desk is served, behind a Guard.** An own agent on UPI gets a desk Guard (`g-<agent>-upi`, tool `owner-marked-desk`) like any other Guard: Caddy sends
+  `/g/<agent>/upi/*` to it, it checks the agent's one credential, holds the desk's limits (modules/payments/owner-marked/desk-guard.ts), records every call and
+  obeys the kill switch and the lease. Its upstream is the relay's container (`relay:8796`, `DESK_PORT`, plain HTTP: it is the server's own `admin` network and
+  there is no certificate to check; `GuardDef.plain`, so `upstreamOf` writes no `[upstream_tls]`). The Guard sends the agent's desk token as its whole Authorization
+  header (`desk_authorization` in its secrets); the desk (services/desk.ts) knows the agent by that token and refuses any other with 401. The desk port is not the
+  relay's: nothing that reaches the desk can reach the relay's `/internal` routes. `DESK_PORT` is set on the relay only when some agent has a desk, so a server
+  without one keeps its compose file byte for byte.
+- **What the desk does on the server** is what it did in the crash test, with what a server needs around it: the owner's replies come from the agent's inbox
+  through the relay's intake (`/internal/owner-messages`, which now keeps a tapped button's id: the Received button carries the code), saved before the inbox is
+  answered and handled one at a time; the owner hears in Bookings' words, in their language, through the relay's own WhatsApp principal, each notice checked against
+  its facts first and sent as its approved template outside the owner's window; the ledger, the replies not yet handled and the last 500 ids handled are one file,
+  written whole (new file, flushed, renamed) on every change, and a reply leaves the queue in the same write as the mark it made, so a restart never marks twice and
+  a redelivered webhook is counted once. A tick a minute sends the owner's refund reminders.
+- **The record and the report.** The own agent's record job reads the desk's two lists through the desk Guard with the reading credential (`RECORD_READS`:
+  `list_links`, `list_refunds`). The agent's calls become the templates' UPI entries (`upi_request`, `upi_paid_claim`, `upi_request_closed`); every refund owed
+  is `upi_refund_owed` from the desk's own list (the one the agent asked for, and one the desk owed by itself after a late mark); each mark the owner made is `owner_marked_paid` with `markedBy: "owner"` and the owner as the conversation, never `record_deposit` (B74: the owner's statement,
+  not a payment service's). The customer's number is a keyed fingerprint. The report (Bookings' code, as for every own agent) counts the marks as money the owner
+  marked and says so.
+- **The crash test runs the same Guard.** `agent crash-test` of a UPI agent now starts the real desk Guard in front of its desk, so the bounds the agent meets in
+  the test are the ones it meets on the server.
+- **Holds on an agent's own API.** A rule in the accept file that holds a call for a person is no longer refused. The deploy makes the owner the approver of that
+  Guard for exactly the held operations (`guard.toml`'s `shop-owner` role names them; a gateway's stays `["refund"]`, so a Razorpay shop's file is unchanged), copies
+  the owner's signing secret to the relay, and issues the relay's reading credential from that Guard (`ops issue-approver` finds the Guard by kind). relay.json's
+  entry for the agent carries the held calls (`ownApi`: tool, operation, amount field, unit), and the relay asks in its own words (modules/Explanation.md). An own
+  API whose spec holds nothing has no relay entry, and its inbox now has no relay address, so the owner's messages go on to the agent instead of waiting (503) on
+  a relay that was never there.
+- **Tests.** `test/desk-served.test.ts` (the deploy's files and secrets, the desk over HTTP with its token, a tapped reply through the relay's intake, a redelivery,
+  a restart, every notice in four languages, the record and report, and the real Guard in front of the desk); `test/agent-own-api.test.ts` (the held rule kept, the
+  approver role, the relay entry, and against the real Guard: asked once, a changed amount held again, the identical call through once after the yes),
+  `test/upi-names.test.ts` (a UPI shop's documents name no gateway). Most of these ran during the work; the last fixes' tests were written and not run (the
+  owner, 11 Nov: every suite runs once on the integration branch). The full Docker proof was not run for this change.
 
 ## Several named people approve (8 November, B37)
 
