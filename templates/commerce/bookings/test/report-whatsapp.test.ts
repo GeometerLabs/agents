@@ -12,6 +12,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import type { MonthlyReport } from "../report/data.ts";
 import { sampleReport } from "../report/review.ts";
 import { seal } from "../../../../modules/report/sign.ts";
+import { verifyLink } from "../../../../modules/report/verify-link.ts";
+import { WHATSAPP_BODY_LIMIT } from "../../../../modules/report/summary-sign.ts";
 import { STRINGS } from "../report/strings.ts";
 import { bannedIn } from "../../../../modules/report/claims.ts";
 import { badgeText } from "../../../../modules/report/text.ts";
@@ -28,13 +30,13 @@ function report(o: { innovator?: boolean; preparedBy?: string | null } = {}): Mo
 }
 const sealed = (o: Parameters<typeof report>[0] = {}) => seal(report(o));
 
-test("the message is the owner's lines in every language: counts and amounts from the report, the check code, the page address, who set it up", () => {
+test("the message is the owner's lines in every language: counts and amounts from the report, the check code, the page address, the check link, who set it up", () => {
   const env = sealed();
   for (const language of LANGUAGES) {
     const s = STRINGS[language];
     const { text } = monthlyReportMessage(env, language, { link: LINK });
     const lines = text.split("\n");
-    assert.equal(lines.length, 8, `${language}: ${lines.length} lines`);
+    assert.equal(lines.length, 9, `${language}: ${lines.length} lines`);
     assert.ok(lines.every((l) => l.trim() !== ""));
     assert.equal(lines[0], `${s.monthlyReport}: Glow Salon · ${MONTH_NAMES[language][1]} 2027`, "no tag for a live report");
     assert.equal(lines[1], `${s.label.bookingsMade}: 38 · ${s.label.depositsCollected}: ₹17,600`);
@@ -43,7 +45,8 @@ test("the message is the owner's lines in every language: counts and amounts fro
     assert.equal(lines[4], `${s.label.notConfirmed}: 1`);
     assert.ok(lines[5].startsWith(`${s.label.notChecked}: `) && lines[5].endsWith(s.handRun), lines[5]);
     assert.equal(lines[6], `${s.page.code}: ${env.code} · ${s.fullReport}: ${LINK}`);
-    assert.equal(lines[7], `${s.page.setUpBy}: Divya, local partner · Geometer`);
+    assert.equal(lines[7], `${s.checkGenuine}: ${verifyLink(env)}`, "an unsigned report carries the #digest link (item 17b)");
+    assert.equal(lines[8], `${s.page.setUpBy}: Divya, local partner · Geometer`);
     assert.deepEqual(bannedIn(text, language), [], `${language}: a word no document may use`);
     assert.ok(!/found(ing|er)/iu.test(text));
   }
@@ -62,9 +65,9 @@ test("the Innovator badge is one more line, the last, and only when the report c
     assert.equal(badged.template.name, "monthly_report_innovator");
     assert.ok(!plain.text.includes(badgeText(language)), `${language}: no badge by default`);
     const lines = badged.text.split("\n");
-    assert.equal(lines.length, 9);
-    assert.equal(lines[8], badgeText(language));
-    assert.ok(/^★ \S/u.test(lines[8]));
+    assert.equal(lines.length, 10);
+    assert.equal(lines[9], badgeText(language));
+    assert.ok(/^★ \S/u.test(lines[9]));
     assert.deepEqual(bannedIn(badged.text, language), []);
   }
   assert.ok(!monthlyReportMessage(sealed({ innovator: false }), "en", { link: LINK }).text.includes("★"));
@@ -77,7 +80,7 @@ test("a report that names no one who set the agent up is not turned into a messa
 
 test("a name typed with a line break or a run of spaces is one line in the message (Meta refuses a break in a value)", () => {
   const { text, template } = monthlyReportMessage(sealed({ preparedBy: "Divya\n  Nair,\t   local partner" }), "en", { link: LINK });
-  assert.equal(text.split("\n").length, 8);
+  assert.equal(text.split("\n").length, 9);
   assert.ok(text.includes("Set up by: Divya Nair, local partner · Geometer"));
   for (const p of template.parameters!) assert.ok(!/[\n\t\r]| {2}/u.test(p), p);
 });
@@ -94,7 +97,7 @@ test("the template variables: one value for each {{n}}, in order, and filling th
       assert.deepEqual(slots, [...REPORT_SLOTS], `${t.name} (${language}) names every value once, in the order the values come`);
       assert.equal(fillBody(metaBody(t.bodies[language]), message.template.parameters!), message.text, `${t.name} (${language})`);
       assert.equal(message.template.text, message.text);
-      const values = reportValues(report(), language, { code: env.code, link: LINK, builder: "Divya, local partner" });
+      const values = reportValues(report(), language, { code: env.code, link: LINK, check: verifyLink(env), builder: "Divya, local partner" });
       assert.deepEqual(reportParameters(t, language, values), slots.map((slot) => values[slot]));
     }
   }
@@ -127,7 +130,9 @@ test("the worst message still fits what WhatsApp takes once the values are in: t
   };
   const link = `https://reports.example.com/r/${"a".repeat(32)}/report-2026-11-en.html`;
   const lengths = LANGUAGES.map((language) => [language, [...monthlyReportMessage(seal(worst), language, { link }).text].length] as const);
-  for (const [language, length] of lengths) assert.ok(length <= 900, `${language}: ${length} characters, and the limit WhatsApp checks after the values are in is 1024`);
+  // The bound is the limit itself since the check line (item 17b) took most of the old 900's headroom: the worst is 963 in Malayalam with the #digest link, and the
+  // longer signed summary link goes in only when the filled message still fits (messageCheckLink; report-summary.test.ts holds that).
+  for (const [language, length] of lengths) assert.ok(length <= WHATSAPP_BODY_LIMIT, `${language}: ${length} characters, and the limit WhatsApp checks after the values are in is ${WHATSAPP_BODY_LIMIT}`);
 });
 
 test("the examples Meta reviews are a believable month, one line each, in the template's own language, and the checked-in list holds them", () => {
