@@ -27,7 +27,9 @@ import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { LiveView } from "./contract.ts";
-import { latestPriceList, monthlyCost } from "./cost.ts";
+import { chargeOf, formatRupees, latestPriceList, monthlyCost, paiseOf } from "./cost.ts";
+import { createAgents } from "./agents.ts";
+import { agentPage, agentsSection } from "./views-agents.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { licenceView } from "./licence.ts";
@@ -344,7 +346,45 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       };
     });
     const firstRun = config.mode === "own" && r.account!.role === "builder" && !serverSetup.view().done;
-    page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards, ...(firstRun ? { serverToDo: true } : {}), serverLink: config.mode === "own" && r.account!.role === "builder" }));
+    // a builder's own agents, beside the shops (none for a partner: agents.ids answers nothing)
+    const own = agents.ids(r.account!).map((id) => agents.view(id, staleMs, unfinished));
+    page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards, ...(firstRun ? { serverToDo: true } : {}), serverLink: config.mode === "own" && r.account!.role === "builder", agents: agentsSection(c, own) }));
+  });
+
+  // ---- own agents (B51's rest, 12 Nov 2026): what a builder sees of each agent they wrote, and three requests the deployer carries out. Builders only (a 404 for anyone
+  // else, as for a shop that is not theirs); each POST writes a request file with a name and an id (agents.ts), never anything that reaches a command.
+  const agents = createAgents(config);
+  const agentOf = (r: Req): string | undefined => { const id = agents.find(r.account!, r.params[0]); if (!id) notFound(r); return id; };
+  on("GET", /^\/agents\/([a-z0-9-]{1,40})$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    const v = agents.view(id, staleMs, unfinished);
+    const licence = licenceView(v.status?.licence, shops.fleet(id)?.licence, now());
+    // the builder licence's price, from the price list in force (never written here)
+    const charge = prices ? chargeOf(prices, null, true) : null;
+    page(r, 200, agentPage(r.ctx(), v, { ...(licence ? { licence } : {}), ...(charge?.fee ? { price: formatRupees(paiseOf(charge.fee.value)) } : {}) }));
+  });
+  on("POST", /^\/agents\/([a-z0-9-]{1,40})\/stop$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    const request = shops.requestStop(id, r.account!); // the same stop request as a shop's: the deployer pulls the kill switch on the agent's Guards
+    log(`stop requested for own agent ${id} by ${r.account!.id} (${request.requestId})`);
+    redirect(r, `/agents/${id}`);
+  });
+  on("POST", /^\/agents\/([a-z0-9-]{1,40})\/crash-test$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    agents.requestCrashTest(id, r.account!);
+    log(`crash test requested for own agent ${id} by ${r.account!.id}`);
+    redirect(r, `/agents/${id}`);
+  });
+  on("POST", /^\/agents\/([a-z0-9-]{1,40})\/rotate$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    const guard = (r.form.guard ?? "") === "" ? undefined : r.form.guard;
+    if (!agents.requestRotate(id, r.account!, guard)) return notFound(r);
+    log(`new credentials requested for own agent ${id}${guard ? ` (${guard})` : ""} by ${r.account!.id}`); // the log never holds a credential: the panel never has one
+    redirect(r, `/agents/${id}`);
   });
 
   // the unfinished-work inbox (B31): every shop this person may see, read from each shop's exported record

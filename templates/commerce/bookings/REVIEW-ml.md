@@ -878,6 +878,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.calendar.id` | കലണ്ടർ ഐഡി | Calendar ID |  |
 | `setup.accounts.calendar.json` | സർവീസ്-അക്കൗണ്ട് കീ ഫയൽ | Service-account key file |  |
 | `setup.accounts.calendar.jsonHelp` | നിങ്ങളുടെ ബിൽഡർ തന്നിട്ടുണ്ടെങ്കിൽ മാത്രം. മുഴുവൻ ഫയലും പേസ്റ്റ് ചെയ്യൂ. | Only if your builder gave you one. Paste the whole file. |  |
+| `setup.accounts.calendar.useOwn` | ബുക്കിംഗുകൾ കടയുടെ സ്വന്തം ലിസ്റ്റിൽ സൂക്ഷിക്കുക (Google Calendar വേണ്ട). ഉടമയ്ക്ക് WhatsApp-ൽ “ഇന്ന്” എന്ന് അയച്ച് ദിവസത്തെ ബുക്കിംഗുകൾ കാണാം. Google Calendar പിന്നീട് ചേർക്കാം. | Keep the bookings in the shop's own list (no Google Calendar needed). The owner sends “today” on WhatsApp to see the day's bookings. A Google Calendar can be added later. |  |
+| `setup.accounts.calendar.useGoogle` | കടയുടെ Google കലണ്ടറും ഉപയോഗിക്കുക | Also use the shop's Google Calendar |  |
 | `setup.checks.saveFirst` | ആദ്യം ഈ കട സെർവറിൽ സേവ് ചെയ്യൂ. | Save this shop to the server first. |  |
 | `setup.checks.saveButton` | സേവ് ചെയ്ത് ബന്ധിപ്പിക്കൂ | Save and connect |  |
 | `setup.checks.saved` | സേവ് ചെയ്തു. സെർവർ ഇത് നടപ്പാക്കും, നടപ്പായാൽ ഈ പേജ് അത് കാണിക്കും. | Saved. The server will apply it, and this page shows when it has. |  |
@@ -1118,4 +1120,56 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `vote.option.equipment-rental` | സംഘങ്ങൾക്ക് ഉപകരണ വാടക: ക്ലബ്ബുകൾ, സൊസൈറ്റികൾ, ഹാളുകൾ | Equipment rental for groups: clubs, societies and halls |  |
 | `vote.option.social-posting` | അംഗീകാരത്തോടെ സോഷ്യൽ പോസ്റ്റിംഗ്: ഓരോ പോസ്റ്റും ഉടമ അംഗീകരിക്കുന്നു | Social posting with approval: the owner approves each post |  |
 | `vote.option.course-packs` | കോഴ്സ് പായ്ക്കുകൾ: ഒരു കോഴ്സ് പാഠങ്ങളായി വിൽക്കുകയും എത്തിക്കുകയും ചെയ്യുക | Course packs: sell and deliver a course in lessons |  |
+| `agents.heading` | നിങ്ങളുടെ സ്വന്തം ഏജന്റുകൾ | Your own agents |  |
+| `agents.intro` | നിങ്ങൾ എഴുതിയ ഏജന്റുകൾ, കടകളുടേതുപോലെ അതേ Guard-കൾക്ക് പിന്നിൽ. Geometer ഇവയെ പ്രവർത്തിപ്പിക്കുന്നില്ല: കടയുടെ സേവനങ്ങളിലേക്ക് ഇവ നടത്തുന്ന ഓരോ കോളും പരിശോധിക്കുന്നു. | Agents you wrote, behind the same Guards as the shops. Geometer does not run them: it checks every call they make to the shop's services. |  |
+| `agents.open` | തുറക്കുക | Open |  |
+| `agents.title` | my-agent: നിങ്ങളുടെ സ്വന്തം ഏജന്റ് | my-agent: your own agent |  |
+| `agents.back` | എല്ലാ കടകളും ഏജന്റുകളും | All shops and agents |  |
+| `agents.guards.heading` | ഇതിന്റെ Guard-കൾ | Its Guards |  |
+| `agents.guards.intro` | നിങ്ങളുടെ ഏജന്റ് വിളിക്കുന്ന ഓരോ സേവനത്തിനും മുന്നിൽ ഒരു Guard ഉണ്ട്, അതിന് സ്വന്തം ക്രെഡൻഷ്യലും. | Each service your agent calls has a Guard in front of it, with a credential of its own. |  |
+| `agents.guards.desk` | UPI ഡെസ്ക് | UPI desk |  |
+| `agents.guards.ownGateway` | നിങ്ങളുടെ ഗേറ്റ്‌വേ | Your gateway |  |
+| `agents.guards.limits` | പ്രവർത്തിക്കുന്ന Guard-കളിൽ 12-ൽ 12 പരിധികൾ പരിശോധിച്ചു | 12 of 12 limits proven to bite on the running Guards |  |
+| `agents.guards.limitsUnknown` | പ്രവർത്തിക്കുന്ന Guard-കളിൽ പരിധികൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല. | The limits have not been checked on the running Guards yet. |  |
+| `agents.guards.since` | 4 Nov 2026 മുതലുള്ള ക്രെഡൻഷ്യൽ | credential since 4 Nov 2026 |  |
+| `agents.guards.oldUntil` | പഴയ ക്രെഡൻഷ്യൽ 4 Nov 2026, 10:15 വരെ പ്രവർത്തിക്കും | the old credential still works until 4 Nov 2026, 10:15 |  |
+| `agents.guards.shared` | ഈ Guard-കൾ ഇപ്പോഴും 12 നവംബർ 2026-ന് മുമ്പ് ഉണ്ടാക്കിയ ഒരേ ക്രെഡൻഷ്യൽ പങ്കിടുന്നു. പുതിയ ക്രെഡൻഷ്യലുകൾ ഓരോ Guard-നും സ്വന്തമായത് നൽകും. | These Guards still share one credential, made before 12 Nov 2026. New credentials give each Guard its own. |  |
+| `agents.guards.file` | നിങ്ങളുടെ ഏജന്റ് സെർവറിലെ secrets/agents/my-agent/credentials.env-ൽ നിന്നാണ് ക്രെഡൻഷ്യലുകൾ വായിക്കുന്നത്. പാനൽ ഒരിക്കലും ക്രെഡൻഷ്യൽ കാണിക്കില്ല. | Your agent reads its credentials from secrets/agents/my-agent/credentials.env on the server. The panel never shows a credential. |  |
+| `agents.held.heading` | ഉടമയ്ക്കായി നിർത്തിവച്ചവ | Held for the owner |  |
+| `agents.held.none` | ഉടമയ്ക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല. | Nothing is waiting for the owner. |  |
+| `agents.held.some` | 1 കോൾ WhatsApp-ൽ ഉടമയുടെ മറുപടിക്കായി കാത്തിരിക്കുന്നു. | 1 call is waiting for the owner's answer on WhatsApp. |  |
+| `agents.held.asOf` | 4 Nov 2026, 10:00-ന് Guard-കൾ പറഞ്ഞതുപോലെ. | As the Guards said at 4 Nov 2026, 10:00. |  |
+| `agents.held.unknown` | Guard-കളോട് ഇതുവരെ ചോദിച്ചിട്ടില്ല. | The Guards have not been asked yet. |  |
+| `agents.unfinished.heading` | തീരാത്ത ജോലി | Unfinished work |  |
+| `agents.unfinished.none` | ഒന്നും ബാക്കിയില്ല. | Nothing is unfinished. |  |
+| `agents.unfinished.notShared` | ഇതിന്റെ രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല, അതിനാൽ തീരാത്ത ജോലി കാണിക്കാൻ കഴിയില്ല. | Its record has not been shared yet, so its unfinished work cannot be listed. |  |
+| `agents.crash.heading` | കഴിഞ്ഞ ക്രാഷ് ടെസ്റ്റ് | Last crash test |  |
+| `agents.crash.never` | ഇതുവരെ ക്രാഷ് ടെസ്റ്റ് നടന്നിട്ടില്ല. | No crash test has run yet. |  |
+| `agents.crash.held` | 12-ൽ 11 പിടിച്ചുനിന്നു. | Held 11 of 12. |  |
+| `agents.crash.failed` | പിടിച്ചുനിൽക്കാത്തവ: | Did not hold: |  |
+| `agents.crash.notRun` | ഈ ക്രമീകരണങ്ങളിൽ നടത്താത്തവ: | Not run on these settings: |  |
+| `agents.crash.running` | ക്രാഷ് ടെസ്റ്റ് നടക്കുന്നു. കുറച്ച് മിനിറ്റ് എടുക്കും. | A crash test is running. It takes a few minutes. |  |
+| `agents.crash.waiting` | ക്രാഷ് ടെസ്റ്റ് ആവശ്യപ്പെട്ടു. സെർവർ ഒഴിവാകുമ്പോൾ തുടങ്ങും. | A crash test is asked for. It starts when the server is free. |  |
+| `agents.crash.error` | ക്രാഷ് ടെസ്റ്റ് നടത്താനായില്ല: The agent did not start | The crash test could not run: The agent did not start |  |
+| `agents.crash.when` | 4 Nov 2026, 10:00, ആവശ്യപ്പെട്ടത്: Divya (builder, from the panel). | 4 Nov 2026, 10:00, asked by Divya (builder, from the panel). |  |
+| `agents.crash.version` | പതിപ്പ് 4f9c2e1. | Version 4f9c2e1. |  |
+| `agents.goLive.heading` | ഗോ-ലൈവ് | Go-live |  |
+| `agents.goLive.none` | ഒരു പതിപ്പിനും ഇതുവരെ ഗോ-ലൈവ് സർട്ടിഫിക്കറ്റ് ഇല്ല. `geometer agent go-live` ഒന്ന് ഉണ്ടാക്കും. | No version has a go-live certificate yet. `geometer agent go-live` makes one. |  |
+| `agents.goLive.inService` | പതിപ്പ് 4f9c2e1 സേവനത്തിലാണ്: 4 Nov 2026-ലെ ക്രാഷ് ടെസ്റ്റിൽ എല്ലാം പിടിച്ചുനിന്നു. | Version 4f9c2e1 is in service: everything held in its crash test on 4 Nov 2026. |  |
+| `agents.goLive.code` | സർട്ടിഫിക്കറ്റ് GL-7K2M. | Certificate GL-7K2M. |  |
+| `agents.actions.heading` | നിങ്ങൾക്ക് ഇവിടെ ചെയ്യാവുന്നത് | What you can do here |  |
+| `agents.actions.stop` | നിർത്തുക (കിൽ സ്വിച്ച്) | Stop it (kill switch) |  |
+| `agents.actions.stopNote` | സെർവറിൽ വീണ്ടും തുടങ്ങുന്നതുവരെ ഇതിന്റെ Guard-കൾ ഒന്നും പുറത്തുവിടില്ല, റീഫണ്ട് പോലും: geometer start <name>. | Its Guards let nothing go out, not even a refund, until it is started again on the server: geometer start <name>. |  |
+| `agents.actions.stopAsked` | നിർത്താൻ ആവശ്യപ്പെട്ടു. സെർവർ ഒരു മിനിറ്റിനുള്ളിൽ ചെയ്യും. | Stop asked. The server carries it out within a minute. |  |
+| `agents.actions.stopped` | ഇത് നിർത്തിയിരിക്കുന്നു. | It is stopped. |  |
+| `agents.actions.crashTest` | പുതിയ ക്രാഷ് ടെസ്റ്റ് നടത്തുക | Run a new crash test |  |
+| `agents.actions.crashNote` | നിങ്ങളുടെ ഏജന്റിനെ അതിന്റെ സ്വന്തം കമാൻഡ് ഉപയോഗിച്ച്, യഥാർത്ഥ Guard-കൾക്ക് പിന്നിൽ, പകരക്കാരൻ സേവനങ്ങളോടൊപ്പം തുടങ്ങുന്നു. യഥാർത്ഥമായി ഒന്നും അയയ്ക്കുകയോ ഈടാക്കുകയോ ഇല്ല. | Starts your agent with its own command against stand-in services, behind its real Guards. Nothing real is sent or charged. |  |
+| `agents.actions.crashAsked` | ക്രാഷ് ടെസ്റ്റ് ആവശ്യപ്പെട്ടു. പൂർത്തിയാകുമ്പോൾ ഫലം ഇവിടെ കാണാം. | Crash test asked. The result shows here when it is done. |  |
+| `agents.actions.rotate` | എല്ലാ Guard-നും പുതിയ ക്രെഡൻഷ്യലുകൾ | New credentials for every Guard |  |
+| `agents.actions.rotateOne` | WhatsApp-ന് പുതിയ ക്രെഡൻഷ്യൽ | New credential for WhatsApp |  |
+| `agents.actions.rotateNote` | പഴയ ക്രെഡൻഷ്യൽ 15 മിനിറ്റ് കൂടി പ്രവർത്തിക്കും, പിന്നെ നിൽക്കും. അതിനുമുമ്പ് നിങ്ങളുടെ ഏജന്റ് ക്രെഡൻഷ്യൽ ഫയൽ വീണ്ടും വായിക്കണം. | The old credential keeps working for 15 minutes, then stops. Your agent must read its credentials file again before then. |  |
+| `agents.actions.rotateAsked` | പുതിയ ക്രെഡൻഷ്യലുകൾ ആവശ്യപ്പെട്ടു. സെർവർ ഒരു മിനിറ്റിനുള്ളിൽ ഉണ്ടാക്കും. | New credentials asked. The server makes them within a minute. |  |
+| `agents.actions.rotateDone` | പുതിയ ക്രെഡൻഷ്യലുകൾ ഉണ്ടാക്കി. പഴയവ 4 Nov 2026, 10:15-ന് നിൽക്കും. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
+| `agents.actions.rotateFailed` | പുതിയ ക്രെഡൻഷ്യലുകൾക്കുള്ള കഴിഞ്ഞ ആവശ്യം നടന്നില്ല; നിങ്ങളുടെ ഏജന്റിന് ഒന്നും മാറിയില്ല. കാരണം സെർവറിന്റെ ലോഗിൽ ഉണ്ട്. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
+| `agents.actions.cliOnly` | ഏജന്റിനെ നീക്കം ചെയ്യുന്നത് സെർവറിൽ മാത്രം: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
 

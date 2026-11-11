@@ -33,8 +33,16 @@ export interface ShopStatus {
   licence?: StatusLicence & { at: string };
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */
   webhooks?: { razorpay: string; whatsapp: string };
-  /** An agent someone else wrote (no runtime, no pathway): where its own agent calls Guard instead of each service, and where WhatsApp sends the shop's webhooks. The panel ignores it. */
-  own?: { baseUrls: Record<string, string>; whatsappWebhook?: string };
+  /**
+   * An agent someone else wrote (no runtime, no pathway): where its own agent calls Guard instead of each service, and where WhatsApp sends the shop's webhooks. Since
+   * 12 Nov 2026 the panel shows own agents from this block (bundle/panel/agents.ts): each Guard's credential's dates (when made, an old one's end; never a credential or a
+   * hash) and the calls its Guards held for the owner at the last minute's look. The last crash test and the version in service are in exports/<agent>/ (agent/requests.ts).
+   */
+  own?: {
+    baseUrls: Record<string, string>; whatsappWebhook?: string;
+    credentials?: { shared: boolean; guards: Record<string, { since?: string; oldUntil?: string }> };
+    held?: { calls: number; at: string };
+  };
 }
 
 // The status of a shop the deployer has not touched yet: deploy state "never" and no backups, so the panel shows "not deployed" rather than nothing.
