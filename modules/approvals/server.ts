@@ -71,6 +71,7 @@ export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receiv
   };
 }
 
+// Saves the owner's message before saying 200, so a message the inbox was told arrived is not lost on a crash.
 export function startRelayServer(relay: Relay, options: { token: string; host?: string; port?: number }): Promise<RunningRelayServer> {
   const server = createServer(relayHandler(relay, options.token));
   server.requestTimeout = 10_000;

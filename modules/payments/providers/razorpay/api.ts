@@ -92,6 +92,7 @@ function linkStatus(raw: unknown): PaymentRequest["status"] {
   }
 }
 
+// Maps a payment link plus its payments into the provider-neutral PaymentRequest; missing or wrong-typed fields throw rather than default, so a changed reply is noticed.
 export function toPaymentRequest(raw: Json, payments: Payment[]): PaymentRequest {
   return {
     id: needStr(raw.id, "link id"), reference_id: str(raw.reference_id) ?? "", amount: needNum(raw.amount, "link amount"), currency: needInr(raw.currency),
@@ -112,6 +113,7 @@ export function toRefund(raw: Json): Refund | null {
 
 // ---- the adapter ------------------------------------------------------------------------------------------------------------
 
+// The live adapter: all calls go through core/http with no key, because Guard in front adds the credential.
 export function createRazorpayPayments(config: RazorpayConfig): Payments {
   const http: Http = createHttp(config.baseUrl, "Razorpay", config.timeoutMs, config.agentToken);
 

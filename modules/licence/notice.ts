@@ -46,6 +46,7 @@ export function noticeDue(l: LicenceNow): { kind: NoticeKind; key: string } | un
   return { kind, key: `${kind}:${l.paidThrough}` };
 }
 
+// Sends the wind-down and final-stop notice once per state, so an owner is told plainly and not repeatedly.
 export function createLicenceNotice<Store>(setup: LicenceNoticeSetup<Store>) {
   async function run(ctx: NoticeContext<Store>): Promise<{ sent: false; why: string } | { sent: true; outcome: Outcome }> {
     const l = setup.licence();

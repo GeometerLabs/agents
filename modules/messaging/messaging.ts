@@ -146,6 +146,7 @@ export interface FakeMessaging extends Messaging {
   inject(op: MessagingOp, mode: MessagingFault, options?: FaultOptions): void;
 }
 
+// The fake that models the 24-hour window, approved templates and STOP, so crash tests can hit those rules without WhatsApp.
 export function createFakeMessaging(clock: Clock): FakeMessaging {
   const outbox: OutboundMessage[] = [];
   const lastInbound = new Map<string, number>();

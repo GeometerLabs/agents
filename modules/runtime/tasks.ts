@@ -45,6 +45,7 @@ export interface TaskRunner {
   stop(): Promise<void>;
 }
 
+// One runner handles one task at a time in arrival order so two steps for the same shop never run at once; retries use the given delays.
 export function createRunner(options: RunnerOptions & { now: () => number }): TaskRunner {
   const { db, step, retryDelaysMs, log, now } = options;
   const maxAttempts = retryDelaysMs.length + 1;
