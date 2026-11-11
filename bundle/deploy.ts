@@ -8,7 +8,7 @@
 //      certificate ("N of M limits proven to bite") is read from there. A mismatch stops the shop with the kill switch.
 //   6. write status/<shop>.json for the panel
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
-import { gatewayOf } from "../modules/payments/providers/index.ts";
+import { gatewayOf, isGatewayKind } from "../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../modules/payments/providers/index.ts";
 import { chownSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -255,14 +255,19 @@ export function licenceFor(server: ServerConfig, on: boolean, kind: GuardPlan["k
   return { deployment: server.id, shop, ownerNumbers: [...new Set(ownerNumbers(numbers))], kids: server.licence.keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort() };
 }
 
-/** Compile one Guard's spec, render its guard.toml, run the tool-name rule and verify-bundle. Nothing running is touched. */
-export async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha, licence?: GuardLicence & { kids: string[] }): Promise<Problem[]> {
+/**
+ * Compile one Guard's spec, render its guard.toml, run the tool-name rule and verify-bundle. Nothing running is touched. `approvalOperations` (B71 part 2): an
+ * agent's own API whose reviewed spec holds these operations for a person; its Guard gets the owner as approver for them (a gateway's Guard always has the owner
+ * for its refunds).
+ */
+export async function compileAndVerify(ctx: Context, server: ServerConfig, shop: string | undefined, g: PreparedGuard, who: Sha, licence?: GuardLicence & { kids: string[] }, approvalOperations?: string[]): Promise<Problem[]> {
   const compiled = await ctx.tool.compile(g.plan.specText);
   if (!compiled.ok) return compiled.problems.map((p) => ({ ...p, message: `${g.plan.service}: ${p.message}` }));
   g.compiled = compiled.result;
   if (licence) g.licence = licence; else delete g.licence;
   const block = licence ? { deployment: licence.deployment, shop: licence.shop, ownerNumbers: licence.ownerNumbers } : undefined;
-  g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(g.plan.kind === "razorpay" && shop ? { approver: approverOf(shop, g.plan.approvers) } : {}), ...(block ? { licence: block } : {}) });
+  const approver = !shop ? undefined : isGatewayKind(g.plan.kind) ? approverOf(shop, g.plan.approvers) : approvalOperations && approvalOperations.length > 0 ? { ...approverOf(shop, undefined), operations: approvalOperations } : undefined;
+  g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(approver ? { approver } : {}), ...(block ? { licence: block } : {}) });
   g.tripwires = await ctx.tool.verify(compiled.result.text, g.toml);
   return [...toolNamesMatch(g.plan, g.toml, compiled.result), ...tripwiresHold(g.plan, g.tripwires)];
 }

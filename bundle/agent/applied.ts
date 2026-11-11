@@ -6,6 +6,8 @@ import type { AgentFacts } from "../generate/configs.ts";
 import { readSecretFile, secretFile } from "../lib/secrets.ts";
 import type { State } from "../lib/state.ts";
 import type { AgentFile } from "./folder.ts";
+import { heldRulesOf } from "../../modules/approvals/held-call.ts";
+import { OWN_API } from "../../modules/payments/providers/index.ts";
 
 const have = (dir: string, container: string, ...file: string[]) => !!readSecretFile(secretFile(dir, container, ...file));
 
@@ -13,7 +15,10 @@ export function agentFacts(dir: string, state: State): AgentFacts[] {
   return Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, a]) => {
     const snap = a.applied!;
     const agent = JSON.parse(snap.agentText) as AgentFile;
-    const settings = JSON.parse(snap.settingsText) as Pick<Settings, "name" | "timezone" | "owner">;
+    const settings = JSON.parse(snap.settingsText) as Pick<Settings, "name" | "timezone" | "owner"> & { payment?: unknown };
+    // B71 part 2: the calls the applied spec of its own API holds for the owner (the relay asks about those, and only those)
+    const ownApiSpec = snap.guards[OWN_API] ? JSON.parse(snap.guards[OWN_API].specText) as { tool?: unknown; rules?: unknown } : undefined;
+    const held = ownApiSpec ? heldRulesOf(ownApiSpec) : undefined;
     const meta = have(dir, "inbox", name, "whatsapp_app_secret");
     return {
       name, index: a.index, guards: Object.values(snap.guards).map((g) => ({ kind: g.kind as "razorpay", service: g.service, tenant: name })),
@@ -22,6 +27,8 @@ export function agentFacts(dir: string, state: State): AgentFacts[] {
       hasGoogle: have(dir, "refresher", name, "google_service_account.json") || have(dir, "refresher", "_server", "google_service_account.json"), ownGoogleKey: have(dir, "refresher", name, "google_service_account.json"),
       ...(agent.whatsapp?.forwardTo ? { forwardTo: agent.whatsapp.forwardTo } : {}),
       business: { name: settings.name, timeZone: settings.timezone, ownerLanguage: settings.owner.language },
+      ...(settings.payment !== undefined ? { payment: settings.payment } : {}),
+      ...(held && held.rules.length > 0 ? { ownApi: held } : {}),
     };
   });
 }

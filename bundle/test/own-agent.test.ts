@@ -75,7 +75,7 @@ test("a refund above the limit is held, the owner approves once on WhatsApp, the
     closers.push(async () => store.close());
     const relay = createRelay({
       clock: systemClock, store, ownerWhatsapp: OWNER, expectedAgent: agentNames.agentId(NAME), guard: guardClient, log: () => undefined,
-      runtime: ownAgentRuntime({ guard: guardClient, razorpay: { baseUrl: rz.agentUrl, token: () => record.token }, business: { name: agentFolder.settings!.name, timeZone: agentFolder.settings!.timezone, ownerLanguage: "en" } }),
+      runtime: ownAgentRuntime({ guard: guardClient, gateway: { id: "razorpay", baseUrl: rz.agentUrl, token: () => record.token }, business: { name: agentFolder.settings!.name, timeZone: agentFolder.settings!.timezone, ownerLanguage: "en" } }),
       messaging: createWhatsAppMessaging({ baseUrl: wa.agentUrl, phoneNumberId: PHONE_NUMBER_ID, agentToken: relayCred.token }, { clock: systemClock, window: { lastInboundAt: () => undefined } }),
     });
     // the inbox for this agent: WhatsApp's webhooks come here, the owner's replies go to the relay, and everything is passed on to the agent as it came

@@ -9,7 +9,8 @@ import type { Context, PreparedGuard } from "../deploy.ts";
 import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
 import { names } from "../generate/shop.ts";
-import { OWN_API } from "../../modules/payments/providers/index.ts";
+import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
+import { DESK_SECRET, OWNER_MARKED_KINDS } from "../generate/guards.ts";
 import { noSecretsIn, provenLine } from "../generate/rules.ts";
 import { INTAKE, ensureAgentLabelKey, ensureSecret, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "../lib/secrets.ts";
 import { loadServer, publicUrl, serverPaths } from "../lib/server.ts";
@@ -23,6 +24,8 @@ import type { Problem } from "../lib/util.ts";
 import { OWN_API_FILES, agentFromFlags, agentGuardPart, paymentUpstreamOf, readAgent } from "./folder.ts";
 import type { AgentFlags, AgentFolder } from "./folder.ts";
 import { RECORD_READS, agentNames, ownApiSpec, planAgent } from "./plan.ts";
+import { heldRulesOf } from "../../modules/approvals/held-call.ts";
+import { providerById } from "../../modules/payments/providers/index.ts";
 import type { AgentPlan } from "./plan.ts";
 
 const sha = (value: string) => sha256Hex(value);
@@ -38,7 +41,7 @@ export interface AgentConnection {
   credential: string | undefined;
   /** Where WhatsApp should send the shop's webhooks (the inbox checks them, keeps the owner's replies to approval requests and passes the rest on). */
   whatsappWebhook?: string;
-  /** B71: the agent takes money with a module the owner marks (UPI): there is no API to put a Guard in front of, and the desk that offers it is not served yet. */
+  /** B71: the agent takes money with a module the owner marks (UPI): its address in `baseUrls` is the desk's Guard, and the desk is served on this server (part 2). */
   desk?: { module: string; displayName: string };
 }
 
@@ -47,8 +50,8 @@ export function connectionOf(dir: string, server: ServerConfig, folder: AgentFol
   const paying = paymentUpstreamOf(agent.upstreams);
   const ownerMarked = paying?.ownerMarked ? paying : undefined;
   return {
-    // an owner-marked module has no Guard, so no address is printed for it (one would lead nowhere): the desk is said separately
-    baseUrls: Object.fromEntries(agent.upstreams.filter((u) => u !== ownerMarked?.id).map((u) => [u, agentBaseUrl(server, folder.name, u)])),
+    // every upstream is a Guard's address, the owner-marked module's too: its Guard is in front of the desk (B71 part 2)
+    baseUrls: Object.fromEntries(agent.upstreams.map((u) => [u, agentBaseUrl(server, folder.name, u)])),
     ...(ownerMarked ? { desk: { module: ownerMarked.id, displayName: ownerMarked.displayName } } : {}),
     credential: readSecretFile(secretFile(dir, "agents", folder.name, "agent_token")),
     ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `${publicUrl(server)}/c/${folder.name}/webhooks/whatsapp` } : {}),
@@ -84,8 +87,25 @@ export function addAgent(dir: string, name: string, flags: AgentFlags, readFile:
 
 interface Credentials { agent: string; record: string; relay: string; admin: Record<Kind, string> }
 
+/**
+ * The Guard the owner answers through, if any: a gateway's (a refund above the limit is held), or the agent's own API's when its reviewed spec holds a call for a
+ * person (B71 part 2), with the operations held. An owner-marked module's desk Guard holds nothing: the owner sends every refund themselves.
+ */
+function approvalGuardOf(kinds: Kind[], holds: string[]): { kind: Kind; operations?: string[] } | undefined {
+  const gateway = kinds.find((k) => isGatewayKind(k));
+  if (gateway) return { kind: gateway };
+  if (kinds.includes(OWN_API) && holds.length > 0) return { kind: OWN_API, operations: holds };
+  return undefined;
+}
+
+/** The operations an own-API agent's applied or planned spec holds for the owner (none for any other agent). */
+const holdsOf = (plan: AgentPlan): string[] => {
+  const g = plan.guards.find((x) => x.kind === OWN_API);
+  return g ? [...new Set(heldRulesOf(g.spec).rules.map((r) => r.operation))] : [];
+};
+
 /** Every credential an agent's containers share: made once, kept in the folder of the container that owns it, copied to the ones that must match. */
-function ensureCredentials(dir: string, name: string, kinds: Kind[]): Credentials {
+function ensureCredentials(dir: string, name: string, kinds: Kind[], approval?: { kind: Kind }): Credentials {
   const agent = ensureSecret(secretFile(dir, "agents", name, "agent_token"), mintGuardToken);
   const record = ensureSecret(secretFile(dir, "ops", name, "record_token"), mintGuardToken);
   ensureAgentLabelKey(dir, name); // B69: the label key in ops' folder, derived from the agent's own
@@ -93,7 +113,13 @@ function ensureCredentials(dir: string, name: string, kinds: Kind[]): Credential
   writeSecretFile(secretFile(dir, "relay", name, "record_token"), record);
   const admin = Object.fromEntries(kinds.map((k) => [k, ensureSecret(secretFile(dir, "ops", name, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
   if (kinds.includes("whatsapp")) writeSecretFile(secretFile(dir, "inbox", name, "relay_token"), ensureSecret(secretFile(dir, "relay", name, "relay_token"), mintSecret));
-  if (kinds.includes("razorpay")) writeSecretFile(secretFile(dir, "relay", name, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${name}-razorpay`, "owner_notify_secret"), mintSecret));
+  // the owner's signing secret, in the Guard the owner answers through and in the relay, which signs the owner's answers (a gateway's, or its own API's when it holds calls)
+  if (approval) writeSecretFile(secretFile(dir, "relay", name, "owner_notify_secret"), ensureSecret(secretFile(dir, names.guard(name, approval.kind), "owner_notify_secret"), mintSecret));
+  // B71 part 2: the desk's token. The desk Guard sends it as its whole Authorization header; the desk (in the relay's container) knows the agent by it
+  for (const k of kinds.filter((x) => OWNER_MARKED_KINDS.includes(x))) {
+    const token = ensureSecret(secretFile(dir, "relay", name, "desk_token"), mintGuardToken);
+    writeSecretFile(secretFile(dir, names.guard(name, k), DESK_SECRET), `Bearer ${token}`);
+  }
   if (kinds.includes("calendar")) { writeSecretFile(secretFile(dir, "refresher", name, "admin_token"), admin.calendar); ensureDir(secretFile(dir, `g-${name}-calendar`)); }
   return { agent, record, relay, admin };
 }
@@ -166,11 +192,13 @@ export async function checkAgent(ctx: Context, name: string): Promise<{ ok: bool
   problems.push(...await serverProblems(ctx, server).then((p) => withoutUnusedModelKey(p, state)));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, prepared.guards.map((g) => g.plan.kind as Kind));
+    const kinds = prepared.guards.map((g) => g.plan.kind as Kind);
+    const approval = approvalGuardOf(kinds, holdsOf(prepared.plan));
+    const creds = ensureCredentials(ctx.dir, name, kinds, approval);
     const licence = await guardLicenceOn(ctx, server);
     if (licence.why) notes.push(licence.why);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
+      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -202,11 +230,12 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   if (problems.length > 0 || !prepared) throw new Refused(problems);
 
   const kinds = prepared.guards.map((g) => g.plan.kind as Kind);
-  const creds = ensureCredentials(ctx.dir, name, kinds);
+  const approval = approvalGuardOf(kinds, holdsOf(prepared.plan));
+  const creds = ensureCredentials(ctx.dir, name, kinds, approval);
   // B13: an agent someone else wrote is restricted by the lease at its Guards, as a shop is (its id is the shop's id in the lease)
   const licence = await guardLicenceOn(ctx, server);
   if (licence.why) ctx.log(`note: ${licence.why}`);
-  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder))));
+  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
   if (problems.length > 0) throw new Refused(problems);
 
   // nothing broken: no secret in any file we are about to write, then write
@@ -230,7 +259,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
 
   // the RUNNING Guards say what they enforce
   const proof = await proveRunning(ctx, prepared.guards);
-  if (proof.problems.length === 0 && kinds.includes("razorpay")) await renewRelayCredential(ctx, name);
+  if (proof.problems.length === 0 && approval) await renewRelayCredential(ctx, name); // the relay's reading credential, at the Guard the owner answers through
   if (s.stopped) await ops(ctx, ["stop", name, "on", "-", s.stopped.reason]); // a recreated Guard keeps its kill switch in its store; this makes sure
   const total = Object.values(proof.guards).reduce((t, g) => ({ passed: t.passed + g.passed, of: t.of + g.of }), { passed: 0, of: 0 });
   const line = provenLine({ ...total, notSelfTestable: Object.values(proof.guards).flatMap((g) => g.notSelfTestable) });
@@ -256,15 +285,16 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
 // ---- the lines `agent add` and `agent show` print ----------------------------------------------------------------------------------------
 
 export function connectionText(name: string, c: AgentConnection, withCredential: boolean): string {
-  const label: Record<string, string> = { razorpay: "Razorpay", [OWN_API]: "Your gateway", whatsapp: "WhatsApp", calendar: "Google Calendar" };
+  // a gateway's or an owner-marked module's label is its own display name (the registry's), so nothing here names a provider
+  const label = (k: string): string => (k === OWN_API ? "Your gateway" : k === "whatsapp" ? "WhatsApp" : k === "calendar" ? "Google Calendar" : k === c.desk?.module ? `${c.desk.displayName} desk` : providerById(k)?.displayName ?? k);
   return [
-    `Point ${name} at these addresses instead of the services themselves. The path after each one is the service's own (for Razorpay, /v1/payment_links and so on):`,
-    ...Object.entries(c.baseUrls).map(([k, url]) => `  ${(label[k] ?? k).padEnd(16)}${url}`),
+    `Point ${name} at these addresses instead of the services themselves. The path after each one is the service's own (for a gateway, its own API's paths; for the desk, /requests and /refunds):`,
+    ...Object.entries(c.baseUrls).map(([k, url]) => `  ${label(k).padEnd(16)}${url}`),
     withCredential
       ? `The credential, for all of them (send it as "Authorization: Bearer <credential>" in place of the service's own key; the real keys stay in the Guards and are never given to the agent):\n  ${c.credential ?? "(not made yet)"}`
       : `The credential is in secrets/agents/${name}/agent_token on this server; \`geometer agent show ${name} --credential\` prints it.`,
     ...(c.whatsappWebhook ? [`In WhatsApp's settings, send this shop's webhooks to:\n  ${c.whatsappWebhook}`] : []),
-    ...(c.baseUrls[OWN_API] ? [`Your own gateway's API: the Guard holds its key (hand it in as secrets-inbox/${name}/gateway_authorization, the whole Authorization header) and enforces only the rules you kept in gateway-accept.json. A rule that waits for a person is not offered: nobody would be asked.`] : []),
-    ...(c.desk ? [`${c.desk.displayName}: customers pay the shop's own ${c.desk.displayName} ID and the owner marks each payment received. Your agent asks Geometer's desk for each request and reads it back (\`geometer agent crash-test ${name}\` runs it against the desk, GEOMETER_UPI_URL). The desk is not served on this server yet: until it is, take ${c.desk.displayName} payments with the crash test only.`] : []),
+    ...(c.baseUrls[OWN_API] ? [`Your own gateway's API: the Guard holds its key (hand it in as secrets-inbox/${name}/gateway_authorization, the whole Authorization header) and enforces only the rules you kept in gateway-accept.json. A rule that waits for a person asks the owner on WhatsApp; after the owner's yes, your agent sends the identical call again and the Guard lets it through.`] : []),
+    ...(c.desk ? [`${c.desk.displayName}: customers pay the shop's own ${c.desk.displayName} ID and the owner marks each payment received on WhatsApp. Your agent asks the desk for each request and reads it back at the address above (POST /requests, GET /requests?reference=..., POST /refunds; \`geometer agent crash-test ${name}\` runs the same desk, GEOMETER_UPI_URL). A request counts as paid only when the owner has marked it.`] : []),
   ].join("\n");
 }

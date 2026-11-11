@@ -2,7 +2,9 @@
 // and the services say, never from what the agent says:
 //   - every call the agent made is a Guard decision: allowed (and the answer the service gave), held for the owner, or refused (and which rule);
 //   - "done" is what the service itself holds: a payment link by its reference, a payment by its link, a refund against its payment, an event in the calendar;
-//   - "the owner approved" is the approval's state in Guard (decided by the owner's signed answer), not a message anyone sent.
+//   - "the owner approved" is the approval's state in Guard (decided by the owner's signed answer), not a message anyone sent;
+//   - on UPI (the owner-marked desk, B71 part 2) "paid" is the OWNER's mark, from the desk's own list: written as `owner_marked_paid` with `markedBy: "owner"`, the
+//     owner's statement, never as a provider's confirmation (`record_deposit`), because nothing but the owner has seen the money (B74).
 // A thing the service does not show (yet) is `unconfirmed`, never `confirmed`. It is written only after a short wait, so a service that is a moment behind does not leave a false
 // "unconfirmed" in a record that is append-only; when the service shows it later, a confirmed entry for the same thing is added after it (the report marks the earlier one "settled later").
 import { canonicalJson } from "../../modules/record/record.ts";
@@ -11,6 +13,8 @@ import type { Action, Outcome, RecordEntry, RuleDecision } from "../../modules/r
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import { readWindow } from "../../companies/decision-window.ts";
 import { label, typedMap, typedText } from "./facts.ts";
+import { MARK_ACTIONS } from "../../modules/payments/owner-marked/obligations.ts";
+import { providerById } from "../../modules/payments/providers/index.ts";
 import type { Approval, Decision, Facts } from "./facts.ts";
 
 export interface RecordState {
@@ -92,6 +96,68 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
       const args = a.arguments ?? {};
       const booking = lab(typedText(args.receipt) ?? typedText(args.payment_id) ?? null);
       mk(`approval:${a.id}`, Number(a.decided_at_ms), { conversation: "owner", booking, action: "owner_decision", inputs: { approval: a.id, state: a.state }, outcome: "confirmed", language: o.settings.owner.language, refs: { command: a.state === "denied" ? "deny" : "approve", approval: a.id } });
+    }
+  }
+
+  // ---- the owner-marked desk (UPI, B71 part 2): the agent's calls are its desk Guard's decisions; what the owner marked is the desk's own lists. The entries use the
+  // names a template's UPI entries use (MARK_ACTIONS), so the unfinished-work list, the papers and the report read them the same way.
+  const deskKind = Object.keys(facts.guards).find((k) => providerById(k)?.ownerMarked !== undefined);
+  const dk = deskKind ? facts.guards[deskKind] : undefined;
+  if (dk) {
+    const requests = facts.service.desk?.requests ?? [];
+    const refunds = facts.service.desk?.refunds ?? [];
+    const requestOf = (id: string | undefined) => (id ? requests.find((r) => r.id === id) : undefined);
+    // who each request is for, from the agent's own calls: a keyed fingerprint of the customer's number, never the number
+    const customerOf = new Map<string, string>();
+    for (const d of dk.decisions.filter((x) => x.principal?.workload === o.agentId && x.operation === "create_link")) {
+      const customer = typedText(d.arguments.customer); const ref = typedText(d.arguments.reference); const amount = typedText(d.arguments.amount_paise);
+      const r = requests.find((x) => x.reference === ref && String(x.amount_paise) === amount);
+      if (r && customer) customerOf.set(r.id, personLabel(o.labelKey, "c", customer));
+    }
+    for (const d of dk.decisions.filter((x) => x.principal?.workload === o.agentId)) {
+      const at = Number(d.at_ms);
+      if (d.operation === "create_link") {
+        const ref = typedText(d.arguments.reference) ?? null; const amount = typedText(d.arguments.amount_paise) ?? "";
+        const customer = typedText(d.arguments.customer);
+        const conversation = customer ? personLabel(o.labelKey, "c", customer) : "agent";
+        if (d.outcome === "deny") { refused(d, MARK_ACTIONS.request, lab(ref), conversation); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        const r = requests.find((x) => x.reference === ref && String(x.amount_paise) === amount);
+        mk(d.id, at, { conversation, booking: lab(ref), action: MARK_ACTIONS.request, inputs: { call: d.call }, outcome: failedOrNot(d, !!r), refs: { ...(r ? { requestId: r.id } : {}), ...(ref ? { reference: lab(ref)! } : {}), amountPaise: amount } });
+      } else if (d.operation === "claim" || d.operation === "cancel_link") {
+        const id = typedText(d.arguments.id); const r = requestOf(id);
+        const action = d.operation === "claim" ? MARK_ACTIONS.claim : MARK_ACTIONS.closed;
+        if (d.outcome === "deny") { refused(d, action, lab(r?.reference ?? null)); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        // a claim marks nothing paid: the customer said so, and the owner is asked to look
+        mk(d.id, at, { conversation: (id && customerOf.get(id)) ?? "customer", booking: lab(r?.reference ?? null), action, inputs: { call: d.call }, outcome: failedOrNot(d, !!r), refs: { ...(id ? { requestId: id } : {}), ...(d.operation === "claim" ? { via: typedText(d.arguments.via) ?? "words" } : {}) } });
+      } else if (d.operation === "refund") {
+        const paymentId = typedText(d.arguments.payment_id) ?? ""; const amount = typedText(d.arguments.amount_paise) ?? "";
+        const owner = requests.find((r) => r.payments.some((p) => p.id === paymentId));
+        const booking = lab(owner?.reference ?? null);
+        if (d.outcome === "deny") { refused(d, MARK_ACTIONS.refundOwed, booking, "agent", ruleDecisions(d, "block")); continue; }
+        if (d.outcome !== "allow" || !d.dispatched) continue;
+        const owed = refunds.find((r) => r.payment_id === paymentId && String(r.amount_paise) === amount && Math.abs(r.owed_at_ms - at) < GRACE_MS);
+        // owed back by the owner, who sends it from their own UPI app: the agent never sends money
+        mk(d.id, at, { conversation: "agent", booking, action: MARK_ACTIONS.refundOwed, inputs: { call: d.call }, outcome: owed ? "held_for_owner" : failedOrNot(d, false), refs: { ...(owed ? { refundId: owed.id } : {}), paymentId, amountPaise: amount } });
+      } else if (d.outcome === "deny") {
+        refused(d, d.operation, null);
+      }
+    }
+    // the owner's marks: what the owner says came in, from the owner's own number with a one-use code. The owner's statement, never a provider's confirmation.
+    for (const r of requests) {
+      for (const p of r.payments ?? []) {
+        mk(`mark:${p.id}`, p.marked_at_ms, {
+          conversation: "owner", booking: lab(r.reference), action: MARK_ACTIONS.marked, inputs: { request: r.id, payment: p.id }, outcome: "confirmed", language: o.settings.owner.language,
+          refs: { paymentId: p.id, requestId: r.id, amountPaise: String(p.amount_paise), markedBy: "owner" },
+          notes: p.after_close ? "marked received by the owner after the request was closed: kept apart, it pays nothing open" : "marked paid by owner: the owner's statement from their own number, not a payment service's record",
+        });
+      }
+    }
+    // a refund the owner owed and marked sent (or kept for something given another way)
+    for (const f of refunds) {
+      if ((f.state !== "done" && f.state !== "kept") || f.settled_at_ms === undefined) continue;
+      mk(`refund-marked:${f.id}`, f.settled_at_ms, { conversation: "owner", booking: lab(f.reference), action: f.state === "kept" ? MARK_ACTIONS.refundKept : MARK_ACTIONS.refundDone, inputs: { refund: f.id }, outcome: "confirmed", language: o.settings.owner.language, refs: { refundId: f.id, paymentId: f.payment_id, amountPaise: String(f.amount_paise) }, notes: "the owner marked it, from their own number: the owner's statement" });
     }
   }
 
