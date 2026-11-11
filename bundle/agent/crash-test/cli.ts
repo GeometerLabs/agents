@@ -8,6 +8,7 @@ import { setAgent } from "../folder.ts";
 import { crashTestText, planCrashTest, runCrashTest } from "./run.ts";
 import type { CrashOptions } from "./run.ts";
 import { issueGoLive, recordService } from "./golive.ts";
+import { crashSummaryOf, writeCrashSummary } from "../requests.ts";
 
 type Values = Record<string, string | boolean | undefined>;
 
@@ -39,6 +40,8 @@ export async function crashCommand(ctx: Context, sub: (typeof CRASH_SUBCOMMANDS)
   const planned = await planCrashTest(ctx, name, optionsOf(values, false));
   const o = optionsOf(values, true);
   const result = await runCrashTest(planned.plan, o);
+  // the panel's own-agent page shows the last crash test (counts and titles): a run of some situations only, or of another command, is not the agent's
+  if (str("situations") === undefined && str("run") === undefined) writeCrashSummary(ctx.dir, name, crashSummaryOf(result, ctx.now(), sub === "go-live", "the command line"));
 
   if (values.json === true) {
     console.log(JSON.stringify(result));

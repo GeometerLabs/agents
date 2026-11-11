@@ -41,8 +41,18 @@ export type ServiceKind = "razorpay" | "whatsapp" | "calendar";
  */
 export function guardsOf(kind: { guards: readonly ServiceKind[] }, settings: unknown): ServiceKind[] {
   const gateway = (settings as { payment?: { module?: string } } | undefined)?.payment?.module === "razorpay";
-  return kind.guards.filter((g) => gateway || g !== "razorpay");
+  const ownCalendar = hasOwnCalendar(settings);
+  return kind.guards.filter((g) => (gateway || g !== "razorpay") && (!ownCalendar || g !== "calendar"));
 }
+
+/**
+ * B72: a shop whose settings say `"calendar": {"module": "own"}` runs on its own booking list: no calendar Guard, no Google key, no calendar id. Anything else (no "calendar" key
+ * at all, "google") keeps the calendar, exactly as every shop did before 12 Nov 2026. The one place that decides it, beside the gateway rule above.
+ */
+export const hasOwnCalendar = (settings: unknown): boolean => (settings as { calendar?: { module?: string } } | undefined)?.calendar?.module === "own";
+
+/** Does this shop have a Google Calendar? Its template has one AND its settings did not choose the booking list. */
+export const hasCalendar = (kind: { guards: readonly ServiceKind[] }, settings: unknown): boolean => guardsOf(kind, settings).includes("calendar");
 
 /** What the panel needs of a hand check's summary and of a go-live certificate, whichever template made them. */
 export interface HandCheckSummaryLike { held: number; total: number; checks: number; failedTitles: string[]; ranOn?: string; notRun?: string[] }
