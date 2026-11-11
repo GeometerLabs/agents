@@ -154,7 +154,7 @@ test("up brings up the panel, HTTPS and the heartbeat with no shop and no model;
     assert.equal(r.result, 0, r.err);
     assert.match(r.out, /The server's own services are up: caddy, inbox, ops, panel, refresher, relay\. The panel answers at https:\/\/shops\.example\.com/u);
     const compose = readFileSync(join(w.root, "generated", "compose.yaml"), "utf8");
-    assert.ok(!compose.includes("g-model") && !compose.includes("guard"), "no Guard runs before the first shop");
+    assert.ok(!compose.includes("g-model") && !compose.includes("geo-guard"), "no Guard runs before the first shop");
     assert.ok(w.calls.some((c) => c.args.join(" ").includes("up -d --remove-orphans")));
     assert.ok(existsSync(join(w.root, "secrets", "panel", "data_key")), "the panel's keys are made");
     const again = await quiet(() => main(["up", "--server", w.root], w.ctx));
