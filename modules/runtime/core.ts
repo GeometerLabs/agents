@@ -117,6 +117,8 @@ export interface RuntimeKit<Store extends { ai?: AiState }, Settings extends { t
   refundContext(store: Store, settings: Settings, receipt: string): Context | null;
   /** The saved store with every id counter moved on by `gap` (the codec's own, modules/runtime/snapshot.ts): used once after a restore from a snapshot (restored.ts). */
   skipCounters?(json: string, gap: number): string;
+  /** The saved store with every id counter at least where a thrown-away step's store had it (the codec's own): used when a task ends without running again (endTask). */
+  keepCounters?(json: string, taken: string): string;
   /**
    * Words a customer wrote that the store keeps on a case (Orders: the delivery address), taken off the cases that ended before `beforeMs`; the outcome stays. Returns
    * how many cases it changed. A template whose store keeps no such words has none.
@@ -244,7 +246,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const down = isTask ? watch.down : undefined;
     const givenUpOn = down !== undefined && (lastTry || givenUp.has(down));
     if (thrown) {
-      if (down !== undefined && (givenUpOn || watch.oneTime)) return endTask(event, taskId!, down, !watch.oneTime);
+      if (down !== undefined && (givenUpOn || watch.oneTime)) return endTask(event, taskId!, down, !watch.oneTime, kit.serialize(store));
       throw thrown.error;
     }
     if (givenUpOn) {
@@ -276,10 +278,14 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   /**
    * A task whose step can neither wait nor run again: a fresh store and agent from the saved state, so nothing of the failed step is kept, then the to-do item (and, when the
    * customer has heard nothing, the template's words) and the failed mark in one transaction. Once only: the task leaves the queue here.
+   *
+   * Except its ids (B75, 11 Nov 2026). The step, or an earlier try of it that waited, may have made a calendar hold or a payment link under the case id it took ("b-7"),
+   * and those stay at the providers. If that id were given out again, the next customer's "look first" would find them and take them as its own: another customer's hold,
+   * and a link someone else may hold. So the id counters stay where the thrown-away step left them (`taken`), and the next case gets a new number.
    */
-  async function endTask(event: RuntimeEvent, taskId: string, service: string, tell: boolean): Promise<void> {
+  async function endTask(event: RuntimeEvent, taskId: string, service: string, tell: boolean, taken: string): Promise<void> {
     givenUp.add(service);
-    const store = kit.parse(snapshot);
+    const store = kit.parse(kit.keepCounters ? kit.keepCounters(snapshot, taken) : snapshot);
     const record = createRecord(clock, entries, options.recordKey ? { key: options.recordKey } : {});
     const agent = kit.createAgent({ store, record, services: kit.services });
     try { await agent.giveUp?.(event, { service, tell }); }

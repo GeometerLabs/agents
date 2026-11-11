@@ -17,7 +17,7 @@ import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createOrdersLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
-import { parseStore, serializeStore, skipStoreCounters } from "./snapshot.ts";
+import { parseStore, serializeStore, keepStoreCounters, skipStoreCounters } from "./snapshot.ts";
 import type { DurableStore } from "./store.ts";
 
 export const PATHWAY = "orders";
@@ -90,6 +90,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     serialize: serializeStore,
     parse: parseStore,
     skipCounters: skipStoreCounters,
+    keepCounters: keepStoreCounters,
     compactStore: compactFinishedOrders,
     services: services as unknown as Record<string, unknown>,
     createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
