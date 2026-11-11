@@ -440,5 +440,5 @@ test("409 already_done after the owner approved a held refund: done, the owner i
 });
 
 test("every template the agent uses for these exists in all four languages", () => {
-  for (const language of ["en", "hi", "ml", "kn"] as const) for (const id of ["refund_checking", "refund_expired", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed", "owner_approval_waiting", "owner_approval_closed", "owner_approval_refused", "owner_refund_settled"] as const) assert.ok(TEMPLATES[language][id], `${id} (${language})`);
+  for (const language of ["en", "hi", "ml", "kn"] as const) for (const id of ["refund_checking", "refund_confirmed", "refund_expired", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed", "owner_approval_waiting", "owner_approval_closed", "owner_approval_refused", "owner_refund_settled"] as const) assert.ok(TEMPLATES[language][id], `${id} (${language})`);
 });

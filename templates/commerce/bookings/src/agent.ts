@@ -364,7 +364,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (b, phone, templates, more) => tellCustomer(b, phone, templates as TemplateId[], more),
     tellOwner: (b, phone, template, more) => tellOwner(b, phone, template as TemplateId, more),
     cases: () => store.bookings.values(),
-    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled" },
+    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled", confirmed: "refund_confirmed" },
   });
   const { requestRefund, overLimit } = refunds;
   const afterRefund = (b: Booking, result: Parameters<typeof refunds.afterRefund>[1], a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }) => refunds.afterRefund(b, result, a);
@@ -1269,7 +1269,7 @@ export function createAgent(deps: AgentDeps): Agent {
   //   recheck_payment   read the payments service's own list for this booking's link, and record any payment not yet counted (the normal path, with its rules)
   //   retry_booking     a deposit is in and the calendar would not confirm it: ask the calendar again, and tell the customer "booked" only if it now shows the booking
   //   ask_owner_again   the owner has not answered: send the owner the same notice again (a calendar clash, or a late cancellation's refund)
-  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again)
+  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again; a refund the list shows settles it, and the customer is told)
   // Nothing here widens a limit: every call is one the agent already makes, and Guard decides each as it does every day.
   async function onRecovery(e: { id: string; case: string; action: string }): Promise<void> {
     const b = store.bookings.get(e.case);
@@ -1301,7 +1301,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (!(b.refundIssues ?? []).some((i) => ["unknown", "uncertain", "unconfirmed", "failed"].includes(i.kind))) return say("blocked", "no refund here is waiting on an unclear outcome");
       say("attempted", "looking again, read-only, for a refund that may have gone");
       const r = await refunds.recheck(b);
-      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
+      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list, and the customer was told of each one that does; none was sent again`);
     }
     say("blocked", `the agent has no recovery called "${e.action}"`);
   }

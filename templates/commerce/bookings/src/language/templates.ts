@@ -48,7 +48,7 @@ export type TemplateId =
   | "slot_unavailable" | "outside_hours" | "hold_failed" | "link_failed" | "booked" | "couldnt_confirm" | "hold_expired"
   | "slot_gone_refund" | "refund_unbooked" | "reschedule_failed" | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending"
   | "cancelled_late" | "cancelled_no_deposit" | "no_booking_found" | "refund_approved" | "refund_denied" | "rescheduled"
-  | "reminder" | "didnt_understand" | "refund_checking" | "refund_expired" | "voice_note"
+  | "reminder" | "didnt_understand" | "refund_checking" | "refund_confirmed" | "refund_expired" | "voice_note"
   // the turns that come with buttons or a list (language/interactive.ts): pick a service, pick a time, are you sure, "talk to the owner"
   | "pick_service" | "pick_slot" | "confirm_buttons" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
   // to the owner. Every line starts and ends with fixed words, because each one is also a WhatsApp template (meta-templates.ts) and
@@ -147,6 +147,7 @@ const en: BaseSet = {
   told_owner: () => "I've told the owner that you would like to talk. They will message you here.",
   couldnt_tell_owner: () => "Sorry, I couldn't reach the owner just now. Please try again in a few minutes.",
   refund_checking: (f) => `We are checking your ${inr(f, "refundInr")} refund and will message you as soon as it is confirmed.`,
+  refund_confirmed: (f) => `Your ${inr(f, "refundInr")} refund is confirmed and is on its way back to you.`,
   refund_expired: (f) => `The owner did not answer in time about your ${inr(f, "refundInr")} refund, so it has not been sent. Please contact ${f.businessName} directly.`,
 
   owner_refund_needs_approval: (f) => `Approval needed: refund ${inr(f, "refundInr")} for ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}). Reply "approve ${need(f, "approvalCode")}" or "deny ${need(f, "approvalCode")}" within ${need(f, "approvalHours")} hours.`,
@@ -206,6 +207,7 @@ const hi: BaseSet = {
   rescheduled: (f) => `हो गया। आपका ${need(f, "serviceName")} अब ${slot(f)} पर है।`,
   reminder: (f) => `याद दिलाना: ${f.businessName} में आपका ${need(f, "serviceName")} ${slot(f)} पर है।`,
   refund_checking: (f) => `आपके ${inr(f, "refundInr")} के रिफंड की जाँच हो रही है। पुष्टि होते ही मैं आपको संदेश भेजूँगा।`,
+  refund_confirmed: (f) => `आपके ${inr(f, "refundInr")} के रिफंड की पुष्टि हो गई है। यह आपको वापस भेजा जा रहा है।`,
   refund_expired: (f) => `मालिक ने समय पर आपके ${inr(f, "refundInr")} के रिफंड पर जवाब नहीं दिया, इसलिए वह अभी नहीं भेजा गया है। कृपया ${f.businessName} से सीधे संपर्क करें।`,
   didnt_understand: () => "माफ़ कीजिए, मैं समझ नहीं पाया। कृपया सेवा, दिन और समय बताइए।",
   voice_note: () => "कृपया अपना संदेश लिखकर भेजिए; मैं अभी वॉइस नोट नहीं सुन सकता।",
@@ -277,6 +279,7 @@ const ml: BaseSet = {
   rescheduled: (f) => `മാറ്റിയിട്ടുണ്ട്. ${need(f, "serviceName")} പുതിയ സമയം: ${slot(f)}.`,
   reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}-ൽ നിങ്ങളുടെ ${need(f, "serviceName")} ബുക്കിംഗ് സമയം: ${slot(f)}.`,
   refund_checking: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം.`,
+  refund_confirmed: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്.`,
   refund_expired: (f) => `ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
   didnt_understand: () => "ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ.",
   voice_note: () => "ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല.",
@@ -344,6 +347,7 @@ const kn: BaseSet = {
   rescheduled: (f) => `ಆಯಿತು. ${need(f, "serviceName")} ಹೊಸ ಸಮಯ: ${slot(f)}.`,
   reminder: (f) => `ನೆನಪಿಸುವುದು: ${f.businessName}-ನಲ್ಲಿ ನಿಮ್ಮ ${need(f, "serviceName")} ಬುಕಿಂಗ್ ಸಮಯ: ${slot(f)}.`,
   refund_checking: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ. ಖಚಿತವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  refund_confirmed: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ.`,
   refund_expired: (f) => `ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ${f.businessName} ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.`,
   didnt_understand: () => "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ.",
   voice_note: () => "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ.",

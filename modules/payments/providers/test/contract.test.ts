@@ -81,7 +81,7 @@ function refundFlow(payments: Payments, clock: FakeClock) {
     tellCustomer: async (_c, _p, templates) => { told.push(...templates); return true; },
     tellOwner: async (_c, _p, template) => { told.push(template); return true; },
     cases: () => [b],
-    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "refund_settled" },
+    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "refund_settled", confirmed: "refund_confirmed" },
   });
   return { b, log, told, flow };
 }

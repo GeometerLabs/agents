@@ -2196,6 +2196,82 @@
     ]
   },
   {
+    "name": "fee_refund_confirmed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपके {{1}} के रिफंड की पुष्टि हो गई है। यह आपको वापस भेजा जा रहा है।",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_confirmed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your {{1}} refund is confirmed and is on its way back to you.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_confirmed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_refund_confirmed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "₹1,200"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_fee_service_paused",
     "language": "hi",
     "category": "UTILITY",
