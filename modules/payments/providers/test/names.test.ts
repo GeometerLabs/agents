@@ -32,7 +32,8 @@ function files(dir: string): string[] {
   return out;
 }
 
-const held = [...files(join(ROOT, "modules")), ...files(join(ROOT, "bundle", "panel")), ...files(join(ROOT, "templates"))]
+// the folders read; HELD says which files in them are held (B71 part 2 added bundle/services, bundle/agent and bundle/generate, for the files named in HELD)
+const held = [...files(join(ROOT, "modules")), ...files(join(ROOT, "bundle", "panel")), ...files(join(ROOT, "templates")), ...["services", "agent", "generate"].flatMap((d) => files(join(ROOT, "bundle", d)))]
   .map((p) => relative(ROOT, p).split("\\").join("/")).filter((rel) => !isTest(rel) && HELD.some((r) => r.test(rel)));
 
 test("the neutral places name no gateway: a gateway's name, key shape or id is only in its own folder", () => {
