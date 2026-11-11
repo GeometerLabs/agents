@@ -571,7 +571,11 @@ function checkLine(c: Ctx, r: CheckResult): Raw {
   let title: string;
   let text: string;
   const generic = (code: CheckResult["code"]): string => (code === "refused_by_guard" && r.detail ? w.guardWords(r.detail) : w.generic[code as keyof typeof w.generic] ?? w.generic.unexpected_response);
-  if (r.service === "whatsapp") {
+  if (r.service === "whatsapp" && r.notChecked.includes("which-number")) {
+    // a shop on Gupshup: its check confirms the app Gupshup answered for, never a number (checks.ts checkGupshup), and its words say exactly that
+    title = w.whatsapp.title;
+    text = r.code === "confirmed" ? w.whatsapp.gupshupConfirmed(found?.appId ?? "") : r.code === "not_found" ? w.whatsapp.gupshupNotFound(r.detail ?? "") : generic(r.code);
+  } else if (r.service === "whatsapp") {
     title = w.whatsapp.title;
     text = r.code === "confirmed" ? w.whatsapp.confirmed(found?.displayNumber ?? "") : r.code === "account_mismatch" ? w.whatsapp.differs(r.foundEnding ?? "") : r.code === "not_found" ? w.whatsapp.notFound : generic(r.code);
   } else if (providerById(r.service)?.gateway) {

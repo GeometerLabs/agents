@@ -448,7 +448,7 @@ export async function connectionChecks(ctx: Context, shop: string): Promise<{ te
   if (!server.panel.enabled) return not("This server has no panel (\"panel\" in geometer.json), and the checks run inside it.");
   if (readStatus(ctx.dir, shop)?.deploy.state !== "applied") return not(`${shop} is not deployed yet, so its Guards are not up to be asked: deploy it, then run \`geometer check ${shop}\` again (or press "Run the checks" in the panel).`);
   const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/services/connection-check.ts", shop], { timeoutMs: 120_000 });
-  let body: { connections?: { service: string; ok: boolean; code: string; detail?: string; notChecked?: string[] }[] | null; missing?: boolean } | undefined;
+  let body: { connections?: { service: string; ok: boolean; code: string; detail?: string; notChecked?: string[]; confirmed?: { appId?: string } }[] | null; missing?: boolean } | undefined;
   try { body = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? ""); } catch { /* not JSON */ }
   if (!body) return not(`The panel did not answer (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 200)}). Is the panel container up (\`geometer status\`)?`);
   if (body.missing) return not(`The panel has no settings for ${shop} (the panel keeps them in shops/${shop}/).`);
@@ -456,7 +456,8 @@ export async function connectionChecks(ctx: Context, shop: string): Promise<{ te
   // "not_configured" means the panel has nothing to check with yet (a shop made by `shop add` has no business number or key id in the panel's own data): that is not a failure
   const notRun = body.connections.filter((c) => !c.ok && c.code === "not_configured");
   const failed = body.connections.some((c) => !c.ok && c.code !== "not_configured");
-  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? "confirmed" : c.code === "not_configured" ? "NOT RUN (the panel does not have what it needs for this yet: enter it on the shop's page in the panel)" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
+  // a Gupshup shop's WhatsApp check confirms an app, never a number (panel/checks.ts checkGupshup): it is printed as what it is
+  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? (c.confirmed?.appId ? `Gupshup answered for app ${c.confirmed.appId}` : "confirmed") : c.code === "not_configured" ? "NOT RUN (the panel does not have what it needs for this yet: enter it on the shop's page in the panel)" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
   const verdict = failed ? "FAILED" : notRun.length > 0 ? "none failed, but some could not run" : "all passed";
   return { text: `Connection checks (read-only through the shop's Guards; nothing is sent or charged; the same as the panel's "Run the checks", so the panel shows these too, and this writes the shop's pins.json when they all confirm): ${verdict}\n${lines.map((l) => `  ${l}`).join("\n")}`, failed, recorded: body.connections.length > 0 && body.connections.every((c) => c.ok) };
 }

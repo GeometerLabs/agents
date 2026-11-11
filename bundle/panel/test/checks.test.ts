@@ -10,7 +10,10 @@ import { createFakeMessaging } from "../../../modules/messaging/messaging.ts";
 import { createFakePayments } from "../../../modules/payments/payments.ts";
 import { fakeClock } from "../../../modules/core/clock.ts";
 import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
-import { checkCalendar, checkConnections, checkGateway, checkWhatsApp } from "../checks.ts";
+import { checkCalendar, checkConnections, checkGateway, checkGupshup, checkWhatsApp } from "../checks.ts";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { boot } from "./helpers.ts";
 
 const SECRETS = { razorpayWebhookSecret: "standin-rzp-secret", whatsappAppSecret: "standin-wa-secret" };
 const PHONE_ID = "100000000000001";
@@ -180,3 +183,58 @@ test("the panel's Guard credential is sent as a bearer token, and a stand-in wit
     assert.deepEqual(seen, [undefined, "Bearer gg_panel_credential_1"]);
   } finally { await s.close(); }
 });
+
+// ---- a shop on Gupshup (follow-up 1, 12 Nov 2026): Gupshup's app read is the check, worded as what it shows ----------------------------------------------
+const APP = "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8";
+
+test("Gupshup: the app read through the shop's Guard confirms the app Gupshup answered for, never a number, and pins nothing", async () => {
+  const seen: string[] = [];
+  const g = await stub((req, res) => { seen.push(`${req.method} ${req.url} ${req.headers.authorization ?? "-"}`); json(res, 200, { status: "success", healthy: "true" }); });
+  try {
+    const report = await checkConnections({ agentToken: "gg_panel_credential_1", gupshup: { baseUrl: g.url, appId: APP } });
+    assert.equal(report.allOk, true, "so \"Ready to go live\" is not held back by a Meta read a Gupshup Guard refuses");
+    const wa = report.results[0];
+    assert.deepEqual([wa.service, wa.ok, wa.code, wa.confirmed], ["whatsapp", true, "confirmed", { appId: APP }], "Gupshup answered for the app the Guard's pinned path named");
+    assert.equal(wa.confirmed?.displayNumber, undefined, "no number is claimed");
+    assert.ok(wa.notChecked.includes("which-number") && wa.notChecked.includes("sending"), "what the read cannot show is named");
+    assert.deepEqual(seen, [`GET /partner/app/${APP}/health Bearer gg_panel_credential_1`], "one GET of the app's health, with the panel's Guard credential and nothing else");
+    assert.equal(report.pins.whatsapp, undefined, "an app is not a number: nothing is pinned from it");
+    assert.ok(wa.sentNothing);
+  } finally { await g.close(); }
+});
+
+test("Gupshup: a refusal, a 429, an unhealthy app, a malformed id and Guard's own no are each said plainly", async () => {
+  const invalid = await stub((_req, res) => json(res, 400, { status: "error", message: "Invalid App Details" }));
+  const busy = await stub((_req, res) => json(res, 429, { status: "error", message: "Too Many Requests" }));
+  const unhealthy = await stub((_req, res) => json(res, 200, { status: "success", healthy: "false" }));
+  const auth = await stub((_req, res) => json(res, 401, { status: "error", message: "Authentication Failed" }));
+  const guard = await stub((_req, res) => json(res, 403, { error: "no", guard: { decision: "deny", code: "refused_by_policy", sent: "no", retry: "no", reason: "app_id is not on the allowlist" } }));
+  try {
+    assert.deepEqual(await checkGupshup({ baseUrl: invalid.url, appId: APP }).then((r) => [r.code, r.detail]), ["not_found", "Invalid App Details"], "Gupshup's own words go with it");
+    assert.equal((await checkGupshup({ baseUrl: busy.url, appId: APP })).code, "rate_limited", "10 reads a minute: a 429 is its own plain result, not a broken account");
+    assert.deepEqual(await checkGupshup({ baseUrl: unhealthy.url, appId: APP }).then((r) => [r.ok, r.code]), [false, "unexpected_response"]);
+    assert.equal((await checkGupshup({ baseUrl: auth.url, appId: APP })).code, "not_allowed");
+    assert.deepEqual(await checkGupshup({ baseUrl: guard.url, appId: APP }).then((r) => [r.code, r.detail]), ["refused_by_guard", "app_id is not on the allowlist"]);
+    assert.equal((await checkGupshup({ baseUrl: invalid.url, appId: "../x" })).code, "not_configured", "an id that could change the path is never sent");
+  } finally { for (const s of [invalid, busy, unhealthy, auth, guard]) await s.close(); }
+});
+
+test("Gupshup: the panel's \"Run the checks\" reads Gupshup's app for a Gupshup shop, not Meta's number, so its WhatsApp line can pass", async () => {
+  const seen: string[] = [];
+  const g = await stub((req, res) => { seen.push(`${req.method} ${req.url?.split("?")[0]}`); return req.url?.startsWith(`/partner/app/${APP}/health`) ? json(res, 200, { status: "success", healthy: "true" }) : json(res, 404, {}); });
+  const b = await boot({ guardUrl: g.url });
+  try {
+    b.addShop("gupshup-shop");
+    // runtime.json as the deployer writes it for a shop on Gupshup (item 11b): the provider and its app id
+    writeFileSync(join(b.dir, "shops", "gupshup-shop", "runtime.json"), JSON.stringify({ mode: "live", tickSeconds: 30, services: { payments: {}, calendar: { calendarId: CALENDAR }, messaging: { provider: "gupshup", appId: APP, phoneNumberId: PHONE_ID }, timeoutMs: 20000 } }));
+    const { createGoLive } = await import("../golive.ts");
+    const { createShops } = await import("../shops.ts");
+    const { openStores } = await import("../server.ts");
+    const { store } = openStores(b.config);
+    const stored = await createGoLive(b.config, createShops(b.config, store), store).run("gupshup-shop");
+    const wa = stored?.connections?.find((c) => c.service === "whatsapp");
+    assert.deepEqual([wa?.ok, wa?.code, wa?.confirmed?.appId], [true, "confirmed", APP]);
+    assert.ok(seen.includes(`GET /partner/app/${APP}/health`) && !seen.some((x) => x.includes(`/${PHONE_ID}`)), "Gupshup's app read, never Meta's number read");
+  } finally { await b.close(); await g.close(); }
+});
+
