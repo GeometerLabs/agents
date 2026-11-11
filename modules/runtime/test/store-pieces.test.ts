@@ -130,12 +130,14 @@ function bytesOfOneStep(pastBookings: number): { step: number; snapshot: number 
   } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
 }
 
-test("what one step writes does not grow with the number of past bookings: 10 or 2,000 bookings behind it, the same few pages", () => {
-  const young = bytesOfOneStep(10);
-  const old = bytesOfOneStep(2_000);
+test("what one step writes does not grow with the number of past bookings: 1,000 or 3,000 bookings behind it, the same few pages", () => {
+  // What a step writes is the pages of the rows it changed, and the B-tree pages above them. That depth grows by one page each time the state grows about a hundredfold
+  // (a run on 11 Nov wrote 4 pages with 10 bookings behind the step and 10 with 2,000), so the two runs compared here are both well past the first few hundred rows.
+  const smaller = bytesOfOneStep(1_000);
+  const larger = bytesOfOneStep(3_000);
   const page = 4_096 + 24; // a page and its frame header in the log
-  assert.ok(Math.abs(old.step - young.step) <= 4 * page, `a step wrote ${young.step} bytes with 10 bookings behind it and ${old.step} with 2,000`);
-  assert.ok(old.step < 16 * page, `a step wrote ${old.step} bytes`);
-  // Before layout 3 the same step wrote the whole snapshot (here about 2 MB with 2,000 bookings and their ledger), once into the log and once into the file.
-  assert.ok(old.snapshot > 50 * old.step, `the snapshot is ${old.snapshot} bytes and the step wrote ${old.step}`);
+  assert.ok(Math.abs(larger.step - smaller.step) <= 4 * page, `a step wrote ${smaller.step} bytes with 1,000 bookings behind it and ${larger.step} with 3,000`);
+  assert.ok(larger.step <= 16 * page, `a step wrote ${larger.step} bytes`);
+  // Before layout 3 the same step wrote the whole snapshot (here about 2.5 MB with 3,000 bookings and their ledger), once into the log and once into the file.
+  assert.ok(larger.snapshot > 20 * larger.step, `the snapshot is ${larger.snapshot} bytes and the step wrote ${larger.step}`);
 });

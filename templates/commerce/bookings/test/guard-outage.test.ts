@@ -2,7 +2,7 @@
 // customer is told once and the owner's list has it. The rule itself is tried in modules/runtime/test/guard-wait.test.ts; what is Bookings' own is the calendar's hold.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CUSTOMER } from "../src/harness.ts";
+import { CUSTOMER, createWorld } from "../src/harness.ts";
 import { GUARD_WAIT_MS } from "../../../../modules/runtime/guard-wait.ts";
 import { outage } from "../../../../modules/runtime/test/outage.ts";
 import { obligations, DEFAULT_OPTIONS } from "../../../../modules/unfinished/index.ts";
@@ -98,4 +98,14 @@ test("the Calendar Guard down past the bound: the customer is told the request w
     const found = obligations.detect({ template: "bookings", entries: o.db.loadState().record, cases: [], nowMs: o.kit.clock.now(), options: DEFAULT_OPTIONS }).found.filter((f) => f.kind === "message_unanswered");
     assert.equal(found.length, 1, "the to-do item the words name is there");
   } finally { await o.runtime.close(); o.kit.cleanup(); }
+});
+
+test("past the bound, a first-time customer is answered in the language they wrote in, read by the rules from their message, not in the shop's first language", async () => {
+  // The step that would have noted their language was thrown away (modules/runtime/core.ts, endTask), so giveUp reads it again from the message. Glow Salon's first language is Hindi.
+  const w = createWorld();
+  const newcomer = "+919877777777";
+  await w.agent.giveUp!({ kind: "message", message: w.messaging.receive(newcomer, "നാളെ ഹെയർകട്ട് വേണം") }, { service: "calendar", tell: true });
+  assert.match(w.lastTextTo(newcomer), /ബുക്കിംഗ് സംവിധാനം ഇപ്പോൾ പ്രതികരിക്കുന്നില്ല/u, "Malayalam");
+  await w.agent.giveUp!({ kind: "message", message: w.messaging.receive("+919866666666", "I want a haircut tomorrow at 6pm") }, { service: "calendar", tell: true });
+  assert.match(w.lastTextTo("+919866666666"), /^Sorry, I could not finish your request/u, "English");
 });
