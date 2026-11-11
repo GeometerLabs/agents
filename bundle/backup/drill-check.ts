@@ -42,6 +42,7 @@ export interface DrillShop {
 export interface DrillJob { target: SnapshotJob["target"]; shops: DrillShop[] }
 export interface DrillResult { name: string; ok: boolean; detail: string; /** The snapshot that was checked. */ stamp?: string }
 
+// The weekly check without the key: confirms every object the seal names is present and its sha256 is the one that was written. It cannot read the contents, which is the point of keeping the key off the server.
 export async function drillShop(shop: DrillShop, store: ObjectStore): Promise<DrillResult> {
   const fail = (detail: string): DrillResult => ({ name: shop.name, ok: false, detail, ...(shop.seal ? { stamp: shop.seal.stamp } : {}) });
   const seal = shop.seal;

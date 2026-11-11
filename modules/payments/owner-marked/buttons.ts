@@ -7,6 +7,7 @@ import { markButtonId } from "./owner.ts";
 
 export interface MarkButtonLabels { received: string; refundSent: string; keptForBooking?: string }
 
+// Builds the owner's choices in the shop's language, one place, so every template asks about marked payments with the same buttons.
 export function ownerMarkChoices(labels: MarkButtonLabels, a: { kind: "received"; code: string; amountInr: number } | { kind: "refund"; code: string; keepAllowed: boolean }): Choice[] {
   if (a.kind === "received") return [{ id: markButtonId("received", a.code), title: clip(`${labels.received} ${formatInr(a.amountInr)}`, LIMITS.buttonTitle) }];
   return [

@@ -25,6 +25,7 @@ export interface OwnAgentContextOptions {
 
 const TIMEOUT_MS = 5_000;
 
+// Stands in for the runtime the relay would ask which booking a refund is for. An agent someone else wrote has no such runtime, so the context is read from its own gateway's reviews instead.
 export function ownAgentRuntime(o: OwnAgentContextOptions): RuntimeClient {
   const fetchFn = o.fetchFn ?? fetch;
   const wire = gatewayRuntime(o.gateway.id);

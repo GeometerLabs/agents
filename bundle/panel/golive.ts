@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { gatewayOf } from "../../modules/payments/providers/index.ts";
-import { kindFor } from "../lib/kinds.ts";
+import { guardsOf, kindFor } from "../lib/kinds.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
@@ -30,6 +30,7 @@ export type Unmet = "hand-check" | "deploy" | "limits" | "connections" | "settin
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
+// Runs and keeps the go-live checks (hand check, connection checks) and decides "ready" only when every condition holds; the stored result is what the certificate and the confirm page read.
 export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
   const now = () => (config.now ?? Date.now)();
   const key = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined; // fails at start, not at the first certificate
@@ -47,11 +48,12 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     if (!config.guardUrl) return undefined;
     const meta = shops.meta(shop);
     // Only a shop that chose a gateway has a gateway account to check and a key to pin (B71): a UPI shop, or settings with no payment block, has none.
-    const gateway = gatewayOf(shops.settings(shop)?.payment);
+    const settings0 = shops.settings(shop);
+    const gateway = gatewayOf(settings0?.payment);
     const runtime = shops.runtime(shop);
     const pins = shops.pins(shop);
     const wa = guardUrlFor(config, shop, "whatsapp") as string;
-    const hasCalendar = kindOf(shop).guards.includes("calendar");
+    const hasCalendar = guardsOf(kindOf(shop), settings0).includes("calendar"); // B72: a shop on its own booking list has no calendar to check
     // A shop whose WhatsApp goes through Gupshup (runtime.json `provider`) has no Meta number read to make: its check is Gupshup's app read (checks.ts checkGupshup)
     const messaging = runtime?.services?.messaging;
     const whatsapp = messaging?.provider === "gupshup"

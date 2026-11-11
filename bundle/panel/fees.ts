@@ -93,6 +93,7 @@ const feesOf = (draft: Draft): FeesForm => draft.fees as FeesForm;
 
 // ---- step 1: the centre, its batches and its students -------------------------------------------------------------------------------
 
+// Fees step 1: the centre, its batches, fees and students into the draft, with problems in the person's language.
 export function applyFeesBusiness(draft: Draft, body: Body, w: Words): StepResult {
   const s = w.setup.problems;
   const f = w.setup.fees.problems;
@@ -130,6 +131,7 @@ export function applyFeesBusiness(draft: Draft, body: Body, w: Words): StepResul
 
 // ---- step 2: the rules of the month ----------------------------------------------------------------------------------------------------
 
+// Fees step 2: the rules of the month (due dates, reminders, limits) into the draft; validateSettings of the Fees pathway still has the last word.
 export function applyFeesRules(draft: Draft, body: Body, w: Words): StepResult {
   const f = w.setup.fees.problems;
   const problems: string[] = [];

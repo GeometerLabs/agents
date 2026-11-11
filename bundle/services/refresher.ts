@@ -48,6 +48,7 @@ export async function exchange(accountFile: string, scope: string, fetchFn: type
 
 export interface Refresher { refreshAll(): Promise<void>; start(): void; stop(): void; healthy(): boolean; state(): Record<string, { expiresAt: number | null; lastError: string | null }> }
 
+// Keeps each shop's Google access token fresh before it expires, with back-off per shop so one shop's bad key does not stop the others. Time and fetch are injected so tests need no clock or network.
 export function createRefresher(config: RefresherConfig, deps: { fetch?: typeof fetch; now?: () => number; log?: (line: string) => void } = {}): Refresher {
   const now = deps.now ?? Date.now;
   const log = deps.log ?? (() => undefined);

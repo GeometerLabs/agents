@@ -64,6 +64,7 @@ export interface ObligationKind {
 
 const KIND_ID = /^[a-z][a-z0-9_]{1,39}$/u;
 
+// A factory rather than a global so tests and templates each build their own list and cannot leak kinds into one another.
 export function createObligationRegistry(initial: readonly ObligationKind[] = []) {
   const kinds = new Map<string, ObligationKind>();
   const api = {
@@ -150,4 +151,5 @@ export function guardWaitLine(event: { kind: string }, why: { service: string },
   };
 }
 
+// Entries carry ISO text; this gives a safe millisecond value or null so a bad time makes a case look unknown, not stuck forever.
 export const timeOf = (e: RecordEntry | undefined): number | null => (e && Number.isFinite(Date.parse(e.time)) ? Date.parse(e.time) : null);

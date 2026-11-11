@@ -53,6 +53,7 @@ function readHistory(path: string | undefined): { at: string; by: { name: string
   });
 }
 
+// One command line for every template: each hands in how to read its own settings and cases, so papers are made identically.
 export async function runPapersCli<Settings, Cert>(argv: string[], a: PapersAdapter<Settings, Cert>): Promise<number> {
   const [command, ...rest] = argv;
   let parsed;

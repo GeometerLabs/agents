@@ -18,6 +18,7 @@ export interface Store {
 
 const SAFE_NAME = /^[a-z0-9][a-z0-9._/-]{0,120}$/u;
 
+// The panel's file store over one folder: whole-file writes through a temp file and rename (a crash never leaves half a file), sealed by the vault when there is a key.
 export function createStore(dir: string, vault: Vault): Store {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const path = (name: string) => {

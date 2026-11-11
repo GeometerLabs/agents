@@ -24,6 +24,7 @@ import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
 import { licencePaths, syncLicence } from "./lib/licence.ts";
+import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
@@ -57,8 +58,10 @@ export interface Context {
   extraComposeFiles?: string[];
 }
 
+// One place for the generated compose path, so every docker call and the status checks agree on the file.
 export const composeFile = (dir: string) => join(serverPaths(dir).generated, "compose.yaml");
 
+// Turns the deployer's context into the folder map the generators take, so they stay pure functions of paths and never reach for the context.
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
   return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config, licence: licencePaths(ctx.dir).root };
@@ -189,6 +192,7 @@ export interface PreparedGuard {
 }
 interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]; webhooks: ShopWebhooks; pathwayDir: string; index: number; desiredHash: string; /** follow-up 2 */ gupshupRenewed: boolean }
 
+// Hash of one spec with its version zeroed, so a version bump alone does not look like a changed spec.
 export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
 // Fleet's button mode and the month's AI cap are part of what a shop is asked to be, so a flip redeploys it. Each is only added to the hash when it is on, so a shop that never had it
@@ -198,6 +202,7 @@ export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJs
 export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons"; fleetModel?: "off" }) => ({
   settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), ...(f.fleetModel ? { fleetModel: f.fleetModel } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
 });
+// What the deployer stores as 'applied': equal hashes mean the shop is up to date and is left running untouched.
 export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
 
 /**
@@ -210,7 +215,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const taken = takeSecrets(ctx.dir, name);
   const problems: Problem[] = [...taken.problems];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
-  const calendar = (kindFor(folder.lock?.pathway) ?? KINDS.bookings).guards.includes("calendar");
+  const calendar = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("calendar"); // B72: a shop on its own booking list has none
   const razorpay = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("razorpay"); // a UPI shop (B33) has no Razorpay
   const webhooks = webhooksFor(ctx.dir, name, calendar);
   const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
@@ -367,6 +372,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
   // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
   syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
+  // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the partner filled the shop's terms in;
+  // otherwise any copy is taken away, so turning the setting off switches the feature off at the next deploy.
+  for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name);
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
   const agents = agentFacts(ctx.dir, state);
   for (const a of Object.values(state.agents ?? {})) if (a.applied) for (const g of Object.values(a.applied.guards)) writeGuardFiles(ctx.dir, g.service, g);

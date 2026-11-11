@@ -72,6 +72,7 @@ function json(res: ServerResponse, status: number, body: unknown, headers: Recor
 const bearer = (req: IncomingMessage) => /^bearer\s+(\S+)$/iu.exec(String(req.headers.authorization ?? ""))?.[1];
 const same = (a: string | undefined, b: string) => a !== undefined && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
+// Starts a local stand-in for Guard so adapters can be tested through the same hop they have in production, including held and blocked answers.
 export async function startStubGuard(config: StubGuardConfig): Promise<RunningStubGuard> {
   const model = config.model ?? createGuardModel(config.spec, config.clock);
   const agentId = config.agentId ?? "runtime-glow-salon";

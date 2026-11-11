@@ -52,6 +52,7 @@ export function generateIdentity(): { recipient: string; identity: string } {
   return { identity, recipient: recipientOf(identity) };
 }
 
+// The public half of an identity, so the server can be given only the recipient and never the secret that opens snapshots.
 export function recipientOf(identity: string): string {
   return bech32Encode("age", rawPublic(createPublicKey(privateKeyFrom(bech32Decode(identity.trim(), "age-secret-key-")))));
 }
@@ -59,6 +60,7 @@ export function recipientOf(identity: string): string {
 const CHUNK = 64 * 1024;
 const nonceFor = (counter: number, last: boolean) => { const n = Buffer.alloc(12); n.writeBigUInt64BE(BigInt(counter), 3); n[11] = last ? 1 : 0; return n; };
 
+// age file encryption to one X25519 recipient, in 64 KiB chunks like the age format, so any standard age tool can open the output.
 export function encrypt(plain: Uint8Array, recipient: string): Buffer {
   const rpk = bech32Decode(recipient.trim(), "age");
   if (rpk.length !== 32) throw new Error("that is not an age recipient (a public key is 32 bytes)");
@@ -83,6 +85,7 @@ export function encrypt(plain: Uint8Array, recipient: string): Buffer {
   return Buffer.concat(parts);
 }
 
+// The inverse of encrypt. Throws on a wrong key or a damaged file rather than returning partial plaintext, since every chunk is authenticated.
 export function decrypt(file: Uint8Array, identity: string): Buffer {
   const secret = bech32Decode(identity.trim(), "age-secret-key-");
   const me = privateKeyFrom(secret);

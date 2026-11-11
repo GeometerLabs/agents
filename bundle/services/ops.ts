@@ -44,6 +44,7 @@ export interface OpsConfig {
 const readSecret = (path: string): string => (existsSync(path) ? readFileSync(path, "utf8").trim() : "");
 const timeout = () => AbortSignal.timeout(4_000);
 
+// One admin request to a Guard, bearer token read fresh from its file each time (so a rotated token needs no restart). Never throws: an unreachable Guard comes back as status 0 so the heartbeat can report it instead of dying.
 export async function adminCall(g: Pick<OpsGuard, "adminUrl" | "adminTokenFile">, method: string, path: string, body?: unknown, fetchFn: typeof fetch = fetch): Promise<{ status: number; body: unknown }> {
   try {
     const r = await fetchFn(`${g.adminUrl.replace(/\/+$/u, "")}${path}`, { method, headers: { authorization: `Bearer ${readSecret(g.adminTokenFile)}`, "content-type": "application/json" }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(10_000) });
@@ -67,6 +68,7 @@ async function get(url: string, headers: Record<string, string> = {}, fetchFn: t
 /** Whether a Guard can hold a call for the owner, so the heartbeat counts what it holds: a gateway's (refunds), or an agent's own API's (B71 part 2). By its kind, never a provider's name. */
 const holdsCalls = (guardId: string): boolean => { const kind = guardId.replace(/^guard-/u, ""); return isGatewayKind(kind) || kind === OWN_API; };
 
+// What one Guard says about itself (ready, admin status, how many calls it is holding for the owner). Held calls are only fetched for Guards that can hold any, to save a request per heartbeat.
 export async function observeGuard(g: OpsGuard, withHeld: boolean, fetchFn: typeof fetch = fetch): Promise<GuardObservation> {
   const [health, status, held] = await Promise.all([
     get(`${g.healthUrl}/readyz`, {}, fetchFn),
@@ -123,6 +125,7 @@ export function readObligations(statusFile: string | undefined): Record<string, 
   } catch { return undefined; }
 }
 
+// Everything the heartbeat needs about one shop: runtime health, its /status and each Guard. The requests run in parallel so one slow service does not stretch the 60-second beat.
 export async function observeShop(id: string, c: OpsConfig["shops"][string], fetchFn: typeof fetch = fetch): Promise<ShopObservation> {
   const token = readSecret(c.internalTokenFile);
   const [healthz, readyz, status, guards] = await Promise.all([

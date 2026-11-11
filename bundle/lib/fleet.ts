@@ -117,6 +117,7 @@ export function parseFleetAnswer(json: unknown): Record<string, ShopAnswer> | un
   return out;
 }
 
+// Reads the answer file ops keeps; any damage gives undefined (treated as "fleet said nothing"), never a guessed plan.
 export function readAnswerFile(path: string): AnswerFile | undefined {
   try {
     const raw: unknown = JSON.parse(readFileSync(path, "utf8"));
@@ -158,8 +159,10 @@ export type UsageBaseline = Record<string, UsageCounters>;
 export const COUNTER_FIELDS = ["messages", "rules", "decision", "model", "modelMicroInr", "service", "utility", "marketing", "estMicroInr"] as const;
 export const EXTRA_FIELDS = ["reportsSent", "hi", "en", "ml", "kn"] as const;
 
+// Where the usage baseline is kept, so usage counts can be reported as a difference from a known starting point.
 export const baselineFile = (dir: string): string => join(dir, "usage-baseline.json");
 
+// Reads the baseline, dropping entries with bad shop ids or shapes; an unreadable file gives {} so counting starts afresh instead of failing.
 export function readUsageBaseline(dir: string): UsageBaseline {
   try {
     const raw: unknown = JSON.parse(readFileSync(baselineFile(dir), "utf8"));

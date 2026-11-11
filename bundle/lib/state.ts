@@ -134,11 +134,13 @@ export interface State {
 
 const file = (dir: string) => join(serverPaths(dir).state, "state.json");
 
+// Read fresh on each command (no cache), since a second command or a person may have changed the file between runs; a missing file is an empty state.
 export function loadState(dir: string): State {
   if (!existsSync(file(dir))) return { schema: 1, shops: {} };
   return JSON.parse(readFileSync(file(dir), "utf8")) as State;
 }
 
+// Atomic write with mode 0600: state names who stopped a shop and backup details, and a half-written file would break the next run.
 export function saveState(dir: string, state: State): void {
   writeAtomic(file(dir), stableJson(state), 0o600);
 }

@@ -6,6 +6,7 @@ import { reviewSheet } from "../../templates/commerce/bookings/scripts/review-sh
 import { panelReviewSection } from "./review.ts";
 import type { ReviewLanguage } from "./review.ts";
 
+// Sections 1-6 (the template's own) plus the panel's section 7 as one document, so the reviewer works from a single file.
 export const wholeSheet = (language: ReviewLanguage): string => `${reviewSheet(language).trimEnd()}\n\n${panelReviewSection(language)}`;
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

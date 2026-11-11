@@ -12,6 +12,7 @@ import type { CrashResult } from "./run.ts";
 
 export interface Issued { files: string[]; code: string; text: string; signed: boolean }
 
+// Writes the certificate for a crash-test result and notes which agent version it was for. Signs it when the panel's key exists; otherwise issues it unsigned and says so, never a signature that is not there.
 export function issueGoLive(ctx: Context, name: string, result: CrashResult, extraOut?: string): Issued {
   const folder = readAgent(ctx.dir, name);
   if (!folder.settings) throw new Error(`${name}'s settings are not usable: ${folder.problems.join(" ")}`);

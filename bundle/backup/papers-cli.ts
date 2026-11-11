@@ -7,6 +7,7 @@ import { compose } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
 import { loadServer } from "../lib/server.ts";
 
+// Asks the running panel to make a paper and writes the files here. The panel holds the signing key, so the command never needs the key on the host.
 export async function paperCommand(ctx: Context, kind: string, shop: string, o: { caseId?: string; lang?: string; out: string }): Promise<string[]> {
   if (!["dispute", "identity", "ledger"].includes(kind)) throw new Error("Say which paper: paper dispute <shop> --case b-3 | paper identity <shop> | paper ledger <shop>. A person's statement is made in the panel.");
   if (kind === "dispute" && !o.caseId) throw new Error("Say which case: paper dispute <shop> --case b-3 (a booking's or a fee's id, as the shop's page lists them).");

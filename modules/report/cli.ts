@@ -21,6 +21,7 @@ export async function main(run: () => Promise<number | void>): Promise<void> {
   }
 }
 
+// Every script option that names a file goes through here, so a missing or broken file is always a sentence to the person (UsageError), never a raw stack.
 export function readJson(path: string | undefined, what: string, option: string): unknown {
   if (!path) throw new UsageError(`Say where ${what} is: ${option} <file>.`);
   let text: string;
@@ -28,6 +29,7 @@ export function readJson(path: string | undefined, what: string, option: string)
   try { return JSON.parse(text); } catch (e) { throw new UsageError(`${what} at ${path} is not valid JSON (${(e as Error).message}).`); }
 }
 
+// Accepts a bare list or {entries}, because both shapes are what the record export and the fleet download produce.
 export function readEntries(path: string | undefined): RecordEntry[] {
   const value = readJson(path, "the record", "--record");
   const list = Array.isArray(value) ? value : (value as { entries?: unknown })?.entries;
@@ -35,20 +37,24 @@ export function readEntries(path: string | undefined): RecordEntry[] {
   return list as RecordEntry[];
 }
 
+// Validates against LANGUAGES here so a typo fails before any paper is made in the wrong language.
 export function readLanguage(value: string | undefined): ReportLanguage {
   if (value === "both" || (LANGUAGES as readonly string[]).includes(value ?? "")) return value as ReportLanguage;
   throw new UsageError(`Say the language: --lang ${[...LANGUAGES, "both"].join(" | ")}  ("both" is Hindi and English).`);
 }
 
+// The report must say what its numbers were counted from, so there is no default: a missing source is an error, not a guess.
 export function readSource(value: string | undefined): Source {
   if ((SOURCES as readonly string[]).includes(value ?? "")) return value as Source;
   throw new UsageError(`Say what the numbers were counted from, so the report can say it: --source ${SOURCES.join(" | ")}.`);
 }
 
+// No key is allowed: an unsigned preview is a legitimate run, so undefined passes through instead of failing.
 export function readKey(path: string | undefined) {
   return path ? loadPrivateKey(path) : undefined;
 }
 
+// Lets tests and re-runs pin the clock; without it a report would differ from run to run.
 export function readNow(value: string | undefined): number {
   if (value === undefined) return Date.now();
   const ms = Date.parse(value);

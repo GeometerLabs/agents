@@ -103,6 +103,7 @@ export interface RefundDeps<C extends RefundCase> {
   ids: { checking: string; denied: string; approved: string; expired: string; settled: string; confirmed: string };
 }
 
+// Looks before sending and never resends a refund that may already have gone out, since a repeated refund is real money lost.
 export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   const { payments, clock, owner, log, tellCustomer, tellOwner } = deps;
 
