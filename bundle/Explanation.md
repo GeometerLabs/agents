@@ -441,7 +441,7 @@ The two Litestream windows of the run itself (at its default, and with the ignor
 - a salon with 30 such conversations on a busy day therefore writes about 115 MiB that day while young;
 - after a year at 20 bookings a day the snapshot would be about 5 to 6 MiB, so each step would write about 11 MiB, and the same day about 1 GiB.
 
-That growth is a design limit of saving the whole store on every step, not a fault of this run. Deferred.md has it.
+That growth was a design limit of saving the whole store on every step, not a fault of this run. Since 11 November the store is kept in pieces and a step writes only the rows it changed (layout 3, modules/Explanation.md, "The saved state in pieces"); these figures are from before that, and the next proof run measures it again (Deferred.md).
 
 **Load, inside 2 CPUs and 4 GiB**, as on 9 November but with the heartbeat at 60 s:
 
