@@ -30,7 +30,7 @@ import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { placeRuntimeReportKey } from "./lib/report-key.ts";
-import { NO_MODEL, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
+import { NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { Snapshot, State } from "./lib/state.ts";
@@ -266,7 +266,7 @@ export async function guardLicenceOn(ctx: Context, server: ServerConfig): Promis
 /** The `[licence]` a per-shop Guard is given (never the model Guard's): the server's id, the shop's (or agent's) id, and its own people's numbers (`ownNumbersOf`). */
 export function licenceFor(server: ServerConfig, on: boolean, kind: GuardPlan["kind"], shop: string | undefined, numbers: readonly (string | undefined)[]): (GuardLicence & { kids: string[] }) | undefined {
   if (!on || kind === "model" || !shop || !server.licence) return undefined;
-  return { deployment: server.id, shop, ownerNumbers: [...new Set(ownerNumbers(numbers))], kids: server.licence.keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort() };
+  return { deployment: fleetIdOf(server), shop, ownerNumbers: [...new Set(ownerNumbers(numbers))], kids: server.licence.keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort() };
 }
 
 /**

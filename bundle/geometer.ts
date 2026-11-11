@@ -12,7 +12,9 @@
 //                                licence key is refused like a missing --licence-key.
 //   pair <folder> --fleet-url U  pair a NEW server with Geometer's fleet: reads the one-time code from your account page (geometer.dev/account, "Add a server") on
 //                                standard input, never from the command line, exchanges it once, and keeps the answer in the folder (fleet_key, 0600, and pairing.json).
-//                                install.sh runs this, then `init --pairing`.
+//                                install.sh runs this, then `init --pairing`. On a folder set up with pairing skipped (geometer.json with no "fleet" section) it pairs
+//                                late: every local check first, the code sent once, then only a `fleet` section is added (the folder keeps its own id; fleet's goes in
+//                                fleet.deploymentId) and the trial lease taken. A pairing kept but not added is added by running it again, with no new code.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
@@ -77,7 +79,7 @@ import { parseArgs } from "node:util";
 import { applyOnce, runLicence, watch } from "./apply.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { takeExtension, takeLease } from "./lib/licence.ts";
-import { pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
+import { joinPairing, latePairingProblem, pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
 import type { PairingFile } from "./lib/pairing.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreAgent, restoreShop } from "./backup/jobs.ts";
@@ -97,7 +99,7 @@ import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeModelKey, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
-import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
+import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
 import { guardsOf, kindFor } from "./lib/kinds.ts";
 import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
 import { discoverTemplates } from "./panel/templates.ts";
@@ -355,7 +357,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         const r = takeLease(dir, server, text);
         if (!r.taken) { console.log(`This lease was not kept: ${r.why}.`); return r.same ? 0 : 1; }
         runLicence(ctx);
-        console.log(`Kept: a lease for ${r.payload.shops.length} shop${r.payload.shops.length === 1 ? "" : "s"} on ${server.id}, signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}. Each shop's Guards and agent read it at their next start; \`geometer deploy\` starts them.`);
+        console.log(`Kept: a lease for ${r.payload.shops.length} shop${r.payload.shops.length === 1 ? "" : "s"} on ${fleetIdOf(server)}, signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}. Each shop's Guards and agent read it at their next start; \`geometer deploy\` starts them.`);
         return 0;
       }
       const r = takeExtension(dir, server, text, Math.floor(ctx.now().getTime() / 1000));
@@ -591,17 +593,30 @@ async function up(ctx: Context): Promise<number> {
 
 /**
  * `pair <folder> --fleet-url U`: the one-time code comes on standard input (one line), so it is never on a command line, in the shell's history or in `ps`. The answer is
- * kept in the folder before anything else (lib/pairing.ts); the code is not.
+ * kept in the folder before anything else (lib/pairing.ts); the code is not. A folder that is already a server set up with pairing skipped is paired late (follow-up 8):
+ * every local check before the code is read, then only a `fleet` section is added to its geometer.json (joinPairing). A late pairing that was kept but not joined is
+ * joined without a new code.
  */
 async function pair(folder: string | undefined, fleetUrl: string | undefined): Promise<number> {
   if (!folder || !fleetUrl) throw new Error("Say where the new server folder goes and fleet's address: pair <folder> --fleet-url https://fleet.geometer.dev   (then paste the code from your account page)");
+  const dir = resolve(folder);
+  const late = existsSync(join(dir, "geometer.json"));
+  const joined = () => {
+    const r = joinPairing(dir);
+    for (const line of r.lines) console.log(line);
+    if (r.joined) console.log("Next: the install's start (a server with no shop yet) or `geometer deploy` (a server with shops) writes the heartbeat's settings, and each shop's Guards take fleet's lease at that deploy.");
+    return 0;
+  };
+  if (late && existsSync(pairingPaths(dir).info)) return joined(); // paired before and not joined yet (or joined already: nothing changes): no new code
+  if (late) { const problem = latePairingProblem(dir); if (problem) throw new Error(problem); } // every local check before a code is read
   if (process.stdin.isTTY) process.stderr.write("Paste the pairing code from your account page (geometer.dev/account, \"Add a server\") and press Enter: ");
   const { createInterface } = await import("node:readline/promises");
   const lines = createInterface({ input: process.stdin, terminal: false });
   let code = "";
   for await (const line of lines) { code = line; break; }
   lines.close();
-  const p = await pairServer({ dir: resolve(folder), fleetUrl, code, now: new Date() });
+  const p = await pairServer({ dir, fleetUrl, code, now: new Date() });
+  if (late) return joined();
   console.log(`Paired with Geometer's fleet for the account "${p.accountName}". This server is ${p.deploymentId}; its key is in ${pairingPaths(resolve(folder)).key} (only you can read it). Next: geometer init ${folder} --pairing --domain <domain> --reviewed-by <you> --panel`);
   return 0;
 }
