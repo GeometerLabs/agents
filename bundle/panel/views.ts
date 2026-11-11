@@ -78,15 +78,21 @@ export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolea
   ${c.draftLanguage ? html`<p class="draft">${c.w.draftNote}</p>` : ""}
 </div>
 ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
-  <a class="tab" href="/shops">${c.w.nav.shops}</a>
-  <a class="tab" href="/inbox">${c.w.inbox.nav}</a>
-  <a class="tab" href="/health">${HEALTH_WORDS[c.lang].nav}</a>
-  <a class="tab" href="/setup">${c.w.nav.setUp}</a>
-  ${c.canInvite ? html`<a class="tab" href="/invite">${c.w.nav.invite}</a>` : ""}
-  <form method="post" action="/logout" class="tab" style="padding:0"><input type="hidden" name="_csrf" value="${c.csrf}"><button class="tab" type="submit" style="width:100%">${c.w.nav.signOut}</button></form>
+  ${tab(c, "/shops", c.w.nav.shops)}
+  ${tab(c, "/inbox", c.w.inbox.nav)}
+  ${tab(c, "/health", HEALTH_WORDS[c.lang].nav)}
+  ${tab(c, "/setup", c.w.nav.setUp)}
+  ${c.canInvite ? tab(c, "/invite", c.w.nav.invite) : ""}
+  <form method="post" action="/logout" class="tab tabform"><input type="hidden" name="_csrf" value="${c.csrf}"><button class="tab" type="submit">${c.w.nav.signOut}</button></form>
 </nav>` : ""}
 </body>
 </html>`.markup;
+}
+
+/** One tab of the bottom bar; the open one is marked aria-current (a shop's pages and /server count as Shops, a setup's as Set up). */
+function tab(c: Ctx, href: string, label: string): Raw {
+  const here = c.path === href || c.path.startsWith(`${href}/`) || (href === "/shops" && c.path.startsWith("/server"));
+  return html`<a class="tab" href="${href}" ${here ? raw('aria-current="page"') : ""}>${label}</a>`;
 }
 
 export const languageName = (l: Language): string => languageOptions().find((o) => o.code === l)?.label.split(" · ")[0] ?? l;
@@ -138,15 +144,18 @@ export interface ShopCardView { id: string; name: string; live: LiveView; limits
 
 const liveLine = (c: Ctx, live: LiveView): Raw => html`<span class="state ${live.code}">${c.w.live[live.code]}</span>`;
 
-export function shopsPage(c: Ctx, o: { all: boolean; cards: ShopCardView[] }): string {
+/** `serverToDo`: the builder's own server still needs its model, backups or key confirmation (the panel's first run); `serverLink`: show the way to "This server". */
+export function shopsPage(c: Ctx, o: { all: boolean; cards: ShopCardView[]; serverToDo?: boolean; serverLink?: boolean }): string {
   const w = c.w.shops;
   return layout(c, o.all ? w.titleAll : w.title, html`<h1>${o.all ? w.titleAll : w.title}</h1>
+${o.serverToDo ? html`<div class="notice warn" role="status"><p><b>Finish setting up this server first:</b> the model your shops use, its key, and the nightly backups.</p><p><a class="btn primary" href="/server">This server</a></p></div>` : ""}
 ${o.cards.length === 0 ? html`<p class="big">${w.empty}</p><a class="btn primary" href="/setup">${w.setUp}</a>` : html`<div class="cards">${o.cards.map((s) => html`<a class="shopcard ${s.live.code}" href="/shops/${s.id}">
   <div class="name">${s.name}</div>
   <div>${liveLine(c, s.live)}</div>
   <div class="meta">${s.limits ? w.limits(s.limits.proven, s.limits.of) : w.limitsUnknown}${s.version ? html` · ${w.version(s.version)}` : ""}</div>
   <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div>${s.licence && s.licence !== "active" ? html`
-  <div class="meta"><b>${c.w.licence.states[s.licence]}</b></div>` : ""}</a>`)}</div>`}`);
+  <div class="meta"><b>${c.w.licence.states[s.licence]}</b></div>` : ""}</a>`)}</div>`}
+${o.serverLink && !o.serverToDo ? html`<p class="mt"><a href="/server">This server: its model, backups and keys</a></p>` : ""}`);
 }
 
 // ---- the unfinished-work inbox (B31) ------------------------------------------------------------------------------------------------------------------
@@ -175,7 +184,7 @@ ${shop.asOf ? html`<p class="note">${w.asOf(when(shop.asOf, c.lang))}</p>` : ""}
 function recoveryButtons(c: Ctx, shop: string, o: Obligation): Raw {
   if (o.actions.length === 0) return raw("");
   const w = c.w.inbox;
-  return html`<br>${o.actions.map((a) => html`<form method="post" action="/shops/${shop}/recover" style="display:inline">${csrf(c)}<input type="hidden" name="case" value="${o.caseId}"><input type="hidden" name="action" value="${a}"><button class="btn" type="submit">${Object.hasOwn(w.actions, a) ? w.actions[a] : a}</button></form> `)}`;
+  return html`<br>${o.actions.map((a) => html`<form method="post" action="/shops/${shop}/recover" class="inline">${csrf(c)}<input type="hidden" name="case" value="${o.caseId}"><input type="hidden" name="action" value="${a}"><button class="btn" type="submit">${Object.hasOwn(w.actions, a) ? w.actions[a] : a}</button></form> `)}`;
 }
 
 export function inboxPage(c: Ctx, o: { shops: ShopInbox[]; notice?: string }): string {
@@ -427,7 +436,7 @@ export function setupStartPage(c: Ctx, templates: Template[]): string {
   return layout(c, w.title, html`<h1>${w.title}</h1>
 <p class="big">${w.chooseTemplate}</p>
 <div class="cards">${templates.map((t) => t.setup === "bookings" || setupOf(t.setup) ? html`<form method="post" action="/setup">${csrf(c)}<input type="hidden" name="template" value="${t.id}">
-  <button class="btn primary" type="submit" style="width:100%">${w.templateNames[t.id] ?? t.id} · ${w.start}</button></form>` : html`<div class="shopcard"><div class="name">${w.templateNames[t.id] ?? t.id}</div><div class="meta">${w.templateElsewhere}</div></div>`)}</div>`);
+  <button class="btn primary wide" type="submit">${w.templateNames[t.id] ?? t.id} · ${w.start}</button></form>` : html`<div class="shopcard"><div class="name">${w.templateNames[t.id] ?? t.id}</div><div class="meta">${w.templateElsewhere}</div></div>`)}</div>`);
 }
 
 const stepsBar = (c: Ctx, steps: string[], now: number): Raw => html`<ol class="steps" aria-label="${c.w.setup.progress(now + 1, steps.length)}">${steps.map((_, i) => html`<li class="${i < now ? "done" : i === now ? "now" : ""}"></li>`)}</ol>`;
@@ -602,12 +611,12 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
 <p class="note">${k.readOnly}</p>
 <form method="post" action="/setup/${d.id}/check">${csrf(c)}<button class="btn primary" type="submit">${k.runButton}</button></form>
 ${v.cost ? html`${costTable(c, v.cost)}
-<form method="post" action="/setup/${d.id}/expected" style="margin-top:12px">${csrf(c)}${text(k.bookingsExpected, "expectedBookings", d.expectedBookings, { mode: "numeric", max: 6 })}<button class="btn" type="submit">${c.w.common.save}</button></form>` : v.own ? messagesBlock(v.own.messages) : ""}
+<form method="post" action="/setup/${d.id}/expected" class="mt">${csrf(c)}${text(k.bookingsExpected, "expectedBookings", d.expectedBookings, { mode: "numeric", max: 6 })}<button class="btn" type="submit">${c.w.common.save}</button></form>` : v.own ? messagesBlock(v.own.messages) : ""}
 <h2>${w.depositStep.whatThisMeans}</h2>
 <ul class="plain">${limitLines(c, d, v).map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>
 ${v.ready
     ? html`<div class="notice"><p class="big">${k.ready}</p><p class="note">${k.switchOn}</p>${v.certificate ? html`<a class="btn primary" href="${v.certificate}">${k.certificate}</a>` : ""}</div>`
-    : v.unmet.length > 0 ? html`<p class="big">${k.notReady(v.unmet.length)}</p>` : html`<form method="post" action="/setup/${d.id}/ready">${csrf(c)}<button class="btn primary" type="submit" style="width:100%">${k.readyButton}</button></form>`}
+    : v.unmet.length > 0 ? html`<p class="big">${k.notReady(v.unmet.length)}</p>` : html`<form method="post" action="/setup/${d.id}/ready">${csrf(c)}<button class="btn primary wide" type="submit">${k.readyButton}</button></form>`}
 ${v.shopId ? html`<p><a href="/shops/${v.shopId}">${c.w.nav.shops}</a></p>` : ""}
 <p>${back}</p>`);
 }

@@ -22,7 +22,7 @@ import { monthRange } from "../../modules/report/months.ts";
 import { createAccounts } from "./accounts.ts";
 import type { Account, Role } from "./accounts.ts";
 import { casesOf, monthOf, monthlyFromExport, readExport } from "./activity.ts";
-import { ConfigError, isSecure, webhookUrlFor } from "./config.ts";
+import { ConfigError, isSecure, readServerModel, webhookUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
@@ -58,6 +58,8 @@ import { settingsDigest } from "../lib/limits-draft.ts";
 import type { Change } from "../lib/limits-draft.ts";
 import { confirmGoLivePage, confirmGonePage, confirmLimitsPage } from "./views-confirm.ts";
 import { createStore } from "./store.ts";
+import { CONFIRM_CHARS, createServerSetup } from "./server-setup.ts";
+import { backupKeyFile, backupKeyPage, serverPage } from "./views-server.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
@@ -125,6 +127,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const signingKey = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined;
   const staleMs = config.staleMinutes * 60_000;
   const canInvite = config.mode === "own";
+  // the server's own settings (the panel's first run, plan item 14b): only a builder, only on their own server
+  const serverSetup = createServerSetup(config, store, now);
 
   // ---- small helpers ------------------------------------------------------------------------------------------------------------------------
 
@@ -268,6 +272,56 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     page(r, 200, invitePage(r.ctx(), { link: `${origin(r.req)}/join/${token}`, hostedOnly: false }));
   });
 
+  // ---- this server: its model and key, its backups, Google (the panel's first run, plan item 14b). A builder's own server only: Geometer runs its hosted one by hand.
+  const SAVED: Record<string, string> = {
+    model: "Saved. The server applies it within a few seconds.",
+    backup: "Saved. The server writes a test object to the bucket, reads it back and deletes it; the result shows here.",
+    google: "Saved. The server puts the key in place within a few seconds.",
+    key: "Confirmed. This server deleted its copy of the backup key's secret half. Keep the copy you saved: it is the only key that opens a backup.",
+  };
+  const serverNotice = (r: Req) => { const k = new URL(r.req.url ?? "/", "http://x").searchParams.get("saved"); return k && Object.hasOwn(SAVED, k) ? { notice: SAVED[k] } : {}; };
+  const ownServer = (r: Req): boolean => { if (config.mode === "own") return true; notFound(r); return false; };
+  on("GET", /^\/server$/u, "builder", (r) => { if (ownServer(r)) page(r, 200, serverPage(r.ctx(), serverSetup.view(), serverNotice(r))); });
+  on("POST", /^\/server\/model$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    const done = serverSetup.requestModel(r.form, r.account!);
+    if (!done.ok) return page(r, 400, serverPage(r.ctx(), serverSetup.view(), { problems: done.problems }));
+    redirect(r, "/server?saved=model");
+  });
+  on("POST", /^\/server\/backup$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    const done = serverSetup.requestBackup(r.form, r.account!);
+    if (!done.ok) return page(r, 400, serverPage(r.ctx(), serverSetup.view(), { problems: done.problems }));
+    // a key pair made just now: its secret half is shown next, before anything else
+    redirect(r, done.madeKey ? "/server/backup-key" : "/server?saved=backup");
+  });
+  on("POST", /^\/server\/backup\/test$/u, "builder", (r) => { if (ownServer(r)) redirect(r, serverSetup.retestBackup(r.account!) ? "/server?saved=backup" : "/server"); });
+  on("POST", /^\/server\/google$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    if (!serverSetup.putGoogle(r.form.google ?? "").ok) return page(r, 400, serverPage(r.ctx(), serverSetup.view(), { problems: [{ field: "google", message: "That is not a Google service account's key file: paste the whole JSON file, from { to }." }] }));
+    redirect(r, "/server?saved=google");
+  });
+  on("GET", /^\/server\/backup-key$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    const v = serverSetup.view();
+    page(r, 200, backupKeyPage(r.ctx(), { ...(serverSetup.backupSecret() ? { identity: serverSetup.backupSecret() } : {}), ...(v.backupKey ? { recipient: v.backupKey.recipient } : {}), ...(v.backupKey?.confirmedAt ? { confirmedAt: v.backupKey.confirmedAt } : {}) }));
+  });
+  on("GET", /^\/server\/backup-key\.txt$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    const identity = serverSetup.backupSecret();
+    const v = serverSetup.view();
+    if (!identity || !v.backupKey) return notFound(r);
+    body(r.res, 200, "text/plain; charset=utf-8", backupKeyFile(identity, v.backupKey.recipient, v.serverId, v.backupKey.madeAt), { "content-disposition": `attachment; filename="geometer-backup-key${v.serverId ? `-${v.serverId}` : ""}.txt"` });
+  });
+  on("POST", /^\/server\/backup-key\/confirm$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    const v = serverSetup.view();
+    const again = (error: string) => page(r, 400, backupKeyPage(r.ctx(), { ...(serverSetup.backupSecret() ? { identity: serverSetup.backupSecret() } : {}), ...(v.backupKey ? { recipient: v.backupKey.recipient } : {}), error }));
+    if (r.form.off !== "yes") return again("Tick the box to say it is somewhere that is not this server.");
+    if (!serverSetup.confirmBackupKey(r.form.last ?? "")) return again(`Those are not the last ${CONFIRM_CHARS} characters of the key. Look at the copy you saved: if it does not end the same, save it again.`);
+    redirect(r, "/server?saved=key");
+  });
+
   // shops
   on("GET", /^\/shops$/u, "user", (r) => {
     handover.sweep();
@@ -284,7 +338,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
         ...(read.ok && read.status.licence ? { licence: read.status.licence.listed ? read.status.licence.state : "none" as const } : {}),
       };
     });
-    page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards }));
+    const firstRun = config.mode === "own" && r.account!.role === "builder" && !serverSetup.view().done;
+    page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards, ...(firstRun ? { serverToDo: true } : {}), serverLink: config.mode === "own" && r.account!.role === "builder" }));
   });
 
   // the unfinished-work inbox (B31): every shop this person may see, read from each shop's exported record
@@ -668,7 +723,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const gateway = providerById(paymentModuleOf(d))?.gateway !== undefined; // B71: a payments service is named only for a shop that chose a gateway
     // item 11b: the panel has no step for the WhatsApp provider yet, so an edit keeps the one runtime.json names (Gupshup and its app id, written by hand); without this,
     // saving a Gupshup shop would turn it back to Meta's paths with Gupshup's token behind them
-    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, config.serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
+    // the model as geometer.json names it now: the panel's first run may have chosen it after the panel started
+    const serverModel = readServerModel(config.serverDir) ?? config.serverModel;
+    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;

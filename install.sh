@@ -32,6 +32,7 @@
 #   --http-port N --https-port N   other ports than 80 and 443, for a trial on a machine where those are taken
 #   --expect-commit SHA         refuse unless this copy is exactly that commit (a pin from outside the repository, e.g. in cloud-init)
 #   --use-this-checkout         install this copy as it is, with no release pin (for a trial before a release); says so loudly
+#   --keep-sudo                 keep the passwordless sudo cloud-init gave this user (by default the install takes it away at the end; see narrow_sudo)
 #   --dry-run                   print each step; change nothing; send no code
 #   --yes                       answer yes to every question: only for cloud-init, where nobody is there to answer
 set -euo pipefail
@@ -521,6 +522,33 @@ last_words() {
   say "Every day: geometer status | geometer logs | geometer invite partner | geometer stop <shop> (one shop's kill switch) | geometer server status"
 }
 
+# ---- cloud-init's passwordless sudo ---------------------------------------------------------------------------------------------------------------------
+
+# cloud-init gives the user sudo with no password, because nobody is there to type one during the install (bundle/cloud-init.yaml). Left as it is, anything
+# that runs as that user is root. So at the end, by default (owner, 11 Nov), the install takes it away and leaves only what the geometer command needs:
+# the deployer's service (start, stop, restart), its log, and setting the user's own password, which brings back ordinary sudo (with that password, through
+# the sudo group). Only cloud-init's own line for this user is touched, and only after visudo has checked both files.
+narrow_sudo() {
+  # SUDOERS_DIR is only for the tests, which cannot write /etc
+  local dir="${SUDOERS_DIR:-/etc/sudoers.d}" grant narrow tmp
+  grant="$dir/90-cloud-init-users" narrow="$dir/geometer-$USER"
+  [ "${KEEP_SUDO:-0}" = 1 ] && return 0
+  sudo -n test -f "$grant" 2>/dev/null || return 0
+  sudo -n grep -Eq "^${USER}[[:space:]]+ALL=\(ALL(:ALL)?\)[[:space:]]+NOPASSWD:[[:space:]]*ALL[[:space:]]*\$" "$grant" 2>/dev/null || return 0
+  step "Taking away the passwordless sudo cloud-init gave $USER"
+  tmp=$(mktemp)
+  printf '%s\n' "$MARK. What the geometer command needs, with no password; everything else needs $USER's own password." \
+    "$USER ALL=(root) NOPASSWD: /usr/bin/systemctl start geometer-deployer.service, /usr/bin/systemctl stop geometer-deployer.service, /usr/bin/systemctl restart geometer-deployer.service, /usr/bin/journalctl -u geometer-deployer.service -n 100 --no-pager, /usr/bin/passwd $USER" >"$tmp"
+  if [ "${DRY_RUN:-0}" != 1 ] && ! sudo visudo -cqf "$tmp"; then rm -f "$tmp"; note "The narrower sudo rule did not check out, so nothing was changed: $USER keeps passwordless sudo."; return 0; fi
+  as_root install -m 0440 -o root -g root "$tmp" "$narrow"
+  rm -f "$tmp"
+  # -i with the suffix attached works with GNU and BSD sed alike; the copy it leaves has a dot in its name, so sudo never reads it
+  as_root sed -i.before-geometer -e "/^${USER}[[:space:]]/d" -e "/^# User rules for $USER\$/d" "$grant"
+  if [ "${DRY_RUN:-0}" != 1 ] && ! sudo -n visudo -cq; then as_root cp -p "$grant.before-geometer" "$grant"; note "sudo's settings did not check out after the change, so the old file was put back: $USER keeps passwordless sudo."; return 0; fi
+  say "Passwordless sudo is taken away; the geometer command's server verbs still work without a password."
+  say "To put it back: sudo passwd $USER (choose a password), then: echo '$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee $grant"
+}
+
 # ---- the questions and the plan --------------------------------------------------------------------------------------------------------------------------
 
 parse_args() {
@@ -542,6 +570,7 @@ parse_args() {
       --expect-commit) EXPECT_COMMIT=$(printf '%s' "${2:-}" | tr '[:upper:]' '[:lower:]'); shift 2
         printf '%s' "$EXPECT_COMMIT" | grep -Eq '^[0-9a-f]{40}$' || die "--expect-commit takes a whole commit id (40 hex characters)." ;;
       --use-this-checkout) USE_THIS_CHECKOUT=1; shift ;;
+      --keep-sudo) KEEP_SUDO=1; shift ;;
       --dry-run) DRY_RUN=1; shift ;;
       --yes) YES=1; shift ;;
       -h | --help) sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -647,6 +676,7 @@ main() {
   start_server
   invite_first_builder
   record_install
+  narrow_sudo
   last_words
 }
 

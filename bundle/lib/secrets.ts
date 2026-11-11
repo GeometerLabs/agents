@@ -174,6 +174,16 @@ export const INTAKE: Record<string, { to: (shop: string) => string[]; make?: (te
   },
 };
 
+/**
+ * The model's key, for the model Guard only: Anthropic's as it is (Guard sends it as x-api-key), any OpenAI-compatible one (a model the builder hosts too) as a
+ * bearer header. The file's name depends on the wire, so the model must be chosen first. Used by `geometer model-key` and by the panel's first run (server-settings.ts).
+ */
+export function writeModelKey(dir: string, wire: "openai" | "anthropic", key: string): void {
+  prepareSecretsRoot(dir);
+  if (wire === "anthropic") writeSecretFile(secretFile(dir, "g-model", "model_api_key"), key);
+  else writeSecretFile(secretFile(dir, "g-model", "model_authorization"), `Bearer ${key}`);
+}
+
 /** Move every file in secrets-inbox/<shop>/ to where it belongs and delete it from the inbox. A file that fails its check stays and is named. */
 export function takeSecrets(dir: string, shop: string): { moved: string[]; problems: Problem[]; unknown: string[] } {
   const inbox = join(serverPaths(dir).secretsInbox, shop);
