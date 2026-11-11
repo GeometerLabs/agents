@@ -1,0 +1,30 @@
+{
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "91XXXXXXXX58",
+              "phone_number_id": "158072934066266"
+            },
+            "statuses": [
+              {
+                "gs_id": "7b8f0910-db98-4cce-be5f-e6e1e847b4bd",
+                "id": "wamid.HBgMOTE5MTYzODA1ODczFQIAERgSMUUzNz",
+                "recipient_id": "919800000001",
+                "status": "read",
+                "timestamp": "1720779817"
+              }
+            ]
+          }
+        }
+      ],
+      "id": "112535025189792"
+    }
+  ],
+  "gs_app_id": "82ed52f4-30c0-4f12-81b4-e7ad07bd41de",
+  "object": "whatsapp_business_account"
+}

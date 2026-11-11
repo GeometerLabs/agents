@@ -1,0 +1,25 @@
+{
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "statuses": [
+              {
+                "gs_id": "2baff204-c39a-4121-90b5-f53f26d522b3",
+                "id": "wamid.HBgMOTE5MTYzODA1ODczFQIAERgSNkZCMThGMEEwQzJDOUFGQjFBAA==",
+                "recipient_id": "919800000001",
+                "status": "enqueued",
+                "timestamp": 1710941393420
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "gs_app_id": "82ed52f4-30c0-4f12-81b4-e7ad07bd41de",
+  "object": "whatsapp_business_account"
+}
