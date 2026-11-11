@@ -632,6 +632,9 @@ The Guards' stores go back too, unlike a shop's (whose `restore` leaves Guard al
 
 **On real Docker: the `agent` phase of the proof** (`test/proof/run.ts`; first run alone, `--shops 1 --only agent`, 10 November 2026, Docker Desktop, the Guard image `geo-guard:local-b14`: 47 checks, none failed, the agent phase about 3 minutes, nothing left behind). It is the first time an agent someone else wrote was started in the generated compose file. The example agent (`examples/own-agent/agent.js`, unchanged) ran as a separate program on the host, outside every network of the bundle, and called its Guards at `https://localhost:18443/g/proof-agent/<service>` through Caddy (trusting Caddy's local root, copied out of its container), with the credential `agent add` made. On Razorpay: an agent on the default UPI module has no payment Guard, and the owner-marked desk is not served on a server yet (B71), so a held refund and a payment Guard's backup need a gateway. What it showed:
 
+**Test status, 11 November 2026.** Run on this branch (each suite alone): panel 161/161, Fees 178/178, Orders 126/126, bundle 337/337, modules 177 passed + 1 skipped of 178, plugin 18/18, prices 8/8, companies 65/65, Bookings 764/767 with 1 skipped; the two Bookings failures (`dev-forwarder.test.ts` "did not start" after 10 s, `full-chain.test.ts` waiting for the inbox) passed when those two files were run alone (10/10), so they were start-up timeouts of child processes on a busy machine. The proof's outage check was narrowed (see Deferred.md): that narrowed check, and the full proof after it, have **not been run**; the owner moved all testing to after the features are built.
+
+
 | | |
 |---|---|
 | Deploy | 3 Guards, every tripwire passed on the running Guards (21 of 21 limits; 7 more cannot be tested without writing), in 20 s; the `gate` network is internal |
