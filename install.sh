@@ -529,7 +529,9 @@ last_words() {
 # the deployer's service (start, stop, restart), its log, and setting the user's own password, which brings back ordinary sudo (with that password, through
 # the sudo group). Only cloud-init's own line for this user is touched, and only after visudo has checked both files.
 narrow_sudo() {
-  local grant=/etc/sudoers.d/90-cloud-init-users narrow="/etc/sudoers.d/geometer-$USER" tmp
+  # SUDOERS_DIR is only for the tests, which cannot write /etc
+  local dir="${SUDOERS_DIR:-/etc/sudoers.d}" grant narrow tmp
+  grant="$dir/90-cloud-init-users" narrow="$dir/geometer-$USER"
   [ "${KEEP_SUDO:-0}" = 1 ] && return 0
   sudo -n test -f "$grant" 2>/dev/null || return 0
   sudo -n grep -Eq "^${USER}[[:space:]]+ALL=\(ALL(:ALL)?\)[[:space:]]+NOPASSWD:[[:space:]]*ALL[[:space:]]*\$" "$grant" 2>/dev/null || return 0
@@ -540,8 +542,8 @@ narrow_sudo() {
   if [ "${DRY_RUN:-0}" != 1 ] && ! sudo visudo -cqf "$tmp"; then rm -f "$tmp"; note "The narrower sudo rule did not check out, so nothing was changed: $USER keeps passwordless sudo."; return 0; fi
   as_root install -m 0440 -o root -g root "$tmp" "$narrow"
   rm -f "$tmp"
-  as_root cp -p "$grant" "$grant.before-geometer"
-  as_root sed -i "/^${USER}[[:space:]]/d; /^# User rules for $USER\$/d" "$grant"
+  # -i with the suffix attached works with GNU and BSD sed alike; the copy it leaves has a dot in its name, so sudo never reads it
+  as_root sed -i.before-geometer -e "/^${USER}[[:space:]]/d" -e "/^# User rules for $USER\$/d" "$grant"
   if [ "${DRY_RUN:-0}" != 1 ] && ! sudo -n visudo -cq; then as_root cp -p "$grant.before-geometer" "$grant"; note "sudo's settings did not check out after the change, so the old file was put back: $USER keeps passwordless sudo."; return 0; fi
   say "Passwordless sudo is taken away; the geometer command's server verbs still work without a password."
   say "To put it back: sudo passwd $USER (choose a password), then: echo '$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee $grant"
