@@ -47,8 +47,11 @@ const fill = (template: string | undefined, values: Record<string, string>): str
 
 // The URL templates in the config hold `{shop}` and `{kind}` slots; these small helpers fill them so every caller addresses a shop's services the same way.
 export const runtimeUrlFor = (c: PanelConfig, shop: string) => fill(c.runtimeUrl, { shop });
+// Per-shop path of the bearer-token file for that shop's runtime, read by the panel only to call the runtime's /status.
 export const runtimeTokenFileFor = (c: PanelConfig, shop: string) => fill(c.runtimeTokenFile, { shop });
+// Per-shop, per-kind address of the shop's Guard, used by the read-only connection checks (checks.ts).
 export const guardUrlFor = (c: PanelConfig, shop: string, kind: string) => fill(c.guardUrl, { shop, kind });
+// Where a provider's webhook should point for a shop and kind, shown in the setup guide.
 export const webhookUrlFor = (c: PanelConfig, shop: string, kind: string) => fill(c.webhookUrl, { shop, kind });
 // True only for an https public address; server.ts uses it to decide whether cookies get the Secure flag.
 export const isSecure = (c: PanelConfig): boolean => c.publicUrl?.startsWith("https://") === true;
