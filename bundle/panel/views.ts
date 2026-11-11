@@ -239,13 +239,13 @@ function licenceBlock(c: Ctx, l: LicenceView): Raw {
   const w = c.w.licence;
   const day = (d: string) => dayWords(d, c.lang);
   const lines = [
-    // a trial shop owes nothing yet: its trial line below says when its cover ends, not a payment date
-    l.paidThrough && !l.trialEnds && (l.state === "active" || l.state === "reminder" || l.state === "warning") ? w.paidThrough(day(l.paidThrough)) : "",
+    // a trial shop owes nothing yet: its trial line below says its last day, not a payment date
+    l.paidThrough && !l.trialLastDay && (l.state === "active" || l.state === "reminder" || l.state === "warning") ? w.paidThrough(day(l.paidThrough)) : "",
     l.windDownOn && (l.state === "reminder" || l.state === "warning") ? w.windDownOn(day(l.windDownOn)) : "",
     l.extendedUntil && l.state !== "wind_down" && l.state !== "stopped" ? w.extended(day(l.extendedUntil)) : "",
     l.stopOn && l.state === "wind_down" ? w.stopOn(day(l.stopOn)) : "",
     l.exportUntil && l.state === "stopped" ? w.exportUntil(day(l.exportUntil)) : "",
-    l.trialEnds ? w.trial(day(l.trialEnds)) : "",
+    l.trialLastDay ? w.trial(day(l.trialLastDay)) : "",
   ].filter(Boolean);
   const urgent = l.state === "warning" || l.state === "wind_down" || l.state === "stopped" || l.state === "none";
   return html`<h2>${w.heading}</h2>

@@ -23,10 +23,10 @@ test("the view: the signed state, fleet's days, the renew link only when somethi
   assert.equal(licenceView(statusLicence({ leaseIssuedAt: new Date(NOW - 3 * 86_400_000).toISOString() }) as never, undefined, NOW)!.staleSince, new Date(NOW - 3 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
   assert.deepEqual(licenceView(statusLicence({ listed: false }) as never, fleet?.licence, NOW), { state: "none" }, "a shop the lease does not list has no licence (decision 39): said, not hidden");
   assert.equal(licenceView(undefined, fleet?.licence, NOW), undefined, "no licence block in the status at all: nothing to say");
-  // a shop the builder's trial covers: fleet's unsigned copy says when the trial ends
-  const trial = parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "active", paid_through: "2026-12-11", wind_down_on: "2026-12-11", stop_on: null, export_until: null, notice: null, renew_url: null, trial_ends: "2026-12-11" })));
-  assert.equal(trial?.licence?.trial_ends, "2026-12-11");
-  assert.equal(licenceView(statusLicence({ state: "active" }) as never, trial?.licence, NOW)!.trialEnds, "2026-12-11");
+  // a shop the builder's trial covers: fleet's unsigned copy says the trial's last day (12 Nov 2026: fleet sends the day before the pause, taken as it is)
+  const trial = parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "active", paid_through: "2026-12-11", wind_down_on: "2026-12-11", stop_on: null, export_until: null, notice: null, renew_url: null, trial_ends: "2026-12-10" })));
+  assert.equal(trial?.licence?.trial_ends, "2026-12-10");
+  assert.equal(licenceView(statusLicence({ state: "active" }) as never, trial?.licence, NOW)!.trialLastDay, "2026-12-10", "no day is added or taken away in the panel");
   assert.equal(parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "active", trial_ends: "11 Dec" })))?.licence?.trial_ends, undefined, "a day or nothing");
   assert.equal(parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "warning", renew_url: "javascript:alert(1)" })))?.licence?.renew_url, null, "a renew link is https or nothing");
 });
@@ -57,7 +57,7 @@ test("the shop page and the list show the licence to the partner whose shop it i
   } finally { await b.close(); }
 });
 
-test("decision 39: a shop the lease does not list says it has no licence yet, on its page and in the list; a trial shop says when its trial ends", async () => {
+test("decision 39: a shop the lease does not list says it has no licence yet, on its page and in the list; a trial shop says its trial's last day", async () => {
   const b = await boot();
   try {
     const dev = await b.account("dev", "partner");
@@ -66,7 +66,7 @@ test("decision 39: a shop the lease does not list says it has no licence yet, on
     b.status("new-shop", { updatedAt: new Date(NOW).toISOString(), deploy: { state: "applied" }, licence: statusLicence({ state: "active", listed: false, paidThrough: null, windDownOn: null, leaseIssuedAt: null }) });
     b.status("trial-shop", { updatedAt: new Date(NOW).toISOString(), deploy: { state: "applied" }, licence: statusLicence({ state: "active", paidThrough: day("2026-12-11"), windDownOn: day("2026-12-11") }) });
     mkdirSync(join(b.dir, "fleet"), { recursive: true });
-    writeFileSync(join(b.dir, "fleet", "trial-shop.json"), JSON.stringify({ ...fleetAnswer({ state: "active", paid_through: "2026-12-11", wind_down_on: "2026-12-11", stop_on: null, export_until: null, notice: null, renew_url: null, trial_ends: "2026-12-11" }), warn: [] }));
+    writeFileSync(join(b.dir, "fleet", "trial-shop.json"), JSON.stringify({ ...fleetAnswer({ state: "active", paid_through: "2026-12-11", wind_down_on: "2026-12-11", stop_on: null, export_until: null, notice: null, renew_url: null, trial_ends: "2026-12-10" }), warn: [] }));
     const none = await dev.get("/shops/new-shop");
     assert.match(none.plain, /<h2>Licence<\/h2>/u);
     assert.match(none.plain, /No licence yet: no new bookings or payment requests/u);
@@ -74,7 +74,7 @@ test("decision 39: a shop the lease does not list says it has no licence yet, on
     assert.match((await dev.get("/shops")).plain, /No licence yet/u, "the card says it too");
     const trial = await dev.get("/shops/trial-shop");
     assert.match(trial.plain, /Licence in order/u);
-    assert.match(trial.plain, /Trial licence: ends on 11 Dec 2026\. After that, new bookings pause until the shop is on a plan\./u);
+    assert.match(trial.plain, /Trial licence: the last day is 10 Dec 2026\. From the next day, new bookings pause until the shop is on a plan\./u);
     assert.doesNotMatch(trial.plain, /Next payment due/u, "a trial owes nothing yet");
   } finally { await b.close(); }
 });

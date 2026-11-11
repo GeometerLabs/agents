@@ -684,7 +684,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು 7 May 2027 ವರೆಗೆ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | ಪಾವತಿಸಿ ನವೀಕರಿಸಿ | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 ರಿಂದ ಪರವಾನಗಿ ನವೀಕರಣಗೊಂಡಿಲ್ಲ. ಈ ಸರ್ವರ್ Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
-| `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: 11 Dec 2026 ರಂದು ಮುಗಿಯುತ್ತದೆ. ಅದರ ನಂತರ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: ends on 11 Dec 2026. After that, new bookings pause until the shop is on a plan. |  |
+| `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: ಕೊನೆಯ ದಿನ 10 Dec 2026. ಮರುದಿನದಿಂದ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |

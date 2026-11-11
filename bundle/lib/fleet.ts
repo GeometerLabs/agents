@@ -49,7 +49,11 @@ export interface ShopLicence {
   notice: "wind_down" | "stop" | null;
   /** The partner's payment link for the invoice holding the shop back: https only, or null. */
   renew_url: string | null;
-  /** Only for a shop the builder's trial covers (no plan; decision 39, monorepo ADR-0070): the day the trial's cover ends, which the panel shows as "trial, ends <day>". */
+  /**
+   * Only for a shop the builder's trial covers (no plan; decision 39, monorepo ADR-0070): the trial's LAST DAY, which the panel shows as "the last day of the trial
+   * is <day>" and the account page shows as `trialUntil` (one meaning since 12 Nov 2026; fleet's trial.ts `trialLastDay`). Taken as fleet sends it: no date
+   * arithmetic here, so an answer and the page can never be a day apart.
+   */
   trial_ends?: string;
 }
 
