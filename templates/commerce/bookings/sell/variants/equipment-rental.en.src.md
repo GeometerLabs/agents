@@ -97,7 +97,7 @@ Don't promise a helper for each machine until Geometer says it is ready.
 
 ### "How do farmers pay?"
 
-> "The deposit is paid by UPI or card on a Razorpay link, straight to your account. The rest is paid to you as today. The helper doesn't record the rest."
+> "The deposit is paid by UPI, straight to your own UPI ID. When you see it in your UPI app, you tap "Received". If you have your own Razorpay account, the deposit can be paid by UPI or card on a Razorpay link instead. The rest is paid to you as today. The helper doesn't record the rest."
 
 ## 6. Price
 
@@ -106,8 +106,7 @@ The three payments are as in section 6 of the main guide: Geometer's plan (a ren
 1. **The shop's price: a starting point; you decide.** Near {{guide.business.shop-min}} for one machine, near {{guide.business.shop-max}} for a bigger centre. The setup is {{guide.business.setup-min}} to {{guide.business.setup-max}}.
 2. **Rental is seasonal.** Before you sign, agree with the owner whether the price is every month or only for the months the helper is on, and write it in the shop terms. A shop counts for a month when it was live on 15 or more days, so a month with fewer live days is not counted; write that in the shop terms too.
 3. **One helper books one thing at a time.** For a centre with several machines, the price is for the centre, one shop, however many helpers it has. If it runs several workflows or branches together it may be Operations, {{plan.operations.fee}} a month: ask Geometer's support before you quote.
-4. **Razorpay's fee on a bigger deposit:** "Razorpay keeps its fee even when you give a deposit back. On a ₹1,000 deposit that is about ₹24." Check Razorpay's current page.
-5. **Money flow only,** as in the main guide. Never say how much anyone will make.
+4. **Money flow only,** as in the main guide. Never say how much anyone will make.
 
 ## 7. Never say
 
@@ -123,7 +122,7 @@ Everything in the main table applies. Add these:
 
 ## 8. The setup visit
 
-Do the checklist in section 8 of the main guide (the WhatsApp check, the shared calendar, the shop's own Razorpay account, the number for approvals, the test booking, the certificate and the terms). For rental, add these:
+Do the checklist in section 8 of the main guide (the WhatsApp check, Google Calendar only if the shop wants it, the shop's own Razorpay account only if it chooses Razorpay, the number for approvals, the test booking, the certificate and the terms). For rental, add these:
 
 - [ ] **One machine to start.** Choose the machine, with its attachments, that the helper will book. Each job is one service: "tractor with rotavator, half day", "tractor with rotavator, full day", "tractor with sprayer, half day", "tractor with trolley, full day".
 - [ ] **Each job's name in the farmers' own words.** Ask what farmers really say, in each language. Every name must be different from every other. A farmer who writes only "tractor" gets the price list and is asked which job: add the short names farmers really use.
@@ -131,6 +130,7 @@ Do the checklist in section 8 of the main guide (the WhatsApp check, the shared 
 - [ ] **One deposit for every job,** never more than the cheapest job. Hold it for 30 minutes, because farmers may need time to find their UPI app.
 - [ ] **The reminder.** One reminder, 24 hours before, so it arrives at the same time of day as the booking. Reminders count hours before the start, so a 2-hour reminder for a 6 am booking would arrive at 4 am.
 - [ ] **The rest of the payment.** Agree how the farmer pays the rest (cash or UPI, to the owner). The helper doesn't record it.
+- [ ] **Only if the centre chooses Razorpay: its fee.** Razorpay's fee is written only here and in the main guide's Razorpay item. Tell the owner: "Razorpay keeps its fee even when you give a deposit back. On a ₹1,000 deposit that is about ₹24." Check Razorpay's current page. On UPI there is no gateway fee.
 - [ ] **Run the check on this shop's own settings.** From the agents folder: `node templates/commerce/bookings/scripts/hand-check.ts --settings <the shop's file>`. Read "Held N of M" aloud, and read the "NOT RUN" list if there is one.
 
   | Limit | Ask | Example (Hosahalli Farm Hiring Centre) |

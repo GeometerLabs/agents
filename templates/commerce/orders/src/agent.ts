@@ -26,6 +26,8 @@
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
+import { handleOwnerTerms } from "../../../../modules/terms/owner.ts";
+import type { TermsFile } from "../../../../modules/terms/terms.ts";
 import { GUARD_WAIT_ENTRY, RECOVERY_ENTRY, guardWaitLine } from "../../../../modules/unfinished/registry.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { HOUR, MINUTE, daysBetween, localParts } from "../../../../modules/core/time.ts";
@@ -83,6 +85,8 @@ export interface AgentDeps {
   qrImage?: (text: string) => Promise<string | null>;
   /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
+  /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
+  terms?: () => TermsFile | undefined;
 }
 
 export type AgentEvent =
@@ -874,6 +878,8 @@ export function createAgent(deps: AgentDeps): Agent {
     // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash.
     const moving = parseHandoverReply(msg.text);
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
+    // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
+    if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
     const m = /^\s*(approve|deny)\s+(o-\d+)\s*$/i.exec(msg.text);
     const o = m ? store.orders.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();

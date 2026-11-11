@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { gatewayOf } from "../../modules/payments/providers/index.ts";
-import { kindFor } from "../lib/kinds.ts";
+import { guardsOf, kindFor } from "../lib/kinds.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
@@ -48,11 +48,12 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     if (!config.guardUrl) return undefined;
     const meta = shops.meta(shop);
     // Only a shop that chose a gateway has a gateway account to check and a key to pin (B71): a UPI shop, or settings with no payment block, has none.
-    const gateway = gatewayOf(shops.settings(shop)?.payment);
+    const settings0 = shops.settings(shop);
+    const gateway = gatewayOf(settings0?.payment);
     const runtime = shops.runtime(shop);
     const pins = shops.pins(shop);
     const wa = guardUrlFor(config, shop, "whatsapp") as string;
-    const hasCalendar = kindOf(shop).guards.includes("calendar");
+    const hasCalendar = guardsOf(kindOf(shop), settings0).includes("calendar"); // B72: a shop on its own booking list has no calendar to check
     return {
       ...(agentToken ? { agentToken } : {}),
       whatsapp: { baseUrl: wa, phoneNumberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" },
