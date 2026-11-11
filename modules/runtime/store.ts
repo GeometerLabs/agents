@@ -1,11 +1,19 @@
 // The runtime's one SQLite file per client agent (Node's built-in node:sqlite, no dependencies). It holds four things:
 //   tasks   every event that has been handed to us, saved before we answer, so a restart loses none. A task that waits for a Guard stays `pending` here, with the Guard's
 //           service and when to look again, so a waiting task survives a restart and the counts a heartbeat sends do not change shape (guard-wait.ts)
-//   state   the agent's Store as one JSON snapshot (see snapshot.ts)
+//   state   the agent's Store as one JSON snapshot (see snapshot.ts), kept in pieces (state_shape and state_rows, below)
 //   record  the action record, append-only (the database itself refuses an update or a delete)
 //   window  when each person last messaged us, for WhatsApp's 24-hour rule
 // A step is saved in ONE transaction: the new snapshot, the record entries it made and the task's "done" mark. So after a
 // crash you see a step wholly done or not done at all, never half.
+//
+// THE SNAPSHOT IN PIECES (layout 3, 11 Nov 2026). Until layout 2 the whole snapshot was one row, written again by every step, and a snapshot only grows (every booking,
+// order or fee and every message id ever seen stays in it): a year-old salon would have written about 11 MiB a step. Now each list in the snapshot is kept one element
+// to a row (`state_rows`): a top-level list (a template's bookings, customers, seen message ids) and a list one level inside a top-level object (a UPI shop's requests and
+// refunds). What is left (the counters, the month's AI counts) is a small `state_shape`, with null where each list was. A step writes the shape and only the rows whose
+// element changed or is new, so what it writes no longer depends on how old the shop is. The pieces are written in the same transaction as before, so a crash still
+// leaves a step whole or absent, and the snapshot read back is byte for byte the one saved (`splitSnapshot` refuses to split any text it could not give back exactly).
+// The interface did not change: a step still hands in the whole snapshot, and `loadState` still gives the whole snapshot back.
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -71,8 +79,8 @@ export interface DurableStore extends WindowStore {
 }
 
 // Each entry is one schema version, applied in order and recorded in PRAGMA user_version. Never edit one that has shipped:
-// add a new entry at the end.
-const MIGRATIONS: string[] = [
+// add a new entry at the end. An entry is SQL, or a function when the data itself has to be moved (it runs inside the version's transaction).
+const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   `
   CREATE TABLE tasks (
     seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,6 +120,28 @@ const MIGRATIONS: string[] = [
   ALTER TABLE tasks ADD COLUMN waiting_on TEXT;
   ALTER TABLE tasks ADD COLUMN retry_at INTEGER;
   `,
+  // Layout 3: the snapshot in pieces (see the top of this file). The one-row `state` table is moved into them and dropped, so a reader that still asks for it is told
+  // so plainly ("no such table") instead of reading a stale or partial snapshot. Going back to a runtime of layout 2 is refused by the deployer (bundle/handcheck.ts).
+  (db) => {
+    db.exec(`
+      CREATE TABLE state_shape (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        shape TEXT NOT NULL,
+        lists TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        saved_at INTEGER NOT NULL
+      );
+      CREATE TABLE state_rows (
+        list TEXT NOT NULL,
+        pos INTEGER NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (list, pos)
+      ) WITHOUT ROWID;
+    `);
+    const old = db.prepare("SELECT snapshot, saved_at FROM state WHERE id = 1").get() as { snapshot: string; saved_at: number } | undefined;
+    if (old) writeSnapshot(db, undefined, splitSnapshot(old.snapshot), old.saved_at);
+    db.exec("DROP TABLE state");
+  },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -135,10 +165,115 @@ function migrate(db: DatabaseSync): void {
   }
   for (let version = current; version < SCHEMA_VERSION; version++) {
     inTransaction(db, () => {
-      db.exec(MIGRATIONS[version]);
+      const step = MIGRATIONS[version];
+      if (typeof step === "string") db.exec(step); else step(db);
       db.exec(`PRAGMA user_version = ${version + 1}`);
     });
   }
+}
+
+// ---- the snapshot in pieces (layout 3; the top of this file says why) ------------------------------------------------------------------------------------
+
+/** A snapshot taken apart: the shape (the snapshot with null where each list was), the lists' paths in the order they come, and each list's elements as JSON text. */
+export interface SplitSnapshot { shape: string; lists: string[]; rows: Map<string, string[]> }
+
+/** The pieces as stored, and the version of the save that wrote them. */
+interface Stored { split: SplitSnapshot; version: number }
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Take a snapshot apart: each top-level list, and each list one level inside a top-level object, becomes its elements. Only text that its own parse gives back byte for
+ * byte is split (what JSON.stringify writes, which is what every template's codec writes, modules/runtime/snapshot.ts). Anything else (a hand-written test snapshot with
+ * spaces, text that is not a JSON object) is kept whole as the shape with no lists, and so is read back exactly as it was given.
+ */
+export function splitSnapshot(snapshot: string): SplitSnapshot {
+  const whole: SplitSnapshot = { shape: snapshot, lists: [], rows: new Map() };
+  let top: unknown;
+  try { top = JSON.parse(snapshot); } catch { return whole; }
+  if (!isPlainObject(top) || JSON.stringify(top) !== snapshot) return whole;
+  const lists: string[] = [];
+  const rows = new Map<string, string[]>();
+  const take = (holder: Record<string, unknown>, key: string, path: string[]): boolean => {
+    const value = holder[key];
+    if (!Array.isArray(value)) return false;
+    const name = JSON.stringify(path);
+    lists.push(name);
+    rows.set(name, value.map((element) => JSON.stringify(element)));
+    holder[key] = null; // the shape keeps the key where it was, so the keys come back in the same order
+    return true;
+  };
+  for (const key of Object.keys(top)) {
+    if (key === "__proto__") continue; // no codec writes it; it stays in the shape, never assigned by name (which would set a prototype)
+    if (take(top, key, [key])) continue;
+    const inner = top[key];
+    if (isPlainObject(inner)) for (const key2 of Object.keys(inner)) if (key2 !== "__proto__") take(inner, key2, [key, key2]);
+  }
+  return { shape: JSON.stringify(top), lists, rows };
+}
+
+/** Put a split snapshot back together. For text `splitSnapshot` split, this is that text again, byte for byte: the keys keep their places, and each element is its own JSON. */
+export function joinSnapshot(split: SplitSnapshot): string {
+  if (split.lists.length === 0) return split.shape;
+  const top = JSON.parse(split.shape) as Record<string, unknown>;
+  for (const name of split.lists) {
+    const path = JSON.parse(name) as string[];
+    const items = (split.rows.get(name) ?? []).map((text) => JSON.parse(text) as unknown);
+    if (path.length === 1) top[path[0]] = items;
+    else (top[path[0]] as Record<string, unknown>)[path[1]] = items;
+  }
+  return JSON.stringify(top);
+}
+
+/** The stored pieces, read whole (the shape row and every element row); undefined before the first save. A list with a missing place is refused, never closed up. */
+function readPieces(db: DatabaseSync): Stored | undefined {
+  const head = db.prepare("SELECT shape, lists, version FROM state_shape WHERE id = 1").get() as { shape: string; lists: string; version: number } | undefined;
+  if (!head) return undefined;
+  const lists = JSON.parse(head.lists) as string[];
+  const rows = new Map<string, string[]>(lists.map((name) => [name, []]));
+  for (const r of db.prepare("SELECT list, pos, value FROM state_rows ORDER BY list, pos").all() as { list: string; pos: number; value: string }[]) {
+    const into = rows.get(r.list);
+    if (!into || r.pos !== into.length) throw new Error(`The saved state is damaged: list ${r.list} has a row at place ${r.pos} that does not follow on. Restore the database from a snapshot.`);
+    into.push(r.value);
+  }
+  return { split: { shape: head.shape, lists, rows }, version: head.version };
+}
+
+/**
+ * Write a snapshot's pieces over the stored ones (`before`; undefined when nothing is stored yet). The shape row always (it carries the save's version); of each list
+ * only the elements that differ, are new, or are gone. Elements are compared by their place: a template's lists only grow at the end or change in place (snapshot.ts
+ * writes Maps and Sets in their own order, and no template deletes from them), so a step writes a few rows. A list that shrinks or moves is written again from the first
+ * place that differs, and is still right. Runs inside the caller's transaction. Returns the new version.
+ */
+function writeSnapshot(db: DatabaseSync, before: Stored | undefined, next: SplitSnapshot, nowMs: number): number {
+  const version = (before?.version ?? 0) + 1;
+  db.prepare("INSERT INTO state_shape (id, shape, lists, version, saved_at) VALUES (1, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET shape = excluded.shape, lists = excluded.lists, version = excluded.version, saved_at = excluded.saved_at")
+    .run(next.shape, JSON.stringify(next.lists), version, nowMs);
+  const update = db.prepare("UPDATE state_rows SET value = ? WHERE list = ? AND pos = ?");
+  const insert = db.prepare("INSERT INTO state_rows (list, pos, value) VALUES (?, ?, ?)");
+  const cut = db.prepare("DELETE FROM state_rows WHERE list = ? AND pos >= ?");
+  for (const name of next.lists) {
+    const now = next.rows.get(name) ?? [];
+    const was = before?.split.rows.get(name) ?? [];
+    for (let i = 0; i < now.length; i++) {
+      if (i >= was.length) insert.run(name, i, now[i]);
+      else if (was[i] !== now[i]) update.run(now[i], name, i);
+    }
+    if (was.length > now.length) cut.run(name, now.length);
+  }
+  for (const name of before?.split.lists ?? []) if (!next.rows.has(name)) cut.run(name, 0);
+  return version;
+}
+
+/**
+ * The last saved snapshot, from an open database of either layout. For readers outside the runtime (the bundle's export, bundle/backup/export.ts): a shop held back on a
+ * version from before layout 3 still has the one-row `state` table. Null before the first step.
+ */
+export function readSnapshot(db: DatabaseSync): string | null {
+  const has = (table: string) => db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table) !== undefined;
+  if (has("state_shape")) { const stored = readPieces(db); return stored ? joinSnapshot(stored.split) : null; }
+  if (has("state")) return (db.prepare("SELECT snapshot FROM state WHERE id = 1").get() as { snapshot: string } | undefined)?.snapshot ?? null;
+  return null;
 }
 
 /** Open (or create) `<dataDir>/agent.db`, ready to use. Only one process may use a data directory at a time. */
@@ -168,11 +303,21 @@ export function openStore(dataDir: string): DurableStore {
   const postponeOne = db.prepare("UPDATE tasks SET retry_at = ? WHERE id = ?");
   const counts = db.prepare("SELECT state, count(*) AS n FROM tasks GROUP BY state");
   const oldestAt = db.prepare("SELECT min(received_at) AS at FROM tasks WHERE state = 'pending'");
-  const readSnapshot = db.prepare("SELECT snapshot FROM state WHERE id = 1");
   const readRecord = db.prepare("SELECT entry FROM record ORDER BY seq");
-  const saveSnapshot = db.prepare("INSERT INTO state (id, snapshot, saved_at) VALUES (1, ?, ?) ON CONFLICT (id) DO UPDATE SET snapshot = excluded.snapshot, saved_at = excluded.saved_at");
+  const shapeVersion = db.prepare("SELECT version FROM state_shape WHERE id = 1");
   const addEntry = db.prepare("INSERT INTO record (seq, time, conversation, booking, action, outcome, entry) VALUES (?, ?, ?, ?, ?, ?, ?)");
   const emptyOldFailed = db.prepare("UPDATE tasks SET payload = '{}' WHERE state = 'failed' AND payload <> '{}' AND received_at < ?");
+
+  // The pieces as this handle last read or wrote them, so a step is compared with them without reading the whole state again. Trusted only while the stored version is
+  // the one it was taken at: another handle on the same file (the tests open two; a restore puts a new file in place) moves the version, and then the rows are read again.
+  let held: Stored | undefined;
+  /** The stored pieces as they are now. Called inside the save's transaction, so nothing can write between this look and the save. */
+  function stored(): Stored | undefined {
+    const version = (shapeVersion.get() as { version: number } | undefined)?.version;
+    if (version === undefined) return undefined;
+    if (held?.version !== version) held = readPieces(db);
+    return held;
+  }
 
   return {
     file,
@@ -209,19 +354,22 @@ export function openStore(dataDir: string): DurableStore {
     oldestPendingAt: () => (oldestAt.get() as { at: number | null }).at,
 
     loadState() {
-      const row = readSnapshot.get() as { snapshot: string } | undefined;
-      return { snapshot: row?.snapshot ?? null, record: (readRecord.all() as { entry: string }[]).map((r) => JSON.parse(r.entry) as RecordEntry) };
+      held = readPieces(db);
+      return { snapshot: held ? joinSnapshot(held.split) : null, record: (readRecord.all() as { entry: string }[]).map((r) => JSON.parse(r.entry) as RecordEntry) };
     },
 
     commitStep({ taskId, snapshot, entries, nowMs, failedWith }) {
-      inTransaction(db, () => {
-        saveSnapshot.run(snapshot, nowMs);
+      const next = splitSnapshot(snapshot); // outside the transaction: it reads nothing stored
+      const saved = inTransaction(db, () => {
+        const version = writeSnapshot(db, stored(), next, nowMs);
         for (const e of entries) addEntry.run(e.seq, e.time, e.conversation, e.booking, e.action, e.outcome, JSON.stringify(e));
         if (taskId !== undefined) {
           if (failedWith === undefined) finishOne.run(taskId);
           else failOne.run(failedWith.slice(0, 500), "failed", taskId);
         }
+        return { split: next, version };
       });
+      held = saved; // only once the transaction is committed: a save that was rolled back leaves this handle's copy as it was
     },
 
     lastInboundAt: (phone) => (lastInbound.get(phone) as { last_inbound_at: number } | undefined)?.last_inbound_at,

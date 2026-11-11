@@ -25,6 +25,7 @@ import { latestPriceList, latestProposedPriceList } from "../panel/cost.ts";
 import { ledgerEntries } from "../../modules/record/ledger.ts";
 import { PERSON_FORM, keyIdOf, personFingerprint } from "../../modules/record/fingerprint.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
+import { readSnapshot } from "../../modules/runtime/store.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string; /** The file (mounted read-only) that holds the shop's key (B69): the job file names it, never carries it. */ personKeyFile: string }[] }
 /**
@@ -73,7 +74,9 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   let rows: { entry: string }[]; let state: { snapshot: string } | undefined;
   try {
     db.exec("PRAGMA busy_timeout = 5000; BEGIN");
-    state = db.prepare("SELECT snapshot FROM state WHERE id = 1").get() as { snapshot: string } | undefined;
+    // the runtime's own reader, which knows both layouts: a shop held back on an older version keeps the one-row table, a newer one keeps the snapshot in pieces
+    const snapshot = readSnapshot(db);
+    state = snapshot === null ? undefined : { snapshot };
     rows = db.prepare("SELECT entry FROM record ORDER BY seq").all() as { entry: string }[];
     db.exec("COMMIT");
   } finally { db.close(); }
