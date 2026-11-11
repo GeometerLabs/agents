@@ -247,8 +247,8 @@ Everything in the bundle used to import Bookings: its settings check, its Razorp
   written whole (new file, flushed, renamed) on every change, and a reply leaves the queue in the same write as the mark it made, so a restart never marks twice and
   a redelivered webhook is counted once. A tick a minute sends the owner's refund reminders.
 - **The record and the report.** The own agent's record job reads the desk's two lists through the desk Guard with the reading credential (`RECORD_READS`:
-  `list_links`, `list_refunds`). The agent's calls become the templates' UPI entries (`upi_request`, `upi_paid_claim`, `upi_request_closed`, `upi_refund_owed`);
-  each mark the owner made is `owner_marked_paid` with `markedBy: "owner"` and the owner as the conversation, never `record_deposit` (B74: the owner's statement,
+  `list_links`, `list_refunds`). The agent's calls become the templates' UPI entries (`upi_request`, `upi_paid_claim`, `upi_request_closed`); every refund owed
+  is `upi_refund_owed` from the desk's own list (the one the agent asked for, and one the desk owed by itself after a late mark); each mark the owner made is `owner_marked_paid` with `markedBy: "owner"` and the owner as the conversation, never `record_deposit` (B74: the owner's statement,
   not a payment service's). The customer's number is a keyed fingerprint. The report (Bookings' code, as for every own agent) counts the marks as money the owner
   marked and says so.
 - **The crash test runs the same Guard.** `agent crash-test` of a UPI agent now starts the real desk Guard in front of its desk, so the bounds the agent meets in

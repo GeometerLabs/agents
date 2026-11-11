@@ -137,9 +137,10 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
         const booking = lab(owner?.reference ?? null);
         if (d.outcome === "deny") { refused(d, MARK_ACTIONS.refundOwed, booking, "agent", ruleDecisions(d, "block")); continue; }
         if (d.outcome !== "allow" || !d.dispatched) continue;
+        // a refund the desk shows is written from the desk's list below (one entry per refund owed, whoever caused it); a call the desk shows nothing for is the
+        // agent's attempt, unconfirmed or failed
         const owed = refunds.find((r) => r.payment_id === paymentId && String(r.amount_paise) === amount && Math.abs(r.owed_at_ms - at) < GRACE_MS);
-        // owed back by the owner, who sends it from their own UPI app: the agent never sends money
-        mk(d.id, at, { conversation: "agent", booking, action: MARK_ACTIONS.refundOwed, inputs: { call: d.call }, outcome: owed ? "held_for_owner" : failedOrNot(d, false), refs: { ...(owed ? { refundId: owed.id } : {}), paymentId, amountPaise: amount } });
+        if (!owed) mk(d.id, at, { conversation: "agent", booking, action: MARK_ACTIONS.refundOwed, inputs: { call: d.call }, outcome: failedOrNot(d, false), refs: { paymentId, amountPaise: amount } });
       } else if (d.outcome === "deny") {
         refused(d, d.operation, null);
       }
@@ -153,6 +154,11 @@ function candidates(facts: Facts, o: FoldOptions): Candidate[] {
           notes: p.after_close ? "marked received by the owner after the request was closed: kept apart, it pays nothing open" : "marked paid by owner: the owner's statement from their own number, not a payment service's record",
         });
       }
+    }
+    // every refund the owner owes, from the desk's own list: one the agent asked for, and one the desk owed by itself (money the owner marked after the request was
+    // closed), so the unfinished-work list sees both. Owed back by the owner, who sends it from their own UPI app: the agent never sends money.
+    for (const f of refunds) {
+      mk(`refund-owed:${f.id}`, f.owed_at_ms, { conversation: "agent", booking: lab(f.reference), action: MARK_ACTIONS.refundOwed, inputs: { refund: f.id }, outcome: "held_for_owner", refs: { refundId: f.id, paymentId: f.payment_id, amountPaise: String(f.amount_paise) } });
     }
     // a refund the owner owed and marked sent (or kept for something given another way)
     for (const f of refunds) {

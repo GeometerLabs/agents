@@ -31,7 +31,7 @@ export interface Strings {
   /** The go-live certificate: what the situations tried were, and the centre's limits in plain words. The numbers are filled in by the per-language formatters. */
   cert: {
     date: string; held(held: number, total: number, failed: number, notTested: number): string; intro: string; yourLimits: string;
-    paidRule: string; fees(items: string): string; due(day: number, graceDays: number): string; lateFee(amount: string): string; noLateFee: string;
+    paidRule: string; /** B71 part 2: a UPI centre's rule (no gateway named). */ paidRuleUpi: string; fees(items: string): string; due(day: number, graceDays: number): string; lateFee(amount: string): string; noLateFee: string;
     reminders(days: string, hour: number, most: number): string; partPayments(least: string): string; noPartPayments: string; waiver(amount: string): string; noWaiver: string; refund(amount: string): string;
     students(count: number): string; notAGrade: string; didNotHold: string; handRunLine: string; checkedOn: string;
   };
@@ -97,7 +97,7 @@ export const en: Strings = {
   cert: {
     date: "Date", held: (h, t, f, n) => `Held ${h} of ${t} situations. ${f} failed. ${n} not tested.`,
     intro: "Before switching on, we tried situations that could go wrong: lost replies, a payment arriving twice, parents saying they paid when they had not, requests for a waiver or a refund, and parents trying to trick the agent.",
-    yourLimits: "Your limits", paidRule: "No reminder once Razorpay's record shows a fee paid", fees: (items) => `Monthly fees: ${items}`,
+    yourLimits: "Your limits", paidRule: "No reminder once Razorpay's record shows a fee paid", paidRuleUpi: "No reminder once you have marked a fee paid", fees: (items) => `Monthly fees: ${items}`,
     due: (day, grace) => `Each fee is due on day ${day} of the month, with ${grace} grace days`, lateFee: (amount) => `A late fee of ${amount}, added once, after the grace days, if the fee is still unpaid`, noLateFee: "No late fee",
     reminders: (days, hour, most) => `Reminders go at ${hour}:00 on these days from the due day (a minus means before it): ${days}; at most ${most} for one fee in a month`,
     partPayments: (least) => `Part payments are allowed, from ${least}`, noPartPayments: "Part payments are not allowed",
@@ -170,7 +170,7 @@ export const hi: Strings = {
   cert: {
     date: "तारीख़", held: (h, t, f, n) => `${t} में से ${h} स्थितियाँ ठीक रहीं। ${f} में गड़बड़ हुई। ${n} बातें जाँची नहीं गईं।`,
     intro: "चालू करने से पहले हमने वे स्थितियाँ आज़माईं जो गलत हो सकती थीं: खोए हुए जवाब, दो बार आया भुगतान, बिना भरे \"भर दिया\" कहने वाले अभिभावक, छूट या रिफंड की माँग, और एजेंट को चकमा देने वाले अभिभावक।",
-    yourLimits: "आपकी सीमाएँ", paidRule: "Razorpay का रिकॉर्ड फीस भरी दिखाए तो उसके बाद कोई याद नहीं", fees: (items) => `मासिक फीस: ${items}`,
+    yourLimits: "आपकी सीमाएँ", paidRule: "Razorpay का रिकॉर्ड फीस भरी दिखाए तो उसके बाद कोई याद नहीं", paidRuleUpi: "आप फीस को भरी हुई दर्ज कर दें तो उसके बाद कोई याद नहीं", fees: (items) => `मासिक फीस: ${items}`,
     due: (day, grace) => `हर फीस महीने की ${day} तारीख़ को देय है, ${grace} दिन की छूट अवधि के साथ`, lateFee: (amount) => `छूट अवधि के बाद भी फीस न भरी हो तो ${amount} की देर की फीस, एक बार जुड़ती है`, noLateFee: "देर की कोई फीस नहीं",
     reminders: (days, hour, most) => `याद के संदेश ${hour}:00 बजे जाते हैं, देय तारीख़ से इन दिनों पर (ऋण का चिह्न यानी उससे पहले): ${days}; एक फीस के लिए महीने में ज़्यादा से ज़्यादा ${most}`,
     partPayments: (least) => `आंशिक भुगतान की अनुमति है, ${least} से`, noPartPayments: "आंशिक भुगतान की अनुमति नहीं है",
@@ -243,7 +243,7 @@ export const ml: Strings = {
   cert: {
     date: "തീയതി", held: (h, t, f, n) => `${t} സാഹചര്യങ്ങളിൽ ${h} എണ്ണം ശരിയായി നിന്നു. ${f} എണ്ണം പിഴച്ചു. ${n} കാര്യങ്ങൾ പരിശോധിച്ചിട്ടില്ല.`,
     intro: "തുടങ്ങുന്നതിന് മുമ്പ് തെറ്റാൻ സാധ്യതയുള്ള സാഹചര്യങ്ങൾ ഞങ്ങൾ പരീക്ഷിച്ചു: നഷ്ടപ്പെട്ട മറുപടികൾ, രണ്ടുതവണ വന്ന പേയ്മെന്റ്, അടയ്ക്കാതെ \"അടച്ചു\" എന്ന് പറയുന്ന രക്ഷിതാക്കൾ, ഇളവിനോ റീഫണ്ടിനോ ഉള്ള അഭ്യർത്ഥനകൾ, ഏജന്റിനെ കബളിപ്പിക്കാൻ ശ്രമിക്കുന്ന രക്ഷിതാക്കൾ.",
-    yourLimits: "നിങ്ങളുടെ പരിധികൾ", paidRule: "Razorpay-യുടെ രേഖയിൽ ഫീസ് അടച്ചതായി കണ്ടാൽ പിന്നെ ഓർമ്മപ്പെടുത്തൽ ഇല്ല", fees: (items) => `പ്രതിമാസ ഫീസ്: ${items}`,
+    yourLimits: "നിങ്ങളുടെ പരിധികൾ", paidRule: "Razorpay-യുടെ രേഖയിൽ ഫീസ് അടച്ചതായി കണ്ടാൽ പിന്നെ ഓർമ്മപ്പെടുത്തൽ ഇല്ല", paidRuleUpi: "ഫീസ് അടച്ചതായി നിങ്ങൾ രേഖപ്പെടുത്തിയാൽ പിന്നെ ഓർമ്മപ്പെടുത്തൽ ഇല്ല", fees: (items) => `പ്രതിമാസ ഫീസ്: ${items}`,
     due: (day, grace) => `ഓരോ ഫീസും മാസത്തിലെ ${day}-ാം തീയതി അടയ്ക്കണം, ${grace} ദിവസത്തെ ഇളവ് സമയത്തോടെ`, lateFee: (amount) => `ഇളവ് സമയത്തിന് ശേഷവും ഫീസ് അടച്ചിട്ടില്ലെങ്കിൽ ${amount} വൈകിയ ഫീസ്, ഒരു തവണ ചേർക്കും`, noLateFee: "വൈകിയ ഫീസ് ഇല്ല",
     reminders: (days, hour, most) => `ഓർമ്മപ്പെടുത്തലുകൾ ${hour}:00-ന് പോകും, അവസാന തീയതിയിൽ നിന്നുള്ള ഈ ദിവസങ്ങളിൽ (മൈനസ് എന്നാൽ അതിന് മുമ്പ്): ${days}; ഒരു ഫീസിന് ഒരു മാസത്തിൽ പരമാവധി ${most}`,
     partPayments: (least) => `ഭാഗികമായി അടയ്ക്കാം, ${least} മുതൽ`, noPartPayments: "ഭാഗികമായി അടയ്ക്കാൻ അനുവാദമില്ല",
@@ -316,7 +316,7 @@ export const kn: Strings = {
   cert: {
     date: "ದಿನಾಂಕ", held: (h, t, f, n) => `${t} ಸಂದರ್ಭಗಳಲ್ಲಿ ${h} ಸರಿಯಾಗಿ ನಿಂತವು. ${f} ತಪ್ಪಿದವು. ${n} ವಿಷಯಗಳನ್ನು ಪರಿಶೀಲಿಸಿಲ್ಲ.`,
     intro: "ಆರಂಭಿಸುವ ಮೊದಲು ತಪ್ಪಾಗಬಹುದಾದ ಸಂದರ್ಭಗಳನ್ನು ನಾವು ಪ್ರಯತ್ನಿಸಿದೆವು: ಕಳೆದುಹೋದ ಉತ್ತರಗಳು, ಎರಡು ಬಾರಿ ಬಂದ ಪಾವತಿ, ಕಟ್ಟದೆ \"ಕಟ್ಟಿದ್ದೇವೆ\" ಎನ್ನುವ ಪೋಷಕರು, ರಿಯಾಯಿತಿ ಅಥವಾ ರೀಫಂಡ್ ಕೋರಿಕೆಗಳು, ಏಜೆಂಟ್ ಅನ್ನು ಮೋಸಗೊಳಿಸಲು ಯತ್ನಿಸುವ ಪೋಷಕರು.",
-    yourLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು", paidRule: "Razorpay ದಾಖಲೆಯಲ್ಲಿ ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಕಂಡರೆ ಆಮೇಲೆ ನೆನಪಿನ ಸಂದೇಶ ಇಲ್ಲ", fees: (items) => `ಮಾಸಿಕ ಶುಲ್ಕ: ${items}`,
+    yourLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು", paidRule: "Razorpay ದಾಖಲೆಯಲ್ಲಿ ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಕಂಡರೆ ಆಮೇಲೆ ನೆನಪಿನ ಸಂದೇಶ ಇಲ್ಲ", paidRuleUpi: "ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ ಮೇಲೆ ನೆನಪಿನ ಸಂದೇಶ ಇಲ್ಲ", fees: (items) => `ಮಾಸಿಕ ಶುಲ್ಕ: ${items}`,
     due: (day, grace) => `ಪ್ರತಿ ಶುಲ್ಕವನ್ನು ತಿಂಗಳ ${day}ನೇ ತಾರೀಖಿಗೆ ಕಟ್ಟಬೇಕು, ${grace} ದಿನಗಳ ಹೆಚ್ಚುವರಿ ಅವಧಿಯೊಂದಿಗೆ`, lateFee: (amount) => `ಹೆಚ್ಚುವರಿ ಅವಧಿಯ ನಂತರವೂ ಶುಲ್ಕ ಕಟ್ಟದಿದ್ದರೆ ${amount} ತಡ ಶುಲ್ಕ, ಒಮ್ಮೆ ಸೇರಿಸಲಾಗುತ್ತದೆ`, noLateFee: "ತಡ ಶುಲ್ಕ ಇಲ್ಲ",
     reminders: (days, hour, most) => `ನೆನಪಿನ ಸಂದೇಶಗಳು ${hour}:00 ಕ್ಕೆ ಹೋಗುತ್ತವೆ, ಕೊನೆಯ ದಿನಾಂಕದಿಂದ ಈ ದಿನಗಳಲ್ಲಿ (ಮೈನಸ್ ಎಂದರೆ ಅದಕ್ಕಿಂತ ಮೊದಲು): ${days}; ಒಂದು ಶುಲ್ಕಕ್ಕೆ ತಿಂಗಳಲ್ಲಿ ಗರಿಷ್ಠ ${most}`,
     partPayments: (least) => `ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇದೆ, ${least} ರಿಂದ`, noPartPayments: "ಭಾಗಶಃ ಪಾವತಿಗೆ ಅವಕಾಶ ಇಲ್ಲ",

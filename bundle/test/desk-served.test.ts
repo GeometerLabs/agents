@@ -77,8 +77,8 @@ test("B71 part 2: an agent on UPI deploys a desk Guard in front of the desk: its
 
 // ---- the desk on the server ------------------------------------------------------------------------------------------------------------------------------------
 
-/** A WhatsApp that keeps every text it was handed, with the template's name when it went as one. The owner's window is open once they have written. */
-function recordingWhatsApp() {
+/** A WhatsApp that keeps every text it was handed, with the template's name when it went as one. The owner's window is open for 24 hours after they wrote, by `now`. */
+function recordingWhatsApp(now: () => number = Date.now) {
   const sent: { text: string; template?: string; buttons?: string[] }[] = [];
   const make = (window: { lastInboundAt(phone: string): number | undefined }): Messaging => {
     const out = (to: string, text: string, kind: OutboundMessage["kind"]): OutboundMessage => ({ id: `m${sent.length}`, to, kind, text, sentAt: 0, afterOptOut: false });
@@ -86,17 +86,17 @@ function recordingWhatsApp() {
       async sendText(to, text) { sent.push({ text }); return out(to, text, "text"); },
       async sendTemplate(to, t) { sent.push({ text: t.text, template: t.name }); return out(to, t.text, "template"); },
       async sendInteractive(to, m) { sent.push({ text: m.body, buttons: (m.buttons ?? []).map((b) => b.id) }); return out(to, m.body, "interactive"); },
-      async isWindowOpen(to) { const last = window.lastInboundAt(to); return last !== undefined && Date.now() - last < 24 * 3_600_000; },
+      async isWindowOpen(to) { const last = window.lastInboundAt(to); return last !== undefined && now() - last < 24 * 3_600_000; },
       async getMessage() { return null; },
     };
   };
   return { make, sent };
 }
 
-function hostIn(dir: string, wa: ReturnType<typeof recordingWhatsApp>, language: Language = "en", lines: string[] = []): DeskHost {
+function hostIn(dir: string, wa: ReturnType<typeof recordingWhatsApp>, language: Language = "en", lines: string[] = [], clock = fakeClock(Date.now())): DeskHost {
   return createDeskHost({
     name: NAME, config: { payment: { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } } }, ownerWhatsapp: OWNER,
-    business: { name: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: language }, file: join(dir, "desk.json"), messaging: wa.make, clock: fakeClock(Date.now()), log: (l) => lines.push(l),
+    business: { name: "Glow Salon", timeZone: "Asia/Kolkata", ownerLanguage: language }, file: join(dir, "desk.json"), messaging: wa.make, clock, log: (l) => lines.push(l),
   });
 }
 
@@ -191,6 +191,33 @@ test("B71 part 2: every notice the desk sends the owner is worded and passes its
   }
 });
 
+test("B71 part 2: outside the owner's 24-hour window the desk's own notices go as their approved templates, in all four languages: what to expect, a claim, a refund to send and its reminder", async () => {
+  const HOUR = 3_600_000;
+  for (const language of LANGUAGES) {
+    const dir = mkdtempSync(join(tmpdir(), "geo-desk-closed-"));
+    const clock = fakeClock(Date.UTC(2026, 10, 11, 4, 0));
+    const wa = recordingWhatsApp(() => clock.now()); const lines: string[] = [];
+    const host = hostIn(dir, wa, language, lines, clock);
+    const q = new URLSearchParams();
+    try {
+      const a = (await host.handle("POST", "/requests", q, { reference: "b-1", amount_paise: 20000, customer: CUSTOMER, service: "haircut", slot_ms: Date.UTC(2026, 10, 13, 12, 30) })).body as any;
+      const b = (await host.handle("POST", "/requests", q, { reference: "b-2", amount_paise: 20000, customer: CUSTOMER })).body as any;
+      await host.handle("POST", `/requests/${b.id}/claim`, q, { via: "words" });
+      const code = JSON.parse(readFileSync(join(dir, "desk.json"), "utf8")).marks.requests[0].code as string;
+      host.receive([{ id: "wamid.mark", from: OWNER, text: `received ${code}`, timestamp: clock.now() }]);
+      await host.idle();
+      clock.advance(25 * HOUR); // the owner's window has closed
+      const paid = (await host.handle("GET", `/requests/${a.id}`, q, undefined)).body as any;
+      await host.handle("POST", "/refunds", q, { payment_id: paid.payments[0].id, amount_paise: 20000, why: "cancelled" });
+      clock.advance(25 * HOUR);
+      await host.tick(); // the first reminder of the refund still owed
+      const templates = wa.sent.filter((m) => m.template).map((m) => m.template);
+      assert.deepEqual(templates, ["owner_upi_check", "owner_upi_customer_says_paid", "owner_upi_refund_to_send", "owner_upi_refund_reminder"], `${language}: each as its own template, never the generic one`);
+      assert.deepEqual(lines.filter((l) => /could not be worded|did not match|not sent/u.test(l)), [], language);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  }
+});
+
 // ---- the record (B74: the owner's statement, never a provider's confirmation) ----------------------------------------------------------------------------------
 
 test("B71 part 2 and B74: the own agent's record keeps the owner's UPI mark as the owner's statement, never as a payment service's confirmation, and the report says so", () => {
@@ -208,7 +235,11 @@ test("B71 part 2 and B74: the own agent's record keeps the owner's UPI mark as t
         links: {}, refunds: {}, events: null, eventsById: {},
         desk: {
           requests: [{ id: "upi-1", reference: "b-1", amount_paise: 20000, pay_url: "upi://pay?pa=glowsalon@okicici", pay_to: { id: "glowsalon@okicici", name: "Glow Salon" }, status: "paid", paid_paise: 20000, left_paise: 0, paid: true, payments: [{ id: "upi-pay-2", amount_paise: 20000, after_close: false, marked_at_ms: at + 120_000, marked_by: "owner" }] }],
-          refunds: [{ id: "upr-3", reference: "b-1", payment_id: "upi-pay-2", amount_paise: 20000, state: "done", sent: true, owed_at_ms: at + 300_000, settled_at_ms: at + 900_000 }],
+          refunds: [
+            { id: "upr-3", reference: "b-1", payment_id: "upi-pay-2", amount_paise: 20000, state: "done", sent: true, owed_at_ms: at + 300_000, settled_at_ms: at + 900_000 },
+            // owed by the desk itself: money the owner marked after a request was closed (no agent call asked for it)
+            { id: "upr-5", reference: "b-4", payment_id: "upi-pay-4", amount_paise: 20000, state: "owed", sent: false, owed_at_ms: at + 1_000_000 },
+          ],
         },
       },
     };
@@ -223,9 +254,9 @@ test("B71 part 2 and B74: the own agent's record keeps the owner's UPI mark as t
     assert.deepEqual(by("upi_request").map((e) => [e.outcome, e.refs.requestId]), [["confirmed", "upi-1"]]);
     assert.ok(!JSON.stringify(state.entries).includes(CUSTOMER.slice(1)), "the customer's number is a fingerprint in the record, never the number");
     assert.deepEqual(by("upi_paid_claim").map((e) => [e.outcome, e.refs.via]), [["confirmed", "screenshot"]], "a claim is recorded as the customer's word; it marks nothing paid");
-    assert.deepEqual(by("upi_refund_owed").map((e) => e.outcome), ["held_for_owner"]);
+    assert.deepEqual(by("upi_refund_owed").map((e) => [e.outcome, e.refs.refundId]), [["held_for_owner", "upr-3"], ["held_for_owner", "upr-5"]], "one entry per refund owed, the agent's and the desk's own");
     assert.deepEqual(by("upi_refund_marked_done").map((e) => e.refs.refundId), ["upr-3"]);
-    assert.deepEqual(markObligations(state.entries), [], "paid in full, and the refund marked sent: nothing left for the owner");
+    assert.deepEqual(markObligations(state.entries).map((x) => [x.kind, x.amountPaise]), [["upi_refund_owed", 20000]], "the late money is still owed back: the owner's unfinished work shows it");
     // the report counts it as money the owner marked, and says so
     const report = buildMonthlyReport({ settings, entries: state.entries, bookings: [], ...monthRange("2026-11", settings.timezone), source: "live", madeAt: at + 86_400_000 });
     assert.equal(report.paidBy, "owner-marked");

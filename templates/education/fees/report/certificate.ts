@@ -6,6 +6,7 @@
 // around them are in strings.ts. The monthly report reads this file back (report/go-live.ts) to say what its checks ran on.
 //
 // There is no monthly record certificate for Fees yet (Deferred.md): the monthly report carries what it was told about this one.
+import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { HAND_RUN, STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import type { HandCheckRun, SituationResult } from "../crash-test/situations.ts";
 import { formatDate, formatInr } from "../../../../modules/language/format.ts";
@@ -80,6 +81,8 @@ export interface GoLiveCertificate {
     reminders: { daysFromDue: number[]; hour: number; maxPerMonth: number };
     partPayments: { allowed: boolean; minInr: number };
     waiverLimitInr: number; refundLimitInr: number;
+    /** B71 part 2: present only for a centre whose payments the owner marks (UPI): its "paid" rule names the owner's mark, not a gateway's record. Left out for a gateway centre, which keeps its bytes. */
+    ownerMarks?: true;
   };
   /** The centre's settings (without contact details) and the settings the checks actually ran on. They differ only when the checks were not run on this centre's own settings. */
   policyDigest: string;
@@ -106,6 +109,7 @@ export function limitsOf(settings: Settings): Limits {
     reminders: { daysFromDue: [...settings.reminders.daysFromDue], hour: settings.reminders.hour, maxPerMonth: settings.reminders.maxPerMonth },
     partPayments: { allowed: settings.partPayments.allowed, minInr: settings.partPayments.minInr },
     waiverLimitInr: settings.waiver.limitInr, refundLimitInr: settings.refund.limitInr,
+    ...(!capabilitiesOf(settings.payment).confirmsAutomatically ? { ownerMarks: true as const } : {}),
   };
 }
 
@@ -142,7 +146,7 @@ export function limitLinesOf(l: Limits, language: Language): string[] {
   const c = STRINGS[language].cert;
   const days = l.reminders.daysFromDue.map((d) => (d > 0 ? `+${d}` : String(d))).join(", ");
   return [
-    c.paidRule,
+    l.ownerMarks ? c.paidRuleUpi : c.paidRule,
     c.fees(l.batches.map((b) => `${b.name[language]} ${formatInr(b.monthlyFeeInr)}`).join(" · ")),
     c.due(l.dueDay, l.graceDays),
     l.lateFeeInr > 0 ? c.lateFee(formatInr(l.lateFeeInr)) : c.noLateFee,

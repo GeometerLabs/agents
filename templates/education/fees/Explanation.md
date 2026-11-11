@@ -144,7 +144,9 @@ to contact the centre and the reminder passed over, never tried again at the nex
   payment account or tells the person who set up the agent. Hindi, Malayalam and Kannada are machine-written and wait for native review (REVIEW-ml/kn; Fees has no
   Hindi sheet). Its Meta template follows the text (whatsapp-templates.json is regenerated); submitting the templates to Meta is checkpoint item 12.
 - **A UPI centre's report names no gateway (11 Nov).** "Fees paid in cash or by bank transfer: the record only holds Razorpay payments" and "in Razorpay or
-  WhatsApp" have UPI lines of their own (`cash-and-transfers-upi`, `outside-agent-upi`); a gateway centre's report keeps its bytes.
+  WhatsApp" have UPI lines of their own (`cash-and-transfers-upi`, `outside-agent-upi`), and the certificate's and the panel's limit line "No reminder once
+  Razorpay's record shows a fee paid" is "No reminder once you have marked a fee paid" (`limits.ownerMarks`); a gateway centre's report and certificate keep
+  their bytes. `bundle/test/upi-names.test.ts` renders all three templates' UPI documents in four languages and finds no gateway's name.
 - **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
   `refund.done`. The Guard spec is written for the gateway the centre chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
 

@@ -18,6 +18,7 @@ import { read, secretsFor, world } from "./world.ts";
 import { credential, skipWithoutBinary, startRealGuard } from "./real-guard.ts";
 import { agentNames } from "../agent/plan.ts";
 import { connectionText } from "../agent/deploy.ts";
+import { runDueJobs } from "../apply.ts";
 import { ownApiRuntime } from "../agent/relay-context.ts";
 import { STANDIN_PROVIDER_AUTHORIZATION } from "../agent/guard-process.ts";
 import { names } from "../generate/shop.ts";
@@ -152,6 +153,11 @@ test("B71 part 2: a rule that holds a call for a person is kept; the deploy make
     assert.equal(relay.gateway, undefined);
     assert.equal(JSON.parse(read(join(w.paths.generated, "inbox", "inbox.json"))).shops[NAME].relayUrl, `http://relay:8795/c/${NAME}`);
     assert.match(connectionText(NAME, r.connection, false), /asks the owner on WhatsApp; after the owner's yes, your agent sends the identical call again/u);
+    // the relay's reading credential is issued at the deploy, and renewed by the daily job (it runs out after a week, and then the owner would never be asked)
+    const issued = () => w.calls.filter((c) => c.args.join(" ").includes(`issue-approver ${NAME}`)).length;
+    assert.equal(issued(), 1, "issued at the deploy");
+    assert.ok((await runDueJobs(w.ctx)).includes("relay credentials"));
+    assert.equal(issued(), 2, "renewed by the daily job");
   } finally { w.done(); }
 });
 
