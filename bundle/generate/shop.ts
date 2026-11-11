@@ -9,7 +9,9 @@ import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, gatewaySpec, whatsappSpec } from "./guards.ts";
+import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, gatewaySpec, whatsappGuardDef, whatsappSpec } from "./guards.ts";
+import type { WhatsAppRoute } from "./guards.ts";
+import { messagingConfigProblem } from "../../modules/messaging/providers.ts";
 import type { GuardDef, GuardKind } from "./guards.ts";
 
 /** What the runtime waits for a call when runtime.json says nothing: longer than Guard's own wait for the provider. */
@@ -108,6 +110,11 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   if (pins.whatsapp && written.whatsapp !== undefined && written.whatsapp !== pins.whatsapp.phoneNumberId) notes.push("runtime.json names another WhatsApp number id than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (hasCalendar && (typeof calendarId !== "string" || calendarId.trim() === "")) problems.push({ rule: "calendar-id", message: 'runtime.json needs services.calendar.calendarId: the shop\'s own Google calendar. The calendar Guard allows exactly that one and refuses every other.' });
   if (typeof phoneNumberId !== "string" || !/^\d{6,20}$/u.test(phoneNumberId)) problems.push({ rule: "whatsapp-number-id", message: 'runtime.json needs services.messaging.phoneNumberId: the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.' });
+  // Item 11b: a shop whose WhatsApp goes through Gupshup says so in runtime.json, with its Gupshup app id; its Guard then fronts Gupshup and allows only that app
+  const messaging = isObj(services.messaging) ? services.messaging : {};
+  const providerProblem = messagingConfigProblem(messaging);
+  if (providerProblem) problems.push({ rule: "whatsapp-provider", message: `runtime.json: ${providerProblem}` });
+  const whatsappRoute: WhatsAppRoute | undefined = !providerProblem && messaging.provider === "gupshup" ? { provider: "gupshup", appId: messaging.appId as string } : undefined;
 
   // The runtime waits longer than Guard, or it gives up on a call Guard is still making and sends the same thing again.
   const timeoutMs = services.timeoutMs === undefined ? DEFAULT_RUNTIME_TIMEOUT_MS : services.timeoutMs;
@@ -133,7 +140,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
     else parser = { wire: p.wire as string, model: p.model as string, ...(typeof p.timeoutMs === "number" ? { timeoutMs: p.timeoutMs } : {}) };
     if (p.baseUrl !== undefined || p.agentTokenFile !== undefined) notes.push("parser: the bundle sets baseUrl and agentTokenFile itself (the server's model Guard).");
   }
-  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, timeoutMs: timeoutMs as number, parser, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
+  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, whatsappRoute, timeoutMs: timeoutMs as number, parser, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
 }
 
 /** The pathway's own check of a runtime config (server/config.ts). A parameter so a test can stand in for a pathway version that knows more. */
@@ -215,12 +222,12 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     const kinds = guardsOf(template, shop.settings); // a UPI shop (B33) has no Razorpay Guard
     const razorpay = kinds.includes("razorpay");
     if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
-    specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour });
+    specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}) });
     if (template.guards.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {
       const spec = specs[kind];
       if (!spec) continue;
-      const def = guardDef(kind);
+      const def = kind === "whatsapp" ? whatsappGuardDef(facts.whatsappRoute) : guardDef(kind);
       const approvers = kind === "razorpay" ? (shop.settings as { approvers?: ApproversSettings }).approvers : undefined;
       guards.push({ kind, service: names.guard(shop.name, kind), tenant: shop.name, deployment: `${shop.name}-${kind}`, def, upstream: upstreamOf(server, kind, def), spec, specText: stableJson(spec), ...(approvers ? { approvers } : {}) });
     }
@@ -230,7 +237,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       services: {
         ...(razorpay ? { payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` } } : {}),
         ...(template.guards.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
-        messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, agentTokenFile: `${SECRETS}/agent_whatsapp` },
+        messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, ...(facts.whatsappRoute ?? {}), agentTokenFile: `${SECRETS}/agent_whatsapp` },
         timeoutMs: facts.timeoutMs,
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
