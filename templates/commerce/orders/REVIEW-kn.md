@@ -307,6 +307,7 @@ Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ನ�
 | `notCounted.kitchen-and-delivery` | ಆಹಾರ ತಯಾರಾಯಿತೇ, ತೆಗೆದುಕೊಂಡರೇ ಅಥವಾ ತಲುಪಿತೇ ಎಂಬುದು | Whether the food was made, collected or delivered |  |
 | `notCounted.read-receipts` | ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಇಲ್ಲವೇ | Whether a customer read a message |  |
 | `notCounted.outside-agent` | ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು Razorpay, UPI ಆ್ಯಪ್ ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು) | Anything done outside the agent (by you or anyone else, in Razorpay, your UPI app or WhatsApp) |  |
+| `notCounted.outside-agent-upi` | ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು UPI ಆ್ಯಪ್ ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು) | Anything done outside the agent (by you or anyone else, in your UPI app or WhatsApp) |  |
 | `notCounted.rule-breaks` | ಏಜೆಂಟ್ ನೋಡದ ನಿಯಮ ಉಲ್ಲಂಘನೆಗಳು: ದಾಖಲೆಯಲ್ಲಿ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು ಮತ್ತು ಅದನ್ನು ತಡೆದದ್ದು ಮಾತ್ರ ಇದೆ | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
 | `cert.date` | ದಿನಾಂಕ | Date |  |
 | `cert.held` | 26 ಸಂದರ್ಭಗಳಲ್ಲಿ 25 ಸರಿಯಾಗಿ ನಿಂತವು. 1 ತಪ್ಪಿದವು. 12 ವಿಷಯಗಳನ್ನು ಪರಿಶೀಲಿಸಿಲ್ಲ. | Held 25 of 26 situations. 1 failed. 12 not tested. |  |

@@ -339,6 +339,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `notTested.real-whatsapp` | യഥാർത്ഥ WhatsApp | real WhatsApp |  |
 | `notTested.real-razorpay` | യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡോ ലൈവോ) | real Razorpay, in test mode or live |  |
 | `notTested.real-calendar` | യഥാർത്ഥ കലണ്ടർ | a real calendar |  |
+| `notTested.webhook-signatures-upi` | സന്ദേശങ്ങളുടെ ഒപ്പ് (webhook signatures) | webhook signatures (proof that a message came from WhatsApp) |  |
 | `notTested.webhook-signatures` | പേയ്മെന്റ് അറിയിപ്പുകളുടെ ഒപ്പ് (webhook signatures) | webhook signatures (proof that a payment notice came from Razorpay) |  |
 | `notTested.real-model` | യഥാർത്ഥ AI മോഡൽ (സന്ദേശം വായിക്കുന്നത് നിശ്ചിത നിയമങ്ങളാലാണ്, മറുപടികൾ നിശ്ചിത മാതൃകകളാണ്) | a real AI model (messages are read by fixed rules and answered from fixed templates) |  |
 | `notTested.other-languages` | തമിഴ്, തെലുങ്ക്, മറ്റ് ഭാഷകൾ | Tamil, Telugu and other languages |  |

@@ -64,8 +64,13 @@ const STOP_SITES: Record<FeeRuleId, readonly string[]> = {
 export type NotTestedKey = NotTestedId | "own-settings" | "other-settings" | "no-go-live-certificate" | "go-live-untrusted" | "situations-skipped";
 
 /** Things the record cannot tell us, so the report does not say them. Always listed. */
-export type NotCountedId = "cash-and-transfers" | "read-receipts" | "outside-agent" | "rule-breaks";
+export type NotCountedId = "cash-and-transfers" | "read-receipts" | "outside-agent" | "rule-breaks" | "cash-and-transfers-upi" | "outside-agent-upi";
 export const NOT_COUNTED: readonly NotCountedId[] = ["cash-and-transfers", "read-receipts", "outside-agent", "rule-breaks"];
+/**
+ * B71 part 2: a UPI centre's report names no gateway. Two lines said what the record holds in a gateway's words ("only Razorpay payments", "in Razorpay or WhatsApp");
+ * a UPI centre gets its own words for them. A gateway centre's lines, and so its report's bytes, are as they were.
+ */
+const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "cash-and-transfers": "cash-and-transfers-upi", "outside-agent": "outside-agent-upi" };
 
 /** The templates whose message is a fee reminder, and the ones that are receipts, by the name the record keeps in `refs.templates`. */
 export const REMINDER_TEMPLATES: readonly string[] = ["fee_reminder", "fee_overdue", "fee_overdue_late"];
@@ -274,7 +279,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     stopped: { total: stoppedTotal, byRule },
     messages: { toOwner: month.filter((e) => e.action === "send_message" && e.outcome !== "blocked" && e.refs.to === "owner").length, heldBack: month.filter((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "message-matches-record")).length },
     unconfirmed: { open: month.filter((e) => (e.outcome === "unconfirmed" || e.outcome === "failed") && e.action !== "send_message" && e.action !== MESSAGE_STATUS_ENTRY).length }, // a message, or WhatsApp's report on one, is not an open payment
-    notCounted: [...NOT_COUNTED],
+    notCounted: NOT_COUNTED.map((id) => (upi ? UPI_NOT_COUNTED[id] ?? id : id)),
     notTested: notTestedForReport(goLive, settings),
     goLive,
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,

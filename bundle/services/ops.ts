@@ -11,6 +11,7 @@
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
 import { parseKey } from "../../modules/record/key-file.ts";
+import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
@@ -54,6 +55,9 @@ async function get(url: string, headers: Record<string, string> = {}, fetchFn: t
     return { status: r.status, json };
   } catch { return { status: 0, json: null }; }
 }
+
+/** Whether a Guard can hold a call for the owner, so the heartbeat counts what it holds: a gateway's (refunds), or an agent's own API's (B71 part 2). By its kind, never a provider's name. */
+const holdsCalls = (guardId: string): boolean => { const kind = guardId.replace(/^guard-/u, ""); return isGatewayKind(kind) || kind === OWN_API; };
 
 export async function observeGuard(g: OpsGuard, withHeld: boolean, fetchFn: typeof fetch = fetch): Promise<GuardObservation> {
   const [health, status, held] = await Promise.all([
@@ -116,7 +120,7 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
   const [healthz, readyz, status, guards] = await Promise.all([
     get(`${c.runtimeUrl}/healthz`, {}, fetchFn), get(`${c.runtimeUrl}/readyz`, {}, fetchFn),
     get(`${c.runtimeUrl}/status`, { authorization: `Bearer ${token}` }, fetchFn),
-    Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn))),
+    Promise.all(c.guards.map((g) => observeGuard(g, holdsCalls(g.id), fetchFn))),
   ]);
   const backups = readBackups(c.statusFile);
   const usage = readUsage(c.statusFile);
@@ -132,7 +136,7 @@ type WithCounts = AdminStatus & { counts?: { decisions?: number } };
  * grows; nothing is said about what a call was (counts only). `errors` is 0: Guard's status does not carry the provider's failures as a count (see Deferred.md).
  */
 export async function observeAgent(c: OpsOwnAgent, version: string, id: string, fetchFn: typeof fetch = fetch): Promise<ShopObservation> {
-  const guards = await Promise.all(c.guards.map((g) => observeGuard(g, g.id === "guard-razorpay", fetchFn)));
+  const guards = await Promise.all(c.guards.map((g) => observeGuard(g, holdsCalls(g.id), fetchFn)));
   const up = guards.every((g) => g.admin !== null);
   const ready = up && guards.every((g) => g.healthReady && g.admin?.tripwires?.ok !== false);
   const steps = guards.reduce((n, g) => n + ((g.admin as WithCounts | null)?.counts?.decisions ?? 0), 0);
@@ -193,7 +197,7 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     try { skip = args[1] ? JSON.parse(args[1]) : undefined; } catch { /* ask about everything */ }
     out(await collectFacts({
       agentId: `agent-${args[0]}`, relayId: `relay-${args[0]}`, recordToken: readSecret(c.recordTokenFile), labelKey: parseKey(readSecret(c.labelKeyFile), `The label key of ${args[0]}`), ...(c.calendarId ? { calendarId: c.calendarId } : {}),
-      guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, "") as "razorpay", adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
+      guards: c.guards.map((g) => ({ kind: g.id.replace(/^guard-/u, ""), adminUrl: g.adminUrl, adminToken: readSecret(g.adminTokenFile), agentUrl: g.agentUrl ?? "" })),
     }, new Date(), fetch, skip));
     return 0;
   }
@@ -204,8 +208,9 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
   if (command === "issue-approver") {
     const c = config.shops[args[0]] ?? config.ownAgents?.[args[0]];
     if (!c) { console.error(`no shop or agent ${args[0]}`); return 2; }
-    const g = c.guards.find((x) => x.id === "guard-razorpay");
-    if (!g) { console.error(`${args[0]} has no Razorpay Guard (a UPI shop has none), so there is no approvals relay to give a credential to`); return 2; }
+    // the Guard the owner answers through: a gateway's (its refunds), or an agent's own API's (the calls its spec holds, B71 part 2). A UPI shop has neither.
+    const g = c.guards.find((x) => isGatewayKind(x.id.replace(/^guard-/u, ""))) ?? c.guards.find((x) => x.id === `guard-${OWN_API}`);
+    if (!g) { console.error(`${args[0]} has no Guard that holds a call for the owner (a UPI shop has none), so there is no approvals relay to give a credential to`); return 2; }
     const r = await adminCall(g, "POST", "/admin/approvers", { id: `relay-${args[0]}`, roles: ["shop-owner"], ttl_seconds: Number(args[1] ?? 604_800), note: "the approvals relay's reading credential" });
     const token = (r.body as { token?: string }).token;
     if (r.status !== 200 || !token) { console.error(`Guard did not issue a credential (HTTP ${r.status})`); return 1; }

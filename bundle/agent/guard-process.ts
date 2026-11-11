@@ -85,6 +85,9 @@ export interface RealGuard {
   stop(): Promise<void>;
 }
 
+/** What every Guard started here sends its upstream as the provider's key: a stand-in (or the crash test's desk, B71 part 2) checks for it. */
+export const STANDIN_PROVIDER_AUTHORIZATION = "Bearer stand-in-provider-key";
+
 export interface RealGuardOptions {
   /** The geo-guard program (findGuardBinary). */
   binary: string;
@@ -96,7 +99,7 @@ export interface RealGuardOptions {
   upstreamPort: number;
   agents: { id: string; token: string; operations?: string[] }[];
   /** B37: `group` writes the guard.toml of a shop with other approvers (generate/guards.ts), each with a secret of their own. */
-  approver?: { id: string; group?: { people: string[]; twoAbovePaise?: number } };
+  approver?: { id: string; group?: { people: string[]; twoAbovePaise?: number }; /** B71 part 2: the operations the owner approves (an own API's held calls); a gateway's refunds when left out. */ operations?: string[] };
 }
 
 // A Guard that is still running when this program ends (Ctrl-C reaches it, but a kill of this program does not) is ended with it.
@@ -119,7 +122,7 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
   const ownerSecret = o.approver ? mintSecret() : undefined;
   // the provider's key is a file the Guard reads; its name in the container is replaced by this folder's
   const headers = Object.fromEntries(Object.entries(o.def.headers).map(([k]) => [k, `\${file:${join(dir, "provider_authorization")}}`]));
-  writeFileSync(join(dir, "provider_authorization"), "Bearer stand-in-provider-key", { mode: 0o600 });
+  writeFileSync(join(dir, "provider_authorization"), STANDIN_PROVIDER_AUTHORIZATION, { mode: 0o600 });
   if (ownerSecret) writeFileSync(join(dir, "owner_notify_secret"), ownerSecret, { mode: 0o600 });
   const group = o.approver?.group;
   const secrets = group ? Object.fromEntries(group.people.map((id) => [id, mintSecret()])) : undefined;
@@ -128,7 +131,7 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
   const toml = guardToml({
     def: { ...o.def, headers }, tenant: o.tenant, deployment: o.deployment, bundleDigest: summary.digest, upstream: { host: `127.0.0.1:${o.upstreamPort}`, tls: false },
     adminSha: admin.hash, agents: o.agents.map((a) => ({ id: a.id, sha: sha256Hex(a.token), ...(a.operations ? { operations: a.operations } : {}) })),
-    ...(o.approver ? { approver: { id: o.approver.id, secretFile: join(dir, "owner_notify_secret"), ...(group ? { group: { people: group.people.map((id) => ({ id, secretFile: join(dir, `approver_${id}_notify_secret`) })), ...(group.twoAbovePaise !== undefined ? { twoAbovePaise: group.twoAbovePaise } : {}) } } : {}) } } : {}),
+    ...(o.approver ? { approver: { id: o.approver.id, secretFile: join(dir, "owner_notify_secret"), ...(o.approver.operations ? { operations: o.approver.operations } : {}), ...(group ? { group: { people: group.people.map((id) => ({ id, secretFile: join(dir, `approver_${id}_notify_secret`) })), ...(group.twoAbovePaise !== undefined ? { twoAbovePaise: group.twoAbovePaise } : {}) } } : {}) } } : {}),
     paths: { listen: `127.0.0.1:${listen}`, adminListen: `127.0.0.1:${adminListen}`, healthListen: `127.0.0.1:${healthListen}`, state: join(dir, "state.db"), bundle: join(dir, "bundle.json") },
   });
   writeFileSync(join(dir, "guard.toml"), toml);

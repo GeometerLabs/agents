@@ -9,6 +9,9 @@ import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
 import type { ApproverPerson } from "../../modules/approvals/people.ts";
 import type { WhatsAppRoute } from "./guards.ts";
+import type { HeldCallSpec } from "../../modules/approvals/held-call.ts";
+import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
+import { OWNER_MARKED_KINDS } from "./guards.ts";
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
@@ -30,6 +33,24 @@ export interface AgentFacts extends AgentDeploy {
   /** Where the agent's own WhatsApp webhooks go after the inbox has kept the owner's replies. */
   forwardTo?: string;
   business: { name: string; timeZone: string; ownerLanguage: string };
+  /** B71 part 2: the agent's payment block (its settings'), for the owner-marked desk: the shop's UPI ID and the name its customers see. Nothing secret. */
+  payment?: unknown;
+  /** B71 part 2: the calls the reviewed spec of the agent's own API holds for the owner, read from the spec that was applied (approvals/held-call.ts). */
+  ownApi?: HeldCallSpec;
+}
+
+/**
+ * What the relay does for an agent someone else wrote, decided once here so the inbox and the relay agree (an inbox that sends the owner's messages to a relay
+ * with no entry would answer 503 for ever): ask about a refund its gateway's Guard holds, ask about a call its own API's Guard holds (only when its spec holds
+ * any), or keep its owner-marked desk. Nothing without WhatsApp: the owner is asked, and marks, on WhatsApp.
+ */
+export function agentRelayRole(a: AgentFacts): { kind: "gateway" | "own-api" | "desk"; guard: string } | undefined {
+  if (!hasGuard(a, "whatsapp")) return undefined;
+  const money = a.guards.find((g) => isGatewayKind(g.kind) || g.kind === OWN_API || OWNER_MARKED_KINDS.includes(g.kind));
+  if (!money) return undefined;
+  if (isGatewayKind(money.kind)) return { kind: "gateway", guard: money.kind };
+  if (money.kind === OWN_API) return a.ownApi && a.ownApi.rules.length > 0 ? { kind: "own-api", guard: money.kind } : undefined;
+  return { kind: "desk", guard: money.kind };
 }
 
 type Three = (typeof SHOP_GUARD_KINDS)[number];
@@ -58,7 +79,7 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
       ...shops.map((s) => [s.name, {
         runtimeUrl: runtimeUrl(server, s),
         // a UPI shop (B33) has no approvals relay (no refund is ever held for its owner): the owner's messages go to the runtime only
-        ...(s.guards.some((g) => g.kind === "razorpay") ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
+        ...(s.guards.some((g) => isGatewayKind(g.kind)) ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId, verification: s.webhooks.verification,
         // a Gupshup callback names its app (gs_app_id): one that names another app is not this shop's
         ...(s.whatsappRoute ? { gupshupAppId: s.whatsappRoute.appId } : {}),
@@ -66,9 +87,10 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
         secretsDir: `/run/secrets/${s.name}`,
       }]),
-      // an agent someone else wrote has no runtime: its WhatsApp number's webhook comes here, the owner's replies go to the relay, and the rest goes on to the agent itself
+      // an agent someone else wrote has no runtime: its WhatsApp number's webhook comes here, the owner's replies go to the relay (when the relay has something
+      // for it: a held call to ask about, or the desk), and the rest goes on to the agent itself
       ...agents.filter((a) => hasGuard(a, "whatsapp")).map((a) => [a.name, {
-        kind: "own-agent", relayUrl: `http://relay:${RELAY_PORT}/c/${a.name}`, ownerWhatsapp: a.ownerWhatsapp, phoneNumberId: a.phoneNumberId, verification: a.verification, secretsDir: `/run/secrets/${a.name}`,
+        kind: "own-agent", ...(agentRelayRole(a) ? { relayUrl: `http://relay:${RELAY_PORT}/c/${a.name}` } : {}), ownerWhatsapp: a.ownerWhatsapp, phoneNumberId: a.phoneNumberId, verification: a.verification, secretsDir: `/run/secrets/${a.name}`,
         ...(a.forwardTo ? { forwardTo: a.forwardTo } : {}),
       }]),
     ]),
@@ -78,10 +100,11 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
 export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers & Route)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
-      ...shops.filter((s) => s.guards.some((g) => g.kind === "razorpay")).map((s) => [s.name, {
+      // a shop on a gateway: the relay asks its owner about the refunds that gateway's Guard holds (by kind, from the registry: B71 part 2)
+      ...shops.filter((s) => s.guards.some((g) => isGatewayKind(g.kind))).map((s) => [s.name, {
         // which template's words the relay asks the owner in (services/relay.ts); left out for Bookings, as it always was
         ...(s.pathway && s.pathway !== "bookings" ? { pathway: s.pathway } : {}),
-        guardAdminUrl: guardAdmin(server, s, "razorpay").adminUrl,
+        guardAdminUrl: guardAdmin(server, s, s.guards.find((g) => isGatewayKind(g.kind))!.kind as Three).adminUrl,
         approverId: names.ownerApproverId(s.name, (s.approvers?.length ?? 0) > 0), agentId: names.agentId(s.name),
         // B37: each other approver signs with approver_<id>_notify_secret in this shop's secrets folder
         ...(s.approvers && s.approvers.length > 0 ? { approvers: s.approvers.map((p) => ({ id: p.id, whatsapp: p.whatsapp, language: p.language })) } : {}),
@@ -93,14 +116,18 @@ export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWh
         ...(s.whatsappRoute ? { provider: s.whatsappRoute.provider, appId: s.whatsappRoute.appId } : {}),
         secretsDir: `/run/secrets/${s.name}`, stateDir: `/home/node/state/${s.name}`,
       }]),
-      // An agent someone else wrote: held refunds are read from its Razorpay Guard, and the owner is asked through its WhatsApp Guard. There is no runtime to ask for the booking:
-      // who paid, and when, is read from Razorpay's own record of the payment (through the reading agent), and the business is the settings'.
-      ...agents.filter((a) => hasGuard(a, "razorpay") && hasGuard(a, "whatsapp")).map((a) => [a.name, {
-        kind: "own-agent", guardAdminUrl: guardAdmin(server, a, "razorpay").adminUrl, approverId: names.approverId(a.name), agentId: agentNames.agentId(a.name),
-        razorpayGuardUrl: url(agentIp(server, a, "razorpay"), GUARD_PORT), whatsappGuardUrl: url(agentIp(server, a, "whatsapp"), GUARD_PORT),
-        ownerWhatsapp: a.ownerWhatsapp, phoneNumberId: a.phoneNumberId, business: a.business,
-        secretsDir: `/run/secrets/${a.name}`, stateDir: `/home/node/state/${a.name}`,
-      }]),
+      // An agent someone else wrote (B71): held calls are read from its money Guard and the owner is asked through its WhatsApp Guard, or, when the owner marks its
+      // money (UPI), the desk keeps its ledger and takes the owner's replies. There is no runtime to ask for the booking: for a gateway, who paid and when is read
+      // from the gateway's own record of the payment (through the reading agent); for its own API, from the held call itself. The business is the settings'.
+      ...agents.flatMap((a) => {
+        const role = agentRelayRole(a);
+        if (!role) return [];
+        const where = { whatsappGuardUrl: url(agentIp(server, a, "whatsapp"), GUARD_PORT), ownerWhatsapp: a.ownerWhatsapp, phoneNumberId: a.phoneNumberId, business: a.business, secretsDir: `/run/secrets/${a.name}`, stateDir: `/home/node/state/${a.name}` };
+        if (role.kind === "desk") return [[a.name, { kind: "own-agent", agentId: agentNames.agentId(a.name), desk: { payment: a.payment }, ...where }]];
+        const asks = { kind: "own-agent", guardAdminUrl: guardAdmin(server, a, role.guard as Three).adminUrl, approverId: names.approverId(a.name), agentId: agentNames.agentId(a.name) };
+        if (role.kind === "own-api") return [[a.name, { ...asks, ownApi: a.ownApi, ...where }]];
+        return [[a.name, { ...asks, gateway: { id: role.guard, guardUrl: url(agentIp(server, a, role.guard as Three), GUARD_PORT) }, ...where }]];
+      }),
     ]),
   });
 }
