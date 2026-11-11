@@ -878,6 +878,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.calendar.id` | കലണ്ടർ ഐഡി | Calendar ID |  |
 | `setup.accounts.calendar.json` | സർവീസ്-അക്കൗണ്ട് കീ ഫയൽ | Service-account key file |  |
 | `setup.accounts.calendar.jsonHelp` | നിങ്ങളുടെ ബിൽഡർ തന്നിട്ടുണ്ടെങ്കിൽ മാത്രം. മുഴുവൻ ഫയലും പേസ്റ്റ് ചെയ്യൂ. | Only if your builder gave you one. Paste the whole file. |  |
+| `setup.accounts.calendar.useOwn` | ബുക്കിംഗുകൾ കടയുടെ സ്വന്തം ലിസ്റ്റിൽ സൂക്ഷിക്കുക (Google Calendar വേണ്ട). ഉടമയ്ക്ക് WhatsApp-ൽ “ഇന്ന്” എന്ന് അയച്ച് ദിവസത്തെ ബുക്കിംഗുകൾ കാണാം. Google Calendar പിന്നീട് ചേർക്കാം. | Keep the bookings in the shop's own list (no Google Calendar needed). The owner sends “today” on WhatsApp to see the day's bookings. A Google Calendar can be added later. |  |
+| `setup.accounts.calendar.useGoogle` | കടയുടെ Google കലണ്ടറും ഉപയോഗിക്കുക | Also use the shop's Google Calendar |  |
 | `setup.checks.saveFirst` | ആദ്യം ഈ കട സെർവറിൽ സേവ് ചെയ്യൂ. | Save this shop to the server first. |  |
 | `setup.checks.saveButton` | സേവ് ചെയ്ത് ബന്ധിപ്പിക്കൂ | Save and connect |  |
 | `setup.checks.saved` | സേവ് ചെയ്തു. സെർവർ ഇത് നടപ്പാക്കും, നടപ്പായാൽ ഈ പേജ് അത് കാണിക്കും. | Saved. The server will apply it, and this page shows when it has. |  |
@@ -1155,10 +1157,9 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.goLive.none` | ഒരു പതിപ്പിനും ഇതുവരെ ഗോ-ലൈവ് സർട്ടിഫിക്കറ്റ് ഇല്ല. `geometer agent go-live` ഒന്ന് ഉണ്ടാക്കും. | No version has a go-live certificate yet. `geometer agent go-live` makes one. |  |
 | `agents.goLive.inService` | പതിപ്പ് 4f9c2e1 സേവനത്തിലാണ്: 4 Nov 2026-ലെ ക്രാഷ് ടെസ്റ്റിൽ എല്ലാം പിടിച്ചുനിന്നു. | Version 4f9c2e1 is in service: everything held in its crash test on 4 Nov 2026. |  |
 | `agents.goLive.code` | സർട്ടിഫിക്കറ്റ് GL-7K2M. | Certificate GL-7K2M. |  |
-| `agents.licence.price` | ബിൽഡർ ലൈസൻസ്: ഈ ലൈവ് ക്ലയന്റ് ബിസിനസിന് മാസം ₹199.00, GST-ക്ക് മുമ്പ്. | Builder licence: ₹199.00 a month for this live client business, before GST. |  |
 | `agents.actions.heading` | നിങ്ങൾക്ക് ഇവിടെ ചെയ്യാവുന്നത് | What you can do here |  |
 | `agents.actions.stop` | നിർത്തുക (കിൽ സ്വിച്ച്) | Stop it (kill switch) |  |
-| `agents.actions.stopNote` | ഇതിന്റെ Guard-കൾ പുതിയതൊന്നും പുറത്തുവിടില്ല. ഇതിനകം അംഗീകരിച്ച റീഫണ്ടുകൾ ഇപ്പോഴും പൂർത്തിയാക്കാം. വീണ്ടും തുടങ്ങാൻ: സെർവറിൽ geometer start <name>. | Its Guards let nothing new go out. Refunds already approved can still be finished. To start it again: geometer start <name> on the server. |  |
+| `agents.actions.stopNote` | സെർവറിൽ വീണ്ടും തുടങ്ങുന്നതുവരെ ഇതിന്റെ Guard-കൾ ഒന്നും പുറത്തുവിടില്ല, റീഫണ്ട് പോലും: geometer start <name>. | Its Guards let nothing go out, not even a refund, until it is started again on the server: geometer start <name>. |  |
 | `agents.actions.stopAsked` | നിർത്താൻ ആവശ്യപ്പെട്ടു. സെർവർ ഒരു മിനിറ്റിനുള്ളിൽ ചെയ്യും. | Stop asked. The server carries it out within a minute. |  |
 | `agents.actions.stopped` | ഇത് നിർത്തിയിരിക്കുന്നു. | It is stopped. |  |
 | `agents.actions.crashTest` | പുതിയ ക്രാഷ് ടെസ്റ്റ് നടത്തുക | Run a new crash test |  |

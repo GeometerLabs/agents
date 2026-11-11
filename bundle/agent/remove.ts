@@ -7,17 +7,18 @@
 //      removal unless --force, which says plainly what stays open;
 //   2. pulls the kill switch on its Guards, so nothing new goes out while it is taken down;
 //   3. moves what it keeps into removed/<agent>-<time>/ (agents/<agent>/, its state entry, status file, record and exports) and leaves a tombstone in the state file, so
-//      the name and its network index are not given to anything else while its Guards' stores are kept;
-//   4. writes the server's configuration without it and brings that up: its Guards and their forwarders are taken down, the inbox, relay, refresher and ops forget it;
-//   5. revokes its credentials: the Guards that knew them are gone, and every credential the bundle made for it is deleted (the agent's own, the reading agent's, the
-//      relay's, the admin ones, the desk's, the owner's signing secret's copies);
-//   6. says what it kept and where. NOTHING ELSE IS DELETED: the shop's own keys, its fingerprint key, its Guards' stores (Docker volumes) and its nightly snapshots stay
+//      the name and its network index are not given to anything else while its Guards' stores are kept; drops any panel request for it that is still waiting;
+//   4. revokes its credentials: every credential the bundle made for it is deleted (the agent's own, the reading agent's, the relay's, the admin ones, the desk's, the
+//      owner's signing secret's copies), before anything that could fail;
+//   5. writes down what it kept and where (README.txt in the kept folder);
+//   6. writes the server's configuration without it and brings that up: its Guards and their forwarders are taken down, the inbox, relay, refresher and ops forget it. A
+//      server that cannot bring it up is said in words (`geometer deploy` finishes it), with steps 1 to 5 already done. NOTHING ELSE IS DELETED: the shop's own keys, its fingerprint key, its Guards' stores (Docker volumes) and its nightly snapshots stay
 //      until the builder deletes them, by hand, knowing what they are.
 // Geometer does not run the agent itself (it runs wherever its builder runs it), so it cannot stop it: from now on its calls to the old addresses get errors.
 import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Context } from "../deploy.ts";
-import { adminCall, bringUp, ops, writeServer } from "../deploy.ts";
+import { Refused, adminCall, bringUp, ops, writeServer } from "../deploy.ts";
 import { project } from "../backup/jobs.ts";
 import { names } from "../generate/shop.ts";
 import { DESK_SECRET, OWNER_MARKED_KINDS } from "../generate/guards.ts";
@@ -123,27 +124,24 @@ export async function removeAgent(ctx: Context, name: string, o: { force?: boole
   move(p.exportsOf(name), "exports");
   move(recordFile(ctx.dir, name), "record.json");
 
-  // 4. the server without it: its Guards and forwarders are orphans now, and `up --remove-orphans` takes them down; the services that served it are restarted with their new files
-  if (a?.applied) {
-    const composed = writeServer(ctx, server, state);
-    await bringUp(ctx, state, composed, [`the server without ${name}`]);
-    for (const g of Object.values(a.applied.guards)) rmSync(join(p.generated, "guards", g.service), { recursive: true, force: true });
-  }
+  // what the panel asked for it and has not been carried out: nothing of it will run again (a stop for it would otherwise be read as a shop's)
+  if (existsSync(p.requests)) for (const f of readdirSync(p.requests).filter((x) => x.startsWith(`${name}.`))) rmSync(join(p.requests, f), { force: true });
 
-  // 5. its credentials: every one the bundle made for it (the Guards that took them are gone)
+  // 4. its credentials: every one the bundle made for it. Before the configuration is brought up, so a server that cannot bring it up still leaves none of them on disk
+  const guardsOf = Object.values(a?.applied?.guards ?? {});
   const revoked = [
     credentialsFolder(ctx.dir, name),
     secretFile(ctx.dir, "relay", name),
-    ...["record_token", ...Object.keys(a?.applied?.guards ?? {}).map((k) => `admin_${k}`)].map((f) => secretFile(ctx.dir, "ops", name, f)),
+    ...["record_token", ...guardsOf.map((g) => `admin_${g.kind}`)].map((f) => secretFile(ctx.dir, "ops", name, f)),
     secretFile(ctx.dir, "inbox", name, "relay_token"),
     secretFile(ctx.dir, "refresher", name, "admin_token"),
-    ...Object.values(a?.applied?.guards ?? {}).flatMap((g) => [secretFile(ctx.dir, g.service, "owner_notify_secret"), secretFile(ctx.dir, g.service, DESK_SECRET)]),
+    ...guardsOf.flatMap((g) => [secretFile(ctx.dir, g.service, "owner_notify_secret"), secretFile(ctx.dir, g.service, DESK_SECRET)]),
   ].filter((f) => existsSync(f));
   for (const f of revoked) rmSync(f, { recursive: true, force: true });
 
-  // 6. what is kept, and where
-  const keptSecrets = keptSecretFiles(ctx.dir, name, Object.values(a?.applied?.guards ?? {}).map((g) => g.service));
-  const volumes = Object.keys(a?.applied?.guards ?? {}).map((k) => `${project(server)}_${names.stateVolume(name, k as "razorpay")}`);
+  // 5. what is kept, and where, written down before anything that could fail
+  const keptSecrets = keptSecretFiles(ctx.dir, name, guardsOf.map((g) => g.service));
+  const volumes = guardsOf.map((g) => `${project(server)}_${names.stateVolume(name, g.kind as "razorpay")}`);
   const snapshot = server.backup ? `${server.backup.snapshots.url.replace(/\/+$/u, "")}/${name}/${a?.lastBackupAt ? ` (the last one taken ${a.lastBackupAt})` : " (no snapshot was taken yet)"}` : undefined;
   const readme = [
     `${name}, removed from this server at ${at.toISOString()} by \`geometer agent remove\`${openLines.length > 0 ? " --force, with work still open (below)" : ""}.`,
@@ -158,21 +156,35 @@ export async function removeAgent(ctx: Context, name: string, o: { force?: boole
     "Kept elsewhere on this server (nothing reads them now; delete them only when you are sure you no longer need them):",
     ...keptSecrets.map((f) => `  ${f}`),
     ...volumes.map((v) => `  Docker volume ${v}  (a Guard's store: its decisions, held calls and once-only memory)`),
-    ...(Object.keys(a?.applied?.guards ?? {}).some((k) => OWNER_MARKED_KINDS.includes(k)) ? [`  The desk's ledger (what the owner marked received, refunds owed): state/${name}/desk.json in the relay's Docker volume`] : []),
+    ...(guardsOf.some((g) => OWNER_MARKED_KINDS.includes(g.kind)) ? [`  The desk's ledger (what the owner marked received, refunds owed): state/${name}/desk.json in the relay's Docker volume`] : []),
     ...(snapshot ? [`  Nightly snapshots: ${snapshot}. The bucket's own lifecycle rule deletes them after its days (keepDays: ${server.backup!.snapshots.keepDays ?? 30}), as for any snapshot: download what you want to keep longer.`] : []),
     "",
-    "Revoked (the Guards that took them are gone, and their files are deleted):",
+    "Revoked (their files are deleted, and the Guards that took them are taken down):",
     ...revoked.map((f) => `  ${relative(p.root, f)}`),
     ...(openLines.length > 0 ? ["", "Open when it was removed:", ...openLines.map((l) => `  - ${l}`)] : []),
     "",
-    "The agent itself runs wherever you run it; Geometer cannot stop it. Its calls to the old addresses now get errors. The name stays taken while this folder is here.",
+    `The agent itself runs wherever you run it; Geometer cannot stop it. Its calls to the old addresses now get errors. The name ${name} stays taken while state/state.json lists it under "removed" (its Guards' kept stores carry the name).`,
   ].join("\n");
   writeFileSync(join(kept, "README.txt"), `${readme}\n`, { mode: 0o600 });
 
+  // 6. the server without it: its Guards and forwarders are orphans now, and `up --remove-orphans` takes them down; the services that served it are restarted with their new files
+  let downProblem: string | undefined;
+  if (a?.applied) {
+    try {
+      const composed = writeServer(ctx, server, state);
+      await bringUp(ctx, state, composed, [`the server without ${name}`]);
+      for (const g of guardsOf) rmSync(join(p.generated, "guards", g.service), { recursive: true, force: true });
+    } catch (e) {
+      downProblem = e instanceof Refused ? e.problems.map((x) => x.message).join(" ") : (e as Error).message;
+    }
+  }
+
   lines.push(
-    `${name} is removed: its Guards are stopped and gone from this server's configuration, and its credentials are revoked.`,
+    downProblem
+      ? `${name} is taken off this server's configuration and its credentials are deleted, but its Guards could not be taken down (${downProblem.slice(0, 300)}). Their kill switch was pulled first. \`geometer deploy\` takes them down when the server answers.`
+      : `${name} is removed: its Guards are stopped and gone from this server's configuration, and its credentials are revoked.`,
     `Kept, not deleted: ${relative(p.root, kept)}/ (its settings, record, exports and what the deployer knew; README.txt there lists everything)${volumes.length > 0 ? `, its Guards' stores (Docker volumes ${volumes.join(", ")})` : ""}${keptSecrets.length > 0 ? `, the shop's own keys and its fingerprint key (${keptSecrets.length} files under secrets/)` : ""}${snapshot ? `, and its nightly snapshots (${snapshot}; the bucket's lifecycle rule deletes them after ${server.backup!.snapshots.keepDays ?? 30} days)` : ""}.`,
-    "Nothing else was deleted. Your agent still runs wherever you run it: stop it there. Geometer's heartbeat stops reporting it from the next minute.",
+    `Nothing else was deleted. Your agent still runs wherever you run it: stop it there. Geometer's heartbeat stops reporting it from the next minute. The name ${name} stays taken while state/state.json lists it under "removed".`,
   );
   return { agent: name, keptIn: relative(p.root, kept), lines };
 }

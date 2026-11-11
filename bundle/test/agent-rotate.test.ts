@@ -96,6 +96,19 @@ test("the deployer ends an overlap when its time comes: the old hash leaves guar
   } finally { w.done(); }
 });
 
+test("an overlap whose last deploy fails keeps the old hash (first, retired) and is tried again later, not on every pass", async () => {
+  const w = await deployed(); try {
+    const old = token(w, "razorpay");
+    await rotateAgent(w.ctx, "my-agent", { guard: "razorpay" });
+    w.ctx.now = () => new Date(NOW.getTime() + (ROTATION_OVERLAP_MINUTES + 1) * 60_000);
+    w.failVerify("g-my-agent-razorpay", ["refund-needs-owner"]);
+    assert.match((await finishRotations(w.ctx)).join(" "), /did not go through .* tried again in 10 minutes/u);
+    const p = loadState(w.root).agents!["my-agent"].credentials!.razorpay.previous!;
+    assert.deepEqual([p.sha256, p.retired], [sha256Hex(old), true], "still in the state, so the next deploy still lists it first");
+    assert.deepEqual(await finishRotations(w.ctx), [], "not again on the next pass");
+  } finally { w.done(); }
+});
+
 test("a deploy that is refused during a rotation puts the old credential back: the agent's file never changed, and its credentials still work", async () => {
   const w = await deployed(); try {
     const old = token(w, "razorpay");

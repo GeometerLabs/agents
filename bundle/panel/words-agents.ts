@@ -1,7 +1,8 @@
 // The words of the panel's own-agent pages (B51's rest, 12 Nov 2026: views-agents.ts), in the four languages. English is the source. Hindi, Malayalam and Kannada are
 // MACHINE-WRITTEN and WAIT FOR NATIVE REVIEW like the rest of the panel's: the pages carry the panel's draft note in those languages (languages.ts REVIEW_STATE), and every
 // line is on the review sheets, section 7 (review.ts adds them under the ids "agents.*"). Names stay in Latin letters (Guard, WhatsApp, Razorpay, Google Calendar, UPI).
-// A sentence here says what is so; it never says anything is certain to be fine. The builder licence's price is not here: it is the price list's (views-agents.ts).
+// A sentence here says what is so; it never says anything is certain to be fine. The builder licence's line is the panel's own (words.ts plan.priceBuilder), with the
+// price read from the price list in force: no price is written here.
 import type { Language } from "../../modules/language/languages.ts";
 
 export interface AgentWords {
@@ -11,7 +12,6 @@ export interface AgentWords {
   unfinished: { heading: string; none: string; notShared: string };
   crash: { heading: string; never: string; held(held: number, of: number): string; failed: string; notRun: string; running: string; waiting: string; error(why: string): string; when(at: string, by: string): string; version(v: string): string };
   goLive: { heading: string; none: string; inService(version: string, day: string): string; code(code: string): string };
-  licence: { price(price: string): string };
   actions: {
     heading: string; stop: string; stopNote: string; stopAsked: string; stopped: string;
     crashTest: string; crashNote: string; crashAsked: string;
@@ -27,7 +27,6 @@ export const AGENT_SAMPLE_ARGS: Record<string, unknown[]> = {
   "agents.held.some": [1], "agents.held.asOf": ["4 Nov 2026, 10:00"],
   "agents.crash.held": [11, 12], "agents.crash.error": ["The agent did not start"], "agents.crash.when": ["4 Nov 2026, 10:00", "Divya (builder, from the panel)"], "agents.crash.version": ["4f9c2e1"],
   "agents.goLive.inService": ["4f9c2e1", "4 Nov 2026"], "agents.goLive.code": ["GL-7K2M"],
-  "agents.licence.price": ["₹199.00"],
   "agents.actions.rotateOne": ["WhatsApp"], "agents.actions.rotateDone": ["4 Nov 2026, 10:15"],
 };
 
@@ -50,10 +49,9 @@ const en: AgentWords = {
     error: (why) => `The crash test could not run: ${why}`, when: (at, by) => `${at}, asked by ${by}.`, version: (v) => `Version ${v}.`,
   },
   goLive: { heading: "Go-live", none: "No version has a go-live certificate yet. `geometer agent go-live` makes one.", inService: (v, d) => `Version ${v} is in service: everything held in its crash test on ${d}.`, code: (c) => `Certificate ${c}.` },
-  licence: { price: (p) => `Builder licence: ${p} a month for this live client business, before GST.` },
   actions: {
     heading: "What you can do here",
-    stop: "Stop it (kill switch)", stopNote: "Its Guards let nothing new go out. Refunds already approved can still be finished. To start it again: geometer start <name> on the server.",
+    stop: "Stop it (kill switch)", stopNote: "Its Guards let nothing go out, not even a refund, until it is started again on the server: geometer start <name>.",
     stopAsked: "Stop asked. The server carries it out within a minute.", stopped: "It is stopped.",
     crashTest: "Run a new crash test", crashNote: "Starts your agent with its own command against stand-in services, behind its real Guards. Nothing real is sent or charged.",
     crashAsked: "Crash test asked. The result shows here when it is done.",
@@ -83,10 +81,9 @@ const hi: AgentWords = {
     error: (why) => `क्रैश टेस्ट नहीं चल सका: ${why}`, when: (at, by) => `${at}, माँगा: ${by}।`, version: (v) => `वर्ज़न ${v}।`,
   },
   goLive: { heading: "गो-लाइव", none: "अभी किसी वर्ज़न का गो-लाइव सर्टिफ़िकेट नहीं है। `geometer agent go-live` एक बनाता है।", inService: (v, d) => `वर्ज़न ${v} सेवा में है: ${d} के क्रैश टेस्ट में सब सही रहा।`, code: (c) => `सर्टिफ़िकेट ${c}।` },
-  licence: { price: (p) => `बिल्डर लाइसेंस: इस लाइव क्लाइंट कारोबार के लिए ${p} महीना, GST से पहले।` },
   actions: {
     heading: "आप यहाँ क्या कर सकते हैं",
-    stop: "इसे रोकें (किल स्विच)", stopNote: "इसके Guard कुछ भी नया बाहर नहीं जाने देते। पहले से मंज़ूर रिफंड अब भी पूरे हो सकते हैं। फिर से शुरू करने के लिए: सर्वर पर geometer start <name>।",
+    stop: "इसे रोकें (किल स्विच)", stopNote: "जब तक इसे सर्वर पर फिर से शुरू न किया जाए, इसके Guard कुछ भी बाहर नहीं जाने देते, रिफंड भी नहीं: geometer start <name>।",
     stopAsked: "रोकने को कहा गया। सर्वर एक मिनट में इसे करता है।", stopped: "यह रुका हुआ है।",
     crashTest: "नया क्रैश टेस्ट चलाएँ", crashNote: "आपके एजेंट को उसके अपने कमांड से, उसके असली Guard के पीछे, नकली सेवाओं के साथ चलाता है। कुछ भी असली भेजा या चार्ज नहीं होता।",
     crashAsked: "क्रैश टेस्ट माँगा गया। पूरा होने पर नतीजा यहाँ दिखेगा।",
@@ -116,10 +113,9 @@ const ml: AgentWords = {
     error: (why) => `ക്രാഷ് ടെസ്റ്റ് നടത്താനായില്ല: ${why}`, when: (at, by) => `${at}, ആവശ്യപ്പെട്ടത്: ${by}.`, version: (v) => `പതിപ്പ് ${v}.`,
   },
   goLive: { heading: "ഗോ-ലൈവ്", none: "ഒരു പതിപ്പിനും ഇതുവരെ ഗോ-ലൈവ് സർട്ടിഫിക്കറ്റ് ഇല്ല. `geometer agent go-live` ഒന്ന് ഉണ്ടാക്കും.", inService: (v, d) => `പതിപ്പ് ${v} സേവനത്തിലാണ്: ${d}-ലെ ക്രാഷ് ടെസ്റ്റിൽ എല്ലാം പിടിച്ചുനിന്നു.`, code: (c) => `സർട്ടിഫിക്കറ്റ് ${c}.` },
-  licence: { price: (p) => `ബിൽഡർ ലൈസൻസ്: ഈ ലൈവ് ക്ലയന്റ് ബിസിനസിന് മാസം ${p}, GST-ക്ക് മുമ്പ്.` },
   actions: {
     heading: "നിങ്ങൾക്ക് ഇവിടെ ചെയ്യാവുന്നത്",
-    stop: "നിർത്തുക (കിൽ സ്വിച്ച്)", stopNote: "ഇതിന്റെ Guard-കൾ പുതിയതൊന്നും പുറത്തുവിടില്ല. ഇതിനകം അംഗീകരിച്ച റീഫണ്ടുകൾ ഇപ്പോഴും പൂർത്തിയാക്കാം. വീണ്ടും തുടങ്ങാൻ: സെർവറിൽ geometer start <name>.",
+    stop: "നിർത്തുക (കിൽ സ്വിച്ച്)", stopNote: "സെർവറിൽ വീണ്ടും തുടങ്ങുന്നതുവരെ ഇതിന്റെ Guard-കൾ ഒന്നും പുറത്തുവിടില്ല, റീഫണ്ട് പോലും: geometer start <name>.",
     stopAsked: "നിർത്താൻ ആവശ്യപ്പെട്ടു. സെർവർ ഒരു മിനിറ്റിനുള്ളിൽ ചെയ്യും.", stopped: "ഇത് നിർത്തിയിരിക്കുന്നു.",
     crashTest: "പുതിയ ക്രാഷ് ടെസ്റ്റ് നടത്തുക", crashNote: "നിങ്ങളുടെ ഏജന്റിനെ അതിന്റെ സ്വന്തം കമാൻഡ് ഉപയോഗിച്ച്, യഥാർത്ഥ Guard-കൾക്ക് പിന്നിൽ, പകരക്കാരൻ സേവനങ്ങളോടൊപ്പം തുടങ്ങുന്നു. യഥാർത്ഥമായി ഒന്നും അയയ്ക്കുകയോ ഈടാക്കുകയോ ഇല്ല.",
     crashAsked: "ക്രാഷ് ടെസ്റ്റ് ആവശ്യപ്പെട്ടു. പൂർത്തിയാകുമ്പോൾ ഫലം ഇവിടെ കാണാം.",
@@ -149,10 +145,9 @@ const kn: AgentWords = {
     error: (why) => `ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆಸಲು ಆಗಲಿಲ್ಲ: ${why}`, when: (at, by) => `${at}, ಕೇಳಿದವರು: ${by}.`, version: (v) => `ಆವೃತ್ತಿ ${v}.`,
   },
   goLive: { heading: "ಗೋ-ಲೈವ್", none: "ಇನ್ನೂ ಯಾವ ಆವೃತ್ತಿಗೂ ಗೋ-ಲೈವ್ ಪ್ರಮಾಣಪತ್ರ ಇಲ್ಲ. `geometer agent go-live` ಒಂದನ್ನು ಮಾಡುತ್ತದೆ.", inService: (v, d) => `ಆವೃತ್ತಿ ${v} ಸೇವೆಯಲ್ಲಿದೆ: ${d} ರ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್‌ನಲ್ಲಿ ಎಲ್ಲವೂ ಸರಿಯಾಗಿ ನಿಂತವು.`, code: (c) => `ಪ್ರಮಾಣಪತ್ರ ${c}.` },
-  licence: { price: (p) => `ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಈ ಲೈವ್ ಕ್ಲೈಂಟ್ ವ್ಯವಹಾರಕ್ಕೆ ತಿಂಗಳಿಗೆ ${p}, GST ಮೊದಲು.` },
   actions: {
     heading: "ನೀವು ಇಲ್ಲಿ ಮಾಡಬಹುದಾದದ್ದು",
-    stop: "ನಿಲ್ಲಿಸಿ (ಕಿಲ್ ಸ್ವಿಚ್)", stopNote: "ಇದರ Guard-ಗಳು ಹೊಸದೇನೂ ಹೊರಗೆ ಹೋಗಲು ಬಿಡುವುದಿಲ್ಲ. ಈಗಾಗಲೇ ಒಪ್ಪಿದ ರೀಫಂಡ್‌ಗಳನ್ನು ಇನ್ನೂ ಮುಗಿಸಬಹುದು. ಮತ್ತೆ ಶುರು ಮಾಡಲು: ಸರ್ವರ್‌ನಲ್ಲಿ geometer start <name>.",
+    stop: "ನಿಲ್ಲಿಸಿ (ಕಿಲ್ ಸ್ವಿಚ್)", stopNote: "ಸರ್ವರ್‌ನಲ್ಲಿ ಮತ್ತೆ ಶುರು ಮಾಡುವವರೆಗೆ ಇದರ Guard-ಗಳು ಏನನ್ನೂ ಹೊರಗೆ ಹೋಗಲು ಬಿಡುವುದಿಲ್ಲ, ರೀಫಂಡ್ ಕೂಡ: geometer start <name>.",
     stopAsked: "ನಿಲ್ಲಿಸಲು ಕೇಳಲಾಗಿದೆ. ಸರ್ವರ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಮಾಡುತ್ತದೆ.", stopped: "ಇದನ್ನು ನಿಲ್ಲಿಸಲಾಗಿದೆ.",
     crashTest: "ಹೊಸ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆಸಿ", crashNote: "ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಅದರ ಸ್ವಂತ ಆಜ್ಞೆಯಿಂದ, ಅದರ ನಿಜವಾದ Guard-ಗಳ ಹಿಂದೆ, ಬದಲಿ ಸೇವೆಗಳ ಜೊತೆ ಶುರು ಮಾಡುತ್ತದೆ. ನಿಜವಾಗಿ ಏನನ್ನೂ ಕಳಿಸುವುದಿಲ್ಲ ಅಥವಾ ಶುಲ್ಕ ವಿಧಿಸುವುದಿಲ್ಲ.",
     crashAsked: "ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ಕೇಳಲಾಗಿದೆ. ಮುಗಿದಾಗ ಫಲಿತಾಂಶ ಇಲ್ಲಿ ಕಾಣುತ್ತದೆ.",

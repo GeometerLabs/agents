@@ -110,34 +110,41 @@ export async function rotateAgent(ctx: Context, name: string, o: { guard?: strin
   return { agent: name, guards: chosen, overlapUntil: overlap === 0 ? null : until, lines };
 }
 
+/** How long the deployer waits before trying again to drop an old credential from guard.toml after that deploy failed. */
+export const FINISH_RETRY_MS = 10 * 60_000;
+
 /**
  * The deployer's half (apply.ts runDueJobs, every pass; it only reads the state file unless an overlap is over): for each Guard whose old credential's time has come,
- * make sure Guard has retired it (asked again only if the first ask was not taken, and only while the old entry is still FIRST in guard.toml, or the call would retire the
- * new one), then drop it from the state and deploy, so guard.toml no longer lists it. A deploy that fails is said, and tried again on the next pass.
+ * tell Guard to retire it now (again, even if it was told at the rotation: a store put back by `restore` may have lost that; harmless otherwise), while the old entry is still
+ * FIRST in guard.toml, so the call cannot retire the new one; then drop it from the state and deploy, so guard.toml no longer lists it. A deploy that fails puts the old hash
+ * back in the state (it is still in the Guard's file, retired) and is tried again after FINISH_RETRY_MS.
  */
 export async function finishRotations(ctx: Context): Promise<string[]> {
   const lines: string[] = [];
   const now = ctx.now().getTime();
   for (const [name, a] of Object.entries(loadState(ctx.dir).agents ?? {})) {
-    const due = Object.entries(a.credentials ?? {}).filter(([, c]) => c.previous && Date.parse(c.previous.until) <= now).map(([k]) => k);
+    const due = Object.entries(a.credentials ?? {}).filter(([, c]) => c.previous && Date.parse(c.previous.until) <= now && !(c.previous.retryAfter && Date.parse(c.previous.retryAfter) > now)).map(([k]) => k);
     if (due.length === 0 || !a.applied) continue;
+    const ready: string[] = [];
     for (const k of due) {
-      if (a.credentials![k].previous!.retired) continue;
       const r = await adminCall(ctx, names.guard(name, k), "POST", "/admin/credentials/retire-static", { kind: "agent", subject: agentNames.agentId(name), after_seconds: 0 });
-      if (r.status !== 200) { lines.push(`${name}: the ${k} Guard did not take the instruction to retire the old credential (HTTP ${r.status}); it is asked again on the next pass.`); continue; }
-      a.credentials![k].previous!.retired = true;
+      if (r.status === 200) ready.push(k); else lines.push(`${name}: the ${k} Guard did not take the instruction to retire the old credential (HTTP ${r.status}); it is asked again on the next pass.`);
     }
-    const ready = due.filter((k) => a.credentials![k].previous!.retired);
     if (ready.length === 0) continue;
+    const kept: Record<string, NonNullable<AgentCredentialState["previous"]>> = {};
     const st = loadState(ctx.dir);
-    for (const k of ready) delete st.agents![name].credentials![k].previous;
+    for (const k of ready) { kept[k] = st.agents![name].credentials![k].previous!; delete st.agents![name].credentials![k].previous; }
     saveState(ctx.dir, st);
     try {
       await deployAgent(ctx, name, { reloadGuards: true });
       writeStatusCredentials(ctx, name);
       lines.push(`${name}: the old ${ready.join(", ")} credential${ready.length === 1 ? " has" : "s have"} ended, and ${ready.length === 1 ? "is" : "are"} no longer in the Guard's configuration.`);
     } catch (e) {
-      lines.push(`${name}: the old ${ready.join(", ")} credential${ready.length === 1 ? " has" : "s have"} ended at the Guard, but the deploy that drops ${ready.length === 1 ? "it" : "them"} from guard.toml did not go through (${(e as Error).message.slice(0, 200)}). The next deploy does it.`);
+      // the old hash is still in the Guard's file (retired at the Guard): keep it in the state, so the next try still lists it first, and try again later
+      const back = loadState(ctx.dir);
+      for (const k of ready) { const c = back.agents?.[name]?.credentials?.[k]; if (c) c.previous = { ...kept[k], retired: true, retryAfter: new Date(now + FINISH_RETRY_MS).toISOString() }; }
+      saveState(ctx.dir, back);
+      lines.push(`${name}: the old ${ready.join(", ")} credential${ready.length === 1 ? " has" : "s have"} ended at the Guard, but the deploy that drops ${ready.length === 1 ? "it" : "them"} from guard.toml did not go through (${(e as Error).message.slice(0, 200)}). It is tried again in ${FINISH_RETRY_MS / 60_000} minutes.`);
     }
   }
   return lines;

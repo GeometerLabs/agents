@@ -68,10 +68,11 @@ test("the agent's page: its Guards and their credentials' dates (never a credent
       "Version 4f9c2e1 is in service", "Certificate GL-7K2M.", "secrets/agents/my-agent/credentials.env", "the old credential still works until"]) assert.ok(p.includes(line), `the page says: ${line}`);
     const prices = latestPriceList()!;
     const licence = formatRupees(paiseOf(chargeOf(prices, null, true)!.fee!.value));
-    assert.ok(p.includes(`Builder licence: ${licence} a month for this live client business`), "the licence's price is the price list's");
+    assert.ok(p.includes(`Builder licence: ${licence} a month for each live client business`), "the licence's price is the price list's, in the panel's own words for it");
     assert.ok(!/gg_[0-9a-f]{32}/u.test(page.text) && !page.text.includes(CREDENTIAL), "no credential on the page");
     assert.ok(!/<script/iu.test(page.text), "no JavaScript");
     assert.match(page.text, /<meta name="viewport" content="width=device-width/u, "the panel's phone-width layout");
+    assert.ok(p.includes("not even a refund"), "the kill switch is said as it is: Guard refuses everything, refunds too");
     for (const action of ["/agents/my-agent/stop", "/agents/my-agent/crash-test", "/agents/my-agent/rotate"]) assert.ok(page.text.includes(`action="${action}"`), `${action} is offered`);
     assert.ok(!/action="[^"]*remove/u.test(page.text), "removing is not offered here");
     assert.match(p, /geometer agent remove <name>/u, "it says where it is done");

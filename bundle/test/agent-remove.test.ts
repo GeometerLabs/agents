@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { addAgent, deployAgent } from "../agent/deploy.ts";
 import type { AgentFlags } from "../agent/folder.ts";
 import { openWorkOf, removeAgent } from "../agent/remove.ts";
-import { applyOnce } from "../apply.ts";
+import { applyOnce, processStopRequests } from "../apply.ts";
 import { main } from "../geometer.ts";
 import { loadState, shopIndex } from "../lib/state.ts";
 import { CALENDAR_ID, PHONE_NUMBER_ID } from "./helpers.ts";
@@ -103,6 +103,32 @@ test("--force removes it anyway, with a plain warning; its Guards go, its creden
     assert.throws(() => shopIndex(state, "my-agent"), /choose another name/u);
     assert.notEqual(shopIndex(state, "glow-salon"), state.removed!["my-agent"].index, "its network index is not given to anything else");
     await assert.rejects(removeAgent(w.ctx, "my-agent"), /was removed already, on 2026-11-04/u);
+  } finally { w.done(); }
+});
+
+test("a panel request for an agent being removed is dropped, and a stop request for a removed name is left alone without stopping the deployer's pass", async () => {
+  const w = await deployed(); try {
+    const requests = join(w.paths.root, "requests");
+    mkdirSync(requests, { recursive: true });
+    writeFileSync(join(requests, "my-agent.crash-test.json"), "{}");
+    await removeAgent(w.ctx, "my-agent");
+    assert.equal(existsSync(join(requests, "my-agent.crash-test.json")), false);
+    // the panel's stop arrives after the removal (it was on the page before): left alone, said once, and the pass goes on
+    writeFileSync(join(requests, "my-agent.stop.json"), JSON.stringify({ schema: 1, requestId: "stop_1", shop: "my-agent", requestedAt: NOW.toISOString(), requestedBy: { id: "a", name: "Asha", role: "builder" } }));
+    assert.deepEqual(await processStopRequests(w.ctx), []);
+    assert.equal(loadState(w.root).shops["my-agent"], undefined, "no shop entry under a removed agent's name");
+  } finally { w.done(); }
+});
+
+test("a server that cannot bring the configuration up still leaves the removal done but for that, with the credentials gone, and says how to finish", async () => {
+  const w = await deployed(); try {
+    w.adminAnswers.set("g-my-agent-razorpay GET /admin/approvals", { status: 200, body: { approvals: [] } });
+    const failingUp = w.ctx.runner;
+    w.ctx.runner = { run: async (command, args, o) => (args.includes("up") ? { code: 1, stdout: "", stderr: "Cannot connect to the Docker daemon" } : failingUp.run(command, args, o)) };
+    const r = await removeAgent(w.ctx, "my-agent");
+    assert.match(r.lines[0], /its Guards could not be taken down .*geometer deploy. takes them down/u);
+    assert.equal(existsSync(join(w.paths.secrets, "agents", "my-agent")), false, "the credentials are deleted before the configuration is brought up");
+    assert.ok(existsSync(join(w.paths.root, r.keptIn, "README.txt")));
   } finally { w.done(); }
 });
 
