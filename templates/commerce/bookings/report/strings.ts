@@ -95,7 +95,7 @@ const en: Strings = {
   notTested: {
     "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
     "voice-calls": "phone calls", "group-bookings": "group bookings", "walk-ins": "walk-ins", "payments-outside-razorpay": "payments made outside Razorpay",
-    "real-whatsapp": "real WhatsApp", "real-razorpay": "real Razorpay, in test mode or live", "real-calendar": "a real calendar", "webhook-signatures": "webhook signatures (proof that a payment notice came from Razorpay)",
+    "real-whatsapp": "real WhatsApp", "real-razorpay": "real Razorpay, in test mode or live", "real-calendar": "a real calendar", "webhook-signatures-upi": "webhook signatures (proof that a message came from WhatsApp)", "webhook-signatures": "webhook signatures (proof that a payment notice came from Razorpay)",
     "real-model": "a real AI model (messages are read by fixed rules and answered from fixed templates)", "other-languages": "Tamil, Telugu and other languages",
     "native-review": "a native speaker's review of the Malayalam and Kannada wording (machine-written)", "restart-mid-step": "a crash or restart in the middle of a step",
     "same-instant": "two customers at the exact same instant", "other-faults": "problems beyond the ones tried",
@@ -174,7 +174,7 @@ const hi: Strings = {
   notTested: {
     "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
     "voice-calls": "फ़ोन कॉल", "group-bookings": "समूह की बुकिंग", "walk-ins": "वॉक-इन ग्राहक", "payments-outside-razorpay": "Razorpay के बाहर के भुगतान",
-    "real-whatsapp": "असली WhatsApp", "real-razorpay": "असली Razorpay (टेस्ट मोड या चालू)", "real-calendar": "असली कैलेंडर", "webhook-signatures": "पेमेंट सूचनाओं के हस्ताक्षर (webhook signatures)",
+    "real-whatsapp": "असली WhatsApp", "real-razorpay": "असली Razorpay (टेस्ट मोड या चालू)", "real-calendar": "असली कैलेंडर", "webhook-signatures-upi": "संदेशों के हस्ताक्षर (webhook signatures)", "webhook-signatures": "पेमेंट सूचनाओं के हस्ताक्षर (webhook signatures)",
     "real-model": "असली AI मॉडल (संदेश तय नियमों से पढ़े जाते हैं और जवाब तय साँचों से बनते हैं)", "other-languages": "तमिल, तेलुगु और दूसरी भाषाएँ",
     "native-review": "मलयालम और कन्नड़ शब्दों की किसी मातृभाषी से जाँच (ये मशीन से लिखे हैं)", "restart-mid-step": "किसी कदम के बीच में बंद होना या दोबारा चालू होना",
     "same-instant": "ठीक एक ही पल में दो ग्राहक", "other-faults": "आज़माई गई गड़बड़ियों के अलावा दूसरी गड़बड़ियाँ",
@@ -253,7 +253,7 @@ const ml: Strings = {
   notTested: {
     "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
     "voice-calls": "ഫോൺ കോളുകൾ", "group-bookings": "ഗ്രൂപ്പ് ബുക്കിംഗ്", "walk-ins": "നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ)", "payments-outside-razorpay": "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ",
-    "real-whatsapp": "യഥാർത്ഥ WhatsApp", "real-razorpay": "യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡോ ലൈവോ)", "real-calendar": "യഥാർത്ഥ കലണ്ടർ", "webhook-signatures": "പേയ്മെന്റ് അറിയിപ്പുകളുടെ ഒപ്പ് (webhook signatures)",
+    "real-whatsapp": "യഥാർത്ഥ WhatsApp", "real-razorpay": "യഥാർത്ഥ Razorpay (ടെസ്റ്റ് മോഡോ ലൈവോ)", "real-calendar": "യഥാർത്ഥ കലണ്ടർ", "webhook-signatures-upi": "സന്ദേശങ്ങളുടെ ഒപ്പ് (webhook signatures)", "webhook-signatures": "പേയ്മെന്റ് അറിയിപ്പുകളുടെ ഒപ്പ് (webhook signatures)",
     "real-model": "യഥാർത്ഥ AI മോഡൽ (സന്ദേശം വായിക്കുന്നത് നിശ്ചിത നിയമങ്ങളാലാണ്, മറുപടികൾ നിശ്ചിത മാതൃകകളാണ്)", "other-languages": "തമിഴ്, തെലുങ്ക്, മറ്റ് ഭാഷകൾ",
     "native-review": "മലയാളം, കന്നഡ വാക്കുകൾ മാതൃഭാഷക്കാരൻ പരിശോധിക്കൽ (ഇവ യന്ത്രം എഴുതിയതാണ്)", "restart-mid-step": "ഒരു ഘട്ടത്തിനിടയിൽ നിൽക്കുകയോ വീണ്ടും തുടങ്ങുകയോ ചെയ്യുന്നത്",
     "same-instant": "ഒരേ നിമിഷത്തിൽ രണ്ട് ഉപഭോക്താക്കൾ", "other-faults": "പരീക്ഷിച്ചവയ്ക്ക് പുറമെയുള്ള പിഴവുകൾ",
@@ -332,7 +332,7 @@ const kn: Strings = {
   notTested: {
     "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",
     "voice-calls": "ಫೋನ್ ಕರೆಗಳು", "group-bookings": "ಗುಂಪು ಬುಕಿಂಗ್", "walk-ins": "ನೇರವಾಗಿ ಬರುವವರು (ವಾಕ್-ಇನ್)", "payments-outside-razorpay": "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು",
-    "real-whatsapp": "ನಿಜವಾದ WhatsApp", "real-razorpay": "ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್)", "real-calendar": "ನಿಜವಾದ ಕ್ಯಾಲೆಂಡರ್", "webhook-signatures": "ಪಾವತಿ ಸೂಚನೆಗಳ ಸಹಿ (webhook signatures)",
+    "real-whatsapp": "ನಿಜವಾದ WhatsApp", "real-razorpay": "ನಿಜವಾದ Razorpay (ಟೆಸ್ಟ್ ಮೋಡ್ ಅಥವಾ ಲೈವ್)", "real-calendar": "ನಿಜವಾದ ಕ್ಯಾಲೆಂಡರ್", "webhook-signatures-upi": "ಸಂದೇಶಗಳ ಸಹಿ (webhook signatures)", "webhook-signatures": "ಪಾವತಿ ಸೂಚನೆಗಳ ಸಹಿ (webhook signatures)",
     "real-model": "ನಿಜವಾದ AI ಮಾದರಿ (ಸಂದೇಶ ಓದುವುದು ನಿಗದಿತ ನಿಯಮಗಳಿಂದ, ಉತ್ತರಗಳು ನಿಗದಿತ ಮಾದರಿಗಳಿಂದ)", "other-languages": "ತಮಿಳು, ತೆಲುಗು ಮತ್ತು ಇತರ ಭಾಷೆಗಳು",
     "native-review": "ಮಲಯಾಳಂ ಮತ್ತು ಕನ್ನಡ ಪದಗಳನ್ನು ಮಾತೃಭಾಷಿಕರು ಪರಿಶೀಲಿಸುವುದು (ಇವು ಯಂತ್ರ ಬರೆದದ್ದು)", "restart-mid-step": "ಒಂದು ಹಂತದ ಮಧ್ಯದಲ್ಲಿ ನಿಲ್ಲುವುದು ಅಥವಾ ಮತ್ತೆ ಆರಂಭವಾಗುವುದು",
     "same-instant": "ಒಂದೇ ಕ್ಷಣದಲ್ಲಿ ಇಬ್ಬರು ಗ್ರಾಹಕರು", "other-faults": "ಪ್ರಯತ್ನಿಸಿದವುಗಳ ಹೊರತಾದ ತೊಂದರೆಗಳು",

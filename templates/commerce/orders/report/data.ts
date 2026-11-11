@@ -74,8 +74,10 @@ const CHECK_SITES = ["check_order", "check_address"];
 export type NotTestedKey = NotTestedId | "own-settings" | "other-settings" | "no-go-live-certificate" | "go-live-untrusted" | "situations-skipped";
 
 /** Things the record cannot tell us, so the report does not say them. Always listed. */
-export type NotCountedId = "balance-at-pickup" | "kitchen-and-delivery" | "read-receipts" | "outside-agent" | "rule-breaks";
+export type NotCountedId = "balance-at-pickup" | "kitchen-and-delivery" | "read-receipts" | "outside-agent" | "rule-breaks" | "outside-agent-upi";
 export const NOT_COUNTED: readonly NotCountedId[] = ["balance-at-pickup", "kitchen-and-delivery", "read-receipts", "outside-agent", "rule-breaks"];
+/** B71 part 2: a UPI shop's report names no gateway ("in Razorpay, your UPI app or WhatsApp" becomes its own line). A gateway shop's line and bytes are as they were. */
+const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "outside-agent": "outside-agent-upi" };
 
 export interface Amount { count: number; paise: number }
 
@@ -293,7 +295,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     stopped,
     messages: { toOwner: month.filter((e) => e.action === "send_message" && e.outcome !== "blocked" && e.refs.to === "owner").length, heldBack: month.filter((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "message-matches-record")).length },
     unconfirmed: { open: month.filter((e) => (e.outcome === "unconfirmed" || e.outcome === "failed") && e.action !== "send_message").length },
-    notCounted: [...NOT_COUNTED],
+    notCounted: NOT_COUNTED.map((id) => (upi ? UPI_NOT_COUNTED[id] ?? id : id)),
     notTested: notTestedForReport(goLive, settings),
     goLive,
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,

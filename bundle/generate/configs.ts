@@ -76,7 +76,7 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
       ...shops.map((s) => [s.name, {
         runtimeUrl: runtimeUrl(server, s),
         // a UPI shop (B33) has no approvals relay (no refund is ever held for its owner): the owner's messages go to the runtime only
-        ...(s.guards.some((g) => g.kind === "razorpay") ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
+        ...(s.guards.some((g) => isGatewayKind(g.kind)) ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId, verification: s.webhooks.verification,
         // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
@@ -95,10 +95,11 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
 export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
-      ...shops.filter((s) => s.guards.some((g) => g.kind === "razorpay")).map((s) => [s.name, {
+      // a shop on a gateway: the relay asks its owner about the refunds that gateway's Guard holds (by kind, from the registry: B71 part 2)
+      ...shops.filter((s) => s.guards.some((g) => isGatewayKind(g.kind))).map((s) => [s.name, {
         // which template's words the relay asks the owner in (services/relay.ts); left out for Bookings, as it always was
         ...(s.pathway && s.pathway !== "bookings" ? { pathway: s.pathway } : {}),
-        guardAdminUrl: guardAdmin(server, s, "razorpay").adminUrl,
+        guardAdminUrl: guardAdmin(server, s, s.guards.find((g) => isGatewayKind(g.kind))!.kind as Three).adminUrl,
         approverId: names.ownerApproverId(s.name, (s.approvers?.length ?? 0) > 0), agentId: names.agentId(s.name),
         // B37: each other approver signs with approver_<id>_notify_secret in this shop's secrets folder
         ...(s.approvers && s.approvers.length > 0 ? { approvers: s.approvers.map((p) => ({ id: p.id, whatsapp: p.whatsapp, language: p.language })) } : {}),

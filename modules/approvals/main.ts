@@ -1,7 +1,7 @@
 // The approvals relay as its own process (never the runtime, and never in the runtime's network namespace), the same for every template. A template's approvals/main.ts is
 // three lines: it gives this its own `createRelay` (the shared relay with the template's words).
 //
-//   GUARD_URL=http://127.0.0.1:8082                     Guard's admin port in front of Razorpay (reached from a sidecar that shares Guard's network)
+//   GUARD_URL=http://127.0.0.1:8082                     Guard's admin port in front of the shop's gateway (reached from a sidecar that shares Guard's network)
 //   GUARD_READ_TOKEN_FILE=/run/secrets/relay_read       an approver credential Guard issued (POST /admin/approvers); it reads the held calls
 //   OWNER_NOTIFY_SECRET_FILE=/run/secrets/owner_notify  the owner's approver secret: the same file Guard reads as notify_secrets
 //   GUARD_APPROVER_ID=owner-glow-salon                  the owner's id in Guard's approver directory
