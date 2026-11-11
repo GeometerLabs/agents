@@ -298,3 +298,16 @@ test("a month with nothing in the record gets no message and no entry", async ()
   assert.equal(w.record.entries().length, 0);
   assert.equal(w.messaging.sentTo(w.owner).length, 0);
 });
+
+test("a refund a person settled by their word is not money given back: it is counted apart, with who said so (B75, 12 Nov 2026)", () => {
+  const settings = createWorld().settings;
+  const entry = (seq: number, refs: Record<string, string>): never => ({ seq, time: new Date(at(11, 10, 12) + seq * 1000).toISOString(), conversation: "+919811111111", booking: "x-1", action: "refund", inputsDigest: "0123456789abcdef", outcome: "confirmed", decisions: [], language: "en", notes: "", refs }) as never;
+  const r = buildFeesReport({
+    settings, dues: [], ...monthRange("2026-11", settings.timezone), source: "stand-in", madeAt: at(12, 1, 10),
+    entries: [entry(1, { paymentId: "p1", amountPaise: "20000", confirmedBy: "operator:ravi" }), entry(2, { paymentId: "p2", amountPaise: "5000", refundId: "rfd_2" })],
+  });
+  assert.deepEqual(r.money.givenBack, { count: 1, paise: 5000 }, "only the payments service's confirmation is given back");
+  assert.deepEqual(r.money.settledByWord, [{ by: "operator:ravi", count: 1, paise: 20000 }]);
+  const none = buildFeesReport({ settings, dues: [], ...monthRange("2026-11", settings.timezone), source: "stand-in", madeAt: at(12, 1, 10), entries: [entry(1, { paymentId: "p2", amountPaise: "5000", refundId: "rfd_2" })] });
+  assert.equal("settledByWord" in none.money, false, "left out when there is none: older reports keep their bytes");
+});
