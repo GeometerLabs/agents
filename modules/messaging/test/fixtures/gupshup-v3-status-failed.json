@@ -1,0 +1,37 @@
+{
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "91XXXXXXXX58",
+              "phone_number_id": "158072934066266"
+            },
+            "statuses": [
+              {
+                "errors": [
+                  {
+                    "code": 131047,
+                    "href": "https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes/",
+                    "title": "Message failed to send..."
+                  }
+                ],
+                "gs_id": "91f58e90-f5ba-4cfc-9ca7-e4ab965b9449",
+                "id": "wamid.HBgMOTE3OTgwODkwOTc4FQIAERgSNERF",
+                "recipient_id": "919800000001",
+                "status": "failed",
+                "timestamp": "1710941507"
+              }
+            ]
+          }
+        }
+      ],
+      "id": "112535025189792"
+    }
+  ],
+  "gs_app_id": "82ed52f4-30c0-4f12-81b4-e7ad07bd41de",
+  "object": "whatsapp_business_account"
+}

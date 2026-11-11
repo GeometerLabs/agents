@@ -9,9 +9,10 @@
 //   upi_payment_unconfirmed  a UPI shop: the customer says they paid, or the owner marked part, and the owner has not confirmed the rest (modules/payments/owner-marked, B33)
 //   upi_refund_owed        a UPI shop: a refund the owner owes and has not marked done (the agent never sends a UPI refund)
 //   message_unanswered     the wait for a Guard ended and the work of a message or payment event was not done (modules/runtime/guard-wait.ts)
+//   message_not_delivered  WhatsApp reported a message the shop counted on as failed (one about a case, or to the owner or an approver): it never arrived
 //
 // A case shows once for one cause: a waiting answer that is overdue is listed as that, and not also as a refund on its way.
-import { GUARD_WAIT_ENTRY, latestEntry, latestRecovery, timeOf } from "./registry.ts";
+import { GUARD_WAIT_ENTRY, MESSAGE_STATUS_ENTRY, latestEntry, latestRecovery, reliedOn, timeOf } from "./registry.ts";
 import { MARK_OBLIGATION_KINDS } from "../payments/owner-marked/obligations.ts";
 import type { CaseLike, DetectInput, Obligation, ObligationKind } from "./registry.ts";
 
@@ -90,6 +91,27 @@ const messageUnanswered: ObligationKind = {
   },
 };
 
+/**
+ * A message the shop counted on that WhatsApp reported as failed (modules/messaging/statuses.ts writes the line). Nothing re-sends it: sending again could reach the
+ * person twice if the report was wrong, and a closed 24-hour window would refuse a plain message anyway, so a person decides. Like message_unanswered it has no
+ * "done" the record can see, so it leaves by age.
+ */
+const messageNotDelivered: ObligationKind = {
+  id: "message_not_delivered",
+  templates: "all",
+  detect(input) {
+    const out: Obligation[] = [];
+    for (const e of input.entries) {
+      if (e.action !== MESSAGE_STATUS_ENTRY || e.outcome !== "failed" || !reliedOn(e.refs.to, e.booking)) continue;
+      const since = timeOf(e);
+      if (since !== null && input.nowMs - since >= UNANSWERED_KEEP_MS) continue;
+      const ref = e.booking ?? `#${e.seq}`; // a message to the owner about no case is named by its line's number, the same on every read
+      out.push({ kind: "message_not_delivered", caseId: ref, sinceMs: since, facts: { case: ref, to: e.refs.to ?? "unknown", ...(e.refs.errorCode && /^\d{1,9}$/u.test(e.refs.errorCode) ? { code: Number(e.refs.errorCode) } : {}) }, actions: [] });
+    }
+    return out;
+  },
+};
+
 const approvalWaitingLong: ObligationKind = {
   id: "approval_waiting_long",
   templates: "all",
@@ -146,4 +168,4 @@ function refundIssues(id: "refund_unknown" | "refund_failed", unknown: boolean):
   };
 }
 
-export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), messageUnanswered, ...MARK_OBLIGATION_KINDS];
+export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), messageUnanswered, messageNotDelivered, ...MARK_OBLIGATION_KINDS];

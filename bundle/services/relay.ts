@@ -14,7 +14,7 @@ import type { Relay, RelayOptions, RelayPerson } from "../../modules/approvals/r
 import { names } from "../generate/shop.ts";
 import { relayHandler } from "../../modules/approvals/server.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";
-import { createWhatsAppMessaging } from "../../modules/messaging/whatsapp.ts";
+import { createLiveMessaging } from "../../modules/messaging/providers.ts";
 import { systemClock } from "../../modules/core/clock.ts";
 import { ownAgentRuntime } from "../agent/relay-context.ts";
 import { createRouter } from "../lib/router.ts";
@@ -37,6 +37,9 @@ export interface RelayShopConfig {
   whatsappGuardUrl: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
+  /** Item 11b: the shop's WhatsApp Guard fronts Gupshup (with the shop's Gupshup app id). Left out: Meta direct. */
+  provider?: "gupshup";
+  appId?: string;
   /** Folder with internal_token, relay_token, owner_notify_secret, read_token and agent_whatsapp for this shop (B37: and approver_<id>_notify_secret for each other approver). */
   secretsDir: string;
   stateDir: string;
@@ -71,7 +74,7 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
     runtime: c.kind === "own-agent"
       ? ownAgentRuntime({ guard, razorpay: { baseUrl: c.razorpayGuardUrl!, token: () => need("record_token") }, business: c.business! })
       : createRuntimeClient({ url: c.runtimeUrl!, token: need("internal_token") }),
-    messaging: createWhatsAppMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, agentToken: need("agent_whatsapp") },
+    messaging: createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId } : {}), agentToken: need("agent_whatsapp") },
       { clock: systemClock, window: { lastInboundAt: (phone) => Number(store.getMeta(lastInboundKey(phone, c.ownerWhatsapp))) || undefined } }),
     ...(c.approvers && c.approvers.length > 0 ? { approvers: c.approvers, ownerApproverId: c.approverId } : {}),
     log: (line) => log(`[${name}] ${line}`),

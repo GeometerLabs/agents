@@ -325,6 +325,17 @@ export function buildSettings(draft: Draft, example: Settings): Built {
   return validateSettings(raw);
 }
 
+/**
+ * Item 11b: the WhatsApp provider runtime.json already names (`"provider": "gupshup"` and its `appId`), carried into a runtime.json the panel writes again. The panel has
+ * no step for it yet (modules/Deferred.md), so a shop moved to Gupshup by hand keeps it when someone edits it here. A runtime.json with no provider is left as made.
+ */
+export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: unknown): Record<string, unknown> {
+  const m = (before as { services?: { messaging?: { provider?: unknown; appId?: unknown } } } | undefined)?.services?.messaging;
+  if (!m || m.provider === undefined) return runtime;
+  const services = runtime.services as { messaging: Record<string, unknown> };
+  return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: m.provider, ...(m.appId !== undefined ? { appId: m.appId } : {}) } } };
+}
+
 /** runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. A payments service is named only for a shop that chose a gateway (B71). */
 export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {

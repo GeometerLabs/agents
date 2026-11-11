@@ -30,6 +30,26 @@ export interface InboundMessage {
   reply?: { id: string; kind: "button" | "list" };
 }
 
+/**
+ * What WhatsApp said LATER about a message we sent (a status webhook, read by webhooks.ts parseWhatsAppStatuses): it reached the person's phone, they read it, or it
+ * failed and never arrived. The send call's own answer is only "accepted" and is none of these. Only these three are kept: "sent" and Gupshup's "enqueued" say no
+ * more than the accepted send did.
+ */
+export interface MessageStatus {
+  /**
+   * The ids the report gives the message, most specific first: Meta's wamid, or Gupshup's own id (`gs_id`) and then the other id it sends. The record is searched
+   * for any of them: the send call's reply gave one, and Gupshup's examples disagree about which field repeats it.
+   */
+  ids: string[];
+  status: "delivered" | "read" | "failed";
+  /** The person it was for, E.164, when the report names them. */
+  to?: string;
+  /** When WhatsApp says it happened, epoch ms. */
+  timestamp: number;
+  /** "failed" only: the provider's code (131047: the 24-hour window had closed) and its short title. Never the message's words. */
+  error?: { code?: number; title?: string };
+}
+
 export interface OutboundMessage {
   id: string;
   to: string;

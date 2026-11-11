@@ -42,7 +42,7 @@ export interface PaperWords {
 const en: PaperWords = {
   outcome: { attempted: "tried", confirmed: "done, read back from the service", unconfirmed: "not confirmed by the service", failed: "failed", blocked: "stopped by a limit", held_for_owner: "waiting for the owner" },
   action: {
-    receive_message: "message received", receive_payment_event: "payment notice received", send_message: "message sent", ask_owner: "owner asked", opt_out: "asked for no more messages",
+    receive_message: "message received", receive_payment_event: "payment notice received", send_message: "message sent", message_status: "WhatsApp's report on a sent message", ask_owner: "owner asked", opt_out: "asked for no more messages",
     owner_decision: "owner's answer", refund: "refund", voice_note_reply: "reply to a voice note", ai_mode: "switched to buttons only",
     upi_request: "UPI payment request sent", upi_paid_claim: "customer says they paid", owner_marked_paid: "marked paid by owner", upi_request_closed: "UPI request closed",
     upi_refund_owed: "refund owed by the owner", upi_refund_marked_done: "refund marked sent by owner", upi_refund_kept: "owner kept the money for a booking made by hand", upi_refund_reminder: "reminder of a refund owed",
@@ -94,7 +94,7 @@ const en: PaperWords = {
 const hi: PaperWords = {
   outcome: { attempted: "कोशिश की", confirmed: "हो गया, सेवा के रिकॉर्ड से जाँचा", unconfirmed: "सेवा ने पक्का नहीं किया", failed: "नहीं हुआ", blocked: "सीमा ने रोका", held_for_owner: "मालिक के जवाब का इंतज़ार" },
   action: {
-    receive_message: "संदेश मिला", receive_payment_event: "भुगतान की सूचना मिली", send_message: "संदेश भेजा", ask_owner: "मालिक से पूछा", opt_out: "और संदेश न भेजने को कहा",
+    receive_message: "संदेश मिला", receive_payment_event: "भुगतान की सूचना मिली", send_message: "संदेश भेजा", message_status: "भेजे गए संदेश पर WhatsApp की रिपोर्ट", ask_owner: "मालिक से पूछा", opt_out: "और संदेश न भेजने को कहा",
     owner_decision: "मालिक का जवाब", refund: "रिफ़ंड", voice_note_reply: "वॉइस नोट का जवाब", ai_mode: "सिर्फ़ बटन पर चला",
     upi_request: "UPI भुगतान का अनुरोध भेजा", upi_paid_claim: "ग्राहक ने कहा भुगतान कर दिया", owner_marked_paid: "मालिक ने भुगतान मिला लिखा", upi_request_closed: "UPI अनुरोध बंद किया",
     upi_refund_owed: "मालिक को रिफ़ंड लौटाना है", upi_refund_marked_done: "मालिक ने रिफ़ंड भेजा लिखा", upi_refund_kept: "मालिक ने हाथ से की बुकिंग के लिए पैसा रखा", upi_refund_reminder: "बकाया रिफ़ंड की याद",
@@ -146,7 +146,7 @@ const hi: PaperWords = {
 const ml: PaperWords = {
   outcome: { attempted: "ശ്രമിച്ചു", confirmed: "ചെയ്തു, സേവനത്തിന്റെ രേഖയിൽ നോക്കി", unconfirmed: "സേവനം സ്ഥിരീകരിച്ചില്ല", failed: "നടന്നില്ല", blocked: "പരിധി തടഞ്ഞു", held_for_owner: "ഉടമയുടെ മറുപടിക്കായി കാത്തിരിക്കുന്നു" },
   action: {
-    receive_message: "സന്ദേശം കിട്ടി", receive_payment_event: "പണമടവിന്റെ അറിയിപ്പ് കിട്ടി", send_message: "സന്ദേശം അയച്ചു", ask_owner: "ഉടമയോട് ചോദിച്ചു", opt_out: "ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞു",
+    receive_message: "സന്ദേശം കിട്ടി", receive_payment_event: "പണമടവിന്റെ അറിയിപ്പ് കിട്ടി", send_message: "സന്ദേശം അയച്ചു", message_status: "അയച്ച സന്ദേശത്തെക്കുറിച്ച് WhatsApp-ന്റെ റിപ്പോർട്ട്", ask_owner: "ഉടമയോട് ചോദിച്ചു", opt_out: "ഇനി സന്ദേശം വേണ്ടെന്ന് പറഞ്ഞു",
     owner_decision: "ഉടമയുടെ മറുപടി", refund: "റീഫണ്ട്", voice_note_reply: "വോയ്സ് നോട്ടിന് മറുപടി", ai_mode: "ബട്ടണുകൾ മാത്രമായി മാറി",
     upi_request: "UPI പണമടവ് അഭ്യർത്ഥന അയച്ചു", upi_paid_claim: "പണമടച്ചെന്ന് ഉപഭോക്താവ് പറഞ്ഞു", owner_marked_paid: "പണം കിട്ടിയെന്ന് ഉടമ രേഖപ്പെടുത്തി", upi_request_closed: "UPI അഭ്യർത്ഥന അടച്ചു",
     upi_refund_owed: "ഉടമ തിരികെ നൽകേണ്ട റീഫണ്ട്", upi_refund_marked_done: "റീഫണ്ട് അയച്ചെന്ന് ഉടമ രേഖപ്പെടുത്തി", upi_refund_kept: "കൈകൊണ്ട് എടുത്ത ബുക്കിംഗിനായി ഉടമ പണം വെച്ചു", upi_refund_reminder: "നൽകാനുള്ള റീഫണ്ടിന്റെ ഓർമ്മപ്പെടുത്തൽ",
@@ -198,7 +198,7 @@ const ml: PaperWords = {
 const kn: PaperWords = {
   outcome: { attempted: "ಪ್ರಯತ್ನಿಸಿತು", confirmed: "ಆಯಿತು, ಸೇವೆಯ ದಾಖಲೆಯಲ್ಲಿ ನೋಡಿತು", unconfirmed: "ಸೇವೆ ದೃಢಪಡಿಸಲಿಲ್ಲ", failed: "ಆಗಲಿಲ್ಲ", blocked: "ಮಿತಿ ತಡೆಯಿತು", held_for_owner: "ಮಾಲೀಕರ ಉತ್ತರಕ್ಕೆ ಕಾಯುತ್ತಿದೆ" },
   action: {
-    receive_message: "ಸಂದೇಶ ಬಂತು", receive_payment_event: "ಪಾವತಿ ಸೂಚನೆ ಬಂತು", send_message: "ಸಂದೇಶ ಕಳುಹಿಸಿತು", ask_owner: "ಮಾಲೀಕರನ್ನು ಕೇಳಿತು", opt_out: "ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದರು",
+    receive_message: "ಸಂದೇಶ ಬಂತು", receive_payment_event: "ಪಾವತಿ ಸೂಚನೆ ಬಂತು", send_message: "ಸಂದೇಶ ಕಳುಹಿಸಿತು", message_status: "ಕಳುಹಿಸಿದ ಸಂದೇಶದ ಬಗ್ಗೆ WhatsApp ವರದಿ", ask_owner: "ಮಾಲೀಕರನ್ನು ಕೇಳಿತು", opt_out: "ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದರು",
     owner_decision: "ಮಾಲೀಕರ ಉತ್ತರ", refund: "ಹಣ ವಾಪಸ್", voice_note_reply: "ವಾಯ್ಸ್ ನೋಟ್‌ಗೆ ಉತ್ತರ", ai_mode: "ಬಟನ್‌ಗಳಿಗೆ ಮಾತ್ರ ಬದಲಾಯಿತು",
     upi_request: "UPI ಪಾವತಿ ವಿನಂತಿ ಕಳುಹಿಸಿತು", upi_paid_claim: "ಪಾವತಿಸಿದ್ದೇವೆ ಎಂದು ಗ್ರಾಹಕರು ಹೇಳಿದರು", owner_marked_paid: "ಹಣ ಬಂತು ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದರು", upi_request_closed: "UPI ವಿನಂತಿ ಮುಚ್ಚಿತು",
     upi_refund_owed: "ಮಾಲೀಕರು ವಾಪಸ್ ಕೊಡಬೇಕಾದ ಹಣ", upi_refund_marked_done: "ಹಣ ವಾಪಸ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದರು", upi_refund_kept: "ಕೈಯಾರೆ ಮಾಡಿದ ಬುಕಿಂಗ್‌ಗೆ ಮಾಲೀಕರು ಹಣ ಇಟ್ಟುಕೊಂಡರು", upi_refund_reminder: "ಬಾಕಿ ಹಣ ವಾಪಸಿನ ನೆನಪು",

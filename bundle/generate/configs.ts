@@ -8,6 +8,7 @@ import type { AgentDeploy, ShopDeploy } from "./compose.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
 import type { ApproverPerson } from "../../modules/approvals/people.ts";
+import type { WhatsAppRoute } from "./guards.ts";
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
@@ -48,8 +49,10 @@ export function guardAdmin(server: ServerConfig, shop: Pick<ShopDeploy, "name" |
 
 /** B37: a shop's other approvers, as the inbox and the relay need them (their secrets are files in the relay's folder, never in a config). */
 type Approvers = { approvers?: ApproverPerson[] };
+/** Item 11b: a shop whose WhatsApp goes through Gupshup. Left out (Meta direct), the configs are exactly as before. */
+type Route = { whatsappRoute?: WhatsAppRoute };
 
-export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; ownerWhatsapp: string; phoneNumberId: string } & Approvers)[], agents: AgentFacts[] = []): string {
+export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; ownerWhatsapp: string; phoneNumberId: string } & Approvers & Route)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
       ...shops.map((s) => [s.name, {
@@ -57,6 +60,8 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         // a UPI shop (B33) has no approvals relay (no refund is ever held for its owner): the owner's messages go to the runtime only
         ...(s.guards.some((g) => g.kind === "razorpay") ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId, verification: s.webhooks.verification,
+        // a Gupshup callback names its app (gs_app_id): one that names another app is not this shop's
+        ...(s.whatsappRoute ? { gupshupAppId: s.whatsappRoute.appId } : {}),
         // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
         secretsDir: `/run/secrets/${s.name}`,
@@ -70,7 +75,7 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
   });
 }
 
-export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers)[], agents: AgentFacts[] = []): string {
+export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers & Route)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
       ...shops.filter((s) => s.guards.some((g) => g.kind === "razorpay")).map((s) => [s.name, {
@@ -84,6 +89,8 @@ export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWh
         // the relay is not on the shop's network: it reaches the WhatsApp Guard's agent port on the Guard's address on the admin network
         whatsappGuardUrl: url(addressing(server).adminIp(s.name, "whatsapp", s.index), GUARD_PORT),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId,
+        // the relay asks the owner through the shop's own WhatsApp Guard, so it speaks that Guard's provider
+        ...(s.whatsappRoute ? { provider: s.whatsappRoute.provider, appId: s.whatsappRoute.appId } : {}),
         secretsDir: `/run/secrets/${s.name}`, stateDir: `/home/node/state/${s.name}`,
       }]),
       // An agent someone else wrote: held refunds are read from its Razorpay Guard, and the owner is asked through its WhatsApp Guard. There is no runtime to ask for the booking:

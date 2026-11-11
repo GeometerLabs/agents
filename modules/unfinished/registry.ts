@@ -132,6 +132,15 @@ export function latestRecovery(entries: readonly RecordEntry[], caseId: string, 
  */
 export const GUARD_WAIT_ENTRY = "guard_wait_over";
 
+/**
+ * The record's name for WhatsApp's later report on a message the shop sent (delivered, read or failed; modules/messaging/statuses.ts writes it). A failed one about a
+ * case, or to the owner or an approver, is listed by `message_not_delivered` (builtin.ts): the shop counted on that message, and it never arrived.
+ */
+export const MESSAGE_STATUS_ENTRY = "message_status";
+
+/** Was a message one the shop counted on? One about a case (a confirmation, a payment link), or one to the owner or another approver (an approval request, a report). */
+export const reliedOn = (to: string | undefined, caseId: string | null): boolean => to === "owner" || to === "approver" || caseId !== null;
+
 /** The line itself, the same for every template: what went wrong, for the person reading the record. It holds no message text and no number. */
 export function guardWaitLine(event: { kind: string }, why: { service: string }, told: boolean): { inputs: unknown; notes: string; refs: Record<string, string> } {
   return {

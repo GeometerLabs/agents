@@ -20,7 +20,7 @@ export interface LiveModule {
 /** The services as the live adapters take them: each Guard's credential for this agent has been read from its file. */
 export type LiveServices = {
   payments: { baseUrl: string; agentToken?: string };
-  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string };
+  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: "meta" | "gupshup"; appId?: string }; // provider: modules/messaging/providers.ts
   timeoutMs?: number;
 };
 

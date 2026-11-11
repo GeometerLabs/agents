@@ -48,7 +48,7 @@ import { createLimiter } from "./ratelimit.ts";
 import { InboxTaken, createInbox } from "./secrets.ts";
 import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
-import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
+import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, keepWhatsAppProvider, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
 import { gatewayOf, providerById } from "../../modules/payments/providers/index.ts";
 import { reportOf, setupOf } from "./setups.ts";
 import type { Body, Draft } from "./setup.ts";
@@ -665,7 +665,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const written = (b: typeof built): unknown => (b.ok ? ((b as { raw?: unknown }).raw ?? b.settings) : undefined);
     const w = r.ctx().w;
     const gateway = providerById(paymentModuleOf(d))?.gateway !== undefined; // B71: a payments service is named only for a shop that chose a gateway
-    const runtime = own ? own.runtime(d.whatsapp.numberId, config.serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel, gateway);
+    // item 11b: the panel has no step for the WhatsApp provider yet, so an edit keeps the one runtime.json names (Gupshup and its app id, written by hand); without this,
+    // saving a Gupshup shop would turn it back to Meta's paths with Gupshup's token behind them
+    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, config.serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, config.serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;
