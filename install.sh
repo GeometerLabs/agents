@@ -22,8 +22,10 @@
 # Options (all optional; a question is asked for what is missing, unless --yes):
 #   --domain D                  the domain whose A (and AAAA) record points at this server; Caddy gets its HTTPS certificate for it
 #   --pairing-code-file F       a file holding the pairing code (never put the code itself on a command line: other users can read it there)
-#   --skip-pairing              no pairing: the panel starts, but no alerts from outside, no licence lease, and so no shop starts with a production Guard image
-#   --fleet-key-file F --deployment-id ID [--licence-key HEX] [--lease-file F]
+#   --skip-pairing --licence-key HEX
+#                               no pairing: the panel starts, but no alerts from outside, no licence lease, and so no shop starts with a production Guard image.
+#                               Fleet's licence key is still needed (decision 39: no server folder without it); Geometer gives it with a deployment key
+#   --fleet-key-file F --deployment-id ID --licence-key HEX [--lease-file F]
 #                               the by-hand path: a deployment key, its server id, fleet's licence key and a lease Geometer gave you
 #   --guard-image-file F        the Guard image as a file (until it is in a registry), checked against release.json's sha256 for this CPU
 #   --server-dir D              the server folder (default ~/geometer-server)
@@ -357,7 +359,9 @@ make_server_folder() {
   local args=(init "$SERVER_DIR" --domain "$DOMAIN" --reviewed-by "$REVIEWED_BY" --guard-image "$(release_get guard_image)" --panel --http-port "$HTTP_PORT" --https-port "$HTTPS_PORT")
   if [ "$PAIR_MODE" = hand ]; then
     args+=(--id "$DEPLOYMENT_ID" --fleet-url "$FLEET_URL" --fleet-key-file "$SERVER_DIR/fleet_key")
-    if [ -n "${LICENCE_KEY:-}" ]; then args+=(--licence-key "$LICENCE_KEY"); fi
+    args+=(--licence-key "$LICENCE_KEY")
+  elif [ "$PAIR_MODE" = skip ]; then
+    args+=(--licence-key "$LICENCE_KEY")
   elif [ -f "$SERVER_DIR/pairing.json" ] || { [ "$PAIR_MODE" = code ] && [ "${DRY_RUN:-0}" = 1 ]; }; then
     # paired (now, or by an earlier run): the id, fleet's address, the key, fleet's licence key and the trial lease come from the pairing
     args+=(--pairing)
@@ -591,6 +595,16 @@ check_inputs() {
   printf '%s' "$USER" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$' || die "The user name \"$USER\" is not one the install can write into a service file."
 }
 
+# Decision 39 (monorepo ADR-0070): a release's Guard runs a builder's shop only under Geometer's licence, so `init` makes no server folder without fleet's
+# licence key. Pairing brings the key; the by-hand path and a skipped pairing must give it. Asked here, with the other answers, so a missing key stops the
+# install before Docker or Node is touched rather than at the server folder. A folder that is already there keeps the key it has.
+SKIP_NEEDS_KEY="Without pairing, give fleet's licence key yourself: --licence-key <64 hex characters> (Geometer gives it with a deployment key). Or pair: --pairing-code-file <file>."
+need_licence_key() {
+  [ -f "$SERVER_DIR/geometer.json" ] && return 0
+  [ -n "${LICENCE_KEY:-}" ] && return 0
+  die "$1 Guard runs a builder's shop only under Geometer's licence, so the server folder is not made without its key. Nothing was changed."
+}
+
 ask_questions() {
   if [ -z "${DOMAIN:-}" ] && [ -f "$SERVER_DIR/geometer.json" ]; then DOMAIN=$(sed -n 's/^[[:space:]]*"domain":[[:space:]]*"\([^"]*\)".*/\1/p' "$SERVER_DIR/geometer.json" | head -n 1); fi
   if [ -z "${DOMAIN:-}" ]; then
@@ -602,11 +616,11 @@ ask_questions() {
 
   if [ "$PAIR_MODE" = hand ]; then
     [ -n "${DEPLOYMENT_ID:-}" ] || die "With --fleet-key-file, say the server id Geometer gave with the key: --deployment-id <id>."
-    [ -n "${LICENCE_KEY:-}" ] || note "No --licence-key: no lease is kept, so a Guard image that requires one starts no shop."
+    need_licence_key "With --fleet-key-file, also give fleet's licence key Geometer gave with it: --licence-key <64 hex characters>."
     return 0
   fi
   if [ -f "$SERVER_DIR/geometer.json" ] || [ -f "$SERVER_DIR/pairing.json" ]; then PAIR_MODE=${PAIR_MODE:-done}; return 0; fi
-  if [ "${PAIR_MODE:-}" = skip ]; then return 0; fi
+  if [ "${PAIR_MODE:-}" = skip ]; then need_licence_key "$SKIP_NEEDS_KEY"; return 0; fi
   if [ -n "${CODE_FILE:-}" ]; then
     [ -r "$CODE_FILE" ] || die "The pairing code file $CODE_FILE cannot be read."
     PAIRING_CODE=$(head -n 1 "$CODE_FILE" | tr -d '[:space:]')
@@ -617,7 +631,7 @@ ask_questions() {
     say "Get a code on geometer.dev/account (\"Add a server\"). It works once, for two hours."
     PAIRING_CODE=$(ask "Pairing code (or type skip): " | tr -d '[:space:]')
   fi
-  if [ "$PAIRING_CODE" = skip ] || [ -z "$PAIRING_CODE" ]; then PAIR_MODE=skip; PAIRING_CODE=""; return 0; fi
+  if [ "$PAIRING_CODE" = skip ] || [ -z "$PAIRING_CODE" ]; then PAIR_MODE=skip; PAIRING_CODE=""; need_licence_key "$SKIP_NEEDS_KEY"; return 0; fi
   printf '%s' "$PAIRING_CODE" | grep -Eiq '^gfp_[a-z0-9-]{24,40}$' || die "That is not a pairing code: it starts with gfp_. Copy it from geometer.dev/account (\"Add a server\")."
   PAIR_MODE=code
 }
@@ -631,7 +645,7 @@ show_plan() {
   case "$PAIR_MODE" in
     code) say "  - pair with Geometer's fleet at $FLEET_URL: the code is sent once, and this server's key is kept in $SERVER_DIR/fleet_key" ;;
     hand) say "  - use the deployment key in $FLEET_KEY_FILE (server id $DEPLOYMENT_ID)" ;;
-    skip) say "  - no pairing: the panel starts, but no alerts from outside and no licence lease, so no shop starts with a production Guard image" ;;
+    skip) say "  - no pairing: the panel starts, but no alerts from outside and no licence lease, so no shop starts with a production Guard image (fleet's licence key is pinned)" ;;
     *) say "  - pairing: already done" ;;
   esac
   say "  - the server folder: $SERVER_DIR ($([ -f "$SERVER_DIR/geometer.json" ] && printf 'there, kept as it is' || printf 'made for %s, with the panel on' "$DOMAIN"))"
