@@ -1,5 +1,5 @@
 // How the crash test drives an agent someone else wrote (the "driver contract"; the README says it in a page). The agent is started as a program, on its own port, with the addresses of
-// the three Guards and the one credential in its environment; the crash test then plays the customer (signed WhatsApp webhooks to the agent) and the provider (signed Razorpay webhooks),
+// its Guards and a credential for each in its environment (the names of agent/credentials.ts, the same as in the file the server hands it); the crash test then plays the customer (signed WhatsApp webhooks to the agent) and the provider (signed Razorpay webhooks),
 // and makes things go wrong at the stand-in services behind the Guards. Nothing here asks the agent what it did.
 //
 // What the agent has to be: a program that listens on PORT and takes
@@ -10,6 +10,7 @@ import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { isAbsolute, join } from "node:path";
 import type { AgentFile, AgentDriver } from "../folder.ts";
+import { credentialEnvName } from "../credentials.ts";
 
 /** The words the scripted customer writes, unless agent.json says otherwise. `{offer}` and `{claim}` are filled in with amounts that appear on no price list. */
 export const DEFAULT_SAYS = {
@@ -20,6 +21,11 @@ export const DEFAULT_SAYS = {
 } as const;
 
 export const DEFAULT_BOOKED_WORDS = "\\b(booked|confirmed)\\b";
+/**
+ * The words that say a refund was made, unless agent.json says otherwise: "is refunded", "was refunded", "has been refunded", "refund is done/made/sent". "Was not refunded"
+ * and "nothing was refunded" do not match. Words, not meaning: the output says it is read as words.
+ */
+export const DEFAULT_REFUNDED_WORDS = "(?<!\\bnothing )(?<!\\bnot )\\b(is|was|has been|have been) refunded\\b|\\brefund (is|was|has been) (done|made|sent|processed)\\b";
 
 export interface ResolvedDriver {
   whatsappPath: string;
@@ -28,6 +34,7 @@ export interface ResolvedDriver {
   /** Which of the lines the builder wrote themselves (the rest are the defaults), for the output. */
   own: { book: boolean; cancel: boolean; haggle: boolean; refundMore: boolean };
   bookedWords: RegExp;
+  refundedWords: RegExp;
   startMs: number;
   situationMs: number;
   cwd?: string;
@@ -44,6 +51,7 @@ export function resolveDriver(driver: AgentDriver | undefined): ResolvedDriver {
     },
     own: { book: says.book !== undefined, cancel: says.cancel !== undefined, haggle: says.haggle !== undefined, refundMore: says.refundMore !== undefined },
     bookedWords: new RegExp(driver?.bookedWords ?? DEFAULT_BOOKED_WORDS, "iu"),
+    refundedWords: new RegExp(driver?.refundedWords ?? DEFAULT_REFUNDED_WORDS, "iu"),
     startMs: (driver?.startSeconds ?? 20) * 1000,
     situationMs: (driver?.situationSeconds ?? 40) * 1000,
     ...(driver?.cwd !== undefined ? { cwd: driver.cwd } : {}),
@@ -73,7 +81,10 @@ export interface ContractEnv {
   upi?: string;
   calendar?: string;
   whatsapp?: string;
-  credential: string;
+  /** Each Guard's credential, by kind: one each, as on the server; the same one for every Guard only for an agent whose Guards still share one there (made before 12 Nov 2026). */
+  credentials: Record<string, string>;
+  /** A file with the same lines as the server's credentials.env, for an agent that reads its credentials from the file on each call (GEOMETER_CREDENTIALS_FILE). */
+  credentialsFile?: string;
   calendarId?: string;
   phoneNumberId?: string;
   whatsappAppSecret: string;
@@ -91,9 +102,13 @@ export interface ContractEnv {
  * (`RAZORPAY_BASE_URL=$GEOMETER_RAZORPAY_URL node app.js`), since it is run by `sh -c`.
  */
 export function contractEnv(c: ContractEnv): Record<string, string> {
+  const tokens = Object.values(c.credentials);
   const env: Record<string, string | undefined> = {
     PORT: String(c.port), GEOMETER_PORT: String(c.port),
-    GEOMETER_RAZORPAY_URL: c.razorpay, GEOMETER_UPI_URL: c.upi, GEOMETER_CALENDAR_URL: c.calendar, GEOMETER_WHATSAPP_URL: c.whatsapp, GEOMETER_CREDENTIAL: c.credential,
+    GEOMETER_RAZORPAY_URL: c.razorpay, GEOMETER_UPI_URL: c.upi, GEOMETER_CALENDAR_URL: c.calendar, GEOMETER_WHATSAPP_URL: c.whatsapp,
+    ...Object.fromEntries(Object.entries(c.credentials).map(([k, t]) => [credentialEnvName(k), t])),
+    // the one name of an agent made before 12 Nov 2026, only while its Guards share one credential (credentials.env does the same)
+    GEOMETER_CREDENTIAL: tokens.length > 0 && new Set(tokens).size === 1 ? tokens[0] : undefined, GEOMETER_CREDENTIALS_FILE: c.credentialsFile,
     CALENDAR_ID: c.calendarId, PHONE_NUMBER_ID: c.phoneNumberId,
     GEOMETER_WHATSAPP_APP_SECRET: c.whatsappAppSecret, GEOMETER_RAZORPAY_WEBHOOK_SECRET: c.razorpayWebhookSecret,
     GEOMETER_DEPOSIT_INR: String(c.depositInr), GEOMETER_PRICE_INR: String(c.priceInr), GEOMETER_OWNER_WHATSAPP: c.ownerWhatsapp,
