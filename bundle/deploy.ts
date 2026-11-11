@@ -104,12 +104,13 @@ export const ownNumbersOf = (folder: { settings?: unknown }): (string | undefine
 };
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
-function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true): Problem[] {
+function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, file) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${shop}: ${handIn} has not been handed in. Put it in secrets-inbox/${shop}/${handIn} (the panel does this); it is moved to where only the right container can read it.` }];
   return [
     // a UPI shop (B33) has no Razorpay account: no key and no webhook secret are asked for
     ...(razorpay ? need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key") : []),
-    ...need(`g-${shop}-whatsapp`, "whatsapp_authorization", "whatsapp_token"),
+    // item 11b: a shop on Gupshup hands its token in under Gupshup's own name; it fills the same file
+    ...need(`g-${shop}-whatsapp`, "whatsapp_authorization", gupshup ? "gupshup_authorization" : "whatsapp_token"),
     ...(razorpay ? need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret") : []),
     ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
@@ -199,7 +200,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay));
+  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup"));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
   // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
   const gateway = gatewayOf((folder.settings as { payment?: PaymentSettings } | undefined)?.payment);
