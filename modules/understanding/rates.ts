@@ -73,6 +73,32 @@ export const INR_PER_USD = { rate: RATE_LISTS[RATE_LISTS.length - 1].inrPerUsd, 
 
 export const RATES: readonly Rate[] = RATE_LISTS.flatMap((l) => l.rates);
 
+/**
+ * The provider name a model the builder hosts is recorded under (B73: their own model server, or Geometer's model gateway in front of it). No file in rates/
+ * has a line for it, and none ever should: what a builder's own GPU costs is not a price we know. Its calls are unknown (unpriced) unless the builder gives
+ * their own rate, which `selfHostedRate` turns into a line of the table for that one runtime.
+ */
+export const SELF_HOSTED_PROVIDER = "self-hosted";
+
+/** A builder's own price for the model they host, in US dollars per million tokens (the same units as the gateway's own config). 0 is allowed: their choice. */
+export interface BuilderRate { inputUsdPerMillion: number; outputUsdPerMillion: number }
+
+/** Is this exactly a BuilderRate: the two prices, each a number of 0 or more, and nothing else? The one check geometer.json and runtime.json both use. */
+export function isBuilderRate(v: unknown): v is BuilderRate {
+  const price = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0;
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const o = v as Record<string, unknown>;
+  return Object.keys(o).every((k) => k === "inputUsdPerMillion" || k === "outputUsdPerMillion") && price(o.inputUsdPerMillion) && price(o.outputUsdPerMillion);
+}
+
+/**
+ * The builder's rate as one line of the table, so the router prices a self-hosted call exactly as it prices a hosted one (rateFor, costMicroInr). It holds from
+ * `from` (the day the runtime started with it) and is converted at the table's own rupee rate, like every other line. It is never written to rates/.
+ */
+export function selfHostedRate(model: string, rate: BuilderRate, from: string): Rate {
+  return { provider: SELF_HOSTED_PROVIDER, model, from, inputUsdPerMillion: rate.inputUsdPerMillion, outputUsdPerMillion: rate.outputUsdPerMillion, source: "the builder's own setting (runtime.json parser.rate; the deploy bundle writes it from geometer.json model.selfHosted.rate)" };
+}
+
 const matches = (rate: Rate, provider: string, model: string): boolean =>
   rate.provider === provider && (rate.model === "*" || (typeof rate.model === "string" ? rate.model === model : rate.model.test(model)));
 
