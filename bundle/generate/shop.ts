@@ -5,11 +5,11 @@ import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../modules/approvals/people.ts";
 import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
-import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
+import { DEFAULT_PREPARED_BY, publicUrl, selfHostedTarget } from "../lib/server.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, gatewaySpec, whatsappGuardDef, whatsappSpec } from "./guards.ts";
+import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelProvider, modelSpec, gatewaySpec, whatsappGuardDef, whatsappSpec } from "./guards.ts";
 import type { WhatsAppRoute } from "./guards.ts";
 import { messagingConfigProblem } from "../../modules/messaging/providers.ts";
 import type { GuardDef, GuardKind } from "./guards.ts";
@@ -87,7 +87,12 @@ export const guardUrl = (service: string) => `http://${service}:${GUARD_PORT}`;
 /** In the runtime container, the folder that holds the agent's credentials for its Guards, one file per Guard. */
 const SECRETS = "/run/secrets";
 
-export const upstreamOf = (server: ServerConfig, kind: GuardKind, def: GuardDef): Upstream => server.upstreams?.[kind] ?? { host: def.upstream, tls: def.plain !== true };
+/**
+ * A Guard's upstream. TLS always, except a self-hosted model the builder put on a private address over plain http (B73; parseServer allows nothing else) and a
+ * Guard whose definition says its upstream is plain (`plain`, item 7: the owner-marked desk on the server's own network).
+ */
+export const upstreamOf = (server: ServerConfig, kind: GuardKind, def: GuardDef): Upstream =>
+  server.upstreams?.[kind] ?? { host: def.upstream, tls: kind === "model" ? (selfHostedTarget(server.model)?.tls ?? true) : def.plain !== true };
 
 /** The model's address for a runtime: the Guard's base, plus whatever the provider puts before /chat/completions. */
 export function modelBaseUrl(model: ModelConfig): string {
@@ -173,6 +178,34 @@ export function withFleetModel(runtime: Record<string, unknown>, fleetModel: "of
   return runtime;
 }
 
+/**
+ * Who answers the shop's language model, named in the GENERATED parser (`provider`), so the runtime prices each call from the rate table's line for that provider and
+ * model, the record's cost counts, and fleet's month AI cap (`ai.cap`, from the heartbeat's `model_micro_inr`) can trip. Before 11 Nov the parser named none, so the
+ * runtime took the host of its own address, `g-model`, which no line prices: every deployed shop's model calls were unpriced. The name is `modelProvider`'s: the
+ * upstream's provider (openai, anthropic, google, deepinfra), geometer.json's `model.provider`, or "self-hosted" for a model the builder hosts (B73), which also
+ * carries the builder's own rate when they gave one. Like `ai` above: the generated config only, and each key only if the pathway's own validator accepts it; a
+ * runtime that does not know `provider` or `rate` keeps its calls unpriced, and a note says so. A provider the bundle cannot name is said in a note too.
+ */
+export function withModelProvider(runtime: Record<string, unknown>, model: ModelConfig, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (!isObj(runtime.parser)) return runtime;
+  const provider = modelProvider(model);
+  if (!provider) {
+    notes.push(`this server's model calls are counted with no price: the bundle cannot tell the provider from the model Guard's address (${guardDef("model", model).upstream}). Name it in geometer.json as "model.provider", the name the rate table uses (for example "deepinfra").`);
+    return runtime;
+  }
+  const named = { ...runtime, parser: { ...runtime.parser, provider } };
+  if (!validate(named, "/").ok) {
+    if (validate(runtime, "/").ok) notes.push("this template version does not know parser.provider yet, so its model calls are counted with no price. Update the template, and the provider is written on the next deploy.");
+    return runtime;
+  }
+  const rate = model.selfHosted?.rate;
+  if (!rate) return named;
+  const priced = { ...named, parser: { ...named.parser, rate } };
+  if (validate(priced, "/").ok) return priced;
+  notes.push("the model you host has a rate in geometer.json, but this template version does not know parser.rate yet, so its calls are counted with no price. Update the template, and the rate is written on the next deploy.");
+  return named;
+}
+
 /** What the monthly report block is made from. */
 export interface ReportFacts {
   /** "Divya, local partner": who the owner is told set the agent up (the shop's report.json, else the panel's attribution). */
@@ -248,6 +281,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       const { provider: _p, appId: _a, ...meta } = (runtime.services as { messaging: Record<string, unknown> }).messaging;
       if (check({ ...runtime, services: { ...(runtime.services as object), messaging: meta } }, "/").ok) problems.push({ rule: "whatsapp-provider-pinned", message: `${shop.name} is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime does not know services.messaging.provider, so it cannot send through Gupshup. Move the shop to a version from 11 Nov 2026 or later (geometer update).` });
     }
+    runtime = withModelProvider(runtime, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks

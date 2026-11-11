@@ -20,6 +20,8 @@ import { KINDS, kindFor, kindNames } from "./kinds.ts";
 import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
+import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../../modules/understanding/rates.ts";
+import type { BuilderRate } from "../../modules/understanding/rates.ts";
 
 export const BUNDLE_VERSION = "0.1.0";
 
@@ -40,6 +42,69 @@ export interface ModelConfig {
   path?: string;
   /** A cap for the whole server, counted by the model Guard. Default 2000 calls a day. */
   callsPerDay?: number;
+  /** B73, optional and for a builder's own server only: a model the builder hosts, in place of a hosted provider. See SelfHostedModel. */
+  selfHosted?: SelfHostedModel;
+  /**
+   * The provider's name as the rate table (modules/understanding/rates/) writes it, for the record and the price of each call ("deepinfra"). Left out, the bundle
+   * names it from the upstream's host (generate/guards.ts `modelProvider`): api.openai.com is openai, api.anthropic.com anthropic, and so on; a model the builder
+   * hosts is always "self-hosted". Needed only for a provider at another address.
+   */
+  provider?: string;
+}
+
+/**
+ * B73: a model the builder hosts (their own model server, or Geometer's model gateway in front of it), reached by the server's one model Guard exactly as a hosted
+ * provider is: the same model pin, the same calls-per-day cap, the same kill switch, the key handed in with `geometer model-key` (for the gateway, the token its
+ * `token issue` printed). Only `wire: "openai"`: the gateway and the common model servers speak OpenAI-compatible chat completions.
+ */
+export interface SelfHostedModel {
+  /** The API root, as an OpenAI client takes it: `https://models.example.in/v1` (the call goes to <url>/chat/completions). Plain http only to a private address. */
+  url: string;
+  /** The builder's own price, US dollars per million tokens (the numbers in the gateway's own config, if they run it). Left out: the calls are counted with no price. */
+  rate?: BuilderRate;
+}
+
+/** Private IPv4 ranges (RFC 1918): the only places a self-hosted model may be reached over plain http, so its key never crosses the internet unencrypted. */
+const PRIVATE_IPV4 = /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/u;
+
+/** Where the model Guard sends a self-hosted model's calls: host:port, whether it talks TLS, and the chat-completions path. Undefined for a hosted provider. */
+export function selfHostedTarget(m: Pick<ModelConfig, "selfHosted">): { host: string; tls: boolean; path: string } | undefined {
+  if (!m.selfHosted) return undefined;
+  const u = new URL(m.selfHosted.url);
+  const tls = u.protocol === "https:";
+  return { host: `${u.hostname}:${u.port || (tls ? "443" : "80")}`, tls, path: `${u.pathname.replace(/\/+$/u, "")}/chat/completions` };
+}
+
+/** Every problem with geometer.json's `model.selfHosted`, in plain words. `hosted`: this is Geometer's partner server. */
+function selfHostedProblems(model: Record<string, unknown>, hosted: boolean): string[] {
+  const raw = model.selfHosted;
+  if (raw === undefined) return [];
+  const shape = '"model.selfHosted" must say {"url": "https://<your model server or gateway>/v1"}, with "rate": {"inputUsdPerMillion": <number>, "outputUsdPerMillion": <number>} if you want its calls priced.';
+  // Geometer's partner server: Geometer pays the AI there and caps it from its own price list (ai.cap), so a rate set on the server would decide the cap.
+  if (hosted) return ['"model.selfHosted" is for a builder\'s own server. On Geometer\'s partner server (panel mode "hosted") the model is Geometer\'s, and its AI cap is priced from Geometer\'s list.'];
+  if (!isObj(raw)) return [shape];
+  const problems: string[] = [];
+  const unknown = Object.keys(raw).filter((k) => k !== "url" && k !== "rate");
+  if (unknown.length > 0) problems.push(`"model.selfHosted" has ${unknown.map((k) => `"${k}"`).join(", ")}, which it does not know. It takes "url" and "rate"; the key is handed in with \`geometer model-key\`, never written here.`);
+  if (model.wire !== "openai") problems.push('"model.selfHosted" needs "wire": "openai" (OpenAI-compatible chat completions, which the model gateway, vLLM, llama.cpp\'s server and Ollama speak).');
+  if (model.upstream !== undefined || model.path !== undefined) problems.push('"model.selfHosted.url" says where the model is, so leave out "model.upstream" and "model.path".');
+  let url: URL | undefined;
+  try { url = typeof raw.url === "string" ? new URL(raw.url) : undefined; } catch { url = undefined; }
+  if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) problems.push(shape);
+  else if (url.username || url.password || url.search || url.hash) problems.push('"model.selfHosted.url" must not hold a user name, a password, a query or a #fragment: the key is handed in with `geometer model-key`, never written in geometer.json.');
+  else if (url.protocol === "http:" && !PRIVATE_IPV4.test(url.hostname)) problems.push(`"model.selfHosted.url" is plain http to ${url.hostname}, so the model's key would travel unencrypted. Use https, or the model server's private address (10.x, 172.16-31.x or 192.168.x) on your own network. (127.0.0.1 is the model Guard's own container, not this machine.)`);
+  if (raw.rate !== undefined && !isBuilderRate(raw.rate)) problems.push('"model.selfHosted.rate" must be {"inputUsdPerMillion": <number>, "outputUsdPerMillion": <number>}: your own price in US dollars per million tokens, 0 or more. Leave it out and the calls are counted with no price.');
+  return problems;
+}
+
+/** `model.provider`: a short name the rate table could use. "self-hosted" belongs to `selfHosted` alone, and a model the builder hosts takes no other name. */
+function providerProblems(model: Record<string, unknown>): string[] {
+  const p = model.provider;
+  if (p === undefined) return [];
+  if (typeof p !== "string" || !/^[a-z][a-z0-9-]{0,39}$/u.test(p)) return ['"model.provider" must be a short lowercase name, as the rate table writes it (for example "deepinfra"). Leave it out for api.openai.com or api.anthropic.com.'];
+  if (model.selfHosted !== undefined && p !== SELF_HOSTED_PROVIDER) return [`"model.provider" cannot be "${p}" for a model you host: its calls are "${SELF_HOSTED_PROVIDER}", priced only at your own rate.`];
+  if (model.selfHosted === undefined && p === SELF_HOSTED_PROVIDER) return [`"model.provider" "${SELF_HOSTED_PROVIDER}" is for a model you host: add "model.selfHosted" with its URL.`];
+  return [];
 }
 
 export interface BackupConfig {
@@ -148,6 +213,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   // A deploy refuses until it is chosen (deploy.ts, serverProblems). When it is there it must be whole.
   const model = isObj(o.model) ? o.model : undefined;
   if (o.model !== undefined && (!model || (model.wire !== "openai" && model.wire !== "anthropic") || typeof model.model !== "string" || model.model === "")) errors.push('"model" must say {"wire": "openai" or "anthropic", "model": "<the one model name every shop may ask for>"}.');
+  if (model) errors.push(...selfHostedProblems(model, isObj(o.panel) && o.panel.mode === "hosted"), ...providerProblems(model));
   const network = isObj(o.network) ? o.network : {};
   const base = typeof network.base === "string" ? network.base : "10.231";
   if (!/^\d{1,3}\.\d{1,3}$/u.test(base)) errors.push('"network.base" must be the first two numbers of a private range, like "10.231".');

@@ -7,9 +7,11 @@
 // turns the shop's own settings into the deposit bound and the refund threshold. The others are generated here from the shop's runtime.json (the WhatsApp
 // number, the calendar) and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
 import { ANTHROPIC_VERSION } from "../../modules/understanding/model-llm.ts";
+import { SELF_HOSTED_PROVIDER } from "../../modules/understanding/rates.ts";
 import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import type { LimitsSpec, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import { selfHostedTarget } from "../lib/server.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
 import { GATEWAYS, GATEWAY_KINDS, OWN_API, PROVIDERS, providerById } from "../../modules/payments/providers/index.ts";
 import { DESK_GUARD } from "../../modules/payments/owner-marked/desk-guard.ts";
@@ -71,7 +73,8 @@ export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
     case "calendar": return { kind, tool: "google-calendar", upstream: "www.googleapis.com:443", headers: { Authorization: "${file:/run/google/authorization}" } };
     case "model":
       if (model?.wire === "anthropic") return { kind, tool: "model", upstream: model.upstream ?? "api.anthropic.com:443", secretFile: "model_api_key", headers: { "x-api-key": "${file:/run/secrets/model_api_key}", "anthropic-version": ANTHROPIC_VERSION } };
-      return { kind, tool: "model", upstream: model?.upstream ?? "api.openai.com:443", secretFile: "model_authorization", headers: { Authorization: "${file:/run/secrets/model_authorization}" } };
+      // a model the builder hosts (B73) is one more OpenAI-compatible upstream: the same tool, the same key file (`geometer model-key`), only its address differs
+      return { kind, tool: "model", upstream: (model && selfHostedTarget(model)?.host) ?? model?.upstream ?? "api.openai.com:443", secretFile: "model_authorization", headers: { Authorization: "${file:/run/secrets/model_authorization}" } };
   }
 }
 
@@ -163,8 +166,25 @@ export function calendarSpec(id: SpecIdentity, o: { calendarId: string; createdP
   };
 }
 
+/**
+ * API hosts and the name the rate table (modules/understanding/rates/) gives their provider. Only providers the table prices are here: a model Guard pointed at another
+ * host names its provider in geometer.json (`model.provider`), or its calls are counted as unpriced.
+ */
+export const PROVIDER_BY_HOST: Readonly<Record<string, string>> = { "api.openai.com": "openai", "api.anthropic.com": "anthropic", "generativelanguage.googleapis.com": "google", "api.deepinfra.com": "deepinfra" };
+
+/**
+ * The provider a server's model calls are recorded and priced under: "self-hosted" for a model the builder hosts (B73), else geometer.json's `model.provider`, else the
+ * name of the model Guard's upstream host. Undefined when none of these says (a provider at an address the bundle does not know): the runtime then names it after
+ * its own address, the model Guard's, which no line of the table prices, as every deployed shop did before 11 Nov.
+ */
+export function modelProvider(m: ModelConfig): string | undefined {
+  if (m.selfHosted) return SELF_HOSTED_PROVIDER;
+  if (m.provider) return m.provider;
+  return PROVIDER_BY_HOST[guardDef("model", m).upstream.replace(/:\d+$/u, "")];
+}
+
 /** The path the model provider is called on. A provider whose compatible endpoint lives elsewhere says so in geometer.json (`model.path`). */
-export const modelPath = (m: ModelConfig): string => m.path ?? (m.wire === "anthropic" ? "/v1/messages" : "/v1/chat/completions");
+export const modelPath = (m: ModelConfig): string => m.path ?? selfHostedTarget(m)?.path ?? (m.wire === "anthropic" ? "/v1/messages" : "/v1/chat/completions");
 
 /** The one model every shop on the server may ask for, and a cap for the whole server. */
 export function modelSpec(id: SpecIdentity, m: ModelConfig): LimitsSpec {
