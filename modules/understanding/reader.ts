@@ -29,6 +29,7 @@ export interface ReaderDeps<I extends IntentBase, C, O extends ParseOptionsBase>
   tellOwner(notice: "allowance" | "override" | "fault"): Promise<unknown>;
 }
 
+// Wraps a parser with the allowance, the fault handling and the cost totals, so every template's agent reads messages the same way and falls back to buttons the same way.
 export function createReader<I extends IntentBase, C, O extends ParseOptionsBase>(deps: ReaderDeps<I, C, O>) {
   const { parser, context, policy, store, clock, timeZone } = deps;
 
