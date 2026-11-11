@@ -278,6 +278,8 @@ test("a pairing code file must hold a code; the questions are never asked when n
     assert.equal(r.code, 1); assert.match(r.out, /Without pairing, give fleet's licence key yourself: --licence-key .*Nothing was changed/u);
     r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE=hand DEPLOYMENT_ID=acme-vps-1 YES=1 DOMAIN=shops.example.com; ask_questions`);
     assert.equal(r.code, 1); assert.match(r.out, /With --fleet-key-file, also give fleet's licence key .*Nothing was changed/u);
+    r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE=skip LICENCE_KEY=abc123 YES=1 DOMAIN=shops.example.com; ask_questions`);
+    assert.equal(r.code, 1); assert.match(r.out, /--licence-key must be fleet's licence key as Geometer gave it: 64 hex characters/u);
     r = await s.run(`SERVER_DIR=${JSON.stringify(join(s.root, "srv"))} PAIR_MODE=skip LICENCE_KEY=${"ab".repeat(32)} YES=1 DOMAIN=shops.example.com; ask_questions; echo "mode $PAIR_MODE"`);
     assert.equal(r.code, 0, r.out); assert.match(r.out, /^mode skip$/mu);
   } finally { s.done(); }

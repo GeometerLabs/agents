@@ -601,7 +601,11 @@ check_inputs() {
 SKIP_NEEDS_KEY="Without pairing, give fleet's licence key yourself: --licence-key <64 hex characters> (Geometer gives it with a deployment key). Or pair: --pairing-code-file <file>."
 need_licence_key() {
   [ -f "$SERVER_DIR/geometer.json" ] && return 0
-  [ -n "${LICENCE_KEY:-}" ] && return 0
+  # the shape init checks (64 hex characters, or a comma-separated few), checked here too so a typo stops the install before anything is installed
+  if [ -n "${LICENCE_KEY:-}" ]; then
+    printf '%s' "$LICENCE_KEY" | grep -Eq '^[0-9a-fA-F]{64}(,[0-9a-fA-F]{64}){0,3}$' || die "--licence-key must be fleet's licence key as Geometer gave it: 64 hex characters (or up to four, separated by commas). Nothing was changed."
+    return 0
+  fi
   die "$1 Guard runs a builder's shop only under Geometer's licence, so the server folder is not made without its key. Nothing was changed."
 }
 
