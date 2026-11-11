@@ -21,7 +21,8 @@ users:
   - name: builder
     groups: [sudo]
     shell: /bin/bash
-    # the install needs sudo with no password here, because nobody is there to type one; take it away after the install if you like (/etc/sudoers.d/90-cloud-init-users)
+    # the install needs sudo with no password here, because nobody is there to type one. At its end the install takes it away (add --keep-sudo to the install
+    # line below to keep it) and leaves only what the geometer command needs; it prints how to put it back (choose a password with: sudo passwd builder)
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     lock_passwd: true
     ssh_authorized_keys:
