@@ -684,7 +684,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ നിങ്ങൾക്ക് ഡൗൺലോഡ് ചെയ്യാം. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | പണം അടച്ച് പുതുക്കുക | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 മുതൽ ലൈസൻസ് പുതുക്കിയിട്ടില്ല. ഈ സർവർ Geometer-ൽ എത്തുന്നുണ്ടോ എന്ന് നോക്കൂ. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
-| `licence.trial` | ട്രയൽ ലൈസൻസ്: 11 Dec 2026-ന് അവസാനിക്കും. അതിനുശേഷം, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: ends on 11 Dec 2026. After that, new bookings pause until the shop is on a plan. |  |
+| `licence.trial` | ട്രയൽ ലൈസൻസ്: അവസാന ദിവസം 10 Dec 2026 ആണ്. പിറ്റേന്ന് മുതൽ, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |

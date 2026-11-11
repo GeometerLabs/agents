@@ -81,7 +81,7 @@ export interface Words {
     heading: string; states: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>; means: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>;
     paidThrough(day: string): string; windDownOn(day: string): string; extended(day: string): string; stopOn(day: string): string; exportUntil(day: string): string;
     renew: string; stale(day: string): string;
-    /** Decision 39: the day the builder's trial ends, for a shop it covers. */
+    /** Decision 39: the builder's trial's LAST DAY, for a shop it covers (fleet's `trial_ends`; new work pauses from the day after). */
     trial(day: string): string;
   };
   setup: {
@@ -202,7 +202,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "plan.is": ["Business"], "plan.included": [3000],
   // Getters: the list is read when a sample is used (the review sheet, the words test), not whenever the panel loads its words.
   get "plan.price"() { return [listRupees("plan.business.fee")]; }, get "plan.priceBuilder"() { return [listRupees("licence.builder.fee")]; },
-  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["11 Dec 2026"],
+  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["10 Dec 2026"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
@@ -354,7 +354,7 @@ export const en: Words = {
     paidThrough: (day) => `Next payment due: ${day}.`, windDownOn: (day) => `If it is not paid, new bookings pause on ${day}.`, extended: (day) => `Geometer's emergency extension covers it until ${day}.`,
     stopOn: (day) => `Final stop planned for ${day}.`, exportUntil: (day) => `You can download the shop's records until ${day}.`,
     renew: "Pay to renew", stale: (day) => `Licence not refreshed since ${day}. Check that this server reaches Geometer. Write to support. A person answers.`,
-    trial: (day) => `Trial licence: ends on ${day}. After that, new bookings pause until the shop is on a plan.`,
+    trial: (day) => `Trial licence: the last day is ${day}. From the next day, new bookings pause until the shop is on a plan.`,
   },
   setup: {
     title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
