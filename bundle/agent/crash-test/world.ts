@@ -52,6 +52,11 @@ export interface CrashPlan {
   cwd: string;
   version?: string;
   driver: ResolvedDriver;
+  /**
+   * Called with a situation's world after its checks and before the world is taken down, so a caller can read what the Guards decided and what the stand-ins hold
+   * (the website's generators save this as the real record of a run: public-web scripts/examples/lostack.ts). It changes nothing a situation judges.
+   */
+  observe?: (world: World) => Promise<void>;
 }
 
 export interface WorldOptions {
