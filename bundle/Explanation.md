@@ -809,8 +809,9 @@ with both hashes in guard.toml under the one id, **the old one first**, because 
 (`admin.rs`, `find(|a| a.id == subject)`); the running Guards are asked to read their guard.toml again (`POST /admin/reload`), and only a Guard whose reload is refused or
 needs a restart is restarted (`bringUp`'s `reload` list, passed by the rotation only, so a shop's deploy is unchanged); (4) `credentials.env` is rewritten once every Guard
 runs what was checked; (5) each rotated Guard is told to retire the old one at the end of the overlap (`after_seconds`), so **Guard's own clock** ends it even if the deployer
-is down then; (6) the deployer's loop (`finishRotations`, last in `runDueJobs`, after its own save so its deploy's state is not overwritten) asks again only if the first
-retire was not taken, while the old entry is still first, then drops the hash and deploys. A deploy refused in (3) puts the old credential back in the Guard's file and
+is down then; (6) the deployer's loop (`finishRotations`, last in `runDueJobs`, after its own save so its deploy's state is not overwritten) tells Guard to retire it again
+(a store put back by `restore` may have lost the first instruction), while the old entry is still first, then drops the hash and deploys; a deploy that fails puts the
+hash back (retired, still first) and is tried again after 10 minutes. A deploy refused in (3) puts the old credential back in the Guard's file and
 forgets the rotation; the agent's file never changed. A second rotation of a Guard is refused while its overlap runs. **The overlap is 15 minutes by default**: it covers a
 call in flight, a held refund sent again every few minutes, and an agent that re-reads its file on each call or is restarted to load it; `--overlap-minutes 0` ends a leaked
 credential at once, and up to 1440 serves an agent whose file is copied to another machine by hand. The panel's "New credentials" button is the same rotation, asked for
@@ -822,8 +823,10 @@ exported record with the panel's own detectors (`modules/unfinished`, Bookings' 
 asked refuses the removal** rather than count as nothing open. `--force` goes on and says plainly what stays open and that nothing will finish it. The order matters: the
 kill switch first; then `agents/<name>/` moves out (the deployer's `applyOnce` and a bare `deploy` deploy any folder there), with its state entry, status file, record and
 exports, into `removed/<name>-<time>/` with a README; a tombstone in `state.removed` keeps the name and its network index, because the Guards' kept volumes carry the name
-and a new shop or agent under it would start on their stores (`agent add` and `shopIndex` refuse it, in words); then the configuration without it, brought up, which takes its
-Guards and forwarders down (`--remove-orphans`); then every credential the bundle made for it is deleted. Kept and listed: the shop's own keys, its fingerprint key and the
+and a new shop or agent under it would start on their stores (`agent add` and `shopIndex` refuse it, in words; a panel stop request for the name is left alone, because the
+shop branch it would take throws there); the panel's waiting requests for it are dropped; every credential the bundle made for it is deleted and the kept README written,
+**before** the configuration without it is brought up (`--remove-orphans` takes its Guards and forwarders down), so a server that cannot bring it up at that moment leaves no
+credential behind and says that `geometer deploy` finishes it. Kept and listed: the shop's own keys, its fingerprint key and the
 label key (the kept record's labels were made with them), the Guards' Docker volumes, the desk's ledger for a UPI agent, and its snapshots in the bucket, whose lifecycle
 rule deletes them after its days as for any snapshot.
 
