@@ -229,6 +229,7 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: 7
 പരിശോധിക്കാത്തത്: പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക · പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) · യഥാർത്ഥ WhatsApp · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 16 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 കോഡ്: 7K2M-9QXD · പൂർണ്ണ റിപ്പോർട്ട്: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html
+യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555
 സപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.
 തയ്യാറാക്കിയത്: Divya, Sri Sai Digital · Geometer
 ★ ഇന്നൊവേറ്റർ
@@ -242,6 +243,7 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `monthlyReport` | പ്രതിമാസ റിപ്പോർട്ട് | Monthly report |  |
 | `goLiveCertificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
 | `fullReport` | പൂർണ്ണ റിപ്പോർട്ട് | Full report |  |
+| `checkGenuine` | യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക | Check it is genuine |  |
 | `helpLine` | സപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും. | Write to support. A person answers. |  |
 | `promise` | പേയ്മെന്റ് രേഖയില്ലാതെ (UPI-യിൽ നിങ്ങളുടെ സ്ഥിരീകരണമില്ലാതെ) ഒരു ഓർഡറും ഉറപ്പിക്കില്ല; ഓരോ റീഫണ്ടും രേഖപ്പെടുത്തുന്നു. | No order confirmed without the payment record (or your confirmation for UPI); every refund tracked. |  |
 | `label.collected` | പിരിഞ്ഞ അഡ്വാൻസ് | Advance collected |  |
@@ -368,6 +370,7 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `page.signedBy` | ഒപ്പിട്ടത് | Signed by |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
 | `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
+| `page.scanSummary` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ ഈ കോഡ് സ്കാൻ ചെയ്യുക, അല്ലെങ്കിൽ ലിങ്ക് തുറക്കുക. രേഖ യഥാർത്ഥമാണോ, ആരാണ് ഇത് പുറത്തിറക്കിയത്, ഈ പേജുമായി ഒത്തുനോക്കാനുള്ള കണക്കുകൾ എന്നിവ അത് കാണിക്കും. പരിശോധന നിങ്ങളുടെ ഫോണിൽ നടക്കുന്നു, രേഖയെക്കുറിച്ച് ഒന്നും അയയ്ക്കുന്നില്ല. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
 | `page.signatureNote` | ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
 | `page.notAGrade` | ഇവ രേഖയിൽ കാണുന്നതിന്റെ എണ്ണം മാത്രമാണ്. ഇവ ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | These are counts of what the record shows. They do not grade the agent. |  |
 | `page.period` | കാലയളവ് | Period |  |

@@ -2367,7 +2367,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nअसली है या नहीं, जाँचें: {{14}}\nतैयार किया: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2384,6 +2384,7 @@
               "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 12 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2399,7 +2400,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nCheck it is genuine: {{14}}\nSet up by: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2416,6 +2417,7 @@
               "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 12 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2431,7 +2433,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nയഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: {{14}}\nതയ്യാറാക്കിയത്: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2448,6 +2450,7 @@
               "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2463,7 +2466,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: {{14}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2480,6 +2483,7 @@
               "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2495,7 +2499,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "text": "मासिक रिपोर्ट: {{1}}\nजमा हुआ: {{2}} · वापस किया: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nअसली है या नहीं, जाँचें: {{14}}\nतैयार किया: {{15}} · Geometer\n★ इनोवेटर",
         "example": {
           "body_text": [
             [
@@ -2512,6 +2516,7 @@
               "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 12 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2527,7 +2532,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "text": "Monthly report: {{1}}\nCollected: {{2}} · Given back: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nCheck it is genuine: {{14}}\nSet up by: {{15}} · Geometer\n★ Innovator",
         "example": {
           "body_text": [
             [
@@ -2544,6 +2549,7 @@
               "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 12 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2559,7 +2565,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nപിരിഞ്ഞത്: {{2}} · തിരികെ നൽകിയത്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nയഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: {{14}}\nതയ്യാറാക്കിയത്: {{15}} · Geometer\n★ ഇന്നൊവേറ്റർ",
         "example": {
           "body_text": [
             [
@@ -2576,6 +2582,7 @@
               "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2591,7 +2598,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಸಂಗ್ರಹವಾದದ್ದು: {{2}} · ಮರಳಿ ಕೊಟ್ಟದ್ದು: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: {{14}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{15}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
         "example": {
           "body_text": [
             [
@@ -2608,6 +2615,7 @@
               "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2623,7 +2631,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer",
+        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nअसली है या नहीं, जाँचें: {{14}}\nतैयार किया: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2640,6 +2648,7 @@
               "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 12 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2655,7 +2664,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Monthly report: {{1}}\nMarked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer",
+        "text": "Monthly report: {{1}}\nMarked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nCheck it is genuine: {{14}}\nSet up by: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2672,6 +2681,7 @@
               "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 12 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2687,7 +2697,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nയഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: {{14}}\nതയ്യാറാക്കിയത്: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2704,6 +2714,7 @@
               "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2719,7 +2730,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: {{14}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{15}} · Geometer",
         "example": {
           "body_text": [
             [
@@ -2736,6 +2747,7 @@
               "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2751,7 +2763,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nतैयार किया: {{14}} · Geometer\n★ इनोवेटर",
+        "text": "मासिक रिपोर्ट: {{1}}\nमालिक द्वारा मिला हुआ दर्ज: {{2}} · मालिक द्वारा भेजा हुआ दर्ज रिफंड: {{3}} · अभी लेना बाकी: {{4}}\nभेजी गई याद: {{5}} · फीस से घटाया: {{6}}\nआपसे पूछा गया: {{7}} · आपने मंज़ूर किया: {{8}} · आपने मना किया: {{9}}\nआपकी सीमाओं ने रोका: {{10}}\nजाँचा नहीं गया: {{11}}। जाँच हाथ से की गई।\nकोड: {{12}} · पूरी रिपोर्ट: {{13}}\nअसली है या नहीं, जाँचें: {{14}}\nतैयार किया: {{15}} · Geometer\n★ इनोवेटर",
         "example": {
           "body_text": [
             [
@@ -2768,6 +2780,7 @@
               "नकद या बैंक ट्रांसफर से दी गई फीस · Razorpay के बाहर के भुगतान · असली WhatsApp · असली Razorpay · शब्दों की किसी मूल भाषी से जाँच · और 12 बातें (पूरी रिपोर्ट में)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2783,7 +2796,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Monthly report: {{1}}\nMarked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nSet up by: {{14}} · Geometer\n★ Innovator",
+        "text": "Monthly report: {{1}}\nMarked paid by owner: {{2}} · Refunds marked sent by owner: {{3}} · Still to collect: {{4}}\nReminders sent: {{5}} · Taken off fees: {{6}}\nYou were asked: {{7}} · You approved: {{8}} · You said no: {{9}}\nStopped by your limits: {{10}}\nNot checked: {{11}}. Checks were run by hand.\nCode: {{12}} · Full report: {{13}}\nCheck it is genuine: {{14}}\nSet up by: {{15}} · Geometer\n★ Innovator",
         "example": {
           "body_text": [
             [
@@ -2800,6 +2813,7 @@
               "fees paid in cash or by bank transfer · payments outside Razorpay · real WhatsApp · real Razorpay · a native speaker's review of the wording · and 12 more (see the full report)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2815,7 +2829,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nതയ്യാറാക്കിയത്: {{14}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "text": "പ്രതിമാസ റിപ്പോർട്ട്: {{1}}\nഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്: {{2}} · ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്: {{3}} · ഇനിയും പിരിക്കാനുള്ളത്: {{4}}\nഅയച്ച ഓർമ്മപ്പെടുത്തലുകൾ: {{5}} · ഫീസിൽ നിന്ന് കുറച്ചത്: {{6}}\nനിങ്ങളോട് ചോദിച്ചു: {{7}} · നിങ്ങൾ അംഗീകരിച്ചു: {{8}} · നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു: {{9}}\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: {{10}}\nപരിശോധിക്കാത്തത്: {{11}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{12}} · പൂർണ്ണ റിപ്പോർട്ട്: {{13}}\nയഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: {{14}}\nതയ്യാറാക്കിയത്: {{15}} · Geometer\n★ ഇന്നൊവേറ്റർ",
         "example": {
           "body_text": [
             [
@@ -2832,6 +2846,7 @@
               "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് · Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ · യഥാർത്ഥ WhatsApp · യഥാർത്ഥ Razorpay · വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന · കൂടാതെ 12 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
               "Divya, Sri Sai Digital"
             ]
           ]
@@ -2847,7 +2862,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{14}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "text": "ಮಾಸಿಕ ವರದಿ: {{1}}\nಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು: {{2}} · ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್: {{3}} · ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು: {{4}}\nಕಳುಹಿಸಿದ ನೆನಪುಗಳು: {{5}} · ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು: {{6}}\nನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು: {{7}} · ನೀವು ಒಪ್ಪಿದ್ದು: {{8}} · ನೀವು ಬೇಡ ಎಂದದ್ದು: {{9}}\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: {{10}}\nಪರಿಶೀಲಿಸದ್ದು: {{11}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{12}} · ಪೂರ್ಣ ವರದಿ: {{13}}\nನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: {{14}}\nಸಿದ್ಧಪಡಿಸಿದವರು: {{15}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
         "example": {
           "body_text": [
             [
@@ -2864,6 +2879,7 @@
               "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
               "7K2M-9QXD",
               "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA",
               "Divya, Sri Sai Digital"
             ]
           ]

@@ -219,6 +219,7 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 आपकी सीमाओं ने रोका: 7
 जाँचा नहीं गया: पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)। जाँच हाथ से की गई।
 कोड: 7K2M-9QXD · पूरी रिपोर्ट: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html
+असली है या नहीं, जाँचें: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA
 सपोर्ट को लिखें। एक इंसान जवाब देता है।
 तैयार किया: Divya, Sri Sai Digital · Geometer
 ★ इनोवेटर
@@ -232,6 +233,7 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `monthlyReport` | मासिक रिपोर्ट | Monthly report |  |
 | `goLiveCertificate` | चालू करने से पहले का जाँच प्रमाणपत्र | Go-live certificate |  |
 | `fullReport` | पूरी रिपोर्ट | Full report |  |
+| `checkGenuine` | असली है या नहीं, जाँचें | Check it is genuine |  |
 | `helpLine` | सपोर्ट को लिखें। एक इंसान जवाब देता है। | Write to support. A person answers. |  |
 | `promise` | भुगतान के रिकॉर्ड (या UPI में आपकी पुष्टि) के बिना कोई ऑर्डर पक्का नहीं; हर रिफंड का हिसाब। | No order confirmed without the payment record (or your confirmation for UPI); every refund tracked. |  |
 | `label.collected` | एडवांस जमा हुआ | Advance collected |  |
@@ -358,6 +360,7 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `page.signedBy` | हस्ताक्षर | Signed by |  |
 | `page.notSigned` | हस्ताक्षर नहीं | Not signed |  |
 | `page.scanToCheck` | इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है। | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
+| `page.scanSummary` | इस दस्तावेज़ को geometer.dev पर जाँचने के लिए यह कोड स्कैन करें या लिंक खोलें। इससे पता चलता है कि दस्तावेज़ असली है या नहीं, इसे किसने जारी किया, और इस पन्ने से मिलाने के लिए आँकड़े। जाँच आपके फ़ोन पर होती है, दस्तावेज़ के बारे में कुछ भेजा नहीं जाता। यह नहीं बताता कि आँकड़े सच हैं। | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
 | `page.signatureNote` | हस्ताक्षर दिखाता है कि यह दस्तावेज़ किसने बनाया और यह बदला नहीं है। यह नहीं दिखाता कि इसमें गिनी गई बातें पूरी हैं। | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
 | `page.notAGrade` | ये रिकॉर्ड में दिखी बातों की गिनती हैं। ये एजेंट को अंक या दर्जा नहीं देतीं। | These are counts of what the record shows. They do not grade the agent. |  |
 | `page.period` | अवधि | Period |  |
