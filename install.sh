@@ -550,6 +550,18 @@ parse_args() {
   done
 }
 
+# What goes into a system file or a command must be plain: a path with no spaces or quotes, a user name, a port number.
+check_inputs() {
+  local p
+  for p in "$HTTP_PORT" "$HTTPS_PORT"; do
+    if ! printf '%s' "$p" | grep -Eq '^[0-9]{1,5}$' || [ "$p" -lt 1 ] || [ "$p" -gt 65535 ]; then die "\"$p\" is not a port number (1 to 65535)."; fi
+  done
+  for p in "$SERVER_DIR" "$APP_DIR"; do
+    printf '%s' "$p" | grep -Eq '^/[A-Za-z0-9._/+-]+$' || die "The folder \"$p\" must be a full path of letters, digits and . _ / + - only (it goes into a system service file)."
+  done
+  printf '%s' "$USER" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$' || die "The user name \"$USER\" is not one the install can write into a service file."
+}
+
 ask_questions() {
   if [ -z "${DOMAIN:-}" ] && [ -f "$SERVER_DIR/geometer.json" ]; then DOMAIN=$(sed -n 's/^[[:space:]]*"domain":[[:space:]]*"\([^"]*\)".*/\1/p' "$SERVER_DIR/geometer.json" | head -n 1); fi
   if [ -z "${DOMAIN:-}" ]; then
@@ -610,6 +622,7 @@ main() {
   USER=${USER:-$(id -un)}
   REVIEWED_BY=${REVIEWED_BY:-$(printf '%s@%s' "$(id -un)" "${HOSTNAME%%.*}" | tr -c 'A-Za-z0-9._:/@+-' '-')}
   SERVER_DIR=${SERVER_DIR%/}
+  check_inputs
 
   say "Geometer: setting up this server for your shops."
   [ "${DRY_RUN:-0}" = 1 ] && say "(Dry run: each step is printed, nothing is changed, and no code is sent.)"
