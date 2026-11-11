@@ -62,16 +62,19 @@ test("a bad, missing or wrong-body signature is 401 and nothing reaches the runt
   });
 });
 
-test("whatsapp: a signed message is forwarded as a message event; a status-only webhook and an event the agent does not use are answered 200 and not forwarded", async () => {
+test("whatsapp: a signed message is forwarded as a message event; a delivered report as a message_status event (item 11b); a 'sent' report and an event the agent does not use are answered 200 and not forwarded", async () => {
   await withInbox(async ({ runtime, post }) => {
     assert.equal((await post("/webhooks/whatsapp", whatsappBody, whatsappHeaders(whatsappBody))).status, 200);
     const sent = JSON.parse(runtime.requests[0].body);
     assert.deepEqual(sent.events, [{ kind: "message", message: { id: "wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=", from: "+16505551234", text: "Does it come in another color?", timestamp: 1749416383000 } }]);
     const status = fixtureText("whatsapp-webhook-status-delivered.json");
     assert.equal((await post("/webhooks/whatsapp", status, whatsappHeaders(status))).status, 200);
+    assert.deepEqual(JSON.parse(runtime.requests[1].body).events, [{ kind: "message_status", status: { ids: ["wamid.HBgLMTY1MDM4Nzk0MzkVAgARGBI3MTE5MjVBOTE3MDk5QUVFM0YA"], status: "delivered", to: "+16505551234", timestamp: 1750263773000 } }]);
+    const onlySent = status.replace('"status": "delivered"', '"status": "sent"');
+    assert.equal((await post("/webhooks/whatsapp", onlySent, whatsappHeaders(onlySent))).status, 200);
     const expired = fixtureText("razorpay-webhook-payment_link.expired.json");
     assert.equal((await post("/webhooks/razorpay", expired, razorpayHeaders(expired))).status, 200);
-    assert.equal(runtime.requests.length, 1);
+    assert.equal(runtime.requests.length, 2);
   });
 });
 
@@ -225,8 +228,8 @@ test("path-token: a post to the URL with the token is forwarded with no signatur
   await withInbox(async ({ runtime, post }) => {
     assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, whatsappBody, jsonHeaders)).status, 200);
     assert.deepEqual(JSON.parse(runtime.requests[0].body).events, [{ kind: "message", message: { id: "wamid.HBgLMTY1MDM4Nzk0MzkVAgASGBQzQTRBNjU5OUFFRTAzODEwMTQ0RgA=", from: "+16505551234", text: "Does it come in another color?", timestamp: 1749416383000 } }]);
-    const status = fixtureText("whatsapp-webhook-status-delivered.json");
-    assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, status, jsonHeaders)).status, 200); // nothing to forward
+    const status = fixtureText("whatsapp-webhook-status-delivered.json").replace('"status": "delivered"', '"status": "sent"');
+    assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, status, jsonHeaders)).status, 200); // a "sent" report: nothing to forward
     assert.equal(runtime.requests.length, 1);
     assert.equal((await post(`/webhooks/whatsapp/${TOKEN}`, "{not json", jsonHeaders)).status, 400);
   }, { config: PATH_MODE });
@@ -343,8 +346,8 @@ test("as its own process: with no WhatsApp setting it refuses to start; path-tok
       child.stderr.on("data", (d) => { seen += d; if (/listening on/.test(seen)) { clearTimeout(timer); resolve(seen); } });
     });
     const port = /127\.0\.0\.1:(\d+)/.exec(out)![1];
-    const status = fixtureText("whatsapp-webhook-status-delivered.json");
-    assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/${TOKEN}`, { method: "POST", body: status })).status, 200); // nothing to forward, so no runtime is needed
+    const status = fixtureText("whatsapp-webhook-status-delivered.json").replace('"status": "delivered"', '"status": "sent"');
+    assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/${TOKEN}`, { method: "POST", body: status })).status, 200); // a "sent" report: nothing to forward, so no runtime is needed
     assert.equal((await fetch(`http://127.0.0.1:${port}/webhooks/whatsapp/not-the-token`, { method: "POST", body: status })).status, 404);
     assert.match(out, /path-token/);
     assert.ok(!out.includes(TOKEN));

@@ -1,0 +1,29 @@
+{
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "statuses": [
+              {
+                "errors": [
+                  {
+                    "code": 4003,
+                    "title": "Message Sending failed as template did not match"
+                  }
+                ],
+                "gs_id": "ad6b9f16-33ce-4405-9abd-5f90f88195c8",
+                "recipient_id": "919800000001",
+                "status": "failed",
+                "timestamp": 1725367035088
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "object": "whatsapp_business_account"
+}
