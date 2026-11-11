@@ -62,6 +62,7 @@ export function ownApiGuardDef(tool: string, upstream: string): GuardDef {
   return { kind: OWN_API, tool, upstream, secretFile: OWN_API_SECRET, headers: { Authorization: `\${file:/run/secrets/${OWN_API_SECRET}}` } };
 }
 
+// The single definition of a Guard kind. Everything else (compose, configs, limits) asks here, so a Guard's upstream and header cannot differ between the files that mention it.
 export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
   // an owner-marked module (UPI) has no API on the internet: its Guard is in front of the desk, in the relay's container on this server (B71 part 2)
   if (providerById(kind)?.ownerMarked) return { kind, tool: DESK_GUARD.tool, upstream: `relay:${DESK_PORT}`, secretFile: DESK_SECRET, headers: { Authorization: `\${file:/run/secrets/${DESK_SECRET}}` }, plain: true };
