@@ -1,9 +1,9 @@
 // Messaging over the WhatsApp Cloud API's wire format, mapped to the Messaging interface. Deliberately thin.
 // No token, no Authorization header: the base URL is a Guard instance in front of the WhatsApp provider (or a stand-in).
 //
-// THE PROVIDER IS NOT CHOSEN YET. Gupshup, AiSensy, Interakt or 360dialog sit in front of Meta's API and each has its own paths and
-// bodies (360dialog is closest to Meta's). This file speaks Meta's Cloud API shape; a provider is added as one more small file that
-// builds its own request and reads its own reply, and createLiveAdapters picks it. Nothing else here would change.
+// Providers (11 Nov 2026): Meta direct is this file. A provider that takes Meta's own bodies (Gupshup's v3 pass-through, the pilot's, decision 3)
+// is one more small file beside it (gupshup.ts) that passes its own path, read and error reader through the seam below (CloudApiWire);
+// providers.ts picks one from the shop's runtime.json, and every createLiveAdapters calls that. The bodies and the reply are the same code.
 //
 // Wire facts this file rests on (Meta's own docs; read 3 Nov 2026):
 //  - send:    POST /{version}/{phone-number-id}/messages, body { messaging_product: "whatsapp", recipient_type: "individual", to, type, ... }.
@@ -30,8 +30,9 @@
 //  - the 24-hour window: opens when the customer writes and resets on each of their messages. There is no API that reports it.
 //
 // What "confirmed" can mean here: WhatsApp has NO endpoint to read a sent message back. getMessage returns the local copy of what the
-// send call accepted, keyed by the wamid. So a live "confirmed" is "WhatsApp accepted it", NOT "delivered". Delivered, read and
-// failed come from status webhooks, which are not handled yet (Deferred.md).
+// send call accepted, keyed by the id the reply gave. So a live "confirmed" is "WhatsApp accepted it", NOT "delivered". Delivered, read and
+// failed arrive later as status webhooks: the inbox reads them (webhooks.ts parseWhatsAppStatuses) and the runtime records each against
+// the message it sent (statuses.ts), in words that keep "accepted" and "delivered" apart.
 import type { Clock } from "../core/clock.ts";
 import { HOUR } from "../core/time.ts";
 import { META_LANGUAGE } from "../language/meta-templates.ts";
@@ -54,10 +55,24 @@ export interface WhatsAppConfig { baseUrl: string; phoneNumberId: string; timeou
 const WINDOW_CLOSED_CODE = 131047;
 const KEPT_MESSAGES = 1000; // the local copy is for the read-back right after a send; it does not grow without end
 
-function describeError(reply: HttpReply): { message: string; code?: number } {
+/** Meta's refusal in plain words, and its error code (131047 is the closed 24-hour window). A provider that passes Meta's errors on reads them with this too. */
+export function describeMetaError(reply: HttpReply): { message: string; code?: number } {
   const e = isObject(reply.body) && isObject(reply.body.error) ? reply.body.error : undefined;
   const details = e && isObject(e.error_data) ? str(e.error_data.details) : undefined;
   return { message: details ?? str(e?.message) ?? `WhatsApp answered ${reply.status}.`, code: num(e?.code) };
+}
+
+/**
+ * What differs between Meta direct and a provider that takes Meta's own bodies and answers with Meta's own reply (Gupshup's v3 pass-through): where a send goes,
+ * where the cheap read for guard-wait.ts goes, and how a refusal reads. Everything else (the bodies, the 24-hour window, the read-back copy) is the same code.
+ */
+export interface CloudApiWire {
+  /** The service's name in errors: "WhatsApp", "Gupshup". */
+  name: string;
+  sendPath: string;
+  /** A read that reaches this service's Guard and changes nothing (Messaging.ping). */
+  pingPath: string;
+  describeError(reply: HttpReply): { message: string; code?: number };
 }
 
 /** A template value may not hold line breaks, tabs or runs of spaces; the record's values never do, so this only guards. */
@@ -93,9 +108,18 @@ export function imageBody(to: string, image: ImageMessage): Json {
   return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "image", image: { link: image.link, ...(image.caption ? { caption: image.caption } : {}) } };
 }
 
+/** Meta's Cloud API, direct (or through Meta's own test number): the default provider. */
 export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: Clock; window: WindowStore }): Messaging {
-  const http: Http = createHttp(config.baseUrl, "WhatsApp", config.timeoutMs, config.agentToken);
-  const path = `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}/messages`;
+  const number = `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}`;
+  return createCloudApiMessaging(createHttp(config.baseUrl, "WhatsApp", config.timeoutMs, config.agentToken), { name: "WhatsApp", sendPath: `${number}/messages`, pingPath: number, describeError: describeMetaError }, deps);
+}
+
+/**
+ * The Messaging interface over Meta's Cloud API bodies, sent to `wire.sendPath` on `http` (a Guard in front of the provider: `http` carries only the agent's credential
+ * for that Guard, never the provider's key). Exported for a provider file like gupshup.ts; a template uses providers.ts.
+ */
+export function createCloudApiMessaging(http: Http, wire: CloudApiWire, deps: { clock: Clock; window: WindowStore }): Messaging {
+  const path = wire.sendPath;
   const sent = new Map<string, OutboundMessage>();
 
   const windowOpen = (to: string) => {
@@ -107,15 +131,15 @@ export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: C
   async function send(body: Json, copy: Omit<OutboundMessage, "id" | "sentAt" | "afterOptOut" | "acceptedAs">): Promise<OutboundMessage> {
     const reply = await http.request("POST", path, { body });
     if (reply.status < 200 || reply.status >= 300) {
-      const { message, code } = describeError(reply);
+      const { message, code } = wire.describeError(reply);
       if (code === WINDOW_CLOSED_CODE) throw new WindowClosedError();
       throw new ApiError(reply.status, message);
     }
     const first = isObject(reply.body) ? asArray(reply.body.messages).find(isObject) : undefined;
     const id = str(first?.id);
-    if (!id) throw new ApiError(502, "WhatsApp accepted the call but gave no message id.");
+    if (!id) throw new ApiError(502, `${wire.name} accepted the call but gave no message id.`);
     const acceptedAs = str(first?.message_status) ?? "accepted";
-    if (acceptedAs === "paused") throw new ApiError(503, "WhatsApp has paused sending, so the message will not go out.");
+    if (acceptedAs === "paused") throw new ApiError(503, `${wire.name} has paused sending, so the message will not go out.`);
     // sentAt is when we handed it over. afterOptOut is not knowable here: the agent's own STOP gate is the guard.
     const message: OutboundMessage = { ...copy, id, sentAt: deps.clock.now(), afterOptOut: false, acceptedAs };
     sent.set(id, message);
@@ -156,7 +180,7 @@ export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: C
 
     async isWindowOpen(to) { return windowOpen(to); },
 
-    async ping() { return http.request("GET", `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}`); },
+    async ping() { return http.request("GET", wire.pingPath); },
 
     /** Not a read from WhatsApp (there is none): the copy of what the send call accepted. Null after a restart. */
     async getMessage(id) {
