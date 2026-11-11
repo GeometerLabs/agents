@@ -75,5 +75,6 @@ test("decision 39: a shop the lease does not list says it has no licence yet, on
     const trial = await dev.get("/shops/trial-shop");
     assert.match(trial.plain, /Licence in order/u);
     assert.match(trial.plain, /Trial licence: ends on 11 Dec 2026\. After that, new bookings pause until the shop is on a plan\./u);
+    assert.doesNotMatch(trial.plain, /Next payment due/u, "a trial owes nothing yet");
   } finally { await b.close(); }
 });
