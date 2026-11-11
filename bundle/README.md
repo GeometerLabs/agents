@@ -118,7 +118,7 @@ Nothing secret is in any generated file; the generator searches for the value of
 
 The server's model Guard calls a hosted provider with the key you hand in. You can point it at a model you run yourself instead: any server that speaks OpenAI-compatible chat completions (vLLM, llama.cpp's server, Ollama), or Geometer's model gateway in front of one. Every call still goes through the model Guard, with the same model pin, the same calls-per-day cap and the same kill switch, and the shops' runtimes still hold no key. If you do nothing, nothing changes. Geometer's partner server refuses this setting: the model there is Geometer's.
 
-1. **Run the model server with a key** (vLLM and llama.cpp's server take `--api-key`). Or put Geometer's model gateway in front of it, which adds tokens, a monthly cap per account and a usage report, and issue a token with `geo-model-gateway --config gateway.toml token issue <account>`.
+1. **Run the model server with a key** (vLLM and llama.cpp's server take `--api-key`), and note the model name it answers to.
 2. **Name it in `geometer.json`**, in the `model` block:
 
    ```json
@@ -132,12 +132,12 @@ The server's model Guard calls a hosted provider with the key you hand in. You c
    }
    ```
 
-   `model` is the name your server answers to (the gateway's `[[model]] id`); every shop's `runtime.json` asks for exactly that one. `url` is the API root, as an OpenAI client takes it; the calls go to `<url>/chat/completions`. Use `https`. Plain `http` is accepted only to a private address on your own network (10.x, 172.16 to 31.x, 192.168.x), so the key never crosses the internet unencrypted. `127.0.0.1` would be the model Guard's own container, so a model server on the same machine needs the machine's private address.
-3. **Hand in its key**: `node bundle/geometer.ts model-key ~/model-key.txt`, with the model server's key or the gateway's token on one line. It is kept exactly like a hosted provider's key: it goes to the model Guard only and is never in `geometer.json`, in a generated file or in a log.
-4. **`rate` is your own price, and optional.** The cost meter and the panel count each call at it, in US dollars per million tokens (the same numbers as the gateway's own config), turned into rupees at the rate table's dollar rate. 0 is allowed. Leave it out and the calls are counted with no price: the panel then says the model line is a floor. No Geometer price list prices your model.
-5. **`check` and `deploy` as usual.** The deploy runs the model Guard's tripwires on the running Guard, as for a hosted provider.
+   `model` is the name your server answers to; every shop's `runtime.json` asks for exactly that one. `url` is the API root, as an OpenAI client takes it; the calls go to `<url>/chat/completions`. Use `https`. Plain `http` is accepted only to a private address on your own network (10.x, 172.16 to 31.x, 192.168.x), so the key never crosses the internet unencrypted. `127.0.0.1` would be the model Guard's own container, so a model server on the same machine needs the machine's private address.
+3. **Hand in its key**: `node bundle/geometer.ts model-key ~/model-key.txt`, with the model server's key on one line. It is kept exactly like a hosted provider's key: it goes to the model Guard only and is never in `geometer.json`, in a generated file or in a log.
+4. **`rate` is your own price, and optional.** The cost meter and the panel count each call at it, in US dollars per million tokens, turned into rupees at the rate table's dollar rate. 0 is allowed. Leave it out and the calls are counted with no price: the panel then says the model line is a floor. No Geometer price list prices your model.
+5. **`check <shop>`, then `deploy` with no shop named.** A change to `geometer.json` redeploys no shop by itself; `deploy` with no name moves the model Guard to the new address and gives every shop the new provider name and rate. The deploy runs the model Guard's tripwires on the running Guard, as for a hosted provider.
 
-The record names these calls `self-hosted`, so the cost meter and the monthly totals show which model read each message. Geometer's model gateway is not in the release downloads yet; [Deferred.md](Deferred.md) says what is missing, and that no real model server has been tried with this yet.
+Each call's line in the shop's record names the provider `self-hosted` and the model. Geometer's model gateway (`apps/model-gateway` in Geometer's own repository) can stand in front of a model server and add tokens, a monthly cap per account and a usage report; its address is then the `url` and its token the key. It is not in the release downloads yet. [Deferred.md](Deferred.md) says what is missing, and that no real model server has been tried with this yet.
 
 ## Every day
 
