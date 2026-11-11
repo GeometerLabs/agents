@@ -66,6 +66,7 @@ export interface Outcome { approval: string; decision: "approve" | "deny"; runti
 
 export interface OwnerMessage { id: string; from: string; text: string; timestamp: number; receivedMs: number }
 
+// Only the hash of an approval code is stored, so a copy of the relay's file cannot be used to approve anything; the prefix keeps it distinct from handover hashes.
 export const hashCode = (code: string): string => createHash("sha256").update(`approval-code:${code.toUpperCase()}`).digest("hex");
 
 const MIGRATIONS = [`
@@ -137,6 +138,7 @@ export interface RelayStore {
   close(): void;
 }
 
+// Creates the folder private (0700) and opens the file; the state must survive a restart, which is why it is a file and not memory.
 export function openRelayStore(dir: string): RelayStore {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const file = join(dir, "relay.db");

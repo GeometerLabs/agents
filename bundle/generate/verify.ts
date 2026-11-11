@@ -53,6 +53,7 @@ export function refusalProblems(stage: string, text: string): Problem[] {
   });
 }
 
+// Reads the tripwire result out of geo-guard's text output, in one place, so a wording change in the Guard tool breaks one parser and a test, not the deploy check silently.
 export function parseVerify(code: number, stdout: string, stderr: string): TripwireResult {
   const counts = /tripwires: passed (\d+) of (\d+)(?:, not self-testable (\d+))?/u.exec(stdout);
   const failedRules = [...stderr.matchAll(/tripwire failed: rule (\S+)/gu)].map((m) => m[1]);

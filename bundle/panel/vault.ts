@@ -8,6 +8,7 @@ import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:cr
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 
+// Thrown when a record cannot be opened (wrong key, tampered, or no key given), so callers can tell it from an ordinary read error.
 export class VaultError extends Error { override name = "VaultError"; }
 
 export interface Vault {
@@ -31,6 +32,7 @@ export const plainVault: Vault = {
   derive: () => null,
 };
 
+// Builds the encrypt/decrypt pair for one data key; each write uses a fresh nonce and binds the record's name, so a file moved to another name fails to open.
 export function createVault(key: Buffer): Vault {
   if (key.length !== 32) throw new VaultError("The data key must be 32 bytes (64 hex characters, or 44 base64 characters).");
   return {

@@ -20,6 +20,7 @@ export interface VoteRecord { schema: 1; round: string; option: string; at: stri
 
 const ID = /^[a-z][a-z0-9-]{0,39}$/u;
 
+// Reads the candidates from vote-options.json (one data file, so the choices change without code); throws on a bad file because a broken poll should fail loudly at start.
 export function loadVoteRound(file: URL | string = VOTE_OPTIONS_FILE): VoteRound {
   const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
   if (!isObj(raw) || raw.format !== "geometer-template-vote/1" || typeof raw.round !== "string" || !/^\d{4}-\d{2}$/u.test(raw.round) || !Array.isArray(raw.options)) throw new Error("vote-options.json is not a template-vote file.");
@@ -41,6 +42,7 @@ export function loadVoteRound(file: URL | string = VOTE_OPTIONS_FILE): VoteRound
 
 const nameOf = (accountId: string) => `votes/${accountId.replace(/_/gu, "-")}.json`;
 
+// The vote store: one file per account, so a second vote replaces the first and a person can never count twice. `now` is injectable for tests.
 export function createVotes(store: Store, shops: Shops, now: () => number, round: VoteRound = loadVoteRound()) {
   const api = {
     round,

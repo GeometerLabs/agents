@@ -153,6 +153,7 @@ export const CADDY_IMAGE = "caddy:2.8.4-alpine";
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+// Every path under one server folder, from one root, so the bundle's commands, the deployer and the panel never build a path by hand.
 export function serverPaths(dir: string) {
   const root = resolve(dir);
   return {
@@ -193,6 +194,7 @@ export function loadServer(dir: string): ServerConfig {
   return result.config;
 }
 
+// Checks a geometer.json and returns the config plus errors (stop) and notes (just worth saying); returns all problems at once so the builder fixes the file in one pass.
 export function parseServer(raw: unknown): { config: ServerConfig; errors: string[]; notes: string[] } {
   const errors: string[] = [];
   const o = isObj(raw) ? raw : {};
@@ -276,6 +278,7 @@ export const isLocalDomain = (domain: string): boolean => domain === "localhost"
 /** The address the world reaches this server at: https, the builder's domain, and the port only when it is not 443. */
 export const publicUrl = (server: Pick<ServerConfig, "domain" | "ports">): string => `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}`;
 
+// Shop folders only, sorted, ignoring dot folders, so the order is stable and scratch folders are never mistaken for shops.
 export function listShops(dir: string): string[] {
   const shops = serverPaths(dir).shops;
   if (!existsSync(shops)) return [];

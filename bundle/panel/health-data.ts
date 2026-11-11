@@ -15,6 +15,7 @@ import type { ShopHealth } from "./views-health.ts";
 
 const DEFAULT_ZONE = "Asia/Kolkata";
 
+// Gathers the inputs of a shop's health (record, status, fleet, licence, to-do items, the person's entries) in one place, so the overview and the single-shop page cannot compute different answers.
 export function createHealthData(deps: { config: PanelConfig; shops: Shops; entries: EntryStore; prices: PriceList; now: () => number; unfinished: UnfinishedOptions }) {
   const { config, shops, entries, prices, now, unfinished } = deps;
   return {

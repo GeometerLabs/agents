@@ -15,6 +15,7 @@ export class Refused extends Error {
   }
 }
 
+// The one hex sha256 helper the bundle uses for fingerprints and token hashes.
 export const sha256Hex = (text: string): string => createHash("sha256").update(text).digest("hex");
 
 /** A credential in the form Guard issues: `gg_` and 32 hex characters. Guard stores only its sha256. */
@@ -70,4 +71,5 @@ export function ensureDirs(path: string): void {
   for (const p of missing) { mkdirSync(p, { mode: 0o755 }); chmodSync(p, 0o755); }
 }
 
+// A name for this machine used in notes and logs ("who ran this"), with fallbacks so it never throws.
 export const hostId = (): string => `${process.env.USER ?? "someone"}@${process.env.HOSTNAME ?? "this-machine"}`;

@@ -43,6 +43,7 @@ import { fingerprintFile, lastFingerprint } from "./fingerprints.ts";
 import { AGENT_DESK_FILE, AGENT_RECORD_FILE, PERSON_KEY_OBJECT } from "./snapshot.ts";
 import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 
+// The compose project name, so the job containers find the same named volumes the running server uses.
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
 const volume = (server: ServerConfig, v: string) => `${project(server)}_${v}`;
 const stampOf = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/gu, "");
@@ -94,6 +95,7 @@ const guardMounts = (server: ServerConfig, name: string, guards: { kind: string 
 /** What a night's or a drill's verdict is written on: a shop's state or an agent's. */
 const entryOf = (state: ReturnType<typeof loadState>, name: string): { lastBackupAt?: string; lastDrill?: { at: string; ok: boolean; detail: string } } | undefined => state.shops[name] ?? state.agents?.[name];
 
+// Starts the short-lived snapshot container for every applied shop and agent and writes the outcome to state. Refuses with a plain message when no backup place was set up.
 export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
   const server = loadServer(ctx.dir);
   const lines: string[] = [];

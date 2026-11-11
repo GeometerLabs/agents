@@ -87,6 +87,7 @@ export interface Manifest {
 
 export interface BuiltExport { name: string; files: Map<string, Buffer>; manifest: Manifest; warnings: string[] }
 
+// A refusal the person can act on (unknown shop, nothing to export), kept distinct so the command can print it without a stack trace.
 export class ExportError extends Error {}
 
 const sha = (data: Buffer | string) => createHash("sha256").update(data).digest("hex");
@@ -115,6 +116,7 @@ function jsonLines(text: string | undefined, what: string, warnings: string[]): 
   return { lines: items.map((x) => JSON.stringify(x)), count: items.length };
 }
 
+// Collects everything that is the shop's into one set of files plus a manifest listing each file's hash. Pure over its sources, and deliberately copies no key or secret: the export is meant to be handed to someone else.
 export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport {
   const warnings: string[] = [];
   const notes: string[] = [];

@@ -31,5 +31,7 @@ export function fakeRunner(handler: FakeHandler): Runner & { calls: { command: s
   return { calls, async run(command, args, options = {}) { calls.push({ command, args, options }); return handler(command, args, options); } };
 }
 
+// Builds a successful fake result, so test handlers read as one short line.
 export const ok = (stdout = ""): RunResult => ({ code: 0, stdout, stderr: "" });
+// Builds a failed fake result with a message on stderr.
 export const failed = (stderr: string, code = 1): RunResult => ({ code, stdout: "", stderr });

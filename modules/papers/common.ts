@@ -50,6 +50,7 @@ export function isPerson(field: string, number: string, personKey?: Buffer): boo
 /** "…4321": enough for a person to see it is their number, and no more. */
 export const lastDigits = (number: string): string => `…${number.replace(/\D/gu, "").slice(-4)}`;
 
+// Papers state dates in the shop's own time zone, not the server's, or a late-evening payment would land on the wrong day.
 export const localDay = (ms: number, timeZone: string): LocalDate => { const p = localParts(ms, timeZone); return { year: p.year, month: p.month, day: p.day }; };
 
 /** "Tue 4 Nov 2026, 10:30 am" in the shop's time zone. */
@@ -57,6 +58,7 @@ export function when(iso: string, timeZone: string, language: Language): string 
   const p = localParts(Date.parse(iso), timeZone);
   return `${formatDate({ year: p.year, month: p.month, day: p.day }, language)} ${p.year}, ${formatTime({ hour: p.hour, minute: p.minute }, language)}`;
 }
+// Same date wording as the rest of the papers so a statement and a case record agree on how a day reads.
 export const dayText = (d: LocalDate, language: Language): string => `${formatDate(d, language)} ${d.year}`;
 
 /** The record entries that belong to these cases, oldest first. */
@@ -79,6 +81,7 @@ export function head(kind: string, title: string, subtitle: string, language: La
   return `<div class="head"><p class="kicker">${esc(kind)}</p><h1>${esc(title)}</h1><p class="period">${esc(subtitle)}</p>${draft}</div>`;
 }
 
+// One wrapper so all three papers share the same printable page and look.
 export const paperPage = (title: string, language: Language, body: string): string => page(title, language, [`<section class="doc">${body}</section>`]);
 
 /** The words a reader sees on a page: no style sheet, no tags, entities read back. What the claim-rule checks read. */

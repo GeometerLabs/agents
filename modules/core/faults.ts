@@ -30,6 +30,7 @@ export class NotSentError extends ApiError {
   }
 }
 
+// 409 gets its own class because a conflict (slot taken, already paid) is a normal answer the agent handles, not a failure to retry.
 export class ConflictError extends ApiError {
   constructor(message: string) {
     super(409, message);
@@ -62,6 +63,7 @@ export interface Faults<Op extends string, Mode extends string> {
   clear(): void;
 }
 
+// Each fake gets its own plan list so a test can script one failure on one operation without affecting others.
 export function createFaults<Op extends string, Mode extends string>(): Faults<Op, Mode> {
   const plans = new Map<Op, Plan<Mode>[]>();
   return {
@@ -108,6 +110,7 @@ export interface GuardInfo {
 /** The call as the adapter sent it. `body` is the exact text that went out: a held call is sent again with these same bytes. */
 export interface SentCall { method: string; path: string; body?: string }
 
+// Carries what Guard decided and the call it stopped, so the agent can tell a policy refusal from a service error and not retry it.
 export class GuardError extends ApiError {
   guard: GuardInfo;
   call: SentCall;

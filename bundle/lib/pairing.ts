@@ -27,6 +27,7 @@ export interface PairingFile {
   pairedAt: string;
 }
 
+// Where pairing keeps the fleet key and the pairing record, in one place so `pair`, `init` and the heartbeat read the same files.
 export const pairingPaths = (dir: string) => ({ key: join(dir, "fleet_key"), info: join(dir, "pairing.json") });
 
 const CODE = /^gfp_[a-z2-9-]{24,40}$/iu;

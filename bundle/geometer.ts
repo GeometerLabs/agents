@@ -107,6 +107,7 @@ import { ensureDir, hostId, serverIdProblem, shopNameProblem, stableJson, writeA
 
 const APP_DIR = resolve(dirname(new URL(import.meta.url).pathname), "..");
 
+// Builds the real context (docker, clock, logger, Guard tool) for a server folder; tests pass overrides to swap any of it for fakes.
 export function makeContext(dir: string, overrides: Partial<Context> = {}): Context {
   const docker = process.env.GEOMETER_DOCKER ?? "docker";
   return {
@@ -128,6 +129,7 @@ function serverDir(values: { server?: string }): string {
   return resolve(dir);
 }
 
+// The command line entry: parses arguments, runs the command and returns the process exit code instead of exiting, so tests can call it directly.
 export async function main(argv: string[], overrides: Partial<Context> = {}): Promise<number> {
   const [command, ...rest] = argv;
   const { values, positionals } = parseArgs({

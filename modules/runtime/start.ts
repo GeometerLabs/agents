@@ -169,6 +169,7 @@ export interface StartHooks<Settings, Rt extends StartableRuntime> {
 /** The part of a runtime the start uses. */
 export type StartableRuntime = Pick<Runtime, "kick" | "close" | "tick" | "submit" | "status" | "refundContext" | "ready" | "idle">;
 
+// The single start sequence every template shares, so recovery of pending work and the order of wiring cannot differ between Bookings and Fees.
 export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(options: StartOptions, hooks: StartHooks<Settings, Rt>): Promise<RunningClient<Settings, Rt>> {
   const log = options.log ?? ((line: string) => console.log(line));
   const clock = options.clock ?? systemClock;
