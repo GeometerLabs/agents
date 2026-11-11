@@ -302,6 +302,11 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     return issue.amountPaise !== undefined && r.amount === issue.amountPaise;
   }
 
+  /** The open issue on this case that a listed refund settles, if any (only the kinds the list can answer: SETTLEABLE_ISSUES). */
+  function openIssueFor(b: C, r: Refund): RefundIssue | undefined {
+    return issuesOf(b).find((i) => SETTLEABLE_ISSUES.includes(i.kind) && isTheRefund(b, i, r));
+  }
+
   /**
    * Settle the ORIGINAL attempt from the payments service's own list: one `refund` / `confirmed` line with the provider's refund id and the amount its list shows (so
    * the monthly report counts it once, by that id, and marks the earlier unconfirmed line settled), and the issue is cleared. Nothing is sent to the payments service:
@@ -346,6 +351,18 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       }
     }
     return { settled, looked };
+  }
+
+  /**
+   * The provider's own refund.done event, already checked by the template against the payments service's list (`listed`: the refund with the event's id, as the list
+   * shows it). When it is the refund an open issue on this case is about, that attempt is settled (settleIssue), and never a new refund. Returns whether it settled one;
+   * an event for a refund nothing is open on changes nothing (it was confirmed already, or it is not this agent's).
+   */
+  async function settleFromEvent(b: C, listed: Refund, eventId: string): Promise<boolean> {
+    const issue = openIssueFor(b, listed);
+    if (!issue) return false;
+    await settleIssue(b, issue, listed, { via: "refund.done", eventId });
+    return true;
   }
 
   // ---- a refund Guard held: the relay says the owner decided ---------------------------------------------------------------------
@@ -501,5 +518,5 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     }
   }
 
-  return { requestRefund, afterRefund, retryRefund, onApprovalDecision, releaseHeld, expireGuardHold, sweep, overLimit, stoppedOf, raise, recheck };
+  return { requestRefund, afterRefund, retryRefund, onApprovalDecision, releaseHeld, expireGuardHold, sweep, overLimit, stoppedOf, raise, recheck, openIssueFor, settleFromEvent };
 }
