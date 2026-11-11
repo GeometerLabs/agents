@@ -277,7 +277,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     model: "Saved. The server applies it within a few seconds.",
     backup: "Saved. The server writes a test object to the bucket, reads it back and deletes it; the result shows here.",
     google: "Saved. The server puts the key in place within a few seconds.",
-    key: "Confirmed. This server deleted its copy of the backup key's secret half. Keep yours safe: it is the only key that opens a backup.",
+    key: "Confirmed. This server deleted its copy of the backup key's secret half. Keep the copy you saved: it is the only key that opens a backup.",
   };
   const serverNotice = (r: Req) => { const k = new URL(r.req.url ?? "/", "http://x").searchParams.get("saved"); return k && Object.hasOwn(SAVED, k) ? { notice: SAVED[k] } : {}; };
   const ownServer = (r: Req): boolean => { if (config.mode === "own") return true; notFound(r); return false; };
