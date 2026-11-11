@@ -231,7 +231,7 @@ If the shop wants the whole price taken online, set the advance to the full amou
 
 ## 6. Price
 
-Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 9 November 2026.
+Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 11 November 2026.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
@@ -241,7 +241,7 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 | The shop | Razorpay | A fee on each payment | about 2% plus GST (only if the shop chooses Razorpay) |
 | The shop, as its own line on your bill | WhatsApp, at cost | Message fees | about ₹295 per shop per month |
 
-1. **Geometer's fee: ₹299 per live shop per month, before GST.** Orders takes an advance, so it is on the Business plan, with 3,000 messages a month included. Extra messages are ₹49 for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost, and so is the payment fee when you top up the balance. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays ₹149 a month for each live client business instead. The first 100 builders and partners with a shop live get the Innovator badge: a badge, not a discount. A shop counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a shop goes live.
+1. **Geometer's fee: ₹299 per live shop per month, before GST.** Orders takes an advance, so it is on the Business plan, with 3,000 messages a month included. Extra messages are ₹49 for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost, and so is the payment fee when you top up the balance. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays ₹199 a month for each live client business instead. The first 100 builders and partners with a shop live get the Innovator badge: a badge, not a discount. A shop counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a shop goes live.
 2. **The shop's price: a starting point; you decide.** The table gives the range. The setup is ₹1,999 to ₹2,999, and you keep all of it. Put WhatsApp on the shop's bill as its own line, at cost: a shop that sends more messages then pays for more, and your service price stays yours.
 3. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
 4. **Tell the shop about Razorpay's fee,** if it chooses Razorpay: "Razorpay keeps its fee even when you give a payment back." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins. The shop opens and pays for its own Razorpay account, and WhatsApp's message fees are at cost. You pay for nothing else to use Orders. On UPI there is no gateway fee.
