@@ -305,3 +305,79 @@ test("a restored Guard that kept the policy in its store (a newer version than t
     assert.equal(loadState(w.root).agents![AGENT].guards.razorpay.version, before.version + 1);
   } finally { w.done(); rmSync(bucket, { recursive: true, force: true }); }
 });
+
+// ---- the owner-marked desk's ledger (item 7's gap, closed 11 Nov 2026) --------------------------------------------------------------------------------------
+
+const DESK_AGENT = "upi-agent";
+/** The desk's file as the relay writes it (bundle/services/desk.ts): its id counter, a request with its mark, nothing waiting. */
+const deskText = (seq: number) => `${JSON.stringify({ schema: 1, marks: { seq, requests: [{ id: `upi-pay-${seq}`, state: "marked" }], refunds: [] }, inbox: [], seen: ["wamid.1"] })}`;
+
+test("an agent on the owner-marked desk: its ledger rides in the snapshot from the relay's volume (read-only), comes out of the restore job byte for byte, and one the desk cannot read is refused before anything stops", async () => {
+  const t = tmp(); try {
+    const owner = generateIdentity(); const store = folderStore(join(t.dir, "bucket"));
+    const f = join(t.dir, "r.json"); writeFileSync(f, recordText(2));
+    const desk = join(t.dir, "desk.json"); writeFileSync(desk, deskText(7));
+    const snap = await snapshotAgent({ name: DESK_AGENT, recordFile: f, deskFile: desk, guards: ["upi", "whatsapp"].map((k) => ({ kind: k, dir: guardBackup(join(t.dir, "g"), k, DESK_AGENT) })) }, job(owner.recipient), store);
+    assert.ok(snap.seal!.objects.some((o) => o.key === `${DESK_AGENT}/${STAMP}/desk.json.gz.age`), "one object of its own, in the seal the weekly drill reads back");
+    writeFileSync(join(t.dir, "identity"), owner.identity);
+    const got = await runAgentRestoreJob({ target: { url: join(t.dir, "bucket") }, shop: DESK_AGENT, identityFile: join(t.dir, "identity"), out: join(t.dir, "out"), nowIso: "2026-11-04T12:00:00.000Z", ownAgent: true }, store);
+    assert.deepEqual(got.guards, ["upi", "whatsapp"]);
+    assert.equal(readFileSync(join(t.dir, "out", "desk.json"), "utf8"), deskText(7), "the ledger, byte for byte: its ids go on from where they were");
+    // an agent with no desk: no desk object
+    const plain = await snapshotAgent({ name: AGENT, recordFile: f, guards: [{ kind: "razorpay", dir: guardBackup(join(t.dir, "g2"), "razorpay") }] }, job(owner.recipient), folderStore(join(t.dir, "b2")));
+    assert.ok(!plain.seal!.objects.some((o) => o.key.endsWith("desk.json.gz.age")));
+    // a ledger the desk could not read would stop the relay from starting: refused while everything runs
+    const broken = folderStore(join(t.dir, "broken")); writeFileSync(desk, JSON.stringify({ schema: 2 }));
+    await snapshotAgent({ name: DESK_AGENT, recordFile: f, deskFile: desk, guards: [{ kind: "upi", dir: guardBackup(join(t.dir, "g3"), "upi", DESK_AGENT) }] }, job(owner.recipient), broken);
+    await assert.rejects(fetchAgentSnapshot(broken, DESK_AGENT, owner.identity), /the desk's ledger in the snapshot of 20261104T013000Z is not a desk file this version can read/);
+  } finally { t.done(); }
+});
+
+test("on the server: the snapshot job reads a desk agent's ledger through the relay's volume, read-only, and `restore` puts it back with the relay stopped for the copy, keeping the one it replaces", async () => {
+  const owner = generateIdentity();
+  const bucket = mkdtempSync(join(tmpdir(), "geo-agent-bucket-"));
+  const w = world({}, { backup: { snapshots: { url: bucket }, ageRecipient: owner.recipient } });
+  try {
+    addAgent(w.root, DESK_AGENT, { upstreams: "upi,whatsapp", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "upi-id": "glowsalon@okicici", payee: "Glow Salon" }, () => { throw new Error("no file"); }, NOW);
+    const { whatsapp_token, whatsapp_app_secret, whatsapp_verify_token } = secretsFor(DESK_AGENT);
+    w.handIn(DESK_AGENT, { whatsapp_token, whatsapp_app_secret, whatsapp_verify_token });
+    await deployAgent(w.ctx, DESK_AGENT);
+    // the nightly job: the ledger's place in the relay's volume, and that volume mounted read-only
+    let snapJob: { agents: { name: string; deskFile?: string }[] } | undefined;
+    const base = w.ctx.runner;
+    w.ctx.runner = { run: (command, args, o) => {
+      if (args.includes("/app/bundle/backup/snapshot.ts")) {
+        w.calls.push({ command, args });
+        snapJob = JSON.parse(readFileSync(args.find((a) => a.endsWith(":/job/job.json:ro"))!.split(":")[0], "utf8"));
+        return Promise.resolve(ok(JSON.stringify({ stamp: STAMP, results: [] })));
+      }
+      return base.run(command, args, o);
+    } };
+    await runBackup(w.ctx);
+    assert.deepEqual(snapJob!.agents.map((a) => [a.name, a.deskFile]), [[DESK_AGENT, `/v/relay-state/state/${DESK_AGENT}/desk.json`]]);
+    assert.match(flagsOf(w, "/app/bundle/backup/snapshot.ts").join(" "), /geometer-acme-vps-1_relay-state:\/v\/relay-state:ro/);
+    w.ctx.runner = base;
+    // last night's snapshot with the ledger at request 7; `restore` brings it back
+    const nightly = join(w.root, "nightly.json"); writeFileSync(nightly, recordText(2));
+    const ledger = join(w.root, "desk-nightly.json"); writeFileSync(ledger, deskText(7));
+    await snapshotAgent({ name: DESK_AGENT, recordFile: nightly, deskFile: ledger, personKeyFile: personKeyFile(w.root, DESK_AGENT), guards: ["upi", "whatsapp"].map((k) => ({ kind: k, dir: guardBackup(join(w.root, "gb"), k, DESK_AGENT) })) }, job(owner.recipient), folderStore(bucket));
+    const identityFile = join(w.root, "owner-key"); writeFileSync(identityFile, owner.identity);
+    const seen = restoringRunner(w, bucket, identityFile);
+    let copied: { args: string[]; ledger: string } | undefined;
+    const restoring = w.ctx.runner;
+    w.ctx.runner = { run: (command, args, o) => {
+      const desk = args.find((a) => a.endsWith(":/in/desk.json:ro"));
+      if (desk) { seen.push("copy desk"); copied = { args, ledger: readFileSync(desk.slice(0, -":/in/desk.json:ro".length), "utf8") }; return Promise.resolve(ok("")); }
+      return restoring.run(command, args, o);
+    } };
+    const said = await restoreAgent(w.ctx, DESK_AGENT, { identity: identityFile });
+    const guards = ["upi", "whatsapp"].map((k) => `g-${DESK_AGENT}-${k}`);
+    assert.deepEqual(seen.slice(-3), ["stop relay", "copy desk", "start relay"], "the relay is stopped only for the copy, after the Guards are back");
+    assert.ok(seen.indexOf(`start ${guards.join(" ")}`) < seen.indexOf("stop relay"));
+    assert.equal(copied!.ledger, deskText(7), "the snapshot's ledger, byte for byte");
+    assert.ok(copied!.args.includes(`geometer-acme-vps-1_relay-state:/v`) && copied!.args.includes("1000:1000"), "into the relay's volume, as the relay's own user");
+    assert.deepEqual(copied!.args.slice(-2), [DESK_AGENT, "20261104T100000Z"], "the agent and the stamp as arguments, not in the script");
+    assert.match(said, /, its desk's ledger and its key\./);
+    assert.match(said, /The desk's ledger .* was put back from the snapshot; the one it replaced is kept beside it in the relay's volume \(state\/upi-agent\/desk\.json\.before-restore-20261104T100000Z\)/);
+  } finally { w.done(); rmSync(bucket, { recursive: true, force: true }); }
+});

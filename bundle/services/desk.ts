@@ -87,10 +87,19 @@ function writeDurable(path: string, text: string): void {
   renameSync(tmp, path);
 }
 
+/**
+ * Is this a desk file this version can read? One check for the desk at start and for a restore (backup/restore-snapshot.ts), which refuses a snapshot's desk.json that
+ * would stop the relay from starting before anything is stopped or replaced.
+ */
+export function isDeskFile(raw: unknown): boolean {
+  const f = raw as Partial<DeskFile> | null;
+  return f?.schema === 1 && !!f.marks && Array.isArray(f.marks.requests) && Array.isArray(f.inbox) && Array.isArray(f.seen);
+}
+
 function readDeskFile(path: string): DeskFile {
   if (!existsSync(path)) return { schema: 1, marks: emptyMarkState(), inbox: [], seen: [] };
   const raw = JSON.parse(readFileSync(path, "utf8")) as DeskFile;
-  if (raw?.schema !== 1 || !raw.marks || !Array.isArray(raw.marks.requests) || !Array.isArray(raw.inbox) || !Array.isArray(raw.seen)) throw new Error(`${path} is not a desk file this version can read.`);
+  if (!isDeskFile(raw)) throw new Error(`${path} is not a desk file this version can read.`);
   return raw;
 }
 

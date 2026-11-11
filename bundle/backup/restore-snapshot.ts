@@ -5,7 +5,8 @@
 //     fingerprint key (B69) comes out as `person_key`: on a new machine put it at `secrets/person-keys/<shop>` (mode 0600), or `geometer restore` does that for you.
 //   - `geometer restore <shop> [--at TIME] --identity <key file>` on the server: the deployer runs this file in a short-lived container with a job file (`--job`) and
 //     the key file mounted read-only; it fetches the newest snapshot at or before the time and writes the runtime's database and a `restored.json` note into a folder
-//     the deployer then puts in place. For an agent someone else wrote (B51) it writes the agent's record, its key and every Guard's backup folder instead.
+//     the deployer then puts in place. For an agent someone else wrote (B51) it writes the agent's record, its key and every Guard's backup folder instead, and for one
+//     on the owner-marked desk the desk's ledger (`desk.json`), which the deployer puts back in the relay's volume.
 // Each object is opened by its name: `.tar.gz.age` is a folder (a Guard's backup), `.gz.age` one gzipped file, and a plain `.age` one file as snapshots before
 // 9 Nov 2026 were written (not gzipped).
 import { createHash } from "node:crypto";
@@ -15,7 +16,8 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { decrypt } from "./age.ts";
 import { fromTarGz } from "../export/tar.ts";
-import { AGENT_RECORD_FILE, PERSON_KEY_OBJECT, agentRecordOf, mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
+import { AGENT_DESK_FILE, AGENT_RECORD_FILE, PERSON_KEY_OBJECT, agentRecordOf, mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
+import { isDeskFile } from "../services/desk.ts";
 import type { RecordFacts, SnapshotJob } from "./snapshot.ts";
 import type { ObjectStore } from "./store.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
@@ -121,7 +123,7 @@ export async function fetchSnapshot(store: ObjectStore, shop: string, identity: 
 
 export interface FetchedAgent {
   stamp: string;
-  /** Every file of the snapshot, each checked against the manifest: `record.json` (when the agent had a record that night) and each Guard's backup folder as `guard-<kind>/...`. */
+  /** Every file of the snapshot, each checked against the manifest: `record.json` (when the agent had a record that night), `desk.json` (an agent on the owner-marked desk) and each Guard's backup folder as `guard-<kind>/...`. */
   files: Map<string, Buffer>;
   record: RecordFacts | null;
   personKey?: string;
@@ -143,6 +145,12 @@ export async function fetchAgentSnapshot(store: ObjectStore, agent: string, iden
   for (const path of digests(manifest).keys()) if (!files.has(path)) throw new Error(`the snapshot of ${stamp} is missing ${path}, which its manifest names`);
   files.delete("manifest.json");
   if (files.has(AGENT_RECORD_FILE)) agentRecordOf(files.get(AGENT_RECORD_FILE)!.toString("utf8"), agent);
+  // the desk's ledger goes back into the relay's volume, and a file the desk cannot read would stop the relay from starting: refused here, while everything still runs
+  if (files.has(AGENT_DESK_FILE)) {
+    let desk: unknown;
+    try { desk = JSON.parse(files.get(AGENT_DESK_FILE)!.toString("utf8")); } catch { desk = undefined; }
+    if (!isDeskFile(desk)) throw new Error(`the desk's ledger in the snapshot of ${stamp} is not a desk file this version can read`);
+  }
   // a Guard's kind may hold a hyphen (B71's own gateway API is `own-api`)
   const guards = [...files.keys()].flatMap((p) => /^guard-([a-z][a-z-]*)\/backup\.json$/u.exec(p)?.[1] ?? []).sort();
   for (const kind of guards) {
