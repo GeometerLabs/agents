@@ -12,6 +12,7 @@ export const CODE_PATTERN = "[A-HJKMNP-Za-hjkmnp-z2-9]{4,6}";
 /** An owner's reply that has the shape of "approve <code>" / "deny <code>". Booking references (b-3) never match: they have a hyphen. */
 export const RELAY_CODE_REPLY = new RegExp(`^\\s*(approve|deny)\\s+(${CODE_PATTERN})\\s*$`, "iu");
 
+// Random one-use code, short enough to type on a phone; only its hash is stored (see store.ts).
 export function newCode(): string {
   let code = "";
   for (let i = 0; i < CODE_LENGTH; i++) code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];

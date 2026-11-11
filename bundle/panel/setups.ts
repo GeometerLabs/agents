@@ -35,6 +35,7 @@ export const REPORTS: Record<string, ReportKind> = {
   fees: { readGoLive: feesGoLive, write: ({ data, ...run }) => writeFeesReport({ ...run, entries: data.entries, dues: data.dues ?? [] }) },
   orders: { readGoLive: ordersGoLive, write: ({ data, ...run }) => writeOrdersReport({ ...run, entries: data.entries, orders: data.orders ?? [] }) },
 };
+// Looks up the report writer for a template; an unknown or missing kind is treated as Bookings, the original template, so an old shop still gets its report.
 export const reportOf = (kind: string): ReportKind => (Object.hasOwn(REPORTS, kind) ? REPORTS[kind] : REPORTS.bookings);
 
 /** A template the phone sets up with its own two forms (every one but Bookings). */

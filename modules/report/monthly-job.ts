@@ -93,6 +93,7 @@ export function sendFrom(now: number, timeZone: string): number {
   return zonedToMs({ year: t.year, month: t.month, day: 1 }, { hour: SEND_FROM_HOUR, minute: 0 }, timeZone);
 }
 
+// Shared by every template so the monthly report goes out on the same schedule, once, in the shop's own time zone.
 export function createMonthlyJob<Ctx extends MonthlyJobContext>(setup: MonthlyJobSetup<Ctx>) {
   let finished: { month: string; why: "already" | "gave-up" } | undefined; // the month this process found done or given up on, so a tick does not look again
   let quiet: string | undefined;

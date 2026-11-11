@@ -19,6 +19,7 @@ export interface PlanView {
   price?: { paise: number; licence: boolean };
 }
 
+// Facts about a shop's plan from fleet's last answer and the price list; undefined when fleet has said nothing, so the page says "unknown" and never invents a plan. `builder` switches the charge to the builder licence on their own server.
 export function planView(fleet: FleetAnswer | undefined, prices: PriceList | null, builder = false): PlanView | undefined {
   if (!fleet) return undefined;
   const charge = fleet.plan && prices ? chargeOf(prices, fleet.plan, builder) : null;

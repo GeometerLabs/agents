@@ -43,6 +43,7 @@ export interface AgentCertificate {
 
 export interface CertificateInput { settings: Settings; agent: string; result: CrashResult; issuedAt: number; preparedBy?: string }
 
+// Turns a crash-test result into the go-live certificate document, on the agent's own settings (not a template's), so the certificate states what was actually tested.
 export function buildAgentCertificate(input: CertificateInput): AgentCertificate {
   const { settings, result } = input;
   const day = localParts(input.issuedAt, settings.timezone);
@@ -97,6 +98,7 @@ export function agentCertificateText(envelope: Envelope<AgentCertificate>): stri
   ].join("\n");
 }
 
+// Renders the certificate for people to read, in the same page layout as the template certificates so both look like one product.
 export function agentCertificatePage(envelope: Envelope<AgentCertificate>): string {
   const cert = envelope.document;
   const section = `<section class="doc" lang="en">

@@ -63,6 +63,7 @@ const millis = (v: unknown): number | undefined => (typeof v === "string" && /^\
 /** How readHeld says an item is not a gateway refund at all: the relay leaves such an item alone (it is not the owner's to answer). */
 export const NOT_A_REFUND = "not a refund on a gateway";
 
+// Validates a held call from Guard strictly and reports why it refused; the amount asked of the owner comes from here and nowhere else.
 export function readHeld(item: unknown): ReadHeld {
   if (!isRecord(item)) return { ok: false, reason: "a review item that is not an object" };
   const id = typeof item.id === "string" && item.id.length > 0 ? item.id : undefined;
@@ -137,6 +138,7 @@ export function readAlready(error: string): { state: string; by?: string; given?
   return { state: /already (\w+)/iu.exec(error)?.[1]?.toLowerCase() ?? "decided" };
 }
 
+// The relay's only door to Guard's admin port: reading what is held and giving back the owner's signed answer both go through here.
 export function createGuardClient(config: GuardConfig): GuardClient {
   const url = (path: string) => config.adminUrl.replace(/\/+$/u, "") + path;
   return {
@@ -229,6 +231,7 @@ export interface RuntimeClient {
   decided(approval: string, decision: "approve" | "deny", id: string): Promise<boolean>;
 }
 
+// Read-only context plus the decided word; it never supplies what the owner is asked to approve.
 export function createRuntimeClient(config: { url: string; token: string }): RuntimeClient {
   const base = config.url.replace(/\/+$/u, "");
   const headers = { authorization: `Bearer ${config.token}` };

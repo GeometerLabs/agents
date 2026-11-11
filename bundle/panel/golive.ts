@@ -30,6 +30,7 @@ export type Unmet = "hand-check" | "deploy" | "limits" | "connections" | "settin
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
+// Runs and keeps the go-live checks (hand check, connection checks) and decides "ready" only when every condition holds; the stored result is what the certificate and the confirm page read.
 export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
   const now = () => (config.now ?? Date.now)();
   const key = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined; // fails at start, not at the first certificate

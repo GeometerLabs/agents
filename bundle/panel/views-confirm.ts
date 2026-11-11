@@ -10,11 +10,13 @@ import type { Ctx } from "./views.ts";
 const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}">`;
 const show = (v: unknown) => (typeof v === "number" ? String(v) : JSON.stringify(v));
 
+// One page for every dead link (used, expired, unknown), worded so none of them reveals whether a token ever existed.
 export function confirmGonePage(c: Ctx, why: "used" | "expired" | "unknown"): string {
   const text = { used: "This link has already been used.", expired: "This link has run out.", unknown: "This link is not one we made." }[why];
   return layout(c, "Confirm", html`<h1>${text}</h1><p>Ask Claude Code for a new one. A link works once and runs out after two hours.</p>`);
 }
 
+// Shows the builder exactly which limits will change and asks for one click, so a change typed in Claude Code is confirmed by a human on a separate screen.
 export function confirmLimitsPage(c: Ctx, o: { token: string; shopName: string; shopId: string; rows: ChangeRow[]; note: string; problems: string[]; done: boolean }): string {
   return layout(c, "Confirm a limit change", html`<h1>${o.done ? "Done" : "Confirm a limit change"}</h1>
 <p class="note">For ${o.shopName} (${o.shopId}). Claude Code drafted this. Nothing changes until you press the button.</p>
@@ -32,6 +34,7 @@ const unmetText: Record<Unmet, string> = {
   limits: "Not every limit is shown to hold on the running Guards yet.", connections: "The connection checks (WhatsApp, the payment gateway if the shop has one, the calendar, through the Guards) have not all passed.", "settings-changed": "The settings changed after the hand check ran.",
 };
 
+// The one-click go-live confirmation: lists what is still unmet so a shop is not switched on while a check is open.
 export function confirmGoLivePage(c: Ctx, o: {
   token: string; shopName: string; shopId: string; unmet: Unmet[]; hand?: { held: number; total: number; failedTitles: string[]; notTested: number };
   connections: CheckResult[] | null; templates: string[]; problems: string[]; done: boolean; certificate?: string;

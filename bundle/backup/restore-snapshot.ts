@@ -109,6 +109,7 @@ async function openAll(store: ObjectStore, folder: string, stamp: string, keys: 
   return files;
 }
 
+// Opens the newest complete snapshot (or the newest before atMs) with the owner's key. Only a snapshot that has its manifest counts as whole, so a night that stopped part-way is skipped instead of restored.
 export async function fetchSnapshot(store: ObjectStore, shop: string, identity: string, atMs?: number): Promise<Fetched> {
   const [stamp, keys] = await newestWhole(store, shop, atMs);
   const folder = `${shop}/${stamp}/`;

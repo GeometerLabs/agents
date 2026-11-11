@@ -63,6 +63,7 @@ interface Spend { step: Step; provider: string; model: string; usage: TokenUsage
 
 export { chosenProbability }; // it lives in model.ts; Fees' reading still imports it from here
 
+// Builds the three-step reader (rules, then decision model, then language model) so each message pays only for the first step that is sure.
 export function createRouter<I extends IntentBase, C, O extends ParseOptionsBase>(options: RouterOptions<I, C, O>): IntentParser<I, C, O> & { parseDetailed(text: string, context: C, options?: O): Promise<ParseResult<I>> } {
   const { reading } = options;
   const now = options.now ?? Date.now;

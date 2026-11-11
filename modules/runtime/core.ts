@@ -179,6 +179,7 @@ export interface Runtime<Status = BaseStatus, Context = unknown> {
 
 export type { InboundMessage, Language };
 
+// Wires agent, store and runner once for all templates so 'saved whole or not at all' is enforced in one place, not per template.
 export function createRuntimeCore<Store extends { ai?: AiState }, Settings extends { timezone: string }, Context>(options: RuntimeCoreOptions<Store, Settings, Context>): Runtime<BaseStatus & Record<string, unknown>, Context> {
   const { settings, store: db, clock, messaging, pathwayVersion, kit } = options;
   const policy: AiPolicy = options.ai ?? {};

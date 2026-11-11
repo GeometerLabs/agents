@@ -79,10 +79,12 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
  * most a space, dot, dash or bracket between them: the rule fleet applies) is kept as a keyed fingerprint of itself (B69, under a key derived from the agent's), so no number reaches the record, the exports or a signed report.
  */
 const PHONE_SHAPE = /\d(?:[ .\-()]?\d){6,}/u;
+// Keeps a phone-shaped value out of the record by replacing it with a keyed label, so the record can name a customer consistently without holding the number.
 export const label = (key: Buffer, v: string | null | undefined): string | null => (typeof v === "string" ? (PHONE_SHAPE.test(v) ? personLabel(key, "b", v) : v) : null);
 
 /** The string inside a typed argument (["str","pmt_1"]), or the number inside ["int","20000"]; undefined for anything else. */
 export function typedText(v: unknown): string | undefined { return Array.isArray(v) && (v[0] === "str" || v[0] === "int") && typeof v[1] === "string" ? v[1] : undefined; }
+// Same idea as typedText for a typed map argument: Guard logs carry arguments as tagged pairs, so callers unwrap them here instead of guessing the shape.
 export function typedMap(v: unknown): Record<string, unknown> | undefined { return Array.isArray(v) && v[0] === "map" && isObj(v[1]) ? v[1] : undefined; }
 
 /**
@@ -95,6 +97,7 @@ const DAY = 86_400_000;
 /** A link nobody has paid after this long is left alone: the record already says it was made. */
 const UNPAID_FOR = 36 * 3_600_000;
 
+// Asks each Guard and the agent's own services what happened, with a timeout per request. Never throws: a service that cannot be reached becomes an entry in `problems`, so the record shows the gap rather than a silent hole.
 export async function collectFacts(cfg: FactsConfig, now: Date, fetchFn: typeof fetch = fetch, skip: Skip = { settled: [], paid: [] }): Promise<Facts> {
   const facts: Facts = { at: now.toISOString(), guards: {}, service: { links: {}, refunds: {}, events: null, eventsById: {} }, problems: [] };
   const settled = new Set(skip.settled); const paid = new Set(skip.paid);

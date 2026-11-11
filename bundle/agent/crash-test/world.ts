@@ -38,6 +38,7 @@ import type { AgentProcess, ResolvedDriver } from "./driver.ts";
 
 export const CUSTOMER = "+919811111111";
 const digits = (n: string) => n.replace(/\D/gu, "");
+// Tiny shared delay for the crash-test steps that must wait for a service to settle.
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Everything a world is made from. */
@@ -120,6 +121,7 @@ export interface World {
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+// Starts one crash-test world: stand-in services, real Guards and a fresh copy of the agent. Each situation gets its own world so one situation's leftovers cannot make the next one pass or fail.
 export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): Promise<World> {
   const { name, folder, settings, driver } = plan;
   const agentFile = folder.agent!;

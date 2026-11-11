@@ -115,6 +115,7 @@ export function callKeyOf(paymentId: string, body: unknown): string {
   return JSON.stringify([paymentId, sorted]);
 }
 
+// Built from the same generated spec as Guard so tests see the same holds and blocks, without a real Guard process; it is a model, not Guard.
 export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { approvers?: ModelApprovers } = {}): GuardModel {
   const directory = options.approvers;
   /** The role a new hold of this amount is assigned to, and how many approvals it needs (Guard: the covering role with the lowest ceiling). */
