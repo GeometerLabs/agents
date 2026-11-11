@@ -147,6 +147,7 @@ export function replyLanguageOf(entry: unknown): Language | undefined {
   return (LANGUAGES as readonly unknown[]).includes(entry.language) ? (entry.language as Language) : undefined;
 }
 
+// Counts a shop's record entries into totals (messages, model use, WhatsApp kinds, languages). Pure so the 15-minute export can call it on every entry without side effects; the rates only price what is counted.
 export function summarizeUsage(entries: readonly unknown[], rates: UsageRates): UsageTotals {
   const t: UsageTotals = { messages: 0, byStep: { rules: 0, decision: 0, model: 0 }, modelMicroInr: 0, unpriced: 0, whatsapp: { service: 0, utility: 0, marketing: 0, estMicroInr: 0, estimated: true }, reportsSent: 0, repliesByLanguage: { hi: 0, en: 0, ml: 0, kn: 0 } };
   for (const entry of entries) {
