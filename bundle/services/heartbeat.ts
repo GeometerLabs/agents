@@ -163,6 +163,7 @@ export function panelUrlForFleet(url: string | undefined): string | undefined {
   try { const u = new URL(url); return u.protocol === "https:" && u.origin === url ? url : undefined; } catch { return undefined; }
 }
 
+// Builds the 60-second body from what was observed. Usage is sent as the change since the last beat (the baseline), so a lost beat does not double count; a shop that did not answer reuses its last known status.
 export function buildHeartbeat(input: { deploymentId: string; bundleVersion: string; panelUrl?: string; now: Date; shops: ShopObservation[]; baseline: Baseline; lastKnown?: Record<string, RuntimeStatus>; usageBaseline?: UsageBaseline }): { body: Record<string, unknown>; next: Baseline; nextUsage: UsageBaseline } {
   const next: Baseline = { ...input.baseline };
   const nextUsage: UsageBaseline = { ...input.usageBaseline };
