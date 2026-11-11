@@ -1,12 +1,15 @@
 // The events the inbox sends a runtime, checked for shape before anything is saved, and the key that makes a redelivery a no-op. The same for every template:
 // a message, a payment event or an approvals answer; a template's agent adds one more event of its own, the tick, which only its own clock makes.
 // The inbox has already checked each provider's signature; this only makes sure a malformed body cannot reach the agent.
-import type { InboundMessage } from "../messaging/messaging.ts";
+import type { InboundMessage, MessageStatus } from "../messaging/messaging.ts";
 import type { PaymentEvent } from "../payments/payments.ts";
 
 /** Ticks come from our own clock, never from outside. */
 export type IncomingEvent =
   | { kind: "message"; message: InboundMessage } // a customer's (or the owner's) WhatsApp message
+  // WhatsApp's later report on a message the shop sent: delivered, read or failed. The runtime records it against that message (modules/messaging/statuses.ts) and
+  // never hands it to the agent: it changes no booking and sends nothing (a failure is listed for a person, B31; nothing is sent again by itself).
+  | { kind: "message_status"; status: MessageStatus }
   | { kind: "payment_event"; event: PaymentEvent } // a Razorpay webhook
   // The approvals relay says what the owner decided about a refund Guard is holding. It carries no authority: Guard releases the refund
   // only if its own record says the owner approved, so a forged "approve" makes the agent ask Guard once more and nothing else.
@@ -27,6 +30,8 @@ export function eventKey(event: IncomingEvent): string {
   // Handling is safe to repeat: the agent looks at the refunds first, and a decision for a hold it no longer has does nothing.
   if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}:${event.id ?? ""}`;
   if (event.kind === "recovery") return `recovery:${event.id}`; // the panel gives each request its own id, so pressing a button twice is one request
+  // the same report sent again is one; a message's delivered and read are two
+  if (event.kind === "message_status") return `message_status:${event.status.ids.join("|")}:${event.status.status}`;
   return `payment_event:${event.event.id}`;
 }
 
@@ -113,5 +118,24 @@ function checkOne(raw: unknown): IncomingEvent | string {
     if (raw.id !== undefined && (typeof raw.id !== "string" || !/^[A-Za-z0-9-]{1,64}$/u.test(raw.id))) return "an approval_decision's id, if given, is up to 64 letters, digits and hyphens.";
     return { kind: "approval_decision", approval: raw.approval, decision: raw.decision, ...(raw.id !== undefined ? { id: raw.id } : {}) };
   }
-  return 'the kind must be "message", "payment_event" or "approval_decision" (a tick is never sent from outside).';
+  if (raw.kind === "message_status") return checkStatus(raw.status);
+  return 'the kind must be "message", "message_status", "payment_event" or "approval_decision" (a tick is never sent from outside).';
+}
+
+const STATUS_ID = /^[A-Za-z0-9._:=+/-]{1,256}$/u;
+
+/** A status report as the inbox reads it (webhooks.ts parseWhatsAppStatuses): its ids, which of the three it is, when, and for a failure only a code and a short title. */
+function checkStatus(s: unknown): IncomingEvent | string {
+  const shape = 'a message_status needs status.ids (1 to 3 message ids), status.status ("delivered", "read" or "failed") and status.timestamp (epoch milliseconds).';
+  if (!isObj(s) || !Array.isArray(s.ids) || s.ids.length === 0 || s.ids.length > 3 || !s.ids.every((id) => typeof id === "string" && STATUS_ID.test(id))) return shape;
+  if (s.status !== "delivered" && s.status !== "read" && s.status !== "failed") return shape;
+  if (typeof s.timestamp !== "number" || !Number.isFinite(s.timestamp)) return shape;
+  if (s.to !== undefined && (typeof s.to !== "string" || !/^\+\d{6,15}$/u.test(s.to))) return "status.to, if given, is the number it was for (E.164, like +919811111111).";
+  let error: { code?: number; title?: string } | undefined;
+  if (s.error !== undefined) {
+    const e = s.error;
+    if (s.status !== "failed" || !isObj(e) || (e.code !== undefined && !Number.isInteger(e.code)) || (e.title !== undefined && (typeof e.title !== "string" || e.title.length > 200))) return "status.error is only for a failed status: {code: a whole number, title: up to 200 characters}, both optional.";
+    error = { ...(e.code !== undefined ? { code: e.code as number } : {}), ...(e.title !== undefined ? { title: e.title as string } : {}) };
+  }
+  return { kind: "message_status", status: { ids: [...s.ids] as string[], status: s.status, ...(s.to !== undefined ? { to: s.to as string } : {}), timestamp: s.timestamp, ...(error ? { error } : {}) } };
 }

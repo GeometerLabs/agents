@@ -8,10 +8,13 @@
 //
 // WhatsApp webhooks can be verified in one of two ways, chosen in the config (default: meta-signature):
 //   - meta-signature: Meta's X-Hub-Signature-256 over the raw body, at POST /webhooks/whatsapp. A body signature proves the body.
-//   - path-token: for a provider that does not sign its webhooks (Gupshup's callbacks carry no signature; only an IP allowlist exists).
+//   - path-token: for a provider that does not sign its webhooks (Gupshup's v3 callbacks carry no signature; only an IP allowlist exists).
 //     The callback URL carries an unguessable token, POST /webhooks/whatsapp/<token>. A wrong or missing token is 404, as if the route
 //     did not exist. An optional list of source addresses (IPs or CIDRs) refuses everyone else. THIS IS WEAKER than a body signature:
 //     whoever learns the URL can post messages that look like they came from any customer or from the owner (see Explanation.md).
+//
+// A WhatsApp webhook carries customers' messages and WhatsApp's reports on what the shop sent (delivered, read, failed). Both go to the runtime: a message as
+// `message`, a report as `message_status` (the runtime records it against the message; webhooks.ts parseWhatsAppStatuses says which reports are kept).
 //
 // Razorpay wants an answer within 5 seconds (https://razorpay.com/docs/webhooks/best-practices.md) and retries for 24 hours;
 // Meta retries for up to 7 days (https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/overview.md).
@@ -21,7 +24,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { BlockList, isIP } from "node:net";
 import type { IncomingEvent } from "../runtime/events.ts";
-import { parseWhatsAppWebhook, verifyMetaSignature } from "../messaging/webhooks.ts";
+import { parseWhatsAppStatuses, parseWhatsAppWebhook, verifyMetaSignature } from "../messaging/webhooks.ts";
 import { parseRazorpayEvent, verifyRazorpaySignature } from "../payments/providers/razorpay/webhook.ts";
 
 export interface InboxConfig {
@@ -42,6 +45,8 @@ export interface InboxConfig {
    * valid signature: several shops can share one Meta app, and so one app secret, and the signature alone does not say whose message it is.
    */
   whatsappPhoneNumberId?: string;
+  /** Optional, Gupshup: this shop's Gupshup app id. A body whose `gs_app_id` names another app is not forwarded; a body with none (Gupshup's own early failures) passes. */
+  whatsappAppId?: string;
   /** Optional: only these source addresses (IPs or CIDRs, for example 203.0.113.0/24) may post WhatsApp webhooks; anyone else is refused (403). */
   whatsappAllowedSources?: string[];
   /** Behind a reverse proxy the socket's address is the proxy's. Name the header your proxy sets (for example x-forwarded-for) and the LAST address in it is used. */
@@ -181,7 +186,15 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
     for (const entry of (json as { entry?: unknown[] } | null)?.entry ?? []) for (const change of (entry as { changes?: unknown[] } | null)?.changes ?? []) ids.push(((change as { value?: { metadata?: { phone_number_id?: unknown } } } | null)?.value?.metadata?.phone_number_id));
     return ids.every((id) => id === undefined || id === config.whatsappPhoneNumberId);
   };
-  const messagesIn = (json: unknown): IncomingEvent[] => ownNumber(json) ? parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })) : [];
+  /** True unless the body names a Gupshup app (`gs_app_id`) and it is not this shop's. */
+  const ownApp = (json: unknown): boolean => {
+    const app = (json as { gs_app_id?: unknown } | null)?.gs_app_id;
+    return !config.whatsappAppId || app === undefined || app === config.whatsappAppId;
+  };
+  /** The customers' messages first, then the reports on what the shop sent, as one body gives them. */
+  const messagesIn = (json: unknown): IncomingEvent[] => ownNumber(json) && ownApp(json)
+    ? [...parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })), ...parseWhatsAppStatuses(json).map((status): IncomingEvent => ({ kind: "message_status", status }))]
+    : [];
 
   /** The owner's messages in these events (B37: and the other approvers'): from those numbers, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */
   const fromOwner = (events: IncomingEvent[]): IncomingEvent[] => (relay ? events.filter((e) => e.kind === "message" && relayDigits.has(e.message.from.replace(/\D/gu, ""))) : []);
@@ -213,7 +226,7 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
     let json: unknown;
     try { json = JSON.parse(raw.toString("utf8")); } catch { reply(res, 400, { error: "not JSON" }); return "400"; }
     const events = read(json);
-    if (events.length === 0) { reply(res, 200, { forwarded: 0 }); return "200 nothing to forward"; } // a status, or an event the agent does not use: do not make the provider retry it
+    if (events.length === 0) { reply(res, 200, { forwarded: 0 }); return "200 nothing to forward"; } // a "sent" status, Gupshup's set-callback check, or an event the agent does not use: do not make the provider retry it
     if (!(await forward(events))) { reply(res, 503, { error: "the runtime did not take the events; send them again" }); return `503 ${events.length} event(s) not taken`; }
     // An owner's reply may be an answer to an approval request. The relay is told directly; if it cannot take it, the provider sends the webhook again
     // (the runtime skips what it has saved, and the relay skips a message id it has seen), so an answer is not lost and not counted twice.

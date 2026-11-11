@@ -7,9 +7,12 @@
 //    https://developers.facebook.com/docs/graph-api/webhooks/getting-started
 //  - WhatsApp payload examples: https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages.md
 //    (text.md, interactive.md, button.md, audio.md, status.md next to it)
+//  - Gupshup's "v3" callbacks (read 11 Nov 2026) are Meta's body with `gs_app_id` beside `object`, and a Gupshup id (`gs_id`) on each status. They are not signed
+//    (the inbox's path-token mode). https://partner-docs.gupshup.io/docs/events (updated 30 Oct 2026), and the pass-through page's examples
+//    https://partner-docs.gupshup.io/docs/whatsapp-passthrough-apis-for-partners. The same parsers read both.
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { InboundMessage } from "./messaging.ts";
-import { asArray, isObject, str } from "../core/http.ts";
+import type { InboundMessage, MessageStatus } from "./messaging.ts";
+import { asArray, isObject, num, str } from "../core/http.ts";
 
 // ---- signatures --------------------------------------------------------------------------------------------------------------
 
@@ -64,7 +67,7 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
 }
 
 /**
- * The customer messages in a WhatsApp webhook. Delivery statuses (sent, delivered, read, failed) are ignored for now (Deferred.md).
+ * The customer messages in a WhatsApp webhook. Delivery statuses are read by parseWhatsAppStatuses, not here.
  * Messages with no id, no sender number or no words are left out. The timestamp is epoch seconds as a string; ours is milliseconds.
  *
  * A voice note or an audio file (`type: "audio"`; Meta marks a recorded voice note with `audio.voice: true`) has no words, but the person
@@ -90,6 +93,48 @@ export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
         const seconds = Number(str(m.timestamp) ?? m.timestamp);
         const reply = replyOf(m);
         out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(image ? { image: true as const } : {}), ...(reply ? { reply } : {}) });
+      }
+    }
+  }
+  return out;
+}
+
+// ---- WhatsApp statuses -------------------------------------------------------------------------------------------------------
+
+/** The statuses worth keeping: they say more than "accepted". "sent" and Gupshup's "enqueued" do not; Gupshup's set-callback check has no status at all. */
+const KEPT_STATUSES = new Set<MessageStatus["status"]>(["delivered", "read", "failed"]);
+/** An id as a provider writes one (wamid.HBgM..., a UUID): nothing that could be confused in a key or a log line. */
+const STATUS_ID = /^[A-Za-z0-9._:=+/-]{1,256}$/u;
+
+/** A status time: Meta writes seconds as a string; Gupshup writes seconds as a string or milliseconds as a number. Anything past the year 2286 in seconds is milliseconds. */
+function statusTime(raw: unknown): number {
+  const n = Number(str(raw) ?? raw);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n >= 1e10 ? Math.trunc(n) : n * 1000;
+}
+
+/**
+ * The delivered, read and failed reports in a WhatsApp webhook (Meta's, or Gupshup's v3 which adds `gs_id`), in order. Each keeps the message's ids, who it was for,
+ * when, and for a failure the provider's code and title: never anything the person wrote. A status with no id at all, or one we do not keep, is left out.
+ * Gupshup's own failure before Meta ever saw the message ("Failed (internal)": template mismatch, say) has only `gs_id`, no wamid and no metadata: it is kept.
+ */
+export function parseWhatsAppStatuses(body: unknown): MessageStatus[] {
+  if (!isObject(body)) return [];
+  const out: MessageStatus[] = [];
+  for (const entry of asArray(body.entry).filter(isObject)) {
+    for (const change of asArray(entry.changes).filter(isObject)) {
+      if (change.field !== "messages" || !isObject(change.value)) continue;
+      for (const s of asArray(change.value.statuses).filter(isObject)) {
+        const status = s.status as MessageStatus["status"];
+        if (!KEPT_STATUSES.has(status)) continue;
+        // Gupshup's own id first: it is what its send call answered with. Then whatever `id` holds (a wamid, or in one example another UUID).
+        const ids = [...new Set([str(s.gs_id), str(s.id)].filter((x): x is string => x !== undefined && STATUS_ID.test(x)))];
+        if (ids.length === 0) continue;
+        const first = status === "failed" ? asArray(s.errors).find(isObject) : undefined;
+        const code = num(first?.code);
+        const title = str(first?.title)?.replace(/\s+/gu, " ").trim().slice(0, 200);
+        const to = toE164(s.recipient_id);
+        out.push({ ids, status, ...(to ? { to } : {}), timestamp: statusTime(s.timestamp), ...(status === "failed" ? { error: { ...(code !== undefined ? { code } : {}), ...(title ? { title } : {}) } } : {}) });
       }
     }
   }

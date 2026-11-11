@@ -25,6 +25,7 @@ import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
 import { headOf } from "../../../../modules/record/ledger.ts";
+import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import type { LedgerHead } from "../../../../modules/record/ledger.ts";
 import { SOURCES } from "../../../../modules/report/text.ts";
 import type { Source } from "../../../../modules/report/text.ts";
@@ -326,7 +327,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     owner,
     stopped: { total: stoppedTotal, byRule },
     messages: { toCustomers, toOwner, heldBack },
-    unconfirmed: { open: rows.length - settledLater, openOnBookings: rows.filter((r) => !r.settledLater && !MESSAGE_ACTIONS.includes(r.action)).length, settledLater, rows },
+    unconfirmed: { open: rows.length - settledLater, openOnBookings: rows.filter((r) => !r.settledLater && !MESSAGE_ACTIONS.includes(r.action) && r.action !== MESSAGE_STATUS_ENTRY).length /* a failed delivery report is about a message too */, settledLater, rows },
     atReportTime: {
       waitingForOwner: bookings.filter((b) => b.pending.length > 0).length,
       paidNotBooked: bookings.filter((b) => b.state === "needs_owner").length,
