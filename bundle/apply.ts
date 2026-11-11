@@ -17,7 +17,8 @@ import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { State } from "./lib/state.ts";
 import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
 import { heldRulesOf } from "../modules/approvals/held-call.ts";
-import { syncLicence } from "./lib/licence.ts";
+import { syncAgentLicences, syncLicence } from "./lib/licence.ts";
+import { processAgentRequests } from "./agent/requests.ts";
 import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { updateStatus } from "./lib/status.ts";
@@ -280,6 +281,8 @@ export function runLicence(ctx: Context): string[] {
   const state = loadState(ctx.dir);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
   const lines = syncLicence(ctx.dir, loadServer(ctx.dir), shops, ctx.now());
+  // own agents: the same lease, shown on their panel page (they have no runtime to hand a licence file to)
+  lines.push(...syncAgentLicences(ctx.dir, loadServer(ctx.dir), Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n), ctx.now()));
   lines.forEach((l) => ctx.log(l));
   return lines;
 }
@@ -289,7 +292,7 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

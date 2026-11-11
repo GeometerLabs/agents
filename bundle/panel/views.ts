@@ -91,7 +91,7 @@ ${showNav ? html`<nav class="tabbar" aria-label="${c.w.appName}">
 
 /** One tab of the bottom bar; the open one is marked aria-current (a shop's pages and /server count as Shops, a setup's as Set up). */
 function tab(c: Ctx, href: string, label: string): Raw {
-  const here = c.path === href || c.path.startsWith(`${href}/`) || (href === "/shops" && c.path.startsWith("/server"));
+  const here = c.path === href || c.path.startsWith(`${href}/`) || (href === "/shops" && (c.path.startsWith("/server") || c.path.startsWith("/agents/")));
   return html`<a class="tab" href="${href}" ${here ? raw('aria-current="page"') : ""}>${label}</a>`;
 }
 
@@ -142,10 +142,10 @@ ${o.link ? html`<div class="notice"><p>${w.made}</p><code class="addr">${o.link}
 
 export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string; /** The licence, when it is not in order: a state of the lease, or `none` when the lease does not list the shop (decision 39). */ licence?: LicenceState }
 
-const liveLine = (c: Ctx, live: LiveView): Raw => html`<span class="state ${live.code}">${c.w.live[live.code]}</span>`;
+export const liveLine = (c: Ctx, live: LiveView): Raw => html`<span class="state ${live.code}">${c.w.live[live.code]}</span>`;
 
 /** `serverToDo`: the builder's own server still needs its model, backups or key confirmation (the panel's first run); `serverLink`: show the way to "This server". */
-export function shopsPage(c: Ctx, o: { all: boolean; cards: ShopCardView[]; serverToDo?: boolean; serverLink?: boolean }): string {
+export function shopsPage(c: Ctx, o: { all: boolean; cards: ShopCardView[]; serverToDo?: boolean; serverLink?: boolean; /** A builder's own agents, beside the shops (views-agents.ts agentsSection). */ agents?: Raw }): string {
   const w = c.w.shops;
   return layout(c, o.all ? w.titleAll : w.title, html`<h1>${o.all ? w.titleAll : w.title}</h1>
 ${o.serverToDo ? html`<div class="notice warn" role="status"><p><b>Finish setting up this server first:</b> the model your shops use, its key, and the nightly backups.</p><p><a class="btn primary" href="/server">This server</a></p></div>` : ""}
@@ -155,6 +155,7 @@ ${o.cards.length === 0 ? html`<p class="big">${w.empty}</p><a class="btn primary
   <div class="meta">${s.limits ? w.limits(s.limits.proven, s.limits.of) : w.limitsUnknown}${s.version ? html` · ${w.version(s.version)}` : ""}</div>
   <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div>${s.licence && s.licence !== "active" ? html`
   <div class="meta"><b>${c.w.licence.states[s.licence]}</b></div>` : ""}</a>`)}</div>`}
+${o.agents ?? ""}
 ${o.serverLink && !o.serverToDo ? html`<p class="mt"><a href="/server">This server: its model, backups and keys</a></p>` : ""}`);
 }
 
@@ -235,7 +236,7 @@ export interface ShopView {
  * The licence (B13): where it stands, in plain words, what that means for customers, the dates, fleet's renew link, and a note when the lease on this server has not been
  * refreshed for more than 2 days. Fleet's licence warning codes are not repeated in the plan's warnings: this block says them.
  */
-function licenceBlock(c: Ctx, l: LicenceView): Raw {
+export function licenceBlock(c: Ctx, l: LicenceView): Raw {
   const w = c.w.licence;
   const day = (d: string) => dayWords(d, c.lang);
   const lines = [
