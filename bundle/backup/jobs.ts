@@ -25,7 +25,8 @@ import { canonicalJson } from "../../modules/record/record.ts";
 import type { RecordEntry } from "../../modules/record/record.ts";
 import { keyedDigest } from "../../modules/record/fingerprint.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
-import { modulesOf } from "../generate/compose.ts";
+import { RELAY_STATE_VOLUME, modulesOf, nodeUser } from "../generate/compose.ts";
+import { OWNER_MARKED_KINDS } from "../generate/guards.ts";
 import { names } from "../generate/shop.ts";
 import { appliedPathwayDir } from "../lib/pathways.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
@@ -39,7 +40,7 @@ import { ensureDir, writeAtomic } from "../lib/util.ts";
 import { readFingerprints } from "../../modules/record/publish.ts";
 import type { DrillResult, PublishedLine } from "./drill-check.ts";
 import { fingerprintFile, lastFingerprint } from "./fingerprints.ts";
-import { AGENT_RECORD_FILE, PERSON_KEY_OBJECT } from "./snapshot.ts";
+import { AGENT_DESK_FILE, AGENT_RECORD_FILE, PERSON_KEY_OBJECT } from "./snapshot.ts";
 import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
@@ -82,6 +83,13 @@ function recordsMount(dir: string): string[] {
   ensureDir(folder);
   return ["-v", `${folder}:/run/records:ro`];
 }
+/**
+ * An agent on the owner-marked desk (UPI, B71 part 2) has its ledger in the relay's volume, not in a Guard's: `desk.json` under state/<agent>/ (the relay's stateDir,
+ * generate/configs.ts). The snapshot job reads it through the volume mounted read-only at RELAY_MOUNT (item 7's gap, 11 Nov 2026).
+ */
+const hasDesk = (a: { applied?: { guards: Record<string, { kind: string }> } }) => Object.values(a.applied?.guards ?? {}).some((g) => OWNER_MARKED_KINDS.includes(g.kind));
+const RELAY_MOUNT = "/v/relay-state";
+const deskPath = (agent: string) => `${RELAY_MOUNT}/state/${agent}/desk.json`;
 const guardMounts = (server: ServerConfig, name: string, guards: { kind: string }[]) => guards.flatMap((g) => ["-v", `${volume(server, names.stateVolume(name, g.kind as "razorpay"))}:/v/${names.stateVolume(name, g.kind as "razorpay")}`]);
 /** What a night's or a drill's verdict is written on: a shop's state or an agent's. */
 const entryOf = (state: ReturnType<typeof loadState>, name: string): { lastBackupAt?: string; lastDrill?: { at: string; ok: boolean; detail: string } } | undefined => state.shops[name] ?? state.agents?.[name];
@@ -106,11 +114,12 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   for (const [name] of [...shops, ...agents]) ensurePersonKey(ctx.dir, name); // B69: the key goes in the snapshot's manifest, so a restored shop or agent can still match its own people (`restore` puts it back)
   writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipient: server.backup.ageRecipient, target: server.backup.snapshots,
     shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, personKeyFile: `/run/person-keys/${shop}`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })),
-    agents: agents.map(([agent, a]) => ({ name: agent, recordFile: `/run/records/${agent}.json`, personKeyFile: `/run/person-keys/${agent}`, guards: Object.values(a.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(agent, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
+    agents: agents.map(([agent, a]) => ({ name: agent, recordFile: `/run/records/${agent}.json`, personKeyFile: `/run/person-keys/${agent}`, ...(hasDesk(a) ? { deskFile: deskPath(agent) } : {}), guards: Object.values(a.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(agent, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
   const mounts = [
     ...shops.flatMap(([shop, s]) => ["-v", `${volume(server, names.dataVolume(shop))}:/v/${names.dataVolume(shop)}`, ...guardMounts(server, shop, Object.values(s.applied!.guards))]),
     ...agents.flatMap(([agent, a]) => guardMounts(server, agent, Object.values(a.applied!.guards))),
     ...(agents.length > 0 ? recordsMount(ctx.dir) : []),
+    ...(agents.some(([, a]) => hasDesk(a)) ? ["-v", `${volume(server, RELAY_STATE_VOLUME)}:${RELAY_MOUNT}:ro`] : []),
   ];
   const place = snapshotPlace(ctx, server);
   const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...mounts, server.appImage, "node", "/app/bundle/backup/snapshot.ts", "/job/job.json"], { timeoutMs: 900_000 });
@@ -298,7 +307,7 @@ async function guardStatus(ctx: Context, service: string): Promise<{ status: num
  *      cannot open the store or verify its ledger is refused here, with nothing touched: Guard's restore moves the live store aside before it opens the copy, so a failure
  *      half-way through a real one would leave a Guard that does not start;
  *   3. stop only the agent's Guards, restore each store (the files it replaces are kept beside, `.before-restore-<ms>`), put the record and the key back, the record with a
- *      `restored` entry, as a shop's runtime writes one;
+ *      `restored` entry, as a shop's runtime writes one; for an agent on the owner-marked desk, its ledger too, with the relay stopped for the copy (deskPutBack);
  *   4. start the Guards and bring back what a snapshot cannot hold: the kill switch as this server has it now, the relay's reading credential (renewed every day, so the
  *      snapshot's is out of date), and the policy deployed now (a Guard keeps the policy in its store when the deployed one is not of a higher version: the agent is then
  *      deployed again above it).
@@ -321,6 +330,7 @@ export async function restoreAgent(ctx: Context, agent: string, o: { at?: string
   const lines: string[] = [];
   let got: { stamp: string; record: RecordFacts | null; guards: string[] };
   let restored: string[] = [];
+  let desk = { back: false, line: "" };
   try {
     mkdirSync(join(work, "files"), { recursive: true }); chmodSync(join(work, "files"), 0o777); // the container writes here; the deployer removes it after
     writeFileSync(join(work, "job.json"), JSON.stringify({ target: server.backup.snapshots, shop: agent, ownAgent: true, ...(o.at ? { atMs: Date.parse(o.at) } : {}), identityFile: "/run/secrets/identity", out: "/out/files", nowIso: ctx.now().toISOString() }), { mode: 0o644 });
@@ -354,6 +364,8 @@ export async function restoreAgent(ctx: Context, agent: string, o: { at?: string
     } finally { if (back.length > 0) await compose(ctx, ["start", ...back.map((g) => g.service)]); }
     lines.push(recordPutBack(ctx, agent, join(work, "files", AGENT_RECORD_FILE), got, stamp));
     lines.push(agentKeyPutBack(ctx.dir, agent, snapshotKey, stamp));
+    desk = await deskPutBack(ctx, server, agent, join(work, "files", AGENT_DESK_FILE), stamp);
+    lines.push(desk.line);
   } finally { rmSync(work, { recursive: true, force: true }); }
   // 4. what the snapshot cannot hold: the kill switch, the relay's credential, and the policy deployed now
   const statuses = new Map<string, { status: number; body: any }>();
@@ -371,7 +383,7 @@ export async function restoreAgent(ctx: Context, agent: string, o: { at?: string
     const d = await deployAgent(ctx, agent);
     lines.push(`The ${behind.map(([k]) => k).join(" and ")} Guard kept the policy in its restored store, so ${agent} was deployed again over it: ${d.proven.line}.`);
   }
-  const was = `${restored.length > 0 ? `its ${restored.map((s) => s.replace(`g-${agent}-`, "")).join(", ")} Guards' stores (every decision, approval and once-only entry up to then; the files they replaced are kept beside them, .before-restore-*), ` : ""}its record (up to entry #${got!.record?.lastSeq ?? 0}) and its key`;
+  const was = `${restored.length > 0 ? `its ${restored.map((s) => s.replace(`g-${agent}-`, "")).join(", ")} Guards' stores (every decision, approval and once-only entry up to then; the files they replaced are kept beside them, .before-restore-*), ` : ""}its record (up to entry #${got!.record?.lastSeq ?? 0})${desk.back ? ", its desk's ledger" : ""} and its key`;
   return [`${agent} is restored from the snapshot of ${got!.stamp}: ${was}.`,
     "What happened after the snapshot is in none of them: calls the agent made after it are not in the Guards or the record (Razorpay, the calendar and WhatsApp keep their own); a refund made after it is not known to Guard as made; approvals the owner gave after it are pending again, and holds made after it are gone.",
     ...lines.filter(Boolean)].join(" ");
@@ -396,6 +408,29 @@ function recordPutBack(ctx: Context, agent: string, from: string, got: { stamp: 
   return before.entries.length > record.entries.length - 1
     ? `The record had ${before.entries.length} entries; the next ones are numbered from #${record.entries.length + 1} again, so record files and reports already handed out carry other entries under those numbers (the old record is kept beside it, ${recordFile(ctx.dir, agent).split("/").at(-1)}.before-restore-${stamp}).`
     : "";
+}
+
+/**
+ * The owner-marked desk's ledger from the snapshot put back in the relay's volume (state/<agent>/desk.json), the file it replaces kept beside it (item 7's gap,
+ * 11 Nov 2026). The relay holds each desk's ledger in memory and writes it whole after every change, so a file put back under a running relay would be written over:
+ * the relay is stopped for the copy and started again at once (it serves every shop's approvals, which wait those seconds: the inbox's forward is answered again
+ * after). The copy runs as the relay's own user, in a short-lived container with the volume, written to a new name and renamed, as the desk writes it. Nothing
+ * when the snapshot holds no desk (an agent with none, or a snapshot from before desks were in it). It never throws: the Guards and the record are already back.
+ */
+async function deskPutBack(ctx: Context, server: ServerConfig, agent: string, from: string, stamp: string): Promise<{ back: boolean; line: string }> {
+  if (!existsSync(from)) return { back: false, line: "" };
+  const byHand = `open the snapshot with restore-snapshot.ts and put its desk.json in the relay's volume at state/${agent}/desk.json (mode 0600, owned by the relay's user) with the relay stopped`;
+  // $1 the agent and $2 the stamp, as arguments rather than in the script's text; both are plain ids
+  const copy = 'set -e; d="/v/state/$1"; mkdir -p "$d"; if [ -f "$d/desk.json" ]; then mv "$d/desk.json" "$d/desk.json.before-restore-$2"; fi; cp /in/desk.json "$d/.desk-restore.tmp"; chmod 600 "$d/.desk-restore.tmp"; mv "$d/.desk-restore.tmp" "$d/desk.json"';
+  try {
+    await compose(ctx, ["stop", "relay"]);
+    let r: { code: number; stdout: string; stderr: string };
+    try {
+      r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false, nodeUser), "-v", `${volume(server, RELAY_STATE_VOLUME)}:/v`, "-v", `${from}:/in/desk.json:ro`, server.appImage, "sh", "-c", copy, "sh", agent, stamp], { timeoutMs: 120_000 });
+    } finally { await compose(ctx, ["start", "relay"]); }
+    if (r.code !== 0) return { back: false, line: `The desk's ledger could NOT be put back (${(r.stderr.trim() || r.stdout.trim()).split("\n").slice(-2).join(" | ").slice(0, 200) || `exit ${r.code}`}): ${byHand}.` };
+    return { back: true, line: `The desk's ledger (the owner's marks, live codes and refunds owed, and its ids) was put back from the snapshot; the one it replaced is kept beside it in the relay's volume (state/${agent}/desk.json.before-restore-${stamp}). The relay was stopped for the copy and started again.` };
+  } catch (e) { return { back: false, line: `The desk's ledger could NOT be put back (${(e as Error).message}): ${byHand}.` }; }
 }
 
 /** The agent's key from the snapshot put back, and its label key made again from it. It never throws: the Guards are already restored and running. */

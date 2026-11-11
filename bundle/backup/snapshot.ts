@@ -12,6 +12,9 @@
 // runtime's copy is (it must parse as a record, and is chained into its ledger) and written as one object in place of the runtime's. Its Guards and its key go in as a shop's do.
 //
 //   <agent>/<stamp>/record.json.gz.age         the agent's record (state/records/<agent>.json, the whole file: its entries, what it has seen, and its marks)
+//   <agent>/<stamp>/desk.json.gz.age           an agent on the owner-marked desk (UPI, B71 part 2): the desk's ledger (desk.json in the relay's volume: the open requests,
+//                                              the owner's marks and live codes, the refunds owed, its id counter), mounted read-only. Without it a lost volume would start
+//                                              the desk's ids again, and the record, which keys the owner's marks by id, would take a new mark for one it already wrote.
 //
 // What it hands back besides, in the clear, is the snapshot's SEAL: each object's key, size and sha256 as uploaded, what the copy's record was (its length, last
 // entry's digest and the head of its hash chain), and a one-way id of the fingerprint key the manifest holds. No customer's words or numbers are in it, and the id
@@ -49,7 +52,7 @@ export interface SnapshotJob {
   /** `personKeyFile`: the shop's fingerprint key (B69), mounted read-only, so it travels in the manifest (encrypted to the age recipient). Left out: the manifest has no key. */
   shops: { name: string; runtimeDb: string; personKeyFile?: string; guards: { kind: string; dir: string }[] }[];
   /** Agents someone else wrote (B51): `recordFile` is the deployer's record of the agent (state/records/<agent>.json), mounted read-only. Left out: a job from before them. */
-  agents?: { name: string; recordFile: string; personKeyFile?: string; guards: { kind: string; dir: string }[] }[];
+  agents?: { name: string; recordFile: string; personKeyFile?: string; /** The desk's ledger in the relay's volume, for an agent on the owner-marked desk (item 7's gap, 11 Nov); left out for one with none. */ deskFile?: string; guards: { kind: string; dir: string }[] }[];
 }
 
 export interface RecordFacts { records: number; lastSeq: number | null; lastEntryDigest: string | null }
@@ -69,6 +72,9 @@ export const MANIFEST_OBJECT = "manifest.json.gz.age";
 /** An agent's record in its snapshot, and the file it opens to. */
 export const AGENT_RECORD_OBJECT = "record.json.gz.age";
 export const AGENT_RECORD_FILE = "record.json";
+/** The owner-marked desk's ledger of an agent someone else wrote, in its snapshot (the relay's desk.json, byte for byte). */
+export const AGENT_DESK_OBJECT = "desk.json.gz.age";
+export const AGENT_DESK_FILE = "desk.json";
 /** What the fingerprint key is called when a restore takes it out of the manifest. */
 export const PERSON_KEY_OBJECT = "person_key";
 
@@ -150,6 +156,12 @@ export async function snapshotAgent(agent: NonNullable<SnapshotJob["agents"]>[nu
     record = { ...read.facts, head: read.head };
     files.push({ path: AGENT_RECORD_FILE, bytes: data.length, sha256: sha256(data) });
     objects.push({ name: AGENT_RECORD_OBJECT, plain: gzipSync(data) });
+  }
+  // the desk's ledger: written whole by a rename (services/desk.ts), so one read sees one version; taken as it is, and checked when it is put back (restore-snapshot.ts)
+  if (agent.deskFile && existsSync(agent.deskFile)) {
+    const data = readFileSync(agent.deskFile);
+    files.push({ path: AGENT_DESK_FILE, bytes: data.length, sha256: sha256(data) });
+    objects.push({ name: AGENT_DESK_OBJECT, plain: gzipSync(data) });
   }
   return sealAndPut(agent, job, store, { objects, files, record, ownAgent: true, empty: "there was nothing to copy (no record of the agent yet, and no Guard backup)" });
 }

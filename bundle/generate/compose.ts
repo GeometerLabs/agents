@@ -173,7 +173,10 @@ export function yaml(value: Y, indent = 0): string {
 
 type Service = Record<string, Y | undefined>;
 const hardened = { restart: "unless-stopped", read_only: true, cap_drop: ["ALL"], security_opt: ["no-new-privileges:true"], tmpfs: ["/tmp"] };
-const nodeUser = "1000:1000"; // the `node` user of the node image
+/** The `node` user of the node image: every node service runs as it, and the backup jobs write the relay's volume as it (backup/jobs.ts). */
+export const nodeUser = "1000:1000";
+/** The relay's volume (its home folder): the approvals relay's store and each owner-marked desk's ledger (state/<name>/desk.json), which the nightly snapshot reads. */
+export const RELAY_STATE_VOLUME = "relay-state";
 const guardUser = "65532:65532"; // the user the Guard image runs as
 const healthWget = (port: number, path: string) => ({ test: ["CMD", "wget", "-q", "-O", "/dev/null", `http://127.0.0.1:${port}${path}`], interval: "10s", timeout: "3s", retries: 3, start_period: "10s" });
 
@@ -273,7 +276,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // DESK_PORT: the owner-marked desk (B71 part 2), served by the relay's process on a port of its own, for the agents' desk Guards (they reach it over `admin`)
   add("relay", node(["node", "/app/bundle/services/relay.ts"], {
     environment: { CONFIG: "/etc/geometer/relay.json", PORT: String(RELAY_PORT), HOST: "0.0.0.0", ...(agents.some((a) => a.guards.some((g) => OWNER_MARKED_KINDS.includes(g.kind))) ? { DESK_PORT: String(DESK_PORT) } : {}) },
-    volumes: [appVolume, `${dirs.generated}/relay:/etc/geometer:ro`, `${secretDir("relay")}:/run/secrets:ro`, "relay-state:/home/node"],
+    volumes: [appVolume, `${dirs.generated}/relay:/etc/geometer:ro`, `${secretDir("relay")}:/run/secrets:ro`, `${RELAY_STATE_VOLUME}:/home/node`],
     networks: { front: {}, admin: {} }, healthcheck: healthWget(RELAY_PORT, "/healthz"),
   }), [`${dirs.generated}/relay/relay.json`]);
   add("refresher", node(["node", "/app/bundle/services/refresher.ts"], {
@@ -323,7 +326,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
-  const volumes: Record<string, Y> = { "google-auth": {}, "relay-state": {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {} };
+  const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {} };
   for (const s of shops) {
     volumes[names.dataVolume(s.name)] = {};
     for (const g of s.guards) volumes[names.stateVolume(s.name, g.kind as Exclude<GuardKind, "model">)] = {};
