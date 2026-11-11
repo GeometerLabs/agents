@@ -81,6 +81,13 @@ This was refused, and nothing was started or changed:
 
 **7. Point the providers at the shop.** The address is in `status/glow-salon.json` (and in the panel): Razorpay's webhook goes to `https://shops.example.com/c/glow-salon/webhooks/razorpay`; WhatsApp's callback goes to `https://shops.example.com/c/glow-salon/webhooks/whatsapp`, with the verify token you handed in. (A provider that does not sign its webhooks, like Gupshup, gets a secret path instead: hand in `whatsapp_path_token` and the address ends `/webhooks/whatsapp/<token>`.)
 
+**A shop on Gupshup (the pilot's provider).** Three things differ from Meta direct, and nothing else does:
+- **`runtime.json`:** `services.messaging` names the provider and the shop's Gupshup app id beside the number id: `{"phoneNumberId": "<Meta's number id>", "provider": "gupshup", "appId": "<the Gupshup app id>"}`. The number id is in every callback Gupshup sends (`metadata.phone_number_id`), and the app id is Gupshup's id for the shop's app (the partner portal's app list shows it). The WhatsApp Guard then fronts `partner.gupshup.io` and allows that one app only.
+- **Secrets:** hand in `gupshup_authorization` (not `whatsapp_token`) and `whatsapp_path_token` (not the app secret and verify token).
+- **Callback:** in Gupshup, add a **v3** callback subscription (Gupshup's "Meta format", version 3) to `https://shops.example.com/c/glow-salon/webhooks/whatsapp/<token>` with the modes `MESSAGE`, `DELIVERED`, `READ` and `FAILED`. Leave out `SENT` and `ENQUEUED`, which say no more than the send's own answer, and do not keep a v2 subscription beside it, or each event arrives twice. Gupshup sends a test event when the subscription is added, and the inbox answers it. Gupshup also asks for "callback billing" to be on for the app before its v3 send works.
+
+Nothing here has been tried on a real Gupshup app. The list of what only a real app can confirm is in `modules/Deferred.md` ("WhatsApp through Gupshup").
+
 **8. Keep the deployer running.** It applies what the panel writes, renews the relay's reading credential every day, takes the nightly snapshot and runs the weekly restore drill.
 
 ```ini
@@ -106,7 +113,8 @@ Hand each one in as a file in `secrets-inbox/<shop>/<name>`. The deployer moves 
 | Name | Goes to | Notes |
 |---|---|---|
 | `razorpay_key` | the shop's Razorpay Guard | `key_id:key_secret`, one line |
-| `whatsapp_token` | the shop's WhatsApp Guard | the access token |
+| `whatsapp_token` | the shop's WhatsApp Guard | Meta's access token (the Guard sends `Bearer <token>`) |
+| `gupshup_authorization` | the shop's WhatsApp Guard | instead of `whatsapp_token`, for a shop on Gupshup: the whole `Authorization` value Gupshup asks for, as it is (its partner app token has no `Bearer`) |
 | `razorpay_webhook_secret` | the inbox | |
 | `whatsapp_app_secret` and `whatsapp_verify_token` | the inbox | Meta's signature, and its handshake token |
 | `whatsapp_path_token` | the inbox | instead of the two above, for a provider that does not sign |

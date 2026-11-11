@@ -72,7 +72,7 @@ node templates/commerce/bookings/standins/dev-forwarder.ts --port 8791     # npm
 # base URLs for createLiveAdapters:  http://127.0.0.1:8791/razorpay   /google   /whatsapp
 ```
 
-WhatsApp is written for Meta's Cloud API shape (Graph v26.0). The provider is not chosen yet, so a provider sandbox that uses other paths needs its own small mapping first. A live "confirmed" message means WhatsApp **accepted** it; WhatsApp has no endpoint to read a message back, and delivery status webhooks are not handled yet. The templates to submit to Meta are in `whatsapp-templates.json` (`node scripts/whatsapp-templates.ts` prints them). Design and decisions: Explanation.md, "Live services". What is left: Deferred.md.
+WhatsApp is written for Meta's Cloud API shape (Graph v26.0), and Gupshup (the pilot's provider) is reached through its v3 pass-through, which takes the same bodies: `runtime.json`'s `services.messaging` says `"provider": "gupshup"` and the shop's `"appId"` (Meta direct when left out; `bundle/README.md` has the steps). A live "confirmed" message means WhatsApp **accepted** it; WhatsApp has no endpoint to read a message back. Its later delivered, read and failed reports are recorded beside the send (`message_status`), and a failure about a booking is on the owner's to-do list. Gupshup has not been tried on a real app yet (`modules/Deferred.md`). The templates to submit to Meta are in `whatsapp-templates.json` (`node scripts/whatsapp-templates.ts` prints them). Design and decisions: Explanation.md, "Live services". What is left: Deferred.md.
 
 ## Show it to a shop
 
