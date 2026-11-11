@@ -197,3 +197,23 @@ Partners and builders use the panel on phones of 360 to 390 px. A pass on `panel
 - **Up to six tabs** share a phone's width: below 420 px their words are smaller and may wrap to two lines.
 - **Five inline `style=""` attributes did nothing.** The panel's Content-Security-Policy lets in only its own nonce'd stylesheet, and an inline style attribute is not that, so the sign-out tab, two full-width buttons, a margin and the to-do list's inline forms were drawn without them. They are classes now (`tabform`, `wide`, `mt`, `inline`), and a test fails on any `style="` in a view.
 - Not done: a look at each page on a real phone, and a second look at the setup's long Malayalam and Kannada labels (Deferred.md).
+
+## Own agents beside the shops (12 November 2026, B51's rest)
+
+A builder's own agents (bundle/README.md, "Bring your own agent") are on the shops page under "Your own agents", and each has a page at `/agents/<name>`. The panel has no
+`agents/` folder and no state file, so `agents.ts` reads only what the deployer writes for it: an agent is a `status/<name>.json` with an `own` block and no shop folder of that
+name; the block gives the Guards' addresses, each Guard's credential's dates (when made, until when an old one still works; never a credential or a hash) and the calls its
+Guards held for the owner at the last minute's look; `exports/<name>/` gives the record (the unfinished-work list is the panel's own, `modules/unfinished`, run on the
+agent's export, which is in Bookings' shape), `crash-test.json` (counts and situation titles only, never a check's detail, which can carry the agent's own output),
+`in-service.json` (the version in service and its certificate's code) and `rotation.json`. The licence line is the lease's state for the agent and the builder licence's price
+from the price list in force (`chargeOf`, never a number written here).
+
+**Who sees it.** Builders only. To a partner the address is a 404, as a shop that is not theirs is, and the shops page has no section.
+
+**The actions.** Stop (the shop's own stop request, `requests/<name>.stop.json`, which the deployer now carries out on an agent's Guards and marks on the agent), a new crash
+test (`requests/<name>.crash-test.json`) and new credentials for every Guard or one (`requests/<name>.rotate.json`, with a Guard's kind, which must be one of the agent's).
+Each file holds a name, an id and who asked: nothing the panel writes reaches a command line (the crash test runs the command in the agent's own `agent.json`). Releasing the
+kill switch and removing the agent are on the command line only (`geometer start`, `geometer agent remove`); the page says where.
+
+**Words.** `words-agents.ts`, English, with Hindi, Malayalam and Kannada machine-written and marked like the rest; on the review sheets as `agents.*`. Machine and brand names
+stay in Latin letters. Tests (written, not run): `test/agents.test.ts`.

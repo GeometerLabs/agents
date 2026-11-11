@@ -97,3 +97,9 @@ Not built, or built only as far as said. The first block needs another part of t
 - [ ] **Only the shops a person serves count for their Innovator badge and vote.** A builder who can see every shop on a server is not made an innovator by a partner's shop.
 - [ ] **No phone-width look at the new pages** (no browser here), and the bottom tab bar now has one more tab.
 - [ ] **The setup fee is shown once, not spread over months** and is not part of the monthly margin. Revisit when: partners ask for it per month.
+
+## Own agents (12 Nov 2026, B51's rest)
+
+- **Not run.** `test/agents.test.ts` and the deployer's `bundle/test/agent-requests.test.ts` were written on 12 Nov and wait for the owner's one test pass. The page was not opened in a browser or at 360 px.
+- **No monthly report and no connection checks for an own agent in the panel.** Its report is `geometer agent report`; the shop's connection checks read a shop's settings. Revisit when: a builder asks for an agent's report from the panel. Done when the agent's page links its month's report, made from its record like a shop's.
+- **The page refreshes on reload only.** A crash test takes minutes; the page says it is running until the builder reloads. Done when: the page carries a plain meta refresh while a crash test runs (no script).

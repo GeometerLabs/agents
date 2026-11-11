@@ -76,7 +76,7 @@ function putBackPersonKey(dir: string, name: string, keyHex: string, stamp: stri
 
 /**
  * An agent someone else wrote (B51): its key put back as a shop's is, and its label key made again from it in ops' folder (ops reads the file at each record pass). No
- * runtime copy and no panel copy: an agent has no runtime, and the panel does not show agents.
+ * runtime copy and no panel copy: an agent has no runtime, and the panel's own-agent page (12 Nov 2026) matches no person, so it needs no key.
  */
 export function restoreAgentKey(dir: string, agent: string, keyHex: string, stamp: string): string | undefined {
   const kept = putBackPersonKey(dir, agent, keyHex, stamp);
