@@ -13,6 +13,7 @@ import type { Settings } from "../../templates/commerce/bookings/src/settings.ts
 import type { ModelConfig, Upstream } from "../lib/server.ts";
 import { GATEWAYS, GATEWAY_KINDS, OWN_API, providerById } from "../../modules/payments/providers/index.ts";
 import { OWN_API_SECRET } from "../lib/secrets.ts";
+import { GUPSHUP_ROUTES, GUPSHUP_UPSTREAM } from "../../modules/messaging/gupshup.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
 export const GUARD_UPSTREAM_TIMEOUT_MS = 15_000;
@@ -46,12 +47,24 @@ export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
   // a gateway's Guard is its folder's: the key order is the deployed definition's, and the bytes of every Razorpay shop's plan are pinned (payment-guard-golden)
   if (gateway) return { kind, tool: gateway.tool, upstream: gateway.upstream, secretFile: gateway.secretFile, headers: { Authorization: `\${file:/run/secrets/${gateway.secretFile}}` } };
   switch (kind) {
-    case "whatsapp": return { kind, tool: "whatsapp", upstream: "graph.facebook.com:443", secretFile: "whatsapp_authorization", headers: { Authorization: "${file:/run/secrets/whatsapp_authorization}" } };
+    case "whatsapp": return whatsappGuardDef();
     case "calendar": return { kind, tool: "google-calendar", upstream: "www.googleapis.com:443", headers: { Authorization: "${file:/run/google/authorization}" } };
     case "model":
       if (model?.wire === "anthropic") return { kind, tool: "model", upstream: model.upstream ?? "api.anthropic.com:443", secretFile: "model_api_key", headers: { "x-api-key": "${file:/run/secrets/model_api_key}", "anthropic-version": ANTHROPIC_VERSION } };
       return { kind, tool: "model", upstream: model?.upstream ?? "api.openai.com:443", secretFile: "model_authorization", headers: { Authorization: "${file:/run/secrets/model_authorization}" } };
   }
+}
+
+/** A shop's WhatsApp provider when it is not Meta direct (runtime.json services.messaging; modules/messaging/providers.ts). Left out: Meta, exactly as before. */
+export interface WhatsAppRoute { provider: "gupshup"; appId: string }
+
+/**
+ * The WhatsApp Guard: Meta's Graph API, or (item 11b) Gupshup's partner API, which takes Meta's bodies. Either way one credential file, sent as the whole
+ * Authorization header and never seen by the runtime: Meta's "Bearer <token>" (`whatsapp_token`), or Gupshup's header value as handed in (`gupshup_authorization`).
+ * The tool name stays "whatsapp", so the licence's final stop and the hourly cap read the same operation ("send") and the same recipient field ("to").
+ */
+export function whatsappGuardDef(route?: WhatsAppRoute): GuardDef {
+  return { kind: "whatsapp", tool: "whatsapp", upstream: route?.provider === "gupshup" ? GUPSHUP_UPSTREAM : "graph.facebook.com:443", secretFile: "whatsapp_authorization", headers: { Authorization: "${file:/run/secrets/whatsapp_authorization}" } };
 }
 
 export interface SpecIdentity { tenant: string; name: string; version: number; reviewedBy: string }
@@ -76,8 +89,24 @@ export function gatewaySpec(settings: Settings, id: SpecIdentity, approvalHours:
  */
 export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GATEWAYS.map((g) => [g.id, g.gateway!.guard.reads.panel])), whatsapp: ["read_number"], calendar: ["get_calendar", "list"] };
 
-/** The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own. */
-export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number }): LimitsSpec {
+/**
+ * The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own.
+ * Through Gupshup (`route`) the same two operations name the shop's own Gupshup app instead, exactly: Gupshup's paths carry the app, not the number
+ * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number (the panel's check is Meta's: Deferred.md).
+ */
+export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute }): LimitsSpec {
+  if (o.route?.provider === "gupshup") {
+    return {
+      ...base(whatsappGuardDef(o.route), id),
+      routes: [{ method: "POST", path: GUPSHUP_ROUTES.send, operation: "send" }, { method: "GET", path: GUPSHUP_ROUTES.read, operation: "read_number" }],
+      rules: [
+        { id: "own-app-only", kind: "argument_allowlist", operation: "send", field: "app_id", match: "exact", allowed_values: [o.route.appId] },
+        { id: "own-app-read", kind: "argument_allowlist", operation: "read_number", field: "app_id", match: "exact", allowed_values: [o.route.appId] },
+      ],
+      limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
+      intents: [], fail_policy: [],
+    };
+  }
   return {
     ...base(guardDef("whatsapp"), id),
     routes: [{ method: "POST", path: "/{version}/{phone_number_id}/messages", operation: "send" }, { method: "GET", path: "/{version}/{phone_number_id}", operation: "read_number" }],

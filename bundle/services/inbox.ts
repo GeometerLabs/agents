@@ -21,6 +21,8 @@ export interface InboxShopConfig {
   /** B37: the shop's other approvers' numbers, whose replies go to the relay too. */
   approverWhatsapps?: string[];
   phoneNumberId: string;
+  /** Item 11b, a Gupshup shop: its Gupshup app id. A callback that names another app (gs_app_id) is not forwarded. */
+  gupshupAppId?: string;
   verification: "meta-signature" | "path-token";
   /** A folder with this shop's secrets: internal_token, relay_token, razorpay_webhook_secret, whatsapp_app_secret + whatsapp_verify_token or whatsapp_path_token. */
   secretsDir: string;
@@ -47,6 +49,7 @@ export function shopHandler(name: string, c: InboxShopConfig, read: (path: strin
     ...(c.verification === "meta-signature" ? { whatsappAppSecret: need("whatsapp_app_secret"), whatsappVerifyToken: need("whatsapp_verify_token") } : { whatsappPathToken: need("whatsapp_path_token") }),
     // Several shops can share one Meta app, and so one app secret: a valid signature does not say whose message it is, the phone number does.
     whatsappPhoneNumberId: c.phoneNumberId,
+    ...(c.gupshupAppId ? { whatsappAppId: c.gupshupAppId } : {}),
     // a shop with no approvals relay (a UPI shop, B33) sends its owner's messages to the runtime only; B37: the other approvers' replies go to the relay too
     ...(c.relayUrl ? { relayUrl: c.relayUrl, relayToken: need("relay_token"), ownerWhatsapp: c.ownerWhatsapp, ...(c.approverWhatsapps && c.approverWhatsapps.length > 0 ? { approverWhatsapps: c.approverWhatsapps } : {}) } : {}),
     log: (line) => log(`[${name}] ${line}`),

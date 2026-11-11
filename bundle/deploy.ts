@@ -312,8 +312,11 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   const shops = applied.map(([name, s]) => {
     const snap = s.applied!;
     const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string }; approvers?: ApproversSettings };
-    const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string } } };
-    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: runtime.services.messaging.phoneNumberId, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
+    const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string; provider?: string; appId?: string } } };
+    const m = runtime.services.messaging;
+    // item 11b: a Gupshup shop's inbox checks the app id on each callback, and its relay asks the owner through Gupshup's paths
+    const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } } : {};
+    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: m.phoneNumberId, ...whatsappRoute, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
   });
   for (const [name, s] of applied) {
     const client = join(p.generated, "shops", name, "client");
