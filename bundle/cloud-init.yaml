@@ -4,8 +4,8 @@
 # for you, with no questions (plan item 14b). About ten minutes after the server starts, log in as builder and run `geometer invite builder` for your sign-in link
 # (the install does not print it into the cloud-init log, which outlives the link).
 #
-# UNTESTED ON A REAL CLOUD (11 Nov 2026): the same install.sh ran inside an ubuntu:24.04 container against Docker on a laptop, not on a Hetzner or DigitalOcean
-# server, and not under cloud-init itself.
+# NOT RUN YET (11 Nov 2026): not on a Hetzner or DigitalOcean server and not under cloud-init. install.sh's own tests are written and wait for the owner's
+# one test pass; a run inside an ubuntu:24.04 container is prepared for that pass too.
 #
 # Fill in the four values marked FILL IN:
 #   - your SSH public key (the line from ~/.ssh/id_ed25519.pub);
