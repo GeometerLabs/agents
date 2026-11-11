@@ -195,7 +195,8 @@ test("ports 80 and 443 must be free or this server's own Caddy's; the domain sho
     r = await s.run("DOMAIN=shops.example.com; check_dns");
     assert.equal(r.code, 0, r.out); assert.match(r.out, /points at this server \(203\.0\.113\.7/u);
     r = await s.run("DOMAIN=shops.example.com; check_dns", { RESOLVES: "198.51.100.9" });
-    assert.equal(r.code, 1); assert.match(r.out, /points at 198\.51\.100\.9, but this server's addresses are 203\.0\.113\.7.*no terminal to ask on/su);
+    // stdout and stderr arrive on two pipes, so each line is looked for on its own, not in an order
+    assert.equal(r.code, 1); assert.match(r.out, /points at 198\.51\.100\.9, but this server's addresses are 203\.0\.113\.7/u); assert.match(r.out, /no terminal to ask on/u);
     r = await s.run("DOMAIN=shops.example.com; YES=1; check_dns", { RESOLVES: "198.51.100.9" });
     assert.equal(r.code, 0, r.out); assert.match(r.out, /keeps trying, so it can be fixed after the install/u);
     r = await s.run("DOMAIN=localhost; check_dns");
