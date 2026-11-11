@@ -887,8 +887,12 @@ export function createAgent(deps: AgentDeps): Agent {
       const paymentId = event.payload.refund!.payment_id;
       const due = dues.find((x) => x.payments.some((p) => p.id === paymentId));
       const refundId = event.payload.refund!.id;
-      const listed = (await payments.listRefunds(paymentId)).some((r) => r.id === refundId);
-      log(due ?? null, due?.customer ?? owner, "receive_payment_event", listed ? "confirmed" : "unconfirmed", { id: event.id, event: event.event }, { refs: { refundId, paymentId }, notes: "the refund is on the payments service's own list" });
+      // The event only says to look: the payments service's own list must show the refund. When it is the refund an unknown outcome is open on (B75), that ORIGINAL
+      // attempt is settled as the provider's confirmation and the customer told (modules/payments/refunds.ts settleFromEvent); no refund is ever asked for again.
+      const listed = (await payments.listRefunds(paymentId)).find((r) => r.id === refundId);
+      const settles = due && listed ? refunds.openIssueFor(due, listed) !== undefined : false;
+      log(due ?? null, due?.customer ?? owner, "receive_payment_event", listed ? "confirmed" : "unconfirmed", { id: event.id, event: event.event }, { refs: { refundId, paymentId }, notes: listed ? (settles ? "the refund is on the payments service's own list, and it is the one whose outcome was unknown: settled below" : "the refund is on the payments service's own list") : "the payments service's own list does not show this refund, so nothing is settled by it" });
+      if (due && listed && settles) await refunds.settleFromEvent(due, listed, event.id);
       store.seenEvents.add(event.id);
       return;
     }

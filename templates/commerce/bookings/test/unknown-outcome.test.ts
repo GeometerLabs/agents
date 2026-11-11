@@ -3,7 +3,8 @@
 //     send it again, days of the customer's silence do not clear it, the to-do list keeps it, and only the payments service's own list settles it, with its refund id;
 //   - a wait for a Guard that ends with the step thrown away keeps the case number that step took: the hold (or link) its first try left at the provider is never taken
 //     by the next customer's "look first" as their own.
-//   - (12 Nov 2026) the look that settles it tells the customer once, as "we will message you as soon as it is confirmed" promised.
+//   - (12 Nov 2026) the look that settles it, or the provider's own refund.done, tells the customer once, as "we will message you as soon as it is confirmed" promised,
+//     and the event settles the ORIGINAL attempt as the provider's confirmation, never a new refund.
 // The map of what exists and what does not is in modules/Explanation.md, "Unknown outcomes".
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -68,6 +69,39 @@ test("a refund whose outcome is unknown: kept through a restart, a fresh attempt
     await second.runtime.idle();
     assert.equal(toldConfirmed(), 1, "a second look finds nothing open and tells nobody again");
   } finally { await second.runtime.close(); kit.cleanup(); }
+});
+
+test("the provider's own refund.done settles a refund whose outcome was unknown: the original attempt, as the provider's confirmation, never a new refund (follow-up 4)", async () => {
+  const kit = createKit();
+  const refundCalls = () => kit.payments.calls.filter((c) => c.op === "refund").length;
+  const { runtime, db } = kit.open();
+  try {
+    await kit.say(runtime, BOOK);
+    kit.payments.customerPays(kit.linkFor("b-1")!.id);
+    await kit.deliverPaymentEvents(runtime);
+    // The refund reaches the provider (which queues its refund.done) and Guard says the outcome is unknown; the list does not show it yet, so it stays unknown.
+    kit.payments.inject("refund", "outcomeUnknown");
+    const listRefunds = kit.payments.listRefunds;
+    kit.payments.listRefunds = async () => [];
+    await kit.say(runtime, "cancel my booking");
+    assert.equal(runtime.status().refunds.needBuilder.unknown, 1);
+    // Now the provider's event arrives, and its list shows the refund.
+    kit.payments.listRefunds = listRefunds;
+    await kit.deliverPaymentEvents(runtime);
+    assert.equal(runtime.status().refunds.needBuilder.total, 0, "settled by the provider's own word, checked against its list");
+    assert.equal(refundCalls(), 1, "no new refund");
+    const record = db.loadState().record;
+    const confirmed = record.filter((e) => e.action === "refund" && e.outcome === "confirmed");
+    assert.equal(confirmed.length, 1, "one confirmation, of the original attempt");
+    assert.match(confirmed[0].refs.refundId ?? "", /^rfd/u);
+    assert.equal(confirmed[0].refs.amountPaise, "20000");
+    assert.ok(confirmed[0].refs.eventId, "recorded as the provider's confirmation (its event), not a look");
+    assert.equal(confirmed[0].refs.confirmedBy, undefined, "never a person's word");
+    const event = record.find((e) => e.action === "receive_payment_event" && e.refs.refundId === confirmed[0].refs.refundId)!;
+    assert.equal(event.outcome, "confirmed");
+    assert.match(event.notes ?? "", /the one whose outcome was unknown/u);
+    assert.equal(kit.messaging.sentTo(CUSTOMER).filter((m) => /refund is confirmed/u.test(m.text)).length, 1, "the customer is told once");
+  } finally { await runtime.close(); kit.cleanup(); }
 });
 
 test("a wait that ends with the step thrown away keeps its case number: the next customer gets a new one, not the first try's hold", async () => {
