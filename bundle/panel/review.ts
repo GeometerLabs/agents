@@ -10,6 +10,7 @@ import type { Language } from "../../modules/language/languages.ts";
 import { WORDS } from "./languages.ts";
 import { SAMPLE_ARGS } from "./words.ts";
 import { HEALTH_SAMPLE_ARGS, HEALTH_WORDS } from "./words-health.ts";
+import { AGENT_SAMPLE_ARGS, AGENT_WORDS } from "./words-agents.ts";
 import { loadVoteRound } from "./votes.ts";
 
 export type ReviewLanguage = "ml" | "kn";
@@ -48,10 +49,13 @@ function healthFlat(language: Language): Map<string, string> {
   return out;
 }
 
+/** The own-agent pages (words-agents.ts, 12 Nov 2026), under the ids "agents.*". */
+const agentsFlat = (language: Language): Map<string, string> => flatWords({ agents: AGENT_WORDS[language] }, AGENT_SAMPLE_ARGS);
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 
