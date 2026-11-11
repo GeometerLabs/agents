@@ -13,6 +13,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
+import { readRefresherRenewals, readRenewalsFile, renewalWork, writeRenewalsFile } from "../lib/renewals.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 import { buildHeartbeat, sendHeartbeat } from "./heartbeat.ts";
@@ -30,6 +31,11 @@ export interface OpsConfig {
   panelUrl?: string;
   /** The one folder ops can write (<server>/fleet): fleet's answer for each shop, and the usage baseline. Left out: the baseline is kept in memory only and no answer is written. */
   fleetDir?: string;
+  /**
+   * Follow-up 2: the token refresher, on a server that renews Gupshup app tokens. Every minute ops reads how each renewal is doing from its /healthz and writes
+   * <fleetDir>/_renewals.json for the panel's unfinished-work list (with or without a fleet), and the heartbeat counts one that needs a person as open work.
+   */
+  refresherUrl?: string;
   shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }>;
   model: OpsGuard;
   ownAgents?: Record<string, OpsOwnAgent>;
@@ -238,6 +244,13 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
     ...await Promise.all(Object.entries(config.ownAgents ?? {}).map(([id, c]) => observeAgent(c, config.bundleVersion, id, fetchFn))),
   ];
   for (const s of shops) if (s.status) state.lastKnown[s.id] = s.status;
+  // follow-up 2: a Gupshup token renewal that needs a person is open work too (the same rule as the panel's list: lib/renewals.ts). Added only where the export's counts
+  // are known, because `open_obligations` is the whole gauge: a partial one would close the other kinds at fleet.
+  const renewals = config.fleetDir && config.refresherUrl ? readRenewalsFile(config.fleetDir)?.shops ?? {} : {};
+  for (const s of shops) {
+    const work = renewals[s.id] ? renewalWork(renewals[s.id], now.getTime()) : undefined;
+    if (work && s.obligations) s.obligations = { ...s.obligations, [work.kind]: 1 };
+  }
   const { body, next, nextUsage } = buildHeartbeat({ deploymentId: config.deploymentId, bundleVersion: config.bundleVersion, ...(config.panelUrl ? { panelUrl: config.panelUrl } : {}), now, shops, baseline: state.baseline, lastKnown: state.lastKnown, usageBaseline: state.usageBaseline });
   const r = await sendHeartbeat(config.fleet!.url, key, body, fetchFn);
   if (r.accepted) {
@@ -255,8 +268,24 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
   return { accepted: r.accepted };
 }
 
+/**
+ * Follow-up 2: every minute, the refresher's word on each Gupshup token renewal, written for the panel (fleet/_renewals.json). Runs with or without a fleet: the panel's
+ * list is how the builder or partner hears of it on a server that sends no heartbeat.
+ */
+async function watchRenewals(config: OpsConfig): Promise<void> {
+  if (!config.refresherUrl || !config.fleetDir) return;
+  const once = async () => {
+    const previous = readRenewalsFile(config.fleetDir!)?.shops ?? {};
+    const now = new Date();
+    try { writeRenewalsFile(config.fleetDir!, await readRefresherRenewals(config.refresherUrl!, previous, now.getTime()), now); } catch (e) { console.error(`could not write the renewals file: ${(e as Error).message}`); }
+  };
+  await once();
+  setInterval(() => void once(), 60_000);
+}
+
 /** The heartbeat loop. */
 async function run(config: OpsConfig): Promise<number> {
+  await watchRenewals(config);
   if (!config.fleet) { console.error("No fleet address in geometer.json, so no heartbeat is sent. (Alerts from outside the server need one.)"); await new Promise(() => undefined); }
   const key = readSecret(config.fleet!.keyFile);
   if (!key) { console.error("The deployment key file is empty or missing, so no heartbeat can be sent."); return 2; }

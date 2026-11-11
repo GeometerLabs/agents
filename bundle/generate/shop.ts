@@ -251,11 +251,12 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
 }
 
 /**
- * Plan one shop. `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). `o.reportKeyReadable` (item 17b): whether the
+ * Plan one shop. `o.gupshupRenewed` (follow-up 2): a Gupshup shop's WhatsApp Guard reads the app token the refresher renews instead of a static file.
+ * `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). `o.reportKeyReadable` (item 17b): whether the
  * server's paper key was put where this shop's runtime reads it, as its own user's (lib/report-key.ts, which a deploy runs first), and if not `o.reportKeyWhy`.
  * Left out (the generator's own tests and goldens, and `check`, which places nothing): no key, and nothing said.
  */
-export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean; reportKeyWhy?: string } = {}): ShopPlan {
+export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean; reportKeyWhy?: string; gupshupRenewed?: boolean } = {}): ShopPlan {
   // The template is the one the shop's pathway.lock names (a lock that is missing is a problem readShop already said; Bookings is assumed until it is fixed).
   const template: Kind = kindFor(shop.lock?.pathway) ?? KINDS.bookings;
   const check: RuntimeValidator = validate ?? template.validateRuntimeConfig;
@@ -276,7 +277,8 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     for (const kind of kinds) {
       const spec = specs[kind];
       if (!spec) continue;
-      const def = kind === "whatsapp" ? whatsappGuardDef(facts.whatsappRoute) : guardDef(kind);
+      // `gupshupRenewed` (deploy.ts decides it from the secrets: no static token, a server universal token): the Guard reads the refresher's renewed app token
+      const def = kind === "whatsapp" ? whatsappGuardDef(facts.whatsappRoute, o.gupshupRenewed === true) : guardDef(kind);
       const approvers = kind === "razorpay" ? (shop.settings as { approvers?: ApproversSettings }).approvers : undefined;
       guards.push({ kind, service: names.guard(shop.name, kind), tenant: shop.name, deployment: `${shop.name}-${kind}`, def, upstream: upstreamOf(server, kind, def), spec, specText: stableJson(spec), ...(approvers ? { approvers } : {}) });
     }

@@ -33,6 +33,27 @@ export const GUPSHUP_UPSTREAM = "partner.gupshup.io:443";
 /** The two routes, with `{app_id}` where the shop's app id goes: the shapes Guard's spec lists (bundle/generate/guards.ts) and this adapter fills in. */
 export const GUPSHUP_ROUTES = { send: "/partner/app/{app_id}/v3/message", read: "/partner/app/{app_id}/health" } as const;
 
+/**
+ * Gupshup's newer tokens (follow-up 2, 12 Nov 2026), read 12 Nov 2026 from Gupshup's partner pages: the auth guide
+ * (https://partner-docs.gupshup.io/docs/partner-authentication-guide-universal-tokens-ut-overview, updated 13 Oct 2026), "Generate universal token"
+ * (.../reference/mintuniversaltoken, updated 6 Oct 2026) and "Generate universal app token" (.../reference/mintuniversalapptoken, updated 17 Sep 2026).
+ *  - the partner app token this adapter's Guard sends today is "legacy, phasing out"; the long-lived partner credentials are the admin's client secret (at most 3 months)
+ *    and the Universal Token (UT) minted with it (24 hours to 60 days; POST /partner/{partnerId}/auth/token, form email + clientSecret + name [+ expiry]; 3 active per
+ *    admin; 3 mints a minute). A UT acts for the WHOLE partner, so it is never put in a shop's Guard.
+ *  - a Universal App Token (UAT) acts for ONE app and lives 1 to 24 hours: POST /partner/app/{appId}/token, `Authorization: Bearer <UT>`, form `name` (1 to 128 characters,
+ *    unique among the app's active ones) and `expiry` (epoch MILLISECONDS, now + 1 h <= expiry <= now + 24 h); answers { status: "success", token, id } (no expiry in the
+ *    reply); 10 mints a minute; 3 active per app; 401 when the UT is not good, 409 at 3 active or a name in use, 429 too many.
+ *  - NOT documented: whether the v3 message API and the app health read take a UAT, and whether bare or after "Bearer". bundle/services/gupshup-tokens.ts writes
+ *    "Bearer <UAT>" by default and the server's geometer.json can say "bare" (Deferred.md).
+ */
+export const GUPSHUP_APP_TOKEN_ROUTE = "/partner/app/{app_id}/token" as const;
+/** A UAT's shortest and longest life, as Gupshup's mint takes them. */
+export const GUPSHUP_UAT_MIN_MS = 3_600_000;
+export const GUPSHUP_UAT_MAX_MS = 24 * 3_600_000;
+/** Gupshup's limits on minting UATs: per minute, and active at once for one app. */
+export const GUPSHUP_UAT_MINTS_PER_MINUTE = 10;
+export const GUPSHUP_UAT_ACTIVE_PER_APP = 3;
+
 /** A Gupshup app id: Gupshup writes them as UUIDs (07c7c72d-20e3-4ff9-a5a1-14d1186eeec8); anything that could change the path is refused. */
 export const GUPSHUP_APP_ID = /^[A-Za-z0-9][A-Za-z0-9-]{7,63}$/u;
 

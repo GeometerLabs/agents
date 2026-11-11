@@ -14,7 +14,7 @@ import { chownSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
-import { inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
+import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
 import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
 import type { GuardLicence } from "./generate/guards.ts";
@@ -89,6 +89,15 @@ function webhooksFor(dir: string, shop: string, calendar = true): ShopWebhooks {
   return { verification: !meta && have(dir, "inbox", `${shop}/whatsapp_path_token`) ? "path-token" : "meta-signature", hasGoogle: calendar && (have(dir, "refresher", `${shop}/google_service_account.json`) || have(dir, "refresher", "_server/google_service_account.json")), ownGoogleKey: calendar && have(dir, "refresher", `${shop}/google_service_account.json`) };
 }
 
+/**
+ * Follow-up 2: is this Gupshup shop's app token renewed by the refresher? Only when no static token was handed in for it (`gupshup_authorization`, which always wins:
+ * it is the shop's own choice) and the server holds a Gupshup universal token (`geometer gupshup-token <file>`). Decided at each deploy from the secrets on disk, and kept
+ * in the applied snapshot (`whatsappTokens`), so the compose file always matches the Guard it was compiled with.
+ */
+function gupshupRenewedFor(dir: string, shop: string, gupshup: boolean): boolean {
+  return gupshup && !have(dir, `g-${shop}-whatsapp`, "whatsapp_authorization") && have(dir, "refresher", `_server/${GUPSHUP_UNIVERSAL_TOKEN_FILE}`);
+}
+
 /** Does this shop's template have a calendar? (Its Guards are what it was planned with.) */
 const hasCalendar = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "calendar");
 /** Does this shop take Razorpay? A UPI shop (B33) was planned with no Razorpay Guard, and so has no Razorpay key, webhook or approvals relay. */
@@ -105,13 +114,13 @@ export const ownNumbersOf = (folder: { settings?: unknown }): (string | undefine
 };
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
-function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false): Problem[] {
+function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false, gupshupRenewed = false): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, file) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${shop}: ${handIn} has not been handed in. Put it in secrets-inbox/${shop}/${handIn} (the panel does this); it is moved to where only the right container can read it.` }];
   return [
     // a UPI shop (B33) has no Razorpay account: no key and no webhook secret are asked for
     ...(razorpay ? need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key") : []),
-    // item 11b: a shop on Gupshup hands its token in under Gupshup's own name; it fills the same file
-    ...need(`g-${shop}-whatsapp`, "whatsapp_authorization", gupshup ? "gupshup_authorization" : "whatsapp_token"),
+    // item 11b: a shop on Gupshup hands its token in under Gupshup's own name; it fills the same file. Follow-up 2: none is needed when the refresher renews one
+    ...(gupshupRenewed ? [] : need(`g-${shop}-whatsapp`, "whatsapp_authorization", gupshup ? "gupshup_authorization" : "whatsapp_token")),
     ...(razorpay ? need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret") : []),
     ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
@@ -126,7 +135,7 @@ interface Credentials { agent: Partial<Record<Three, string>> & Record<"model" |
  * Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. `calendar`: whether the shop's
  * template has a calendar. One that has none gets no calendar credentials, no folder for a calendar Guard, and nothing in the token refresher's folder.
  */
-function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = []): Credentials {
+function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = [], gupshupRenewed = false): Credentials {
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
@@ -148,6 +157,11 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
     writeSecretFile(secretFile(dir, "refresher", shop, "admin_token"), admin.calendar as string);
     ensureDir(secretFile(dir, `g-${shop}-calendar`));
   }
+  // follow-up 2: the refresher asks a renewed Gupshup shop's WhatsApp Guard to read each new app token (/admin/reload), with that Guard's admin token, as for the calendar
+  if (gupshupRenewed) {
+    writeSecretFile(secretFile(dir, "refresher", shop, GUPSHUP_GUARD_ADMIN_FILE), admin.whatsapp as string);
+    ensureDir(secretFile(dir, `g-${shop}-whatsapp`)); // its folder holds no token now, but Docker must find it to mount (a missing one it would make as root)
+  } else rmSync(secretFile(dir, "refresher", shop, GUPSHUP_GUARD_ADMIN_FILE), { force: true });
   // The panel's agent token lives ONLY in the panel's folder (every Guard keeps its hash, under the agent `panel-<shop>`, allowed the reads and nothing else). 0600: the
   // panel runs as the user who wrote it. One token for the panel, not one per Guard: the panel reads a single token file and presents it to each Guard it checks.
   // B69: the shop's fingerprint key and its copies (lib/secrets.ts)
@@ -173,7 +187,7 @@ export interface PreparedGuard {
   /** The `[licence]` its guard.toml was given (B13), and the key ids the running Guard must have built in. */
   licence?: GuardLicence & { kids: string[] };
 }
-interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]; webhooks: ShopWebhooks; pathwayDir: string; index: number; desiredHash: string }
+interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]; webhooks: ShopWebhooks; pathwayDir: string; index: number; desiredHash: string; /** follow-up 2 */ gupshupRenewed: boolean }
 
 export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
@@ -203,13 +217,17 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   // The settings the bundle adds to the generated config (`ai`, `report`) are judged by the check of the version the shop is PINNED to, not by this checkout's: a client held back
   // on an older version has a runtime that refuses a key it does not know.
   const check = pathwayDir ? await pinnedRuntimeCheck(pathwayDir) : undefined;
+  // follow-up 2: whether the refresher renews this Gupshup shop's app token (the secrets on disk say; taken out of the inbox above)
+  const gupshup = (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup";
+  const gupshupRenewed = gupshupRenewedFor(ctx.dir, name, gupshup);
   const placed = o.placeReportKey ? await placeRuntimeReportKey({ runner: ctx.runner, docker: ctx.docker, image: server.appImage, dir: ctx.dir, runtimeFolder: names.runtime(name), panelOn: server.panel.enabled }) : undefined;
   const reportKey = placed === undefined ? {} : placed.readable ? { reportKeyReadable: true } : { reportKeyReadable: false, reportKeyWhy: placed.why };
-  const first = planShop(server, folder, {}, check, reportKey);
+  const planOptions = { ...reportKey, ...(gupshupRenewed ? { gupshupRenewed: true } : {}) };
+  const first = planShop(server, folder, {}, check, planOptions);
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup"));
+  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
   // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
   const gateway = gatewayOf((folder.settings as { payment?: PaymentSettings } | undefined)?.payment);
@@ -226,11 +244,11 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const prev = state.shops[name]?.guards ?? {};
   const versions: Record<string, number> = {};
   for (const g of first.guards) versions[g.kind] = prev[g.kind]?.contentHash === contentHash(g.spec) ? prev[g.kind].version : (prev[g.kind]?.version ?? 0) + 1;
-  const plan = planShop(server, folder, versions, check, reportKey);
+  const plan = planShop(server, folder, versions, check, planOptions);
   // reserve the network index now, so two shops added together never share one (it is saved only when the deploy goes through)
   const index = (state.shops[name] ??= { index: shopIndex(state, name), guards: {}, lockHistory: [] }).index;
   return {
-    prepared: { folder, plan, webhooks, pathwayDir, index, guards: plan.guards.map((g) => ({ plan: g, version: versions[g.kind], contentHash: contentHash(g.spec) })), desiredHash: desiredHashOf(folder) },
+    prepared: { folder, plan, webhooks, pathwayDir, index, guards: plan.guards.map((g) => ({ plan: g, version: versions[g.kind], contentHash: contentHash(g.spec) })), desiredHash: desiredHashOf(folder), gupshupRenewed },
     problems, notes,
   };
 }
@@ -307,7 +325,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards));
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards), prepared.gupshupRenewed);
     const licence = await guardLicenceOn(ctx, server);
     if (!licence.on) problems.push(licence.problem);
     for (const g of prepared.guards) {
@@ -336,7 +354,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const m = runtime.services.messaging;
     // item 11b: a Gupshup shop's inbox checks the app id on each callback, and its relay asks the owner through Gupshup's paths
     const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } } : {};
-    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: m.phoneNumberId, ...whatsappRoute, pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
+    // follow-up 2: from the snapshot, so the compose file mounts the renewed token exactly when the applied Guard was compiled to read it
+    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: m.phoneNumberId, ...whatsappRoute, ...(snap.whatsappTokens === "renewed" ? { gupshupRenewed: true } : {}), pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
   });
   for (const [name, s] of applied) {
     const client = join(p.generated, "shops", name, "client");
@@ -450,7 +469,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards))]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards), p.gupshupRenewed)]));
   const licence = await guardLicenceOn(ctx, server);
   if (!licence.on) problems.push(licence.problem);
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
@@ -483,6 +502,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
     for (const g of p.guards) s.guards[g.plan.kind] = { version: g.version, contentHash: g.contentHash, digest: g.compiled!.digest, tripwires: { passed: g.tripwires!.passed, of: g.tripwires!.of, notSelfTestable: g.tripwires!.notSelfTestable } };
     s.applied = {
       appliedAt: at, pathway: `${p.folder.lock!.pathway}@${p.folder.lock!.version}`, lockText: p.folder.lockText, settingsText: p.folder.settingsText, runtime: p.plan.runtime, pathwayDir: p.pathwayDir, desiredHash: p.desiredHash,
+      ...(p.gupshupRenewed ? { whatsappTokens: "renewed" as const } : {}),
       guards: Object.fromEntries(p.guards.map((g) => [g.plan.kind, { kind: g.plan.kind, service: g.plan.service, specText: g.plan.specText, bundleText: g.compiled!.text, tomlText: g.toml! }])),
     };
     s.lastDeployAt = at;
