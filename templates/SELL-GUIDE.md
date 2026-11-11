@@ -70,7 +70,16 @@ A single page the partner leaves behind. Self-contained: inline CSS, no scripts,
 - **Money flow yes, amounts no.** Say who pays whom and how much a fee is. Never say how much anyone will make, not even as an example.
 - Serious and sober. No hype, no emojis, no gamification.
 - Use the owner's own words for the limits: "It can't go below your ₹450 price."
-- Where the true answer is "it depends" (a WhatsApp account's age, a Razorpay website), say so.
+- Where the true answer is "it depends" (a Razorpay website, whether Meta will ask the shop to verify its business), say so. Never state a WhatsApp rule as fact that the facts file (`docs/research/2026-11-11-whatsapp-onboarding-facts.md`) lists as unconfirmed, such as an account-age rule.
+
+## The setup visit asks for as little as possible (B72)
+
+Section 8 is cut to what the code needs from the shop today, and the same cut lands in every language and every variant (the sell-guide tests compare their shape).
+
+- **One card, one list.** What to ask the shop for is written once, in `modules/ask-card/list.ts`, and made into `sell/ask-card.<lang>.md` beside the guide by `node modules/ask-card/render.ts` (`--check` writes nothing and fails if a card is behind). Section 2 or 8 of each guide points at the card in its own language. Do not copy the list into the guide: change the list, run the command.
+- **Cut rule.** A checklist item stays only if something in the code still needs it. A thing only some shops want is an optional item that says so (Google Calendar for Bookings: a shop with none runs on its own booking list; its own Razorpay account). Razorpay's fee is written only in the Razorpay-only item, never in the main pitch or the price table.
+- **The WhatsApp check** is the honest list: the Business app stays, a Facebook login with admin access to the shop's Meta business portfolio (the owner logs in themselves), a name that matches what the shop calls itself in public, verification that may be asked later, and the app opened at least every 2 weeks. Never promise "no documents" or "one visit".
+- **The shop terms stay signed on paper.** Agreeing them on WhatsApp is built but off, and waits for the owner's legal check. A guide may say that Geometer may later tell the partner so; it never says the WhatsApp agreement is enough.
 
 ## Keeping it true
 
