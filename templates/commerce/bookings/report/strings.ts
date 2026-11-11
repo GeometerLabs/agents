@@ -41,6 +41,11 @@ export interface Strings {
   upiLabel: { deposits: string; givenBack: string };
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
+  /** The month's work and what it cost (plan B75): the three counts, what each means, and why a cost per job is sometimes not given. */
+  work: {
+    heading: string; jobs: string; completed: string; abandoned: string; unresolved: string; settledByPerson: string; cost: string; costUnknown: string; unitCost: string;
+    noCompleted: string; noCost: string; completedMeans: string; abandonedMeans: string; unresolvedMeans: string; abandonedNeverClears: string; refundsByPerson: string;
+  };
   page: {
     numbers: string; item: string; count: string; amount: string; droppedBeforeBooked: string; givenBackDeposits: string; givenBackSecond: string; retried: string;
     stoppedHeading: string; stoppedTotal: string; stoppedNote: string; rule: string; times: string;
@@ -110,6 +115,15 @@ const en: Strings = {
   notCounted: {
     "no-shows": "who turned up (a booking is marked finished when its time passes)", "read-receipts": "whether customers read their messages (only that WhatsApp's record held them)",
     "outside-agent": "bookings, calls and payments that did not go through the agent", "rule-breaks": "whether anything got past a limit (this counts what the limits stopped)",
+  },
+  work: {
+    heading: "Work this month, and what it cost", jobs: "Bookings worked on", completed: "Completed", abandoned: "Abandoned", unresolved: "Unresolved",
+    settledByPerson: "Steps a person settled by hand (their word, not the service's)", cost: "Cost this month", costUnknown: "Not worked out for this report", unitCost: "Cost per completed job",
+    noCompleted: "None: no job was completed, so there is no cost per job.", noCost: "None: the cost is not known, so there is no cost per job.",
+    completedMeans: "Completed means the calendar's own record shows the booking and the deposit was recorded first, and nothing about it is still open. A booking cancelled afterwards counts as completed once its refund is settled.",
+    abandonedMeans: "Abandoned means the conversation stopped before the calendar confirmed a booking: nobody paid, the hold ran out, or the customer dropped it.",
+    unresolvedMeans: "Unresolved means something is still open or not confirmed: a step a service never confirmed, a refund waiting for you or owed by you, or a payment the customer says they made that you have not marked.",
+    abandonedNeverClears: "A customer who stops replying never closes an unresolved item.", refundsByPerson: "Refunds a person settled by hand (their word, not the payment service's)",
   },
   page: {
     numbers: "The numbers", item: "What", count: "How many", amount: "Amount", droppedBeforeBooked: "Asked for, then dropped before it was booked",
@@ -190,6 +204,15 @@ const hi: Strings = {
     "no-shows": "कौन आया और कौन नहीं (समय बीतने पर बुकिंग पूरी मान ली जाती है)", "read-receipts": "ग्राहकों ने संदेश पढ़े या नहीं (सिर्फ़ इतना कि WhatsApp के रिकॉर्ड में संदेश है)",
     "outside-agent": "एजेंट से बाहर हुई बुकिंग, कॉल और भुगतान", "rule-breaks": "कोई चीज़ सीमा पार कर गई या नहीं (यहाँ सिर्फ़ यह गिना गया है कि सीमाओं ने क्या रोका)",
   },
+  work: {
+    heading: "इस महीने का काम और उसका खर्च", jobs: "जिन बुकिंग पर काम हुआ", completed: "पूरे हुए", abandoned: "बीच में छूटे", unresolved: "अनसुलझे",
+    settledByPerson: "जो कदम किसी व्यक्ति ने हाथ से निपटाए (उनकी बात, सेवा की नहीं)", cost: "इस महीने का खर्च", costUnknown: "इस रिपोर्ट के लिए निकाला नहीं गया", unitCost: "हर पूरे हुए काम का खर्च",
+    noCompleted: "कुछ नहीं: कोई काम पूरा नहीं हुआ, इसलिए प्रति काम खर्च नहीं।", noCost: "कुछ नहीं: खर्च पता नहीं है, इसलिए प्रति काम खर्च नहीं।",
+    completedMeans: "पूरा हुआ का मतलब: कैलेंडर के अपने रिकॉर्ड में बुकिंग दिखती है, उससे पहले जमा राशि दर्ज हुई, और उसमें कुछ भी खुला नहीं है। बाद में रद्द हुई बुकिंग तब पूरी गिनी जाती है जब उसका रिफंड निपट जाए।",
+    abandonedMeans: "बीच में छूटा का मतलब: कैलेंडर के बुकिंग पक्की करने से पहले बातचीत रुक गई: किसी ने पैसे नहीं दिए, होल्ड खत्म हो गया, या ग्राहक ने छोड़ दिया।",
+    unresolvedMeans: "अनसुलझा का मतलब: कुछ अभी खुला है या पक्का नहीं हुआ: जो कदम किसी सेवा ने पक्का नहीं किया, आपके इंतज़ार में या आपके देने वाला रिफंड, या ग्राहक का बताया पेमेंट जिसे आपने दर्ज नहीं किया।",
+    abandonedNeverClears: "जो ग्राहक जवाब देना बंद कर दे, उससे कोई अनसुलझी बात बंद नहीं होती।", refundsByPerson: "जो रिफंड किसी व्यक्ति ने हाथ से निपटाए (उनकी बात, पेमेंट सेवा की नहीं)",
+  },
   page: {
     numbers: "आँकड़े", item: "क्या", count: "कितने", amount: "रकम", droppedBeforeBooked: "माँगी गई, पर बुक होने से पहले छोड़ दी गई",
     givenBackDeposits: "इनमें से जमा राशि वापस की गई", givenBackSecond: "इनमें से दूसरी बार का भुगतान वापस किया गया", retried: "आपने कैलेंडर फिर जाँचने को कहा",
@@ -269,6 +292,15 @@ const ml: Strings = {
     "no-shows": "ആരൊക്കെ വന്നു (സമയം കഴിയുമ്പോൾ ബുക്കിംഗ് തീർന്നതായി രേഖപ്പെടുത്തും)", "read-receipts": "ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം)",
     "outside-agent": "ഏജന്റ് വഴിയല്ലാതെ നടന്ന ബുക്കിംഗ്, കോൾ, പേയ്മെന്റ്", "rule-breaks": "ഏതെങ്കിലും പരിധി മറികടന്നോ എന്ന് (ഇവിടെ പരിധികൾ തടഞ്ഞത് മാത്രം എണ്ണിയിരിക്കുന്നു)",
   },
+  work: {
+    heading: "ഈ മാസത്തെ ജോലിയും അതിന്റെ ചെലവും", jobs: "ജോലി ചെയ്ത ബുക്കിംഗുകൾ", completed: "പൂർത്തിയായത്", abandoned: "ഇടയ്ക്ക് നിന്നുപോയത്", unresolved: "പരിഹരിക്കാത്തത്",
+    settledByPerson: "ഒരാൾ കൈകൊണ്ട് തീർത്ത ഘട്ടങ്ങൾ (അവരുടെ വാക്ക്, സേവനത്തിന്റേതല്ല)", cost: "ഈ മാസത്തെ ചെലവ്", costUnknown: "ഈ റിപ്പോർട്ടിന് കണക്കാക്കിയിട്ടില്ല", unitCost: "പൂർത്തിയായ ഓരോ ജോലിയുടെയും ചെലവ്",
+    noCompleted: "ഒന്നുമില്ല: ഒരു ജോലിയും പൂർത്തിയായില്ല, അതിനാൽ ഒരു ജോലിക്കുള്ള ചെലവില്ല.", noCost: "ഒന്നുമില്ല: ചെലവ് അറിയില്ല, അതിനാൽ ഒരു ജോലിക്കുള്ള ചെലവില്ല.",
+    completedMeans: "പൂർത്തിയായത് എന്നാൽ: കലണ്ടറിന്റെ സ്വന്തം രേഖയിൽ ബുക്കിംഗ് കാണുന്നു, അതിനുമുമ്പ് അഡ്വാൻസ് രേഖപ്പെടുത്തി, ഇനി ഒന്നും തുറന്നിരിപ്പില്ല. പിന്നീട് റദ്ദാക്കിയ ബുക്കിംഗ് അതിന്റെ റീഫണ്ട് തീർന്നാൽ പൂർത്തിയായതായി കണക്കാക്കും.",
+    abandonedMeans: "ഇടയ്ക്ക് നിന്നുപോയത് എന്നാൽ: കലണ്ടർ ബുക്കിംഗ് ഉറപ്പിക്കുംമുമ്പ് സംഭാഷണം നിന്നു: ആരും പണം അടച്ചില്ല, ഹോൾഡ് തീർന്നു, അല്ലെങ്കിൽ ഉപഭോക്താവ് ഉപേക്ഷിച്ചു.",
+    unresolvedMeans: "പരിഹരിക്കാത്തത് എന്നാൽ: എന്തോ തുറന്നിരിക്കുന്നു അല്ലെങ്കിൽ ഉറപ്പായിട്ടില്ല: ഒരു സേവനം ഉറപ്പിക്കാത്ത ഘട്ടം, നിങ്ങൾക്കായി കാത്തിരിക്കുന്നതോ നിങ്ങൾ നൽകാനുള്ളതോ ആയ റീഫണ്ട്, അല്ലെങ്കിൽ ഉപഭോക്താവ് അടച്ചെന്ന് പറഞ്ഞ് നിങ്ങൾ രേഖപ്പെടുത്താത്ത പണം.",
+    abandonedNeverClears: "മറുപടി നിർത്തിയ ഉപഭോക്താവ് ഒരു പരിഹരിക്കാത്ത കാര്യവും അടയ്ക്കുന്നില്ല.", refundsByPerson: "ഒരാൾ കൈകൊണ്ട് തീർത്ത റീഫണ്ടുകൾ (അവരുടെ വാക്ക്, പേയ്മെന്റ് സേവനത്തിന്റേതല്ല)",
+  },
   page: {
     numbers: "കണക്കുകൾ", item: "എന്ത്", count: "എത്ര", amount: "തുക", droppedBeforeBooked: "ചോദിച്ചു, പക്ഷേ ബുക്ക് ആകുംമുമ്പ് ഒഴിവാക്കി",
     givenBackDeposits: "ഇതിൽ തിരികെ നൽകിയ അഡ്വാൻസ്", givenBackSecond: "ഇതിൽ തിരികെ നൽകിയ രണ്ടാമത്തെ പേയ്മെന്റ്", retried: "കലണ്ടർ വീണ്ടും നോക്കാൻ നിങ്ങൾ പറഞ്ഞത്",
@@ -347,6 +379,15 @@ const kn: Strings = {
   notCounted: {
     "no-shows": "ಯಾರು ಬಂದರು (ಸಮಯ ಕಳೆದ ಮೇಲೆ ಬುಕಿಂಗ್ ಮುಗಿದಂತೆ ದಾಖಲಾಗುತ್ತದೆ)", "read-receipts": "ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು (WhatsApp ದಾಖಲೆಯಲ್ಲಿ ಸಂದೇಶ ಇದೆ ಎಂದಷ್ಟೇ)",
     "outside-agent": "ಏಜೆಂಟ್ ಮೂಲಕ ಅಲ್ಲದೆ ನಡೆದ ಬುಕಿಂಗ್, ಕರೆ, ಪಾವತಿ", "rule-breaks": "ಯಾವುದಾದರೂ ಮಿತಿ ದಾಟಿತೇ ಎಂದು (ಇಲ್ಲಿ ಮಿತಿಗಳು ತಡೆದದ್ದನ್ನು ಮಾತ್ರ ಎಣಿಸಲಾಗಿದೆ)",
+  },
+  work: {
+    heading: "ಈ ತಿಂಗಳ ಕೆಲಸ ಮತ್ತು ಅದರ ವೆಚ್ಚ", jobs: "ಕೆಲಸ ಮಾಡಿದ ಬುಕಿಂಗ್‌ಗಳು", completed: "ಪೂರ್ಣಗೊಂಡದ್ದು", abandoned: "ಅರ್ಧಕ್ಕೆ ನಿಂತದ್ದು", unresolved: "ಬಗೆಹರಿಯದ್ದು",
+    settledByPerson: "ಒಬ್ಬ ವ್ಯಕ್ತಿ ಕೈಯಿಂದ ಮುಗಿಸಿದ ಹಂತಗಳು (ಅವರ ಮಾತು, ಸೇವೆಯದ್ದಲ್ಲ)", cost: "ಈ ತಿಂಗಳ ವೆಚ್ಚ", costUnknown: "ಈ ವರದಿಗೆ ಲೆಕ್ಕ ಹಾಕಿಲ್ಲ", unitCost: "ಪೂರ್ಣಗೊಂಡ ಪ್ರತಿ ಕೆಲಸದ ವೆಚ್ಚ",
+    noCompleted: "ಯಾವುದೂ ಇಲ್ಲ: ಯಾವ ಕೆಲಸವೂ ಪೂರ್ಣಗೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಪ್ರತಿ ಕೆಲಸದ ವೆಚ್ಚವಿಲ್ಲ.", noCost: "ಯಾವುದೂ ಇಲ್ಲ: ವೆಚ್ಚ ತಿಳಿದಿಲ್ಲ, ಆದ್ದರಿಂದ ಪ್ರತಿ ಕೆಲಸದ ವೆಚ್ಚವಿಲ್ಲ.",
+    completedMeans: "ಪೂರ್ಣಗೊಂಡದ್ದು ಎಂದರೆ: ಕ್ಯಾಲೆಂಡರ್‌ನ ಸ್ವಂತ ದಾಖಲೆಯಲ್ಲಿ ಬುಕಿಂಗ್ ಕಾಣುತ್ತದೆ, ಅದಕ್ಕಿಂತ ಮೊದಲು ಮುಂಗಡ ದಾಖಲಾಗಿದೆ, ಮತ್ತು ಇನ್ನೇನೂ ತೆರೆದಿಲ್ಲ. ನಂತರ ರದ್ದಾದ ಬುಕಿಂಗ್ ಅದರ ರೀಫಂಡ್ ಮುಗಿದಾಗ ಪೂರ್ಣಗೊಂಡದ್ದು ಎಂದು ಎಣಿಕೆಯಾಗುತ್ತದೆ.",
+    abandonedMeans: "ಅರ್ಧಕ್ಕೆ ನಿಂತದ್ದು ಎಂದರೆ: ಕ್ಯಾಲೆಂಡರ್ ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸುವ ಮೊದಲೇ ಮಾತುಕತೆ ನಿಂತಿತು: ಯಾರೂ ಪಾವತಿಸಲಿಲ್ಲ, ಹೋಲ್ಡ್ ಮುಗಿಯಿತು, ಅಥವಾ ಗ್ರಾಹಕರು ಕೈಬಿಟ್ಟರು.",
+    unresolvedMeans: "ಬಗೆಹರಿಯದ್ದು ಎಂದರೆ: ಏನೋ ಇನ್ನೂ ತೆರೆದಿದೆ ಅಥವಾ ಖಚಿತವಾಗಿಲ್ಲ: ಒಂದು ಸೇವೆ ಖಚಿತಪಡಿಸದ ಹಂತ, ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಅಥವಾ ನೀವು ಕೊಡಬೇಕಾದ ರೀಫಂಡ್, ಅಥವಾ ಗ್ರಾಹಕರು ಪಾವತಿಸಿದ್ದೇನೆ ಎಂದು ಹೇಳಿ ನೀವು ದಾಖಲಿಸದ ಹಣ.",
+    abandonedNeverClears: "ಉತ್ತರ ನಿಲ್ಲಿಸಿದ ಗ್ರಾಹಕರು ಯಾವುದೇ ಬಗೆಹರಿಯದ ವಿಷಯವನ್ನು ಮುಚ್ಚುವುದಿಲ್ಲ.", refundsByPerson: "ಒಬ್ಬ ವ್ಯಕ್ತಿ ಕೈಯಿಂದ ಮುಗಿಸಿದ ರೀಫಂಡ್‌ಗಳು (ಅವರ ಮಾತು, ಪಾವತಿ ಸೇವೆಯದ್ದಲ್ಲ)",
   },
   page: {
     numbers: "ಲೆಕ್ಕಗಳು", item: "ಏನು", count: "ಎಷ್ಟು", amount: "ಮೊತ್ತ", droppedBeforeBooked: "ಕೇಳಿದರು, ಆದರೆ ಬುಕ್ ಆಗುವ ಮೊದಲು ಕೈಬಿಟ್ಟರು",

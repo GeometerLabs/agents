@@ -359,6 +359,22 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `notCounted.read-receipts` | ഉപഭോക്താക്കൾ സന്ദേശം വായിച്ചോ എന്ന് (WhatsApp-ന്റെ രേഖയിൽ സന്ദേശം ഉണ്ടെന്ന് മാത്രം) | whether customers read their messages (only that WhatsApp's record held them) |  |
 | `notCounted.outside-agent` | ഏജന്റ് വഴിയല്ലാതെ നടന്ന ബുക്കിംഗ്, കോൾ, പേയ്മെന്റ് | bookings, calls and payments that did not go through the agent |  |
 | `notCounted.rule-breaks` | ഏതെങ്കിലും പരിധി മറികടന്നോ എന്ന് (ഇവിടെ പരിധികൾ തടഞ്ഞത് മാത്രം എണ്ണിയിരിക്കുന്നു) | whether anything got past a limit (this counts what the limits stopped) |  |
+| `work.heading` | ഈ മാസത്തെ ജോലിയും അതിന്റെ ചെലവും | Work this month, and what it cost |  |
+| `work.jobs` | ജോലി ചെയ്ത ബുക്കിംഗുകൾ | Bookings worked on |  |
+| `work.completed` | പൂർത്തിയായത് | Completed |  |
+| `work.abandoned` | ഇടയ്ക്ക് നിന്നുപോയത് | Abandoned |  |
+| `work.unresolved` | പരിഹരിക്കാത്തത് | Unresolved |  |
+| `work.settledByPerson` | ഒരാൾ കൈകൊണ്ട് തീർത്ത ഘട്ടങ്ങൾ (അവരുടെ വാക്ക്, സേവനത്തിന്റേതല്ല) | Steps a person settled by hand (their word, not the service's) |  |
+| `work.cost` | ഈ മാസത്തെ ചെലവ് | Cost this month |  |
+| `work.costUnknown` | ഈ റിപ്പോർട്ടിന് കണക്കാക്കിയിട്ടില്ല | Not worked out for this report |  |
+| `work.unitCost` | പൂർത്തിയായ ഓരോ ജോലിയുടെയും ചെലവ് | Cost per completed job |  |
+| `work.noCompleted` | ഒന്നുമില്ല: ഒരു ജോലിയും പൂർത്തിയായില്ല, അതിനാൽ ഒരു ജോലിക്കുള്ള ചെലവില്ല. | None: no job was completed, so there is no cost per job. |  |
+| `work.noCost` | ഒന്നുമില്ല: ചെലവ് അറിയില്ല, അതിനാൽ ഒരു ജോലിക്കുള്ള ചെലവില്ല. | None: the cost is not known, so there is no cost per job. |  |
+| `work.completedMeans` | പൂർത്തിയായത് എന്നാൽ: കലണ്ടറിന്റെ സ്വന്തം രേഖയിൽ ബുക്കിംഗ് കാണുന്നു, അതിനുമുമ്പ് അഡ്വാൻസ് രേഖപ്പെടുത്തി, ഇനി ഒന്നും തുറന്നിരിപ്പില്ല. പിന്നീട് റദ്ദാക്കിയ ബുക്കിംഗ് അതിന്റെ റീഫണ്ട് തീർന്നാൽ പൂർത്തിയായതായി കണക്കാക്കും. | Completed means the calendar's own record shows the booking and the deposit was recorded first, and nothing about it is still open. A booking cancelled afterwards counts as completed once its refund is settled. |  |
+| `work.abandonedMeans` | ഇടയ്ക്ക് നിന്നുപോയത് എന്നാൽ: കലണ്ടർ ബുക്കിംഗ് ഉറപ്പിക്കുംമുമ്പ് സംഭാഷണം നിന്നു: ആരും പണം അടച്ചില്ല, ഹോൾഡ് തീർന്നു, അല്ലെങ്കിൽ ഉപഭോക്താവ് ഉപേക്ഷിച്ചു. | Abandoned means the conversation stopped before the calendar confirmed a booking: nobody paid, the hold ran out, or the customer dropped it. |  |
+| `work.unresolvedMeans` | പരിഹരിക്കാത്തത് എന്നാൽ: എന്തോ തുറന്നിരിക്കുന്നു അല്ലെങ്കിൽ ഉറപ്പായിട്ടില്ല: ഒരു സേവനം ഉറപ്പിക്കാത്ത ഘട്ടം, നിങ്ങൾക്കായി കാത്തിരിക്കുന്നതോ നിങ്ങൾ നൽകാനുള്ളതോ ആയ റീഫണ്ട്, അല്ലെങ്കിൽ ഉപഭോക്താവ് അടച്ചെന്ന് പറഞ്ഞ് നിങ്ങൾ രേഖപ്പെടുത്താത്ത പണം. | Unresolved means something is still open or not confirmed: a step a service never confirmed, a refund waiting for you or owed by you, or a payment the customer says they made that you have not marked. |  |
+| `work.abandonedNeverClears` | മറുപടി നിർത്തിയ ഉപഭോക്താവ് ഒരു പരിഹരിക്കാത്ത കാര്യവും അടയ്ക്കുന്നില്ല. | A customer who stops replying never closes an unresolved item. |  |
+| `work.refundsByPerson` | ഒരാൾ കൈകൊണ്ട് തീർത്ത റീഫണ്ടുകൾ (അവരുടെ വാക്ക്, പേയ്മെന്റ് സേവനത്തിന്റേതല്ല) | Refunds a person settled by hand (their word, not the payment service's) |  |
 | `page.numbers` | കണക്കുകൾ | The numbers |  |
 | `page.item` | എന്ത് | What |  |
 | `page.count` | എത്ര | How many |  |

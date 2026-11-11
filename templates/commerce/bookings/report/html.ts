@@ -25,6 +25,27 @@ export function goLiveBlock(goLive: GoLiveFinding, language: Language): string {
   return `<div class="${goLive.status === "own" ? "note" : "warn"}">${goLiveLines(goLive, language).map((line) => `<p>${esc(line)}</p>`).join("")}</div>`;
 }
 
+/** Micro-rupees (1,000,000 = ₹1) as rupees to the paisa, rounded up, so a small cost shows as it is and never as 0. */
+const costText = (micro: number): string => rupees(Math.ceil(micro / 10_000));
+
+/**
+ * The month's work and what it cost (plan B75): completed, abandoned and unresolved side by side, the cost beside them, and what each word means on the page itself.
+ * The cost per completed job is shown only when the report has one; otherwise the page says why there is none (nothing completed, or the cost is not known).
+ */
+export function workBlock(r: MonthlyReport, s: Strings): string {
+  const w = r.work;
+  const k = s.work;
+  const unit = w.costPerCompletedMicroInr !== null ? costText(w.costPerCompletedMicroInr) : w.noUnitCost === "no-completed-jobs" ? k.noCompleted : k.noCost;
+  const rows: [string, string][] = [
+    [k.jobs, String(w.jobs)], [k.completed, String(w.completed)], [k.abandoned, String(w.abandoned)], [k.unresolved, String(w.unresolved)],
+    ...(w.settledByPerson > 0 ? [[k.settledByPerson, String(w.settledByPerson)] as [string, string]] : []),
+    [k.cost, w.costMicroInr !== null ? costText(w.costMicroInr) : k.costUnknown], [k.unitCost, unit],
+  ];
+  return `<h2>${esc(k.heading)}</h2>${table([{ text: s.page.item }, { text: s.page.count, n: true }], rows.map(([a, b]) => [esc(a), esc(b)]))}
+${w.costBasis ? `<p class="small">${esc(w.costBasis)}</p>` : ""}
+<ul class="small"><li>${esc(k.completedMeans)}</li><li>${esc(k.abandonedMeans)}</li><li>${esc(k.unresolvedMeans)}</li><li>${esc(k.abandonedNeverClears)}</li></ul>`;
+}
+
 /** One language's section of the report page. `check` is the report's signed summary link (report/run.ts), left out for a report that is not signed. */
 export function reportSection(envelope: Envelope<MonthlyReport>, language: Language, check?: string): string {
   const s = STRINGS[language];
@@ -43,6 +64,7 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
     [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.refunds)],
     [esc(p.givenBackDeposits), ...amount(r.money.refunds.ofDeposits)],
     [esc(p.givenBackSecond), ...amount(r.money.refunds.ofSecondPayments)],
+    ...(r.money.refunds.byPerson ? [[esc(s.work.refundsByPerson), ...amount(r.money.refunds.byPerson)]] : []),
     [esc(s.label.wasAsked), String(r.owner.asked), ""],
     [esc(s.label.approved), String(r.owner.approved), ""],
     [esc(s.label.saidNo), String(r.owner.denied), ""],
@@ -77,6 +99,7 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
 <div class="card"><b>${r.stopped.total}</b><span>${esc(s.label.stoppedByLimits)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
+${workBlock(r, s)}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}<p class="small">${esc(p.stoppedNote)}</p>
 <h2>${esc(p.messagesHeading)}</h2>${messages}
 <h2>${esc(p.unconfirmedHeading)}</h2>${unconfirmed}
