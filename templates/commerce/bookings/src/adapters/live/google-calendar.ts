@@ -17,8 +17,9 @@
 //                   https://developers.google.com/workspace/calendar/api/guides/errors
 //
 // Times are written as UTC RFC 3339 (the owner's calendar shows them in their own zone); we store epoch milliseconds.
-// Google never refuses an overlapping insert, so the agent's own look at conflicts() before the hold is the only guard, and there is
-// a short race between that look and the insert (see Deferred.md). A 409 can only mean a duplicate id, and is mapped to ConflictError.
+// Google never refuses an overlapping insert. So the agent holds a time in its own saved bookings first, looks at conflicts() before the
+// insert, and looks again after it, letting the hold go if someone else's event appeared meanwhile (agent.ts, tryHold; Deferred.md says
+// what is left). A 409 can only mean a duplicate id, and is mapped to ConflictError.
 import { ApiError, ConflictError } from "../../../../../../modules/core/faults.ts";
 import type { Busy, Calendar, CalendarEvent, NewCalendarEvent } from "../calendar.ts";
 import { zonedToMs } from "../../../../../../modules/core/time.ts";

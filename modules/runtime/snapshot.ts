@@ -25,6 +25,11 @@ export interface SnapshotCodec<S> {
   parse(json: string): S;
   /** The saved JSON with every `count` field (the id counters: nextBooking, nextDue, ...) moved on by `gap`. Used once after a restore (restored.ts). */
   skipCounters(json: string, gap: number): string;
+  /**
+   * The saved JSON with every `count` field at least where `taken` has it: `taken` is the store of a step that was thrown away and will not run again (core.ts, endTask).
+   * The ids that step gave out may already name a calendar hold or a payment link at a provider, so they are never given out again (B75, 11 Nov 2026).
+   */
+  keepCounters(json: string, taken: string): string;
 }
 
 /** `format` is the number written first; change it only with a migration, because a runtime refuses a snapshot it cannot read. */
@@ -66,6 +71,18 @@ export function snapshotCodec<S extends object>(format: number, fields: readonly
       const raw = JSON.parse(json) as Record<string, unknown>;
       for (const f of fields) if (f.kind === "count" && Number.isInteger(raw[f.name])) raw[f.name] = (raw[f.name] as number) + gap;
       return JSON.stringify(raw);
+    },
+
+    keepCounters(json, taken) {
+      const raw = JSON.parse(json) as Record<string, unknown>;
+      const other = JSON.parse(taken) as Record<string, unknown>;
+      let moved = false;
+      for (const f of fields) {
+        if (f.kind !== "count" || !Number.isInteger(raw[f.name]) || !Number.isInteger(other[f.name]) || (other[f.name] as number) <= (raw[f.name] as number)) continue;
+        raw[f.name] = other[f.name];
+        moved = true;
+      }
+      return moved ? JSON.stringify(raw) : json; // unchanged text when nothing moved, so a quiet end writes nothing new
     },
   };
 }

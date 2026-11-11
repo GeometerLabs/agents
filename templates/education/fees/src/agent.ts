@@ -39,6 +39,7 @@ import type { InteractiveMessage } from "../../../../modules/language/interactiv
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
+import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { Payment, PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds } from "../../../../modules/payments/refunds.ts";
@@ -968,10 +969,21 @@ export function createAgent(deps: AgentDeps): Agent {
     return onTick();
   }
 
-  /** `fee_couldnt_tell_owner`: the words this template already has for "this could not be done just now", and they ask the parent to try again rather than promise anything. */
+  /**
+   * `fee_wait_over` (11 Nov 2026): the request was not finished, the system is not answering just now, the message is on the owner's to-do list (the line written below,
+   * which the panel's list reads), and to write again later or contact the shop directly. Nothing else is promised, because nothing else happens: nobody is messaged
+   * and nothing is tried again by itself. Sent only when the customer heard nothing from this step (`why.tell`).
+   */
   async function giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void> {
     const phone = event.kind === "message" ? event.message.from : owner;
-    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["fee_couldnt_tell_owner"]) : false;
+    if (event.kind === "message" && why.tell) {
+      // The step that would have noted a new customer's language was thrown away, so it is read again here from the message, by the rules alone (no model is asked);
+      // without it a first message would be answered in the shop's first language, whatever the customer wrote in. A language already on record is kept.
+      const customer = customerOf(phone);
+      const spoken = detectLanguage(event.message.text);
+      if (customer.language === undefined && spoken !== undefined && settings.languages.includes(spoken)) customer.language = spoken;
+    }
+    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["fee_wait_over"]) : false;
     const line = guardWaitLine(event, why, told);
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }

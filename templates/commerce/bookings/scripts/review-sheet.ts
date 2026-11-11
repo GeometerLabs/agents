@@ -103,6 +103,7 @@ const WHEN: Record<TemplateId, string> = {
   kept: "The customer tapped No, keep it: the booking stays as it is",
   told_owner: "The customer tapped Talk to the owner: they are told the owner has been asked to message them",
   couldnt_tell_owner: "The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write",
+  wait_over: "The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised",
   owner_wants_to_talk: "A customer tapped Talk to the owner (sent at most once an hour for the same customer)",
   owner_ai_allowance: "Button mode, told once a month: the shop's monthly AI allowance is used up",
   owner_ai_off: "Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent)",
