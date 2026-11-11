@@ -13,7 +13,7 @@
 import { createPublicKey, sign, verify } from "node:crypto";
 import type { KeyObject } from "node:crypto";
 import { keyIdOf, publicKeyHex } from "./sign.ts";
-import { verifyLink } from "./verify-link.ts";
+import { verifyCodeLink, verifyLink } from "./verify-link.ts";
 import type { Envelope } from "./sign.ts";
 import {
   KEY_HINT_BYTES, MAX_BY_BYTES, MAX_PATHWAY_BYTES, MAX_SHOP_BYTES, SummaryError, encodeSummary, fitText, readSummaryLink, signedBytes, summaryLinkOf,
@@ -58,13 +58,19 @@ export function signSummary(summary: PaperSummary, key: KeyObject): SignedSummar
 }
 
 /**
- * The summary link for a sealed paper, or undefined when there is no key or the paper is not signed (the page then prints the older #digest link). Throws when the
- * key is not the one that signed the paper: a summary must never name a signer other than the paper's own.
+ * The summary link for a sealed paper, or undefined when there is no key, the paper is not signed, or its figures are not something the format can carry (a
+ * fraction of a paisa, a negative amount): the page then prints the older #digest link, and the paper still goes out. Throws when the key is not the one that
+ * signed the paper: a summary must never name a signer other than the paper's own, and that is a mistake in the caller, not in the paper.
  */
 export function summaryFor<T>(envelope: Envelope<T>, fields: SummaryFields, key?: KeyObject): SignedSummary | undefined {
   if (!key || !envelope.signature) return undefined;
   if (publicKeyHex(key) !== envelope.signature.publicKey) throw new Error("The summary would be signed with a different key from the paper's own signature.");
-  return signSummary(summaryOf(fields, envelope.digest, envelope.signature.keyId), key);
+  try {
+    return signSummary(summaryOf(fields, envelope.digest, envelope.signature.keyId), key);
+  } catch (e) {
+    if (e instanceof SummaryError) return undefined; // a report is never held back for its summary
+    throw e;
+  }
 }
 
 /** The same, as just the link. */
@@ -99,13 +105,17 @@ export function goLiveSummaryFields(cert: { pathway: { name: string }; shop: { n
 export const WHATSAPP_BODY_LIMIT = 1024;
 
 /**
- * The check link a monthly report's WhatsApp message carries, chosen once per message so the plain text and the template say the same: the signed summary link when
- * the whole message, filled with it, stays within WHATSAPP_BODY_LIMIT; otherwise (an unsigned report, or a long message in Malayalam or Kannada) the older
- * #digest link, which still finds the paper and checks its file. `fill` gives the whole message for a check link.
+ * The check link a monthly report's WhatsApp message carries, chosen once per message so the plain text and the template say the same. The longest that lets the
+ * whole filled message stay within WHATSAPP_BODY_LIMIT, in this order: the signed summary link (no file needed); the #sha256 digest link (names the one paper,
+ * and checks its file); the #code link (`https://geometer.dev/verify/#7K2M-9QXD`, 38 characters, which finds the paper), used even if the message is still too
+ * long, since nothing shorter is a link. A message that was within the limit before this line existed stays within it with the code link. `fill` gives the
+ * whole message for a check link.
  */
-export function messageCheckLink(fill: (check: string) => string, envelope: Pick<Envelope, "digest">, summaryLink?: string): string {
-  if (summaryLink && fill(summaryLink).length <= WHATSAPP_BODY_LIMIT) return summaryLink; // UTF-16 units: never fewer than the characters Meta counts
-  return verifyLink(envelope);
+export function messageCheckLink(fill: (check: string) => string, envelope: Pick<Envelope, "digest" | "code">, summaryLink?: string): string {
+  const fits = (link: string) => fill(link).length <= WHATSAPP_BODY_LIMIT; // UTF-16 units: never fewer than the characters Meta counts
+  if (summaryLink && fits(summaryLink)) return summaryLink;
+  const digest = verifyLink(envelope);
+  return fits(digest) ? digest : verifyCodeLink(envelope);
 }
 
 // ---- checking, as the page will -------------------------------------------------------------------------------------------------------------------------

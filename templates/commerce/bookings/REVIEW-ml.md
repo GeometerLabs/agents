@@ -283,7 +283,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 ഉറപ്പിക്കാൻ കഴിയാത്തത്: 1
 പരിശോധിക്കാത്തത്: ഫോൺ കോളുകൾ · നേരിട്ട് വരുന്നവർ (വാക്ക്-ഇൻ) · കൂടാതെ 17 കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ). പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.
 കോഡ്: 7K2M-9QXD · പൂർണ്ണ റിപ്പോർട്ട്: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html
-യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA
+യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg
 തയ്യാറാക്കിയത്: Divya, Sri Sai Digital · Geometer
 ★ ഇന്നൊവേറ്റർ
 ```

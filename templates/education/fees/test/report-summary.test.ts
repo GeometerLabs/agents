@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { brightTuition } from "../src/harness.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { keyIdOf, publicKeyHex, seal } from "../../../../modules/report/sign.ts";
-import { verifyLink } from "../../../../modules/report/verify-link.ts";
+import { verifyCodeLink, verifyLink } from "../../../../modules/report/verify-link.ts";
 import { labelledFigures } from "../../../../modules/report/summary.ts";
 import { WHATSAPP_BODY_LIMIT, checkSummaryLink, summaryLinkFor } from "../../../../modules/report/summary-sign.ts";
 import type { ListedSigner } from "../../../../modules/report/summary-sign.ts";
@@ -68,7 +68,7 @@ test("a signed go-live certificate ends its text with its summary link, which is
   assert.ok(check.status === "genuine" && check.summary.layout === 3 && check.summary.source === "stand-in" && check.summary.period === "2026-11-03");
 });
 
-test("every report template, in every language, with long names in the centre's own script, stays within WhatsApp's 1024 characters, and uses the summary whenever it fits", () => {
+test("every report template, in every language, with long names in the centre's own script, stays within WhatsApp's 1024 characters, and uses the longest check link that fits", () => {
   const names: Record<string, { shop: string; by: string }> = {
     en: { shop: "Sri Manjunatha Bright Tuition and Computer Training Centre", by: "Divya Ramakrishnan, Sri Sai Digital Services" },
     hi: { shop: "श्री मंजुनाथ ब्राइट ट्यूशन एंड कंप्यूटर ट्रेनिंग सेंटर", by: "दिव्या रामकृष्णन, श्री साई डिजिटल सर्विसेज़" },
@@ -85,9 +85,11 @@ test("every report template, in every language, with long names in the centre's 
       const message = monthlyReportMessage(env, language, { link: page, check: summary });
       assert.equal(message.template.name, t.name);
       assert.ok(message.text.length <= WHATSAPP_BODY_LIMIT, `${t.name} (${language}): ${message.text.length} characters`);
-      const used = message.text.includes(summary) ? summary : verifyLink(env);
-      assert.ok(message.text.includes(`${STRINGS[language].checkGenuine}: ${used}`), `${t.name} (${language}): the check line`);
-      if (used !== summary) assert.ok(message.text.length - used.length + summary.length > WHATSAPP_BODY_LIMIT, `${t.name} (${language}) fell back with room to spare`);
+      // the longest link that fits: the summary, else the #digest link, else the #code link (messageCheckLink)
+      const tiers = [summary, verifyLink(env), verifyCodeLink(env)];
+      const used = tiers.find((link) => message.text.includes(`${STRINGS[language].checkGenuine}: ${link}\n`))!;
+      assert.ok(used, `${t.name} (${language}): the check line carries one of the three links`);
+      for (const longer of tiers.slice(0, tiers.indexOf(used))) assert.ok(message.text.length - used.length + longer.length > WHATSAPP_BODY_LIMIT, `${t.name} (${language}): ${longer.slice(0, 40)}… would have fitted`);
       assert.equal(message.template.text, message.text);
     }
   }

@@ -153,11 +153,11 @@ export function monthlyReportMessage(report: Envelope<FeesReport>, language: Lan
 function exampleValues(language: Language, template: ReportTemplate): Record<ReportSlot, string> {
   const sample = { ...sampleReport(), source: "live" as const };
   // a real signed summary link (SAMPLE_SUMMARY_LINK) where the message has room for it, chosen as a real message's is
-  return valuesWithCheck(template, language, sample, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, Sri Sai Digital" }, { digest: SAMPLE_DIGEST }, SAMPLE_SUMMARY_LINK);
+  return valuesWithCheck(template, language, sample, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, Sri Sai Digital" }, { digest: SAMPLE_DIGEST, code: "7K2M-9QXD" }, SAMPLE_SUMMARY_LINK);
 }
 
-/** The values with the check link chosen for this template and language: the summary link if the filled message fits WhatsApp's limit, else the #digest link. */
-function valuesWithCheck(template: ReportTemplate, language: Language, report: FeesReport, extras: Omit<ReportExtras, "check">, envelope: { digest: string }, summaryLink?: string): Record<ReportSlot, string> {
+/** The values with the check link chosen for this template and language: the summary link if the filled message fits WhatsApp's limit, else the #digest link, else the #code link (messageCheckLink). */
+function valuesWithCheck(template: ReportTemplate, language: Language, report: FeesReport, extras: Omit<ReportExtras, "check">, envelope: { digest: string; code: string }, summaryLink?: string): Record<ReportSlot, string> {
   const fill = (check: string) => fillBody(metaBody(template.bodies[language]), reportParameters(template, language, reportValues(report, language, { ...extras, check })));
   return reportValues(report, language, { ...extras, check: messageCheckLink(fill, envelope, summaryLink) });
 }
