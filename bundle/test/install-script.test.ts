@@ -27,7 +27,7 @@ function sandbox(stubs: Record<string, string> = {}) {
   const all: Record<string, string> = {
     sha256sum: 'exec shasum -a 256 "$@"',
     // root's commands are noted; one whose last argument (where it writes) is inside the sandbox is carried out (without the chown to root, which a test user cannot do)
-    sudo: `case "\${@: -1}" in "${root}"*) args=(); skip=0; for a in "$@"; do if [ $skip = 1 ]; then skip=0; continue; fi; case "$a" in -o|-g) skip=1;; *) args+=("$a");; esac; done; "\${args[@]}";; esac`,
+    sudo: `case "\${@: -1}" in "${root}"*) [ "$1" = -n ] && shift; args=(); skip=0; for a in "$@"; do if [ $skip = 1 ]; then skip=0; continue; fi; case "$a" in -o|-g) skip=1;; *) args+=("$a");; esac; done; "\${args[@]}";; esac`,
     ...stubs,
   };
   for (const [name, body] of Object.entries(all)) {
@@ -297,3 +297,31 @@ test("a whole dry run says each step and changes nothing: no root command, no se
     assert.ok(!existsSync(join(s.root, "home", "geometer-server")), "no server folder");
   } finally { s.done(); }
 });
+
+test("cloud-init's passwordless sudo is taken away at the end, leaving only the geometer command's verbs and passwd; --keep-sudo keeps it; nothing else is touched", async () => {
+  const s = sandbox({ visudo: "exit 0" });
+  try {
+    const dir = join(s.root, "sudoers.d");
+    mkdirSync(dir);
+    const grant = join(dir, "90-cloud-init-users");
+    const original = "# Created by cloud-init v. 24.1\n\n# User rules for builder\nbuilder ALL=(ALL) NOPASSWD:ALL\n\n# User rules for ubuntu\nubuntu ALL=(ALL) NOPASSWD:ALL\n";
+    writeFileSync(grant, original);
+    let r = await s.run(`KEEP_SUDO=1 USER=builder SUDOERS_DIR=${JSON.stringify(dir)}; narrow_sudo`);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(readFileSync(grant, "utf8"), original, "--keep-sudo changes nothing");
+    r = await s.run(`USER=builder SUDOERS_DIR=${JSON.stringify(dir)}; narrow_sudo`);
+    assert.equal(r.code, 0, r.out);
+    const left = readFileSync(grant, "utf8");
+    assert.doesNotMatch(left, /builder/u, "the builder's line and its comment are gone");
+    assert.match(left, /ubuntu ALL=\(ALL\) NOPASSWD:ALL/u, "another user's line is left as it was");
+    assert.equal(readFileSync(`${grant}.before-geometer`, "utf8"), original, "the file as it was is kept, under a name sudo never reads");
+    const narrow = readFileSync(join(dir, "geometer-builder"), "utf8");
+    assert.match(narrow, /^builder ALL=\(root\) NOPASSWD: \/usr\/bin\/systemctl start geometer-deployer\.service, \/usr\/bin\/systemctl stop geometer-deployer\.service, \/usr\/bin\/systemctl restart geometer-deployer\.service, \/usr\/bin\/journalctl -u geometer-deployer\.service -n 100 --no-pager, \/usr\/bin\/passwd builder$/mu);
+    assert.match(r.out, /To put it back: sudo passwd builder \(choose a password\), then: echo 'builder ALL=\(ALL\) NOPASSWD:ALL' \| sudo tee /u);
+    assert.ok(s.calls().some((c) => c.startsWith("visudo -cqf")), "the narrow rule was checked before it went in");
+    r = await s.run(`USER=builder SUDOERS_DIR=${JSON.stringify(dir)}; narrow_sudo; echo "rc=$?"`);
+    assert.match(r.out, /^rc=0$/mu);
+    assert.doesNotMatch(r.out, /Taking away/u, "a second run finds nothing to take away");
+  } finally { s.done(); }
+});
+
