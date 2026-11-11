@@ -252,8 +252,12 @@ test("sell guide: every number is the same in every language", () => {
 test("sell guide: section 6 gives the Business plan, the builder licence and WhatsApp on the shop's bill from the list in force, in every language, and no first-100 price or own-server discount", () => {
   for (const l of LANGUAGES) {
     const s6 = section(l, 6);
-    for (const id of ["plan.business.fee", "plan.business.allowance", "overage.extra", "licence.builder.fee", "guide.business.shop-min", "guide.business.shop-max", "guide.business.setup-min", "guide.business.setup-max", "guide.business.whatsapp", "innovator.places", "razorpay.platform-fee"]) assert.ok(s6.includes(price(id)), `${l}: section 6 must give ${id} (${price(id)})`);
+    for (const id of ["plan.business.fee", "plan.business.allowance", "overage.extra", "licence.builder.fee", "guide.business.shop-min", "guide.business.shop-max", "guide.business.setup-min", "guide.business.setup-max", "guide.business.whatsapp", "innovator.places"]) assert.ok(s6.includes(price(id)), `${l}: section 6 must give ${id} (${price(id)})`);
     for (const wanted of ["15", dayWords(LIST.date)]) assert.ok(s6.includes(wanted), `${l}: section 6 must give ${wanted}`);
+    // B72: Razorpay's fee left the main pitch. It is written once, in the Razorpay-only item of the setup visit (section 8), and not in sections 5 and 6.
+    assert.ok(!s6.includes(price("razorpay.platform-fee")), `${l}: section 6 does not state Razorpay's fee`);
+    assert.ok(!section(l, 5).includes(price("razorpay.platform-fee")), `${l}: section 5 does not state Razorpay's fee`);
+    assert.ok(section(l, 8).includes(price("razorpay.platform-fee")), `${l}: section 8 states Razorpay's fee, in the Razorpay-only item`);
     // The 4 Nov flat fee was ₹199, written by hand. Since decision 36 (10 Nov) the builder licence is ₹199 too, and it reaches a guide only through
     // {{licence.builder.fee}}. So the ₹199 check reads the source: a hand-written ₹199 there is the old fee; a ₹199 in the made guide is the list's licence.
     assert.ok(!/₹\s?199\b/u.test(readFileSync(new URL(`guide.${l}.src.md`, SELL), "utf8")), `${l}: no old flat fee written by hand (a price comes from the list: {{id}})`);
@@ -518,4 +522,28 @@ test("sell guide: every guide quotes the owner's replies, STOP and the buttons, 
     assert.ok(text.includes('"Received"') && text.includes('"Refund sent"'), `${l}: the owner's two buttons`);
     assert.ok(text.includes("Razorpay") && text.includes("Meta"), `${l}: the platforms are named`);
   }
+});
+
+// ---- the paperwork cut (B72, 12 Nov 2026) --------------------------------------------------------------------------------------
+
+test("sell guide (B72): the WhatsApp check is the honest list (Business app, Facebook login with admin access, public name, verification may be asked, app opened every 2 weeks), with no account-age rule and no promise of 'no documents' or 'one visit'", () => {
+  for (const l of LANGUAGES) {
+    const text = guide(l);
+    const whatsapp = section(l, 8).split("\n- [ ] **").find((x) => /^(The WhatsApp check|WhatsApp की जाँच|WhatsApp പരിശോധന|WhatsApp ಪರಿಶೀಲನೆ)/u.test(x));
+    assert.ok(whatsapp, `${l}: the WhatsApp check item is there`);
+    assert.ok(whatsapp.includes("Facebook") && whatsapp.includes("Meta"), `${l}: it names the Facebook login and the Meta business portfolio`);
+    assert.equal(whatsapp.split("\n").filter((x) => x.startsWith("  - ")).length, 5, `${l}: it has its five points`);
+    assert.ok(!/months of real use|months old|कुछ महीने पुराना|മാസങ്ങളുടെ പഴക്കം|ತಿಂಗಳು ಹಳೆಯ/u.test(text), `${l}: the unconfirmed account-age rule is not stated as a fact`);
+    assert.ok(!/\bno documents\b|\bone visit\b|\bno paperwork\b/i.test(text), `${l}: no promise the facts file forbids`);
+  }
+});
+
+test("sell guide (B72): every guide points at the 'What to ask the shop for' card in its own language, the card file exists, and the shop terms stay signed on paper", () => {
+  for (const l of LANGUAGES) {
+    assert.ok(guide(l).includes(`sell/ask-card.${l}.md`), `${l}: the guide names the card`);
+    assert.ok(existsSync(new URL(`ask-card.${l}.md`, SELL)), `sell/ask-card.${l}.md is missing: node modules/ask-card/render.ts`);
+  }
+  assert.ok(guide("en").includes("Signed paper is still what Geometer's checks assume."));
+  assert.ok(guide("en").includes("do that only after Geometer says so"));
+  assert.ok(!/legally (enough|sufficient|valid)/i.test(guide("en")), "no claim that WhatsApp agreement is legally enough");
 });
