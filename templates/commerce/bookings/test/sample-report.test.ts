@@ -40,6 +40,9 @@ test("the sample month holds a held refund, an unresolved payment, abandoned con
   assert.equal(r.money.deposits.count, 7, "seven payments marked received by the owner");
   assert.equal(r.atReportTime.waitingForOwner, 1, "one refund is still waiting for the owner");
   assert.equal(r.work.costMicroInr, null, "no cost given: unknown, never 0");
+  assert.equal(r.work.list.length, r.work.jobs, "every job is listed with its state");
+  assert.deepEqual(r.work.list.filter((j) => j.state === "unresolved").map((j) => j.why).sort(), ["payment-not-marked", "refund-waiting-for-owner"]);
+  assert.ok(r.work.list.every((j) => j.seqs.length > 0 && j.seqs.every((n) => r.record.rows.some((row) => row.seq === n))), "each job's entry numbers are rows of the report's own record");
 });
 
 test("a booking cancelled and refunded counts as completed; a refund held for the owner and a payment the owner has not marked are unresolved, whatever else the customer does", async () => {
