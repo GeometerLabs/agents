@@ -725,7 +725,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     // saving a Gupshup shop would turn it back to Meta's paths with Gupshup's token behind them
     // the model as geometer.json names it now: the panel's first run may have chosen it after the panel started
     const serverModel = readServerModel(config.serverDir) ?? config.serverModel;
-    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
+    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.use === "google" ? d.calendar.id : "", d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;

@@ -196,7 +196,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const taken = takeSecrets(ctx.dir, name);
   const problems: Problem[] = [...taken.problems];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
-  const calendar = (kindFor(folder.lock?.pathway) ?? KINDS.bookings).guards.includes("calendar");
+  const calendar = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("calendar"); // B72: a shop on its own booking list has none
   const razorpay = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("razorpay"); // a UPI shop (B33) has no Razorpay
   const webhooks = webhooksFor(ctx.dir, name, calendar);
   const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;

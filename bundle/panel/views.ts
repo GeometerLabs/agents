@@ -515,7 +515,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
     ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.numberId, { mode: "numeric", max: 20 })}
     ${secret(c, a.whatsapp.token, "waToken", v.receipts.whatsapp_token)}${secret(c, a.whatsapp.appSecret, "waAppSecret", v.receipts.whatsapp_app_secret)}` : ""}
-  ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
+  ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.useOwn}</p>
+    <div class="field"><label><input type="checkbox" name="calUse" value="google" ${d.calendar.use === "google" ? raw("checked") : ""}> ${a.calendar.useGoogle}</label></div>
+    <p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
     ${v.shareAddress ? html`<p>${a.calendar.shareAddress}</p><code class="addr">${v.shareAddress}</code>` : html`<p class="note">${a.calendar.noAddress}</p>`}
     ${text(a.calendar.id, "calId", d.calendar.id, { max: 200 })}
     ${v.shareAddress ? "" : secret(c, a.calendar.json, "calJson", v.receipts["google_service_account.json"], "textarea")}` : ""}
