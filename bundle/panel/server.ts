@@ -91,6 +91,7 @@ interface Req {
 type Handler = (r: Req) => void | Promise<void>;
 interface Route { method: "GET" | "POST"; pattern: RegExp; access: "public" | "user" | "builder"; handler: Handler }
 
+// Opens the panel's data folder (private, mode 0700) with the vault, store and the session secret, which is created once and then kept; split out so tests can open the same stores.
 export function openStores(config: PanelConfig) {
   const paths = serverPaths(config.serverDir);
   mkdirSync(paths.panel, { recursive: true, mode: 0o700 });
@@ -108,6 +109,7 @@ export function openStores(config: PanelConfig) {
   return { paths, vault, store, secret };
 }
 
+// Starts the panel's HTTP server. `deps` lets tests replace the clock, network and runtimes; it returns a handle to stop it.
 export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Promise<RunningPanel> {
   const log = deps.log ?? ((line: string) => process.stderr.write(`${line}\n`));
   const now = () => (config.now ?? Date.now)();
