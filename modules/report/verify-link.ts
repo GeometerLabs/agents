@@ -22,6 +22,9 @@ export function verifyLink(envelope: Pick<Envelope, "digest">, key?: string): st
   return `${VERIFY_URL}#${envelope.digest}${key ? `&key=${key}` : ""}`;
 }
 
+/** The code form with the host, `https://geometer.dev/verify/#7K2M-9QXD`: the shortest link that finds a paper (the WhatsApp message's last resort, summary-sign.ts). */
+export const verifyCodeLink = (envelope: Pick<Envelope, "code">): string => `${VERIFY_URL}#${envelope.code}`;
+
 /** The short form for a line of text, without the host: `/verify/#7K2M-9QXD` (the code the paper prints). */
 export const verifyCodePath = (envelope: Pick<Envelope, "code">): string => `/verify/#${envelope.code}`;
 

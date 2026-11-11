@@ -13,7 +13,7 @@ import type { World } from "../src/harness.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { keyIdOf, publicKeyHex, seal } from "../../../../modules/report/sign.ts";
-import { verifyLink } from "../../../../modules/report/verify-link.ts";
+import { verifyCodeLink, verifyLink } from "../../../../modules/report/verify-link.ts";
 import { labelledFigures } from "../../../../modules/report/summary.ts";
 import { WHATSAPP_BODY_LIMIT, checkSummaryLink, summaryLinkFor } from "../../../../modules/report/summary-sign.ts";
 import type { ListedSigner } from "../../../../modules/report/summary-sign.ts";
@@ -67,6 +67,11 @@ test("a signed report and its certificate print a summary link that is genuine u
 
   const page = readFileSync(join(out, "report-2026-11-en.html"), "utf8");
   assert.ok(page.includes(`<a href="${made.check}" rel="noreferrer">`) && page.includes(STRINGS.en.page.scanSummary) && page.includes('<meta name="referrer" content="no-referrer">'));
+  // still self-contained (report-render.test.ts): the one thing a reader can follow is the check link, and nothing is loaded from anywhere
+  assert.deepEqual([...page.matchAll(/href="([^"]*)"/gu)].map((m) => m[1]), [made.check]);
+  for (const forbidden of ["<script", "<link", "<img", "<iframe", "url(", "@import", "src="]) assert.ok(!page.includes(forbidden), forbidden);
+  assert.ok(!/https?:|\/\/[a-z]/iu.test(page.split(made.check!).join("")), "no address but the check link");
+  assert.ok(page.includes("default-src 'none'"));
   // the monthly record certificate has its own summary (layout 2), on its page and at the end of its text
   const certPage = readFileSync(join(out, "certificate-2026-11-en.html"), "utf8");
   const certText = readFileSync(join(out, "certificate-2026-11-en.txt"), "utf8");
@@ -125,7 +130,7 @@ test("the monthly job sends the owner the summary link of the report it signed, 
   assert.equal(checkSummaryLink(link[0], LIST).status, "genuine");
 });
 
-test("every report template, in every language, with long names in the shop's own script, stays within WhatsApp's 1024 characters, and uses the summary whenever it fits", () => {
+test("every report template, in every language, with long names in the shop's own script, stays within WhatsApp's 1024 characters, and uses the longest check link that fits", () => {
   const names: Record<string, { shop: string; by: string }> = {
     en: { shop: "Sri Manjunatha Beauty Parlour and Bridal Studio", by: "Divya Ramakrishnan, Sri Sai Digital Services" },
     hi: { shop: "श्री मंजुनाथ ब्यूटी पार्लर एंड ब्राइडल स्टूडियो", by: "दिव्या रामकृष्णन, श्री साई डिजिटल सर्विसेज़" },
@@ -142,10 +147,12 @@ test("every report template, in every language, with long names in the shop's ow
       const message = monthlyReportMessage(env, language, { link, check: summary });
       assert.equal(message.template.name, t.name);
       assert.ok(message.text.length <= WHATSAPP_BODY_LIMIT, `${t.name} (${language}): ${message.text.length} characters`);
-      const used = message.text.includes(summary) ? summary : verifyLink(env);
-      assert.ok(message.text.includes(`${STRINGS[language].checkGenuine}: ${used}`), `${t.name} (${language}): the check line`);
+      // the longest link that fits: the summary, else the #digest link, else the #code link (messageCheckLink)
+      const tiers = [summary, verifyLink(env), verifyCodeLink(env)];
+      const used = tiers.find((link) => message.text.includes(`${STRINGS[language].checkGenuine}: ${link}\n`))!;
+      assert.ok(used, `${t.name} (${language}): the check line carries one of the three links`);
       // the fallback is taken only when the summary would not have fitted
-      if (used !== summary) assert.ok(message.text.length - used.length + summary.length > WHATSAPP_BODY_LIMIT, `${t.name} (${language}) fell back with room to spare`);
+      for (const longer of tiers.slice(0, tiers.indexOf(used))) assert.ok(message.text.length - used.length + longer.length > WHATSAPP_BODY_LIMIT, `${t.name} (${language}): ${longer.slice(0, 40)}… would have fitted`);
       assert.equal(message.template.text, message.text, "the template and the text agree");
     }
   }

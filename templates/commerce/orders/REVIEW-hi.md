@@ -219,7 +219,7 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 आपकी सीमाओं ने रोका: 7
 जाँचा नहीं गया: पिकअप पर नकद या UPI से दी गई बाकी रकम · भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) · असली WhatsApp · शब्दों की किसी मूल भाषी से जाँच · और 16 बातें (पूरी रिपोर्ट में)। जाँच हाथ से की गई।
 कोड: 7K2M-9QXD · पूरी रिपोर्ट: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html
-असली है या नहीं, जाँचें: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA
+असली है या नहीं, जाँचें: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg
 सपोर्ट को लिखें। एक इंसान जवाब देता है।
 तैयार किया: Divya, Sri Sai Digital · Geometer
 ★ इनोवेटर

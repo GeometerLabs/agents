@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { sealBlock } from "../report/page.ts";
 import type { SealWords } from "../report/page.ts";
 import { keyIdOf, publicKeyHex, seal } from "../report/sign.ts";
-import { verifyLink } from "../report/verify-link.ts";
+import { verifyCodeLink, verifyLink } from "../report/verify-link.ts";
 import {
   LAYOUTS, MAX_BY_BYTES, MAX_SHOP_BYTES, SAMPLE_SUMMARY_LINK, SUMMARY_DOMAIN, SummaryError, carriedLength, decodeSummary, encodeSummary, fitText, fromBase64url,
   isPeriod, isSummaryLink, labelledFigures, readSummaryLink, signedBytes, summaryLinkOf, textBytes, toBase64url,
@@ -52,8 +52,10 @@ test("a text in an Indian script travels as UTF-16 only when that is shorter, an
   assert.equal(textBytes("Glow Salon").wide, false);
   assert.equal(textBytes("ശ്രീ ദുർഗ്ഗ").wide, true);
   assert.ok(carriedLength("ശ്രീ ദുർഗ്ഗ") < new TextEncoder().encode("ശ്രീ ദുർഗ്ഗ").length);
-  const s = summaryOf(malayalam, DIGEST, keyId);
+  // a name short enough that its UTF-8 spelling (30 bytes) is also within the cap, so only the one-spelling rule can refuse it
+  const s = summaryOf({ ...malayalam, shop: "ശ്രീ ദുർഗ്ഗ" }, DIGEST, keyId);
   const bytes = encodeSummary(s);
+  assert.ok(new TextEncoder().encode(s.shop).length <= MAX_SHOP_BYTES);
   // find the shop's length byte (layout, source, flags, then period and pathway as length + bytes) and rewrite the shop as UTF-8 with the narrow flag
   let at = 3;
   at += 1 + bytes[at]; // period
@@ -61,7 +63,7 @@ test("a text in an Indian script travels as UTF-16 only when that is shorter, an
   assert.ok((bytes[at] & 0x80) !== 0, "the Malayalam shop name is wide");
   const narrow = new TextEncoder().encode(s.shop);
   const respelt = Uint8Array.from([...bytes.slice(0, at), narrow.length, ...narrow, ...bytes.slice(at + 1 + (bytes[at] & 0x7f))]);
-  assert.throws(() => decodeSummary(respelt), SummaryError, "the same name in the longer encoding is not the one spelling");
+  assert.throws(() => decodeSummary(respelt), /longer of its two encodings/u, "the same name in the longer encoding is not the one spelling");
 });
 
 test("the parser refuses every other spelling: stray base64 bits, padding, a long-form number, an unknown flag, a wrong figure count, trailing bytes, a cut summary", () => {
@@ -176,6 +178,9 @@ test("a summary is made only for a signed paper and only with the paper's own ke
   assert.equal(made.summary.digest, env.digest, "the digest is the paper's, never the caller's");
   assert.equal(made.summary.keyHint, keyHintOf(env.signature!.keyId));
   assert.throws(() => summaryFor(env, bookings, generateKeyPairSync("ed25519").privateKey), /different key/u);
+  // a figure the format cannot carry (half a paisa, a negative amount) never holds the paper back: it goes out with the #digest link
+  assert.equal(summaryFor(env, { ...bookings, figures: [38, 1_760_000.5, 40_000, 5, 3, 2, 1, 1] }, privateKey), undefined);
+  assert.equal(summaryFor(env, { ...bookings, figures: [38, -1, 40_000, 5, 3, 2, 1, 1] }, privateKey), undefined);
 });
 
 // ---- the committed vectors --------------------------------------------------------------------------------------------------------------------------------
@@ -207,7 +212,7 @@ test("a realistic summary is a version 12 QR with Latin names and at most versio
   }
   // the most any summary can be: both names at their caps, a range, nine figures near ₹1 crore
   const worst = make({ ...kannada, shop: "ಶ".repeat(200), by: "ದ".repeat(200), figures: new Array(9).fill(999_999_999) });
-  assert.ok(encodeQr(worst.link).version <= 16, `worst case: version ${encodeQr(worst.link).version}`); // measured 11 Nov: 427 characters, version 16
+  assert.ok(encodeQr(worst.link).version <= 16, `worst case: version ${encodeQr(worst.link).version}`); // measured 11 Nov: 449 characters, version 16
 });
 
 test("every layout has a unique number, a known paper kind and named figures; a summary carries at most 16", () => {
@@ -240,13 +245,20 @@ test("the page block prints the summary link and draws exactly it as the QR, lar
 
 // ---- the WhatsApp message's check link ---------------------------------------------------------------------------------------------------------------------
 
-test("the message carries the summary link when the whole message fits WhatsApp's 1024 characters, and the #digest link when it does not", () => {
+test("the message carries the longest check link that fits WhatsApp's 1024 characters: the summary, then the #digest link, then the #code link", () => {
   const link = make(bookings).link;
-  const env = { digest: DIGEST };
+  const env = { digest: DIGEST, code: "7K2M-9QXD" };
+  const digest = verifyLink(env);
+  const code = verifyCodeLink(env);
+  assert.equal(code, "https://geometer.dev/verify/#7K2M-9QXD");
+  const room = (n: number) => (c: string) => `${"x".repeat(WHATSAPP_BODY_LIMIT - n)}${c}`;
   assert.equal(messageCheckLink((c) => `short\n${c}`, env, link), link);
-  assert.equal(messageCheckLink((c) => `${"x".repeat(WHATSAPP_BODY_LIMIT - link.length)}${c}`, env, link), link, "exactly at the limit still fits");
-  assert.equal(messageCheckLink((c) => `${"x".repeat(WHATSAPP_BODY_LIMIT - link.length + 1)}${c}`, env, link), verifyLink(env));
-  assert.equal(messageCheckLink((c) => c, env, undefined), verifyLink(env), "an unsigned report has no summary");
+  assert.equal(messageCheckLink(room(link.length), env, link), link, "exactly at the limit still fits");
+  assert.equal(messageCheckLink(room(link.length - 1), env, link), digest);
+  assert.equal(messageCheckLink(room(digest.length), env, link), digest);
+  assert.equal(messageCheckLink(room(digest.length - 1), env, link), code);
+  assert.equal(messageCheckLink(room(0), env, link), code, "the code link even when nothing fits: nothing shorter is a link");
+  assert.equal(messageCheckLink((c) => c, env, undefined), digest, "an unsigned report has no summary");
 });
 
 // ---- the claim a server sends fleet -------------------------------------------------------------------------------------------------------------------------

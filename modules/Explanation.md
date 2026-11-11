@@ -404,7 +404,8 @@ from the link before it reads them, and never re-encodes first. A summary is mad
 
 **The payload,** in order: the layout (one byte: which paper, which figures), the source (live, test mode, stand-in services: so a sample never reads as real
 money), a flag for money the owner marked (a UPI shop, `paidBy: "owner-marked"`), the period (`2026-11`, a go-live certificate's day `2026-11-03`, or a range
-`2026-11-01..2026-11-15`), the agent's name, the shop's name (up to 64 bytes), who set it up as the paper says it (up to 48), the figures (unsigned LEB128,
+`2026-11-01..2026-11-15`), the agent's name, the shop's name (up to 64 bytes), who set it up as the paper says it (up to 64: on Geometer's partner server it is the only place the
+page names the partner, so it gets the same room), the figures (unsigned LEB128,
 money in paise), the first 8 bytes of the signer's key id (a hint: which listed key to try), and the full paper's sha256 (so a file, when someone has it, can be
 matched to the summary). Layouts: 1 Bookings' monthly report, 2 Bookings' monthly record certificate, 3 any template's go-live certificate, 4 Fees' monthly
 report, 5 Orders' monthly report (Fees and Orders have no monthly record certificate yet). Each carries the figures the printed page and the owner's WhatsApp
@@ -418,15 +419,19 @@ is strictly shorter; the high bit of its length byte says which. A name too long
 
 **Size, measured 11 Nov** (level M, as every QR here): Glow Salon with a Latin "set up by" is 262 characters, version 12 (65 modules); names in Hindi 326
 characters, version 13; Malayalam and Kannada 347 to 359 characters, version 14 (73 modules). The most any summary can reach (both names at their caps, a range,
-nine figures near ₹1 crore) is 427 characters, version 16. The QR beside a summary link is drawn at 12rem (about 51 mm printed), so each module of a version
+nine figures near ₹1 crore) is 449 characters, version 16; names longer than the caps (64 bytes: 64 Latin letters, or 32 in an Indian script) are cut. The QR beside a summary link is drawn at 12rem (about 51 mm printed), so each module of a version
 14 code is about 0.63 mm; the older digest QR stays at 9.5rem.
 
 **On the paper and in WhatsApp.** `sealBlock` (`report/page.ts`) takes the summary link: it draws its QR, prints it as a link a phone can tap (opened with no
 referrer, and the page now sends none: the report page's own address holds the secret folder it is served from), and uses `scanSummary` (no file needed,
 nothing sent, and it does not show the numbers are true) instead of `scanToCheck`. A certificate's short text ends with "Check it is genuine: <link>". The
-owner's monthly WhatsApp message gets one line, "Check it is genuine: {check}", before "Set up by": the summary link when the whole filled message stays within
-1,024 characters, else the paper's `#sha256:` link (`messageCheckLink`), chosen once so the plain text and the template agree. With the sample names every
-Bookings message carries the summary; Fees in Malayalam and Orders in Malayalam and Kannada fall back to the digest link (their messages are longer). The new
+owner's monthly WhatsApp message gets one line, "Check it is genuine: {check}", before "Set up by": the longest link that lets the whole filled message stay
+within 1,024 characters (`messageCheckLink`), chosen once so the plain text and the template agree: the summary link, else the paper's `#sha256:` link, else
+its `#<code>` link (38 characters; used even when nothing fits, so a message that fitted before this line still fits). Measured on 11 Nov over all 48
+template variants (3 templates, 4 variants, 4 languages): with the sample names every Bookings message carries the summary, Fees in Malayalam and Orders in
+Malayalam and Kannada take the digest link; with long names in the shop's own script (about 50 letters for the shop and 40 for the partner), 8 of Bookings' 16
+take the summary and the rest the digest link, Fees' and Orders' take the digest link, and 5 (Orders in Malayalam, Fees' UPI-and-Innovator message in
+Malayalam) need the code link; the longest is 1,013 characters. The new
 words are in `report/text.ts` (`CHECK_GENUINE`, `SCAN_SUMMARY`), taken into each template's strings so the review sheets list them; Hindi, Malayalam and
 Kannada are machine-written.
 

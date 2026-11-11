@@ -226,7 +226,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 5
 ಪರಿಶೀಲಿಸದ್ದು: ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ · Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು · ನಿಜವಾದ WhatsApp · ನಿಜವಾದ Razorpay · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಇನ್ನೂ 12 ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
 ಕೋಡ್: 7K2M-9QXD · ಪೂರ್ಣ ವರದಿ: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html
-ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA
+ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg
 ಸಿದ್ಧಪಡಿಸಿದವರು: Divya, Sri Sai Digital · Geometer
 ★ ಇನ್ನೋವೇಟರ್
 ```

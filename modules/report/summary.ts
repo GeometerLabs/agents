@@ -24,7 +24,8 @@
 //   period    text      "2026-11" (a month), "2026-11-03" (a day: a go-live certificate's date) or "2026-11-01..2026-11-15" (any other range)
 //   pathway   text      the agent's name as the paper has it ("bookings", "fees", "orders", or a builder's own agent), up to 32 bytes
 //   shop      text      the shop's name as the paper prints it, up to 64 bytes (a longer name is cut at a whole character and ends with "…")
-//   by        text      who set the shop up, as the paper says it ("Divya, Sri Sai Digital"), up to 48 bytes; empty when the paper names no one
+//   by        text      who set the shop up, as the paper says it ("Divya, Sri Sai Digital"), up to 64 bytes; empty when the paper names no one. On Geometer's
+//                       partner server this is the only place the page names the partner, so it gets the same room as the shop's name
 //   figures   1 byte count (at most 16), then each figure as an unsigned LEB128 number in its fewest bytes; money is in paise
 //   key hint  8 bytes   the first 8 bytes of the signer's key id (the sha256 of its raw public key, sign.ts): which entry of the public list to try
 //   digest    32 bytes  the sha256 of the full paper (its `digest`), so the file, when someone has it, can be matched to this summary
@@ -43,7 +44,7 @@
  * A real summary link, for the example values Meta's template review and the native review sheets show: the first test vector (modules/test/summary-vectors.json,
  * signed with a throwaway key whose private half was never written down), Glow Salon's sample month. SAMPLE_DIGEST is the digest that vector carries.
  */
-export const SAMPLE_SUMMARY_LINK = "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAc20QOlfSve5VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.g10dlE5ObXgdmzkDbuikoko0SL-r19DHlRVQfRBmUV9sghyzzVC27HhXfoqACJg6UOZR10EYmkmtQC1nxSxLDA";
+export const SAMPLE_SUMMARY_LINK = "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg";
 export const SAMPLE_DIGEST = `sha256:${"5".repeat(64)}`;
 
 /** The format's version, the start of the fragment. */
@@ -54,7 +55,7 @@ export const VERIFY_PAGE = "https://geometer.dev/verify/";
 /** Bytes of the key id carried as a hint, and the most bytes in each text. */
 export const KEY_HINT_BYTES = 8;
 export const MAX_SHOP_BYTES = 64;
-export const MAX_BY_BYTES = 48;
+export const MAX_BY_BYTES = 64;
 export const MAX_PATHWAY_BYTES = 32;
 export const MAX_FIGURES = 16;
 const DIGEST_BYTES = 32;
