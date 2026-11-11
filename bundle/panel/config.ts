@@ -57,6 +57,20 @@ const num = (v: string | undefined, name: string): number | undefined => {
   return n;
 };
 
+/**
+ * The model geometer.json names now. Read when a shop's runtime.json is written, not only at start: on a new server the panel's first run chooses the model
+ * while the panel is already running (plan item 14b). Undefined when none is chosen or the file cannot be read (the bundle says why).
+ */
+export function readServerModel(serverDir: string): { wire: "openai" | "anthropic"; model: string } | undefined {
+  const geometer = join(resolve(serverDir), "geometer.json");
+  if (!existsSync(geometer)) return undefined;
+  try {
+    const g = JSON.parse(readFileSync(geometer, "utf8")) as { model?: { wire?: unknown; model?: unknown } };
+    if ((g.model?.wire === "openai" || g.model?.wire === "anthropic") && typeof g.model.model === "string" && g.model.model !== "") return { wire: g.model.wire, model: g.model.model };
+  } catch { /* the bundle reports a broken geometer.json; the panel just has no model to name */ }
+  return undefined;
+}
+
 export function configFromEnv(env: Record<string, string | undefined>): PanelConfig {
   const serverDir = env.PANEL_SERVER_DIR;
   if (!serverDir) throw new ConfigError("Say which server folder the panel serves: PANEL_SERVER_DIR=/path/to/server (the folder with geometer.json and shops/).");
@@ -67,15 +81,8 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
   const publicUrl = env.PANEL_PUBLIC_URL?.replace(/\/+$/u, "");
   if (publicUrl !== undefined && !/^https?:\/\/[^/\s]+$/u.test(publicUrl)) throw new ConfigError("PANEL_PUBLIC_URL must look like https://shops.example.com (no path).");
   const dir = resolve(serverDir);
-  // The server's own settings name the model every shop uses; a setting here wins.
-  let serverModel: { wire: "openai" | "anthropic"; model: string } | undefined;
-  const geometer = join(dir, "geometer.json");
-  if (existsSync(geometer)) {
-    try {
-      const g = JSON.parse(readFileSync(geometer, "utf8")) as { model?: { wire?: unknown; model?: unknown } };
-      if ((g.model?.wire === "openai" || g.model?.wire === "anthropic") && typeof g.model.model === "string") serverModel = { wire: g.model.wire, model: g.model.model };
-    } catch { /* the bundle reports a broken geometer.json; the panel just has no model to name */ }
-  }
+  // The server's own settings name the model every shop uses (read again when a shop is written: server.ts).
+  const serverModel = readServerModel(dir);
   return {
     serverDir: dir, mode, host: env.PANEL_HOST ?? "127.0.0.1", port, ...(publicUrl ? { publicUrl } : {}),
     trustProxy: env.PANEL_TRUST_PROXY === "1",

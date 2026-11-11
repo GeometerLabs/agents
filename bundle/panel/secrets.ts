@@ -10,6 +10,9 @@ import { randomBytes } from "node:crypto";
 import { SECRET_NAMES, SHOP_ID, isObj } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { Shops } from "./shops.ts";
+import { SERVER_SECRET_NAMES, serverSettingsPaths } from "./server-contract.ts";
+import type { ServerSecretName } from "./server-contract.ts";
+import type { Store } from "./store.ts";
 
 const NO_SPACE = (min: number, max: number) => new RegExp(`^[^\\s]{${min},${max}}$`, "u");
 
@@ -67,3 +70,27 @@ export function createInbox(shops: Shops, now: () => number = Date.now) {
 }
 
 export type Inbox = ReturnType<typeof createInbox>;
+
+/**
+ * The server's own keys (the panel's first run, plan item 14b): the model's key, the backup bucket's key and a server-wide Google key, written to
+ * secrets-inbox/_server/<name> and noted as arrived in the panel's store. The same rules as a shop's: written, never read back, never in a message. The
+ * deployer (bundle/server-settings.ts) checks each by shape again, moves it to the one container that needs it, and deletes it here.
+ */
+export function createServerInbox(dir: string, store: Store, now: () => number = Date.now) {
+  const inbox = serverSettingsPaths(dir).inbox;
+  const receiptsFile = "server/receipts.json";
+  return {
+    put(name: ServerSecretName, text: string): void {
+      if (!(SERVER_SECRET_NAMES as readonly string[]).includes(name)) throw new Error("not a place the secrets inbox takes");
+      mkdirSync(inbox, { recursive: true, mode: 0o700 });
+      const tmp = join(inbox, `.${randomBytes(6).toString("hex")}.tmp`);
+      writeFileSync(tmp, text.endsWith("\n") ? text : `${text}\n`, { mode: 0o600 });
+      chmodSync(tmp, 0o600);
+      renameSync(tmp, join(inbox, name)); // a key handed in again before the deployer collected the first replaces it: the newest is the one meant
+      const receipts = store.read<Record<string, string>>(receiptsFile) ?? {};
+      store.write(receiptsFile, { ...receipts, [name]: new Date(now()).toISOString() });
+    },
+    /** When each key was handed in here (never the key). */
+    receipts: (): Partial<Record<ServerSecretName, string>> => store.read<Record<string, string>>(receiptsFile) ?? {},
+  };
+}
