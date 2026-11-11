@@ -1,7 +1,7 @@
 // The small config files the shared services read (inbox, relay, refresher, ops), and the secret files they and the shops' containers get. None of the
 // config files holds a secret: they name the secret FILES. Pure text in, text out; the deployer writes them.
 import { agentNames } from "../agent/plan.ts";
-import { BUNDLE_VERSION } from "../lib/server.ts";
+import { BUNDLE_VERSION, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
@@ -125,6 +125,8 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
   return stableJson({
     deploymentId: server.id, bundleVersion: BUNDLE_VERSION, heartbeatSeconds: server.heartbeatSeconds,
     ...(server.fleet ? { fleet: { url: server.fleet.url, keyFile: "/run/secrets/fleet_key" } } : {}),
+    // the panel's address, for the "Open panel" link on the builder's account page (fleet's GET /v1/me/servers); a link only, signing in stays the panel's
+    ...(server.panel.enabled ? { panelUrl: publicUrl(server) } : {}),
     fleetDir: OPS_FLEET_DIR,
     shops: Object.fromEntries(shops.map((s) => [s.name, {
       pathway: s.pathway ?? "bookings", pathwayVersion: s.pathwayVersion,

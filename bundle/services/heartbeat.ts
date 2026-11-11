@@ -153,7 +153,17 @@ export function usageDelta(current: UsageTotals, base: UsageCounters | undefined
   };
 }
 
-export function buildHeartbeat(input: { deploymentId: string; bundleVersion: string; now: Date; shops: ShopObservation[]; baseline: Baseline; lastKnown?: Record<string, RuntimeStatus>; usageBaseline?: UsageBaseline }): { body: Record<string, unknown>; next: Baseline; nextUsage: UsageBaseline } {
+/**
+ * The panel's address as fleet takes it in a heartbeat (`panel_url`, fleet's schema.ts): https and nothing after the host and port, at most 200 characters, and
+ * nothing fleet would take for a phone number or an email address (a whole heartbeat with a field fleet refuses is refused). Anything else is not sent: the
+ * account page then shows no "Open panel" link for this server, and nothing else changes.
+ */
+export function panelUrlForFleet(url: string | undefined): string | undefined {
+  if (!url || url.length > 200 || url.includes("@") || /\+?\d(?:[\s().-]{0,2}\d){6,}/u.test(url)) return undefined;
+  try { const u = new URL(url); return u.protocol === "https:" && u.origin === url ? url : undefined; } catch { return undefined; }
+}
+
+export function buildHeartbeat(input: { deploymentId: string; bundleVersion: string; panelUrl?: string; now: Date; shops: ShopObservation[]; baseline: Baseline; lastKnown?: Record<string, RuntimeStatus>; usageBaseline?: UsageBaseline }): { body: Record<string, unknown>; next: Baseline; nextUsage: UsageBaseline } {
   const next: Baseline = { ...input.baseline };
   const nextUsage: UsageBaseline = { ...input.usageBaseline };
   const agents = input.shops.map((shop) => {
@@ -194,7 +204,7 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
     };
   });
   return {
-    body: { deployment_id: input.deploymentId, bundle_version: input.bundleVersion, sent_at: input.now.toISOString().replace(/\.\d{3}Z$/u, "Z"), agents },
+    body: { deployment_id: input.deploymentId, bundle_version: input.bundleVersion, ...(panelUrlForFleet(input.panelUrl) ? { panel_url: panelUrlForFleet(input.panelUrl) } : {}), sent_at: input.now.toISOString().replace(/\.\d{3}Z$/u, "Z"), agents },
     next, nextUsage,
   };
 }

@@ -25,6 +25,8 @@ export interface OpsConfig {
   bundleVersion: string;
   heartbeatSeconds?: number;
   fleet?: { url: string; keyFile: string };
+  /** The panel's address (https://<domain>), sent in the heartbeat as `panel_url` so the builder's account page can link to it. Left out: no panel here. */
+  panelUrl?: string;
   /** The one folder ops can write (<server>/fleet): fleet's answer for each shop, and the usage baseline. Left out: the baseline is kept in memory only and no answer is written. */
   fleetDir?: string;
   shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }>;
@@ -231,7 +233,7 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
     ...await Promise.all(Object.entries(config.ownAgents ?? {}).map(([id, c]) => observeAgent(c, config.bundleVersion, id, fetchFn))),
   ];
   for (const s of shops) if (s.status) state.lastKnown[s.id] = s.status;
-  const { body, next, nextUsage } = buildHeartbeat({ deploymentId: config.deploymentId, bundleVersion: config.bundleVersion, now, shops, baseline: state.baseline, lastKnown: state.lastKnown, usageBaseline: state.usageBaseline });
+  const { body, next, nextUsage } = buildHeartbeat({ deploymentId: config.deploymentId, bundleVersion: config.bundleVersion, ...(config.panelUrl ? { panelUrl: config.panelUrl } : {}), now, shops, baseline: state.baseline, lastKnown: state.lastKnown, usageBaseline: state.usageBaseline });
   const r = await sendHeartbeat(config.fleet!.url, key, body, fetchFn);
   if (r.accepted) {
     state.baseline = next; state.usageBaseline = nextUsage; state.lastProblem = "";
