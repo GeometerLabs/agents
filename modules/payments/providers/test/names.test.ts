@@ -14,7 +14,6 @@ const ROOT = join(import.meta.dirname, "..", "..", "..", "..");
 /** Where the rule holds: the panel, the payments flow and the owner-marked module, the shared Guard and approvals code, the templates' agents. */
 const HELD = [/^bundle\/panel\//u, /^modules\/payments\/(?!providers\/)/u, /^modules\/messaging\//u, /^modules\/approvals\/(clients|relay)\.ts$/u, /^modules\/standins\//u, /^templates\/[a-z]+\/[a-z-]+\/src\//u];
 const EXCEPT: Record<string, string> = {
-  "templates/education/fees/src/language/templates.ts": "owner_link_failed (\"... Please check Razorpay\") is the text of a Meta-approved message template; changing it needs Meta's re-review, so it waits for the owner (B71 report)",
   "templates/commerce/orders/src/harness.ts": "the test harness names its gateway example by the example's own file name (annapurna-tiffins-razorpay.example.json)",
 };
 const isTest = (rel: string) => /(^|\/)test\//u.test(rel) || /\.test\.ts$/u.test(rel);
