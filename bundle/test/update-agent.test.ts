@@ -223,7 +223,7 @@ test("a real update: the good example is in service, the broken one is held back
     const bad = await update(w);
     assert.deepEqual(asked, ["server", "server-broken"]);
     assert.equal(bad.result, 1, bad.out);
-    assert.match(bad.out, /✗ my-agent +HELD BACK\. Held 9 of 10 at server-broken; 10 of 10 held at server\. Now failing: Razorpay made the refund but the reply was lost\. Keep running server: server-broken gets no go-live certificate\./);
+    assert.match(bad.out, /✗ my-agent +HELD BACK\. Held 11 of 12 at server-broken; 12 of 12 held at server\. Now failing: Razorpay made the refund but the reply was lost\. Keep running server: server-broken gets no go-live certificate\./);
     assert.match(bad.out, /After the answer was lost the agent did not ask for the refund again: Guard saw 3 more refund requests/);
     assert.equal(inService(w)!.version, "server");
     assert.equal(readFileSync(certificate(w), "utf8"), certificateBefore);

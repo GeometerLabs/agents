@@ -32,8 +32,13 @@
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
 //   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams upi|razorpay|own-api,whatsapp,calendar] [--upi-id ID --payee "Name"]
 //                    [--gateway-draft D --gateway-accept A --gateway-upstream host:port] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
-//                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses and the one credential it must use instead
-//   agent check|deploy|show <name> [--credential]      the same checks and checked deploy as a shop's; show prints the addresses again
+//                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses it must use instead, and where its
+//                                credentials are (one per Guard, in secrets/agents/<name>/credentials.env; never printed)
+//   agent check|deploy|show <name>      the same checks and checked deploy as a shop's; show prints the addresses again and where the credentials are (never a credential)
+//   agent rotate <name> [--guard <kind>] [--overlap-minutes N]   a new credential for each Guard (or one), handed to the agent through secrets/agents/<name>/credentials.env;
+//                                the old one keeps working for 15 minutes (or N, 0 to 1440), then stops at the Guard. Nothing is printed.
+//   agent remove <name> [--force]   stop its Guards and take it off this server; its record, settings and last snapshot are kept (where is printed), its credentials are
+//                                revoked, nothing is deleted. Refused while a call is held for the owner or work is unfinished, unless --force.
 //   agent record <name>          the record of what the agent did, built from its Guards' own decisions and the services' own state (the deployer also does this every five minutes)
 //   agent report <name> --month 2026-11 --out <folder> [--language en]      the monthly report and certificate from that record
 //   agent crash-test <name> [--situations a,b] [--run "<cmd>"] [--version V] [--details] [--json]      start the agent with its own command and try situations that could go wrong, through the
@@ -95,6 +100,7 @@ import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from 
 import { listAgents, readAgent } from "./agent/folder.ts";
 import type { AgentFlags } from "./agent/folder.ts";
 import { CRASH_SUBCOMMANDS, crashCommand } from "./agent/crash-test/cli.ts";
+import { MANAGE_SUBCOMMANDS, manageCommand } from "./agent/manage-cli.ts";
 import { recordAgent } from "./agent/records.ts";
 import { exportCommand } from "./export/cli.ts";
 import { paperCommand } from "./backup/papers-cli.ts";
@@ -156,6 +162,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" }, case: { type: "string" }, lang: { type: "string" },
       // agent crash-test / go-live / set (and --run, --version on agent add)
       run: { type: "string" }, version: { type: "string" }, situations: { type: "string" }, "guard-bin": { type: "string" }, json: { type: "boolean" }, details: { type: "boolean" },
+      // agent rotate / remove
+      guard: { type: "string" }, "overlap-minutes": { type: "string" }, force: { type: "boolean" },
       // update / rollback
       to: { type: "string" }, shops: { type: "string" }, "dry-run": { type: "boolean" },
     },
@@ -570,9 +578,11 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     const server = loadServer(ctx.dir);
     const kinds = folder.agent!.upstreams;
     const keys = [...(kinds.includes("razorpay") ? ["razorpay_key (key_id:key_secret)"] : []), ...(kinds.includes("whatsapp") ? ["whatsapp_token", "whatsapp_app_secret", "whatsapp_verify_token"] : []), ...(kinds.includes("calendar") ? ["google_service_account.json"] : [])];
-    console.log(`Added ${name}: Guard's limits are made from its settings (agents/${name}/settings.json), the same way a template's are.\n\n${connectionText(name, connectionOf(ctx.dir, server, folder), true)}\n\nNext: put the shop's own keys in secrets-inbox/${name}/, one file each (${keys.join(", ")}), then \`geometer agent check ${name}\` and \`geometer agent deploy ${name}\`.\nYour agent keeps working as it is; only these addresses and this credential change. A refund above the limit gets HTTP 202 until the owner approves on WhatsApp: send the refund with a "receipt", and send the identical call again after the 202 until it stops being held.`);
+    console.log(`Added ${name}: Guard's limits are made from its settings (agents/${name}/settings.json), the same way a template's are.\n\n${connectionText(name, connectionOf(ctx.dir, server, folder))}\n\nNext: put the shop's own keys in secrets-inbox/${name}/, one file each (${keys.join(", ")}), then \`geometer agent check ${name}\` and \`geometer agent deploy ${name}\`.\nYour agent keeps working as it is; only these addresses and this credential change. A refund above the limit gets HTTP 202 until the owner approves on WhatsApp: send the refund with a "receipt", and send the identical call again after the 202 until it stops being held.`);
     return 0;
   }
+  // rotate and remove say themselves what is wrong with a name (remove also finishes an agent whose folder it already moved)
+  if ((MANAGE_SUBCOMMANDS as readonly string[]).includes(sub)) return await manageCommand(ctx, sub as (typeof MANAGE_SUBCOMMANDS)[number], name, values);
   if (!existsSync(serverPaths(ctx.dir).agent(name))) throw new Error(`There is no agent called ${name}. Add one with: geometer agent add ${name} --deposit 200 --refund-limit 200 --owner-whatsapp +919800000001 ...`);
   const server = loadServer(ctx.dir);
   if (sub === "check") {
@@ -587,10 +597,11 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     const r = await deployAgent(ctx, name);
     console.log(`${name}: ${r.proven.line}`);
     for (const [k, g] of Object.entries(r.guards)) console.log(`  ${k}: ${g.passed} of ${g.of} tripwires passed on the running Guard${g.notSelfTestable.length ? `, ${g.notSelfTestable.length} not self-testable (not counted)` : ""}`);
-    console.log(connectionText(name, r.connection, false));
+    console.log(connectionText(name, r.connection));
     return 0;
   }
-  if (sub === "show") { console.log(connectionText(name, connectionOf(ctx.dir, server, readAgent(ctx.dir, name)), values.credential === true)); return 0; }
+  // --credential printed the shared credential before 12 Nov 2026; credentials are never printed now (agent/credentials.ts), so it says where they are instead
+  if (sub === "show") { console.log(`${connectionText(name, connectionOf(ctx.dir, server, readAgent(ctx.dir, name)))}${values.credential === true ? "\nnote: --credential no longer prints anything: credentials are never printed. Your agent reads them from the file named above." : ""}`); return 0; }
   if ((CRASH_SUBCOMMANDS as readonly string[]).includes(sub)) return await crashCommand(ctx, sub as (typeof CRASH_SUBCOMMANDS)[number], name, values);
   if (sub === "record") {
     const r = await recordAgent(ctx, name);
@@ -605,7 +616,7 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     console.log(`Wrote ${r.files.length} files to ${resolve(out)}. The report's code is ${r.code}; the certificate's is ${r.certificateCode}.${r.goLiveSaid ? `\n${r.goLiveSaid}` : "\nNo go-live certificate was found, so the report lists the go-live checks as not given. `geometer agent go-live` makes one."}\n${r.ownerTexts.join("\n\n")}`);
     return 0;
   }
-  throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report|crash-test|go-live|set <name>`);
+  throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report|crash-test|go-live|set|rotate|remove <name>`);
 }
 
 /** The services every server runs, before and after its first shop (composeServer): what `logs` with no shop shows and `server status` waits for. */

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { runBackup, runDrill, runExports } from "./backup/jobs.ts";
 import { runFingerprints } from "./backup/fingerprints.ts";
 import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
+import { finishRotations } from "./agent/rotate.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import { recordAgents } from "./agent/records.ts";
 import { Refused, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
@@ -16,7 +17,8 @@ import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { State } from "./lib/state.ts";
 import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
 import { heldRulesOf } from "../modules/approvals/held-call.ts";
-import { syncLicence } from "./lib/licence.ts";
+import { syncAgentLicences, syncLicence } from "./lib/licence.ts";
+import { processAgentRequests } from "./agent/requests.ts";
 import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { updateStatus } from "./lib/status.ts";
@@ -98,7 +100,11 @@ export async function processStopRequests(ctx: Context): Promise<string[]> {
     const request = shopNameProblem(shop) ? undefined : parseStopRequest(readFileSync(path, "utf8"), shop);
     if (!request) { if (!warned.has(path)) { warned.add(path); ctx.log(`requests/${file} is not a stop request for a shop on this server, so it is left alone.`); } continue; }
     const state = loadState(ctx.dir);
-    const applied = state.shops[shop]?.applied !== undefined;
+    // the name of an agent taken off this server (agent/remove.ts): nothing of it runs, and a shop entry under its name would be refused (lib/state.ts shopIndex)
+    if (state.removed?.[shop]) { if (!warned.has(path)) { warned.add(path); ctx.log(`requests/${file} is for ${shop}, which was removed from this server, so it is left alone.`); } continue; }
+    // an agent someone else wrote (the panel's own-agent page, 12 Nov 2026): the same kill switch on its Guards, marked on the agent, never as a shop
+    const agent = state.agents?.[shop];
+    const applied = (agent ?? state.shops[shop])?.applied !== undefined;
     const by = `${request.requestedBy.name || request.requestedBy.id} (${request.requestedBy.role ?? "user"}, from the panel)`;
     const reason = `request ${request.requestId}`;
     let stoppedReason = `stopped by ${by} at ${ctx.now().toISOString()}: ${reason}`;
@@ -110,7 +116,8 @@ export async function processStopRequests(ctx: Context): Promise<string[]> {
       stoppedReason = result.reason;
     }
     const at = ctx.now().toISOString();
-    (state.shops[shop] ??= { index: shopIndex(state, shop), guards: {}, lockHistory: [] }).stopped = { by, at, reason: stoppedReason, requestId: request.requestId };
+    if (agent) agent.stopped = { by, at, reason: stoppedReason };
+    else (state.shops[shop] ??= { index: shopIndex(state, shop), guards: {}, lockHistory: [] }).stopped = { by, at, reason: stoppedReason, requestId: request.requestId };
     saveState(ctx.dir, state);
     updateStatus(ctx.dir, shop, ctx.now(), (s) => { s.stopped = { at, requestId: request.requestId, by, reason: stoppedReason }; });
     rmSync(path, { force: true });
@@ -158,9 +165,11 @@ export async function processRecoveryRequests(ctx: Context): Promise<string[]> {
 export async function refreshStatuses(ctx: Context): Promise<string[]> {
   const state = loadState(ctx.dir);
   const applied = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
-  if (applied.length === 0) return [];
+  const agents = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n);
+  if (applied.length === 0 && agents.length === 0) return [];
   const r = await ops(ctx, ["observe"]);
-  let seen: { shops: { id: string; up: boolean; ready: boolean; guards: { id: string; healthReady: boolean; admin: { tripwires?: { ran?: boolean; ok?: boolean; passed?: number; of?: number; not_self_testable_items?: { item: string }[] } } | null }[] }[] } | undefined;
+  type Seen = { id: string; up: boolean; ready: boolean; guards: { id: string; healthReady: boolean; held?: number | null; admin: { tripwires?: { ran?: boolean; ok?: boolean; passed?: number; of?: number; not_self_testable_items?: { item: string }[] } } | null }[] };
+  let seen: { shops: Seen[]; agents?: Seen[] } | undefined;
   try { seen = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? ""); } catch { return []; }
   const confirmed: string[] = [];
   for (const shop of applied) {
@@ -178,6 +187,23 @@ export async function refreshStatuses(ctx: Context): Promise<string[]> {
       if (stop) s.stopped = { at: stop.at, by: stop.by, reason: stop.reason, ...(stop.requestId ? { requestId: stop.requestId } : {}) }; else delete s.stopped;
     });
     confirmed.push(shop);
+  }
+  // own agents (12 Nov 2026): their Guards only, the same way, and the calls they hold for the owner now, so the panel's own-agent page is never "not confirmed" for good
+  for (const agent of agents) {
+    const o = seen?.agents?.find((x) => x.id === agent);
+    const mine = o?.guards ?? [];
+    if (!o || mine.length === 0 || mine.some((g) => g.admin?.tripwires?.ran !== true)) continue;
+    const failed = mine.some((g) => g.admin!.tripwires!.ok === false);
+    if (!(o.up && o.ready) && !failed) continue;
+    const proven = mine.reduce((n, g) => n + (g.admin!.tripwires!.passed ?? 0), 0), of = mine.reduce((n, g) => n + (g.admin!.tripwires!.of ?? 0), 0);
+    const held = mine.reduce((n, g) => n + (typeof g.held === "number" ? g.held : 0), 0);
+    updateStatus(ctx.dir, agent, ctx.now(), (s) => {
+      s.limits = { proven, of, unprovable: [...new Set(mine.flatMap((g) => (g.admin!.tripwires!.not_self_testable_items ?? []).map((i) => i.item)))], line: `${proven} of ${of} limits proven to bite on the running Guards`, perGuard: s.limits?.perGuard ?? {} };
+      if (s.own) s.own.held = { calls: held, at: ctx.now().toISOString() };
+      const stop = state.agents![agent].stopped;
+      if (stop) s.stopped = { at: stop.at, by: stop.by, reason: stop.reason }; else delete s.stopped;
+    });
+    confirmed.push(agent);
   }
   return confirmed;
 }
@@ -244,6 +270,9 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
     const r = await runDrill(ctx); r.lines.forEach((l) => ctx.log(l)); ran.push(r.ok ? "drill" : "drill FAILED");
   }
   const fresh = loadState(ctx.dir); fresh.jobs = { ...fresh.jobs, ...jobs }; saveState(ctx.dir, fresh);
+  // an own agent's rotation overlap that is over: its old credential retired at the Guard and dropped from guard.toml (agent/rotate.ts). Last, after the state above is
+  // saved, because it deploys (and so writes the state file itself); it only reads the state file when no overlap is over.
+  (await finishRotations(ctx)).forEach((l) => ctx.log(l));
   return ran;
 }
 
@@ -255,6 +284,8 @@ export function runLicence(ctx: Context): string[] {
   const state = loadState(ctx.dir);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
   const lines = syncLicence(ctx.dir, loadServer(ctx.dir), shops, ctx.now());
+  // own agents: the same lease, shown on their panel page (they have no runtime to hand a licence file to)
+  lines.push(...syncAgentLicences(ctx.dir, loadServer(ctx.dir), Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n), ctx.now()));
   lines.forEach((l) => ctx.log(l));
   return lines;
 }
@@ -265,7 +296,7 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }
