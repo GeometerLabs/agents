@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (36)
+## 1. Messages to the parent (37)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -48,6 +48,7 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ഉടമ Aarav Sharma-ന്റെ ഫീസിൽ നിന്ന് ₹1,200 UPI വഴി നിങ്ങൾക്ക് തിരികെ അയക്കും. അയച്ചതായി ഉടമ രേഖപ്പെടുത്തുമ്പോൾ ഞാൻ സന്ദേശം അയക്കും. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
 | `fee_upi_refund_sent` | UPI centre: the owner marked the refund sent (only then is the parent told) | ഉടമ Aarav Sharma-ന്റെ ഫീസിന്റെ (f-3) നിങ്ങളുടെ ₹1,200 റീഫണ്ട് UPI വഴി അയച്ചതായി രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ. | The owner has marked your ₹1,200 refund for Aarav Sharma's fee (f-3) as sent by UPI. Please check your UPI app. |  |
 | `fee_paused` | The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later | ഓൺലൈൻ ഫീസ് അടയ്ക്കൽ തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. ദയവായി Bright Tuition Centre-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Online fee payment is paused for now. Please contact Bright Tuition Centre directly. |  |
+| `fee_wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | ക്ഷമിക്കണം, നിങ്ങളുടെ അഭ്യർത്ഥന പൂർത്തിയാക്കാൻ കഴിഞ്ഞില്ല: ഫീസ് സംവിധാനം ഇപ്പോൾ പ്രതികരിക്കുന്നില്ല. നിങ്ങളുടെ സന്ദേശം ഉടമയുടെ ചെയ്യാനുള്ള കാര്യങ്ങളുടെ പട്ടികയിലുണ്ട്. ദയവായി പിന്നീട് വീണ്ടും എഴുതൂ, അല്ലെങ്കിൽ Bright Tuition Centre-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | Sorry, I could not finish your request: the fee system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact Bright Tuition Centre directly. |  |
 
 ## 2. Messages to the owner (35)
 
