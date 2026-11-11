@@ -15,6 +15,8 @@ import { buildOrdersReport } from "./data.ts";
 import type { OrdersReport, GoLiveFinding, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
 import { ownerText } from "./text.ts";
+import { reportSummaryFields } from "./summary.ts";
+import { goLiveSummaryFields, summaryLinkFor } from "../../../../modules/report/summary-sign.ts";
 
 export interface ReportRun {
   settings: Settings;
@@ -39,16 +41,18 @@ export interface ReportRun {
 }
 
 /** The monthly report: the page, the owner text in each language, and the signed data. */
-export function writeOrdersReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; report: Envelope<OrdersReport> } {
+/** The monthly report (page, owner text, signed data). `check` is its signed summary link (item 17b), for the owner's message; undefined when it is not signed. */
+export function writeOrdersReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; report: Envelope<OrdersReport>; check?: string } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
   const report = buildOrdersReport({ settings: run.settings, entries: run.entries, orders: run.orders, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, ...(run.tenant ? { ledger: { tenant: run.tenant } } : {}) });
   const sealed = seal(report, run.key);
+  const check = summaryLinkFor(sealed, reportSummaryFields(report), run.key); // the same key as the paper's, or none
   const w = writer(run.out);
   const langs = languagesOf(run.language);
   w.write(`report-${run.month}.json`, envelopeFile(sealed));
-  w.write(`report-${run.month}-${run.language}.html`, reportPage(sealed, run.language));
+  w.write(`report-${run.month}-${run.language}.html`, reportPage(sealed, run.language, check));
   for (const l of langs) w.write(`owner-${run.month}-${l}.txt`, `${ownerText(report, l)}\n`);
-  return { files: w.files, ownerTexts: langs.map((l) => ownerText(report, l)), code: sealed.code, report: sealed };
+  return { files: w.files, ownerTexts: langs.map((l) => ownerText(report, l)), code: sealed.code, report: sealed, ...(check ? { check } : {}) };
 }
 
 export interface GoLiveRun {
@@ -64,10 +68,11 @@ export interface GoLiveRun {
 /** The go-live certificate (page, text, signed data) from one hand-check run. */
 export function writeGoLiveCertificate(run: GoLiveRun): { files: string[]; texts: string[]; code: string } {
   const sealed = seal(buildGoLiveCertificate({ settings: run.settings, handCheck: run.handCheck, issuedAt: run.now, preparedBy: run.preparedBy }), run.key);
+  const check = summaryLinkFor(sealed, goLiveSummaryFields(sealed.document), run.key);
   const w = writer(run.out);
   const langs = languagesOf(run.language);
   w.write("go-live-certificate.json", envelopeFile(sealed));
-  w.write(`go-live-certificate-${run.language}.html`, goLivePage(sealed, run.language));
-  for (const l of langs) w.write(`go-live-certificate-${l}.txt`, `${goLiveText(sealed, l)}\n`);
-  return { files: w.files, texts: langs.map((l) => goLiveText(sealed, l)), code: sealed.code };
+  w.write(`go-live-certificate-${run.language}.html`, goLivePage(sealed, run.language, check));
+  for (const l of langs) w.write(`go-live-certificate-${l}.txt`, `${goLiveText(sealed, l, check)}\n`);
+  return { files: w.files, texts: langs.map((l) => goLiveText(sealed, l, check)), code: sealed.code };
 }

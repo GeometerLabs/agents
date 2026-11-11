@@ -1,5 +1,7 @@
-// The link a signed paper carries to geometer.dev's check page, and the QR code of it. The contract is the website's (public-web docs/Deferred.md, P22):
+// The older link a paper carries to geometer.dev's check page, and the QR code of it. The contract is the website's (public-web docs/Deferred.md, P22):
 //   https://geometer.dev/verify/#<digest or code>[&key=key:<64 hex>]
+// A SIGNED report or certificate of a template now carries a signed summary instead (summary.ts, `#s1.`: the check needs no file; item 17b). This form stays for
+// every paper that is not signed, for the other papers (modules/papers), and for any page that already printed it: the website reads both.
 // Everything sits after the "#", which a browser never sends to a server, so nothing about a paper reaches Geometer. The full digest is preferred because it names
 // exactly one file; the 8-character code is 40 bits, so it finds a paper but does not name one for certain.
 //
@@ -19,6 +21,9 @@ export function verifyLink(envelope: Pick<Envelope, "digest">, key?: string): st
   if (key !== undefined && !/^key:[0-9a-f]{64}$/.test(key)) throw new Error("A key in a link is key: and 64 hex digits.");
   return `${VERIFY_URL}#${envelope.digest}${key ? `&key=${key}` : ""}`;
 }
+
+/** The code form with the host, `https://geometer.dev/verify/#7K2M-9QXD`: the shortest link that finds a paper (the WhatsApp message's last resort, summary-sign.ts). */
+export const verifyCodeLink = (envelope: Pick<Envelope, "code">): string => `${VERIFY_URL}#${envelope.code}`;
 
 /** The short form for a line of text, without the host: `/verify/#7K2M-9QXD` (the code the paper prints). */
 export const verifyCodePath = (envelope: Pick<Envelope, "code">): string => `/verify/#${envelope.code}`;

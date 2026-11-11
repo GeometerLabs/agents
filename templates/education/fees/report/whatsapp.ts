@@ -12,7 +12,9 @@
 //   you were asked, approved, said no           report.owner
 //   stopped by your limits                      report.stopped.total
 //   what was not checked                        the owner's short form (text.ts), and "checks were run by hand"
-// The check code and the address of the full page close the message, then who set it up. Rules for the words: informational only, no promotion (Meta moves a
+// The check code and the address of the full page close the message, then the check link (item 17b: the report's signed summary, so the owner taps it and sees
+// on geometer.dev whether the report is genuine, with no file; modules/report/summary.ts), then who set it up. The check link is the signed summary when the
+// whole message still fits WhatsApp's 1024 characters, else the older #digest link (messageCheckLink): one choice per message, so the text and the template agree. Rules for the words: informational only, no promotion (Meta moves a
 // promotional template to the marketing price), numbers and labels only, nothing graded.
 import { META_LANGUAGE, fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
 import type { MetaSubmission } from "../../../../modules/language/meta-templates.ts";
@@ -25,6 +27,8 @@ import type { FeesReport } from "./data.ts";
 import { sampleReport } from "./review.ts";
 import { STRINGS } from "./strings.ts";
 import { notCheckedList } from "./text.ts";
+import { messageCheckLink } from "../../../../modules/report/summary-sign.ts";
+import { SAMPLE_DIGEST, SAMPLE_SUMMARY_LINK } from "../../../../modules/report/summary.ts";
 
 export interface ReportTemplate {
   /** The name registered with Meta (lowercase, underscores). */
@@ -39,7 +43,7 @@ export interface ReportTemplate {
 }
 
 /** The values in a report message, in the order they come in the wording. */
-export const REPORT_SLOTS = ["title", "collected", "givenBack", "pending", "reminders", "takenOff", "asked", "approved", "saidNo", "stopped", "notChecked", "code", "link", "builder"] as const;
+export const REPORT_SLOTS = ["title", "collected", "givenBack", "pending", "reminders", "takenOff", "asked", "approved", "saidNo", "stopped", "notChecked", "code", "link", "check", "builder"] as const;
 export type ReportSlot = (typeof REPORT_SLOTS)[number];
 
 /** The words for one language. Starts and ends with fixed words, never two values side by side, one line per thing the owner reads. */
@@ -54,6 +58,7 @@ function wording(language: Language, badge: boolean, upi = false): string {
     `${s.label.stoppedByLimits}: {stopped}`,
     `${s.label.notChecked}: {notChecked}${dot} ${s.handRun}`,
     `${s.page.code}: {code} · ${s.fullReport}: {link}`,
+    `${s.checkGenuine}: {check}`,
     `${s.page.setUpBy}: {builder} · Geometer`,
     ...(badge ? [badgeText(language)] : []),
   ].join("\n");
@@ -87,6 +92,8 @@ export interface ReportExtras {
   code: string;
   /** The address of the full report page. */
   link: string;
+  /** The check link: the report's signed summary link, or its #digest link (messageCheckLink). */
+  check: string;
   /** Who set the agent up, as they are named on the report. */
   builder: string;
 }
@@ -109,6 +116,7 @@ export function reportValues(report: FeesReport, language: Language, extras: Rep
     notChecked: notCheckedList(report, language),
     code: extras.code,
     link: extras.link,
+    check: extras.check,
     builder: oneLine(extras.builder),
   };
 }
@@ -127,13 +135,14 @@ export interface ReportMessage {
 
 /**
  * The message for one sealed report, in one language. The builder's name is the report's own `preparedBy` (the report cannot be sent without it), and the badge
- * comes from the report's own `innovator` flag, so what the owner reads is what the signed report says.
+ * comes from the report's own `innovator` flag, so what the owner reads is what the signed report says. `check` is the report's signed summary link (report/run.ts),
+ * left out for a report that is not signed: the message then carries the #digest link.
  */
-export function monthlyReportMessage(report: Envelope<FeesReport>, language: Language, o: { link: string }): ReportMessage {
+export function monthlyReportMessage(report: Envelope<FeesReport>, language: Language, o: { link: string; check?: string }): ReportMessage {
   const r = report.document;
   if (!r.preparedBy || oneLine(r.preparedBy) === "") throw new Error("The report names no one who set the agent up, and the message says who did.");
   const template = REPORT_TEMPLATES.find((t) => t.badge === (r.innovator === true) && (t.upi === true) === (r.paidBy === "owner-marked"))!;
-  const parameters = reportParameters(template, language, reportValues(r, language, { code: report.code, link: o.link, builder: r.preparedBy }));
+  const parameters = reportParameters(template, language, valuesWithCheck(template, language, r, { code: report.code, link: o.link, builder: r.preparedBy }, report, o.check));
   const text = fillBody(metaBody(template.bodies[language]), parameters);
   return { text, template: { name: template.name, language, text, parameters } };
 }
@@ -141,21 +150,28 @@ export function monthlyReportMessage(report: Envelope<FeesReport>, language: Lan
 // ---- the list to submit to Meta ------------------------------------------------------------------------------------------------
 
 /** Example values for Meta's review: the sample month the review sheets use, as a live report, with a believable address and builder. */
-function exampleValues(language: Language): Record<ReportSlot, string> {
+function exampleValues(language: Language, template: ReportTemplate): Record<ReportSlot, string> {
   const sample = { ...sampleReport(), source: "live" as const };
-  return reportValues(sample, language, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, Sri Sai Digital" });
+  // a real signed summary link (SAMPLE_SUMMARY_LINK) where the message has room for it, chosen as a real message's is
+  return valuesWithCheck(template, language, sample, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, Sri Sai Digital" }, { digest: SAMPLE_DIGEST, code: "7K2M-9QXD" }, SAMPLE_SUMMARY_LINK);
+}
+
+/** The values with the check link chosen for this template and language: the summary link if the filled message fits WhatsApp's limit, else the #digest link, else the #code link (messageCheckLink). */
+function valuesWithCheck(template: ReportTemplate, language: Language, report: FeesReport, extras: Omit<ReportExtras, "check">, envelope: { digest: string; code: string }, summaryLink?: string): Record<ReportSlot, string> {
+  const fill = (check: string) => fillBody(metaBody(template.bodies[language]), reportParameters(template, language, reportValues(report, language, { ...extras, check })));
+  return reportValues(report, language, { ...extras, check: messageCheckLink(fill, envelope, summaryLink) });
 }
 
 /** The message as the review sheets show it: the sample month, with the Innovator line, so a native reader sees every word that is sent. */
 export function sampleMessage(language: Language): string {
   const template = REPORT_TEMPLATES.find((t) => t.badge && !t.upi)!;
-  return fillBody(metaBody(template.bodies[language]), reportParameters(template, language, exampleValues(language)));
+  return fillBody(metaBody(template.bodies[language]), reportParameters(template, language, exampleValues(language, template)));
 }
 
 /** One entry per template and language, in the body Meta's create-template call takes (POST /{waba-id}/message_templates), like metaSubmissions in src/language/meta-templates.ts. */
 export function reportSubmissions(): MetaSubmission[] {
   return REPORT_TEMPLATES.flatMap((t) => LANGUAGES.map((language) => ({
     name: t.name, language: META_LANGUAGE[language], category: "UTILITY" as const, parameter_format: "positional" as const,
-    components: [{ type: "BODY" as const, text: metaBody(t.bodies[language]), example: { body_text: [reportParameters(t, language, exampleValues(language))] } }],
+    components: [{ type: "BODY" as const, text: metaBody(t.bodies[language]), example: { body_text: [reportParameters(t, language, exampleValues(language, t))] } }],
   })));
 }

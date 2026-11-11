@@ -1,0 +1,156 @@
+{
+  "note": "Signed with a throwaway Ed25519 key made in memory by a one-off script; only its public half is here. Every link must check as genuine under public_key, and read back as summary.",
+  "public_key": "e9e0ba950d5c8bb3ce226676ee894ae32ac58284dee208668f4dec91a0018dd3",
+  "key_id": "key:0003ec760c76d7e395433bbabde931fc08e0286b25dd73b767eaf71c1136a1ca",
+  "vectors": [
+    {
+      "name": "bookings-report-latin",
+      "link": "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg",
+      "summary": {
+        "layout": 1,
+        "source": "live",
+        "ownerMarked": false,
+        "period": "2027-02",
+        "pathway": "bookings",
+        "shop": "Glow Salon",
+        "by": "Divya, Sri Sai Digital",
+        "figures": [
+          38,
+          1760000,
+          40000,
+          5,
+          3,
+          2,
+          1,
+          1
+        ],
+        "keyHint": "0003ec760c76d7e3",
+        "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+      }
+    },
+    {
+      "name": "bookings-certificate-malayalam-upi",
+      "link": "https://geometer.dev/verify/#s1.AgABBzIwMjYtMTEIYm9va2luZ3O0Ng1NDTANQA0gACYNQQ18DRcNTQ0XDSAALA1NDS8NQg0fDU0NHw0_DSAAKg0-DXwNMg18DbImDT8NNQ1NDS8NLAAgADYNTQ0wDUANIAA4DT4NLw0_DSAAIQ0_DRwNPw0xDU0NMQ19DQmKAQyA2tME4MUIDQwBGQMAA-x2DHbX46qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq.fucI8soDRQRrb701gFt6aEQJqoDXf7qf8pd3lWettc1Kuotcsi-SvzuFUBUD9a9gpghZNcSrfteyB8ADir1mBQ",
+      "summary": {
+        "layout": 2,
+        "source": "live",
+        "ownerMarked": true,
+        "period": "2026-11",
+        "pathway": "bookings",
+        "shop": "ശ്രീ ദുർഗ്ഗ ബ്യൂട്ടി പാർലർ",
+        "by": "ദിവ്യ, ശ്രീ സായി ഡിജിറ്റൽ",
+        "figures": [
+          138,
+          12,
+          9760000,
+          140000,
+          13,
+          12,
+          1,
+          25,
+          3
+        ],
+        "keyHint": "0003ec760c76d7e3",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "go-live-stand-in",
+      "link": "https://geometer.dev/verify/#s1.AwIACjIwMjYtMTEtMDMGb3JkZXJzEUFubmFwdXJuYSBUaWZmaW5zAAQfHwAOAAPsdgx21-MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMw.UX561-9RBGTzu7sYz4pOnntiQFtjez1tDHwuJywE6OyH-htB-ls95Q2e9GqOIan45cciFe_WxX-II8QlOOiSCg",
+      "summary": {
+        "layout": 3,
+        "source": "stand-in",
+        "ownerMarked": false,
+        "period": "2026-11-03",
+        "pathway": "orders",
+        "shop": "Annapurna Tiffins",
+        "by": "",
+        "figures": [
+          31,
+          31,
+          0,
+          14
+        ],
+        "keyHint": "0003ec760c76d7e3",
+        "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "name": "fees-report-kannada-test-mode-range",
+      "link": "https://geometer.dev/verify/#s1.BAEBFjIwMjYtMTEtMDEuLjIwMjYtMTEtMTUEZmVlc6qsDM0MsAzIDJ8MzQwgAJ8MzQyvDMIMtwyoDM0MIAC4DMYMggyfDLAMzQyypgy_DLUMzQyvDL4MLAAgALYMzQywDMAMIAC4DL4Mrwy_DCAAoQy_DJwMvwyfDLIMzQwJoK7XC8CpB-DP1QGMAdCGAwQDAQIAA-x2DHbX4___________________________________________.UYtaCE9Rab6yraLTuVzaFo4vSFchLS_6pFCIjEzzsDc0w_eDa5D3c6-3pT6Pu9gs_T93dfYHj5kmClN8rO8MDQ",
+      "summary": {
+        "layout": 4,
+        "source": "test-mode",
+        "ownerMarked": true,
+        "period": "2026-11-01..2026-11-15",
+        "pathway": "fees",
+        "shop": "ಬ್ರೈಟ್ ಟ್ಯೂಷನ್ ಸೆಂಟರ್",
+        "by": "ದಿವ್ಯಾ, ಶ್ರೀ ಸಾಯಿ ಡಿಜಿಟಲ್",
+        "figures": [
+          24500000,
+          120000,
+          3500000,
+          140,
+          50000,
+          4,
+          3,
+          1,
+          2
+        ],
+        "keyHint": "0003ec760c76d7e3",
+        "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "name": "bookings-report-long-name-cut",
+      "link": "https://geometer.dev/verify/#s1.AQAABzIwMjYtMTIIYm9va2luZ3PANg1NDTANQA0gAC4NHg1NDRwNQQ0oDT4NJQ0gACwNTQ0vDUINHw1NDR8NPw0gACoNPg18DTINfA0gAAYNew0mIBREaXZ5YSwgbG9jYWwgcGFydG5lcggAAAAAAAAAAAAD7HYMdtfjzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMw.fGunu_wZD3k3KURIo9la_DUKaaUqa1kmh_RXlBjuxauLAJRPHhVddTbNJjM-_poh7rpft9buyV8MVdU_NLQzCQ",
+      "summary": {
+        "layout": 1,
+        "source": "live",
+        "ownerMarked": false,
+        "period": "2026-12",
+        "pathway": "bookings",
+        "shop": "ശ്രീ മഞ്ജുനാഥ ബ്യൂട്ടി പാർലർ ആൻ…",
+        "by": "Divya, local partner",
+        "figures": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "keyHint": "0003ec760c76d7e3",
+        "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    },
+    {
+      "name": "orders-report-hindi",
+      "link": "https://geometer.dev/verify/#s1.BQAABzIwMjYtMTAGb3JkZXJzogUJKAlNCSgJKglCCTAJTQkjCT4JIAAfCT8JKwk8CT8JKAmuJgk_CTUJTQkvCT4JLAAgADYJTQkwCUAJIAA4CT4JCAkgACEJPwkcCT8JHwkyCQnAgogEsOoBwKkHnAMJAgIAAwAD7HYMdtfjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.E52RihrjrPJBqGyLU41WCuoWtOzzN7tnc4ST0ul7uvT328z8QXx4qarFSjuPOTxL0GQHXU8eLVMOoFvkybslDA",
+      "summary": {
+        "layout": 5,
+        "source": "live",
+        "ownerMarked": false,
+        "period": "2026-10",
+        "pathway": "orders",
+        "shop": "अन्नपूर्णा टिफ़िन",
+        "by": "दिव्या, श्री साई डिजिटल",
+        "figures": [
+          8520000,
+          30000,
+          120000,
+          412,
+          9,
+          2,
+          2,
+          0,
+          3
+        ],
+        "keyHint": "0003ec760c76d7e3",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ]
+}

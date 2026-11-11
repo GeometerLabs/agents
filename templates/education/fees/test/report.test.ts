@@ -14,6 +14,7 @@ import { monthRange } from "../../../../modules/report/months.ts";
 import { esc } from "../../../../modules/report/page.ts";
 import { MAX_TRIES, lastMonth } from "../../../../modules/report/monthly-job.ts";
 import { envelopeFile, seal, verifyEnvelopeText } from "../../../../modules/report/sign.ts";
+import { verifyCodeLink, verifyLink } from "../../../../modules/report/verify-link.ts";
 import { badgeText } from "../../../../modules/report/text.ts";
 import { MARKERS } from "../crash-test/says.ts";
 import { NOT_TESTED } from "../crash-test/not-tested.ts";
@@ -202,7 +203,10 @@ test("the message is the owner's lines in every language: numbers from the repor
     assert.ok(text.startsWith(`${s.monthlyReport}: `), "starts with fixed words");
     assert.ok(text.endsWith("Geometer"), "ends with fixed words");
     assert.equal(template.name, "fee_monthly_report");
-    assert.equal(text.split("\n").length, 8);
+    assert.equal(text.split("\n").length, 9, "the owner's lines, the code and page, the check link (item 17b), who set it up");
+    // an unsigned report carries the #digest link, or the #code link where the whole message would pass 1024 characters with it (messageCheckLink)
+    const checkLine = text.split("\n").find((l) => l.startsWith(`${s.checkGenuine}: `));
+    assert.ok(checkLine === `${s.checkGenuine}: ${verifyLink(sealed)}` || (checkLine === `${s.checkGenuine}: ${verifyCodeLink(sealed)}` && text.length - verifyCodeLink(sealed).length + verifyLink(sealed).length > 1024), checkLine ?? "no check line");
     assert.deepEqual(bannedIn(text, language), [], language);
   }
 });
@@ -233,7 +237,7 @@ test("the template follows Meta's rules: numbered values used once, fixed words 
       assert.ok(!/\}\s*\{/.test(body), "no two values side by side");
       const meta = metaBody(body);
       assert.ok(!/^\{\{|\}\}$/.test(meta));
-      const values = reportValues(sealed.document, language, { code: sealed.code, link: "https://x.example.com/a.html", builder: "Divya  \n Nair" });
+      const values = reportValues(sealed.document, language, { code: sealed.code, link: "https://x.example.com/a.html", check: verifyLink(sealed), builder: "Divya  \n Nair" });
       const parameters = reportParameters(template, language, values);
       assert.equal(parameters.length, slots.length);
       for (const p of parameters) assert.ok(!/[\n\t]| {2,}/.test(p), `a value is one line: ${JSON.stringify(p)}`);
