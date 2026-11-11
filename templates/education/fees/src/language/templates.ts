@@ -58,7 +58,7 @@ export type TemplateId =
   // to the parent: answers to what they wrote or tapped
   | "fee_pay_link" | "fee_already_paid" | "fee_claim_partial" | "fee_claim_not_found" | "fee_nothing_due"
   | "fee_waiver_asked" | "fee_waiver_applied" | "fee_waiver_cleared" | "fee_waiver_denied" | "fee_discount_to_owner" | "fee_request_waiting"
-  | "fee_refund_asked" | "fee_refund_too_much" | "fee_refund_none" | "fee_refund_done" | "fee_refund_pending" | "fee_refund_checking" | "fee_refund_approved" | "fee_refund_denied" | "fee_refund_expired"
+  | "fee_refund_asked" | "fee_refund_too_much" | "fee_refund_none" | "fee_refund_done" | "fee_refund_pending" | "fee_refund_checking" | "fee_refund_confirmed" | "fee_refund_approved" | "fee_refund_denied" | "fee_refund_expired"
   | "fee_link_failed" | "fee_menu" | "fee_didnt_understand" | "fee_told_owner" | "fee_couldnt_tell_owner" | "voice_note"
   // to the owner. Every line starts and ends with fixed words, because each one that goes out unasked is also a WhatsApp template (meta-templates.ts) and
   // Meta rejects a body that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
@@ -141,6 +141,7 @@ const en: BaseSet = {
   fee_refund_done: (f) => `${inr(f, "refundInr")} is being refunded to you.`,
   fee_refund_pending: (f) => `The owner will confirm your ${inr(f, "refundInr")} refund shortly.`,
   fee_refund_checking: (f) => `We are checking your ${inr(f, "refundInr")} refund and will message you as soon as it is confirmed.`,
+  fee_refund_confirmed: (f) => `Your ${inr(f, "refundInr")} refund is confirmed and is on its way back to you.`,
   fee_refund_approved: (f) => `The owner approved your refund. ${inr(f, "refundInr")} is on its way.`,
   fee_refund_denied: () => "The owner has decided not to refund this payment.",
   fee_refund_expired: (f) => `The owner did not answer in time about your ${inr(f, "refundInr")} refund, so it has not been sent. Please contact ${f.businessName} directly.`,
@@ -203,6 +204,7 @@ const hi: BaseSet = {
   fee_refund_done: (f) => `${inr(f, "refundInr")} आपको लौटाए जा रहे हैं।`,
   fee_refund_pending: (f) => `मालिक जल्दी ही आपके ${inr(f, "refundInr")} के रिफंड की पुष्टि करेंगे।`,
   fee_refund_checking: (f) => `हम आपके ${inr(f, "refundInr")} के रिफंड की जाँच कर रहे हैं, पुष्टि होते ही आपको संदेश भेजेंगे।`,
+  fee_refund_confirmed: (f) => `आपके ${inr(f, "refundInr")} के रिफंड की पुष्टि हो गई है। यह आपको वापस भेजा जा रहा है।`,
   fee_refund_approved: (f) => `मालिक ने आपका रिफंड मंज़ूर कर दिया है। ${inr(f, "refundInr")} रास्ते में हैं।`,
   fee_refund_denied: () => "मालिक ने इस भुगतान को वापस न करने का फ़ैसला किया है।",
   fee_refund_expired: (f) => `मालिक ने आपके ${inr(f, "refundInr")} के रिफंड पर समय पर जवाब नहीं दिया, इसलिए वह नहीं भेजा गया। कृपया ${f.businessName} से सीधे संपर्क करें।`,
@@ -263,6 +265,7 @@ const ml: BaseSet = {
   fee_refund_done: (f) => `${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നു.`,
   fee_refund_pending: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് ഉടമ ഉടൻ സ്ഥിരീകരിക്കും.`,
   fee_refund_checking: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് ഞങ്ങൾ പരിശോധിക്കുകയാണ്, സ്ഥിരീകരിച്ചാലുടൻ സന്ദേശം അയയ്ക്കാം.`,
+  fee_refund_confirmed: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്.`,
   fee_refund_approved: (f) => `ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. ${inr(f, "refundInr")} വഴിയിലാണ്.`,
   fee_refund_denied: () => "ഈ പേയ്മെന്റ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു.",
   fee_refund_expired: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ടിനെക്കുറിച്ച് ഉടമ സമയത്തിനുള്ളിൽ മറുപടി നൽകിയില്ല, അതിനാൽ അത് അയച്ചിട്ടില്ല. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടുക.`,
@@ -323,6 +326,7 @@ const kn: BaseSet = {
   fee_refund_done: (f) => `${inr(f, "refundInr")} ನಿಮಗೆ ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತಿದೆ.`,
   fee_refund_pending: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ದೃಢೀಕರಿಸುತ್ತಾರೆ.`,
   fee_refund_checking: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ, ದೃಢವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇವೆ.`,
+  fee_refund_confirmed: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ.`,
   fee_refund_approved: (f) => `ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಅನ್ನು ಒಪ್ಪಿದ್ದಾರೆ. ${inr(f, "refundInr")} ದಾರಿಯಲ್ಲಿದೆ.`,
   fee_refund_denied: () => "ಈ ಪಾವತಿಯನ್ನು ಹಿಂತಿರುಗಿಸದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ.",
   fee_refund_expired: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಬಗ್ಗೆ ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ${f.businessName}-ನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.`,

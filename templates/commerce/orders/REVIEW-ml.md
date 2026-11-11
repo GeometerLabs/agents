@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (54)
+## 1. Messages to the customer (55)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `refund_approved` | The owner approved the refund | ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. ₹120 തിരികെ വരുന്നുണ്ട്. | The owner approved your refund. ₹120 is on its way. |  |
 | `refund_denied` | The owner said no to the refund | ₹120 അഡ്വാൻസ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു. | The owner has decided not to refund the ₹120 advance. |  |
 | `refund_checking` | A refund could not be sent yet: it is being checked | നിങ്ങളുടെ ₹120 റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം. | We are checking your ₹120 refund and will message you as soon as it is confirmed. |  |
+| `refund_confirmed` | A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised | നിങ്ങളുടെ ₹120 റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്. | Your ₹120 refund is confirmed and is on its way back to you. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ₹120 റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി Annapurna Tiffins-നെ നേരിട്ട് ബന്ധപ്പെടൂ. | The owner did not answer in time about your ₹120 refund, so it has not been sent. Please contact Annapurna Tiffins directly. |  |
 | `big_order_asked` | A big order (above the owner's line) waits for the owner | നിങ്ങളുടെ ഓർഡർ (2 × veg thali, വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ) വലുതാണ്, അതിനാൽ ഉടമയോട് അനുമതി ചോദിച്ചിട്ടുണ്ട്. മറുപടി ഇവിടെ തന്നെ കിട്ടും. | Your order (2 × veg thali, Thu 12 Nov, 12:00 pm to 1:00 pm) is a big one, so I have asked the owner to approve it. You will hear back here. |  |
 | `big_order_denied` | The owner said no to a big order | ക്ഷമിക്കണം, വ്യാഴം, 12 നവംബർ-ലെ നിങ്ങളുടെ ഓർഡർ ഉടമയ്ക്ക് എടുക്കാൻ കഴിയില്ല. പണം ഒന്നും ഈടാക്കിയിട്ടില്ല. | Sorry, the owner cannot take your order for Thu 12 Nov. Nothing was charged. |  |

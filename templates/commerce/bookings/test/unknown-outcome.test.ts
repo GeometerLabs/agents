@@ -3,6 +3,7 @@
 //     send it again, days of the customer's silence do not clear it, the to-do list keeps it, and only the payments service's own list settles it, with its refund id;
 //   - a wait for a Guard that ends with the step thrown away keeps the case number that step took: the hold (or link) its first try left at the provider is never taken
 //     by the next customer's "look first" as their own.
+//   - (12 Nov 2026) the look that settles it tells the customer once, as "we will message you as soon as it is confirmed" promised.
 // The map of what exists and what does not is in modules/Explanation.md, "Unknown outcomes".
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -58,6 +59,14 @@ test("a refund whose outcome is unknown: kept through a restart, a fresh attempt
     const confirmed = second.db.loadState().record.filter((e) => e.action === "refund" && e.outcome === "confirmed");
     assert.equal(confirmed.length, 1);
     assert.match(confirmed[0].refs.refundId ?? "", /^rfd/u, "settled by the provider's own record, which names the refund");
+    assert.equal(confirmed[0].refs.amountPaise, "20000", "with the amount the provider's list shows, so the monthly report counts it in full");
+    // 12 Nov 2026 (follow-up 3): "we will message you as soon as it is confirmed" is kept, once
+    const toldConfirmed = () => kit.messaging.sentTo(CUSTOMER).filter((m) => /Your ₹200 refund is confirmed and is on its way back to you\./u.test(m.text)).length;
+    assert.equal(toldConfirmed(), 1, "the customer hears it is confirmed");
+    second.runtime.submit([{ kind: "recovery", id: "r-2", case: "b-1", action: "recheck_refund" }]);
+    second.runtime.kick();
+    await second.runtime.idle();
+    assert.equal(toldConfirmed(), 1, "a second look finds nothing open and tells nobody again");
   } finally { await second.runtime.close(); kit.cleanup(); }
 });
 

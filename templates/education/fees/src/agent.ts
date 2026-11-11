@@ -199,7 +199,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (due, phone, templates, more) => tellCustomer(due, phone, templates as TemplateId[], more),
     tellOwner: (due, phone, template, more) => tellOwner(due, phone, template as TemplateId, more),
     cases: () => store.dues.values(),
-    ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired", settled: "owner_refund_settled" },
+    ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired", settled: "owner_refund_settled", confirmed: "fee_refund_confirmed" },
   });
   const { requestRefund, afterRefund, overLimit } = refunds;
 
@@ -927,7 +927,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
   //   recheck_payment   read the payments service's own list for this fee's links and count any payment not yet counted (the normal path, with its rules)
   //   ask_owner_again   the owner has not answered a waiver or a refund request: send the owner the same notice again
-  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again)
+  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again; a refund the list shows settles it, and the customer is told)
   // Nothing here widens a limit: every call is one the agent already makes, and Guard decides each as it does every day.
   async function onRecovery(e: { id: string; case: string; action: string }): Promise<void> {
     const due = store.dues.get(e.case);
@@ -955,7 +955,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (!(due.refundIssues ?? []).some((i) => ["unknown", "uncertain", "unconfirmed", "failed"].includes(i.kind))) return say("blocked", "no refund here is waiting on an unclear outcome");
       say("attempted", "looking again, read-only, for a refund that may have gone");
       const r = await refunds.recheck(due);
-      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
+      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list, and the customer was told of each one that does; none was sent again`);
     }
     say("blocked", `the agent has no recovery called "${e.action}"`);
   }

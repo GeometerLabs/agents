@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (37)
+## 1. Messages to the parent (38)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -34,6 +34,7 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_refund_done` | A refund was sent (the payments service's own list shows it) | ₹1,200 ನಿಮಗೆ ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತಿದೆ. | ₹1,200 is being refunded to you. |  |
 | `fee_refund_pending` | A refund above the limit is waiting for the owner's one-use code | ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ದೃಢೀಕರಿಸುತ್ತಾರೆ. | The owner will confirm your ₹1,200 refund shortly. |  |
 | `fee_refund_checking` | A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner | ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ, ದೃಢವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇವೆ. | We are checking your ₹1,200 refund and will message you as soon as it is confirmed. |  |
+| `fee_refund_confirmed` | A refund that was being checked now shows on the payment service's own list: the parent is told, once, as fee_refund_checking promised | ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ. | Your ₹1,200 refund is confirmed and is on its way back to you. |  |
 | `fee_refund_approved` | The owner approved the refund | ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಅನ್ನು ಒಪ್ಪಿದ್ದಾರೆ. ₹1,200 ದಾರಿಯಲ್ಲಿದೆ. | The owner approved your refund. ₹1,200 is on its way. |  |
 | `fee_refund_denied` | The owner said no to the refund | ಈ ಪಾವತಿಯನ್ನು ಹಿಂತಿರುಗಿಸದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ. | The owner has decided not to refund this payment. |  |
 | `fee_refund_expired` | The owner did not answer a refund request in time: nothing was sent | ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಬಗ್ಗೆ ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Bright Tuition Centre-ನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ. | The owner did not answer in time about your ₹1,200 refund, so it has not been sent. Please contact Bright Tuition Centre directly. |  |

@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (54)
+## 1. Messages to the customer (55)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `refund_approved` | The owner approved the refund | ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಒಪ್ಪಿದ್ದಾರೆ. ₹120 ಮರಳಿ ಬರುತ್ತಿದೆ. | The owner approved your refund. ₹120 is on its way. |  |
 | `refund_denied` | The owner said no to the refund | ₹120 ಮುಂಗಡ ಹಣವನ್ನು ಮರಳಿ ಕೊಡದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ. | The owner has decided not to refund the ₹120 advance. |  |
 | `refund_checking` | A refund could not be sent yet: it is being checked | ನಿಮ್ಮ ₹120 ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ. ಖಚಿತವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | We are checking your ₹120 refund and will message you as soon as it is confirmed. |  |
+| `refund_confirmed` | A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised | ನಿಮ್ಮ ₹120 ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ. | Your ₹120 refund is confirmed and is on its way back to you. |  |
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ₹120 ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Annapurna Tiffins ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ. | The owner did not answer in time about your ₹120 refund, so it has not been sent. Please contact Annapurna Tiffins directly. |  |
 | `big_order_asked` | A big order (above the owner's line) waits for the owner | ನಿಮ್ಮ ಆರ್ಡರ್ (2 × veg thali, ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ) ದೊಡ್ಡದಾಗಿದೆ, ಆದ್ದರಿಂದ ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ. | Your order (2 × veg thali, Thu 12 Nov, 12:00 pm to 1:00 pm) is a big one, so I have asked the owner to approve it. You will hear back here. |  |
 | `big_order_denied` | The owner said no to a big order | ಕ್ಷಮಿಸಿ, ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರ ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ಮಾಲೀಕರು ತೆಗೆದುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ. | Sorry, the owner cannot take your order for Thu 12 Nov. Nothing was charged. |  |

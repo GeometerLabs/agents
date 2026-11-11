@@ -73,7 +73,7 @@ export type TemplateId =
   // to the customer: the quote, the order, and what happens to the money
   | "quote_and_link" | "already_waiting" | "link_failed" | "order_confirmed" | "hold_expired" | "stock_gone_refund" | "cutoff_passed_refund" | "refund_unused"
   | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending" | "cancelled_late" | "cancelled_no_advance" | "cancelled_draft" | "no_order_found"
-  | "refund_approved" | "refund_denied" | "refund_checking" | "refund_expired" | "big_order_asked" | "big_order_denied"
+  | "refund_approved" | "refund_denied" | "refund_checking" | "refund_confirmed" | "refund_expired" | "big_order_asked" | "big_order_denied"
   | "didnt_understand" | "voice_note" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
   // to the owner. Every line starts and ends with fixed words, because each one that goes out unasked is also a WhatsApp template (meta-templates.ts) and Meta rejects a body
   // that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
@@ -200,6 +200,7 @@ const en: BaseSet = {
   refund_approved: (f) => `The owner approved your refund. ${inr(f, "refundInr")} is on its way.`,
   refund_denied: (f) => `The owner has decided not to refund the ${inr(f, "advanceInr")} advance.`,
   refund_checking: (f) => `We are checking your ${inr(f, "refundInr")} refund and will message you as soon as it is confirmed.`,
+  refund_confirmed: (f) => `Your ${inr(f, "refundInr")} refund is confirmed and is on its way back to you.`,
   refund_expired: (f) => `The owner did not answer in time about your ${inr(f, "refundInr")} refund, so it has not been sent. Please contact ${f.businessName} directly.`,
   big_order_asked: (f) => `Your order (${items(f)}, ${when(f)}) is a big one, so I have asked the owner to approve it. You will hear back here.`,
   big_order_denied: (f) => `Sorry, the owner cannot take your order for ${day(f)}. Nothing was charged.`,
@@ -275,6 +276,7 @@ const hi: BaseSet = {
   refund_approved: (f) => `मालिक ने आपके रिफंड को मंज़ूरी दे दी है। ${inr(f, "refundInr")} आपको वापस भेजा जा रहा है।`,
   refund_denied: (f) => `मालिक ने ${inr(f, "advanceInr")} का एडवांस वापस न करने का फ़ैसला किया है।`,
   refund_checking: (f) => `आपके ${inr(f, "refundInr")} के रिफंड की जाँच हो रही है। पुष्टि होते ही मैं आपको संदेश भेजूँगा।`,
+  refund_confirmed: (f) => `आपके ${inr(f, "refundInr")} के रिफंड की पुष्टि हो गई है। यह आपको वापस भेजा जा रहा है।`,
   refund_expired: (f) => `मालिक ने समय पर आपके ${inr(f, "refundInr")} के रिफंड पर जवाब नहीं दिया, इसलिए वह अभी नहीं भेजा गया है। कृपया ${f.businessName} से सीधे संपर्क करें।`,
   big_order_asked: (f) => `आपका ऑर्डर (${items(f)}, ${when(f)}) बड़ा है, इसलिए मैंने मालिक से मंज़ूरी माँगी है। जवाब यहीं मिलेगा।`,
   big_order_denied: (f) => `माफ़ कीजिए, मालिक ${day(f)} का आपका ऑर्डर नहीं ले पाएँगे। कोई शुल्क नहीं लिया गया।`,
@@ -350,6 +352,7 @@ const ml: BaseSet = {
   refund_approved: (f) => `ഉടമ നിങ്ങളുടെ റീഫണ്ട് അംഗീകരിച്ചു. ${inr(f, "refundInr")} തിരികെ വരുന്നുണ്ട്.`,
   refund_denied: (f) => `${inr(f, "advanceInr")} അഡ്വാൻസ് തിരികെ നൽകേണ്ടതില്ലെന്ന് ഉടമ തീരുമാനിച്ചു.`,
   refund_checking: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് പരിശോധിക്കുകയാണ്. ഉറപ്പാകുന്ന ഉടൻ ഞാൻ സന്ദേശം അയയ്ക്കാം.`,
+  refund_confirmed: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്.`,
   refund_expired: (f) => `ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
   big_order_asked: (f) => `നിങ്ങളുടെ ഓർഡർ (${items(f)}, ${when(f)}) വലുതാണ്, അതിനാൽ ഉടമയോട് അനുമതി ചോദിച്ചിട്ടുണ്ട്. മറുപടി ഇവിടെ തന്നെ കിട്ടും.`,
   big_order_denied: (f) => `ക്ഷമിക്കണം, ${day(f)}-ലെ നിങ്ങളുടെ ഓർഡർ ഉടമയ്ക്ക് എടുക്കാൻ കഴിയില്ല. പണം ഒന്നും ഈടാക്കിയിട്ടില്ല.`,
@@ -425,6 +428,7 @@ const kn: BaseSet = {
   refund_approved: (f) => `ಮಾಲೀಕರು ನಿಮ್ಮ ರೀಫಂಡ್ ಒಪ್ಪಿದ್ದಾರೆ. ${inr(f, "refundInr")} ಮರಳಿ ಬರುತ್ತಿದೆ.`,
   refund_denied: (f) => `${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣವನ್ನು ಮರಳಿ ಕೊಡದಿರಲು ಮಾಲೀಕರು ತೀರ್ಮಾನಿಸಿದ್ದಾರೆ.`,
   refund_checking: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತಿದ್ದೇವೆ. ಖಚಿತವಾದ ತಕ್ಷಣ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ.`,
+  refund_confirmed: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ.`,
   refund_expired: (f) => `ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ${f.businessName} ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.`,
   big_order_asked: (f) => `ನಿಮ್ಮ ಆರ್ಡರ್ (${items(f)}, ${when(f)}) ದೊಡ್ಡದಾಗಿದೆ, ಆದ್ದರಿಂದ ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ.`,
   big_order_denied: (f) => `ಕ್ಷಮಿಸಿ, ${day(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ಮಾಲೀಕರು ತೆಗೆದುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ.`,
