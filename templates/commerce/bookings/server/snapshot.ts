@@ -21,3 +21,5 @@ export const serializeStore: (store: Store) => string = codec.serialize;
 export const parseStore: (json: string) => Store = codec.parse;
 /** After a restore from a snapshot: every id counter of the saved store moved on (modules/runtime/restored.ts). */
 export const skipStoreCounters: (json: string, gap: number) => string = codec.skipCounters;
+/** When a task ends without running again: every id counter at least where the thrown-away step left it, so its ids are never given out twice (modules/runtime/core.ts, endTask). */
+export const keepStoreCounters: (json: string, taken: string) => string = codec.keepCounters;
