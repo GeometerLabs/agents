@@ -2,6 +2,16 @@
 
 Not built, or built only as far as said. The first block needs another part of the product to change; the rest is the panel's own.
 
+## This server, and the phone pass (11 Nov 2026, plan item 14b part 2a)
+
+- **Not run.** The tests (`test/server-setup.test.ts`, and the deployer's `bundle/test/server-settings.test.ts`) were written on 11 Nov and wait for the owner's one test pass; nothing was opened in a browser or on a phone. Done when: both pass, and each panel page has been looked at on a 360 px phone.
+- **The model of a server that runs shops cannot be changed from the panel.** Each shop's runtime names the model it was deployed with, so a change needs every shop redeployed with the new name, checked. Revisit when: a builder asks. Done when: the deployer applies a model change by redeploying every shop, and refuses it whole if one shop is refused.
+- **A model the builder hosts is refused until B73 is merged** (`SELF_HOSTED_RUNS` in `bundle/server-settings.ts` looks for B73's `selfHostedTarget`). Done when: B73 is merged and the check is taken out.
+- **No new backup key from the panel once one is confirmed.** "Make one for me" reuses the pair it made; changing the key the backups are locked with is "I have an age key" with a new public half. Revisit when: a builder loses the secret half. Done when: the panel can make a new pair after a confirmed one, says that older snapshots still need the old key, and keeps the drill honest about which key each snapshot needs.
+- **English only.** The /server and backup-key pages have no Hindi, Malayalam or Kannada. Done when: they are in words.ts's languages, read by native speakers like the rest.
+- **The secret half sits in the panel's store until it is confirmed.** It is sealed with the panel's data key, which is on the same server. A builder who never confirms leaves it there. Revisit when: a builder leaves it more than a week. Done when: the panel reminds them (on the shops page it already says so, every time).
+- **Phone pass, not looked at on a phone.** The long Malayalam and Kannada labels of the setup steps were not checked at 360 px.
+
 ## Needs the bundle (the deployer, compose) or Guard
 
 - **Guard must list the three reads, or the connection checks are refused as unlisted routes.** Today `bundle/generate/guards.ts` lists only `POST /{version}/{phone_number_id}/messages` for WhatsApp and the events routes for the calendar. Add `GET /{version}/{phone_number_id}` (operation `read_number`, same exact `phone_number_id` allowlist) to the WhatsApp spec and `GET /calendar/v3/calendars/{calendarId}` (operation `get_calendar`, same exact `calendarId` allowlist) to the calendar spec, and a Guard agent for the panel (`panel-<shop>`, restricted to those operations plus the Razorpay `list_links` read, which is already listed). The same goes for the templates in `monorepo/deploy/pathways/bookings/`. Until then `PANEL_GUARD_URL` points at something else, or the checks say `refused_by_guard` with Guard's own words.
