@@ -14,7 +14,8 @@ import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import { GUARD_WAIT_MS } from "../../../../modules/runtime/guard-wait.ts";
 import { outage } from "../../../../modules/runtime/test/outage.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
-import { AMIT, HARNESS_GUARD, annapurnaRazorpay } from "../src/harness.ts";
+import { AMIT, HARNESS_GUARD, annapurnaRazorpay, createWorld } from "../src/harness.ts";
+import { GUARD_WAIT_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import { gatewayLimitsSpec } from "../src/guard-limits.ts";
 import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
@@ -84,4 +85,12 @@ test("the Razorpay Guard down past the bound: the customer gets the shop's words
     assert.equal(w.messaging.sentTo(AMIT).length, 1, "told once");
     assert.match(w.messaging.sentTo(AMIT)[0].text, /Sorry|माफ़/u);
   } finally { await w.cleanup(); }
+});
+
+test("past the bound, a customer who heard nothing from the step is told it was not finished and where the message is, and the owner's list gets one item", async () => {
+  // The agent's own end of the wait (the runtime calls it when the last try threw: modules/runtime/core.ts, endTask). Its words (11 Nov) promise nothing the code does not do.
+  const w = createWorld({ settings });
+  await w.agent.giveUp!({ kind: "message", message: w.messaging.receive(AMIT, ORDER) }, { service: "payments", tell: true });
+  assert.equal(w.lastTextTo(AMIT), `Sorry, I could not finish your request: the ordering system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${settings.name} directly.`);
+  assert.equal(w.record.entries().filter((e) => e.action === GUARD_WAIT_ENTRY).length, 1);
 });

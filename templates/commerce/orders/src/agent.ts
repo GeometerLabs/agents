@@ -1097,10 +1097,14 @@ export function createAgent(deps: AgentDeps): Agent {
     return onTick();
   }
 
-  /** `couldnt_tell_owner`: the words this template already has for "this could not be done just now", and they ask the customer to try again rather than promise anything. */
+  /**
+   * `wait_over` (11 Nov 2026): the request was not finished, the system is not answering just now, the message is on the owner's to-do list (the line written below,
+   * which the panel's list reads), and to write again later or contact the shop directly. Nothing else is promised, because nothing else happens: nobody is messaged
+   * and nothing is tried again by itself. Sent only when the customer heard nothing from this step (`why.tell`).
+   */
   async function giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void> {
     const phone = event.kind === "message" ? event.message.from : owner;
-    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["couldnt_tell_owner"]) : false;
+    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["wait_over"]) : false;
     const line = guardWaitLine(event, why, told);
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
