@@ -19,7 +19,7 @@ import type { AdminStatus, BackupFacts, Baseline, GuardObservation, RuntimeStatu
 
 export interface OpsGuard { id: string; service: string; adminUrl: string; healthUrl: string; adminTokenFile: string; /** The Guard's agent port (an agent someone else wrote: where the reading agent looks at the service's state). */ agentUrl?: string }
 /** An agent someone else wrote: its Guards, and nothing the bundle runs (no runtime). */
-export interface OpsOwnAgent { createdAt: string; recordTokenFile: string; /** The label key (B69): see agent/facts.ts. */ labelKeyFile: string; ownerWhatsapp: string; calendarId?: string; guards: OpsGuard[] }
+export interface OpsOwnAgent { createdAt: string; recordTokenFile: string; /** The label key (B69): see agent/facts.ts. */ labelKeyFile: string; ownerWhatsapp: string; calendarId?: string; /** The deployer's status file for the agent: its backup and drill (B51). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }
 export interface OpsConfig {
   deploymentId: string;
   bundleVersion: string;
@@ -136,7 +136,9 @@ export async function observeAgent(c: OpsOwnAgent, version: string, id: string, 
   const up = guards.every((g) => g.admin !== null);
   const ready = up && guards.every((g) => g.healthReady && g.admin?.tripwires?.ok !== false);
   const steps = guards.reduce((n, g) => n + ((g.admin as WithCounts | null)?.counts?.decisions ?? 0), 0);
-  return { id, pathway: "own-agent", pathwayVersion: version, up, ready, status: { steps, errors: 0, startedAt: c.createdAt, tasks: { pending: 0, failed: 0 }, bookings: {} }, guards };
+  // its snapshot's and drill's ages, as a shop's: a snapshot that stops coming, or a failed drill, alerts the same way
+  const backups = readBackups(c.statusFile);
+  return { id, pathway: "own-agent", pathwayVersion: version, up, ready, status: { steps, errors: 0, startedAt: c.createdAt, tasks: { pending: 0, failed: 0 }, bookings: {} }, guards, ...(backups ? { backups } : {}) };
 }
 
 /** Stop or start a shop (or an agent someone else wrote): nothing new goes out. The reason says who and when; Guard writes it, with its own admin id, into its evidence. */

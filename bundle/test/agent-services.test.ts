@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { agentInboxHandler } from "../agent/inbox.ts";
 import { ownAgentRuntime } from "../agent/relay-context.ts";
@@ -99,6 +100,23 @@ test("the heartbeat carries an agent's Guards: counts only, up when every Guard 
   const sent = buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now, shops: [down], baseline: {} }).body.agents as { guards: { id: string; ready: boolean }[] }[];
   assert.deepEqual(sent[0].guards.map((g) => [g.id, g.ready]), [["guard-razorpay", true], ["guard-whatsapp", false], ["guard-calendar", true]]);
   if (fleet) assert.equal(fleet.checkHeartbeat(buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now, shops: [down], baseline: {} }).body).ok, true);
+});
+
+test("an agent's heartbeat carries its snapshot's and drill's ages as a shop's does (B51), read from the deployer's status file, in a shape fleet accepts", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-agent-hb-"));
+  try {
+    const statusFile = join(dir, "my-agent.json");
+    writeFileSync(statusFile, JSON.stringify({ backups: { lastCopyAt: "2026-11-05T02:00:00.000Z", lastDrillAt: "2026-11-05T03:00:00.000Z", drillOk: false, drillDetail: "snapshot x: the live record is missing" } }));
+    const obs = await observeAgent({ ...ownAgent, statusFile }, "0.1.0", "my-agent", guardsAnswer(7));
+    const body = buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now: new Date("2026-11-05T10:00:00Z"), shops: [obs], baseline: {} }).body;
+    const a = (body.agents as Record<string, unknown>[])[0];
+    assert.deepEqual([a.backup_age_s, a.drill], [8 * 3600, { age_s: 7 * 3600, ok: false }]);
+    assert.doesNotMatch(JSON.stringify(body), /live record is missing/u, "the drill's reason stays on the server");
+    if (fleet) assert.equal(fleet.checkHeartbeat(body).ok, true, "fleet's own validator accepts it");
+    // no status file, or one with no backups yet: nothing is sent, as for a shop
+    const none = await observeAgent(ownAgent, "0.1.0", "my-agent", guardsAnswer(7));
+    assert.equal((buildHeartbeat({ deploymentId: "acme-vps-1", bundleVersion: "0.1.0", now: new Date("2026-11-05T10:00:00Z"), shops: [none], baseline: {} }).body.agents as Record<string, unknown>[])[0].backup_age_s, undefined);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("stop switches an agent's own Guards and nothing shared: there is no model Guard to stop for it", async () => {

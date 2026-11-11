@@ -15,7 +15,7 @@ import type { PublishedLine } from "../backup/drill-check.ts";
 import { ledgerEntries } from "../../modules/record/ledger.ts";
 import type { RecordEntry } from "../../modules/record/record.ts";
 import { restoreShop, runBackup, runDrill, sealFile } from "../backup/jobs.ts";
-import { recordFacts, snapshotShop } from "../backup/snapshot.ts";
+import { agentRecordOf, recordFacts, snapshotAgent, snapshotShop } from "../backup/snapshot.ts";
 import type { SnapshotJob } from "../backup/snapshot.ts";
 import { folderStore } from "../backup/store.ts";
 import type { ObjectStore } from "../backup/store.ts";
@@ -23,7 +23,7 @@ import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 import { deploy } from "../deploy.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { readStatus } from "../lib/status.ts";
-import { writeSecretFile, secretFile } from "../lib/secrets.ts";
+import { keyIdOf, writeSecretFile, secretFile } from "../lib/secrets.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
 import { parseServer, STREAM_NOTE } from "../lib/server.ts";
 import { world } from "./world.ts";
@@ -39,6 +39,14 @@ function runtimeDb(dir: string, entries: number): string {
   for (let i = 1; i <= entries; i++) store.commitStep({ snapshot: "{}", entries: [{ seq: i, time: "2026-11-04T10:00:00Z", conversation: "c", booking: "b-1", action: "a", outcome: "confirmed" } as never], nowMs: Date.now() });
   store.close();
   return join(dir, "agent.db");
+}
+/** An agent's record as the deployer writes it (agent/records.ts: state/records/<agent>.json), with `entries` entries. */
+function agentRecordFile(dir: string, agent: string, entries: number): string {
+  mkdirSync(dir, { recursive: true });
+  const list = Array.from({ length: entries }, (_, k) => ({ seq: k + 1, time: `2026-11-04T10:00:0${k % 10}.000Z`, conversation: "agent", booking: "b-1", action: "send_message", inputsDigest: "d", outcome: "confirmed", decisions: [], language: "en", notes: "", refs: {} }));
+  const file = join(dir, `${agent}.json`);
+  writeFileSync(file, `${JSON.stringify({ schema: 1, entries: list, seen: {}, marks: {} })}\n`);
+  return file;
 }
 const sha = (b: Uint8Array | string) => createHash("sha256").update(b).digest("hex");
 const STAMP = "20261104T013000Z";
@@ -97,6 +105,36 @@ test("a snapshot is one object per database file (the runtime's, each Guard's fo
     assert.deepEqual(r.seal!.record, { ...recordFacts(new DatabaseSync(db, { readOnly: true })), head: ledgerEntries(rows, "glow-salon").at(-1)!.hash });
     assert.ok(!existsSync(guardBackup), "Guard's staging copy is removed once shipped");
     assert.ok(!existsSync(join(t.dir, "scratch", "glow-salon.db")), "no plain copy is left behind");
+  } finally { t.done(); }
+});
+
+test("an agent someone else wrote: its record file is one object in place of the runtime's, then its Guards; the manifest holds its key, the seal only the key's id", async () => {
+  const t = tmp(); try {
+    const file = agentRecordFile(join(t.dir, "records"), "my-agent", 4);
+    const guardBackup = join(t.dir, "gs", "backups", STAMP); mkdirSync(guardBackup, { recursive: true }); writeFileSync(join(guardBackup, "state.db"), "agent-guard-state");
+    const keyFile = join(t.dir, "person-key"); const key = "ab".repeat(32); writeFileSync(keyFile, `${key}\n`);
+    const owner = generateIdentity();
+    const store = folderStore(join(t.dir, "bucket"));
+    const r = await snapshotAgent({ name: "my-agent", recordFile: file, personKeyFile: keyFile, guards: [{ kind: "razorpay", dir: guardBackup }] }, job(owner.recipient), store);
+    assert.deepEqual([r.ok, r.record?.records, r.record?.lastSeq, r.files], [true, 4, 4, 3]);
+    const keys = await keysOf(store, "my-agent/");
+    assert.deepEqual(keys, [`my-agent/${STAMP}/guard-razorpay.tar.gz.age`, `my-agent/${STAMP}/manifest.json.gz.age`, `my-agent/${STAMP}/record.json.gz.age`]);
+    for (const k of keys) assert.ok((await store.get(k))!.toString("latin1").startsWith("age-encryption.org/v1"), k);
+    assert.ok(!keys.some((k) => (readFileSync(join(t.dir, "bucket", k)).toString("latin1")).includes("send_message")), "no entry is readable in the bucket");
+    // the owner's key opens the record, byte for byte the deployer's file
+    const opened = openObject("record.json.gz.age", (await store.get(`my-agent/${STAMP}/record.json.gz.age`))!, owner.identity);
+    assert.deepEqual(opened.get("record.json"), readFileSync(file));
+    const manifest = JSON.parse(openObject("manifest.json.gz.age", (await store.get(`my-agent/${STAMP}/manifest.json.gz.age`))!, owner.identity).get("manifest.json")!.toString());
+    assert.deepEqual([manifest.runtime, manifest.ownAgent.record.lastSeq, manifest.personKey], [null, 4, key]);
+    // the seal: the record's facts as the drill computes them, the chain's head, and an id of the key that opens nothing
+    const read = agentRecordOf(readFileSync(file, "utf8"), "my-agent");
+    assert.deepEqual(r.seal!.record, { ...read.facts, head: ledgerEntries(read.entries, "my-agent").at(-1)!.hash });
+    assert.equal(r.seal!.keyId, keyIdOf(key));
+    assert.ok(!JSON.stringify(r.seal).includes(key), "the seal is kept in the clear: the key is not in it");
+    assert.ok(!existsSync(guardBackup), "Guard's staging copy is removed once shipped");
+    // a record file this bundle cannot read is not shipped as if it were one
+    writeFileSync(file, "{\"schema\":2}");
+    await assert.rejects(snapshotAgent({ name: "my-agent", recordFile: file, guards: [] }, job(owner.recipient, "20261105T013000Z"), store), /not one this bundle can read/);
   } finally { t.done(); }
 });
 
