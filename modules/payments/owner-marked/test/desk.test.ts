@@ -68,6 +68,9 @@ test("the owner's marks: another amount is a part with a new code; the rest make
   const after = w.desk.view(w.state.requests[1]);
   assert.deepEqual([after.paid, after.status, after.payments[0].after_close], [false, "cancelled", true], "kept apart: it pays nothing open");
   assert.equal(w.told.at(-1)?.template, "owner_upi_late");
+  // B71 part 2: as in a template, the late money is owed back (or kept), and the owner's message carries that refund's own code
+  assert.deepEqual(w.state.refunds.map((x) => [x.paymentId, x.amountPaise, x.state, x.keepAllowed]), [[after.payments[0].id, 20_000, "owed", true]]);
+  assert.equal(w.told.at(-1)?.facts.upiCode, w.state.refunds[0].code);
   assert.ok(r.id && w.saves() > 0);
 });
 

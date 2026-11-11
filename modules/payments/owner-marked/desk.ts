@@ -163,7 +163,14 @@ export function createDesk(o: DeskOptions) {
       log(r, MARK_ACTIONS.marked, "confirmed", { paymentId: result.mark.id, requestId: r.id, amountPaise: String(result.mark.amountPaise), markedBy: "owner" },
         result.afterClose ? "marked received by the owner after the request was closed: kept apart, it pays nothing open" : "marked paid by owner: from the owner's own number, with a one-use code");
       const markedInr = result.mark.amountPaise / 100;
-      if (result.afterClose) await o.tellOwner({ template: "owner_upi_late", facts: facts(r, { markedInr, refundInr: markedInr }) });
+      if (result.afterClose) {
+        // B71 part 2, as a template does (lateMark): money marked after the request was closed is owed back unless the owner keeps it for something they give
+        // another way, and the owner's message carries that refund's own code (it used to carry none, and could not be worded on a server)
+        const owed = oweRefund(state, { caseId: r.reference, customer: customerOf(r), paymentId: result.mark.id, amountPaise: result.mark.amountPaise, why: "marked received after the request was closed", keepAllowed: true }, now);
+        o.save(state);
+        log(owed, MARK_ACTIONS.refundOwed, "held_for_owner", { refundId: owed.id, paymentId: owed.paymentId, amountPaise: String(owed.amountPaise) }, "marked received after the request was closed: owed back by the owner, or kept for something given another way");
+        await o.tellOwner({ template: "owner_upi_late", facts: facts(r, { markedInr, refundInr: markedInr, upiCode: owed.code ?? undefined }), choices: ownerMarkChoices(o.labels, { kind: "refund", code: owed.code!, keepAllowed: true }) });
+      }
       else if (!result.full) await o.tellOwner({ template: "owner_upi_part", facts: facts(r, { markedInr: (r.amountPaise - leftOn(r)) / 100, leftInr: leftOn(r) / 100 }), ...(received(r) ? { choices: received(r) } : {}) });
       else await o.tellOwner({ template: "owner_upi_marked", facts: facts(r, { markedInr }) });
       return "marked";

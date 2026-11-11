@@ -131,7 +131,7 @@ export function createDeskHost(o: DeskHostOptions): DeskHost {
     clock: o.clock, payment, owner: o.ownerWhatsapp, state: file.marks, save: () => save(),
     record: (e) => o.log(`[${o.name}] desk: ${e.action} ${e.outcome}`),
     tellOwner,
-    labels: { received: LABELS[language].received, refundSent: LABELS[language].refundSent },
+    labels: { received: LABELS[language].received, refundSent: LABELS[language].refundSent, keptForBooking: LABELS[language].keptForBooking },
   });
 
   let chain: Promise<unknown> = Promise.resolve();

@@ -200,7 +200,7 @@ test("B71 part 2, against the real Guard: the held call is asked about once, in 
       assert.equal(api.refunds.length, 0);
       // the identical call goes through, once
       const again = await refund(15_000);
-      assert.equal(again.status, 200, await again.text());
+      assert.equal(again.status, 201, await again.text()); // the API made the refund (201 Created)
       assert.deepEqual(api.refunds.map((r) => [r.charge_id, r.amount]), [["ch_1", 15_000]]);
     } finally { store.close(); await real.stop(); }
   } finally { await api.close(); t.done(); rmSync(dir, { recursive: true, force: true }); }
