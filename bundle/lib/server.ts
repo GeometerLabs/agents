@@ -144,8 +144,10 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   if (reviewedBy && !/^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/u.test(reviewedBy)) errors.push('"reviewedBy" must be an id: letters, digits and . _ : / @ + -.');
   const approvalHours = o.approvalHours ?? 24;
   if (typeof approvalHours !== "number" || !Number.isInteger(approvalHours) || approvalHours < 1 || approvalHours > 168) errors.push('"approvalHours" must be a whole number of hours from 1 to 168 (Guard allows at most seven days).');
+  // "model" may be left out until the first shop: the one-step install (install.sh, plan item 14b) makes the folder before the panel's first run asks for the model.
+  // A deploy refuses until it is chosen (deploy.ts, serverProblems). When it is there it must be whole.
   const model = isObj(o.model) ? o.model : undefined;
-  if (!model || (model.wire !== "openai" && model.wire !== "anthropic") || typeof model.model !== "string" || model.model === "") errors.push('"model" must say {"wire": "openai" or "anthropic", "model": "<the one model name every shop may ask for>"}.');
+  if (o.model !== undefined && (!model || (model.wire !== "openai" && model.wire !== "anthropic") || typeof model.model !== "string" || model.model === "")) errors.push('"model" must say {"wire": "openai" or "anthropic", "model": "<the one model name every shop may ask for>"}.');
   const network = isObj(o.network) ? o.network : {};
   const base = typeof network.base === "string" ? network.base : "10.231";
   if (!/^\d{1,3}\.\d{1,3}$/u.test(base)) errors.push('"network.base" must be the first two numbers of a private range, like "10.231".');
@@ -194,6 +196,12 @@ export const STREAM_NOTE = 'geometer.json still names "backup.stream", the bucke
 export function serverNotes(dir: string): string[] {
   try { return parseServer(JSON.parse(readFileSync(serverPaths(dir).config, "utf8"))).notes; } catch { return []; }
 }
+
+/** Has this server chosen its one model yet? A folder made by the one-step install has not, until the panel's first run (or the builder by hand) says which. */
+export const modelChosen = (server: Pick<ServerConfig, "model">): boolean => server.model.model !== "";
+
+/** What `deploy`, `check` and `model-key` say while no model is chosen. */
+export const NO_MODEL = 'No model is chosen for this server yet, and every shop\'s agent needs one. The panel\'s first run asks for it; by hand, put "model": {"wire": "openai", "model": "gpt-4o-mini"} (or "anthropic" and its model) in geometer.json, then hand in its key with `geometer model-key <file>`.';
 
 /** Is this domain one a public certificate authority could never give a certificate to? Then Caddy makes its own (`tls internal`). */
 export const isLocalDomain = (domain: string): boolean => domain === "localhost" || domain.endsWith(".localhost") || domain.endsWith(".local") || domain.endsWith(".internal") || /^\d{1,3}(\.\d{1,3}){3}$/u.test(domain);

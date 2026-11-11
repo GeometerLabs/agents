@@ -29,7 +29,7 @@ import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
-import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
+import { NO_MODEL, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { Snapshot, State } from "./lib/state.ts";
@@ -274,7 +274,8 @@ export async function serverProblems(ctx: Context, server: ServerConfig): Promis
   const image = await ctx.runner.run(ctx.docker, ["image", "inspect", "--format", "{{.Id}}", server.guardImage], { timeoutMs: 30_000 });
   if (image.code !== 0) problems.push({ rule: "guard-image", message: `The Guard image ${server.guardImage} is not on this machine. It is not published to a registry yet, so it cannot be pulled: load it with \`docker load < geo-guard.tar\` (the tarball Geometer gives you), or set "guardImage" in geometer.json to the name it was loaded under.` });
   const keyFile = server.model.wire === "anthropic" ? "model_api_key" : "model_authorization";
-  if (!have(ctx.dir, "g-model", keyFile)) problems.push({ rule: "secret-missing:model_key", message: `The model's API key is not in place. Run \`geometer model-key <file>\` (a file with the key on one line); it goes to the model Guard only.` });
+  if (!modelChosen(server)) problems.push({ rule: "model-not-chosen", message: NO_MODEL });
+  else if (!have(ctx.dir, "g-model", keyFile)) problems.push({ rule: "secret-missing:model_key", message: `The model's API key is not in place. Run \`geometer model-key <file>\` (a file with the key on one line); it goes to the model Guard only.` });
   if (server.backup && !have(ctx.dir, "backup", "snapshots") && server.backup.snapshots.url.startsWith("s3://")) problems.push({ rule: "secret-missing:backup-key", message: "The snapshot bucket's key is not in place. Run `geometer backup-key snapshots <file>` (the file has `access-key-id:secret` on one line)." });
   if (server.fleet && !readSecretFile(resolve(ctx.dir, server.fleet.keyFile))) problems.push({ rule: "fleet-key", message: `The deployment key file ${server.fleet.keyFile} is missing, so no heartbeat could be sent and Geometer's alerts from outside would never fire.` });
   return problems;
@@ -542,6 +543,27 @@ export async function bringUp(ctx: Context, state: State, composed: Composed, fo
   state.serviceHashes = hashes;
   saveState(ctx.dir, state);
   return changed;
+}
+
+/**
+ * `geometer up`: bring up the server's own services (HTTPS, the panel, the heartbeat, the inbox, the relay, the token refresher) on a server where nothing has been
+ * deployed yet, so the builder can sign in to the panel and make the first shop there. The one-step install (install.sh, plan item 14b) ends with it.
+ *
+ * Nothing is compiled or proven, because no Guard runs yet (composeServer leaves out the model Guard while there is no shop); the model, its key, the Guard image and
+ * the backup key are needed only by the first shop's deploy, which checks them. Once a shop or an agent someone else wrote is deployed, `deploy` is the one way to
+ * change what runs, so `up` refuses rather than rewrite the compose file without the tripwire proof. Running it again changes nothing that is already up.
+ */
+export async function upServer(ctx: Context): Promise<{ services: string[]; changed: string[] }> {
+  const server = loadServer(ctx.dir);
+  const state = loadState(ctx.dir);
+  const deployed = [...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n)];
+  if (deployed.length > 0) throw new Refused([{ rule: "up-with-shops", message: `This server already runs ${deployed.join(", ")}. \`geometer deploy\` is what brings it up from here, because it checks each shop's limits on its running Guards; \`up\` is only for a server with no shop yet.` }]);
+  // the same check a deploy makes: a fleet section with no key file would start a heartbeat that can never be heard
+  if (server.fleet && !readSecretFile(resolve(ctx.dir, server.fleet.keyFile))) throw new Refused([{ rule: "fleet-key", message: `The deployment key file ${server.fleet.keyFile} is missing, so no heartbeat could be sent and Geometer's alerts from outside would never fire.` }]);
+  prepareSecretsRoot(ctx.dir);
+  const composed = writeServer(ctx, server, state);
+  const changed = await bringUp(ctx, state, composed, ["the server's own services"]);
+  return { services: Object.keys(composed.services).sort(), changed };
 }
 
 /** After a failed `up`: which services are not running well, and the last lines each one said (they hold no secret: our programs never log one). */

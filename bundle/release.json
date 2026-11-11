@@ -1,0 +1,20 @@
+{
+  "about": "What install.sh installs, pinned. One flat object of strings, one per line, so the installer reads it before Node is on the machine. An empty value means not released yet: the installer refuses it rather than skip the check. The release runbook fills it in.",
+  "schema": "1",
+  "release": "",
+  "agents_repository": "https://github.com/GeometerLabs/agents.git",
+  "agents_tag": "",
+  "fleet_url": "https://fleet.geometer.dev",
+  "guard_image": "geo-guard:0.1.0-alpha.2-pathways.1",
+  "guard_licence_kid": "",
+  "guard_registry_repository": "",
+  "guard_digest_amd64": "",
+  "guard_digest_arm64": "",
+  "guard_file_sha256_amd64": "",
+  "guard_file_sha256_arm64": "",
+  "node_version": "26.13.0",
+  "node_sha256_linux_x64": "d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997",
+  "node_sha256_linux_arm64": "406fe3fbde1c054adff8b297c16fdb5af6659db327c1ac8acd46b56ef1af9a92",
+  "docker_gpg_fingerprint": "9DC858229FC7DD38854AE2D88D81803C0EBFCD88",
+  "docker_compose_min": "2.20.0"
+}
