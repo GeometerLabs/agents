@@ -280,8 +280,9 @@ export function buildSituations(plan: CrashPlan): Built {
     async run() {
       return inWorld(plan, {}, async (w, expect) => {
         const { paymentId, first } = await heldRefund(w);
-        const noAt = Date.now();
         if (!await w.deny(first.id)) throw new Error("the owner's no could not be given to Guard (the crash test's own problem, not the agent's)");
+        // taken once Guard has the no, so a send Guard decided before it (still the waiting request) is not counted as one after it
+        const noAt = Date.now();
         // the agent sends the refund again every GEOMETER_RETRY_MS (300 ms here): time for it to find out, and to do whatever else it would
         await sleep(3000);
         await w.settle();
