@@ -6,6 +6,35 @@ The runtime holds no key, and the only things it can connect to are its own Guar
 
 > **The Guard image is not published to a registry yet** (that needs the owner's yes), so a builder cannot `docker pull` it. Geometer gives you the image as a file, and you load it: `docker load < geo-guard-<version>.tar`. The pilot on Geometer's partner server uses a locally loaded image the same way. The image has to match the server's CPU (an Intel or AMD server needs the x86_64 file, an ARM server the arm64 one).
 
+## Install in one command
+
+On a new Ubuntu 22.04 or 24.04 server (a Hetzner CX22, a DigitalOcean droplet with 2 vCPU / 4 GB, any Ubuntu box), logged in as a normal user with `sudo`, with your domain's `A` record pointing at the server:
+
+```sh
+git clone --branch <release tag> https://github.com/GeometerLabs/agents.git ~/geometer/agents
+bash ~/geometer/agents/install.sh
+```
+
+It asks two things: **your domain**, and **the pairing code** from your account page (geometer.dev/account, "Add a server"; type `skip` to leave it). It says what it will do and asks before it changes anything. Then it installs Docker Engine and Node if they are missing (each checked against its publisher's key or checksum), checks this copy is the release, loads the Guard image, pairs the server with Geometer (the code works once), makes the server folder, starts the deployer as a system service, starts HTTPS and the panel, and ends with the panel's address and **a one-time sign-in link**. The model's key, the backup place and Google are left for the panel's first run (until it asks for them: step 5 of "By hand").
+
+- **Run it again whenever you like.** It finds what is there and only repairs or carries on; it never replaces the server folder, its keys, or a system file it did not write. `--dry-run` prints each step and changes nothing; `--help` lists the options.
+- **Before the first release (11 Nov 2026)** `bundle/release.json` names no release, so the install refuses; `--use-this-checkout` installs the copy as it is, and says so. The Guard image is not in a registry yet: add `--guard-image-file <the file Geometer gave you>` (its sha256 must be the one `release.json` pins for your server's CPU).
+- **Without pairing** (`skip`) the panel starts, but nobody outside hears if the server goes down, and it has no licence lease, so a production Guard image runs no shop (decision 39). Run the install again with a code to pair it. A deployment key Geometer gave you by hand still works: `--fleet-key-file <file> --deployment-id <id> --licence-key <hex> --lease-file <file>`.
+- **Making the server with cloud-init:** paste `bundle/cloud-init.yaml` as the user data, with your SSH key, the release tag, your domain and the pairing code filled in. It makes a user `builder` and runs the install with `--yes`. Then log in and run `geometer invite builder` for your link. (Not tried on a real cloud yet.)
+
+Afterwards `geometer` is a command on the server:
+
+| | |
+|---|---|
+| `geometer status` | each shop: running or not, its Guards, its last backup |
+| `geometer logs [shop]` | a shop's runtime and Guards; with no shop, the panel, HTTPS and the heartbeat |
+| `geometer invite builder` or `partner` | a one-time sign-in link for the panel |
+| `geometer stop <shop>` / `start <shop>` | **one shop's** kill switch: nothing goes out from it; the record says who |
+| `geometer server status` / `server logs` | the whole server's containers and the deployer |
+| `geometer server stop` / `server start` | **every** container: no shop answers its customers until `server start`. It names the shops and asks you to type `stop` |
+
+What each step checks, and why, is in [Explanation.md](Explanation.md#the-one-step-install-11-november-plan-item-14b).
+
 ## What you need
 
 | | |
@@ -16,9 +45,12 @@ The runtime holds no key, and the only things it can connect to are its own Guar
 | Per shop | The shop's Razorpay key and webhook secret, its WhatsApp provider token and app secret, its Google service account (the shop's calendar is shared with it), and the shop's settings. The panel (or you, by hand) hands them in; see "Secrets". |
 | For the model | One API key for the one model every shop on the server may use. |
 | For backups | One place that is not this server, for the nightly snapshots: any S3-compatible bucket (Google Cloud Storage's S3 interface in Mumbai, Backblaze, Cloudflare R2, MinIO). Its key must be able to write, and to read for the weekly drill and `restore`. **Set a lifecycle rule on the bucket** that deletes snapshots after 30 days or more (Google Cloud Storage, Backblaze B2, Cloudflare R2 and MinIO all have one): the bundle deletes old snapshots itself only as a fallback, when its key may. A folder works for a trial, but a folder on this server's own disk is not a backup. |
-| Alerts from outside | A deployment key from Geometer (`gfk_...`) and the fleet address. Without it the server can still run, but nobody outside hears if it dies. |
+| Alerts from outside, and the licence | Pairing: a one-time code from geometer.dev/account that the install exchanges for this server's deployment key (`gfk_...`), fleet's address, fleet's licence key and a trial lease. By hand: the key and the lease Geometer gives you. Without either the server can still run the panel, but nobody outside hears if it dies, and a production Guard image runs no shop without a lease. |
 
-## From an empty server to the first shop
+## By hand: from an empty server to the first shop
+
+What `install.sh` does, step by step, for a server you set up yourself. Steps 6 and 7 (each shop) are the panel's, or yours, either way.
+
 
 **1. Make the server.** Create it, add your SSH key, and open ports 22, 80 and 443 in its firewall (Hetzner: Firewalls; DigitalOcean: Networking, Firewalls). Log in as a normal user with `sudo`, not as root.
 
@@ -380,6 +412,9 @@ The heartbeat also carries **the cost meter's counts** per shop (messages by und
 
 ```
 <server>/geometer.json            this server (written by init)
+<server>/fleet_key                this server's deployment key (0600; `pair` writes it, or you put the key Geometer gave you here); the ops container gets a copy
+<server>/pairing.json             what pairing gave besides the key: the server's id, fleet's address and licence key, the trial lease (no secret; `pair` writes it)
+<server>/state/install.json       which release install.sh installed, when, and whether the first sign-in link was made (no secret)
 <server>/shops/<shop>/            settings.json, runtime.json, pathway.lock, owner.json (account name, optional company, role), pins.json   the panel writes; the deployer applies
 <server>/shops/<shop>/report.json  {"schema": 1, "preparedBy": "Divya, local partner"}: who the owner's monthly report says set the shop up (optional; wins over owner.json; `shop add --prepared-by Divya --company "Sri Sai Digital"` writes "Divya, Sri Sai Digital")
 <server>/secrets-inbox/<shop>/    razorpay_key ("<key id>:<key secret>"), whatsapp_token, ...        the panel writes, mode 0600; the deployer moves and deletes

@@ -305,7 +305,7 @@ get_guard_image() {
     return 0
   fi
   if docker_q docker image inspect "$ref" >/dev/null 2>&1; then
-    say "Guard image: $ref is already on this machine. The install did not check it again; each shop's deploy proves its Guards' limits on the running image."
+    say "Guard image: $ref is already on this machine. The install did not check it again; each shop's deploy checks its Guards' limits on the running image."
     GUARD_STATE="already here"
     return 0
   fi

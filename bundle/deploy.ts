@@ -553,7 +553,7 @@ export async function upServer(ctx: Context): Promise<{ services: string[]; chan
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
   const deployed = [...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n)];
-  if (deployed.length > 0) throw new Refused([{ rule: "up-with-shops", message: `This server already runs ${deployed.join(", ")}. \`geometer deploy\` is what brings it up from here, because it proves each shop's limits on its running Guards; \`up\` is only for a server with no shop yet.` }]);
+  if (deployed.length > 0) throw new Refused([{ rule: "up-with-shops", message: `This server already runs ${deployed.join(", ")}. \`geometer deploy\` is what brings it up from here, because it checks each shop's limits on its running Guards; \`up\` is only for a server with no shop yet.` }]);
   // the same check a deploy makes: a fleet section with no key file would start a heartbeat that can never be heard
   if (server.fleet && !readSecretFile(resolve(ctx.dir, server.fleet.keyFile))) throw new Refused([{ rule: "fleet-key", message: `The deployment key file ${server.fleet.keyFile} is missing, so no heartbeat could be sent and Geometer's alerts from outside would never fire.` }]);
   prepareSecretsRoot(ctx.dir);
