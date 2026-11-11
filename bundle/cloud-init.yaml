@@ -1,0 +1,38 @@
+#cloud-config
+# bundle/cloud-init.yaml: paste this as the "user data" (Hetzner Cloud: "Cloud config"; DigitalOcean: "Advanced options", "Add initialization scripts") when you
+# create an Ubuntu 24.04 (or 22.04) server for your shops. It makes a user `builder` who logs in with your SSH key, and runs the agents repository's install.sh
+# for you, with no questions (plan item 14b). About ten minutes after the server starts, log in as builder and run `geometer invite builder` for your sign-in link
+# (the install does not print it into the cloud-init log, which outlives the link).
+#
+# NOT RUN YET (11 Nov 2026): not on a Hetzner or DigitalOcean server and not under cloud-init. install.sh's own tests are written and wait for the owner's
+# one test pass; a run inside an ubuntu:24.04 container is prepared for that pass too.
+#
+# Fill in the four values marked FILL IN:
+#   - your SSH public key (the line from ~/.ssh/id_ed25519.pub);
+#   - the release tag (bundle/README.md, "Install in one command", names the current one);
+#   - your domain, whose A record points at the server's address (make the server first, then the record; Caddy keeps trying until it points here);
+#   - the pairing code from geometer.dev/account, "Add a server" (it works once, for two hours: make the server soon after you get it).
+#
+# The pairing code sits in this user data, which the cloud keeps and root can read on the server. It is used once by the install and runs out two hours after it
+# was made, so afterwards it opens nothing. It is written to /run (memory, gone at the next boot) for the install, which reads it from that file and never from
+# its command line, and the file is removed straight after.
+users:
+  - default
+  - name: builder
+    groups: [sudo]
+    shell: /bin/bash
+    # the install needs sudo with no password here, because nobody is there to type one; take it away after the install if you like (/etc/sudoers.d/90-cloud-init-users)
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    ssh_authorized_keys:
+      - "FILL IN: ssh-ed25519 AAAA... you@laptop"
+
+package_update: true
+packages: [git, curl, ca-certificates]
+
+runcmd:
+  - [sh, -c, 'umask 077 && mkdir -p /run/geometer && printf "%s\n" "FILL IN: gfp_xxxx-xxxx-xxxx-xxxx-xxxx-xxxx" > /run/geometer/pairing-code && chown -R builder:builder /run/geometer']
+  - [sudo, -u, builder, -H, git, clone, --branch, "FILL IN: the release tag", "https://github.com/GeometerLabs/agents.git", /home/builder/geometer/agents]
+  # --yes: the only place it belongs (nobody is there to answer). Add --expect-commit <the release's commit id> to pin the commit from here as well.
+  - [sudo, -u, builder, -H, bash, /home/builder/geometer/agents/install.sh, --yes, --domain, "FILL IN: shops.example.com", --pairing-code-file, /run/geometer/pairing-code]
+  - [rm, -rf, /run/geometer]

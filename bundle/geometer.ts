@@ -1,6 +1,13 @@
 // geometer: the deploy bundle's command line.   node bundle/geometer.ts <command> [--server <folder>]
 //
-//   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [--licence-key HEX[,HEX]] [backup options]
+//   init <folder> --domain D --reviewed-by ID [--model-wire openai|anthropic --model NAME] [--fleet-url U --fleet-key-file F] [--licence-key HEX[,HEX]] [backup options]
+//                                --model may be left out until the first shop (the panel's first run asks for it); a deploy refuses until it is chosen.
+//   init <folder> --pairing --domain D --reviewed-by ID [--guard-licence-kid KID] ...   the same, with this server's id, fleet's address, the deployment key and fleet's licence
+//                                key taken from what `pair` kept in the folder, and the trial lease taken in. --guard-licence-kid: refuse when fleet's licence key is not the
+//                                one built into the Guard image (bundle/release.json names it), since every shop's deploy would be refused then.
+//   pair <folder> --fleet-url U  pair a NEW server with Geometer's fleet: reads the one-time code from your account page (geometer.dev/account, "Add a server") on
+//                                standard input, never from the command line, exchanges it once, and keeps the answer in the folder (fleet_key, 0600, and pairing.json).
+//                                install.sh runs this, then `init --pairing`.
 //                                --licence-key: the public half of fleet's licence key, as fleet's `licence key show` prints it (64 hex characters). It is pinned in geometer.json;
 //                                a lease is only ever checked with it. Without it no lease is kept and no shop is restricted by one.
 //   model-key <file>             the model's API key, handed to the model Guard only
@@ -25,6 +32,7 @@
 //                                real Guards: "Held N of M", judged from the stand-ins' records and Guard's decisions. agent go-live <name> [--out <folder>] does the same and writes the go-live certificate.
 //                                agent set <name> --run "<cmd>" --version V   records how to start the agent ({version} in the command) and which version it is at
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
+//   invite builder|partner [--note T]                  the same, shorter
 //   panel confirm-link --kind limits|go-live --shop S [--changes JSON] [--note T]    a one-time link a person opens in the panel to confirm what Claude Code asked for (the plugin, B11); it only asks
 //   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
 //                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
@@ -35,9 +43,17 @@
 //                                The panel makes them (it holds the signing key and the papers); a person's statement is made in the panel only.
 //   fingerprints                 the daily fingerprint of every shop's record, now (it also runs once a day by itself): local file always; git and OpenTimestamps only
 //                                when <server>/fingerprints.json turns them on with the owner's yes
+//   licence lease <file>         a lease from Geometer (gl1.), given by hand (a server set up with --fleet-key-file has none until its first heartbeat brings one):
+//                                checked with the pinned key, for this server, newer than the one kept
 //   licence extension <file>     an emergency extension from Geometer (gx1.), checked with the pinned key and kept: until it ends, no shop here winds down because fleet could
 //                                not renew its lease. It never lifts a wind-down or a stop the lease states.
 //   deploy [shop]                check, then bring up only what changed, then read the running Guards
+//   up                           bring up the server's own services (HTTPS, the panel, the heartbeat) before any shop exists; install.sh ends with it. Once a shop is
+//                                deployed, `deploy` is what brings things up.
+//   server status [--wait S]     every container of this server and how it is; --wait: until the panel and HTTPS are up, at most S seconds
+//   server stop --confirm        stop EVERY container on this server: no shop answers customers until `server start`. Without --confirm it only says what it would stop.
+//                                (Not the same as `stop <shop>`, the kill switch for one shop.) The `geometer` command install.sh writes also stops the deployer first.
+//   server start                 start them again as they were (a server with no shop yet: the same as `up`)
 //   status                       every shop: running or not, what its Guards enforce, the last snapshot and drill
 //   stop <shop> [--reason T]     the Guard kill switch: nothing goes out. The record says who stopped it.   start <shop> releases it.
 //   restore <shop> --identity FILE [--at TIME]   put the shop's runtime database back from the newest nightly snapshot (at or before TIME, if given). FILE is the
@@ -47,7 +63,7 @@
 //   update [--to V] [--shops a,b] [--dry-run]   move clients to a new template version, one at a time, each hand-checked on its own settings first; a client with any situation
 //                                that held before and fails now is held back with the reason. Stopped half-way, the same command again carries on. --dry-run changes nothing.
 //   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
-//   logs <shop> [--tail N]
+//   logs <shop> [--tail N]       a shop's runtime and Guards;   logs [--tail N] with no shop: the server's own services (the panel, HTTPS, the heartbeat, the inbox, the relay)
 //   apply [--watch]              the host-side deployer: applies what the panel writes, running the same checked deploy
 //   backup now | drill           the nightly snapshot and the weekly restore drill, once
 //
@@ -56,11 +72,13 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync
 import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { applyOnce, runLicence, watch } from "./apply.ts";
-import { takeExtension } from "./lib/licence.ts";
+import { takeExtension, takeLease } from "./lib/licence.ts";
+import { pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
+import type { PairingFile } from "./lib/pairing.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreAgent, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
-import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
+import { Refused, checkShop, compose, composeFile, deploy, ops, upServer } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
@@ -75,7 +93,7 @@ import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
-import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, listShops, loadServer, parseServer, serverNotes, serverPaths } from "./lib/server.ts";
+import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
 import { guardsOf, kindFor } from "./lib/kinds.ts";
 import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
 import { discoverTemplates } from "./panel/templates.ts";
@@ -115,7 +133,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" }, // stream-*: only to say they are no longer used
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
-      kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" },
+      kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, pairing: { type: "boolean" }, "guard-licence-kid": { type: "string" }, wait: { type: "string" }, confirm: { type: "boolean" },
       "prepared-by": { type: "string" }, company: { type: "string" }, "upi-id": { type: "string" }, payee: { type: "string" }, payment: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
@@ -135,10 +153,12 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     if (!command || command === "--help" || command === "help") { console.log(readFileSync(new URL(import.meta.url), "utf8").split("\n").filter((l) => l.startsWith("//")).map((l) => l.slice(3)).join("\n")); return command ? 0 : 2; }
 
     if (command === "init") return await init(positionals[0], values as Record<string, string | boolean | undefined>);
+    if (command === "pair") return await pair(positionals[0], str("fleet-url"));
 
     const dir = serverDir({ server: str("server") });
     if (command === "model-key") {
       const server = loadServer(dir);
+      if (!modelChosen(server)) throw new Error(NO_MODEL); // the key's file name depends on the wire, so the model comes first
       const key = readFileSync(resolve(positionals[0] ?? ""), "utf8").trim();
       if (key.length < 8) throw new Error("That file is empty or too short to be an API key.");
       prepareSecretsRoot(dir);
@@ -267,10 +287,11 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return c.failed ? 1 : 0;
     }
 
-    if (command === "panel" && positionals[0] === "invite") {
+    if ((command === "panel" && positionals[0] === "invite") || command === "invite") {
       if (!loadServer(dir).panel.enabled) throw new Error('This server has no panel: set "panel": { "enabled": true } in geometer.json and deploy, or `init --panel`.');
-      const role = str("role");
-      if (role !== "builder" && role !== "partner") throw new Error("Say who the invitation is for: panel invite --role builder|partner [--note TEXT]");
+      // `invite builder` is the short form of `panel invite --role builder`
+      const role = command === "invite" ? positionals[0] : str("role");
+      if (role !== "builder" && role !== "partner") throw new Error(command === "invite" ? "Say who the invitation is for: invite builder|partner [--note TEXT]" : "Say who the invitation is for: panel invite --role builder|partner [--note TEXT]");
       const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", "invite", "--role", role, ...(str("note") ? ["--note", str("note") as string] : [])], { timeoutMs: 60_000 });
       if (r.code !== 0) throw new Error(`The panel did not make a link (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 300)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
       console.log(r.stdout.trim());
@@ -319,11 +340,21 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "status") return await status(ctx);
+    if (command === "up") return await up(ctx);
+    if (command === "server") return await serverCommand(ctx, positionals[0], { wait: str("wait"), confirm: values.confirm === true });
 
     if (command === "licence") {
-      if (positionals[0] !== "extension" || !positionals[1]) throw new Error("Say what to do: licence extension <file>   (the gx1. token Geometer sent, in a file or as it is)");
+      if ((positionals[0] !== "extension" && positionals[0] !== "lease") || !positionals[1]) throw new Error("Say what to do: licence extension <file>   (the gx1. token Geometer sent, in a file or as it is), or licence lease <file>   (a gl1. lease)");
       const server = loadServer(dir);
       const text = existsSync(resolve(positionals[1])) ? readFileSync(resolve(positionals[1]), "utf8") : positionals[1];
+      if (positionals[0] === "lease") {
+        // the by-hand path for a server set up with --fleet-key-file (decision 39: a production Guard runs no shop without a lease); a paired server gets its trial lease at init
+        const r = takeLease(dir, server, text);
+        if (!r.taken) { console.log(`This lease was not kept: ${r.why}.`); return r.same ? 0 : 1; }
+        runLicence(ctx);
+        console.log(`Kept: a lease for ${r.payload.shops.length} shop${r.payload.shops.length === 1 ? "" : "s"} on ${server.id}, signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}. Each shop's Guards and agent read it at their next start; \`geometer deploy\` starts them.`);
+        return 0;
+      }
       const r = takeExtension(dir, server, text, Math.floor(ctx.now().getTime() / 1000));
       if (!r.taken) { console.log(`This extension was not kept: ${r.why}.`); return r.same ? 0 : 1; }
       runLicence(ctx);
@@ -332,7 +363,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "stop" || command === "start") {
-      if (!shop) throw new Error(`Say which shop: ${command} <shop>`);
+      if (!shop) throw new Error(`Say which shop: ${command} <shop> (${command === "stop" ? "the kill switch for that one shop: nothing goes out from it" : "releases that shop's kill switch"}). The whole server is \`geometer server ${command}\`.`);
       const on = command === "stop";
       const by = hostId();
       const r = await ops(ctx, ["stop", shop, on ? "on" : "off", by, str("reason") ?? ""]);
@@ -358,7 +389,12 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "logs") {
-      if (!shop) throw new Error("Say which shop: logs <shop>");
+      if (!shop) {
+        // no shop: the server's own services, the ones that run before any shop does
+        const r = await compose(ctx, ["logs", "--no-color", "--tail", str("tail") ?? "100", ...SERVER_SERVICES.filter((n) => n !== "panel" || loadServer(dir).panel.enabled)]);
+        process.stdout.write(r.stdout); process.stderr.write(r.stderr);
+        return r.code;
+      }
       // the shop's own Guards, as it was applied: a Fees centre has no calendar Guard and a UPI shop (B33) no Razorpay one
       const applied = loadState(ctx.dir).shops[shop]?.applied;
       const guards = applied ? Object.values(applied.guards).map((g) => g.service) : [`g-${shop}-razorpay`, `g-${shop}-whatsapp`, `g-${shop}-calendar`];
@@ -426,7 +462,18 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   const dir = resolve(folder);
   if (existsSync(join(dir, "geometer.json"))) throw new Error(`${dir} is already a server folder.`);
   const s = (k: string) => (typeof v[k] === "string" ? v[k] as string : undefined);
-  const id = s("id") ?? basename(dir).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^-+/u, "").slice(0, 64);
+  // --pairing: what `pair` kept in the folder says who this server is to fleet; nothing given by hand may contradict it
+  let paired: PairingFile | undefined;
+  if (v.pairing === true) {
+    paired = readPairing(dir);
+    if (s("id") !== undefined && s("id") !== paired.deploymentId) throw new Error(`--id ${s("id")} is not the id fleet gave this server when it was paired (${paired.deploymentId}); every heartbeat must name that one. Leave out --id.`);
+    if (s("fleet-url") !== undefined || s("fleet-key-file") !== undefined || s("licence-key") !== undefined) throw new Error("With --pairing, fleet's address, the deployment key and the licence key come from the pairing: leave out --fleet-url, --fleet-key-file and --licence-key.");
+    const want = s("guard-licence-kid");
+    const kids = paired.licenceKeys.map((k) => kidOf(Buffer.from(k, "hex")));
+    if (want !== undefined && paired.licenceKeys.length > 0 && !kids.includes(want)) throw new Error(`Fleet's licence key (key id ${kids.join(", ")}) is not the one built into this release's Guard image (key id ${want}), so every shop's deploy would be refused. Nothing was set up. This is Geometer's to fix: write to support. The pairing is kept, so running the install again later needs no new code.`);
+    if (paired.licenceKeys.length === 0) console.log("note: fleet signs no licence lease yet, so none is pinned or kept here. A Guard image that requires a lease will not run a shop until one is (geometer licence lease <file>).");
+  }
+  const id = paired?.deploymentId ?? s("id") ?? basename(dir).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^-+/u, "").slice(0, 64);
   const problem = serverIdProblem(id);
   if (problem) throw new Error(problem);
   let recipient = s("age-recipient");
@@ -442,9 +489,10 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   const raw = {
     schema: 1, id, domain: s("domain") ?? "localhost", reviewedBy: s("reviewed-by") ?? "", guardImage: s("guard-image") ?? DEFAULT_GUARD_IMAGE, appImage: DEFAULT_APP_IMAGE,
     approvalHours: s("approval-hours") ? Number(s("approval-hours")) : 24,
-    model: { wire: s("model-wire") ?? "openai", model: s("model") ?? "" },
-    ...(s("fleet-url") ? { fleet: { url: s("fleet-url"), keyFile: s("fleet-key-file") ?? "" } } : {}),
-    ...(s("licence-key") ? { licence: { keys: s("licence-key")!.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean) } } : {}),
+    // no --model: the folder is made without one, and the panel's first run (or the builder, by hand) chooses it before the first shop
+    ...(s("model") !== undefined || s("model-wire") !== undefined ? { model: { wire: s("model-wire") ?? "openai", model: s("model") ?? "" } } : {}),
+    ...(paired ? { fleet: { url: paired.fleetUrl, keyFile: pairingPaths(dir).key } } : s("fleet-url") ? { fleet: { url: s("fleet-url"), keyFile: s("fleet-key-file") ?? "" } } : {}),
+    ...(paired && paired.licenceKeys.length > 0 ? { licence: { keys: paired.licenceKeys } } : s("licence-key") ? { licence: { keys: s("licence-key")!.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean) } } : {}),
     ...(s("snapshots-url") && recipient ? { backup: { snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
     panel: { enabled: v.panel === true, mode: v["panel-mode"] === "hosted" ? "hosted" : "own" },
     ports: { http: s("http-port") ? Number(s("http-port")) : 80, https: s("https-port") ? Number(s("https-port")) : 443 },
@@ -455,8 +503,16 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   for (const d of [p.shops, p.secretsInbox, p.status, p.state, p.generated, p.requests, p.exports, p.panel]) ensureDir(d);
   prepareSecretsRoot(dir);
   writeAtomic(p.config, stableJson(raw));
-  for (const k of checked.config.licence?.keys ?? []) console.log(`Fleet's licence key is pinned: key id ${kidOf(Buffer.from(k, "hex"))}. It should be the id fleet's \`licence key show\` printed.`);
-  console.log(`Server folder ready: ${dir}\nNext: \`geometer model-key <file>\`, then \`geometer shop add <name> --from <client folder>\`, hand in the shop's secrets, and \`geometer check <name>\`.`);
+  for (const k of checked.config.licence?.keys ?? []) console.log(`Fleet's licence key is pinned: key id ${kidOf(Buffer.from(k, "hex"))}.${paired ? "" : " It should be the id fleet's `licence key show` printed."}`);
+  if (paired) {
+    console.log(`Paired with Geometer's fleet for the account "${paired.accountName}": this server is ${id}, and its heartbeats go to ${paired.fleetUrl}.`);
+    // decision 39: the trial lease goes in before the first start, so a new server is never stuck waiting for its first heartbeat
+    if (paired.trialLease) {
+      const r = takeLease(dir, checked.config, paired.trialLease);
+      console.log(r.taken ? `The trial lease is kept (signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}): shops can start before the first heartbeat.` : `note: the trial lease fleet sent was not kept: ${r.why}. The first heartbeat brings a lease.`);
+    } else console.log("note: fleet sent no trial lease, so the first heartbeat brings this server's lease; until it does, a Guard image that requires a lease starts no shop.");
+  }
+  console.log(`Server folder ready: ${dir}\nNext: ${checked.config.model.model === "" ? "choose the model (the panel's first run asks; by hand, \"model\" in geometer.json), then " : ""}\`geometer model-key <file>\`, then \`geometer shop add <name> --from <client folder>\`, hand in the shop's secrets, and \`geometer check <name>\`.`);
   return 0;
 }
 
@@ -511,6 +567,80 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     return 0;
   }
   throw new Error(`I don't know "agent ${sub}". Try: agent add|check|deploy|show|record|report|crash-test|go-live|set <name>`);
+}
+
+/** The services every server runs, before and after its first shop (composeServer): what `logs` with no shop shows and `server status` waits for. */
+const SERVER_SERVICES = ["caddy", "panel", "ops", "inbox", "relay", "refresher"] as const;
+
+/** `up`, and `server start` on a server with no shop yet. */
+async function up(ctx: Context): Promise<number> {
+  const r = await upServer(ctx);
+  const server = loadServer(ctx.dir);
+  console.log(`The server's own services are up: ${r.services.join(", ")}${r.changed.length === 0 ? " (nothing changed)" : ""}. ${server.panel.enabled ? `The panel answers at ${publicUrl(server)} once HTTPS is ready; \`geometer invite builder\` makes a sign-in link.` : "This server has no panel."}`);
+  return 0;
+}
+
+/**
+ * `pair <folder> --fleet-url U`: the one-time code comes on standard input (one line), so it is never on a command line, in the shell's history or in `ps`. The answer is
+ * kept in the folder before anything else (lib/pairing.ts); the code is not.
+ */
+async function pair(folder: string | undefined, fleetUrl: string | undefined): Promise<number> {
+  if (!folder || !fleetUrl) throw new Error("Say where the new server folder goes and fleet's address: pair <folder> --fleet-url https://fleet.geometer.dev   (then paste the code from your account page)");
+  if (process.stdin.isTTY) process.stderr.write("Paste the pairing code from your account page (geometer.dev/account, \"Add a server\") and press Enter: ");
+  const { createInterface } = await import("node:readline/promises");
+  const lines = createInterface({ input: process.stdin, terminal: false });
+  let code = "";
+  for await (const line of lines) { code = line; break; }
+  lines.close();
+  const p = await pairServer({ dir: resolve(folder), fleetUrl, code, now: new Date() });
+  console.log(`Paired with Geometer's fleet for the account "${p.accountName}". This server is ${p.deploymentId}; its key is in ${pairingPaths(resolve(folder)).key} (only you can read it). Next: geometer init ${folder} --pairing --domain <domain> --reviewed-by <you> --panel`);
+  return 0;
+}
+
+/**
+ * `server status|start|stop`: the whole server, as distinct from one shop. `stop <shop>` stays the kill switch for that shop; stopping every container is a different
+ * act with a different name, and it asks to be confirmed, because no shop answers its customers while the server is stopped.
+ */
+async function serverCommand(ctx: Context, sub: string | undefined, o: { wait?: string; confirm: boolean }): Promise<number> {
+  const server = loadServer(ctx.dir);
+  const state = loadState(ctx.dir);
+  const deployed = [...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n)].sort();
+  const started = existsSync(composeFile(ctx.dir));
+  if (sub === "status") {
+    if (!started) { console.log("Nothing has been started on this server yet: `geometer up` starts its own services (HTTPS, the panel, the heartbeat)."); return 1; }
+    const want = SERVER_SERVICES.filter((n) => n !== "panel" || server.panel.enabled);
+    const limit = Date.now() + Math.max(0, Number(o.wait ?? 0)) * 1000;
+    for (;;) {
+      const ps = await compose(ctx, ["ps", "-a", "--format", "{{.Service}}\t{{.State}}\t{{.Status}}"], { timeoutMs: 60_000 });
+      const rows = ps.stdout.trim().split("\n").filter(Boolean).map((l) => l.split("\t")).map(([service, st, text]) => ({ service, state: st, text: text ?? "" }));
+      // up means running, and healthy where the service has a health check (Caddy has none)
+      const up = (name: string) => rows.some((r) => r.service === name && r.state === "running" && !/unhealthy|health: starting/u.test(r.text));
+      const missing = want.filter((n) => !up(n));
+      if (missing.length === 0 || Date.now() >= limit) {
+        for (const r of rows.sort((a, b) => a.service.localeCompare(b.service))) console.log(`${r.service.padEnd(28)} ${r.text || r.state}`);
+        console.log(missing.length === 0 ? `The server's own services are up${server.panel.enabled ? `; the panel is at ${publicUrl(server)}` : ""}. Shops deployed: ${deployed.length === 0 ? "none yet" : deployed.join(", ")} (\`geometer status\` says how each is).` : `Not up yet: ${missing.join(", ")}. \`geometer logs\` shows what they said.`);
+        return missing.length === 0 ? 0 : 1;
+      }
+      await ctx.sleep(3_000);
+    }
+  }
+  if (sub === "start") {
+    if (!started || deployed.length === 0) return await up(ctx);
+    const r = await compose(ctx, ["start"], { timeoutMs: 600_000 });
+    if (r.code !== 0) throw new Error(`The containers could not be started as they were (${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300)}). \`geometer deploy\` brings everything up again, checked.`);
+    console.log(`Started every container on this server as it was. ${deployed.length} shop${deployed.length === 1 ? "" : "s"} answer customers again; \`geometer status\` says how each is.`);
+    return 0;
+  }
+  if (sub === "stop") {
+    const what = deployed.length === 0 ? "No shop runs here yet, so only the panel and HTTPS stop." : `These stop answering their customers until \`geometer server start\`: ${deployed.join(", ")}. Payment links already sent still work at the payment service; nothing new goes out.`;
+    if (!o.confirm) { console.log(`This stops EVERY container on this server. ${what}\nTo stop one shop instead, it is \`geometer stop <shop>\` (its kill switch). To go ahead: geometer server stop --confirm`); return 3; }
+    if (!started) { console.log("Nothing has been started on this server, so there is nothing to stop."); return 0; }
+    const r = await compose(ctx, ["stop"], { timeoutMs: 600_000 });
+    if (r.code !== 0) throw new Error(`docker compose stop failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300)}`);
+    console.log(`Stopped every container on this server. ${what}`);
+    return 0;
+  }
+  throw new Error("Say what to do with the whole server: server status [--wait S] | server start | server stop --confirm   (one shop: stop <shop> / start <shop>)");
 }
 
 async function status(ctx: Context): Promise<number> {
