@@ -21,8 +21,10 @@
 import { GATEWAYS } from "../../modules/payments/providers/index.ts";
 import { join, resolve } from "node:path";
 
+// The shared "is a plain object" check every parser below starts with, so a file that is a string, array or null is rejected before any field is read.
 export const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+// Every folder and file the panel and the deployer agree on, derived from one root, so neither side builds a path by hand and the two cannot drift apart.
 export function serverPaths(dir: string) {
   const root = resolve(dir);
   return {
@@ -43,6 +45,7 @@ export function serverPaths(dir: string) {
 
 /** Shop names go into container names, DNS names and URLs, and the id is also a path: so letters, digits and dashes only (the bundle's rule). */
 export const SHOP_ID = /^[a-z0-9][a-z0-9-]{0,39}$/u;
+// Explains in words why a shop id is not allowed (undefined means fine); the second rule keeps ids from looking like phone numbers, which fleet's heartbeat refuses to carry.
 export function shopIdProblem(id: string): string | undefined {
   if (!SHOP_ID.test(id)) return "use lowercase letters, digits and dashes, starting with a letter or digit, at most 40 characters";
   if (/\d(?:[ .\-()]?\d){6,}/u.test(id)) return "it has seven or more digits in a row, so it looks like a phone number (Geometer's heartbeat would refuse it)";
@@ -151,6 +154,7 @@ export interface FleetAnswer {
   licence?: { state: string; paid_through: string | null; wind_down_on: string | null; stop_on: string | null; export_until: string | null; renew_url: string | null; trial_ends?: string };
 }
 
+// Reads fleet's last answer file; returns undefined for anything malformed, because a file the deployer half-wrote must show as "unknown", not crash the page.
 export function parseFleetAnswer(textOrNothing: string | undefined): FleetAnswer | undefined {
   if (textOrNothing === undefined) return undefined;
   try {
@@ -180,6 +184,7 @@ function fleetLicence(l: Record<string, unknown>): NonNullable<FleetAnswer["lice
 
 export interface StopRequest { schema: 1; requestId: string; shop: string; requestedAt: string; requestedBy: { id: string; name: string; role: string } }
 
+// Checks a stop request file; the deployer acts on it, so only a well-formed one is accepted.
 export function parseStopRequest(textOrNothing: string | undefined): StopRequest | undefined {
   if (textOrNothing === undefined) return undefined;
   try {
@@ -234,6 +239,7 @@ export function companyOf(v: unknown): string | undefined {
   return c !== "" && [...c].length <= COMPANY_LIMIT ? c : undefined;
 }
 
+// Checks the shop's owner.json (who the shop's owner is and how to reach them); malformed means "no owner on record", never a guessed one.
 export function parseOwner(textOrNothing: string | undefined): OwnerFile | undefined {
   if (textOrNothing === undefined) return undefined;
   try {
@@ -278,6 +284,7 @@ export function preparedByOf(owner: Pick<OwnerFile, "accountName" | "role"> & { 
  */
 export interface ReportFile { schema: 1; preparedBy: string }
 
+// Checks a report file the deployer wrote for a shop, so the papers page only shows numbers it could actually read.
 export function parseReportFile(textOrNothing: string | undefined): ReportFile | undefined {
   if (textOrNothing === undefined) return undefined;
   try {
@@ -308,6 +315,7 @@ export interface AssignmentFile {
 
 const person = (v: unknown): Person | undefined => (isObj(v) && text(v.accountId, 80) && text(v.accountName, 120) && (v.role === "builder" || v.role === "partner") ? { accountId: v.accountId as string, accountName: v.accountName as string, role: v.role } : undefined);
 
+// Checks the file that says which account set up (and may see) which shop; a partner's visibility rests on it, so a broken file shows nothing rather than everything.
 export function parseAssignmentFile(textOrNothing: string | undefined): AssignmentFile | undefined {
   if (textOrNothing === undefined) return undefined;
   try {
