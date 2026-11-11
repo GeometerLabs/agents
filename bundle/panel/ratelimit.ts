@@ -7,6 +7,7 @@ export interface Limiter {
   clear(key: string): void;
 }
 
+// Failure-counting limiter: `max` failures inside `windowMs` block a key, `keep` caps how many keys are remembered so a flood of made-up handles cannot grow memory without bound.
 export function createLimiter(max: number, windowMs: number, now: () => number = Date.now, keep = 5000): Limiter {
   const failures = new Map<string, number[]>();
   const recent = (key: string): number[] => {

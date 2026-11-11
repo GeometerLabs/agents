@@ -36,11 +36,13 @@ const KINDS: Record<string, { papers: TemplatePapers; cases(data: NonNullable<Re
 
 export type PaperKind = "dispute" | "statement" | "identity" | "identity-public" | "pack" | "anchor";
 export interface MadePaper { file: string; type: string; text: string }
+// A paper cannot be made (missing file or key); the route turns it into a plain page instead of a crash.
 export class PaperError extends Error {}
 
 const readText = (file: string): string | undefined => { try { return readFileSync(file, "utf8"); } catch { return undefined; } };
 const readJson = (file: string): { keyId?: string } | undefined => { try { return JSON.parse(readFileSync(file, "utf8")) as { keyId?: string }; } catch { return undefined; } };
 
+// Builds the statement, case record and identity paper for a shop the caller already has the right to see; `now` is injectable so dates in tests are fixed.
 export function createPapers(config: PanelConfig, shops: Shops, docs: Documents, now: () => number) {
   const key = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined;
   const ledgerOf = (id: string): LedgerEntry[] | undefined => { try { return JSON.parse(readText(join(shops.paths.exports(id), "ledger.json")) ?? "null") ?? undefined; } catch { return undefined; } };

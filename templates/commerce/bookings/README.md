@@ -1,10 +1,10 @@
-# Bookings template (v0 core)
+# Bookings template
 
 Market: Commerce and support (bookings).
 
-A WhatsApp agent for businesses that take bookings with a deposit and a cancellation rule: salons, tuition centres, fitness studios and home services. A customer writes in Hindi, English, Malayalam or Kannada; the agent holds a slot, sends a deposit link, books only when the calendar and the payment record both agree, reminds the customer, and handles cancellations, refunds and rescheduling, asking the owner when a decision is theirs.
+A WhatsApp agent for businesses that take bookings with a deposit and a cancellation rule: salons, tuition centres, fitness studios and home services. A customer writes in Hindi, English, Malayalam or Kannada; the agent holds a slot, sends a way to pay the deposit (the shop's own UPI ID with a QR picture, or a Razorpay link), books only when the calendar and the payment record both agree, reminds the customer, and handles cancellations, refunds and rescheduling, asking the owner when a decision is theirs.
 
-**What this folder is, and is not.** It is the v0 core of the template, built and checked against **stand-in services in memory**. It is **not the Geometer engine**, it talks to no real WhatsApp, Razorpay or calendar, and nothing here has been run against a real business. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
+**What this folder is, and is not.** It is the Bookings template, built and checked against **stand-in services**. It runs as a server (one SQLite file per shop, a signed-webhook inbox, an approvals relay), and `geometer shop add --template bookings` starts a shop on a Geometer server. The **live adapters exist** (Razorpay, Google Calendar and WhatsApp wire formats, in `src/adapters/live/` and `modules/`), but the code here has been run against no real WhatsApp, Razorpay or Google account, no real business, and **no shop is live on it**. It is **not the Geometer engine**. The "hand check" below is a hand-run check for the Phase 0 prototype, not the engine's crash test.
 
 It has no dependencies. The agent and its tests make no network call outside this computer: the server, the live adapters, the inbox and the stand-ins talk HTTP, but only to each other on ports you choose, and only the dev forwarder can reach a real service. The rule parser reads the messages; a model parser exists too (see "Choose the model"), but nothing uses it until you point it at a model. TypeScript is run directly by Node's built-in type stripping.
 
@@ -282,6 +282,7 @@ One JSON file per business. [`settings/glow-salon.example.json`](settings/glow-s
 | `openingHours` | Per weekday, `{ "open": "10:00", "close": "20:00" }`, or `null` when closed |
 | `slotMinutes`, `bufferMinutes` | Bookings start on this grid; this gap is kept between bookings |
 | `deposit` | `amountInr`, and `holdMinutes` (default 15) |
+| `payment` | How customers pay the deposit: `{"module": "upi", "upi": {"id", "payee"}}` (the default: the shop's own UPI ID, marked paid by the owner; see [glow-salon-upi.example.json](settings/glow-salon-upi.example.json)) or `{"module": "razorpay"}` (the shop's own gateway account, through Guard). A file without the block is refused and asked for the UPI ID |
 | `cancellation` | `windowHours`: cancel at least this long before the start and the deposit is refunded. `refundLimitInr`: the agent refunds up to and including this amount alone; above it the owner must approve |
 | `languages` | Any of `"hi"`, `"en"`, `"ml"`, `"kn"`; `["hi", "en"]` by default; the first is the default. Every service needs a name in each language listed |
 | `owner` | `whatsapp` number, and `language` for the owner's messages (default `en`; any of the four) |
@@ -376,7 +377,7 @@ Explanation.md, Deferred.md        how it was built and why; what is left open a
 
 ## What is not done yet
 
-- **Real services.** The live adapters, the inbox and the stand-ins are written and tested, but only against the stand-ins and the providers' own sample payloads. Nothing here has talked to a real Razorpay, Google or WhatsApp account yet, and the WhatsApp provider is not chosen.
+- **Real services.** The live adapters, the inbox and the stand-ins are written and tested, but only against the stand-ins and the providers' own sample payloads. Nothing here has talked to a real Razorpay, Google or WhatsApp account yet. (A shop that pays by UPI needs no payment account. Google Calendar is required by this template today; making it optional is being done separately.)
 - **Guard.** A refund above the limit is held by Guard, and a refund above one deposit is refused by it (the real binary is tested here; the hand check uses a model of it). The other limits still run in the agent's own process, nothing else is enforced outside the AI yet, and nothing fails closed if the agent is compromised.
 - **The engine crash test.** The situations here are hand-written and run on in-memory fakes. Simulated services, injected faults at every step, exact replay and saved checks are the engine's job (Phase 2).
 - **Model-written text.** Messages are templates only. The model parser only reads a customer's message into an intent. It is built and tested against a local stub server, **not yet run against a real model**, and the agent uses the rule parser unless it is given the model parser.

@@ -256,6 +256,7 @@ export function agentGuardPart(agentText: string): string {
   return stableJson(rest);
 }
 
+// The agent folder names on this server; dot-folders are skipped so hidden working folders are never treated as agents.
 export function listAgents(dir: string): string[] {
   const agents = serverPaths(dir).agents;
   if (!existsSync(agents)) return [];

@@ -57,6 +57,7 @@ export function shopHandler(name: string, c: InboxShopConfig, read: (path: strin
   return inboxHandler(config);
 }
 
+// Wires the config into the router: one handler per shop, each with its own secrets, so a webhook can only ever reach the shop whose secret it matched.
 export function loadRouter(config: { shops: Record<string, InboxShopConfig> }, read: (path: string) => string | undefined, log: (line: string) => void): Handler {
   return createRouter(Object.fromEntries(Object.entries(config.shops).map(([name, c]) => [name, shopHandler(name, c, read, log)])), log);
 }

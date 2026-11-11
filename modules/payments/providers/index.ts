@@ -32,6 +32,7 @@ export const PAYMENT_MODULES: readonly PaymentModule[] = PROVIDERS.map((p) => p.
 /** The providers with an API Guard sits in front of. Their ids are Guard kinds in the bundle. */
 export const GATEWAYS: readonly PaymentProvider[] = PROVIDERS.filter((p) => p.gateway !== undefined);
 export const GATEWAY_KINDS: readonly string[] = GATEWAYS.map((p) => p.id);
+// Gateway providers (with an API for Guard to sit in front of) are handled differently from owner-marked ones; this is the one place that tells them apart.
 export const isGatewayKind = (kind: string): boolean => GATEWAY_KINDS.includes(kind);
 
 /** What a settings file with no "payment" block is told: the default first, because it needs no account, then how a gateway shop says so. */

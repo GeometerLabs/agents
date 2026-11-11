@@ -8,6 +8,7 @@ import type { PanelConfig } from "./config.ts";
 import type { Documents } from "./documents.ts";
 import type { Shops } from "./shops.ts";
 
+// Builds the shop export package from the panel's sealed papers; it lives in the panel because only the panel can open its store, which is why `geometer export` asks the panel instead of reading files itself.
 export function exportShop(config: PanelConfig, shops: Shops, docs: Documents, shop: string, now: number, by?: { name: string; role: string }): { built: BuiltExport; tgz: Buffer } {
   const papers = (id: string) => [
     ...docs.list(id, "go-live").map((f) => ({ path: `go-live/${f}`, text: docs.get(id, `go-live/${f}`) })),

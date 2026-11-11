@@ -77,6 +77,7 @@ function totalBlock(h: HealthWords, s: Sum): Raw {
 ${s.setupPaise > 0 ? html`<p class="note">${w.setup}: ${money(s.setupPaise)}</p>` : ""}`;
 }
 
+// Overview across a person's shops: one row per shop plus the summed margin, used by the Health tab in server.ts.
 export function healthPage(c: Ctx, o: { shops: ShopHealth[]; sum: Sum; month: string; innovator: boolean }): string {
   const h = HEALTH_WORDS[c.lang];
   const needing = o.shops.filter((s) => s.attention.needs).length;
@@ -93,6 +94,7 @@ ${totalBlock(h, o.sum)}
 ${o.innovator ? html`<p><a class="btn" href="/vote">${h.vote.link}</a></p>` : ""}`);
 }
 
+// One shop's health and cost page with the partner's own entries form; `values` refills the form after a refused entry.
 export function shopHealthPage(c: Ctx, o: { shop: ShopHealth; month: string; saved?: boolean; problem?: keyof HealthWords["problems"]; values?: Record<string, string> }): string {
   const h = HEALTH_WORDS[c.lang];
   const s = o.shop;
@@ -120,6 +122,7 @@ ${marginBlock(h, s.margin)}
 <p><a href="/health">${c.w.common.back}</a> · <a href="/shops/${s.id}">${h.open}</a></p>`);
 }
 
+// The template vote for Innovators (votes.ts); `refused` is shown when the round does not accept the pick.
 export function votePage(c: Ctx, o: { round: VoteRound; mine: string | undefined; counts: Record<string, number> | undefined; saved?: boolean; refused?: boolean }): string {
   const h = HEALTH_WORDS[c.lang];
   const w = h.vote;

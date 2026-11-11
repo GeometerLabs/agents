@@ -152,7 +152,7 @@ test("B71 part 2: a rule that holds a call for a person is kept; the deploy make
     assert.deepEqual(relay.ownApi, { tool: "refunds", rules: [{ operation: "create_refund", amountField: "amount", unit: "cents" }] });
     assert.equal(relay.gateway, undefined);
     assert.equal(JSON.parse(read(join(w.paths.generated, "inbox", "inbox.json"))).shops[NAME].relayUrl, `http://relay:8795/c/${NAME}`);
-    assert.match(connectionText(NAME, r.connection, false), /asks the owner on WhatsApp; after the owner's yes, your agent sends the identical call again/u);
+    assert.match(connectionText(NAME, r.connection), /asks the owner on WhatsApp; after the owner's yes, your agent sends the identical call again/u);
     // the relay's reading credential is issued at the deploy, and renewed by the daily job (it runs out after a week, and then the owner would never be asked)
     const issued = () => w.calls.filter((c) => c.args.join(" ").includes(`issue-approver ${NAME}`)).length;
     assert.equal(issued(), 1, "issued at the deploy");

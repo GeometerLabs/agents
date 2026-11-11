@@ -39,6 +39,8 @@ Three yes: go. Two yes: go, but carefully. One or none: skip it. A polite skip i
 
 Carry: your laptop (charged, walkthrough tested), 3 printed one-page sheets with your name and number written in, the shop terms with your price filled in, a letter of intent, and a pen.
 
+The card "What to ask the shop for" (`sell/ask-card.en.md`) lists what to ask the owner for. Bring it.
+
 ## 3. The first three sentences
 
 Say them in the owner's language, slowly.
@@ -148,13 +150,13 @@ Don't run Meta's AI down. What it can do changes: check before each pitch.
 The facts behind "it depends":
 
 - It must be the WhatsApp Business app, not plain WhatsApp.
-- The account may need to be some months old. Some providers ask for about 3 months of real use.
-- Open the app at least once a week: after about 2 weeks without it, the connection drops. Uninstalling the app disconnects the number.
+- It needs a Facebook login with admin access to the centre's Meta business portfolio, which the owner uses themselves. Meta may later ask the centre to verify its business; which documents it accepts for a small centre is not confirmed.
+- Open the app at least once every 2 weeks: after about 2 weeks without it, the connection drops. Uninstalling the app disconnects the number.
 - Linked devices are unlinked and must be linked again. In one-to-one chats, disappearing messages, view-once and live location stop working, and broadcast lists become read-only.
 
 ### "What does it cost?"
 
-> "It's [your monthly price] a month, and [your setup price] once for setting it up. Razorpay takes its own fee, about {{razorpay.platform-fee}} plus GST, on each payment. WhatsApp's message fees are their own line on the bill, at cost. Nothing else. You can stop with one message."
+> "It's [your monthly price] a month, and [your setup price] once for setting it up. WhatsApp's message fees are their own line on the bill, at cost. Nothing else. You can stop with one message."
 
 Section 6 has the numbers.
 
@@ -216,7 +218,7 @@ Say this, word for word: "No fee marked paid without your confirmation; every re
 
 - A parent's screenshot is not proof. The helper tells them the owner will confirm, and marks nothing paid.
 - You send each refund from your own UPI app. The helper keeps the list of refunds owed and reminds you. It tells the parent "sent" only after you mark it done.
-- A centre that has, or wants, its own Razorpay account can use Razorpay instead: the helper then reads Razorpay's own record and refunds within your limit. The centre opens that account itself. Razorpay's fee applies only then.
+- A centre that has, or wants, its own Razorpay account can use Razorpay instead: the helper then reads Razorpay's own record and refunds within your limit. The centre opens that account itself.
 
 ## 6. Price
 
@@ -227,13 +229,12 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 | You | Geometer | Each live centre, each month | {{plan.business.fee}} |
 | The centre | You | The monthly service (a starting point; you decide) | {{guide.business.shop-min}} to {{guide.business.shop-max}} |
 | The centre | You | Setup, once. You keep all of it. | {{guide.business.setup-min}} to {{guide.business.setup-max}} |
-| The centre | Razorpay | A fee on each payment | about {{razorpay.platform-fee}} plus GST (only if the centre chooses Razorpay) |
 | The centre, as its own line on your bill | WhatsApp, at cost | Message fees | about {{guide.business.whatsapp}} per centre per month |
 
 1. **Geometer's fee: {{plan.business.fee}} per live centre per month.** Fees is in the Business plan, with {{plan.business.allowance}} messages a month included. Extra messages are {{overage.extra}} for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost, and so is the payment fee when you top up the balance. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays {{licence.builder.fee}} a month for each live client business instead. The first {{innovator.places}} builders and partners with a shop live get the Innovator badge: a badge, not a discount. A centre counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a centre goes live.
 2. **The centre's price: a starting point; you decide.** The table gives the range. The setup is {{guide.business.setup-min}} to {{guide.business.setup-max}}, and you keep all of it. Put WhatsApp on the centre's bill as its own line, at cost: a centre that sends more messages then pays for more, and your service price stays yours.
 3. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the centre can cancel with one message, no automatic debit unless the owner clearly agreed.
-4. **Tell the centre about Razorpay's fee:** "Razorpay keeps its fee even when you give a payment back. On a ₹1,200 fee that is about ₹28." Check Razorpay's current page; if the centre's own agreement says otherwise, the agreement wins. The centre opens and pays for its own Razorpay account, and WhatsApp's message fees are at cost. You pay for nothing else to use Fees. This applies only if the centre chooses Razorpay: on UPI there is no gateway fee.
+4. **Nothing else to pay.** WhatsApp's message fees are at cost. You pay for nothing else to use Fees. A centre that chooses Razorpay opens and pays for its own Razorpay account: see the Razorpay item in section 8.
 5. **When to take money:** Fees is not live anywhere, so do not take a setup fee or a first month, and do not give a start date. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
 6. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make or how much a centre will collect, not even as an example. Geometer doesn't either.
 
@@ -259,16 +260,18 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 
 ## 8. The setup visit
 
-Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner. No real Fees centre has gone live yet (section 11), so this is the visit as it will be, for you to learn. Until Geometer tells you your town is ready, do not start it: show the walkthrough, ask for the letter of intent, and promise no date. When your town is ready, the panel's Set up page does the same list on a phone, in five steps.
+Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner. No real Fees centre has gone live yet (section 11), so this is the visit as it will be, for you to learn. Until Geometer tells you your town is ready, do not start it: show the walkthrough, ask for the letter of intent, and promise no date. When your town is ready, the panel's Set up page does the same list on a phone, in five steps. Ask for what is on the card "What to ask the shop for" (`sell/ask-card.en.md`); it also says what not to promise.
 
 **How the centre gets paid.** UPI is the default: parents pay the centre's own UPI ID, and the centre needs no gateway account. Ask the owner for the UPI ID and the name that shows on it. Type both carefully, then read them back to the owner. Nothing checks a UPI ID for you, so one wrong letter sends the money to someone else. Then show the owner the "Received" button on WhatsApp. Use Razorpay only if the centre has, or wants, its own account.
 
 - [ ] **The WhatsApp check.** Open the centre's WhatsApp with the owner.
   - It must be the WhatsApp Business app, and the centre keeps its number and its app.
-  - Ask how old the account is. If it is too new, the helper can't connect yet: agree a date to check again, and take no money.
-  - Tell the owner: open the app at least once a week, don't uninstall it, and link the other devices again afterwards.
+  - WhatsApp needs a Facebook login with admin access to the centre's Meta business portfolio. The owner logs in themselves, on their own phone: you never see a password or a code.
+  - The name WhatsApp shows must match what the centre calls itself in public (signboard, Google or Instagram page).
+  - Meta may ask the centre to verify its business later. Which documents it accepts for a small centre is not confirmed, so don't promise that no papers will be needed.
+  - Tell the owner: open the app at least once every 2 weeks, don't uninstall it, and link the other devices again afterwards.
 - [ ] **Meta's approval of the messages.** Every reminder and every notice to the owner goes out as a message wording that Meta must approve first. The list is in `templates/education/fees/whatsapp-templates.json`, in all four languages. Approval can take days, and Meta can ask for changes. Say so, and give no date.
-- [ ] **The centre's own Razorpay account.** Only if the centre chooses Razorpay. Payments go straight to the centre, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. The helper then needs access to the account: a Razorpay key ID, a key secret and a webhook secret, made by the owner in the Razorpay dashboard. Never write them in a chat or on paper. The account may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes the time Razorpay takes: minutes, or up to 4 working days in the cases we know of.
+- [ ] **The centre's own Razorpay account.** Only if the centre chooses Razorpay. Payments go straight to the centre, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. The helper then needs access to the account: a Razorpay key ID, a key secret and a webhook secret, made by the owner in the Razorpay dashboard. Never write them in a chat or on paper. The account may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes the time Razorpay takes: minutes, or up to 4 working days in the cases we know of. **Razorpay's fee** is written only here: about {{razorpay.platform-fee}} plus GST on each payment. Tell the centre: "Razorpay keeps its fee even when you give a payment back. On a ₹1,200 fee that is about ₹28." Check Razorpay's current page; if the centre's own agreement says otherwise, the agreement wins. Put the fee in the shop terms for this centre. On UPI there is no gateway fee.
 - [ ] **The students and their parents.** For each child: the name, the class, the parent's WhatsApp number and the parent's language (Hindi, English, Malayalam or Kannada). Ask the owner to read the list back. The list is the owner's: don't keep a copy on your own phone.
 - [ ] **The fees and the limits, in the owner's words.** Ask, write down, read back:
 
@@ -286,7 +289,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 - [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Approval needed". The owner answers "approve q-1" or "deny q-1". For a refund above the refund limit the reply uses a one-use code instead of q-1. Practise one reply together. For a refund above the refund limit, the one-use code comes from the approvals relay. It has been tried against the real Guard program, but not on a live centre (section 11). A fee waiver above the waiver limit is not held that way: the agent asks with the same "approve q-1" reply.
 - [ ] **The checks on this centre's settings.** Copy `templates/education/fees/settings/bright-tuition.example.json`, put in the centre's numbers from the list above, and run `node templates/education/fees/scripts/hand-check.ts --settings <your file>` (ask Geometer's team if you are unsure). A check that these settings can't express, for example a late fee when the centre has none, is named as not run and is not counted.
 - [ ] **The go-live certificate, read together.** The panel makes it when the checks pass. A builder can also make it with `node templates/education/fees/scripts/go-live-certificate.ts`. It says what was tried, on which settings, and what was not checked. Read every line aloud in the owner's language, including "Not checked". Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
-- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, Razorpay's fee, WhatsApp's message fees, cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet. On UPI there is no gateway fee; Razorpay's fee applies only if the centre chooses Razorpay.
+- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, WhatsApp's message fees, cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet. Signed paper is still what Geometer's checks assume. Later, Geometer may tell you that the terms can be agreed on WhatsApp instead; do that only after Geometer says so. A centre that chose Razorpay also has Razorpay's fee in its terms (see the Razorpay item).
 
 ## 9. The first month
 

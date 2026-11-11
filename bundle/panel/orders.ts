@@ -121,6 +121,7 @@ export function ordersDraftFromShop(id: string, accountId: string, templateId: s
 
 // ---- step 1: the shop and its menu ------------------------------------------------------------------------------------------------
 
+// Orders step 1: the shop name and the menu typed one item per line become the draft; problems come back in the person's language, and what was typed stays so the form refills.
 export function applyOrdersBusiness(draft: Draft, body: Body, w: Words): StepResult {
   const s = w.setup.problems;
   const o = w.setup.orders.problems;
@@ -151,6 +152,7 @@ export function applyOrdersBusiness(draft: Draft, body: Body, w: Words): StepRes
 
 // ---- step 2: the rules -------------------------------------------------------------------------------------------------------------
 
+// Orders step 2: cut-off, pickup and delivery slots, advance and limits; refused here in plain words so the pathway's validateSettings, the last gate, seldom has to.
 export function applyOrdersRules(draft: Draft, body: Body, w: Words): StepResult {
   const o = w.setup.orders.problems;
   const problems: string[] = [];

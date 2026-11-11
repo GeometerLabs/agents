@@ -9,6 +9,7 @@ import type { Store } from "./booking.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import type { FakeClock } from "../../../../modules/core/clock.ts";
 import { createFakeCalendar } from "./adapters/calendar.ts";
+import { createOwnCalendar } from "./adapters/own-calendar.ts";
 import type { FakeCalendar } from "./adapters/calendar.ts";
 import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
 import type { FakeMessaging, InboundMessage } from "../../../../modules/messaging/messaging.ts";
@@ -106,6 +107,10 @@ export interface WorldOptions {
   qrImage?: (text: string) => Promise<string | null>;
   /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
   licence?: () => LicenceNow;
+  /** B72: run on the shop's own booking list instead of the fake Google Calendar. Pair it with settings that say `calendar: {module: "own"}`. */
+  ownCalendar?: boolean;
+  /** B72: the shop terms the owner can agree to on WhatsApp (modules/terms). Left out: the feature is off. */
+  terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -114,15 +119,16 @@ export const HARNESS_GUARD = { tenant: "glow-salon", version: 1, reviewedBy: "ha
 export function createWorld(options: WorldOptions = {}): World {
   const settings = options.settings ?? glowSalon();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, settings.timezone));
-  const calendar = createFakeCalendar();
+  const store = createStore();
+  // B72: a shop with no Google Calendar (settings "calendar": {"module": "own"}) gets its own booking list in place of the fake calendar, as the runtime does
+  const calendar = options.ownCalendar ? createOwnCalendar(store, () => clock.now()) as unknown as FakeCalendar : createFakeCalendar();
   const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock);
   const payments = createFakePayments(clock, { guard, ...options.payments });
   const messaging = createFakeMessaging(clock);
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
-  const store = createStore();
-  const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
+  const agent = createAgent({ settings, clock, ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
   let deliveredEvents = 0;
 
   const world: World = {

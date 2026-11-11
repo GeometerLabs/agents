@@ -13,6 +13,7 @@ export type MarkReply =
 
 /** The reply buttons' ids. A button carries one action and one code. */
 export const MARK_BUTTON = { received: "upi-received", refunded: "upi-refunded", kept: "upi-kept" } as const;
+// Button ids carry the one-use code so a tap can only act on the request it was sent for.
 export const markButtonId = (kind: keyof typeof MARK_BUTTON, code: string): string => `${MARK_BUTTON[kind]}:${code}`;
 
 const BUTTON_RE = new RegExp(`^(upi-received|upi-refunded|upi-kept):(${CODE_PATTERN})$`, "u");

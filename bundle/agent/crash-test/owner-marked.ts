@@ -43,6 +43,7 @@ async function bookAndRequest(w: World): Promise<{ id: string; at: number }> {
 
 const booked = (w: World, from = 0) => w.toCustomer().slice(from).filter((t) => w.plan.driver.bookedWords.test(t));
 
+// The situations for an agent taking UPI through the desk. The gateway ones are returned as skipped with a reason, so the certificate shows they were left out and why.
 export function buildOwnerMarkedSituations(plan: CrashPlan): { situations: Situation[]; skipped: Skipped[] } {
   const D = plan.settings.deposit.amountInr;
   const out: Situation[] = [];

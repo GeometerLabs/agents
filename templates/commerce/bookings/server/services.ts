@@ -19,7 +19,7 @@ export interface LiveModule {
 /** The services as the live adapters take them: each Guard's credential for this agent has been read from its file. */
 export type LiveServices = {
   payments: { baseUrl: string; agentToken?: string };
-  calendar: { baseUrl: string; calendarId: string; agentToken?: string };
+  calendar?: { baseUrl: string; calendarId: string; agentToken?: string }; // left out for a shop with no Google Calendar (B72)
   messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: "meta" | "gupshup"; appId?: string }; // provider: modules/messaging/providers.ts
   timeoutMs?: number;
 };
@@ -44,6 +44,8 @@ export interface ServicesDeps {
   loadLive?: () => Promise<LiveModule>;
   /** The shop's payment block (settings.payment): which gateway a payments service is (B71). */
   payment?: unknown;
+  /** A shop with no Google Calendar (settings "calendar": {"module": "own"}, B72): no calendar service is built, live or not, and the runtime keeps the shop's own booking list. */
+  ownCalendar?: boolean;
 }
 
 export async function buildServices(config: Pick<RuntimeConfig, "mode" | "services">, deps: ServicesDeps): Promise<Services> {
@@ -51,5 +53,5 @@ export async function buildServices(config: Pick<RuntimeConfig, "mode" | "servic
     const live = await (deps.loadLive ?? loadLiveModule)();
     return live.createLiveAdapters(readAgentTokens(config.services!), { clock: deps.clock, window: deps.window, ...(deps.payment ? { payment: deps.payment } : {}) });
   }
-  return { calendar: createFakeCalendar(), payments: createFakePayments(deps.clock), messaging: standInMessaging(deps.clock, [...Object.values(TEMPLATE_NAMES), ...REPORT_TEMPLATE_NAMES], deps.say) };
+  return { ...(deps.ownCalendar ? {} : { calendar: createFakeCalendar() }), payments: createFakePayments(deps.clock), messaging: standInMessaging(deps.clock, [...Object.values(TEMPLATE_NAMES), ...REPORT_TEMPLATE_NAMES], deps.say) };
 }

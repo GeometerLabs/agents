@@ -49,6 +49,7 @@ export interface AgentConnection {
   desk?: { module: string; displayName: string };
 }
 
+// The addresses a builder points their agent at (one per Guard) and the credential for them; derived from the folder alone so `agent add` and `agent show` print the same thing.
 export function connectionOf(dir: string, server: ServerConfig, folder: AgentFolder): AgentConnection {
   const agent = folder.agent!;
   const paying = paymentUpstreamOf(agent.upstreams);
@@ -178,6 +179,7 @@ function missingSecrets(dir: string, name: string, f: AgentFolder): Problem[] {
   ];
 }
 
+// The agent twin of prepareShop: everything that can be decided and refused before any container starts. Takes the agent's handed-in secrets as a side effect.
 export function prepareAgent(ctx: Context, server: ServerConfig, state: State, name: string): { prepared?: PreparedAgent; problems: Problem[]; notes: string[] } {
   const folder = readAgent(ctx.dir, name);
   const taken = takeSecrets(ctx.dir, name);
@@ -321,7 +323,7 @@ async function deployChecked(ctx: Context, name: string, o: AgentDeployOptions):
 
 // ---- the lines `agent add` and `agent show` print ----------------------------------------------------------------------------------------
 
-/** What `agent add`, `deploy` and `show` print. Never a credential: the agent reads them from its file (agent/credentials.ts). */
+/** The plain-language lines `agent add`, `deploy` and `show` print. Never a credential (since 12 Nov 2026): the agent reads them from its file (agent/credentials.ts). */
 export function connectionText(name: string, c: AgentConnection): string {
   // a gateway's or an owner-marked module's label is its own display name (the registry's), so nothing here names a provider
   const label = (k: string): string => (k === OWN_API ? "Your gateway" : k === "whatsapp" ? "WhatsApp" : k === "calendar" ? "Google Calendar" : k === c.desk?.module ? `${c.desk.displayName} desk` : providerById(k)?.displayName ?? k);

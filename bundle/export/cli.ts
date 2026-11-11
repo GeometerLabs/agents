@@ -15,6 +15,7 @@ import { sourcesFor } from "./sources.ts";
 
 export interface Exported { folder: string; archive: string; files: number; notes: string[]; warnings: string[]; whole: boolean }
 
+// Builds the export, re-checks it before writing, and writes both a folder and a .tar.gz. Checking before handing it over means a bad export is reported to the person who made it, not to whoever receives it.
 export async function exportCommand(ctx: Context, shop: string, out: string): Promise<Exported> {
   const now = ctx.now().getTime();
   const target = resolve(out);

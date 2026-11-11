@@ -77,6 +77,7 @@ export interface IntentParser<I extends IntentBase = IntentBase, C = unknown, O 
   parseDetailed?(text: string, context: C, options?: O): Promise<ParseResult<I>>;
 }
 
+// Model replies are untrusted JSON; this is the first check before any field of one is used.
 export const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** How likely the decision model thought the option it chose was, 0 to 1. Here and not in the router, so a template's reading can use it without the router, the price table and the HTTP code coming with it (the browser demo has none of them). */

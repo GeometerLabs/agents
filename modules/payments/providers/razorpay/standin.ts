@@ -50,10 +50,12 @@ export function wireLink(l: PaymentRequest, payments: "full" | "empty" | "null")
   };
 }
 
+// Shaped like Razorpay's refund object so the live adapter's parser is exercised by the same bytes it would get in production.
 export function wireRefund(r: Refund): Record<string, unknown> {
   return { id: r.id, entity: "refund", amount: r.amount, currency: "INR", payment_id: r.payment_id, notes: {}, receipt: r.receipt ?? null, acquirer_data: { arn: null }, created_at: r.created_at, batch_id: null, status: r.status, speed_processed: "normal" };
 }
 
+// Translates Razorpay paths into calls on the fake payments, so crash tests run the real adapter against a fake that can fail on demand.
 export function razorpayStandin(payments: FakePayments): Handler {
   return async ({ method, path, query, body }) => {
     if (!path.startsWith("/v1/payment_links") && !path.startsWith("/v1/payments/")) return undefined;
