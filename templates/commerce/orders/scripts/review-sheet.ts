@@ -65,6 +65,7 @@ const WHEN: Record<TemplateId, string> = {
   kept: "The customer said no to cancelling: the order stays",
   told_owner: "The customer tapped Talk to the owner: the owner has been asked to message them",
   couldnt_tell_owner: "The owner could not be told just now",
+  wait_over: "The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised",
   owner_order_confirmed: "A pickup order was confirmed: what to prepare, for when, the total, the advance and what to collect",
   owner_delivery_confirmed: "A delivery order was confirmed: the same, with the address the customer wrote",
   owner_big_order: "An order above the owner's line: approve or deny, with the order's reference",

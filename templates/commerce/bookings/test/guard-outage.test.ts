@@ -85,14 +85,17 @@ test("the WhatsApp Guard down past the bound: no reply can reach the customer, s
   } finally { await o.runtime.close(); o.kit.cleanup(); }
 });
 
-test("the Calendar Guard down past the bound: the customer gets the shop's words for it and the owner's list has it, once", async () => {
+test("the Calendar Guard down past the bound: the customer is told the request was not finished and where it went, once, and the owner's list has it", async () => {
   const o = outageKit();
   try {
     o.calendar.down();
     await o.kit.say(o.runtime, BOOK);
     await o.run(GUARD_WAIT_MS);
     assert.equal(o.toCustomer().length, 1);
-    assert.match(o.toCustomer()[0].text, /couldn't reach the owner|मालिक तक/u);
+    // the words of their own (11 Nov): what happened, where the message is, what to do; never that the owner was told or will write, which the code does not do
+    assert.equal(o.toCustomer()[0].text, `Sorry, I could not finish your request: the booking system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${o.kit.settings.name} directly.`);
     assert.deepEqual(o.runtime.status().tasks, { pending: 0, done: 0, failed: 1 });
+    const found = obligations.detect({ template: "bookings", entries: o.db.loadState().record, cases: [], nowMs: o.kit.clock.now(), options: DEFAULT_OPTIONS }).found.filter((f) => f.kind === "message_unanswered");
+    assert.equal(found.length, 1, "the to-do item the words name is there");
   } finally { await o.runtime.close(); o.kit.cleanup(); }
 });

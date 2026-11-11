@@ -64,13 +64,20 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId;
 
 /**
  * The licence's wind-down and final stop (plan B13; modules/licence). The customer's line answers a request for new work while online booking is paused; the owner's
  * two are the one service notice for each `paid_through` (WhatsApp utility templates). About the service, never about money; they name who to contact.
  */
 export type LicenceTemplateId = "booking_paused" | "owner_licence_paused" | "owner_licence_stopped";
+
+/**
+ * The wait for a Guard is over (modules/runtime/guard-wait.ts, 15 minutes from the message) and this message's work was not done: the customer hears that it was
+ * not finished, that the booking system is not answering, that the message is on the owner's to-do list (the record line the panel's list reads, `message_unanswered`),
+ * and to write again later or contact the shop. Nothing more is promised: nobody is messaged by the code and nothing is tried again by itself (11 Nov 2026).
+ */
+export type GuardWaitTemplateId = "wait_over";
 
 /** UPI shops only (B33): the deposit is paid to the shop's own UPI ID and marked paid by the owner; refunds are sent by the owner. */
 export type UpiTemplateId =
@@ -84,9 +91,10 @@ export const TEMPLATE_NAMES = { customer: "booking_update", reminder: "booking_r
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId>, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
 type LicenceSet = Record<LicenceTemplateId, Template>;
+type GuardWaitSet = Record<GuardWaitTemplateId, Template>;
 
 /** A template asks for a value the record does not have: refuse to write the message at all. */
 export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): NonNullable<MessageFacts[K]> {
@@ -523,7 +531,23 @@ const licenceKn: LicenceSet = {
   owner_licence_stopped: (f) => `ಸೂಚನೆ: ${f.businessName}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ ${partner(f)} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿರುವ ಬುಕಿಂಗ್‌ಗಳು: ${upcoming(f)}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn }, hi: { ...hi, ...upiHi, ...licenceHi }, ml: { ...ml, ...upiMl, ...licenceMl }, kn: { ...kn, ...upiKn, ...licenceKn } };
+// ---- the wait for a Guard is over (checkpoint item 8, 11 Nov 2026) ------------------------------------------------------------------------------------------------
+// Hindi, Malayalam and Kannada are machine-written, like the rest of those packs, and wait for a native speaker's review (the REVIEW sheets list them; Deferred.md says so).
+// The shop's name is not given a case ending: the sentence that names it is built the way `booking_paused` is.
+const waitEn: GuardWaitSet = {
+  wait_over: (f) => `Sorry, I could not finish your request: the booking system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${f.businessName} directly.`,
+};
+const waitHi: GuardWaitSet = {
+  wait_over: (f) => `माफ़ कीजिए, मैं आपका अनुरोध पूरा नहीं कर पाया: बुकिंग सिस्टम अभी जवाब नहीं दे रहा है। आपका संदेश मालिक की काम की सूची में है। कृपया बाद में फिर लिखें, या सीधे ${f.businessName} से संपर्क करें।`,
+};
+const waitMl: GuardWaitSet = {
+  wait_over: (f) => `ക്ഷമിക്കണം, നിങ്ങളുടെ അഭ്യർത്ഥന പൂർത്തിയാക്കാൻ കഴിഞ്ഞില്ല: ബുക്കിംഗ് സംവിധാനം ഇപ്പോൾ പ്രതികരിക്കുന്നില്ല. നിങ്ങളുടെ സന്ദേശം ഉടമയുടെ ചെയ്യാനുള്ള കാര്യങ്ങളുടെ പട്ടികയിലുണ്ട്. ദയവായി പിന്നീട് വീണ്ടും എഴുതൂ, അല്ലെങ്കിൽ ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
+};
+const waitKn: GuardWaitSet = {
+  wait_over: (f) => `ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಬುಕಿಂಗ್ ವ್ಯವಸ್ಥೆ ಈಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂದೇಶ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {
