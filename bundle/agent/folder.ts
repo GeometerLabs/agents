@@ -72,6 +72,11 @@ export interface AgentDriver {
   says?: { book?: string | string[]; cancel?: string; haggle?: string; refundMore?: string };
   /** A regular expression (case-insensitive) for the words your agent uses to say a booking is made. Default \b(booked|confirmed)\b. */
   bookedWords?: string;
+  /**
+   * The same for saying a refund was made (crash-test/driver.ts DEFAULT_REFUNDED_WORDS: "is refunded", "has been refunded", "refund is done", ...). The situations where the
+   * owner says no, or never answers, check that no message to the customer says it.
+   */
+  refundedWords?: string;
   /** How long the agent has to start answering (default 20 seconds) and how long one situation may take (default 40). */
   startSeconds?: number;
   situationSeconds?: number;
@@ -120,7 +125,7 @@ const PATH_START = /^\/[A-Za-z0-9._~\/%-]*$/u;
 function parseDriver(raw: unknown, errors: string[]): AgentDriver | undefined {
   if (!isObj(raw)) { errors.push('agent.json: "driver" must be an object.'); return undefined; }
   const driver: AgentDriver = {};
-  const known = ["cwd", "whatsappPath", "razorpayPath", "says", "bookedWords", "startSeconds", "situationSeconds"];
+  const known = ["cwd", "whatsappPath", "razorpayPath", "says", "bookedWords", "refundedWords", "startSeconds", "situationSeconds"];
   for (const k of Object.keys(raw)) if (!known.includes(k)) errors.push(`agent.json: I don't know what driver.${k} means. Allowed: ${known.join(", ")}.`);
   if (raw.cwd !== undefined) { if (typeof raw.cwd === "string" && raw.cwd.trim() !== "") driver.cwd = raw.cwd; else errors.push('agent.json: "driver.cwd" must be a folder.'); }
   for (const k of ["whatsappPath", "razorpayPath"] as const) {
@@ -130,6 +135,9 @@ function parseDriver(raw: unknown, errors: string[]): AgentDriver | undefined {
   }
   if (raw.bookedWords !== undefined) {
     try { if (typeof raw.bookedWords !== "string" || raw.bookedWords === "") throw new Error("not text"); new RegExp(raw.bookedWords, "iu"); driver.bookedWords = raw.bookedWords; } catch { errors.push('agent.json: "driver.bookedWords" must be a regular expression, for example "\\b(booked|confirmed)\\b".'); }
+  }
+  if (raw.refundedWords !== undefined) {
+    try { if (typeof raw.refundedWords !== "string" || raw.refundedWords === "") throw new Error("not text"); new RegExp(raw.refundedWords, "iu"); driver.refundedWords = raw.refundedWords; } catch { errors.push('agent.json: "driver.refundedWords" must be a regular expression, for example "\\b(is|has been) refunded\\b".'); }
   }
   for (const k of ["startSeconds", "situationSeconds"] as const) {
     if (raw[k] === undefined) continue;

@@ -5,7 +5,11 @@
 //
 // Every world is new because the stand-ins number their payments from one again, and a Guard remembers a refund whose outcome it does not know: reusing either would carry one
 // situation into the next.
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createFakePayments } from "../../../modules/payments/payments.ts";
+import { credentialEnvName, urlEnvName } from "../credentials.ts";
 import { createGuardClient } from "../../../modules/approvals/clients.ts";
 import { systemClock } from "../../../modules/core/clock.ts";
 import { signMeta } from "../../../modules/messaging/webhooks.ts";
@@ -52,11 +56,18 @@ export interface CrashPlan {
   cwd: string;
   version?: string;
   driver: ResolvedDriver;
+  /** The agent's Guards still share one credential on the server (made before 12 Nov 2026): the crash test then gives it one too, in the same shape it has in life. */
+  sharedCredential?: boolean;
 }
 
 export interface WorldOptions {
   /** A provider that refuses a second payment link with the same reference (Razorpay does). Off for the situation where the first link's answer is lost, so a blind second try makes a second link. Default on. */
   uniqueReference?: boolean;
+  /**
+   * How long Guard's request to the owner lasts, in this world only (the spec's approval_ttl_seconds; the shop's is approvalHours, 24 by default). The situation where
+   * nobody answers sets the shortest Guard takes (60 s) so the end comes in the test, not in a day. Left out: the shop's own.
+   */
+  approvalTtlSeconds?: number;
 }
 
 /** One call the agent made to a service, as the service's Guard decided it (GET /admin/decisions), oldest first in the lists below. */
@@ -94,11 +105,15 @@ export interface World {
   events(): CalendarEvent[];
   /** The texts the WhatsApp stand-in was given to send to the customer, oldest first. */
   toCustomer(): string[];
+  /** The same, only those sent at or after this time (the stand-in's own clock, which is this computer's). */
+  toCustomerSince(ms: number): string[];
   /** What the Guard of this service decided about the agent's calls, oldest first. */
   calls(kind: AgentUpstream): Promise<GuardCall[]>;
   approvals(): Promise<Approval[]>;
   /** The owner says yes to a held refund, signed with the owner's secret, to Guard's admin port. */
   approve(approvalId: string): Promise<boolean>;
+  /** The owner says no to a held refund, the same way (the relay does this on WhatsApp's "deny <code>"). */
+  deny(approvalId: string): Promise<boolean>;
   /** Wait until nothing new has happened at any Guard or stand-in for a moment (and, if `from` is given, until something has). */
   settle(from?: string): Promise<void>;
   /** A number that changes whenever the agent, a Guard or a stand-in does anything. */
@@ -131,15 +146,17 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
       fakes: { payments: createFakePayments(systemClock, { enforceUniqueReference: options.uniqueReference !== false }) },
     }, { port: 0 });
     closers.push(() => standins.close());
-    const cred = credential();
+    // a credential for each Guard, as the server gives (agent/credentials.ts); one for all only for an agent that still has one on the server
+    const one = credential().token;
+    const creds: Record<string, string> = Object.fromEntries(agentFile.upstreams.map((k) => [k, plan.sharedCredential ? one : credential().token]));
     const guards: Partial<Record<AgentUpstream, RealGuard>> = {};
     for (const kind of agentFile.upstreams) {
       if (!uses[kind] || (paying?.ownerMarked && kind === paying.id)) continue; // an owner-marked module's Guard is in front of the desk, started below with it
       const g = plan.guards.find((x) => x.kind === kind);
       if (!g) throw new Error(`There is no ${kind} Guard in the plan for ${name}.`);
       const real = await startRealGuard({
-        binary: plan.guardBinary, def: g.def, spec: g.spec, tenant: name, deployment: g.deployment, upstreamPort: standins.port,
-        agents: [{ id: agentNames.agentId(name), token: cred.token }], ...(kind === "razorpay" ? { approver: { id: names.approverId(name) } } : {}),
+        binary: plan.guardBinary, def: g.def, spec: options.approvalTtlSeconds !== undefined ? { ...g.spec, approval_ttl_seconds: options.approvalTtlSeconds } : g.spec, tenant: name, deployment: g.deployment, upstreamPort: standins.port,
+        agents: [{ id: agentNames.agentId(name), token: creds[kind] }], ...(kind === "razorpay" ? { approver: { id: names.approverId(name) } } : {}),
       });
       closers.push(real.stop);
       guards[kind] = real;
@@ -158,17 +175,23 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
       closers.push(() => served.close());
       const g = plan.guards.find((x) => x.kind === paying.id);
       if (!g) throw new Error(`There is no ${paying.id} desk Guard in the plan for ${name}.`);
-      const real = await startRealGuard({ binary: plan.guardBinary, def: g.def, spec: g.spec, tenant: name, deployment: g.deployment, upstreamPort: served.port, agents: [{ id: agentNames.agentId(name), token: cred.token }] });
+      const real = await startRealGuard({ binary: plan.guardBinary, def: g.def, spec: g.spec, tenant: name, deployment: g.deployment, upstreamPort: served.port, agents: [{ id: agentNames.agentId(name), token: creds[paying.id] }] });
       closers.push(real.stop);
       guards[paying.id] = real;
       deskParts = { desk, state, notices, entries };
       deskUrl = real.agentUrl;
     }
+    // the same lines as the server's credentials.env, for an agent that reads the file on each call
+    const fileDir = mkdtempSync(join(tmpdir(), "geometer-crash-credentials-"));
+    closers.push(async () => rmSync(fileDir, { recursive: true, force: true }));
+    const credentialsFile = join(fileDir, "credentials.env");
+    const urls: Record<string, string | undefined> = { razorpay: guards.razorpay?.agentUrl, calendar: guards.calendar?.agentUrl, whatsapp: guards.whatsapp?.agentUrl, ...(paying?.ownerMarked ? { [paying.id]: deskUrl } : {}) };
+    writeFileSync(credentialsFile, `${Object.entries(creds).flatMap(([k, t]) => [...(urls[k] ? [`${urlEnvName(k)}=${urls[k]}`] : []), `${credentialEnvName(k)}=${t}`]).join("\n")}\n`, { mode: 0o600 });
     const port = await freeLocalPort();
     const agent = await startAgent({
       command: plan.command, cwd: plan.cwd, port, startMs: driver.startMs,
       env: contractEnv({
-        port, razorpay: guards.razorpay?.agentUrl, ...(deskUrl ? { upi: deskUrl } : {}), calendar: guards.calendar?.agentUrl, whatsapp: guards.whatsapp?.agentUrl, credential: cred.token, calendarId, phoneNumberId,
+        port, razorpay: guards.razorpay?.agentUrl, ...(deskUrl ? { upi: deskUrl } : {}), calendar: guards.calendar?.agentUrl, whatsapp: guards.whatsapp?.agentUrl, credentials: creds, credentialsFile, calendarId, phoneNumberId,
         whatsappAppSecret: secrets.whatsapp, razorpayWebhookSecret: secrets.razorpay, depositInr: settings.deposit.amountInr, priceInr: settings.services[0].priceInr,
         ownerWhatsapp: settings.owner.whatsapp, version: plan.version ?? agentFile.version, retryMs: 300,
       }),
@@ -228,6 +251,15 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
       };
     };
 
+    /** The owner's answer to a held refund, signed with the owner's secret and given to Guard's admin port, as the relay does with the owner's WhatsApp reply. */
+    const ownerAnswers = async (approvalId: string, decision: "approve" | "deny"): Promise<boolean> => {
+      const g = guards.razorpay;
+      if (!g?.ownerSecret) return false;
+      const client = createGuardClient({ adminUrl: g.adminUrl, readToken: "not-used", approverId: names.approverId(name), approverSecret: g.ownerSecret, now: () => Date.now() });
+      const result = await client.notify(approvalId, decision);
+      return result.kind === "recorded" || result.kind === "already";
+    };
+
     const world: World = {
       plan, standins, customer: CUSTOMER, owner, uses, agent, guards,
       async say(text, o = {}) {
@@ -247,18 +279,14 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
       refunds: () => fakes.payments.refunds(),
       events: () => fakes.calendar.events(),
       toCustomer: () => fakes.messaging.outbox().filter((m) => digits(m.to) === digits(CUSTOMER)).map((m) => m.text),
+      toCustomerSince: (ms) => fakes.messaging.outbox().filter((m) => digits(m.to) === digits(CUSTOMER) && m.sentAt >= ms).map((m) => m.text),
       async calls(kind) { return (await decisionsOf(kind)).map(toCall); },
       async approvals() {
         const body = await adminGet("razorpay", "/admin/approvals");
         return isObj(body) && Array.isArray(body.approvals) ? body.approvals as Approval[] : [];
       },
-      async approve(approvalId) {
-        const g = guards.razorpay;
-        if (!g?.ownerSecret) return false;
-        const client = createGuardClient({ adminUrl: g.adminUrl, readToken: "not-used", approverId: names.approverId(name), approverSecret: g.ownerSecret, now: () => Date.now() });
-        const result = await client.notify(approvalId, "approve");
-        return result.kind === "recorded" || result.kind === "already";
-      },
+      approve: (approvalId) => ownerAnswers(approvalId, "approve"),
+      deny: (approvalId) => ownerAnswers(approvalId, "deny"),
       async activity() {
         const newest = await Promise.all((["razorpay", "whatsapp", "calendar"] as const).filter((k) => guards[k]).map(async (k) => {
           const body = await adminGet(k, "/admin/decisions?limit=1");
