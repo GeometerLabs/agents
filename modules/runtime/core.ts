@@ -27,6 +27,8 @@ import type { DurableStore, TaskCounts, WindowStore } from "./store.ts";
 import { createRunner } from "./tasks.ts";
 import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wait.ts";
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
+import { recordMessageStatus } from "../messaging/statuses.ts";
+import type { StatusContext } from "../messaging/statuses.ts";
 
 /** Wait before the first, second and third retry; so four tries in all. For a step that failed: a step that found its Guard down waits by guard-wait.ts instead. */
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000];
@@ -222,6 +224,9 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   // not the bound for every message. In memory only: a restart waits again, and that wait is still bounded by each message's own time.
   const givenUp = new Set<string>();
   const tickMemory = sendMemory();
+  // whose number a status report names: the owner's and the approvers' (B37), from the shop's settings
+  const people = settings as { owner?: { whatsapp: string; language: Language }; approvers?: { people?: { whatsapp: string }[] } };
+  const statusContext: StatusContext = { ...(people.owner ? { owner: people.owner } : {}), approvers: (people.approvers?.people ?? []).map((p) => p.whatsapp), ...(options.recordKey ? { recordKey: options.recordKey } : {}) };
 
   /**
    * A task's step or a tick. Decided right after the agent returns, and BEFORE the compact, the licence notice and the monthly report: those two save for themselves, so a
@@ -236,7 +241,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     if (!isTask) tickMemory.begin();
     const watch = watchStep(kit.services, { mode: isTask && !lastTry ? "wait" : "observe", givenUp, ...(isTask ? {} : { memory: tickMemory }) });
     const agent = kit.createAgent({ store, record, services: watch.services });
-    const run = () => agent.handle(event);
+    // a status report is recorded against the message it is about and never handed to the agent (modules/messaging/statuses.ts)
+    const run = async () => { if (event.kind === "message_status") recordMessageStatus(record, event.status, statusContext); else await agent.handle(event); };
     let thrown: { error: unknown } | undefined;
     try { await (options.aroundStep ? options.aroundStep(event, run) : run()); } catch (error) { thrown = { error }; }
     for (const service of watch.answered) givenUp.delete(service);

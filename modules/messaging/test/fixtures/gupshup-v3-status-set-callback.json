@@ -1,0 +1,21 @@
+{
+  "object": "whatsapp_business_account",
+  "gs_app_id": "82ed52f4-30c0-4f12-81b4-e7ad07bd41de",
+  "entry": [
+    {
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "statuses": [
+              {
+                "type": "set-callback"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

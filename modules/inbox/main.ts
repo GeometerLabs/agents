@@ -8,6 +8,7 @@
 //   meta-signature  Meta's X-Hub-Signature-256. Needs WHATSAPP_APP_SECRET_FILE and WHATSAPP_VERIFY_TOKEN_FILE. Callback: POST /webhooks/whatsapp
 //   path-token      for a provider that does not sign (Gupshup). Needs WHATSAPP_PATH_TOKEN_FILE (16+ characters of A-Z a-z 0-9 _ -).
 //                   Callback: POST /webhooks/whatsapp/<token>; a wrong or missing token is 404. WEAKER than a signature: see Explanation.md.
+//                   With Gupshup, set WHATSAPP_APP_ID to the shop's Gupshup app id: a callback that names another app (gs_app_id) is not forwarded.
 // Either way, WHATSAPP_ALLOWED_SOURCES (comma-separated IPs or CIDRs) refuses every other source, and WHATSAPP_SOURCE_IP_HEADER (for example
 // x-forwarded-for) says which header your reverse proxy sets with the real address (the last one in it is used).
 //
@@ -66,6 +67,7 @@ try {
     whatsappAllowedSources: sources,
     ...(relayUrl ? { relayUrl, relayToken: secretFrom("RELAY_TOKEN_FILE"), ownerWhatsapp: process.env.OWNER_WHATSAPP } : {}),
     ...(process.env.WHATSAPP_SOURCE_IP_HEADER ? { sourceIpHeader: process.env.WHATSAPP_SOURCE_IP_HEADER } : {}),
+    ...(process.env.WHATSAPP_APP_ID ? { whatsappAppId: process.env.WHATSAPP_APP_ID } : {}),
   }, { port, host: process.env.HOST ?? "127.0.0.1" });
 } catch (e) { console.error((e as Error).message); process.exit(2); }
 console.error(`Inbox listening on ${process.env.HOST ?? "127.0.0.1"}:${inbox.port}. Forwarding to ${new URL(runtimeUrl).origin}. WhatsApp: ${verification}${sources.length > 0 ? `, sources limited to ${sources.length} address range(s)` : ""}${relayUrl ? `, the owner's messages also go to the approvals relay at ${new URL(relayUrl).origin}` : ""}. POST /webhooks/razorpay and /webhooks/whatsapp${verification === "path-token" ? "/<token>" : ""}.`);

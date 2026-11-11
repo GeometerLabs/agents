@@ -17,6 +17,7 @@ import { canonicalJson } from "../../../../modules/record/record.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
 import { headOf } from "../../../../modules/record/ledger.ts";
+import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import type { LedgerHead } from "../../../../modules/record/ledger.ts";
 import { SOURCES } from "../../../../modules/report/text.ts";
 import type { Source } from "../../../../modules/report/text.ts";
@@ -272,7 +273,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     parents: { stopped: new Set(month.filter((e) => e.action === "opt_out" && e.outcome === "confirmed").map((e) => e.conversation)).size },
     stopped: { total: stoppedTotal, byRule },
     messages: { toOwner: month.filter((e) => e.action === "send_message" && e.outcome !== "blocked" && e.refs.to === "owner").length, heldBack: month.filter((e) => e.action === "send_message" && e.outcome === "blocked" && e.decisions.some((d) => d.ruleId === "message-matches-record")).length },
-    unconfirmed: { open: month.filter((e) => (e.outcome === "unconfirmed" || e.outcome === "failed") && e.action !== "send_message").length },
+    unconfirmed: { open: month.filter((e) => (e.outcome === "unconfirmed" || e.outcome === "failed") && e.action !== "send_message" && e.action !== MESSAGE_STATUS_ENTRY).length }, // a message, or WhatsApp's report on one, is not an open payment
     notCounted: [...NOT_COUNTED],
     notTested: notTestedForReport(goLive, settings),
     goLive,

@@ -148,6 +148,12 @@ export const INTAKE: Record<string, { to: (shop: string) => string[]; make?: (te
     make: (t) => `Bearer ${t.trim()}`,
     check: (t) => (t.trim().length >= 16 && !/\s/u.test(t.trim()) ? undefined : "whatsapp_token must be the access token, on one line, with no spaces."),
   },
+  // Item 11b: a shop whose WhatsApp goes through Gupshup. Its Guard sends this whole Authorization value to partner.gupshup.io, exactly as handed in: Gupshup's partner
+  // app token goes as it is (no "Bearer"), and a newer universal token as Gupshup says to send it. It fills the same file as whatsapp_token: a shop has one provider.
+  gupshup_authorization: {
+    to: (shop) => [`g-${shop}-whatsapp`, "whatsapp_authorization"],
+    check: (t) => (/^(?:[A-Za-z]+ )?[^\s]{16,}$/u.test(t.trim()) ? undefined : "gupshup_authorization must be the whole Authorization value Gupshup asks for, on one line: the partner app token as Gupshup shows it (or a word like Bearer, one space, and the token)."),
+  },
   // B71 step 6: an agent's own gateway API. Its Authorization header, whole and as handed in ("Bearer ..." or "Basic ..."), for that Guard only: no module here knows the API's key shape
   gateway_authorization: {
     to: (shop) => [`g-${shop}-${OWN_API}`, OWN_API_SECRET],
