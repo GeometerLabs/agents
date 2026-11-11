@@ -193,8 +193,10 @@ test("sell guide: the ₹ amounts are the same set in every guide, section by se
 
 test("sell guide: section 6 states the two price lists of the list in force (partners' plans, the builder licence, WhatsApp on the shop's bill), and the first-100 price, the own-server discount, the old flat fee and the word 'founding' are gone from every guide and variant", () => {
   for (const l of LANGUAGES) {
-    for (const [name, text] of [["guide", guide(l)], ["variant", variant(l)]] as const) {
-      assert.ok(!/₹\s?199\b/u.test(text), `${l} ${name}: the 4 Nov flat fee ₹199 is out of date`);
+    for (const [name, text, source] of [["guide", guide(l), `guide.${l}.src.md`], ["variant", variant(l), `variants/equipment-rental.${l}.src.md`]] as const) {
+      // The 4 Nov flat fee was ₹199, written by hand. Since decision 36 (10 Nov) the builder licence is ₹199 too, and it reaches a guide only through
+      // {{licence.builder.fee}}. So the check reads the source: a hand-written ₹199 there is the old fee; a ₹199 in the made guide is the list's licence.
+      assert.ok(!/₹\s?199\b/u.test(readFileSync(new URL(source, SELL), "utf8")), `${l} ${name}: the 4 Nov flat fee ₹199 is out of date (a price comes from the list: {{id}})`);
       assert.ok(!/40\s?%|half (the )?plan|आधी कीमत|വിലയുടെ പകുതി|ಬೆಲೆಯ ಅರ್ಧ|ರಿಯಾಯಿತಿಯೊಂದಿಗೆ|from ₹|₹999 से:|₹999 മുതൽ:|₹999 ರಿಂದ:/u.test(text), `${l} ${name}: no first-100 discount, no own-server discount, and Operations is not "from"`);
       assert.ok(!/found(ing|er)|संस्थापक|फ़ाउंडिंग|ಸಂಸ್ಥಾಪಕ|ಫೌಂಡಿಂಗ್|സ്ഥാപക|ഫൗണ്ടിംഗ്/iu.test(text), `${l} ${name}: no "founding" and no "founder" in anything we offer`);
     }

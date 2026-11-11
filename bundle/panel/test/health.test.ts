@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { LANGUAGES } from "../../../modules/language/languages.ts";
-import { PRICES_DIR, loadPriceList } from "../cost.ts";
+import { PRICES_DIR, formatRupees, latestPriceList, loadPriceList } from "../cost.ts";
 import { entriesFromForm, marginOf, minutesFromText, monthUsage, paiseFromText, planFeePaise, runningCostItems, sumMargins } from "../health.ts";
 import type { CostItem } from "../health.ts";
 import { WORDS } from "../languages.ts";
@@ -15,8 +15,11 @@ import { loadVoteRound } from "../votes.ts";
 import { NOW, accountIdOf, boot, tokenOf } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
-// The arithmetic is checked on the list of 9 Nov, by name: a dated list never changes.
-const prices = loadPriceList(new URL("2026-11-09.json", PRICES_DIR).pathname);
+// The arithmetic is checked on the list of 11 Nov, by name: a dated list never changes. On it the builder licence differs from every plan's fee (on the 9 Nov
+// list it equalled Basic's), so a test can tell the licence from a plan fee.
+const prices = loadPriceList(new URL("2026-11-11.json", PRICES_DIR).pathname);
+/** The builder licence of that list, in paise: read from it, never written here. */
+const LICENCE_PAISE = prices.rates["licence.builder.fee"].micro! / 10_000;
 const AT = new Date(NOW).toISOString();
 const fleet = (b: Boot, shop: string, more: Record<string, unknown> = {}) => {
   mkdirSync(join(b.dir, "fleet"), { recursive: true });
@@ -38,7 +41,8 @@ test("Geometer's charge: the plan's fee on Geometer's server, the builder licenc
   const fee = (o: { plan?: "basic" | "business" | "operations" | null; builder?: boolean }) => planFeePaise({ plan: o.plan === undefined ? "business" : o.plan, prices, builder: o.builder ?? false });
   assert.deepEqual(fee({}), { paise: 29_900, notes: [] });
   assert.deepEqual(fee({ plan: "basic" }), { paise: 14_900, notes: [] });
-  for (const plan of ["basic", "business", "operations", null] as const) assert.deepEqual(fee({ plan, builder: true }), { paise: 14_900, notes: ["builder-licence"] }, `${plan}: the builder licence, flat`);
+  assert.ok(!["basic", "business", "operations"].some((p) => prices.rates[`plan.${p}.fee`].micro! / 10_000 === LICENCE_PAISE), "the licence is not any plan's fee on this list, so the next line tells them apart");
+  for (const plan of ["basic", "business", "operations", null] as const) assert.deepEqual(fee({ plan, builder: true }), { paise: LICENCE_PAISE, notes: ["builder-licence"] }, `${plan}: the builder licence, flat`);
   assert.deepEqual(fee({ plan: null }), { paise: null, notes: ["no-plan"] });
   const { "licence.builder.fee": _gone, ...without } = prices.rates;
   assert.deepEqual(planFeePaise({ plan: "business", prices: { ...prices, rates: without }, builder: true }), { paise: null, notes: ["no-price"] }, "a list without the licence is unknown, never the plan fee and never 0");
@@ -162,7 +166,8 @@ test("on a builder's own server Geometer's line is the builder licence and the m
     b.status("glow-salon", { updatedAt: AT, deploy: { state: "applied" }, backups: { lastDrillAt: new Date(NOW - 12 * 86_400_000).toISOString(), drillOk: true }, licence: { state: "warning", listed: true, paidThrough: null, windDownOn: null, stopOn: null, exportUntil: null, leaseIssuedAt: AT, extendedUntil: null } });
     exportRecord(b, "glow-salon", [entry(1, "2026-11-02T10:00:00+05:30", "receive_message", { step: "model", costMicroInr: "2000000" })]);
     const page = (await arjun.get("/health/glow-salon")).plain;
-    assert.match(page, /₹149\.00/u, "the builder licence, whatever the plan (Business here)");
+    const inForce = latestPriceList().rates["licence.builder.fee"].micro! / 10_000;
+    assert.ok(page.includes(formatRupees(inForce)), "the builder licence of the list in force, whatever the plan (Business here)");
     assert.match(page, /Builder licence/u);
     assert.match(page, /AI model[^]*?₹2\.00/u, "the model cost the runtime recorded this month");
     assert.match(page, /more than 2 days ago/u, "the heartbeat is old");
