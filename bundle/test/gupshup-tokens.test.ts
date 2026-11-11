@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { UAT_LIFETIME_MS, UAT_RENEW_BEFORE_MS, MINTS_PER_MINUTE, createGupshupRenewer, jwtExpiryMs, mintAppToken } from "../services/gupshup-tokens.ts";
 import { GUPSHUP_UAT_MAX_MS, GUPSHUP_UAT_MIN_MS } from "../../modules/messaging/gupshup.ts";
 import { CREDENTIAL_WARN_MS, parseRenewalNotes, readRefresherRenewals, readRenewalsFile, renewalWork, writeRenewalsFile } from "../lib/renewals.ts";
+import { watchRenewals } from "../services/ops.ts";
 import { checkShop, deploy } from "../deploy.ts";
 import { planShop } from "../generate/shop.ts";
 import { secretFile } from "../lib/secrets.ts";
@@ -166,6 +167,12 @@ test("the rule the panel's list and the heartbeat share: failing, ended or missi
     const down = (async () => { throw new TypeError("fetch failed"); }) as unknown as typeof fetch;
     const notes = await readRefresherRenewals("http://refresher:8791", readRenewalsFile(dir)!.shops, now, down);
     assert.deepEqual([notes.glow.lastError, notes.glow.failingSince], ["the token refresher is not answering, so nothing is renewed", now]);
+    // ops: the refresher's word goes to the file the panel reads; and once nothing is renewed here any more, the file goes, so no old renewal is shown as failing
+    const answering = (async () => new Response(JSON.stringify({ ok: true, shops: {}, gupshup: { glow: { validUntil: now + 20 * HOUR, lastError: null, failingSince: null, credentialValidUntil: null } } }), { status: 200 })) as unknown as typeof fetch;
+    await watchRenewals({ fleetDir: dir, refresherUrl: "http://refresher:8791" }, { fetchFn: answering, once: true });
+    assert.equal(readRenewalsFile(dir)?.shops.glow.validUntil, now + 20 * HOUR);
+    await watchRenewals({ fleetDir: dir }, { once: true });
+    assert.equal(readRenewalsFile(dir), undefined, "no refresher URL: no renewals file left behind");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

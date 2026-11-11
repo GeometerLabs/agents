@@ -2,7 +2,7 @@
 // which reads the refresher's /healthz every minute and writes fleet/_renewals.json (the one folder ops can write), and counts a renewal that needs a person in the
 // heartbeat's open work; and by the panel (panel/inbox.ts), which shows it on the shop's unfinished-work list. One file, one rule (`renewalWork`), so the list and
 // the heartbeat never disagree. Nothing here is a secret: times, and a few plain words from the refresher (never a token, never a reply body).
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { writeAtomic } from "./util.ts";
 
@@ -51,6 +51,14 @@ export function readRenewalsFile(fleetDir: string): RenewalsFile | undefined {
     const raw = JSON.parse(readFileSync(path, "utf8")) as { schema?: unknown; at?: unknown; shops?: unknown };
     return raw.schema === 1 && typeof raw.at === "string" ? { schema: 1, at: raw.at, shops: parseRenewalNotes(raw.shops) } : undefined;
   } catch { return undefined; }
+}
+
+/**
+ * No shop's token is renewed here any more (the last one went back to a static token, or the universal token was taken away): the file goes, so the panel's list never
+ * shows an old renewal as failing once its token's end has passed.
+ */
+export function clearRenewalsFile(fleetDir: string): void {
+  rmSync(join(fleetDir, RENEWALS_FILE), { force: true });
 }
 
 export function writeRenewalsFile(fleetDir: string, shops: Record<string, RenewalNote>, now: Date): void {
