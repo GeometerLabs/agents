@@ -34,6 +34,7 @@ const costText = (micro: number): string => rupees(Math.ceil(micro / 10_000));
  */
 export function workBlock(r: MonthlyReport, s: Strings): string {
   const w = r.work;
+  if (!w) return ""; // a report made before the work block existed has none, and is shown as it was
   const k = s.work;
   const unit = w.costPerCompletedMicroInr !== null ? costText(w.costPerCompletedMicroInr) : w.noUnitCost === "no-completed-jobs" ? k.noCompleted : k.noCost;
   const rows: [string, string][] = [
