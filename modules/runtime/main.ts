@@ -16,6 +16,7 @@ export interface MainOptions {
   start(o: { clientFolder: string; tokenFile: string | undefined }): Promise<RunningClient<{ name: string }, any>>;
 }
 
+// Shared command-line entry so each template's server/main.ts stays a few lines and errors print as a sentence, not a stack.
 export async function runMain(options: MainOptions, args: string[] = process.argv.slice(2)): Promise<void> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(`Usage: INTERNAL_TOKEN_FILE=<file> node ${options.mainPath} --client <folder>`);

@@ -141,7 +141,7 @@ export interface Words {
     accounts: {
       intro: string; received(at: string): string; keepEmpty: string; neverShown: string;
       whatsapp: { title: string; intro: string; steps: string[]; number: string; numberId: string; token: string; appSecret: string };
-      calendar: { title: string; intro: string; steps: string[]; shareAddress: string; noAddress: string; id: string; json: string; jsonHelp: string };
+      calendar: { title: string; intro: string; steps: string[]; shareAddress: string; noAddress: string; id: string; json: string; jsonHelp: string; /** B72: the shop's own booking list (default) and the choice to also use Google Calendar. */ useOwn: string; useGoogle: string };
     };
     checks: {
       saveFirst: string; saveButton: string; saved: string; runButton: string; waiting: string; settingsOk: string; handCheck: string; handNotRun: string;
@@ -464,7 +464,7 @@ export const en: Words = {
       calendar: {
         title: "Calendar", intro: "Bookings go into the shop's own Google Calendar.",
         steps: ["Open Google Calendar on a computer, and open the calendar's settings.", "Under “Share with specific people”, add the address below and choose “Make changes to events”.", "Under “Integrate calendar”, copy the Calendar ID and type it below."],
-        shareAddress: "Share the calendar with this address:", noAddress: "This server has no shared address. Paste the key file your builder gave you, below.", id: "Calendar ID", json: "Service-account key file", jsonHelp: "Only if your builder gave you one. Paste the whole file.",
+        shareAddress: "Share the calendar with this address:", noAddress: "This server has no shared address. Paste the key file your builder gave you, below.", id: "Calendar ID", json: "Service-account key file", jsonHelp: "Only if your builder gave you one. Paste the whole file.", useOwn: "Keep the bookings in the shop's own list (no Google Calendar needed). The owner sends “today” on WhatsApp to see the day's bookings. A Google Calendar can be added later.", useGoogle: "Also use the shop's Google Calendar",
       },
     },
     checks: {

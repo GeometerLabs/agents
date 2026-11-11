@@ -37,6 +37,9 @@ export interface MessageFacts {
   /** UPI: what the owner marked received, and what is still to come, in whole rupees. */
   markedInr?: number;
   leftInr?: number;
+  /** The owner asked for a day's bookings ("today", "tomorrow"): which day, and each booking on it (B72). Only ever in the reply to the owner's own message. */
+  day?: "today" | "tomorrow";
+  dayBookings?: { slotMs: number; serviceName: string; customerPhone: string; ref: string }[];
   /** The licence's service notices (B13): who the owner should contact (the partner who set the shop up), and the count the final stop's notice states. */
   partner?: string;
   upcomingCount?: number;
@@ -55,7 +58,7 @@ export type TemplateId =
   // Meta rejects a body that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
   | "owner_refund_needs_approval" | "owner_cant_confirm" | "owner_late_cancellation" | "owner_duplicate_payment"
   | "owner_payment_unused" | "owner_not_booked" | "owner_reschedule_failed"
-  | "owner_message_held" | "owner_opted_out" | "owner_unknown_command" | "owner_wants_to_talk"
+  | "owner_message_held" | "owner_opted_out" | "owner_unknown_command" | "owner_wants_to_talk" | "owner_day_bookings"
   // button mode: the agent reads with the rules only and answers with buttons and lists (modules/understanding/ai-state.ts). Each says why, and that every limit still holds.
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
   // sent by the approvals relay, not by the agent: the ask for a refund Guard is holding, and the answers to the owner's reply
@@ -104,6 +107,13 @@ export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): Non
 }
 export const slot = (f: MessageFacts) => formatSlot(need(f, "slotMs"), f.timeZone, f.language);
 export const inr = (f: MessageFacts, key: "priceInr" | "depositInr" | "refundInr") => formatInr(need(f, key));
+/** The owner's day list: a heading, then one line per booking (time, service, the customer's number, the reference). The words around it are per language. */
+function dayList(f: MessageFacts, words: { heading: Record<"today" | "tomorrow", string>; none: Record<"today" | "tomorrow", string> }): string {
+  const day = f.day ?? "today";
+  const rows = f.dayBookings ?? [];
+  if (rows.length === 0) return words.none[day];
+  return [words.heading[day], ...rows.map((r) => `- ${formatSlot(r.slotMs, f.timeZone, f.language)} ${r.serviceName} ${r.customerPhone} (${r.ref})`)].join("\n");
+}
 const menuList = (f: MessageFacts) => f.services.map((s) => `${s.name} ${formatInr(s.priceInr)}`).join(", ");
 
 const en: BaseSet = {
@@ -162,6 +172,7 @@ const en: BaseSet = {
   owner_message_held: (f) => `A message to ${need(f, "customerPhone")} was held back because it did not match the booking record. Nothing was sent.`,
   owner_opted_out: (f) => `Customer ${need(f, "customerPhone")} sent STOP. No more messages will go to them.`,
   owner_unknown_command: () => `I didn't understand that. Reply "approve", "deny" or "retry" followed by the booking reference.`,
+  owner_day_bookings: (f) => dayList(f, { heading: { today: "Your bookings today:", tomorrow: "Your bookings tomorrow:" }, none: { today: "No bookings today.", tomorrow: "No bookings tomorrow." } }),
   owner_approval_done: (f) => `Thank you. The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} is being sent, and they will be told.`,
   owner_approval_denied: (f) => `Understood. The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} will not be sent, and they will be told.`,
   owner_approval_expired: (f) => `That request ran out before you answered, so nothing was refunded: ${inr(f, "refundInr")} for ${need(f, "customerPhone")}.`,
@@ -229,6 +240,7 @@ const hi: BaseSet = {
   owner_message_held: (f) => `ग्राहक ${need(f, "customerPhone")} को जाने वाला एक संदेश रोक दिया गया क्योंकि वह बुकिंग रिकॉर्ड से मेल नहीं खाता था। कुछ नहीं भेजा गया।`,
   owner_opted_out: (f) => `ग्राहक ${need(f, "customerPhone")} ने STOP भेजा है। अब उन्हें कोई संदेश नहीं जाएगा।`,
   owner_unknown_command: () => `मैं समझ नहीं पाया। "approve", "deny" या "retry" लिखें और उसके बाद बुकिंग का रेफ़रेंस।`,
+  owner_day_bookings: (f) => dayList(f, { heading: { today: "आज की बुकिंग:", tomorrow: "कल की बुकिंग:" }, none: { today: "आज कोई बुकिंग नहीं है।", tomorrow: "कल कोई बुकिंग नहीं है।" } }),
   owner_approval_done: (f) => `धन्यवाद। ${need(f, "customerPhone")} को ${inr(f, "refundInr")} का रिफंड भेजा जा रहा है, और उन्हें बता दिया जाएगा।`,
   owner_approval_denied: (f) => `समझ गया। ${need(f, "customerPhone")} को ${inr(f, "refundInr")} का रिफंड नहीं भेजा जाएगा, और उन्हें बता दिया जाएगा।`,
   owner_approval_expired: (f) => `वह अनुरोध आपके जवाब से पहले ही समाप्त हो गया, इसलिए कुछ भी वापस नहीं किया गया: ${need(f, "customerPhone")} के लिए ${inr(f, "refundInr")}।`,
@@ -301,6 +313,7 @@ const ml: BaseSet = {
   owner_message_held: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")}: അയയ്ക്കാനിരുന്ന ഒരു സന്ദേശം ബുക്കിംഗ് രേഖയുമായി പൊരുത്തപ്പെടാത്തതിനാൽ തടഞ്ഞു. ഒന്നും അയച്ചിട്ടില്ല.`,
   owner_opted_out: (f) => `ഉപഭോക്താവ് ${need(f, "customerPhone")} STOP അയച്ചു. ഇനി അവർക്ക് സന്ദേശങ്ങൾ അയയ്ക്കില്ല.`,
   owner_unknown_command: () => `എനിക്ക് മനസ്സിലായില്ല. "approve", "deny" അല്ലെങ്കിൽ "retry" എന്ന് എഴുതി അതിനു ശേഷം ബുക്കിംഗ് റഫറൻസ് എഴുതൂ.`,
+  owner_day_bookings: (f) => dayList(f, { heading: { today: "ഇന്നത്തെ ബുക്കിംഗുകൾ:", tomorrow: "നാളത്തെ ബുക്കിംഗുകൾ:" }, none: { today: "ഇന്ന് ബുക്കിംഗുകളൊന്നും ഇല്ല.", tomorrow: "നാളെ ബുക്കിംഗുകളൊന്നും ഇല്ല." } }),
   owner_approval_done: (f) => `നന്ദി. ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${inr(f, "refundInr")} റീഫണ്ട് അയയ്ക്കുന്നുണ്ട്, അവരെ അറിയിക്കും.`,
   owner_approval_denied: (f) => `മനസ്സിലായി. ഉപഭോക്താവ് ${need(f, "customerPhone")}: ${inr(f, "refundInr")} റീഫണ്ട് അയയ്ക്കില്ല, അവരെ അറിയിക്കും.`,
   owner_approval_expired: (f) => `നിങ്ങൾ മറുപടി നൽകുന്നതിന് മുമ്പ് ആ അഭ്യർത്ഥനയുടെ സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും തിരികെ നൽകിയില്ല: ഉപഭോക്താവ് ${need(f, "customerPhone")}, ${inr(f, "refundInr")}.`,
@@ -369,6 +382,7 @@ const kn: BaseSet = {
   owner_message_held: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ಕಳುಹಿಸಬೇಕಿದ್ದ ಒಂದು ಸಂದೇಶ ಬುಕಿಂಗ್ ದಾಖಲೆಗೆ ಹೊಂದಿಕೆಯಾಗದ ಕಾರಣ ತಡೆಹಿಡಿಯಲಾಗಿದೆ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ.`,
   owner_opted_out: (f) => `ಗ್ರಾಹಕರು ${need(f, "customerPhone")} STOP ಕಳುಹಿಸಿದ್ದಾರೆ. ಇನ್ನು ಅವರಿಗೆ ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
   owner_unknown_command: () => `ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. "approve", "deny" ಅಥವಾ "retry" ಎಂದು ಬರೆದು, ನಂತರ ಬುಕಿಂಗ್ ರೆಫರೆನ್ಸ್ ಬರೆಯಿರಿ.`,
+  owner_day_bookings: (f) => dayList(f, { heading: { today: "ಇಂದಿನ ಬುಕಿಂಗ್‌ಗಳು:", tomorrow: "ನಾಳೆಯ ಬುಕಿಂಗ್‌ಗಳು:" }, none: { today: "ಇಂದು ಬುಕಿಂಗ್‌ಗಳು ಇಲ್ಲ.", tomorrow: "ನಾಳೆ ಬುಕಿಂಗ್‌ಗಳು ಇಲ್ಲ." } }),
   owner_approval_done: (f) => `ಧನ್ಯವಾದ. ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.`,
   owner_approval_denied: (f) => `ಅರ್ಥವಾಯಿತು. ಗ್ರಾಹಕರು ${need(f, "customerPhone")}: ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.`,
   owner_approval_expired: (f) => `ನೀವು ಉತ್ತರಿಸುವ ಮೊದಲೇ ಆ ವಿನಂತಿಯ ಸಮಯ ಮುಗಿದಿದೆ, ಆದ್ದರಿಂದ ಏನನ್ನೂ ಮರಳಿ ಕೊಟ್ಟಿಲ್ಲ: ಗ್ರಾಹಕರು ${need(f, "customerPhone")}, ${inr(f, "refundInr")}.`,

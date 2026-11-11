@@ -48,6 +48,7 @@ export interface Ctx {
 }
 
 const dateFmt = (lang: string) => new Intl.DateTimeFormat(`${lang}-IN-u-nu-latn`, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
+// Dates are always shown in India time and Western digits, in the reader's language, so a shop owner reads the same clock the bookings use; a bad or missing date gives "" rather than "Invalid Date" on a page.
 export const when = (iso: string | undefined | null, lang: string): string => (iso && Number.isFinite(Date.parse(iso)) ? dateFmt(lang).format(new Date(iso)) : "");
 
 const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}">`;
@@ -55,6 +56,7 @@ const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}
 const PAPERS_LINK: Record<Language, string> = { en: "Statements, case records and the agent's paper", hi: "विवरण, मामलों के रिकॉर्ड और एजेंट का काग़ज़", ml: "വിവരങ്ങൾ, കേസ് രേഖകൾ, ഏജന്റിന്റെ രേഖ", kn: "ವಿವರಗಳು, ಪ್ರಕರಣ ದಾಖಲೆಗಳು ಮತ್ತು ಏಜೆಂಟ್ ಕಾಗದ" };
 const roleWord = (c: Ctx, role: "builder" | "partner") => c.w.roles[role];
 
+// The one page shell (head, nav, language switch, footer) every other page goes through, so the style, the escaping and the "no JavaScript needed" rule live in one place. `nav: false` is for signed-out pages.
 export function layout(c: Ctx, title: string, body: Raw, options: { nav?: boolean } = {}): string {
   const showNav = options.nav !== false && c.who;
   return html`<!doctype html>
@@ -95,10 +97,12 @@ function tab(c: Ctx, href: string, label: string): Raw {
   return html`<a class="tab" href="${href}" ${here ? raw('aria-current="page"') : ""}>${label}</a>`;
 }
 
+// The plain name of a language ("Hindi" part of the "Hindi · हिन्दी" label), for sentences that name the shop's language; falls back to the code so a new language never shows blank.
 export const languageName = (l: Language): string => languageOptions().find((o) => o.code === l)?.label.split(" · ")[0] ?? l;
 
 // ---- sign in, invitations ---------------------------------------------------------------------------------------------------------------
 
+// Sign-in form. `hostedNote` adds the line that explains accounts come only by invitation on Geometer's server.
 export function loginPage(c: Ctx, o: { error?: string; handle?: string; hostedNote: boolean }): string {
   const w = c.w.login;
   return layout(c, w.title, html`<h1>${w.title}</h1>
@@ -111,6 +115,7 @@ ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <p class="note">${w.byInvitation}</p>`, { nav: false });
 }
 
+// Where an invite link lands: the person picks a name and passphrase. `values` is refilled after an error so a phone user does not retype everything.
 export function joinPage(c: Ctx, o: { token: string; role: "builder" | "partner"; error?: string; values: { name: string; company: string; handle: string; language: string } }): string {
   const w = c.w.join;
   return layout(c, w.title(roleWord(c, o.role)), html`<h1>${w.title(roleWord(c, o.role))}</h1>
@@ -126,6 +131,7 @@ ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 </form>`, { nav: false });
 }
 
+// Make-an-invite page; `hostedOnly` replaces the form with an explanation, because on Geometer's server only its owner may invite.
 export function invitePage(c: Ctx, o: { link?: string; hostedOnly: boolean }): string {
   const w = c.w.invite;
   if (o.hostedOnly) return layout(c, w.title, html`<h1>${w.title}</h1><p>${w.hostedOnly}</p>`);
@@ -187,6 +193,7 @@ function recoveryButtons(c: Ctx, shop: string, o: Obligation): Raw {
   return html`<br>${o.actions.map((a) => html`<form method="post" action="/shops/${shop}/recover" class="inline">${csrf(c)}<input type="hidden" name="case" value="${o.caseId}"><input type="hidden" name="action" value="${a}"><button class="btn" type="submit">${Object.hasOwn(w.actions, a) ? w.actions[a] : a}</button></form> `)}`;
 }
 
+// The to-do list across a person's shops: everything waiting on a human, gathered in one place so nothing hides inside a single shop's page.
 export function inboxPage(c: Ctx, o: { shops: ShopInbox[]; notice?: string }): string {
   const w = c.w.inbox;
   const total = o.shops.reduce((n, s) => n + s.items.length, 0);
@@ -224,6 +231,8 @@ export interface ShopView {
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
   /** This shop's unfinished work (B31), read from its exported record. */
   inbox?: ShopInbox;
+  /** B72: the words of the link to the shop terms page; left out while the feature is off (the page does not exist then). */
+  termsLink?: string;
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
   isBuilder: boolean;
   details?: { statusJson: string; pins: string; runtimeJson: string };
@@ -310,6 +319,7 @@ function messagesBlock(m: TemplateMessages): Raw {
 <p class="note">${m.note}</p>`;
 }
 
+// One shop's page: status, limits, recent activity, the stop button and the links to its papers. The biggest page, kept as one function so every section reads the same `ShopView` snapshot.
 export function shopPage(c: Ctx, v: ShopView): string {
   const w = c.w.shop;
   const status = v.status;
@@ -367,6 +377,7 @@ ${v.cost ? costTable(c, v.cost) : v.own ? messagesBlock(v.own.messages) : ""}
 ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
 ${v.papers.canMakeReport ? html`<p><a class="btn" href="/shops/${v.id}/papers">${PAPERS_LINK[c.lang]}</a></p>` : ""}
+${v.termsLink ? html`<p><a class="btn" href="/shops/${v.id}/terms">${v.termsLink}</a></p>` : ""}
 
 <h2>${c.w.takeOut.heading}</h2>
 <p>${c.w.takeOut.text}</p>
@@ -401,6 +412,7 @@ export interface HandoverView {
   history: AssignmentFile["history"];
 }
 
+// The page for moving a shop to another account in stages (form, asked, waiting, expired, done): it says what moves and what stays before asking for anything, and shows the code only once.
 export function handoverPage(c: Ctx, v: HandoverView): string {
   const w = c.w.handover;
   const form = html`<form method="post" action="/shops/${v.id}/handover" autocomplete="off">${csrf(c)}
@@ -421,6 +433,7 @@ ${v.history.length > 0 ? html`<h2>${w.history}</h2><ul class="plain">${v.history
 <p><a href="/shops/${v.id}">${c.w.common.back}</a></p>`);
 }
 
+// Confirmation page for the stop request. It is a separate step on purpose: stopping a shop is hard to undo by accident on a small touchscreen; `already` shows a pending request instead of a second button.
 export function stopPage(c: Ctx, o: { id: string; name: string; already: boolean; at?: string }): string {
   const w = c.w.shop;
   return layout(c, w.stopTitle(o.name), html`<h1>${w.stopTitle(o.name)}</h1>
@@ -431,6 +444,7 @@ ${o.already ? html`<div class="notice">${w.stopAsked(when(o.at, c.lang))}</div><
 
 // ---- the setup --------------------------------------------------------------------------------------------------------------------------
 
+// First setup screen: choose the template. Templates without a phone setup are listed but not clickable, so nobody starts a flow that cannot finish.
 export function setupStartPage(c: Ctx, templates: Template[]): string {
   const w = c.w.setup;
   return layout(c, w.title, html`<h1>${w.title}</h1>
@@ -462,6 +476,7 @@ export interface StepView {
   webhookUrl: string | undefined;
 }
 
+// One step of the phone setup (business, deposit, languages, accounts), each its own small page so a cheap phone loads little and an error only repeats that step.
 export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" | "languages" | "accounts"): string {
   const w = c.w.setup;
   const d = v.draft;
@@ -515,7 +530,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
     ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.numberId, { mode: "numeric", max: 20 })}
     ${secret(c, a.whatsapp.token, "waToken", v.receipts.whatsapp_token)}${secret(c, a.whatsapp.appSecret, "waAppSecret", v.receipts.whatsapp_app_secret)}` : ""}
-  ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
+  ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.useOwn}</p>
+    <div class="field"><label><input type="checkbox" name="calUse" value="google" ${d.calendar.use === "google" ? raw("checked") : ""}> ${a.calendar.useGoogle}</label></div>
+    <p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
     ${v.shareAddress ? html`<p>${a.calendar.shareAddress}</p><code class="addr">${v.shareAddress}</code>` : html`<p class="note">${a.calendar.noAddress}</p>`}
     ${text(a.calendar.id, "calId", d.calendar.id, { max: 200 })}
     ${v.shareAddress ? "" : secret(c, a.calendar.json, "calJson", v.receipts["google_service_account.json"], "textarea")}` : ""}
@@ -590,6 +607,7 @@ function checkLine(c: Ctx, r: CheckResult): Raw {
   return row(r.ok ? "ok" : "bad", html`<b>${title}</b><br>${text}${providerById(r.service)?.gateway && r.ok ? html`<br><small class="note">${providerById(r.service)!.gateway!.setup.words[c.lang].whose}</small>` : ""}`);
 }
 
+// The last setup page: shows the stored checks and what is still unmet in plain words, so the person sees why a shop is or is not ready to go live.
 export function setupChecksPage(c: Ctx, v: ChecksView): string {
   const w = c.w.setup;
   const k = w.checks;
@@ -637,6 +655,7 @@ export function limitList(c: Ctx, d: Draft, hold = 15): { price: string; hours: 
   return { price: l.price, hours: l.hours, deposit: l.deposit(amount, hold), refund: l.refund(window, amount), booked: l.booked, language: l.language, charge: l.charge };
 }
 
+// A plain error page; the nav is shown only when someone is signed in, so a signed-out error does not show the menu.
 export function errorPage(c: Ctx, status: number, message: string): string {
   return layout(c, String(status), html`<h1>${message}</h1><p><a class="btn" href="/">${c.w.common.back}</a></p>`, { nav: Boolean(c.who) });
 }

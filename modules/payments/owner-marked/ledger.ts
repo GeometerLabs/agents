@@ -78,6 +78,7 @@ export interface OwedRefund {
 
 export interface MarkState { seq: number; requests: MarkedRequest[]; refunds: OwedRefund[] }
 
+// A fresh shop starts with nothing sent, marked or owed; one function so the stores and tests start from the same shape.
 export const emptyMarkState = (): MarkState => ({ seq: 0, requests: [], refunds: [] });
 
 /** How long after a refund became owed the owner is first reminded, and between reminders; and how many reminders at most. After that it stays in the unfinished work. */
@@ -173,6 +174,7 @@ export function markRefund(state: MarkState, code: string, how: "done" | "kept",
 export const remindersDue = (state: MarkState, nowMs: number): OwedRefund[] =>
   state.refunds.filter((r) => r.state === "owed" && r.reminders < REFUND_REMINDERS_MAX && r.nextReminderAtMs <= nowMs);
 
+// Mutates in place and schedules the next nudge, so the caller sends a reminder and then records it; remindersDue stops at the maximum.
 export function reminded(refund: OwedRefund, nowMs: number): void {
   refund.reminders += 1;
   refund.nextReminderAtMs = nowMs + REFUND_REMINDER_EVERY_MS;

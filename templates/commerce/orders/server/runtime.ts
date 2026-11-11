@@ -42,6 +42,8 @@ export interface RuntimeOptions {
   report?: MonthlyReportSetup;
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
+  /** B72: the shop terms the owner can agree to on WhatsApp (modules/terms/reader.ts). Left out: off. */
+  terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -93,7 +95,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     keepCounters: keepStoreCounters,
     compactStore: compactFinishedOrders,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
+    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.orders.values(),
     refundContext(store, _settings, receipt) {

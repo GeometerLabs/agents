@@ -34,6 +34,8 @@ import type { Booking, Pending, Store } from "./booking.ts";
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
+import { handleOwnerTerms } from "../../../../modules/terms/owner.ts";
+import type { TermsFile } from "../../../../modules/terms/terms.ts";
 import { GUARD_WAIT_ENTRY, RECOVERY_ENTRY, guardWaitLine } from "../../../../modules/unfinished/registry.ts";
 import { ApiError, ConflictError, GuardSuspendedError, TimeoutError } from "../../../../modules/core/faults.ts";
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
@@ -68,7 +70,7 @@ import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligati
 import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
-import { hoursOn, serviceName } from "./settings.ts";
+import { calendarModule, hoursOn, serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
@@ -93,6 +95,8 @@ export interface AgentDeps {
   qrImage?: (text: string) => Promise<string | null>;
   /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
+  /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
+  terms?: () => TermsFile | undefined;
 }
 
 export type AgentEvent =
@@ -187,7 +191,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * With an `offer`, the text the limits read is the whole message the customer will see: the words, then each option.
    * What is Bookings' own is given here: the facts, the offers, and the two gates (no reminder after a cancellation, "booked" only when recorded).
    */
-  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number }
+  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"] }
   const say = createSay<SayArgs, MessageFacts>({
     messaging,
     voice: {
@@ -199,7 +203,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, booking) => languageOf(phone, booking),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
     inputsOf: (a) => ({ refundInr: a.refundInr, slotMs: a.slotMs, ...(a.markedInr !== undefined ? { markedInr: a.markedInr } : {}) }), // never the owner's code
     gates: (a, optedOut) => [
@@ -218,6 +222,8 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- what to offer: the shop's services, free times, and a few buttons ----------------------------------------------
 
+  // B72: a shop with no Google Calendar keeps its bookings in its own list (the runtime hands in src/adapters/own-calendar.ts). "booked" then means the shop's own record holds it.
+  const ownList = calendarModule(settings) === "own";
   const OFFER_DAYS = 7; // free times are looked for a week ahead
   const OFFER_ROWS = 9; // a list holds ten rows, and the last is the row that reaches the owner
 
@@ -861,7 +867,7 @@ export function createAgent(deps: AgentDeps): Agent {
       b.holdExpiresAt = undefined;
       b.pending = b.pending.filter((p) => p.kind !== "calendar");
       b.reminders = reminderSchedule(settings, b.startMs!, clock.now());
-      log(b, b.customer, "confirm_booking", "confirmed", want, { refs: { eventId: found.event.id } });
+      log(b, b.customer, "confirm_booking", "confirmed", want, { refs: { eventId: found.event.id }, ...(ownList ? { notes: "read back from the shop's own booking list (this shop has no Google Calendar); the deposit is recorded too" } : {}) });
       moveTo(b, "confirmed");
       await tellCustomer(b, b.customer, [ownerConfirms ? "upi_booked" : "booked"], { offer: cancelOrOwner });
       return;
@@ -1065,6 +1071,26 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- the owner's answers -----------------------------------------------------------------------------------------
 
+  /** The words that ask for a day's bookings, in the four languages. Nothing else matches, so a command or a payment mark is never read as one. */
+  const DAY_WORDS: [RegExp, "today" | "tomorrow"][] = [
+    [/^\s*(?:today|bookings?|aaj|आज|ഇന്ന്|ಇಂದು)\s*[.!?]*\s*$/iu, "today"],
+    [/^\s*(?:tomorrow|kal|कल|നാളെ|ನಾಳೆ)\s*[.!?]*\s*$/iu, "tomorrow"],
+  ];
+  const parseDayRequest = (text: string): "today" | "tomorrow" | undefined => DAY_WORDS.find(([re]) => re.test(text))?.[1];
+
+  /** The owner's list for a day: the shop's confirmed bookings (and those waiting for the owner after the deposit), in time order, read from the saved bookings. */
+  async function tellDay(day: "today" | "tomorrow"): Promise<void> {
+    const today = localParts(clock.now(), tz);
+    const from = zonedToMs(addDays(today, day === "today" ? 0 : 1), { hour: 0, minute: 0 }, tz);
+    const to = zonedToMs(addDays(today, day === "today" ? 1 : 2), { hour: 0, minute: 0 }, tz);
+    const rows = [...store.bookings.values()]
+      .filter((x) => (x.state === "confirmed" || x.state === "needs_owner") && x.startMs !== undefined && x.startMs >= from && x.startMs < to)
+      .sort((x, y) => (x.startMs as number) - (y.startMs as number))
+      .map((x) => ({ slotMs: x.startMs as number, serviceName: serviceName(settings.services.find((v) => v.id === x.serviceId) ?? settings.services[0], settings.owner.language), customerPhone: x.customer, ref: x.id }));
+    log(null, owner, "owner_day_list", "confirmed", { day }, { notes: `the owner asked for the bookings of ${day}; ${rows.length} listed from the shop's saved bookings`, refs: { day } });
+    await say({ booking: null, phone: owner, to: "owner", templates: ["owner_day_bookings"], day, dayBookings: rows });
+  }
+
   async function onOwnerMessage(msg: InboundMessage): Promise<void> {
     // Owner-marked (B33): "received K7M2QX", "refunded K7M2QX" or a tap on one of those buttons. Only the owner's number reaches here.
     const markReply = markState ? parseMarkReply(msg) : undefined;
@@ -1076,6 +1102,11 @@ export function createAgent(deps: AgentDeps): Agent {
     // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
     const moving = parseHandoverReply(msg.text);
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
+    // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
+    if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
+    // B72: "today" / "tomorrow" (or "bookings") asks for that day's bookings, from the shop's own saved list. A reply to the owner's own message, so no template is needed.
+    const dayAsked = parseDayRequest(msg.text);
+    if (dayAsked) return tellDay(dayAsked);
     const m = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i.exec(msg.text);
     const b = m ? store.bookings.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
@@ -1248,8 +1279,30 @@ export function createAgent(deps: AgentDeps): Agent {
     store.seenEvents.add(event.id); // only after it worked: a failed step can be run again with the same event
   }
 
+  /**
+   * B72: remember which calendar the bookings were last written to. A shop that was on its own booking list and now has Google Calendar gets its coming bookings written
+   * there once, looking first by booking id, so nothing is doubled and nothing is lost; the booking list stays the authority either way. A booking whose time Google already
+   * shows taken is not un-booked: the failure is recorded for the partner and the owner's list still shows it. Tried again on the next beat until every one is in.
+   */
+  async function backfillCalendar(now: number): Promise<void> {
+    if (ownList) { if (store.calendarState?.kind !== "own") store.calendarState = { kind: "own" }; return; }
+    if (store.calendarState?.kind !== "own") return;
+    let allIn = true;
+    for (const b of [...store.bookings.values()]) {
+      if (b.startMs === undefined || b.endMs === undefined || b.endMs <= now) continue;
+      const status = b.state === "confirmed" || b.state === "needs_owner" ? "confirmed" : b.state === "awaiting_deposit" && b.holdExpiresAt !== undefined && b.holdExpiresAt > now ? "tentative" : undefined;
+      if (!status) continue;
+      const found = await ensureEvent(b, { start: b.startMs, end: b.endMs, status });
+      if (found.event) { b.eventId = found.event.id; continue; }
+      allIn = false;
+      log(b, b.customer, "calendar_backfill", found.error || found.conflict ? "failed" : "unconfirmed", { start: b.startMs }, { notes: `this booking is in the shop's booking list but could not be written to the new Google Calendar yet (${found.error ?? "the calendar does not show it"}); it stays booked and is tried again` });
+    }
+    if (allIn) { store.calendarState = { kind: "google" }; log(null, owner, "calendar_backfill", "confirmed", { kind: "google" }, { notes: "every coming booking from the shop's own list is now in the Google Calendar" }); }
+  }
+
   async function onTick(): Promise<void> {
     const now = clock.now();
+    await backfillCalendar(now);
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their booking is in (modules/payments/refunds.ts)
     if (markState) await remindOwedRefunds(now);

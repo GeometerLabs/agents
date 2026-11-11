@@ -35,6 +35,7 @@ const dayInIndia = (iso: string | null | undefined): string | undefined => {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
 };
 
+// Combines the signed state (what the shop's runtime acts on) with fleet's unsigned days and renew link (what the person reads); undefined when there is no licence to show.
 export function licenceView(status: ShopStatus["licence"] | undefined, fleet: FleetAnswer["licence"] | undefined, nowMs: number): LicenceView | undefined {
   if (!status) return undefined;
   if (!status.listed) return { state: "none" };

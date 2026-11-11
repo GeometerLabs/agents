@@ -93,6 +93,7 @@ function rowOf(e: RecordEntry, d: PaperWords, extra: Record<string, string>, led
   return row;
 }
 
+// Reads only the record's entries for this case and looks nothing up again, so the paper shows what was known at the time, not what the services say now.
 export function buildDisputeRecord(input: DisputeInput): DisputeRecord {
   const d = WORDS[input.language];
   const extra = input.template.actionWords[input.language] ?? {};
@@ -115,10 +116,12 @@ export function buildDisputeRecord(input: DisputeInput): DisputeRecord {
   };
 }
 
+// Build and sign in one step so a case record is never handed out unsigned.
 export const sealDisputeRecord = (input: DisputeInput, key?: KeyObject): Envelope<DisputeRecord> => seal(buildDisputeRecord(input), key);
 
 const cell = (lines: string[]): string => lines.map((l) => esc(l)).join("<br>");
 
+// Lays the rows side by side without any verdict column, on purpose: the paper must never say who is right.
 export function disputePage(envelope: Envelope<DisputeRecord>): string {
   const r = envelope.document;
   const w = WORDS[r.language];

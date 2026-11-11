@@ -28,11 +28,11 @@ export interface ServiceConfig { baseUrl: string; agentTokenFile?: string; [extr
  * "upi"}, plan B33) has none (no Razorpay account, no Razorpay Guard), so runtime.json may leave it out; `loadClientFolder`, which reads the settings too, still asks
  * a Razorpay shop for it.
  */
-export type ServiceShape = readonly { name: string; extra?: string; payment?: true; /** Fields the service may also have, checked by `check`. */ optional?: readonly string[]; check?: (raw: Record<string, unknown>) => string | null }[];
+export type ServiceShape = readonly { name: string; extra?: string; payment?: true; /** The calendar (B72): runtime.json may leave it out, and `loadClientFolder` asks for it unless the settings say `"calendar": {"module": "own"}`. */ calendar?: true; /** Fields the service may also have, checked by `check`. */ optional?: readonly string[]; check?: (raw: Record<string, unknown>) => string | null }[];
 
 /** WhatsApp: the number's id always; `provider` and `appId` only to choose a provider other than Meta direct (modules/messaging/providers.ts). */
 const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId"], check: messagingConfigProblem } as const;
-export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId" }, MESSAGING_SERVICE];
+export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE];
 export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */
@@ -302,7 +302,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
     else {
       unknownKeys(s, [...names, "timeoutMs"], "services", errors);
       // the payment service may be left out (a UPI shop has none); everything else is needed
-      const present = shape.filter((x) => !(x.payment && s[x.name] === undefined));
+      const present = shape.filter((x) => !((x.payment || x.calendar) && s[x.name] === undefined));
       const read = present.map((x) => readService(s[x.name], x.name, x.extra, errors, x));
       if (s.timeoutMs !== undefined && (!Number.isInteger(s.timeoutMs) || (s.timeoutMs as number) < 1)) errors.push("services.timeoutMs must be a whole number of milliseconds.");
       const where = (o: Obj | undefined) => (o && isText(o.agentTokenFile) ? { ...o, agentTokenFile: isAbsolute(o.agentTokenFile) ? o.agentTokenFile : resolve(folder, o.agentTokenFile) } : o);
@@ -361,6 +361,12 @@ export function loadClientFolder<Settings>(folder: string, running: { pathway: s
   const paymentService = template.services.find((x) => x.payment);
   if (paymentService && runtime.config.mode === "live" && !upi && runtime.config.services?.[paymentService.name] === undefined) {
     throw new ClientError(`runtime.json needs fixing:\n- In "services", add "${paymentService.name}" with its "baseUrl": this shop takes Razorpay (settings.json), so it needs the Guard in front of it.`);
+  }
+  // B72: a shop that uses Google Calendar (the default when settings say nothing) in live mode still needs its calendar service; one on its own booking list has none and any named is not used.
+  const ownCalendar = (settings.settings as { calendar?: { module?: string } }).calendar?.module === "own";
+  const calendarService = template.services.find((x) => x.calendar);
+  if (calendarService && runtime.config.mode === "live" && !ownCalendar && runtime.config.services?.[calendarService.name] === undefined) {
+    throw new ClientError(`runtime.json needs fixing:\n- In "services", add "${calendarService.name}" with its "baseUrl" and "calendarId": this shop uses Google Calendar (settings.json). To run on the shop's own booking list instead, set "calendar": {"module": "own"} in settings.json.`);
   }
   return { name: basename(dir), folder: dir, settings: settings.settings, runtime: runtime.config, lock };
 }

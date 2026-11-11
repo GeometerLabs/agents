@@ -75,6 +75,7 @@ export interface SayDeps<A extends SayArgs, Facts extends { language: Language }
   heldBack(a: A): Promise<void>;
 }
 
+// The one exit for outgoing text: limits run on the final rendered text, so nothing reaches a customer that skipped a check.
 export function createSay<A extends SayArgs, Facts extends { language: Language }>(deps: SayDeps<A, Facts>): (a: A) => Promise<boolean> {
   const { messaging, voice, owner, log } = deps;
 

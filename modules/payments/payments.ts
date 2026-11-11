@@ -137,6 +137,7 @@ export interface FakePayments extends Payments {
   calls: { op: PaymentsOp }[];
 }
 
+// The fake every crash test runs against; it can fail on demand (timeouts, lost replies) so the agent's careful handling is exercised.
 export function createFakePayments(clock: Clock, options: FakePaymentsOptions = {}): FakePayments {
   const enforceUnique = options.enforceUniqueReference ?? true;
   const guard = options.guard;

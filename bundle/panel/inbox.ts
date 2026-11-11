@@ -35,6 +35,7 @@ function renewalItems(shops: Shops, id: string, nowMs: number): Obligation[] {
   return work ? [{ kind: work.kind, caseId: "WhatsApp", sinceMs: work.sinceMs, facts: { hours: work.hoursLeft }, actions: [] }] : [];
 }
 
+// Builds one shop's to-do list from its last export on every call and stores nothing, so the list cannot disagree with the record (and the Gupshup token's renewal, above).
 export function inboxFor(shops: Shops, id: string, nowMs: number, options: UnfinishedOptions): ShopInbox {
   const name = shops.settings(id)?.name ?? id;
   const dir = shops.paths.exports(id);

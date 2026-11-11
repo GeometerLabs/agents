@@ -39,6 +39,7 @@ const BACKUP_KEY = "server/backup-key.json";
 /** How many characters at the end of the secret half the builder types back to confirm they have it: enough to show it was copied, not a second copy. */
 export const CONFIRM_CHARS = 6;
 
+// The first-run logic behind the /server pages: validates the model and backup forms, writes REQUESTS for the deployer (the panel never edits geometer.json) and passes keys on into the inbox. `now` is injectable for tests.
 export function createServerSetup(config: PanelConfig, store: Store, now: () => number = Date.now) {
   const p = serverSettingsPaths(config.serverDir);
   const inbox = createServerInbox(config.serverDir, store, now);

@@ -37,8 +37,10 @@ export interface ShopStatus {
   own?: { baseUrls: Record<string, string>; whatsappWebhook?: string };
 }
 
+// The status of a shop the deployer has not touched yet: deploy state "never" and no backups, so the panel shows "not deployed" rather than nothing.
 export const emptyStatus = (shop: string, now: Date): ShopStatus => ({ shop, updatedAt: now.toISOString(), deploy: { state: "never" }, backups: { lastCopyAt: null, lastDrillAt: null, drillOk: null } });
 
+// Reads a shop's status; a missing or damaged file is undefined, because the deployer rewrites it on its next run.
 export function readStatus(dir: string, shop: string): ShopStatus | undefined {
   const path = serverPaths(dir).statusFile(shop);
   try { return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) as ShopStatus : undefined; } catch { return undefined; }

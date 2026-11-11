@@ -1,3 +1,4 @@
+// The Kannada word list for the panel: one translation table of every panel word (the Words shape in words.ts), picked up by languages.ts and words.ts when the owner chooses Kannada.
 import type { Words } from "./words.ts";
 
 // MACHINE-WRITTEN Kannada. Review marker: machine-written. A native Kannada speaker must read every line before a real shop sees it; the lines are on
@@ -247,7 +248,7 @@ export const kn: Words = {
       calendar: {
         title: "ಕ್ಯಾಲೆಂಡರ್", intro: "ಬುಕಿಂಗ್‌ಗಳು ಅಂಗಡಿಯದೇ ಆದ Google Calendar ಒಳಗೆ ಹೋಗುತ್ತವೆ.",
         steps: ["ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ Google Calendar ತೆರೆಯಿರಿ, ನಂತರ ಆ ಕ್ಯಾಲೆಂಡರ್‌ನ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ.", "“Share with specific people” ಅಡಿಯಲ್ಲಿ ಕೆಳಗಿನ ಅಡ್ರೆಸ್ ಸೇರಿಸಿ, ಮತ್ತು “Make changes to events” ಆರಿಸಿ.", "“Integrate calendar” ಅಡಿಯಲ್ಲಿ Calendar ID ಕಾಪಿ ಮಾಡಿ, ಕೆಳಗೆ ಟೈಪ್ ಮಾಡಿ."],
-        shareAddress: "ಈ ಅಡ್ರೆಸ್‌ಗೆ ಕ್ಯಾಲೆಂಡರ್ ಶೇರ್ ಮಾಡಿ:", noAddress: "ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಹಂಚಿಕೊಳ್ಳಲು ಅಡ್ರೆಸ್ ಇಲ್ಲ. ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಕೊಟ್ಟ ಕೀ ಫೈಲ್ ಅನ್ನು ಕೆಳಗೆ ಪೇಸ್ಟ್ ಮಾಡಿ.", id: "ಕ್ಯಾಲೆಂಡರ್ ID", json: "ಸರ್ವೀಸ್-ಅಕೌಂಟ್ ಕೀ ಫೈಲ್", jsonHelp: "ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಒಂದು ಕೊಟ್ಟಿದ್ದರೆ ಮಾತ್ರ. ಇಡೀ ಫೈಲ್ ಪೇಸ್ಟ್ ಮಾಡಿ.",
+        shareAddress: "ಈ ಅಡ್ರೆಸ್‌ಗೆ ಕ್ಯಾಲೆಂಡರ್ ಶೇರ್ ಮಾಡಿ:", noAddress: "ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಹಂಚಿಕೊಳ್ಳಲು ಅಡ್ರೆಸ್ ಇಲ್ಲ. ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಕೊಟ್ಟ ಕೀ ಫೈಲ್ ಅನ್ನು ಕೆಳಗೆ ಪೇಸ್ಟ್ ಮಾಡಿ.", id: "ಕ್ಯಾಲೆಂಡರ್ ID", json: "ಸರ್ವೀಸ್-ಅಕೌಂಟ್ ಕೀ ಫೈಲ್", jsonHelp: "ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಒಂದು ಕೊಟ್ಟಿದ್ದರೆ ಮಾತ್ರ. ಇಡೀ ಫೈಲ್ ಪೇಸ್ಟ್ ಮಾಡಿ.", useOwn: "ಬುಕಿಂಗ್‌ಗಳನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ ಪಟ್ಟಿಯಲ್ಲಿ ಇಡಿ (Google Calendar ಬೇಕಿಲ್ಲ). ಮಾಲೀಕರು WhatsApp ನಲ್ಲಿ “ಇಂದು” ಎಂದು ಕಳುಹಿಸಿ ದಿನದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ನೋಡಬಹುದು. Google Calendar ಅನ್ನು ನಂತರ ಸೇರಿಸಬಹುದು.", useGoogle: "ಅಂಗಡಿಯ Google Calendar ಕೂಡ ಬಳಸಿ",
       },
     },
     checks: {

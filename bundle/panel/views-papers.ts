@@ -24,6 +24,7 @@ const PANEL_WORDS: Record<Language, { title: (shop: string) => string; intro: st
     ledgerNote: "ತೆರೆದ ಪರಿಶೀಲಕ geo-verify ಗೆ: geo-verify pack.json --anchor anchor.json", publicNote: "ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ನೀವು ಆರಿಸಿದ್ದು ಮಾತ್ರ.", noCases: "ದಾಖಲೆಯಲ್ಲಿ ಇನ್ನೂ ಪ್ರಕರಣಗಳಿಲ್ಲ.", choose: "ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ತೋರಿಸುವುದು (ಗ್ರಾಹಕರ ವಿವರ ಎಂದಿಗೂ ಇಲ್ಲ):", save: "ಈ ಆಯ್ಕೆ ಇಡಿ", saved: "ಇಟ್ಟಿದೆ. ಸಾರ್ವಜನಿಕ ಕಾಗದದಲ್ಲಿ ಈಗ ಆರಿಸಿದ್ದು ಮಾತ್ರ." },
 };
 
+// The shop's papers page: pick a case for the case record, ask for a statement, get the identity paper or the evidence pack. `public` lists what may go on the public version.
 export function papersPage(c: Ctx, o: { id: string; name: string; cases: string[]; problem?: string; public?: Choosable[]; saved?: boolean }): string {
   const p = PANEL_WORDS[c.lang];
   const w = WORDS[c.lang];

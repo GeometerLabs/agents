@@ -13,6 +13,7 @@ export type Handler = (request: StandinRequest) => Promise<StandinReply | undefi
 /** The fake stored the change and "lost" the reply: the server cuts the connection, so the client sees no answer. */
 export class LostReply extends Error {}
 
+// The common success reply; short because every translator returns it.
 export const ok = (body?: unknown): StandinReply => ({ status: 200, body });
 
 const MAX_BODY = 1024 * 1024;

@@ -42,6 +42,7 @@ function readBody(req: IncomingMessage): Promise<Buffer | "too large"> {
   });
 }
 
+// The HTTP handler for one agent's WhatsApp webhooks. Throws at construction on a half-configured verification, so a bad setup stops the deploy and does not accept unverified messages.
 export function agentInboxHandler(c: AgentInboxConfig): (req: IncomingMessage, res: ServerResponse) => void {
   if (c.verification === "meta-signature" && (!c.appSecret || !c.verifyToken)) throw new Error("WhatsApp is not configured for this agent: meta-signature needs the app secret and the verify token.");
   if (c.verification === "path-token" && !(c.pathToken && /^[A-Za-z0-9_-]{16,}$/u.test(c.pathToken))) throw new Error("The WhatsApp path token must be at least 16 characters of A-Z, a-z, 0-9, _ and -.");

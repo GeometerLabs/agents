@@ -321,6 +321,7 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
   };
 }
 
+// The only process that holds webhook secrets: it verifies and forwards, so the agent runtime never sees a secret.
 export async function startInbox(config: InboxConfig, listen: { port: number; host?: string }): Promise<RunningInbox> {
   const server = createServer(inboxHandler(config));
   server.requestTimeout = 10_000;

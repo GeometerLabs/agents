@@ -155,6 +155,48 @@ test("sell guide: every guide teaches the UPI option, each carries the one allow
   assert.ok(guide("en").includes('tap "Received"'), "the owner taps Received");
 });
 
+// ---- the paperwork cut (B72, 12 Nov 2026) --------------------------------------------------------------------------------------
+
+test("sell guide (B72): Google Calendar is an optional item; the owner's booking list is the default; the test booking looks in the booking list", () => {
+  for (const l of LANGUAGES) {
+    const setup = sections(guide(l))[7].body;
+    const items = setup.split("\n").filter((x) => x.startsWith("- [ ] **"));
+    assert.equal(items.length, 8, `${l}: the checklist keeps its 8 items`);
+    const calendar = items.find((x) => x.includes('"module": "own"'));
+    assert.ok(calendar, `${l}: the Google Calendar item says how a shop runs on its own booking list (settings "calendar": {"module": "own"})`);
+    assert.ok(calendar.includes('"today"') && calendar.includes('"tomorrow"'), `${l}: and how the owner gets a day's bookings`);
+    assert.ok(calendar.includes("Make changes to events"), `${l}: the sharing steps stay, for a shop that wants Google Calendar`);
+    assert.ok(!/make a Google Calendar first|पहले एक Google Calendar बनाइए|ആദ്യം ഒരു Google Calendar ഉണ്ടാക്കി|ಮೊದಲು ಒಂದು Google Calendar ಮಾಡಿ/u.test(setup), `${l}: a shop on a paper diary is no longer told to make a calendar`);
+    assert.ok(!/(?:^|\n)- \[ \] \*\*(?:Share the calendar|कैलेंडर साथ में|കലണ്ടർ ഒന്നിച്ച്|ಕ್ಯಾಲೆಂಡರ್ ಅನ್ನು ಒಟ್ಟಿಗೆ)/u.test(setup), `${l}: the old required calendar step is gone`);
+  }
+  assert.ok(guide("en").includes("see it in the owner's booking list (or in the calendar, if one is connected)"));
+});
+
+test("sell guide (B72): the WhatsApp check is the honest list (Business app, Facebook login with admin access, public name, verification may be asked, open the app every 2 weeks), with no account-age rule and no promise of 'no documents' or 'one visit'", () => {
+  for (const l of LANGUAGES) {
+    const text = guide(l);
+    const whatsapp = sections(text)[7].body.split("\n- [ ] **")[1];
+    assert.ok(whatsapp.includes("Facebook") && whatsapp.includes("Meta"), `${l}: the WhatsApp check names the Facebook login and the Meta business portfolio`);
+    assert.equal(whatsapp.split("\n").filter((x) => x.startsWith("  - ")).length, 5, `${l}: the WhatsApp check has its five points`);
+    assert.ok(!/months of real use|months old|कुछ महीने पुराना|മാസങ്ങളുടെ പഴക്കം|ತಿಂಗಳು ಹಳೆಯ/u.test(text), `${l}: the unconfirmed account-age rule is not stated as a fact`);
+    assert.ok(!/\bno documents\b|\bone visit\b|\bno paperwork\b/i.test(text), `${l}: no promise the facts file forbids`);
+  }
+});
+
+test("sell guide (B72): every guide points at the 'What to ask the shop for' card in its own language, and the card file exists", () => {
+  for (const l of LANGUAGES) {
+    assert.ok(guide(l).includes(`sell/ask-card.${l}.md`), `${l}: the guide names the card`);
+    assert.ok(existsSync(new URL(`ask-card.${l}.md`, SELL)), `sell/ask-card.${l}.md is missing: node modules/ask-card/render.ts`);
+  }
+});
+
+test("sell guide (B72): the shop terms stay signed on paper; the guide says only that WhatsApp agreement may come later, after Geometer says so", () => {
+  const en = guide("en");
+  assert.ok(en.includes("Signed paper is still what Geometer's checks assume."));
+  assert.ok(en.includes("do that only after Geometer says so"));
+  assert.ok(!/legally (enough|sufficient|valid)/i.test(en), "no claim that WhatsApp agreement is legally enough");
+});
+
 // ---- amounts and numbers ------------------------------------------------------------------------------------------------
 
 // ---- the price figures: from the price list in force (prices/), through each guide's source file and prices/render.ts --------------------------------------
@@ -201,7 +243,12 @@ test("sell guide: section 6 states the two price lists of the list in force (par
       assert.ok(!/found(ing|er)|संस्थापक|फ़ाउंडिंग|ಸಂಸ್ಥಾಪಕ|ಫೌಂಡಿಂಗ್|സ്ഥാപക|ഫൗണ്ടിംഗ്/iu.test(text), `${l} ${name}: no "founding" and no "founder" in anything we offer`);
     }
     const section6 = sections(guide(l))[5].body;
-    for (const id of ["plan.basic.fee", "plan.business.fee", "plan.operations.fee", "overage.extra", "licence.builder.fee", "guide.basic.whatsapp", "guide.business.whatsapp", "plan.basic.allowance", "plan.business.allowance", "plan.operations.allowance", "recharge.warn", "recharge.payment-fee", "innovator.places", "razorpay.platform-fee"]) assert.ok(section6.includes(price(id)), `${l}: section 6 states ${id} (${price(id)})`);
+    for (const id of ["plan.basic.fee", "plan.business.fee", "plan.operations.fee", "overage.extra", "licence.builder.fee", "guide.basic.whatsapp", "guide.business.whatsapp", "plan.basic.allowance", "plan.business.allowance", "plan.operations.allowance", "recharge.warn", "recharge.payment-fee", "innovator.places"]) assert.ok(section6.includes(price(id)), `${l}: section 6 states ${id} (${price(id)})`);
+    // B72: Razorpay's fee left the main pitch. It is written once, in the Razorpay-only item of the setup visit (section 8), and nowhere in sections 5 and 6.
+    const sectionsOf = sections(guide(l));
+    assert.ok(!section6.includes(price("razorpay.platform-fee")), `${l}: section 6 does not state Razorpay's fee`);
+    assert.ok(!sectionsOf[4].body.includes(price("razorpay.platform-fee")), `${l}: section 5 does not state Razorpay's fee`);
+    assert.ok(sectionsOf[7].body.includes(price("razorpay.platform-fee")), `${l}: section 8 states Razorpay's fee, in the Razorpay-only item`);
     assert.ok(section6.includes(dayWords(LIST.date)), `${l}: section 6 names the list it is from`);
   }
 });

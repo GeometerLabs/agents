@@ -49,7 +49,15 @@ export interface Settings {
    * Required (B71): a file without it is refused and asked for the UPI ID, never read as a gateway shop. It is the last key of the parsed settings, as it always was.
    */
   payment: PaymentSettings;
+  /**
+   * Where the shop's bookings are kept as a calendar (B72, 12 Nov 2026). "own": the shop's own saved booking list, no Google account and no calendar Guard (the default for a
+   * shop set up from the panel). "google": the shop's Google Calendar. Left out: "google", as every shop before 12 Nov was. Read through `calendarModule`.
+   */
+  calendar?: { module: "own" | "google" };
 }
+
+/** Which calendar this shop uses. A file with no "calendar" key is a Google Calendar shop, as it always was; only an explicit "own" drops the calendar. */
+export const calendarModule = (settings: { calendar?: { module?: string } } | undefined): "own" | "google" => (settings?.calendar?.module === "own" ? "own" : "google");
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
 
@@ -64,7 +72,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the business's name (\"name\").");
@@ -88,6 +96,11 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   const approvers = readApprovers(input.approvers, { ownerWhatsapp: owner?.whatsapp, refundLimitInr: cancellation?.refundLimitInr }, errors);
   const reminders = readReminders(input.reminders, errors);
   const payment = readPaymentSettings(input.payment, errors, options);
+  let calendar: Settings["calendar"];
+  if (input.calendar !== undefined) {
+    if (!isObj(input.calendar) || (input.calendar.module !== "own" && input.calendar.module !== "google")) errors.push('"calendar" must be {"module": "own"} (the shop\'s own booking list, no Google Calendar) or {"module": "google"}.');
+    else calendar = { module: input.calendar.module };
+  }
 
   if (errors.length > 0) return { ok: false, errors };
   const settings = {
@@ -105,6 +118,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   } as Settings;
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
+  if (calendar) settings.calendar = calendar;
   settings.payment = payment as PaymentSettings; // last, as before: the order of keys is what an older settings file read back has
   return { ok: true, settings };
 }

@@ -147,11 +147,13 @@ export function addressing(server: ServerConfig): Addressing {
     },
   };
 }
+// Each shop gets its own /24 so one shop's containers cannot reach another's; the index is the shop's fixed slot.
 export const shopSubnet = (server: ServerConfig, index: number) => `${server.network.base}.${index}.0/24`;
 
 // ---- a very small YAML writer: scalars as JSON, so quoting is never wrong -------------------------------------------------------------------
 
 type Y = string | number | boolean | null | Y[] | { [key: string]: Y | undefined };
+// Hand-written YAML writer so the bundle needs no dependency; scalars go out as JSON strings, which YAML accepts and which cannot be mis-quoted.
 export function yaml(value: Y, indent = 0): string {
   const pad = "  ".repeat(indent);
   if (Array.isArray(value)) {
@@ -201,6 +203,7 @@ export interface PanelOptions {
   run?: boolean;
 }
 
+// The whole server as compose services plus the files each needs. Pure: it returns text and touches neither disk nor Docker, so a deploy can be checked before anything starts.
 export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[] }): Composed {
   const agents = features.agents ?? [];
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
