@@ -18,7 +18,7 @@ export interface LiveServicesConfig {
   // `agentTokenFile`: a file holding the credential THIS agent presents to that Guard (what Guard calls the agent's token; Guard removes it before it
   // forwards). It is not a key to the service. Left out, no Authorization header is sent. A relative path is measured from the client folder.
   payments: { baseUrl: string; agentTokenFile?: string };
-  calendar: { baseUrl: string; calendarId: string; agentTokenFile?: string };
+  calendar?: { baseUrl: string; calendarId: string; agentTokenFile?: string }; // left out for a shop on its own booking list (B72)
   messaging: { baseUrl: string; phoneNumberId: string; agentTokenFile?: string };
   timeoutMs?: number;
 }

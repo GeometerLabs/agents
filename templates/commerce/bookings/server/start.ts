@@ -20,6 +20,7 @@ import type { ClientFolder } from "./config.ts";
 import { createRuntime } from "./runtime.ts";
 import type { Runtime } from "./runtime.ts";
 import { buildServices } from "./services.ts";
+import { calendarModule } from "../src/settings.ts";
 import type { LiveModule } from "./services.ts";
 
 export { parserArguments, readToken };
@@ -61,7 +62,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     casesName: "bookings",
     loadClient,
     async build(client, { store, clock, log, recordKey }) {
-      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment });
+      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment, ownCalendar: calendarModule(client.settings) === "own" });
       // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
       const services = ownerMarkedOf((client.settings as { payment?: PaymentSettings }).payment) && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;

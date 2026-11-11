@@ -18,7 +18,7 @@
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
 //                                pathway.lock); --prepared-by is the name the owner's monthly report message says set the shop up (written to report.json; without it the message says "your
 //                                builder"). With --company, --prepared-by is the person's name alone and the message says "Divya, Sri Sai Digital".
-//   shop add <name> --template bookings|fees|orders (--upi-id ID --payee "Name" | --payment razorpay | --settings F) [--whatsapp-number-id ID] [--calendar-id ID] [--prepared-by ... [--company ...]]
+//   shop add <name> --template bookings|fees|orders (--upi-id ID --payee "Name" | --payment razorpay | --settings F) [--whatsapp-number-id ID] [--calendar own|google] [--calendar-id ID] [--prepared-by ... [--company ...]]
 //                                start a shop from a template of this checkout: its example settings (or the file --settings names, checked first), a pin to the template's version here, and a
 //                                runtime.json that names the WhatsApp number (and, for a template with a calendar, the calendar). The settings start as the template's made-up example: change
 //                                them to the real ones. How customers pay is never the example's (B71): the shop's own UPI ID, the default, or --payment razorpay for its own gateway account.
@@ -141,7 +141,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "prepared-by": { type: "string" }, company: { type: "string" }, "upi-id": { type: "string" }, payee: { type: "string" }, payment: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
-      "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, "forward-whatsapp-to": { type: "string" },
+      "price-floor": { type: "string" }, hours: { type: "string" }, timezone: { type: "string" }, "whatsapp-number-id": { type: "string" }, "calendar-id": { type: "string" }, calendar: { type: "string" }, "forward-whatsapp-to": { type: "string" },
       "gateway-draft": { type: "string" }, "gateway-accept": { type: "string" }, "gateway-upstream": { type: "string" },
       "refund-inr-per-day": { type: "string" }, "refunds-per-day": { type: "string" }, "links-per-hour": { type: "string" }, "messages-per-hour": { type: "string" }, "events-per-hour": { type: "string" }, "events-deleted-per-day": { type: "string" },
       credential: { type: "boolean" }, month: { type: "string" }, out: { type: "string" }, language: { type: "string" }, source: { type: "string" }, case: { type: "string" }, lang: { type: "string" },
@@ -240,15 +240,25 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
           parsed = { ...(parsed as Record<string, unknown>), payment: block };
           settingsText = `${JSON.stringify(parsed, null, 2)}\n`;
         }
-        const checked = kind.validateSettings(parsed);
-        if (!checked.ok) throw new Error(`These ${found.id} settings need fixing (${settingsFile}):\n- ${checked.errors.join("\n- ")}`);
         const numberId = str("whatsapp-number-id");
         const calendarId = str("calendar-id");
         if (calendarId !== undefined && !kind.guards.includes("calendar")) throw new Error(`The ${found.id} template has no calendar, so --calendar-id means nothing for it.`);
+        // B72: a Bookings shop uses the shop's own booking list unless it is given a calendar (--calendar-id) or asked for Google Calendar (--calendar google). With --settings the file says it.
+        const calendarFlag = str("calendar");
+        if (calendarFlag !== undefined && calendarFlag !== "own" && calendarFlag !== "google") throw new Error(`--calendar ${calendarFlag} is not a choice. Say --calendar own (the shop's own booking list) or --calendar google (the shop's Google Calendar, with --calendar-id when you have it).`);
+        if (str("settings") !== undefined && calendarFlag !== undefined) throw new Error("The settings file you gave says where bookings are kept (\"calendar\"), so --calendar means nothing here. Change the file instead.");
+        if (calendarFlag === "own" && calendarId !== undefined) throw new Error("--calendar own means no Google Calendar, so --calendar-id means nothing with it.");
+        if (kind.guards.includes("calendar") && str("settings") === undefined && (parsed as { calendar?: unknown }).calendar === undefined) {
+          const module = calendarFlag ?? (calendarId !== undefined ? "google" : "own");
+          parsed = { ...(parsed as Record<string, unknown>), calendar: { module } };
+          settingsText = `${JSON.stringify(parsed, null, 2)}\n`;
+        }
+        const checked = kind.validateSettings(parsed);
+        if (!checked.ok) throw new Error(`These ${found.id} settings need fixing (${settingsFile}):\n- ${checked.errors.join("\n- ")}`);
         if (numberId !== undefined && !/^\d{6,20}$/u.test(numberId)) throw new Error("--whatsapp-number-id must be the shop's WhatsApp phone number id: digits only.");
         fromTemplate = {
           settings: settingsText.endsWith("\n") ? settingsText : `${settingsText}\n`,
-          runtime: { mode: "live", tickSeconds: 30, services: { ...(guardsOf(kind, checked.settings).includes("razorpay") ? { payments: {} } : {}), ...(kind.guards.includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
+          runtime: { mode: "live", tickSeconds: 30, services: { ...(guardsOf(kind, checked.settings).includes("razorpay") ? { payments: {} } : {}), ...(guardsOf(kind, checked.settings).includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
           lock: `${found.id}@${found.version}\n`,
           where: str("settings") ? "the settings file you gave" : `the ${found.id} template's example (${found.settingsExample}), which is somebody else's made-up centre: change it to the real one`,
         };
