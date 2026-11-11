@@ -14,6 +14,9 @@ const codec = snapshotCodec<Store>(1, [
   { name: "ai", kind: "optional-ai" },
   // Optional: a UPI shop's requests, the owner's marks and the refunds the owner owes (B33). A Razorpay shop never has it, so its snapshot is as it was.
   { name: "upi", kind: "optional-object" },
+  // Optional: a shop with no Google Calendar keeps its calendar view here, and which calendar the bookings were last written to (B72). A Google shop's snapshot is as it was.
+  { name: "ownCalendar", kind: "optional-object" },
+  { name: "calendarState", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

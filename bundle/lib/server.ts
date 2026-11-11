@@ -134,7 +134,7 @@ export interface ServerConfig {
   upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model", Upstream>>;
   limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
   /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's partner server (the data key is required). */
-  panel: { enabled: boolean; mode: "own" | "hosted" };
+  panel: { enabled: boolean; mode: "own" | "hosted"; /** B72: the shop terms can be sent to the owner and agreed on WhatsApp (modules/terms). OFF unless true: it needs the owner's legal check before it replaces signed paper. */ termsOnWhatsapp: boolean };
   /** Publish Caddy's ports on these host ports. Default 80 and 443. */
   ports: { http: number; https: number };
   /** Seconds between heartbeats. Fleet's contract says 60; a test makes it shorter. */
@@ -153,6 +153,7 @@ export const CADDY_IMAGE = "caddy:2.8.4-alpine";
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+// Every path under one server folder, from one root, so the bundle's commands, the deployer and the panel never build a path by hand.
 export function serverPaths(dir: string) {
   const root = resolve(dir);
   return {
@@ -193,6 +194,7 @@ export function loadServer(dir: string): ServerConfig {
   return result.config;
 }
 
+// Checks a geometer.json and returns the config plus errors (stop) and notes (just worth saying); returns all problems at once so the builder fixes the file in one pass.
 export function parseServer(raw: unknown): { config: ServerConfig; errors: string[]; notes: string[] } {
   const errors: string[] = [];
   const o = isObj(raw) ? raw : {};
@@ -241,7 +243,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     network: { base },
     ...(isObj(o.upstreams) ? { upstreams: o.upstreams as ServerConfig["upstreams"] } : {}),
     limits: { razorpayLinksPerHour: limit("razorpayLinksPerHour", 60), whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
-    panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own" },
+    panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own", termsOnWhatsapp: isObj(o.panel) && o.panel.termsOnWhatsapp === true },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
@@ -276,6 +278,7 @@ export const isLocalDomain = (domain: string): boolean => domain === "localhost"
 /** The address the world reaches this server at: https, the builder's domain, and the port only when it is not 443. */
 export const publicUrl = (server: Pick<ServerConfig, "domain" | "ports">): string => `https://${server.domain}${server.ports.https === 443 ? "" : `:${server.ports.https}`}`;
 
+// Shop folders only, sorted, ignoring dot folders, so the order is stable and scratch folders are never mistaken for shops.
 export function listShops(dir: string): string[] {
   const shops = serverPaths(dir).shops;
   if (!existsSync(shops)) return [];

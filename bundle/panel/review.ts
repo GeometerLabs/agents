@@ -52,6 +52,7 @@ function healthFlat(language: Language): Map<string, string> {
 /** The own-agent pages (words-agents.ts, 12 Nov 2026), under the ids "agents.*". */
 const agentsFlat = (language: Language): Map<string, string> => flatWords({ agents: AGENT_WORDS[language] }, AGENT_SAMPLE_ARGS);
 
+// Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
   const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language)]);
   const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en")]);
@@ -61,6 +62,7 @@ export function panelRows(language: ReviewLanguage): Row[] {
 const cell = (text: string) => text.replace(/\|/gu, "\\|").replace(/\n/gu, " ");
 const REVIEWER = "Native reviewer: OK / change to …";
 
+// Section 7 of the REVIEW sheet, appended by review-sheet.ts to the sections the template's own script writes.
 export function panelReviewSection(language: ReviewLanguage): string {
   const name = LANGUAGE_NAMES[language];
   const rows = panelRows(language);

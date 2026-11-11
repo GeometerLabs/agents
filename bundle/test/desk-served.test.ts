@@ -69,7 +69,7 @@ test("B71 part 2: an agent on UPI deploys a desk Guard in front of the desk: its
     assert.equal(relay.guardAdminUrl, undefined);
     assert.equal(JSON.parse(read(join(w.paths.generated, "inbox", "inbox.json"))).shops[NAME].relayUrl, `http://relay:8795/c/${NAME}`);
     assert.match(read(join(w.paths.generated, "compose.yaml")), new RegExp(`DESK_PORT: "${DESK_PORT}"`, "u"));
-    const text = connectionText(NAME, r.connection, false);
+    const text = connectionText(NAME, r.connection);
     assert.match(text, /UPI desk +https:\/\/shops\.example\.com\/g\/upi-agent\/upi/u);
     assert.doesNotMatch(text, /not served/u);
   } finally { w.done(); }

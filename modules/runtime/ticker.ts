@@ -5,6 +5,7 @@ import type { Runtime } from "./core.ts";
 
 export interface Ticker { stop(): void }
 
+// Starts the clock that feeds ticks into the runtime's queue; stop() is returned so shutdown does not leave a timer behind.
 export function startTicker(runtime: Pick<Runtime, "tick">, everyMs: number): Ticker {
   const timer = setInterval(() => { void runtime.tick(); }, everyMs); // tick() never rejects
   timer.unref(); // the clock alone does not keep the process alive

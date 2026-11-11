@@ -40,6 +40,7 @@ export interface ResolvedDriver {
   cwd?: string;
 }
 
+// Fills the defaults of an agent's driver contract, so the rest of the crash test reads one complete shape and never checks for missing fields.
 export function resolveDriver(driver: AgentDriver | undefined): ResolvedDriver {
   const says = driver?.says ?? {};
   return {

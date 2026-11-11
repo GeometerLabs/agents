@@ -210,6 +210,7 @@ export async function refreshStatuses(ctx: Context): Promise<string[]> {
 /** The deployers (one per running `apply --watch`, by its context) that have sent this server's paper signer claim since they started. */
 const claimedSinceStart = new WeakSet<Context>();
 
+// Runs the periodic duties (snapshot, drill, fingerprints) whose time has come, judged from the times saved in state, so a restart does not rerun them or skip them.
 export async function runDueJobs(ctx: Context): Promise<string[]> {
   const ran: string[] = [];
   const state = loadState(ctx.dir);
@@ -287,6 +288,7 @@ export function runLicence(ctx: Context): string[] {
   return lines;
 }
 
+// The deployer's loop: each pass handles stop and recovery requests, server settings, then shops, then due jobs. Errors are caught per pass so one bad pass never ends the loop.
 export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   let lastRefresh = 0;
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);

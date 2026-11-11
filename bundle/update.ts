@@ -98,6 +98,7 @@ function named(ctx: Context, asked: string[]): string[] {
 
 // ---- update ----------------------------------------------------------------------------------------------------------------------------------------
 
+// Moves clients to a bundle version one at a time (or only checks, with dryRun), and records what moved so runRollback can put it back.
 export async function runUpdate(ctx: Context, opts: UpdateOptions = {}): Promise<Run> {
   if (opts.to !== undefined && !VERSION.test(opts.to)) throw new Error(`"${opts.to}" is not a version. Say it like 0.2.0.`);
   const names = opts.shops ? named(ctx, opts.shops) : [...listShops(ctx.dir), ...listAgents(ctx.dir)];
@@ -182,6 +183,7 @@ function lastMoved(ctx: Context): string[] {
   return run ? run.shops.filter((s) => left(s) && (run.steps[s].status === "moved" || (run.steps[s].status === "unchanged" && (state.shops[s]?.lockHistory.length ?? 0) > 0))) : [];
 }
 
+// Puts clients back on the version they were on before the last update. With no names it resumes the rollback that was stopped, so a stop never strands half the clients.
 export async function runRollback(ctx: Context, opts: RollbackOptions = {}): Promise<Run> {
   const state = loadState(ctx.dir);
   // with no names: the clients the last update moved, or (after a stop) the clients of the rollback that was stopped

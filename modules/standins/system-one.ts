@@ -55,6 +55,7 @@ function answerFor(question: Question, pick: Pick): Record<string, unknown> {
   return { type: "choice", choice, confidence: probabilities[choice], probabilities };
 }
 
+// Lets a crash test run the real decision-model client against a local server that applies the same request checks as the real API.
 export function systemOneStandin(options: SystemOneStandinOptions = {}): SystemOneStandin {
   const decider = options.decider ?? lastOptionDecider;
   const requests: DecisionRequestSeen[] = [];

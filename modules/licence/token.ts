@@ -36,6 +36,7 @@ export function publicKeyFromRaw(raw: Buffer): KeyObject {
 
 /** A pinned key as geometer.json holds it: 64 hex characters (fleet's `licence key show` prints it so). */
 export const PUBLIC_KEY_HEX = /^[0-9a-f]{64}$/u;
+// Drops anything that is not a well-formed public key instead of throwing, so one bad entry in the key list cannot disable checking with the others.
 export const keysFromHex = (hex: readonly string[]): Buffer[] => hex.filter((h) => PUBLIC_KEY_HEX.test(h)).map((h) => Buffer.from(h, "hex"));
 
 export type CheckCode = "too_long" | "not_four_parts" | "wrong_kind" | "unknown_key" | "not_base64url" | "bad_signature" | "not_json" | "wrong_version" | "wrong_shape";

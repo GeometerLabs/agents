@@ -2,11 +2,11 @@
 
 Market: Commerce and support (collections).
 
-A WhatsApp agent for tuition and coaching centres, music and dance classes, hobby schools and small private schools that collect a monthly fee from parents. Each month it sends the parent of every student a reminder, with a Razorpay payment link, in that parent's language (Hindi, English, Malayalam or Kannada). The agent works inside limits the owner sets. Its main limit is **"never a reminder once paid"**, and paid is judged from Razorpay's own payment record, never from what a parent says.
+A WhatsApp agent for tuition and coaching centres, music and dance classes, hobby schools and small private schools that collect a monthly fee from parents. Each month it sends the parent of every student a reminder, with a way to pay, in that parent's language (Hindi, English, Malayalam or Kannada). The agent works inside limits the owner sets. Its main limit is **"never a reminder once paid"**, and paid is judged from a payment record, never from what a parent says. How parents pay is the centre's choice (`payment.module`): **UPI** (the default: the centre's own UPI ID, a QR picture and link in the reminder, and the owner marks each payment received from WhatsApp, so the owner's mark is the record) or **Razorpay** (the centre's own gateway account, a payment link, and Razorpay's own payment list is the record).
 
-**What this folder is, and is not.** It is the Fees template, built and checked against **stand-in services** (a stand-in WhatsApp, a stand-in Razorpay, a model of Guard, and for the approval the real `geo-guard` binary in front of the Razorpay stand-in). It **runs as a server** the way Bookings does (one SQLite file per centre, a signed-webhook inbox, an approvals relay), and `geometer shop add --template fees` starts a centre on a Geometer server. It is **not the Geometer engine**, it has been run against no real WhatsApp or Razorpay account, and **no centre is live on it**. Nothing here is a claim about real services.
+**What this folder is, and is not.** It is the Fees template, built and checked against **stand-in services** (a stand-in WhatsApp, a stand-in Razorpay for the gateway option, a model of Guard, and for the approval the real `geo-guard` binary in front of the Razorpay stand-in). It **runs as a server** the way Bookings does (one SQLite file per centre, a signed-webhook inbox, an approvals relay), and `geometer shop add --template fees` starts a centre on a Geometer server. It is **not the Geometer engine**, it has been run against no real WhatsApp or Razorpay account, and **no centre is live on it**. Nothing here is a claim about real services.
 
-It has no dependencies. The agent and its tests make no call outside the computer. Most of the code is not in this folder: it is in [`agents/modules/`](../../../modules/README.md), shared with Bookings (the runtime server, the inbox, the approvals relay, the payment and refund code, the report frame). What is here is Fees: a student's fee for a month, its states, its words, its limits, its checks, and the thin files that give the shared code those.
+It has no dependencies (the UPI option needs no account at all). The agent and its tests make no call outside the computer. Most of the code is not in this folder: it is in [`agents/modules/`](../../../modules/README.md), shared with Bookings (the runtime server, the inbox, the approvals relay, the payment and refund code, the report frame). What is here is Fees: a student's fee for a month, its states, its words, its limits, its checks, and the thin files that give the shared code those.
 
 ## Run it
 
@@ -42,11 +42,11 @@ node templates/education/fees/inbox/main.ts        # the inbox: Razorpay's and W
 node templates/education/fees/approvals/main.ts    # the approvals relay: asks the owner about a refund Guard is holding (modules/approvals/main.ts lists the environment)
 ```
 
-- **The runtime** (`server/`) keeps one SQLite file per centre (`agent.db` in its data folder). Every event the inbox hands it is saved before it is acknowledged, a step is saved whole or not at all, and a restart carries on from what was saved. **All of the store is saved**, including the day the agent first ran (without it a restart would make the agent believe it had just started, and no month would be chased) and the counters that make the next `f-3` and `q-2`. `runtime.json` takes the same settings as Bookings' (`parser`, `decision`, `ai`, `allowance`, `report`, ...) with `services` for **payments and messaging only: there is no calendar**.
+- **The runtime** (`server/`) keeps one SQLite file per centre (`agent.db` in its data folder). Every event the inbox hands it is saved before it is acknowledged, a step is saved whole or not at all, and a restart carries on from what was saved. **All of the store is saved**, including the day the agent first ran (without it a restart would make the agent believe it had just started, and no month would be chased) and the counters that make the next `f-3` and `q-2`. `runtime.json` takes the same settings as Bookings' (`parser`, `decision`, `ai`, `allowance`, `report`, ...) with `services` for **payments and messaging only: Fees has no calendar**.
 - **Reminders and the report** run on the runtime's own beat (`tickSeconds`): the month is opened and the first reminder goes at the centre's hour on its first reminder day, and last month's report goes to the owner on the 1st from 09:00 (`report/monthly-job.ts`, once, even across a crash).
 - **Refunds Guard holds.** A refund above `refund.limitInr` is held by Guard. The approvals relay then asks the owner **once**, in the owner's language: "Approval needed: refund ₹1,800 for +919844444444 (Rohan Mehta, Nov 2026). Reply "approve K7M2QX" or "deny K7M2QX" within 24 hours." The amount is Guard's own; the parent and the student come from the fee the runtime holds (`/internal/refund-context`, read-only, matched to Guard's held call). The owner's reply releases the refund once or denies it. `test/approvals-guard-binary.test.ts` runs this against the real `geo-guard` (skipped, with its reason, when the binary is not built). **A waiver is not held by Guard** (a smaller link is not a refund): above the waiver limit it is the agent's own question to the owner ("approve q-2"), in the ordinary conversation.
 - **Go-live certificate and monthly report from files.** `scripts/go-live-certificate.ts` runs the hand check on the centre's own settings and writes a signed certificate (the limits in plain words, "Held N of M", what was not tested); `scripts/client-report.ts` makes the monthly report from the saved record and fees (`--dues`), reads the certificate back and says what its checks ran on: this centre's own settings, the example centre, other settings, or that none was given. There is no monthly record certificate for Fees yet.
-- **Start one on a server.** `node bundle/geometer.ts shop add bright --template fees --upi-id <the centre's own UPI ID> --payee "Bright Tuition" --whatsapp-number-id <id> --prepared-by Divya --company "Sri Sai Digital"` (UPI is the default; `--payment razorpay` instead for a centre with its own gateway account, B71) (the owner then reads "Set up by: Divya, Sri Sai Digital"; without `--company`, `--prepared-by "Divya, local partner"` is taken as written) makes the shop from this template's example (change the settings to the real centre's, or give `--settings <file>`). The bundle gives a Fees centre two Guards (Razorpay, WhatsApp), no calendar Guard and no Google key, and runs this runtime, this inbox and this relay's words for it. The panel sets a Fees centre up on a phone in the same five steps (the centre with its batches and students, the rules of the month, languages, accounts, checks), makes its go-live certificate and monthly report, and shows its page in four languages. The panel's form takes at most 6 batches and 300 students; `--settings <file>` takes any number (Deferred.md).
+- **Start one on a server.** `node bundle/geometer.ts shop add bright --template fees --upi-id <the centre's own UPI ID> --payee "Bright Tuition" --whatsapp-number-id <id> --prepared-by Divya --company "Sri Sai Digital"` (UPI is the default; `--payment razorpay` instead for a centre with its own gateway account, B71) (the owner then reads "Set up by: Divya, Sri Sai Digital"; without `--company`, `--prepared-by "Divya, local partner"` is taken as written) makes the shop from this template's example (change the settings to the real centre's, or give `--settings <file>`). The bundle gives a UPI centre one Guard (WhatsApp) and a Razorpay centre two (Razorpay, WhatsApp); a Fees centre never gets a calendar Guard or a Google key, and runs this runtime, this inbox and this relay's words for it. The panel sets a Fees centre up on a phone in the same five steps (the centre with its batches and students, the rules of the month, languages, accounts, checks), makes its go-live certificate and monthly report, and shows its page in four languages. The panel's form takes at most 6 batches and 300 students; `--settings <file>` takes any number (Deferred.md).
 
 ## What the parent sees
 
@@ -72,7 +72,7 @@ The Malayalam and Kannada wording is **machine-written** and must be read by a n
 
 ## Settings: tailoring without code
 
-A centre is a JSON file ([bright-tuition.example.json](settings/bright-tuition.example.json), [maths-circle.example.json](settings/maths-circle.example.json)); the agent reads it and says in plain words what is wrong with it.
+A centre is a JSON file ([bright-tuition-upi.example.json](settings/bright-tuition-upi.example.json) is the template's own example; [bright-tuition.example.json](settings/bright-tuition.example.json) and [maths-circle.example.json](settings/maths-circle.example.json) are Razorpay centres); the agent reads it and says in plain words what is wrong with it.
 
 | Setting | What it is |
 | --- | --- |
@@ -85,13 +85,13 @@ A centre is a JSON file ([bright-tuition.example.json](settings/bright-tuition.e
 | `partPayments` | Whether a parent may pay part, and the least a first part may be |
 | `waiver.limitInr` | The most the agent takes off one student's month on its own. 0: every request goes to the owner |
 | `refund.limitInr` | The refund the agent may ask for on its own (an overpayment); above it Guard holds the refund for the owner. It is the same number Guard's threshold is made from |
-| `payment.module` | `razorpay` (UPI is the next module, plan item B33, and is not built) |
+| `payment` | How parents pay. `{"module": "upi", "upi": {"id": "brighttuition@oksbi", "payee": "Bright Tuition"}}` (the default: the centre's own UPI ID, marked paid by the owner; [bright-tuition-upi.example.json](settings/bright-tuition-upi.example.json)) or `{"module": "razorpay"}` (the centre's own gateway account, through Guard). A file without the block is refused and asked for the UPI ID |
 | `owner` | The owner's WhatsApp number and language |
 | `approvers` | Optional: others who approve a refund Guard holds (a teacher, a partner), each from their own phone: `people` (1 to 6 of `{"id", "whatsapp", "language"}`) and `twoAboveInr` (above it, two different people must approve). Left out: the owner alone |
 
 ## The rules, in plain words
 
-1. **A reminder only if the record shows the fee unpaid and could be read.** If the payments service cannot be read just now, no reminder goes out (`no-reminder-once-paid`).
+1. **A reminder only if the record shows the fee unpaid and could be read.** If the payment record (Razorpay's list, or the owner's marks on a UPI centre) cannot be read just now, no reminder goes out (`no-reminder-once-paid`).
 2. **At most so many reminders for one fee in a month** (`reminder-cap`).
 3. **A payment link is for what the record says is still owed, and nothing else** (`fee-link-matches-record`), and Guard bounds a link to a range from ₹1 to the dearest fee with its late fee.
 4. **A waiver above the limit is the owner's call, for that exact amount; never more than what is owed** (`waiver-limit`).
@@ -100,7 +100,7 @@ A centre is a JSON file ([bright-tuition.example.json](settings/bright-tuition.e
 7. **A message matches the record** (`message-matches-record`) **and no message follows STOP** (`opt-out`).
 8. **No payouts**, no matter who asks (Guard).
 
-The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. `scripts/guard-spec.ts` writes the Razorpay limits spec for a centre's settings.
+The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. `scripts/guard-spec.ts` writes the Razorpay limits spec for a Razorpay centre's settings (a UPI centre has no payment API for Guard to sit in front of).
 
 ## The monthly report
 
@@ -129,14 +129,14 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 | `clients/` | An example centre's folder (`bright-tuition.example`) |
 | `template.json` | What the bundle and the panel read to offer Fees: its id, its steps, the accounts it uses (WhatsApp and Razorpay; no calendar) |
 | `scripts/` | Hand check, walkthrough, report example, review sheet, Guard spec, Meta template list, local stack, go-live certificate, client report |
-| `settings/` | Two example centres |
+| `settings/` | Three example centres: UPI (the template's example), and two Razorpay |
 | `sell/` | The sell guide and the owner's one-page sheet, in four languages |
 | `whatsapp-templates.json` | The list to submit to Meta: 15 fee and owner templates and the 2 report templates, each in four languages (68 entries) |
 | `test/` | The tests |
 
 ## What is not done yet
 
-See [Deferred.md](Deferred.md). The ones to know first: nothing has been run against a real WhatsApp or Razorpay account, so no centre is live; a waiver is not held by Guard (it is the agent's question to the owner); no monthly record certificate; no phone demo; no UPI; cash and bank transfers are not handled; the Malayalam and Kannada wording is not yet read by a native speaker.
+See [Deferred.md](Deferred.md). The ones to know first: nothing has been run against a real WhatsApp or Razorpay account, so no centre is live; a waiver is not held by Guard (it is the agent's question to the owner); no monthly record certificate; no phone demo; on a UPI centre the Razorpay situations are listed as not run and seven UPI situations run instead; cash and bank transfers are not handled; the Malayalam and Kannada wording is not yet read by a native speaker.
 
 ## Not a claim
 

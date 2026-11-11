@@ -31,6 +31,7 @@ const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 export const CONFIRM_TOKEN = /^[A-Za-z0-9_-]{16,80}$/u;
 const TTL_MS = 2 * 3_600_000;
 
+// The one-time link store: only a sha256 of the token is kept, a link works once and ends after two hours, and it is tied to the settings it was asked for. `now` is injectable for tests.
 export function createConfirmations(store: Store, now: () => number = Date.now) {
   const load = () => store.read<{ schema: 1; items: Confirmation[] }>("confirmations.json")?.items ?? [];
   const save = (items: Confirmation[]) => store.write("confirmations.json", { schema: 1, items });

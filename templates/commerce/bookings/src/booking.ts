@@ -117,6 +117,10 @@ export interface Store {
   ai?: AiState;
   /** An owner-marked shop's requests, the owner's marks and the refunds the owner owes (modules/payments/owner-marked/ledger.ts). Kept under `upi`, as it always was. Left out until the first request. */
   upi?: MarkState;
+  /** A shop with no Google Calendar (settings "calendar": {"module": "own"}): the calendar view of its own bookings (src/adapters/own-calendar.ts). Left out for a Google shop. */
+  ownCalendar?: { events: Record<string, import("./adapters/calendar.ts").CalendarEvent>; next: number };
+  /** Which calendar the bookings were last written to ("own" or "google"), so a calendar added later is filled from the booking list once (agent.ts, backfill). */
+  calendarState?: { kind: "own" | "google" };
 }
 
 export function createStore(): Store {
@@ -140,7 +144,7 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 }
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
-export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number } = {}): MessageFacts {
+export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"] } = {}): MessageFacts {
   const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
@@ -164,6 +168,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
     ...(extra.markedInr !== undefined ? { markedInr: extra.markedInr } : {}),
     ...(extra.leftInr !== undefined ? { leftInr: extra.leftInr } : {}),
+    ...(extra.day ? { day: extra.day, dayBookings: extra.dayBookings ?? [] } : {}),
   };
 }
 

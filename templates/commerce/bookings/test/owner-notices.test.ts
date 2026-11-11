@@ -87,7 +87,7 @@ test("every notice the agent sends the owner on its own has a template in all fo
   // UPI (B33): the answers to the owner's own "received <code>" / "refunded <code>" are replies too; the notices the agent sends on its own (what to look for,
   // the customer says they paid, a refund to send and its reminder, the rest of a part) have their templates.
   // B37 (8 Nov): "your approval is in, N more are needed" answers that person's own "approve <code>" too.
-  const repliesToTheOwner = ["owner_unknown_command", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed", "owner_approval_waiting",
+  const repliesToTheOwner = ["owner_unknown_command", "owner_day_bookings", "owner_approval_done", "owner_approval_denied", "owner_approval_expired", "owner_approval_failed", "owner_approval_waiting",
     "owner_upi_marked", "owner_upi_already", "owner_upi_unknown", "owner_upi_late", "owner_upi_refund_marked", "owner_upi_refund_kept"];
   const needTemplate = ownerIds.filter((id) => !repliesToTheOwner.includes(id));
   assert.deepEqual(needTemplate.filter((id) => !META_TEMPLATES.some((t) => t.usedFor === id)), [], "an owner notice has no template, so it would be refused outside the window");

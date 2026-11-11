@@ -22,6 +22,7 @@ function formatterFor(timeZone: string): Intl.DateTimeFormat {
   return f;
 }
 
+// Settings accept a time zone name typed by a person; this is how a bad name is caught at setup instead of throwing deep in a booking.
 export function isValidTimeZone(timeZone: string): boolean {
   try {
     formatterFor(timeZone);
@@ -46,11 +47,13 @@ export function weekdayOf(d: LocalDate): number {
   return new Date(Date.UTC(d.year, d.month - 1, d.day)).getUTCDay();
 }
 
+// Goes through UTC date arithmetic so month ends and leap days roll over correctly without touching any time zone (no DST surprises).
 export function addDays(d: LocalDate, days: number): LocalDate {
   const t = new Date(Date.UTC(d.year, d.month - 1, d.day + days));
   return { year: t.getUTCFullYear(), month: t.getUTCMonth() + 1, day: t.getUTCDate() };
 }
 
+// Compares fields rather than objects, since LocalDate values are built fresh each time.
 export function sameDate(a: LocalDate, b: LocalDate): boolean {
   return a.year === b.year && a.month === b.month && a.day === b.day;
 }
@@ -72,10 +75,12 @@ export function zonedToMs(date: LocalDate, time: LocalTime, timeZone: string): n
   return guess;
 }
 
+// Slots and opening hours are compared as plain minutes, which avoids string or Date comparison.
 export function minutesOfDay(t: LocalTime): number {
   return t.hour * 60 + t.minute;
 }
 
+// The inverse of minutesOfDay, used when slot arithmetic produces a minute count that must be shown or stored as a clock time.
 export function timeFromMinutes(m: number): LocalTime {
   return { hour: Math.floor(m / 60), minute: m % 60 };
 }

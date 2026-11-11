@@ -8,9 +8,11 @@ import { blankWrittenDate, phraseRe, wordRe } from "../language/dates.ts";
 import { WORDS, inBoth } from "../language/words.ts";
 import type { Language } from "../language/languages.ts";
 
+// Hindi and Malayalam can arrive in different Unicode compositions; normalising first makes the word lists match either.
 export const nfc = (source: string) => source.normalize("NFC");
 
 export const YES_RE = wordRe(["yes", "y", "yeah", "yep", "yup", "ok", "okay", "sure", "confirm", "confirmed", "correct", "haan", "han", "haa", "हाँ", "हां", "हा", "जी", "ठीक", "ठीक है", "theek hai", "thik hai", "पक्का", "ओके", "सही", ...inBoth((w) => w.yes)], "u", false);
+// A "no" is read from the same shared word lists as "yes", so every template parses a refusal identically.
 export const NO_RE = wordRe(["no", "nope", "nahi", "nahin", "नहीं", "नही", "गलत", "wrong", ...inBoth((w) => w.no)], "u", false);
 export const GREETING_RE = wordRe(["hi", "hello", "hey", "namaste", "namaskar", "नमस्ते", "नमस्कार", "हैलो", "हेलो", "हाय", ...inBoth((w) => w.greeting)], "u", false);
 export const FREE_RE = wordRe(["free", "complimentary", "free of charge", "no charge", "for nothing", "मुफ्त", "मुफ़्त", "फ्री", "फ़्री", "बिना पैसे", "muft", "bina paise", ...inBoth((w) => w.free)]);
@@ -74,6 +76,7 @@ export function findOffer(t: string): number | undefined {
   return FREE_RE.test(t) ? 0 : undefined;
 }
 
+// Short messages only: STOP inside a long sentence is not an opt-out, and a missed opt-out is worse than a false one so the word lists are wide.
 export function isStop(t: string): boolean {
   const tokens = t.trim().split(/\s+/u).filter(Boolean);
   return (tokens.length <= 4 && STOP_WORDS_RE.test(t)) || (tokens.length <= 5 && (STOP_HINDI_RE.test(t) || STOP_DRAVIDIAN_RE.test(t)));
