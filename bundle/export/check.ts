@@ -67,6 +67,7 @@ export function readPackage(where: string): Map<string, Buffer> {
   return new Map([...all].map(([p, c]) => [p.slice(folder.length + 1), c]));
 }
 
+// Re-checks an export from its bytes alone: every file against the manifest, nothing missing or extra, signatures and (when geo-verify is available) the record. Works on a map of files so it runs on a folder, a tarball or in a test.
 export function checkPackage(files: ReadonlyMap<string, Buffer>, o: { geoVerify?: string } = { geoVerify: process.env.GEO_VERIFY_BIN }): PackageCheck {
   const problems: string[] = [];
   const papers: PackageCheck["papers"] = [];
@@ -104,6 +105,7 @@ export function checkPackage(files: ReadonlyMap<string, Buffer>, o: { geoVerify?
   return { ok: problems.length === 0, problems, papers, manifest, ...(ledger ? { ledger } : {}) };
 }
 
+// The plain-language result of a check. It says what a pass does and does not show, so nobody reads 'whole' as 'true'.
 export function describe(check: PackageCheck): string {
   const lines = [check.ok ? "Whole: every file is the one the manifest names." : "NOT whole:", ...check.problems.map((p) => `  - ${p}`)];
   if (check.manifest) lines.push(`Shop ${check.manifest.shop}, made ${check.manifest.exportedAt}; ${check.manifest.counts.recordEntries} record entries, ${check.manifest.counts.cases} cases, ${check.manifest.counts.reports} reports, ${check.manifest.counts.certificates} certificates.`);

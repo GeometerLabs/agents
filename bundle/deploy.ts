@@ -56,8 +56,10 @@ export interface Context {
   extraComposeFiles?: string[];
 }
 
+// One place for the generated compose path, so every docker call and the status checks agree on the file.
 export const composeFile = (dir: string) => join(serverPaths(dir).generated, "compose.yaml");
 
+// Turns the deployer's context into the folder map the generators take, so they stay pure functions of paths and never reach for the context.
 export function dirsOf(ctx: Context): Dirs {
   const p = serverPaths(ctx.dir);
   return { app: ctx.appDir, generated: p.generated, secrets: p.secrets, status: p.status, fleet: p.fleet, shops: p.shops, secretsInbox: p.secretsInbox, requests: p.requests, exports: p.exports, panelData: p.panel, config: p.config, licence: licencePaths(ctx.dir).root };
@@ -179,6 +181,7 @@ export interface PreparedGuard {
 }
 interface Prepared { folder: ShopFolder; plan: ShopPlan; guards: PreparedGuard[]; webhooks: ShopWebhooks; pathwayDir: string; index: number; desiredHash: string }
 
+// Hash of one spec with its version zeroed, so a version bump alone does not look like a changed spec.
 export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJson({ ...spec, version: 0 }));
 /** What a shop is asked to be: its three files. A shop is up to date when this equals what was applied. */
 // Fleet's button mode and the month's AI cap are part of what a shop is asked to be, so a flip redeploys it. Each is only added to the hash when it is on, so a shop that never had it
@@ -188,6 +191,7 @@ export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJs
 export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons"; fleetModel?: "off" }) => ({
   settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), ...(f.fleetModel ? { fleetModel: f.fleetModel } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
 });
+// What the deployer stores as 'applied': equal hashes mean the shop is up to date and is left running untouched.
 export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
 
 /** Everything about one shop that can be decided and refused without starting anything. Takes the shop's handed-in secrets as a side effect. */
