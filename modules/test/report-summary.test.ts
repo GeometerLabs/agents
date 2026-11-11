@@ -251,7 +251,7 @@ test("the message carries the summary link when the whole message fits WhatsApp'
 
 // ---- the claim a server sends fleet -------------------------------------------------------------------------------------------------------------------------
 
-test("a signer claim proves the key for one deployment only: the public key, and a signature over the domain, the deployment and the key", () => {
+test("a signer claim shows the key is held, for one deployment only: the public key, and a signature over the domain, the deployment and the key", () => {
   const claim = signerClaim(privateKey, "acme-vps-1");
   assert.equal(claim.public_key, publicKey);
   assert.match(claim.proof, /^[0-9a-f]{128}$/u);
