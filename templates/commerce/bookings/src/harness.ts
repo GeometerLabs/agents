@@ -109,6 +109,8 @@ export interface WorldOptions {
   licence?: () => LicenceNow;
   /** B72: run on the shop's own booking list instead of the fake Google Calendar. Pair it with settings that say `calendar: {module: "own"}`. */
   ownCalendar?: boolean;
+  /** B72: the shop terms the owner can agree to on WhatsApp (modules/terms). Left out: the feature is off. */
+  terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -126,7 +128,7 @@ export function createWorld(options: WorldOptions = {}): World {
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
-  const agent = createAgent({ settings, clock, calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
+  const agent = createAgent({ settings, clock, ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
   let deliveredEvents = 0;
 
   const world: World = {

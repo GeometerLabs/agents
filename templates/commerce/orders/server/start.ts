@@ -12,6 +12,7 @@ import type { Clock } from "../../../../modules/core/clock.ts";
 import { readGoLive } from "../report/cli.ts";
 import type { MonthlyReportSetup } from "../report/monthly-job.ts";
 import { licenceReader } from "../../../../modules/runtime/config.ts";
+import { termsReader } from "../../../../modules/terms/reader.ts";
 import { buildUnderstanding as understanding, monthlyReportSetup as reportSetup, parserArguments, readToken, startRuntimeClient } from "../../../../modules/runtime/start.ts";
 import type { RunningClient as SharedRunningClient } from "../../../../modules/runtime/start.ts";
 import { loadClient, pathwayVersion } from "./config.ts";
@@ -67,7 +68,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
-      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), ...(recordKey ? { recordKey } : {}), log });
+      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), log });
     },
   }) as RunningClient;
 }

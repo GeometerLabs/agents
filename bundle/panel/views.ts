@@ -224,6 +224,8 @@ export interface ShopView {
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
   /** This shop's unfinished work (B31), read from its exported record. */
   inbox?: ShopInbox;
+  /** B72: the words of the link to the shop terms page; left out while the feature is off (the page does not exist then). */
+  termsLink?: string;
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
   isBuilder: boolean;
   details?: { statusJson: string; pins: string; runtimeJson: string };
@@ -367,6 +369,7 @@ ${v.cost ? costTable(c, v.cost) : v.own ? messagesBlock(v.own.messages) : ""}
 ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
 ${v.papers.canMakeReport ? html`<p><a class="btn" href="/shops/${v.id}/papers">${PAPERS_LINK[c.lang]}</a></p>` : ""}
+${v.termsLink ? html`<p><a class="btn" href="/shops/${v.id}/terms">${v.termsLink}</a></p>` : ""}
 
 <h2>${c.w.takeOut.heading}</h2>
 <p>${c.w.takeOut.text}</p>
