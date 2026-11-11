@@ -11,6 +11,7 @@ import { paymentUpstreamOf, readAgent } from "../folder.ts";
 import { OWN_API } from "../../../modules/payments/providers/index.ts";
 import { findGuardBinary } from "../guard-process.ts";
 import { planAgent } from "../plan.ts";
+import { readAgentCredentials, sharesOneCredential } from "../credentials.ts";
 import { AgentDidNotStart, NotDrivable, commandFor, resolveDriver, workingFolder } from "./driver.ts";
 import { buildSituations } from "./situations.ts";
 import type { Built } from "./situations.ts";
@@ -49,7 +50,8 @@ export interface CrashResult {
 /** What the crash test does not cover, whatever the result. The go-live certificate carries the same list. */
 export const NOT_TESTED: readonly string[] = [
   "real WhatsApp, real Razorpay (test mode or live) and a real Google calendar (stand-in services were used, with your agent's real Guards in front)",
-  "the owner's answer on WhatsApp through Geometer's inbox and relay (where a refund is held, the owner's yes is given to Guard directly)",
+  "the owner's answer on WhatsApp through Geometer's inbox and relay (where a refund is held, the owner's yes or no is given to Guard directly)",
+  "a held refund running out after the shop's own hours (the request is made to run out after 60 seconds, the shortest Guard takes)",
   "your agent being restarted in the middle of a step",
   "two customers at the exact same instant",
   "languages other than the lines in agent.json, and voice",
@@ -76,7 +78,9 @@ export async function planCrashTest(ctx: Context, name: string, o: CrashOptions 
   const driver = resolveDriver(folder.agent.driver);
   return {
     guardFoundIn: found.how,
-    plan: { name, folder, settings: folder.settings, server, guards: planned.guards, guardBinary: found.path, command, cwd: workingFolder(serverPaths(ctx.dir).agent(name), driver), ...(version ? { version } : {}), driver },
+    plan: { name, folder, settings: folder.settings, server, guards: planned.guards, guardBinary: found.path, command, cwd: workingFolder(serverPaths(ctx.dir).agent(name), driver), ...(version ? { version } : {}), driver,
+      // the credentials' shape the agent has on the server: one per Guard, or (made before 12 Nov 2026 and not rotated yet) one shared
+      ...(sharesOneCredential(readAgentCredentials(ctx.dir, name, folder.agent.upstreams)) ? { sharedCredential: true } : {}) },
   };
 }
 
@@ -131,8 +135,8 @@ export function crashTestText(result: CrashResult, settingsName: string, options
       workDone: ({ situations, checks, tookMs }) => [
         `  Work done for you: ${situations} situations and ${checks} checks in ${(tookMs / 1000).toFixed(1)} s, against stand-in Razorpay, Google Calendar and`,
         "  WhatsApp behind your agent's real Guards: lost replies after a payment link and after a refund, a payment event delivered twice and",
-        "  late, a calendar that saves nothing, an expired key, refunds above the limit and above what was paid, the same WhatsApp message",
-        "  twice, and a customer asking for a price below the floor.",
+        "  late, a calendar that saves nothing, an expired key, refunds above the limit and above what was paid, an owner who says no to a held",
+        "  refund and one who never answers, the same WhatsApp message twice, and a customer asking for a price below the floor.",
       ],
       shopName: settingsName,
       judged: (checks) => [

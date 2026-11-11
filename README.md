@@ -111,3 +111,10 @@ each agent does not check is listed in [LIMITS.md](LIMITS.md) and again in its R
 development and staging.
 
 Licence: Apache-2.0 (see [LICENSE](LICENSE)). Copyright 2026 Naval Tharun.
+
+## Putting a shop live with less paperwork (B72)
+
+- A Bookings shop needs **no Google Calendar**: it runs on its own booking list, and the owner writes "today" or "tomorrow" to the shop's WhatsApp number for the day's bookings. A calendar can be added later without losing a booking.
+- `modules/ask-card/` makes the card "What to ask the shop for" (English, Hindi, Malayalam, Kannada) from one list; `node modules/ask-card/render.ts --check` fails if a card is behind.
+- **Shop terms agreed on WhatsApp** (`modules/terms/`) are built and **off by default** (`geometer.json`: `"panel": {"termsOnWhatsapp": true}`). They need the owner's legal check before they replace signed paper; until then the guides keep the signed paper.
+- What a shop still needs for WhatsApp is a Facebook login with admin access to its Meta business portfolio; Meta may ask for business verification later. Nothing here promises "no documents".

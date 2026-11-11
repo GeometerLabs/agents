@@ -27,7 +27,9 @@ import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
 import type { LiveView } from "./contract.ts";
-import { latestPriceList, monthlyCost } from "./cost.ts";
+import { chargeOf, formatRupees, latestPriceList, monthlyCost, paiseOf } from "./cost.ts";
+import { createAgents } from "./agents.ts";
+import { agentPage, agentsSection } from "./views-agents.ts";
 import type { PriceList } from "./cost.ts";
 import { planView } from "./plan.ts";
 import { licenceView } from "./licence.ts";
@@ -39,6 +41,8 @@ import { createGoLive } from "./golive.ts";
 import type { Unmet } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
+import { createTerms } from "./terms.ts";
+import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { exportShop } from "./export.ts";
 import { PaperError, createPapers } from "./papers.ts";
 import type { MadePaper } from "./papers.ts";
@@ -121,6 +125,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const goLive = createGoLive(config, shops, store);
   const confirmations = createConfirmations(store, now);
   const handover = createHandover(shops, accounts, store, now);
+  const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
@@ -341,7 +346,45 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       };
     });
     const firstRun = config.mode === "own" && r.account!.role === "builder" && !serverSetup.view().done;
-    page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards, ...(firstRun ? { serverToDo: true } : {}), serverLink: config.mode === "own" && r.account!.role === "builder" }));
+    // a builder's own agents, beside the shops (none for a partner: agents.ids answers nothing)
+    const own = agents.ids(r.account!).map((id) => agents.view(id, staleMs, unfinished));
+    page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards, ...(firstRun ? { serverToDo: true } : {}), serverLink: config.mode === "own" && r.account!.role === "builder", agents: agentsSection(c, own) }));
+  });
+
+  // ---- own agents (B51's rest, 12 Nov 2026): what a builder sees of each agent they wrote, and three requests the deployer carries out. Builders only (a 404 for anyone
+  // else, as for a shop that is not theirs); each POST writes a request file with a name and an id (agents.ts), never anything that reaches a command.
+  const agents = createAgents(config);
+  const agentOf = (r: Req): string | undefined => { const id = agents.find(r.account!, r.params[0]); if (!id) notFound(r); return id; };
+  on("GET", /^\/agents\/([a-z0-9-]{1,40})$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    const v = agents.view(id, staleMs, unfinished);
+    const licence = licenceView(v.status?.licence, shops.fleet(id)?.licence, now());
+    // the builder licence's price, from the price list in force (never written here)
+    const charge = prices ? chargeOf(prices, null, true) : null;
+    page(r, 200, agentPage(r.ctx(), v, { ...(licence ? { licence } : {}), ...(charge?.fee ? { price: formatRupees(paiseOf(charge.fee.value)) } : {}) }));
+  });
+  on("POST", /^\/agents\/([a-z0-9-]{1,40})\/stop$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    const request = shops.requestStop(id, r.account!); // the same stop request as a shop's: the deployer pulls the kill switch on the agent's Guards
+    log(`stop requested for own agent ${id} by ${r.account!.id} (${request.requestId})`);
+    redirect(r, `/agents/${id}`);
+  });
+  on("POST", /^\/agents\/([a-z0-9-]{1,40})\/crash-test$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    agents.requestCrashTest(id, r.account!);
+    log(`crash test requested for own agent ${id} by ${r.account!.id}`);
+    redirect(r, `/agents/${id}`);
+  });
+  on("POST", /^\/agents\/([a-z0-9-]{1,40})\/rotate$/u, "builder", (r) => {
+    const id = agentOf(r);
+    if (!id) return;
+    const guard = (r.form.guard ?? "") === "" ? undefined : r.form.guard;
+    if (!agents.requestRotate(id, r.account!, guard)) return notFound(r);
+    log(`new credentials requested for own agent ${id}${guard ? ` (${guard})` : ""} by ${r.account!.id}`); // the log never holds a credential: the panel never has one
+    redirect(r, `/agents/${id}`);
   });
 
   // the unfinished-work inbox (B31): every shop this person may see, read from each shop's exported record
@@ -426,6 +469,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
       inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
+      termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
@@ -463,7 +507,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   // through shops.find, so a partner gets a 404 for a shop that is not theirs; a person's number is only ever in a POST body, never in the address or the log
   const papers = createPapers(config, shops, goLive.docs, now);
   const PAPER_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
-  const sendPaper = (r: Req, made: MadePaper | undefined) => (made ? body(r.res, 200, made.type, made.text, { "content-security-policy": PAPER_CSP, ...(made.file.endsWith(".json") ? { "content-disposition": `attachment; filename=\"${made.file}\"` } : {}) }) : notFound(r));
+  const sendPaper = (r: Req, made: MadePaper | undefined) => (made ? body(r.res, 200, made.type, made.text, { "content-security-policy": PAPER_CSP, ...(made.file.endsWith(".json") || made.file.endsWith(".txt") ? { "content-disposition": `attachment; filename=\"${made.file}\"` } : {}) }) : notFound(r));
   const paperRoute = (pattern: RegExp, method: "GET" | "POST", make: (r: Req, id: string) => MadePaper | undefined, what: string) => on(method, pattern, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref) return notFound(r);
@@ -497,6 +541,30 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   }, "identity paper");
   paperRoute(/^\/shops\/([a-z0-9-]{1,40})\/papers\/ledger\/(pack|anchor)\.json$/u, "GET", (r, id) => papers.ledger(id).find((m) => m.file.endsWith(`-${r.params[1]}.json`)), "evidence pack");
 
+  // B72: the shop terms the owner agrees to on WhatsApp. Every route answers "not found" while the server setting is off, so the page does not exist for anyone by default.
+  const termsPageFor = (r: Req, id: string, problem = false): void => {
+    const c = r.ctx();
+    page(r, problem ? 400 : 200, termsPage(c, { id, name: shops.settings(id)?.name ?? id, state: terms.status(id), ...(terms.file(id) ? { file: terms.file(id) } : {}), problem }));
+  };
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/terms$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || !terms.on()) return notFound(r);
+    termsPageFor(r, ref.id);
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/terms$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || !terms.on()) return notFound(r);
+    const saved = terms.save(ref.id, r.form);
+    if (saved.ok) log(`shop terms details of ${ref.id} saved by ${r.account!.id}`);
+    termsPageFor(r, ref.id, !saved.ok);
+  });
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/terms\/copy\.txt$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || !terms.on()) return notFound(r);
+    const made = terms.copy(ref.id);
+    if (made) log(`shop terms copy of ${ref.id} downloaded by ${r.account!.id}`);
+    sendPaper(r, made);
+  });
   // moving a shop to another partner or builder (B38), with the owner's agreement from their own number
   const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
     const state = handover.check(id);
@@ -727,7 +795,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     // saving a Gupshup shop would turn it back to Meta's paths with Gupshup's token behind them
     // the model as geometer.json names it now: the panel's first run may have chosen it after the panel started
     const serverModel = readServerModel(config.serverDir) ?? config.serverModel;
-    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.id, d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
+    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.use === "google" ? d.calendar.id : "", d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;

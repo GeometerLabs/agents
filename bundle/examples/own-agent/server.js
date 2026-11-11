@@ -6,20 +6,23 @@
 //
 //   "book ..."    makes a deposit link (looking for it by reference if the answer was lost, never making a second) and sends it
 //   a payment     saves the booking in the calendar, LOOKS at the calendar to see that it is there, and only then says "Booked!"
-//   "cancel ..."  asks for the deposit back, for what Razorpay says was paid and no more. A refund Guard holds is sent again, identical, until the owner has answered. If the
-//                 answer to a refund never came back, it LOOKS at Razorpay's refunds and never sends the refund again.
+//   "cancel ..."  asks for the deposit back, for what Razorpay says was paid and no more. A refund Guard holds is sent again, identical, until the owner has answered: made
+//                 (200), or no (Guard names another request in its 202), or never (the request's end, expires_at_ms in the 202, passes: nothing is sent after it). The customer
+//                 is told each way, and never that a refund was made that was not. If the answer to a refund never came back, it LOOKS at Razorpay's refunds and never sends
+//                 the refund again.
 //   anything else with a price in it gets the list price back
 //
 // With GEOMETER_UPI_URL set (UPI, B71) there is no gateway: "book" asks Geometer's desk for a request and sends its upi:// link; "I paid" (or a picture) only asks the owner
 // to look; the agent looks at the desk until the OWNER has marked the money received, and only then books and says so; "cancel" owes the deposit back through the desk,
 // and the customer hears that the owner will send it, never that it was sent.
 //
-// What it reads from the environment (the crash test sets all of these; so can you):
-//   PORT, GEOMETER_RAZORPAY_URL or GEOMETER_UPI_URL, GEOMETER_CALENDAR_URL, GEOMETER_WHATSAPP_URL, GEOMETER_CREDENTIAL, CALENDAR_ID, PHONE_NUMBER_ID,
+// What it reads from the environment (the crash test sets all of these; so can you, with node --env-file=<the server's credentials.env> for the addresses and credentials):
+//   PORT, GEOMETER_RAZORPAY_URL or GEOMETER_UPI_URL, GEOMETER_CALENDAR_URL, GEOMETER_WHATSAPP_URL, a credential for each (GEOMETER_RAZORPAY_CREDENTIAL, ...; or
+//   GEOMETER_CREDENTIALS_FILE, read on each call; or the one GEOMETER_CREDENTIAL of an agent made before 12 Nov 2026), CALENDAR_ID, PHONE_NUMBER_ID,
 //   GEOMETER_WHATSAPP_APP_SECRET, GEOMETER_RAZORPAY_WEBHOOK_SECRET, GEOMETER_DEPOSIT_INR, GEOMETER_PRICE_INR, GEOMETER_RETRY_MS (wait between sends of a held refund, default 5 minutes)
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
-import { createAgent } from "./agent.js";
+import { LAST_SEND_MS, createAgent, credentialsFromEnv, heldOf } from "./agent.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const hmac = (secret, raw) => createHmac("sha256", secret).update(raw).digest("hex");
@@ -45,7 +48,13 @@ export async function retryWithNewKey({ agent, refund, done, giveUp }) {
  * The agent as an http.Server (not listening yet). `agent` is the calls to the three services (agent.js). `onRefundUnknown` is the one place the good and the broken
  * example differ. Everything is kept in memory: it is an example.
  */
-export function createApp({ agent, appSecret, webhookSecret, depositInr, priceInr, hasCalendar = true, retryMs = 5 * 60_000, onRefundUnknown = lookBeforeRetrying, log = () => undefined, upi = false }) {
+/**
+ * How a held refund is followed (the good way: both true). `watchRequest`: a 202 naming another request means the owner said no (or it ran out): stop. `watchEnd`: never send after
+ * the request's end (expires_at_ms). The broken examples turn one off each (server-asks-again.js, server-past-end.js).
+ */
+export const FOLLOW_HELD = { watchRequest: true, watchEnd: true };
+
+export function createApp({ agent, appSecret, webhookSecret, depositInr, priceInr, hasCalendar = true, retryMs = 5 * 60_000, onRefundUnknown = lookBeforeRetrying, held = FOLLOW_HELD, log = () => undefined, upi = false }) {
   const seenMessages = new Set();
   const seenEvents = new Set();
   const bookings = new Map(); // customer -> booking
@@ -145,15 +154,25 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
     const money = { paymentId: booking.paymentId, amountPaise: booking.amountPaise, receipt: booking.ref };
     const done = async (paise) => { booking.state = "refunded"; await say(booking.customer, `Your deposit of Rs ${paise / 100} is refunded.`); };
     const giveUp = async (text) => { booking.state = "refund-open"; await say(booking.customer, text); };
-    const stopAt = Date.now() + 24 * 3_600_000;
+    const rupees = money.amountPaise / 100;
+    // the request Guard opened for the owner: its id and its end, from Guard's first 202; a clock of our own only when Guard names no end (it ran its 24 hours)
+    let asked;
+    const ownClockEnd = Date.now() + 24 * 3_600_000;
     for (;;) {
       const result = await agent.refundOnce(money).catch(() => ({ status: 0 }));
       if (result.status === 200) return done(money.amountPaise);
       if (result.status === 202) {
         // held for the owner: send the identical call again until it is made. A hold with no approval id cannot be approved on WhatsApp, so sending again is no use.
         if (!result.held) return giveUp("Your refund needs the owner. The owner will write to you.");
-        if (Date.now() >= stopAt) return giveUp("The owner has not answered yet. Please ask the shop.");
-        await sleep(retryMs);
+        const now = heldOf(result);
+        // another request: the first ended without a yes. Sending it again would only ask the owner again, so stop and say so
+        if (held.watchRequest && asked && now.id !== asked.id) return giveUp(`The owner decided not to refund your Rs ${rupees} deposit. Please contact the shop if you have questions.`);
+        asked ??= now;
+        const end = held.watchEnd ? asked.until : ownClockEnd;
+        const left = end - Date.now();
+        // the last send goes just before the end; after it, nothing: the owner did not answer in time
+        if (left <= LAST_SEND_MS) { await sleep(Math.max(0, left) + 1000); return giveUp(`The owner did not answer in time, so your Rs ${rupees} refund was not sent. Please contact the shop directly.`); }
+        await sleep(Math.min(retryMs, left - LAST_SEND_MS));
         continue;
       }
       if (result.status === 403 || result.status === 409) return giveUp("I could not make that refund. The owner will write to you.");
@@ -213,8 +232,10 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
 export function startFromEnv(extra = {}) {
   const env = (name, fallback) => { const v = process.env[name] ?? fallback; if (v === undefined || v === "") { console.error(`Set ${name} (see the top of this file).`); process.exit(2); } return v; };
   const upi = process.env.GEOMETER_UPI_URL;
+  const creds = credentialsFromEnv();
+  if (!creds.credentialsFile && !creds.credential && !creds.credentials.whatsapp) { console.error("Set the credentials: GEOMETER_CREDENTIALS_FILE, or GEOMETER_<SERVICE>_CREDENTIAL for each service (see the top of this file)."); process.exit(2); }
   const agent = createAgent({
-    razorpay: upi ? "" : env("GEOMETER_RAZORPAY_URL"), upi, calendar: process.env.GEOMETER_CALENDAR_URL ?? "", whatsapp: env("GEOMETER_WHATSAPP_URL"), credential: env("GEOMETER_CREDENTIAL"),
+    razorpay: upi ? "" : env("GEOMETER_RAZORPAY_URL"), upi, calendar: process.env.GEOMETER_CALENDAR_URL ?? "", whatsapp: env("GEOMETER_WHATSAPP_URL"), ...creds,
     calendarId: process.env.CALENDAR_ID ?? "", phoneNumberId: env("PHONE_NUMBER_ID"),
   });
   const app = createApp({

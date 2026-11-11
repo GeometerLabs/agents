@@ -134,7 +134,7 @@ export interface ServerConfig {
   upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model", Upstream>>;
   limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
   /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's partner server (the data key is required). */
-  panel: { enabled: boolean; mode: "own" | "hosted" };
+  panel: { enabled: boolean; mode: "own" | "hosted"; /** B72: the shop terms can be sent to the owner and agreed on WhatsApp (modules/terms). OFF unless true: it needs the owner's legal check before it replaces signed paper. */ termsOnWhatsapp: boolean };
   /** Publish Caddy's ports on these host ports. Default 80 and 443. */
   ports: { http: number; https: number };
   /** Seconds between heartbeats. Fleet's contract says 60; a test makes it shorter. */
@@ -243,7 +243,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     network: { base },
     ...(isObj(o.upstreams) ? { upstreams: o.upstreams as ServerConfig["upstreams"] } : {}),
     limits: { razorpayLinksPerHour: limit("razorpayLinksPerHour", 60), whatsappMessagesPerHour: limit("whatsappMessagesPerHour", 200), calendarEventsCreatedPerHour: limit("calendarEventsCreatedPerHour", 30), calendarEventsDeletedPerDay: limit("calendarEventsDeletedPerDay", 20) },
-    panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own" },
+    panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own", termsOnWhatsapp: isObj(o.panel) && o.panel.termsOnWhatsapp === true },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },

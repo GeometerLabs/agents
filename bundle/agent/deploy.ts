@@ -20,6 +20,7 @@ import type { State } from "../lib/state.ts";
 import { readStatus, refusalMessage, updateStatus } from "../lib/status.ts";
 import type { GuardProof } from "../lib/status.ts";
 import { ensureDir, mintGuardToken, mintSecret, sha256Hex, shopNameProblem, stableJson, writeAtomic } from "../lib/util.ts";
+import { SHARED_ENV_NAME, credentialEnvName, credentialStatusOf, credentialsEnvShown, dropUnusedLegacyCredential, ensureAgentCredentials, readAgentCredentials, sharesOneCredential, writeCredentialsEnv } from "./credentials.ts";
 import type { Problem } from "../lib/util.ts";
 import { OWN_API_FILES, agentFromFlags, agentGuardPart, paymentUpstreamOf, readAgent } from "./folder.ts";
 import type { AgentFlags, AgentFolder } from "./folder.ts";
@@ -37,8 +38,11 @@ type Kind = Exclude<GuardKind, "model">;
 export interface AgentConnection {
   /** The addresses the builder's agent calls instead of the services themselves. */
   baseUrls: Partial<Record<Kind, string>>;
-  /** The one credential for all of them. It replaces the services' own keys, which only the Guards hold. */
-  credential: string | undefined;
+  /**
+   * Where the agent's credentials are (agent/credentials.ts): one per Guard, in the file the agent reads, under these names. They replace the services' own keys, which
+   * only the Guards hold. The credentials themselves are never in this object, so nothing that prints it can print one.
+   */
+  credentials: { file: string; names: Partial<Record<Kind, string>>; /** Every Guard still takes the one credential an agent from before 12 Nov 2026 has. */ shared: boolean };
   /** Where WhatsApp should send the shop's webhooks (the inbox checks them, keeps the owner's replies to approval requests and passes the rest on). */
   whatsappWebhook?: string;
   /** B71: the agent takes money with a module the owner marks (UPI): its address in `baseUrls` is the desk's Guard, and the desk is served on this server (part 2). */
@@ -54,12 +58,15 @@ export function connectionOf(dir: string, server: ServerConfig, folder: AgentFol
     // every upstream is a Guard's address, the owner-marked module's too: its Guard is in front of the desk (B71 part 2)
     baseUrls: Object.fromEntries(agent.upstreams.map((u) => [u, agentBaseUrl(server, folder.name, u)])),
     ...(ownerMarked ? { desk: { module: ownerMarked.id, displayName: ownerMarked.displayName } } : {}),
-    credential: readSecretFile(secretFile(dir, "agents", folder.name, "agent_token")),
+    credentials: (() => {
+      const tokens = readAgentCredentials(dir, folder.name, agent.upstreams);
+      return { file: credentialsEnvShown(folder.name), names: Object.fromEntries(agent.upstreams.map((u) => [u, credentialEnvName(u)])), shared: sharesOneCredential(tokens) };
+    })(),
     ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `${publicUrl(server)}/c/${folder.name}/webhooks/whatsapp` } : {}),
   };
 }
 
-/** `agent add`: make the agent's folder and its one credential. Starts nothing. */
+/** `agent add`: make the agent's folder, a credential for each Guard and the file that hands them to the agent (agent/credentials.ts). Starts nothing. */
 export function addAgent(dir: string, name: string, flags: AgentFlags, readFile: (path: string) => string, now: Date): AgentFolder {
   const problem = shopNameProblem(name);
   if (problem) throw new Error(problem.replace(/shop name/gu, "agent name"));
@@ -67,6 +74,9 @@ export function addAgent(dir: string, name: string, flags: AgentFlags, readFile:
   if (existsSync(paths.agent(name))) throw new Error(`There is already an agent called ${name}.`);
   // one name is one set of container names and one place on the network, whether it is a shop or an agent
   if (existsSync(paths.shop(name)) || loadState(dir).shops[name]) throw new Error(`There is already a shop called ${name}: a name is used once, because it becomes the names of the Guards.`);
+  // an agent removed from this server keeps its name while what it kept is here (its Guards' stores carry the name): lib/state.ts says the same at deploy
+  const gone = loadState(dir).removed?.[name];
+  if (gone) throw new Error(`${name} is the name of an agent removed from this server on ${gone.at.slice(0, 10)} (what it kept is in ${gone.keptIn}). Choose another name: its Guards' kept stores carry this one.`);
   const waiting = paths.inbox(name);
   if (existsSync(waiting) && readdirSync(waiting).length > 0) throw new Error(`The secrets inbox for ${name} already holds files, so that name is taken by a setup in progress. Choose another name.`);
   const made = agentFromFlags(name, flags, readFile, now);
@@ -80,13 +90,14 @@ export function addAgent(dir: string, name: string, flags: AgentFlags, readFile:
   // an own gateway API's reviewed spec: the kit's two files, byte for byte (the accept file names the draft by its hash)
   if (made.ownApi) { writeAtomic(join(paths.agent(name), OWN_API_FILES.draft), made.ownApi.draftText); writeAtomic(join(paths.agent(name), OWN_API_FILES.accept), made.ownApi.acceptText); }
   prepareSecretsRoot(dir);
-  ensureSecret(secretFile(dir, "agents", name, "agent_token"), mintGuardToken);
+  writeCredentialsEnv(dir, loadServer(dir), name, ensureAgentCredentials(dir, name, made.agent.upstreams));
   return readAgent(dir, name);
 }
 
 // ---- credentials -------------------------------------------------------------------------------------------------------------------------
 
-interface Credentials { agent: string; record: string; relay: string; admin: Record<Kind, string> }
+/** `agent`: the builder's agent's credential at each Guard (one per Guard since 12 Nov 2026). The rest are the bundle's own and never reach the agent. */
+interface Credentials { agent: Record<string, string>; record: string; relay: string; admin: Record<Kind, string> }
 
 /**
  * The Guard the owner answers through, if any: a gateway's (a refund above the limit is held), or the agent's own API's when its reviewed spec holds a call for a
@@ -107,7 +118,7 @@ const holdsOf = (plan: AgentPlan): string[] => {
 
 /** Every credential an agent's containers share: made once, kept in the folder of the container that owns it, copied to the ones that must match. */
 function ensureCredentials(dir: string, name: string, kinds: Kind[], approval?: { kind: Kind }): Credentials {
-  const agent = ensureSecret(secretFile(dir, "agents", name, "agent_token"), mintGuardToken);
+  const agent = ensureAgentCredentials(dir, name, kinds);
   const record = ensureSecret(secretFile(dir, "ops", name, "record_token"), mintGuardToken);
   ensureAgentLabelKey(dir, name); // B69: the label key in ops' folder, derived from the agent's own
   const relay = ensureSecret(secretFile(dir, "relay", name, "agent_whatsapp"), mintGuardToken);
@@ -125,12 +136,17 @@ function ensureCredentials(dir: string, name: string, kinds: Kind[], approval?: 
   return { agent, record, relay, admin };
 }
 
-/** Who may call each Guard: the builder's agent (everything its spec lists), the relay (sends to the owner), and the reading agent (looks at the service's own state, changes nothing). */
-function whoOf(name: string, kind: Kind, c: Credentials) {
+/**
+ * Who may call each Guard: the builder's agent (everything its spec lists), the relay (sends to the owner), and the reading agent (looks at the service's own state, changes
+ * nothing). While a rotation's overlap runs (agent/rotate.ts) the agent has two entries under ONE id: the old credential's hash FIRST, because Guard's retire call retires the
+ * first entry with that id, then the new one. One id keeps the agent's held calls (Guard keys them by it) and its record (agent/facts.ts filters on it) the same.
+ */
+function whoOf(name: string, kind: Kind, c: Credentials, previous: readonly string[] = []) {
   return {
     admin: sha(c.admin[kind]),
     agents: [
-      { id: agentNames.agentId(name), sha: sha(c.agent) },
+      ...previous.filter((p) => p !== sha(c.agent[kind])).map((p) => ({ id: agentNames.agentId(name), sha: p })),
+      { id: agentNames.agentId(name), sha: sha(c.agent[kind]) },
       ...(kind === "whatsapp" ? [{ id: names.relayAgentId(name), sha: sha(c.relay), operations: ["send"] }] : []),
       ...(RECORD_READS[kind] ? [{ id: agentNames.recordId(name), sha: sha(c.record), operations: RECORD_READS[kind]! }] : []),
     ],
@@ -199,8 +215,9 @@ export async function checkAgent(ctx: Context, name: string): Promise<{ ok: bool
     const creds = ensureCredentials(ctx.dir, name, kinds, approval);
     const licence = await guardLicenceOn(ctx, server);
     if (!licence.on) problems.push(licence.problem);
+    if (sharesOneCredential(creds.agent)) notes.push(`${name}'s Guards still share one credential (made before 12 Nov 2026, ${SHARED_ENV_NAME} in ${credentialsEnvShown(name)}). \`geometer agent rotate ${name}\` gives each Guard its own, with an overlap so the running agent does not fail mid-call.`);
     for (const g of prepared.guards) {
-      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
+      problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds, previousHashes(state, name, g.plan.kind)), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
     }
   }
@@ -211,18 +228,29 @@ export async function checkAgent(ctx: Context, name: string): Promise<{ ok: bool
 
 export interface AgentResult { agent: string; proven: { passed: number; of: number; line: string }; guards: Record<string, GuardProof>; connection: AgentConnection }
 
+/** The hashes of credentials a Guard still accepts while a rotation's overlap runs (lib/state.ts AgentState.credentials). */
+const previousHashes = (state: State, name: string, kind: string): string[] => { const p = state.agents?.[name]?.credentials?.[kind]?.previous; return p ? [p.sha256] : []; };
+
+export interface AgentDeployOptions {
+  /**
+   * Only who may call a Guard changed (a rotation): ask a running Guard to read its guard.toml again (POST /admin/reload) instead of restarting it, so a call in
+   * flight is not cut off. A Guard whose reload is refused or needs a restart is restarted as before. Every other deploy restarts, as a shop's does.
+   */
+  reloadGuards?: boolean;
+}
+
 /** Deploy one agent's Guards. Throws Refused, naming every broken rule, before anything is changed. */
-export async function deployAgent(ctx: Context, name: string): Promise<AgentResult> {
+export async function deployAgent(ctx: Context, name: string, o: AgentDeployOptions = {}): Promise<AgentResult> {
   updateStatus(ctx.dir, name, ctx.now(), (s) => { s.deploy = { state: "in-progress", at: ctx.now().toISOString() }; });
   const before = readStatus(ctx.dir, name)?.deploy;
-  try { return await deployChecked(ctx, name); } catch (e) {
+  try { return await deployChecked(ctx, name, o); } catch (e) {
     if (e instanceof Refused) updateStatus(ctx.dir, name, ctx.now(), (s) => { s.deploy = { state: "failed", at: ctx.now().toISOString(), message: refusalMessage(e.problems), refusal: e.problems }; });
     else updateStatus(ctx.dir, name, ctx.now(), (s) => { s.deploy = before && before.state !== "in-progress" ? before : { state: "never" }; }, false);
     throw e;
   }
 }
 
-async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
+async function deployChecked(ctx: Context, name: string, o: AgentDeployOptions): Promise<AgentResult> {
   const server = loadServer(ctx.dir);
   prepareSecretsRoot(ctx.dir);
   const state = loadState(ctx.dir);
@@ -237,7 +265,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   // B13: an agent someone else wrote is restricted by the lease at its Guards, as a shop is (its id is the shop's id in the lease)
   const licence = await guardLicenceOn(ctx, server);
   if (!licence.on) problems.push(licence.problem);
-  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
+  for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds, previousHashes(state, name, g.plan.kind)), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
   if (problems.length > 0) throw new Refused(problems);
 
   // nothing broken: no secret in any file we are about to write, then write
@@ -245,19 +273,24 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   for (const g of prepared.guards) { configs[`${g.plan.service}/spec.json`] = g.plan.specText; configs[`${g.plan.service}/guard.toml`] = g.toml!; }
   // every provider credential a Guard of this agent reads (its def says which file), so none of them can end up in a file written beside it
   const provider = prepared.guards.flatMap((g) => (g.plan.def.secretFile ? [readSecretFile(secretFile(ctx.dir, g.plan.service, g.plan.def.secretFile)) ?? ""] : []));
-  const leaks = noSecretsIn(configs, [creds.agent, creds.record, creds.relay, ...Object.values(creds.admin), ...provider].filter(Boolean));
+  const leaks = noSecretsIn(configs, [...Object.values(creds.agent), creds.record, creds.relay, ...Object.values(creds.admin), ...provider].filter(Boolean));
   if (leaks.length > 0) throw new Refused(leaks);
 
   const at = ctx.now().toISOString();
   const s = state.agents![name];
+  // a Guard whose policy is the one it already runs, when only its callers changed (a rotation): reloaded rather than restarted
+  const reload = o.reloadGuards ? prepared.guards.filter((g) => s.guards[g.plan.kind]?.digest === g.compiled!.digest).map((g) => g.plan.service) : [];
   for (const g of prepared.guards) s.guards[g.plan.kind] = { version: g.version, contentHash: g.contentHash, digest: g.compiled!.digest, tripwires: { passed: g.tripwires!.passed, of: g.tripwires!.of, notSelfTestable: g.tripwires!.notSelfTestable } };
   s.applied = {
     appliedAt: at, settingsText: prepared.folder.settingsText, agentText: prepared.folder.agentText, desiredHash: prepared.desiredHash,
     guards: Object.fromEntries(prepared.guards.map((g) => [g.plan.kind, { kind: g.plan.kind, service: g.plan.service, specText: g.plan.specText, bundleText: g.compiled!.text, tomlText: g.toml! }])),
   };
   s.lastDeployAt = at;
+  // since when each Guard's credential is in force (a rotation sets its own; the first deploy of a Guard sets it here)
+  s.credentials ??= {};
+  for (const k of kinds) s.credentials[k] ??= { since: at };
   const composed = writeServer(ctx, server, state);
-  const changed = await bringUp(ctx, state, composed, [name]);
+  const changed = await bringUp(ctx, state, composed, [name], { reload });
 
   // the RUNNING Guards say what they enforce
   const proof = await proveRunning(ctx, prepared.guards);
@@ -272,7 +305,8 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
     st.limits = { proven: total.passed, of: total.of, unprovable: [...new Set(Object.values(proof.guards).flatMap((g) => g.notSelfTestable))], line, perGuard: proof.guards };
     st.versions = { pathway: "own-agent", bundle: "0.1.0", guard: server.guardImage, guards: Object.fromEntries(Object.entries(s.guards).map(([k, v]) => [k, v.version])) };
     if (s.stopped) st.stopped = { at: s.stopped.at, by: s.stopped.by, reason: s.stopped.reason }; else delete st.stopped;
-    st.own = { baseUrls: connection.baseUrls as Record<string, string>, ...(connection.whatsappWebhook ? { whatsappWebhook: connection.whatsappWebhook } : {}) };
+    // the rest of `own` (the last crash test, what was asked from the panel) is kept: a deploy changes only what it knows
+    st.own = { ...st.own, baseUrls: connection.baseUrls as Record<string, string>, ...(connection.whatsappWebhook ? { whatsappWebhook: connection.whatsappWebhook } : {}), credentials: credentialStatusOf(s.credentials, creds.agent) };
   });
   saveState(ctx.dir, state);
   if (proof.problems.length > 0) {
@@ -280,22 +314,25 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
     throw new Refused(proof.problems);
   }
   if (proof.licence.length > 0) throw new Refused(proof.licence); // refused, but the kill switch is not pulled (refunds owed must still go through)
+  // only now, with every Guard taking them, does the agent's file change (a new Guard's credential, a new address); a Guard rotated earlier keeps its own
+  writeCredentialsEnv(ctx.dir, server, name, creds.agent);
+  if (dropUnusedLegacyCredential(ctx.dir, name, creds.agent)) ctx.log(`${name}: no Guard uses the one shared credential any more, so its file is deleted.`);
   ctx.log(`Changed services: ${changed.length === 0 ? "none" : changed.join(", ")}`);
   return { agent: name, proven: { ...total, line }, guards: proof.guards, connection };
 }
 
 // ---- the lines `agent add` and `agent show` print ----------------------------------------------------------------------------------------
 
-// The plain-language lines `agent add` and `agent show` print. The credential is shown only when asked for, so `show` can be pasted into a chat without leaking it.
-export function connectionText(name: string, c: AgentConnection, withCredential: boolean): string {
+/** The plain-language lines `agent add`, `deploy` and `show` print. Never a credential (since 12 Nov 2026): the agent reads them from its file (agent/credentials.ts). */
+export function connectionText(name: string, c: AgentConnection): string {
   // a gateway's or an owner-marked module's label is its own display name (the registry's), so nothing here names a provider
   const label = (k: string): string => (k === OWN_API ? "Your gateway" : k === "whatsapp" ? "WhatsApp" : k === "calendar" ? "Google Calendar" : k === c.desk?.module ? `${c.desk.displayName} desk` : providerById(k)?.displayName ?? k);
   return [
     `Point ${name} at these addresses instead of the services themselves. The path after each one is the service's own (for a gateway, its own API's paths; for the desk, /requests and /refunds):`,
     ...Object.entries(c.baseUrls).map(([k, url]) => `  ${label(k).padEnd(16)}${url}`),
-    withCredential
-      ? `The credential, for all of them (send it as "Authorization: Bearer <credential>" in place of the service's own key; the real keys stay in the Guards and are never given to the agent):\n  ${c.credential ?? "(not made yet)"}`
-      : `The credential is in secrets/agents/${name}/agent_token on this server; \`geometer agent show ${name} --credential\` prints it.`,
+    c.credentials.shared
+      ? `Its Guards still share one credential (made before 12 Nov 2026), ${SHARED_ENV_NAME} in ${c.credentials.file} on this server. \`geometer agent rotate ${name}\` gives each Guard its own.`
+      : `Each Guard has a credential of its own, in ${c.credentials.file} on this server (${Object.values(c.credentials.names).join(", ")}). Send each as "Authorization: Bearer <credential>" to its own address, in place of the service's own key; the real keys stay in the Guards. Load the file when the agent starts (node --env-file=...), or read it on each call. Credentials are never printed.`,
     ...(c.whatsappWebhook ? [`In WhatsApp's settings, send this shop's webhooks to:\n  ${c.whatsappWebhook}`] : []),
     ...(c.baseUrls[OWN_API] ? [`Your own gateway's API: the Guard holds its key (hand it in as secrets-inbox/${name}/gateway_authorization, the whole Authorization header) and enforces only the rules you kept in gateway-accept.json. A rule that waits for a person asks the owner on WhatsApp; after the owner's yes, your agent sends the identical call again and the Guard lets it through.`] : []),
     ...(c.desk ? [`${c.desk.displayName}: customers pay the shop's own ${c.desk.displayName} ID and the owner marks each payment received on WhatsApp. Your agent asks the desk for each request and reads it back at the address above (POST /requests, GET /requests?reference=..., POST /refunds; \`geometer agent crash-test ${name}\` runs the same desk, GEOMETER_UPI_URL). A request counts as paid only when the owner has marked it.`] : []),

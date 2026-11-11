@@ -6,6 +6,7 @@ import type { AgentEvent } from "../src/agent.ts";
 import { createStore } from "../src/booking.ts";
 import type { Store } from "../src/booking.ts";
 import type { Calendar } from "../src/adapters/calendar.ts";
+import { createOwnCalendar } from "../src/adapters/own-calendar.ts";
 import type { Messaging } from "../../../../modules/messaging/messaging.ts";
 import type { IntentParser } from "../src/adapters/model.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -27,7 +28,7 @@ export const PATHWAY = "bookings";
 export { RETRY_DELAYS_MS };
 export type { RefundCounts };
 
-export interface Services { calendar: Calendar; payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
+export interface Services { /** Left out for a shop with no Google Calendar (B72): the agent then uses the shop's own booking list (src/adapters/own-calendar.ts). */ calendar?: Calendar; payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
   settings: Settings;
@@ -44,6 +45,8 @@ export interface RuntimeOptions {
   report?: MonthlyReportSetup;
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
+  /** B72: the shop terms the owner can agree to on WhatsApp (modules/terms/reader.ts). Left out: off. */
+  terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -93,7 +96,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     skipCounters: skipStoreCounters,
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}) }),
+    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), calendar: (watched as unknown as Services).calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.bookings.values(),
     refundContext(store, _settings, receipt) {
