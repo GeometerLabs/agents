@@ -6,11 +6,10 @@ import type { ApproversSettings } from "../../modules/approvals/people.ts";
 import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl, selfHostedTarget } from "../lib/server.ts";
-import { SELF_HOSTED_PROVIDER } from "../../modules/understanding/rates.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelSpec, gatewaySpec, whatsappSpec } from "./guards.ts";
+import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelProvider, modelSpec, gatewaySpec, whatsappSpec } from "./guards.ts";
 import type { GuardDef, GuardKind } from "./guards.ts";
 
 /** What the runtime waits for a call when runtime.json says nothing: longer than Guard's own wait for the provider. */
@@ -170,18 +169,30 @@ export function withFleetModel(runtime: Record<string, unknown>, fleetModel: "of
 }
 
 /**
- * B73: a shop on a server whose model the builder hosts (geometer.json `model.selfHosted`). The GENERATED parser names the provider "self-hosted", so the record says
- * where each call went and no line of the shared rate table can price it by accident, and carries the builder's own rate when they gave one, so the cost meter and the
- * panel count what the calls cost at their price. Like `ai` above: the generated config only, and the rate only if the pathway's own validator accepts it; a runtime
- * that does not know `parser.rate` counts the calls with no price (unknown, never 0), and a note says so. A hosted provider's shop is left exactly as it was.
+ * Who answers the shop's language model, named in the GENERATED parser (`provider`), so the runtime prices each call from the rate table's line for that provider and
+ * model, the record's cost counts, and fleet's month AI cap (`ai.cap`, from the heartbeat's `model_micro_inr`) can trip. Before 11 Nov the parser named none, so the
+ * runtime took the host of its own address, `g-model`, which no line prices: every deployed shop's model calls were unpriced. The name is `modelProvider`'s: the
+ * upstream's provider (openai, anthropic, google, deepinfra), geometer.json's `model.provider`, or "self-hosted" for a model the builder hosts (B73), which also
+ * carries the builder's own rate when they gave one. Like `ai` above: the generated config only, and each key only if the pathway's own validator accepts it; a
+ * runtime that does not know `provider` or `rate` keeps its calls unpriced, and a note says so. A provider the bundle cannot name is said in a note too.
  */
-export function withSelfHostedModel(runtime: Record<string, unknown>, model: ModelConfig, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
-  if (!model.selfHosted || !isObj(runtime.parser)) return runtime;
-  const named = { ...runtime, parser: { ...runtime.parser, provider: SELF_HOSTED_PROVIDER } };
-  if (!model.selfHosted.rate) return named;
-  const priced = { ...named, parser: { ...named.parser, rate: model.selfHosted.rate } };
+export function withModelProvider(runtime: Record<string, unknown>, model: ModelConfig, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (!isObj(runtime.parser)) return runtime;
+  const provider = modelProvider(model);
+  if (!provider) {
+    notes.push(`this server's model calls are counted with no price: the bundle cannot tell the provider from the model Guard's address (${guardDef("model", model).upstream}). Name it in geometer.json as "model.provider", the name the rate table uses (for example "deepinfra").`);
+    return runtime;
+  }
+  const named = { ...runtime, parser: { ...runtime.parser, provider } };
+  if (!validate(named, "/").ok) {
+    if (validate(runtime, "/").ok) notes.push("this template version does not know parser.provider yet, so its model calls are counted with no price. Update the template, and the provider is written on the next deploy.");
+    return runtime;
+  }
+  const rate = model.selfHosted?.rate;
+  if (!rate) return named;
+  const priced = { ...named, parser: { ...named.parser, rate } };
   if (validate(priced, "/").ok) return priced;
-  if (validate(named, "/").ok) notes.push("the model you host has a rate in geometer.json, but this template version does not know parser.rate yet, so its calls are counted with no price. Update the template, and the rate is written on the next deploy.");
+  notes.push("the model you host has a rate in geometer.json, but this template version does not know parser.rate yet, so its calls are counted with no price. Update the template, and the rate is written on the next deploy.");
   return named;
 }
 
@@ -254,7 +265,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
-    runtime = withSelfHostedModel(runtime, server.model, check, notes);
+    runtime = withModelProvider(runtime, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks

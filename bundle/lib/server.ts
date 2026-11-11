@@ -20,7 +20,7 @@ import { KINDS, kindFor, kindNames } from "./kinds.ts";
 import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
-import { isBuilderRate } from "../../modules/understanding/rates.ts";
+import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../../modules/understanding/rates.ts";
 import type { BuilderRate } from "../../modules/understanding/rates.ts";
 
 export const BUNDLE_VERSION = "0.1.0";
@@ -44,6 +44,12 @@ export interface ModelConfig {
   callsPerDay?: number;
   /** B73, optional and for a builder's own server only: a model the builder hosts, in place of a hosted provider. See SelfHostedModel. */
   selfHosted?: SelfHostedModel;
+  /**
+   * The provider's name as the rate table (modules/understanding/rates/) writes it, for the record and the price of each call ("deepinfra"). Left out, the bundle
+   * names it from the upstream's host (generate/guards.ts `modelProvider`): api.openai.com is openai, api.anthropic.com anthropic, and so on; a model the builder
+   * hosts is always "self-hosted". Needed only for a provider at another address.
+   */
+  provider?: string;
 }
 
 /**
@@ -89,6 +95,16 @@ function selfHostedProblems(model: Record<string, unknown>, hosted: boolean): st
   else if (url.protocol === "http:" && !PRIVATE_IPV4.test(url.hostname)) problems.push(`"model.selfHosted.url" is plain http to ${url.hostname}, so the model's key would travel unencrypted. Use https, or the model server's private address (10.x, 172.16-31.x or 192.168.x) on your own network. (127.0.0.1 is the model Guard's own container, not this machine.)`);
   if (raw.rate !== undefined && !isBuilderRate(raw.rate)) problems.push('"model.selfHosted.rate" must be {"inputUsdPerMillion": <number>, "outputUsdPerMillion": <number>}: your own price in US dollars per million tokens, 0 or more. Leave it out and the calls are counted with no price.');
   return problems;
+}
+
+/** `model.provider`: a short name the rate table could use. "self-hosted" belongs to `selfHosted` alone, and a model the builder hosts takes no other name. */
+function providerProblems(model: Record<string, unknown>): string[] {
+  const p = model.provider;
+  if (p === undefined) return [];
+  if (typeof p !== "string" || !/^[a-z][a-z0-9-]{0,39}$/u.test(p)) return ['"model.provider" must be a short lowercase name, as the rate table writes it (for example "deepinfra"). Leave it out for api.openai.com or api.anthropic.com.'];
+  if (model.selfHosted !== undefined && p !== SELF_HOSTED_PROVIDER) return [`"model.provider" cannot be "${p}" for a model you host: its calls are "${SELF_HOSTED_PROVIDER}", priced only at your own rate.`];
+  if (model.selfHosted === undefined && p === SELF_HOSTED_PROVIDER) return [`"model.provider" "${SELF_HOSTED_PROVIDER}" is for a model you host: add "model.selfHosted" with its URL.`];
+  return [];
 }
 
 export interface BackupConfig {
@@ -195,7 +211,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   if (typeof approvalHours !== "number" || !Number.isInteger(approvalHours) || approvalHours < 1 || approvalHours > 168) errors.push('"approvalHours" must be a whole number of hours from 1 to 168 (Guard allows at most seven days).');
   const model = isObj(o.model) ? o.model : undefined;
   if (!model || (model.wire !== "openai" && model.wire !== "anthropic") || typeof model.model !== "string" || model.model === "") errors.push('"model" must say {"wire": "openai" or "anthropic", "model": "<the one model name every shop may ask for>"}.');
-  if (model) errors.push(...selfHostedProblems(model, isObj(o.panel) && o.panel.mode === "hosted"));
+  if (model) errors.push(...selfHostedProblems(model, isObj(o.panel) && o.panel.mode === "hosted"), ...providerProblems(model));
   const network = isObj(o.network) ? o.network : {};
   const base = typeof network.base === "string" ? network.base : "10.231";
   if (!/^\d{1,3}\.\d{1,3}$/u.test(base)) errors.push('"network.base" must be the first two numbers of a private range, like "10.231".');

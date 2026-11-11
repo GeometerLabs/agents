@@ -7,6 +7,7 @@
 // turns the shop's own settings into the deposit bound and the refund threshold. The others are generated here from the shop's runtime.json (the WhatsApp
 // number, the calendar) and the server's settings. The monorepo copies in deploy/pathways/bookings/ are fixtures: test/drift.test.ts compares the shapes.
 import { ANTHROPIC_VERSION } from "../../modules/understanding/model-llm.ts";
+import { SELF_HOSTED_PROVIDER } from "../../modules/understanding/rates.ts";
 import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import type { LimitsSpec, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
@@ -114,6 +115,23 @@ export function calendarSpec(id: SpecIdentity, o: { calendarId: string; createdP
     limits: [count("events-created-per-hour", "insert", o.createdPerHour, 3600), count("events-deleted-per-day", "delete", o.deletedPerDay, 86_400)],
     intents: [], fail_policy: [],
   };
+}
+
+/**
+ * API hosts and the name the rate table (modules/understanding/rates/) gives their provider. Only providers the table prices are here: a model Guard pointed at another
+ * host names its provider in geometer.json (`model.provider`), or its calls are counted as unpriced.
+ */
+export const PROVIDER_BY_HOST: Readonly<Record<string, string>> = { "api.openai.com": "openai", "api.anthropic.com": "anthropic", "generativelanguage.googleapis.com": "google", "api.deepinfra.com": "deepinfra" };
+
+/**
+ * The provider a server's model calls are recorded and priced under: "self-hosted" for a model the builder hosts (B73), else geometer.json's `model.provider`, else the
+ * name of the model Guard's upstream host. Undefined when none of these says (a provider at an address the bundle does not know): the runtime then names it after
+ * its own address, the model Guard's, which no line of the table prices, as every deployed shop did before 11 Nov.
+ */
+export function modelProvider(m: ModelConfig): string | undefined {
+  if (m.selfHosted) return SELF_HOSTED_PROVIDER;
+  if (m.provider) return m.provider;
+  return PROVIDER_BY_HOST[guardDef("model", m).upstream.replace(/:\d+$/u, "")];
 }
 
 /** The path the model provider is called on. A provider whose compatible endpoint lives elsewhere says so in geometer.json (`model.path`). */

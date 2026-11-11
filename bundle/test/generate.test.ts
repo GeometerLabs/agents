@@ -96,7 +96,7 @@ test("the runtime config points only at the shop's own Guards, with credential f
 test("a model parser must be the server's one model on the server's wire, and is pointed at the shared model Guard", () => {
   const good = plan(panelRuntime({ parser: { wire: "openai", model: "gpt-4o-mini" } }));
   assert.deepEqual(good.problems, []);
-  assert.deepEqual(good.runtime.parser, { wire: "openai", baseUrl: "http://g-model:8080/v1", model: "gpt-4o-mini", agentTokenFile: "/run/secrets/agent_model" });
+  assert.deepEqual(good.runtime.parser, { wire: "openai", baseUrl: "http://g-model:8080/v1", model: "gpt-4o-mini", agentTokenFile: "/run/secrets/agent_model", provider: "openai" }, "the provider is named, so the runtime prices each call from its line in the rate table (11 Nov)");
   assert.deepEqual(rules(plan(panelRuntime({ parser: { wire: "openai", model: "gpt-5" } }))), ["model-matches-guard"]);
   assert.deepEqual(rules(plan(panelRuntime({ parser: { wire: "anthropic", model: "gpt-4o-mini" } }))), ["model-matches-guard"]);
   const anthropic = plan(panelRuntime({ parser: { wire: "anthropic", model: "claude-haiku-4-5" } }), { model: { wire: "anthropic", model: "claude-haiku-4-5" } });

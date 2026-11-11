@@ -114,6 +114,10 @@ Hand each one in as a file in `secrets-inbox/<shop>/<name>`. The deployer moves 
 
 Nothing secret is in any generated file; the generator searches for the value of every secret and for the shape of keys, and refuses if it finds one. Folders under `secrets/` are 0755 and files 0644 so a container's own non-root user can read them; `secrets/` itself is 0700, so no other user of the machine gets to any of it. Docker mounts one container's folder into that container only.
 
+## The model's price
+
+Each call's cost is read from the rate table under the provider's name, which the bundle takes from the model's address: `api.openai.com` is `openai`, `api.anthropic.com` `anthropic`, `generativelanguage.googleapis.com` `google`, `api.deepinfra.com` `deepinfra`. For a provider at another address (`model.upstream`), add `"provider": "<its name in the rate table>"` to the `model` block, or its calls are counted with no price and `check` says so. After updating the bundle, run `deploy` once with no shop named, so every shop's runtime gets the name.
+
 ## A model you host (optional)
 
 The server's model Guard calls a hosted provider with the key you hand in. You can point it at a model you run yourself instead: any server that speaks OpenAI-compatible chat completions (vLLM, llama.cpp's server, Ollama), or Geometer's model gateway in front of one. Every call still goes through the model Guard, with the same model pin, the same calls-per-day cap and the same kill switch, and the shops' runtimes still hold no key. If you do nothing, nothing changes. Geometer's partner server refuses this setting: the model there is Geometer's.
