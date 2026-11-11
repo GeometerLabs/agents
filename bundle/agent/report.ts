@@ -9,7 +9,7 @@ import type { ReportLanguage } from "../../modules/report/text.ts";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import type { RecordEntry } from "../../modules/record/record.ts";
 import type { Booking } from "../../templates/commerce/bookings/src/booking.ts";
-import { secretFile } from "../lib/secrets.ts";
+import { panelSigningKeyFile } from "../lib/secrets.ts";
 import { serverPaths } from "../lib/server.ts";
 import { BUNDLE_VERSION } from "../lib/server.ts";
 import { readAgent } from "./folder.ts";
@@ -27,7 +27,7 @@ export function writeAgentReport(dir: string, agent: string, o: AgentReportOptio
   if (!existsSync(`${exported}/record.json`)) throw new Error(`There is no record for ${agent} yet. It is made from the Guards' decisions: run \`geometer agent record ${agent}\` (the deployer also does it every five minutes).`);
   const entries = JSON.parse(readFileSync(`${exported}/record.json`, "utf8")) as RecordEntry[];
   const bookings = JSON.parse(readFileSync(`${exported}/bookings.json`, "utf8")) as Booking[];
-  const keyFile = secretFile(dir, "panel", "signing_key");
+  const keyFile = panelSigningKeyFile(dir);
   // the go-live certificate `geometer agent go-live` wrote, read the way a template's is: it must be signed, and its checks must have run on these settings
   const certificate = `${exported}/go-live-certificate.json`;
   const goLive = existsSync(certificate) ? readGoLiveCertificate(readFileSync(certificate, "utf8"), folder.settings) : undefined;

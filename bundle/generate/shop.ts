@@ -6,6 +6,7 @@ import type { ApproversSettings } from "../../modules/approvals/people.ts";
 import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl, selfHostedTarget } from "../lib/server.ts";
+import { RUNTIME_SIGNING_KEY_FILE } from "../lib/secrets.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
@@ -218,6 +219,11 @@ export interface ReportFacts {
   source: "live" | "test-mode";
   /** The shop's id: the tenant of its record's ledger (B28), so the report is anchored under the same id the daily fingerprint uses. */
   tenant?: string;
+  /**
+   * Item 17b: where the runtime finds the server's paper signing key (the panel's, copied for it by the deployer), so the owner's WhatsApp report is signed and its
+   * summary link checks on /verify against fleet's list. Left out: the report goes unsigned, with its digest and code link, as before.
+   */
+  signingKeyFile?: string;
 }
 
 /**
@@ -231,6 +237,12 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
   const plain = { ...runtime, report: { preparedBy: facts.preparedBy, innovator: facts.innovator, pageBaseUrl: facts.pageBaseUrl, pagesDir: REPORTS_DIR, source: facts.source } };
   // the ledger tenant (B28) anchors the report to the record's head; a template version from before it would refuse the key, and then gets its report unanchored
   const withIt = facts.tenant ? { ...plain, report: { ...plain.report, tenant: facts.tenant } } : plain;
+  // 17b: signed with the server's key when the runtime is handed one; a template version that does not take the key gets its report unsigned, and the deploy says so
+  if (facts.signingKeyFile) {
+    const signed = { ...withIt, report: { ...withIt.report, signingKeyFile: facts.signingKeyFile } };
+    if (validate(signed, "/").ok) return signed;
+    notes.push("the owner's monthly report is not signed: this template version does not take report.signingKeyFile. Update the pathway, and it is signed from the next deploy.");
+  }
   const checked = validate(withIt, "/");
   if (checked.ok) return withIt;
   if (withIt !== plain && validate(plain, "/").ok) { notes.push("the monthly report is not anchored to the record's ledger: this template version does not know report.tenant. Update the pathway, and it is written on the next deploy."); return plain; }
@@ -238,8 +250,12 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
   return runtime;
 }
 
-/** Plan one shop. `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). */
-export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator): ShopPlan {
+/**
+ * Plan one shop. `versions` are the bundle versions Guard will be given (raise them on every change; see state.ts). `o.reportKeyReadable` (item 17b): whether the
+ * deployer can hand this shop's runtime the server's paper key (lib/secrets.ts runtimeReadsPrivateKeys); deploy and check pass it. Left out, the plan does not
+ * depend on who runs it: no key, and nothing said (the generator's own tests and goldens).
+ */
+export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean } = {}): ShopPlan {
   // The template is the one the shop's pathway.lock names (a lock that is missing is a problem readShop already said; Bookings is assumed until it is fixed).
   const template: Kind = kindFor(shop.lock?.pathway) ?? KINDS.bookings;
   const check: RuntimeValidator = validate ?? template.validateRuntimeConfig;
@@ -284,7 +300,10 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     runtime = withModelProvider(runtime, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
-    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks
+    // 17b: the server's paper key exists where the panel is on (deploy.ts mints it, and copies it for the runtime on the same condition as here: ensureCredentials)
+    const signingKeyFile = server.panel.enabled && o.reportKeyReadable === true ? `${SECRETS}/${RUNTIME_SIGNING_KEY_FILE}` : undefined;
+    if (server.panel.enabled && o.reportKeyReadable === false) notes.push(`the owner's monthly WhatsApp report is not signed on this server: ${shop.name}'s runtime runs as the node image's user (uid 1000) and can use only a private key that user owns, which a deployer running as uid ${process.getuid?.() ?? "?"} cannot give it. Run the deployer as uid 1000 or as root to sign it; the report still carries its digest and code link.`);
+    runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name, ...(signingKeyFile ? { signingKeyFile } : {}) }, check, notes); // a UPI shop's money is the owner's real marks
     if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };
