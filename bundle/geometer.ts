@@ -1,15 +1,18 @@
 // geometer: the deploy bundle's command line.   node bundle/geometer.ts <command> [--server <folder>]
 //
-//   init <folder> --domain D --reviewed-by ID [--model-wire openai|anthropic --model NAME] [--fleet-url U --fleet-key-file F] [--licence-key HEX[,HEX]] [backup options]
+//   init <folder> --domain D --reviewed-by ID --licence-key HEX[,HEX] [--model-wire openai|anthropic --model NAME] [--fleet-url U --fleet-key-file F] [backup options]
 //                                --model may be left out until the first shop (the panel's first run asks for it); a deploy refuses until it is chosen.
+//                                --licence-key: the public half of fleet's licence key, as fleet's `licence key show` prints it (64 hex characters); pairing the server gives it.
+//                                It is pinned in geometer.json, and a lease is only ever checked with it. Required (decision 39, monorepo ADR-0070): a release's Guard runs a
+//                                builder's shop only under Geometer's lease, so a server without the key could run no shop. Tests and the Docker proof pass RFC 8032's published
+//                                test key, the one their Guard image is built with.
 //   init <folder> --pairing --domain D --reviewed-by ID [--guard-licence-kid KID] ...   the same, with this server's id, fleet's address, the deployment key and fleet's licence
 //                                key taken from what `pair` kept in the folder, and the trial lease taken in. --guard-licence-kid: refuse when fleet's licence key is not the
-//                                one built into the Guard image (bundle/release.json names it), since every shop's deploy would be refused then.
+//                                one built into the Guard image (bundle/release.json names it), since every shop's deploy would be refused then. A pairing that brought no
+//                                licence key is refused like a missing --licence-key.
 //   pair <folder> --fleet-url U  pair a NEW server with Geometer's fleet: reads the one-time code from your account page (geometer.dev/account, "Add a server") on
 //                                standard input, never from the command line, exchanges it once, and keeps the answer in the folder (fleet_key, 0600, and pairing.json).
 //                                install.sh runs this, then `init --pairing`.
-//                                --licence-key: the public half of fleet's licence key, as fleet's `licence key show` prints it (64 hex characters). It is pinned in geometer.json;
-//                                a lease is only ever checked with it. Without it no lease is kept and no shop is restricted by one.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
@@ -78,7 +81,7 @@ import type { PairingFile } from "./lib/pairing.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreAgent, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
-import { Refused, checkShop, compose, composeFile, deploy, ops, upServer } from "./deploy.ts";
+import { NO_LICENCE_KEY, Refused, checkShop, compose, composeFile, deploy, ops, upServer } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
@@ -471,11 +474,13 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     const want = s("guard-licence-kid");
     const kids = paired.licenceKeys.map((k) => kidOf(Buffer.from(k, "hex")));
     if (want !== undefined && paired.licenceKeys.length > 0 && !kids.includes(want)) throw new Error(`Fleet's licence key (key id ${kids.join(", ")}) is not the one built into this release's Guard image (key id ${want}), so every shop's deploy would be refused. Nothing was set up. This is Geometer's to fix: write to support. The pairing is kept, so running the install again later needs no new code.`);
-    if (paired.licenceKeys.length === 0) console.log("note: fleet signs no licence lease yet, so none is pinned or kept here. A Guard image that requires a lease will not run a shop until one is (geometer licence lease <file>).");
   }
   const id = paired?.deploymentId ?? s("id") ?? basename(dir).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^-+/u, "").slice(0, 64);
   const problem = serverIdProblem(id);
   if (problem) throw new Error(problem);
+  // Decision 39: no server folder without Geometer's licence key, so no shop is set up that its Guards would then refuse to run. Same words as a refused deploy.
+  // With --pairing the key is the one fleet sent when the server was paired (a pairing that brought none is refused the same way); by hand it is --licence-key.
+  if (paired ? paired.licenceKeys.length === 0 : !s("licence-key")) throw new Error(NO_LICENCE_KEY);
   let recipient = s("age-recipient");
   if (s("snapshots-url") && !recipient) {
     const out = s("age-identity-out");
@@ -659,6 +664,8 @@ async function status(ctx: Context): Promise<number> {
     if (o) for (const g of o.guards) console.log(`  ${g.id}: ${g.admin === null ? "admin port not reachable" : `${g.healthReady ? "ready" : "NOT READY"}, ${g.admin.kill_switch?.on ? "KILLED" : "open"}, tripwires ${g.admin.tripwires?.passed ?? "?"} of ${g.admin.tripwires?.of ?? "?"}${g.admin.tripwires?.ok === false ? " (FAILED)" : ""}`}`);
     if (s?.limits) console.log(`  ${s.limits.line}${s.deploy.state === "failed" ? `; the last deploy FAILED: ${s.deploy.message}` : ""}`);
     if (s?.licence?.listed) console.log(`  licence: ${s.licence.state.replace("_", " ")}${s.licence.paidThrough ? `, paid through ${s.licence.paidThrough.slice(0, 10)}` : ""}${s.licence.state !== "wind_down" && s.licence.state !== "stopped" && s.licence.windDownOn ? `, covered until ${s.licence.windDownOn.slice(0, 10)}` : ""}${s.licence.stopOn ? `, final stop ${s.licence.stopOn.slice(0, 10)}` : ""}${s.licence.exportUntil ? `, records can be downloaded until ${s.licence.exportUntil.slice(0, 10)}` : ""}${s.licence.leaseIssuedAt ? ` (lease signed ${s.licence.leaseIssuedAt.slice(0, 10)})` : ""}`);
+    // decision 39 (monorepo ADR-0070): a shop the lease does not list has no licence, and a release's Guard takes no new work for it
+    else if (s?.licence) console.log("  licence: none yet (the lease does not list this shop, so its Guards take no new work; it comes with a heartbeat once the trial or a plan covers it)");
     console.log(`  backup: ${s?.backups?.lastCopyAt ? `last snapshot ${s.backups.lastCopyAt}` : "no snapshot yet"}; restore drill: ${s?.backups?.lastDrillAt ? `${s.backups.drillOk ? "passed" : "FAILED"} ${s.backups.lastDrillAt}${s.backups.drillOk ? "" : ` (${s.backups.drillDetail})`}` : "never run"}`);
   }
   // agents someone else wrote: their Guards only

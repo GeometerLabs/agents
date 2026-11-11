@@ -196,7 +196,7 @@ export async function checkAgent(ctx: Context, name: string): Promise<{ ok: bool
     const approval = approvalGuardOf(kinds, holdsOf(prepared.plan));
     const creds = ensureCredentials(ctx.dir, name, kinds, approval);
     const licence = await guardLicenceOn(ctx, server);
-    if (licence.why) notes.push(licence.why);
+    if (!licence.on) problems.push(licence.problem);
     for (const g of prepared.guards) {
       problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
       if (g.tripwires) lines.push(`${g.plan.service}: ${provenLine(g.tripwires)}`);
@@ -234,7 +234,7 @@ async function deployChecked(ctx: Context, name: string): Promise<AgentResult> {
   const creds = ensureCredentials(ctx.dir, name, kinds, approval);
   // B13: an agent someone else wrote is restricted by the lease at its Guards, as a shop is (its id is the shop's id in the lease)
   const licence = await guardLicenceOn(ctx, server);
-  if (licence.why) ctx.log(`note: ${licence.why}`);
+  if (!licence.on) problems.push(licence.problem);
   for (const g of prepared.guards) problems.push(...await compileAndVerify(ctx, server, name, g, whoOf(name, g.plan.kind as Kind, creds), licenceFor(server, licence.on, g.plan.kind, name, ownNumbersOf(prepared.folder)), approval?.operations && g.plan.kind === approval.kind ? approval.operations : undefined));
   if (problems.length > 0) throw new Refused(problems);
 

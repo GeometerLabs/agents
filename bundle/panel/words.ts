@@ -78,9 +78,11 @@ export interface Words {
    * when the lease has not been refreshed for a while. Said to a builder or partner, never to the shop's customers.
    */
   licence: {
-    heading: string; states: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped", string>; means: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped", string>;
+    heading: string; states: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>; means: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>;
     paidThrough(day: string): string; windDownOn(day: string): string; extended(day: string): string; stopOn(day: string): string; exportUntil(day: string): string;
     renew: string; stale(day: string): string;
+    /** Decision 39: the day the builder's trial ends, for a shop it covers. */
+    trial(day: string): string;
   };
   setup: {
     title: string; chooseTemplate: string; templateNames: Record<string, string>; templateElsewhere: string; start: string; progress(n: number, of: number): string;
@@ -200,7 +202,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "plan.is": ["Business"], "plan.included": [3000],
   // Getters: the list is read when a sample is used (the review sheet, the words test), not whenever the panel loads its words.
   get "plan.price"() { return [listRupees("plan.business.fee")]; }, get "plan.priceBuilder"() { return [listRupees("licence.builder.fee")]; },
-  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"],
+  "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["11 Dec 2026"],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
@@ -340,17 +342,19 @@ export const en: Words = {
   },
   licence: {
     heading: "Licence",
-    states: { active: "Licence in order", reminder: "Licence payment due", warning: "Licence payment overdue", wind_down: "Paused: no new bookings or payment requests", stopped: "Stopped" },
+    states: { active: "Licence in order", reminder: "Licence payment due", warning: "Licence payment overdue", wind_down: "Paused: no new bookings or payment requests", stopped: "Stopped", none: "No licence yet: no new bookings or payment requests" },
     means: {
       active: "Nothing changes for customers.",
       reminder: "Nothing changes for customers yet.",
       warning: "Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests.",
       wind_down: "Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once.",
       stopped: "Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records.",
+      none: "Geometer's lease does not cover this shop yet, so its Guards take no new work. Refunds, cancellations and reading what is there still go through. When the trial or a plan covers the shop, the lease lists it within a minute or two of its first deploy. If it does not, write to support. A person answers.",
     },
     paidThrough: (day) => `Next payment due: ${day}.`, windDownOn: (day) => `If it is not paid, new bookings pause on ${day}.`, extended: (day) => `Geometer's emergency extension covers it until ${day}.`,
     stopOn: (day) => `Final stop planned for ${day}.`, exportUntil: (day) => `You can download the shop's records until ${day}.`,
     renew: "Pay to renew", stale: (day) => `Licence not refreshed since ${day}. Check that this server reaches Geometer. Write to support. A person answers.`,
+    trial: (day) => `Trial licence: ends on ${day}. After that, new bookings pause until the shop is on a plan.`,
   },
   setup: {
     title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
