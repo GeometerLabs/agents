@@ -1,5 +1,7 @@
-// The link a signed paper carries to geometer.dev's check page, and the QR code of it. The contract is the website's (public-web docs/Deferred.md, P22):
+// The older link a paper carries to geometer.dev's check page, and the QR code of it. The contract is the website's (public-web docs/Deferred.md, P22):
 //   https://geometer.dev/verify/#<digest or code>[&key=key:<64 hex>]
+// A SIGNED report or certificate of a template now carries a signed summary instead (summary.ts, `#s1.`: the check needs no file; item 17b). This form stays for
+// every paper that is not signed, for the other papers (modules/papers), and for any page that already printed it: the website reads both.
 // Everything sits after the "#", which a browser never sends to a server, so nothing about a paper reaches Geometer. The full digest is preferred because it names
 // exactly one file; the 8-character code is 40 bits, so it finds a paper but does not name one for certain.
 //

@@ -29,3 +29,23 @@ export function periodLabel(period: { month: { year: number; month: number } | n
 /** What a report's numbers were counted from. Always written on the report and in the message, never assumed: a report made from stand-ins must say so. */
 export type Source = "stand-in" | "test-mode" | "live";
 export const SOURCES: readonly Source[] = ["stand-in", "test-mode", "live"];
+
+// ---- the signed summary's words (item 17b) -------------------------------------------------------------------------------------------------------------------
+// Shared by every template's report and certificates, and taken into each template's own strings (so the native review sheets list them with the rest).
+// The Hindi, Malayalam and Kannada are machine-written and must be read by a native speaker before a real shop sees them.
+
+/** The label before the check link in the owner's WhatsApp message: "Check it is genuine: https://geometer.dev/verify/#s1...". */
+export const CHECK_GENUINE: Record<Language, string> = {
+  en: "Check it is genuine",
+  hi: "असली है या नहीं, जाँचें",
+  ml: "യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക",
+  kn: "ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ",
+};
+
+/** What a paper with a signed summary in its QR says under it: no file is needed, nothing is sent, and what the check does not show (B67). */
+export const SCAN_SUMMARY: Record<Language, string> = {
+  en: "Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true.",
+  hi: "इस दस्तावेज़ को geometer.dev पर जाँचने के लिए यह कोड स्कैन करें या लिंक खोलें। इससे पता चलता है कि दस्तावेज़ असली है या नहीं, इसे किसने जारी किया, और इस पन्ने से मिलाने के लिए आँकड़े। जाँच आपके फ़ोन पर होती है, दस्तावेज़ के बारे में कुछ भेजा नहीं जाता। यह नहीं बताता कि आँकड़े सच हैं।",
+  ml: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ ഈ കോഡ് സ്കാൻ ചെയ്യുക, അല്ലെങ്കിൽ ലിങ്ക് തുറക്കുക. രേഖ യഥാർത്ഥമാണോ, ആരാണ് ഇത് പുറത്തിറക്കിയത്, ഈ പേജുമായി ഒത്തുനോക്കാനുള്ള കണക്കുകൾ എന്നിവ അത് കാണിക്കും. പരിശോധന നിങ്ങളുടെ ഫോണിൽ നടക്കുന്നു, രേഖയെക്കുറിച്ച് ഒന്നും അയയ്ക്കുന്നില്ല. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
+  kn: "ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಈ ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಅಥವಾ ಲಿಂಕ್ ತೆರೆಯಿರಿ. ದಾಖಲೆ ನಿಜವಾದುದೇ, ಅದನ್ನು ಯಾರು ನೀಡಿದರು, ಮತ್ತು ಈ ಪುಟದೊಂದಿಗೆ ಹೋಲಿಸಲು ಲೆಕ್ಕಗಳನ್ನು ಅದು ತೋರಿಸುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ದಾಖಲೆಯ ಬಗ್ಗೆ ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
+};

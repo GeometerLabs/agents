@@ -1,7 +1,9 @@
 // The page every report and certificate is printed on, for every template: a printable page, self-contained (one file, inline CSS, no script, no external
-// font, image or link), green and white with amber for what was not tested. Every value that reaches the page is escaped by the caller with `esc`.
+// font or image, nothing loaded from anywhere), green and white with amber for what was not tested. Every value that reaches the page is escaped by the caller
+// with `esc`. The one thing a reader can follow is a signed paper's check link (sealBlock), and the page sends no referrer, so its own address stays private.
 import type { Language } from "../language/languages.ts";
 import type { Envelope } from "./sign.ts";
+import { textQrSvg } from "../qr/svg.ts";
 import { verifyLink, verifyQrSvg } from "./verify-link.ts";
 
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -42,6 +44,7 @@ summary{cursor:pointer;font-weight:600;color:var(--g9);padding:.3rem 0}
 .seal .code{font-size:1.6rem;font-weight:700;letter-spacing:.08em;color:var(--g9)}
 .seal{display:flex;flex-wrap:wrap;gap:1rem;align-items:center}
 .seal .qr{flex:0 0 auto;width:9.5rem}
+.seal .qr.wide{width:12rem}
 .seal .qr svg{display:block;width:100%;height:auto;border:1px solid var(--line)}
 .seal .words{flex:1 1 14rem;min-width:0}
 @media print{.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}details{border:0}.doc{break-after:page}}
@@ -55,6 +58,7 @@ export function page(title: string, language: Language, sections: string[]): str
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<meta name="referrer" content="no-referrer">
 <title>${esc(title)}</title>
 <style>${CSS}</style>
 </head>
@@ -72,15 +76,27 @@ export const table = (head: { text: string; n?: boolean }[], rows: string[][]): 
 
 export const list = (items: string[]): string => `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
 
-/** The words the verification block needs; every template's strings carry them under `page`. */
-export interface SealWords { checkHeading: string; code: string; digest: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string }
+/**
+ * The words the verification block needs; every template's strings carry them under `page`. `scanSummary` is what a paper with a signed summary in its link says
+ * instead of `scanToCheck` (item 17b: the check needs no file); left out, `scanToCheck` is used for both.
+ */
+export interface SealWords { checkHeading: string; code: string; digest: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string; scanSummary?: string }
 
-/** The verification block every report and certificate carries: the code, the full digest, and what a signature does and does not show. */
-export function sealBlock(words: SealWords, envelope: Envelope, extra: [string, string][] = []): string {
+/**
+ * The verification block every report and certificate carries: the code, the full digest, the QR and the link, and what a signature does and does not show.
+ *
+ * `summaryLink` is the paper's signed summary link (modules/report/summary-sign.ts, `#s1.`), given only for a signed paper. With it the QR and the printed link carry
+ * the summary, so a phone checks the paper with no file, the QR is drawn larger (a summary is a version 12 to 14 code: at 12rem, about 51 mm printed, each module
+ * is about 0.6 mm), and the link can be tapped on a phone that is showing this page. The link opens with no referrer: this page's own address holds the secret
+ * folder name it is served from, and it must not reach geometer.dev. Without it, the older #digest link is printed as before.
+ */
+export function sealBlock(words: SealWords, envelope: Envelope, extra: [string, string][] = [], summaryLink?: string): string {
   const rows: [string, string][] = [...extra, [words.digest, envelope.digest]];
-  const link = verifyLink(envelope);
+  const scan = summaryLink ? words.scanSummary ?? words.scanToCheck : words.scanToCheck;
+  const qr = summaryLink ? `<div class="qr wide">${textQrSvg(summaryLink, { label: scan })}</div>` : `<div class="qr">${verifyQrSvg(envelope, scan)}</div>`;
+  const link = summaryLink ? `<div class="mono"><a href="${esc(summaryLink)}" rel="noreferrer">${esc(summaryLink)}</a></div>` : `<div class="mono">${esc(verifyLink(envelope))}</div>`;
   return `<h2>${esc(words.checkHeading)}</h2>
-<div class="seal"><div class="qr">${verifyQrSvg(envelope, words.scanToCheck)}</div><div class="words"><div class="small">${esc(words.code)}</div><div class="code">${esc(envelope.code)}</div><div class="mono">${esc(link)}</div><p class="small">${esc(words.scanToCheck)}</p></div></div>
+<div class="seal">${qr}<div class="words"><div class="small">${esc(words.code)}</div><div class="code">${esc(envelope.code)}</div>${link}<p class="small">${esc(scan)}</p></div></div>
 <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd class="mono">${esc(v)}</dd>`).join("")}<dt>${esc(words.signedBy)}</dt><dd class="mono">${esc(envelope.signature ? envelope.signature.keyId : words.notSigned)}</dd></dl>
 <p class="small">${esc(words.signatureNote)}</p>`;
 }

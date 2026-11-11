@@ -160,7 +160,8 @@ export function limitLinesOf(l: Limits, language: Language): string[] {
 const heldLine = (cert: GoLiveCertificate, language: Language): string => STRINGS[language].cert.held(cert.checks.held, cert.checks.total, cert.checks.failed, cert.notTested.length);
 
 /** The short text, ready to paste into WhatsApp: a handful of lines. */
-export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Language): string {
+/** The short text, ready to paste into WhatsApp. It ends with the signed summary link when the certificate is signed (`check`), else the short /verify/#code. */
+export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const cert = envelope.document;
   const lines = [
@@ -171,12 +172,13 @@ export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Lang
     ...limitLines(cert, language).map((line) => `• ${line}`),
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.cert.handRunLine,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code}${check ? "" : ` · ${verifyCodePath(envelope)}`}`,
+    ...(check ? [`${s.checkGenuine}: ${check}`] : []),
   ];
   return lines.join("\n");
 }
 
-export function goLiveSection(envelope: Envelope<GoLiveCertificate>, language: Language): string {
+export function goLiveSection(envelope: Envelope<GoLiveCertificate>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const cert = envelope.document;
   return `<section class="doc" lang="${language}">
@@ -191,11 +193,12 @@ ${cert.checks.failed > 0 ? `<div class="warn"><h2>${esc(s.cert.didNotHold)}</h2>
 <div class="warn"><h2>${esc(s.page.notTestedHeading)}</h2>${list(cert.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(s.cert.notAGrade)}</p>
 ${sealBlock(s.page, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),
-  [s.page.limitsDigest, cert.policyDigest], [`${s.cert.checkedOn} (${s.page.limitsDigest})`, cert.checkedPolicyDigest]])}
+  [s.page.limitsDigest, cert.policyDigest], [`${s.cert.checkedOn} (${s.page.limitsDigest})`, cert.checkedPolicyDigest]], check)}
 </section>`;
 }
 
-export function goLivePage(envelope: Envelope<GoLiveCertificate>, language: ReportLanguage): string {
+/** The go-live certificate's page; `check` is its signed summary link (report/run.ts), left out when it is not signed. */
+export function goLivePage(envelope: Envelope<GoLiveCertificate>, language: ReportLanguage, check?: string): string {
   const langs = languagesOf(language);
-  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].goLiveCertificate}`, langs[0], langs.map((l) => goLiveSection(envelope, l)));
+  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].goLiveCertificate}`, langs[0], langs.map((l) => goLiveSection(envelope, l, check)));
 }

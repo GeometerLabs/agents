@@ -3,6 +3,7 @@
 //
 // Machine-written Hindi, Malayalam and Kannada. They are listed in REVIEW-hi.md, REVIEW-ml.md and REVIEW-kn.md for a native speaker, and no real shop should be given them before
 // that review. The claim rules (modules/report/claims.ts) apply: a document counts and states facts; it never grades.
+import { CHECK_GENUINE, SCAN_SUMMARY } from "../../../../modules/report/text.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, OrderRuleId, Source } from "./data.ts";
 
@@ -12,6 +13,8 @@ export interface Strings {
   goLiveCertificate: string;
   /** The label before the address of the full report page, in the WhatsApp message. */
   fullReport: string;
+  /** The label before the check link in the WhatsApp message (modules/report/text.ts CHECK_GENUINE). */
+  checkGenuine: string;
   /** The one help line every owner document ends with. */
   helpLine: string;
   /** The one assurance the documents make, and the only one. */
@@ -51,13 +54,13 @@ export interface Strings {
     numbers: string; item: string; count: string; amount: string; ordersTaken: string; ordersCompleted: string; ordersCancelled: string; holdsRanOut: string; soldHeading: string; soldOrders: string;
     pickup: string; delivery: string; itemsSold: string; noItems: string; messagesHeading: string; toYou: string; heldBack: string;
     stoppedHeading: string; rule: string; times: string; stoppedCustomers: string; notCountedHeading: string; notTestedHeading: string; unconfirmed: string;
-    checkHeading: string; code: string; digest: string; countedFrom: string; setUpBy: string; madeOn: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string; notAGrade: string; period: string;
+    checkHeading: string; code: string; digest: string; countedFrom: string; setUpBy: string; madeOn: string; signedBy: string; notSigned: string; signatureNote: string; scanToCheck: string; scanSummary: string; notAGrade: string; period: string;
     showWhatWeDid: string; byActionHeading: string; action: string; agentVersion: string; limitsDigest: string; recordDigest: string; liveServices: string;
   };
 }
 
 export const en: Strings = {
-  agent: "Orders agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report",
+  agent: "Orders agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en,
   helpLine: "Write to support. A person answers.",
   promise: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked.",
   label: { collected: "Advance collected", stillToCollect: "To collect at pickup", givenBack: "Given back", ordersTaken: "Orders taken", cancelled: "Cancelled", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", orders: "orders" },
@@ -130,14 +133,14 @@ export const en: Strings = {
     numbers: "The numbers", item: "What", count: "How many", amount: "Amount", ordersTaken: "Orders taken", ordersCompleted: "Orders completed", ordersCancelled: "Orders cancelled after they were confirmed", holdsRanOut: "Holds that ran out before an advance", soldHeading: "Orders for days in this month", soldOrders: "Confirmed or completed orders",
     pickup: "Pickup", delivery: "Delivery", itemsSold: "Items sold", noItems: "None", messagesHeading: "Messages", toYou: "To you, the owner", heldBack: "Held back before sending",
     stoppedHeading: "What your limits stopped", rule: "Limit", times: "Times", stoppedCustomers: "Customers who sent STOP", notCountedHeading: "Not counted", notTestedHeading: "Not tested", unconfirmed: "Left unconfirmed or failed",
-    checkHeading: "Check this document", code: "Code", digest: "Digest", countedFrom: "Counted from", setUpBy: "Set up by", madeOn: "Made on", signedBy: "Signed by", notSigned: "Not signed", scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you.", signatureNote: "A signature shows who made this document and that it has not changed. It does not show that what it counts is complete.",
+    checkHeading: "Check this document", code: "Code", digest: "Digest", countedFrom: "Counted from", setUpBy: "Set up by", madeOn: "Made on", signedBy: "Signed by", notSigned: "Not signed", scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you.", scanSummary: SCAN_SUMMARY.en, signatureNote: "A signature shows who made this document and that it has not changed. It does not show that what it counts is complete.",
     notAGrade: "These are counts of what the record shows. They do not grade the agent.", period: "Period",
     showWhatWeDid: "Show what we did ▸", byActionHeading: "What the agent did, by action", action: "Action", agentVersion: "Agent version", limitsDigest: "Limits digest", recordDigest: "Record digest", liveServices: "Live services",
   },
 };
 
 export const hi: Strings = {
-  agent: "ऑर्डर एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट",
+  agent: "ऑर्डर एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi,
   helpLine: "सपोर्ट को लिखें। एक इंसान जवाब देता है।",
   promise: "भुगतान के रिकॉर्ड (या UPI में आपकी पुष्टि) के बिना कोई ऑर्डर पक्का नहीं; हर रिफंड का हिसाब।",
   label: { collected: "एडवांस जमा हुआ", stillToCollect: "पिकअप पर लेना बाकी", givenBack: "वापस किया", ordersTaken: "लिए गए ऑर्डर", cancelled: "रद्द हुए", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", orders: "ऑर्डर" },
@@ -209,14 +212,14 @@ export const hi: Strings = {
     numbers: "आँकड़े", item: "क्या", count: "कितने", amount: "रकम", ordersTaken: "लिए गए ऑर्डर", ordersCompleted: "पूरे हुए ऑर्डर", ordersCancelled: "पक्के होने के बाद रद्द हुए ऑर्डर", holdsRanOut: "एडवांस आने से पहले खत्म हुए होल्ड", soldHeading: "इस महीने के दिनों के ऑर्डर", soldOrders: "पक्के या पूरे हुए ऑर्डर",
     pickup: "पिकअप", delivery: "डिलीवरी", itemsSold: "बिकी चीज़ें", noItems: "कोई नहीं", messagesHeading: "संदेश", toYou: "आपको, मालिक को", heldBack: "भेजने से पहले रोके गए",
     stoppedHeading: "आपकी सीमाओं ने क्या रोका", rule: "सीमा", times: "बार", stoppedCustomers: "STOP भेजने वाले ग्राहक", notCountedHeading: "गिना नहीं गया", notTestedHeading: "जाँचा नहीं गया", unconfirmed: "जो पक्का नहीं हुआ या नहीं हो पाया",
-    checkHeading: "इस दस्तावेज़ को जाँचें", code: "कोड", digest: "डाइजेस्ट", countedFrom: "कहाँ से गिना", setUpBy: "तैयार किया", madeOn: "बनाया गया", signedBy: "हस्ताक्षर", notSigned: "हस्ताक्षर नहीं", scanToCheck: "इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।", signatureNote: "हस्ताक्षर दिखाता है कि यह दस्तावेज़ किसने बनाया और यह बदला नहीं है। यह नहीं दिखाता कि इसमें गिनी गई बातें पूरी हैं।",
+    checkHeading: "इस दस्तावेज़ को जाँचें", code: "कोड", digest: "डाइजेस्ट", countedFrom: "कहाँ से गिना", setUpBy: "तैयार किया", madeOn: "बनाया गया", signedBy: "हस्ताक्षर", notSigned: "हस्ताक्षर नहीं", scanToCheck: "इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।", scanSummary: SCAN_SUMMARY.hi, signatureNote: "हस्ताक्षर दिखाता है कि यह दस्तावेज़ किसने बनाया और यह बदला नहीं है। यह नहीं दिखाता कि इसमें गिनी गई बातें पूरी हैं।",
     notAGrade: "ये रिकॉर्ड में दिखी बातों की गिनती हैं। ये एजेंट को अंक या दर्जा नहीं देतीं।", period: "अवधि",
     showWhatWeDid: "देखें हमने क्या किया ▸", byActionHeading: "एजेंट ने क्या किया, काम के हिसाब से", action: "काम", agentVersion: "एजेंट का संस्करण", limitsDigest: "सीमाओं का डाइजेस्ट", recordDigest: "रिकॉर्ड का डाइजेस्ट", liveServices: "असली सिस्टम",
   },
 };
 
 export const ml: Strings = {
-  agent: "ഓർഡർ ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്",
+  agent: "ഓർഡർ ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml,
   helpLine: "സപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.",
   promise: "പേയ്മെന്റ് രേഖയില്ലാതെ (UPI-യിൽ നിങ്ങളുടെ സ്ഥിരീകരണമില്ലാതെ) ഒരു ഓർഡറും ഉറപ്പിക്കില്ല; ഓരോ റീഫണ്ടും രേഖപ്പെടുത്തുന്നു.",
   label: { collected: "പിരിഞ്ഞ അഡ്വാൻസ്", stillToCollect: "പിക്കപ്പിൽ വാങ്ങാനുള്ളത്", givenBack: "തിരികെ നൽകിയത്", ordersTaken: "എടുത്ത ഓർഡറുകൾ", cancelled: "റദ്ദാക്കിയത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", orders: "ഓർഡറുകൾ" },
@@ -288,14 +291,14 @@ export const ml: Strings = {
     numbers: "കണക്കുകൾ", item: "എന്ത്", count: "എത്ര", amount: "തുക", ordersTaken: "എടുത്ത ഓർഡറുകൾ", ordersCompleted: "പൂർത്തിയായ ഓർഡറുകൾ", ordersCancelled: "ഉറപ്പിച്ചതിന് ശേഷം റദ്ദാക്കിയ ഓർഡറുകൾ", holdsRanOut: "അഡ്വാൻസ് വരുന്നതിന് മുമ്പ് തീർന്ന ഹോൾഡുകൾ", soldHeading: "ഈ മാസത്തെ ദിവസങ്ങളിലെ ഓർഡറുകൾ", soldOrders: "ഉറപ്പിച്ചതോ പൂർത്തിയായതോ ആയ ഓർഡറുകൾ",
     pickup: "പിക്കപ്പ്", delivery: "ഡെലിവറി", itemsSold: "വിറ്റ സാധനങ്ങൾ", noItems: "ഒന്നുമില്ല", messagesHeading: "സന്ദേശങ്ങൾ", toYou: "നിങ്ങൾക്ക്, ഉടമയ്ക്ക്", heldBack: "അയയ്ക്കുന്നതിന് മുമ്പ് തടഞ്ഞത്",
     stoppedHeading: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", rule: "പരിധി", times: "തവണ", stoppedCustomers: "STOP അയച്ച ഉപഭോക്താക്കൾ", notCountedHeading: "എണ്ണാത്തത്", notTestedHeading: "പരിശോധിക്കാത്തത്", unconfirmed: "ഉറപ്പാകാത്തതോ പരാജയപ്പെട്ടതോ",
-    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", code: "കോഡ്", digest: "ഡൈജസ്റ്റ്", countedFrom: "എവിടെ നിന്ന് എണ്ണി", setUpBy: "തയ്യാറാക്കിയത്", madeOn: "ഉണ്ടാക്കിയ തീയതി", signedBy: "ഒപ്പിട്ടത്", notSigned: "ഒപ്പിട്ടിട്ടില്ല", scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക.", signatureNote: "ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല.",
+    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", code: "കോഡ്", digest: "ഡൈജസ്റ്റ്", countedFrom: "എവിടെ നിന്ന് എണ്ണി", setUpBy: "തയ്യാറാക്കിയത്", madeOn: "ഉണ്ടാക്കിയ തീയതി", signedBy: "ഒപ്പിട്ടത്", notSigned: "ഒപ്പിട്ടിട്ടില്ല", scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക.", scanSummary: SCAN_SUMMARY.ml, signatureNote: "ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല.",
     notAGrade: "ഇവ രേഖയിൽ കാണുന്നതിന്റെ എണ്ണം മാത്രമാണ്. ഇവ ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല.", period: "കാലയളവ്",
     showWhatWeDid: "ഞങ്ങൾ ചെയ്തത് കാണിക്കുക ▸", byActionHeading: "ഏജന്റ് ചെയ്തത്, പ്രവൃത്തി അനുസരിച്ച്", action: "പ്രവൃത്തി", agentVersion: "ഏജന്റ് പതിപ്പ്", limitsDigest: "പരിധികളുടെ ഡൈജസ്റ്റ്", recordDigest: "രേഖയുടെ ഡൈജസ്റ്റ്", liveServices: "യഥാർത്ഥ സംവിധാനങ്ങൾ",
   },
 };
 
 export const kn: Strings = {
-  agent: "ಆರ್ಡರ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ",
+  agent: "ಆರ್ಡರ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn,
   helpLine: "ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.",
   promise: "ಪಾವತಿ ದಾಖಲೆ (ಅಥವಾ UPI ಯಲ್ಲಿ ನಿಮ್ಮ ದೃಢೀಕರಣ) ಇಲ್ಲದೆ ಯಾವ ಆರ್ಡರ್ ಅನ್ನೂ ಖಚಿತಪಡಿಸುವುದಿಲ್ಲ; ಪ್ರತಿ ರೀಫಂಡ್ ದಾಖಲಾಗುತ್ತದೆ.",
   label: { collected: "ಸಂಗ್ರಹವಾದ ಮುಂಗಡ", stillToCollect: "ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", ordersTaken: "ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು", cancelled: "ರದ್ದಾದವು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", orders: "ಆರ್ಡರ್‌ಗಳು" },
@@ -367,7 +370,7 @@ export const kn: Strings = {
     numbers: "ಅಂಕಿಅಂಶಗಳು", item: "ಏನು", count: "ಎಷ್ಟು", amount: "ಮೊತ್ತ", ordersTaken: "ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು", ordersCompleted: "ಮುಗಿದ ಆರ್ಡರ್‌ಗಳು", ordersCancelled: "ಖಚಿತವಾದ ನಂತರ ರದ್ದಾದ ಆರ್ಡರ್‌ಗಳು", holdsRanOut: "ಮುಂಗಡ ಬರುವ ಮೊದಲೇ ಮುಗಿದ ಹೋಲ್ಡ್‌ಗಳು", soldHeading: "ಈ ತಿಂಗಳ ದಿನಗಳ ಆರ್ಡರ್‌ಗಳು", soldOrders: "ಖಚಿತವಾದ ಅಥವಾ ಮುಗಿದ ಆರ್ಡರ್‌ಗಳು",
     pickup: "ಪಿಕಪ್", delivery: "ಡೆಲಿವರಿ", itemsSold: "ಮಾರಾಟವಾದ ವಸ್ತುಗಳು", noItems: "ಯಾವುದೂ ಇಲ್ಲ", messagesHeading: "ಸಂದೇಶಗಳು", toYou: "ನಿಮಗೆ, ಮಾಲೀಕರಿಗೆ", heldBack: "ಕಳುಹಿಸುವ ಮೊದಲು ತಡೆದದ್ದು",
     stoppedHeading: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", rule: "ಮಿತಿ", times: "ಬಾರಿ", stoppedCustomers: "STOP ಕಳುಹಿಸಿದ ಗ್ರಾಹಕರು", notCountedHeading: "ಎಣಿಸದ್ದು", notTestedHeading: "ಪರಿಶೀಲಿಸದ್ದು", unconfirmed: "ದೃಢವಾಗದ ಅಥವಾ ವಿಫಲವಾದದ್ದು",
-    checkHeading: "ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ", code: "ಕೋಡ್", digest: "ಡೈಜೆಸ್ಟ್", countedFrom: "ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು", setUpBy: "ಸಿದ್ಧಪಡಿಸಿದವರು", madeOn: "ಮಾಡಿದ ದಿನ", signedBy: "ಸಹಿ ಮಾಡಿದವರು", notSigned: "ಸಹಿ ಇಲ್ಲ", scanToCheck: "ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ.", signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
+    checkHeading: "ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ", code: "ಕೋಡ್", digest: "ಡೈಜೆಸ್ಟ್", countedFrom: "ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು", setUpBy: "ಸಿದ್ಧಪಡಿಸಿದವರು", madeOn: "ಮಾಡಿದ ದಿನ", signedBy: "ಸಹಿ ಮಾಡಿದವರು", notSigned: "ಸಹಿ ಇಲ್ಲ", scanToCheck: "ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ.", scanSummary: SCAN_SUMMARY.kn, signatureNote: "ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
     notAGrade: "ಇವು ದಾಖಲೆಯಲ್ಲಿ ಕಾಣುವ ವಿಷಯಗಳ ಎಣಿಕೆ. ಇವು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ನೀಡುವುದಿಲ್ಲ.", period: "ಅವಧಿ",
     showWhatWeDid: "ನಾವು ಮಾಡಿದ್ದನ್ನು ತೋರಿಸಿ ▸", byActionHeading: "ಏಜೆಂಟ್ ಮಾಡಿದ್ದು, ಕೆಲಸದ ಪ್ರಕಾರ", action: "ಕೆಲಸ", agentVersion: "ಏಜೆಂಟ್ ಆವೃತ್ತಿ", limitsDigest: "ಮಿತಿಗಳ ಡೈಜೆಸ್ಟ್", recordDigest: "ದಾಖಲೆಯ ಡೈಜೆಸ್ಟ್", liveServices: "ನಿಜವಾದ ವ್ಯವಸ್ಥೆಗಳು",
   },

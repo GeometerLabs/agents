@@ -134,8 +134,8 @@ export function limitLines(cert: GoLiveCertificate, language: Language): string[
 
 const heldLine = (cert: GoLiveCertificate, language: Language): string => STRINGS[language].cert.held(cert.checks.held, cert.checks.total, cert.checks.failed, cert.notTested.length);
 
-/** The short text, ready to paste into WhatsApp: a handful of lines. */
-export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Language): string {
+/** The short text, ready to paste into WhatsApp: a handful of lines. It ends with the signed summary link when the certificate is signed (`check`), else the short /verify/#code. */
+export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const cert = envelope.document;
   const lines = [
@@ -146,12 +146,13 @@ export function goLiveText(envelope: Envelope<GoLiveCertificate>, language: Lang
     ...limitLines(cert, language).map((line) => `• ${line}`),
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     s.cert.handRunLine,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code}${check ? "" : ` · ${verifyCodePath(envelope)}`}`,
+    ...(check ? [`${s.checkGenuine}: ${check}`] : []),
   ];
   return lines.join("\n");
 }
 
-export function goLiveSection(envelope: Envelope<GoLiveCertificate>, language: Language): string {
+export function goLiveSection(envelope: Envelope<GoLiveCertificate>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const cert = envelope.document;
   return `<section class="doc" lang="${language}">
@@ -166,13 +167,14 @@ ${cert.checks.failed > 0 ? `<div class="warn"><h2>${esc(s.cert.didNotHold)}</h2>
 <div class="warn"><h2>${esc(s.page.notTestedHeading)}</h2>${list(cert.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(s.cert.notAGrade)}</p>
 ${sealBlock(s, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),
-  [s.page.limitsDigest, cert.policyDigest], [`${s.cert.checkedOn} (${s.page.limitsDigest})`, cert.checkedPolicyDigest]])}
+  [s.page.limitsDigest, cert.policyDigest], [`${s.cert.checkedOn} (${s.page.limitsDigest})`, cert.checkedPolicyDigest]], check)}
 </section>`;
 }
 
-export function goLivePage(envelope: Envelope<GoLiveCertificate>, language: ReportLanguage): string {
+/** The go-live certificate's page; `check` is its signed summary link (report/run.ts), left out when it is not signed. */
+export function goLivePage(envelope: Envelope<GoLiveCertificate>, language: ReportLanguage, check?: string): string {
   const langs = languagesOf(language);
-  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].goLiveCertificate}`, langs[0], langs.map((l) => goLiveSection(envelope, l)));
+  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].goLiveCertificate}`, langs[0], langs.map((l) => goLiveSection(envelope, l, check)));
 }
 
 // ---- the monthly record certificate --------------------------------------------------------------------------------------
@@ -242,7 +244,8 @@ function countedPairs(cert: MonthlyCertificate, language: Language): string[] {
   ];
 }
 
-export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, language: Language): string {
+/** The monthly record certificate as a short text. It ends with the signed summary link when the certificate is signed (`check`), else the short /verify/#code. */
+export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const cert = envelope.document;
   const tag = s.sourceTag[cert.source];
@@ -253,11 +256,12 @@ export function monthlyCertificateText(envelope: Envelope<MonthlyCertificate>, l
     `${s.label.notChecked}: ${cert.notTested.map((id) => s.notTested[id]).join(" · ")}`,
     goLiveLines(cert.goLive, language).join(" "),
     s.handRun,
-    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${cert.innovator ? `${badgeText(language)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code} · ${verifyCodePath(envelope)}`,
+    `${cert.preparedBy ? `${s.page.setUpBy}: ${oneLine(cert.preparedBy)} · ` : ""}${cert.innovator ? `${badgeText(language)} · ` : ""}${s.page.agentVersion}: ${cert.pathway.name} ${cert.pathway.version} · ${s.page.code}: ${envelope.code}${check ? "" : ` · ${verifyCodePath(envelope)}`}`,
+    ...(check ? [`${s.checkGenuine}: ${check}`] : []),
   ].join("\n");
 }
 
-export function monthlySection(envelope: Envelope<MonthlyCertificate>, language: Language): string {
+export function monthlySection(envelope: Envelope<MonthlyCertificate>, language: Language, check?: string): string {
   const s = STRINGS[language];
   const cert = envelope.document;
   const tag = s.sourceTag[cert.source];
@@ -270,11 +274,12 @@ ${table([{ text: s.page.item }, { text: s.page.count, n: true }], countedPairs(c
 <div class="warn"><h2>${esc(s.page.notCountedHeading)}</h2>${list(cert.notCounted.map((id) => s.notCounted[id]))}<h2>${esc(s.page.notTestedHeading)}</h2>${list(cert.notTested.map((id) => s.notTested[id]))}</div>
 <p class="small">${esc(s.page.notAGrade)}</p>
 ${sealBlock(s, envelope, [[s.page.agentVersion, `${cert.pathway.name} ${cert.pathway.version}`], [s.cert.date, dateText(cert.issuedOn, language)], ...(cert.preparedBy ? [[s.page.setUpBy, cert.preparedBy] as [string, string]] : []),
-  [s.page.recordDigest, cert.record.digest], [`${s.monthlyReport} (${s.page.digest})`, cert.report.digest], [`${s.monthlyReport} (${s.page.code})`, cert.report.code], [s.page.limitsDigest, cert.policyDigest]])}
+  [s.page.recordDigest, cert.record.digest], [`${s.monthlyReport} (${s.page.digest})`, cert.report.digest], [`${s.monthlyReport} (${s.page.code})`, cert.report.code], [s.page.limitsDigest, cert.policyDigest]], check)}
 </section>`;
 }
 
-export function monthlyCertificatePage(envelope: Envelope<MonthlyCertificate>, language: ReportLanguage): string {
+/** The monthly record certificate's page; `check` is its signed summary link (report/run.ts), left out when it is not signed. */
+export function monthlyCertificatePage(envelope: Envelope<MonthlyCertificate>, language: ReportLanguage, check?: string): string {
   const langs = languagesOf(language);
-  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].monthlyCertificate}`, langs[0], langs.map((l) => monthlySection(envelope, l)));
+  return page(`${envelope.document.shop.name} · ${STRINGS[langs[0]].monthlyCertificate}`, langs[0], langs.map((l) => monthlySection(envelope, l, check)));
 }

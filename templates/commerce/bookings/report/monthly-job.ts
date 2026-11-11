@@ -48,7 +48,8 @@ export function createMonthlyReport(setup: MonthlyReportSetup) {
         preparedBy, innovator, now, ...(setup.key ? { key: setup.key } : {}), ...(setup.goLive ? { goLive: setup.goLive() } : {}), ...(setup.tenant ? { tenant: setup.tenant } : {}),
       });
       const base = `${setup.pages.baseUrl}/${token}`;
-      const message = monthlyReportMessage(made.report, language, { link: `${base}/report-${month}-${language}.html` });
+      // the check link is the report's signed summary (report/run.ts) when it is signed, so the owner can tap it and check the report with no file
+      const message = monthlyReportMessage(made.report, language, { link: `${base}/report-${month}-${language}.html`, ...(made.check ? { check: made.check } : {}) });
       const s = STRINGS[language];
       const filename = `certificate-${month}-${language}.txt`;
       return {
