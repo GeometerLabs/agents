@@ -61,7 +61,15 @@ export interface AgentState {
   /** The nightly snapshot and the weekly drill, as a shop's (backup/jobs.ts): its Guards' stores, its record and its key. */
   lastBackupAt?: string;
   lastDrill?: { at: string; ok: boolean; detail: string };
+  /**
+   * Each Guard's credential for the builder's agent (agent/credentials.ts), by Guard kind: since when the one in force was made, and, while a rotation's overlap runs,
+   * the old one's sha256 (never the credential itself) and when it stops working. The deployer lists the old hash in that Guard's guard.toml until then, so a running
+   * agent does not fail mid-call; Guard itself retires it at `until` (`retired` says it was asked to), and the deployer then drops it (agent/rotate.ts).
+   */
+  credentials?: Record<string, AgentCredentialState>;
 }
+
+export interface AgentCredentialState { since: string; previous?: { sha256: string; until: string; retired?: boolean } }
 
 /**
  * One client's part in an update or a rollback: what was decided, what was moved, and what a restart needs to finish a move that stopped half-way.
@@ -120,6 +128,11 @@ export interface State {
   /** Agents someone else wrote ("bring your own agent"). Absent on a server that has none, so a shop-only state file is unchanged. */
   agents?: Record<string, AgentState>;
   /** The record job's memory for each such agent is in state/records/<agent>.json (agent/record.ts), not here. */
+  /**
+   * Agents taken off this server by `geometer agent remove` (agent/remove.ts): when, where what it kept is, and its network index. The name and the index stay taken while
+   * the entry is here, because the Guards' kept volumes carry the name: a shop or an agent added under it would start on the old Guards' stores.
+   */
+  removed?: Record<string, { at: string; keptIn: string; index: number }>;
   model?: GuardApplied;
   modelApplied?: GuardFiles;
   /** Each compose service as last applied: its entry, and the files it mounts. A changed entry is recreated by compose; changed files need a restart. */
@@ -145,7 +158,9 @@ export function saveState(dir: string, state: State): void {
 export function shopIndex(state: State, shop: string): number {
   const have = state.shops[shop]?.index ?? state.agents?.[shop]?.index;
   if (have !== undefined) return have;
-  const used = new Set([...Object.values(state.shops), ...Object.values(state.agents ?? {})].map((s) => s.index));
+  const gone = state.removed?.[shop];
+  if (gone) throw new Error(`${shop} is the name of an agent removed from this server on ${gone.at.slice(0, 10)} (what it kept is in ${gone.keptIn}). Its Guards' kept stores carry the name, so a new shop or agent under it would start on them: choose another name.`);
+  const used = new Set([...Object.values(state.shops), ...Object.values(state.agents ?? {}), ...Object.values(state.removed ?? {})].map((s) => s.index));
   for (let i = 1; i < 200; i++) if (!used.has(i)) return i;
   throw new Error("This server has 199 shops and agents, the most the network plan has addresses for.");
 }

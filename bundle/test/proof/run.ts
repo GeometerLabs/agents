@@ -719,7 +719,7 @@ async function ownAgent() {
   const st = () => control(AGENT_NAME, "/_standin/state");
   const guards = ["razorpay", "whatsapp", "calendar"].map((k) => `g-${AGENT_NAME}-${k}`);
   const opsAdmin = (svc: string, path: string) => JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", svc, "GET", path]).out.trim().split("\n").at(-1) ?? "{}");
-  // agent add (the function, not the command: the command prints the credential) and the shop's own keys, handed in under the names a shop's are
+  // agent add (the function, as the command does; neither prints a credential since 12 Nov 2026) and the shop's own keys, handed in under the names a shop's are
   addAgent(SERVER, AGENT_NAME, { upstreams: "razorpay,whatsapp,calendar", deposit: "200", "refund-limit": "100", "owner-whatsapp": OWNER, "whatsapp-number-id": phoneOf(AGENT_INDEX), "calendar-id": calendarOf(AGENT_INDEX) }, (p) => readFileSync(p, "utf8"), new Date());
   const inbox = join(SERVER, "secrets-inbox", AGENT_NAME); mkdirSync(inbox, { recursive: true });
   const s = secretsOf(AGENT_INDEX);
@@ -730,7 +730,9 @@ async function ownAgent() {
   check("agent deploy: its three Guards start in the generated compose file and every tripwire passes on the running Guards", deployed.proven.passed === deployed.proven.of && deployed.proven.of > 0, deployed.proven.line);
   await waitFor("the agent's Guards", () => guards.every(healthy), 120);
   check("its Guards are (healthy), on the gate network with Caddy", guards.every(healthy) && dk(["network", "inspect", `${PROJECT}_gate`, "--format", "{{.Internal}}"]).out.trim() === "true", dc(["ps", "--format", "{{.Service}} {{.Status}}", ...guards]).out.trim().split("\n"));
-  const credential = readFileSync(secretFile(SERVER, "agents", AGENT_NAME, "agent_token"), "utf8").trim();
+  // one credential per Guard since 12 Nov 2026 (agent/credentials.ts): the agent sends each its own, and one Guard's opens nothing at another's
+  const credentialOf = (kind: string) => readFileSync(secretFile(SERVER, "agents", AGENT_NAME, `${kind}_token`), "utf8").trim();
+  const credential = credentialOf("razorpay");
 
   // ---- the agent's story, through Caddy: a deposit, a booking, a message, and a refund above the owner's limit
   const caFile = join(SCRATCH, "caddy-root.crt");
@@ -738,7 +740,7 @@ async function ownAgent() {
   writeFileSync(caFile, dc(["exec", "-T", "caddy", "cat", "/data/caddy/pki/authorities/local/root.crt"]).out);
   await customerWrites(AGENT_NAME, customer, "hi"); // the customer wrote first, so a plain message can go back (WhatsApp's 24-hour window)
   const base = `https://localhost:18443/g/${AGENT_NAME}`;
-  const child = spawn("node", [join(APP, "bundle/examples/own-agent/agent.js")], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, NODE_EXTRA_CA_CERTS: caFile, GEOMETER_RAZORPAY_URL: `${base}/razorpay`, GEOMETER_CALENDAR_URL: `${base}/calendar`, GEOMETER_WHATSAPP_URL: `${base}/whatsapp`, GEOMETER_CREDENTIAL: credential, CALENDAR_ID: calendarOf(AGENT_INDEX), PHONE_NUMBER_ID: phoneOf(AGENT_INDEX), CUSTOMER: customer, BOOKING: "pa-1", DEPOSIT_INR: "200" } });
+  const child = spawn("node", [join(APP, "bundle/examples/own-agent/agent.js")], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, NODE_EXTRA_CA_CERTS: caFile, GEOMETER_RAZORPAY_URL: `${base}/razorpay`, GEOMETER_CALENDAR_URL: `${base}/calendar`, GEOMETER_WHATSAPP_URL: `${base}/whatsapp`, GEOMETER_RAZORPAY_CREDENTIAL: credentialOf("razorpay"), GEOMETER_CALENDAR_CREDENTIAL: credentialOf("calendar"), GEOMETER_WHATSAPP_CREDENTIAL: credentialOf("whatsapp"), CALENDAR_ID: calendarOf(AGENT_INDEX), PHONE_NUMBER_ID: phoneOf(AGENT_INDEX), CUSTOMER: customer, BOOKING: "pa-1", DEPOSIT_INR: "200" } });
   let out = ""; child.stdout.on("data", (c: Buffer) => { out += c.toString(); }); child.stderr.on("data", (c: Buffer) => { out += c.toString(); });
   const exited = new Promise<number>((resolve) => { const t = setTimeout(() => { child.kill(); resolve(-1); }, 420_000); child.on("close", (c) => { clearTimeout(t); resolve(c ?? -1); }); });
   // the customer pays at Razorpay; the agent sees it by looking at its link (every 15 s)
@@ -788,13 +790,15 @@ async function ownAgent() {
   const adminPath = viaCaddy("GET", `/g/${AGENT_NAME}/razorpay/admin/status`, credential);
   const shopsGuard = viaCaddy("GET", "/g/glow-salon/razorpay/v1/payment_links", credential);
   const notDeposit = viaCaddy("POST", `/g/${AGENT_NAME}/razorpay/v1/payment_links`, credential, { amount: 99900, currency: "INR", reference_id: "pa-x", description: "not the deposit" });
-  const otherNumber = viaCaddy("POST", `/g/${AGENT_NAME}/whatsapp/v26.0/${phoneOf(1)}/messages`, credential, { messaging_product: "whatsapp", to: digits(customer), type: "text", text: { body: "from another number" } });
+  const otherNumber = viaCaddy("POST", `/g/${AGENT_NAME}/whatsapp/v26.0/${phoneOf(1)}/messages`, credentialOf("whatsapp"), { messaging_product: "whatsapp", to: digits(customer), type: "text", text: { body: "from another number" } });
+  const crossGuard = viaCaddy("GET", `/g/${AGENT_NAME}/whatsapp/v26.0/${phoneOf(AGENT_INDEX)}`, credentialOf("razorpay"));
   const shopKey = viaCaddy("GET", `/g/${AGENT_NAME}/razorpay/v1/payment_links`, readSecret("rt-glow-salon", "agent_razorpay"));
   check("through Caddy: no credential is refused at its Guard", /^40[13]$/u.test(noKey.status), noKey);
   check("through Caddy: its credential does not open a Guard's admin API (only the agent port is behind /g/)", adminPath.status !== "200" || !/tripwires|kill_switch/u.test(adminPath.body), adminPath);
   check("through Caddy: a shop's Guards are not served under /g/ at all", !/^2\d\d$/u.test(shopsGuard.status) && !/payment_links|items/u.test(shopsGuard.body), shopsGuard);
   check("through Caddy: a payment link that is not the deposit, and a message from another shop's number, are refused by its Guards (403)", notDeposit.status === "403" && otherNumber.status === "403", { link: notDeposit.status, message: otherNumber.status });
   check("through Caddy: a shop runtime's credential opens nothing at the agent's Guard", /^40[13]$/u.test(shopKey.status), shopKey.status);
+  check("through Caddy: the agent's Razorpay credential opens nothing at its WhatsApp Guard (one credential per Guard)", /^40[13]$/u.test(crossGuard.status), crossGuard.status);
 
   // ---- its backup: the nightly snapshot, the drill without the key, and `restore`
   const snap = await runBackup(ctx); snap.lines.forEach(say);

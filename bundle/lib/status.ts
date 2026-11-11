@@ -33,9 +33,24 @@ export interface ShopStatus {
   licence?: StatusLicence & { at: string };
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */
   webhooks?: { razorpay: string; whatsapp: string };
-  /** An agent someone else wrote (no runtime, no pathway): where its own agent calls Guard instead of each service, and where WhatsApp sends the shop's webhooks. The panel ignores it. */
-  own?: { baseUrls: Record<string, string>; whatsappWebhook?: string };
+  /**
+   * An agent someone else wrote (no runtime, no pathway): where its own agent calls Guard instead of each service, and where WhatsApp sends the shop's webhooks. Since
+   * 12 Nov 2026 the panel shows own agents from this block (bundle/panel/agents.ts): each Guard's credential (when made, an old one's end; never a credential), the last crash
+   * test (counts and titles only: never a check's detail, which can carry the agent's own output), the version in service, and the held calls the last look found.
+   */
+  own?: {
+    baseUrls: Record<string, string>; whatsappWebhook?: string;
+    credentials?: { shared: boolean; guards: Record<string, { since?: string; oldUntil?: string }> };
+    crashTest?: OwnCrashTest;
+    service?: { version: string | null; at: string; held: number; of: number; code: string };
+    held?: { calls: number; at: string };
+    /** A crash test or a rotation the panel asked for, waiting or running (agent/requests.ts). */
+    asked?: { crashTest?: { at: string; running: boolean }; rotate?: { at: string } };
+  };
 }
+
+/** The last crash test of an own agent, as the panel shows it: when, which version, the counts, and the titles of what did not hold or could not be run. */
+export interface OwnCrashTest { at: string; version: string | null; held: number; of: number; failed: string[]; notRun: string[]; goLive: boolean }
 
 export const emptyStatus = (shop: string, now: Date): ShopStatus => ({ shop, updatedAt: now.toISOString(), deploy: { state: "never" }, backups: { lastCopyAt: null, lastDrillAt: null, drillOk: null } });
 

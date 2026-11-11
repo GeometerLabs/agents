@@ -152,13 +152,15 @@ test("panel invite asks the running panel for a one-time link (the first builder
   } finally { w.done(); }
 });
 
-test("agent add prints the addresses and the one credential, check says what is missing, deploy and show print the addresses again, stop and status know the agent, and a shop's name is refused", async () => {
+test("agent add prints the addresses and where the credentials are (never one), check says what is missing, deploy and show print the addresses again, stop and status know the agent, and a shop's name is refused", async () => {
   const w = world({ "glow-salon": panelRuntime() }); try {
     const cli = (...args: string[]) => quiet(() => main([...args, "--server", w.root], w.ctx));
     const added = await cli("agent", "add", "my-agent", "--upstreams", "razorpay,whatsapp,calendar", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "123456789012345", "--calendar-id", "shop@group.calendar.google.com");
     assert.equal(added.result, 0, added.err);
-    const credential = /gg_[0-9a-f]{32}/u.exec(added.out)?.[0];
-    assert.ok(credential, "the credential is printed");
+    // 12 Nov 2026: one credential per Guard, never printed; the output names the file the agent reads them from
+    assert.equal(/gg_[0-9a-f]{32}/u.exec(added.out), null, "no credential is printed");
+    assert.match(added.out, /secrets\/agents\/my-agent\/credentials\.env/);
+    const credential = readFileSync(join(w.paths.secrets, "agents", "my-agent", "razorpay_token"), "utf8").trim();
     for (const kind of ["razorpay", "whatsapp", "calendar"]) assert.ok(added.out.includes(`https://shops.example.com/g/my-agent/${kind}`));
     assert.match(added.out, /send the refund with a "receipt", and send the identical call again after the 202/);
     assert.equal((await cli("agent", "add", "glow-salon", "--deposit", "200", "--refund-limit", "100", "--owner-whatsapp", "+919800000001", "--whatsapp-number-id", "1", "--calendar-id", "x")).result, 1);
@@ -174,7 +176,8 @@ test("agent add prints the addresses and the one credential, check says what is 
     assert.equal(deployed.result, 0, deployed.err);
     assert.match(deployed.out, /my-agent: 12 of 12 limits proven to bite/);
     assert.ok(!deployed.out.includes(credential), "deploy does not print the credential");
-    assert.ok((await cli("agent", "show", "my-agent", "--credential")).out.includes(credential));
+    const asked = await cli("agent", "show", "my-agent", "--credential");
+    assert.ok(!asked.out.includes(credential) && /never printed/u.test(asked.out), "--credential prints no credential any more, and says so");
     assert.ok(!(await cli("agent", "show", "my-agent")).out.includes(credential));
     const stopped = await cli("stop", "my-agent", "--reason", "owner asked");
     assert.equal(stopped.result, 0, stopped.err);
