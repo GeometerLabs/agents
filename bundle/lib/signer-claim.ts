@@ -14,6 +14,7 @@ import { resolve } from "node:path";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { signerClaim } from "../../modules/report/summary-sign.ts";
 import { panelSigningKeyFile, readSecretFile } from "./secrets.ts";
+import { fleetIdOf } from "./server.ts";
 import type { ServerConfig } from "./server.ts";
 
 /** Fleet's route for the claim (the monorepo's apps/fleet/src/paper-signers-api.ts). */
@@ -31,7 +32,7 @@ export async function claimPaperSigner(o: { dir: string; server: ServerConfig; f
   try {
     const deploymentKey = readSecretFile(resolve(o.dir, server.fleet.keyFile));
     if (!deploymentKey) return `paper signer: not sent: there is no deployment key at ${server.fleet.keyFile}, so fleet would not take the claim.`;
-    const body = signerClaim(loadPrivateKey(keyFile), server.id);
+    const body = signerClaim(loadPrivateKey(keyFile), fleetIdOf(server)); // the id fleet knows this server by (lib/server.ts fleetIdOf)
     const r = await (o.fetchImpl ?? fetch)(`${server.fleet.url.replace(/\/+$/u, "")}${SIGNERS_PATH}`, {
       method: "POST", headers: { authorization: `Bearer ${deploymentKey}`, "content-type": "application/json" }, body: JSON.stringify(body),
       redirect: "error", signal: AbortSignal.timeout(o.timeoutMs ?? 15_000),

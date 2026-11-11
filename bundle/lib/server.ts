@@ -123,7 +123,12 @@ export interface ServerConfig {
   guardImage: string;
   /** The image the bundle's own programs run in. */
   appImage: string;
-  fleet?: { url: string; keyFile: string };
+  /**
+   * Geometer's fleet: where heartbeats go and the deployment key's file. `deploymentId` is the id fleet knows this server by, only when it differs from `id`: a server
+   * set up with pairing skipped and paired later (follow-up 8, 12 Nov 2026) keeps its own `id` (its compose project, volumes and model Guard are named from it, and
+   * renaming would leave its data behind), while heartbeats, leases, extensions, the Guards' `[licence]` and the paper-signer claim use fleet's (fleetIdOf).
+   */
+  fleet?: { url: string; keyFile: string; deploymentId?: string };
   /** How long a held refund waits for the owner, in hours. The one setting behind Guard's bundle AND the words in the owner's message. */
   approvalHours: number;
   model: ModelConfig;
@@ -183,6 +188,13 @@ export function serverPaths(dir: string) {
 }
 
 /** Read and check geometer.json. Every problem is said in plain words, all at once. */
+/**
+ * The id fleet knows this server by: `fleet.deploymentId` for a server paired after it was set up (follow-up 8), otherwise its own `id`. Every place that speaks to
+ * fleet or checks fleet's signed words uses this (the heartbeat, the lease and extensions, the Guards' `[licence]`, the paper-signer claim); everything local (the
+ * compose project, volumes, the model Guard's tenant) keeps `id`.
+ */
+export const fleetIdOf = (server: Pick<ServerConfig, "id" | "fleet">): string => server.fleet?.deploymentId ?? server.id;
+
 export function loadServer(dir: string): ServerConfig {
   const path = serverPaths(dir).config;
   if (!existsSync(path)) throw new Error(`${path} is not there. Run \`node bundle/geometer.ts init <folder> ...\` to make a server folder.`);
@@ -230,11 +242,13 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   const fleet = isObj(o.fleet) ? o.fleet : undefined;
   if (o.fleet !== undefined && (!fleet || typeof fleet.url !== "string" || typeof fleet.keyFile !== "string")) errors.push('"fleet" must say {"url": "https://...", "keyFile": "<a file that holds this server\'s deployment key>"}.');
   if (fleet && typeof fleet.url === "string" && !/^https:\/\//u.test(fleet.url) && !/^http:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)/u.test(fleet.url)) errors.push('"fleet.url" must be https:// (the deployment key is a bearer secret).');
+  const fleetId = fleet?.deploymentId;
+  if (fleetId !== undefined && (typeof fleetId !== "string" || serverIdProblem(fleetId))) errors.push('"fleet.deploymentId" must be the server id fleet gave this server when it was paired (pairing.json).');
   const config: ServerConfig = {
     schema: 1, id, domain, reviewedBy,
     guardImage: typeof o.guardImage === "string" ? o.guardImage : DEFAULT_GUARD_IMAGE,
     appImage: typeof o.appImage === "string" ? o.appImage : DEFAULT_APP_IMAGE,
-    ...(fleet && typeof fleet.url === "string" && typeof fleet.keyFile === "string" ? { fleet: { url: fleet.url, keyFile: fleet.keyFile } } : {}),
+    ...(fleet && typeof fleet.url === "string" && typeof fleet.keyFile === "string" ? { fleet: { url: fleet.url, keyFile: fleet.keyFile, ...(typeof fleetId === "string" && !serverIdProblem(fleetId) ? { deploymentId: fleetId } : {}) } } : {}),
     approvalHours: typeof approvalHours === "number" ? approvalHours : 24,
     model: (model ?? { wire: "openai", model: "" }) as unknown as ModelConfig,
     ...(isObj(o.backup) ? { backup: o.backup as unknown as BackupConfig } : {}),

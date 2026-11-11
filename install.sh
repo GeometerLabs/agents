@@ -322,6 +322,7 @@ geo() { with_docker env GEOMETER_SERVER="$SERVER_DIR" "$NODE_BIN" "$APP_DIR/bund
 
 # The code is spent last, after every local step that can fail, and sent once; the answer is kept at once (fleet_key 0600 and pairing.json, by `geometer pair`).
 pair_server() {
+  if [ "$PAIR_MODE" = late ]; then pair_late; return 0; fi
   if [ -f "$SERVER_DIR/geometer.json" ]; then say "The server folder $SERVER_DIR is already set up: no pairing is asked again."; return 0; fi
   if [ -f "$SERVER_DIR/pairing.json" ] && [ -f "$SERVER_DIR/fleet_key" ]; then say "This server was paired before (its key is kept in $SERVER_DIR/fleet_key): no new code is needed."; return 0; fi
   case "$PAIR_MODE" in
@@ -345,6 +346,26 @@ pair_server() {
       ;;
     skip) say "Pairing skipped, as asked." ;;
   esac
+}
+
+# Follow-up 8 (12 Nov 2026): a server set up with pairing skipped, run again with a code. `geometer pair` checks the folder first (geometer.json readable, no fleet
+# section yet), sends the code once, and adds ONLY the fleet section to geometer.json (and takes the trial lease): the folder's id, its containers, volumes, shops and keys
+# stay as they are. A pairing kept but not joined yet (pairing.json, no fleet section: the licence keys did not match, say) is joined again with no new code.
+pair_late() {
+  step "Pairing this server with Geometer's fleet (it was set up without pairing; only its fleet settings are added)"
+  if [ "${DRY_RUN:-0}" = 1 ]; then say "  would $([ -n "${PAIRING_CODE:-}" ] && printf 'send the code once to %s/v1/pair, then ' "$FLEET_URL")add the fleet section to $SERVER_DIR/geometer.json"; return 0; fi
+  if [ -n "${PAIRING_CODE:-}" ]; then
+    # the code reaches `geometer pair` on its standard input, as for a new server: it is in no process's command line
+    printf '%s\n' "$PAIRING_CODE" | env GEOMETER_SERVER="$SERVER_DIR" "$NODE_BIN" "$APP_DIR/bundle/geometer.ts" pair "$SERVER_DIR" --fleet-url "$FLEET_URL" || die "The server was not paired (the reason is above). Nothing else was changed in $SERVER_DIR."
+  else
+    env GEOMETER_SERVER="$SERVER_DIR" "$NODE_BIN" "$APP_DIR/bundle/geometer.ts" pair "$SERVER_DIR" --fleet-url "$FLEET_URL" </dev/null || die "The pairing kept in $SERVER_DIR/pairing.json was not added (the reason is above). Nothing else was changed."
+  fi
+  PAIRING_CODE=""
+}
+
+# A server folder that does not talk to Geometer's fleet yet: geometer.json has no "fleet" section (pairing was skipped, and no key was given by hand).
+unpaired_folder() {
+  [ -f "$SERVER_DIR/geometer.json" ] && ! grep -Eq '"fleet"[[:space:]]*:' "$SERVER_DIR/geometer.json"
 }
 
 make_server_folder() {
@@ -475,6 +496,7 @@ start_server() {
   step "Starting HTTPS and the panel"
   if [ -f "$SERVER_DIR/state/state.json" ] && grep -q '"applied"' "$SERVER_DIR/state/state.json"; then
     say "Shops are deployed here already; they keep running as they are (geometer status)."
+    [ "$PAIR_MODE" = late ] && note "Paired now: the next geometer deploy writes the heartbeat's settings and gives each shop's Guards fleet's lease. Run it when you are ready (nothing else was changed)."
   else
     geo up || die "The server's own services did not start (the reason is above). geometer logs shows what they said."
   fi
@@ -519,7 +541,7 @@ last_words() {
   say "  - where the nightly backups go, with a test write (geometer backup-key snapshots <file>);"
   say "  - Google, if a shop uses a calendar (optional)."
   case "$PAIR_MODE" in
-    skip) say "Not paired: nobody outside hears if this server goes down, and it has no licence lease, so a shop will not start with a production Guard image. Pair it later: get a code on geometer.dev/account and run the install again." ;;
+    skip|unpaired) say "Not paired: nobody outside hears if this server goes down, and it has no licence lease, so a shop will not start with a production Guard image. Pair it later: get a code on geometer.dev/account and run the install again." ;;
   esac
   [ "${GUARD_STATE:-}" = missing ] && say "The Guard image is not here yet: run the install again with --guard-image-file <file> before the first shop."
   say ""
@@ -609,6 +631,25 @@ need_licence_key() {
   die "$1 Guard runs a builder's shop only under Geometer's licence, so the server folder is not made without its key. Nothing was changed."
 }
 
+# The second run on a folder set up with pairing skipped (follow-up 8): pair it when a code is given or typed; otherwise it stays unpaired, as it was.
+ask_late_pairing() {
+  if [ -f "$SERVER_DIR/pairing.json" ]; then PAIR_MODE=late; PAIRING_CODE=""; return 0; fi # paired before, not added yet: no new code
+  if [ -n "${CODE_FILE:-}" ]; then
+    [ -r "$CODE_FILE" ] || die "The pairing code file $CODE_FILE cannot be read."
+    PAIRING_CODE=$(head -n 1 "$CODE_FILE" | tr -d '[:space:]')
+  elif [ "${YES:-0}" = 1 ]; then
+    PAIR_MODE=unpaired; return 0
+  else
+    say ""
+    say "This server is not paired with Geometer's fleet yet (pairing was skipped): no alerts from outside, and no licence lease."
+    say "Get a code on geometer.dev/account (\"Add a server\") to pair it now. Nothing else on the server changes."
+    PAIRING_CODE=$(ask "Pairing code (or press Enter to leave it unpaired): " | tr -d '[:space:]')
+  fi
+  if [ -z "$PAIRING_CODE" ] || [ "$PAIRING_CODE" = skip ]; then PAIR_MODE=unpaired; PAIRING_CODE=""; return 0; fi
+  printf '%s' "$PAIRING_CODE" | grep -Eiq '^gfp_[a-z0-9-]{24,40}$' || die "That is not a pairing code: it starts with gfp_. Copy it from geometer.dev/account (\"Add a server\")."
+  PAIR_MODE=late
+}
+
 ask_questions() {
   if [ -z "${DOMAIN:-}" ] && [ -f "$SERVER_DIR/geometer.json" ]; then DOMAIN=$(sed -n 's/^[[:space:]]*"domain":[[:space:]]*"\([^"]*\)".*/\1/p' "$SERVER_DIR/geometer.json" | head -n 1); fi
   if [ -z "${DOMAIN:-}" ]; then
@@ -623,6 +664,8 @@ ask_questions() {
     need_licence_key "With --fleet-key-file, also give fleet's licence key Geometer gave with it: --licence-key <64 hex characters>."
     return 0
   fi
+  # Follow-up 8: a folder set up with pairing skipped can be paired now, by a second run with a code (or the code asked here); --skip-pairing keeps it as it is
+  if unpaired_folder && [ "${PAIR_MODE:-}" != skip ]; then ask_late_pairing; return 0; fi
   if [ -f "$SERVER_DIR/geometer.json" ] || [ -f "$SERVER_DIR/pairing.json" ]; then PAIR_MODE=${PAIR_MODE:-done}; return 0; fi
   if [ "${PAIR_MODE:-}" = skip ]; then need_licence_key "$SKIP_NEEDS_KEY"; return 0; fi
   if [ -n "${CODE_FILE:-}" ]; then
@@ -650,6 +693,8 @@ show_plan() {
     code) say "  - pair with Geometer's fleet at $FLEET_URL: the code is sent once, and this server's key is kept in $SERVER_DIR/fleet_key" ;;
     hand) say "  - use the deployment key in $FLEET_KEY_FILE (server id $DEPLOYMENT_ID)" ;;
     skip) say "  - no pairing: the panel starts, but no alerts from outside and no licence lease, so no shop starts with a production Guard image (fleet's licence key is pinned)" ;;
+    late) say "  - pair this server, set up before without pairing, with Geometer's fleet at $FLEET_URL: $([ -n "${PAIRING_CODE:-}" ] && printf 'the code is sent once; ' || printf 'the pairing kept in pairing.json, no new code; ')only the fleet settings are added to geometer.json" ;;
+    unpaired) say "  - pairing: not paired (it was skipped), and kept that way" ;;
     *) say "  - pairing: already done" ;;
   esac
   say "  - the server folder: $SERVER_DIR ($([ -f "$SERVER_DIR/geometer.json" ] && printf 'there, kept as it is' || printf 'made for %s, with the panel on' "$DOMAIN"))"
