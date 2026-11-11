@@ -898,6 +898,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ഇത് ഈ കടയുടെ നമ്പർ ആണ് (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | കിട്ടിയ നമ്പറിന്റെ അവസാന അക്കങ്ങൾ 3210 ആണ്; ഇത് കടയുടെ നമ്പർ അല്ല. ഒന്നും മാറ്റിയിട്ടില്ല. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ആ ഫോൺ നമ്പർ ഐഡി ഈ അക്കൗണ്ടിൽ ഇല്ല. | That phone number ID is not on this account. |  |
+| `setup.checks.whatsapp.gupshupConfirmed` | ആപ്പ് 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8-നായി Gupshup മറുപടി നൽകി. ആപ്പ് ഏത് നമ്പറിൽ നിന്നാണ് അയയ്ക്കുന്നതെന്ന് ഈ പരിശോധന കാണിക്കുന്നില്ല. | Gupshup answered for app 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8. This check does not show which number the app sends from. |  |
+| `setup.checks.whatsapp.gupshupNotFound` | ഈ ടോക്കണിനൊപ്പം Gupshup ആ ആപ്പ് സ്വീകരിച്ചില്ല (അത് പറഞ്ഞത്: Invalid App Details). | Gupshup did not accept that app with this token (it said: Invalid App Details). |  |
 | `setup.checks.calendar.title` | Google കലണ്ടർ | Calendar |  |
 | `setup.checks.calendar.confirmed` | “Glow Salon bookings” കണ്ടെത്തി. ഇതിൽ മാറ്റങ്ങൾ വരുത്താൻ കഴിയും. | Found “Glow Salon bookings”, and it can be changed. |  |
 | `setup.checks.calendar.differs` | Google കാണിക്കുന്ന കലണ്ടർ നൽകിയതിൽ നിന്ന് വ്യത്യസ്തമാണ്. ഒന്നും മാറ്റിയിട്ടില്ല. | Google shows a different calendar from the one given. Nothing was changed. |  |
@@ -906,6 +908,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.generic.not_allowed` | അക്കൗണ്ട് ഈ പരിശോധന സ്വീകരിച്ചില്ല. കീകൾ നോക്കൂ. | The account did not accept the check. Check the keys. |  |
 | `setup.checks.generic.refused_by_guard` | സെർവറിന്റെ Guard ഈ പരിശോധന കടത്തിവിട്ടില്ല. | The server's Guard did not let this check through. |  |
 | `setup.checks.generic.unreachable` | ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Could not reach it. Try again in a minute. |  |
+| `setup.checks.generic.rate_limited` | ഇപ്പോൾ വളരെയധികം പരിശോധനകൾ നടന്നു. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Too many checks just now. Try again in a minute. |  |
 | `setup.checks.generic.unexpected_response` | കിട്ടിയ മറുപടി ഈ സേവനം സാധാരണ തരാറുള്ളതല്ല, അതിനാൽ അത് ഉപയോഗിച്ചില്ല. | The answer was not what this service gives, so it was not used. |  |
 | `setup.checks.generic.not_configured` | ആദ്യം മുകളിലെ വിവരങ്ങൾ പൂരിപ്പിക്കൂ. | Fill in the details above first. |  |
 | `setup.checks.guardWords` | Guard പറഞ്ഞത്: the route is not listed | Guard said: the route is not listed |  |

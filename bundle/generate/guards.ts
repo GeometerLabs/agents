@@ -115,7 +115,8 @@ export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GAT
 /**
  * The shop's own WhatsApp number, exactly: not a longer number that ends the same way. `read_number` is the panel's check that the number is the shop's own.
  * Through Gupshup (`route`) the same two operations name the shop's own Gupshup app instead, exactly: Gupshup's paths carry the app, not the number
- * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number (the panel's check is Meta's: Deferred.md).
+ * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number: the panel's check for such a shop says "Gupshup
+ * answered for app <id>", never that the number is confirmed (panel/checks.ts checkGupshup).
  */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute }): LimitsSpec {
   if (o.route?.provider === "gupshup") {

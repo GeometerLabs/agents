@@ -147,7 +147,8 @@ export interface Words {
       saveFirst: string; saveButton: string; saved: string; runButton: string; waiting: string; settingsOk: string; handCheck: string; handNotRun: string;
       deploy: string; deployApplied(at: string): string; deployNot: string; limitsProven(proven: number, of: number): string; limitsNot: string;
       guardNotSet: string; readOnly: string;
-      whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string };
+      /** `gupshupConfirmed` and `gupshupNotFound`: a shop on Gupshup, whose check is Gupshup's app read: it confirms the app, never the number (checks.ts checkGupshup). */
+      whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string; gupshupConfirmed(appId: string): string; gupshupNotFound(said: string): string };
       calendar: { title: string; confirmed(name: string): string; differs: string; notFound: string; notWritable(role: string): string };
       generic: Record<Exclude<CheckCode, "confirmed" | "account_mismatch" | "wrong_mode" | "not_writable" | "not_found">, string>;
       guardWords(detail: string): string;
@@ -220,6 +221,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
+  "setup.checks.whatsapp.gupshupConfirmed": ["07c7c72d-20e3-4ff9-a5a1-14d1186eeec8"], "setup.checks.whatsapp.gupshupNotFound": ["Invalid App Details"],
   "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
 };
 
@@ -474,6 +476,8 @@ export const en: Words = {
       whatsapp: {
         title: "WhatsApp", confirmed: (n) => `This is the shop's number (${n}).`, differs: (e) => `The number found ends in ${e}, not the shop's. Nothing was changed.`,
         notFound: "That phone number ID is not on this account.",
+        gupshupConfirmed: (id) => `Gupshup answered for app ${id}. This check does not show which number the app sends from.`,
+        gupshupNotFound: (said) => (said ? `Gupshup did not accept that app with this token (it said: ${said}).` : "Gupshup did not accept that app with this token."),
       },
       calendar: {
         title: "Calendar", confirmed: (n) => `Found “${n}”, and it can be changed.`, differs: "Google shows a different calendar from the one given. Nothing was changed.",
@@ -481,6 +485,7 @@ export const en: Words = {
       },
       generic: {
         not_allowed: "The account did not accept the check. Check the keys.", refused_by_guard: "The server's Guard did not let this check through.", unreachable: "Could not reach it. Try again in a minute.",
+        rate_limited: "Too many checks just now. Try again in a minute.",
         unexpected_response: "The answer was not what this service gives, so it was not used.", not_configured: "Fill in the details above first.",
       },
       guardWords: (d) => `Guard said: ${d}`,

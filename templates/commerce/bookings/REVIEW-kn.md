@@ -898,6 +898,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ಇದು ಅಂಗಡಿಯ ನಂಬರ್ (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | ಸಿಕ್ಕ ನಂಬರ್‌ನ ಕೊನೆಯ ಅಂಕಿಗಳು: 3210. ಇದು ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ಆ ಫೋನ್ ನಂಬರ್ ID ಈ ಖಾತೆಯಲ್ಲಿ ಇಲ್ಲ. | That phone number ID is not on this account. |  |
+| `setup.checks.whatsapp.gupshupConfirmed` | ಆ್ಯಪ್ 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8ಗಾಗಿ Gupshup ಉತ್ತರಿಸಿತು. ಆ್ಯಪ್ ಯಾವ ಸಂಖ್ಯೆಯಿಂದ ಕಳುಹಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಈ ಪರಿಶೀಲನೆ ತೋರಿಸುವುದಿಲ್ಲ. | Gupshup answered for app 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8. This check does not show which number the app sends from. |  |
+| `setup.checks.whatsapp.gupshupNotFound` | ಈ ಟೋಕನ್‌ನೊಂದಿಗೆ Gupshup ಆ ಆ್ಯಪ್ ಅನ್ನು ಒಪ್ಪಲಿಲ್ಲ (ಅದು ಹೇಳಿದ್ದು: Invalid App Details). | Gupshup did not accept that app with this token (it said: Invalid App Details). |  |
 | `setup.checks.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
 | `setup.checks.calendar.confirmed` | “Glow Salon bookings” ಸಿಕ್ಕಿದೆ, ಮತ್ತು ಇದನ್ನು ಬದಲಾಯಿಸಬಹುದು. | Found “Glow Salon bookings”, and it can be changed. |  |
 | `setup.checks.calendar.differs` | Google ಬೇರೆ ಕ್ಯಾಲೆಂಡರ್ ತೋರಿಸುತ್ತಿದೆ, ಕೊಟ್ಟಿದ್ದನ್ನಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | Google shows a different calendar from the one given. Nothing was changed. |  |
@@ -906,6 +908,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.generic.not_allowed` | ಖಾತೆ ಪರಿಶೀಲನೆಯನ್ನು ಒಪ್ಪಲಿಲ್ಲ. ಕೀಗಳನ್ನು ನೋಡಿ. | The account did not accept the check. Check the keys. |  |
 | `setup.checks.generic.refused_by_guard` | ಸರ್ವರ್‌ನ Guard ಈ ಪರಿಶೀಲನೆಗೆ ಅವಕಾಶ ಕೊಡಲಿಲ್ಲ. | The server's Guard did not let this check through. |  |
 | `setup.checks.generic.unreachable` | ತಲುಪಲು ಆಗಲಿಲ್ಲ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Could not reach it. Try again in a minute. |  |
+| `setup.checks.generic.rate_limited` | ಈಗ ತುಂಬಾ ಪರಿಶೀಲನೆಗಳು ಆಗಿವೆ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Too many checks just now. Try again in a minute. |  |
 | `setup.checks.generic.unexpected_response` | ಉತ್ತರ ಈ ಸೇವೆ ಕೊಡುವ ರೀತಿಯಲ್ಲಿ ಇರಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಬಳಸಲಿಲ್ಲ. | The answer was not what this service gives, so it was not used. |  |
 | `setup.checks.generic.not_configured` | ಮೊದಲು ಮೇಲಿನ ವಿವರಗಳನ್ನು ತುಂಬಿ. | Fill in the details above first. |  |
 | `setup.checks.guardWords` | Guard ಹೇಳಿದ್ದು: the route is not listed | Guard said: the route is not listed |  |
