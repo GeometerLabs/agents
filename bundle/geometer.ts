@@ -1,8 +1,10 @@
 // geometer: the deploy bundle's command line.   node bundle/geometer.ts <command> [--server <folder>]
 //
-//   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME [--fleet-url U --fleet-key-file F] [--licence-key HEX[,HEX]] [backup options]
-//                                --licence-key: the public half of fleet's licence key, as fleet's `licence key show` prints it (64 hex characters). It is pinned in geometer.json;
-//                                a lease is only ever checked with it. Without it no lease is kept and no shop is restricted by one.
+//   init <folder> --domain D --reviewed-by ID --model-wire openai|anthropic --model NAME --licence-key HEX[,HEX] [--fleet-url U --fleet-key-file F] [backup options]
+//                                --licence-key: the public half of fleet's licence key, as fleet's `licence key show` prints it (64 hex characters); pairing the server gives it.
+//                                It is pinned in geometer.json, and a lease is only ever checked with it. Required (decision 39, monorepo ADR-0070): a release's Guard runs a
+//                                builder's shop only under Geometer's lease, so a server without the key could run no shop. Tests and the Docker proof pass RFC 8032's published
+//                                test key, the one their Guard image is built with.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
@@ -59,7 +61,7 @@ import { takeExtension } from "./lib/licence.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreShop } from "./backup/jobs.ts";
 import { generateIdentity } from "./backup/age.ts";
-import { Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
+import { NO_LICENCE_KEY, Refused, checkShop, compose, deploy, ops } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { addAgent, checkAgent, connectionOf, connectionText, deployAgent } from "./agent/deploy.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
@@ -426,6 +428,8 @@ async function init(folder: string | undefined, v: Record<string, string | boole
   const id = s("id") ?? basename(dir).toLowerCase().replace(/[^a-z0-9_-]+/gu, "-").replace(/^-+/u, "").slice(0, 64);
   const problem = serverIdProblem(id);
   if (problem) throw new Error(problem);
+  // Decision 39: no server folder without Geometer's licence key, so no shop is set up that its Guards would then refuse to run. Same words as a refused deploy.
+  if (!s("licence-key")) throw new Error(NO_LICENCE_KEY);
   let recipient = s("age-recipient");
   if (s("snapshots-url") && !recipient) {
     const out = s("age-identity-out");

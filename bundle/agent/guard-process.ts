@@ -6,7 +6,9 @@
 //   1. --guard-bin <path>      2. GEO_GUARD_BIN      3. `geo-guard` on the PATH
 //   4. on a Linux server: out of the Guard image the server already has (`docker create`, `docker cp`). The image holds the static Linux program
 //      at /usr/local/bin/geo-guard, and the server's image has to match its CPU already, so it runs there.
-// On any other computer (a laptop) it needs 1, 2 or 3, and the message says so.
+// On any other computer (a laptop) it needs 1, 2 or 3, and the message says so. Since decision 39 (monorepo ADR-0070) a RELEASE image's program is built
+// with Geometer's licence keys and will not start a shop's Guard without the lease, which a crash test does not have: 4 then fails, and the error says to
+// use the `geo` downloads' geo-guard (built with no key) through 1, 2 or 3. A test or development image still works through 4.
 import { execFileSync, spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { accessSync, chmodSync, constants, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -143,7 +145,12 @@ export async function startRealGuard(o: RealGuardOptions): Promise<RealGuard> {
     rmSync(dir, { recursive: true, force: true });
   };
   for (let i = 0; i < 200 && !/geo-guard ready/u.test(output); i++) {
-    if (child.exitCode !== null) { await stop(); throw new Error(`geo-guard did not start: ${output.slice(0, 600)}`); }
+    if (child.exitCode !== null) {
+      await stop();
+      // ADR-0070: a release image's geo-guard runs a shop's Guard only under the lease; the crash test runs with no lease, so it needs the downloads' program
+      if (/runs a shop only under Geometer's licence/u.test(output)) throw new Error("This geo-guard is a release Guard image's, built with Geometer's licence keys: it runs a shop's Guard only under Geometer's lease, and a crash test has none. Run the crash test with the geo-guard of the `geo` downloads, which holds nobody to a lease: --guard-bin <path> or GEO_GUARD_BIN.");
+      throw new Error(`geo-guard did not start: ${output.slice(0, 600)}`);
+    }
     await new Promise((r) => setTimeout(r, 50));
   }
   if (!/geo-guard ready/u.test(output)) { await stop(); throw new Error(`geo-guard was not ready in 10 s: ${output.slice(0, 600)}`); }

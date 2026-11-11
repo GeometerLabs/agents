@@ -1,5 +1,6 @@
-// Guard's half of the licence (plan B13, monorepo ADR-0062 and Deferred D83): the `[licence]` block the bundle writes into each per-shop Guard's guard.toml, the
-// folder it mounts, and the check of the running Guards' own account of the lease. Against the fake machine (test/world.ts); the real binary is the Docker proof's.
+// Guard's half of the licence (plan B13, monorepo ADR-0062, ADR-0070 and Deferred D83): the `[licence]` block the bundle writes into every per-shop Guard's guard.toml
+// (decision 39: always; a server with no key, or an image that does not read the block, is refused), the folder it mounts, and the check of the running Guards' own
+// account of the lease. Against the fake machine (test/world.ts); the real binary is the Docker proof's.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
@@ -123,22 +124,35 @@ test("a Fees centre and an Orders shop get the block and the folder on each of t
   } finally { w.done(); }
 });
 
-test("an image older than ADR-0062 gets no block (it would read as if it did something), and the deploy says why; with no key pinned there is none either", async () => {
+test("decision 39: an image older than ADR-0062, or a server with no key pinned, is refused in plain words and starts nothing: a shop never runs without the licence", async () => {
   const old = world(undefined, PIN); try {
-    const lines: string[] = []; old.ctx.log = (l) => lines.push(l);
+    old.guardLicence.reads = false;
     old.handIn("glow-salon");
-    await deploy(old.ctx);
-    assert.ok(!toml(old, "g-glow-salon-razorpay").includes("[licence]"));
-    assert.ok(lines.some((l) => /does not read the licence lease .*only the runtime refuses new work/u.test(l)), lines.join("\n"));
+    const problems = await refusedWith(deploy(old.ctx));
+    const p = problems.find((x) => x.rule === "guard-image-licence");
+    assert.ok(p, problems.map((x) => x.rule).join(", "));
+    assert.match(p!.message, /does not check Geometer's licence lease .*a shop is never run without it/u);
+    assert.ok(!composeCalls(old).some((c) => c[0] === "up"), "nothing was started");
     const check = await checkShop(old.ctx, "glow-salon");
-    assert.ok(check.notes.some((n) => /does not read the licence lease/u.test(n)), "`check` says it too");
+    assert.ok(!check.ok && check.problems.some((x) => x.rule === "guard-image-licence"), "`check` refuses it too");
   } finally { old.done(); }
-  const none = world(); try {
-    none.guardLicence.reads = true;
+  const none = world(undefined, { licence: undefined }); try {
     none.handIn("glow-salon");
-    await deploy(none.ctx);
-    assert.ok(!toml(none, "g-glow-salon-whatsapp").includes("[licence]"), "no key pinned: no lease is kept, so there is nothing for Guard to check");
+    const problems = await refusedWith(deploy(none.ctx));
+    const p = problems.find((x) => x.rule === "licence-key");
+    assert.ok(p, problems.map((x) => x.rule).join(", "));
+    assert.match(p!.message, /This server has no licence key from Geometer .*Pair the server with Geometer: the install command does it/u);
+    assert.ok(!composeCalls(none).some((c) => c[0] === "up"), "nothing was started");
   } finally { none.done(); }
+});
+
+test("the block is written for every shop Guard by default: the test image's world pins the test key, and the deploy goes through", async () => {
+  const w = world(); try {
+    w.handIn("glow-salon");
+    await deploy(w.ctx);
+    for (const kind of ["razorpay", "whatsapp", "calendar"]) assert.equal(block(toml(w, `g-glow-salon-${kind}`)).shop, '"glow-salon"', kind);
+    assert.ok(!toml(w, "g-model").includes("[licence]"), "never the model Guard");
+  } finally { w.done(); }
 });
 
 test("a running Guard built with other licence keys than geometer.json pins refuses the deploy, by name, WITHOUT the kill switch (refunds owed must still go through)", async () => {

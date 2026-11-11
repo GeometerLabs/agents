@@ -1,4 +1,4 @@
-// The command line: init makes a server folder (and a key pair for snapshots), shop add copies a client folder in and refuses names fleet would refuse,
+// The command line: init makes a server folder (and a key pair for snapshots), and refuses one with no licence key (decision 39); shop add copies a client folder in and refuses names fleet would refuse,
 // stop says who stopped the shop, rollback goes back one lock.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,6 +12,7 @@ import { readStatus } from "../lib/status.ts";
 import { deploy } from "../deploy.ts";
 import { fakeRunner } from "../lib/runner.ts";
 import { EXAMPLE_CLIENT, panelRuntime } from "./helpers.ts";
+import { TEST_PUBLIC_HEX } from "./licence-helpers.ts";
 import { world } from "./world.ts";
 
 async function quiet<T>(work: () => Promise<T>): Promise<{ result: T; out: string; err: string }> {
@@ -24,8 +25,14 @@ async function quiet<T>(work: () => Promise<T>): Promise<{ result: T; out: strin
 test("init makes a server folder, a key pair for the snapshots (the secret half in a file with mode 0600), and a geometer.json that loads", async () => {
   const root = mkdtempSync(join(tmpdir(), "geo-init-")); const folder = join(root, "acme-vps-1"); const identity = join(root, "age-identity.txt");
   try {
-    const r = await quiet(() => main(["init", folder, "--domain", "shops.example.com", "--reviewed-by", "builder-arjun", "--model-wire", "openai", "--model", "gpt-4o-mini", "--stream-url", "s3://stream/acme", "--snapshots-url", "s3://snaps/acme", "--age-identity-out", identity]));
+    // decision 39: no server folder without Geometer's licence key (pairing gives it), in the same words a refused deploy uses
+    const unpaired = await quiet(() => main(["init", folder, "--domain", "shops.example.com", "--reviewed-by", "builder-arjun", "--model-wire", "openai", "--model", "gpt-4o-mini"]));
+    assert.equal(unpaired.result, 1);
+    assert.match(unpaired.err, /This server has no licence key from Geometer .*Pair the server with Geometer: the install command does it/u);
+    assert.equal(existsSync(join(folder, "geometer.json")), false, "nothing was written");
+    const r = await quiet(() => main(["init", folder, "--domain", "shops.example.com", "--reviewed-by", "builder-arjun", "--model-wire", "openai", "--model", "gpt-4o-mini", "--licence-key", TEST_PUBLIC_HEX, "--stream-url", "s3://stream/acme", "--snapshots-url", "s3://snaps/acme", "--age-identity-out", identity]));
     assert.equal(r.result, 0, r.err);
+    assert.deepEqual(loadServer(folder).licence, { keys: [TEST_PUBLIC_HEX] });
     assert.match(r.out, /secret half is in .*age-identity\.txt/);
     assert.match(r.out, /--stream-url and --stream-endpoint are not used any more/, "an old flag is said, not silently dropped");
     assert.match(readFileSync(identity, "utf8"), /^AGE-SECRET-KEY-1/);
@@ -36,9 +43,9 @@ test("init makes a server folder, a key pair for the snapshots (the secret half 
     assert.equal(statSync(join(folder, "secrets")).mode & 0o777, 0o700, "secrets/ is private to the user");
     assert.ok(!readFileSync(join(folder, "geometer.json"), "utf8").includes("AGE-SECRET-KEY"), "the secret half is not in the server folder");
     assert.equal((await quiet(() => main(["init", folder, "--domain", "x", "--reviewed-by", "a", "--model", "m"]))).result, 1, "not twice");
-    const bad = await quiet(() => main(["init", join(root, "other"), "--domain", "x.example.com", "--model", "m"]));
+    const bad = await quiet(() => main(["init", join(root, "other"), "--domain", "x.example.com", "--model", "m", "--licence-key", TEST_PUBLIC_HEX]));
     assert.equal(bad.result, 1); assert.match(bad.err, /reviewedBy/);
-    const noKey = await quiet(() => main(["init", join(root, "third"), "--domain", "x.example.com", "--reviewed-by", "a", "--model", "m", "--stream-url", "s3://a/b", "--snapshots-url", "s3://c/d"]));
+    const noKey = await quiet(() => main(["init", join(root, "third"), "--domain", "x.example.com", "--reviewed-by", "a", "--model", "m", "--licence-key", TEST_PUBLIC_HEX, "--stream-url", "s3://a/b", "--snapshots-url", "s3://c/d"]));
     assert.equal(noKey.result, 1); assert.match(noKey.err, /--age-identity-out/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

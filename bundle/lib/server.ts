@@ -76,7 +76,8 @@ export interface ServerConfig {
   heartbeatSeconds: number;
   /**
    * Fleet's licence lease (B13): the public half of fleet's lease key (or keys, while one is rotated), 64 hex characters each, as fleet's `licence key show` prints
-   * them. Pinned here at `init --licence-key`, never taken from a lease. Left out: no lease is kept and no shop is ever restricted by one (bundle/lib/licence.ts).
+   * them. Pinned here at `init --licence-key` (pairing gives it), never taken from a lease. `init` requires it and the deploy refuses a server without it (decision 39,
+   * monorepo ADR-0070): a release's Guard runs a shop only under the lease. Optional here only so an older folder still loads and is told what to do.
    */
   licence?: { keys: string[] };
 }

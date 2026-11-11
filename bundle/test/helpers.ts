@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseServer, readShop, serverPaths } from "../lib/server.ts";
 import type { PanelRuntime, ServerConfig } from "../lib/server.ts";
+import { TEST_PUBLIC_HEX } from "./licence-helpers.ts";
 
 export const EXAMPLE_CLIENT = new URL("../../templates/commerce/bookings/clients/glow-salon.example", import.meta.url).pathname;
 export const CALENDAR_ID = "glowsalon@group.calendar.google.com";
@@ -25,11 +26,15 @@ export const panelRuntime = (change: PanelRuntime = {}): PanelRuntime => ({
   ...change,
 });
 
-/** A server folder in a temp directory with one shop in it, written the way the panel writes it. */
+/**
+ * A server folder in a temp directory with one shop in it, written the way the panel writes it. Its geometer.json pins RFC 8032's published test key, as `init` now
+ * requires a licence key (decision 39) and the fake Guard image (test/world.ts) has that key built in, as the test image does. A test that wants another key or none
+ * says so in `config`.
+ */
 export function tempServer(shops: Record<string, PanelRuntime | null> = { "glow-salon": panelRuntime() }, config: Record<string, unknown> = {}) {
   const root = mkdtempSync(join(tmpdir(), "geo-bundle-"));
   const paths = serverPaths(root);
-  writeFileSync(paths.config, JSON.stringify({ schema: 1, id: "acme-vps-1", domain: "shops.example.com", reviewedBy: "builder-arjun", model: { wire: "openai", model: "gpt-4o-mini" }, ...config }));
+  writeFileSync(paths.config, JSON.stringify({ schema: 1, id: "acme-vps-1", domain: "shops.example.com", reviewedBy: "builder-arjun", model: { wire: "openai", model: "gpt-4o-mini" }, licence: { keys: [TEST_PUBLIC_HEX] }, ...config }));
   for (const [name, runtime] of Object.entries(shops)) {
     mkdirSync(paths.shop(name), { recursive: true });
     cpSync(join(EXAMPLE_CLIENT, "settings.json"), join(paths.shop(name), "settings.json"));

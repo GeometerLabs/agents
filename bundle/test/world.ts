@@ -9,6 +9,11 @@ import { fakeRunner, ok } from "../lib/runner.ts";
 import type { RunResult } from "../lib/runner.ts";
 import { prepareSecretsRoot, secretFile, writeSecretFile } from "../lib/secrets.ts";
 import { CALENDAR_ID, PHONE_NUMBER_ID, panelRuntime, tempServer } from "./helpers.ts";
+import { TEST_PUBLIC_HEX } from "./licence-helpers.ts";
+import { kidOf } from "../../modules/licence/token.ts";
+
+/** The kid of RFC 8032's published test key: what the test image has built in. */
+const TEST_KID = kidOf(Buffer.from(TEST_PUBLIC_HEX, "hex"));
 
 export const GOOD: TripwireResult = { ok: true, passed: 4, of: 4, notSelfTestable: ["rule refund-once: whether a repeat is stopped depends on the intent ledger"], failedRules: [], text: "" };
 
@@ -31,8 +36,9 @@ export interface World {
   /** What a shop's runtime answers to `ops recover` (default 200); 0 is "could not be reached". */
   recover: { status: number };
   /**
-   * The licence (B13): whether the fake Guard image reads `[licence]` (default no, as an older image), and the key ids the "running" Guards report as built in
-   * (default: none). A Guard whose guard.toml had the block reports it in /admin/status, as the real one does.
+   * The licence (B13, decision 39): whether the fake Guard image reads `[licence]`, and the key ids the "running" Guards report as built in. The default is the test
+   * image's: it reads the block and has RFC 8032's published test key, the one tempServer pins. A Guard whose guard.toml had the block reports it in /admin/status,
+   * as the real one does.
    */
   guardLicence: { reads: boolean; kids: string[] };
   /** The guard.toml each service was last verified with. */
@@ -58,7 +64,7 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
   const failing = new Map<string, string[]>();
   const runningDigest = new Map<string, string>();
   const digestByName = new Map<string, string>();
-  const guardLicence = { reads: false, kids: [] as string[] };
+  const guardLicence = { reads: true, kids: [TEST_KID] as string[] };
   const tomls = new Map<string, string>();
   const serviceOf = (toml: string) => { const name = /^deployment = "([^"]+)"/mu.exec(toml)?.[1] ?? ""; return name === "" ? "" : toml.includes('tool = "model"') ? "g-model" : `g-${name}`; };
   const tool: GuardTool = {
@@ -90,7 +96,7 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
           const name = service === "g-model" ? [...digestByName.keys()].find((n) => n.endsWith("-model")) : service.slice(2);
           const spec = [...digestByName.entries()].find(([n]) => n === name);
           const block = /\n\[licence\]\n([\s\S]*)$/u.exec(tomls.get(service) ?? "")?.[1];
-          const licence = block ? { configured: true, deployment: /^deployment = "([^"]+)"/mu.exec(block)?.[1], shop: /^shop = "([^"]+)"/mu.exec(block)?.[1], keys: guardLicence.kids.map((kid) => ({ kid, test_key: false })), keys_from: "GEO_GUARD_LICENCE_KEYS" } : undefined;
+          const licence = block ? { configured: true, deployment: /^deployment = "([^"]+)"/mu.exec(block)?.[1], shop: /^shop = "([^"]+)"/mu.exec(block)?.[1], keys: guardLicence.kids.map((kid) => ({ kid, test_key: kid === TEST_KID })), keys_from: "GEO_GUARD_LICENCE_KEYS" } : undefined;
           return ok(JSON.stringify({ status: 200, body: { policy: { digest: runningDigest.get(service) ?? spec?.[1] }, tripwires: { ran: true, ok: true, passed: 4, of: 4, failed: [], not_self_testable_items: [{ item: "rule refund-once" }] }, kill_switch: { on: false }, ...(licence ? { licence } : {}) } }));
         }
         return ok(JSON.stringify({ status: 200, body: {} }));

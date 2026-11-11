@@ -134,7 +134,7 @@ ${o.link ? html`<div class="notice"><p>${w.made}</p><code class="addr">${o.link}
 
 // ---- the shops --------------------------------------------------------------------------------------------------------------------------
 
-export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string; /** The licence, when the lease lists the shop and it is not in order. */ licence?: LicenceState }
+export interface ShopCardView { id: string; name: string; live: LiveView; limits?: { proven: number; of: number }; version?: string; setUpBy?: string; /** The licence, when it is not in order: a state of the lease, or `none` when the lease does not list the shop (decision 39). */ licence?: LicenceState }
 
 const liveLine = (c: Ctx, live: LiveView): Raw => html`<span class="state ${live.code}">${c.w.live[live.code]}</span>`;
 
@@ -235,8 +235,9 @@ function licenceBlock(c: Ctx, l: LicenceView): Raw {
     l.extendedUntil && l.state !== "wind_down" && l.state !== "stopped" ? w.extended(day(l.extendedUntil)) : "",
     l.stopOn && l.state === "wind_down" ? w.stopOn(day(l.stopOn)) : "",
     l.exportUntil && l.state === "stopped" ? w.exportUntil(day(l.exportUntil)) : "",
+    l.trialEnds ? w.trial(day(l.trialEnds)) : "",
   ].filter(Boolean);
-  const urgent = l.state === "warning" || l.state === "wind_down" || l.state === "stopped";
+  const urgent = l.state === "warning" || l.state === "wind_down" || l.state === "stopped" || l.state === "none";
   return html`<h2>${w.heading}</h2>
 <p class="big"><span class="state ${urgent ? "stopped" : "live"}">${w.states[l.state]}</span></p>
 <p>${w.means[l.state]}</p>
