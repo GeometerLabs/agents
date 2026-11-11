@@ -11,6 +11,7 @@ import { OWN_API } from "../../modules/payments/providers/index.ts";
 
 const have = (dir: string, container: string, ...file: string[]) => !!readSecretFile(secretFile(dir, container, ...file));
 
+// The deployed agents as the generators need to know them (Guards, secrets present, what its API holds). Read from the snapshot applied at deploy time, so config follows what is running, not what the folder says now.
 export function agentFacts(dir: string, state: State): AgentFacts[] {
   return Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, a]) => {
     const snap = a.applied!;

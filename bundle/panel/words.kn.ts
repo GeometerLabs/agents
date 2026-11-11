@@ -1,3 +1,4 @@
+// The Kannada word list for the panel: one translation table of every panel word (the Words shape in words.ts), picked up by languages.ts and words.ts when the owner chooses Kannada.
 import type { Words } from "./words.ts";
 
 // MACHINE-WRITTEN Kannada. Review marker: machine-written. A native Kannada speaker must read every line before a real shop sees it; the lines are on

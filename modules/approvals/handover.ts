@@ -12,12 +12,14 @@ import { CODE_PATTERN, newCode } from "./code.ts";
 /** "move K7M2QX", typed in any case. An approval's "approve K7M2QX" and the booking commands ("approve b-3") do not match. */
 export const HANDOVER_REPLY = new RegExp(`^\\s*move\\s+(${CODE_PATTERN})\\s*$`, "iu");
 
+// Returns the upper-cased code or undefined, so a message that is not a handover agreement falls through to the other commands.
 export function parseHandoverReply(text: string): string | undefined {
   const m = HANDOVER_REPLY.exec(text);
   return m ? m[1].toUpperCase() : undefined;
 }
 
 export const newHandoverCode = newCode;
+// Hashed with its own prefix so an approval code can never be replayed as a handover code or the reverse.
 export const handoverHash = (code: string): string => createHash("sha256").update(`handover-code:${code.toUpperCase()}`).digest("hex");
 
 /**

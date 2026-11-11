@@ -18,6 +18,7 @@ const sha256 = (data: string | Uint8Array) => createHash("sha256").update(data).
 const hmac = (key: string | Buffer, data: string) => createHmac("sha256", key).update(data).digest();
 const encode = (s: string) => encodeURIComponent(s).replace(/[!'()*]/gu, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
+// A small S3-compatible client (signed requests, no SDK) so the bundle ships with no dependency and works with any bucket that speaks the S3 API.
 export function s3Store(t: S3Target, fetchFn: typeof fetch = fetch, now: () => Date = () => new Date()): ObjectStore {
   const m = /^s3:\/\/([^/]+)\/?(.*)$/u.exec(t.url);
   if (!m) throw new Error(`"${t.url}" is not an s3:// address (s3://bucket/optional/folder).`);

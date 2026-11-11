@@ -115,6 +115,7 @@ export function agentRecordOf(text: string, agent: string): { entries: RecordEnt
 
 const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]);
 
+// Takes one shop's nightly snapshot: a consistent copy of its database, encrypted to the owner's public key and uploaded, with a seal the drill later checks. The live files are only read.
 export async function snapshotShop(shop: SnapshotJob["shops"][number], job: SnapshotJob, store: ObjectStore, scratch: string): Promise<ShopSnapshot> {
   const objects: { name: string; plain: Buffer }[] = [];
   const files: ManifestFile[] = [];
@@ -206,6 +207,7 @@ async function sealAndPut(who: { name: string; personKeyFile?: string; guards: {
   return { name: who.name, ok: true, stamp: job.stamp, files: sealed.length, bytes, ...(facts ? { record: facts } : {}), seal, ...(pruneError ? { pruneError } : {}) };
 }
 
+// Chooses the place snapshots go from the configured URL: a bucket (needs the key file) or a folder on this machine. Fails early with a plain message when the key is missing.
 export function storeFor(target: SnapshotJob["target"], keyText: string | undefined): ObjectStore {
   if (!target.url.startsWith("s3://")) return folderStore(target.url);
   const [accessKeyId, ...secret] = (keyText ?? "").trim().split(":");

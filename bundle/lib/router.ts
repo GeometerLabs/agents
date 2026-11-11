@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 export type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
+// Maps /c/<shop>/... to that shop's own handler and answers /healthz itself; an unknown shop gets a plain 404 so shops cannot reach one another through it. `log` is optional.
 export function createRouter(shops: Record<string, Handler>, log: (line: string) => void = () => undefined): Handler {
   return (req, res) => {
     const url = req.url ?? "/";

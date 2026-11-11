@@ -20,7 +20,9 @@ import { loadServer, serverPaths } from "../lib/server.ts";
 import { loadState } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
 
+// Per-shop append-only list of published fingerprints; the last line is what 'already published today' is decided from.
 export const fingerprintFile = (dir: string, shop: string): string => join(serverPaths(dir).state, "fingerprints", `${shop}.jsonl`);
+// Where the owner lists the places fingerprints are published to; kept beside the server root, off the shops' folders.
 export const targetsFile = (dir: string): string => join(serverPaths(dir).root, "fingerprints.json");
 
 /** The last fingerprint published for a shop, or undefined (none yet, or the file cannot be read: the caller says which). */
@@ -57,6 +59,7 @@ function copyForExport(dir: string, shop: string): void {
   renameSync(tmp, to);
 }
 
+// The daily publish: for each applied shop, send its ledger head to every target and record it. One shop failing is reported and does not stop the others.
 export async function runFingerprints(ctx: Context, deps: { fetch?: Fetch } = {}): Promise<{ ok: boolean; lines: string[]; results: Record<string, Published> }> {
   const paths = serverPaths(ctx.dir);
   const state = loadState(ctx.dir);

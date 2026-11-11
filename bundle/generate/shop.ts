@@ -26,6 +26,7 @@ export const REPORTS_DIR = `${DATA_DIR}/reports`;
 export const REPORTS_SUBPATH = REPORTS_DIR.slice(HOME_DIR.length + 1);
 /** The public address of a shop's report pages: https://<domain>/r/<shop>/<32 hex digits>/<file>. Caddy serves exactly that shape (generate/compose.ts, reportsMatcher). */
 export const REPORTS_ROUTE = "/r";
+// Where a shop's report pages are reached from outside; built from the same route Caddy matches, so a link in a message always lands on a served path.
 export const reportBaseUrl = (server: Pick<ServerConfig, "domain" | "ports">, shop: string): string => `${publicUrl(server)}${REPORTS_ROUTE}/${shop}`;
 
 /** Names of everything a shop owns, in one place. */
@@ -84,6 +85,7 @@ export interface ShopPlan {
 
 export const RUNTIME_PORT = 8780;
 export const GUARD_PORT = 8080;
+// Address of a Guard on the shop's own network; one definition so the runtime config and the compose file cannot drift apart.
 export const guardUrl = (service: string) => `http://${service}:${GUARD_PORT}`;
 /** In the runtime container, the folder that holds the agent's credentials for its Guards, one file per Guard. */
 const SECRETS = "/run/secrets";

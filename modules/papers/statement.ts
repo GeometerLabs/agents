@@ -69,6 +69,7 @@ export interface StatementInput {
   tenant?: string;
 }
 
+// Filters to this person's own cases first and builds every total from those alone, so no figure about anyone else can reach the paper.
 export function buildStatement(input: StatementInput): Statement {
   const mine = input.cases.filter((c) => isPerson(c.customer, input.number, input.personKey));
   const language = input.language ?? mine.at(-1)?.language ?? "en";
@@ -111,6 +112,7 @@ export function buildStatement(input: StatementInput): Statement {
   };
 }
 
+// Build and sign in one step so a statement is never handed out unsigned by mistake.
 export const sealStatement = (input: StatementInput, key?: KeyObject): Envelope<Statement> => seal(buildStatement(input), key);
 
 const label = (i: StatementItem, language: Language): string => {
@@ -131,6 +133,7 @@ export function statementText(envelope: Envelope<Statement>): string {
   return lines.join("\n");
 }
 
+// Renders from the signed document only, so the page and the signed bytes cannot disagree.
 export function statementPage(envelope: Envelope<Statement>): string {
   const d = envelope.document;
   const w = WORDS[d.language];

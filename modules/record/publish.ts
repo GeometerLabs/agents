@@ -51,6 +51,7 @@ export interface Published {
   alert?: string;
 }
 
+// Canonical bytes plus newline, so the same line always produces the same file contents and the file can be checked line by line.
 export const lineBytes = (line: FingerprintLine): string => `${canonicalJson(line)}\n`;
 const sha256 = (text: string): string => `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
 

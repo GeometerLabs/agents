@@ -107,6 +107,7 @@ const providerStatus = (reply: HttpReply, service: Service, notChecked: NotCheck
 // GET /{version}/{phone-number-id}?fields=id,display_phone_number,verified_name
 // https://developers.facebook.com/docs/whatsapp/cloud-api/reference/phone-numbers/  (read 3 Nov 2026: "Get Phone Number")
 
+// Read-only: asks WhatsApp for the number's own details to confirm the pasted number id is this shop's; sends no message.
 export async function checkWhatsApp(target: NonNullable<ConnectionTargets["whatsapp"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
   const notChecked: NotChecked[] = ["sending", "templates-approved"];
   if (!NUMBER_ID.test(target.phoneNumberId) || digits(target.businessNumber).length < 8) return result("whatsapp", "not_configured", { notChecked });
@@ -132,6 +133,7 @@ export async function checkWhatsApp(target: NonNullable<ConnectionTargets["whats
 // does NOT prove: whose account the key belongs to (a gateway may document no call that tells an ordinary key its own account). So the result says
 // `payments-account` was not checked, and the panel shows the gateway's own sentence about it (its words.whose).
 
+// Read-only: asks the payment gateway who the key belongs to; creates no order and charges nothing.
 export async function checkGateway(target: NonNullable<ConnectionTargets["gateway"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
   const notChecked: NotChecked[] = ["payments-account"];
   const provider = providerById(target.provider);
@@ -163,6 +165,7 @@ export async function checkGateway(target: NonNullable<ConnectionTargets["gatewa
 
 const WRITE_ROLES = new Set(["owner", "writer"]);
 
+// Read-only: reads the calendar's own record to confirm the id is the shop's; books nothing.
 export async function checkCalendar(target: NonNullable<ConnectionTargets["calendar"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
   const notChecked: NotChecked[] = ["sending", "events-private-properties"];
   if (target.calendarId.trim() === "" || /[\s/?#]/u.test(target.calendarId)) return result("calendar", "not_configured", { notChecked });

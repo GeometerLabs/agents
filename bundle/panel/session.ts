@@ -10,6 +10,7 @@ export interface SessionOptions { secure: boolean; maxAgeSeconds?: number; now?:
 const b64 = (b: Buffer | string) => Buffer.from(b).toString("base64url");
 const equal = (a: string, b: string) => { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 
+// Signs and checks session cookies and CSRF tokens with the panel's secret. `options` carries the lifetime and whether the cookie is Secure.
 export function createSessions(secret: Buffer, options: SessionOptions) {
   const now = options.now ?? Date.now;
   const maxAge = options.maxAgeSeconds ?? 12 * 3600;

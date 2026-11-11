@@ -120,6 +120,7 @@ function weakest(...q: Quality[]): Quality {
   return q.reduce((a, b) => (QUALITIES.indexOf(a) <= QUALITIES.indexOf(b) ? a : b));
 }
 
+// Rounds a micropaise amount UP to a whole paisa, once per line: rounding down would understate what the shop is charged, and rounding each step would drift.
 export const paiseOf = (micro: bigint): number => Number(ceilDiv(micro, MICRO));
 
 /**
@@ -220,6 +221,7 @@ export interface MonthlyCost {
 
 const need = (n: number | undefined, fallback: number): number => (n !== undefined && Number.isSafeInteger(n) && n >= 0 ? n : fallback);
 
+// Builds the shop's month: each line from counts and a price, "unknown" where a price is missing, and a total that says when it is only a subtotal.
 export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   const a: Assumptions = { ...DEFAULT_ASSUMPTIONS };
   for (const key of Object.keys(DEFAULT_ASSUMPTIONS) as (keyof Assumptions)[]) a[key] = need(input.assumptions?.[key], DEFAULT_ASSUMPTIONS[key]);

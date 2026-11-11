@@ -21,6 +21,7 @@ export const MONTH_NAMES: Record<Language, string[]> = {
 
 /** Which part of the day an hour (0-23) is in. Hindi, Malayalam and Kannada each name it before the time. */
 export type DayPart = "morning" | "noon" | "evening" | "night";
+// One definition of the day boundaries so every language says 'morning' and 'evening' for the same hours.
 export function dayPartOf(hour24: number): DayPart {
   if (hour24 >= 5 && hour24 < 12) return "morning";
   if (hour24 >= 12 && hour24 < 16) return "noon";
@@ -37,6 +38,7 @@ export const DAY_PART_WORDS: Record<Exclude<Language, "en">, Record<DayPart, str
 
 /** Hindi says which part of the day it is: "शाम 6:00 बजे" (6:00 in the evening). Kept for callers that only need Hindi. */
 export const HINDI_PERIODS = DAY_PART_WORDS.hi;
+// Older callers only need Hindi; kept so they do not each rebuild the lookup.
 export const hindiPeriod = (hour24: number): string => DAY_PART_WORDS.hi[dayPartOf(hour24)];
 
 /** "₹450", "₹1,200", "₹12,500", "₹1,25,000": whole rupees with Indian digit grouping. */

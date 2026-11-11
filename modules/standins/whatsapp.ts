@@ -62,6 +62,7 @@ function readInteractive(i: any): InteractiveMessage | string {
   return "interactive.type must be button or list";
 }
 
+// Speaks the Cloud API's send paths and bodies in front of the fake messaging, so the live WhatsApp adapter is tested unchanged.
 export function whatsappStandin(messaging: FakeMessaging, catalogue: TemplateCatalogue, options: { phoneNumberId?: string; displayPhoneNumber?: string; verifiedName?: string } = {}): Handler {
   const details = (id: string, fields: string | null) => {
     const all: Record<string, string> = {

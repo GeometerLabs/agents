@@ -14,4 +14,5 @@ export const WORDS: Record<Language, Words> = { en, hi, ml, kn };
  * a line at the foot (`draftNote`) for as long as the marker stays. Change a marker only when a named reader has signed the sheet.
  */
 export const REVIEW_STATE: Record<Language, "source" | "machine-written"> = { en: "source", hi: "machine-written", ml: "machine-written", kn: "machine-written" };
+// True for languages still machine-written; the layout then shows the "waiting for a native reader" note so a shop owner knows the wording is unreviewed.
 export const isDraftLanguage = (l: string): boolean => REVIEW_STATE[l as Language] === "machine-written";

@@ -37,6 +37,7 @@ export function readExport(dir: string): Exported | null {
   } catch { return null; }
 }
 
+// The calendar month (YYYY-MM) of a moment in the shop's own time zone, so an evening booking near midnight lands in the month the owner would say it did.
 export const monthOf = (ms: number, timeZone: string): string => {
   const p = localParts(ms, timeZone);
   return `${p.year}-${String(p.month).padStart(2, "0")}`;
@@ -59,4 +60,5 @@ export function ordersMonthlyFromExport(settings: OrdersSettings, data: Exported
 
 /** The cases a shop's export holds, by the shop's template: its bookings, its fees or its orders (what the inbox, the papers and the case list read). */
 const CASES: Record<string, (d: Exported) => { id: string }[]> = { fees: (d) => d.dues ?? [], orders: (d) => d.orders ?? [] };
+// Picks the list of cases by template kind; an unknown kind falls back to bookings, the original template.
 export const casesOf = (data: Exported, kind: string): { id: string }[] => (Object.hasOwn(CASES, kind) ? CASES[kind] : (d: Exported) => d.bookings)(data);
