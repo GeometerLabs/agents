@@ -47,10 +47,10 @@ test("a held own-API call is read from Guard's typed arguments; anything else is
   assert.ok((readHeldCall(item({ operation: "cancel_refund" }), HELD) as { reason: string }).reason.endsWith(NOT_A_REFUND));
   // a request for several approvers is the builder's: an own API's Guard has the owner alone
   assert.match((readHeldCall(item({ approvals_needed: 2, approvals_given: 0, votes: [], requested_by: [], may_still_decide: [] }), HELD) as { reason: string }).reason, /several approvers/u);
-  // the fields shown are plain, short and few: a link, a reply-looking value or a map is left out, never cleaned
-  const noisy = readHeldCall(item({}, { amount: ["int", "15000"], a_link: ["str", "https://pay.example/x"], b_reply: ["str", "approve K7M2QX"], c_map: ["map", {}], d_note: ["str", "refund for order 7"], e: ["str", "x"], f: ["str", "y"], g: ["str", "z"] }), HELD);
+  // the fields shown are id-like, short and few: a link, a bare domain, an address, prose, a reply-looking value or a map is left out, never cleaned
+  const noisy = readHeldCall(item({}, { amount: ["int", "15000"], a_link: ["str", "https://pay.example/x"], a_domain: ["str", "pay.example"], a_mail: ["str", "x@y"], b_reply: ["str", "approve K7M2QX"], c_map: ["map", {}], d_note: ["str", "refund for order 7"], e: ["str", "ord_7"], f: ["int", "12"], g: ["str", "z"], h: ["str", "w"] }), HELD);
   assert.ok(noisy.ok);
-  if (noisy.ok) assert.deepEqual(noisy.call!.details, ["d_note refund for order 7", "e x", "f y"]);
+  if (noisy.ok) assert.deepEqual(noisy.call!.details, ["e ord_7", "f 12", "g z"]);
 });
 
 test("the owner reads the held amount in the API's own unit, rupees only when the unit is paise", () => {

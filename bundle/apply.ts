@@ -13,6 +13,9 @@ import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import { RECOVERY_FILE, parseRecoveryRequest, parseStopRequest } from "./lib/requests.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
+import type { State } from "./lib/state.ts";
+import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
+import { heldRulesOf } from "../modules/approvals/held-call.ts";
 import { syncLicence } from "./lib/licence.ts";
 import { updateStatus } from "./lib/status.ts";
 import { shopNameProblem, sha256Hex, stableJson } from "./lib/util.ts";
@@ -186,10 +189,12 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   const jobs = state.jobs ??= {};
   const since = (iso?: string) => (iso ? now.getTime() - Date.parse(iso) : Infinity);
   const shops = Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n);
-  // a UPI shop (B33) has no Razorpay Guard and so no approvals relay: there is no credential to renew for it
-  const shopsWithRelay = Object.entries(state.shops).filter(([, s]) => s.applied && Object.values(s.applied.guards).some((g) => g.kind === "razorpay")).map(([n]) => n);
-  // an agent someone else wrote has a relay credential too, when it calls Razorpay (a held refund is asked about on WhatsApp)
-  const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && a.guards.razorpay).map(([n]) => n);
+  // a UPI shop (B33) has no gateway Guard and so no approvals relay: there is no credential to renew for it
+  const shopsWithRelay = Object.entries(state.shops).filter(([, s]) => s.applied && Object.values(s.applied.guards).some((g) => isGatewayKind(g.kind))).map(([n]) => n);
+  // an agent someone else wrote has a relay credential too when a call of its can be held for the owner: a refund on its gateway, or (B71 part 2) a call its own
+  // API's reviewed spec holds. Without the renewal the relay's credential runs out after a week and the owner is never asked again.
+  const holdsForOwner = (a: NonNullable<State["agents"]>[string]): boolean => Object.values(a.applied!.guards).some((g) => isGatewayKind(g.kind) || (g.kind === OWN_API && heldRulesOf(JSON.parse(g.specText) as { tool?: unknown; rules?: unknown }).rules.length > 0));
+  const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && holdsForOwner(a)).map(([n]) => n);
   if (shops.length === 0 && withRelay.length === 0) return ran;
   if (since(jobs.relayCredentialsAt) >= 24 * HOUR) {
     for (const shop of [...shopsWithRelay, ...withRelay]) await renewRelayCredential(ctx, shop);

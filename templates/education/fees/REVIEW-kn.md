@@ -304,6 +304,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `cert.intro` | ಆರಂಭಿಸುವ ಮೊದಲು ತಪ್ಪಾಗಬಹುದಾದ ಸಂದರ್ಭಗಳನ್ನು ನಾವು ಪ್ರಯತ್ನಿಸಿದೆವು: ಕಳೆದುಹೋದ ಉತ್ತರಗಳು, ಎರಡು ಬಾರಿ ಬಂದ ಪಾವತಿ, ಕಟ್ಟದೆ "ಕಟ್ಟಿದ್ದೇವೆ" ಎನ್ನುವ ಪೋಷಕರು, ರಿಯಾಯಿತಿ ಅಥವಾ ರೀಫಂಡ್ ಕೋರಿಕೆಗಳು, ಏಜೆಂಟ್ ಅನ್ನು ಮೋಸಗೊಳಿಸಲು ಯತ್ನಿಸುವ ಪೋಷಕರು. | Before switching on, we tried situations that could go wrong: lost replies, a payment arriving twice, parents saying they paid when they had not, requests for a waiver or a refund, and parents trying to trick the agent. |  |
 | `cert.yourLimits` | ನಿಮ್ಮ ಮಿತಿಗಳು | Your limits |  |
 | `cert.paidRule` | Razorpay ದಾಖಲೆಯಲ್ಲಿ ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಕಂಡರೆ ಆಮೇಲೆ ನೆನಪಿನ ಸಂದೇಶ ಇಲ್ಲ | No reminder once Razorpay's record shows a fee paid |  |
+| `cert.paidRuleUpi` | ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ನೀವು ದಾಖಲಿಸಿದ ಮೇಲೆ ನೆನಪಿನ ಸಂದೇಶ ಇಲ್ಲ | No reminder once you have marked a fee paid |  |
 | `cert.fees` | ಮಾಸಿಕ ಶುಲ್ಕ: class 8 ₹1,200 · class 10 ₹1,800 | Monthly fees: class 8 ₹1,200 · class 10 ₹1,800 |  |
 | `cert.due` | ಪ್ರತಿ ಶುಲ್ಕವನ್ನು ತಿಂಗಳ 5ನೇ ತಾರೀಖಿಗೆ ಕಟ್ಟಬೇಕು, 5 ದಿನಗಳ ಹೆಚ್ಚುವರಿ ಅವಧಿಯೊಂದಿಗೆ | Each fee is due on day 5 of the month, with 5 grace days |  |
 | `cert.lateFee` | ಹೆಚ್ಚುವರಿ ಅವಧಿಯ ನಂತರವೂ ಶುಲ್ಕ ಕಟ್ಟದಿದ್ದರೆ ₹100 ತಡ ಶುಲ್ಕ, ಒಮ್ಮೆ ಸೇರಿಸಲಾಗುತ್ತದೆ | A late fee of ₹100, added once, after the grace days, if the fee is still unpaid |  |

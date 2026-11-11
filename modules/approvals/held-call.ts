@@ -24,11 +24,11 @@ export interface HeldCall { operation: string; unit?: string; /** The call's oth
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const millis = (v: unknown): number | undefined => (typeof v === "string" && /^\d{1,16}$/u.test(v) ? Number(v) : typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : undefined);
 
-/** At most this many other fields are shown, each value at most this long. The agent chose them, so only plain text is shown, never anything that could read as a link or a code reply. */
+/** At most this many other fields are shown, each value at most this long. The agent chose them, so only id-like tokens are shown, never anything that could read as a link, an address or a code reply. */
 export const DETAIL_FIELDS = 3;
 export const DETAIL_LENGTH = 40;
 const PLAIN_NAME = /^[A-Za-z][A-Za-z0-9_]{0,39}$/u;
-const PLAIN_VALUE = new RegExp(`^[A-Za-z0-9 _.:@+-]{1,${DETAIL_LENGTH}}$`, "u");
+const PLAIN_VALUE = new RegExp(`^[A-Za-z0-9_-]{1,${DETAIL_LENGTH}}$`, "u");
 
 /** The spec's rules that hold a call for a person, read from the spec Guard was given (the kit's `call_bound_approval`, with `amount_field` and `units`). */
 export function heldRulesOf(spec: { tool?: unknown; rules?: unknown }): HeldCallSpec {
@@ -41,8 +41,9 @@ export function heldRulesOf(spec: { tool?: unknown; rules?: unknown }): HeldCall
 }
 
 /**
- * The plain fields of a held call other than its amount, as the owner may read them: names and values from a small safe alphabet, cut short, at most DETAIL_FIELDS.
- * A field that is a map or a list, or whose text has anything else in it (a link, a line break, the words "approve" or "deny"), is left out rather than cleaned.
+ * The plain fields of a held call other than its amount, as the owner may read them: names and values that look like ids (letters, digits, `_` and `-`), cut
+ * short, at most DETAIL_FIELDS. The agent chose the values, so anything else is left out rather than cleaned: a map or a list, prose, a line break, the words
+ * "approve" or "deny", and anything with a dot, colon or @ in it, which WhatsApp could show as a link or an address.
  */
 function detailsOf(args: Record<string, unknown>, amountField: string): string[] {
   const out: string[] = [];
