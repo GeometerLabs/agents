@@ -5,7 +5,7 @@
 //     fingerprint key (B69) comes out as `person_key`: on a new machine put it at `secrets/person-keys/<shop>` (mode 0600), or `geometer restore` does that for you.
 //   - `geometer restore <shop> [--at TIME] --identity <key file>` on the server: the deployer runs this file in a short-lived container with a job file (`--job`) and
 //     the key file mounted read-only; it fetches the newest snapshot at or before the time and writes the runtime's database and a `restored.json` note into a folder
-//     the deployer then puts in place.
+//     the deployer then puts in place. For an agent someone else wrote (B51) it writes the agent's record, its key and every Guard's backup folder instead.
 // Each object is opened by its name: `.tar.gz.age` is a folder (a Guard's backup), `.gz.age` one gzipped file, and a plain `.age` one file as snapshots before
 // 9 Nov 2026 were written (not gzipped).
 import { createHash } from "node:crypto";
@@ -15,7 +15,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { decrypt } from "./age.ts";
 import { fromTarGz } from "../export/tar.ts";
-import { PERSON_KEY_OBJECT, mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
+import { AGENT_RECORD_FILE, PERSON_KEY_OBJECT, agentRecordOf, mountedKey, recordFacts, stampMs, stampOf, storeFor } from "./snapshot.ts";
 import type { RecordFacts, SnapshotJob } from "./snapshot.ts";
 import type { ObjectStore } from "./store.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
@@ -81,16 +81,20 @@ export interface Fetched { stamp: string; db: Buffer; record: RecordFacts | null
  * The runtime's database from the newest whole snapshot of a shop (one whose manifest was written: it is written last), at or before `atMs` if given. Only the database
  * and the manifest are fetched: a LIST and two GETs. The database is checked against the manifest's digest.
  */
-export async function fetchSnapshot(store: ObjectStore, shop: string, identity: string, atMs?: number): Promise<Fetched> {
-  const all = await snapshotsOf(store, shop);
-  const whole = [...all.entries()].filter(([stamp, keys]) => (atMs === undefined || stampMs(stamp) <= atMs) && keys.some((k) => /\/manifest\.json(\.gz)?\.age$/u.test(k))).sort(([a], [b]) => (a < b ? -1 : 1));
-  if (whole.length === 0) throw new Error(atMs === undefined ? `there is no snapshot of ${shop} in the snapshot place yet` : `there is no snapshot of ${shop} from ${new Date(atMs).toISOString()} or before`);
-  const [stamp, keys] = whole.at(-1)!;
-  const folder = `${shop}/${stamp}/`;
-  const runtimeKey = keys.find((k) => /\/runtime\/agent\.db(\.gz)?\.age$/u.test(k));
-  if (!runtimeKey) throw new Error(`the snapshot of ${stamp} has no runtime database (the shop had no record yet that night)`);
+const MANIFEST_KEY = /\/manifest\.json(\.gz)?\.age$/u;
+
+/** The newest whole snapshot of a shop or agent (one whose manifest was written: it is written last), at or before `atMs` if given: its stamp and its objects' keys. One LIST. */
+async function newestWhole(store: ObjectStore, name: string, atMs?: number): Promise<[string, string[]]> {
+  const all = await snapshotsOf(store, name);
+  const whole = [...all.entries()].filter(([stamp, keys]) => (atMs === undefined || stampMs(stamp) <= atMs) && keys.some((k) => MANIFEST_KEY.test(k))).sort(([a], [b]) => (a < b ? -1 : 1));
+  if (whole.length === 0) throw new Error(atMs === undefined ? `there is no snapshot of ${name} in the snapshot place yet` : `there is no snapshot of ${name} from ${new Date(atMs).toISOString()} or before`);
+  return whole.at(-1)!;
+}
+
+/** Fetch and open these objects of one snapshot (one GET each), saying plainly when the key is not the owner's. */
+async function openAll(store: ObjectStore, folder: string, stamp: string, keys: string[], identity: string): Promise<Map<string, Buffer>> {
   const files = new Map<string, Buffer>();
-  for (const key of [keys.find((k) => /\/manifest\.json(\.gz)?\.age$/u.test(k))!, runtimeKey]) {
+  for (const key of keys) {
     const sealed = await store.get(key);
     if (!sealed) throw new Error(`${key} was listed but could not be read`);
     let opened: Map<string, Buffer>;
@@ -100,14 +104,72 @@ export async function fetchSnapshot(store: ObjectStore, shop: string, identity: 
     }
     for (const [p, d] of opened) files.set(p, d);
   }
+  return files;
+}
+
+export async function fetchSnapshot(store: ObjectStore, shop: string, identity: string, atMs?: number): Promise<Fetched> {
+  const [stamp, keys] = await newestWhole(store, shop, atMs);
+  const folder = `${shop}/${stamp}/`;
+  const runtimeKey = keys.find((k) => /\/runtime\/agent\.db(\.gz)?\.age$/u.test(k));
+  if (!runtimeKey) throw new Error(`the snapshot of ${stamp} has no runtime database (the shop had no record yet that night)`);
+  const files = await openAll(store, folder, stamp, [keys.find((k) => MANIFEST_KEY.test(k))!, runtimeKey], identity);
   const manifest = JSON.parse(files.get("manifest.json")!.toString("utf8")) as { files?: { path?: string; key?: string; sha256: string }[]; runtime?: RecordFacts | null; personKey?: string };
   check(files, manifest);
   if (!digests(manifest).has("runtime/agent.db")) throw new Error(`the snapshot of ${stamp}'s manifest does not describe its runtime database`);
   return { stamp, db: files.get("runtime/agent.db")!, record: manifest.runtime ?? null, ...(manifest.personKey ? { personKey: manifest.personKey } : {}) };
 }
 
-/** What `geometer restore` hands the restore container. */
-export interface RestoreJob { target: SnapshotJob["target"]; shop: string; atMs?: number; identityFile: string; out: string; nowIso: string }
+export interface FetchedAgent {
+  stamp: string;
+  /** Every file of the snapshot, each checked against the manifest: `record.json` (when the agent had a record that night) and each Guard's backup folder as `guard-<kind>/...`. */
+  files: Map<string, Buffer>;
+  record: RecordFacts | null;
+  personKey?: string;
+  /** The Guards whose backup folder the snapshot holds, each checked to be this agent's (its backup.json names the agent as its tenant). */
+  guards: string[];
+}
+
+/**
+ * The newest whole snapshot of an agent someone else wrote (B51), at or before `atMs`: its record, its key and every Guard's backup folder. All of it is fetched (one LIST and
+ * one GET per object: the manifest, the record and one tar per Guard) because a restore puts all of it back, and all of it is checked here, before anything is stopped:
+ * every file the manifest names must be there with its digest, the record must be a record, and each Guard folder must be a Guard backup of this agent.
+ */
+export async function fetchAgentSnapshot(store: ObjectStore, agent: string, identity: string, atMs?: number): Promise<FetchedAgent> {
+  const [stamp, keys] = await newestWhole(store, agent, atMs);
+  const files = await openAll(store, `${agent}/${stamp}/`, stamp, [keys.find((k) => MANIFEST_KEY.test(k))!, ...keys.filter((k) => !MANIFEST_KEY.test(k))], identity);
+  const manifest = JSON.parse(files.get("manifest.json")!.toString("utf8")) as { files?: { path?: string; key?: string; sha256: string }[]; ownAgent?: { record: RecordFacts | null }; personKey?: string };
+  if (!manifest.ownAgent) throw new Error(`the snapshot of ${stamp} is not of an agent someone else wrote (it holds a shop's runtime)`);
+  check(files, manifest);
+  for (const path of digests(manifest).keys()) if (!files.has(path)) throw new Error(`the snapshot of ${stamp} is missing ${path}, which its manifest names`);
+  files.delete("manifest.json");
+  if (files.has(AGENT_RECORD_FILE)) agentRecordOf(files.get(AGENT_RECORD_FILE)!.toString("utf8"), agent);
+  // a Guard's kind may hold a hyphen (B71's own gateway API is `own-api`)
+  const guards = [...files.keys()].flatMap((p) => /^guard-([a-z][a-z-]*)\/backup\.json$/u.exec(p)?.[1] ?? []).sort();
+  for (const kind of guards) {
+    let tenant: unknown;
+    try { tenant = (JSON.parse(files.get(`guard-${kind}/backup.json`)!.toString("utf8")) as { tenant?: unknown }).tenant; } catch { tenant = undefined; }
+    // the Guard's own restore refuses another tenant's backup too, but only once its Guard is stopped: this says so while everything still runs
+    if (tenant !== agent) throw new Error(`the ${kind} Guard's backup in the snapshot of ${stamp} is not ${agent}'s (it names ${String(tenant)})`);
+  }
+  return { stamp, files, record: manifest.ownAgent.record, guards, ...(manifest.personKey ? { personKey: manifest.personKey } : {}) };
+}
+
+/** What `geometer restore` hands the restore container. `ownAgent`: the name is an agent someone else wrote, and everything of its snapshot is written out. */
+export interface RestoreJob { target: SnapshotJob["target"]; shop: string; atMs?: number; identityFile: string; out: string; nowIso: string; ownAgent?: boolean }
+
+/** The agent's snapshot, checked, written into the folder the deployer then puts in place: `record.json`, `person_key` and `guard-<kind>/...`. Readable by the Guard's own user, which restores from it. */
+export async function runAgentRestoreJob(job: RestoreJob, store: ObjectStore): Promise<{ ok: true; stamp: string; record: RecordFacts | null; guards: string[]; ownAgent: true }> {
+  const got = await fetchAgentSnapshot(store, job.shop, readFileSync(job.identityFile, "utf8"), job.atMs);
+  mkdirSync(job.out, { recursive: true, mode: 0o755 });
+  for (const [p, d] of got.files) {
+    const target = resolve(job.out, p);
+    if (!target.startsWith(resolve(job.out) + sep)) throw new Error(`${p} would be written outside ${job.out}`);
+    mkdirSync(dirname(target), { recursive: true, mode: 0o755 });
+    writeFileSync(target, d, { mode: 0o644 });
+  }
+  if (got.personKey) writeFileSync(join(job.out, PERSON_KEY_OBJECT), `${got.personKey}\n`, { mode: 0o644 });
+  return { ok: true, stamp: got.stamp, record: got.record, guards: got.guards, ownAgent: true };
+}
 
 /**
  * Fetch, check and write the database and the note the runtime reads at its next start (`restored.json`: it moves the shop's ids on so none used after the snapshot comes
@@ -136,7 +198,7 @@ if (import.meta.main) {
   const at = (flag: string) => a[a.indexOf(flag) + 1];
   if (a[0] === "--job") {
     const job = JSON.parse(readFileSync(a[1], "utf8")) as RestoreJob;
-    try { console.log(JSON.stringify(await runRestoreJob(job, storeFor(job.target, mountedKey())))); } catch (e) { console.log(JSON.stringify({ ok: false, error: (e as Error).message })); process.exit(1); }
+    try { const store = storeFor(job.target, mountedKey()); console.log(JSON.stringify(job.ownAgent ? await runAgentRestoreJob(job, store) : await runRestoreJob(job, store))); } catch (e) { console.log(JSON.stringify({ ok: false, error: (e as Error).message })); process.exit(1); }
   } else {
     if (a.length < 5 || !a.includes("--identity") || !a.includes("--out")) { console.error("usage: restore-snapshot.ts <folder> --identity <key file> --out <empty folder>"); process.exit(2); }
     try { const files = restoreSnapshot(resolve(a[0]), readFileSync(at("--identity"), "utf8"), resolve(at("--out"))); console.log(`${files.length} files opened under ${resolve(at("--out"))}, each checked against the manifest`); } catch (e) { console.error((e as Error).message); process.exit(1); }

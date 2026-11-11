@@ -58,6 +58,9 @@ export interface AgentState {
    * Geometer knows. It does not run the agent, so this is the builder's word for what runs, backed by the test. The next `update` compares the version in agent.json with this one.
    */
   service?: { version: string | null; at: string; held: number; of: number; code: string };
+  /** The nightly snapshot and the weekly drill, as a shop's (backup/jobs.ts): its Guards' stores, its record and its key. */
+  lastBackupAt?: string;
+  lastDrill?: { at: string; ok: boolean; detail: string };
 }
 
 /**

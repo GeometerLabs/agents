@@ -5,7 +5,8 @@
 // It builds a throwaway server folder, brings the real bundle up with docker compose (the real Guard image, one set of stand-ins per shop as the providers, MinIO
 // as the bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Every bundle container runs inside
 // ONE parent cgroup capped at 2 CPUs and 4 GiB (the 2 vCPU / 4 GB server of B14 item 4; the stand-ins, MinIO and the probes are outside it). Everything it creates
-// is named geometer-proof-* and is removed at the end (volumes, networks, containers, the cgroup); it never deletes an image.
+// is named geometer-proof-* and is removed at the end (volumes, networks, containers, the cgroup); it never deletes an image. The `agent` phase (B51) adds an agent
+// someone else wrote (proof-agent, the example agent run from this machine through Caddy) beside the shops, and keeps it for the phases after it.
 //
 // The Guard image must read `[licence]` and have RFC 8032's published test key built in (monorepo ADR-0062): the proof pins that key in geometer.json and signs
 // its leases with it (test/licence-helpers.ts). GUARD_IMAGE names the image (default geo-guard:local-b14, built locally, never pushed).
@@ -22,7 +23,9 @@ import type { GuardTool } from "../../generate/verify.ts";
 import { realRunner } from "../../lib/runner.ts";
 import { secretFile } from "../../lib/secrets.ts";
 import { readStatus } from "../../lib/status.ts";
-import { runBackup, runDrill, restoreShop } from "../../backup/jobs.ts";
+import { runBackup, runDrill, restoreAgent, restoreShop } from "../../backup/jobs.ts";
+import { addAgent, deployAgent } from "../../agent/deploy.ts";
+import { recordAgent } from "../../agent/records.ts";
 import { decrypt, encrypt, generateIdentity } from "../../backup/age.ts";
 import { loadState } from "../../lib/state.ts";
 import { clientLicenceFile, licencePaths, syncLicence } from "../../lib/licence.ts";
@@ -30,7 +33,7 @@ import { loadServer } from "../../lib/server.ts";
 import { yaml } from "../../generate/compose.ts";
 import type { Runner } from "../../lib/runner.ts";
 import { TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
-import { OWNER, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
+import { AGENT_INDEX, AGENT_NAME, OWNER, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
 const EXAMPLE = join(APP, "templates/commerce/bookings/clients/glow-salon.example");
@@ -43,6 +46,8 @@ const KEEP = args.includes("--keep");
 /** `--only kill,licence`: run those phases (and the deploy of one shop they need); the default is every phase. */
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
 const runs = (phase: string) => !ONLY || ONLY.has(phase);
+/** The reference_id prefix of the payment links the kill phase makes by calling a Guard directly (no runtime, no booking): the outage phase's per-booking check leaves them out. */
+const RAW_LOAD_REF = "load-";
 const LOAD_SECONDS = args.includes("--load-seconds") ? Number(args[args.indexOf("--load-seconds") + 1]) : 120;
 /** `--heartbeat 10`: the heartbeat every 10 s. Left out, the real default: the disk-write and CPU figures are then what a real shop would see. */
 const HEARTBEAT = args.includes("--heartbeat") ? Number(args[args.indexOf("--heartbeat") + 1]) : undefined;
@@ -188,6 +193,8 @@ function stats(): { name: string; mib: number }[] {
 }
 function group(name: string): string {
   if (name === "g-model") return "model Guard";
+  // the agent someone else wrote (the agent phase) is counted apart, so the shops' per-shop figures stay comparable with the runs before it
+  if (name.startsWith(`g-${AGENT_NAME}-`)) return "own agent's Guards";
   if (/^g-.+-(razorpay|whatsapp|calendar)$/u.test(name)) return "shop Guards";
   if (name.startsWith("rt-")) return "runtimes";
   if (name.startsWith("fwd-") || name.startsWith("door-")) return "forwarders and doors";
@@ -330,6 +337,7 @@ async function main_(): Promise<void> {
     await phase("stop", stopPersists);
     await phase("outputs", deployerOutputs);
     await phase("data", dataDuties);
+    await phase("agent", ownAgent);
     await phase("model", modelGuard);
     measure("1 shop (after the checks above)", 1);
     await phase("load", () => loadStep(1));
@@ -520,7 +528,7 @@ async function killUnderLoad() {
   const before = link();
   // 12 requests a second for 24 s from inside the runtime; the Guard is killed 8 s in
   const load = `let ok=0,refused=0,unreachable=0,other=0;const t0=Date.now();const log=[];
-(async()=>{while(Date.now()-t0<24000){const started=Date.now()-t0;try{const r=await fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{method:'POST',headers:{authorization:'Bearer ${agent}','content-type':'application/json'},body:JSON.stringify({amount:20000,currency:'INR',description:'load',reference_id:'load-'+started+'-'+Math.random()}),signal:AbortSignal.timeout(2500)});if(r.status===200||r.status===201)ok++;else if(r.status===403||r.status===503)refused++;else other++;await r.arrayBuffer()}catch(e){unreachable++}await new Promise(r=>setTimeout(r,80))}
+(async()=>{while(Date.now()-t0<24000){const started=Date.now()-t0;try{const r=await fetch('http://g-glow-salon-razorpay:8080/v1/payment_links',{method:'POST',headers:{authorization:'Bearer ${agent}','content-type':'application/json'},body:JSON.stringify({amount:20000,currency:'INR',description:'load',reference_id:'${RAW_LOAD_REF}'+started+'-'+Math.random()}),signal:AbortSignal.timeout(2500)});if(r.status===200||r.status===201)ok++;else if(r.status===403||r.status===503)refused++;else other++;await r.arrayBuffer()}catch(e){unreachable++}await new Promise(r=>setTimeout(r,80))}
 console.log(JSON.stringify({ok,refused,unreachable,other}))})()`;
   const child = spawn("docker", ["compose", "-f", composeFile, "-f", testCompose, "--project-directory", join(SERVER, "generated"), "exec", "-T", rt, "node", "-e", load], { stdio: ["ignore", "pipe", "pipe"] });
   let out = ""; child.stdout.on("data", (c: Buffer) => { out += c.toString(); });
@@ -683,6 +691,130 @@ async function modelGuard() {
   const pinned = ask("gpt-4o-mini"); const other = ask("gpt-5-expensive");
   check("the model Guard lets the pinned model through with the server's key", pinned.startsWith("200"), pinned);
   check("and refuses any other model", other.startsWith("403"), other);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- B51: an agent someone else wrote
+//
+// The example agent (bundle/examples/own-agent/agent.js), run as a builder runs it: a separate program on this machine, outside every network of the bundle, calling its
+// Guards through Caddy's https://localhost:18443/g/<agent>/<service> addresses with the one credential `agent add` made. On Razorpay: an agent on the default UPI module
+// has no payment Guard, and the owner-marked desk that would take its UPI money is not served on a server yet (B71), so the held refund, the owner's approval and a
+// payment Guard's backup need a gateway. Then its record, its backup, the drill and `restore`, and a hostile container on the network its Guards share with Caddy.
+
+/** One call through Caddy, as the builder's agent makes it: the status and the start of the answer. The credential is an argument to curl, never in a line said. */
+function viaCaddy(method: string, path: string, credential?: string, body?: unknown): { status: string; body: string } {
+  const r = sh("curl", ["-sk", "-X", method, `https://localhost:18443${path}`, ...(credential ? ["-H", `authorization: Bearer ${credential}`] : []), "-H", "content-type: application/json", ...(body ? ["--data-binary", JSON.stringify(body)] : []), "-w", "\n%{http_code}", "--max-time", "20"]);
+  const lines = r.out.trimEnd().split("\n");
+  return { status: lines.at(-1) ?? "", body: lines.slice(0, -1).join("\n").slice(0, 200) };
+}
+
+async function ownAgent() {
+  say(`\n== an agent someone else wrote (B51): ${AGENT_NAME}, behind its own Guards ==`);
+  const ctx = ctxFor();
+  const customer = "+919811111190";
+  const st = () => control(AGENT_NAME, "/_standin/state");
+  const guards = ["razorpay", "whatsapp", "calendar"].map((k) => `g-${AGENT_NAME}-${k}`);
+  const opsAdmin = (svc: string, path: string) => JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", svc, "GET", path]).out.trim().split("\n").at(-1) ?? "{}");
+  // agent add (the function, not the command: the command prints the credential) and the shop's own keys, handed in under the names a shop's are
+  addAgent(SERVER, AGENT_NAME, { upstreams: "razorpay,whatsapp,calendar", deposit: "200", "refund-limit": "100", "owner-whatsapp": OWNER, "whatsapp-number-id": phoneOf(AGENT_INDEX), "calendar-id": calendarOf(AGENT_INDEX) }, (p) => readFileSync(p, "utf8"), new Date());
+  const inbox = join(SERVER, "secrets-inbox", AGENT_NAME); mkdirSync(inbox, { recursive: true });
+  const s = secretsOf(AGENT_INDEX);
+  for (const [n, v] of Object.entries({ razorpay_key: s.razorpay_key, whatsapp_token: s.whatsapp_token, whatsapp_app_secret: s.whatsapp_app_secret, whatsapp_verify_token: s.whatsapp_verify_token, "google_service_account.json": SA(AGENT_INDEX) })) writeFileSync(join(inbox, n), v);
+  const t0 = Date.now();
+  const deployed = await deployAgent(ctx, AGENT_NAME);
+  results.agentDeploySeconds = Math.round((Date.now() - t0) / 1000);
+  check("agent deploy: its three Guards start in the generated compose file and every tripwire passes on the running Guards", deployed.proven.passed === deployed.proven.of && deployed.proven.of > 0, deployed.proven.line);
+  await waitFor("the agent's Guards", () => guards.every(healthy), 120);
+  check("its Guards are (healthy), on the gate network with Caddy", guards.every(healthy) && dk(["network", "inspect", `${PROJECT}_gate`, "--format", "{{.Internal}}"]).out.trim() === "true", dc(["ps", "--format", "{{.Service}} {{.Status}}", ...guards]).out.trim().split("\n"));
+  const credential = readFileSync(secretFile(SERVER, "agents", AGENT_NAME, "agent_token"), "utf8").trim();
+
+  // ---- the agent's story, through Caddy: a deposit, a booking, a message, and a refund above the owner's limit
+  const caFile = join(SCRATCH, "caddy-root.crt");
+  viaCaddy("GET", `/g/${AGENT_NAME}/razorpay/v1/payment_links`); // Caddy makes its local certificates on the first handshake
+  writeFileSync(caFile, dc(["exec", "-T", "caddy", "cat", "/data/caddy/pki/authorities/local/root.crt"]).out);
+  await customerWrites(AGENT_NAME, customer, "hi"); // the customer wrote first, so a plain message can go back (WhatsApp's 24-hour window)
+  const base = `https://localhost:18443/g/${AGENT_NAME}`;
+  const child = spawn("node", [join(APP, "bundle/examples/own-agent/agent.js")], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, NODE_EXTRA_CA_CERTS: caFile, GEOMETER_RAZORPAY_URL: `${base}/razorpay`, GEOMETER_CALENDAR_URL: `${base}/calendar`, GEOMETER_WHATSAPP_URL: `${base}/whatsapp`, GEOMETER_CREDENTIAL: credential, CALENDAR_ID: calendarOf(AGENT_INDEX), PHONE_NUMBER_ID: phoneOf(AGENT_INDEX), CUSTOMER: customer, BOOKING: "pa-1", DEPOSIT_INR: "200" } });
+  let out = ""; child.stdout.on("data", (c: Buffer) => { out += c.toString(); }); child.stderr.on("data", (c: Buffer) => { out += c.toString(); });
+  const exited = new Promise<number>((resolve) => { const t = setTimeout(() => { child.kill(); resolve(-1); }, 420_000); child.on("close", (c) => { clearTimeout(t); resolve(c ?? -1); }); });
+  // the customer pays at Razorpay; the agent sees it by looking at its link (every 15 s)
+  let linkId: string | undefined;
+  await waitFor("the agent's deposit link at Razorpay", async () => { linkId = ((await st()).links ?? []).find((l: { id: string; status: string }) => l.status === "created")?.id; return !!linkId; }, 90);
+  if (linkId) await control(AGENT_NAME, "/_standin/razorpay/pay", { request_id: linkId });
+  // the relay finds the held refund at Guard and asks the owner on WhatsApp with a one-use code; the owner answers, as an owner does
+  let code: string | undefined;
+  const asked = async () => ((await st()).outbox ?? []).filter((m: { to: string; text: string }) => digits(m.to) === digits(OWNER) && /approve\s+[A-Z0-9]{6}/u.test(m.text));
+  await waitFor("the relay's question to the owner", async () => { const m = (await asked()).at(-1); code = m ? /approve\s+([A-Z0-9]{6})/u.exec(m.text)?.[1] : undefined; return !!code; }, 180);
+  const heldAt = ((await st()).refunds ?? []).length;
+  check("a refund above the owner's limit is HELD by its Guard (the agent was answered 202) and nothing is refunded while the owner has not answered", /Held for the owner/u.test(out) && heldAt === 0 && !!code, { refunds: heldAt, asked: code ? "a code was sent to the owner" : "no question to the owner", agentSaid: out.trim().split("\n").slice(-3) });
+  if (code) await customerWrites(AGENT_NAME, OWNER, `approve ${code}`);
+  const exit = await exited;
+  const refunds = ((await st()).refunds ?? []) as { id: string; amount: number }[];
+  const consumed = opsAdmin(guards[0], "/admin/approvals?state=consumed").body?.approvals?.length;
+  check("the owner's approval lets the agent's identical retry through once: one refund at Razorpay, one approval used, the owner asked once", exit === 0 && /Refunded once:/u.test(out) && refunds.length === 1 && consumed === 1 && (await asked()).length === 1, { exit, refunds: refunds.length, approvalsUsed: consumed, ownerAsked: (await asked()).length, agentSaid: out.trim().split("\n").slice(-2) });
+
+  // ---- its record: from what the Guards decided and what the services hold, through the real ops container
+  const rec = await recordAgent(ctx, AGENT_NAME);
+  const entries = (() => { try { return JSON.parse(readFileSync(join(SERVER, "exports", AGENT_NAME, "record.json"), "utf8")) as { action: string; outcome: string; refs: Record<string, string> }[]; } catch { return []; } })();
+  const n = (action: string, outcome: string) => entries.filter((e) => e.action === action && e.outcome === outcome).length;
+  const counts = { link: n("create_deposit_link", "confirmed"), deposit: n("record_deposit", "confirmed"), booking: n("confirm_booking", "confirmed"), held: n("refund", "held_for_owner"), approved: entries.filter((e) => e.action === "owner_decision" && e.refs?.command === "approve").length, refund: n("refund", "confirmed"), messages: n("send_message", "confirmed") };
+  check("its record is built from its Guards' decisions and the services' own state: the link, the deposit, the booking, the hold, the owner's approval and the refund Razorpay holds", counts.link === 1 && counts.deposit === 1 && counts.booking === 1 && counts.held === 1 && counts.approved === 1 && counts.refund === 1 && counts.messages >= 2 && entries.find((e) => e.action === "refund" && e.outcome === "confirmed")?.refs?.refundId === refunds[0]?.id, { ...counts, entries: entries.length, problems: rec.problems });
+  check("and no phone number is in it", entries.length > 0 && !JSON.stringify(entries).includes(digits(customer)) && !JSON.stringify(entries).includes(digits(OWNER)), "");
+
+  // ---- a hostile agent container: on the network its Guards share with Caddy, it reaches its own Guards' agent ports and nothing else
+  const targets: [string, string, number, boolean][] = [
+    ...guards.map((g): [string, string, number, boolean] => [`its own ${g.split("-").at(-1)} Guard's agent port`, g, 8080, true]),
+    ["its razorpay Guard's admin port (loopback only)", guards[0], 8082, false],
+    ["its razorpay Guard's admin forwarder, by name", guards[0], 8190, false],
+    [`its razorpay Guard's admin forwarder at ${adminIpOf(guards[0])}`, adminIpOf(guards[0]), 8190, false],
+    ["the shop's razorpay Guard, by name", "g-glow-salon-razorpay", 8080, false],
+    [`the shop's razorpay Guard at ${adminIpOf("g-glow-salon-razorpay")}`, adminIpOf("g-glow-salon-razorpay"), 8080, false],
+    ["the shop's runtime", "rt-glow-salon", 8780, false],
+    ["the model Guard", "g-model", 8080, false],
+    ["the inbox", "inbox", 8788, false], ["the relay", "relay", 8795, false], ["ops", "ops", 80, false],
+    ["MinIO (the bucket)", "minio", 9000, false], ["the stand-in providers", "standins", 8790, false],
+    ["a public address, 1.1.1.1:443", "1.1.1.1", 443, false], ["fleet on the host, host.docker.internal:18790", "host.docker.internal", 18790, false],
+  ];
+  const script = `const net=require('net');const t=${JSON.stringify(targets.map(([, h, p]) => [h, p]))};(async()=>{const r=[];for(const [h,p] of t){r.push(await new Promise((ok)=>{if(!h)return ok('DID-NOT-RUN');const s=net.connect({host:h,port:p,timeout:3000});s.on('connect',()=>{s.destroy();ok('REACHED')});s.on('timeout',()=>{s.destroy();ok('TIMEOUT')});s.on('error',(e)=>ok('ERR '+e.code))}))}console.log(JSON.stringify(r))})()`;
+  const hostile = dk(["run", "--rm", "--name", `${PROJECT}-hostile-agent`, "--network", `${PROJECT}_gate`, "--cap-drop", "ALL", "--read-only", "node:26-alpine", "node", "-e", script], { timeout: 240_000 });
+  const got = (() => { try { return JSON.parse(hostile.out.trim().split("\n").at(-1) ?? "[]") as string[]; } catch { return [] as string[]; } })();
+  targets.forEach(([label, , , reach], i) => { const r = got[i] ?? `DID-NOT-RUN (${hostile.err.trim().slice(0, 80)})`; check(`hostile agent container on the gate network: ${label} -> ${r}`, reach ? r === "REACHED" : UNREACHABLE.test(r), r); });
+  // and through Caddy, from outside, as the agent itself calls: its credential opens its own Guards' routes, within its limits, and nothing else
+  const noKey = viaCaddy("GET", `/g/${AGENT_NAME}/razorpay/v1/payment_links`);
+  const adminPath = viaCaddy("GET", `/g/${AGENT_NAME}/razorpay/admin/status`, credential);
+  const shopsGuard = viaCaddy("GET", "/g/glow-salon/razorpay/v1/payment_links", credential);
+  const notDeposit = viaCaddy("POST", `/g/${AGENT_NAME}/razorpay/v1/payment_links`, credential, { amount: 99900, currency: "INR", reference_id: "pa-x", description: "not the deposit" });
+  const otherNumber = viaCaddy("POST", `/g/${AGENT_NAME}/whatsapp/v26.0/${phoneOf(1)}/messages`, credential, { messaging_product: "whatsapp", to: digits(customer), type: "text", text: { body: "from another number" } });
+  const shopKey = viaCaddy("GET", `/g/${AGENT_NAME}/razorpay/v1/payment_links`, readSecret("rt-glow-salon", "agent_razorpay"));
+  check("through Caddy: no credential is refused at its Guard", /^40[13]$/u.test(noKey.status), noKey);
+  check("through Caddy: its credential does not open a Guard's admin API (only the agent port is behind /g/)", adminPath.status !== "200" || !/tripwires|kill_switch/u.test(adminPath.body), adminPath);
+  check("through Caddy: a shop's Guards are not served under /g/ at all", !/^2\d\d$/u.test(shopsGuard.status) && !/payment_links|items/u.test(shopsGuard.body), shopsGuard);
+  check("through Caddy: a payment link that is not the deposit, and a message from another shop's number, are refused by its Guards (403)", notDeposit.status === "403" && otherNumber.status === "403", { link: notDeposit.status, message: otherNumber.status });
+  check("through Caddy: a shop runtime's credential opens nothing at the agent's Guard", /^40[13]$/u.test(shopKey.status), shopKey.status);
+
+  // ---- its backup: the nightly snapshot, the drill without the key, and `restore`
+  const snap = await runBackup(ctx); snap.lines.forEach(say);
+  const line = snap.lines.find((l) => l.startsWith(`${AGENT_NAME}:`)) ?? "";
+  const lastSeq = Number(/record at entry #(\d+)/u.exec(line)?.[1] ?? NaN);
+  check("the nightly snapshot holds the agent: its record and each Guard's store, 5 objects", /snapshot \S+ written \(5 objects/u.test(line), line);
+  const dir = join(SCRATCH, "minio", "geo-snaps", "proof", AGENT_NAME);
+  const files = sh("find", [dir, "-type", "f", "-not", "-name", "xl.meta.tmp"]).out.trim().split("\n").filter(Boolean).length;
+  const grep = (pattern: string) => Number(sh("sh", ["-c", `grep -rlaF "${pattern}" "${dir}" | wc -l`]).out.trim());
+  check("every object of it in the bucket is an age file; none holds the record or a Guard's store readable", files > 0 && grep("age-encryption.org/v1") >= 5 && grep("create_deposit_link") === 0 && grep("SQLite format 3") === 0, { files, ageFiles: grep("age-encryption.org/v1") });
+  const drill = await runDrill(ctx); drill.lines.forEach(say);
+  const dl = drill.lines.find((l) => l.startsWith(`${AGENT_NAME}:`)) ?? "";
+  check("the weekly drill, without the key: the agent's objects read back unchanged, its record the start of the live one, the key in its manifest the one in use", /restore drill passed/u.test(dl) && /its manifest holds the fingerprint key this server uses/u.test(dl), dl);
+  let said = "";
+  try { said = await restoreAgent(ctx, AGENT_NAME, { identity: join(SCRATCH, "age-identity.txt") }); } catch (e) { said = `FAILED: ${(e as Error).message}`; }
+  say(said);
+  check("restore <agent> tries each Guard's backup first, then puts back its Guards' stores, its record and its key, and says what a restore loses", /is restored from the snapshot of/u.test(said) && /calendar, razorpay, whatsapp Guards' stores|razorpay, whatsapp, calendar Guards' stores/u.test(said) && /calls the agent made after it are not in the Guards or the record/u.test(said), said.slice(0, 300));
+  await waitFor("the agent's Guards after the restore", () => guards.every(healthy), 120);
+  const record = (() => { try { return JSON.parse(readFileSync(join(SERVER, "state", "records", `${AGENT_NAME}.json`), "utf8")) as { entries: { action: string }[] }; } catch { return { entries: [] }; } })();
+  const reviews = nodeEval("relay", `fetch('http://${adminIpOf(guards[0])}:8190/admin/reviews',{headers:{authorization:'Bearer ${readSecret("relay", `${AGENT_NAME}/read_token`)}'}}).then(r=>console.log(r.status))`).out.trim();
+  check("after it: its Guards are (healthy), the approval the owner gave is in the restored store, the relay's renewed credential reads its Guard, and the record ends with a 'restored' entry after the snapshot's", guards.every(healthy) && opsAdmin(guards[0], "/admin/approvals?state=consumed").body?.approvals?.length === 1 && reviews === "200" && record.entries.length === lastSeq + 1 && record.entries.at(-1)?.action === "restored", { healthy: guards.every(healthy), reviews, entries: record.entries.length, snapshotAt: lastSeq });
+  const again = await recordAgent(ctx, AGENT_NAME);
+  const after = (() => { try { return JSON.parse(readFileSync(join(SERVER, "exports", AGENT_NAME, "record.json"), "utf8")) as { action: string; outcome: string }[]; } catch { return []; } })();
+  check("the next record pass after the restore writes nothing twice (one refund, one deposit)", after.filter((e) => e.action === "refund" && e.outcome === "confirmed").length === 1 && after.filter((e) => e.action === "record_deposit").length === 1, { added: again.added, problems: again.problems });
+  results.ownAgent = { deploySeconds: results.agentDeploySeconds, proven: deployed.proven.line, record: counts, hostile: Object.fromEntries(targets.map(([label], i) => [label, got[i]])), snapshot: line, drill: dl, restore: said.slice(0, 600) }; save();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- B14, through the runtime
@@ -1016,7 +1148,8 @@ async function guardOutage() {
     const twice = repeated(after);
     const failedAfter = tasksOf(shop)?.failed ?? -1;
     // each payment's work done once: every paid link's booking is confirmed in the calendar, by exactly one event (the provider's own records, not the runtime's word)
-    const paidRefs = ((after.links ?? []) as { reference_id: string; status: string }[]).filter((l) => l.status === "paid").map((l) => l.reference_id);
+    // Only links that belong to a booking: the kill phase's raw Guard calls (RAW_LOAD_REF) make links with no booking behind them, by design, and the drive()'s payer pays any open link, those too; booking ids are "b-N", so the prefix cannot match a booking's link.
+    const paidRefs = ((after.links ?? []) as { reference_id: string; status: string }[]).filter((l) => l.status === "paid" && !l.reference_id.startsWith(RAW_LOAD_REF)).map((l) => l.reference_id);
     const confirmedBy = ((after.calendar ?? []) as { bookingRef?: string; status?: string }[]).filter((e) => e.status === "confirmed").reduce<Record<string, number>>((m, e) => { const k = e.bookingRef ?? "?"; m[k] = (m[k] ?? 0) + 1; return m; }, {});
     const notConfirmedOnce = paidRefs.filter((r) => confirmedBy[r] !== 1);
     out[kind] = { downSeconds: Math.round((downTo - downFrom) / 1000), sent: load.sent.length, delivered, answered: answers.answered, longestWaitSeconds: Math.round((answers.waits.at(-1) ?? 0) / 1000), providerAtKill: atKill, providerBeforeRestart: beforeRestart, pendingWhileDown, failedTasksDuring: failedAfter - failedBefore, runtimeRestartedWhileDown: backUp, paidLinks: paidRefs.length, paidNotConfirmedOnce: notConfirmedOnce, twice };

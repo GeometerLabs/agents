@@ -2,8 +2,14 @@
 // shops apart by the same values (each shop's Guards add that shop's own Razorpay key, WhatsApp token and Google token), so each shop has stand-ins of its own,
 // as each real shop has its own Razorpay account, WhatsApp number and calendar. Test values only: no real account is behind any of them.
 
-export const shopName = (i: number): string => (i === 1 ? "glow-salon" : `shop-${String(i).padStart(2, "0")}`);
-export const shopIndex = (name: string): number | undefined => (name === "glow-salon" ? 1 : /^shop-(\d{2})$/u.exec(name) ? Number(name.slice(5)) : undefined);
+/**
+ * The proof's agent someone else wrote (B51): number 90, a number no proof shop reaches. It is told apart by the same values as a shop, so the stand-ins give it a set
+ * of its own (its webhooks to /c/proof-agent) and its Guards' keys name it, with nothing changed in standins.ts.
+ */
+export const AGENT_INDEX = 90;
+export const AGENT_NAME = "proof-agent";
+export const shopName = (i: number): string => (i === 1 ? "glow-salon" : i === AGENT_INDEX ? AGENT_NAME : `shop-${String(i).padStart(2, "0")}`);
+export const shopIndex = (name: string): number | undefined => (name === "glow-salon" ? 1 : name === AGENT_NAME ? AGENT_INDEX : /^shop-(\d{2})$/u.exec(name) ? Number(name.slice(5)) : undefined);
 export const phoneOf = (i: number): string => `10000000000${String(i).padStart(4, "0")}`;
 export const calendarOf = (i: number): string => `${shopName(i)}@group.calendar.google.com`;
 /** The owner's number in the example settings every proof shop is made from. */

@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { generateIdentity } from "../backup/age.ts";
 import { fetchSnapshot } from "../backup/restore-snapshot.ts";
 import { drillShop } from "../backup/drill-check.ts";
-import { snapshotShop } from "../backup/snapshot.ts";
+import { snapshotAgent, snapshotShop } from "../backup/snapshot.ts";
 import { s3Store } from "../backup/store.ts";
 import { openStore } from "../../templates/commerce/bookings/server/store.ts";
 
@@ -64,18 +64,33 @@ function shopFiles(dir: string, records: number, segments: number, guards: strin
   return { runtimeDb: join(dir, "rt", "agent.db"), get guards() { return write(); } };
 }
 
+/** An agent someone else wrote (B51): its record file as the deployer writes it (state/records/<agent>.json), with this many entries, and the same Guard folders. */
+function agentFiles(dir: string, records: number, segments: number, guards: string[]): { recordFile: string; guards: { kind: string; dir: string }[] } {
+  const entries = Array.from({ length: records }, (_, k) => ({ seq: k + 1, time: "2026-11-04T10:00:00.000Z", conversation: "agent", booking: `b-${k % 400}`, action: "send_message", inputsDigest: "d", outcome: "confirmed", decisions: [], language: "en", notes: "", refs: {} }));
+  mkdirSync(join(dir, "records"), { recursive: true });
+  const recordFile = join(dir, "records", "my-agent.json");
+  writeFileSync(recordFile, `${JSON.stringify({ schema: 1, entries, seen: Object.fromEntries(entries.map((e) => [`d-${e.seq}`, { seq: e.seq, outcome: e.outcome }])), marks: {} })}\n`);
+  const shop = shopFiles(join(dir, "g"), 0, segments, guards);
+  return { recordFile, get guards() { return shop.guards; } };
+}
+
 const stampOf = (day: number) => new Date(Date.UTC(2026, 9, 1 + day, 1, 30)).toISOString().replace(/[-:]|\.\d{3}/gu, "");
 
-async function nights(records: number, segments: number, guards: string[], n: number, createOnly = false): Promise<Counts[]> {
+/** `agent`: the nights of an agent someone else wrote (its record file in place of the runtime's database), through the same code. */
+async function nights(records: number, segments: number, guards: string[], n: number, createOnly = false, agent = false): Promise<Counts[]> {
   const dir = mkdtempSync(join(tmpdir(), "geo-cost-"));
   try {
     const files = shopFiles(dir, records, segments, guards);
+    const own = agent ? agentFiles(join(dir, "agent"), records, segments, guards) : undefined;
     const bucket = countingBucket(createOnly);
     const recipient = generateIdentity().recipient;
     const per: Counts[] = [];
     for (let day = 0; day < n; day++) {
       const before = { ...bucket.counts };
-      const r = await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, { stamp: stampOf(day), keepDays: 30, recipient, target: { url: "s3://snaps" }, shops: [] }, bucket.store, join(dir, "scratch"));
+      const job = { stamp: stampOf(day), keepDays: 30, recipient, target: { url: "s3://snaps" }, shops: [] };
+      const r = own
+        ? await snapshotAgent({ name: "my-agent", recordFile: own.recordFile, guards: own.guards }, job, bucket.store)
+        : await snapshotShop({ name: "glow-salon", runtimeDb: files.runtimeDb, guards: files.guards }, job, bucket.store, join(dir, "scratch"));
       assert.equal(r.ok, true, r.error);
       if (createOnly) assert.match(r.pruneError ?? "", /403/, "a key that may not list: pruning is left to the bucket, the night is not a failure");
       else assert.equal(r.pruneError, undefined, r.pruneError);
@@ -101,6 +116,16 @@ test("one night's bucket requests per shop are a fixed constant times its databa
   const createOnly = await nights(3000, 40, guards, 35, true);
   assert.deepEqual(createOnly, await nights(0, 1, guards, 35, true), "the shop's size changes nothing here either");
   createOnly.forEach((c, day) => assert.deepEqual(c, expected(guards.length, false), `night ${day}`));
+});
+
+test("an agent someone else wrote costs the same constant a night: its record file is one object in place of the runtime's, whatever it holds, for 35 nights", async () => {
+  const guards = ["razorpay", "whatsapp", "calendar"];
+  const empty = await nights(0, 1, guards, 35, false, true);
+  const busy = await nights(3000, 40, guards, 35, false, true);
+  assert.deepEqual(busy, empty, "the record's size changes nothing");
+  empty.forEach((c, day) => assert.deepEqual(c, expected(guards.length, day > 30), `night ${day}`));
+  // and a create-only key: the same writes, one refused LIST, no DELETE
+  (await nights(3000, 40, guards, 35, true, true)).forEach((c, day) => assert.deepEqual(c, expected(guards.length, false), `night ${day}`));
 });
 
 test("the weekly drill reads back each object of the newest snapshot once, by the keys in its seal (no LIST), and `restore` one LIST and two GETs, whatever the shop holds", async () => {
