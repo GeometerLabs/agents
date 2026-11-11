@@ -10,7 +10,7 @@
 //   secrets/agents/<name>/agent_token      an agent added before 12 Nov 2026 had ONE credential for all its Guards. Each Guard's file starts as a copy of it, so the agent
 //                                          keeps working through the deploy that brings this in, and credentials.env keeps GEOMETER_CREDENTIAL while every Guard still
 //                                          shares it. `agent rotate` gives each Guard its own; the old file is deleted once no Guard uses it.
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { agentBaseUrl } from "../generate/compose.ts";
 import type { GuardKind } from "../generate/guards.ts";
@@ -18,7 +18,7 @@ import { readSecretFile, secretFile, writeSecretFile } from "../lib/secrets.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { mintGuardToken, sha256Hex, writeAtomic } from "../lib/util.ts";
 
-/** The folder that holds an agent's credentials (never mounted into any container: only the deployer and the agent's own user read it). */
+/** The folder that holds an agent's credentials (never mounted into any container: only the deployer and the agent's own user read it). `agent remove` deletes it whole. */
 export const credentialsFolder = (dir: string, name: string): string => secretFile(dir, "agents", name);
 /** One Guard's credential file. */
 export const credentialFile = (dir: string, name: string, kind: string): string => secretFile(dir, "agents", name, `${kind}_token`);
@@ -91,12 +91,6 @@ export function dropUnusedLegacyCredential(dir: string, name: string, tokens: Re
   if (legacy === undefined || Object.values(tokens).includes(legacy)) return false;
   rmSync(legacyCredentialFile(dir, name), { force: true });
   return true;
-}
-
-/** Every credential file the bundle made for the agent itself (the per-Guard ones, the shared one, credentials.env), for `agent remove` to delete. */
-export function agentCredentialPaths(dir: string, name: string): string[] {
-  const folder = credentialsFolder(dir, name);
-  return existsSync(folder) ? [folder] : [];
 }
 
 /**
