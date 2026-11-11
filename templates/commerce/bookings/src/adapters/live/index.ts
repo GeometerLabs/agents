@@ -11,7 +11,8 @@ import { createGoogleCalendar } from "./google-calendar.ts";
 import { noGateway } from "../../../../../../modules/payments/owner-marked/ledger.ts";
 import { gatewayAdapter } from "../../../../../../modules/payments/providers/runtime.ts";
 import type { PaymentSettings } from "../../../../../../modules/payments/providers/index.ts";
-import { createWhatsAppMessaging } from "../../../../../../modules/messaging/whatsapp.ts";
+import { createLiveMessaging } from "../../../../../../modules/messaging/providers.ts";
+import type { MessagingProvider } from "../../../../../../modules/messaging/providers.ts";
 import type { WindowStore } from "../../../../../../modules/messaging/whatsapp.ts";
 
 export type { WindowStore } from "../../../../../../modules/messaging/whatsapp.ts";
@@ -20,7 +21,7 @@ export interface LiveServices {
   // Each Guard may ask the agent for its own credential (`agentToken`: what Guard calls the agent's token, never a service key).
   payments?: { baseUrl: string; agentToken?: string }; // Guard in front of the shop's gateway; left out for a shop with none (UPI, B33/B71)
   calendar: { baseUrl: string; calendarId: string; agentToken?: string }; // Guard in front of Google Calendar
-  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string }; // Guard in front of the WhatsApp provider
+  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: MessagingProvider; appId?: string }; // Guard in front of the WhatsApp provider (Meta unless runtime.json names another)
   /** How long to wait for any one reply before treating it as lost. Default 10 seconds. */
   timeoutMs?: number;
 }
@@ -31,6 +32,6 @@ export function createLiveAdapters(services: LiveServices, deps: { clock: Clock;
     // a UPI shop has no payment service: the agent keeps its own ledger of the owner's marks, and any call here would be a mistake, said plainly
     payments: services.payments ? gatewayAdapter(deps.payment, { baseUrl: services.payments.baseUrl, agentToken: services.payments.agentToken, timeoutMs }) : noGateway,
     calendar: createGoogleCalendar({ baseUrl: services.calendar.baseUrl, calendarId: services.calendar.calendarId, agentToken: services.calendar.agentToken, timeoutMs }),
-    messaging: createWhatsAppMessaging({ baseUrl: services.messaging.baseUrl, phoneNumberId: services.messaging.phoneNumberId, agentToken: services.messaging.agentToken, timeoutMs }, deps),
+    messaging: createLiveMessaging({ ...services.messaging, timeoutMs }, deps), // the provider runtime.json names (modules/messaging/providers.ts)
   };
 }

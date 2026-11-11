@@ -20,7 +20,7 @@ export interface LiveModule {
 export type LiveServices = {
   payments: { baseUrl: string; agentToken?: string };
   calendar: { baseUrl: string; calendarId: string; agentToken?: string };
-  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string };
+  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: "meta" | "gupshup"; appId?: string }; // provider: modules/messaging/providers.ts
   timeoutMs?: number;
 };
 

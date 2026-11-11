@@ -12,6 +12,7 @@ import { licenceNow, parseLicenceFile } from "../licence/rules.ts";
 import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
 import type { Language } from "../language/languages.ts";
 import { DEFAULT_PORT } from "./http.ts";
+import { messagingConfigProblem } from "../messaging/providers.ts";
 
 /**
  * One service a template calls, as runtime.json names it. Each base URL is a Guard instance in front of that service. `agentTokenFile`: a file holding the credential THIS
@@ -25,10 +26,12 @@ export interface ServiceConfig { baseUrl: string; agentTokenFile?: string; [extr
  * "upi"}, plan B33) has none (no Razorpay account, no Razorpay Guard), so runtime.json may leave it out; `loadClientFolder`, which reads the settings too, still asks
  * a Razorpay shop for it.
  */
-export type ServiceShape = readonly { name: string; extra?: string; payment?: true }[];
+export type ServiceShape = readonly { name: string; extra?: string; payment?: true; /** Fields the service may also have, checked by `check`. */ optional?: readonly string[]; check?: (raw: Record<string, unknown>) => string | null }[];
 
-export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId" }, { name: "messaging", extra: "phoneNumberId" }];
-export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "messaging", extra: "phoneNumberId" }];
+/** WhatsApp: the number's id always; `provider` and `appId` only to choose a provider other than Meta direct (modules/messaging/providers.ts). */
+const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId"], check: messagingConfigProblem } as const;
+export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId" }, MESSAGING_SERVICE];
+export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */
 export type LiveServicesConfig = { [service: string]: ServiceConfig | number | undefined } & { timeoutMs?: number };
@@ -138,9 +141,11 @@ function unknownKeys(obj: Obj, allowed: string[], where: string, errors: string[
   for (const key of Object.keys(obj)) if (!allowed.includes(key)) errors.push(`I don't know what "${key}" means in ${where}. Allowed: ${allowed.join(", ")}.`);
 }
 
-function readService(raw: unknown, name: string, extra: string | undefined, errors: string[]): Obj | undefined {
+function readService(raw: unknown, name: string, extra: string | undefined, errors: string[], more: Pick<ServiceShape[number], "optional" | "check"> = {}): Obj | undefined {
   if (!isObj(raw)) { errors.push(`In "services", add "${name}" with its "baseUrl"${extra ? ` and "${extra}"` : ""}.`); return undefined; }
-  unknownKeys(raw, extra ? ["baseUrl", extra, "agentTokenFile"] : ["baseUrl", "agentTokenFile"], `services.${name}`, errors);
+  unknownKeys(raw, [...(extra ? ["baseUrl", extra, "agentTokenFile"] : ["baseUrl", "agentTokenFile"]), ...(more.optional ?? [])], `services.${name}`, errors);
+  const problem = more.check?.(raw);
+  if (problem) errors.push(problem);
   if (raw.agentTokenFile !== undefined && !isText(raw.agentTokenFile)) errors.push(`services.${name}.agentTokenFile must be the path of a file that holds this agent's credential for that Guard.`);
   if (!isText(raw.baseUrl) || !/^https?:\/\/\S+$/.test(raw.baseUrl)) errors.push(`services.${name}.baseUrl must be the address of the Guard in front of ${name}, starting with http:// or https://.`);
   if (extra && !isText(raw[extra])) errors.push(`services.${name}.${extra} is missing.`);
@@ -278,7 +283,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
       unknownKeys(s, [...names, "timeoutMs"], "services", errors);
       // the payment service may be left out (a UPI shop has none); everything else is needed
       const present = shape.filter((x) => !(x.payment && s[x.name] === undefined));
-      const read = present.map((x) => readService(s[x.name], x.name, x.extra, errors));
+      const read = present.map((x) => readService(s[x.name], x.name, x.extra, errors, x));
       if (s.timeoutMs !== undefined && (!Number.isInteger(s.timeoutMs) || (s.timeoutMs as number) < 1)) errors.push("services.timeoutMs must be a whole number of milliseconds.");
       const where = (o: Obj | undefined) => (o && isText(o.agentTokenFile) ? { ...o, agentTokenFile: isAbsolute(o.agentTokenFile) ? o.agentTokenFile : resolve(folder, o.agentTokenFile) } : o);
       if (read.every((x) => x !== undefined)) services = { ...Object.fromEntries(present.map((x, i) => [x.name, where(read[i])])), ...(s.timeoutMs !== undefined ? { timeoutMs: s.timeoutMs as number } : {}) } as unknown as LiveServicesConfig;
