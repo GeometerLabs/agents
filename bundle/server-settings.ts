@@ -11,27 +11,20 @@
 // A server with no shop yet then has its own services brought up again (`up`), so the panel sees what changed (the address calendars are shared with).
 //
 // What it will not do: change the model of a server that already runs shops (every shop's runtime names the model; that is a deploy's job, not yet built:
-// Deferred.md), or accept a model the builder hosts (B73's `model.selfHosted`) from a bundle that cannot run one, which would send that model's key to OpenAI.
+// Deferred.md). A model the builder hosts (B73's `model.selfHosted`, with its optional `rate`) and another provider's `model.provider` are written in exactly
+// the shape lib/server.ts `parseServer` checks, and only when that whole check passes (writeConfig).
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
 import type { Context } from "./deploy.ts";
 import { compose, composeFile, upServer } from "./deploy.ts";
 import { storeFor } from "./backup/snapshot.ts";
-import * as serverLib from "./lib/server.ts";
 import { loadServer, modelChosen, parseServer } from "./lib/server.ts";
 import { INTAKE, readSecretFile, secretFile, writeModelKey, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { stableJson, writeAtomic } from "./lib/util.ts";
 import { backupChoiceProblems, modelChoiceProblems, parseBackupRequest, parseModelRequest, parseServerStatus, serverKeyShapeOk, serverSettingsPaths } from "./panel/server-contract.ts";
 import type { BackupChoice, ModelChoice, Outcome, ServerSecretName, ServerStatus } from "./panel/server-contract.ts";
-
-/**
- * Can this bundle run a model the builder hosts? B73 (agents branch model-gateway-11nov) adds `selfHostedTarget` to lib/server.ts; until it is merged here, a
- * `model.selfHosted` in geometer.json would be ignored and the model Guard would send the builder's own key to api.openai.com. So the request is refused until then.
- * Once B73 is merged this is always true, and the check can go (Deferred.md).
- */
-const SELF_HOSTED_RUNS = typeof (serverLib as Record<string, unknown>).selfHostedTarget === "function";
 
 const nowIso = (ctx: Context) => ctx.now().toISOString();
 const readText = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, "utf8") : undefined);
@@ -59,7 +52,6 @@ export async function applyServerSettings(ctx: Context): Promise<string[]> {
       const server = loadServer(ctx.dir);
       const same = stableJson(server.model) === stableJson(cleanModel(req.model));
       if (problems.length > 0) result = outcome("refused", problems.map((x) => x.message).join(" "));
-      else if (req.model.selfHosted && !SELF_HOSTED_RUNS) result = outcome("refused", "This server's bundle cannot run a model you host yet (its model Guard would send your model's key to OpenAI). Update the bundle to a release with B73, then choose it again.");
       else if (deployed.length > 0 && modelChosen(server) && !same) result = outcome("refused", `This server already runs ${deployed.join(", ")}, and each shop's agent names the model it was deployed with. Changing the model of a running server is not built yet; it stays ${server.model.model}.`);
       else {
         const written = writeConfig(ctx.dir, (raw) => { raw.model = cleanModel(req.model); });

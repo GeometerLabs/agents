@@ -64,8 +64,8 @@ export interface SelfHostedModel {
   rate?: BuilderRate;
 }
 
-/** Private IPv4 ranges (RFC 1918): the only places a self-hosted model may be reached over plain http, so its key never crosses the internet unencrypted. */
-const PRIVATE_IPV4 = /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/u;
+/** Private IPv4 ranges (RFC 1918): the only places a self-hosted model may be reached over plain http, so its key never crosses the internet unencrypted. The panel's model form checks with the same pattern. */
+export const PRIVATE_IPV4 = /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/u;
 
 /** Where the model Guard sends a self-hosted model's calls: host:port, whether it talks TLS, and the chat-completions path. Undefined for a hosted provider. */
 export function selfHostedTarget(m: Pick<ModelConfig, "selfHosted">): { host: string; tls: boolean; path: string } | undefined {
