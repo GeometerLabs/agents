@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (36)
+## 1. Messages to the parent (37)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -48,6 +48,7 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ ₹1,200 ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
 | `fee_upi_refund_sent` | UPI centre: the owner marked the refund sent (only then is the parent told) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ (f-3) ನಿಮ್ಮ ₹1,200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹1,200 refund for Aarav Sharma's fee (f-3) as sent by UPI. Please check your UPI app. |  |
 | `fee_paused` | The centre's licence is in its wind-down: the answer to a parent who asks to pay. No link is made, nothing is kept for later | ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಪಾವತಿ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Bright Tuition Centre ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online fee payment is paused for now. Please contact Bright Tuition Centre directly. |  |
+| `fee_wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಶುಲ್ಕ ವ್ಯವಸ್ಥೆ ಈಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂದೇಶ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ ನೇರವಾಗಿ Bright Tuition Centre ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Sorry, I could not finish your request: the fee system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact Bright Tuition Centre directly. |  |
 
 ## 2. Messages to the owner (35)
 

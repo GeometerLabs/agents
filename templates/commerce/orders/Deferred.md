@@ -2,6 +2,7 @@
 
 - **Nothing has run against a real WhatsApp, Razorpay or UPI account.** No shop is live on Orders. Every number in this folder is from stand-in services.
 - **Native review.** The Hindi, Malayalam and Kannada messages, buttons, word lists, report words, sell guides and one-page sheets are machine-written. [REVIEW-hi.md](REVIEW-hi.md), [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list the messages; the guides and sheets carry a banner. Needed before a real shop sees them.
+- **Native review of `wait_over` (11 Nov).** The words a customer gets when the wait for a Guard runs out are machine-written in Hindi, Malayalam and Kannada; all three REVIEW sheets list them. Revisit when: a native reader is found (the same review as the rest).
 - **No stand-in server and no local stack** (Bookings and Fees have `standins/` and `scripts/local-stack.ts`), and no test of the relay against the real `geo-guard` binary. Add them when the first shop goes live.
 - **The balance at pickup or delivery.** Only the advance is tracked. The rest is paid in cash or by UPI at the door and the agent never learns whether it was.
 - **Fulfilment.** An order is completed when its slot ends. Whether the food was made, collected or delivered is not known. No delivery fee, no delivery tracking, no route.

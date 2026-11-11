@@ -24,7 +24,7 @@ Who runs it: the owner (or the partner they name) checks daily; the lead reads t
 4. Money against Razorpay's test dashboard: the day's deposits and refunds equal the record's `record_deposit` and `refund` confirmed entries. Any difference is a finding.
 5. WhatsApp: no message that arrived twice on a phone; every reply that should have gone, did; the sandbox number still working (a token or sandbox expiry shows here first; **check in the provider's console**).
 6. Guard's own logs (`geometer logs`): any restart you did not cause; the heartbeat and fleet's "Guard not ready" alert are quiet.
-7. The server: disk and memory (a note of the numbers each day, so growth shows: the runtime rewrites its whole saved state on every step, and this is the item that grows with the shop's age; write the size of the saved state each day).
+7. The server: disk and memory (a note of the numbers each day, so growth shows: the size of the runtime's saved state grows with the shop's age, though since layout 3 (11 Nov) a step writes only the rows it changed, so the daily disk writes should not grow with it; write the size of the saved state and the day's disk writes each day).
 8. One line in the log below.
 
 ## Daily log (copy a row a day)

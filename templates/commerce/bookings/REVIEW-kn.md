@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (54)
+## 1. Messages to the customer (55)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -66,6 +66,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_extra_refund_owed` | UPI shop: the owner marked more than the deposit; the extra goes back from the owner | ನೀವು ಮುಂಗಡ ಹಣಕ್ಕಿಂತ ಹೆಚ್ಚು ಕಳುಹಿಸಿದ್ದೀರಿ. ಹೆಚ್ಚುವರಿ ₹200 ಅನ್ನು ಮಾಲೀಕರು UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | You paid more than the deposit. The owner will send the extra ₹200 back to you by UPI, and I'll message you when they mark it sent. |  |
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ಬುಕಿಂಗ್ b-3 ರ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹200 refund for booking b-3 as sent by UPI. Please check your UPI app. |  |
 | `booking_paused` | The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later | ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Glow Salon ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online booking is paused for now. Please contact Glow Salon directly. |  |
+| `wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಬುಕಿಂಗ್ ವ್ಯವಸ್ಥೆ ಈಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂದೇಶ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ ನೇರವಾಗಿ Glow Salon ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Sorry, I could not finish your request: the booking system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact Glow Salon directly. |  |
 
 ## 2. Messages to the owner (35)
 

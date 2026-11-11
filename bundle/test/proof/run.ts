@@ -1328,9 +1328,12 @@ async function minioOps(): Promise<Record<string, number>> {
 const opsDelta = (a: Record<string, number>, b: Record<string, number>) => Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map((k) => [k, (b[k] ?? 0) - (a[k] ?? 0)]).filter(([, v]) => (v as number) > 0));
 const cores = (a?: CapReading, b?: CapReading) => (a && b ? +((b.cpuUsec - a.cpuUsec) / ((b.atMs - a.atMs) * 1000)).toFixed(3) : NaN);
 
-/** The size of the agent's saved state: every step writes all of it, so this is what a shop's disk writes grow with. */
+/**
+ * The size of the agent's saved state. Until layout 3 every step wrote all of it again; since then (modules/runtime/store.ts) a step writes only the rows it changed, so
+ * this is what the state holds, not what a step writes. Read from either layout: the pieces (shape and rows) or the old one-row table.
+ */
 function snapshotBytes(shop: string): number {
-  const r = dk(["run", "--rm", "--network", "none", "--user", "1000:1000", "-v", `${PROJECT}_rt-data-${shop}:/d`, "node:26-alpine", "node", "-e", "const {DatabaseSync}=require('node:sqlite');const db=new DatabaseSync('/d/data/agent.db',{readOnly:true});console.log(db.prepare('SELECT length(snapshot) AS n FROM state').get()?.n ?? 0)"], { timeout: 60_000 });
+  const r = dk(["run", "--rm", "--network", "none", "--user", "1000:1000", "-v", `${PROJECT}_rt-data-${shop}:/d`, "node:26-alpine", "node", "-e", "const {DatabaseSync}=require('node:sqlite');const db=new DatabaseSync('/d/data/agent.db',{readOnly:true});let n;try{n=db.prepare('SELECT coalesce((SELECT length(shape) FROM state_shape),0)+coalesce((SELECT sum(length(value)) FROM state_rows),0) AS n').get().n}catch{n=db.prepare('SELECT length(snapshot) AS n FROM state').get()?.n ?? 0}console.log(n)"], { timeout: 60_000 });
   return Number(r.out.trim().split("\n").at(-1) ?? NaN);
 }
 

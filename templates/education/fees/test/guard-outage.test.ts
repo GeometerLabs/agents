@@ -6,6 +6,8 @@ import { zonedToMs } from "../../../../modules/core/time.ts";
 import { GUARD_WAIT_MS } from "../../../../modules/runtime/guard-wait.ts";
 import { outage } from "../../../../modules/runtime/test/outage.ts";
 import { PARENT, createKit } from "./runtime-kit.ts";
+import { KIRAN_PARENT, ROHAN_PARENT, createWorld } from "../src/harness.ts";
+import { GUARD_WAIT_ENTRY } from "../../../../modules/unfinished/registry.ts";
 
 function outageKit() {
   const kit = createKit();
@@ -63,4 +65,15 @@ test("the WhatsApp Guard down when a parent writes: answered once when it is bac
     assert.equal(o.runtime.status().tasks.pending, 0, "the bound ends the wait");
     assert.equal(o.kit.messaging.outbox().length, before + 1, "and with WhatsApp down nothing reached the parent");
   } finally { await o.runtime.close(); o.kit.cleanup(); }
+});
+
+test("past the bound, a parent who heard nothing from the step is told it was not finished and where the message is, in their own language, and the owner's list gets one item", async () => {
+  // The agent's own end of the wait (the runtime calls it when the last try threw: modules/runtime/core.ts, endTask). Its words (11 Nov) promise nothing the code does not do.
+  const w = createWorld();
+  await w.agent.giveUp!({ kind: "message", message: w.messaging.receive(ROHAN_PARENT, "hello") }, { service: "payments", tell: true });
+  assert.equal(w.lastTextTo(ROHAN_PARENT), `Sorry, I could not finish your request: the fee system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${w.settings.name} directly.`);
+  await w.say("ನಮಸ್ಕಾರ", { from: KIRAN_PARENT });
+  await w.agent.giveUp!({ kind: "message", message: w.messaging.receive(KIRAN_PARENT, "ನಮಸ್ಕಾರ") }, { service: "payments", tell: true });
+  assert.match(w.lastTextTo(KIRAN_PARENT), /ಶುಲ್ಕ ವ್ಯವಸ್ಥೆ/u, "a Kannada parent hears it in Kannada");
+  assert.equal(w.record.entries().filter((e) => e.action === GUARD_WAIT_ENTRY).length, 2);
 });

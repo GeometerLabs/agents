@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (53)
+## 1. Messages to the customer (54)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -65,6 +65,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `upi_extra_refund_owed` | UPI shop: the owner marked more than the advance: the owner will send the extra back | आपने एडवांस से ज़्यादा पैसे भेजे हैं। मालिक ज़्यादा भेजे गए ₹120 UPI से वापस भेजेंगे, और जब वे इसे भेजा हुआ दर्ज करेंगे, मैं आपको संदेश भेजूँगा। | You paid more than the advance. The owner will send the extra ₹120 back to you by UPI, and I'll message you when they mark it sent. |  |
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | मालिक ने ऑर्डर o-3 का आपका ₹120 रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें। | The owner has marked your ₹120 refund for order o-3 as sent by UPI. Please check your UPI app. |  |
 | `orders_paused` | The shop's licence is in its wind-down: the answer to a customer who asks to order. No order, no link, nothing kept for later | ऑनलाइन ऑर्डर अभी रुके हुए हैं। कृपया सीधे Annapurna Tiffins से संपर्क करें। | Online ordering is paused for now. Please contact Annapurna Tiffins directly. |  |
+| `wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | माफ़ कीजिए, मैं आपका अनुरोध पूरा नहीं कर पाया: ऑर्डर सिस्टम अभी जवाब नहीं दे रहा है। आपका संदेश मालिक की काम की सूची में है। कृपया बाद में फिर लिखें, या सीधे Annapurna Tiffins से संपर्क करें। | Sorry, I could not finish your request: the ordering system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact Annapurna Tiffins directly. |  |
 
 ## 2. Messages to the owner (37)
 

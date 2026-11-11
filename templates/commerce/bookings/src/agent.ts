@@ -28,6 +28,7 @@
 // lease: Guard's offline check (`subscription_suspended`) is not built yet.
 import { checkConfirmOnlyWhenRecorded, checkMessageMatchesRecord, checkNoDoubleBooking, checkNoMessageAfterStop, checkOneDepositPerBooking, checkPriceAtOrAboveList, checkRefundLimit, checkWithinHours } from "./limits.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
+import type { BusyEvent } from "./limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
 import type { Booking, Pending, Store } from "./booking.ts";
 import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
@@ -38,6 +39,7 @@ import { ApiError, ConflictError, GuardSuspendedError, TimeoutError } from "../.
 import type { Calendar, CalendarEvent } from "./adapters/calendar.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
+import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { CandidateSlot, Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
 import { bookingsReading } from "./adapters/reading.ts";
@@ -219,6 +221,26 @@ export function createAgent(deps: AgentDeps): Agent {
   const OFFER_DAYS = 7; // free times are looked for a week ahead
   const OFFER_ROWS = 9; // a list holds ten rows, and the last is the row that reaches the owner
 
+  /** A calendar event as the double-booking limit reads it: a tentative event (a hold) stops blocking when its hold ends. */
+  const busyOf = (e: CalendarEvent): BusyEvent => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined });
+
+  /**
+   * The times the shop's own bookings hold, read from the bookings themselves (11 Nov, the last slot): the shop's own saved state is the authority for its holds, the way
+   * Orders works its stock out from its orders. The calendar is still read, for what others put there, but its list can lag a write, or miss a hold whose write did not
+   * land, and Google never refuses an overlapping event. One message is handled at a time (modules/runtime/tasks.ts), so this look and the hold a step makes are never
+   * split by another customer's step. Which bookings hold a time: one waiting for its deposit, until its hold ends (an unpaid hold expires by itself); one waiting for
+   * the owner (the deposit is in and the calendar would not confirm it) and a confirmed one, until they are cancelled or done. `exceptId`: the booking asking.
+   */
+  function heldByBookings(exceptId: string): BusyEvent[] {
+    const held: BusyEvent[] = [];
+    for (const x of store.bookings.values()) {
+      if (x.id === exceptId || x.startMs === undefined || x.endMs === undefined) continue;
+      if (x.state === "awaiting_deposit" && x.holdExpiresAt !== undefined) held.push({ start: x.startMs, end: x.endMs, bookingRef: x.id, tentativeUntil: x.holdExpiresAt });
+      else if (x.state === "needs_owner" || x.state === "confirmed") held.push({ start: x.startMs, end: x.endMs, bookingRef: x.id });
+    }
+    return held;
+  }
+
   /**
    * Up to nine start times the calendar shows free for this service in the next week, at most three a day (spread through the day), earliest first. Each is
    * on the shop's slot grid, inside its opening hours and clear of everything in the calendar, holds included: the same two rules a typed time must pass.
@@ -231,7 +253,8 @@ export function createAgent(deps: AgentDeps): Agent {
     const grid = settings.slotMinutes;
     let events: CalendarEvent[];
     try { events = await calendar.conflicts(now - settings.bufferMinutes * MINUTE, now + (OFFER_DAYS + 2) * 24 * HOUR + settings.bufferMinutes * MINUTE); } catch { return []; }
-    const others = events.map((e) => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined }));
+    // the shop's own holds as well as the calendar's, so the list never offers a time a booking here already holds (the same two sources as slotRules)
+    const others = [...events.map(busyOf), ...heldByBookings("")];
     const out: number[] = [];
     for (let day = 0; day < OFFER_DAYS && out.length < limit; day++) {
       const date = addDays(today, day);
@@ -567,17 +590,30 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- the booking flow ------------------------------------------------------------------------------------------
 
-  /** The two limits about WHEN: inside opening hours, and not on top of anything else in the calendar (holds included). */
+  /** The two limits about WHEN: inside opening hours, and not on top of anything else, in the calendar or held by the shop's own bookings (holds included). */
   async function slotRules(b: Booking, start: number, end: number): Promise<{ hours: Decision; clash: Decision }> {
     const buffer = settings.bufferMinutes * MINUTE;
     const nearby = await calendar.conflicts(start - buffer, end + buffer);
     return {
       hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start }),
-      clash: checkNoDoubleBooking({
-        startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(),
-        others: nearby.map((e) => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined })),
-      }),
+      clash: checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: [...nearby.map(busyOf), ...heldByBookings(b.id)] }),
     };
+  }
+
+  /**
+   * After this booking's hold is written to the calendar: did anyone else write an event on the same time in between? Google takes overlapping events without a word, so
+   * the calendar is read again and the same limit decides, counting only what is in the calendar now. A block means the time was taken meanwhile; null, that it was not.
+   * A read that fails says neither, and is answered as "not held" by the caller: a hold is only kept when the calendar was seen clear around it.
+   */
+  async function takenMeanwhile(b: Booking, start: number, end: number): Promise<{ clash: Decision | null } | { unread: string }> {
+    const buffer = settings.bufferMinutes * MINUTE;
+    let nearby: CalendarEvent[];
+    try { nearby = await calendar.conflicts(start - buffer, end + buffer); } catch (e) {
+      if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
+      return { unread: (e as Error).message };
+    }
+    const clash = checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: nearby.map(busyOf) });
+    return { clash: clash.verdict === "block" ? clash : null };
   }
 
   /** Check the limits for a slot, then hold it in the calendar. */
@@ -591,11 +627,26 @@ export function createAgent(deps: AgentDeps): Agent {
     if (hours.verdict === "block") { log(b, b.customer, "hold_slot", "blocked", { start }, { decisions }); return { ok: false, why: "outside_hours", decisions }; }
     if (clash.verdict === "block") { log(b, b.customer, "hold_slot", "blocked", { start }, { decisions }); return { ok: false, why: "unavailable", decisions }; }
 
+    // The hold is the booking's own: its time and its end, kept in the shop's saved state with the rest of this step. It is written before the calendar, and the calendar
+    // only follows it. The record shows both: this line for the shop's hold, the next for the calendar's.
     b.holdExpiresAt = clock.now() + settings.deposit.holdMinutes * MINUTE;
-    log(b, b.customer, "hold_slot", "attempted", { start, end }, { decisions });
+    log(b, b.customer, "hold_slot", "attempted", { start, end }, { decisions, notes: `held in the shop's own bookings until ${new Date(b.holdExpiresAt).toISOString()}, before the calendar is written; a hold that is not paid by then ends by itself` });
     const { event, error, conflict, suspended } = await ensureEvent(b, { start, end, status: "tentative" });
     if (event) {
       b.eventId = event.id;
+      const meanwhile = await takenMeanwhile(b, start, end);
+      if ("unread" in meanwhile || meanwhile.clash) {
+        // Not kept: someone else's event is on this time now, or the calendar could not be read again to say it is not. The calendar's hold is taken away again.
+        const taken = !("unread" in meanwhile);
+        log(b, b.customer, "hold_slot", taken ? "blocked" : "unconfirmed", { start, end }, {
+          ...(taken ? { decisions: [...decisions, meanwhile.clash!] } : {}),
+          refs: { eventId: event.id },
+          notes: taken ? "another event was written on this time in the calendar while it was being held: the hold is let go and the customer is offered another time" : `the calendar could not be read again after the hold was written (${meanwhile.unread}), so the hold is not kept`,
+        });
+        await releaseSlot(b, taken ? "another event took the time while it was being held" : "the calendar could not be read again after the hold was written");
+        b.holdExpiresAt = undefined;
+        return taken ? { ok: false, why: "unavailable", decisions: [...decisions, meanwhile.clash!] } : { ok: false, why: "failed", decisions };
+      }
       log(b, b.customer, "hold_slot", "confirmed", { start, end }, { refs: { eventId: event.id } });
       return { ok: true, decisions };
     }
@@ -1264,10 +1315,21 @@ export function createAgent(deps: AgentDeps): Agent {
     return onTick();
   }
 
-  /** `couldnt_tell_owner`: the words this template already has for "this could not be done just now", and they ask the customer to try again rather than promise anything. */
+  /**
+   * `wait_over` (11 Nov 2026): the request was not finished, the system is not answering just now, the message is on the owner's to-do list (the line written below,
+   * which the panel's list reads), and to write again later or contact the shop directly. Nothing else is promised, because nothing else happens: nobody is messaged
+   * and nothing is tried again by itself. Sent only when the customer heard nothing from this step (`why.tell`).
+   */
   async function giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void> {
     const phone = event.kind === "message" ? event.message.from : owner;
-    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["couldnt_tell_owner"]) : false;
+    if (event.kind === "message" && why.tell) {
+      // The step that would have noted a new customer's language was thrown away, so it is read again here from the message, by the rules alone (no model is asked);
+      // without it a first message would be answered in the shop's first language, whatever the customer wrote in. A language already on record is kept.
+      const customer = customerOf(phone);
+      const spoken = detectLanguage(event.message.text);
+      if (customer.language === undefined && spoken !== undefined && settings.languages.includes(spoken)) customer.language = spoken;
+    }
+    const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["wait_over"]) : false;
     const line = guardWaitLine(event, why, told);
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
