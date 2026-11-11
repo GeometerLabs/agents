@@ -25,8 +25,10 @@ export const TIGHTEN_ONLY: Readonly<Record<string, readonly LimitField[]>> = {
 export interface Change { path: string; value: number }
 export interface ChangeRow { path: string; label: string; from: unknown; to: unknown; verdict: "tighter" | "wider" | "not-a-limit-the-plugin-may-change" }
 
+// A fingerprint of the settings a draft started from; the panel compares it at confirmation to refuse a draft made against settings that have since changed.
 export const settingsDigest = (settings: unknown): string => createHash("sha256").update(canonicalJson(settings)).digest("hex");
 
+// Reads a dotted settings path ("limits.maxPerDay"); undefined when any step is missing, so a wrong path reads as "not there" rather than throwing.
 export function getPath(obj: unknown, path: string): unknown {
   let at: any = obj;
   for (const part of path.split(".")) { if (at === null || typeof at !== "object") return undefined; at = at[part]; }
