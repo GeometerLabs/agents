@@ -27,7 +27,8 @@
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
 //   agent add <name> [--settings F | --deposit N --refund-limit N --owner-whatsapp +91...] [--upstreams upi|razorpay|own-api,whatsapp,calendar] [--upi-id ID --payee "Name"]
 //                    [--gateway-draft D --gateway-accept A --gateway-upstream host:port] [--whatsapp-number-id ID] [--calendar-id ID] [caps...]
-//                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses and the one credential it must use instead
+//                                put Guard in front of the services an agent SOMEONE ELSE wrote calls (no hosting, no rebuild); prints the addresses it must use instead, and where its
+//                                credentials are (one per Guard, in secrets/agents/<name>/credentials.env; never printed)
 //   agent check|deploy|show <name>      the same checks and checked deploy as a shop's; show prints the addresses again and where the credentials are (never a credential)
 //   agent rotate <name> [--guard <kind>] [--overlap-minutes N]   a new credential for each Guard (or one), handed to the agent through secrets/agents/<name>/credentials.env;
 //                                the old one keeps working for 15 minutes (or N, 0 to 1440), then stops at the Guard. Nothing is printed.
@@ -561,6 +562,8 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
     console.log(`Added ${name}: Guard's limits are made from its settings (agents/${name}/settings.json), the same way a template's are.\n\n${connectionText(name, connectionOf(ctx.dir, server, folder))}\n\nNext: put the shop's own keys in secrets-inbox/${name}/, one file each (${keys.join(", ")}), then \`geometer agent check ${name}\` and \`geometer agent deploy ${name}\`.\nYour agent keeps working as it is; only these addresses and this credential change. A refund above the limit gets HTTP 202 until the owner approves on WhatsApp: send the refund with a "receipt", and send the identical call again after the 202 until it stops being held.`);
     return 0;
   }
+  // rotate and remove say themselves what is wrong with a name (remove also finishes an agent whose folder it already moved)
+  if ((MANAGE_SUBCOMMANDS as readonly string[]).includes(sub)) return await manageCommand(ctx, sub as (typeof MANAGE_SUBCOMMANDS)[number], name, values);
   if (!existsSync(serverPaths(ctx.dir).agent(name))) throw new Error(`There is no agent called ${name}. Add one with: geometer agent add ${name} --deposit 200 --refund-limit 200 --owner-whatsapp +919800000001 ...`);
   const server = loadServer(ctx.dir);
   if (sub === "check") {
@@ -580,7 +583,6 @@ export async function agentCommand(ctx: Context, sub: string | undefined, name: 
   }
   // --credential printed the shared credential before 12 Nov 2026; credentials are never printed now (agent/credentials.ts), so it says where they are instead
   if (sub === "show") { console.log(`${connectionText(name, connectionOf(ctx.dir, server, readAgent(ctx.dir, name)))}${values.credential === true ? "\nnote: --credential no longer prints anything: credentials are never printed. Your agent reads them from the file named above." : ""}`); return 0; }
-  if ((MANAGE_SUBCOMMANDS as readonly string[]).includes(sub)) return await manageCommand(ctx, sub as (typeof MANAGE_SUBCOMMANDS)[number], name, values);
   if ((CRASH_SUBCOMMANDS as readonly string[]).includes(sub)) return await crashCommand(ctx, sub as (typeof CRASH_SUBCOMMANDS)[number], name, values);
   if (sub === "record") {
     const r = await recordAgent(ctx, name);

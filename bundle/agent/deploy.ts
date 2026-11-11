@@ -42,7 +42,7 @@ export interface AgentConnection {
    * Where the agent's credentials are (agent/credentials.ts): one per Guard, in the file the agent reads, under these names. They replace the services' own keys, which
    * only the Guards hold. The credentials themselves are never in this object, so nothing that prints it can print one.
    */
-  credentials: { file: string; names: Partial<Record<Kind, string>>; /** Every Guard still takes the one credential an agent from before 12 Nov 2026 has. */ shared: boolean; made: boolean };
+  credentials: { file: string; names: Partial<Record<Kind, string>>; /** Every Guard still takes the one credential an agent from before 12 Nov 2026 has. */ shared: boolean };
   /** Where WhatsApp should send the shop's webhooks (the inbox checks them, keeps the owner's replies to approval requests and passes the rest on). */
   whatsappWebhook?: string;
   /** B71: the agent takes money with a module the owner marks (UPI): its address in `baseUrls` is the desk's Guard, and the desk is served on this server (part 2). */
@@ -60,7 +60,7 @@ export function connectionOf(dir: string, server: ServerConfig, folder: AgentFol
     ...(ownerMarked ? { desk: { module: ownerMarked.id, displayName: ownerMarked.displayName } } : {}),
     credentials: (() => {
       const tokens = readAgentCredentials(dir, folder.name, agent.upstreams);
-      return { file: credentialsEnvShown(folder.name), names: Object.fromEntries(agent.upstreams.map((u) => [u, credentialEnvName(u)])), shared: sharesOneCredential(tokens), made: Object.keys(tokens).length === agent.upstreams.length };
+      return { file: credentialsEnvShown(folder.name), names: Object.fromEntries(agent.upstreams.map((u) => [u, credentialEnvName(u)])), shared: sharesOneCredential(tokens) };
     })(),
     ...(agent.upstreams.includes("whatsapp") ? { whatsappWebhook: `${publicUrl(server)}/c/${folder.name}/webhooks/whatsapp` } : {}),
   };

@@ -878,6 +878,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.calendar.id` | ಕ್ಯಾಲೆಂಡರ್ ID | Calendar ID |  |
 | `setup.accounts.calendar.json` | ಸರ್ವೀಸ್-ಅಕೌಂಟ್ ಕೀ ಫೈಲ್ | Service-account key file |  |
 | `setup.accounts.calendar.jsonHelp` | ನಿಮ್ಮ ಬಿಲ್ಡರ್ ಒಂದು ಕೊಟ್ಟಿದ್ದರೆ ಮಾತ್ರ. ಇಡೀ ಫೈಲ್ ಪೇಸ್ಟ್ ಮಾಡಿ. | Only if your builder gave you one. Paste the whole file. |  |
+| `setup.accounts.calendar.useOwn` | ಬುಕಿಂಗ್‌ಗಳನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ ಪಟ್ಟಿಯಲ್ಲಿ ಇಡಿ (Google Calendar ಬೇಕಿಲ್ಲ). ಮಾಲೀಕರು WhatsApp ನಲ್ಲಿ “ಇಂದು” ಎಂದು ಕಳುಹಿಸಿ ದಿನದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ನೋಡಬಹುದು. Google Calendar ಅನ್ನು ನಂತರ ಸೇರಿಸಬಹುದು. | Keep the bookings in the shop's own list (no Google Calendar needed). The owner sends “today” on WhatsApp to see the day's bookings. A Google Calendar can be added later. |  |
+| `setup.accounts.calendar.useGoogle` | ಅಂಗಡಿಯ Google Calendar ಕೂಡ ಬಳಸಿ | Also use the shop's Google Calendar |  |
 | `setup.checks.saveFirst` | ಮೊದಲು ಈ ಅಂಗಡಿಯನ್ನು ಸರ್ವರ್‌ಗೆ ಉಳಿಸಿ. | Save this shop to the server first. |  |
 | `setup.checks.saveButton` | ಉಳಿಸಿ ಮತ್ತು ಜೋಡಿಸಿ | Save and connect |  |
 | `setup.checks.saved` | ಉಳಿಸಲಾಗಿದೆ. ಸರ್ವರ್ ಇದನ್ನು ಜಾರಿಗೆ ತರುತ್ತದೆ, ಜಾರಿಯಾದಾಗ ಈ ಪುಟದಲ್ಲಿ ಕಾಣುತ್ತದೆ. | Saved. The server will apply it, and this page shows when it has. |  |
@@ -1155,10 +1157,9 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.goLive.none` | ಇನ್ನೂ ಯಾವ ಆವೃತ್ತಿಗೂ ಗೋ-ಲೈವ್ ಪ್ರಮಾಣಪತ್ರ ಇಲ್ಲ. `geometer agent go-live` ಒಂದನ್ನು ಮಾಡುತ್ತದೆ. | No version has a go-live certificate yet. `geometer agent go-live` makes one. |  |
 | `agents.goLive.inService` | ಆವೃತ್ತಿ 4f9c2e1 ಸೇವೆಯಲ್ಲಿದೆ: 4 Nov 2026 ರ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್‌ನಲ್ಲಿ ಎಲ್ಲವೂ ಸರಿಯಾಗಿ ನಿಂತವು. | Version 4f9c2e1 is in service: everything held in its crash test on 4 Nov 2026. |  |
 | `agents.goLive.code` | ಪ್ರಮಾಣಪತ್ರ GL-7K2M. | Certificate GL-7K2M. |  |
-| `agents.licence.price` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಈ ಲೈವ್ ಕ್ಲೈಂಟ್ ವ್ಯವಹಾರಕ್ಕೆ ತಿಂಗಳಿಗೆ ₹199.00, GST ಮೊದಲು. | Builder licence: ₹199.00 a month for this live client business, before GST. |  |
 | `agents.actions.heading` | ನೀವು ಇಲ್ಲಿ ಮಾಡಬಹುದಾದದ್ದು | What you can do here |  |
 | `agents.actions.stop` | ನಿಲ್ಲಿಸಿ (ಕಿಲ್ ಸ್ವಿಚ್) | Stop it (kill switch) |  |
-| `agents.actions.stopNote` | ಇದರ Guard-ಗಳು ಹೊಸದೇನೂ ಹೊರಗೆ ಹೋಗಲು ಬಿಡುವುದಿಲ್ಲ. ಈಗಾಗಲೇ ಒಪ್ಪಿದ ರೀಫಂಡ್‌ಗಳನ್ನು ಇನ್ನೂ ಮುಗಿಸಬಹುದು. ಮತ್ತೆ ಶುರು ಮಾಡಲು: ಸರ್ವರ್‌ನಲ್ಲಿ geometer start <name>. | Its Guards let nothing new go out. Refunds already approved can still be finished. To start it again: geometer start <name> on the server. |  |
+| `agents.actions.stopNote` | ಸರ್ವರ್‌ನಲ್ಲಿ ಮತ್ತೆ ಶುರು ಮಾಡುವವರೆಗೆ ಇದರ Guard-ಗಳು ಏನನ್ನೂ ಹೊರಗೆ ಹೋಗಲು ಬಿಡುವುದಿಲ್ಲ, ರೀಫಂಡ್ ಕೂಡ: geometer start <name>. | Its Guards let nothing go out, not even a refund, until it is started again on the server: geometer start <name>. |  |
 | `agents.actions.stopAsked` | ನಿಲ್ಲಿಸಲು ಕೇಳಲಾಗಿದೆ. ಸರ್ವರ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಮಾಡುತ್ತದೆ. | Stop asked. The server carries it out within a minute. |  |
 | `agents.actions.stopped` | ಇದನ್ನು ನಿಲ್ಲಿಸಲಾಗಿದೆ. | It is stopped. |  |
 | `agents.actions.crashTest` | ಹೊಸ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆಸಿ | Run a new crash test |  |

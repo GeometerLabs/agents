@@ -69,7 +69,8 @@ export interface AgentState {
   credentials?: Record<string, AgentCredentialState>;
 }
 
-export interface AgentCredentialState { since: string; previous?: { sha256: string; until: string; retired?: boolean } }
+/** `retryAfter`: the deploy that drops the old hash from guard.toml failed; the deployer tries again after this time (agent/rotate.ts finishRotations). */
+export interface AgentCredentialState { since: string; previous?: { sha256: string; until: string; retired?: boolean; retryAfter?: string } }
 
 /**
  * One client's part in an update or a rollback: what was decided, what was moved, and what a restart needs to finish a move that stopped half-way.

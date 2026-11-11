@@ -100,6 +100,8 @@ export async function processStopRequests(ctx: Context): Promise<string[]> {
     const request = shopNameProblem(shop) ? undefined : parseStopRequest(readFileSync(path, "utf8"), shop);
     if (!request) { if (!warned.has(path)) { warned.add(path); ctx.log(`requests/${file} is not a stop request for a shop on this server, so it is left alone.`); } continue; }
     const state = loadState(ctx.dir);
+    // the name of an agent taken off this server (agent/remove.ts): nothing of it runs, and a shop entry under its name would be refused (lib/state.ts shopIndex)
+    if (state.removed?.[shop]) { if (!warned.has(path)) { warned.add(path); ctx.log(`requests/${file} is for ${shop}, which was removed from this server, so it is left alone.`); } continue; }
     // an agent someone else wrote (the panel's own-agent page, 12 Nov 2026): the same kill switch on its Guards, marked on the agent, never as a shop
     const agent = state.agents?.[shop];
     const applied = (agent ?? state.shops[shop])?.applied !== undefined;

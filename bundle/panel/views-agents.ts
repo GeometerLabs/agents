@@ -73,7 +73,7 @@ ${crash && !crash.running ? html`<p class="note">${a.crash.when(at(crash.at), cr
 <p>${v.inService ? html`${a.goLive.inService(v.inService.version ?? "", at(v.inService.at))} ${a.goLive.code(v.inService.code)}` : a.goLive.none}</p>
 
 ${o.licence ? licenceBlock(c, o.licence) : ""}
-${o.price ? html`<p class="note">${a.licence.price(o.price)}</p>` : ""}
+${o.price ? html`<p class="note">${c.w.plan.priceBuilder(o.price)}</p>` : ""}
 
 <h2>${a.actions.heading}</h2>
 ${v.rotation && !v.asked.rotate ? html`<p class="note">${v.rotation.ok ? (v.rotation.oldUntil ? a.actions.rotateDone(at(v.rotation.oldUntil)) : "") : a.actions.rotateFailed}</p>` : ""}
