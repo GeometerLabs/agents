@@ -105,6 +105,43 @@ export interface RecordRow {
   digest: string; // sha256 of the whole entry without the customer's number
 }
 
+/**
+ * The month's work in three parts that add up (plan B75, checkpoint item 17), with what it cost beside them. A "job" is a booking the record shows any step of in the month.
+ *  - completed: the calendar's own record confirmed the booking (the deposit was recorded first), and nothing about the job is still open. A booking the customer
+ *    cancelled afterwards is completed too when its refund is settled: the customer got what they asked for.
+ *  - abandoned: the conversation stopped before the calendar confirmed a booking (nobody paid, the hold ran out, the customer dropped it) and nothing is owed or waiting.
+ *  - unresolved: something is still open or uncertain: a step the service never confirmed, a refund waiting for the owner or owed by the owner, a payment the customer
+ *    says they made that the owner has not marked, a booking paid for but not on the calendar. An abandoned conversation never clears an unresolved item.
+ * The cost is added by the caller (it knows the price list); a cost per completed job is worked out only when there is a cost and at least one completed job.
+ */
+export type JobState = "completed" | "abandoned" | "unresolved";
+/** Why a job is unresolved: the first thing found open on it, by this priority. */
+export type OpenReason = "step-not-confirmed" | "waiting-for-owner" | "paid-not-booked" | "refund-waiting-for-owner" | "refund-owed-by-owner" | "payment-not-marked";
+/** One job in the list behind the counts: its state, why it is unresolved (if it is), and the record entries (their numbers) the report can show for it. */
+export interface JobLine { booking: string; state: JobState; why: OpenReason | null; seqs: number[] }
+
+export interface Work {
+  /** Every job with the numbers of its record entries in the month, so each count can be followed to the entries behind it. */
+  list: JobLine[];
+  jobs: number;
+  completed: number;
+  abandoned: number;
+  unresolved: number;
+  /** Steps in the month that a person settled by hand (the record's refs.confirmedBy), apart from the services' own confirmations. */
+  settledByPerson: number;
+  /** What the month cost in micro-rupees (1,000,000 = ₹1), or null when the caller gave no cost: unknown, never 0. */
+  costMicroInr: number | null;
+  /** What the cost counts, as the caller wrote it; null when there is no cost. */
+  costBasis: string | null;
+  /** costMicroInr over completed, rounded up; null when either is missing. */
+  costPerCompletedMicroInr: number | null;
+  /** Why there is no cost per completed job: nothing completed, or no cost. null when there is one. */
+  noUnitCost: "no-completed-jobs" | "cost-unknown" | null;
+}
+
+/** What the caller knows about the month's cost. `basis` is a short sentence of what it counts and which price list it used. */
+export interface MonthCost { microInr: number; basis: string }
+
 export interface MonthlyReport {
   format: "geometer-monthly-report/1";
   pathway: { name: string; version: string };
@@ -128,6 +165,8 @@ export interface MonthlyReport {
   /** A row settled later by a person's word (a refund Guard's already_done settled) says who in `settledByWord`; left out otherwise, so older reports keep their bytes. */
   unconfirmed: { open: number; /** The open ones that touch a booking, a payment or the calendar: everything but a message. This is what the owner's line counts. */ openOnBookings: number; settledLater: number; rows: { seq: number; action: Action; outcome: "unconfirmed" | "failed"; booking: string | null; settledLater: boolean; settledByWord?: string }[] };
   atReportTime: { waitingForOwner: number; paidNotBooked: number };
+  /** Completed, abandoned and unresolved work beside the cost (plan B75). Always present; the cost is null unless the caller gave one. */
+  work: Work;
   /** Entries that should carry a detail (an amount, a command, who a message went to) and do not, so that count is incomplete. */
   missing: { depositAmounts: number; refundAmounts: number; ownerCommands: number; messageTargets: number };
   notCounted: NotCountedId[];
@@ -173,6 +212,8 @@ export interface ReportInput {
   pathway?: { name: string; version: string };
   /** The ledger to anchor the report to: its tenant (the shop's id on the server). Left out, `anchor` is null. */
   ledger?: { tenant: string };
+  /** What the month cost (the caller reads the price list). Left out: the report says the cost is not known and gives no cost per job. */
+  cost?: MonthCost;
 }
 
 /** What governs how the agent behaves and speaks, without contact details. Two shops with the same policy digest have the same limits and words. */
@@ -347,6 +388,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
       waitingForOwner: bookings.filter((b) => b.pending.length > 0).length,
       paidNotBooked: bookings.filter((b) => b.state === "needs_owner").length,
     },
+    work: workOf({ all, month, rows, bookings, firstConfirmed, cost: input.cost }),
     missing,
     notCounted: [...NOT_COUNTED],
     notTested: notTestedForReport(goLive, settings),
@@ -354,6 +396,50 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     ...(input.innovator === true ? { innovator: true as const } : {}),
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
+  };
+}
+
+/**
+ * Completed, abandoned and unresolved jobs (see Work for the meaning of each), counted from the record and the store, so the three always add up to the jobs.
+ * A job is unresolved if ANY of these holds, whatever else it did: a step the service did not confirm and nothing later did; a booking waiting for the owner or paid
+ * but not on the calendar; a refund held for the owner with no answer since; a refund the owner owes and has not marked; a UPI payment the customer says they made that
+ * the owner has not marked. Only then is it completed (the calendar confirmed it) or abandoned (it never was).
+ */
+function workOf(a: { all: readonly RecordEntry[]; month: readonly RecordEntry[]; rows: { action: Action; booking: string | null; settledLater: boolean }[]; bookings: readonly Booking[]; firstConfirmed: Map<string, RecordEntry>; cost?: MonthCost }): Work {
+  const { all, month, rows, bookings, firstConfirmed } = a;
+  const jobs = new Set(month.filter((e) => e.booking !== null && e.action !== MESSAGE_STATUS_ENTRY).map((e) => e.booking as string));
+  const open = new Map<string, OpenReason>();
+  const flag = (booking: string, why: OpenReason) => { if (!open.has(booking)) open.set(booking, why); }; // the first thing found, in the order below
+  for (const r of rows) if (r.booking && !r.settledLater && !MESSAGE_ACTIONS.includes(r.action) && r.action !== MESSAGE_STATUS_ENTRY) flag(r.booking, "step-not-confirmed");
+  const lastSeq = (booking: string, keep: (e: RecordEntry) => boolean) => all.reduce((n, e) => (e.booking === booking && keep(e) ? Math.max(n, e.seq) : n), 0);
+  const cancelled = (booking: string) => lastSeq(booking, (e) => e.action === "cancel_booking" && e.outcome === "confirmed") > 0;
+  // a refund held for the owner is open until the owner has answered after it
+  for (const e of all) if (e.action === "refund" && e.outcome === "held_for_owner" && e.booking && e.seq > lastSeq(e.booking, (x) => x.action === "owner_decision" && x.outcome === "confirmed")) flag(e.booking, "refund-waiting-for-owner");
+  // UPI: the customer says they paid and the owner has not marked it; a refund owed and not yet marked sent or kept
+  for (const e of all) {
+    if (e.action === "upi_paid_claim" && e.booking && e.seq > lastSeq(e.booking, (x) => (x.action === "owner_marked_paid" && x.outcome === "confirmed") || x.action === "upi_request_closed") && !cancelled(e.booking)) flag(e.booking, "payment-not-marked");
+    if (e.action === "upi_refund_owed" && e.outcome === "held_for_owner" && e.booking
+      && !all.some((x) => (x.action === "upi_refund_marked_done" || x.action === "upi_refund_kept") && x.outcome === "confirmed" && x.refs.refundId === e.refs.refundId)) flag(e.booking, "refund-owed-by-owner");
+  }
+  // the store's own view comes last: a more specific reason from the record wins
+  for (const b of bookings) { if (b.state === "needs_owner") flag(b.id, "paid-not-booked"); else if (b.pending.length > 0) flag(b.id, "waiting-for-owner"); }
+  let completed = 0, abandoned = 0, unresolved = 0;
+  const list: JobLine[] = [];
+  const bookingNo = (id: string) => Number(id.replace(/^\D+/u, "")) || 0;
+  for (const id of [...jobs].sort((x, y) => bookingNo(x) - bookingNo(y))) {
+    const seqs = month.filter((e) => e.booking === id && e.action !== MESSAGE_STATUS_ENTRY).map((e) => e.seq);
+    if (open.has(id)) { unresolved++; list.push({ booking: id, state: "unresolved", why: open.get(id)!, seqs }); }
+    else if (firstConfirmed.has(id)) { completed++; list.push({ booking: id, state: "completed", why: null, seqs }); }
+    else { abandoned++; list.push({ booking: id, state: "abandoned", why: null, seqs }); }
+  }
+  const settledByPerson = month.filter((e) => e.outcome === "confirmed" && e.refs.confirmedBy).length;
+  const cost = a.cost ?? null;
+  const unit = cost && completed > 0 ? Math.ceil(cost.microInr / completed) : null;
+  return {
+    list, jobs: jobs.size, completed, abandoned, unresolved, settledByPerson,
+    costMicroInr: cost ? cost.microInr : null, costBasis: cost ? cost.basis : null,
+    costPerCompletedMicroInr: unit,
+    noUnitCost: unit !== null ? null : completed === 0 ? "no-completed-jobs" : "cost-unknown",
   };
 }
 

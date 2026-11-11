@@ -36,6 +36,7 @@ async function inWorld(plan: CrashPlan, options: WorldOptions, body: (w: World, 
   const w = await buildWorld(plan, options);
   try {
     await body(w, expect);
+    await plan.observe?.(w); // read-only: for callers that keep the run's own record (CrashPlan.observe)
     expect("The agent was still running at the end", w.alive(), `it stopped by itself${w.agent.output() ? `. It printed: ${w.agent.output()}` : ""}`);
   } finally {
     await w.close();

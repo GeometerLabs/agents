@@ -5,6 +5,7 @@ import type { Language } from "../language/languages.ts";
 import type { Envelope } from "./sign.ts";
 import { textQrSvg } from "../qr/svg.ts";
 import { verifyLink, verifyQrSvg } from "./verify-link.ts";
+import { whatThisChecksBlock } from "./what-this-checks.ts";
 
 // The only door for text into the page: every value is escaped here so a shop name or customer text can never add markup.
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -48,8 +49,23 @@ summary{cursor:pointer;font-weight:600;color:var(--g9);padding:.3rem 0}
 .seal .qr.wide{width:12rem}
 .seal .qr svg{display:block;width:100%;height:auto;border:1px solid var(--line)}
 .seal .words{flex:1 1 14rem;min-width:0}
+.what{border:1px solid var(--line);border-radius:10px;padding:.2rem .9rem;margin:1.2rem 0;background:var(--g0)}
+.what h2{margin:.7rem 0 .2rem}
+.what dd{word-break:normal}
 @media print{.head{-webkit-print-color-adjust:exact;print-color-adjust:exact}details{border:0}.doc{break-after:page}}
 `;
+
+const SECTION_LANG = /^<section[^>]*\blang="(en|hi|ml|kn)"/u;
+
+/**
+ * "What this checks" (B67) goes inside every section, in that section's language (the `lang` its opening tag names, else the page's), as its last block. It is added
+ * here, where every report, certificate and paper is printed, so a new paper cannot leave it out and a bilingual page gets each language's own.
+ */
+function withWhatThisChecks(section: string, pageLanguage: Language): string {
+  const language = (SECTION_LANG.exec(section)?.[1] as Language | undefined) ?? pageLanguage;
+  const end = section.lastIndexOf("</section>");
+  return end < 0 ? section : `${section.slice(0, end)}${whatThisChecksBlock(language)}${section.slice(end)}`;
+}
 
 /** A whole page around one or more language sections. No script, no link, no external file; a content policy that forbids them. */
 export function page(title: string, language: Language, sections: string[]): string {
@@ -65,7 +81,7 @@ export function page(title: string, language: Language, sections: string[]): str
 </head>
 <body>
 <main>
-${sections.join("\n")}
+${sections.map((s) => withWhatThisChecks(s, language)).join("\n")}
 </main>
 </body>
 </html>
