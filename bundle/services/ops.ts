@@ -13,7 +13,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
-import { readRefresherRenewals, readRenewalsFile, renewalWork, writeRenewalsFile } from "../lib/renewals.ts";
+import { clearRenewalsFile, readRefresherRenewals, readRenewalsFile, renewalWork, writeRenewalsFile } from "../lib/renewals.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 import { buildHeartbeat, sendHeartbeat } from "./heartbeat.ts";
@@ -275,15 +275,17 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
  * Follow-up 2: every minute, the refresher's word on each Gupshup token renewal, written for the panel (fleet/_renewals.json). Runs with or without a fleet: the panel's
  * list is how the builder or partner hears of it on a server that sends no heartbeat.
  */
-async function watchRenewals(config: OpsConfig): Promise<void> {
-  if (!config.refresherUrl || !config.fleetDir) return;
+export async function watchRenewals(config: Pick<OpsConfig, "refresherUrl" | "fleetDir">, o: { fetchFn?: typeof fetch; once?: boolean } = {}): Promise<void> {
+  if (!config.fleetDir) return;
+  // nothing renewed here (any more): a file left from before would show an old renewal as failing once its token's end had passed
+  if (!config.refresherUrl) { try { clearRenewalsFile(config.fleetDir); } catch { /* nothing to clear */ } return; }
   const once = async () => {
     const previous = readRenewalsFile(config.fleetDir!)?.shops ?? {};
     const now = new Date();
-    try { writeRenewalsFile(config.fleetDir!, await readRefresherRenewals(config.refresherUrl!, previous, now.getTime()), now); } catch (e) { console.error(`could not write the renewals file: ${(e as Error).message}`); }
+    try { writeRenewalsFile(config.fleetDir!, await readRefresherRenewals(config.refresherUrl!, previous, now.getTime(), o.fetchFn), now); } catch (e) { console.error(`could not write the renewals file: ${(e as Error).message}`); }
   };
   await once();
-  setInterval(() => void once(), 60_000);
+  if (!o.once) setInterval(() => void once(), 60_000);
 }
 
 /** The heartbeat loop. */
