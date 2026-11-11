@@ -357,6 +357,16 @@ See [bundle/Deferred.md](../../../bundle/Deferred.md) for everything the bundle 
 | **A panel-made shop never holds a deposit refund** | The panel sets the refund limit to at least the deposit, so a refund of one deposit is never above it. Only an extra payment, or a settings file written by hand, reaches Guard's hold and so the approvers. They are asked for, and work, wherever a hold happens | A shop wants deposit refunds approved by two people |
 | **Managers cannot ask the agent for a refund** | Only the owner's number gives commands, so the person named in `Geo-Requested-By` is always the owner | A shop's manager needs to command the agent (see `modules/Deferred.md`) |
 
+## The sample report (B66, B75, B67; 12 November 2026)
+
+| Left open | Why | Revisit when, and done when |
+| --- | --- | --- |
+| **The owner's WhatsApp message and the printed page do not list the jobs or their entries.** Only the website's preview lists each job with its record entries (the signed JSON carries the list). | The printed page already has the counts, their meaning and the whole record; a job table needs its words in four languages. | Revisit when: an owner asks "which ones?". Done when: the page lists the unresolved jobs with their entry numbers in the shop's language. |
+| **The cost covers WhatsApp only, and is gross of the month's free replies.** A model's spend is added when the record has it; the sample uses no model. A shop that bought a model upgrade gets the cost line from the cost meter, not a separate one here. | One estimate everywhere (bundle/lib/usage.ts) beats a second one in the report. | Revisit when: the monthly job passes a cost (today only the sample script does). Done when: the monthly job and `agent report` pass `cost` from the cost meter, and the report says when part of the cost is unknown. |
+| **Fees and Orders reports have no work block, and no What this checks beyond the shared one.** | Their jobs (a fee, an order) need their own definition of completed. | Revisit when: the first Fees or Orders shop. Done when: each template defines completed, abandoned and unresolved on its own record. |
+| **Native review of the work-block words and of What this checks in Hindi, Malayalam and Kannada** | Machine-written on 12 November 2026 (rows `work.*` in REVIEW-ml.md and REVIEW-kn.md; Hindi is in `report/strings.ts`). | Before a real shop reads a report in these languages. |
+| **The Bookings template has no `refund-lost-reply` situation of its own** in `crash-test/situations.ts`; only an own agent's crash test (bundle/agent/crash-test) has it. Its unit test is `test/unknown-outcome.test.ts` (not run on 12 Nov). | The template's lost-reply paths for the payment link and the calendar are covered; the refund's is a runtime test. | Revisit when: the integration run. Done when: the situation exists for the template and the website's story can name the template's own check. |
+
 ## B72 leftovers (12 Nov 2026)
 
 | What | Why not now | Trigger | Done when |

@@ -10,7 +10,7 @@ import { buildGoLiveCertificate, buildMonthlyCertificate, goLivePage, goLiveText
 import type { HandCheckSummary } from "./certificate.ts";
 import { buildMonthlyReport } from "./data.ts";
 import { monthRange, writer } from "../../../../modules/report/months.ts";
-import type { GoLiveFinding, MonthlyReport, Source } from "./data.ts";
+import type { GoLiveFinding, MonthCost, MonthlyReport, Source } from "./data.ts";
 import { reportPage } from "./html.ts";
 import { envelopeFile, seal } from "../../../../modules/report/sign.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
@@ -41,6 +41,8 @@ export interface ReportRun {
   pathway?: { name: string; version: string };
   /** The ledger tenant (the shop's id on the server) to anchor the report to its record's head. Left out, the report's anchor is null. */
   tenant?: string;
+  /** What the month cost, worked out by the caller from the price list (report/data.ts MonthCost). Left out, the report says the cost is not known and gives no cost per job. */
+  cost?: MonthCost;
 }
 
 /**
@@ -49,7 +51,7 @@ export interface ReportRun {
  */
 export function writeClientReport(run: ReportRun): { files: string[]; ownerTexts: string[]; code: string; certificateCode: string; report: Envelope<MonthlyReport>; check?: string } {
   const { from, to } = monthRange(run.month, run.settings.timezone);
-  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, pathway: run.pathway, ...(run.tenant ? { ledger: { tenant: run.tenant } } : {}) });
+  const report = buildMonthlyReport({ settings: run.settings, entries: run.entries, bookings: run.bookings, from, to, source: run.source, madeAt: run.now, preparedBy: run.preparedBy, innovator: run.innovator, goLive: run.goLive, pathway: run.pathway, cost: run.cost, ...(run.tenant ? { ledger: { tenant: run.tenant } } : {}) });
   const sealed = seal(report, run.key);
   const certificate = seal(buildMonthlyCertificate(sealed, run.now), run.key);
   const reportCheck = summaryLinkFor(sealed, reportSummaryFields(report), run.key);

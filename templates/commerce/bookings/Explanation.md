@@ -887,6 +887,39 @@ Tests: `test/papers.test.ts` (5) on the busy month the report tests use: a custo
 
 **Left** (Deferred.md, the calendar race row): a reschedule does not read the calendar again after it moves the event; and two writers that both re-check may both let the time go.
 
+## The sample report, completed/abandoned/unresolved, and What this checks (B66, B75, B67; 12 November 2026)
+
+**The sample.** `scripts/sample-report.ts` makes `sample-report/` from `report/sample-shop.ts`: a made-up UPI salon ("Sample Salon") on the stand-in services, one scripted November
+with test money. Seven bookings are paid and marked received by the owner (one cancelled early, its refund marked sent); one late cancellation the owner approves and
+marks sent; one late cancellation the owner has not answered by month end (the **held refund**); one customer who sends a screenshot on the last evening and whose money
+the owner has not marked (**unresolved**); three conversations that stop before any payment (a hold that runs out, a customer who drops it, a Sunday request: **abandoned**).
+Nothing is random: the harness clock is fixed, every customer is a made-up number, and the owner's one-use codes are read from the ledger and never written into the record.
+`test/sample-report.test.ts` makes the folder again into a temporary directory and fails if the committed copy differs, as `prices/` does for the price list.
+Files: the monthly report (`report-2026-11.json`, `report-2026-11-en.html`), the crash-test report (`go-live-certificate.json`, `go-live-certificate-en.html`: the in-process
+situations that suit a UPI shop, run on this shop's own settings), the owner's WhatsApp message, and `manifest.json` (key, codes, the `#s1.` summary link, the owner's lines).
+
+**The key.** A **public test key**: Ed25519 from the seed `0x2d` repeated 32 times, published in the script. It is nobody's identity and is never on Geometer's list of signers, so the
+website's signed-link check answers "unknown signer" for it, which is the right answer; the file check on /verify passes only with this key named. Never use it for a real paper.
+Chosen over a throwaway key because a signature must be reproducible for the drift test, and over a secret key because no key goes in git.
+
+**The work block** (`report/data.ts`, `Work`): a *job* is a booking the record shows any step of in the month. *Unresolved* if anything is still open: a step no service confirmed
+(and nothing later settled), a booking waiting for the owner or paid but not on the calendar, a refund held for the owner with no answer since, a UPI refund the owner owes and has not
+marked, or a payment the customer says they made that the owner has not marked. Otherwise *completed* if the calendar confirmed it (the deposit was recorded first), else *abandoned*.
+The three add up to the jobs, and an abandoned conversation never clears an unresolved item. Each job is listed with its state, why, and the numbers of its record entries, so a
+count can be followed to the entries behind it. **Cost:** the caller gives it (`MonthCost`); the sample uses the cost meter's WhatsApp estimate for the record and the price list in
+force on the month's last day, before the month's free replies, no model. A **cost per completed job** exists only with a cost and at least one completed job; otherwise the report says
+why there is none (`noUnitCost`: nothing completed, or the cost is not known), never 0. Refunds a person settled by hand (`refs.confirmedBy`) are kept apart in `money.refunds.byPerson`.
+
+**What this checks** (`modules/report/what-this-checks.ts`, added by `modules/report/page.ts`): the three lines, in the section's own language, as the last block of every report,
+certificate and paper (they all go through `page()`). English and the website's wording are the same; the Hindi, Malayalam and Kannada are the website's, machine-written and
+waiting for native review (`WHAT_THIS_CHECKS_REVIEW`). public-web's `tests/sample-report.test.ts` compares the two.
+
+**Crash test.** `CrashPlan.observe` (bundle/agent/crash-test) lets a caller read a situation's world (the Guards' decisions, the stand-in's refunds) before it is taken down. The website's
+lost-acknowledgement story (`scripts/examples/lostack.ts` in public-web) uses it on the `refund-lost-reply` situation. What that run showed: the example agent that **looks first**
+(server.js) sent one refund, then read the gateway's refunds list: Guard saw no repeat, so its own check stopped it. The example agent that **asks again** (server-broken.js) sent
+three more with new keys: Guard refused all three (at-most-once, the first attempt's outcome unknown) and sent none, and the crash test marks that agent as not holding.
+Both left the stand-in gateway with one refund. The Bookings template was not part of that run (it has no such situation in its own `crash-test/situations.ts`).
+
 ## Google Calendar is optional (B72, 12 Nov 2026)
 
 Since 11 Nov the shop's own saved bookings are the authority for a slot (`heldByBookings`), so Google's list is a second opinion, not the source. B72 makes the second opinion optional.

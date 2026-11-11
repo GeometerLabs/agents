@@ -57,6 +57,11 @@ export interface CrashPlan {
   cwd: string;
   version?: string;
   driver: ResolvedDriver;
+  /**
+   * Called with a situation's world after its checks and before the world is taken down, so a caller can read what the Guards decided and what the stand-ins hold
+   * (the website's generators save this as the real record of a run: public-web scripts/examples/lostack.ts). It changes nothing a situation judges.
+   */
+  observe?: (world: World) => Promise<void>;
   /** The agent's Guards still share one credential on the server (made before 12 Nov 2026): the crash test then gives it one too, in the same shape it has in life. */
   sharedCredential?: boolean;
 }

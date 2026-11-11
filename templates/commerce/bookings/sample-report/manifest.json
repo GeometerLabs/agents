@@ -1,0 +1,32 @@
+{
+  "format": "geometer-sample-report/1",
+  "about": "A made-up UPI salon on stand-in services with test money. Signed with a public test key that is nobody's identity and is not on Geometer's list of signers.",
+  "shop": "Sample Salon",
+  "month": "2026-11",
+  "source": "stand-in",
+  "language": "en",
+  "publicKey": "a87b8a99bd88a69686c994a80b629d8154871aa295540834c01d79f4f916502f",
+  "keyId": "key:b50003e0cc8ee143c82065185e2b8b646456800be30a9c34ee7259cc86f103ec",
+  "report": {
+    "json": "report-2026-11.json",
+    "html": "report-2026-11-en.html",
+    "code": "Q5SD-N9A5",
+    "digest": "sha256:b972daa5455c47df472d7f855c0846ef6122bfc32052b4244a0bb499e035adb5",
+    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQ7ly2qVFXEffRy1_hVwIRu9hIr_DIFK0JEoLtJngNa21.MMOgSOCTKa_pUZqdgDs6Y4UKxuCndkp0AX1wjYgHCJMEz5pPo4tV1TpA2u0zUcVb7PYQUC4kng3UtDeVJygvAQ"
+  },
+  "crashTest": {
+    "json": "go-live-certificate.json",
+    "html": "go-live-certificate-en.html",
+    "code": "FT31-8HJ0",
+    "held": 9,
+    "total": 9
+  },
+  "priceList": "2026-11-11",
+  "ownerLines": [
+    "Sample Salon · Nov 2026 · stand-in services, test money",
+    "Bookings made: 7 · Cancelled: 3 · Deposits marked paid by owner: ₹1,400 · Refunds marked sent by owner: ₹400",
+    "You were asked: 2 · You approved: 1 · You said no: 0",
+    "Stopped by your limits: 1 (Outside opening hours: 1)",
+    "Not checked: phone calls · walk-ins · automatic payment checking: with UPI the owner marks each payment received · and 16 more (see the full report). Checks were run by hand."
+  ]
+}
