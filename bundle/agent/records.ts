@@ -15,8 +15,10 @@ import { readAgent } from "./folder.ts";
 import { emptyRecord, foldFacts, waitingForOwner } from "./record.ts";
 import type { RecordState } from "./record.ts";
 
+// Per-agent record file under the server's state folder.
 export const recordFile = (dir: string, agent: string): string => join(serverPaths(dir).state, "records", `${agent}.json`);
 
+// Reads an agent's record, or a fresh empty one if there is none yet. Refuses an unknown schema rather than reading it wrongly.
 export function loadRecord(dir: string, agent: string): RecordState {
   const path = recordFile(dir, agent);
   if (!existsSync(path)) return emptyRecord();

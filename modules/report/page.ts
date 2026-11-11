@@ -7,6 +7,7 @@ import { textQrSvg } from "../qr/svg.ts";
 import { verifyLink, verifyQrSvg } from "./verify-link.ts";
 import { whatThisChecksBlock } from "./what-this-checks.ts";
 
+// The only door for text into the page: every value is escaped here so a shop name or customer text can never add markup.
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 const CSS = `
@@ -87,9 +88,11 @@ ${sections.map((s) => withWhatThisChecks(s, language)).join("\n")}
 `;
 }
 
+// Cells are passed in already escaped (they may hold markup such as a line break), so the caller owns escaping; the head is escaped here.
 export const table = (head: { text: string; n?: boolean }[], rows: string[][]): string =>
   `<div class="tablewrap"><table><thead><tr>${head.map((h) => `<th${h.n ? ' class="n"' : ""}>${esc(h.text)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td${head[i]?.n ? ' class="n"' : ""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 
+// Items are escaped here, unlike table cells, because a list item is always plain text.
 export const list = (items: string[]): string => `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
 
 /**

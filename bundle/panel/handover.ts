@@ -43,6 +43,7 @@ export type MoveState =
 /** An account called (or named) like Geometer, or a server's own service name, is not somewhere a shop can go: "never to Geometer directly". */
 const GEOMETER_LIKE = /geometer|fleet|^server$|^system$|^admin$/iu;
 
+// The handover flow (ask, wait for the owner's "move CODE" by WhatsApp, finish): keeps only the code's hash and expires after 72 hours so a stale code moves nothing. `now` is injectable for tests.
 export function createHandover(shops: Shops, accounts: Accounts, store: Store, now: () => number) {
   const key = (shop: string) => `handover/${shop}.json`;
   const iso = (ms: number) => new Date(ms).toISOString();

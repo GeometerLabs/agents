@@ -11,6 +11,7 @@ export interface FakeClock extends Clock {
   advanceMinutes(minutes: number): void;
 }
 
+// A clock tests move by hand, so expiry and reminders can be tested without waiting.
 export function fakeClock(startMs: number): FakeClock {
   let t = startMs;
   return {

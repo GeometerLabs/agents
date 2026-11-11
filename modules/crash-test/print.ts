@@ -16,6 +16,7 @@ export interface HandCheckText {
   notTested: string[];
 }
 
+// Result line first, then one line per situation, so the answer is readable in the first second and the detail is there for who wants it.
 export function handCheckText(args: { results: SituationResult[]; skipped: Skipped[]; showAll: boolean; tookMs: number; text: HandCheckText }): { text: string; failed: number } {
   const { results, skipped, showAll, tookMs, text } = args;
   const held = results.filter((r) => r.held);

@@ -9,6 +9,7 @@ import { OWN_API } from "../../modules/payments/providers/index.ts";
 import { ensureDir, mintSecret, mintSigningKey, writeAtomic } from "./util.ts";
 import type { Problem } from "./util.ts";
 
+// The path of one secret inside the one container's folder that needs it; Docker mounts only that folder into that container.
 export const secretFile = (dir: string, container: string, ...rest: string[]) => join(serverPaths(dir).secrets, container, ...rest);
 
 /** Make `secrets/` private to this machine's user and each container's folder readable inside its container. */
@@ -141,6 +142,7 @@ function ensureDirsFor(path: string): void {
   for (let i = at + 2; i < parts.length; i++) ensureDir(parts.slice(0, i).join("/"), 0o755);
 }
 
+// The trimmed value, or undefined if the file is absent; trimming drops the newline an editor or `echo` adds.
 export function readSecretFile(path: string): string | undefined {
   return existsSync(path) ? readFileSync(path, "utf8").trim() : undefined;
 }

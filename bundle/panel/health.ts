@@ -47,6 +47,7 @@ export function paiseFromText(text: string | undefined): number | undefined | nu
   return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0") || 0);
 }
 
+// Same three-way answer as paiseFromText (value, not entered, problem) for support minutes, so a form can tell "left blank" from "typed nonsense".
 export function minutesFromText(text: string | undefined): number | undefined | null {
   const t = (text ?? "").trim();
   if (t === "") return undefined;
@@ -76,6 +77,7 @@ export function entriesFromForm(form: Record<string, string | undefined>, month:
 const keyOf = (accountId: string) => accountId.replace(/_/gu, "-");
 const entriesName = (accountId: string, shop: string) => `health/${keyOf(accountId)}/${shop}.json`;
 
+// The partner's own figures (price charged, setup fee, support minutes, hourly worth) kept per account and shop in the panel store; kept apart from fleet's facts because only the partner knows them and they must never be mistaken for measured numbers.
 export function createEntries(store: Store) {
   return {
     /** This person's entries for a shop. Nobody else's are ever read for them. */
@@ -129,6 +131,7 @@ export interface Sum {
   setupPaise: number;
 }
 
+// Adds shops' margins into one line for the person's overview, counting only shops with complete figures so a missing price never reads as zero.
 export function sumMargins(list: readonly ShopMargin[]): Sum {
   const known = list.filter((m) => m.margin !== null);
   return {
@@ -179,6 +182,7 @@ export interface RunningCostInput {
   month: string;
 }
 
+// Lists what a shop costs to run this month as separate named items (not a lump) so the page can show where the money goes; the model line depends on `modelIncluded`.
 export function runningCostItems(i: RunningCostInput): CostItem[] {
   const items: CostItem[] = [{ id: "plan", paise: i.plan.paise, notes: i.plan.notes }];
   // WhatsApp at cost: the month's counts at the price list's rates, GST included, before the month's free replies (so it can be a little high, never low).
@@ -222,6 +226,7 @@ export interface Attention {
 
 const DAY = 86_400_000;
 
+// Decides whether a shop needs a look and which buttons to offer, from facts only (open items, shared record, status, fleet, licence, clock); returns no words, views-health.ts adds the language.
 export function attentionOf(i: { items: readonly { kind: string }[]; recordShared: boolean; status: ShopStatus | undefined; fleet: FleetAnswer | undefined; licence: LicenceState | undefined; nowMs: number }): Attention {
   const unfinished: Record<string, number> = {};
   for (const o of i.items) unfinished[o.kind] = (unfinished[o.kind] ?? 0) + 1;

@@ -26,6 +26,7 @@ export interface RecordState {
   /** The newest decision (its time) read from each Guard so far: what a gap in Guard's list of recent decisions is measured from. */
   marks?: Record<string, number>;
 }
+// The starting point for an agent with no record yet.
 export const emptyRecord = (): RecordState => ({ schema: 1, entries: [], seen: {} });
 
 /** How long a thing the service does not show yet is given before it is written down as unconfirmed. */

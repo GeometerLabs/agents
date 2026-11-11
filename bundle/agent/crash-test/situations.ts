@@ -89,6 +89,7 @@ async function cancelAndWaitForRefundCall(w: World, text: string, line: "cancel"
 
 // ---- the situations ----------------------------------------------------------------------------------------------------------------------------
 
+// The list of things that go wrong that the crash test tries on an agent. An owner-marked (UPI) agent gets its own list, since the gateway situations do not apply to it.
 export function buildSituations(plan: CrashPlan): Built {
   // an agent that takes UPI through the owner-marked desk has its own situations: there is no gateway for the ones below (B71)
   const paying = paymentUpstreamOf(plan.folder.agent!.upstreams);
