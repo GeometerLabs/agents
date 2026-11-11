@@ -154,6 +154,35 @@ Hand each one in as a file in `secrets-inbox/<shop>/<name>`. The deployer moves 
 
 Nothing secret is in any generated file; the generator searches for the value of every secret and for the shape of keys, and refuses if it finds one. Folders under `secrets/` are 0755 and files 0644 so a container's own non-root user can read them; `secrets/` itself is 0700, so no other user of the machine gets to any of it. Docker mounts one container's folder into that container only.
 
+## The model's price
+
+Each call's cost is read from the rate table under the provider's name, which the bundle takes from the model's address: `api.openai.com` is `openai`, `api.anthropic.com` `anthropic`, `generativelanguage.googleapis.com` `google`, `api.deepinfra.com` `deepinfra`. For a provider at another address (`model.upstream`), add `"provider": "<its name in the rate table>"` to the `model` block, or its calls are counted with no price and `check` says so. After updating the bundle, run `deploy` once with no shop named, so every shop's runtime gets the name.
+
+## A model you host (optional)
+
+The server's model Guard calls a hosted provider with the key you hand in. You can point it at a model you run yourself instead: any server that speaks OpenAI-compatible chat completions (vLLM, llama.cpp's server, Ollama), or Geometer's model gateway in front of one. Every call still goes through the model Guard, with the same model pin, the same calls-per-day cap and the same kill switch, and the shops' runtimes still hold no key. If you do nothing, nothing changes. Geometer's partner server refuses this setting: the model there is Geometer's.
+
+1. **Run the model server with a key** (vLLM and llama.cpp's server take `--api-key`), and note the model name it answers to.
+2. **Name it in `geometer.json`**, in the `model` block:
+
+   ```json
+   "model": {
+     "wire": "openai",
+     "model": "llama-local",
+     "selfHosted": {
+       "url": "https://models.example.in/v1",
+       "rate": { "inputUsdPerMillion": 0.05, "outputUsdPerMillion": 0.10 }
+     }
+   }
+   ```
+
+   `model` is the name your server answers to; every shop's `runtime.json` asks for exactly that one. `url` is the API root, as an OpenAI client takes it; the calls go to `<url>/chat/completions`. Use `https`. Plain `http` is accepted only to a private address on your own network (10.x, 172.16 to 31.x, 192.168.x), so the key never crosses the internet unencrypted. `127.0.0.1` would be the model Guard's own container, so a model server on the same machine needs the machine's private address.
+3. **Hand in its key**: `node bundle/geometer.ts model-key ~/model-key.txt`, with the model server's key on one line. It is kept exactly like a hosted provider's key: it goes to the model Guard only and is never in `geometer.json`, in a generated file or in a log.
+4. **`rate` is your own price, and optional.** The cost meter and the panel count each call at it, in US dollars per million tokens, turned into rupees at the rate table's dollar rate. 0 is allowed. Leave it out and the calls are counted with no price: the panel then says the model line is a floor. No Geometer price list prices your model.
+5. **`check <shop>`, then `deploy` with no shop named.** A change to `geometer.json` redeploys no shop by itself; `deploy` with no name moves the model Guard to the new address and gives every shop the new provider name and rate. The deploy runs the model Guard's tripwires on the running Guard, as for a hosted provider.
+
+Each call's line in the shop's record names the provider `self-hosted` and the model. Geometer's model gateway, `geo-model-gateway`, comes with the `geo` download (the installer puts it next to `geo`). It can stand in front of a model server and add tokens, a monthly cap per account and a usage report, and it keeps no message text; its address is then the `url` and a token it issues the key (Geometer's "Deploy on your server" docs show its config). [Deferred.md](Deferred.md) says what is not done, and that no real model server has been tried with this yet.
+
 ## Every day
 
 ```sh

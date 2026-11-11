@@ -13,6 +13,8 @@ import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
 import type { Language } from "../language/languages.ts";
 import { DEFAULT_PORT } from "./http.ts";
 import { messagingConfigProblem } from "../messaging/providers.ts";
+import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../understanding/rates.ts";
+import type { BuilderRate } from "../understanding/rates.ts";
 
 /**
  * One service a template calls, as runtime.json names it. Each base URL is a Guard instance in front of that service. `agentTokenFile`: a file holding the credential THIS
@@ -53,6 +55,12 @@ export interface ParserConfig {
   provider?: string;
   /** The name of the environment variable that holds the provider's key. Left out: no key is sent from here. */
   keyEnv?: string;
+  /**
+   * B73: the builder's own price for a model they host, in US dollars per million tokens (geometer.json model.selfHosted.rate; the deploy bundle writes it here). Only
+   * with provider "self-hosted": a hosted provider's price comes from the shared rate table (modules/understanding/rates/), never from a shop's config. Left out, a
+   * self-hosted call is counted with no price (unknown, never 0).
+   */
+  rate?: BuilderRate;
 }
 
 /** Step 1: a System One decision model. Laya runs on the shop's own server (a local address, no key); Jev is hosted (an address, and a key in the named environment variable). */
@@ -160,7 +168,7 @@ function readParser(raw: unknown, folder: string, errors: string[]): ParserConfi
   const before = errors.length;
   const keyLike = Object.keys(raw).filter((k) => /^(api[_-]?key|key|access[_-]?token|auth[_-]?token|token|client[_-]?secret|secret|password|passwd|authorization|bearer)$/iu.test(k)); // whole names: maxTokens is no key
   for (const k of keyLike) errors.push(`parser.${k} is not allowed. ${NO_KEY}`);
-  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs", "agentTokenFile", "provider", "keyEnv"], "parser", errors);
+  unknownKeys(Object.fromEntries(Object.entries(raw).filter(([k]) => !keyLike.includes(k))), ["wire", "baseUrl", "model", "timeoutMs", "agentTokenFile", "provider", "keyEnv", "rate"], "parser", errors);
   if (raw.agentTokenFile !== undefined && !isText(raw.agentTokenFile)) errors.push("parser.agentTokenFile must be the path of a file that holds this agent's credential for the model's Guard.");
   if (raw.wire !== "openai" && raw.wire !== "anthropic") errors.push('parser.wire must be "openai" (OpenAI-compatible chat completions, which Gemini, Groq and Sarvam also speak) or "anthropic" (the Anthropic Messages API).');
   let url: URL | undefined;
@@ -173,9 +181,21 @@ function readParser(raw: unknown, folder: string, errors: string[]): ParserConfi
   if (raw.provider !== undefined && (!isText(raw.provider) || !/^[a-z][a-z0-9-]{0,39}$/u.test(raw.provider))) errors.push('parser.provider must be a short lowercase name for the provider, for example "deepinfra".');
   readKeyEnv(raw.keyEnv, "parser", url, errors);
   if (raw.keyEnv !== undefined && raw.agentTokenFile !== undefined) errors.push("parser.keyEnv and parser.agentTokenFile are two ways to authenticate: use keyEnv for a provider reached directly, agentTokenFile for a Guard in front of it, not both.");
+  const rate = raw.rate !== undefined ? readBuilderRate(raw.rate, raw.provider, errors) : undefined;
   if (errors.length > before) return undefined;
   const agentTokenFile = isText(raw.agentTokenFile) ? (isAbsolute(raw.agentTokenFile) ? raw.agentTokenFile : resolve(folder, raw.agentTokenFile)) : undefined;
-  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}), ...(agentTokenFile ? { agentTokenFile } : {}), ...(raw.provider !== undefined ? { provider: raw.provider as string } : {}), ...(raw.keyEnv !== undefined ? { keyEnv: raw.keyEnv as string } : {}) };
+  return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}), ...(agentTokenFile ? { agentTokenFile } : {}), ...(raw.provider !== undefined ? { provider: raw.provider as string } : {}), ...(raw.keyEnv !== undefined ? { keyEnv: raw.keyEnv as string } : {}), ...(rate ? { rate } : {}) };
+}
+
+/**
+ * `parser.rate` (B73): the builder's own price for the model they host. Only beside provider "self-hosted", because the shared rate table is the one place a hosted
+ * provider's price is written, and a shop's config must not be able to replace it. Two numbers, 0 or more; 0 is the builder's own choice (a model on hardware they
+ * already pay for), never a default.
+ */
+function readBuilderRate(raw: unknown, provider: unknown, errors: string[]): BuilderRate | undefined {
+  if (provider !== SELF_HOSTED_PROVIDER) { errors.push(`parser.rate is the builder's own price for a model they host, so it goes only with parser.provider "${SELF_HOSTED_PROVIDER}". A hosted provider's price comes from the shared rate table.`); return undefined; }
+  if (!isBuilderRate(raw)) { errors.push('parser.rate must be {"inputUsdPerMillion": <number>, "outputUsdPerMillion": <number>}: US dollars per million tokens, 0 or more, and nothing else.'); return undefined; }
+  return { inputUsdPerMillion: raw.inputUsdPerMillion, outputUsdPerMillion: raw.outputUsdPerMillion };
 }
 
 const LOOPBACK = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/u;
