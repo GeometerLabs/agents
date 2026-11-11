@@ -49,3 +49,48 @@ details.what summary { cursor: pointer; padding: 10px 0; font-weight: 600; color
 details.what pre { overflow-x: auto; font-size: 13px; background: var(--bg); padding: 8px; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .draft { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0 6px; }
 .inline { display: inline; }
+
+/* ---- The phone pass (plan item 14b, 11 Nov): a 360-390 px screen, no sideways scrolling, forms that read and type well, focus that shows. ----
+   The panel's CSP lets in only this nonce'd stylesheet, so an inline style="" never applied: these classes replace the five there were. */
+.tabform { padding: 0; } .tabform button.tab { width: 100%; }
+.btn.wide, a.btn.wide, button.btn.wide { width: 100%; }
+.mt { margin-top: 12px; }
+/* Long words (a shop's id, a key's public half, a web address, a Malayalam compound) wrap instead of pushing the page sideways. */
+main { overflow-wrap: anywhere; }
+main :is(h1, h2, p, li, td, th, dd, label, legend, small) { overflow-wrap: anywhere; min-width: 0; }
+.checks li > *, .plain li > *, .cards > * { min-width: 0; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }
+img, svg, video, iframe, table { max-width: 100%; }
+/* Every table fits the width; a cell's words wrap. */
+main table { width: 100%; border-collapse: collapse; }
+/* The confirm page's table of limits (four columns): fixed columns, so it cannot be wider than the screen. The cost tables keep their own two columns. */
+main table:not(.cost) { table-layout: fixed; }
+main table:not(.cost) th, main table:not(.cost) td { padding: 8px 6px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+/* 16 px in every field, or a phone zooms the page when a field is touched. */
+.field textarea, .field input, .field select { font-size: 16px; max-width: 100%; }
+a.btn, button.btn { white-space: normal; text-align: center; line-height: 1.25; }
+/* Choices (radio buttons and the confirm box) as large touch targets, with their help under them. */
+fieldset.field { border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px 10px; background: var(--card); margin: 12px 0; min-width: 0; }
+fieldset.field legend { font-size: 14px; color: var(--muted); padding: 0 4px; }
+label.choice { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; padding: 10px 2px; min-height: 44px; border-top: 1px solid var(--line); }
+fieldset.field label.choice:first-of-type { border-top: 0; }
+label.choice input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--green); }
+label.choice small { display: block; color: var(--muted); font-size: 14px; font-weight: 400; margin-top: 2px; }
+.notice.warn { background: var(--amber-bg); border-color: var(--amber-line); color: var(--amber-ink); }
+code.addr.secret { font-size: 15px; letter-spacing: .02em; }
+section.step { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 4px; }
+/* Focus: the base outline everywhere, and inside the fixed tab bar (where an outline outside would be cut off), an inset ring. */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid #2b8a5f; outline-offset: 2px; }
+.tabbar .tab:focus-visible { outline-offset: -4px; }
+.tab[aria-current="page"] { color: var(--green-dark); border-top-color: var(--green); background: var(--green-tint); }
+@media (max-width: 420px) {
+  /* Up to six tabs share a phone's width: smaller words that may wrap to two lines, never wider than the screen. */
+  .tab { font-size: 13px; line-height: 1.15; padding: 4px 2px; min-width: 0; overflow-wrap: anywhere; }
+  .topbar .wrap { flex-wrap: wrap; }
+  h1 { font-size: 21px; }
+  .big { font-size: 19px; }
+  /* Two fields side by side are too narrow for a long label in Malayalam or Kannada: one under the other. */
+  .row { grid-template-columns: 1fr; }
+  .shopcard .name { font-size: 18px; }
+  table.cost td { padding: 8px; }
+}
