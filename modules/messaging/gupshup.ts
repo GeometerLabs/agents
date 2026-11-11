@@ -10,8 +10,10 @@
 //            https://partner-docs.gupshup.io/reference/post_partner-app-appid-v3-text-message (template: .../post_partner-app-appid-v3-message-14, updated 14 Oct 2026,
 //            whose body is { name, language: { code }, components }, exactly templateBody; interactive: .../post_partner-app-appid-v3-interactive-message;
 //            image: .../post_partner-app-appid-v3-image-message; document: .../senddocumentmessage). Each takes a `link` for media, as whatsapp.ts sends.
-//  - reply:  { messages: [{ id: "GUPSHUP_MESSAGE_ID" }], messaging_product, contacts } (a Gupshup id, not a wamid). It means GUPSHUP took the message: the send is
-//            processed later, so even Meta's refusals (131047, the closed window) arrive afterwards as a "failed" status (webhooks.ts parseWhatsAppStatuses).
+//  - reply:  { messages: [{ id: "GUPSHUP_MESSAGE_ID" }], messaging_product, contacts } (a Gupshup id, not a wamid). Read as GUPSHUP having taken the message: its
+//            self-serve send "is processed asynchronously" (https://docs.gupshup.io/docs/session-messages) and the partner events include its own failures after the
+//            answer, so Meta's refusals (131047, the closed window) are expected afterwards as a "failed" status (webhooks.ts parseWhatsAppStatuses). An inference
+//            for the partner API: its pages do not say it in so many words.
 //  - errors: { status: "error", message } (401 "Authentication Failed"; 400 "Callback Billing must be enabled for this API"; 400 "Invalid App Details").
 //  - read:   GET /partner/app/{appId}/health, `Authorization: {PARTNER_APP_TOKEN}`, answers { status: "success", healthy: "true" }; 10 calls a minute at most.
 //            https://partner-docs.gupshup.io/reference/get_partner-app-appid-health

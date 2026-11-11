@@ -207,3 +207,43 @@ test("a runtime core records a status without handing it to the agent, saves it 
     assert.equal(runtime.status().tasks.pending, 0);
   } finally { await runtime.close(); rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("a runtime too old to know delivery reports (a shop pinned to an earlier version) refuses them with a 400: the messages still go in, the reports are dropped and said once, and the provider is not made to retry for ever", async () => {
+  const batchesSeen: string[][] = [];
+  const runtime = createServer((req, res) => {
+    let raw = "";
+    req.on("data", (c) => { raw += c; });
+    req.on("end", () => {
+      const kinds = (JSON.parse(raw).events as { kind: string }[]).map((e) => e.kind);
+      batchesSeen.push(kinds);
+      res.writeHead(kinds.includes("message_status") ? 400 : 200).end("{}"); // what an older checkEvents answers: the whole request refused
+    });
+  });
+  await new Promise<void>((resolve) => runtime.listen(0, "127.0.0.1", resolve));
+  const logs: string[] = [];
+  const TOKEN = "Zk3-mQ9_vT7xLp2Rw8YdNa5c";
+  const inbox = createServer(inboxHandler({
+    runtimeUrl: `http://127.0.0.1:${(runtime.address() as { port: number }).port}`, internalToken: "internal-token-1", razorpayWebhookSecret: "razorpay-secret-1",
+    whatsappVerification: "path-token", whatsappPathToken: TOKEN, whatsappPhoneNumberId: "105523045970845", log: (l) => logs.push(l),
+  }));
+  await new Promise<void>((resolve) => inbox.listen(0, "127.0.0.1", resolve));
+  const post = async (body: unknown) => {
+    const r = await fetch(`http://127.0.0.1:${(inbox.address() as { port: number }).port}/webhooks/whatsapp/${TOKEN}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    return [r.status, await r.json()];
+  };
+  try {
+    // one body with a customer's picture and a report on what the shop sent: the message goes first and alone, then the report
+    const both = fixture("gupshup-v3-message-image.json");
+    both.entry[0].changes[0].value.statuses = fixture("gupshup-v3-status-delivered.json").entry[0].changes[0].value.statuses;
+    assert.deepEqual(await post(both), [200, { forwarded: 2 }]);
+    assert.deepEqual(batchesSeen, [["message"], ["message_status"]]);
+    assert.ok(logs.some((l) => /refused 1 WhatsApp delivery report\(s\).*dropped/.test(l)), logs.join("\n"));
+    // a body for another number is answered 200, and the log says why rather than "nothing to forward"
+    assert.deepEqual(await post(fixture("gupshup-v3-status-failed.json")), [200, { forwarded: 0 }]);
+    assert.ok(logs.some((l) => /not forwarded: it names another WhatsApp number id/.test(l)), logs.join("\n"));
+    assert.ok(!logs.join("\n").includes(TOKEN));
+  } finally {
+    inbox.closeAllConnections(); runtime.closeAllConnections();
+    await Promise.all([new Promise((r) => inbox.close(r)), new Promise((r) => runtime.close(r))]);
+  }
+});
