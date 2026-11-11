@@ -10,6 +10,7 @@ import type { IntentBase, ParseOptionsBase } from "../understanding/model.ts";
 import type { ModelConfig, ModelParser } from "../understanding/model-llm.ts";
 import type { AiPolicy } from "../understanding/ai-state.ts";
 import { systemOneFromEnv } from "../understanding/system-one.ts";
+import { RATES, dayOf, selfHostedRate } from "../understanding/rates.ts";
 import type { DecisionStep, ModelStep, RouterOptions } from "../understanding/router.ts";
 import { ClientError, aiOverrideReader, modelSwitchReader, reportOptionsReader } from "./config.ts";
 import type { ClientFolder } from "./config.ts";
@@ -48,7 +49,7 @@ const MIN_TOKEN_LENGTH = 16;
  * configured address and is not logged or put in an error.
  */
 export function parserArguments(config: NonNullable<ClientFolder["runtime"]["parser"]>, env: Record<string, string | undefined> = process.env): [ModelConfig, typeof fetch?] {
-  const { agentTokenFile, provider: _provider, keyEnv, ...model } = config;
+  const { agentTokenFile, provider: _provider, keyEnv, rate: _rate, ...model } = config; // provider and rate are for pricing (the router), not for the call
   const bearer = (token: string): typeof fetch => (url, init) => fetch(url, { ...init, headers: { ...(init?.headers as Record<string, string> | undefined), authorization: `Bearer ${token}` } });
   if (keyEnv) {
     const key = env[keyEnv]?.trim();
@@ -88,7 +89,10 @@ export function buildUnderstanding<Parser, Intent extends IntentBase, Context, O
     if (rt.parser.keyEnv && !env[rt.parser.keyEnv]?.trim()) deps.log(`Step 2 (the language model) is off: ${rt.parser.keyEnv} is not set, so nothing is sent to ${rt.parser.provider ?? new URL(rt.parser.baseUrl).hostname}.`);
     else model = { parser: hooks.createModelParser(...parserArguments(rt.parser, env)), provider: rt.parser.provider ?? new URL(rt.parser.baseUrl).hostname, model: rt.parser.model };
   }
-  const parser = decision || model ? hooks.createRouter({ decision, model, now: () => deps.clock.now() }) : hooks.createRuleParser();
+  // B73: a model the builder hosts is priced at the builder's own rate (runtime.json parser.rate), added as one more line of the router's table for this runtime only.
+  // Without it the router uses the shared table, which has no line for a self-hosted model, so those calls are counted as unpriced (unknown, never 0).
+  const rates = rt.parser?.rate && model ? [...RATES, selfHostedRate(rt.parser.model, rt.parser.rate, dayOf(deps.clock.now()))] : undefined;
+  const parser = decision || model ? hooks.createRouter({ decision, model, now: () => deps.clock.now(), ...(rates ? { rates } : {}) }) : hooks.createRuleParser();
   const ai: AiPolicy = {
     override: aiOverrideReader(client.folder, rt.ai === "buttons" ? "buttons" : "auto"),
     model: modelSwitchReader(client.folder, rt.model === "off" ? "off" : "normal"),

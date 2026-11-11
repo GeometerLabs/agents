@@ -10,6 +10,7 @@ import { ANTHROPIC_VERSION } from "../../modules/understanding/model-llm.ts";
 import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-limits.ts";
 import type { LimitsSpec, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
+import { selfHostedTarget } from "../lib/server.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
 import { GATEWAYS, GATEWAY_KINDS, OWN_API, providerById } from "../../modules/payments/providers/index.ts";
 import { OWN_API_SECRET } from "../lib/secrets.ts";
@@ -50,7 +51,8 @@ export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
     case "calendar": return { kind, tool: "google-calendar", upstream: "www.googleapis.com:443", headers: { Authorization: "${file:/run/google/authorization}" } };
     case "model":
       if (model?.wire === "anthropic") return { kind, tool: "model", upstream: model.upstream ?? "api.anthropic.com:443", secretFile: "model_api_key", headers: { "x-api-key": "${file:/run/secrets/model_api_key}", "anthropic-version": ANTHROPIC_VERSION } };
-      return { kind, tool: "model", upstream: model?.upstream ?? "api.openai.com:443", secretFile: "model_authorization", headers: { Authorization: "${file:/run/secrets/model_authorization}" } };
+      // a model the builder hosts (B73) is one more OpenAI-compatible upstream: the same tool, the same key file (`geometer model-key`), only its address differs
+      return { kind, tool: "model", upstream: (model && selfHostedTarget(model)?.host) ?? model?.upstream ?? "api.openai.com:443", secretFile: "model_authorization", headers: { Authorization: "${file:/run/secrets/model_authorization}" } };
   }
 }
 
@@ -115,7 +117,7 @@ export function calendarSpec(id: SpecIdentity, o: { calendarId: string; createdP
 }
 
 /** The path the model provider is called on. A provider whose compatible endpoint lives elsewhere says so in geometer.json (`model.path`). */
-export const modelPath = (m: ModelConfig): string => m.path ?? (m.wire === "anthropic" ? "/v1/messages" : "/v1/chat/completions");
+export const modelPath = (m: ModelConfig): string => m.path ?? selfHostedTarget(m)?.path ?? (m.wire === "anthropic" ? "/v1/messages" : "/v1/chat/completions");
 
 /** The one model every shop on the server may ask for, and a cap for the whole server. */
 export function modelSpec(id: SpecIdentity, m: ModelConfig): LimitsSpec {

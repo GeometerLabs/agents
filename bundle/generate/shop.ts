@@ -5,7 +5,8 @@ import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../modules/approvals/people.ts";
 import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
-import { DEFAULT_PREPARED_BY, publicUrl } from "../lib/server.ts";
+import { DEFAULT_PREPARED_BY, publicUrl, selfHostedTarget } from "../lib/server.ts";
+import { SELF_HOSTED_PROVIDER } from "../../modules/understanding/rates.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
@@ -85,7 +86,9 @@ export const guardUrl = (service: string) => `http://${service}:${GUARD_PORT}`;
 /** In the runtime container, the folder that holds the agent's credentials for its Guards, one file per Guard. */
 const SECRETS = "/run/secrets";
 
-export const upstreamOf = (server: ServerConfig, kind: GuardKind, def: GuardDef): Upstream => server.upstreams?.[kind] ?? { host: def.upstream, tls: true };
+/** A Guard's upstream. TLS always, except a self-hosted model the builder put on a private address over plain http (B73; parseServer allows nothing else). */
+export const upstreamOf = (server: ServerConfig, kind: GuardKind, def: GuardDef): Upstream =>
+  server.upstreams?.[kind] ?? { host: def.upstream, tls: kind === "model" ? (selfHostedTarget(server.model)?.tls ?? true) : true };
 
 /** The model's address for a runtime: the Guard's base, plus whatever the provider puts before /chat/completions. */
 export function modelBaseUrl(model: ModelConfig): string {
@@ -166,6 +169,22 @@ export function withFleetModel(runtime: Record<string, unknown>, fleetModel: "of
   return runtime;
 }
 
+/**
+ * B73: a shop on a server whose model the builder hosts (geometer.json `model.selfHosted`). The GENERATED parser names the provider "self-hosted", so the record says
+ * where each call went and no line of the shared rate table can price it by accident, and carries the builder's own rate when they gave one, so the cost meter and the
+ * panel count what the calls cost at their price. Like `ai` above: the generated config only, and the rate only if the pathway's own validator accepts it; a runtime
+ * that does not know `parser.rate` counts the calls with no price (unknown, never 0), and a note says so. A hosted provider's shop is left exactly as it was.
+ */
+export function withSelfHostedModel(runtime: Record<string, unknown>, model: ModelConfig, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (!model.selfHosted || !isObj(runtime.parser)) return runtime;
+  const named = { ...runtime, parser: { ...runtime.parser, provider: SELF_HOSTED_PROVIDER } };
+  if (!model.selfHosted.rate) return named;
+  const priced = { ...named, parser: { ...named.parser, rate: model.selfHosted.rate } };
+  if (validate(priced, "/").ok) return priced;
+  if (validate(named, "/").ok) notes.push("the model you host has a rate in geometer.json, but this template version does not know parser.rate yet, so its calls are counted with no price. Update the template, and the rate is written on the next deploy.");
+  return named;
+}
+
 /** What the monthly report block is made from. */
 export interface ReportFacts {
   /** "Divya, local partner": who the owner is told set the agent up (the shop's report.json, else the panel's attribution). */
@@ -235,6 +254,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
+    runtime = withSelfHostedModel(runtime, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name }, check, notes); // a UPI shop's money is the owner's real marks
