@@ -231,7 +231,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   }
   const moved = new Set(month.filter((e) => e.action === "reschedule_booking" && e.outcome === "confirmed" && e.booking !== null).map((e) => e.booking)).size;
 
-  // ---- money: from entries the payments service's own record confirmed ----
+  // ---- money: a gateway's from entries the payments service's own record confirmed; UPI's from the owner's marks, labelled as the owner's (paidBy) ----
   const depositEntries = all.filter((e) => e.action === "record_deposit" && e.outcome === "confirmed");
   const depositPayments = new Set(depositEntries.map((e) => e.refs.paymentId).filter(Boolean));
   const missing = { depositAmounts: 0, refundAmounts: 0, ownerCommands: 0, messageTargets: 0 };
