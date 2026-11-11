@@ -1,14 +1,13 @@
 // The deployer's side of the panel's first run (plan item 14b, part 2a: bundle/server-settings.ts), against the fake Docker of world.ts and a bucket in memory
-// behind fetch: a model request written into geometer.json only when the bundle's own check passes; a model the builder hosts refused while this bundle cannot
-// run one; the model of a server that runs shops left alone; each key moved to its one container and deleted from the inbox, the model's key only once the model
+// behind fetch: a model request written into geometer.json only when the bundle's own check passes; a model the builder hosts written in B73's shape (and another
+// provider's name); the model of a server that runs shops left alone; each key moved to its one container and deleted from the inbox, the model's key only once the model
 // is chosen; the bucket's test write (written, read back, deleted) made again only when something changes; and status/_server.json, which never holds a key.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { applyServerSettings } from "../server-settings.ts";
-import * as serverLib from "../lib/server.ts";
-import { loadServer } from "../lib/server.ts";
+import { loadServer, selfHostedTarget } from "../lib/server.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { secretFile } from "../lib/secrets.ts";
 import { serverSettingsPaths } from "../panel/server-contract.ts";
@@ -69,18 +68,23 @@ test("a model request is checked, written into geometer.json, and said in the st
   } finally { w.done(); }
 });
 
-test("a model the builder hosts is refused while this bundle cannot run one (its key would go to OpenAI), and applied once it can", async () => {
+test("a model the builder hosts is written in B73's shape (model.selfHosted with its rate) and read back by parseServer; another provider's name as model.provider", async () => {
   const { w, p, status } = fresh();
   try {
-    writeFileSync(p.modelRequest, request("model", { wire: "openai", model: "llama-3.1-8b", selfHosted: { url: "https://models.example.in/v1" } }));
+    // B73 is merged (integration, 11 Nov): the request is applied, and geometer.json holds exactly what lib/server.ts takes, nothing the request carried besides
+    const rate = { inputUsdPerMillion: 0.1, outputUsdPerMillion: 0.2 };
+    writeFileSync(p.modelRequest, request("model", { wire: "openai", model: "llama-3.1-8b", selfHosted: { url: "https://models.example.in/v1", rate } }));
     await applyServerSettings(w.ctx);
-    const runs = typeof (serverLib as Record<string, unknown>).selfHostedTarget === "function";
-    if (runs) assert.equal(status().requests.model.state, "applied");
-    else {
-      assert.equal(status().requests.model.state, "refused");
-      assert.match(status().requests.model.message, /cannot run a model you host yet/u);
-      assert.equal(loadServer(w.root).model.model, "");
-    }
+    assert.equal(status().requests.model.state, "applied", status().requests.model.message);
+    assert.match(status().requests.model.message, /which you host at models\.example\.in/u);
+    const server = loadServer(w.root);
+    assert.deepEqual(server.model, { wire: "openai", model: "llama-3.1-8b", selfHosted: { url: "https://models.example.in/v1", rate } });
+    assert.deepEqual(selfHostedTarget(server.model), { host: "models.example.in:443", tls: true, path: "/v1/chat/completions" });
+    // a provider at another address, named for the rate table
+    writeFileSync(p.modelRequest, request("model", { wire: "openai", model: "meta-llama/Llama-3.3-70B-Instruct", upstream: "api.deepinfra.com:443", path: "/v1/openai/chat/completions", provider: "deepinfra" }, "model_fedcba9876543210"));
+    await applyServerSettings(w.ctx);
+    assert.equal(status().requests.model.state, "applied", status().requests.model.message);
+    assert.deepEqual(loadServer(w.root).model, { wire: "openai", model: "meta-llama/Llama-3.3-70B-Instruct", upstream: "api.deepinfra.com:443", path: "/v1/openai/chat/completions", provider: "deepinfra" });
   } finally { w.done(); }
 });
 

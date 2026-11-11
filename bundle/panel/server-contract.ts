@@ -11,6 +11,9 @@
 // Who uses this file: panel/server-setup.ts (the panel's side), bundle/server-settings.ts (the deployer's side) and their tests.
 import { join, resolve } from "node:path";
 import { isObj } from "./contract.ts";
+import { PRIVATE_IPV4 } from "../lib/server.ts";
+import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../../modules/understanding/rates.ts";
+import type { BuilderRate } from "../../modules/understanding/rates.ts";
 
 export const SERVER_NAME = "_server";
 export const SERVER_SECRET_NAMES = ["model_key", "backup_key", "google_service_account.json"] as const;
@@ -27,10 +30,7 @@ export function serverSettingsPaths(dir: string) {
   };
 }
 
-/** B73's price for a model the builder hosts: their own US dollars per million tokens (modules/understanding/rates.ts on the model-gateway branch). */
-export interface BuilderRate { inputUsdPerMillion: number; outputUsdPerMillion: number }
-
-/** geometer.json's `model`, as the panel may choose it. The model-gateway branch (B73) adds `selfHosted`; this is its shape. */
+/** geometer.json's `model`, as the panel may choose it: lib/server.ts `ModelConfig`'s fields the panel sets, B73's `selfHosted` and `provider` included. */
 export interface ModelChoice {
   wire: "openai" | "anthropic";
   /** The one model name every shop may ask for; the model Guard refuses any other. */
@@ -72,15 +72,10 @@ const MODEL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,99}$/u;
 const HOST_PORT = /^(?=.{1,253}:)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]:\d{1,5}$/u;
 const CHAT_PATH = /^\/[A-Za-z0-9._~/-]{1,200}$/u;
 const PROVIDER = /^[a-z][a-z0-9-]{0,39}$/u;
-export const SELF_HOSTED_PROVIDER = "self-hosted";
-/** Private IPv4 (RFC 1918): the only places a model the builder hosts may be reached over plain http, so its key never crosses the internet unencrypted (B73's rule). */
-const PRIVATE_IPV4 = /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/u;
 const AGE_RECIPIENT = /^age1[02-9ac-hj-np-z]{58}$/u;
 const BUCKET_URL = /^s3:\/\/[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/[A-Za-z0-9._-]+)*\/?$/u;
 const REGION = /^[a-z0-9][a-z0-9-]{0,39}$/u;
 
-const isRate = (v: unknown): v is BuilderRate => isObj(v) && Object.keys(v).every((k) => k === "inputUsdPerMillion" || k === "outputUsdPerMillion")
-  && [v.inputUsdPerMillion, v.outputUsdPerMillion].every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1_000_000);
 
 /** Every problem with a model choice, by field. Shape only: whether the provider answers is the first shop's deploy's business. */
 export function modelChoiceProblems(raw: unknown): Problem[] {
@@ -104,7 +99,7 @@ export function modelChoiceProblems(raw: unknown): Problem[] {
     if (!isObj(s) || Object.keys(s).some((k) => k !== "url" && k !== "rate") || !url || (url.protocol !== "https:" && url.protocol !== "http:")) p.push({ field: "selfHosted.url", message: "Your model server's address must look like https://models.example.in/v1." });
     else if (url.username || url.password || url.search || url.hash) p.push({ field: "selfHosted.url", message: "Your model server's address must not hold a name, a password, a ? or a #: the key goes in its own field." });
     else if (url.protocol === "http:" && !PRIVATE_IPV4.test(url.hostname)) p.push({ field: "selfHosted.url", message: `Plain http to ${url.hostname} would send the model's key unencrypted. Use https, or the model server's private address (10.x, 172.16-31.x or 192.168.x).` });
-    if (isObj(s) && s.rate !== undefined && !isRate(s.rate)) p.push({ field: "selfHosted.rate", message: "Your own price is two numbers of 0 or more: US dollars per million input tokens and per million output tokens." });
+    if (isObj(s) && s.rate !== undefined && !isBuilderRate(s.rate)) p.push({ field: "selfHosted.rate", message: "Your own price is two numbers of 0 or more: US dollars per million input tokens and per million output tokens." });
   } else if (raw.provider === SELF_HOSTED_PROVIDER) p.push({ field: "provider", message: `"${SELF_HOSTED_PROVIDER}" is for a model you host: give its address.` });
   return p;
 }
