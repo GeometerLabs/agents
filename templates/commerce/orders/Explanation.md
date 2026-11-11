@@ -59,3 +59,7 @@ Measured 9 November 2026. `templates/commerce/orders` code (src, server, inbox, 
 - **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
   `refund.done`. The Guard spec is written for the gateway the shop chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
 
+
+## Two customers for the last item (checkpoint item 8, 11 November 2026)
+
+Orders already held stock in its own saved state, so nothing was changed here. What is left of an item for a day is worked out each time from the orders that hold it (`src/order.ts`, `takenOf` and `holdsStock`): a confirmed order always, one waiting for its advance until its hold ends or the cut-off, whichever is first. The check and the hold happen in one step (`proceedToHold`: `availability`, then the hold and the record's `hold_stock` line), and the runtime handles one message at a time (`modules/runtime/tasks.ts`), so no other customer's step can come between them. A hold nobody pays ends by itself (`expireHold`, which reads the payments record first and writes `release_stock`). `test/last-item.test.ts` pins it: with one veg thali left, two customers ordering it at the same moment get one hold and one link, and the other is told it is sold out; a step held half-way keeps the other customer's step from starting; and once the unpaid hold ends, the next customer gets the thali.

@@ -872,3 +872,17 @@ Tests: `test/papers.test.ts` (5) on the busy month the report tests use: a custo
 - **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
   `refund.done`. The Guard spec is written for the gateway the shop chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
 
+
+## Two customers for the last slot (checkpoint item 8, 11 November 2026)
+
+**What it was before.** `tryHold` read the calendar's list of events around the time (`slotRules`, `calendar.conflicts`), and if nothing blocked it, wrote a tentative event (the hold) with the booking id and the hold's end. Two customers of one shop were kept apart only because the runtime handles one message at a time (`modules/runtime/tasks.ts`): the second customer's step began after the first's had written its hold and been saved. Two things were not covered. The calendar's list was the only source, so a list that lagged a write, or a hold whose write did not show, let the next customer take the same time. And Google never refuses an overlapping event, so an event someone else wrote between the look and the write (the owner by hand, another booking channel) made two bookings for one time.
+
+**What it is now.**
+- **The hold is the booking's own.** `heldByBookings` works out from the saved bookings which times are held, the way Orders works out its stock from its orders: a booking waiting for its deposit until its hold ends, one waiting for the owner (the deposit is in and the calendar would not confirm it) and a confirmed one until cancelled or done. The double-booking limit reads both the calendar and these, before a hold (`slotRules`) and in the list of free times offered (`freeSlots`), so the list never offers a time a booking already holds. The hold is set on the booking before the calendar is written, and saved with the rest of the step: the record's `hold_slot` `attempted` line says until when, and the `confirmed` line says the calendar shows it.
+- **The calendar is read again after the hold is written** (`takenMeanwhile`). If another event is now on the time, the hold is let go (the event is removed, `release_slot`), the record says why (`hold_slot` `blocked`, with the double-booking limit's block), no deposit link is made, and the customer is told the time is not available, with other times to tap. If that second read fails, the hold is not kept either (`hold_slot` `unconfirmed`, `hold_failed`): a hold is kept only when the calendar was seen clear around it.
+- **One step at a time stays as it is**, and is now pinned: a test holds one customer's step half-way and shows the other's has not started.
+- **A hold nobody pays ends by itself** (`expireHold`, on the clock's beat), and the time can be booked again.
+
+`test/last-slot.test.ts` has each of these. The one that tells the old code from the new is the calendar whose list never shows a hold: before 11 Nov both customers got the time.
+
+**Left** (Deferred.md, the calendar race row): a reschedule does not read the calendar again after it moves the event; and two writers that both re-check may both let the time go.
