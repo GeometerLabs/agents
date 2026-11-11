@@ -100,6 +100,8 @@ export const en: Strings = {
     "kitchen-and-delivery": "Whether the food was made, collected or delivered",
     "read-receipts": "Whether a customer read a message",
     "outside-agent": "Anything done outside the agent (by you or anyone else, in Razorpay, your UPI app or WhatsApp)",
+    // B71 part 2: a UPI shop's own words for the line above (machine-written hi/ml/kn wait for native review, like the rest)
+    "outside-agent-upi": "Anything done outside the agent (by you or anyone else, in your UPI app or WhatsApp)",
     "rule-breaks": "Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing",
   },
   cert: {
@@ -178,6 +180,7 @@ export const hi: Strings = {
     "kitchen-and-delivery": "खाना बना, लिया गया या पहुँचा या नहीं",
     "read-receipts": "ग्राहक ने संदेश पढ़ा या नहीं",
     "outside-agent": "एजेंट के बाहर किया गया कोई भी काम (आपने या किसी और ने Razorpay, UPI ऐप या WhatsApp में किया)",
+    "outside-agent-upi": "एजेंट के बाहर किया गया कोई भी काम (आपने या किसी और ने UPI ऐप या WhatsApp में किया)",
     "rule-breaks": "वे नियम-उल्लंघन जो एजेंट ने देखे नहीं: रिकॉर्ड में वही है जो एजेंट ने किया या जिससे उसे रोका गया",
   },
   cert: {
@@ -256,6 +259,7 @@ export const ml: Strings = {
     "kitchen-and-delivery": "ഭക്ഷണം ഉണ്ടാക്കിയോ, എടുത്തോ, എത്തിച്ചോ എന്നത്",
     "read-receipts": "ഉപഭോക്താവ് സന്ദേശം വായിച്ചോ ഇല്ലയോ",
     "outside-agent": "ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ Razorpay-യിലോ UPI ആപ്പിലോ WhatsApp-ലോ ചെയ്തത്)",
+    "outside-agent-upi": "ഏജന്റിന് പുറത്ത് ചെയ്ത എന്തും (നിങ്ങളോ മറ്റാരെങ്കിലുമോ UPI ആപ്പിലോ WhatsApp-ലോ ചെയ്തത്)",
     "rule-breaks": "ഏജന്റ് കാണാത്ത നിയമലംഘനങ്ങൾ: ഏജന്റ് ചെയ്തതും തടഞ്ഞതും മാത്രമാണ് രേഖയിലുള്ളത്",
   },
   cert: {
@@ -334,6 +338,7 @@ export const kn: Strings = {
     "kitchen-and-delivery": "ಆಹಾರ ತಯಾರಾಯಿತೇ, ತೆಗೆದುಕೊಂಡರೇ ಅಥವಾ ತಲುಪಿತೇ ಎಂಬುದು",
     "read-receipts": "ಗ್ರಾಹಕರು ಸಂದೇಶ ಓದಿದರೇ ಇಲ್ಲವೇ",
     "outside-agent": "ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು Razorpay, UPI ಆ್ಯಪ್ ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು)",
+    "outside-agent-upi": "ಏಜೆಂಟ್ ಹೊರಗೆ ಮಾಡಿದ ಯಾವುದೇ ಕೆಲಸ (ನೀವು ಅಥವಾ ಬೇರೆಯವರು UPI ಆ್ಯಪ್ ಅಥವಾ WhatsApp ನಲ್ಲಿ ಮಾಡಿದ್ದು)",
     "rule-breaks": "ಏಜೆಂಟ್ ನೋಡದ ನಿಯಮ ಉಲ್ಲಂಘನೆಗಳು: ದಾಖಲೆಯಲ್ಲಿ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು ಮತ್ತು ಅದನ್ನು ತಡೆದದ್ದು ಮಾತ್ರ ಇದೆ",
   },
   cert: {

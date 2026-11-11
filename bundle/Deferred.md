@@ -9,6 +9,16 @@ Newest first within each part. "Revisit when" is the trigger; nothing here is cl
   - whether a provider's own outage should wait too (a one-line change, and a wider promise);
   - whether per-conversation order (reserved case ids, a place in line for payment events) is worth building before shops with heavy traffic;
   - whether the customer's words when the wait ends should be a template of their own: today they are `couldnt_tell_owner` ("Sorry, I couldn't reach the owner just now. Please try again in a few minutes."), though nobody tried the owner on WhatsApp.
+- **Two payment questions stay with the owner (checkpoint item 7, 11 Nov); the code keeps today's behaviour for both:**
+  - **the 60-minute hold for UPI shops** (how long a slot or an order is held while the customer pays the shop's own UPI ID and the owner marks it): unchanged;
+  - **approvals for held calls on an agent's own API**: built so the owner is asked on WhatsApp, and on the owner's yes the relay signs to Guard and the agent
+    sends the identical call again, which Guard then lets through. That is what a template's held refund does today; whether an own API's held call should
+    instead wait for something more (a second person, a longer time, the builder) is the owner's call.
+- **The owner-marked desk's ledger is in no snapshot (11 Nov).** It is `desk.json` in the relay's volume (`relay-state`), and the nightly snapshot goes through the
+  shops' data volumes, not the relay's. Lost, it would lose the open requests, the owner's live codes and the refunds owed, and the desk's ids would start again
+  (`upi-pay-1`), so the record job, which keys the owner's marks by id, would take a new mark for one it already wrote and leave it out. The backups are another
+  job's work (bundle/backup), so this is said here, not changed. Revisit when: before the first own agent takes UPI live. Done when the snapshot carries each
+  desk's file (or the desk keeps its ledger in a volume the snapshot reads), and the record keys a mark by the desk's request and mark together.
 - **A package's `settings.json` holds the shop's own list of people in plain text** (the owner's and approvers' numbers; a Fees centre's students with their parents' numbers), and so does `history/settings-history.jsonl`. The fingerprints (B69) cover the record and the cases, not the settings, and the README in every package says so. A version for handing around would leave those two files out or replace the numbers and names in them. Revisit when: the owner decides whether the export is only the shop's own copy, or also something to pass on.
 - **Whether `restore <agent>` should put its Guards' stores back (B51, 10 Nov).** Built: it does, unlike a shop's `restore`, which leaves Guard's store alone. The reason: an agent's record is read from its Guards, so a record put back alone would be read against Guards that remember more, and on a new machine (the case a restore is for) the Guards' stores are empty and the snapshot's are all there is of the approvals and the once-only memory. The cost: on the same machine, a Guard put back forgets the refunds it let through after the snapshot, so a repeat the agent sends is handled as a new refund (README, Backups). The other way is the shop's: put back only the record and the key, keep the live Guards, and let the record catch up from their last 500 decisions. To decide: which way, or both behind a flag (`--keep-guards`). Nothing else changes with the choice.
 - [x] **An own agent's key is in no snapshot.** Done 10 Nov 2026 (B51): an agent is in the nightly snapshot as a shop is, its key in the encrypted manifest, and `restore <agent>` puts it back and makes its label key again from it (Explanation.md, "Backups of an agent someone else wrote").
@@ -280,26 +290,38 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
 
 ## UPI by default, any other provider through one seam (B71, 10 Nov)
 
-- **Not every place says "the gateway" yet.** The panel (its payment step, keys, connection check, cost line and words), the payments flow, the templates' agents and the
-  Guard spec ask the provider registry (`modules/payments/providers`), and `modules/payments/providers/test/names.test.ts` holds them to it. These still say "razorpay"
-  where the shop's gateway id belongs, and work because Razorpay is the one gateway: the deployer's secret files and credentials (`deploy.ts`, `lib/secrets.ts`
-  INTAKE, `agent_razorpay`), the inbox's webhook route and config (`/webhooks/razorpay`, `razorpayWebhookSecret`), the generated relay and inbox configs
-  (`generate/configs.ts`), `generate/shop.ts`'s gateway variable and `server.limits.razorpayLinksPerHour`, `services/ops.ts` and `services/relay.ts`, the own agent's
-  record, facts and relay context (`agent/record.ts`, `facts.ts`, `relay-context.ts`; the payment look-up is already `providers/razorpay/runtime.ts`), the own-agent
-  crash test's gateway situations and world, `agent/deploy.ts` (`ensureCredentials`' owner notify secret, `renewRelayCredential`, the connection text's labels),
-  `geometer.ts` (`shop add --payment razorpay` is compared by name and its refusals say Razorpay; the help text), `generate/compose.ts` `SHOP_GUARD_KINDS`, and the
-  templates' reports, stand-in control routes and scripts. Each is the provider's id from
-  the shop's settings, mechanically; none changes what a Razorpay shop gets (the golden test pins its bytes). Revisit when: before a second gateway, in one wave.
-- **An agent on its own gateway API (B71 step 6, `--upstreams own-api`) is checked less than one on a module** (Explanation.md says how it is built). Not done:
-  (1) a rule that holds a call for a person is refused, because the owner relay asks only about refunds on a gateway it has a module for
-  (`modules/approvals/clients.ts` `readHeld`); keep a bound or forbid the call instead. An uncertain call under an at-most-once rule is still held by Guard and
-  nobody is asked about it: it waits until it expires, and the builder checks with the API (`/admin/intents/resolve`). (2) There is no stand-in for the API, so
+- **Not every place says "the gateway" yet (11 Nov, checkpoint item 7: what is left, and why).** Made neutral and held to `names.test.ts` on 11 Nov: the relay and the
+  desk on a server (`services/relay.ts`, `services/desk.ts`), `services/ops.ts` (issue-approver and the heartbeat's held count find the Guard by kind),
+  `generate/configs.ts` (relay.json's own-agent gateway is `{id, guardUrl}`), `agent/relay-context.ts` (reads the payment through the gateway's folder), all of
+  `modules/approvals/`, `agent/deploy.ts`'s credentials and connection text. A UPI shop's report, certificate and papers name no gateway in any language (three lines
+  did: Fees' "only Razorpay payments" and "in Razorpay or WhatsApp", Orders' "in Razorpay, your UPI app or WhatsApp", Bookings' English "payment notice came from
+  Razorpay"; each now has UPI words, and a gateway shop's report keeps its bytes). **Kept on purpose, because the name is on disk or in an outside contract**
+  (renaming would break a server that runs today, or what someone typed into a provider's dashboard): the secret files and hand-in names (`agent_razorpay`,
+  `razorpay_key`, `razorpay_authorization`, `lib/secrets.ts` INTAKE), the inbox's webhook route `/webhooks/razorpay` (pasted into the gateway's dashboard),
+  `geometer.json`'s `limits.razorpayLinksPerHour`, the crash test's `GEOMETER_RAZORPAY_URL` and `razorpayPath` (an agent's code and agent.json read them), Guard
+  tool names, rule ids and record actions. **Still internal, still to do** (each is the provider's id where the shop's gateway id belongs, and works because there is
+  one gateway; none changes what a Razorpay shop gets, the golden test pins its bytes): the inbox config key `razorpayWebhookSecret` and `deploy.ts`'s
+  `hasRazorpay`, `generate/shop.ts`'s gateway variable, `generate/compose.ts` `SHOP_GUARD_KINDS` (its first entry is the payment slot), the own agent's record and
+  facts (they read Razorpay's wire paths: the reads belong in the gateway's folder, like `paymentContext`), the own-agent crash test's gateway situations and world,
+  `geometer.ts`'s `shop add --payment razorpay`, the templates' `notTestedOf` (compares the module to "upi"), stand-in control routes and scripts.
+  Revisit when: before a second gateway, in one wave. Done when `names.test.ts` holds the whole bundle but its stand-ins, with only the kept names above listed.
+- **An agent on its own gateway API (B71 step 6, `--upstreams own-api`) is checked less than one on a module** (Explanation.md says how it is built). 11 Nov
+  (checkpoint item 7): a rule that holds a call for a person is now kept, and the relay asks the owner on WhatsApp (part 2, Explanation.md); after the yes the
+  agent sends the identical call again, as for a template. Not done: (1) an uncertain call under an at-most-once rule is still held by Guard with no approval to
+  give, and nobody is asked: it waits until it expires, and the builder checks with the API (`/admin/intents/resolve`). (2) There is no stand-in for the API, so
   `agent crash-test` refuses to run and no go-live certificate can be made for it. (3) The providers' contract test does not apply: there is no module to run it
   on. (4) `RECORD_READS` has no entry for it, so the record job reads none of the API's own state: the record and the report show the Guard's decisions on the
   agent's calls, never what the API holds (no "done" for a refund, no payment received). (5) Guard enforces only what the accept file kept: a route left out is
-  refused as unlisted, a rule left out does not exist. Revisit when: a builder brings a gateway with no module and wants holds, the record or a certificate;
+  refused as unlisted, a rule left out does not exist. (6) Found 11 Nov: the record job reads the own API's Guard (facts.ts) but folds none of its decisions
+  (agent/record.ts has no own-API section), so neither the agent's calls nor the owner's answers to a held call are in the record or the report yet; Guard's own
+  decisions and approvals hold them. Revisit when: a builder brings a gateway with no module and wants the record or a certificate;
   each needs that gateway's reads and events described (its own module, or reads named in the accept file).
-- **The owner-marked desk is not served on a server** (modules/Deferred.md, B71): `agent add --upstreams upi,...` plans an own agent on UPI with no gateway Guard and
-  `agent crash-test` drives it against the desk, but a deployed agent has nothing to call yet; `agent add` says so in plain words instead of printing an address.
+- **The owner-marked desk is served (11 Nov, checkpoint item 7), not yet proven in Docker** (modules/Deferred.md): `agent deploy` of an own agent on UPI makes its
+  desk Guard (`g-<agent>-upi`, upstream `relay:8796` in plain HTTP on the server's own network), the desk token (`relay/<agent>/desk_token`, and the whole header in
+  the Guard's `desk_authorization`), the relay's desk entry and `DESK_PORT`. The full Docker proof has no own agent on UPI. Revisit when: before the first builder's
+  own agent takes UPI on a server. Done when the proof deploys one and a tap marks a request paid.
+- **The desk keeps its ledger in one JSON file written whole on every change** (`<relay state>/<agent>/desk.json`), like the panel's files, not in SQLite like
+  the relay's store. It grows with every request and refund ever made. Revisit when: an own agent's desk passes a few thousand requests. Done when old, settled
+  requests move out of the file (the record already holds them).
 
 - [ ] **The full Docker proof has not run since the agent phase and the outage-check change (11 Nov 2026).** The last full run failed one check, "every paid link's booking confirmed by one event", because it listed the kill phase's raw Guard calls (`load-*` links: made straight on the Razorpay Guard, no runtime, no booking, by design; the outage phase's payer pays any open link). The check now counts only links that belong to a booking (booking ids are `b-N`; the prefix is one shared constant, `RAW_LOAD_REF`), still needs at least one paid booking link, and still fails if any has not exactly one confirmed event. Trigger: the integrated test run. Done when: `node bundle/test/proof/run.ts` (all phases) passes with the counts written into Explanation.md.

@@ -61,7 +61,7 @@ const WHEN: Record<TemplateId, string> = {
   owner_discount_note: "A parent asked for a discount without an amount",
   owner_payment_claim: "A parent says they paid and the payment record shows nothing (at most once an hour for the same parent)",
   owner_overpayment: "A parent paid more than was due: the extra is refunded and the owner is told",
-  owner_link_failed: "The payment link for a fee could not be made, so no reminder went out for it",
+  owner_link_failed: "The payment link for a fee could not be made (for a reminder, when the parent asked, or after a waiver): the parent was not sent it, it is tried again at the next reminder or when the parent asks, and the owner is told what to check",
   owner_request_stale: "The owner approved, but the fee changed since they were asked: nothing was done",
   owner_message_held: "A message was held back because it did not match the fee record",
   owner_opted_out: "A parent sent STOP",
