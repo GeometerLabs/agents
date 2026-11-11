@@ -28,14 +28,14 @@ import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
-import { RECORD_KEY_FILE, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { RECORD_KEY_FILE, RUNTIME_SIGNING_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, runtimeReadsPrivateKeys, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { NO_MODEL, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
 import { loadState, saveState, shopIndex } from "./lib/state.ts";
 import type { Snapshot, State } from "./lib/state.ts";
 import { readStatus, refusalMessage, updateStatus } from "./lib/status.ts";
 import type { GuardProof } from "./lib/status.ts";
-import { Refused, ensureDir, mintGuardToken, mintSecret, mintSigningKey, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
+import { Refused, ensureDir, mintGuardToken, mintSecret, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
 import type { Problem } from "./lib/util.ts";
 import type { ApproversSettings } from "../modules/approvals/people.ts";
 
@@ -151,6 +151,13 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   // panel runs as the user who wrote it. One token for the panel, not one per Guard: the panel reads a single token file and presents it to each Guard it checks.
   // B69: the shop's fingerprint key and its copies (lib/secrets.ts)
   ensureShopPersonKeys(dir, shop, rt, panelOn);
+  // Item 17b: the owner's WhatsApp monthly report is signed with the server's one paper key (the panel's: the signer fleet's list names), so its summary link checks
+  // on /verify. The runtime gets its own copy, 0600 for its own user, in the folder already mounted at /run/secrets (a bind mount of the panel's file would hand
+  // the runtime a file owned by another user, or make a directory where the key is missing). Only where the runtime can read it: generate/shop.ts sets
+  // report.signingKeyFile on the same condition, and a copy left from before is taken away when it no longer holds.
+  const reportKey = secretFile(dir, rt, RUNTIME_SIGNING_KEY_FILE);
+  if (panelOn && runtimeReadsPrivateKeys()) writeSecretFile(reportKey, ensurePanelSigningKey(dir), 0o600);
+  else rmSync(reportKey, { force: true });
   const panel = panelOn ? ensureSecret(secretFile(dir, "panel", names.panelGuardToken), mintGuardToken, 0o600) : undefined;
   return { agent, admin, ...(panel ? { panel } : {}) };
 }
@@ -196,7 +203,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   // The settings the bundle adds to the generated config (`ai`, `report`) are judged by the check of the version the shop is PINNED to, not by this checkout's: a client held back
   // on an older version has a runtime that refuses a key it does not know.
   const check = pathwayDir ? await pinnedRuntimeCheck(pathwayDir) : undefined;
-  const first = planShop(server, folder, {}, check);
+  const first = planShop(server, folder, {}, check, { reportKeyReadable: runtimeReadsPrivateKeys() });
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
@@ -217,7 +224,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const prev = state.shops[name]?.guards ?? {};
   const versions: Record<string, number> = {};
   for (const g of first.guards) versions[g.kind] = prev[g.kind]?.contentHash === contentHash(g.spec) ? prev[g.kind].version : (prev[g.kind]?.version ?? 0) + 1;
-  const plan = planShop(server, folder, versions, check);
+  const plan = planShop(server, folder, versions, check, { reportKeyReadable: runtimeReadsPrivateKeys() });
   // reserve the network index now, so two shops added together never share one (it is saved only when the deploy goes through)
   const index = (state.shops[name] ??= { index: shopIndex(state, name), guards: {}, lockHistory: [] }).index;
   return {
@@ -369,10 +376,8 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
 function preparePanel(ctx: Context): PanelOptions {
   const p = serverPaths(ctx.dir);
   // data_key: 32 bytes as hex (vault.ts). signing_key: an Ed25519 private key in PEM, as the pathway's report key is (modules/report/sign.ts loadPrivateKey); it signs go-live certificates.
-  for (const [name, make] of [["data_key", mintSecret], ["signing_key", mintSigningKey]] as const) {
-    const path = secretFile(ctx.dir, "panel", name);
-    if (!readSecretFile(path)) writeSecretFile(path, make(), 0o600);
-  }
+  ensureSecret(secretFile(ctx.dir, "panel", "data_key"), mintSecret, 0o600);
+  ensurePanelSigningKey(ctx.dir);
   const { uid, gid } = panelUser();
   for (const d of [p.shops, p.secretsInbox, p.requests, p.exports, p.panel, p.status]) {
     ensureDir(d);

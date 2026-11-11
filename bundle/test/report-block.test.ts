@@ -299,3 +299,39 @@ test("`shop add --prepared-by` writes report.json, which the shop's plan reads; 
     assert.deepEqual([readShop(w.root, "glow-salon").preparedBy, readShop(w.root, "glow-salon").preparedBySource], ["your builder", "default"]);
   } finally { w.done(); }
 });
+
+// ---- item 17b: the owner's WhatsApp report signed with the server's paper key --------------------------------------------------------------------------------
+
+test("17b: the report block names the runtime's copy of the server's paper key when the deployer can hand it one; a version that does not take it is unsigned, and said", () => {
+  const facts: ReportFacts = { preparedBy: "Divya, local partner", innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", source: "live", tenant: "glow-salon", signingKeyFile: "/run/secrets/report_signing_key" };
+  const notes: string[] = [];
+  const signed = withReport({ mode: "fakes" }, facts, validateRuntimeConfig, notes);
+  assert.equal((signed.report as Record<string, unknown>).signingKeyFile, "/run/secrets/report_signing_key");
+  assert.equal(validateRuntimeConfig(signed, "/").ok, true, "today's runtime takes it, so the shop starts");
+  assert.deepEqual(notes, []);
+  // a pinned version whose runtime refuses the key: the report still goes, unsigned, and the deploy says why
+  const noKey = (config: unknown, folder: string) => ((config as { report?: { signingKeyFile?: unknown } }).report?.signingKeyFile !== undefined ? { ok: false as const, errors: ["report.signingKeyFile is not a setting I know."] } : validateRuntimeConfig(config, folder));
+  const unsigned = withReport({ mode: "fakes" }, facts, noKey, notes);
+  assert.equal("signingKeyFile" in (unsigned.report as object), false);
+  assert.equal((unsigned.report as Record<string, unknown>).tenant, "glow-salon", "the rest of the block is as before");
+  assert.match(notes.join(" "), /monthly report is not signed: this template version does not take report\.signingKeyFile/u);
+});
+
+test("17b: planShop signs the report only on a server with the panel (its key) and only when deploy says the runtime can read the key; the planner alone adds nothing", () => {
+  const t = tempServer(); try {
+    const panelOn = serverConfig({ panel: { enabled: true } });
+    const keyOf = (p: { runtime: Record<string, unknown> }) => (p.runtime.report as Record<string, unknown> | undefined)?.signingKeyFile;
+    assert.equal(keyOf(planShop(panelOn, t.shop("glow-salon"), {}, undefined, { reportKeyReadable: true })), "/run/secrets/report_signing_key");
+    const cannot = planShop(panelOn, t.shop("glow-salon"), {}, undefined, { reportKeyReadable: false });
+    assert.equal(keyOf(cannot), undefined);
+    assert.match(cannot.notes.join(" "), /monthly WhatsApp report is not signed on this server: glow-salon's runtime runs as the node image's user \(uid 1000\)/u);
+    // the generator's own tests and goldens: no option, no key, nothing said, whoever runs them
+    const plain = planShop(panelOn, t.shop("glow-salon"));
+    assert.equal(keyOf(plain), undefined);
+    assert.ok(!plain.notes.some((n) => n.includes("not signed")));
+    // no panel, no paper key on the server: nothing to sign with, and nothing to say
+    const noPanel = planShop(serverConfig(), t.shop("glow-salon"), {}, undefined, { reportKeyReadable: true });
+    assert.equal(keyOf(noPanel), undefined);
+    assert.deepEqual(noPanel.notes, []);
+  } finally { t.done(); }
+});

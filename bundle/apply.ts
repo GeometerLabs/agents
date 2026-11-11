@@ -17,6 +17,7 @@ import type { State } from "./lib/state.ts";
 import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
 import { heldRulesOf } from "../modules/approvals/held-call.ts";
 import { syncLicence } from "./lib/licence.ts";
+import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { updateStatus } from "./lib/status.ts";
 import { shopNameProblem, sha256Hex, stableJson } from "./lib/util.ts";
@@ -182,6 +183,9 @@ export async function refreshStatuses(ctx: Context): Promise<string[]> {
 }
 
 /** The scheduled jobs that are due now. Run once each when due, and the time is remembered so a restart does not run them twice. */
+/** The deployers (one per running `apply --watch`, by its context) that have sent this server's paper signer claim since they started. */
+const claimedSinceStart = new WeakSet<Context>();
+
 export async function runDueJobs(ctx: Context): Promise<string[]> {
   const ran: string[] = [];
   const state = loadState(ctx.dir);
@@ -196,6 +200,15 @@ export async function runDueJobs(ctx: Context): Promise<string[]> {
   // API's reviewed spec holds. Without the renewal the relay's credential runs out after a week and the owner is never asked again.
   const holdsForOwner = (a: NonNullable<State["agents"]>[string]): boolean => Object.values(a.applied!.guards).some((g) => isGatewayKind(g.kind) || (g.kind === OWN_API && heldRulesOf(JSON.parse(g.specText) as { tool?: unknown; rules?: unknown }).rules.length > 0));
   const withRelay = Object.entries(state.agents ?? {}).filter(([, a]) => a.applied && holdsForOwner(a)).map(([n]) => n);
+  // Item 17b: this server's paper signing key on fleet's public list of signers, when the deployer starts and once a day (lib/signer-claim.ts). Before the
+  // early return below: a server with no shop yet already signs papers (its panel's certificates). Saved at once, since that return does not save the state.
+  if (server.fleet && (!claimedSinceStart.has(ctx) || since(jobs.signerClaimAt) >= 24 * HOUR)) {
+    claimedSinceStart.add(ctx);
+    jobs.signerClaimAt = now.toISOString(); saveState(ctx.dir, state);
+    const line = await claimPaperSigner({ dir: ctx.dir, server });
+    if (line) ctx.log(line);
+    ran.push("paper signer");
+  }
   // B51: a server with only agents still takes its snapshot and drill, so return early only when there is nothing applied at all
   const anyAgent = Object.values(state.agents ?? {}).some((a) => a.applied);
   if (shops.length === 0 && !anyAgent) return ran;
