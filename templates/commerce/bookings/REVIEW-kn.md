@@ -670,11 +670,13 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.states.warning` | ಪರವಾನಗಿ ಪಾವತಿ ತಡವಾಗಿದೆ | Licence payment overdue |  |
 | `licence.states.wind_down` | ನಿಲ್ಲಿಸಲಾಗಿದೆ: ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ಇಲ್ಲ | Paused: no new bookings or payment requests |  |
 | `licence.states.stopped` | ನಿಂತಿದೆ | Stopped |  |
+| `licence.states.none` | ಇನ್ನೂ ಪರವಾನಗಿ ಇಲ್ಲ: ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ಇಲ್ಲ | No licence yet: no new bookings or payment requests |  |
 | `licence.means.active` | ಗ್ರಾಹಕರಿಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers. |  |
 | `licence.means.reminder` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers yet. |  |
 | `licence.means.warning` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. ಪಾವತಿಸದಿದ್ದರೆ ಅಂಗಡಿ ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
 | `licence.means.wind_down` | ಗ್ರಾಹಕರಿಗೆ ಅಂಗಡಿಯನ್ನು ಸಂಪರ್ಕಿಸಲು ಹೇಳಲಾಗುತ್ತದೆ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಈಗಾಗಲೇ ಬುಕ್ ಅಥವಾ ಪಾವತಿಯಾದ ಕೆಲಸಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಪಾವತಿಸಿದ ಕೂಡಲೇ ಎಲ್ಲವೂ ಮರಳುತ್ತದೆ. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
 | `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ತೆರೆದಿರುವ ಪಾವತಿ ಲಿಂಕ್‌ಗಳನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ; ಅಂಗಡಿಯ ಸ್ವಂತ ಖಾತೆಗಳು ಮತ್ತು ಕೀಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಸೇವೆ ಮುಗಿದಿದೆ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ; ಬೇರೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಸೇರಲು ಅವರು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಬಹುದು. ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records. |  |
+| `licence.means.none` | Geometer-ನ ಲೀಸ್ ಇನ್ನೂ ಈ ಅಂಗಡಿಯನ್ನು ಒಳಗೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಇದರ Guard ಗಳು ಹೊಸ ಕೆಲಸ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಇರುವುದನ್ನು ಓದುವುದು ಮುಂದುವರಿಯುತ್ತವೆ. ಟ್ರಯಲ್ ಅಥವಾ ಪ್ಲಾನ್ ಇದ್ದರೆ, ಮೊದಲ ಡಿಪ್ಲಾಯ್‌ನ ಒಂದೆರಡು ನಿಮಿಷಗಳಲ್ಲಿ ಲೀಸ್ ಈ ಅಂಗಡಿಯನ್ನು ಸೇರಿಸುತ್ತದೆ. ಇಲ್ಲದಿದ್ದರೆ ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Geometer's lease does not cover this shop yet, so its Guards take no new work. Refunds, cancellations and reading what is there still go through. When the trial or a plan covers the shop, the lease lists it within a minute or two of its first deploy. If it does not, write to support. A person answers. |  |
 | `licence.paidThrough` | ಮುಂದಿನ ಪಾವತಿ: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
 | `licence.windDownOn` | ಪಾವತಿಸದಿದ್ದರೆ 7 Jan 2027 ರಿಂದ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
 | `licence.extended` | Geometer-ನ ತುರ್ತು ವಿಸ್ತರಣೆ 21 Dec 2026 ವರೆಗೆ ಇದೆ. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
@@ -682,6 +684,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.exportUntil` | ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು 7 May 2027 ವರೆಗೆ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | ಪಾವತಿಸಿ ನವೀಕರಿಸಿ | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 ರಿಂದ ಪರವಾನಗಿ ನವೀಕರಣಗೊಂಡಿಲ್ಲ. ಈ ಸರ್ವರ್ Geometer ತಲುಪುತ್ತಿದೆಯೇ ಎಂದು ನೋಡಿ. ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
+| `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: 11 Dec 2026 ರಂದು ಮುಗಿಯುತ್ತದೆ. ಅದರ ನಂತರ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: ends on 11 Dec 2026. After that, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
@@ -927,6 +930,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: {gateway} ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
 | `inbox.kinds.message_unanswered` | ಸೇವೆಯ ಸಂಪರ್ಕ ನಿಂತುಹೋದ ಕಾರಣ #12 ರ ಕೆಲಸ ಪೂರ್ಣವಾಗಲಿಲ್ಲ: ಪರಿಶೀಲಿಸಿ ಗ್ರಾಹಕರಿಗೆ ಉತ್ತರಿಸಿ | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
+| `inbox.kinds.message_not_delivered` | b-3 ಗಾಗಿ ಕಳುಹಿಸಿದ WhatsApp ಸಂದೇಶ ಫೋನ್ ತಲುಪಲಿಲ್ಲ (ಅದು ವಿಫಲವಾಯಿತು ಎಂದು WhatsApp ತಿಳಿಸಿತು): ಆ ವ್ಯಕ್ತಿಯನ್ನು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಸಂಪರ್ಕಿಸಿ | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3 ಗಾಗಿ ₹200 UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3 ಗಾಗಿ ₹200 ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3 ನಲ್ಲಿ ಒಬ್ಬರು ನೋಡಬೇಕಿದೆ (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |

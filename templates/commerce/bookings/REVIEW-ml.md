@@ -670,11 +670,13 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.states.warning` | ലൈസൻസ് പണം വൈകി | Licence payment overdue |  |
 | `licence.states.wind_down` | നിർത്തിവച്ചു: പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ ഇല്ല | Paused: no new bookings or payment requests |  |
 | `licence.states.stopped` | നിർത്തി | Stopped |  |
+| `licence.states.none` | ഇതുവരെ ലൈസൻസ് ഇല്ല: പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ ഇല്ല | No licence yet: no new bookings or payment requests |  |
 | `licence.means.active` | ഉപഭോക്താക്കൾക്ക് ഒന്നും മാറുന്നില്ല. | Nothing changes for customers. |  |
 | `licence.means.reminder` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. | Nothing changes for customers yet. |  |
 | `licence.means.warning` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. പണം അടച്ചില്ലെങ്കിൽ കട പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ എടുക്കില്ല. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
 | `licence.means.wind_down` | ഉപഭോക്താക്കളോട് കടയെ ബന്ധപ്പെടാൻ പറയുന്നു. റീഫണ്ടുകളും റദ്ദാക്കലുകളും നേരത്തെ ബുക്ക് ചെയ്തതോ പണം അടച്ചതോ ആയ കാര്യങ്ങളും തുടരും. പണം അടച്ചാൽ ഉടൻ എല്ലാം തിരിച്ചുവരും. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
 | `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. തുറന്നിരിക്കുന്ന പണമടയ്ക്കൽ ലിങ്കുകൾ റദ്ദാക്കി; കടയുടെ സ്വന്തം അക്കൗണ്ടുകളും കീകളും കടയുടേതായി തുടരും. ഒന്നും മായ്ച്ചിട്ടില്ല. സേവനം അവസാനിച്ചെന്ന് ഉടമയെ അറിയിച്ചു; മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ബന്ധപ്പെടാൻ ഉടമയ്ക്ക് hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതാം. കടയുടെ രേഖകൾ നിങ്ങൾക്ക് മാത്രമേ ഡൗൺലോഡ് ചെയ്യാനാകൂ. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records. |  |
+| `licence.means.none` | Geometer-ന്റെ ലീസ് ഇതുവരെ ഈ കടയെ ഉൾക്കൊള്ളുന്നില്ല, അതിനാൽ ഇതിന്റെ Guard-കൾ പുതിയ ജോലി എടുക്കുന്നില്ല. റീഫണ്ടുകളും റദ്ദാക്കലുകളും ഉള്ളത് വായിക്കലും തുടരും. ട്രയലോ പ്ലാനോ ഉണ്ടെങ്കിൽ, ആദ്യ ഡിപ്ലോയ് കഴിഞ്ഞ് ഒന്നോ രണ്ടോ മിനിറ്റിനുള്ളിൽ ലീസ് ഈ കടയെ ഉൾപ്പെടുത്തും. ഇല്ലെങ്കിൽ സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Geometer's lease does not cover this shop yet, so its Guards take no new work. Refunds, cancellations and reading what is there still go through. When the trial or a plan covers the shop, the lease lists it within a minute or two of its first deploy. If it does not, write to support. A person answers. |  |
 | `licence.paidThrough` | അടുത്ത പണം അടയ്ക്കേണ്ടത്: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
 | `licence.windDownOn` | പണം അടച്ചില്ലെങ്കിൽ 7 Jan 2027 മുതൽ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
 | `licence.extended` | Geometer-ന്റെ അടിയന്തര നീട്ടൽ 21 Dec 2026 വരെയുണ്ട്. | Geometer's emergency extension covers it until 21 Dec 2026. |  |
@@ -682,6 +684,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.exportUntil` | കടയുടെ രേഖകൾ 7 May 2027 വരെ നിങ്ങൾക്ക് ഡൗൺലോഡ് ചെയ്യാം. | You can download the shop's records until 7 May 2027. |  |
 | `licence.renew` | പണം അടച്ച് പുതുക്കുക | Pay to renew |  |
 | `licence.stale` | 5 Dec 2026 മുതൽ ലൈസൻസ് പുതുക്കിയിട്ടില്ല. ഈ സർവർ Geometer-ൽ എത്തുന്നുണ്ടോ എന്ന് നോക്കൂ. സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Licence not refreshed since 5 Dec 2026. Check that this server reaches Geometer. Write to support. A person answers. |  |
+| `licence.trial` | ട്രയൽ ലൈസൻസ്: 11 Dec 2026-ന് അവസാനിക്കും. അതിനുശേഷം, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: ends on 11 Dec 2026. After that, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
@@ -927,6 +930,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: {gateway}-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
 | `inbox.kinds.message_unanswered` | സേവനത്തിന്റെ കണക്ഷൻ നിലച്ചതിനാൽ #12-ന്റെ ജോലി പൂർത്തിയായില്ല: പരിശോധിച്ച് ഉപഭോക്താവിന് മറുപടി നൽകുക | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
+| `inbox.kinds.message_not_delivered` | b-3-നുള്ള WhatsApp സന്ദേശം ഫോണിൽ എത്തിയില്ല (അത് പരാജയപ്പെട്ടെന്ന് WhatsApp അറിയിച്ചു): ആ വ്യക്തിയെ മറ്റൊരു വഴിക്ക് ബന്ധപ്പെടുക | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3-നുള്ള ₹200 UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3-ന്റെ ₹200 റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3-ൽ ഒരാൾ നോക്കേണ്ടതുണ്ട് (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
