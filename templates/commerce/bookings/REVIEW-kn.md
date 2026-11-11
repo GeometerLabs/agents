@@ -648,7 +648,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.is` | ಈ ಅಂಗಡಿ Business ಪ್ಲಾನ್‌ನಲ್ಲಿದೆ. | This shop is on the Business plan. |  |
 | `plan.included` | ಪ್ರತಿ ತಿಂಗಳು 3000 ಗ್ರಾಹಕ ಸಂದೇಶಗಳು ಸೇರಿವೆ. | 3000 customer messages a month are included. |  |
 | `plan.price` | ಪ್ಲಾನ್ ಬೆಲೆ: ತಿಂಗಳಿಗೆ ₹299, GST ಬಿಟ್ಟು. | Plan price: ₹299 a month, before GST. |  |
-| `plan.priceBuilder` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ತಿಂಗಳಿಗೆ ₹149, ಪ್ಲಾನ್ ಯಾವುದೇ ಇರಲಿ, GST ಬಿಟ್ಟು. | Builder licence: ₹149 a month for each live client business, whatever the plan, before GST. |  |
+| `plan.priceBuilder` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ತಿಂಗಳಿಗೆ ₹199, ಪ್ಲಾನ್ ಯಾವುದೇ ಇರಲಿ, GST ಬಿಟ್ಟು. | Builder licence: ₹199 a month for each live client business, whatever the plan, before GST. |  |
 | `plan.builderLicence` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್ | Builder licence |  |
 | `plan.priceNote` | ಒಂದು ಅಂಗಡಿ ತಿಂಗಳಲ್ಲಿ ಕನಿಷ್ಠ 15 ದಿನ ಚಾಲನೆಯಲ್ಲಿದ್ದರೆ ಆ ತಿಂಗಳಿಗೆ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | A shop counts for a month when it was live on 15 or more days. |  |
 | `plan.innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |

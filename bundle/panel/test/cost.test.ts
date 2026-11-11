@@ -22,6 +22,7 @@ const PINNED: Record<string, string> = {
   "2026-11-05.json": "3af9b56ca2cfac974e363acf31263b21d437e9c9e28e3575adcfc50a3b88e2b9", // the proposal: latestPriceList skips it (see plans.test.ts)
   "2026-11-07.json": "1534f0af36e98c1ca35ee22c9e219e59240248c5396021521a4d90278fb2444a", // the owner's decision of 5 Nov
   "2026-11-09.json": "19b0afdba0f6538839895cc9dad59b0f51cd80e49044a9fafde9f3866d085f04", // the owner's decision of 9 Nov: two price lists, partners and builders
+  "2026-11-11.json": "c7f4ee6f1845d440e17a0e00d88435ef183c7db098b05d2d772b93e8cd4269d8", // decision 36 (10 Nov): the builder licence at INR 199, nothing else changed
 };
 
 test("the panel reads the newest dated list that is not a proposal, and the bytes of every list are pinned: a changed price is a new file", () => {

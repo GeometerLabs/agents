@@ -33,6 +33,23 @@ test("the 9 Nov list holds both price lists and none of the removed terms", () =
   assert.equal(list.rates["recharge.payment-fee"].basisPoints, (fee * (10_000 + gst)) / 10_000);
 });
 
+// Decision 36 (owner, 10 Nov 2026): the builder licence goes from INR 149 to INR 199 per live client business. The 11 Nov list is the 9 Nov list with that one
+// rate changed, so a partner's price, a fair-use line or an outside rate cannot have moved with it by accident.
+test("the 11 Nov list changes only the builder licence, to INR 199, and says where the decision is written", () => {
+  const before = JSON.parse(readFileSync(join(PRICES_DIR, "2026-11-09.json"), "utf8"));
+  const now = JSON.parse(readFileSync(join(PRICES_DIR, "2026-11-11.json"), "utf8"));
+  const { date: _d1, about: _a1, rates: rates1, ...rest1 } = before;
+  const { date: _d2, about: _a2, rates: rates2, ...rest2 } = now;
+  assert.deepEqual(rest2, rest1, "the format, quality names, exchange rates and notPriced are the 9 Nov list's");
+  assert.deepEqual(Object.keys(rates2), Object.keys(rates1), "the same ids, in the same order");
+  for (const id of Object.keys(rates1).filter((x) => x !== "licence.builder.fee")) assert.deepEqual(rates2[id], rates1[id], id);
+  const fee = now.rates["licence.builder.fee"];
+  assert.deepEqual([fee.currency, fee.micro, fee.per], ["INR", 199_000_000, "live client business a month"]);
+  assert.deepEqual([fee.source, fee.read], ["docs/plans/implementation-plan.md", "2026-11-10"]);
+  assert.match(fee.note, /decision 36/u);
+  assert.match(now.about, /decision 36/u);
+});
+
 test("new.ts copies the newest list forward and refuses to overwrite or go back", () => {
   const dir = mkdtempSync(join(tmpdir(), "prices-"));
   try {

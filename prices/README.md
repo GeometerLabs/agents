@@ -53,3 +53,4 @@ After adding a list here, run `node prices/render.ts`, then each copy's sync and
 | `2026-11-05.json` | The plans, proposed |
 | `2026-11-07.json` | The plans in force (5 Nov decision), at ₹94 to the dollar |
 | `2026-11-09.json` | Two price lists: partners (Basic ₹149, Business ₹299, Operations ₹999 flat) and builders (₹149 per live client business). The first-100 discount and the half-price self-host licence are gone |
+| `2026-11-11.json` | The builder licence becomes ₹199 per live client business (owner, 10 Nov, decision 36). Nothing else changes. It prices all of November 2026: no invoice had been issued |

@@ -648,7 +648,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `plan.is` | ഈ കട Business പ്ലാനിലാണ്. | This shop is on the Business plan. |  |
 | `plan.included` | ഓരോ മാസവും 3000 ഉപഭോക്തൃ സന്ദേശങ്ങൾ ഉൾപ്പെടുന്നു. | 3000 customer messages a month are included. |  |
 | `plan.price` | പ്ലാൻ വില: മാസം ₹299, GST ഒഴികെ. | Plan price: ₹299 a month, before GST. |  |
-| `plan.priceBuilder` | ബിൽഡർ ലൈസൻസ്: പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും മാസം ₹149, പ്ലാൻ ഏതായാലും, GST ഒഴികെ. | Builder licence: ₹149 a month for each live client business, whatever the plan, before GST. |  |
+| `plan.priceBuilder` | ബിൽഡർ ലൈസൻസ്: പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും മാസം ₹199, പ്ലാൻ ഏതായാലും, GST ഒഴികെ. | Builder licence: ₹199 a month for each live client business, whatever the plan, before GST. |  |
 | `plan.builderLicence` | ബിൽഡർ ലൈസൻസ് | Builder licence |  |
 | `plan.priceNote` | ഒരു കട ആ മാസം കുറഞ്ഞത് 15 ദിവസം പ്രവർത്തിച്ചാൽ ആ മാസം കണക്കിൽ വരും. | A shop counts for a month when it was live on 15 or more days. |  |
 | `plan.innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
