@@ -75,6 +75,8 @@ export async function makeSampleReport(out: string): Promise<Record<string, unkn
     report: { json: "report-2026-11.json", html: "report-2026-11-en.html", code: report.report.code, digest: report.report.digest, check: report.check ?? null },
     crashTest: { json: "go-live-certificate.json", html: "go-live-certificate-en.html", code: goLive.code, held: handCheck.held, total: handCheck.total },
     priceList: cost ? list.date : null,
+    /** The owner's WhatsApp message, line for line (owner-2026-11-en.txt), so the website's preview shows the same words without reading a second file. */
+    ownerLines: report.ownerTexts[0].split("\n"),
   };
   writeFileSync(join(out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   return manifest;
