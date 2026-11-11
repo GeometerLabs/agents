@@ -3,7 +3,7 @@
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
 import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../modules/approvals/people.ts";
-import { KINDS, kindFor, guardsOf } from "../lib/kinds.ts";
+import { KINDS, kindFor, guardsOf, hasCalendar as shopHasCalendar } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl, selfHostedTarget } from "../lib/server.ts";
 import { RUNTIME_SIGNING_KEY_FILE } from "../lib/secrets.ts";
@@ -106,8 +106,8 @@ export function modelBaseUrl(model: ModelConfig): string {
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** The pieces of runtime.json the generator needs, checked. */
-function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[], kind: Kind) {
-  const hasCalendar = kind.guards.includes("calendar");
+function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[], kind: Kind, settings: unknown) {
+  const hasCalendar = shopHasCalendar(kind, settings); // B72: a shop on its own booking list has none
   const services = isObj(panel.services) ? panel.services : {};
   // The ids the providers CONFIRMED (pins.json, written after the panel's connection checks) win over what runtime.json says, for the Guards AND for the
   // runtime, so the two always agree. A runtime.json that differs is said so.
@@ -134,7 +134,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   for (const [what, v] of [["payments", services.payments], ["calendar", services.calendar], ["messaging", services.messaging]] as const) {
     if (what === "calendar" && !hasCalendar) {
       // a template with no calendar has no calendar Guard and no calendar in its runtime: whatever runtime.json says about one (an old file, the panel's) is left out, and said
-      if (v !== undefined) notes.push(`services.calendar: the ${kind.id} template has no calendar, so what runtime.json says there is left out of the generated config.`);
+      if (v !== undefined) notes.push(`services.calendar: ${kind.guards.includes("calendar") ? `this ${kind.id} shop runs on its own booking list (settings "calendar": {"module": "own"}), so there is no calendar` : `the ${kind.id} template has no calendar`}, so what runtime.json says there is left out of the generated config.`);
       continue;
     }
     if (isObj(v) && (v.baseUrl !== undefined || v.agentTokenFile !== undefined)) notes.push(`services.${what}: the bundle sets baseUrl and agentTokenFile itself (the shop's own Guard), so what runtime.json says there is not used.`);
@@ -263,7 +263,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
   const check: RuntimeValidator = validate ?? template.validateRuntimeConfig;
   const problems: Problem[] = shop.problems.map((message) => ({ rule: "shop-folder", message }));
   const notes: string[] = [];
-  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes, template);
+  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes, template, shop.settings);
   const guards: GuardPlan[] = [];
   let runtime: Record<string, unknown> = {};
 
@@ -274,7 +274,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     const razorpay = kinds.includes("razorpay");
     if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
     specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}) });
-    if (template.guards.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
+    if (kinds.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {
       const spec = specs[kind];
       if (!spec) continue;
@@ -287,7 +287,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}),
       services: {
         ...(razorpay ? { payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` } } : {}),
-        ...(template.guards.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
+        ...(kinds.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
         messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, ...(facts.whatsappRoute ?? {}), agentTokenFile: `${SECRETS}/agent_whatsapp` },
         timeoutMs: facts.timeoutMs,
       },
@@ -298,6 +298,11 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     if (facts.whatsappRoute && !check(runtime, "/").ok) {
       const { provider: _p, appId: _a, ...meta } = (runtime.services as { messaging: Record<string, unknown> }).messaging;
       if (check({ ...runtime, services: { ...(runtime.services as object), messaging: meta } }, "/").ok) problems.push({ rule: "whatsapp-provider-pinned", message: `${shop.name} is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime does not know services.messaging.provider, so it cannot send through Gupshup. Move the shop to a version from 11 Nov 2026 or later (geometer update).` });
+    }
+    // B72: a shop on its own booking list has no calendar service. A runtime pinned to a version from before 12 Nov 2026 insists on one (and would refuse the settings' "calendar"
+    // key too), and there is nothing to fall back to, so the deploy is refused instead of starting a shop that would not run.
+    if (template.guards.includes("calendar") && !kinds.includes("calendar") && !check(runtime, "/").ok) {
+      problems.push({ rule: "calendar-own-pinned", message: `${shop.name} runs on its own booking list (settings "calendar": {"module": "own"}), but it is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime still needs a Google Calendar. Move the shop to a version from 12 Nov 2026 or later (geometer update), or give it a Google Calendar.` });
     }
     runtime = withModelProvider(runtime, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);

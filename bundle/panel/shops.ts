@@ -9,7 +9,7 @@ import { canonicalJson } from "../../modules/record/record.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { parseLock, pathwayVersion } from "../../templates/commerce/bookings/server/config.ts";
 import { PATHWAY } from "../../templates/commerce/bookings/server/runtime.ts";
-import { kindFor } from "../lib/kinds.ts";
+import { guardsOf, kindFor } from "../lib/kinds.ts";
 import type { Account } from "./accounts.ts";
 import { runtimeTokenFileFor, runtimeUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
@@ -133,7 +133,7 @@ export function createShops(config: PanelConfig, store: Store) {
       const s = (runtime.services ?? {}) as Record<string, Record<string, unknown>>;
       const stand = (o: Record<string, unknown> | undefined) => ({ baseUrl: "http://guard.invalid", ...(o ?? {}) });
       // only the services the template has: a Fees runtime.json that names a calendar is refused by its own check
-      const withGuards = { ...runtime, services: { ...s, payments: stand(s.payments), ...(kind.guards.includes("calendar") ? { calendar: stand(s.calendar) } : {}), messaging: stand(s.messaging) },
+      const withGuards = { ...runtime, services: { ...s, payments: stand(s.payments), ...(guardsOf(kind, settings).includes("calendar") ? { calendar: stand(s.calendar) } : {}), messaging: stand(s.messaging) },
         ...(runtime.parser ? { parser: { baseUrl: "http://guard.invalid", ...(runtime.parser as object) } } : {}) };
       const r = kind.validateRuntimeConfig(withGuards, "/tmp");
       if (!r.ok) problems.push(...(r.errors ?? []));

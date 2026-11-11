@@ -231,6 +231,8 @@ export interface ShopView {
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
   /** This shop's unfinished work (B31), read from its exported record. */
   inbox?: ShopInbox;
+  /** B72: the words of the link to the shop terms page; left out while the feature is off (the page does not exist then). */
+  termsLink?: string;
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
   isBuilder: boolean;
   details?: { statusJson: string; pins: string; runtimeJson: string };
@@ -375,6 +377,7 @@ ${v.cost ? costTable(c, v.cost) : v.own ? messagesBlock(v.own.messages) : ""}
 ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
 ${v.papers.canMakeReport ? html`<p><a class="btn" href="/shops/${v.id}/papers">${PAPERS_LINK[c.lang]}</a></p>` : ""}
+${v.termsLink ? html`<p><a class="btn" href="/shops/${v.id}/terms">${v.termsLink}</a></p>` : ""}
 
 <h2>${c.w.takeOut.heading}</h2>
 <p>${c.w.takeOut.text}</p>
@@ -527,7 +530,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
     ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.numberId, { mode: "numeric", max: 20 })}
     ${secret(c, a.whatsapp.token, "waToken", v.receipts.whatsapp_token)}${secret(c, a.whatsapp.appSecret, "waAppSecret", v.receipts.whatsapp_app_secret)}` : ""}
-  ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
+  ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.useOwn}</p>
+    <div class="field"><label><input type="checkbox" name="calUse" value="google" ${d.calendar.use === "google" ? raw("checked") : ""}> ${a.calendar.useGoogle}</label></div>
+    <p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
     ${v.shareAddress ? html`<p>${a.calendar.shareAddress}</p><code class="addr">${v.shareAddress}</code>` : html`<p class="note">${a.calendar.noAddress}</p>`}
     ${text(a.calendar.id, "calId", d.calendar.id, { max: 200 })}
     ${v.shareAddress ? "" : secret(c, a.calendar.json, "calJson", v.receipts["google_service_account.json"], "textarea")}` : ""}

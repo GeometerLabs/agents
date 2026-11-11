@@ -24,6 +24,7 @@ import { names, planModelGuard, planShop } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
 import { licencePaths, syncLicence } from "./lib/licence.ts";
+import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
@@ -200,7 +201,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const taken = takeSecrets(ctx.dir, name);
   const problems: Problem[] = [...taken.problems];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
-  const calendar = (kindFor(folder.lock?.pathway) ?? KINDS.bookings).guards.includes("calendar");
+  const calendar = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("calendar"); // B72: a shop on its own booking list has none
   const razorpay = guardsOf(kindFor(folder.lock?.pathway) ?? KINDS.bookings, folder.settings).includes("razorpay"); // a UPI shop (B33) has no Razorpay
   const webhooks = webhooksFor(ctx.dir, name, calendar);
   const pathwayDir = folder.lock ? pathwayDirFor(ctx.appDir, ctx.dir, folder.lock) : undefined;
@@ -350,6 +351,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
   // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
   syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
+  // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the partner filled the shop's terms in;
+  // otherwise any copy is taken away, so turning the setting off switches the feature off at the next deploy.
+  for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name);
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
   const agents = agentFacts(ctx.dir, state);
   for (const a of Object.values(state.agents ?? {})) if (a.applied) for (const g of Object.values(a.applied.guards)) writeGuardFiles(ctx.dir, g.service, g);

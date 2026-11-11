@@ -20,18 +20,19 @@ export type { WindowStore } from "../../../../../../modules/messaging/whatsapp.t
 export interface LiveServices {
   // Each Guard may ask the agent for its own credential (`agentToken`: what Guard calls the agent's token, never a service key).
   payments?: { baseUrl: string; agentToken?: string }; // Guard in front of the shop's gateway; left out for a shop with none (UPI, B33/B71)
-  calendar: { baseUrl: string; calendarId: string; agentToken?: string }; // Guard in front of Google Calendar
+  calendar?: { baseUrl: string; calendarId: string; agentToken?: string }; // Guard in front of Google Calendar; left out for a shop with no Google Calendar (B72)
   messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: MessagingProvider; appId?: string }; // Guard in front of the WhatsApp provider (Meta unless runtime.json names another)
   /** How long to wait for any one reply before treating it as lost. Default 10 seconds. */
   timeoutMs?: number;
 }
 
-export function createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore; /** The shop's payment block: which gateway the payments service is (B71). */ payment?: PaymentSettings }): { payments: Payments; calendar: Calendar; messaging: Messaging } {
+export function createLiveAdapters(services: LiveServices, deps: { clock: Clock; window: WindowStore; /** The shop's payment block: which gateway the payments service is (B71). */ payment?: PaymentSettings }): { payments: Payments; calendar?: Calendar; messaging: Messaging } {
   const timeoutMs = services.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   return {
     // a UPI shop has no payment service: the agent keeps its own ledger of the owner's marks, and any call here would be a mistake, said plainly
     payments: services.payments ? gatewayAdapter(deps.payment, { baseUrl: services.payments.baseUrl, agentToken: services.payments.agentToken, timeoutMs }) : noGateway,
-    calendar: createGoogleCalendar({ baseUrl: services.calendar.baseUrl, calendarId: services.calendar.calendarId, agentToken: services.calendar.agentToken, timeoutMs }),
+    // never a stand-in in live mode: no calendar service means the runtime keeps the shop's own booking list, which is saved
+    ...(services.calendar ? { calendar: createGoogleCalendar({ baseUrl: services.calendar.baseUrl, calendarId: services.calendar.calendarId, agentToken: services.calendar.agentToken, timeoutMs }) } : {}),
     messaging: createLiveMessaging({ ...services.messaging, timeoutMs }, deps), // the provider runtime.json names (modules/messaging/providers.ts)
   };
 }
