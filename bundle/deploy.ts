@@ -526,8 +526,11 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
 /**
  * Bring up what changed in the compose file just written, and nothing else: compose recreates a service whose entry changed, and a service whose FILES changed (compose cannot see
  * that) is restarted. Shared by the deploy of a shop and of an agent someone else wrote, so the two cannot drift apart. Returns the services that changed.
+ *
+ * `reload` (an own agent's credential rotation only, agent/rotate.ts): Guards whose files changed but whose policy did not are asked to read their guard.toml again
+ * (POST /admin/reload) instead of being restarted, so a call in flight is not cut off. A Guard that refuses, or answers that a change needs a restart, is restarted as before.
  */
-export async function bringUp(ctx: Context, state: State, composed: Composed, forWhom: string[]): Promise<string[]> {
+export async function bringUp(ctx: Context, state: State, composed: Composed, forWhom: string[], o: { reload?: readonly string[] } = {}): Promise<string[]> {
   const hashes = Object.fromEntries(Object.keys(composed.services).map((n) => [n, serviceHashes(composed, n)]));
   const before = state.serviceHashes ?? {};
   ctx.log(`Bringing up ${forWhom.join(", ")}...`);
@@ -549,9 +552,17 @@ export async function bringUp(ctx: Context, state: State, composed: Composed, fo
   }
   const restart = Object.keys(hashes).filter((n) => before[n] && before[n].block === hashes[n].block && before[n].files !== hashes[n].files && !stranded.includes(n) && n !== "refresher");
   const changed = Object.keys(hashes).filter((n) => !before[n] || before[n].block !== hashes[n].block || before[n].files !== hashes[n].files);
-  if (restart.length > 0) {
-    ctx.log(`Restarting ${restart.join(", ")} (their files changed).`);
-    const r = await compose(ctx, ["restart", ...restart]);
+  const reloaded: string[] = [];
+  for (const n of restart.filter((x) => o.reload?.includes(x))) {
+    const r = await adminCall(ctx, n, "POST", "/admin/reload", {});
+    const needsRestart = Array.isArray(r.body?.needs_restart) && r.body.needs_restart.length > 0;
+    if (r.status === 200 && !needsRestart) reloaded.push(n);
+  }
+  if (reloaded.length > 0) ctx.log(`Reloaded ${reloaded.join(", ")} (only who may call them changed; not restarted).`);
+  const toRestart = restart.filter((n) => !reloaded.includes(n));
+  if (toRestart.length > 0) {
+    ctx.log(`Restarting ${toRestart.join(", ")} (their files changed).`);
+    const r = await compose(ctx, ["restart", ...toRestart]);
     if (r.code !== 0) throw new Refused([{ rule: "compose-restart", message: `docker compose restart failed: ${r.stderr.trim().split("\n").slice(-4).join(" | ")}` }]);
   }
   state.serviceHashes = hashes;
