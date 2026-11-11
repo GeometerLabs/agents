@@ -35,6 +35,7 @@ export interface ShopRef { id: string; owner: OwnerFile | undefined }
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
+// The shops layer: the only code that touches shops/, status/ and requests/, and the one place that decides who may see which shop, so a missed check on one page cannot expose a shop.
 export function createShops(config: PanelConfig, store: Store) {
   const paths = serverPaths(config.serverDir);
   const now = () => (config.now ?? Date.now)();

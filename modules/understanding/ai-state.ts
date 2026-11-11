@@ -110,6 +110,7 @@ export function stateFor(store: AiStore, nowMs: number, timeZone: string): AiSta
 /** Messages handled by a model this month (steps 1 and 2): what the allowance counts. */
 export const aiMessages = (s: AiState): number => s.decision + s.model;
 
+// Either the message count or the cost budget ends the allowance, whichever comes first; an unset allowance means no limit.
 export function usedUp(s: AiState, allowance: AiPolicy["allowance"]): boolean {
   if (!allowance) return false;
   return (allowance.messages !== undefined && aiMessages(s) >= allowance.messages) || (allowance.costMicroInr !== undefined && s.costMicroInr >= allowance.costMicroInr);
@@ -191,6 +192,7 @@ export interface AiSummary {
   reason: ButtonReason | null;
 }
 
+// One read for the status page and the heartbeat so what the owner sees and what fleet is told are the same numbers.
 export function summaryOf(store: AiStore, policy: AiPolicy, nowMs: number, timeZone: string): AiSummary {
   const s = stateFor(store, nowMs, timeZone);
   const mode = modeOf(store, policy, nowMs, timeZone);

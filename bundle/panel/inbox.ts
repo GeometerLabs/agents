@@ -24,6 +24,7 @@ export interface ShopInbox {
 /** The panel's setting for how long an owner's answer may wait: PANEL_APPROVAL_WAIT_HOURS, default 12. */
 export const optionsFor = (approvalWaitHours?: number): UnfinishedOptions => ({ ...DEFAULT_OPTIONS, ...(approvalWaitHours !== undefined ? { approvalWaitMs: approvalWaitHours * 3_600_000 } : {}) });
 
+// Builds one shop's to-do list from its last export on every call and stores nothing, so the list cannot disagree with the record.
 export function inboxFor(shops: Shops, id: string, nowMs: number, options: UnfinishedOptions): ShopInbox {
   const name = shops.settings(id)?.name ?? id;
   const dir = shops.paths.exports(id);

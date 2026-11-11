@@ -77,6 +77,7 @@ function readBody(req: IncomingMessage, max: number): Promise<string> {
   });
 }
 
+// Saves the event before answering 200, so the inbox only stops retrying once the message is durable.
 export function startServer(runtime: ServedRuntime, options: ServerOptions): Promise<RunningServer> {
   const host = options.host ?? "127.0.0.1";
   const max = options.maxBodyBytes ?? MAX_BODY_BYTES;

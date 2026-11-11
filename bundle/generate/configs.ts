@@ -73,6 +73,7 @@ type Approvers = { approvers?: ApproverPerson[] };
 /** Item 11b: a shop whose WhatsApp goes through Gupshup. Left out (Meta direct), the configs are exactly as before. */
 type Route = { whatsappRoute?: WhatsAppRoute };
 
+// The inbox container's config. Built from the shops (and bring-your-own agents) so one inbox routes each webhook to the right runtime; stableJson keeps the bytes identical between runs so an unchanged server is not redeployed.
 export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; ownerWhatsapp: string; phoneNumberId: string } & Approvers & Route)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
@@ -97,6 +98,7 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
   });
 }
 
+// The approvals relay's config: only shops whose Guard can hold a call for the owner get an entry, because a UPI shop has nothing to ask the owner about.
 export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWhatsapp: string; phoneNumberId: string; pathway?: string } & Approvers & Route)[], agents: AgentFacts[] = []): string {
   return stableJson({
     shops: Object.fromEntries([
@@ -132,6 +134,7 @@ export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWh
   });
 }
 
+// The Google token refresher's config. Only shops that have a Google key get an entry; a shop without its own key falls back to the server-wide one, so the refresher never reads another shop's secret.
 export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks })[], overrides: { scope?: string } = {}, agents: AgentFacts[] = []): string {
   const entry = (s: Pick<ShopDeploy, "name" | "index">, own: boolean) => [s.name, {
     serviceAccountFile: own ? `/run/secrets/${s.name}/google_service_account.json` : "/run/secrets/_server/google_service_account.json",
@@ -146,6 +149,7 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
   });
 }
 
+// The ops container's config: where every Guard's admin port and every runtime is, plus the fleet link. Ops is the only place that holds all admin tokens, so this file names token FILES, never the tokens.
 export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string; pathway?: string })[], agents: AgentFacts[] = []): string {
   const net = addressing(server);
   const modelGuard = { id: "guard-model", service: names.modelGuard, adminUrl: url(net.adminIp(undefined, "model"), ADMIN_FORWARD_PORT), healthUrl: url(net.adminIp(undefined, "model"), HEALTH_PORT), adminTokenFile: "/run/secrets/_model/admin_token" };

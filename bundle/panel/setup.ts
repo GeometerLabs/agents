@@ -107,6 +107,7 @@ export function draftFromShop(id: string, accountId: string, templateId: string,
 const text = (v: string | undefined, max = 120) => (v ?? "").trim().slice(0, max);
 const WHOLE = /^\d{1,9}$/u;
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/u;
+// Strips everything but digits, for comparing phone numbers and numeric form fields regardless of spacing or punctuation.
 export const digitsOf = (s: string) => s.replace(/\D/gu, "");
 
 /** "98765 43210", "+91 98765 43210", "09876543210", "919876543210" all become "+919876543210". Anything else is not a number we will message. */
@@ -123,6 +124,7 @@ export type StepResult = { problems: string[] };
 
 // ---- step 1: the business ----------------------------------------------------------------------------------------------------------
 
+// Step 1: takes the business fields from the form into the draft; problems come back in the person's language. The draft keeps what was typed even when there are problems, so the form refills instead of emptying.
 export function applyBusiness(draft: Draft, body: Body, w: Words): StepResult {
   const s = w.setup.problems;
   const problems: string[] = [];
@@ -151,6 +153,7 @@ export function applyBusiness(draft: Draft, body: Body, w: Words): StepResult {
 
 // ---- step 2: deposit and cancellation -------------------------------------------------------------------------------------------------
 
+// Step 2: the deposit and the cancellation window into the draft. A deposit above the cheapest service is refused here because it would make a booking cost less than its deposit.
 export function applyDeposit(draft: Draft, body: Body, w: Words): StepResult {
   const s = w.setup.problems;
   const problems: string[] = [];
@@ -170,6 +173,7 @@ export function applyDeposit(draft: Draft, body: Body, w: Words): StepResult {
 
 // ---- step 3: languages and the owner's number ------------------------------------------------------------------------------------------
 
+// Step 3: the shop's languages and the owner's WhatsApp number; the owner's number must differ from the business number, or the agent would be messaging itself.
 export function applyLanguages(draft: Draft, body: Body, w: Words): StepResult {
   const s = w.setup.problems;
   const problems: string[] = [];

@@ -81,6 +81,7 @@ export function rereadingGuardClient(c: RelayShopConfig, read: (path: string) =>
 /** One entry of relay.json, running: the approvals relay (a shop, or an own agent on a gateway or its own API), or the desk (an own agent on UPI), never both. */
 export interface RunningShop { relay?: Relay; desk?: DeskHost; /** The desk's token, read from its file on every call. */ deskToken?: () => string | undefined; handler: Handler; close(): void }
 
+// Builds one shop's relay (and its owner-marked desk when it has one) from that shop's own secrets. Throws at start if a secret file is missing, so a misconfigured shop fails at deploy and not on the first refund.
 export function shopRelay(name: string, c: RelayShopConfig, read: (path: string) => string | undefined, log: (line: string) => void, clock: Clock = systemClock): RunningShop {
   const need = (file: string): string => {
     const v = read(`${c.secretsDir}/${file}`);

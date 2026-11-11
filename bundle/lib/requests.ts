@@ -4,6 +4,7 @@ export interface StopRequest { schema: 1; requestId: string; shop: string; reque
 
 const text = (v: unknown, max: number): v is string => typeof v === "string" && v.length > 0 && v.length <= max;
 
+// The deployer's own check of a stop request; it must also match the shop its file name claims, so a request cannot stop another shop.
 export function parseStopRequest(content: string | undefined, shop: string): StopRequest | undefined {
   if (content === undefined) return undefined;
   try {
@@ -22,6 +23,7 @@ export interface RecoveryRequest { schema: 1; requestId: string; shop: string; c
 
 export const RECOVERY_FILE = /^([a-z0-9][a-z0-9-]{0,39})\.recover\.([A-Za-z0-9-]{1,64})\.json$/u;
 
+// The deployer's own check of a recovery request: only a name, a case id and an action, and the file name's shop and id must match the content.
 export function parseRecoveryRequest(content: string | undefined, shop: string, id: string): RecoveryRequest | undefined {
   if (content === undefined) return undefined;
   try {

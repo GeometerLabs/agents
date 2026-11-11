@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../record/record.ts";
 
+// Always the full digest with an algorithm prefix, so a stored value says what it is and two digests are never compared at different lengths.
 export const sha256 = (bytes: string | Uint8Array): string => `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 
 /** The digest of any JSON value: its canonical bytes, hashed. */

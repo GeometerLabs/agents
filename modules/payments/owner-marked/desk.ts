@@ -67,6 +67,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 const whole = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v > 0;
 const REF = /^[A-Za-z0-9._:-]{1,40}$/u;
 
+// UPI has no provider API for Guard to sit in front of, so the desk gives the agent the same payments interface backed by the owner's marks.
 export function createDesk(o: DeskOptions) {
   const marked = ownerMarkedOf(o.payment);
   if (!marked) throw new Error("The desk is for a payment module the owner marks (UPI); this shop's module confirms by itself.");

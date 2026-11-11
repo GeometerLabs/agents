@@ -39,15 +39,21 @@ export interface PanelConfig {
   now?: () => number;
 }
 
+// Thrown for a bad environment at start-up so the panel refuses to run, with a message the operator can act on, instead of limping along half set up.
 export class ConfigError extends Error {}
 
 const fill = (template: string | undefined, values: Record<string, string>): string | undefined =>
   template === undefined ? undefined : template.replace(/\{(\w+)\}/gu, (_, k: string) => values[k] ?? "");
 
+// The URL templates in the config hold `{shop}` and `{kind}` slots; these small helpers fill them so every caller addresses a shop's services the same way.
 export const runtimeUrlFor = (c: PanelConfig, shop: string) => fill(c.runtimeUrl, { shop });
+// Per-shop path of the bearer-token file for that shop's runtime, read by the panel only to call the runtime's /status.
 export const runtimeTokenFileFor = (c: PanelConfig, shop: string) => fill(c.runtimeTokenFile, { shop });
+// Per-shop, per-kind address of the shop's Guard, used by the read-only connection checks (checks.ts).
 export const guardUrlFor = (c: PanelConfig, shop: string, kind: string) => fill(c.guardUrl, { shop, kind });
+// Where a provider's webhook should point for a shop and kind, shown in the setup guide.
 export const webhookUrlFor = (c: PanelConfig, shop: string, kind: string) => fill(c.webhookUrl, { shop, kind });
+// True only for an https public address; server.ts uses it to decide whether cookies get the Secure flag.
 export const isSecure = (c: PanelConfig): boolean => c.publicUrl?.startsWith("https://") === true;
 
 const num = (v: string | undefined, name: string): number | undefined => {
@@ -71,6 +77,7 @@ export function readServerModel(serverDir: string): { wire: "openai" | "anthropi
   return undefined;
 }
 
+// Turns the environment into a PanelConfig (everything comes from env so the compose file is the only place to set it); throws ConfigError on a missing or bad value, notably the data key on a hosted server.
 export function configFromEnv(env: Record<string, string | undefined>): PanelConfig {
   const serverDir = env.PANEL_SERVER_DIR;
   if (!serverDir) throw new ConfigError("Say which server folder the panel serves: PANEL_SERVER_DIR=/path/to/server (the folder with geometer.json and shops/).");
