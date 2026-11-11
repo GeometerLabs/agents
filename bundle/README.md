@@ -91,6 +91,7 @@ node bundle/geometer.ts init ~/geometer-server \
 export GEOMETER_SERVER=~/geometer-server
 node bundle/geometer.ts model-key ~/model-key.txt                    # one line; goes to the model Guard only
 node bundle/geometer.ts google-key ~/google-key.json                 # optional: one service account for every shop that hands in none of its own
+node bundle/geometer.ts gupshup-token ~/gupshup-ut.txt              # optional, only on a server the Gupshup partner runs: renews each Gupshup shop's app token
 node bundle/geometer.ts backup-key snapshots ~/snapshots-key.txt     # access-key-id:secret
 ```
 

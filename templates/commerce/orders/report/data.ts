@@ -19,6 +19,8 @@ import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
+import { isSettledByWord, settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
+import type { SettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { headOf } from "../../../../modules/record/ledger.ts";
 import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
 import type { LedgerHead } from "../../../../modules/record/ledger.ts";
@@ -97,7 +99,11 @@ export interface OrdersReport {
   policyDigest: string;
   record: { entries: number; digest: string; byAction: Record<string, Record<string, number>> };
   /** `collected` is the advance. For a UPI shop it is what the owner marked paid. */
-  money: { collected: Amount; givenBack: Amount };
+  /**
+   * `givenBack` is what the payments service's own record confirmed (or, UPI, the owner marked sent). `settledByWord` (B75, 12 Nov 2026) are refunds a person at the
+   * server settled as made by their word (Guard's already_done): never counted as given back, grouped by who said so. Left out when there are none (older bytes kept).
+   */
+  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[] };
   /** Present only for a UPI shop (B33): the money is what the owner MARKED, and every document labels it so. Left out for a Razorpay shop, which keeps its bytes. */
   paidBy?: "owner-marked";
   /** From the record: orders confirmed (each once), orders completed, orders cancelled after they were confirmed, and holds that ran out before an advance was recorded. */
@@ -224,12 +230,14 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   for (const e of all) if (e.action === "refund" && e.refs.paymentId && e.refs.amountPaise) amountOfPayment.set(e.refs.paymentId, e.refs.amountPaise);
   const givenBack = emptyAmount();
   const seenRefunds = new Set<string>();
-  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed")) {
+  // a refund a person settled by their word is not money given back: it is counted on its own (settledByWord), never here
+  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed" && !isSettledByWord(x))) {
     const key = e.refs.refundId ?? `seq-${e.seq}`;
     if (seenRefunds.has(key)) continue;
     seenRefunds.add(key);
     add(givenBack, e.refs.amountPaise ?? (e.refs.paymentId ? amountOfPayment.get(e.refs.paymentId) : undefined));
   }
+  const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
 
   // ---- orders: each at its own confirmed entry, once per order ----
   const bookingsOf = (action: string, entries: readonly RecordEntry[] = month) => new Set(entries.filter((e) => e.action === action && e.outcome === "confirmed" && e.booking).map((e) => e.booking as string));
@@ -289,7 +297,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     madeAt: new Date(madeAt).toISOString(),
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(all.map(entryDigest)), byAction },
-    money: { collected, givenBack },
+    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}) },
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     orders, sold, owner,
     customers: { stopped: new Set(month.filter((e) => e.action === "opt_out" && e.outcome === "confirmed").map((e) => e.conversation)).size },

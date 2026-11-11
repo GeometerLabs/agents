@@ -179,6 +179,23 @@ test("a deposit or refund is counted once by its payment or refund id, and one w
   assert.deepEqual(r.missing, { depositAmounts: 1, refundAmounts: 1, ownerCommands: 0, messageTargets: 0 });
 });
 
+test("a refund a person settled by their word (Guard's already_done) is not a refund made: it is counted apart, with who said so (B75, 12 Nov 2026)", () => {
+  seq = 0;
+  const r = count([
+    e("record_deposit", "confirmed", { refs: { paymentId: "pmt_1", amountPaise: "20000" } }),
+    e("refund", "unconfirmed", { refs: { paymentId: "pmt_1", amountPaise: "20000" } }), // the reply was lost
+    e("refund", "confirmed", { refs: { paymentId: "pmt_1", amountPaise: "20000", confirmedBy: "operator:ravi" } }), // a person at the server settled it
+    e("refund", "confirmed", { booking: "b-2", refs: { paymentId: "pmt_2", amountPaise: "5000", refundId: "r_2" } }), // the provider's own list confirmed this one
+  ]);
+  assert.deepEqual(r.money.refunds, { count: 1, paise: 5000, ofDeposits: { count: 0, paise: 0 }, ofSecondPayments: { count: 1, paise: 5000 } }, "only the provider's confirmation is a refund made");
+  assert.deepEqual(r.money.settledByWord, [{ by: "operator:ravi", count: 1, paise: 20000 }], "the person's word, apart, with who said it");
+  assert.deepEqual(r.unconfirmed.rows.map((x) => [x.action, x.settledLater, x.settledByWord]), [["refund", true, "operator:ravi"]], "the lost reply is settled, by that person's word");
+  seq = 0;
+  const none = count([e("refund", "confirmed", { refs: { paymentId: "pmt_1", amountPaise: "20000", refundId: "r_1" } })]);
+  assert.equal("settledByWord" in none.money, false, "left out when there is none: older reports keep their bytes");
+  assert.equal(none.unconfirmed.rows.some((x) => "settledByWord" in x), false);
+});
+
 test("a limit that said no is counted once, at its own entry, not again on the message that follows", () => {
   seq = 0;
   const hours = block("within-hours");

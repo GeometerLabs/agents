@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { Context } from "../deploy.ts";
 import type { GuardTool, TripwireResult } from "../generate/verify.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
+import { REPORT_KEY_JOB } from "../lib/report-key.ts";
 import type { RunResult } from "../lib/runner.ts";
 import { prepareSecretsRoot, secretFile, writeSecretFile } from "../lib/secrets.ts";
 import { CALENDAR_ID, PHONE_NUMBER_ID, panelRuntime, tempServer } from "./helpers.ts";
@@ -88,9 +89,17 @@ export function world(shops: Record<string, ReturnType<typeof panelRuntime> | nu
       return rules ? { ok: false, passed: 0, of: 4, notSelfTestable: [], failedRules: rules, text: "tripwire failed" } : GOOD;
     },
   };
-  const runner = fakeRunner((command, args): RunResult => {
+  const runner = fakeRunner((command, args, options): RunResult => {
     calls.push({ command, args });
     const joined = args.join(" ");
+    // the deployer's short-lived copy of the paper key for a shop runtime (lib/report-key.ts): do what the container does, as far as a test can (the file is the test
+    // user's, not uid 1000's), and answer as the container would on a real server
+    if (args[0] === "run" && args.includes(REPORT_KEY_JOB)) {
+      const out = args[args.indexOf("-v") + 1].replace(/:\/out$/u, "");
+      const name = args[args.indexOf("-e") + 2];
+      writeFileSync(join(out, name), options.input ?? "", { mode: 0o600 });
+      return ok(JSON.stringify({ sha256: createHash("sha256").update(options.input ?? "").digest("hex"), uid: 1000, gid: 1000, mode: 0o600 }));
+    }
     if (args[0] === "image") return ok("sha256:imageid");
     if (args[0] === "compose" && joined.includes("exec -T ops")) {
       const i = args.findIndex((a) => a.endsWith("/ops.ts"));

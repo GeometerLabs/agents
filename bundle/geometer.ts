@@ -12,9 +12,14 @@
 //                                licence key is refused like a missing --licence-key.
 //   pair <folder> --fleet-url U  pair a NEW server with Geometer's fleet: reads the one-time code from your account page (geometer.dev/account, "Add a server") on
 //                                standard input, never from the command line, exchanges it once, and keeps the answer in the folder (fleet_key, 0600, and pairing.json).
-//                                install.sh runs this, then `init --pairing`.
+//                                install.sh runs this, then `init --pairing`. On a folder set up with pairing skipped (geometer.json with no "fleet" section) it pairs
+//                                late: every local check first, the code sent once, then only a `fleet` section is added (the folder keeps its own id; fleet's goes in
+//                                fleet.deploymentId) and the trial lease taken. A pairing kept but not added is added by running it again, with no new code.
 //   model-key <file>             the model's API key, handed to the model Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
+//   gupshup-token <file>         the Gupshup partner's Universal Token (follow-up 2): the token refresher mints and renews each Gupshup shop's app token with it, for every
+//                                Gupshup shop that hands in no static gupshup_authorization. Only on a server run by that Gupshup partner: it acts for every app linked
+//                                to the partner. It lasts at most 60 days; hand in a new one before then (the panel's to-do list says when).
 //   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
 //                                pathway.lock); --prepared-by is the name the owner's monthly report message says set the shop up (written to report.json; without it the message says "your
 //                                builder"). With --company, --prepared-by is the person's name alone and the message says "Divya, Sri Sai Digital".
@@ -82,7 +87,9 @@ import { parseArgs } from "node:util";
 import { applyOnce, runLicence, watch } from "./apply.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { takeExtension, takeLease } from "./lib/licence.ts";
-import { pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
+import { joinPairing, latePairingProblem, pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
+import { GUPSHUP_UNIVERSAL_TOKEN_FILE } from "./generate/configs.ts";
+import { jwtExpiryMs } from "./services/gupshup-tokens.ts";
 import type { PairingFile } from "./lib/pairing.ts";
 import { kidOf } from "../modules/licence/token.ts";
 import { runBackup, runDrill, restoreAgent, restoreShop } from "./backup/jobs.ts";
@@ -103,7 +110,7 @@ import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
 import { INTAKE, secretFile, writeModelKey, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
-import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
+import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
 import { guardsOf, kindFor } from "./lib/kinds.ts";
 import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
 import { discoverTemplates } from "./panel/templates.ts";
@@ -199,6 +206,17 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       prepareSecretsRoot(dir);
       writeSecretFile(secretFile(dir, "refresher", "_server", "google_service_account.json"), file.trim());
       console.log(`The server-wide Google key is in place (${(JSON.parse(file) as { client_email: string }).client_email}). A shop that hands in no key of its own uses it; share each shop's calendar with that address.`);
+      return 0;
+    }
+
+    if (command === "gupshup-token") {
+      // follow-up 2: the partner's Universal Token, kept only in the refresher's folder; never printed, only its end (read from the token itself, not checked)
+      const token = readFileSync(resolve(positionals[0] ?? ""), "utf8").trim();
+      if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(token)) throw new Error("The file must hold Gupshup's Universal Token on one line, as Gupshup gave it (three parts with dots between, like eyJ...).");
+      prepareSecretsRoot(dir);
+      writeSecretFile(secretFile(dir, "refresher", "_server", GUPSHUP_UNIVERSAL_TOKEN_FILE), token);
+      const ends = jwtExpiryMs(token);
+      console.log(`The Gupshup universal token is in place${ends ? ` (it says it ends ${new Date(ends).toISOString().slice(0, 10)}; hand in a new one before then)` : ""}. Each Gupshup shop that hands in no gupshup_authorization of its own gets its app token renewed by the refresher from the next \`geometer deploy\`.`);
       return 0;
     }
 
@@ -375,7 +393,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         const r = takeLease(dir, server, text);
         if (!r.taken) { console.log(`This lease was not kept: ${r.why}.`); return r.same ? 0 : 1; }
         runLicence(ctx);
-        console.log(`Kept: a lease for ${r.payload.shops.length} shop${r.payload.shops.length === 1 ? "" : "s"} on ${server.id}, signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}. Each shop's Guards and agent read it at their next start; \`geometer deploy\` starts them.`);
+        console.log(`Kept: a lease for ${r.payload.shops.length} shop${r.payload.shops.length === 1 ? "" : "s"} on ${fleetIdOf(server)}, signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}. Each shop's Guards and agent read it at their next start; \`geometer deploy\` starts them.`);
         return 0;
       }
       const r = takeExtension(dir, server, text, Math.floor(ctx.now().getTime() / 1000));
@@ -468,7 +486,7 @@ export async function connectionChecks(ctx: Context, shop: string): Promise<{ te
   if (!server.panel.enabled) return not("This server has no panel (\"panel\" in geometer.json), and the checks run inside it.");
   if (readStatus(ctx.dir, shop)?.deploy.state !== "applied") return not(`${shop} is not deployed yet, so its Guards are not up to be asked: deploy it, then run \`geometer check ${shop}\` again (or press "Run the checks" in the panel).`);
   const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/services/connection-check.ts", shop], { timeoutMs: 120_000 });
-  let body: { connections?: { service: string; ok: boolean; code: string; detail?: string; notChecked?: string[] }[] | null; missing?: boolean } | undefined;
+  let body: { connections?: { service: string; ok: boolean; code: string; detail?: string; notChecked?: string[]; confirmed?: { appId?: string } }[] | null; missing?: boolean } | undefined;
   try { body = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? ""); } catch { /* not JSON */ }
   if (!body) return not(`The panel did not answer (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 200)}). Is the panel container up (\`geometer status\`)?`);
   if (body.missing) return not(`The panel has no settings for ${shop} (the panel keeps them in shops/${shop}/).`);
@@ -476,7 +494,8 @@ export async function connectionChecks(ctx: Context, shop: string): Promise<{ te
   // "not_configured" means the panel has nothing to check with yet (a shop made by `shop add` has no business number or key id in the panel's own data): that is not a failure
   const notRun = body.connections.filter((c) => !c.ok && c.code === "not_configured");
   const failed = body.connections.some((c) => !c.ok && c.code !== "not_configured");
-  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? "confirmed" : c.code === "not_configured" ? "NOT RUN (the panel does not have what it needs for this yet: enter it on the shop's page in the panel)" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
+  // a Gupshup shop's WhatsApp check confirms an app, never a number (panel/checks.ts checkGupshup): it is printed as what it is
+  const lines = body.connections.map((c) => `${c.service}: ${c.ok ? (c.confirmed?.appId ? `Gupshup answered for app ${c.confirmed.appId}` : "confirmed") : c.code === "not_configured" ? "NOT RUN (the panel does not have what it needs for this yet: enter it on the shop's page in the panel)" : `NOT confirmed (${c.code}${c.detail ? `: ${c.detail}` : ""})`}${c.notChecked?.length ? `; not checked: ${c.notChecked.join(", ")}` : ""}`);
   const verdict = failed ? "FAILED" : notRun.length > 0 ? "none failed, but some could not run" : "all passed";
   return { text: `Connection checks (read-only through the shop's Guards; nothing is sent or charged; the same as the panel's "Run the checks", so the panel shows these too, and this writes the shop's pins.json when they all confirm): ${verdict}\n${lines.map((l) => `  ${l}`).join("\n")}`, failed, recorded: body.connections.length > 0 && body.connections.every((c) => c.ok) };
 }
@@ -613,17 +632,30 @@ async function up(ctx: Context): Promise<number> {
 
 /**
  * `pair <folder> --fleet-url U`: the one-time code comes on standard input (one line), so it is never on a command line, in the shell's history or in `ps`. The answer is
- * kept in the folder before anything else (lib/pairing.ts); the code is not.
+ * kept in the folder before anything else (lib/pairing.ts); the code is not. A folder that is already a server set up with pairing skipped is paired late (follow-up 8):
+ * every local check before the code is read, then only a `fleet` section is added to its geometer.json (joinPairing). A late pairing that was kept but not joined is
+ * joined without a new code.
  */
 async function pair(folder: string | undefined, fleetUrl: string | undefined): Promise<number> {
   if (!folder || !fleetUrl) throw new Error("Say where the new server folder goes and fleet's address: pair <folder> --fleet-url https://fleet.geometer.dev   (then paste the code from your account page)");
+  const dir = resolve(folder);
+  const late = existsSync(join(dir, "geometer.json"));
+  const joined = () => {
+    const r = joinPairing(dir);
+    for (const line of r.lines) console.log(line);
+    if (r.joined) console.log("Next: the install's start (a server with no shop yet) or `geometer deploy` (a server with shops) writes the heartbeat's settings, and each shop's Guards take fleet's lease at that deploy.");
+    return 0;
+  };
+  if (late && existsSync(pairingPaths(dir).info)) return joined(); // paired before and not joined yet (or joined already: nothing changes): no new code
+  if (late) { const problem = latePairingProblem(dir); if (problem) throw new Error(problem); } // every local check before a code is read
   if (process.stdin.isTTY) process.stderr.write("Paste the pairing code from your account page (geometer.dev/account, \"Add a server\") and press Enter: ");
   const { createInterface } = await import("node:readline/promises");
   const lines = createInterface({ input: process.stdin, terminal: false });
   let code = "";
   for await (const line of lines) { code = line; break; }
   lines.close();
-  const p = await pairServer({ dir: resolve(folder), fleetUrl, code, now: new Date() });
+  const p = await pairServer({ dir, fleetUrl, code, now: new Date() });
+  if (late) return joined();
   console.log(`Paired with Geometer's fleet for the account "${p.accountName}". This server is ${p.deploymentId}; its key is in ${pairingPaths(resolve(folder)).key} (only you can read it). Next: geometer init ${folder} --pairing --domain <domain> --reviewed-by <you> --panel`);
   return 0;
 }

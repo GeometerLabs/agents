@@ -108,6 +108,8 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("owner_fee_upi_refund_reminder", "owner_fee_upi_refund_reminder", "owner"),
   template("fee_upi_refund_coming", "fee_upi_refund_owed", "customer"),
   template("fee_upi_refund_marked_sent", "fee_upi_refund_sent", "customer"),
+  // 12 Nov 2026: the promise fee_refund_checking makes ("as soon as it is confirmed"), kept when the payments service's list settles the refund, often days later
+  template("fee_refund_confirmed", "fee_refund_confirmed", "customer"),
   // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
   template("owner_fee_service_paused", "owner_licence_paused", "owner"),
   template("owner_fee_service_stopped", "owner_licence_stopped", "owner"),

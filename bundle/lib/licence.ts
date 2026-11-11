@@ -22,7 +22,7 @@ import { dirname, join } from "node:path";
 import { checkToken, CHECK_WORDS, keysFromHex } from "../../modules/licence/token.ts";
 import { licenceNow, newerThan, serverNow } from "../../modules/licence/rules.ts";
 import type { ExtensionPayload, LeasePayload, LeaseState, LicenceFile } from "../../modules/licence/rules.ts";
-import { readShop, serverPaths } from "./server.ts";
+import { fleetIdOf, readShop, serverPaths } from "./server.ts";
 import type { ServerConfig } from "./server.ts";
 import { readStatus, updateStatus } from "./status.ts";
 import { sha256Hex, stableJson, writeAtomic } from "./util.ts";
@@ -54,23 +54,23 @@ const pinned = (server: Pick<ServerConfig, "licence">): Buffer[] => keysFromHex(
 const NO_KEY = "no licence key is pinned in geometer.json (licence.keys), so no lease is kept and no shop is restricted by one";
 
 /** The kept lease, checked again with the pinned keys (a file someone changed by hand is not a lease). Undefined when there is none, or it does not check. */
-export function keptLease(dir: string, server: Pick<ServerConfig, "licence" | "id">): LeasePayload | undefined {
+export function keptLease(dir: string, server: Pick<ServerConfig, "licence" | "id" | "fleet">): LeasePayload | undefined {
   const keys = pinned(server);
   if (keys.length === 0 || !existsSync(licencePaths(dir).lease)) return undefined;
   const c = checkToken<LeasePayload>(readFileSync(licencePaths(dir).lease, "utf8").trim(), "lease", keys);
-  return c.ok && c.payload.deployment === server.id ? c.payload : undefined;
+  return c.ok && c.payload.deployment === fleetIdOf(server) ? c.payload : undefined; // fleet's id for this server (a late pairing keeps its own `id`)
 }
 
 export type Take<T> = { taken: true; payload: T } | { taken: false; why: string; same?: boolean };
 
 /** Keep a lease if it is good, for this server, and newer than the one kept. Anything else is never written. */
-export function takeLease(dir: string, server: Pick<ServerConfig, "licence" | "id">, token: string): Take<LeasePayload> {
+export function takeLease(dir: string, server: Pick<ServerConfig, "licence" | "id" | "fleet">, token: string): Take<LeasePayload> {
   const keys = pinned(server);
   if (keys.length === 0) return { taken: false, why: NO_KEY };
   const text = token.trim();
   const c = checkToken<LeasePayload>(text, "lease", keys);
   if (!c.ok) return { taken: false, why: CHECK_WORDS[c.code] };
-  if (c.payload.deployment !== server.id) return { taken: false, why: `it is a lease for another server, not this one (${server.id})` };
+  if (c.payload.deployment !== fleetIdOf(server)) return { taken: false, why: `it is a lease for another server, not this one (${fleetIdOf(server)})` };
   const seen = readSeen(dir);
   const file = keptLease(dir, server);
   const kept: Mark | null = seen.kept ?? (file ? { serial: file.serial, issued_at: file.issued_at } : null);
@@ -85,14 +85,14 @@ export function takeLease(dir: string, server: Pick<ServerConfig, "licence" | "i
 }
 
 /** The good extensions that cover this server, from state/licence/extensions/. */
-export function keptExtensions(dir: string, server: Pick<ServerConfig, "licence" | "id">): ExtensionPayload[] {
+export function keptExtensions(dir: string, server: Pick<ServerConfig, "licence" | "id" | "fleet">): ExtensionPayload[] {
   const keys = pinned(server);
   const folder = licencePaths(dir).extensions;
   if (keys.length === 0 || !existsSync(folder)) return [];
   const out: ExtensionPayload[] = [];
   for (const name of readdirSync(folder).filter((n) => n.endsWith(".gx1")).sort()) {
     const c = checkToken<ExtensionPayload>(readFileSync(join(folder, name), "utf8").trim(), "extension", keys);
-    if (c.ok && (c.payload.deployments.includes("*") || c.payload.deployments.includes(server.id))) out.push(c.payload);
+    if (c.ok && (c.payload.deployments.includes("*") || c.payload.deployments.includes(fleetIdOf(server)))) out.push(c.payload);
   }
   return out;
 }
@@ -101,13 +101,13 @@ export function keptExtensions(dir: string, server: Pick<ServerConfig, "licence"
  * Keep an emergency extension (`geometer licence extension <file>`): checked like a lease, `kind` "extension", naming this server or `*`, and not already over. It only
  * pushes out when a lease's cover ends: it never lifts a wind-down or a stop a lease states.
  */
-export function takeExtension(dir: string, server: Pick<ServerConfig, "licence" | "id">, token: string, clockS: number): Take<ExtensionPayload> {
+export function takeExtension(dir: string, server: Pick<ServerConfig, "licence" | "id" | "fleet">, token: string, clockS: number): Take<ExtensionPayload> {
   const keys = pinned(server);
   if (keys.length === 0) return { taken: false, why: NO_KEY };
   const text = token.trim();
   const c = checkToken<ExtensionPayload>(text, "extension", keys);
   if (!c.ok) return { taken: false, why: CHECK_WORDS[c.code] };
-  if (!c.payload.deployments.includes("*") && !c.payload.deployments.includes(server.id)) return { taken: false, why: `it does not name this server (${server.id})` };
+  if (!c.payload.deployments.includes("*") && !c.payload.deployments.includes(fleetIdOf(server))) return { taken: false, why: `it does not name this server (${fleetIdOf(server)})` };
   const seen = readSeen(dir);
   if (c.payload.until <= serverNow(clockS, seen.newest_issued_at)) return { taken: false, why: `it ended on ${new Date(c.payload.until * 1000).toISOString().slice(0, 10)}, so it would change nothing` };
   const file = join(licencePaths(dir).extensions, `${sha256Hex(text).slice(0, 16)}.gx1`);
@@ -122,7 +122,7 @@ export function takeExtension(dir: string, server: Pick<ServerConfig, "licence" 
 export interface KeptLicence { lease?: LeasePayload; newestIssuedAt: number; extensionUntil: number; pinned: boolean }
 
 // Re-checks everything held (lease and extensions) against the pinned keys each time, so a file edited by hand after being stored stops counting.
-export function keptLicence(dir: string, server: Pick<ServerConfig, "licence" | "id">): KeptLicence {
+export function keptLicence(dir: string, server: Pick<ServerConfig, "licence" | "id" | "fleet">): KeptLicence {
   const lease = keptLease(dir, server);
   const extensions = keptExtensions(dir, server);
   const seen = readSeen(dir);

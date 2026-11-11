@@ -91,6 +91,17 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
     },
   },
   {
+    // 12 Nov 2026: the word "we will message you as soon as it is confirmed" (refund_checking) promised. The payments service's list can settle the refund days later
+    // (a person's look, or the provider's refund.done), outside the customer's 24-hour window, so it needs a template of its own.
+    name: "deposit_refund_confirmed", usedFor: "refund_confirmed", audience: "customer",
+    bodies: {
+      en: "Your {refund} refund is confirmed and is on its way back to you.",
+      hi: "आपके {refund} के रिफंड की पुष्टि हो गई है। यह आपको वापस भेजा जा रहा है।",
+      ml: "നിങ്ങളുടെ {refund} റീഫണ്ട് ഉറപ്പായി. അത് തിരികെ വരുന്നുണ്ട്.",
+      kn: "ನಿಮ್ಮ {refund} ರೀಫಂಡ್ ಖಚಿತವಾಗಿದೆ. ಅದು ಮರಳಿ ಬರುತ್ತಿದೆ.",
+    },
+  },
+  {
     name: "deposit_paid_twice", usedFor: "duplicate_refund", audience: "customer",
     bodies: {
       en: "You paid the deposit twice. The extra {refund} is being refunded.",

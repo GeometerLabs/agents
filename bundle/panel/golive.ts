@@ -54,9 +54,14 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     const pins = shops.pins(shop);
     const wa = guardUrlFor(config, shop, "whatsapp") as string;
     const hasCalendar = guardsOf(kindOf(shop), settings0).includes("calendar"); // B72: a shop on its own booking list has no calendar to check
+    // A shop whose WhatsApp goes through Gupshup (runtime.json `provider`) has no Meta number read to make: its check is Gupshup's app read (checks.ts checkGupshup)
+    const messaging = runtime?.services?.messaging;
+    const whatsapp = messaging?.provider === "gupshup"
+      ? { gupshup: { baseUrl: wa, appId: String(messaging.appId ?? "") } }
+      : { whatsapp: { baseUrl: wa, phoneNumberId: String(messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" } };
     return {
       ...(agentToken ? { agentToken } : {}),
-      whatsapp: { baseUrl: wa, phoneNumberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" },
+      ...whatsapp,
       ...(gateway ? { gateway: { provider: gateway.id, baseUrl: guardUrlFor(config, shop, gateway.id) as string, ...(meta.gateway?.provider === gateway.id && meta.gateway.keyId ? { keyId: meta.gateway.keyId } : {}), expectedMode: meta.gateway?.mode ?? "live", ...(pins?.gateway?.provider === gateway.id && pins.gateway.keyId ? { pinnedKeyId: pins.gateway.keyId } : {}) } } : {}),
       ...(hasCalendar ? { calendar: { baseUrl: guardUrlFor(config, shop, "calendar") as string, calendarId: String(runtime?.services?.calendar?.calendarId ?? "") } } : {}),
     };

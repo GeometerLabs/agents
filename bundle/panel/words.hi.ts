@@ -144,7 +144,7 @@ export const hi: Words = {
     paidThrough: (day) => `अगला भुगतान: ${day}।`, windDownOn: (day) => `भुगतान न होने पर ${day} से नई बुकिंग रुक जाएगी।`, extended: (day) => `Geometer का आपात विस्तार ${day} तक लागू है।`,
     stopOn: (day) => `पूरी तरह बंद होने की तारीख़: ${day}।`, exportUntil: (day) => `दुकान के रिकॉर्ड आप ${day} तक डाउनलोड कर सकते हैं।`,
     renew: "भुगतान करके नवीनीकरण करें", stale: (day) => `लाइसेंस ${day} से ताज़ा नहीं हुआ है। देखें कि यह सर्वर Geometer तक पहुँच रहा है। सहायता को लिखिए। एक इंसान जवाब देता है।`,
-    trial: (day) => `ट्रायल लाइसेंस: ${day} को ख़त्म होता है। उसके बाद, दुकान के प्लान पर आने तक नई बुकिंग रुकी रहेगी।`,
+    trial: (day) => `ट्रायल लाइसेंस: आख़िरी दिन ${day} है। अगले दिन से, दुकान के प्लान पर आने तक नई बुकिंग रुकी रहेगी।`,
   },
   setup: {
     title: "दुकान सेट करें", chooseTemplate: "यह क्या काम करेगा?", templateNames: { bookings: "जमा राशि के साथ बुकिंग", fees: "कक्षाओं की फीस वसूली", orders: "एडवांस के साथ प्री-ऑर्डर" },
@@ -264,6 +264,8 @@ export const hi: Words = {
       whatsapp: {
         title: "WhatsApp की जाँच", confirmed: (n) => `यह दुकान का ही नंबर है (${n})।`, differs: (e) => `जो नंबर मिला वह ${e} पर ख़त्म होता है, दुकान का नंबर नहीं है। कुछ भी बदला नहीं गया।`,
         notFound: "यह फ़ोन नंबर आईडी इस अकाउंट में नहीं है।",
+        gupshupConfirmed: (id) => `Gupshup ने ऐप ${id} के लिए जवाब दिया। यह जाँच नहीं दिखाती कि ऐप किस नंबर से भेजता है।`,
+        gupshupNotFound: (said) => (said ? `Gupshup ने इस टोकन के साथ वह ऐप स्वीकार नहीं किया (उसने कहा: ${said})।` : "Gupshup ने इस टोकन के साथ वह ऐप स्वीकार नहीं किया।"),
       },
       calendar: {
         title: "कैलेंडर की जाँच", confirmed: (n) => `“${n}” मिला, और इसमें बदलाव हो सकता है।`, differs: "Google एक अलग कैलेंडर दिखा रहा है, दिए गए कैलेंडर से अलग। कुछ भी बदला नहीं गया।",
@@ -271,6 +273,7 @@ export const hi: Words = {
       },
       generic: {
         not_allowed: "अकाउंट ने जाँच मंज़ूर नहीं की। कुंजियाँ देख लीजिए।", refused_by_guard: "सर्वर के Guard ने इस जाँच को आगे नहीं जाने दिया।", unreachable: "वहाँ तक पहुँच नहीं हो पाई। एक मिनट बाद फिर कोशिश कीजिए।",
+        rate_limited: "अभी बहुत सारी जाँचें हो गईं। एक मिनट बाद फिर कोशिश कीजिए।",
         unexpected_response: "जवाब वैसा नहीं था जैसा यह सेवा देती है, इसलिए उसे इस्तेमाल नहीं किया गया।", not_configured: "पहले ऊपर की जानकारी भरिए।",
       },
       guardWords: (d) => `Guard ने कहा: ${d}`,
@@ -290,6 +293,8 @@ export const hi: Words = {
       refund_unknown: (id) => `${id} का रिफंड हुआ या नहीं, पता नहीं: {gateway} में देखिए`,
       refund_failed: (id) => `${id} का रिफंड नहीं हो पाया: देखिए`,
       message_unanswered: (id) => `सेवा का कनेक्शन बंद होने से ${id} का काम पूरा नहीं हुआ: जाँचिए और ग्राहक को जवाब दीजिए`,
+      whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup से WhatsApp: इस दुकान का टोकन नया नहीं हो पाया। अभी वाला टोकन ${hours} घंटे में ख़त्म होगा, उसके बाद कोई संदेश नहीं जाएगा। सर्वर देखिए (geometer logs refresher) या Gupshup का नया universal token दीजिए।`,
+      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup से WhatsApp: सर्वर का Gupshup universal token ${Math.floor(hours / 24)} दिन में ख़त्म होगा। उससे पहले नया दीजिए (geometer gupshup-token <file>)।`,
       message_not_delivered: (id) => `${id} के लिए भेजा गया WhatsApp संदेश फ़ोन तक नहीं पहुँचा (WhatsApp ने बताया कि वह विफल रहा): उस व्यक्ति से किसी और तरह संपर्क कीजिए`,
       upi_payment_unconfirmed: (id, amount) => `${id} के लिए ${amount} का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए`,
       upi_refund_owed: (id, amount) => `${id} का ${amount} का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए`,

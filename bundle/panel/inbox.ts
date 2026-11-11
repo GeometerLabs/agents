@@ -3,13 +3,14 @@
 // modules/unfinished. Nothing is saved: the list is read again each time, so it can never disagree with the record. A shop that is stopped, or whose
 // subscription lapsed, still has its last export, so it still has its list.
 import { existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { obligations } from "../../modules/unfinished/index.ts";
 import type { CaseLike, Obligation, UnfinishedOptions } from "../../modules/unfinished/index.ts";
 import { DEFAULT_OPTIONS } from "../../modules/unfinished/index.ts";
 import type { Account } from "./accounts.ts";
 import { casesOf, readExport } from "./activity.ts";
 import type { Shops } from "./shops.ts";
+import { readRenewalsFile, renewalWork } from "../lib/renewals.ts";
 
 export interface ShopInbox {
   id: string;
@@ -24,17 +25,28 @@ export interface ShopInbox {
 /** The panel's setting for how long an owner's answer may wait: PANEL_APPROVAL_WAIT_HOURS, default 12. */
 export const optionsFor = (approvalWaitHours?: number): UnfinishedOptions => ({ ...DEFAULT_OPTIONS, ...(approvalWaitHours !== undefined ? { approvalWaitMs: approvalWaitHours * 3_600_000 } : {}) });
 
-// Builds one shop's to-do list from its last export on every call and stores nothing, so the list cannot disagree with the record.
+/**
+ * Follow-up 2: the shop's Gupshup token, when its renewal needs a person (fleet/_renewals.json, written by ops from the token refresher; lib/renewals.ts). It is not in
+ * the shop's record, so it is added here, first: a token that is not renewed stops every message the shop sends.
+ */
+function renewalItems(shops: Shops, id: string, nowMs: number): Obligation[] {
+  const note = readRenewalsFile(dirname(shops.paths.fleetFile(id)))?.shops[id]; // the fleet folder, which ops writes and the panel reads
+  const work = note ? renewalWork(note, nowMs) : undefined;
+  return work ? [{ kind: work.kind, caseId: "WhatsApp", sinceMs: work.sinceMs, facts: { hours: work.hoursLeft }, actions: [] }] : [];
+}
+
+// Builds one shop's to-do list from its last export on every call and stores nothing, so the list cannot disagree with the record (and the Gupshup token's renewal, above).
 export function inboxFor(shops: Shops, id: string, nowMs: number, options: UnfinishedOptions): ShopInbox {
   const name = shops.settings(id)?.name ?? id;
   const dir = shops.paths.exports(id);
+  const renewal = renewalItems(shops, id, nowMs);
   const data = readExport(dir);
-  if (!data) return { id, name, items: [], failed: [] };
+  if (!data) return { id, name, items: renewal, failed: [] };
   const template = shops.kind(id);
   const cases = casesOf(data, template) as unknown as CaseLike[];
   const { found, failed } = obligations.detect({ template, entries: data.entries, cases, nowMs, options });
   const file = join(dir, "record.json");
-  return { id, name, asOf: existsSync(file) ? new Date(statSync(file).mtimeMs).toISOString() : undefined, items: found, failed } as ShopInbox;
+  return { id, name, asOf: existsSync(file) ? new Date(statSync(file).mtimeMs).toISOString() : undefined, items: [...renewal, ...found], failed } as ShopInbox;
 }
 
 /** Every shop this account may see, those with something to do first (most items, then name). A partner's list holds only the partner's own shops. */

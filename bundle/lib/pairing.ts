@@ -11,9 +11,18 @@
 //
 // The code itself is read from standard input, never from the command line (where other users of the machine can see it), and is never written anywhere. It opens
 // nothing but this exchange: not the panel, not fleet's other routes.
+//
+// A LATE pairing (follow-up 8, 12 Nov 2026): a server set up with pairing skipped has geometer.json and no fleet key. The install run again with a code pairs it:
+// `pairServer` takes the code for such a folder too (every local check first, the code sent once), and `joinPairing` then adds ONLY a `fleet` section to geometer.json
+// (fleet's address, the key file, and fleet's id for the server when it is not the folder's own `id`, which stays: the compose project and the volumes are named from
+// it), and takes the trial lease. Nothing else in the folder changes. A pairing kept but not joined yet (pairing.json, no `fleet` section) is joined by running it again,
+// with no new code.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { serverIdProblem } from "./util.ts";
+import { kidOf } from "../../modules/licence/token.ts";
+import { takeLease } from "./licence.ts";
+import { parseServer, serverPaths } from "./server.ts";
+import { serverIdProblem, stableJson, writeAtomic } from "./util.ts";
 
 export interface PairingFile {
   schema: 1;
@@ -63,12 +72,29 @@ export function checkAnswer(body: unknown, pairedWith: string): { ok: true; key:
 }
 
 /**
- * Exchange the code with fleet, and keep the answer in `dir` (made if needed). Refuses before sending anything when the folder is already set up or already paired:
- * pairing is for a new server, and a second code would make a second deployment in fleet.
+ * A server folder that can be paired late: geometer.json is there and readable, and it has no `fleet` section (pairing was skipped, and no key was given by hand). Says
+ * why not, or undefined when it can. Read before any code is sent.
+ */
+export function latePairingProblem(dir: string): string | undefined {
+  let raw: unknown;
+  try { raw = JSON.parse(readFileSync(serverPaths(dir).config, "utf8")); } catch { return `${serverPaths(dir).config} could not be read, so nothing was sent.`; }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return `${serverPaths(dir).config} is not a server's settings, so nothing was sent.`;
+  if ((raw as { fleet?: unknown }).fleet !== undefined) return `${dir} already talks to Geometer's fleet (geometer.json has a "fleet" section), so it is not paired again. Nothing was sent.`;
+  const checked = parseServer(raw);
+  if (checked.errors.length > 0) return `${serverPaths(dir).config} needs fixing first (${checked.errors[0]}), so nothing was sent.`;
+  return undefined;
+}
+
+/**
+ * Exchange the code with fleet, and keep the answer in `dir` (made if needed). Refuses before sending anything when the folder is already paired (a second code would make a
+ * second deployment in fleet), and when it is a server folder that already talks to fleet. A server folder set up with pairing skipped is paired late (then joinPairing).
  */
 export async function pairServer(o: { dir: string; fleetUrl: string; code: string; now: Date; fetchImpl?: typeof fetch; timeoutMs?: number }): Promise<PairingFile> {
   const paths = pairingPaths(o.dir);
-  if (existsSync(join(o.dir, "geometer.json"))) throw new Error(`${o.dir} is already a server folder, so it is not paired again. Pairing is for a new server.`);
+  if (existsSync(join(o.dir, "geometer.json"))) {
+    const problem = latePairingProblem(o.dir);
+    if (problem) throw new Error(problem);
+  }
   if (existsSync(paths.key) || existsSync(paths.info)) throw new Error(`${o.dir} is already paired (${existsSync(paths.info) ? "pairing.json" : "fleet_key"} is there). Nothing was sent. To start over, move the folder away first.`);
   const problem = fleetUrlProblem(o.fleetUrl);
   if (problem) throw new Error(problem);
@@ -108,3 +134,37 @@ export function readPairing(dir: string): PairingFile {
   if (!checked.ok || r.schema !== 1) throw new Error(`${paths.info} (or fleet_key beside it) is not a pairing this bundle can use${checked.ok ? "" : `: ${checked.problem}`}.`);
   return { ...checked.file, pairedAt: typeof r.pairedAt === "string" ? r.pairedAt : "" };
 }
+
+/**
+ * A late pairing's second half: add the `fleet` section to an existing geometer.json from what `pair` kept, and nothing else; then take the trial lease. Refused, with
+ * nothing changed and the pairing kept (so running it again needs no new code), when the licence key pinned in geometer.json is not fleet's: the lease fleet signs would
+ * never check, and every shop would wind down. Running it again after it was joined changes nothing. Returns what to tell the builder.
+ */
+export function joinPairing(dir: string): { joined: boolean; lines: string[] } {
+  const paired = readPairing(dir);
+  const path = serverPaths(dir).config;
+  const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown> & { id?: unknown; fleet?: { url?: unknown; deploymentId?: unknown }; licence?: { keys?: unknown } };
+  const fleetId = (f: typeof raw.fleet) => (typeof f?.deploymentId === "string" ? f.deploymentId : raw.id);
+  if (raw.fleet !== undefined) {
+    if (raw.fleet.url === paired.fleetUrl && fleetId(raw.fleet) === paired.deploymentId) return { joined: false, lines: [`This server is already paired with Geometer's fleet as ${paired.deploymentId}.`] };
+    throw new Error(`${path} already names a fleet (${String(raw.fleet.url)}), not the pairing kept in pairing.json (${paired.fleetUrl}, ${paired.deploymentId}). Nothing was changed.`);
+  }
+  const pinned = Array.isArray(raw.licence?.keys) ? (raw.licence!.keys as unknown[]).filter((k): k is string => typeof k === "string").map((k) => k.toLowerCase()) : [];
+  const kids = (keys: string[]) => keys.map((k) => kidOf(Buffer.from(k, "hex"))).sort().join(", ");
+  if (paired.licenceKeys.length > 0 && (pinned.length !== paired.licenceKeys.length || !paired.licenceKeys.every((k) => pinned.includes(k)))) {
+    throw new Error(`geometer.json pins Geometer's licence key ${kids(pinned) || "(none)"}, but fleet's is ${kids(paired.licenceKeys)}, so the lease fleet sends would never check and the shops would wind down. Nothing in geometer.json was changed, and the pairing is kept in ${pairingPaths(dir).info}: if fleet's key is the right one, put it in geometer.json's "licence" ("keys"), or write to support, then run the install again. No new code is needed.`);
+  }
+  const fleet = { url: paired.fleetUrl, keyFile: pairingPaths(dir).key, ...(paired.deploymentId !== raw.id ? { deploymentId: paired.deploymentId } : {}) };
+  const next = { ...raw, fleet };
+  const checked = parseServer(next);
+  if (checked.errors.length > 0) throw new Error(`The fleet section could not be added (${checked.errors.join("; ")}). Nothing was changed; the pairing is kept in ${pairingPaths(dir).info}.`);
+  writeAtomic(path, stableJson(next));
+  const lines = [`Paired with Geometer's fleet for the account "${paired.accountName}": heartbeats go to ${paired.fleetUrl}, as ${paired.deploymentId}${fleet.deploymentId ? ` (the folder keeps its own id, ${String(raw.id)}, for its containers and volumes)` : ""}. Nothing else in ${dir} was changed.`];
+  if (paired.licenceKeys.length === 0) lines.push("note: fleet sent no licence key (its licence is off), so the key pinned in geometer.json stays as it is.");
+  if (paired.trialLease) {
+    const r = takeLease(dir, checked.config, paired.trialLease);
+    lines.push(r.taken ? `The trial lease is kept (signed ${new Date(r.payload.issued_at * 1000).toISOString().slice(0, 10)}).` : `note: the trial lease fleet sent was not kept: ${r.why}. The first heartbeat brings a lease.`);
+  }
+  return { joined: true, lines };
+}
+

@@ -285,6 +285,40 @@ test("a pairing code file must hold a code; the questions are never asked when n
   } finally { s.done(); }
 });
 
+test("follow-up 8: a second run on a folder whose pairing was skipped pairs it when a code is given, asks for one when a person is there, and otherwise leaves it as it is", async () => {
+  const s = sandbox();
+  try {
+    const srv = join(s.root, "srv"); mkdirSync(srv);
+    // geometer.json as `init` writes it after a skipped pairing: no "fleet" section
+    writeFileSync(join(srv, "geometer.json"), `{\n  "domain": "shops.example.com",\n  "id": "srv",\n  "licence": {\n    "keys": ["${"ab".repeat(32)}"]\n  }\n}\n`);
+    const code = join(s.root, "code"); writeFileSync(code, "gfp_abcd-efgh-jkmn-pqrs-tvwx-yz23\n");
+    const ask = (vars: string) => s.run(`SERVER_DIR=${JSON.stringify(srv)} PAIR_MODE="" ${vars}; ask_questions; echo "mode $PAIR_MODE code \${PAIRING_CODE:-none} domain $DOMAIN"`);
+    let r = await ask(`CODE_FILE=${JSON.stringify(code)} YES=1`);
+    assert.equal(r.code, 0, r.out); assert.match(r.out, /^mode late code gfp_abcd-efgh-jkmn-pqrs-tvwx-yz23 domain shops\.example\.com$/mu, "the domain is the folder's, the code is the one given");
+    r = await ask("YES=1");
+    assert.equal(r.code, 0, r.out); assert.match(r.out, /^mode unpaired code none/mu, "nobody to ask and no code: it stays unpaired, as it was");
+    r = await s.run(`SERVER_DIR=${JSON.stringify(srv)} PAIR_MODE=skip YES=1; ask_questions; echo "mode $PAIR_MODE"`);
+    assert.match(r.out, /^mode skip$/mu, "--skip-pairing keeps it so");
+    writeFileSync(join(code), "123456\n");
+    r = await ask(`CODE_FILE=${JSON.stringify(code)} YES=1`);
+    assert.equal(r.code, 1); assert.match(r.out, /not a pairing code: it starts with gfp_/u);
+    // a pairing kept but not added yet (pairing.json, no fleet section): joined again, no new code
+    writeFileSync(join(srv, "pairing.json"), "{}\n");
+    r = await ask("YES=1");
+    assert.match(r.out, /^mode late code none/mu);
+    // a folder that talks to fleet already is never asked again
+    writeFileSync(join(srv, "geometer.json"), `{\n  "fleet": {\n    "keyFile": "/x/fleet_key",\n    "url": "https://fleet.geometer.dev"\n  },\n  "domain": "shops.example.com",\n  "id": "srv"\n}\n`);
+    r = await ask(`CODE_FILE=${JSON.stringify(code)} YES=1`);
+    assert.match(r.out, /^mode done code none/mu);
+    // pair_server sends the code to `geometer pair` on standard input, never on its command line, for a folder that exists
+    const node = join(s.bin, "node"); writeFileSync(node, `#!/bin/bash\necho "node $* stdin=$(cat)" >> "$STUB_LOG"\n`); chmodSync(node, 0o755);
+    r = await s.run(`SERVER_DIR=${JSON.stringify(srv)} NODE_BIN=node APP_DIR=/app FLEET_URL=https://fleet.geometer.dev PAIR_MODE=late PAIRING_CODE=gfp_abcd-efgh-jkmn-pqrs-tvwx-yz23; pair_server`);
+    assert.equal(r.code, 0, r.out);
+    const sent = s.calls().find((c) => c.startsWith("node /app/bundle/geometer.ts pair"))!;
+    assert.match(sent, /pair .*srv --fleet-url https:\/\/fleet\.geometer\.dev stdin=gfp_abcd-efgh-jkmn-pqrs-tvwx-yz23$/u, "the code on standard input only");
+  } finally { s.done(); }
+});
+
 test("a whole dry run says each step and changes nothing: no root command, no server folder, no code sent", async () => {
   const s = sandbox({
     uname: "echo x86_64",

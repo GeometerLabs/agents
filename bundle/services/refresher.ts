@@ -2,6 +2,9 @@
 // shared with that account), exchanges a signed assertion for a short-lived token, writes `Bearer <token>` to a file only that shop's Calendar Guard reads,
 // and asks that Guard to read it again (POST /admin/reload with its admin token). The runtime never sees the key or the token.
 //
+// Since 12 Nov 2026 (follow-up 2) it also renews Gupshup app tokens for the shops whose WhatsApp Guard is "renewed" (gupshup-tokens.ts; config `gupshup`), with the
+// same discipline, and its /healthz says how each is doing (no token), which ops passes on to the panel's unfinished-work list.
+//
 // Token discipline: a token is never logged and is never part of a URL; the exchange is tried once per round and a failure waits (1 min, then doubling to
 // 10) rather than being repeated at once; the service-account key file is only ever read, never rewritten; if the provider ever sends a refresh credential
 // with the token it is not stored here, because this flow has none to keep (the key is the long-lived credential).
@@ -10,9 +13,12 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { writeAtomic } from "../lib/util.ts";
+import { createGupshupRenewer } from "./gupshup-tokens.ts";
+import type { GupshupRenewalConfig } from "./gupshup-tokens.ts";
 
 export interface RefresherShopConfig { serviceAccountFile: string; guardAdminUrl: string; adminTokenFile: string }
-export interface RefresherConfig { outDir: string; refreshMinutes: number; scope: string; shops: Record<string, RefresherShopConfig> }
+/** `gupshup`: the shops whose Gupshup app token this refresher renews (follow-up 2); left out on a server with none, which keeps its config as it was. */
+export interface RefresherConfig { outDir: string; refreshMinutes: number; scope: string; shops: Record<string, RefresherShopConfig>; gupshup?: GupshupRenewalConfig }
 
 const b64url = (data: string | Buffer) => Buffer.from(data).toString("base64url");
 
@@ -97,12 +103,21 @@ export function createRefresher(config: RefresherConfig, deps: { fetch?: typeof 
 if (import.meta.main) {
   const config = JSON.parse(readFileSync(process.env.CONFIG ?? "/etc/geometer/refresher.json", "utf8")) as RefresherConfig;
   const refresher = createRefresher(config, { log: (line) => console.error(line) });
+  const gupshup = config.gupshup && Object.keys(config.gupshup.shops).length > 0 ? createGupshupRenewer(config.gupshup, { log: (line) => console.error(line) }) : undefined;
   const server = createServer((req, res) => {
-    if (req.url === "/healthz") { const ok = refresher.healthy(); res.writeHead(ok ? 200 : 503, { "content-type": "application/json" }); res.end(JSON.stringify({ ok, shops: Object.fromEntries(Object.entries(refresher.state()).map(([n, s]) => [n, { valid: s.expiresAt !== null && s.expiresAt > Date.now(), lastError: s.lastError }])) })); return; }
+    if (req.url === "/healthz") {
+      const ok = refresher.healthy() && (gupshup?.healthy() ?? true);
+      res.writeHead(ok ? 200 : 503, { "content-type": "application/json" });
+      // `gupshup`: each renewed shop's state (times and plain words, never a token), for ops to pass on to the panel's unfinished-work list
+      res.end(JSON.stringify({ ok, shops: Object.fromEntries(Object.entries(refresher.state()).map(([n, s]) => [n, { valid: s.expiresAt !== null && s.expiresAt > Date.now(), lastError: s.lastError }])), ...(gupshup ? { gupshup: gupshup.state() } : {}) }));
+      return;
+    }
     res.writeHead(404); res.end();
   });
   server.listen(Number(process.env.PORT ?? 8791), process.env.HOST ?? "127.0.0.1");
   refresher.start();
+  // every 7 s: a token due is renewed at once, and the per-minute limit inside tick() spreads a first start's mints over a minute or two
+  if (gupshup) { void gupshup.tick(); const gupshupTimer = setInterval(() => void gupshup.tick(), 7_000); for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => clearInterval(gupshupTimer)); }
   console.error(`Google token refresher for ${Object.keys(config.shops).length} shop(s), every ${config.refreshMinutes} minutes and before a token runs out.`);
   for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { refresher.stop(); server.close(() => process.exit(0)); });
 }

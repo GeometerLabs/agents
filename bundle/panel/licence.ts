@@ -4,7 +4,7 @@
 // which states them as fleet's own local days; without it, the signed times are shown as days in India, fleet's time zone.
 //
 // Decision 39 (monorepo ADR-0070): a shop the lease does not list has NO LICENCE (state `none`): its Guards take no new work, so the page says so instead of
-// showing nothing. A shop the builder's trial covers shows the day the trial ends (fleet's `trial_ends`).
+// showing nothing. A shop the builder's trial covers shows the trial's last day (fleet's `trial_ends`: the last day, the same day the account page shows).
 import type { FleetAnswer, ShopStatus } from "./contract.ts";
 
 /** The lease's five states, and `none`: the lease does not list the shop (decision 39). */
@@ -25,8 +25,8 @@ export interface LicenceView {
   renewUrl?: string;
   /** The day the kept lease was signed, when that is more than 2 days ago. */
   staleSince?: string;
-  /** The day the builder's trial ends, for a shop it covers (fleet's unsigned `trial_ends`). */
-  trialEnds?: string;
+  /** The builder's trial's LAST DAY, for a shop it covers (fleet's unsigned `trial_ends`, which fleet sends as the last day: never shifted here). */
+  trialLastDay?: string;
 }
 
 /** A signed time (the start of a local day in fleet's time zone) as that day. */
@@ -51,7 +51,7 @@ export function licenceView(status: ShopStatus["licence"] | undefined, fleet: Fl
   set("extendedUntil", dayInIndia(status.extendedUntil));
   if (status.state !== "active") set("renewUrl", fleet?.renew_url ?? undefined);
   set("staleSince", stale);
-  set("trialEnds", fleet?.trial_ends);
+  set("trialLastDay", fleet?.trial_ends);
   return v;
 }
 

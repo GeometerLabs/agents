@@ -257,7 +257,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellCustomer: (o, phone, templates, more) => tellCustomer(o, phone, templates as TemplateId[], more),
     tellOwner: (o, phone, template, more) => tellOwner(o, phone, template as TemplateId, more),
     cases: () => store.orders.values(),
-    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled" },
+    ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled", confirmed: "refund_confirmed" },
   });
   const { requestRefund, overLimit } = refunds;
   const afterRefund = (o: Order, result: Parameters<typeof refunds.afterRefund>[1], a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }) => refunds.afterRefund(o, result, a);
@@ -1024,8 +1024,12 @@ export function createAgent(deps: AgentDeps): Agent {
       const paymentId = event.payload.refund!.payment_id;
       const o = orders.find((x) => x.handledPayments.includes(paymentId) || x.advancePaymentId === paymentId);
       const refundId = event.payload.refund!.id;
-      const listed = (await payments.listRefunds(paymentId)).some((r) => r.id === refundId);
-      log(o ?? null, o?.customer ?? owner, "receive_payment_event", listed ? "confirmed" : "unconfirmed", { id: event.id, event: event.event }, { refs: { refundId, paymentId }, notes: "the refund is on the payments service's own list" });
+      // The event only says to look: the payments service's own list must show the refund. When it is the refund an unknown outcome is open on (B75), that ORIGINAL
+      // attempt is settled as the provider's confirmation and the customer told (modules/payments/refunds.ts settleFromEvent); no refund is ever asked for again.
+      const listed = (await payments.listRefunds(paymentId)).find((r) => r.id === refundId);
+      const settles = o && listed ? refunds.openIssueFor(o, listed) !== undefined : false;
+      log(o ?? null, o?.customer ?? owner, "receive_payment_event", listed ? "confirmed" : "unconfirmed", { id: event.id, event: event.event }, { refs: { refundId, paymentId }, notes: listed ? (settles ? "the refund is on the payments service's own list, and it is the one whose outcome was unknown: settled below" : "the refund is on the payments service's own list") : "the payments service's own list does not show this refund, so nothing is settled by it" });
+      if (o && listed && settles) await refunds.settleFromEvent(o, listed, event.id);
       store.seenEvents.add(event.id);
       return;
     }
@@ -1062,7 +1066,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
   //   recheck_payment   read the payments service's own list for this order's link, and record any payment not yet counted (the normal path, with its rules)
   //   ask_owner_again   the owner has not answered: send the owner the same notice again (a big order, or a late cancellation's refund, or a UPI payment or refund)
-  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again)
+  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again; a refund the list shows settles it, and the customer is told)
   // Nothing here widens a limit: every call is one the agent already makes, and Guard decides each as it does every day.
   async function onRecovery(e: { id: string; case: string; action: string }): Promise<void> {
     const o = store.orders.get(e.case);
@@ -1090,7 +1094,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (!(o.refundIssues ?? []).some((i) => ["unknown", "uncertain", "unconfirmed", "failed"].includes(i.kind))) return note("blocked", "no refund here is waiting on an unclear outcome");
       note("attempted", "looking again, read-only, for a refund that may have gone");
       const r = await refunds.recheck(o);
-      return note("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list; none was sent again`);
+      return note("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list, and the customer was told of each one that does; none was sent again`);
     }
     note("blocked", `the agent has no recovery called "${e.action}"`);
   }

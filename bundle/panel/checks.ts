@@ -5,12 +5,14 @@
 //  - the id the shop gave is immutable: finding a different account is an error with its own code, never a silent switch to what was found;
 //  - the reply is checked for shape (an id that is not an id is `unexpected_response`), and a reply that holds the credential is thrown away;
 //  - the ids the PROVIDER reported are what come back as `pins`, and those are what Guard's exact allowlists are written with.
+// A shop on Gupshup (item 11b) has no read that names its number: its WhatsApp check is Gupshup's app read (checkGupshup), worded as what it is.
 // The functions take base URLs and the ids the shop gave. They never take a provider key: in production the base URL is a Guard that holds the
 // keys, and the panel presents only its own Guard credential (`agentToken`). The calls go through the same createHttp the live adapters use, so
 // Guard's answers (refused, held, unavailable) are told apart in the same one place.
 import { providerById } from "../../modules/payments/providers/index.ts";
 import { ApiError, GuardError, GuardUnauthenticatedError, NotSentError, TimeoutError } from "../../modules/core/faults.ts";
 import { GRAPH_VERSION } from "../../modules/messaging/whatsapp.ts";
+import { GUPSHUP_APP_ID, gupshupPath } from "../../modules/messaging/gupshup.ts";
 import { createHttp, isObject, str } from "../../modules/core/http.ts";
 import type { Http, HttpReply } from "../../modules/core/http.ts";
 
@@ -25,18 +27,19 @@ export type CheckCode =
   | "not_allowed" // the credential was not accepted
   | "refused_by_guard" // Guard did not let the read through (its own words are in `detail`)
   | "unreachable"
+  | "rate_limited" // the provider answered 429: too many reads just now (Gupshup allows 10 of its app reads a minute). Nothing is wrong with the account; try again
   | "unexpected_response"
   | "not_configured";
 
-/** What a read cannot show, named so a page never claims more than it checked. */
-export type NotChecked = "sending" | "templates-approved" | "payments-account" | "events-private-properties";
+/** What a read cannot show, named so a page never claims more than it checked. "which-number": Gupshup's app read does not name the number the app sends from. */
+export type NotChecked = "sending" | "templates-approved" | "payments-account" | "events-private-properties" | "which-number";
 
 export interface CheckResult {
   service: Service;
   ok: boolean;
   code: CheckCode;
   /** What the provider itself reported: ids, never what the shop typed. */
-  confirmed?: { phoneNumberId?: string; displayNumber?: string; verifiedName?: string; calendarId?: string; calendarName?: string; timeZone?: string; accessRole?: string; keyId?: string; mode?: "test" | "live" };
+  confirmed?: { phoneNumberId?: string; displayNumber?: string; verifiedName?: string; calendarId?: string; calendarName?: string; timeZone?: string; accessRole?: string; keyId?: string; mode?: "test" | "live"; /** Gupshup: the app the Guard pinned path named, which Gupshup answered for (not an id Gupshup's reply carries). */ appId?: string };
   /** On a mismatch: the last four digits of the number that was found, so a person can see it is not theirs without the page showing a whole number. */
   foundEnding?: string;
   /** The calendar role found, or Guard's own reason. Plain words from the provider or Guard, never a credential. */
@@ -51,6 +54,8 @@ export interface ConnectionTargets {
   /** The credential the panel presents to Guard (a Guard bearer). Never a provider key; left out, no Authorization header is sent (a stand-in). */
   agentToken?: string;
   whatsapp?: { baseUrl: string; phoneNumberId: string; /** The number customers write to, with +country code. NOT the owner's number. */ businessNumber: string };
+  /** A shop whose WhatsApp goes through Gupshup (item 11b): its WhatsApp Guard, and the shop's own Gupshup app id (runtime.json). Checked in place of `whatsapp`. */
+  gupshup?: { baseUrl: string; appId: string };
   /** B71: the shop's gateway (its provider id), only for a shop that chose one. */
   gateway?: { provider: string; baseUrl: string; /** The key id the shop gave (it is public, not the secret). */ keyId?: string; expectedMode: "test" | "live"; /** The key id confirmed earlier: a different one now is an error. */ pinnedKeyId?: string };
   calendar?: { baseUrl: string; calendarId: string };
@@ -96,6 +101,7 @@ const providerStatus = (reply: HttpReply, service: Service, notChecked: NotCheck
   if (reply.status >= 200 && reply.status < 300) return undefined;
   if (reply.status === 401 || reply.status === 403) return result(service, "not_allowed", { notChecked });
   if (reply.status === 404) return result(service, "not_found", { notChecked });
+  if (reply.status === 429) return result(service, "rate_limited", { notChecked });
   if (reply.status === 400 && service === "whatsapp") {
     const error = isObject(reply.body) && isObject(reply.body.error) ? reply.body.error : undefined;
     return result(service, error?.code === 190 ? "not_allowed" : "not_found", { notChecked }); // 190: the token is no good; 100: this account cannot see that id
@@ -123,6 +129,37 @@ export async function checkWhatsApp(target: NonNullable<ConnectionTargets["whats
     if (id !== target.phoneNumberId) return result("whatsapp", "account_mismatch", { notChecked });
     if (digits(shown) !== digits(target.businessNumber)) return result("whatsapp", "account_mismatch", { notChecked, foundEnding: digits(shown).slice(-4) });
     return result("whatsapp", "confirmed", { notChecked, confirmed: { phoneNumberId: id, displayNumber: `+${digits(shown)}`, ...(str(b.verified_name) ? { verifiedName: str(b.verified_name) as string } : {}) } });
+  } catch (e) {
+    return failure("whatsapp", e, notChecked);
+  }
+}
+
+// ---- WhatsApp through Gupshup: Gupshup answers for the shop's own app (follow-up 1, 12 Nov 2026) --------------------------------------------------------
+// GET /partner/app/{appId}/health -> { status: "success", healthy: "true" }, 10 calls a minute at most   https://partner-docs.gupshup.io/reference/get_partner-app-appid-health
+// (read 11 Nov 2026; modules/messaging/gupshup.ts). It is the one Gupshup read the shop's Guard allows (`read_number`, pinned to the shop's own app id), and the read
+// the runtime's wait for a Guard uses, so a Guard that lets it through is one that will let the sends through to Gupshup with the token it holds.
+// What it shows, and no more: Gupshup accepted the token the Guard sends for the app the path names, and says the app is healthy. It does NOT name the number the
+// app sends from (no Gupshup read the Guard allows does), so the result says "Gupshup answered for app <id>", never "number verified", and lists `which-number`
+// as not checked. Gupshup's reply carries no app id, so the id shown is the one the Guard's pinned path named; nothing is pinned from it.
+
+export async function checkGupshup(target: NonNullable<ConnectionTargets["gupshup"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
+  const notChecked: NotChecked[] = ["which-number", "sending", "templates-approved"];
+  if (!GUPSHUP_APP_ID.test(target.appId)) return result("whatsapp", "not_configured", { notChecked });
+  try {
+    const http = options.http ?? createHttp(target.baseUrl, "Gupshup", options.timeoutMs, options.agentToken);
+    const reply = await http.request("GET", gupshupPath("read", target.appId));
+    const b = reply.body;
+    // Gupshup's own refusals are { status: "error", message }: 400 "Invalid App Details" is an app this token cannot see. Its words go with the result (not a credential).
+    if (reply.status === 400) {
+      const said = isObject(b) && !holdsSecret(b, [options.agentToken]) ? str(b.message) : undefined;
+      return result("whatsapp", "not_found", { notChecked, ...(said ? { detail: said.slice(0, 200) } : {}) });
+    }
+    const bad = providerStatus(reply, "gupshup", notChecked);
+    if (bad) return { ...bad, service: "whatsapp" };
+    if (!isObject(b) || b.status !== "success" || holdsSecret(b, [options.agentToken])) return result("whatsapp", "unexpected_response", { notChecked });
+    // `healthy` is a string in Gupshup's example ("true"); anything else is not an answer this check can call healthy
+    if (String(b.healthy) !== "true") return result("whatsapp", "unexpected_response", { notChecked, detail: "Gupshup did not say the app is healthy." });
+    return result("whatsapp", "confirmed", { notChecked, confirmed: { appId: target.appId } });
   } catch (e) {
     return failure("whatsapp", e, notChecked);
   }
@@ -199,7 +236,8 @@ export async function checkCalendar(target: NonNullable<ConnectionTargets["calen
 export async function checkConnections(targets: ConnectionTargets): Promise<ConnectionReport> {
   const o = { timeoutMs: targets.timeoutMs, agentToken: targets.agentToken };
   const jobs: Promise<CheckResult>[] = [];
-  if (targets.whatsapp) jobs.push(checkWhatsApp(targets.whatsapp, o));
+  if (targets.gupshup) jobs.push(checkGupshup(targets.gupshup, o));
+  else if (targets.whatsapp) jobs.push(checkWhatsApp(targets.whatsapp, o));
   if (targets.gateway) jobs.push(checkGateway(targets.gateway, o));
   if (targets.calendar) jobs.push(checkCalendar(targets.calendar, o));
   const results = await Promise.all(jobs);
@@ -207,6 +245,7 @@ export async function checkConnections(targets: ConnectionTargets): Promise<Conn
   for (const r of results) {
     const c = r.confirmed;
     if (!r.ok || !c) continue;
+    // a Gupshup check confirms an app, not a number: it pins nothing (its Guard is already pinned to the app id in runtime.json)
     if (r.service === "whatsapp" && c.phoneNumberId && c.displayNumber) pins.whatsapp = { phoneNumberId: c.phoneNumberId, displayNumber: c.displayNumber };
     if (r.service === "calendar" && c.calendarId) pins.calendar = { calendarId: c.calendarId };
     if (targets.gateway && r.service === targets.gateway.provider && c.keyId && c.mode) pins.gateway = { provider: r.service, keyId: c.keyId, mode: c.mode };

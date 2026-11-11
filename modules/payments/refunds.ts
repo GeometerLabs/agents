@@ -12,6 +12,10 @@
 // that a person at the server looked and settled the refund as made (Guard's ADR-0060). That one is DONE: recorded as done by that person's word,
 // never sent again, and the owner is told in plain words.
 //
+// A refund whose outcome is not known is settled only by the payments service's own list: read by a person's look (the to-do list's recheck_refund) or after the
+// provider's own refund.done event (12 Nov 2026). Either way the ORIGINAL attempt is settled (matched by the refund id it was given, our receipt, or the payment and
+// the amount it asked for), nothing is ever sent again, and the customer, who was told "we will message you as soon as it is confirmed", is told, once.
+//
 // What a template gives this file: the thing a refund belongs to (a booking, a student's fee) as a `RefundCase`, how to write to the record and to the
 // customer about it, and where to find the case again from an approval. Everything about HOW a refund is asked for and read back is here, once.
 import { formatInr } from "../language/format.ts";
@@ -21,7 +25,7 @@ import { MINUTE } from "../core/time.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
 import { ATTEMPTS } from "./links.ts";
-import type { Payments } from "./payments.ts";
+import type { Payments, Refund } from "./payments.ts";
 
 /** After a refund could not be sent at all, or an approved one could not be sent again: minutes before each next try, then the builder is told. */
 export const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
@@ -32,7 +36,17 @@ export const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
  * the customer by hand, and the builder or partner is told through this count as well as the record.
  */
 export type RefundIssueKind = "unknown" | "uncertain" | "refused" | "failed" | "unconfirmed" | "expired" | "unheld" | "late_upi";
-export interface RefundIssue { paymentId: string; kind: RefundIssueKind; note: string; atMs: number }
+/**
+ * `amountPaise`: what the attempt asked for, and `refundId`: the id the payments service gave it, when its reply came (12 Nov 2026). They are how the provider's list
+ * or its refund.done event is matched to THIS attempt and no other. An issue saved before 12 Nov has neither and is matched by our receipt alone.
+ */
+export interface RefundIssue { paymentId: string; kind: RefundIssueKind; note: string; atMs: number; amountPaise?: number; refundId?: string }
+
+/** The issues the payments service's own list can settle: the refund may have gone. "refused", "expired" and "unheld" are not a question the list answers. */
+export const SETTLEABLE_ISSUES: readonly RefundIssueKind[] = ["unknown", "uncertain", "unconfirmed", "failed"];
+
+/** Who settled an open refund from the provider's list: a person's look (`recheck`), or the provider's own refund.done event (its id). Never a person's word. */
+export type SettledThrough = { via: "recheck" } | { via: "refund.done"; eventId: string };
 
 /**
  *  - guard_hold: a refund Guard is holding for the owner. It keeps the approval id and the EXACT bytes of the call that was held:
@@ -82,8 +96,11 @@ export interface RefundDeps<C extends RefundCase> {
   tellOwner(c: C, phone: string, template: string, more?: { refundInr?: number }): Promise<boolean>;
   /** Every case, to find the one that waits on an approval, and to sweep the clock's work. */
   cases(): Iterable<C>;
-  /** The message ids this file sends itself. `settled` tells the owner a refund is done by the word of the person who looks after the server (Guard's `already_done`). */
-  ids: { checking: string; denied: string; approved: string; expired: string; settled: string };
+  /**
+   * The message ids this file sends itself. `settled` tells the owner a refund is done by the word of the person who looks after the server (Guard's `already_done`).
+   * `confirmed` tells the customer their refund is confirmed when the payments service's list settles one they were told was being checked (`checking`).
+   */
+  ids: { checking: string; denied: string; approved: string; expired: string; settled: string; confirmed: string };
 }
 
 // Looks before sending and never resends a refund that may already have gone out, since a repeated refund is real money lost.
@@ -93,9 +110,12 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   const issuesOf = (b: C) => (b.refundIssues ??= []);
   const stoppedOf = (b: C) => (b.stoppedRefunds ??= []);
   const holds = (b: C) => b.pending as { kind: string }[];
-  /** The builder must look at this refund, not the owner. It is in the record (the entry's notes) and counted in the runtime's status. */
-  function raise(b: C, paymentId: string, kind: RefundIssueKind, note: string): void {
-    issuesOf(b).push({ paymentId, kind, note, atMs: clock.now() });
+  /**
+   * The builder must look at this refund, not the owner. It is in the record (the entry's notes) and counted in the runtime's status. `of` is what the attempt asked
+   * for and the id it was given, when known: kept so the provider's list can settle this attempt and no other (settleIssue).
+   */
+  function raise(b: C, paymentId: string, kind: RefundIssueKind, note: string, of: { amountInr?: number; refundId?: string } = {}): void {
+    issuesOf(b).push({ paymentId, kind, note, atMs: clock.now(), ...(of.amountInr !== undefined ? { amountPaise: of.amountInr * 100 } : {}), ...(of.refundId ? { refundId: of.refundId } : {}) });
     if (kind !== "unheld") stoppedOf(b).push(paymentId); // asking Guard again could only ask the owner about the same money again
   }
 
@@ -164,12 +184,12 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       if (found) { log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, notes: `${why}; the payments service's own list shows the refund, and it is not sent again` }); return "done"; }
       const note = `${why}. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`;
       log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
-      raise(b, paymentId, "unknown", note);
+      raise(b, paymentId, "unknown", note, { amountInr });
       return "stopped";
     }
 
-    /** The service took the refund (2xx): read it back once. Never send again, whatever the list shows. */
-    async function readBack(note?: string): Promise<RefundResult> {
+    /** The service took the refund (2xx): read it back once. Never send again, whatever the list shows. `refundId`: the id its reply gave, kept on an unconfirmed issue. */
+    async function readBack(refundId: string | undefined, note?: string): Promise<RefundResult> {
       const found = await findRefund(paymentId, receipt).catch(() => undefined);
       if (found) {
         log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, ...(note ? { notes: note } : {}) });
@@ -181,8 +201,8 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
         return "done";
       }
       const why = "the payments service accepted the refund, but its own list does not show it yet. It is NOT sent again";
-      log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
-      raise(b, paymentId, "unconfirmed", why);
+      log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs: { ...refs, ...(refundId ? { refundId } : {}) }, notes: why });
+      raise(b, paymentId, "unconfirmed", why, { amountInr, refundId });
       return "stopped";
     }
 
@@ -201,7 +221,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       }
       try {
         const sent = await payments.refund(paymentId, { amount: amountPaise, receipt, ...(requestedBy && requestedBy.length > 0 ? { requestedBy } : {}) });
-        return await readBack(sent.replayed ? "Guard answered from its record; nothing was sent again" : undefined);
+        return await readBack(typeof sent.id === "string" && sent.id !== "" ? sent.id : undefined, sent.replayed ? "Guard answered from its record; nothing was sent again" : undefined);
       } catch (e) {
         const sorted = sortRefundError(e);
         switch (sorted.is) {
@@ -210,7 +230,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
             if (sorted.error.approval === null || sorted.error.call.body === undefined) {
               const note = `Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}, then tell Guard (POST /admin/intents/resolve).`;
               log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
-              raise(b, paymentId, "uncertain", note);
+              raise(b, paymentId, "uncertain", note, { amountInr });
               return "stopped";
             }
             holds(b).push({ kind: "guard_hold", amountInr, paymentId, receipt, approval: sorted.error.approval, body: sorted.error.call.body, expiresAtMs: sorted.error.expiresAtMs, heldAtMs: clock.now(), ...(requestedBy && requestedBy.length > 0 ? { requestedBy } : {}) } as GuardHold);
@@ -227,7 +247,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
           case "no_good": {
             const note = `Guard did not take the refund and will not on a retry: ${sorted.why}. Nothing was refunded.`;
             log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
-            raise(b, paymentId, "failed", note);
+            raise(b, paymentId, "failed", note, { amountInr });
             return "stopped";
           }
           case "lost": case "not_sent": error = sorted.why; break; // look again, and try once more
@@ -259,7 +279,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       if (tries >= RETRY_MINUTES.length) {
         const note = `The refund of ${formatInr(p.amountInr)} for payment ${p.paymentId} could not be sent after ${tries + 1} tries. Nothing was refunded.`;
         log(b, b.customer, "refund", "failed", { paymentId: p.paymentId, amountInr: p.amountInr }, { notes: note, refs: { paymentId: p.paymentId } });
-        raise(b, p.paymentId, "failed", note);
+        raise(b, p.paymentId, "failed", note, { amountInr: p.amountInr });
         return;
       }
       holds(b).push({ ...p, tries, retryAtMs: clock.now() + RETRY_MINUTES[tries] * MINUTE });
@@ -269,35 +289,81 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     else if (result === "held") await tellCustomer(b, b.customer, [p.then.held], { refundInr: p.amountInr });
   }
 
-  // ---- a look at a refund whose outcome is not known (the panel's to-do list asks for it) -------------------------------------------------
+  // ---- settling a refund whose outcome is not known: the payments service's own list, read by a person's look or after the provider's event --------------
+
+  /**
+   * Is this refund, as the payments service's own list shows it, the one this open issue is about? By the refund id the attempt was given, when its reply came;
+   * otherwise by our receipt (`<case>:<payment>`, which travels with every refund the agent asks for); otherwise by the payment and the exact amount the attempt
+   * asked for. A refund of the same payment for another amount is never taken for it: that is not the money this attempt was about.
+   */
+  function isTheRefund(b: C, issue: RefundIssue, r: Refund): boolean {
+    if (r.payment_id !== issue.paymentId) return false;
+    if (issue.refundId !== undefined) return r.id === issue.refundId;
+    if (r.receipt === `${b.id}:${issue.paymentId}`) return true;
+    return issue.amountPaise !== undefined && r.amount === issue.amountPaise;
+  }
+
+  /** The open issue on this case that a listed refund settles, if any (only the kinds the list can answer: SETTLEABLE_ISSUES). */
+  function openIssueFor(b: C, r: Refund): RefundIssue | undefined {
+    return issuesOf(b).find((i) => SETTLEABLE_ISSUES.includes(i.kind) && isTheRefund(b, i, r));
+  }
+
+  /**
+   * Settle the ORIGINAL attempt from the payments service's own list: one `refund` / `confirmed` line with the provider's refund id and the amount its list shows (so
+   * the monthly report counts it once, by that id, and marks the earlier unconfirmed line settled), and the issue is cleared. Nothing is sent to the payments service:
+   * no refund is asked for again, and the payment stays in `stoppedRefunds`. Then the customer, who was told the refund is being checked and that they would hear
+   * when it is confirmed, is told, once (the issue is gone, so no later look or event tells them again). Never `confirmedBy`: that is a person's word, and this is not.
+   */
+  async function settleIssue(b: C, issue: RefundIssue, r: Refund, through: SettledThrough): Promise<void> {
+    b.refundIssues = issuesOf(b).filter((x) => x !== issue);
+    const inputs = through.via === "recheck" ? { paymentId: issue.paymentId, recheck: true } : { paymentId: issue.paymentId, event: through.eventId };
+    log(b, b.customer, "refund", "confirmed", inputs, {
+      refs: { paymentId: issue.paymentId, amountPaise: String(r.amount), refundId: r.id, ...(through.via === "refund.done" ? { eventId: through.eventId } : {}) },
+      notes: through.via === "recheck"
+        ? "looked again: the payments service's own list now shows the refund. It was not sent again"
+        : "the payments service's own refund.done event names this refund, and its own list shows it: the attempt whose outcome was unknown is settled by the provider. It was not sent again",
+    });
+    await tellCustomer(b, b.customer, [deps.ids.confirmed], { refundInr: r.amount / 100 });
+  }
 
   /**
    * Look once more, read-only, at the payments service's own list of refunds for each payment whose refund may have gone (unknown, uncertain, unconfirmed, or failed after its
-   * tries). A refund that is on the list is recorded as confirmed and the problem is cleared. Nothing is ever SENT: no refund is asked for again, and the payment stays in
-   * `stoppedRefunds`. Returns how many it settled, and how many it looked at and still could not see.
+   * tries). A refund on the list that is this attempt's (isTheRefund) settles it (settleIssue: the record, and the customer told). Nothing is ever SENT: no refund is asked
+   * for again, and the payment stays in `stoppedRefunds`. Returns how many it settled, and how many it looked at.
    */
   async function recheck(b: C): Promise<{ settled: number; looked: number }> {
     let settled = 0;
     let looked = 0;
     for (const issue of [...issuesOf(b)]) {
-      if (!["unknown", "uncertain", "unconfirmed", "failed"].includes(issue.kind)) continue;
+      if (!SETTLEABLE_ISSUES.includes(issue.kind)) continue;
       looked++;
       const refs = { paymentId: issue.paymentId };
-      let found;
-      try { found = (await payments.listRefunds(issue.paymentId)).find((r) => r.receipt === `${b.id}:${issue.paymentId}`); } catch (e) {
+      let found: Refund | undefined;
+      try { found = (await payments.listRefunds(issue.paymentId)).find((r) => isTheRefund(b, issue, r)); } catch (e) {
         if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
         log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: `looked again, but the payments service's list could not be read (${(e as Error).message}). Nothing was sent` });
         continue;
       }
       if (found) {
-        log(b, b.customer, "refund", "confirmed", { paymentId: issue.paymentId, recheck: true }, { refs: { ...refs, refundId: found.id }, notes: "looked again: the payments service's own list now shows the refund. It was not sent again" });
-        b.refundIssues = issuesOf(b).filter((x) => x !== issue);
+        await settleIssue(b, issue, found, { via: "recheck" });
         settled++;
       } else {
         log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: "looked again: the payments service's own list still does not show the refund. It was not sent again; check the payment gateway's own records" });
       }
     }
     return { settled, looked };
+  }
+
+  /**
+   * The provider's own refund.done event, already checked by the template against the payments service's list (`listed`: the refund with the event's id, as the list
+   * shows it). When it is the refund an open issue on this case is about, that attempt is settled (settleIssue), and never a new refund. Returns whether it settled one;
+   * an event for a refund nothing is open on changes nothing (it was confirmed already, or it is not this agent's).
+   */
+  async function settleFromEvent(b: C, listed: Refund, eventId: string): Promise<boolean> {
+    const issue = openIssueFor(b, listed);
+    if (!issue) return false;
+    await settleIssue(b, issue, listed, { via: "refund.done", eventId });
+    return true;
   }
 
   // ---- a refund Guard held: the relay says the owner decided ---------------------------------------------------------------------
@@ -342,7 +408,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
         dropHold(b, hold);
         const note = `The owner approved the refund, but it could not be sent after ${hold.tries} tries (${why}). Nothing was refunded.`;
         log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
-        raise(b, paymentId, "failed", note);
+        raise(b, paymentId, "failed", note, { amountInr });
         return tellCustomer(b, b.customer, [deps.ids.checking], { refundInr: amountInr }).then(() => undefined);
       }
       hold.retryAtMs = clock.now() + RETRY_MINUTES[hold.tries - 1] * MINUTE;
@@ -355,10 +421,10 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId }, ...(note ? { notes: note } : {}) });
       await tellCustomer(b, b.customer, [deps.ids.approved], { refundInr: amountInr });
     };
-    const stop = async (kind: RefundIssueKind, note: string, outcome: "failed" | "unconfirmed" | "blocked") => {
+    const stop = async (kind: RefundIssueKind, note: string, outcome: "failed" | "unconfirmed" | "blocked", refundId?: string) => {
       dropHold(b, hold);
-      log(b, b.customer, "refund", outcome, { paymentId, amountInr }, { refs, notes: note });
-      raise(b, paymentId, kind, note);
+      log(b, b.customer, "refund", outcome, { paymentId, amountInr }, { refs: { ...refs, ...(refundId ? { refundId } : {}) }, notes: note });
+      raise(b, paymentId, kind, note, { amountInr, refundId });
       await tellCustomer(b, b.customer, [deps.ids.checking], { refundInr: amountInr });
     };
 
@@ -370,9 +436,11 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     }
     if (listed) return finish(listed.id, "the refund was already on the payments service's own list, so it was not sent again");
 
+    let resentId: string | undefined; // the id the service gave the approved refund, kept if its list does not show it yet
     try {
       // who asked goes again (B37): not needed for the approval, which Guard binds to the bytes, but if Guard holds it anew the new hold must not be asked of them
-      await payments.resendRefund(paymentId, hold.body, hold.requestedBy);
+      const resent = await payments.resendRefund(paymentId, hold.body, hold.requestedBy);
+      resentId = typeof resent?.id === "string" && resent.id !== "" ? resent.id : undefined;
     } catch (e) {
       const sorted = sortRefundError(e);
       switch (sorted.is) {
@@ -413,7 +481,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     released();
     const after = await findRefund(paymentId, hold.receipt).catch(() => undefined);
     if (after) return finish(after.id);
-    return stop("unconfirmed", "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again", "unconfirmed");
+    return stop("unconfirmed", "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again", "unconfirmed", resentId);
   }
 
   /**
@@ -451,5 +519,5 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     }
   }
 
-  return { requestRefund, afterRefund, retryRefund, onApprovalDecision, releaseHeld, expireGuardHold, sweep, overLimit, stoppedOf, raise, recheck };
+  return { requestRefund, afterRefund, retryRefund, onApprovalDecision, releaseHeld, expireGuardHold, sweep, overLimit, stoppedOf, raise, recheck, openIssueFor, settleFromEvent };
 }

@@ -14,9 +14,10 @@ import { promisify } from "node:util";
 import { main } from "../geometer.ts";
 import { serverProblems, upServer } from "../deploy.ts";
 import { fakeRunner, ok } from "../lib/runner.ts";
-import { checkAnswer, pairServer, readPairing } from "../lib/pairing.ts";
+import { checkAnswer, joinPairing, pairServer, readPairing } from "../lib/pairing.ts";
+import { opsConfig } from "../generate/configs.ts";
 import { licencePaths } from "../lib/licence.ts";
-import { loadServer, parseServer } from "../lib/server.ts";
+import { fleetIdOf, loadServer, parseServer } from "../lib/server.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import { kidOf } from "../../modules/licence/token.ts";
 import { lease, PIN, TEST_PUBLIC_HEX } from "./licence-helpers.ts";
@@ -126,6 +127,59 @@ test("init --pairing takes the id, fleet's address, the key file and the licence
     assert.deepEqual({ id: server.id, fleet: server.fleet, licence: server.licence, panel: server.panel, model: server.model.model }, { id: "ravi-abcdef", fleet: { url: fleet.url, keyFile: join(dir, "fleet_key") }, licence: { keys: [TEST_PUBLIC_HEX] }, panel: { enabled: true, mode: "own" }, model: "" });
     assert.ok(existsSync(licencePaths(dir).lease), "the trial lease is in state/licence before the first start");
     assert.match(r.out, /choose the model/u);
+  } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
+});
+
+test("follow-up 8: a server set up with pairing skipped is paired by a second run: only a fleet section is added, its own id stays, fleet's id is what fleet hears", async () => {
+  const fleet = await fakeFleet(() => goodAnswer());
+  const root = mkdtempSync(join(tmpdir(), "geo-pair-"));
+  const dir = join(root, "server");
+  try {
+    // the first run: pairing skipped, fleet's licence key given by hand
+    assert.equal((await quiet(() => main(["init", dir, "--domain", "shops.example.com", "--reviewed-by", "ravi@vps", "--panel", "--licence-key", TEST_PUBLIC_HEX]))).result, 0);
+    const before = JSON.parse(readFileSync(join(dir, "geometer.json"), "utf8"));
+    assert.equal(before.fleet, undefined);
+    // the second run, with a code: `geometer pair` on the existing folder
+    const child = promisify(execFile)(process.execPath, [GEOMETER, "pair", dir, "--fleet-url", fleet.url], { timeout: 30_000 });
+    child.child.stdin!.end(`${CODE}\n`);
+    const r = await child;
+    assert.match(r.stdout, /Paired with Geometer's fleet for the account "Ravi Builds": heartbeats go to .* as ravi-abcdef \(the folder keeps its own id, server, for its containers and volumes\)\. Nothing else/u);
+    assert.match(r.stdout, /The trial lease is kept/u);
+    assert.ok(!`${r.stdout}${r.stderr}`.includes(KEY) && !`${r.stdout}${r.stderr}`.includes(CODE));
+    assert.deepEqual(fleet.bodies, [{ code: CODE }], "the code was sent once");
+    const after = JSON.parse(readFileSync(join(dir, "geometer.json"), "utf8"));
+    const { fleet: added, ...rest } = after;
+    assert.deepEqual(rest, before, "nothing else in geometer.json changed");
+    assert.deepEqual(added, { url: fleet.url, keyFile: join(dir, "fleet_key"), deploymentId: "ravi-abcdef" });
+    const server = loadServer(dir);
+    assert.deepEqual([server.id, fleetIdOf(server)], ["server", "ravi-abcdef"], "the compose project and volumes keep their name; fleet hears its own id");
+    assert.equal(JSON.parse(opsConfig(server, [])).deploymentId, "ravi-abcdef", "the heartbeat names the id fleet gave");
+    assert.ok(existsSync(licencePaths(dir).lease), "fleet's trial lease (for ravi-abcdef) checks against this server");
+    // again: nothing changes, and no code is sent
+    assert.deepEqual(joinPairing(dir), { joined: false, lines: ["This server is already paired with Geometer's fleet as ravi-abcdef."] });
+    await assert.rejects(pairServer({ dir, fleetUrl: fleet.url, code: CODE, now: new Date() }), /already talks to Geometer's fleet.*Nothing was sent/u);
+    assert.equal(fleet.bodies.length, 1);
+  } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
+});
+
+test("follow-up 8: a pinned licence key that is not fleet's stops the late pairing with geometer.json untouched, and the next run joins it without a new code", async () => {
+  const fleet = await fakeFleet(() => goodAnswer());
+  const root = mkdtempSync(join(tmpdir(), "geo-pair-"));
+  const dir = join(root, "server");
+  try {
+    const other = "cd".repeat(32);
+    assert.equal((await quiet(() => main(["init", dir, "--domain", "shops.example.com", "--reviewed-by", "ravi@vps", "--licence-key", other]))).result, 0);
+    const text = readFileSync(join(dir, "geometer.json"), "utf8");
+    await pairServer({ dir, fleetUrl: fleet.url, code: CODE, now: new Date() });
+    assert.throws(() => joinPairing(dir), /pins Geometer's licence key .* but fleet's is .*Nothing in geometer\.json was changed, and the pairing is kept .*No new code is needed/u);
+    assert.equal(readFileSync(join(dir, "geometer.json"), "utf8"), text, "untouched");
+    // the builder puts fleet's key in, and runs it again: the kept pairing is joined, nothing is read from standard input, no code is sent
+    writeFileSync(join(dir, "geometer.json"), text.replace(other, TEST_PUBLIC_HEX));
+    const again = await quiet(() => main(["pair", dir, "--fleet-url", fleet.url]));
+    assert.equal(again.result, 0, again.err);
+    assert.match(again.out, /Paired with Geometer's fleet/u);
+    assert.equal(fleet.bodies.length, 1, "one code, sent once, across both runs");
+    assert.equal(loadServer(dir).fleet?.deploymentId, "ravi-abcdef");
   } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
 });
 
