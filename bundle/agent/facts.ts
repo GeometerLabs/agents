@@ -5,6 +5,8 @@
 // the real Guard binary and the stand-ins.
 import { WINDOW, windowOf } from "../../companies/decision-window.ts";
 import { personLabel } from "../../modules/record/fingerprint.ts";
+import { providerById } from "../../modules/payments/providers/index.ts";
+import type { DeskRefund, DeskRequest } from "../../modules/payments/owner-marked/desk.ts";
 import type { AgentUpstream } from "./folder.ts";
 
 export interface GuardAccess { kind: AgentUpstream; adminUrl: string; adminToken: string; agentUrl: string }
@@ -58,6 +60,11 @@ export interface Facts {
     events: EventFact[] | null;
     /** An event the agent changed or deleted, asked for by its id: the event, `"gone"` when the calendar has none (or only a cancelled one), `null` when it could not be asked. */
     eventsById: Record<string, EventFact | "gone" | null>;
+    /**
+     * B71 part 2: the owner-marked desk's own lists, read through its Guard: every request with the owner's marks on it, and every refund owed with whether the owner
+     * marked it sent. `null`: the desk could not be asked this pass. Left out: the agent has no desk.
+     */
+    desk?: { requests: DeskRequest[] | null; refunds: DeskRefund[] | null };
   };
   /** What could not be read, in words. Nothing secret. */
   problems: string[];
@@ -152,6 +159,19 @@ export async function collectFacts(cfg: FactsConfig, now: Date, fetchFn: typeof 
       const r = await getJson(`${base}/v1/payments/${encodeURIComponent(p)}/refunds`, cfg.recordToken);
       facts.service.refunds[p] = r.status === 200 ? list(r.body, "items").filter(isObj).map((i) => ({ id: String(i.id), amount: Number(i.amount), receipt: typeof i.receipt === "string" ? i.receipt : null, status: String(i.status), createdAt: Number(i.created_at) })) : null;
     }
+  }
+
+  // B71 part 2: the owner-marked desk's own lists (the owner's marks and the refunds owed), read whole through the desk's Guard with the reading agent: two reads a
+  // pass, because a mark can come long after the request was made and the lists are one shop's.
+  const desk = cfg.guards.find((g) => providerById(g.kind)?.ownerMarked !== undefined);
+  if (desk && facts.guards[desk.kind]) {
+    const base = desk.agentUrl.replace(/\/+$/u, "");
+    const [requests, refunds] = [await getJson(`${base}/requests`, cfg.recordToken), await getJson(`${base}/refunds`, cfg.recordToken)];
+    facts.service.desk = {
+      requests: requests.status === 200 ? list(requests.body, "requests").filter(isObj) as unknown as DeskRequest[] : null,
+      refunds: refunds.status === 200 ? list(refunds.body, "refunds").filter(isObj) as unknown as DeskRefund[] : null,
+    };
+    if (requests.status !== 200 || refunds.status !== 200) facts.problems.push("The desk could not be read, so the owner's marks are not in this pass.");
   }
 
   // Google's own record of the calendar. An event the agent booked is looked for around the times it booked (a calendar with history is far more than one page); an event the

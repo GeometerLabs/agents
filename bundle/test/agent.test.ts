@@ -53,7 +53,7 @@ test("agent add from flags makes the same settings a template uses, checked by t
   assert.throws(() => agentFromFlags("my-agent", { upstreams: "razorpay,whatsapp", settings: "s.json", "whatsapp-number-id": PHONE_NUMBER_ID }, () => '{"name": ""}', NOW), /The settings file needs fixing/);
 });
 
-test("B71: an agent takes UPI by default, through the desk: no gateway Guard, the shop's own UPI ID asked for, and one payment module only", () => {
+test("B71: an agent takes UPI by default, through the desk: no gateway Guard (the desk's own Guard instead, part 2), the shop's own UPI ID asked for, and one payment module only", () => {
   const upi = { "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID } as AgentFlags;
   assert.throws(() => agentFromFlags("my-agent", upi, noFiles, NOW), /Say where this shop's customers pay\. UPI needs no gateway account: --upi-id/u, "UPI is the default, and its ID is asked for");
   const made = agentFromFlags("my-agent", { ...upi, "upi-id": "GlowSalon@OKICICI", payee: "Glow Salon" }, noFiles, NOW);
@@ -67,7 +67,9 @@ test("B71: an agent takes UPI by default, through the desk: no gateway Guard, th
     addAgent(t.root, "upi-agent", { ...upi, "upi-id": "glowsalon@okicici", payee: "Glow Salon" }, noFiles, NOW);
     const plan = planAgent(serverConfig(), readAgent(t.root, "upi-agent"));
     assert.deepEqual(plan.problems, []);
-    assert.deepEqual(plan.guards.map((g) => g.kind), ["whatsapp", "calendar"], "UPI has no API, so no Guard: the desk instead");
+    assert.deepEqual(plan.guards.map((g) => g.kind), ["upi", "whatsapp", "calendar"], "UPI has no API on the internet: its Guard is in front of the desk (B71 part 2)");
+    assert.equal(plan.guards[0].def.upstream, "relay:8796");
+    assert.deepEqual(plan.guards[0].upstream, { host: "relay:8796", tls: false }, "the desk is on the server's own network: plain HTTP, no certificate to check");
     assert.deepEqual(plan.desk, { module: "upi" });
   } finally { t.done(); }
 });

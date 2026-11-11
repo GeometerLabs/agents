@@ -35,7 +35,7 @@ import { basename, dirname, join } from "node:path";
 import { CADDY_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
-import { LICENCE_MOUNT } from "./guards.ts";
+import { DESK_PORT, LICENCE_MOUNT, OWNER_MARKED_KINDS } from "./guards.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
@@ -54,11 +54,12 @@ export const HEALTH_PORT = 8081;
 /** A shop's three Guards, in the order that fixes each one's address on the admin network (the shop's door is the fourth). */
 export const SHOP_GUARD_KINDS: readonly Exclude<GuardKind, "model">[] = ["razorpay", "whatsapp", "calendar"];
 /**
- * A Guard's place among its shop's four addresses. The way money is taken is the first, whichever it is (a gateway module, or an agent's own API, B71): a shop or an
+ * A Guard's place among its shop's four addresses. The way money is taken is the first, whichever it is (a gateway module, the desk of a module the owner marks, or an agent's own API, B71): a shop or an
  * agent has one, so they never share it. A kind with no place is an error here, never a neighbour's address.
  */
 export function slotOf(kind: Exclude<GuardKind, "model">): number {
-  if (isGatewayKind(kind) || kind === OWN_API) return 0;
+  // the desk's Guard (an owner-marked module, B71 part 2) is the agent's way of taking money too
+  if (isGatewayKind(kind) || kind === OWN_API || OWNER_MARKED_KINDS.includes(kind)) return 0;
   const i = SHOP_GUARD_KINDS.indexOf(kind);
   if (i < 0) throw new Error(`A Guard of kind ${kind} has no address slot.`);
   return i;
@@ -269,8 +270,9 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     volumes: [appVolume, `${dirs.generated}/inbox:/etc/geometer:ro`, `${secretDir("inbox")}:/run/secrets:ro`],
     networks: { front: {}, admin: {} }, healthcheck: healthWget(INBOX_PORT, "/healthz"),
   }), [`${dirs.generated}/inbox/inbox.json`]);
+  // DESK_PORT: the owner-marked desk (B71 part 2), served by the relay's process on a port of its own, for the agents' desk Guards (they reach it over `admin`)
   add("relay", node(["node", "/app/bundle/services/relay.ts"], {
-    environment: { CONFIG: "/etc/geometer/relay.json", PORT: String(RELAY_PORT), HOST: "0.0.0.0" },
+    environment: { CONFIG: "/etc/geometer/relay.json", PORT: String(RELAY_PORT), HOST: "0.0.0.0", ...(agents.some((a) => a.guards.some((g) => OWNER_MARKED_KINDS.includes(g.kind))) ? { DESK_PORT: String(DESK_PORT) } : {}) },
     volumes: [appVolume, `${dirs.generated}/relay:/etc/geometer:ro`, `${secretDir("relay")}:/run/secrets:ro`, "relay-state:/home/node"],
     networks: { front: {}, admin: {} }, healthcheck: healthWget(RELAY_PORT, "/healthz"),
   }), [`${dirs.generated}/relay/relay.json`]);

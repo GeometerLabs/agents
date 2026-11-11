@@ -211,6 +211,11 @@ export interface RefundContext {
   monthLabel?: string;
   /** B37: who asked the agent for this refund, by approver id (the runtime sent them in Geo-Requested-By). They are never asked to approve it. */
   requestedBy?: string[];
+  /**
+   * B71 part 2: a call held on an agent's OWN API (approvals/held-call.ts), read from Guard's held call itself: the operation, the amount's unit and the call's other
+   * plain fields. `amountPaise` is then the amount in that unit. Only the own-API relay's voice reads it; a template's runtime never sends it.
+   */
+  call?: { operation: string; unit?: string; details: string[] };
 }
 
 export type Context = { kind: "found"; context: RefundContext } | { kind: "missing" } | { kind: "error"; error: string };

@@ -47,12 +47,19 @@ export interface DeskOptions {
   labels: MarkButtonLabels;
 }
 
-/** A request as the agent sees it. `paid` is the owner's word, never the agent's or the customer's. */
+/**
+ * A request as the agent sees it. `paid` is the owner's word, never the agent's or the customer's. Each "payment" is a mark the owner made (`marked_by` is always
+ * "owner": the record keeps it as the owner's statement, never as a provider's confirmation, B74), with the time it was made, which the own agent's record job reads
+ * through the desk's Guard (bundle/agent/record.ts).
+ */
 export interface DeskRequest {
   id: string; reference: string; amount_paise: number; pay_url: string; pay_to: { id: string; name: string };
   status: MarkedRequest["status"]; paid_paise: number; left_paise: number; paid: boolean;
-  payments: { id: string; amount_paise: number; after_close: boolean }[];
+  payments: { id: string; amount_paise: number; after_close: boolean; marked_at_ms: number; marked_by: "owner" }[];
 }
+
+/** A refund the owner owes, as the agent and the record job see it: `sent` and `kept` are the owner's marks, with when they were made. */
+export interface DeskRefund { id: string; reference: string; payment_id: string; amount_paise: number; state: OwedRefund["state"]; sent: boolean; owed_at_ms: number; settled_at_ms?: number }
 
 export type DeskReply = { status: number; body: unknown };
 
@@ -70,7 +77,7 @@ export function createDesk(o: DeskOptions) {
     const paid = r.marks.filter((m) => !m.afterClose).reduce((n, m) => n + m.amountPaise, 0);
     return {
       id: r.id, reference: r.reference, amount_paise: r.amountPaise, pay_url: r.link, pay_to: marked.payTo, status: r.status, paid_paise: paid, left_paise: leftOn(r),
-      paid: paid >= r.amountPaise, payments: r.marks.map((m) => ({ id: m.id, amount_paise: m.amountPaise, after_close: m.afterClose === true })),
+      paid: paid >= r.amountPaise, payments: r.marks.map((m) => ({ id: m.id, amount_paise: m.amountPaise, after_close: m.afterClose === true, marked_at_ms: m.atMs, marked_by: "owner" as const })),
     };
   };
   const facts = (r: MarkedRequest, more: Record<string, unknown> = {}) => ({
@@ -139,7 +146,7 @@ export function createDesk(o: DeskOptions) {
     return { status: 200, body: refundView(refund) };
   }
 
-  const refundView = (r: OwedRefund) => ({ id: r.id, payment_id: r.paymentId, amount_paise: r.amountPaise, state: r.state, sent: r.state === "done" });
+  const refundView = (r: OwedRefund): DeskRefund => ({ id: r.id, reference: r.caseId, payment_id: r.paymentId, amount_paise: r.amountPaise, state: r.state, sent: r.state === "done", owed_at_ms: r.owedAtMs, ...(r.doneAtMs !== undefined ? { settled_at_ms: r.doneAtMs } : {}) });
 
   /** A message from the owner's own number (Geometer's inbox gives the desk a copy). Only a reply with a code the desk issued marks anything; a picture never does. */
   async function ownerSays(m: { from: string; text: string; reply?: { id: string } }): Promise<"marked" | "refund" | "already" | "unknown" | "not_ours"> {

@@ -11,7 +11,11 @@ import { gatewayLimitsSpec } from "../../templates/commerce/bookings/src/guard-l
 import type { LimitsSpec, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { Settings } from "../../templates/commerce/bookings/src/settings.ts";
 import type { ModelConfig, Upstream } from "../lib/server.ts";
-import { GATEWAYS, GATEWAY_KINDS, OWN_API, providerById } from "../../modules/payments/providers/index.ts";
+import { GATEWAYS, GATEWAY_KINDS, OWN_API, PROVIDERS, providerById } from "../../modules/payments/providers/index.ts";
+import { DESK_GUARD } from "../../modules/payments/owner-marked/desk-guard.ts";
+
+/** The payment modules the owner marks (UPI): each is a desk Guard's kind on an agent someone else wrote. */
+export const OWNER_MARKED_KINDS: readonly string[] = PROVIDERS.filter((p) => p.ownerMarked !== undefined).map((p) => p.id);
 import { OWN_API_SECRET } from "../lib/secrets.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
@@ -29,9 +33,23 @@ export interface GuardDef {
   headers: Record<string, string>;
   /** The provider secret this Guard reads, as a file name under /run/secrets in its container (none for the calendar: the token refresher writes it). */
   secretFile?: string;
+  /**
+   * The upstream is a container on this server's own internal network (the owner-marked desk, B71 part 2), reached in plain HTTP: there is no certificate to check
+   * on a Docker network. Left out: TLS to the provider, as for every provider on the internet.
+   */
+  plain?: true;
 }
 
+/** The Guards a shop can have. A desk Guard (OWNER_MARKED_KINDS) is only ever an agent's: a template shop on UPI runs the same ledger in its own runtime. */
 export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "model"];
+
+/**
+ * Where the owner-marked desk listens (B71 part 2): the approvals relay's container serves it on this port of its own (bundle/services/desk.ts), apart from the
+ * relay's port, so nothing that reaches the desk can reach the relay's /internal routes. Only a desk Guard calls it, with the agent's own desk token.
+ */
+export const DESK_PORT = 8796;
+/** The file in a desk Guard's secrets that holds the whole Authorization header it sends to the desk ("Bearer <the agent's desk token>"). */
+export const DESK_SECRET = "desk_authorization";
 
 /**
  * The Guard in front of an agent's own gateway API, which has no module here (B71 step 6): its tool is the reviewed spec's, its upstream is where the builder said the
@@ -42,6 +60,8 @@ export function ownApiGuardDef(tool: string, upstream: string): GuardDef {
 }
 
 export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
+  // an owner-marked module (UPI) has no API on the internet: its Guard is in front of the desk, in the relay's container on this server (B71 part 2)
+  if (providerById(kind)?.ownerMarked) return { kind, tool: DESK_GUARD.tool, upstream: `relay:${DESK_PORT}`, secretFile: DESK_SECRET, headers: { Authorization: `\${file:/run/secrets/${DESK_SECRET}}` }, plain: true };
   const gateway = providerById(kind)?.gateway?.guard;
   // a gateway's Guard is its folder's: the key order is the deployed definition's, and the bytes of every Razorpay shop's plan are pinned (payment-guard-golden)
   if (gateway) return { kind, tool: gateway.tool, upstream: gateway.upstream, secretFile: gateway.secretFile, headers: { Authorization: `\${file:/run/secrets/${gateway.secretFile}}` } };
@@ -143,7 +163,7 @@ export interface TomlOptions {
    * The owner's approver id (Razorpay only): the approvals relay signs the owner's answers with the owner's secret. B37: `group` adds the shop's other people,
    * each with their own secret file, and the amount (in paise) above which two different people must approve. Without it the file is the one it always was.
    */
-  approver?: { id: string; secretFile: string; group?: { people: { id: string; secretFile: string }[]; twoAbovePaise?: number } };
+  approver?: { id: string; secretFile: string; group?: { people: { id: string; secretFile: string }[]; twoAbovePaise?: number }; /** The operations the owner approves: a gateway's refunds when left out; an agent's own API's held calls (B71 part 2). */ operations?: string[] };
   /** Seconds between tripwire runs; Guard's default is 300. */
   tripwireIntervalS?: number;
   /** Where this Guard listens and keeps its files. The defaults are the container's; a test that runs the real binary on this computer gives its own. */
@@ -247,8 +267,10 @@ export function guardToml(o: TomlOptions): string {
   if (o.approver?.group) lines.push(...groupApprovers(o, { ...o.approver, group: o.approver.group }));
   else if (o.approver) {
     lines.push(
-      ``, `# Who may approve a held refund: the shop's owner, through the approvals relay, which signs each answer with the owner's secret (POST /admin/notify).`,
-      `[[roles]]`, `id = "shop-owner"`, `tools = [${q(o.def.tool)}]`, `operations = ["refund"]`, `rules = ["*"]`, `tenants = [${q(o.tenant)}]`,
+      ...(o.approver.operations
+        ? [``, `# Who may approve a call this Guard holds: the shop's owner, through the approvals relay, which signs each answer with the owner's secret (POST /admin/notify).`]
+        : [``, `# Who may approve a held refund: the shop's owner, through the approvals relay, which signs each answer with the owner's secret (POST /admin/notify).`]),
+      `[[roles]]`, `id = "shop-owner"`, `tools = [${q(o.def.tool)}]`, `operations = [${(o.approver.operations ?? ["refund"]).map(q).join(", ")}]`, `rules = ["*"]`, `tenants = [${q(o.tenant)}]`,
       ``, `[[approvers]]`, `id = ${q(o.approver.id)}`, `roles = ["shop-owner"]`,
       ``, `[notify_secrets]`, `${o.approver.id} = ${q("${file:" + o.approver.secretFile + "}")}`,
     );

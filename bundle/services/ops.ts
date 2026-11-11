@@ -11,6 +11,7 @@
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
 import { existsSync, readFileSync } from "node:fs";
 import { parseKey } from "../../modules/record/key-file.ts";
+import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import { readUsageBaseline, writeAnswerFiles, writeLeaseInbox, writeUsageBaseline } from "../lib/fleet.ts";
 import type { UsageBaseline } from "../lib/fleet.ts";
 import type { UsageTotals } from "../lib/usage.ts";
@@ -202,8 +203,9 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
   if (command === "issue-approver") {
     const c = config.shops[args[0]] ?? config.ownAgents?.[args[0]];
     if (!c) { console.error(`no shop or agent ${args[0]}`); return 2; }
-    const g = c.guards.find((x) => x.id === "guard-razorpay");
-    if (!g) { console.error(`${args[0]} has no Razorpay Guard (a UPI shop has none), so there is no approvals relay to give a credential to`); return 2; }
+    // the Guard the owner answers through: a gateway's (its refunds), or an agent's own API's (the calls its spec holds, B71 part 2). A UPI shop has neither.
+    const g = c.guards.find((x) => isGatewayKind(x.id.replace(/^guard-/u, ""))) ?? c.guards.find((x) => x.id === `guard-${OWN_API}`);
+    if (!g) { console.error(`${args[0]} has no Guard that holds a call for the owner (a UPI shop has none), so there is no approvals relay to give a credential to`); return 2; }
     const r = await adminCall(g, "POST", "/admin/approvers", { id: `relay-${args[0]}`, roles: ["shop-owner"], ttl_seconds: Number(args[1] ?? 604_800), note: "the approvals relay's reading credential" });
     const token = (r.body as { token?: string }).token;
     if (r.status !== 200 || !token) { console.error(`Guard did not issue a credential (HTTP ${r.status})`); return 1; }

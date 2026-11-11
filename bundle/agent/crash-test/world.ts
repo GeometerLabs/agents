@@ -30,7 +30,7 @@ import type { ServerConfig } from "../../lib/server.ts";
 import { typedText } from "../facts.ts";
 import type { Approval, Decision } from "../facts.ts";
 import type { AgentFolder, AgentUpstream } from "../folder.ts";
-import { credential, freeLocalPort, startRealGuard } from "../guard-process.ts";
+import { STANDIN_PROVIDER_AUTHORIZATION, credential, freeLocalPort, startRealGuard } from "../guard-process.ts";
 import type { RealGuard } from "../guard-process.ts";
 import { agentNames } from "../plan.ts";
 import { NotDrivable, contractEnv, startAgent } from "./driver.ts";
@@ -134,7 +134,7 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
     const cred = credential();
     const guards: Partial<Record<AgentUpstream, RealGuard>> = {};
     for (const kind of agentFile.upstreams) {
-      if (!uses[kind] || (paying?.ownerMarked && kind === paying.id)) continue; // an owner-marked module has no API and no Guard: the desk below
+      if (!uses[kind] || (paying?.ownerMarked && kind === paying.id)) continue; // an owner-marked module's Guard is in front of the desk, started below with it
       const g = plan.guards.find((x) => x.kind === kind);
       if (!g) throw new Error(`There is no ${kind} Guard in the plan for ${name}.`);
       const real = await startRealGuard({
@@ -152,10 +152,17 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
       const notices: DeskNotice[] = [];
       const entries: { action: string; outcome: string }[] = [];
       const desk = createDesk({ clock: systemClock, payment: settings.payment, owner: settings.owner.whatsapp, state, save: () => undefined, record: (e) => entries.push({ action: e.action, outcome: e.outcome }), tellOwner: async (n) => { notices.push(n); return true; }, labels: { received: "Received", refundSent: "Refund sent" } });
-      const served = await serveRaw(async (r) => (r.headers.authorization === `Bearer ${cred.token}` ? desk.handle(r.method, r.path, r.query, r.body) : { status: 401, body: { error: "the agent's credential is needed" } }));
+      // B71 part 2: as on a server, the agent reaches the desk through the desk's own Guard (its credential, the deposit and refund bounds, the day's caps), and only
+      // that Guard reaches the desk, with the key it holds (here the stand-in key every Guard of the crash test sends)
+      const served = await serveRaw(async (r) => (r.headers.authorization === STANDIN_PROVIDER_AUTHORIZATION ? desk.handle(r.method, r.path, r.query, r.body) : { status: 401, body: { error: "the desk's Guard's key is needed" } }));
       closers.push(() => served.close());
+      const g = plan.guards.find((x) => x.kind === paying.id);
+      if (!g) throw new Error(`There is no ${paying.id} desk Guard in the plan for ${name}.`);
+      const real = await startRealGuard({ binary: plan.guardBinary, def: g.def, spec: g.spec, tenant: name, deployment: g.deployment, upstreamPort: served.port, agents: [{ id: agentNames.agentId(name), token: cred.token }] });
+      closers.push(real.stop);
+      guards[paying.id] = real;
       deskParts = { desk, state, notices, entries };
-      deskUrl = served.url;
+      deskUrl = real.agentUrl;
     }
     const port = await freeLocalPort();
     const agent = await startAgent({

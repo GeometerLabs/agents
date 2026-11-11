@@ -17,7 +17,8 @@ export interface AgentInboxConfig {
   appSecret?: string;
   verifyToken?: string;
   pathToken?: string;
-  relayUrl: string;
+  /** The approvals relay (or the owner-marked desk), when it has something for this agent. Left out: the owner's messages go on to the agent like any other. */
+  relayUrl?: string;
   relayToken: string;
   /** The agent's own WhatsApp webhook. Left out, nothing but the owner's replies is kept. */
   forwardTo?: string;
@@ -70,7 +71,7 @@ export function agentInboxHandler(c: AgentInboxConfig): (req: IncomingMessage, r
     if (!ownNumber(json)) { reply(res, 200, { forwarded: 0 }); return "200 another number's"; }
     // the owner's messages to the relay: if it cannot take them, the provider sends the webhook again and the relay skips a message id it has seen
     const owners = parseWhatsAppWebhook(json).filter((m) => m.from.replace(/\D/gu, "") === owner);
-    if (owners.length > 0 && !(await post(`${c.relayUrl.replace(/\/+$/u, "")}/internal/owner-messages`, { "content-type": "application/json", authorization: `Bearer ${c.relayToken}` }, JSON.stringify({ messages: owners })))) {
+    if (owners.length > 0 && c.relayUrl && !(await post(`${c.relayUrl.replace(/\/+$/u, "")}/internal/owner-messages`, { "content-type": "application/json", authorization: `Bearer ${c.relayToken}` }, JSON.stringify({ messages: owners })))) {
       reply(res, 503, { error: "the approvals relay did not take the owner's message; send it again" });
       return `503 ${owners.length} owner message(s) not taken by the relay`;
     }
