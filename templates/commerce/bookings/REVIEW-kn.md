@@ -1118,4 +1118,57 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `vote.option.equipment-rental` | ಗುಂಪುಗಳಿಗೆ ಉಪಕರಣ ಬಾಡಿಗೆ: ಕ್ಲಬ್‌ಗಳು, ಸೊಸೈಟಿಗಳು, ಹಾಲ್‌ಗಳು | Equipment rental for groups: clubs, societies and halls |  |
 | `vote.option.social-posting` | ಒಪ್ಪಿಗೆಯೊಂದಿಗೆ ಸಾಮಾಜಿಕ ಪೋಸ್ಟ್: ಪ್ರತಿ ಪೋಸ್ಟ್ ಅನ್ನು ಮಾಲೀಕರು ಒಪ್ಪುತ್ತಾರೆ | Social posting with approval: the owner approves each post |  |
 | `vote.option.course-packs` | ಕೋರ್ಸ್ ಪ್ಯಾಕ್‌ಗಳು: ಕೋರ್ಸ್ ಅನ್ನು ಪಾಠಗಳಾಗಿ ಮಾರಾಟ ಮಾಡಿ ತಲುಪಿಸುವುದು | Course packs: sell and deliver a course in lessons |  |
+| `agents.heading` | ನಿಮ್ಮ ಸ್ವಂತ ಏಜೆಂಟ್‌ಗಳು | Your own agents |  |
+| `agents.intro` | ನೀವು ಬರೆದ ಏಜೆಂಟ್‌ಗಳು, ಅಂಗಡಿಗಳಂತೆಯೇ ಅದೇ Guard-ಗಳ ಹಿಂದೆ. Geometer ಇವುಗಳನ್ನು ನಡೆಸುವುದಿಲ್ಲ: ಅಂಗಡಿಯ ಸೇವೆಗಳಿಗೆ ಇವು ಮಾಡುವ ಪ್ರತಿ ಕರೆಯನ್ನೂ ಪರಿಶೀಲಿಸುತ್ತದೆ. | Agents you wrote, behind the same Guards as the shops. Geometer does not run them: it checks every call they make to the shop's services. |  |
+| `agents.open` | ತೆರೆಯಿರಿ | Open |  |
+| `agents.title` | my-agent: ನಿಮ್ಮ ಸ್ವಂತ ಏಜೆಂಟ್ | my-agent: your own agent |  |
+| `agents.back` | ಎಲ್ಲಾ ಅಂಗಡಿಗಳು ಮತ್ತು ಏಜೆಂಟ್‌ಗಳು | All shops and agents |  |
+| `agents.guards.heading` | ಇದರ Guard-ಗಳು | Its Guards |  |
+| `agents.guards.intro` | ನಿಮ್ಮ ಏಜೆಂಟ್ ಕರೆಯುವ ಪ್ರತಿ ಸೇವೆಯ ಮುಂದೆ ಒಂದು Guard ಇದೆ, ಅದಕ್ಕೆ ತನ್ನದೇ ಕ್ರೆಡೆನ್ಶಿಯಲ್ ಇದೆ. | Each service your agent calls has a Guard in front of it, with a credential of its own. |  |
+| `agents.guards.desk` | UPI ಡೆಸ್ಕ್ | UPI desk |  |
+| `agents.guards.ownGateway` | ನಿಮ್ಮ ಗೇಟ್‌ವೇ | Your gateway |  |
+| `agents.guards.limits` | ನಡೆಯುತ್ತಿರುವ Guard-ಗಳಲ್ಲಿ 12 ರಲ್ಲಿ 12 ಮಿತಿಗಳನ್ನು ಪರೀಕ್ಷಿಸಲಾಗಿದೆ | 12 of 12 limits proven to bite on the running Guards |  |
+| `agents.guards.limitsUnknown` | ನಡೆಯುತ್ತಿರುವ Guard-ಗಳಲ್ಲಿ ಮಿತಿಗಳನ್ನು ಇನ್ನೂ ಪರೀಕ್ಷಿಸಿಲ್ಲ. | The limits have not been checked on the running Guards yet. |  |
+| `agents.guards.since` | 4 Nov 2026 ರಿಂದ ಕ್ರೆಡೆನ್ಶಿಯಲ್ | credential since 4 Nov 2026 |  |
+| `agents.guards.oldUntil` | ಹಳೆಯ ಕ್ರೆಡೆನ್ಶಿಯಲ್ 4 Nov 2026, 10:15 ರವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ | the old credential still works until 4 Nov 2026, 10:15 |  |
+| `agents.guards.shared` | ಈ Guard-ಗಳು ಇನ್ನೂ 12 ನವೆಂಬರ್ 2026 ರ ಮೊದಲು ಮಾಡಿದ ಒಂದೇ ಕ್ರೆಡೆನ್ಶಿಯಲ್ ಹಂಚಿಕೊಳ್ಳುತ್ತವೆ. ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳು ಪ್ರತಿ Guard-ಗೆ ತನ್ನದೇ ಒಂದನ್ನು ಕೊಡುತ್ತವೆ. | These Guards still share one credential, made before 12 Nov 2026. New credentials give each Guard its own. |  |
+| `agents.guards.file` | ನಿಮ್ಮ ಏಜೆಂಟ್ ಸರ್ವರ್‌ನಲ್ಲಿರುವ secrets/agents/my-agent/credentials.env ನಿಂದ ತನ್ನ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳನ್ನು ಓದುತ್ತದೆ. ಪ್ಯಾನೆಲ್ ಯಾವತ್ತೂ ಕ್ರೆಡೆನ್ಶಿಯಲ್ ತೋರಿಸುವುದಿಲ್ಲ. | Your agent reads its credentials from secrets/agents/my-agent/credentials.env on the server. The panel never shows a credential. |  |
+| `agents.held.heading` | ಮಾಲೀಕರಿಗಾಗಿ ತಡೆಹಿಡಿದವು | Held for the owner |  |
+| `agents.held.none` | ಮಾಲೀಕರಿಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ. | Nothing is waiting for the owner. |  |
+| `agents.held.some` | 1 ಕರೆ WhatsApp ನಲ್ಲಿ ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ. | 1 call is waiting for the owner's answer on WhatsApp. |  |
+| `agents.held.asOf` | 4 Nov 2026, 10:00 ರಂದು Guard-ಗಳು ಹೇಳಿದಂತೆ. | As the Guards said at 4 Nov 2026, 10:00. |  |
+| `agents.held.unknown` | Guard-ಗಳನ್ನು ಇನ್ನೂ ಕೇಳಿಲ್ಲ. | The Guards have not been asked yet. |  |
+| `agents.unfinished.heading` | ಮುಗಿಯದ ಕೆಲಸ | Unfinished work |  |
+| `agents.unfinished.none` | ಏನೂ ಬಾಕಿ ಇಲ್ಲ. | Nothing is unfinished. |  |
+| `agents.unfinished.notShared` | ಇದರ ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಮುಗಿಯದ ಕೆಲಸವನ್ನು ತೋರಿಸಲು ಆಗುವುದಿಲ್ಲ. | Its record has not been shared yet, so its unfinished work cannot be listed. |  |
+| `agents.crash.heading` | ಹಿಂದಿನ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ | Last crash test |  |
+| `agents.crash.never` | ಇನ್ನೂ ಯಾವುದೇ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆದಿಲ್ಲ. | No crash test has run yet. |  |
+| `agents.crash.held` | 12 ರಲ್ಲಿ 11 ಸರಿಯಾಗಿ ನಿಂತವು. | Held 11 of 12. |  |
+| `agents.crash.failed` | ಸರಿಯಾಗಿ ನಿಲ್ಲದವು: | Did not hold: |  |
+| `agents.crash.notRun` | ಈ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಡೆಸದವು: | Not run on these settings: |  |
+| `agents.crash.running` | ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆಯುತ್ತಿದೆ. ಕೆಲವು ನಿಮಿಷ ಬೇಕು. | A crash test is running. It takes a few minutes. |  |
+| `agents.crash.waiting` | ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ಕೇಳಲಾಗಿದೆ. ಸರ್ವರ್ ಬಿಡುವಾದಾಗ ಶುರುವಾಗುತ್ತದೆ. | A crash test is asked for. It starts when the server is free. |  |
+| `agents.crash.error` | ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆಸಲು ಆಗಲಿಲ್ಲ: The agent did not start | The crash test could not run: The agent did not start |  |
+| `agents.crash.when` | 4 Nov 2026, 10:00, ಕೇಳಿದವರು: Divya (builder, from the panel). | 4 Nov 2026, 10:00, asked by Divya (builder, from the panel). |  |
+| `agents.crash.version` | ಆವೃತ್ತಿ 4f9c2e1. | Version 4f9c2e1. |  |
+| `agents.goLive.heading` | ಗೋ-ಲೈವ್ | Go-live |  |
+| `agents.goLive.none` | ಇನ್ನೂ ಯಾವ ಆವೃತ್ತಿಗೂ ಗೋ-ಲೈವ್ ಪ್ರಮಾಣಪತ್ರ ಇಲ್ಲ. `geometer agent go-live` ಒಂದನ್ನು ಮಾಡುತ್ತದೆ. | No version has a go-live certificate yet. `geometer agent go-live` makes one. |  |
+| `agents.goLive.inService` | ಆವೃತ್ತಿ 4f9c2e1 ಸೇವೆಯಲ್ಲಿದೆ: 4 Nov 2026 ರ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್‌ನಲ್ಲಿ ಎಲ್ಲವೂ ಸರಿಯಾಗಿ ನಿಂತವು. | Version 4f9c2e1 is in service: everything held in its crash test on 4 Nov 2026. |  |
+| `agents.goLive.code` | ಪ್ರಮಾಣಪತ್ರ GL-7K2M. | Certificate GL-7K2M. |  |
+| `agents.licence.price` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್: ಈ ಲೈವ್ ಕ್ಲೈಂಟ್ ವ್ಯವಹಾರಕ್ಕೆ ತಿಂಗಳಿಗೆ ₹199.00, GST ಮೊದಲು. | Builder licence: ₹199.00 a month for this live client business, before GST. |  |
+| `agents.actions.heading` | ನೀವು ಇಲ್ಲಿ ಮಾಡಬಹುದಾದದ್ದು | What you can do here |  |
+| `agents.actions.stop` | ನಿಲ್ಲಿಸಿ (ಕಿಲ್ ಸ್ವಿಚ್) | Stop it (kill switch) |  |
+| `agents.actions.stopNote` | ಇದರ Guard-ಗಳು ಹೊಸದೇನೂ ಹೊರಗೆ ಹೋಗಲು ಬಿಡುವುದಿಲ್ಲ. ಈಗಾಗಲೇ ಒಪ್ಪಿದ ರೀಫಂಡ್‌ಗಳನ್ನು ಇನ್ನೂ ಮುಗಿಸಬಹುದು. ಮತ್ತೆ ಶುರು ಮಾಡಲು: ಸರ್ವರ್‌ನಲ್ಲಿ geometer start <name>. | Its Guards let nothing new go out. Refunds already approved can still be finished. To start it again: geometer start <name> on the server. |  |
+| `agents.actions.stopAsked` | ನಿಲ್ಲಿಸಲು ಕೇಳಲಾಗಿದೆ. ಸರ್ವರ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಮಾಡುತ್ತದೆ. | Stop asked. The server carries it out within a minute. |  |
+| `agents.actions.stopped` | ಇದನ್ನು ನಿಲ್ಲಿಸಲಾಗಿದೆ. | It is stopped. |  |
+| `agents.actions.crashTest` | ಹೊಸ ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ನಡೆಸಿ | Run a new crash test |  |
+| `agents.actions.crashNote` | ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಅದರ ಸ್ವಂತ ಆಜ್ಞೆಯಿಂದ, ಅದರ ನಿಜವಾದ Guard-ಗಳ ಹಿಂದೆ, ಬದಲಿ ಸೇವೆಗಳ ಜೊತೆ ಶುರು ಮಾಡುತ್ತದೆ. ನಿಜವಾಗಿ ಏನನ್ನೂ ಕಳಿಸುವುದಿಲ್ಲ ಅಥವಾ ಶುಲ್ಕ ವಿಧಿಸುವುದಿಲ್ಲ. | Starts your agent with its own command against stand-in services, behind its real Guards. Nothing real is sent or charged. |  |
+| `agents.actions.crashAsked` | ಕ್ರ್ಯಾಶ್ ಟೆಸ್ಟ್ ಕೇಳಲಾಗಿದೆ. ಮುಗಿದಾಗ ಫಲಿತಾಂಶ ಇಲ್ಲಿ ಕಾಣುತ್ತದೆ. | Crash test asked. The result shows here when it is done. |  |
+| `agents.actions.rotate` | ಪ್ರತಿ Guard-ಗೆ ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳು | New credentials for every Guard |  |
+| `agents.actions.rotateOne` | WhatsApp ಗೆ ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್ | New credential for WhatsApp |  |
+| `agents.actions.rotateNote` | ಹಳೆಯ ಕ್ರೆಡೆನ್ಶಿಯಲ್ 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ, ನಂತರ ನಿಲ್ಲುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ನಿಮ್ಮ ಏಜೆಂಟ್ ತನ್ನ ಕ್ರೆಡೆನ್ಶಿಯಲ್ ಫೈಲ್ ಅನ್ನು ಮತ್ತೆ ಓದಬೇಕು. | The old credential keeps working for 15 minutes, then stops. Your agent must read its credentials file again before then. |  |
+| `agents.actions.rotateAsked` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳನ್ನು ಕೇಳಲಾಗಿದೆ. ಸರ್ವರ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಮಾಡುತ್ತದೆ. | New credentials asked. The server makes them within a minute. |  |
+| `agents.actions.rotateDone` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳು ಸಿದ್ಧ. ಹಳೆಯವು 4 Nov 2026, 10:15 ಕ್ಕೆ ನಿಲ್ಲುತ್ತವೆ. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
+| `agents.actions.rotateFailed` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳ ಹಿಂದಿನ ವಿನಂತಿ ಆಗಲಿಲ್ಲ; ನಿಮ್ಮ ಏಜೆಂಟ್‌ಗೆ ಏನೂ ಬದಲಾಗಲಿಲ್ಲ. ಕಾರಣ ಸರ್ವರ್‌ನ ಲಾಗ್‌ನಲ್ಲಿದೆ. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
+| `agents.actions.cliOnly` | ಏಜೆಂಟ್ ಅನ್ನು ತೆಗೆದುಹಾಕುವುದು ಸರ್ವರ್‌ನಲ್ಲಿ ಮಾತ್ರ: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
 
