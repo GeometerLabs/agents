@@ -61,7 +61,7 @@ Note the time before each step so you can find its record entries (P1).
 
 **A9. A provider outage and a wrong key (P3).**
 - WhatsApp Guard down while C writes `I have paid`: nothing comes back, no half-answer; after the Guard is back, one reply. Past 15 minutes: one to-do item for the owner; no message to C if the WhatsApp Guard is the one down.
-- Razorpay Guard down while C asks to pay: the same wait. After the bound or with a wrong key: C sees `Sorry, I could not make the payment link just now, so I have not sent it. I have told the owner. Please try again in a few minutes.`; O sees `Could not make the payment link for Test One's fee for <Month> (<C>). No reminder went out. Please check Razorpay.` Record: `create_fee_link` blocked/failed. A wrong key must **not** wait 15 minutes.
+- Razorpay Guard down while C asks to pay: the same wait. After the bound or with a wrong key: C sees `Sorry, I could not make the payment link just now, so I have not sent it. I have told the owner. Please try again in a few minutes.`; O sees `Could not make the payment link for Test One's fee for <Month> (<C>), so the parent has not been sent it. It is tried again at the next reminder, or when the parent asks again. If this keeps happening, check your payment account or tell the person who set up your agent.` (the wording since 11 Nov, checkpoint item 7) Record: `create_fee_link` blocked/failed. A wrong key must **not** wait 15 minutes.
 - Nothing sent twice: look at both phones and the dashboard.
 
 **A10. STOP.** C writes `STOP`. No reply to C. O sees `Parent <C> sent STOP. No more messages will go to them.` Record: `opt_out` confirmed; no later `send_message` to C, and no late fee for them.
