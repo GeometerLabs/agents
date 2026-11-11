@@ -29,6 +29,7 @@ import { createRelay } from "../approvals/relay.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
 import { createKit } from "./runtime-kit.ts";
 import { createHmac, randomUUID } from "node:crypto";
+import { GuardHeldError } from "../../../../modules/core/faults.ts";
 
 const BINARY = process.env.GEO_GUARD_BIN ?? "/Users/navaltharun/Work/geometer/monorepo/target/debug/geo-guard";
 const skip = existsSync(BINARY) ? false : `needs the built geo-guard binary, which is not at ${BINARY} (build it in the monorepo, or set GEO_GUARD_BIN); these tests run the real Guard`;
@@ -322,6 +323,58 @@ test("a denied refund against the real Guard: the owner says no, nothing is refu
     assert.equal(whatsapp.sentTo(settings.owner.whatsapp).filter((m) => m.templateName === "owner_approval_request").length, 1);
   } finally {
     store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
+    await guard.stop(); await standins.close();
+  }
+});
+
+// B74 (11 Nov): the owner's yes covers ONE exact call. The relay gives Guard the owner's signed answer for an approval id and nothing else (no amount, no
+// payment), so what binds the yes to the money is Guard: it holds a call by its digest and releases only the identical call. A changed amount, another
+// payment (whose payer the refund goes to) or another receipt is a different call: it is held again under a NEW approval, which the owner has not given,
+// and nothing is sent. Razorpay's refund body has no currency (a refund is in its payment's currency) and no fee field; any other field added would change
+// the bytes in the same way. The runtime never builds the call again: it sends the saved bytes (modules/payments/refunds.ts, resendRefund).
+test("B74: after the owner approves, a changed amount, another payment or another receipt is held again under a new approval and nothing is sent; only the identical call is released, once", { skip }, async () => {
+  const settings = limited(100); // ₹200 deposit, owner's limit ₹100: a refund above ₹100 is held
+  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
+  const guard = await startRealGuard(settings, standins.port);
+  try {
+    const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: guard.agentToken });
+    // two paid deposits, both through the real Guard (₹200 is the only amount the deposit bound lets through)
+    const paid = [];
+    for (const ref of ["b-1", "b-2"]) {
+      const link = await payments.createRequest({ amount: 20_000, reference_id: ref, description: "deposit" });
+      paid.push(standins.fakes.payments.customerPays(link.id).id);
+    }
+    const [p1, p2] = paid;
+    const heldId = async (paymentId: string, amount: number, receipt: string): Promise<string> => {
+      try { await payments.refund(paymentId, { amount, receipt }); } catch (e) { if (e instanceof GuardHeldError && e.approval) return e.approval; throw e; }
+      throw new Error(`a refund of ${amount} on ${paymentId} was sent, not held`);
+    };
+    const approve = async (approval: string) => {
+      const raw = JSON.stringify({ approval, decision: "approve", approver: "owner-glow-salon", at_ms: String(Date.now()), nonce: randomUUID() });
+      const r = await fetch(`${guard.adminUrl}/admin/notify`, { method: "POST", body: raw, headers: { "content-type": "application/json", "x-geo-signature": createHmac("sha256", guard.ownerSecret).update(raw).digest("hex") } });
+      assert.equal(r.status, 200, await r.text());
+    };
+    const states = async () => Object.fromEntries(((await (await admin(guard, "/admin/approvals")).json() as any).approvals as any[]).map((a) => [a.id, a.state]));
+
+    const asked = await heldId(p1, 20_000, `b-1:${p1}`);
+    await approve(asked);
+    assert.equal((await states())[asked], "approved");
+
+    // the same refund with any material field changed: held again, each under an approval of its own, and the owner's yes is not used up
+    const changed = [await heldId(p1, 15_000, `b-1:${p1}`), await heldId(p2, 20_000, `b-1:${p1}`), await heldId(p1, 20_000, `b-9:${p1}`)];
+    for (const id of changed) assert.notEqual(id, asked, "a changed call never reuses the approval the owner gave");
+    assert.equal(new Set(changed).size, 3, "each changed call is its own approval");
+    assert.equal(standins.fakes.payments.refunds().length, 0, "nothing was sent: an approval for one call is not an approval for another");
+    const after = await states();
+    assert.equal(after[asked], "approved", "the owner's yes is still for the original call");
+    for (const id of changed) assert.equal(after[id], "pending", "the changed calls wait for a yes the owner has not given");
+
+    // the identical call is released, once
+    const refund = await payments.refund(p1, { amount: 20_000, receipt: `b-1:${p1}` });
+    assert.equal(refund.amount, 20_000);
+    assert.deepEqual(standins.fakes.payments.refunds().map((r) => [r.payment_id, r.amount, r.receipt]), [[p1, 20_000, `b-1:${p1}`]]);
+    assert.equal((await states())[asked], "consumed");
+  } finally {
     await guard.stop(); await standins.close();
   }
 });
