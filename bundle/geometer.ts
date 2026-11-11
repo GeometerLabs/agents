@@ -75,6 +75,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync
 import { basename, dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { applyOnce, runLicence, watch } from "./apply.ts";
+import { applyServerSettings } from "./server-settings.ts";
 import { takeExtension, takeLease } from "./lib/licence.ts";
 import { pairServer, pairingPaths, readPairing } from "./lib/pairing.ts";
 import type { PairingFile } from "./lib/pairing.ts";
@@ -95,7 +96,7 @@ import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
-import { INTAKE, secretFile, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
+import { INTAKE, secretFile, writeModelKey, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
 import { guardsOf, kindFor } from "./lib/kinds.ts";
 import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
@@ -164,8 +165,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (!modelChosen(server)) throw new Error(NO_MODEL); // the key's file name depends on the wire, so the model comes first
       const key = readFileSync(resolve(positionals[0] ?? ""), "utf8").trim();
       if (key.length < 8) throw new Error("That file is empty or too short to be an API key.");
-      prepareSecretsRoot(dir);
-      if (server.model.wire === "anthropic") writeSecretFile(secretFile(dir, "g-model", "model_api_key"), key); else writeSecretFile(secretFile(dir, "g-model", "model_authorization"), `Bearer ${key}`);
+      writeModelKey(dir, server.model.wire, key);
       console.log("The model's key is in place, for the model Guard only.");
       return 0;
     }
@@ -408,6 +408,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     if (command === "apply") {
       if (values.watch) { await watch(ctx, Number(str("interval") ?? 10) * 1000); return 0; }
+      await applyServerSettings(ctx);
       const r = await applyOnce(ctx);
       return r.failed > 0 ? 1 : 0;
     }

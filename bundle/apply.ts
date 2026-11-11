@@ -17,6 +17,7 @@ import type { State } from "./lib/state.ts";
 import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
 import { heldRulesOf } from "../modules/approvals/held-call.ts";
 import { syncLicence } from "./lib/licence.ts";
+import { applyServerSettings } from "./server-settings.ts";
 import { updateStatus } from "./lib/status.ts";
 import { shopNameProblem, sha256Hex, stableJson } from "./lib/util.ts";
 
@@ -248,7 +249,8 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   let lastRefresh = 0;
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

@@ -126,6 +126,8 @@ export interface State {
   serviceHashes?: Record<string, { block: string; files: string }>;
   /** When the deployer's scheduled jobs last ran (ISO times), so each runs once when it is due and not again after a restart. */
   jobs?: { snapshotAt?: string; drillAt?: string; relayCredentialsAt?: string; exportsAt?: string; agentRecordsAt?: string; fingerprintsAt?: string };
+  /** The backup bucket's test write (server-settings.ts): a digest of the settings and the key it was last made with, so it is made again only when one changes. */
+  backupTestFor?: string;
 }
 
 const file = (dir: string) => join(serverPaths(dir).state, "state.json");
