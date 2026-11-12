@@ -103,6 +103,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     no_case: (w, d) => `Nothing has the number ${w.lit(d.ref)}.`, not_yours: (w, d) => `${w.lit(d.ref)} is not something this assistant handles.`,
     already_back: (w, d) => `The deposit on ${w.lit(d.ref)} is already going back, so I can't cancel it from here. Please tell the customer yourself.`,
     cancel_first: (w, d) => `${w.lit(d.ref)} is still booked. To give the deposit back, cancel it: ${w.lit(`cancel ${d.ref}`)}.`,
+    not_here: (w, d) => `That can't be done from the chat for ${w.lit(d.ref)} in this version. Use the message I sent you about it, or ask your partner.`,
     not_booked: (w, d) => `${w.lit(d.ref)} is not booked yet, so there is nothing to cancel.`,
     not_live: (w, d) => `${w.lit(d.ref)} is already cancelled, done or expired.`, nothing_paid: (w, d) => `Nothing was paid on ${w.lit(d.ref)}, so there is nothing to refund.`,
     too_much: (w, d) => `That is more than was paid on ${w.lit(d.ref)} (${w.inr(d.paidPaise ?? 0)}).`, nothing_waiting: (w, d) => `Nothing on ${w.lit(d.ref)} is waiting for you.`,
@@ -115,6 +116,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     no_case: (w, d) => `${w.lit(d.ref)} नंबर का कुछ नहीं मिला।`, not_yours: (w, d) => `${w.lit(d.ref)} यह असिस्टेंट नहीं संभालता।`,
     already_back: (w, d) => `${w.lit(d.ref)} की जमा राशि पहले से वापस जा रही है, इसलिए मैं इसे यहाँ से रद्द नहीं कर सकता। कृपया ग्राहक को ख़ुद बताएँ।`,
     cancel_first: (w, d) => `${w.lit(d.ref)} अभी बुक है। जमा राशि लौटाने के लिए इसे रद्द करें: ${w.lit(`cancel ${d.ref}`)}।`,
+    not_here: (w, d) => `इस वर्शन में ${w.lit(d.ref)} के लिए यह चैट से नहीं हो सकता। इसके बारे में भेजे मेरे मैसेज का इस्तेमाल करें, या अपने पार्टनर से कहें।`,
     not_booked: (w, d) => `${w.lit(d.ref)} अभी बुक नहीं हुई है, इसलिए रद्द करने को कुछ नहीं है।`,
     not_live: (w, d) => `${w.lit(d.ref)} पहले ही रद्द, पूरा या ख़त्म हो चुका है।`, nothing_paid: (w, d) => `${w.lit(d.ref)} पर कुछ भी नहीं चुकाया गया, तो वापस करने को कुछ नहीं है।`,
     too_much: (w, d) => `यह ${w.lit(d.ref)} पर चुकाए गए पैसे (${w.inr(d.paidPaise ?? 0)}) से ज़्यादा है।`, nothing_waiting: (w, d) => `${w.lit(d.ref)} पर आपके लिए कुछ बाकी नहीं है।`,
@@ -127,6 +129,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     no_case: (w, d) => `${w.lit(d.ref)} എന്ന നമ്പറിൽ ഒന്നുമില്ല.`, not_yours: (w, d) => `${w.lit(d.ref)} ഈ അസിസ്റ്റന്റ് കൈകാര്യം ചെയ്യുന്നതല്ല.`,
     already_back: (w, d) => `${w.lit(d.ref)}-ന്റെ ഡെപ്പോസിറ്റ് ഇതിനകം തിരികെ പോകുന്നു, അതിനാൽ എനിക്ക് ഇവിടെ നിന്ന് റദ്ദാക്കാനാകില്ല. ദയവായി ഉപഭോക്താവിനോട് നേരിട്ട് പറയുക.`,
     cancel_first: (w, d) => `${w.lit(d.ref)} ഇപ്പോഴും ബുക്ക് ചെയ്തിരിക്കുന്നു. ഡെപ്പോസിറ്റ് തിരികെ നൽകാൻ അത് റദ്ദാക്കുക: ${w.lit(`cancel ${d.ref}`)}.`,
+    not_here: (w, d) => `ഈ പതിപ്പിൽ ${w.lit(d.ref)}-ന് ഇത് ചാറ്റിൽ നിന്ന് ചെയ്യാനാകില്ല. ഇതിനെക്കുറിച്ച് ഞാൻ അയച്ച സന്ദേശം ഉപയോഗിക്കുക, അല്ലെങ്കിൽ നിങ്ങളുടെ പാർട്ണറോട് ചോദിക്കുക.`,
     not_booked: (w, d) => `${w.lit(d.ref)} ഇതുവരെ ബുക്ക് ചെയ്തിട്ടില്ല, അതിനാൽ റദ്ദാക്കാൻ ഒന്നുമില്ല.`,
     not_live: (w, d) => `${w.lit(d.ref)} ഇതിനകം റദ്ദാക്കിയതോ പൂർത്തിയായതോ കാലഹരണപ്പെട്ടതോ ആണ്.`, nothing_paid: (w, d) => `${w.lit(d.ref)}-ൽ ഒന്നും അടച്ചിട്ടില്ല, അതിനാൽ തിരികെ നൽകാൻ ഒന്നുമില്ല.`,
     too_much: (w, d) => `ഇത് ${w.lit(d.ref)}-ൽ അടച്ചതിനേക്കാൾ (${w.inr(d.paidPaise ?? 0)}) കൂടുതലാണ്.`, nothing_waiting: (w, d) => `${w.lit(d.ref)}-ൽ നിങ്ങൾക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല.`,
@@ -139,6 +142,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     no_case: (w, d) => `${w.lit(d.ref)} ಸಂಖ್ಯೆಯಲ್ಲಿ ಏನೂ ಇಲ್ಲ.`, not_yours: (w, d) => `${w.lit(d.ref)} ಅನ್ನು ಈ ಸಹಾಯಕ ನೋಡಿಕೊಳ್ಳುವುದಿಲ್ಲ.`,
     already_back: (w, d) => `${w.lit(d.ref)} ನ ಠೇವಣಿ ಈಗಾಗಲೇ ಹಿಂತಿರುಗುತ್ತಿದೆ, ಹಾಗಾಗಿ ನಾನು ಇಲ್ಲಿಂದ ರದ್ದು ಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಗ್ರಾಹಕರಿಗೆ ನೀವೇ ತಿಳಿಸಿ.`,
     cancel_first: (w, d) => `${w.lit(d.ref)} ಇನ್ನೂ ಬುಕ್ ಆಗಿದೆ. ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಲು ಅದನ್ನು ರದ್ದು ಮಾಡಿ: ${w.lit(`cancel ${d.ref}`)}.`,
+    not_here: (w, d) => `ಈ ಆವೃತ್ತಿಯಲ್ಲಿ ${w.lit(d.ref)} ಗೆ ಇದನ್ನು ಚಾಟ್‌ನಿಂದ ಮಾಡಲಾಗದು. ಅದರ ಬಗ್ಗೆ ನಾನು ಕಳುಹಿಸಿದ ಸಂದೇಶ ಬಳಸಿ, ಅಥವಾ ನಿಮ್ಮ ಪಾರ್ಟ್‌ನರ್ ಅವರನ್ನು ಕೇಳಿ.`,
     not_booked: (w, d) => `${w.lit(d.ref)} ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ, ರದ್ದು ಮಾಡಲು ಏನೂ ಇಲ್ಲ.`,
     not_live: (w, d) => `${w.lit(d.ref)} ಈಗಾಗಲೇ ರದ್ದಾಗಿದೆ, ಮುಗಿದಿದೆ ಅಥವಾ ಅವಧಿ ಮೀರಿದೆ.`, nothing_paid: (w, d) => `${w.lit(d.ref)} ಮೇಲೆ ಏನೂ ಪಾವತಿಯಾಗಿಲ್ಲ, ಹಿಂತಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.`,
     too_much: (w, d) => `ಇದು ${w.lit(d.ref)} ಮೇಲೆ ಪಾವತಿಸಿದ್ದಕ್ಕಿಂತ (${w.inr(d.paidPaise ?? 0)}) ಹೆಚ್ಚು.`, nothing_waiting: (w, d) => `${w.lit(d.ref)} ಮೇಲೆ ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ.`,
@@ -160,6 +164,7 @@ const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "calendar") return `The calendar would not confirm ${ref} (${who}, ${w.lit(d.what)}, paid ${w.inr(d.amountPaise)}). Try the calendar again?`;
     if (d.itemKind === "deposit") return `Did ${w.inr(d.amountPaise)} from ${who} for ${ref} reach your UPI?`;
     if (d.itemKind === "refund_owed") return `Did you send ${w.inr(d.amountPaise)} back to ${who} for ${ref}?`;
+    if (d.itemKind === "refund_request") return `${who} asked for ${w.inr(d.amountPaise)} back (${w.lit(d.what)}, ${ref}). Refund it?`;
     if (d.itemKind === "waiver") return `Waive ${w.inr(d.amountPaise)} of ${who}'s fee (${w.lit(d.what)}, ${ref})?`;
     if (d.itemKind === "big_order") return `Accept order ${ref} from ${who} (${w.lit(d.what)}, ${w.inr(d.amountPaise)})?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. Go ahead?`;
@@ -173,6 +178,7 @@ const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "calendar") return `कैलेंडर ने ${ref} (${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)} दिए) पक्की नहीं की। कैलेंडर फिर से आज़माएँ?`;
     if (d.itemKind === "deposit") return `क्या ${ref} के लिए ${who} के ${w.inr(d.amountPaise)} आपके UPI में आ गए?`;
     if (d.itemKind === "refund_owed") return `क्या आपने ${ref} के लिए ${who} को ${w.inr(d.amountPaise)} लौटा दिए?`;
+    if (d.itemKind === "refund_request") return `${who} ने ${w.inr(d.amountPaise)} वापस माँगे हैं (${w.lit(d.what)}, ${ref})। लौटाएँ?`;
     if (d.itemKind === "waiver") return `${who} की फीस (${w.lit(d.what)}, ${ref}) में ${w.inr(d.amountPaise)} की छूट दें?`;
     if (d.itemKind === "big_order") return `${who} का ऑर्डर ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) स्वीकार करें?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}। आगे बढ़ें?`;
@@ -186,6 +192,7 @@ const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "calendar") return `കലണ്ടർ ${ref} (${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)} അടച്ചു) ഉറപ്പാക്കിയില്ല. കലണ്ടർ വീണ്ടും ശ്രമിക്കണോ?`;
     if (d.itemKind === "deposit") return `${ref}-ന് ${who} അയച്ച ${w.inr(d.amountPaise)} നിങ്ങളുടെ UPI-യിൽ എത്തിയോ?`;
     if (d.itemKind === "refund_owed") return `${ref}-ന് ${who}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ അയച്ചോ?`;
+    if (d.itemKind === "refund_request") return `${who} ${w.inr(d.amountPaise)} തിരികെ ചോദിച്ചു (${w.lit(d.what)}, ${ref}). തിരികെ നൽകണോ?`;
     if (d.itemKind === "waiver") return `${who}-ന്റെ ഫീസിൽ (${w.lit(d.what)}, ${ref}) ${w.inr(d.amountPaise)} ഇളവ് നൽകണോ?`;
     if (d.itemKind === "big_order") return `${who}-ന്റെ ഓർഡർ ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) സ്വീകരിക്കണോ?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. തുടരണോ?`;
@@ -199,6 +206,7 @@ const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "calendar") return `ಕ್ಯಾಲೆಂಡರ್ ${ref} (${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)} ಪಾವತಿ) ಖಚಿತಪಡಿಸಲಿಲ್ಲ. ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬೇಕೆ?`;
     if (d.itemKind === "deposit") return `${ref} ಗಾಗಿ ${who} ಅವರ ${w.inr(d.amountPaise)} ನಿಮ್ಮ UPI ಗೆ ಬಂತೆ?`;
     if (d.itemKind === "refund_owed") return `${ref} ಗಾಗಿ ${who} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಿದಿರಾ?`;
+    if (d.itemKind === "refund_request") return `${who} ಅವರು ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲು ಕೇಳಿದ್ದಾರೆ (${w.lit(d.what)}, ${ref}). ಹಿಂತಿರುಗಿಸಬೇಕೆ?`;
     if (d.itemKind === "waiver") return `${who} ಅವರ ಫೀಸ್‌ನಲ್ಲಿ (${w.lit(d.what)}, ${ref}) ${w.inr(d.amountPaise)} ರಿಯಾಯಿತಿ ನೀಡಬೇಕೆ?`;
     if (d.itemKind === "big_order") return `${who} ಅವರ ಆರ್ಡರ್ ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) ಸ್ವೀಕರಿಸಬೇಕೆ?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. ಮುಂದುವರಿಯಬೇಕೆ?`;

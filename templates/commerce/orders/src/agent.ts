@@ -40,6 +40,9 @@ import type { Choice } from "../../../../modules/language/interactive.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
+import { ordersSkill } from "./assistant.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
@@ -87,6 +90,8 @@ export interface AgentDeps {
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
   terms?: () => TermsFile | undefined;
+  /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
+  ownerParser?: OwnerParser;
 }
 
 export type AgentEvent =
@@ -880,7 +885,9 @@ export function createAgent(deps: AgentDeps): Agent {
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
     // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
     if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
-    const m = /^\s*(approve|deny)\s+(o-\d+)\s*$/i.exec(msg.text);
+    // Item 11e: the shop's assistant reads what no fixed phrase is (this command is one). A shop without an "assistant" block: exactly as before.
+    if (assistant && !OWNER_COMMAND.test(msg.text) && (await assistant.onOwnerMessage(msg))) return;
+    const m = OWNER_COMMAND.exec(msg.text);
     const o = m ? store.orders.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
     const pending = o?.pending[0];
@@ -937,6 +944,9 @@ export function createAgent(deps: AgentDeps): Agent {
    */
   async function onVoiceNote(msg: InboundMessage): Promise<void> {
     const phone = msg.from;
+    // Item 11e: with the shop's assistant and a voice service, the owner's voice note is read as their typed words (or they are told it could not be made out)
+    const heard = phone === owner && assistant ? await assistant.hearOwner(msg) : null;
+    if (heard) return heard.text ? onOwnerMessage(heard) : undefined;
     if (phone === owner) { await say({ booking: null, phone, to: "owner", templates: ["voice_note"], action: "voice_note_reply" }); return; }
     const customer = customerOf(phone);
     log(null, phone, "receive_message", "confirmed", { voiceNote: true, id: msg.id }, { notes: "a voice note: it is not listened to and nothing of it is kept", refs: { messageId: msg.id } });
@@ -1049,6 +1059,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function onTick(): Promise<void> {
+    assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their order is in (modules/payments/refunds.ts)
@@ -1127,5 +1138,19 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
+  // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
+  // On only when the settings have an "assistant" block. Orders is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
+  const assistant = assistantForAgent({
+    settings, store, skill: ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
+    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.orders.get(caseId) ?? null : null, phone, action, outcome, inputs, more),
+    ownerNotice: async (notice) => { await tellOwner(null, owner, notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"); },
+    languageOf: (phone) => languageOf(phone),
+    optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
+  });
+
   return { handle, giveUp };
 }
+
+/** The owner's fixed command about something the agent asked them ("approve o-3", "deny o-3"). Item 11e names it so the assistant lets it pass. */
+const OWNER_COMMAND = /^\s*(approve|deny)\s+(o-\d+)\s*$/i;

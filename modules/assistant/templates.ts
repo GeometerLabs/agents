@@ -13,16 +13,16 @@ import type { LocalDate } from "../core/time.ts";
 import { Writer } from "./words.ts";
 
 export type AssistantTemplateId = "morning" | "day_closed" | "day_open";
-type Slot = "shop" | "name" | "date" | "time" | "bookings" | "money" | "waiting";
+type Slot = "shop" | "name" | "date" | "time" | "today" | "money" | "waiting";
 
 const TEMPLATES: readonly MetaTemplate<AssistantTemplateId>[] = [
   {
     name: "owner_morning", usedFor: "morning", audience: "owner",
     bodies: {
-      en: "Good morning from {name}, the assistant of {shop}. Today, {date}: {bookings}. Recorded yesterday: {money}. Waiting for you: {waiting}. Reply here to see more.",
-      hi: "सुप्रभात, मैं {name}, {shop} का असिस्टेंट। आज, {date}: {bookings}। कल दर्ज: {money}। आपके लिए बाकी: {waiting}। और देखने के लिए यहाँ जवाब दें।",
-      ml: "സുപ്രഭാതം, ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. ഇന്ന്, {date}: {bookings}. ഇന്നലെ രേഖപ്പെടുത്തിയത്: {money}. നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: {waiting}. കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക.",
-      kn: "ಶುಭೋದಯ, ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. ಇಂದು, {date}: {bookings}. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: {money}. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: {waiting}. ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ.",
+      en: "Good morning from {name}, the assistant of {shop}. Today, {date}: {today}. Recorded yesterday: {money}. Waiting for you: {waiting}. Reply here to see more.",
+      hi: "सुप्रभात, मैं {name}, {shop} का असिस्टेंट। आज, {date}: {today}। कल दर्ज: {money}। आपके लिए बाकी: {waiting}। और देखने के लिए यहाँ जवाब दें।",
+      ml: "സുപ്രഭാതം, ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. ഇന്ന്, {date}: {today}. ഇന്നലെ രേഖപ്പെടുത്തിയത്: {money}. നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: {waiting}. കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക.",
+      kn: "ಶುಭೋದಯ, ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. ಇಂದು, {date}: {today}. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: {money}. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: {waiting}. ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ.",
     },
   },
   {
@@ -56,7 +56,7 @@ const value = (slot: Slot) => (f: TemplateFacts): string => {
 
 export const assistantCatalogue = createMetaCatalogue<TemplateFacts, AssistantTemplateId, Slot>({
   templates: TEMPLATES,
-  values: { shop: value("shop"), name: value("name"), date: value("date"), time: value("time"), bookings: value("bookings"), money: value("money"), waiting: value("waiting") },
+  values: { shop: value("shop"), name: value("name"), date: value("date"), time: value("time"), today: value("today"), money: value("money"), waiting: value("waiting") },
 });
 
 /** The text of a template in a language with these values: the body filled in, exactly as Meta would show it. */
@@ -69,23 +69,29 @@ export function render(id: AssistantTemplateId, f: TemplateFacts): string {
 export const templateMessageFor = (id: AssistantTemplateId, f: TemplateFacts, text: string): TemplateMessage =>
   assistantCatalogue.templateMessage({ ids: [id], language: f.language, facts: f, text, generic: "assistant_no_template" });
 
-/** The words of the morning line's three parts, in each language. A part is a phrase inside the template (no line break, as Meta requires of a value). */
-const MORNING_PARTS: Record<Language, { bookings: (n: string, first: string) => string; noBookings: string; nothing: string; things: (n: string) => string }> = {
-  en: { bookings: (n, first) => `bookings: ${n}, the first at ${first}`, noBookings: "no bookings", nothing: "nothing", things: (n) => n },
-  hi: { bookings: (n, first) => `बुकिंग: ${n}, पहली ${first}`, noBookings: "कोई बुकिंग नहीं", nothing: "कुछ नहीं", things: (n) => n },
-  ml: { bookings: (n, first) => `ബുക്കിംഗുകൾ: ${n}, ആദ്യത്തേത് ${first}`, noBookings: "ബുക്കിംഗുകൾ ഇല്ല", nothing: "ഒന്നുമില്ല", things: (n) => n },
-  kn: { bookings: (n, first) => `ಬುಕಿಂಗ್‌ಗಳು: ${n}, ಮೊದಲನೆಯದು ${first}`, noBookings: "ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ", nothing: "ಏನೂ ಇಲ್ಲ", things: (n) => n },
+/** The words of the morning line's parts, in each language. A part is a phrase inside the template (no line break, as Meta requires of a value). */
+const MORNING_PARTS: Record<Language, { bookings: (n: string, first: string) => string; noBookings: string; owes: (n: string, amount: string) => string; open: (n: string) => string; nothing: string }> = {
+  en: { bookings: (n, first) => `bookings: ${n}, the first at ${first}`, noBookings: "no bookings", owes: (n, amount) => `fees not paid: ${n} (${amount})`, open: (n) => `open orders: ${n}`, nothing: "nothing" },
+  hi: { bookings: (n, first) => `बुकिंग: ${n}, पहली ${first}`, noBookings: "कोई बुकिंग नहीं", owes: (n, amount) => `बाकी फीस: ${n} (${amount})`, open: (n) => `खुले ऑर्डर: ${n}`, nothing: "कुछ नहीं" },
+  ml: { bookings: (n, first) => `ബുക്കിംഗുകൾ: ${n}, ആദ്യത്തേത് ${first}`, noBookings: "ബുക്കിംഗുകൾ ഇല്ല", owes: (n, amount) => `അടയ്ക്കാത്ത ഫീസ്: ${n} (${amount})`, open: (n) => `തുറന്ന ഓർഡറുകൾ: ${n}`, nothing: "ഒന്നുമില്ല" },
+  kn: { bookings: (n, first) => `ಬುಕಿಂಗ್‌ಗಳು: ${n}, ಮೊದಲನೆಯದು ${first}`, noBookings: "ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ", owes: (n, amount) => `ಪಾವತಿಯಾಗದ ಫೀಸ್: ${n} (${amount})`, open: (n) => `ತೆರೆದ ಆರ್ಡರ್‌ಗಳು: ${n}`, nothing: "ಏನೂ ಇಲ್ಲ" },
 };
 
-/** The morning line's facts: today's bookings (count and the first start), money recorded yesterday, and how many things wait. */
-export function morningFacts(a: { language: Language; timeZone: string; shop: string; name: string; today: LocalDate; bookings: number; firstMs?: number; moneyPaise: number; waiting: number }): TemplateFacts {
+/** What today holds, by skill: a booking shop's day, a centre's unpaid fees, a shop's open orders. A shop with several skills has several parts. */
+export type MorningToday = { bookings: number; firstMs?: number } | { owes: number; owedPaise: number } | { open: number };
+
+/** The morning line's facts: what today holds, money recorded yesterday, and how many things wait. */
+export function morningFacts(a: { language: Language; timeZone: string; shop: string; name: string; today: LocalDate; parts: MorningToday[]; moneyPaise: number; waiting: number }): TemplateFacts {
   const w = new Writer(a.language, a.timeZone);
   const p = MORNING_PARTS[a.language];
+  const part = (t: MorningToday): string =>
+    "bookings" in t ? (t.bookings > 0 && t.firstMs !== undefined ? p.bookings(w.n(t.bookings), w.time(t.firstMs)) : p.noBookings)
+      : "owes" in t ? (t.owes > 0 ? p.owes(w.n(t.owes), w.inr(t.owedPaise)) : p.nothing) : t.open > 0 ? p.open(w.n(t.open)) : p.nothing;
   const values = {
     name: w.lit(a.name), shop: w.lit(a.shop), date: w.date(a.today),
-    bookings: a.bookings > 0 && a.firstMs !== undefined ? p.bookings(w.n(a.bookings), w.time(a.firstMs)) : p.noBookings,
+    today: a.parts.length > 0 ? a.parts.map(part).join(", ") : p.nothing,
     money: a.moneyPaise > 0 ? w.inr(a.moneyPaise) : p.nothing,
-    waiting: a.waiting > 0 ? p.things(w.n(a.waiting)) : p.nothing,
+    waiting: a.waiting > 0 ? w.n(a.waiting) : p.nothing,
   };
   return { language: a.language, values, check: w.check() };
 }
@@ -100,7 +106,7 @@ export function dayFacts(a: { language: Language; timeZone: string; shop: string
 export function assistantSubmissions() {
   return assistantCatalogue.submissions((language) => {
     const today = { year: 2026, month: 11, day: 12 };
-    const facts = morningFacts({ language, timeZone: "Asia/Kolkata", shop: "Glow Salon", name: "Mithra", today, bookings: 6, firstMs: Date.UTC(2026, 10, 12, 4, 30), moneyPaise: 140_000, waiting: 2 });
+    const facts = morningFacts({ language, timeZone: "Asia/Kolkata", shop: "Glow Salon", name: "Mithra", today, parts: [{ bookings: 6, firstMs: Date.UTC(2026, 10, 12, 4, 30) }], moneyPaise: 140_000, waiting: 2 });
     const day = dayFacts({ language, timeZone: "Asia/Kolkata", shop: "Glow Salon", date: today, startMs: Date.UTC(2026, 10, 12, 10, 30) });
     return { ...facts, values: { ...facts.values, time: day.values.time } };
   });

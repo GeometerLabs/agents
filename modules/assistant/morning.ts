@@ -1,4 +1,5 @@
-// The morning line (item 11e): one short message a day to the owner, in their language: today's bookings (how many, the first time), money recorded yesterday, and how
+// The morning line (item 11e): one short message a day to the owner, in their language: what today holds (a booking shop's bookings and the first time, a centre's unpaid
+// fees, a shop's open orders), money recorded yesterday, and how
 // many things wait for them. A runtime job on the clock's beat (modules/runtime/core.ts `daily`), beside the monthly report, because like it it must save its claim
 // before it sends (the agent's step saves only at its end). Each template hands it its skills, read-only over the store (templates/<...>/src/assistant.ts).
 //
@@ -27,6 +28,7 @@ import { todayIn } from "./mood.ts";
 import type { OwnerSkill } from "./skill.ts";
 import type { AssistantState } from "./state.ts";
 import { morningFacts, render, templateMessageFor } from "./templates.ts";
+import type { MorningToday } from "./templates.ts";
 
 /** How long after its hour the morning line may still go. */
 export const MORNING_WINDOW_MS = 4 * HOUR;
@@ -91,13 +93,20 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
     const state = ctx.store.assistant;
     const hoursSkill = skills.find((s) => s.hours);
     if (isClosedDay(state, today) || (hoursSkill && hoursSkill.hours!(today) === null)) { finished = key; return { done: false, why: "closed" }; }
-    const rows = skills.flatMap((s) => s.day?.(today) ?? []).sort((a, b) => a.startMs - b.startMs);
+    // what today holds, per skill: a day's bookings, the fees not paid, the open orders
+    const parts: MorningToday[] = [];
+    for (const s of skills) {
+      if (s.day) { const rows = s.day(today); parts.push({ bookings: rows.length, ...(rows[0] ? { firstMs: Math.min(...rows.map((r) => r.startMs)) } : {}) }); }
+      if (s.owes) { const owes = s.owes(); parts.push({ owes: owes.length, owedPaise: owes.reduce((n, r) => n + r.amountPaise, 0) }); }
+      if (s.open) parts.push({ open: s.open().length });
+    }
+    const something = parts.some((t) => ("bookings" in t ? t.bookings : "owes" in t ? t.owes : t.open) > 0);
     const waiting = skills.reduce((n, s) => n + s.waiting().length, 0) + (state ? openCards(state, now).length : 0);
     const money = moneyOn(ctx.record.entries(), addDays(today, -1), tz);
-    if (rows.length === 0 && money.paise === 0 && waiting === 0) { finished = key; return { done: false, why: "quiet" }; }
+    if (!something && money.paise === 0 && waiting === 0) { finished = key; return { done: false, why: "quiet" }; }
 
     // ---- the words: the template's body filled in, and checked against its own values ----
-    const facts = morningFacts({ language, timeZone: tz, shop: shop.name, name: shop.settings.character.name, today, bookings: rows.length, ...(rows[0] ? { firstMs: rows[0].startMs } : {}), moneyPaise: money.paise, waiting });
+    const facts = morningFacts({ language, timeZone: tz, shop: shop.name, name: shop.settings.character.name, today, parts, moneyPaise: money.paise, waiting });
     const text = render("morning", facts);
     const { sticker, mood } = shopMood(skills, state, now, tz, shop.settings);
     const refs = { to: "owner", morning: key, templates: "owner_morning", mood, sticker };

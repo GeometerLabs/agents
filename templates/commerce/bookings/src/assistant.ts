@@ -7,7 +7,7 @@
 // and each customer booked that day is told through the assistant's template and stays booked. Nothing is cancelled or refunded by closing a day.
 import { addDays, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
-import { amountOf } from "../../../../modules/assistant/intents.ts";
+import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
 import type { DayNotice, DayRow, Executed, OwnerSkill, Prepared, Proposal, WaitingItem } from "../../../../modules/assistant/skill.ts";
 import type { CardAction } from "../../../../modules/assistant/state.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -85,19 +85,19 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
   const requestOf = (b: Booking) => store.upi?.requests.find((r) => r.reference === b.id && r.id === b.linkId);
 
   /** What waits for the owner on one booking, as a card can show it (and the fields its digest is over). */
-  function waitingOn(b: Booking): (WaitingItem & { fields: Record<string, string | number | boolean>; reply: InboundMessage["reply"] | string })[] {
-    const out: (WaitingItem & { fields: Record<string, string | number | boolean>; reply: InboundMessage["reply"] | string })[] = [];
+  function waitingOn(b: Booking): (WaitingItem & { fields: Record<string, string | number | boolean>; reply: { id: string } | string })[] {
+    const out: (WaitingItem & { fields: Record<string, string | number | boolean>; reply: { id: string } | string })[] = [];
     const p = b.pending[0];
     if (p?.kind === "refund") out.push({ case: b.id, kind: "late_refund", amountPaise: p.amountInr * 100, who: whoOf(b), what: what(b), money: true, yes: "approve", no: "deny", fields: { paymentId: p.paymentId, amountPaise: p.amountInr * 100 }, reply: "approve" });
     else if (p?.kind === "calendar" && b.depositInr !== undefined) out.push({ case: b.id, kind: "calendar", amountPaise: b.depositInr * 100, who: whoOf(b), what: what(b), money: true, yes: "retry", fields: { paymentId: b.depositPaymentId ?? "", startMs: b.startMs ?? 0, amountPaise: b.depositInr * 100 }, reply: "retry" });
     // A deposit to mark only when there is a reason to think it came (the customer said so, or part is marked), as the unfinished-work list reads it.
     const r = requestOf(b);
     if (b.state === "awaiting_deposit" && r?.code && (r.status === "partially_paid" || b.claimTellAtMs !== undefined)) {
-      out.push({ case: b.id, kind: "deposit", amountPaise: leftOn(r), who: whoOf(b), what: what(b), money: true, yes: "received", fields: { request: r.id, amountPaise: leftOn(r), marks: r.marks.length, used: r.usedCodes.length }, reply: { id: markButtonId("received", r.code), kind: "button" } as never });
+      out.push({ case: b.id, kind: "deposit", amountPaise: leftOn(r), who: whoOf(b), what: what(b), money: true, yes: "received", fields: { request: r.id, amountPaise: leftOn(r), marks: r.marks.length, used: r.usedCodes.length }, reply: { id: markButtonId("received", r.code) } });
     }
     for (const o of store.upi?.refunds ?? []) {
       if (o.caseId !== b.id || o.state !== "owed" || !o.code) continue;
-      out.push({ case: b.id, kind: "refund_owed", amountPaise: o.amountPaise, who: whoOf(b), what: what(b), money: true, yes: "refunded", fields: { refund: o.id, amountPaise: o.amountPaise, used: o.usedCodes.length }, reply: { id: markButtonId("refunded", o.code), kind: "button" } as never });
+      out.push({ case: b.id, kind: "refund_owed", amountPaise: o.amountPaise, who: whoOf(b), what: what(b), money: true, yes: "refunded", fields: { refund: o.id, amountPaise: o.amountPaise, used: o.usedCodes.length }, reply: { id: markButtonId("refunded", o.code) } });
     }
     return out;
   }
@@ -113,11 +113,10 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
       return { ok: true, action: action("answer", b, { itemKind: item.kind, answer: p.answer, ...item.fields }), shown: { who: item.who, what: item.what, amountPaise: item.amountPaise } };
     }
     if (p.kind === "message") {
-      if (deps.optedOut(b.customer)) return { ok: false, why: "opted_out" };
       // The owner's words go as typed; an amount in them must be one this booking has (its deposit or its service's price). Money back is a refund, with its own card.
-      const amount = amountOf(p.words);
       const service = settings.services.find((s) => s.id === b.serviceId);
-      if (amount !== undefined && ![b.depositInr, service?.priceInr, settings.deposit.amountInr].some((v) => v !== undefined && v * 100 === amount)) return { ok: false, why: "amount_not_on_record" };
+      const refused = checkWords(p.words, { optedOut: deps.optedOut(b.customer), amountsPaise: [b.depositInr, service?.priceInr, settings.deposit.amountInr].map((v) => (v === undefined ? undefined : v * 100)) });
+      if (refused) return { ok: false, why: refused };
       return { ok: true, action: action("message", b, { phone: b.customer, words: p.words }), shown: { who: whoOf(b), what: what(b), amountPaise: 0, words: p.words } };
     }
     if (busy(b)) return { ok: false, why: "busy" };
@@ -148,10 +147,8 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
       const item = waitingOn(b).find((i) => i.kind === a.fields.itemKind);
       if (!item) return { ok: false, note: "failed" };
       const no = a.fields.answer === "no";
-      const base = { id: `assistant:${a.case}:${String(a.fields.itemKind)}:${deps.nowMs()}`, from: acts.owner, timestamp: deps.nowMs() };
       // The same reply the owner could give: typed for the agent's own asks, the mark's button (with its code) for a UPI mark.
-      const msg: InboundMessage = typeof item.reply === "string" ? { ...base, text: `${no && item.no ? item.no : item.reply} ${b.id}` } : { ...base, text: "", reply: item.reply };
-      await acts.answer(msg);
+      await acts.answer(ownerReply(acts.owner, deps.nowMs(), b.id, typeof item.reply === "string" ? { text: `${no && item.no ? item.no : item.reply} ${b.id}` } : { buttonId: item.reply.id }));
       return { ok: true, note: "done" };
     }
     if (a.kind === "cancel") {
