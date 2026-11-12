@@ -26,7 +26,7 @@
 // signed with that person's own secret. A 200 "pending" is a vote: the person is told how many more are needed, and the runtime is not told. "approved"
 // or "denied" is the decision: the runtime is told, the others are told their ask is closed, and on a no the person who asked is told too. The person
 // who asked never gets an ask, whether Guard or the runtime named them. A request without those keys is the owner's alone, handled exactly as above.
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { newCode, parseCodeReply } from "./code.ts";
 import { ApiError, DENIED_REPEAT_MS, mayHaveHappened } from "../core/faults.ts";
 import { WindowClosedError } from "../core/faults.ts";
@@ -126,7 +126,24 @@ export interface Relay {
   start(everyMs: number): void;
   stop(): Promise<void>;
   status(): RelayStatus;
+  /**
+   * Item 11d: the owner's own live asks, for the owner's private approvals page (modules/channels/owner-page.ts): never another approver's (B37). Each carries the digest of
+   * what Guard holds (the approval, the payment, the amount, the receipt and when its code runs out), which the page sends back with its answer.
+   */
+  ownerAsks(): PageAsk[];
+  /**
+   * Item 11d: the owner answered on their private page. The same as "approve <code>" from the owner's number (the one use of the ask, then Guard, then the runtime, then the
+   * owner told), inside the same one-thing-at-a-time chain, so a WhatsApp reply and a press can never both count. "changed": the digest is not what waits now (a changed
+   * amount is a new approval, which needs its own yes); "gone": already answered here or on WhatsApp, or not the owner's; "expired": the code ran out.
+   */
+  decideOnPage(approval: string, digest: string, decision: "approve" | "deny"): Promise<PageDecision>;
 }
+
+/** What became of an answer from the owner's page. "failed": Guard did not take it (unreachable, or refused the signature); the ask stays open, as on WhatsApp. */
+export type PageDecision = "recorded" | "gone" | "changed" | "expired" | "failed";
+
+/** One ask as the owner's page shows it: only what Guard holds and the runtime's context gave the WhatsApp message. */
+export interface PageAsk { approval: string; digest: string; amountPaise: number; customerPhone: string | null; booking: string | null; serviceName?: string; slotMs?: number; untilMs: number }
 
 const digitsOf = (s: string) => s.replace(/\D/gu, "");
 const sameNumber = (a: string, b: string) => digitsOf(a) === digitsOf(b);
@@ -623,7 +640,40 @@ export function createRelay(options: RelayOptions): Relay {
     await processMessages();
   });
 
+  // ---- item 11d: the owner's private page ---------------------------------------------------------------------------------------------
+  /** The owner's own asks: the single ask (approver ""), or the owner's ask on a refund that needs several people. */
+  const isOwners = (ask: Ask) => ask.approver === "" || (ownerId !== undefined && ask.approver === ownerId);
+  const pageDigest = (ask: Ask): string => createHash("sha256").update(JSON.stringify(["relay", ask.approval, ask.approver, ask.paymentId, ask.amountPaise, ask.receipt, ask.codeExpiresAtMs])).digest("hex").slice(0, 32);
+  function ownerAsks(): PageAsk[] {
+    const now = clock.now();
+    return store.asks(["asked"]).filter((a) => isOwners(a) && (a.codeExpiresAtMs === null || a.codeExpiresAtMs > now)).map((a) => {
+      const c = contextOf(a);
+      return {
+        approval: a.approval, digest: pageDigest(a), amountPaise: a.amountPaise, customerPhone: a.customerPhone, booking: a.booking,
+        ...(c && typeof (c as { serviceName?: unknown }).serviceName === "string" ? { serviceName: (c as { serviceName: string }).serviceName } : {}),
+        ...(c && typeof (c as { slotMs?: unknown }).slotMs === "number" ? { slotMs: (c as { slotMs: number }).slotMs } : {}),
+        untilMs: a.codeExpiresAtMs ?? a.guardExpiresAtMs,
+      };
+    });
+  }
+  function decideOnPage(approval: string, digest: string, decision: "approve" | "deny"): Promise<PageDecision> {
+    let outcome: PageDecision = "gone";
+    return serial(async () => {
+      const ask = store.asksOf(approval).find(isOwners);
+      if (!ask || ask.state !== "asked") { outcome = ask?.state === "expired" ? "expired" : "gone"; return; }
+      if (pageDigest(ask) !== digest) { outcome = "changed"; return; }
+      if (ask.codeExpiresAtMs !== null && clock.now() >= ask.codeExpiresAtMs) { store.moveAsk(ask, ["asked"], "expired"); outcome = "expired"; return; }
+      if (!store.moveAsk(ask, ["asked"], "deciding", { decision })) return; // the one use of this ask
+      log(`The owner answered approval ${approval} on their private page.`);
+      await finishDecision(store.ask(ask.approval, ask.approver)!);
+      const after = store.ask(ask.approval, ask.approver)?.state;
+      outcome = after === "decided" || after === "closed" ? "recorded" : after === "expired" ? "expired" : "failed";
+    }).then(() => outcome);
+  }
+
   return {
+    ownerAsks,
+    decideOnPage,
     receive(messages) {
       const result = store.saveMessages(messages, clock.now());
       void serial(processMessages).catch(() => undefined);
