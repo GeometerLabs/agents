@@ -31,6 +31,8 @@ export type { RefundCounts };
 export interface Services { /** Left out for a shop with no Google Calendar (B72): the agent then uses the shop's own booking list (src/adapters/own-calendar.ts). */ calendar?: Calendar; payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
+  /** B29: the shop's voice service (modules/voice), built from runtime.json `speech`. Not one of `services`: it never reaches a Guard the step waits on (it answers, it does not throw). Left out: voice is off. */
+  voice?: import("../../../../modules/voice/voice.ts").VoiceService;
   settings: Settings;
   store: DurableStore;
   clock: Clock;
@@ -96,7 +98,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     skipCounters: skipStoreCounters,
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), calendar: (watched as unknown as Services).calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
+    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), calendar: (watched as unknown as Services).calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.bookings.values(),
     refundContext(store, _settings, receipt) {

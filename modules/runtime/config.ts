@@ -12,6 +12,8 @@ import { licenceNow, parseLicenceFile } from "../licence/rules.ts";
 import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
 import type { Language } from "../language/languages.ts";
 import { DEFAULT_PORT } from "./http.ts";
+import { readSpeech } from "../voice/config.ts";
+import type { SpeechConfig } from "../voice/config.ts";
 import { messagingConfigProblem } from "../messaging/providers.ts";
 import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../understanding/rates.ts";
 import type { BuilderRate } from "../understanding/rates.ts";
@@ -123,6 +125,8 @@ export interface RuntimeConfig {
   /** Minutes of button mode after a model step fails. Default 5. */
   pauseMinutes?: number;
   report?: ReportConfig;
+  /** B29: voice notes (modules/voice). Left out: voice is off and a voice note gets the one line asking the customer to type. */
+  speech?: SpeechConfig;
 }
 
 export interface ClientFolder<Settings = unknown> {
@@ -281,7 +285,7 @@ function readReport(raw: unknown, folder: string, dataDir: string, errors: strin
 export function readRuntimeConfig(input: unknown, folder: string, shape: ServiceShape): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "model", "allowance", "pauseMinutes", "report"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "model", "allowance", "pauseMinutes", "report", "speech"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -319,9 +323,13 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
 
   const report = input.report !== undefined && isText(dataDir) ? readReport(input.report, folder, isAbsolute(dataDir) ? dataDir : resolve(folder, dataDir), errors) : undefined;
 
+  // B29: voice notes. Spoken replies are served from the report pages' folder, so a shop with voice needs the monthly report's address.
+  const speech = input.speech !== undefined ? readSpeech(input.speech, folder, errors) : undefined;
+  if (input.speech !== undefined && input.report === undefined) errors.push('"speech" needs "report" as well: the spoken replies are served from the folder the report pages are served from (report.pagesDir at report.pageBaseUrl).');
+
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) , ...(speech ? { speech } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */
