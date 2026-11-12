@@ -152,7 +152,12 @@ test("main.ts: runs the example client, serves, and stops cleanly on SIGTERM", a
   const r = run(["--client", s.folder], { INTERNAL_TOKEN_FILE: s.tokenFile });
   try {
     let url: string | undefined;
-    for (let i = 0; i < 400 && !url; i++) { url = /Listening on (http:\/\/\S+)/.exec(r.output())?.[1]; if (!url) await new Promise((res) => setTimeout(res, 10)); }
+    // A cold `node main.ts` loads every module the runtime imports, which takes seconds on a busy machine (a full-suite run, other builds), so wait for the ready line against a
+    // deadline and not a fixed 4 seconds of sleeps; a process that has already exited is reported at once with what it printed, so a real start-up failure is not waited out.
+    let exitedEarly = false;
+    void r.exited.then(() => { exitedEarly = true; });
+    for (const deadline = Date.now() + 60_000; !url && !exitedEarly && Date.now() < deadline;) { url = /Listening on (http:\/\/\S+)/.exec(r.output())?.[1]; if (!url) await new Promise((res) => setTimeout(res, 20)); }
+    url ??= /Listening on (http:\/\/\S+)/.exec(r.output())?.[1];
     assert.ok(url, r.output());
     assert.deepEqual(await (await fetch(`${url}/healthz`)).json(), { ok: true });
     assert.match(r.output(), /Stand-in services: nothing real is contacted/);
