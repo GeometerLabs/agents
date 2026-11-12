@@ -7,7 +7,6 @@ import { createVoice } from "../../voice.ts";
 import type { VoiceService } from "../../voice.ts";
 import { fakeVoiceNote, scriptedSpeech, scriptedWire } from "../../standin.ts";
 import { sttCostMicroInr } from "../../speech.ts";
-import { summarizeUsage } from "../../../../bundle/lib/usage.ts";
 
 export const RATE = { sttInrPerMinute: 0.6 };
 const SECONDS = 12;
@@ -23,6 +22,11 @@ export interface Harness<W extends AnyWorld> {
   greeting: string;
   /** What the shop says when voice is off. */
   offLine: (w: W) => string;
+  /**
+   * The cost meter's model spend over the record (the bundle's bundle/lib/usage.ts summarizeUsage, which fleet's AI cap reads). Handed in by the template's test,
+   * because a shared module imports nothing from the bundle (modules/test/boundary.test.ts).
+   */
+  meterSpend: (entries: unknown[]) => number;
 }
 
 export function voiceCases<W extends AnyWorld>(h: Harness<W>): void {
@@ -54,7 +58,7 @@ export function voiceCases<W extends AnyWorld>(h: Harness<W>): void {
     assert.deepEqual(speech.calls.map((c) => c.kind), ["transcribe"]);
     const spent = w.store.ai!.costMicroInr;
     assert.equal(spent, sttCostMicroInr(RATE, SECONDS));
-    assert.equal(summarizeUsage(w.record.entries() as never, {}).modelMicroInr, spent, "the cost meter and the allowance agree");
+    assert.equal(h.meterSpend(w.record.entries()), spent, "the cost meter and the allowance agree");
   });
 
   test(`${h.name}: a note that cannot be made out gets the could-not-make-out line in text only; with voice off the old line stays`, async () => {
