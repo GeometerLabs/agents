@@ -148,7 +148,7 @@ test("only the turn that answers a voice note is spoken: a typed message afterwa
 });
 
 test("the language they spoke is the language of the reply when their words do not say", async () => {
-  const { w, speech } = voiceWorld({ transcript: { text: "hello", language: "ml", confidence: 0.9 } });
+  const { w, speech } = voiceWorld({ transcript: { text: "zzz qqq", language: "ml", confidence: 0.9 } });
   await sendNote(w);
   assert.equal(w.store.customers.get(CUSTOMER)!.language, "ml");
   assert.ok(speech.calls.some((c) => c.kind === "synthesize" && c.detail.startsWith("ml ")));
