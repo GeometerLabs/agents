@@ -120,9 +120,24 @@ test("deny is final: the customer is told, nothing is sent, and the agent never 
   await w.advance(3 * 60);
   await w.say("cancel my booking"); // nothing to cancel any more
   assert.equal(calls.length, 0);
-  assert.equal(w.heldForOwner().length, 0, "Guard would hold the same call again under a new approval; the agent does not make it");
+  assert.equal(w.heldForOwner().length, 0, "the agent does not send it again (Guard would refuse it for a day, and hold it again after that)");
   assert.deepEqual(w.store.bookings.get("b-1")!.stoppedRefunds, [paymentOf(w)]);
   assert.deepEqual(entries(w, "owner_decision", "confirmed").map((e) => e.refs.command), ["deny"]);
+});
+
+test("Guard's record of a no wins over the relay's word: a resend after an 'approve' is refused as denied_by_approver, the customer hears the no, nobody is asked again, and nothing is raised", async () => {
+  const { w, calls } = await paidAndCancelled();
+  const id = w.heldForOwner()[0].id;
+  assert.equal(w.guard.decide(id, false, "owner").status, 200, "a person said no, in Guard's record");
+  await w.agent.handle({ kind: "approval_decision", approval: id, decision: "approve" }); // the relay's word says approve
+  assert.equal(calls.length, 1, "the identical bytes once, and Guard refused them");
+  assert.equal(w.payments.refunds().length, 0);
+  assert.match(w.lastTextTo(CUSTOMER), /decided not to refund the ₹200/);
+  assert.equal(w.heldForOwner().length, 0, "no new request: the owner is not asked again (ADR-0061 addendum)");
+  assert.deepEqual(w.store.bookings.get("b-1")!.stoppedRefunds, [paymentOf(w)]);
+  assert.deepEqual(issues(w), [], "the owner's no is not something for the builder");
+  assert.deepEqual(entries(w, "owner_decision", "confirmed").map((e) => [e.refs.command, e.refs.approval]), [["deny", id]]);
+  assert.equal(w.store.bookings.get("b-1")!.pending.length, 0, "the hold is dropped");
 });
 
 test("expiry: when the owner never answers, Guard's approval runs out, the customer is told plainly, nothing is refunded and the builder sees it", async () => {

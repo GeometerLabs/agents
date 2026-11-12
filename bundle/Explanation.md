@@ -792,8 +792,9 @@ Item 17b put a signed summary in each paper's link (`#s1.`, modules/Explanation.
 The builder's own agents get what a long-lived service needs: credentials that can be changed without stopping it, a way off the server that keeps the record, a page in
 the panel, and the two held-refund endings the crash test did not try. **Guard is not changed** (monorepo untouched): Guard already lets one agent id have two credentials
 side by side and retires a configured one at a time it is told (monorepo ADR-0041 item 4, `adapters/boundaries/guard/tests/reload.rs`), reloads its agent list without a
-restart, and opens a new request when a call held for the owner is sent again after a no or after its end (`tests/approvals.rs`, `one_deny_refuses_and_nobody_who_asked_decides`).
-What that last rule costs is under "The owner's no", below.
+restart, and (until 12 Nov 2026) opened a new request when a call held for the owner was sent again after a no or after its end (`tests/approvals.rs`,
+`one_deny_refuses_and_nobody_who_asked_decides`). Since then Guard refuses the identical call for a day after a no (monorepo ADR-0061 addendum); after the end it
+still opens a new request. Both are under "The owner's no", below.
 
 **A credential per Guard** (`agent/credentials.ts`). `secrets/agents/<name>/<kind>_token` for each Guard, under the agent's one id (`agent-<name>`), so Guard keys its held
 calls (`pending_for`: tenant, principal, call, policy) and the record (`facts.ts` filters on the id) the same as before. **They reach the agent in one file**,
@@ -833,16 +834,18 @@ label key (the kept record's labels were made with them), the Guards' Docker vol
 rule deletes them after its days as for any snapshot.
 
 **The owner's no, and the 24 hours** (`agent/crash-test/situations.ts`, `owner-denies` and `approval-expires`). Guard's 202 names the request it opened for the owner and when
-it runs out (`detail.approval`, `detail.expires_at_ms`). Sent again while it waits, the identical call gets the same request; after a no or after the end, Guard opens a new one.
-So an agent learns of a no by **one more send that gets a 202 naming another request**, and stops; and it must never send after `expires_at_ms`. The judges allow exactly that:
-after the no, at most one more refund request and at most one new request, no refund of another amount or for another payment and no payout, nothing at Razorpay; after the
-end, one request in all and no refund request, nothing at Razorpay; in both, a message to the customer after the no (or after the agent's last request) and none that says
-the deposit was refunded. That last is the second thing read as words (`driver.refundedWords`; "not" and "nothing" before the words do not count). The end is made to come
+it runs out (`detail.approval`, `detail.expires_at_ms`). Sent again while it waits, the identical call gets the same request. **After a no** (the owner's decision of 12 Nov
+2026, monorepo ADR-0061 addendum) Guard refuses the identical call for 24 hours with a 403 whose `reason_code` is `denied_by_approver`, naming the denied request, and
+opens nothing, so the one send that finds out asks nobody again; the agent reads it and stops. **After the end** Guard opens a new request (a request that ran out is
+not a no), so an agent must never send after `expires_at_ms`. The judges: after the no, at most one more refund request, Guard refused it and opened no new request (a
+check of Guard's part: an older Guard fails it, saying so), no refund of another amount or for another payment and no payout, nothing at Razorpay; after the end, one
+request in all and no refund request, nothing at Razorpay; in both, a message to the customer after the no (or after the agent's last request) and none that says the
+deposit was refunded. That last is the second thing read as words (`driver.refundedWords`; "not" and "nothing" before the words do not count). The end is made to come
 in the test: Guard's request is compiled to run out after 60 seconds, the shortest its compiler takes (`approval_ttl_seconds`, 60 to 604800), said in the situation's own
-words as standing in for the shop's hours. **The cost of finding out by sending once more**: the new request it opens is one the relay would ask the owner about, minutes
-after their no. Closing that needs the relay (not ask about a call identical to one denied within the hour) or Guard (answer a call whose last request was denied with a
-refusal); neither is changed here (Deferred.md). The example agent follows the contract; `server-asks-again.js` (never looks at which request) and `server-past-end.js` (a
-24-hour clock of its own) each fail one of the two situations and no other.
+words as standing in for the shop's hours. The example agent follows the contract (`saidNo` in `agent.js`; `FOLLOW_HELD.readNo`); `server-asks-again.js` takes the
+refusal for "not yet" and keeps sending (Guard refuses every send), and `server-past-end.js` keeps a 24-hour clock of its own; each fails one of the two situations and
+no other. Before 12 Nov the send that found out opened a new request, which the relay asked the owner about minutes after their no; the relay now also sets such a request
+aside (for a Guard from before the change), and the templates' runtime reads `denied_by_approver` as the owner's no (modules/payments/refunds.ts).
 
 **Own agents in the panel** (`panel/agents.ts`, `panel/views-agents.ts`, `panel/words-agents.ts`). The panel has no `agents/` folder and no state file, so everything it shows
 is in files the deployer writes for it: `status/<agent>.json`'s `own` block (the addresses, each Guard's credential's dates, the calls held at the last minute's look, from

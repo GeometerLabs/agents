@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../../../modules/core/clock.ts";
-import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, mayHaveHappened } from "../../../../modules/core/faults.ts";
 import { ensureLink } from "../../../../modules/payments/links.ts";
 import { classify, createHttp } from "../../../../modules/core/http.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
@@ -97,6 +97,23 @@ test("already_done: the identical call after a person settled it as happened is 
   // a reason_code on any other code changes nothing
   const other = classify(409, { get: () => null }, { guard: { decision: "deny", code: "refused_by_policy", reason_code: "already_done" } }, CALL);
   assert.ok(other instanceof GuardRefusedError && !(other instanceof GuardAlreadyDoneError));
+});
+
+test("denied_by_approver: the identical call within a day of a person's no is a 403 that is the owner's no, with the denied request; still a refusal for code that does not know it", () => {
+  const e = read("denied_by_approver");
+  assert.ok(e instanceof GuardDeniedError, "told apart from a rule's refusal by reason_code");
+  assert.ok(e instanceof GuardRefusedError, "and still a refusal, so code that does not know it never sends it again");
+  assert.equal(e.status, 403);
+  assert.deepEqual([e.guard.code, e.guard.reason_code, e.guard.sent, e.guard.retry], ["refused_by_policy", "denied_by_approver", "no", "no"]);
+  assert.equal(e.approval, "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3");
+  assert.equal(e.deniedAtMs, 1793712060824);
+  assert.equal(e.untilMs, 1793712060824 + 24 * 3_600_000);
+  assert.equal(e.ruleId, undefined, "the reason starts with plain words, not a rule id");
+  assert.doesNotMatch(e.guard.reason ?? "", /expire/iu, "never read as an approval that ran out");
+  assert.equal(mayHaveHappened(e), false);
+  // the reason_code on another code changes nothing
+  const other = classify(409, { get: () => null }, { guard: { decision: "deny", code: "conflict", reason_code: "denied_by_approver" } }, CALL);
+  assert.ok(other instanceof GuardConflictError && !(other instanceof GuardDeniedError));
 });
 
 test("suspended: Guard's licence refusal (402) is its own error, the runtime's licence rule said by Guard: not a policy denial, nothing sent, never retried", () => {

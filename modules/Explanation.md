@@ -408,7 +408,7 @@ The plan asks that "we're checking, don't do it again yet" comes from saved stat
 | Operation, and how its outcome can be unknown | Saved where, and does it survive a restart | A fresh attempt | The customer goes quiet | Settled by |
 |---|---|---|---|---|
 | **A refund** (`payments/refunds.ts`, every template): the reply is lost, Guard answers 504 "outcome unknown", the provider answers 5xx, or Guard holds it with no approval | On the case: `refundIssues` (`unknown`, `uncertain`, `unconfirmed`) with the payment id, and the payment in `stoppedRefunds`; the record's `refund` `unconfirmed` line. In the snapshot, so a restart keeps it | Refused: the payment is in `stoppedRefunds`, so the agent never asks Guard again (record: `refund` `blocked`). Guard's own record would also hold an identical call | Nothing clears it: no tick, hold expiry or cancel touches `refundIssues`. The to-do list shows `refund_unknown` until it is settled | Only the payments service's own list: read by the to-do list's `recheck_refund` (read-only), or, since 12 Nov, after the provider's own `refund.done` event names a refund the list shows. Either way `refunds.ts settleIssue` settles the original attempt (matched by the refund id its reply gave, our receipt, or the payment and the exact amount it asked for), writes one `confirmed` line with the provider's refund id and the amount its list shows (an event's line also has `refs.eventId`), and tells the customer once (`refund_confirmed`), as `refund_checking` promised. Pinned end to end, with a restart and three days of silence, by `templates/commerce/bookings/test/unknown-outcome.test.ts` (written 11 Nov, the event and the message added 12 Nov, not yet run) |
-| **A person's resolution** of a refund | Guard's `already_done` (a person at the server settled it): the `refund` line is `confirmed` with `refs.confirmedBy` (the person) and notes saying it is by that person's word, not the provider's list; no refund id. Apart from a provider's confirmation in the record (`refund-held.test.ts`, "409 already_done") | | | The monthly report's data tells them apart since 12 Nov: a person's settlement is not a refund made, and is listed in `money.settledByWord` with who said so (`modules/report/settled-by-word.ts`); the documents do not show it yet (Deferred.md) |
+| **A person's resolution** of a refund | Guard's `already_done` (a person at the server settled it): the `refund` line is `confirmed` with `refs.confirmedBy` (the person) and notes saying it is by that person's word, not the provider's list; no refund id. Apart from a provider's confirmation in the record (`refund-held.test.ts`, "409 already_done") | | | The monthly report's data tells them apart since 12 Nov: a person's settlement is not a refund made, and is listed in `money.settledByWord` with who said so (`modules/report/settled-by-word.ts`); the documents show it since 12 Nov ("Settled by <who>, by their word on the documents", below) |
 | **A deposit or advance link** (`payments/links.ts`): the create's reply is lost | Not as an unknown: "look first" by the case id finds a link that landed. If both tries fail, the case goes back to `enquiry` with its id kept in the store; a link that did land has a URL nobody was given | Bookings takes the same booking up again at the customer's next request (`onBook` reuses the one in `enquiry`), and its look finds that link: the original, not a new one | Nothing to clear | The provider's list |
 | **A calendar hold** (Bookings): the insert's reply is lost | Not as an unknown: "look first" by the booking id. A hold that landed after all is tentative and ends by itself | Found again by the booking id | The hold ends by itself | The calendar's list |
 | **The deposit itself** when a hold runs out (Bookings, Orders): did the customer pay? | The hold's expiry reads the payments service first (`reconcilePayments`, uncaught in both). If that read fails the tick throws whole and nothing is saved: the case stays waiting for its payment, and is not marked expired, until the payment can be read. But the time or the stock counts as free for other customers once the hold's end has passed (it is worked out from the hold's end), as it always has: the hold's length is the promise | | The case is not given up while its payment cannot be read; its time or stock is, at the hold's end | The payments service's record; a payment found later is taken again only if the time or stock is still free, and refunded otherwise |
@@ -481,6 +481,58 @@ so nobody lists someone else's key under their own name, and a claim made for on
 one-character change, forged and re-signed summaries, the list as the trust, the committed vectors in `test/summary-vectors.json`, the QR size, the page block,
 the WhatsApp rule, the claim) and each template's `test/report-summary.test.ts` (signed papers' summaries genuine and saying what the paper says, unsigned
 papers unchanged, every message variant and language with long names in the shop's script within 1,024 characters).
+
+## The owner's no, from Guard's record (12 Nov 2026, the owner's decision; monorepo ADR-0061 addendum)
+
+Guard now refuses the identical call for 24 hours after a person denied it: a 403 with `code: refused_by_policy`, `retry: no` and `reason_code: "denied_by_approver"`,
+whose `detail` names the denied request (`approval`, `denied_at_ms`, `until_ms`). No new request is opened, so nobody is asked again. This folder reads it as the owner's no:
+
+- **`core/`.** `http.ts` makes that answer a `GuardDeniedError` (`faults.ts`), which is a `GuardRefusedError`: code that does not know it still never retries it, and
+  `waitsForGuard` never waits on it. `DENIED_REPEAT_MS` (24 hours) is Guard's number, for the stand-in and the relay.
+- **`payments/refunds.ts`.** It is checked before any other refusal (which means "a rule or a limit said no", for the builder). In `requestRefund` the result is
+  `"denied"`. In `releaseHeld`, the relay said approve but Guard's record says no (one of several people said no, or the relay's word was wrong), and Guard is the
+  record. Either way `ownerSaidNo` counts the owner's decision (`owner_decision` confirmed, deny, with the request), stops the payment, raises nothing for the builder,
+  and the customer gets the template's "denied" message, never "we are checking".
+- **`approvals/relay.ts`.** With the new Guard there is no request to ask about. A Guard from before the change still opens one; the relay sets aside a request for a
+  refund with the same receipt, payment and amount (all it sees of a refund) as one the owner said no to in the last 24 hours (`store.deniedCall`) and tells the
+  builder (`denied_repeat`), instead of asking the owner again. With the new Guard that can only be a call the agent changed in another field, and it is set aside
+  too: the owner said no to that money. An own API's held call has its approval id as its receipt, so it is never matched. The owner's single ask counts from when
+  the owner was asked, because the relay keeps no time of the answer.
+- **The stand-ins.** `payments/guard-model.ts` refuses the identical refund for 24 hours after a no (`denied_repeat`, Guard's words and `detail`); `olderGuard: true`
+  is the behaviour before, for the relay's test. `standins/guard.ts` serves it as Guard's 403 and the payments fake throws `GuardDeniedError`.
+- **Tests** (written, not run): `payments/test/refund-denied.test.ts`, the classification in `templates/commerce/bookings/test/guard-responses.test.ts` (with the doc's
+  body as a fixture), a row in `runtime/test/guard-wait.test.ts`, one in `refund-held.test.ts` (Guard's no wins over the relay's approve), two in
+  `approvals-relay.test.ts` (no new request with Guard as it is; with an older Guard the relay does not ask again).
+
+## Settled by <who>, by their word on the documents (B75, 12 Nov 2026)
+
+The report data has kept a person's settlement apart since follow-up 5 (`money.settledByWord`, Bookings' `rows[].settledByWord`). The documents now say it.
+
+- **The words, once** (`report/text.ts`). `SETTLED_BY_WORD` ("Settled by asha, by their word") and `SETTLED_BY_SOMEONE` (the same without a name), in four languages.
+  Each template's `report/strings.ts` takes them in (`settledByWord`, `settledBySomeone`), so the review sheets list them with the rest. Hindi, Malayalam and Kannada
+  are machine-written. `settledWho` shows who as a person reads it: Guard's `operator:` prefix goes, one line, at most 40 characters. The signed data keeps the whole name.
+- **The report pages.** One money row per person, with the count and the amount, after the refunds the payments service confirmed. This is Bookings' row
+  as before, now in the shared words, so Bookings' own label (`work.refundsByPerson`) went. Fees and Orders have the same row.
+  Bookings' unconfirmed row a person settled says "Settled by ravi, by their word" instead of "Settled by a later step".
+- **The owner's WhatsApp message.** A Meta template has no optional line, and its approved bodies should not change for a rare month. So the words go inside an
+  existing value: after Bookings' not-confirmed count, and after Fees' and Orders' given-back amount ("Given back: ₹50 · Settled by ravi, by their word: 1 (₹200)").
+  No template body changed, and the three `whatsapp-templates.json` are the same.
+  `settledByWordWords` picks the longest form that keeps the message within WhatsApp's 1,024 characters with the shortest check link:
+  - each person named (two, then "and N more");
+  - no names, with the totals;
+  - the count alone;
+  - none, for a message that was already at the limit. A message that fitted before still fits, and the full report names them.
+
+  It is chosen before the check link, so a long month gives up the longer link before it gives up who settled what.
+- **Measured** (12 Nov, a scratch script; not a test run):
+  - Bookings' worst message (120-character builder, 60-character shop, five-digit counts): 963 characters with nobody (Malayalam, #digest link), 1,010 with one
+    person named (Malayalam, #digest link), 994 with three (Hindi, #code link, names given way).
+  - In the long-name months of the three `report-summary.test.ts`, every form stays within 1,024. In Orders' Malayalam badge month there is no room for any form,
+    so the message is as before.
+- **The sample report** (`scripts/sample-report.ts`, a UPI salon) has no such refund, and regenerated byte-identical.
+- **Tests** (written, not run): `modules/test/settled-by-word.test.ts` (`settledWho`, the four forms), Bookings `test/report-settled-by-word.test.ts` (the page,
+  the unconfirmed row, every language and template of the message), Orders' and Fees' `test/report.test.ts` (the row and the message). The worst case in Bookings
+  `test/report-whatsapp.test.ts` and the long-name months in the three `report-summary.test.ts` now include people who settled by their word.
 
 ## Adding to a module later
 

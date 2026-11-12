@@ -930,3 +930,30 @@ Since 11 Nov the shop's own saved bookings are the authority for a slot (`heldBy
 - **The owner's day.** The owner writes `today` or `tomorrow` (or `bookings`; Hindi, Malayalam, Kannada words too) to the shop's number and gets that day's confirmed bookings and the ones waiting for the owner, read from the saved bookings. It is a reply in the owner's open window, so it needs no Meta template (listed in `repliesToTheOwner` in `owner-notices.test.ts`); the record keeps an `owner_day_list` entry. The panel still shows counts only (the `Status` type's rule); a per-day count line is in Deferred.md.
 - **Adding a calendar later.** The agent remembers which calendar its bookings were last written to (`store.calendarState`). When settings change from own to google, the next beat writes every coming confirmed or held booking to Google, looking first by booking id, and marks the change done when all are in. A booking Google cannot take stays booked on the list and is recorded as `calendar_backfill` failed; it is tried again each beat.
 - **Older template versions.** A shop pinned to a version from before 12 Nov would refuse a runtime.json with no calendar, so the generator refuses the deploy with `calendar-own-pinned` instead of starting a shop that would not run.
+
+## The review sheets catch up with B72 (12 Nov 2026)
+
+`scripts/review-sheet.ts` crashed on main after the B72 merge: `owner_day_bookings` had no line in `WHEN` (when each message is sent), and the empty cell reached the
+table writer as `undefined`. The TypeScript type (`Record<TemplateId, string>`) would have refused it, but nothing type-checks the scripts before they run.
+
+- **The line.** `owner_day_bookings` says when it goes: the owner wrote today, tomorrow or bookings, and gets that day's bookings, one line each, from the saved
+  bookings; it answers the owner's own message, so it is never a WhatsApp template.
+- **Every form reaches the reviewer.** The reply has four forms (today or tomorrow, with bookings or none). The sample shows today with two haircuts, and
+  `DAY_LIST_VARIANTS` adds a row for each other form, so all four phrases (two headings, two none-lines) are on the sheet in each language. A cell holds the list on
+  one line, as the sheet's tables do; the test compares in that form.
+- **A missing line is refused in words.** `missingWhen` names every template with no line, and the generator stops before writing anything, saying which ids and
+  where to add them. Both commands (`scripts/review-sheet.ts` and `bundle/panel/review-sheet.ts`) print that sentence and exit 1, with no stack trace.
+- **Section 2's opening sentence** said every owner message but the last is a WhatsApp template. Thirteen owner messages are answers to something the owner just
+  wrote (a command, a code, a mark, "today") and have none; the sentence now says that.
+- **How the sheets were made.** Sections 1 to 6 by the script; section 7 (the panel's words) kept as committed, then compared with what
+  `bundle/panel/review-sheet.ts` makes: the same, cell for cell, and no reviewer note had been filled in anywhere. Fees (ml, kn) and Orders (hi, ml, kn) regenerated
+  byte-identical, and the three `whatsapp-templates.json` unchanged (the day list has no Meta template).
+
+## Settled by <who>, by their word, on the report and the message (B75, 12 Nov 2026)
+
+A refund a person at the server settled as made (Guard's `already_done`) was already counted apart in the report data. The report page now lists it one row per
+person ("Settled by ravi, by their word", the shared words of `modules/report/text.ts`, which replaced this template's own `work.refundsByPerson`). The unconfirmed
+row it settled says the same instead of "Settled by a later step". The owner's WhatsApp message says it after the not-confirmed count, inside that value, so no
+approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen: names, then totals, then the count, then none. The worst case
+is now 1,010 characters (Malayalam, one person named). How and why: modules/Explanation.md, "Settled by <who>, by their word on the documents". Machine-written
+hi/ml/kn, on REVIEW-ml.md and REVIEW-kn.md (section 6). The sample report has no such refund and did not change.

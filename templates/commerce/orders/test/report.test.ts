@@ -363,4 +363,15 @@ test("a refund a person settled by their word is not money given back: it is cou
   assert.deepEqual(r.money.settledByWord, [{ by: "operator:ravi", count: 1, paise: 20000 }]);
   const none = buildOrdersReport({ settings, orders: [], ...monthRange("2026-11", settings.timezone), source: "stand-in", madeAt: at(12, 1, 10), entries: [entry(1, { paymentId: "p2", amountPaise: "5000", refundId: "rfd_2" })] });
   assert.equal("settledByWord" in none.money, false, "left out when there is none: older reports keep their bytes");
+  // the documents (12 Nov 2026): one row per person on the page, and the owner's WhatsApp message says it after "given back" (no template body changes)
+  const env = seal({ ...r, preparedBy: "Divya, Sri Sai Digital" });
+  const page = reportPage(env, "en");
+  assert.match(page, /<td>Settled by ravi, by their word<\/td><td[^>]*>1<\/td><td[^>]*>₹200<\/td>/u);
+  assert.ok(!page.includes("operator:ravi"), "who, as a person reads it");
+  for (const language of ["en", "hi", "ml", "kn"] as const) {
+    const m = monthlyReportMessage(env, language, { link: "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2026-11-en.html" });
+    assert.ok(m.text.includes(`${STRINGS[language].label.givenBack}: ₹50 · ${STRINGS[language].settledByWord("ravi")}: 1 (₹200)`), `${language}: ${m.text}`);
+    assert.equal(m.template.text, m.text);
+  }
+  assert.ok(!monthlyReportMessage(seal({ ...none, preparedBy: "Divya" }), "en", { link: "https://reports.example.com/r/x/report-2026-11-en.html" }).text.includes("by their word"));
 });

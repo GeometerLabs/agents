@@ -12,13 +12,18 @@
 //   - A deposit link is only ever for the shop's deposit, a calendar event only on the shop's own calendar, a message only from the shop's own number: anything else is refused (HTTP 403).
 //   - A refund above the owner's limit is held (HTTP 202). The owner is asked on WhatsApp. The agent sends the IDENTICAL call again until it is made (HTTP 200), and then stops:
 //     the refund is made once, and a repeat of a refund already made would be held again as a new request to the owner. A refund carries a `receipt`: it is how the owner's request
-//     finds the right booking. Guard's 202 names its request for the owner and when it runs out (`detail.approval`, `detail.expires_at_ms`): a 202 naming ANOTHER request means
-//     the first ended without a yes (the owner said no, or it ran out), and the agent stops; it never sends after the end, because every new request asks the owner again.
+//     finds the right booking. Guard's 202 names its request for the owner and when it runs out (`detail.approval`, `detail.expires_at_ms`).
+//   - After the owner's NO, the identical call gets HTTP 403 with `guard.reason_code: "denied_by_approver"` (Guard since 12 Nov 2026): the owner said no, nobody is asked again,
+//     and the agent stops and tells the customer. A Guard from before then answers with a 202 naming ANOTHER request instead: that too means the first ended without a yes, and
+//     the agent stops. It never sends after the end (`expires_at_ms`), because a request that ran out unanswered is not a no, and the next one asks the owner again.
 
 import { readFileSync } from "node:fs";
 
 /** The last send of a held call goes this long before Guard's end for it, so it reaches Guard in time; nothing is sent after the end. */
 export const LAST_SEND_MS = 2_000;
+
+/** Guard's answer after the owner said no to this exact call (403, `reason_code: "denied_by_approver"`, monorepo ADR-0061 addendum): the owner's no, never "try again". */
+export const saidNo = (result) => result.status === 403 && result.json?.guard?.reason_code === "denied_by_approver";
 
 /** Guard's request for the owner, from a 202: its id and when it runs out (Guard's clock). A Guard that names no end is taken to give the shop's 24 hours. */
 export const heldOf = (result, now = Date.now) => ({ id: result.json?.guard?.detail?.approval ?? result.held, until: Number(result.json?.guard?.detail?.expires_at_ms) || now() + 24 * 3_600_000 });
@@ -70,14 +75,15 @@ export function createAgent({ razorpay, upi, calendar, whatsapp, credentials = {
     /** A refund the owner owes and sends from their own UPI app: never sent by the agent, never more than was marked. */
     upiOwe: ({ paymentId, amountPaise, why }) => call("upi", "POST", `${upi}/refunds`, { payment_id: paymentId, amount_paise: amountPaise, why }),
     /**
-     * Keep sending the identical refund while Guard holds it for the owner, and stop at the first of: it is made (200, or any other answer); Guard names another request (the
-     * owner said no, or it ran out: `ended: "no"`); the request's own end, Guard's `expires_at_ms` (`ended: "ran-out"`; the last send goes LAST_SEND_MS before it, never after).
-     * Nothing else is done to hurry it: only the owner can approve.
+     * Keep sending the identical refund while Guard holds it for the owner, and stop at the first of: it is made (200, or any other answer); the owner said no (Guard's 403
+     * `denied_by_approver`, or, from a Guard before 12 Nov 2026, a 202 naming another request: `ended: "no"`); the request's own end, Guard's `expires_at_ms`
+     * (`ended: "ran-out"`; the last send goes LAST_SEND_MS before it, never after). Nothing else is done to hurry it: only the owner can approve.
      */
     async refundUntilDone(refund, { everyMs = 5_000, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now } = {}) {
       let asked;
       for (;;) {
         const result = await this.refundOnce(refund);
+        if (saidNo(result)) return { ...result, ended: "no" };
         if (result.status !== 202) return result;
         const held = heldOf(result, now);
         if (asked && held.id !== asked.id) return { ...result, ended: "no" };

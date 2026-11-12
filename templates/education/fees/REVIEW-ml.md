@@ -242,6 +242,8 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `goLiveCertificate` | തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ് | Go-live certificate |  |
 | `fullReport` | പൂർണ്ണ റിപ്പോർട്ട് | Full report |  |
 | `checkGenuine` | യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക | Check it is genuine |  |
+| `settledByWord` | asha സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത് | Settled by asha, by their word |  |
+| `settledBySomeone` | ഒരാൾ സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത് | Settled by a person, by their word |  |
 | `label.collected` | പിരിഞ്ഞത് | Collected |  |
 | `label.stillToCollect` | ഇനിയും പിരിക്കാനുള്ളത് | Still to collect |  |
 | `label.givenBack` | തിരികെ നൽകിയത് | Given back |  |

@@ -7,7 +7,7 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { esc, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
-import { badgeText, languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import { badgeText, languagesOf, periodLabel, rupees, settledWho } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
 import type { FeesReport, GoLiveFinding } from "./data.ts";
@@ -33,6 +33,8 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
   const numbers = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
     [esc(moneyLabels(language, r.paidBy).collected), ...amount(r.money.collected)],
     [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.givenBack)],
+    // refunds a person settled by their word (B75): one row per person, never counted as given back
+    ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),
     [esc(p.opened), String(r.fees.opened), ""],
     [esc(p.paidInFull), String(r.fees.paidInFull), ""],
     [esc(p.partlyPaid), String(r.fees.partlyPaid), ""],

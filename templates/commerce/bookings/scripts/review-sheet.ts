@@ -26,8 +26,11 @@ export type ReviewLanguage = "ml" | "kn";
 const TIME_ZONE = "Asia/Kolkata";
 export const SAMPLE_SLOT = zonedToMs({ year: 2026, month: 11, day: 10 }, { hour: 18, minute: 0 }, TIME_ZONE); // Tue 10 Nov, 6:00 pm
 
-/** The sample values every line of the sheet is written with: Glow Salon's haircut, booked for Tue 10 Nov at 6 pm. */
-export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
+/**
+ * The sample values every line of the sheet is written with: Glow Salon's haircut, booked for Tue 10 Nov at 6 pm. `dayList` picks the form of the owner's day list
+ * (B72): which day, and whether it has bookings (the default: today, with two).
+ */
+export function sampleFacts(language: Language, id: TemplateId, dayList: DayListForm = { day: "today" }): MessageFacts {
   const salon = glowSalon();
   const haircut = salon.services[0];
   return {
@@ -40,8 +43,30 @@ export function sampleFacts(language: Language, id: TemplateId): MessageFacts {
     upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
     // the licence's notices (B13): who set the shop up, and the bookings still to come at the final stop
     partner: "Divya, Sri Sai Digital", upcomingCount: 3,
+    // the owner's day list (B72): two of the day's bookings, so the reviewer sees the heading and how each row reads (DAY_LIST_VARIANTS has the other forms)
+    // two haircuts on the sample day (named in the language, as the agent names them), or none
+    ...(id === "owner_day_bookings" ? {
+      day: dayList.day,
+      dayBookings: dayList.none ? [] : [
+        { slotMs: SAMPLE_SLOT - 3 * 3_600_000, serviceName: serviceName(haircut, language), customerPhone: "+919811111111", ref: "b-3" },
+        { slotMs: SAMPLE_SLOT, serviceName: serviceName(haircut, language), customerPhone: "+919822222222", ref: "b-4" },
+      ],
+    } : {}),
   };
 }
+
+/** A form of the owner's day list: which day it answers, and whether that day has no bookings. */
+export interface DayListForm { day: "today" | "tomorrow"; none?: boolean }
+
+/**
+ * The owner's day list has four forms (today or tomorrow, with bookings or none), and the sample shows the first. The other three get a row of their own on the
+ * sheet, so every phrase of the template reaches the reviewer.
+ */
+export const DAY_LIST_VARIANTS: (DayListForm & { when: string })[] = [
+  { when: "The same, when the owner asks for tomorrow", day: "tomorrow" },
+  { when: "The same, on a day with no bookings (today)", day: "today", none: true },
+  { when: "The same, on a day with no bookings (tomorrow)", day: "tomorrow", none: true },
+];
 
 /** When each message is sent, in a line, so the reviewer knows what the customer or owner has just done. */
 const WHEN: Record<TemplateId, string> = {
@@ -106,6 +131,7 @@ const WHEN: Record<TemplateId, string> = {
   couldnt_tell_owner: "The customer tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write",
   wait_over: "The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised",
   owner_wants_to_talk: "A customer tapped Talk to the owner (sent at most once an hour for the same customer)",
+  owner_day_bookings: "The owner wrote today, tomorrow or bookings: the shop's bookings that day, one line each (time, service, the customer's number, the reference), from the saved bookings. The answer to the owner's own message, so it is never a WhatsApp template",
   owner_ai_allowance: "Button mode, told once a month: the shop's monthly AI allowance is used up",
   owner_ai_off: "Button mode, told once: the AI was switched off from outside (for example by the person who runs the agent)",
   owner_ai_fault: "Button mode, told at most once a day: a model did not answer, so buttons are used for a few minutes",
@@ -192,14 +218,26 @@ function describeIntent(i: Intent): string {
   return parts.join(", ");
 }
 
-/** The whole sheet for a language, as Markdown. */
+/**
+ * Every template must say when it is sent. A template added without a WHEN line used to reach `cell` as undefined and crash the generator half-way (12 Nov 2026:
+ * owner_day_bookings); now the generator stops before writing anything and names each id that has no line.
+ */
+export function missingWhen(ids: readonly TemplateId[]): TemplateId[] {
+  return ids.filter((id) => typeof WHEN[id] !== "string" || WHEN[id].trim() === "");
+}
+
+/** The whole sheet for a language, as Markdown. Throws, naming the ids, when a template has no WHEN line. */
 export function reviewSheet(language: ReviewLanguage): string {
   const name = LANGUAGE_NAMES[language];
   const words = WORDS[language];
   const salon = glowSalon();
   const ids = Object.keys(TEMPLATES[language]) as TemplateId[];
-  const messageRows = (owner: boolean) => ids.filter((id) => id.startsWith("owner_") === owner).map((id): string[] => [
-    `\`${id}\``, WHEN[id], render(id, sampleFacts(language, id)), render(id, sampleFacts("en", id)), "",
+  const missing = missingWhen(ids);
+  if (missing.length > 0) throw new Error(`The review sheet has no "When it is sent" line for ${missing.join(", ")}. Add one to WHEN in templates/commerce/bookings/scripts/review-sheet.ts (when the message is sent, in a line), then run it again.`);
+  const messageRows = (owner: boolean) => ids.filter((id) => id.startsWith("owner_") === owner).flatMap((id): string[][] => [
+    [`\`${id}\``, WHEN[id], render(id, sampleFacts(language, id)), render(id, sampleFacts("en", id)), ""],
+    // the day list's other forms, one row each (DAY_LIST_VARIANTS)
+    ...(id === "owner_day_bookings" ? DAY_LIST_VARIANTS.map((v) => [`\`${id}\``, v.when, render(id, sampleFacts(language, id, v)), render(id, sampleFacts("en", id, v)), ""]) : []),
   ]);
   const head = ["Template id", "When it is sent", `Text (${name})`, "Meaning (the English template)", REVIEWER];
   const ctx = { services: salon.services, languages: salon.languages };
@@ -213,7 +251,7 @@ export function reviewSheet(language: ReviewLanguage): string {
 
   out.push(`## 1. Messages to the customer (${ids.filter((id) => !id.startsWith("owner_")).length})`, "", table(head, messageRows(false)), "");
   out.push(`## 2. Messages to the owner (${ids.filter((id) => id.startsWith("owner_")).length})`, "");
-  out.push("Every owner message but the last is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.", "");
+  out.push("Every owner message that is not the answer to something the owner has just written (a command, a code, a mark, \"today\") is also a WhatsApp template, because the owner usually has not written to the number in the last 24 hours and WhatsApp then carries only an approved template. Meta approves the words as they stand here, with the values (number, service, date and time, amounts, reference) as {{1}}, {{2}} ..., so a change to a line below is a change to a template that must be submitted again: `node templates/commerce/bookings/scripts/whatsapp-templates.ts` prints them.", "");
   out.push(table(head, messageRows(true)), "");
 
   out.push("### The words on the buttons and the lists", "");
@@ -293,6 +331,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error("Say which language: node templates/commerce/bookings/scripts/review-sheet.ts ml   (or kn)");
     process.exitCode = 1;
   } else {
-    console.log(reviewSheet(language));
+    try { console.log(reviewSheet(language)); } catch (e) { console.error((e as Error).message); process.exitCode = 1; }
   }
 }
