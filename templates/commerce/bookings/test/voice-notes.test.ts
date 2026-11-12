@@ -235,7 +235,7 @@ test("a recording from the owner's page (items 11d and 11e): heard from memory b
   assert.deepEqual(w.store.assistant!.talk.map((l) => [l.from, l.text.split(".")[0]]), [["owner", "close tomorrow"], ["assistant", "Closed Wed 4 Nov"]], "the words and the answer are on the page");
   assert.equal(w.messaging.sentTo(w.owner).length, toOwner, "nothing to the owner's WhatsApp");
   assert.equal(summarizeUsage(w.record.entries(), {}).modelMicroInr, sttCostMicroInr(RATE, SECONDS), "the cost is counted as for a WhatsApp note");
-  assert.ok(!JSON.stringify(w.store).includes("OggS"), "the audio is nowhere in the saved state");
+  assert.ok(!serializeStore(w.store).includes("OggS") && !JSON.stringify(w.record.entries()).includes("OggS"), "the audio is nowhere in the saved state or the record");
   // a recording the runtime no longer holds (a restart): nothing is listened to, the owner is asked to type
   await w.agent.handle({ kind: "owner_message", id: "page-voice-2", text: "", voice: "not-held" });
   assert.equal(speech.calls.length, 1);
