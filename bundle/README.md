@@ -447,6 +447,21 @@ Good to know:
 - If you change the domain or the HTTPS port, run `deploy` again for each shop. The links already sent stay on the old address.
 - Nothing has deleted old pages yet. Each month adds one small folder per shop.
 
+## Voice notes (optional, off by default)
+
+Many customers send a voice note instead of typing. With voice on, the agent listens to it, reads the words exactly as if they had been typed (the same rules, the same limits, the same Guards), and answers in writing and, as a second message, out loud in the customer's language (Hindi, Malayalam, Kannada or English). The audio is held in memory for the length of the call and never saved; the record keeps what it keeps for typed text, plus that it came by voice and what the listening cost. Replies to approved WhatsApp templates stay text. If the note is too long (over 30 seconds), cannot be made out, or the shop is out of its AI allowance for the month, the customer gets the same short line asking them to type.
+
+**It is not switched on by default, and today the setting is refused**, because the two Guards it needs (the speech Guard and the media Guard) are defined in `bundle/generate/speech.ts` but this release does not place them in the server's Compose file yet. `geometer check` says so in words if a shop's `runtime.json` has a `speech` block. What is built and run against stand-ins: the voice service, the Sarvam adapter, the media fetch, the spoken-reply links, the cost counting and the Guards' definitions.
+
+When it is placed, turning it on for a server is:
+
+1. Open a Sarvam account (the builder's own, paid) and note the price per minute of speech-to-text and per 1,000 characters of text-to-speech from Sarvam's price page.
+2. `geometer speech-key <file>`: the key goes to the speech Guard only and is never shown again. Without it the setting is refused.
+3. In the shop's `runtime.json`, add a `speech` block: the provider (`sarvam`), the two prices you read in step 1 (`rate`; voice does not run without them, so every call has a known cost), and where the voice note's audio is read from (`media`). Spoken replies are served from the folder the monthly report pages use, so the shop needs its `report` block too. Replies can be turned off with `"replies": false`: the agent still listens, and answers in text.
+4. For a partner's shop the speech cost counts in the shop's model spend, so the AI cap (`ai.cap`) stops it; for a builder it is their own key and their own bill.
+
+A rough bill for a salon, at Sarvam's pay-as-you-go prices read on 12 Nov 2026 (excluding GST): 100 voice notes of about 20 seconds, each answered by a spoken reply of about 200 characters, cost about 33 minutes of listening at INR 0.49 (about INR 16) plus 20,000 characters of speech at INR 3.00 per 1,000 on Bulbul v3 (about INR 60), so about INR 76 for the hundred, or about INR 36 if the cheaper Bulbul v4 Flash is used (it has no Malayalam). The replies cost more than the listening.
+
 ## Backups
 
 | Layer | How often | Where | Encrypted |
