@@ -22,11 +22,14 @@ const UPI_SETTINGS = new URL("../settings/glow-salon-upi.example.json", import.m
 const TYPED = "+919811111111";
 const OWNER = "+919000000000";
 
-/** A UPI shop on its own booking list, its runtime on a free port with a fake clock (Monday 16 Nov 2026, 09:00 in Kochi), and the front in front of it. */
-async function world() {
+/**
+ * A UPI shop on its own booking list, its runtime on a free port with a fake clock (Monday 16 Nov 2026, 09:00 in Kochi), and the front in front of it. `extra` adds
+ * settings (the shop's assistant, for the closed-day test).
+ */
+async function world(extra: Record<string, unknown> = {}) {
   const root = mkdtempSync(join(tmpdir(), "geo-channels-"));
   const folder = join(root, "glow");
-  const settings = { ...JSON.parse(readFileSync(UPI_SETTINGS, "utf8")), calendar: { module: "own" } };
+  const settings = { ...JSON.parse(readFileSync(UPI_SETTINGS, "utf8")), calendar: { module: "own" }, ...extra };
   const { mkdirSync } = await import("node:fs");
   mkdirSync(folder);
   writeFileSync(join(folder, "settings.json"), JSON.stringify(settings));
@@ -50,6 +53,12 @@ async function world() {
   const linkOwner = () => writeFileSync(join(folder, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(ownerToken, new Date(clock.now()))));
   return {
     origin, page, form, api, record, lines, client, clock, folder, ownerToken, linkOwner,
+    /** The owner's WhatsApp message, as the inbox would hand it to the runtime (the internal token), and the step run. */
+    async ownerSays(text: string, id = `wamid.owner-${text.length}-${clock.now()}`) {
+      const r = await fetch(`${client.server.url}/internal/events`, { method: "POST", headers: { authorization: `Bearer ${INTERNAL}` }, body: JSON.stringify({ events: [{ kind: "message", message: { id, from: OWNER, text, timestamp: clock.now() } }] }) });
+      assert.equal(r.status, 200);
+      await client.runtime.idle();
+    },
     async done() { await new Promise<void>((r) => { front.closeAllConnections(); front.close(() => r()); }); await client.stop(); rmSync(root, { recursive: true, force: true }); },
   };
 }
@@ -238,5 +247,41 @@ test("money: a part marked on WhatsApp leaves the page asking for exactly the re
     assert.deepEqual(presses, ["received", "approve", "refunded"], "each press recorded as the owner's, from the page");
     const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: unknown[] };
     assert.deepEqual(state.waiting, [], "nothing waits any more");
+  } finally { await w.done(); }
+});
+
+test("a day the owner closed through the assistant (item 11e) is offered nowhere: not on the page, not by the API, not by MCP, and a booking asked for on it holds nothing", async () => {
+  const w = await world({ assistant: {} });
+  try {
+    const TUESDAY = "2026-11-17";
+    const startsOnDay = async () => {
+      const api = (await (await w.api(`/slots?service=haircut&date=${TUESDAY}&days=2`)).json()) as { days: { date: string; slots: { start_ms: number }[] }[] };
+      return api.days.find((d) => d.date === TUESDAY)?.slots ?? [];
+    };
+    const open = await startsOnDay();
+    assert.ok(open.length > 0, "Tuesday has free times before the owner closes it");
+    const tuesdayStart = open[0].start_ms;
+
+    await w.ownerSays("close tomorrow");
+    assert.ok(w.record().some((e) => e.action === "close_day" && e.outcome === "confirmed" && e.refs.date === TUESDAY), "the assistant closed Tuesday");
+
+    assert.deepEqual(await startsOnDay(), [], "the API offers no time on the closed day");
+    const page = await (await w.page(`/?lang=en&service=haircut&date=${TUESDAY}`)).text();
+    assert.ok(!startsOn(page).includes(tuesdayStart), "the page offers none of that day's times");
+    assert.ok(startsOn(page).every((t) => new Date(t + 5.5 * 3_600_000).toISOString().slice(0, 10) !== TUESDAY), "nor any other time on that day");
+    const mcp = await (await w.page("/mcp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "free_slots", arguments: { service_id: "haircut", date: TUESDAY, days: 1 } } }) })).json() as { result: { structuredContent?: { days: { slots: unknown[] }[] }; content: { text: string }[] } };
+    const viaMcp = mcp.result.structuredContent ?? JSON.parse(mcp.result.content[0].text) as { days: { slots: unknown[] }[] };
+    assert.deepEqual(viaMcp.days.flatMap((d) => d.slots), [], "an AI assistant is offered nothing on that day either");
+
+    // a client that sends the old time anyway: refused before anything is held
+    const asked = await (await w.api("/bookings", { service_id: "haircut", start: tuesdayStart, name: "Asha", phone: "9811111111", language: "en" })).json() as { status: string; reason?: string };
+    await w.client.runtime.idle();
+    assert.equal(asked.status, "refused");
+    assert.ok(!w.record().some((e) => e.action === "hold_slot" && e.outcome === "confirmed"), "nothing was held");
+    assert.ok(w.record().some((e) => e.action === "channel_booking" && e.outcome === "blocked" && e.refs.reason === "outside_hours"), "the request is refused as outside the hours");
+
+    // undo opens it again everywhere
+    await w.ownerSays("undo");
+    assert.ok((await startsOnDay()).length > 0, "after undo the day is offered again");
   } finally { await w.done(); }
 });
