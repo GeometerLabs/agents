@@ -5,6 +5,7 @@
 //   GET  /healthz                   the process is up
 //   GET  /owner/asks                item 11d: the owner's own live asks, for the owner's private page (bearer token AND the owner's link in x-owner-link)
 //   POST /owner/decide              {"approval", "digest", "decision"}: the owner's answer from that page (the same)
+//                                   item 11f: in place of the link, the owner's session (x-owner-session), which the relay checks with the shop's runtime
 //
 // The relay's token is not the runtime's. Bind to 127.0.0.1 or a private network.
 import { createHash, timingSafeEqual } from "node:crypto";
@@ -12,6 +13,7 @@ import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Relay } from "./relay.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
+import { OWNER_SESSION_HEADER } from "../channels/owner-access.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 
 const MAX_BODY = 64 * 1024;
@@ -41,7 +43,12 @@ export interface RunningRelayServer { port: number; url: string; close(): Promis
  * What takes the owner's messages is anything with `receive` and `status`: the relay, or (B71 part 2) the owner-marked desk of an agent someone else wrote, which also
  * reads a tapped button's id (`reply.id`, the button that carries the one-use code). The relay ignores it.
  */
-export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receive: Relay["receive"]; status(): unknown }, token: string, options: { /** Item 11d: the owner's link as the relay's own file has it now, read on every call. Left out: no owner page. */ ownerLink?: () => OwnerLinkFile | undefined } = {}): (req: IncomingMessage, res: ServerResponse) => void {
+export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receive: Relay["receive"]; status(): unknown }, token: string, options: {
+  /** Item 11d: the owner's link as the relay's own file has it now, read on every call. Left out: no owner page. */
+  ownerLink?: () => OwnerLinkFile | undefined;
+  /** Item 11f: is this owner's session good? Asked of the shop's RUNTIME (which made it), never taken from the front. Left out: no session is accepted. */
+  ownerSession?: (session: string) => Promise<boolean>;
+} = {}): (req: IncomingMessage, res: ServerResponse) => void {
   const wanted = sha256(token);
   const authorised = (req: IncomingMessage) => {
     const given = /^bearer\s+(\S+)$/iu.exec(req.headers.authorization ?? "")?.[1];
@@ -58,7 +65,11 @@ export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receiv
         const pageRelay = relay as Partial<Pick<Relay, "ownerAsks" | "decideOnPage">>;
         if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." });
         const given = req.headers[OWNER_LINK_HEADER];
-        if (!options.ownerLink || !pageRelay.ownerAsks || !pageRelay.decideOnPage || !ownerTokenMatches(typeof given === "string" ? given : undefined, options.ownerLink())) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        const session = req.headers[OWNER_SESSION_HEADER];
+        // the owner's link against the relay's own copy of its hash, or (item 11f) a session the shop's runtime says is good now
+        const owner = (options.ownerLink !== undefined && ownerTokenMatches(typeof given === "string" ? given : undefined, options.ownerLink()))
+          || (typeof given !== "string" && typeof session === "string" && options.ownerSession !== undefined && await options.ownerSession(session));
+        if (!pageRelay.ownerAsks || !pageRelay.decideOnPage || !owner) return send(res, 403, { error: "The owner's link or session is not valid (it may have been revoked or ended)." });
         if (path === "/owner/asks" && req.method === "GET") return send(res, 200, { asks: pageRelay.ownerAsks() });
         if (path === "/owner/decide" && req.method === "POST") {
           const text = await readBody(req);

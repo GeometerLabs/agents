@@ -30,6 +30,8 @@ export function shopInfo(settings: Settings, paused: boolean) {
     cancellation: { windowHours: settings.cancellation.windowHours },
     payment: marked ? { kind: "upi" as const, payee: marked.payTo.name } : { kind: "link" as const },
     paused,
+    // item 11f: the customer view shows the week's hours (the same settings the agent books against)
+    hours: settings.openingHours,
   };
 }
 

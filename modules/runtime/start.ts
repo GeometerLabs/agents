@@ -4,6 +4,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { OWNER_LINK_FILE, ownerLinkReader } from "../channels/owner-link.ts";
+import { OWNER_ACCESS_FILE, OWNER_SESSIONS_FILE, openOwnerAccess, readEndBefore } from "../channels/owner-access.ts";
+import { createOwnerSignin } from "../channels/owner-signin.ts";
+import type { OwnerSignin } from "../channels/owner-signin.ts";
+import { PAGES_FILE, pagesReader } from "../channels/pages-file.ts";
+import type { Language } from "../language/languages.ts";
 import { systemClock } from "../core/clock.ts";
 import type { Clock } from "../core/clock.ts";
 import { loadPrivateKey } from "../report/sign.ts";
@@ -181,7 +186,8 @@ export interface StartHooks<Settings, Rt extends StartableRuntime> {
   /** What this template calls its cases, for the one warning that names them: "bookings", "fees". */
   casesName: string;
   loadClient(folder: string): ClientFolder<Settings>;
-  build(client: ClientFolder<Settings>, ctx: { store: DurableStore; clock: Clock; log: (line: string) => void; recordKey?: Buffer }): Promise<Rt>;
+  /** `ownerSignin` (item 11f): hand it to the runtime core (RuntimeCoreOptions.ownerSignin); left out for a shop without a channel token. */
+  build(client: ClientFolder<Settings>, ctx: { store: DurableStore; clock: Clock; log: (line: string) => void; recordKey?: Buffer; ownerSignin?: OwnerSignin }): Promise<Rt>;
 }
 
 /** The part of a runtime the start uses. */
@@ -197,11 +203,20 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const recordKey = readRecordKey(client.runtime.mode, options.recordKeyFile ?? process.env.RECORD_KEY_FILE);
 
   const store = openStore(client.runtime.dataDir);
+  // Item 11f: the owner's sign-in on the shop's page, for a shop with a page (a channel token). Its links and sessions are in a file of their own beside the store;
+  // the shop's addresses (pages.json) and the panel's "sign out every device" (owner-sessions.json) are read from the client folder on every use.
+  const owner = (client.settings as { owner?: { whatsapp: string; language: Language } }).owner;
+  const ownerAccess = channelToken && owner ? openOwnerAccess(join(client.runtime.dataDir, OWNER_ACCESS_FILE)) : undefined;
+  const ownerSignin = ownerAccess && owner ? createOwnerSignin({
+    access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
+    owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
+  }) : undefined;
   let runtime: Rt;
   try {
-    runtime = await hooks.build(client, { store, clock, log, ...(recordKey ? { recordKey } : {}) });
+    runtime = await hooks.build(client, { store, clock, log, ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}) });
   } catch (e) {
     store.close();
+    ownerAccess?.close();
     throw e;
   }
 
@@ -212,9 +227,10 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   let server: RunningServer;
   try {
     // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}) });
+    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}) });
   } catch (e) {
     await runtime.close();
+    ownerAccess?.close();
     throw e;
   }
   runtime.kick(); // any task saved but not finished when the last process stopped runs now
@@ -227,6 +243,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
       ticker.stop();
       await server.close();
       await runtime.close();
+      ownerAccess?.close();
     },
   };
 }

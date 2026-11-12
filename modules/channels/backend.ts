@@ -4,6 +4,20 @@
 import type { Language } from "../language/languages.ts";
 import type { ChannelEvent } from "./events.ts";
 import { OWNER_LINK_HEADER } from "./owner-link.ts";
+import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "./owner-access.ts";
+import type { LinkState } from "./owner-access.ts";
+
+/**
+ * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a
+ * link, as item 11d's callers pass it. The runtime and the relay check either against their own records; the front only carries it.
+ */
+export type OwnerCred = string | { link: string } | { session: string };
+/** The header that carries a credential to the runtime or the relay. */
+export function ownerCredHeader(c: OwnerCred | undefined): Record<string, string> {
+  if (c === undefined) return {};
+  if (typeof c === "string") return { [OWNER_LINK_HEADER]: c };
+  return "link" in c ? { [OWNER_LINK_HEADER]: c.link } : { [OWNER_SESSION_HEADER]: c.session };
+}
 
 /** A service as the page shows it (templates' channel.ts publicServices). */
 export interface OfferService { id: string; names: Record<Language, string>; priceInr: number; durationMinutes: number }
@@ -12,6 +26,10 @@ export interface ShopInfo {
   deposit: { amountInr: number; holdMinutes: number }; cancellation: { windowHours: number };
   payment: { kind: "upi"; payee: string } | { kind: "link" };
   paused: boolean;
+  /** Item 11f: the week's opening hours ("10:00" to "20:00", null when closed), for the customer view. Left out by a template that has none. */
+  hours?: Record<"sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat", { open: string; close: string } | null>;
+  /** Item 11f: the shop's character (item 11e's setting), when the template's settings carry one; the page draws a placeholder in its colour. */
+  character?: { name: string; look?: { colour?: string } };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 
@@ -43,17 +61,23 @@ export type RelayDecision = "recorded" | "gone" | "changed" | "expired" | "faile
 /** What the front asks of a runtime. */
 export interface ChannelBackend {
   offer(q: { serviceId?: string; fromDate?: string; days?: number }): Promise<Offer>;
-  /** Save events; `ownerToken` with an owner_action. "refused": the runtime said no (the owner's link, mostly). */
-  submit(events: ChannelEvent[], ownerToken?: string): Promise<"saved" | "refused">;
+  /** Save events; the owner's credential with an owner_action. "refused": the runtime said no (the owner's link or session, mostly). */
+  submit(events: ChannelEvent[], owner?: OwnerCred): Promise<"saved" | "refused">;
   view(handleHash: string): Promise<BookingView | null>;
-  /** Null when the owner's link is not (or no longer) valid. */
-  owner(ownerToken: string): Promise<OwnerView | null>;
+  /** Null when the owner's link or session is not (or no longer) good. */
+  owner(owner: OwnerCred): Promise<OwnerView | null>;
+  /** Item 11f: what a one-time sign-in link is now (nothing used up). Left out: the shop has no owner sign-in on its page. */
+  linkState?(link: string): Promise<LinkState>;
+  /** Item 11f: use a sign-in link up; a session for this browser, or why not. */
+  signin?(link: string): Promise<{ session: string; expiresAtMs: number } | { state: Exclude<LinkState, "valid"> }>;
+  /** Item 11f: end this session. */
+  signout?(session: string): Promise<void>;
 }
 
 /** What the front asks of the approvals relay, for a shop whose Guard holds refunds for the owner (a gateway shop). */
 export interface RelayBackend {
-  asks(ownerToken: string): Promise<RelayAsk[] | null>;
-  decide(ownerToken: string, approval: string, digest: string, decision: "approve" | "deny"): Promise<RelayDecision | "refused">;
+  asks(owner: OwnerCred): Promise<RelayAsk[] | null>;
+  decide(owner: OwnerCred, approval: string, digest: string, decision: "approve" | "deny"): Promise<RelayDecision | "refused">;
 }
 
 export class BackendError extends Error {}
@@ -69,7 +93,7 @@ async function call(url: string, init: RequestInit, timeoutMs: number): Promise<
 /** The runtime's channel routes (modules/runtime/http.ts), through the shop's door, with the channel token. */
 export function runtimeBackend(o: { url: string; token: string; timeoutMs?: number }): ChannelBackend {
   const timeout = o.timeoutMs ?? 4_000;
-  const headers = (owner?: string) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", ...(owner ? { [OWNER_LINK_HEADER]: owner } : {}) });
+  const headers = (owner?: OwnerCred, extra: Record<string, string> = {}) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", ...ownerCredHeader(owner), ...extra });
   const json = async <T>(r: Response): Promise<T> => { if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`); return await r.json() as T; };
   return {
     async offer(q) {
@@ -79,8 +103,8 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       if (q.days) p.set("days", String(q.days));
       return json<Offer>(await call(`${o.url}/internal/channel/offer?${p}`, { headers: headers() }, timeout));
     },
-    async submit(events, ownerToken) {
-      const r = await call(`${o.url}/internal/channel/events`, { method: "POST", headers: headers(ownerToken), body: JSON.stringify({ events }) }, timeout);
+    async submit(events, owner) {
+      const r = await call(`${o.url}/internal/channel/events`, { method: "POST", headers: headers(owner), body: JSON.stringify({ events }) }, timeout);
       if (r.status === 403) return "refused";
       if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
       return "saved";
@@ -90,10 +114,23 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       if (r.status === 404) return null;
       return json<BookingView>(r);
     },
-    async owner(ownerToken) {
-      const r = await call(`${o.url}/internal/channel/owner`, { headers: headers(ownerToken) }, timeout);
+    async owner(owner) {
+      const r = await call(`${o.url}/internal/channel/owner`, { headers: headers(owner) }, timeout);
       if (r.status === 403) return null;
       return json<OwnerView>(r);
+    },
+    async linkState(link) {
+      const r = await call(`${o.url}/internal/channel/owner-signin`, { headers: headers(undefined, { [OWNER_SIGNIN_HEADER]: link }) }, timeout);
+      return (await json<{ state: LinkState }>(r)).state;
+    },
+    async signin(link) {
+      const r = await call(`${o.url}/internal/channel/owner-signin`, { method: "POST", headers: headers(undefined, { [OWNER_SIGNIN_HEADER]: link }) }, timeout);
+      if (r.status === 403) return { state: (await r.json() as { state: Exclude<LinkState, "valid"> }).state };
+      const a = await json<{ session: string; expires_at_ms: number }>(r);
+      return { session: a.session, expiresAtMs: a.expires_at_ms };
+    },
+    async signout(session) {
+      await json<unknown>(await call(`${o.url}/internal/channel/owner-signout`, { method: "POST", headers: headers({ session }) }, timeout));
     },
   };
 }
@@ -101,16 +138,16 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
 /** The relay's owner-page routes (modules/approvals/server.ts), for one shop, with the relay's token. */
 export function relayBackend(o: { url: string; token: string; timeoutMs?: number }): RelayBackend {
   const timeout = o.timeoutMs ?? 8_000; // a decision waits for Guard and the runtime to be told
-  const headers = (owner: string) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", [OWNER_LINK_HEADER]: owner });
+  const headers = (owner: OwnerCred) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", ...ownerCredHeader(owner) });
   return {
-    async asks(ownerToken) {
-      const r = await call(`${o.url}/owner/asks`, { headers: headers(ownerToken) }, timeout);
+    async asks(owner) {
+      const r = await call(`${o.url}/owner/asks`, { headers: headers(owner) }, timeout);
       if (r.status === 403) return null;
       if (!r.ok) throw new BackendError(`The approvals relay answered ${r.status}.`);
       return ((await r.json()) as { asks: RelayAsk[] }).asks;
     },
-    async decide(ownerToken, approval, digest, decision) {
-      const r = await call(`${o.url}/owner/decide`, { method: "POST", headers: headers(ownerToken), body: JSON.stringify({ approval, digest, decision }) }, timeout);
+    async decide(owner, approval, digest, decision) {
+      const r = await call(`${o.url}/owner/decide`, { method: "POST", headers: headers(owner), body: JSON.stringify({ approval, digest, decision }) }, timeout);
       if (r.status === 403) return "refused";
       if (!r.ok) throw new BackendError(`The approvals relay answered ${r.status}.`);
       return ((await r.json()) as { result: RelayDecision }).result;

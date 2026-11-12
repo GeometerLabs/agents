@@ -6,10 +6,13 @@
 //                     same steps, limits and Guards as the same request on WhatsApp (templates/commerce/bookings/src/agent.ts).
 //   owner_action      the owner pressed a button on their private approvals page. The runtime's HTTP layer has checked the owner's link before the event is saved; the
 //                     agent then checks that the action shown is still the one waiting (its digest), and does exactly what the same reply on WhatsApp does.
+//   owner_signin      someone on the shop's page asked for the owner's sign-in link (item 11f). It carries no number and no address: the runtime core sends the link
+//                     to the owner's number in the settings, within the shop's limits (owner-signin.ts), and never hands this event to the agent.
 import { CHANNELS, HANDLE_HASH } from "./handle.ts";
 import type { ChannelName } from "./handle.ts";
 import { normaliseName, normalisePhone } from "./contact.ts";
 import { LANGUAGES } from "../language/languages.ts";
+import type { OwnerSigninEvent } from "./owner-signin.ts";
 import type { Language } from "../language/languages.ts";
 
 /** A booking asked for from a channel: the service and the exact start, the customer's name and number as typed, and the language they used. */
@@ -23,11 +26,12 @@ export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny",
 export type OwnerActionName = (typeof OWNER_ACTIONS)[number];
 export interface OwnerAction { kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string }
 
-export type ChannelEvent = ChannelRequest | OwnerAction;
+export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent;
 
 /** The task key: a booking is made once per handle, however often it is sent; a cancel or a claim once per press (the front's own id for it). */
 export function channelEventKey(e: ChannelEvent): string {
   if (e.kind === "owner_action") return `owner_action:${e.id}`;
+  if (e.kind === "owner_signin") return `owner_signin:${e.id}`; // one per press: the limits, not the key, bound how many
   return e.op === "book" ? `channel_book:${e.handle}` : `channel_${e.op}:${e.handle}:${e.id}`;
 }
 
@@ -48,7 +52,9 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
     if (typeof raw.digest !== "string" || !DIGEST.test(raw.digest)) return { ok: false, error: "An owner_action carries the digest of the action as it was shown (32 hex digits)." };
     return { ok: true, event: { kind: "owner_action", id: raw.id, action: raw.action as OwnerActionName, case: raw.case, digest: raw.digest } };
   }
-  if (raw.kind !== "channel_request") return { ok: false, error: 'The kind must be "channel_request" or "owner_action".' };
+  // item 11f: only the kind and the id are read; anything else sent with it (a number above all) is dropped, never used
+  if (raw.kind === "owner_signin") return { ok: true, event: { kind: "owner_signin", id: raw.id } };
+  if (raw.kind !== "channel_request") return { ok: false, error: 'The kind must be "channel_request", "owner_action" or "owner_signin".' };
   if (!CHANNELS.includes(raw.channel as ChannelName)) return { ok: false, error: 'A channel_request\'s channel is "web" or "mcp".' };
   if (typeof raw.handle !== "string" || !HANDLE_HASH.test(raw.handle)) return { ok: false, error: "A channel_request carries its handle's hash (64 hex digits), never the handle." };
   const base = { kind: "channel_request" as const, id: raw.id, channel: raw.channel as ChannelName, handle: raw.handle };

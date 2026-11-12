@@ -31,6 +31,7 @@ import type { Words } from "./words.ts";
 import { setupOf } from "./setups.ts";
 import { HEALTH_WORDS } from "./words-health.ts";
 import { channelsBlock } from "./views-channels.ts";
+import { pagesBlock } from "./views-pages.ts";
 
 const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
 
@@ -242,6 +243,9 @@ export interface ShopView {
   notice?: string;
   /** Item 11d: the booking page, its QR code, the MCP endpoint and the owner's link (views-channels.ts). Left out for a template without a booking page. */
   channels?: import("./channels.ts").ChannelsView;
+  /** Item 11f: the shop's page on the pages domain and the owner's sessions (views-pages.ts). Left out for a template without a booking page. */
+  pages?: import("./views-pages.ts").PagesView;
+  pagesNotice?: "ended" | "bad";
 }
 
 /**
@@ -357,6 +361,7 @@ ${v.liveCounts ? html`<ul class="plain">
 
 ${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
 ${v.channels ? channelsBlock(c, v.id, v.channels) : ""}
+${v.pages ? pagesBlock(c, v.id, v.pages, v.pagesNotice) : ""}
 
 <h2>${w.settings}</h2>
 ${v.own ? ownSummaryBlock(c, v) : ""}

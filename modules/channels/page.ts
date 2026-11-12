@@ -13,6 +13,8 @@ import type { Language } from "../language/languages.ts";
 import { textQrSvg } from "../qr/svg.ts";
 import type { BookingView, Offer } from "./backend.ts";
 import { PAGE } from "./words.ts";
+import { FACE_CSS, facePartnerLine, shopFace } from "./shop-face.ts";
+import type { PagesFile } from "./pages-file.ts";
 
 const CSS = `
 :root{--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--amber:#92400e;--amber-bg:#fffbeb;--bg:#fff}
@@ -31,15 +33,15 @@ button.quiet{background:#fff;color:var(--g9);border:1px solid var(--line)}.statu
 export interface PageShop { name: string; publicUrl: string }
 
 /** The whole page: head, header and the content, with the language links and, for a machine-written language, the note that says so. */
-function layout(o: { shop: Offer["shop"]; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string> }): string {
+function layout(o: { shop: Offer["shop"]; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; /** Item 11f: the shop's face and the partner's line (the booking page's front). */ face?: Raw; foot?: Raw }): string {
   const w = PAGE[o.language];
   const link = (l: Language) => { const q = new URLSearchParams({ ...(o.query ?? {}), lang: l }); return `${o.selfPath}?${q}`; };
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-${o.refreshSeconds ? raw(`<meta http-equiv="refresh" content="${o.refreshSeconds}">`) : ""}<title>${o.title}</title><style>${raw(CSS)}</style></head>
+${o.refreshSeconds ? raw(`<meta http-equiv="refresh" content="${o.refreshSeconds}">`) : ""}<title>${o.title}</title><style>${raw(CSS)}${FACE_CSS}</style></head>
 <body><main><header><h1>${o.shop.name}</h1>${o.shop.address ? html`<p>${o.shop.address}</p>` : ""}</header>
 ${o.shop.languages.length > 1 ? html`<p class="langs" aria-label="${w.language}">${o.shop.languages.map((l) => (l === o.language ? html`<b>${LANGUAGE_LABEL[l]}</b>` : html`<a href="${link(l)}" hreflang="${l}">${LANGUAGE_LABEL[l]}</a>`))}</p>` : ""}
 ${w.machine ? html`<p class="machine">${w.machine}</p>` : ""}
-${o.body}
+${o.face ?? ""}${o.body}${o.foot ?? ""}
 </main></body></html>`.markup}`;
 }
 
@@ -57,13 +59,16 @@ function footer(shop: PageShop, language: Language): Raw {
  * The booking page: the services; with a service chosen, its free days and times; with a day, the form (a time, the name and the number). `offer` is the runtime's
  * answer for the chosen service (or the services alone). `error` is a plain line from the front (too many requests, a form to check).
  */
-export function bookingPage(o: { shop: PageShop; offer: Offer; language: Language; serviceId?: string; date?: string; error?: string; values?: { name?: string; phone?: string }; /** The form's random nonce (handle.ts handleFromNonce): a second tap is the same booking. */ nonce?: string }): string {
+export function bookingPage(o: { shop: PageShop; offer: Offer; language: Language; serviceId?: string; date?: string; error?: string; values?: { name?: string; phone?: string }; /** The form's random nonce (handle.ts handleFromNonce): a second tap is the same booking. */ nonce?: string; /** Item 11f: the shop's page addresses (its WhatsApp number, the panel's link). */ pages?: PagesFile }): string {
   const w = PAGE[o.language];
   const s = o.offer.shop;
+  // item 11f: the customer view's head (the character, the hours, WhatsApp) and the partner's small line
+  const face = shopFace({ shop: s, language: o.language, ...(o.pages ? { pages: o.pages } : {}) });
+  const foot = facePartnerLine(o.language, o.pages);
   const tz = s.timezone;
   const self = `${o.shop.publicUrl}/`;
   const q = (extra: Record<string, string>) => `${self}?${new URLSearchParams({ lang: o.language, ...extra })}`;
-  if (s.paused) return layout({ shop: s, language: o.language, title: w.title(s.name), selfPath: self, body: html`<p class="status warn">${w.paused}</p>${footer(o.shop, o.language)}` });
+  if (s.paused) return layout({ shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, body: html`<p class="status warn">${w.paused}</p>${footer(o.shop, o.language)}` });
   const deposit = formatInr(s.deposit.amountInr);
   const chosen = o.offer.services.find((x) => x.id === o.serviceId);
   const services = html`<h2>${w.pickService}</h2><ul class="list">${o.offer.services.map((x) => html`<li><a class="choice${x.id === chosen?.id ? " on" : ""}" href="${q({ service: x.id })}">${x.names[o.language]}<span>${formatInr(x.priceInr)}</span><br><small class="note">${w.minutes(x.durationMinutes)}</small></a></li>`)}</ul>`;
@@ -90,7 +95,7 @@ export function bookingPage(o: { shop: PageShop; offer: Offer; language: Languag
     }
   }
   return layout({
-    shop: s, language: o.language, title: w.title(s.name), selfPath: self, query: { ...(chosen ? { service: chosen.id } : {}), ...(o.date ? { date: o.date } : {}) },
+    shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, query: { ...(chosen ? { service: chosen.id } : {}), ...(o.date ? { date: o.date } : {}) },
     body: html`<p>${w.intro(deposit, s.payment.kind === "upi")}</p>${o.error ? html`<p class="status warn" role="alert">${o.error}</p>` : ""}${services}${times}${footer(o.shop, o.language)}`,
   });
 }
