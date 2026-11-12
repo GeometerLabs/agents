@@ -40,7 +40,7 @@ import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "./assistant.ts";
 import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
 import type { ChannelEvent, ChannelFee, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
-import type { PageAudio } from "../../../../modules/channels/owner-audio.ts";
+import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
 import { ownerItems, parentOf, parentsList } from "./channel.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";

@@ -53,7 +53,7 @@ import { phoneDigits } from "../../../../modules/channels/contact.ts";
 import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelEvent, ChannelOrder, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
-import type { PageAudio } from "../../../../modules/channels/owner-audio.ts";
+import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
 import { dateOf, ownerItems } from "./channel.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
