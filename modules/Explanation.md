@@ -408,7 +408,7 @@ The plan asks that "we're checking, don't do it again yet" comes from saved stat
 | Operation, and how its outcome can be unknown | Saved where, and does it survive a restart | A fresh attempt | The customer goes quiet | Settled by |
 |---|---|---|---|---|
 | **A refund** (`payments/refunds.ts`, every template): the reply is lost, Guard answers 504 "outcome unknown", the provider answers 5xx, or Guard holds it with no approval | On the case: `refundIssues` (`unknown`, `uncertain`, `unconfirmed`) with the payment id, and the payment in `stoppedRefunds`; the record's `refund` `unconfirmed` line. In the snapshot, so a restart keeps it | Refused: the payment is in `stoppedRefunds`, so the agent never asks Guard again (record: `refund` `blocked`). Guard's own record would also hold an identical call | Nothing clears it: no tick, hold expiry or cancel touches `refundIssues`. The to-do list shows `refund_unknown` until it is settled | Only the payments service's own list: read by the to-do list's `recheck_refund` (read-only), or, since 12 Nov, after the provider's own `refund.done` event names a refund the list shows. Either way `refunds.ts settleIssue` settles the original attempt (matched by the refund id its reply gave, our receipt, or the payment and the exact amount it asked for), writes one `confirmed` line with the provider's refund id and the amount its list shows (an event's line also has `refs.eventId`), and tells the customer once (`refund_confirmed`), as `refund_checking` promised. Pinned end to end, with a restart and three days of silence, by `templates/commerce/bookings/test/unknown-outcome.test.ts` (written 11 Nov, the event and the message added 12 Nov, not yet run) |
-| **A person's resolution** of a refund | Guard's `already_done` (a person at the server settled it): the `refund` line is `confirmed` with `refs.confirmedBy` (the person) and notes saying it is by that person's word, not the provider's list; no refund id. Apart from a provider's confirmation in the record (`refund-held.test.ts`, "409 already_done") | | | The monthly report's data tells them apart since 12 Nov: a person's settlement is not a refund made, and is listed in `money.settledByWord` with who said so (`modules/report/settled-by-word.ts`); the documents do not show it yet (Deferred.md) |
+| **A person's resolution** of a refund | Guard's `already_done` (a person at the server settled it): the `refund` line is `confirmed` with `refs.confirmedBy` (the person) and notes saying it is by that person's word, not the provider's list; no refund id. Apart from a provider's confirmation in the record (`refund-held.test.ts`, "409 already_done") | | | The monthly report's data tells them apart since 12 Nov: a person's settlement is not a refund made, and is listed in `money.settledByWord` with who said so (`modules/report/settled-by-word.ts`); the documents show it since 12 Nov ("Settled by <who>, by their word on the documents", below) |
 | **A deposit or advance link** (`payments/links.ts`): the create's reply is lost | Not as an unknown: "look first" by the case id finds a link that landed. If both tries fail, the case goes back to `enquiry` with its id kept in the store; a link that did land has a URL nobody was given | Bookings takes the same booking up again at the customer's next request (`onBook` reuses the one in `enquiry`), and its look finds that link: the original, not a new one | Nothing to clear | The provider's list |
 | **A calendar hold** (Bookings): the insert's reply is lost | Not as an unknown: "look first" by the booking id. A hold that landed after all is tentative and ends by itself | Found again by the booking id | The hold ends by itself | The calendar's list |
 | **The deposit itself** when a hold runs out (Bookings, Orders): did the customer pay? | The hold's expiry reads the payments service first (`reconcilePayments`, uncaught in both). If that read fails the tick throws whole and nothing is saved: the case stays waiting for its payment, and is not marked expired, until the payment can be read. But the time or the stock counts as free for other customers once the hold's end has passed (it is worked out from the hold's end), as it always has: the hold's length is the promise | | The case is not given up while its payment cannot be read; its time or stock is, at the hold's end | The payments service's record; a payment found later is taken again only if the time or stock is still free, and refunded otherwise |
@@ -501,6 +501,36 @@ whose `detail` names the denied request (`approval`, `denied_at_ms`, `until_ms`)
 - **Tests** (written, not run): `payments/test/refund-denied.test.ts`, the classification in `templates/commerce/bookings/test/guard-responses.test.ts` (with the doc's
   body as a fixture), a row in `runtime/test/guard-wait.test.ts`, one in `refund-held.test.ts` (Guard's no wins over the relay's approve), two in
   `approvals-relay.test.ts` (no new request with Guard as it is; with an older Guard the relay does not ask again).
+
+## Settled by <who>, by their word on the documents (B75, 12 Nov 2026)
+
+The report data has kept a person's settlement apart since follow-up 5 (`money.settledByWord`, Bookings' `rows[].settledByWord`). The documents now say it.
+
+- **The words, once** (`report/text.ts`). `SETTLED_BY_WORD` ("Settled by asha, by their word") and `SETTLED_BY_SOMEONE` (the same without a name), in four languages.
+  Each template's `report/strings.ts` takes them in (`settledByWord`, `settledBySomeone`), so the review sheets list them with the rest. Hindi, Malayalam and Kannada
+  are machine-written. `settledWho` shows who as a person reads it: Guard's `operator:` prefix goes, one line, at most 40 characters. The signed data keeps the whole name.
+- **The report pages.** One money row per person, with the count and the amount, after the refunds the payments service confirmed. This is Bookings' row
+  as before, now in the shared words, so Bookings' own label (`work.refundsByPerson`) went. Fees and Orders have the same row.
+  Bookings' unconfirmed row a person settled says "Settled by ravi, by their word" instead of "Settled by a later step".
+- **The owner's WhatsApp message.** A Meta template has no optional line, and its approved bodies should not change for a rare month. So the words go inside an
+  existing value: after Bookings' not-confirmed count, and after Fees' and Orders' given-back amount ("Given back: ₹50 · Settled by ravi, by their word: 1 (₹200)").
+  No template body changed, and the three `whatsapp-templates.json` are the same.
+  `settledByWordWords` picks the longest form that keeps the message within WhatsApp's 1,024 characters with the shortest check link:
+  - each person named (two, then "and N more");
+  - no names, with the totals;
+  - the count alone;
+  - none, for a message that was already at the limit. A message that fitted before still fits, and the full report names them.
+
+  It is chosen before the check link, so a long month gives up the longer link before it gives up who settled what.
+- **Measured** (12 Nov, a scratch script; not a test run):
+  - Bookings' worst message (120-character builder, 60-character shop, five-digit counts): 963 characters with nobody (Malayalam, #digest link), 1,010 with one
+    person named (Malayalam, #digest link), 994 with three (Hindi, #code link, names given way).
+  - In the long-name months of the three `report-summary.test.ts`, every form stays within 1,024. In Orders' Malayalam badge month there is no room for any form,
+    so the message is as before.
+- **The sample report** (`scripts/sample-report.ts`, a UPI salon) has no such refund, and regenerated byte-identical.
+- **Tests** (written, not run): `modules/test/settled-by-word.test.ts` (`settledWho`, the four forms), Bookings `test/report-settled-by-word.test.ts` (the page,
+  the unconfirmed row, every language and template of the message), Orders' and Fees' `test/report.test.ts` (the row and the message). The worst case in Bookings
+  `test/report-whatsapp.test.ts` and the long-name months in the three `report-summary.test.ts` now include people who settled by their word.
 
 ## Adding to a module later
 

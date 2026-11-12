@@ -76,10 +76,12 @@ test("every report template, in every language, with long names in the centre's 
     kn: { shop: "ಶ್ರೀ ಮಂಜುನಾಥ ಬ್ರೈಟ್ ಟ್ಯೂಷನ್ ಮತ್ತು ಕಂಪ್ಯೂಟರ್ ತರಬೇತಿ ಕೇಂದ್ರ", by: "ದಿವ್ಯಾ ರಾಮಕೃಷ್ಣನ್, ಶ್ರೀ ಸಾಯಿ ಡಿಜಿಟಲ್ ಸರ್ವೀಸಸ್" },
   };
   const page = `https://reports.example.com/r/${"a".repeat(32)}/report-2026-11-en.html`;
+  // B75: and with three people who settled refunds by their word (never on a UPI shop: it has no gateway refund to settle)
+  const settled = [{ by: "operator:asha.krishnamurthy.support.desk.team.one", count: 3, paise: 1_250_000 }, { by: "operator:ravi.k", count: 1, paise: 20_000 }, { by: "operator:meena", count: 1, paise: 100 }];
   for (const t of REPORT_TEMPLATES) {
-    for (const language of LANGUAGES) {
+    for (const language of LANGUAGES) for (const byWord of t.upi ? [undefined] : [undefined, settled]) {
       const base = sampleReport();
-      const r = live({ preparedBy: names[language].by, shop: { ...base.shop, name: names[language].shop }, ...(t.badge ? { innovator: true as const } : {}), ...(t.upi ? { paidBy: "owner-marked" as const } : {}) });
+      const r = live({ preparedBy: names[language].by, shop: { ...base.shop, name: names[language].shop }, ...(t.badge ? { innovator: true as const } : {}), ...(t.upi ? { paidBy: "owner-marked" as const } : {}), ...(byWord ? { money: { ...base.money, settledByWord: byWord } } : {}) });
       const env = seal(r, privateKey);
       const summary = summaryLinkFor(env, reportSummaryFields(r), privateKey)!;
       const message = monthlyReportMessage(env, language, { link: page, check: summary });

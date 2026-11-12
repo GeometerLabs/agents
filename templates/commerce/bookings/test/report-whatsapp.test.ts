@@ -129,10 +129,16 @@ test("the worst message still fits what WhatsApp takes once the values are in: t
     stopped: { ...base.stopped, total: 99999 }, owner: { asked: 99999, approved: 99999, denied: 99999, retried: 0 }, unconfirmed: { ...base.unconfirmed, openOnBookings: 99999 },
   };
   const link = `https://reports.example.com/r/${"a".repeat(32)}/report-2026-11-en.html`;
-  const lengths = LANGUAGES.map((language) => [language, [...monthlyReportMessage(seal(worst), language, { link }).text].length] as const);
-  // The bound is the limit itself since the check line (item 17b) took most of the old 900's headroom: the worst is 963 in Malayalam with the #digest link, and the
-  // longer signed summary link goes in only when the filled message still fits (messageCheckLink; report-summary.test.ts holds that).
-  for (const [language, length] of lengths) assert.ok(length <= WHATSAPP_BODY_LIMIT, `${language}: ${length} characters, and the limit WhatsApp checks after the values are in is ${WHATSAPP_BODY_LIMIT}`);
+  // B75 (12 Nov 2026): refunds people settled by their word go inside the not-confirmed value; one person with a 60-character name, and three people
+  const one = [{ by: `operator:${"A".repeat(60)}`, count: 99999, paise: 9_999_999_900 }];
+  const three = [...one, { by: `operator:${"R".repeat(60)}`, count: 99999, paise: 9_999_999_900 }, { by: "operator:meena", count: 1, paise: 100 }];
+  const months = [worst, { ...worst, money: { ...worst.money, settledByWord: one } }, { ...worst, money: { ...worst.money, settledByWord: three } }];
+  const lengths = LANGUAGES.flatMap((language) => months.map((m, i) => [`${language} (${["none", "one person", "three people"][i]})`, [...monthlyReportMessage(seal(m), language, { link }).text].length] as const));
+  // The bound is the limit itself since the check line (item 17b) took most of the old 900's headroom. Measured 12 Nov 2026: with nobody settling by their word the
+  // worst is 963 in Malayalam with the #digest link; with one person, named, 1010 (Malayalam, #digest link); with three, the names give way first (settledByWordWords),
+  // 994 (Hindi, #code link). The longer signed summary link goes in only when the filled message still fits (messageCheckLink; report-summary.test.ts holds that).
+  for (const [which, length] of lengths) assert.ok(length <= WHATSAPP_BODY_LIMIT, `${which}: ${length} characters, and the limit WhatsApp checks after the values are in is ${WHATSAPP_BODY_LIMIT}`);
+  for (const language of LANGUAGES) assert.match(monthlyReportMessage(seal(months[2]), language, { link }).text, new RegExp(`${STRINGS[language].label.notConfirmed}: 99999 · `, "u"), "the settled words are there, after what is still open");
 });
 
 test("the examples Meta reviews are a believable month, one line each, in the template's own language, and the checked-in list holds them", () => {

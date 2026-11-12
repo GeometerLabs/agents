@@ -12,7 +12,7 @@ import { ownerText } from "./text.ts";
 
 /** What each phrase that takes a number or an amount is shown with. */
 const SAMPLE: Record<string, unknown[]> = {
-  more: [12], "cert.held": [29, 31, 2, 14], "cert.floor": ["…"], "cert.deposit": ["₹200", 15], "cert.cancel": [24], "cert.refund": ["₹200"], "cert.countedIntro": ["Nov 2026"],
+  more: [12], settledByWord: ["asha"], "cert.held": [29, 31, 2, 14], "cert.floor": ["…"], "cert.deposit": ["₹200", 15], "cert.cancel": [24], "cert.refund": ["₹200"], "cert.countedIntro": ["Nov 2026"],
   "goLive.own": ["Tue 10 Nov 2026"], "goLive.example": ["Tue 10 Nov 2026"], "goLive.different": ["Tue 10 Nov 2026"], "goLive.signedWith": ["key:3f9a1c…"],
 };
 

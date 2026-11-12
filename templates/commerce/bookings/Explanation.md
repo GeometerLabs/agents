@@ -949,3 +949,11 @@ table writer as `undefined`. The TypeScript type (`Record<TemplateId, string>`) 
   `bundle/panel/review-sheet.ts` makes: the same, cell for cell, and no reviewer note had been filled in anywhere. Fees (ml, kn) and Orders (hi, ml, kn) regenerated
   byte-identical, and the three `whatsapp-templates.json` unchanged (the day list has no Meta template).
 
+## Settled by <who>, by their word, on the report and the message (B75, 12 Nov 2026)
+
+A refund a person at the server settled as made (Guard's `already_done`) was already counted apart in the report data. The report page now lists it one row per
+person ("Settled by ravi, by their word", the shared words of `modules/report/text.ts`, which replaced this template's own `work.refundsByPerson`). The unconfirmed
+row it settled says the same instead of "Settled by a later step". The owner's WhatsApp message says it after the not-confirmed count, inside that value, so no
+approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen: names, then totals, then the count, then none. The worst case
+is now 1,010 characters (Malayalam, one person named). How and why: modules/Explanation.md, "Settled by <who>, by their word on the documents". Machine-written
+hi/ml/kn, on REVIEW-ml.md and REVIEW-kn.md (section 6). The sample report has no such refund and did not change.

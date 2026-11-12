@@ -305,6 +305,8 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `innovator` | ഇന്നൊവേറ്റർ | Innovator |  |
 | `fullReport` | പൂർണ്ണ റിപ്പോർട്ട് | Full report |  |
 | `checkGenuine` | യഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക | Check it is genuine |  |
+| `settledByWord` | asha സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത് | Settled by asha, by their word |  |
+| `settledBySomeone` | ഒരാൾ സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത് | Settled by a person, by their word |  |
 | `languageName.hi` | ഹിന്ദി | Hindi |  |
 | `languageName.en` | ഇംഗ്ലീഷ് | English |  |
 | `languageName.ml` | മലയാളം | Malayalam |  |
@@ -379,7 +381,6 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `work.abandonedMeans` | ഇടയ്ക്ക് നിന്നുപോയത് എന്നാൽ: കലണ്ടർ ബുക്കിംഗ് ഉറപ്പിക്കുംമുമ്പ് സംഭാഷണം നിന്നു: ആരും പണം അടച്ചില്ല, ഹോൾഡ് തീർന്നു, അല്ലെങ്കിൽ ഉപഭോക്താവ് ഉപേക്ഷിച്ചു. | Abandoned means the conversation stopped before the calendar confirmed a booking: nobody paid, the hold ran out, or the customer dropped it. |  |
 | `work.unresolvedMeans` | പരിഹരിക്കാത്തത് എന്നാൽ: എന്തോ തുറന്നിരിക്കുന്നു അല്ലെങ്കിൽ ഉറപ്പായിട്ടില്ല: ഒരു സേവനം ഉറപ്പിക്കാത്ത ഘട്ടം, നിങ്ങൾക്കായി കാത്തിരിക്കുന്നതോ നിങ്ങൾ നൽകാനുള്ളതോ ആയ റീഫണ്ട്, അല്ലെങ്കിൽ ഉപഭോക്താവ് അടച്ചെന്ന് പറഞ്ഞ് നിങ്ങൾ രേഖപ്പെടുത്താത്ത പണം. | Unresolved means something is still open or not confirmed: a step a service never confirmed, a refund waiting for you or owed by you, or a payment the customer says they made that you have not marked. |  |
 | `work.abandonedNeverClears` | മറുപടി നിർത്തിയ ഉപഭോക്താവ് ഒരു പരിഹരിക്കാത്ത കാര്യവും അടയ്ക്കുന്നില്ല. | A customer who stops replying never closes an unresolved item. |  |
-| `work.refundsByPerson` | ഒരാൾ കൈകൊണ്ട് തീർത്ത റീഫണ്ടുകൾ (അവരുടെ വാക്ക്, പേയ്മെന്റ് സേവനത്തിന്റേതല്ല) | Refunds a person settled by hand (their word, not the payment service's) |  |
 | `page.numbers` | കണക്കുകൾ | The numbers |  |
 | `page.item` | എന്ത് | What |  |
 | `page.count` | എത്ര | How many |  |
