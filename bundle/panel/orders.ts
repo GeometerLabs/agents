@@ -10,7 +10,7 @@ import { limitLinesOf, limitsOf } from "../../templates/commerce/orders/report/c
 import { itemName, validateSettings } from "../../templates/commerce/orders/src/settings.ts";
 import type { Settings, Slot } from "../../templates/commerce/orders/src/settings.ts";
 import { idsFrom } from "./fees.ts";
-import { approversDraftOf, approversFromDraft, newPayment, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf, whatsappDraftOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -108,7 +108,7 @@ export function ordersDraftFromShop(id: string, accountId: string, templateId: s
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: { ...emptyShopForm(), name: s.name }, windowHours: "",
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
     ...approversDraftOf(s.approvers),
-    whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
+    whatsapp: whatsappDraftOf(meta, runtime),
     calendar: { id: "" }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     orders: {
       address: s.address ?? "", menu, cutoffDays: String(s.cutoff.daysBefore), cutoffTime: s.cutoff.time, pickup: slotText(s.pickup.slots, "p"), delivery: slotText(s.delivery?.slots ?? [], "d"), area: (s.delivery?.area ?? []).join(", "),

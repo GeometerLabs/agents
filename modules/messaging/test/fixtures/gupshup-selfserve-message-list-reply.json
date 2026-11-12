@@ -11,10 +11,18 @@
       "title": "section 1 row 1",
       "id": "list1",
       "reply": "section 1 row 1 1",
-      "postbackText": "slot:2026-11-14T10:00",
+      "postbackText": "section 1 row 1 postback payload",
       "description": "first row of first section description"
     },
-    "sender": { "phone": "919800000001", "name": "CUSTOMER_NAME", "country_code": "91", "dial_code": "9800000001" },
-    "context": { "id": "gBEGkYaYVSEEAgnPGGVYGg1uNU4", "gsId": "cbdafe39-1023-42a7-89d6-6c01a3388bb5" }
+    "sender": {
+      "phone": "919800000001",
+      "name": "CUSTOMER_NAME",
+      "country_code": "91",
+      "dial_code": "9800000001"
+    },
+    "context": {
+      "id": "gBEGkYaYVSEEAgnPGGVYGg1uNU4",
+      "gsId": "cbdafe39-1023-42a7-89d6-6c01a3388bb5"
+    }
   }
 }

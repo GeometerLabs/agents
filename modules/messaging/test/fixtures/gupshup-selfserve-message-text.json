@@ -1,13 +1,20 @@
 {
-  "app": "DemoApp",
-  "timestamp": 1580227766370,
+  "app": "docdeck",
+  "timestamp": 1718007189549,
   "version": 2,
   "type": "message",
   "payload": {
-    "id": "ABEGkYaYVSEEAhAL3SLAWwHKeKrt6s3FKB0c",
+    "id": "ABEGkZUTIXZ0Ago6jWqOZm-Sz0WD",
     "source": "919800000001",
     "type": "text",
-    "payload": { "text": "Hi" },
-    "sender": { "phone": "919800000001", "name": "CUSTOMER_NAME", "country_code": "91", "dial_code": "9800000001" }
+    "payload": {
+      "text": "Hi"
+    },
+    "sender": {
+      "phone": "919800000001",
+      "name": "CUSTOMER_NAME",
+      "country_code": "91",
+      "dial_code": "9800000001"
+    }
   }
 }
