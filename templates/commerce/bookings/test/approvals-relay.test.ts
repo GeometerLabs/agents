@@ -45,12 +45,13 @@ run("the hours in the owner's message are Guard's own: the hold's expiry less th
   assert.ok(!/24 hours/u.test(text));
 }, { approvalTtlSeconds: 21_600 });
 
-run("when the owner has written today, the ask goes as free text inside the window", async (w) => {
+run("when the owner has written today, the ask goes inside the window as a card: the same words, with Approve and Refuse buttons carrying its code (item 11e)", async (w) => {
   await w.heldRefund();
   await w.ownerWrites("hello");
   await w.relay.poll();
   assert.equal(w.toOwner().length, 1);
-  assert.equal(w.toOwner()[0].kind, "text");
+  assert.equal(w.toOwner()[0].kind, "interactive");
+  assert.match(w.toOwner()[0].text, /"approve [A-HJKMNP-Z2-9]{6}"/u, "the typed reply is still in the words");
 });
 
 run("approve <code>: Guard gets the owner's signed answer, the agent sends the identical call again, the refund is made once, the owner is told", async (w) => {

@@ -64,6 +64,13 @@ node templates/education/fees/approvals/main.ts    # the approvals relay: asks t
 - A message for each thing that needs them: an approval, a parent who says they paid with nothing on record, a payment link that could not be made, a message held back, a parent who sent STOP, a parent who asked to talk.
 - **The monthly report**, on WhatsApp on the 1st from 09:00, once: collected, still to collect, given back, reminders sent, what was taken off, what the owner was asked, approved and refused, what the limits stopped, and what was not checked. A page behind a link has the whole report, signed, in the owner's language (see The monthly report).
 
+## The shop's assistant (item 11e)
+
+With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "who owes fees", "what needs me" (a waiver or a refund request comes as a card), "message f-3 The class moves to 5 pm".
+Anything that moves money, and a message to a customer, comes back as a card with the exact change, done only by a tap; a card's yes on something waiting is the owner's
+own fixed reply (`approve`/`deny`), which keeps working as before. Cancelling or refunding from the chat is not in the first release. A short morning line goes to the owner
+from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).
+
 ## Languages
 
 Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada people type in Latin letters. A parent is written to in their own language, kept per student in the settings, and changes if they write in another. All messages are fixed templates; every amount, date and name is filled in from the record, and the outgoing check reads the final text against the record before it is sent.

@@ -24,6 +24,8 @@ import type { Runtime } from "./runtime.ts";
 import { buildServices } from "./services.ts";
 import { calendarModule } from "../src/settings.ts";
 import type { LiveModule } from "./services.ts";
+import { OWNER_UNDERSTANDING } from "../../../../modules/assistant/reading.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 
 export { parserArguments, readToken };
 
@@ -76,7 +78,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // B29: voice notes, only for a shop whose runtime.json has a `speech` block (the bundle writes it only when the server holds the provider's key).
       const speech = client.runtime.speech;
       const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
-      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), log });
+      // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
+      const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), log });
     },
   }) as RunningClient;
 }

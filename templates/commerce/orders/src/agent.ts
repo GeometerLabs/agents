@@ -23,7 +23,7 @@
 // The licence (plan B13; modules/licence). While the shop's lease puts it in its WIND-DOWN, the agent takes no new orders: a customer who asks to order is answered "online
 // ordering is paused, please contact the shop", no hold or advance link is made, and nothing is kept to do later. Cancellations, refunds owed and payments from links sent
 // earlier go on as every day. In the FINAL STOP the agent also closes the open advance links (where the module can cancel one) and sends nothing more.
-import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { isRelayReply } from "../../../../modules/approvals/buttons.ts"; // the relay's replies, typed or tapped (item 11e)
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { handleOwnerTerms } from "../../../../modules/terms/owner.ts";
@@ -40,6 +40,9 @@ import type { Choice } from "../../../../modules/language/interactive.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
+import { ordersSkill } from "./assistant.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
@@ -92,6 +95,8 @@ export interface AgentDeps {
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
   terms?: () => TermsFile | undefined;
+  /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
+  ownerParser?: OwnerParser;
 }
 
 export type AgentEvent =
@@ -881,13 +886,15 @@ export function createAgent(deps: AgentDeps): Agent {
     if (ownerConfirms && msg.image) return; // a picture from the owner is not a mark: only the reply with its code is
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent: no reply and no record, so the
     // owner is not told "I didn't understand" about an answer that was understood elsewhere.
-    if (RELAY_CODE_REPLY.test(msg.text)) return;
+    if (isRelayReply(msg)) return;
     // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash.
     const moving = parseHandoverReply(msg.text);
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
     // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
     if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
-    const m = /^\s*(approve|deny)\s+(o-\d+)\s*$/i.exec(msg.text);
+    // Item 11e: the shop's assistant reads what no fixed phrase is (this command is one). A shop without an "assistant" block: exactly as before.
+    if (assistant && !OWNER_COMMAND.test(msg.text) && (await assistant.onOwnerMessage(msg))) return;
+    const m = OWNER_COMMAND.exec(msg.text);
     const o = m ? store.orders.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
     const pending = o?.pending[0];
@@ -944,6 +951,9 @@ export function createAgent(deps: AgentDeps): Agent {
    */
   async function onVoiceNote(msg: InboundMessage, tried?: Heard): Promise<void> {
     const phone = msg.from;
+    // Item 11e: with the shop's assistant and a voice service, the owner's voice note is read as their typed words (or they are told it could not be made out)
+    const heard = phone === owner && assistant ? await assistant.hearOwner(msg) : null;
+    if (heard) return heard.text ? onOwnerMessage(heard) : undefined;
     if (phone === owner) { await say({ booking: null, phone, to: "owner", templates: ["voice_note"], action: "voice_note_reply" }); return; }
     const customer = customerOf(phone);
     // B29: when voice is on and the note could not be used, the record says why and what listening cost
@@ -969,7 +979,7 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     store.seenMessages.add(msg.id);
     // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
-    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && isRelayReply(msg)) return;
     // B29: a voice note is turned into the words it says and then read exactly like a typed message
     let voiceHeard: HeardOk | undefined;
     if (msg.voiceNote) {
@@ -1077,6 +1087,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function onTick(): Promise<void> {
+    assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their order is in (modules/payments/refunds.ts)
@@ -1156,5 +1167,19 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
+  // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
+  // On only when the settings have an "assistant" block. Orders is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
+  const assistant = assistantForAgent({
+    settings, store, skill: ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
+    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.orders.get(caseId) ?? null : null, phone, action, outcome, inputs, more),
+    ownerNotice: async (notice) => { await tellOwner(null, owner, notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"); },
+    languageOf: (phone) => languageOf(phone),
+    optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
+  });
+
   return { handle, giveUp };
 }
+
+/** The owner's fixed command about something the agent asked them ("approve o-3", "deny o-3"). Item 11e names it so the assistant lets it pass. */
+const OWNER_COMMAND = /^\s*(approve|deny)\s+(o-\d+)\s*$/i;

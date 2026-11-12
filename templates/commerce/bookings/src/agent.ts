@@ -31,7 +31,7 @@ import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { BusyEvent } from "./limits.ts";
 import { factsFor, latestBooking, moveTo, newDraft, register, reminderSchedule } from "./booking.ts";
 import type { Booking, Pending, Store } from "./booking.ts";
-import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { isRelayReply } from "../../../../modules/approvals/buttons.ts"; // the relay's replies, typed or tapped (item 11e)
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { handleOwnerTerms } from "../../../../modules/terms/owner.ts";
@@ -86,6 +86,10 @@ import { ownerItems } from "./channel.ts";
 import type { Heard, VoiceService } from "../../../../modules/voice/voice.ts";
 import { VOICE_WHY, createListener, failedMarks, voiceMarks } from "../../../../modules/voice/turn.ts";
 import type { HeardOk } from "../../../../modules/voice/turn.ts";
+import { isoDate } from "../../../../modules/assistant/conversation.ts";
+import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
+import { bookingsSkill } from "./assistant.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -112,6 +116,11 @@ export interface AgentDeps {
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
   terms?: () => TermsFile | undefined;
+  /**
+   * Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts): the owner's router over the shop's model steps. Left out: the rules alone.
+   * The assistant itself is on only when the settings have an "assistant" block.
+   */
+  ownerParser?: OwnerParser;
 }
 
 export type AgentEvent =
@@ -174,6 +183,8 @@ export function createAgent(deps: AgentDeps): Agent {
   const languageOf = (phone: string, b?: Booking | null) => b?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
   /** The number a message names for this conversation: a channel booking's is the one its customer typed (item 11d), never its "web:..." conversation. */
   const shownPhone = (phone: string, b: Booking | null): string => (b?.channel && b.contact ? b.contact.phone : phone);
+  /** Item 11e: the dates the owner closed through the shop's assistant; the free times and the within-hours limit leave them out. */
+  const closedDays = (): readonly string[] => store.assistant?.closedDays ?? [];
 
   function log(b: Booking | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: b?.id || null, action, inputs, outcome, language: languageOf(phone, b), ...more });
@@ -271,11 +282,13 @@ export function createAgent(deps: AgentDeps): Agent {
   /**
    * Every start time on the shop's slot grid, on one day, that is free for this service: inside its opening hours, clear of everything in the calendar and of the shop's
    * own holds (the same two rules a typed time must pass), and far enough ahead that the customer has the hold's time to pay. `others` is what is busy (calendar and holds).
-   * The one place free times are worked out: WhatsApp's list (freeSlots) and the booking page and its API (freeStarts, item 11d) both use it.
+   * The one place free times are worked out: WhatsApp's list (freeSlots) and the booking page and its API (freeStarts, item 11d) both use it, so a day the owner
+   * closed (item 11e) is left out of all of them at once.
    */
   function freeOnDay(service: Settings["services"][number], date: LocalDate, others: BusyEvent[], now: number): number[] {
     const hours = hoursOn(settings, weekdayOf(date));
-    if (!hours) return [];
+    // item 11e: a date the owner closed through the assistant has no free time anywhere: WhatsApp's list, the booking page, its API and MCP all read this one function
+    if (!hours || closedDays().includes(isoDate(date))) return [];
     const grid = settings.slotMinutes;
     const free: number[] = [];
     for (let m = Math.ceil(hours.open / grid) * grid; m + service.durationMinutes <= hours.close; m += grid) {
@@ -660,7 +673,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const buffer = settings.bufferMinutes * MINUTE;
     const nearby = await calendar.conflicts(start - buffer, end + buffer);
     return {
-      hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start }),
+      hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start, closedDays: closedDays() }),
       clash: checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: [...nearby.map(busyOf), ...heldByBookings(b.id)] }),
     };
   }
@@ -1157,7 +1170,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (ownerConfirms && msg.image) return; // a picture from the owner is not a mark: only the reply with its code is
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent:
     // no reply and no record, so the owner is not told "I didn't understand" about an answer that was understood elsewhere.
-    if (RELAY_CODE_REPLY.test(msg.text)) return;
+    if (isRelayReply(msg)) return;
     // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
     const moving = parseHandoverReply(msg.text);
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
@@ -1166,7 +1179,9 @@ export function createAgent(deps: AgentDeps): Agent {
     // B72: "today" / "tomorrow" (or "bookings") asks for that day's bookings, from the shop's own saved list. A reply to the owner's own message, so no template is needed.
     const dayAsked = parseDayRequest(msg.text);
     if (dayAsked) return tellDay(dayAsked);
-    const m = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i.exec(msg.text);
+    // Item 11e: the shop's assistant reads what no fixed phrase is (this command is one). A shop without an "assistant" block: exactly as before.
+    if (assistant && !OWNER_COMMAND.test(msg.text) && (await assistant.onOwnerMessage(msg))) return;
+    const m = OWNER_COMMAND.exec(msg.text);
     const b = m ? store.bookings.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
     const pending = b?.pending[0];
@@ -1241,6 +1256,9 @@ export function createAgent(deps: AgentDeps): Agent {
    */
   async function onVoiceNote(msg: InboundMessage, tried?: Heard): Promise<void> {
     const phone = msg.from;
+    // Item 11e: with the shop's assistant and a voice service, the owner's voice note is read as their typed words (or they are told it could not be made out)
+    const heard = phone === owner && assistant ? await assistant.hearOwner(msg) : null;
+    if (heard) return heard.text ? onOwnerMessage(heard) : undefined;
     if (phone === owner) {
       await say({ booking: null, phone, to: "owner", templates: ["voice_note"], action: "voice_note_reply" });
       return;
@@ -1269,7 +1287,7 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     store.seenMessages.add(msg.id);
     // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
-    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && isRelayReply(msg)) return;
     // B29: a voice note is turned into the words it says and then read exactly like a typed message (rules first, then the models, then the same limits and checks).
     let voiceHeard: HeardOk | undefined;
     if (msg.voiceNote) {
@@ -1405,6 +1423,7 @@ export function createAgent(deps: AgentDeps): Agent {
         log(b, b.customer, "complete_booking", "confirmed", { endMs: b.endMs });
       }
     }
+    assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
   }
 
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
@@ -1575,5 +1594,51 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
+  // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
+  // On only when the settings have an "assistant" block. Bookings is its one skill here; the skill's acts are this agent's own paths (src/assistant.ts).
+  const ownerCancelRefund = async (b: Booking, amountInr: number, why: string, customer: { upi: TemplateId; done: TemplateId; held: TemplateId }) => {
+    const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: b.depositInr ?? amountInr, ownerApproved: true });
+    if (ownerRefunds) { await oweBack(b, b.depositPaymentId!, amountInr * 100, why, { customer: customer.upi, decisions: [limit] }); return "owed" as const; }
+    const result = await requestRefund(b, b.depositPaymentId!, amountInr, [limit], overLimit(amountInr), askedByOwner);
+    await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: customer.done }, held: customer.held, requestedBy: askedByOwner } as never);
+    return result;
+  };
+  const assistantSkill = bookingsSkill({
+    settings, store, nowMs: () => clock.now(), entries: () => record.entries(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
+    acts: {
+      owner, ownerRefunds,
+      answer: (msg) => onOwnerMessage(msg),
+      // the owner cancels a paid booking: the same steps as the owner's "approve b-3" on a booking the calendar could not confirm (above), then the deposit back
+      async cancelPaid(b, back, why) {
+        b.pending = [];
+        await releaseSlot(b, why);
+        b.reminders = [];
+        moveTo(b, "cancelled");
+        log(b, b.customer, "cancel_booking", "confirmed", { by: "owner" }, { refs: { by: "owner", via: "assistant" } });
+        return ownerCancelRefund(b, back, why, { upi: "upi_cancelled_refund_owed", done: "cancelled_refund", held: "cancelled_refund_pending" });
+      },
+      cancelWaiting: (b, why) => cancelWaiting(b, why),
+      slotRules: (b, startMs, endMs) => slotRules(b, startMs, endMs),
+      // the owner's move, as the customer's own "yes" to a new time applies it: the same checks again, the calendar, and the customer's "rescheduled" message
+      async applyMove(b, startMs, endMs) {
+        const p = localParts(startMs, tz);
+        b.reschedule = { date: { year: p.year, month: p.month, day: p.day }, timePhrase: { hour: p.hour % 12 || 12, minute: p.minute, period: p.hour < 12 ? "am" : "pm" }, startMs, endMs };
+        await applyReschedule(b);
+      },
+      tellCancelled: (b) => tellCustomer(b, b.customer, ["cancelled_no_deposit"]),
+      refund: (b, _paymentId, amountInr, why) => ownerCancelRefund(b, amountInr, why, { upi: "upi_refund_owed", done: "refund_approved", held: "cancelled_refund_pending" }),
+    },
+  });
+  const assistant = assistantForAgent({
+    settings, store, skill: assistantSkill, clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.bookings.get(caseId) ?? null : null, phone, action, outcome, inputs, more),
+    ownerNotice: async (notice) => { await say({ booking: null, phone: owner, to: "owner", templates: [notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"] }); },
+    languageOf: (phone) => languageOf(phone),
+    optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
+  });
+
   return { handle, giveUp, freeStarts };
 }
+
+/** The owner's fixed command about something the agent asked them ("approve b-3", "deny b-3", "retry b-3"). Item 11e names it so the assistant lets it pass. */
+const OWNER_COMMAND = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i;

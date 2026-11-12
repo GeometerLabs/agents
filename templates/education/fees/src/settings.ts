@@ -1,5 +1,7 @@
 // A centre's settings: everything a builder changes to tailor the Fees pathway. No code, only this file.
 // Validation is written by hand and says what is wrong in plain words, so a builder can fix it without a manual.
+import { readAssistantSettings } from "../../../../modules/assistant/settings.ts";
+import type { AssistantSettings } from "../../../../modules/assistant/settings.ts";
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { readApprovers } from "../../../../modules/approvals/people.ts";
@@ -68,6 +70,8 @@ export interface Settings {
   owner: { whatsapp: string; language: Language };
   /** Others who may approve a refund Guard holds, and the amount above which two must (B37, modules/approvals/people.ts). Left out: the owner alone. */
   approvers?: ApproversSettings;
+  /** Item 11e: the shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, as before. */
+  assistant?: AssistantSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -83,7 +87,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the centre's name, batches, students and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the centre's name (\"name\").");
@@ -107,6 +111,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const approvers = readApprovers(input.approvers, { ownerWhatsapp: owner?.whatsapp, refundLimitInr: refund?.limitInr }, errors);
   if (approvers) for (const p of approvers.people) if (students.some((s) => s.parent === p.whatsapp)) errors.push(`approvers: ${p.id}'s number is a parent's. A person who approves refunds answers from their own number, not a parent's.`);
 
+  const assistant = readAssistantSettings(input.assistant, errors);
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, batches, students,
@@ -116,6 +121,7 @@ export function validateSettings(input: unknown): SettingsResult {
   };
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
+  if (assistant) settings.assistant = assistant;
   return { ok: true, settings };
 }
 
