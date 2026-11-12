@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (55)
+## 1. Messages to the customer (56)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -52,6 +52,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `big_order_denied` | The owner said no to a big order | ക്ഷമിക്കണം, വ്യാഴം, 12 നവംബർ-ലെ നിങ്ങളുടെ ഓർഡർ ഉടമയ്ക്ക് എടുക്കാൻ കഴിയില്ല. പണം ഒന്നും ഈടാക്കിയിട്ടില്ല. | Sorry, the owner cannot take your order for Thu 12 Nov. Nothing was charged. |  |
 | `didnt_understand` | The message was not understood | ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി എന്താണ് ഓർഡർ ചെയ്യേണ്ടത്, എത്ര, ഏത് ദിവസം എന്ന് പറയൂ. | Sorry, I didn't understand. Please tell me what you would like to order, how many, and which day. |  |
 | `voice_note` | A voice note: it cannot be listened to yet, so they are asked to type | ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല. | Please type your message; I can't listen to voice notes yet. |  |
+| `voice_note_retry` | The customer sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead | ആ വോയ്‌സ് നോട്ട് എനിക്ക് മനസ്സിലായില്ല. ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ. | I couldn't make out that voice note. Please type your message instead. |  |
 | `ask_cancel` | The customer tapped Cancel order: are you sure (Yes / No buttons) | വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ-ലെ നിങ്ങളുടെ ഓർഡർ റദ്ദാക്കണോ? | Do you want to cancel your order for Thu 12 Nov, 12:00 pm to 1:00 pm? |  |
 | `kept` | The customer said no to cancelling: the order stays | ശരി, വ്യാഴം, 12 നവംബർ, ഉച്ചയ്ക്ക് 12:00 മുതൽ ഉച്ചയ്ക്ക് 1:00 വരെ-ലെ നിങ്ങളുടെ ഓർഡർ അതുപോലെ തന്നെ തുടരും. | Okay, your order for Thu 12 Nov, 12:00 pm to 1:00 pm stays as it is. |  |
 | `told_owner` | The customer tapped Talk to the owner: the owner has been asked to message them | നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ നിങ്ങൾക്ക് സന്ദേശം അയയ്ക്കും. | I've told the owner that you would like to talk. They will message you here. |  |

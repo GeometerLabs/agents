@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (38)
+## 1. Messages to the parent (39)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -44,6 +44,7 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_told_owner` | The parent tapped Talk to the owner: they are told the owner has been asked to message them | ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ. | I have told the owner that you would like to talk. They will message you here. |  |
 | `fee_couldnt_tell_owner` | The parent tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write | ಕ್ಷಮಿಸಿ, ಈಗ ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Sorry, I could not reach the owner just now. Please try again in a few minutes. |  |
 | `voice_note` | The parent sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ; ನನಗೆ ಇನ್ನೂ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I cannot listen to voice notes yet. |  |
+| `voice_note_retry` | The parent sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead | ಆ ವಾಯ್ಸ್ ನೋಟ್ ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ. | I couldn't make out that voice note. Please type your message instead. |  |
 | `fee_upi_qr_caption` | UPI centre: the words under the QR picture | Aarav Sharma ಅವರ ಶುಲ್ಕಕ್ಕಾಗಿ (f-3) Bright Tuition Centre ಗೆ UPI ಮೂಲಕ ₹1,200 ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. | Scan to pay ₹1,200 by UPI to Bright Tuition Centre for Aarav Sharma's fee (f-3). |  |
 | `fee_upi_claim` | UPI centre: the parent says they paid or sends a screenshot (nothing is marked paid) | ಧನ್ಯವಾದ. Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದ ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪಾವತಿಯ ಪುರಾವೆ ಅಲ್ಲ, ಆದ್ದರಿಂದ ದಯವಿಟ್ಟು ಆ ಸಂದೇಶಕ್ಕಾಗಿ ಕಾಯಿರಿ. | Thank you. The owner will look for your payment for Aarav Sharma's Nov 2026 fee in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message. |  |
 | `fee_upi_refund_owed` | UPI centre: a refund the owner will send (the agent never sends it) | ಮಾಲೀಕರು Aarav Sharma ಅವರ ಶುಲ್ಕದ ₹1,200 ಅನ್ನು UPI ಮೂಲಕ ನಿಮಗೆ ಮರಳಿ ಕಳುಹಿಸುತ್ತಾರೆ. ಕಳುಹಿಸಿದೆ ಎಂದು ಅವರು ದಾಖಲಿಸಿದಾಗ ನಾನು ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ. | The owner will send ₹1,200 back to you by UPI for Aarav Sharma's fee. I'll message you when they mark it sent. |  |
