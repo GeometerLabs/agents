@@ -23,7 +23,7 @@ import type { SayArgs } from "../messaging/say.ts";
 import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Outcome, RecordEntry } from "../record/record.ts";
-import { actionDigest, cardButtonId, closeCard, expireCards, judgeReply, makeCard, openCards, parseCardReply, refusedBefore } from "./cards.ts";
+import { actionDigest, cardButtonId, cardByCode, closeCard, expireCards, judgeReply, makeCard, openCards, parseCardReply, refusedBefore } from "./cards.ts";
 import type { CardReply } from "./cards.ts";
 import type { OwnerContext, OwnerIntent, OwnerKind } from "./intents.ts";
 import { moodOf, outsideHours, todayIn } from "./mood.ts";
@@ -349,8 +349,9 @@ export function createAssistant(deps: AssistantDeps) {
   async function onOwnerMessage(msg: InboundMessage): Promise<boolean> {
     if (msg.from !== owner) return false;
     if (isRelayReply(msg)) return true;
+    // A tap is always a card's. Typed, "no thanks" has the shape of "no <code>": it is a card's reply only when a card has that code; otherwise it is words to read.
     const card = parseCardReply(msg);
-    if (card) { await onCardReply(card); return true; }
+    if (card && (card.via === "button" || cardByCode(state(), card.code))) { await onCardReply(card); return true; }
     const read = await deps.read(msg.text);
     const intent = read.intent;
     logLine(null, ASSISTANT_ACTIONS.read, "confirmed", { intent: intent.kind }, { intent: intent.kind, ...read.refs, ...(intent.ref ? { case: intent.ref } : {}) }, read.note);

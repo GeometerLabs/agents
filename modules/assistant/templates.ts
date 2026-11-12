@@ -71,10 +71,10 @@ export const templateMessageFor = (id: AssistantTemplateId, f: TemplateFacts, te
 
 /** The words of the morning line's three parts, in each language. A part is a phrase inside the template (no line break, as Meta requires of a value). */
 const MORNING_PARTS: Record<Language, { bookings: (n: string, first: string) => string; noBookings: string; nothing: string; things: (n: string) => string }> = {
-  en: { bookings: (n, first) => `${n} bookings, the first at ${first}`, noBookings: "no bookings", nothing: "nothing", things: (n) => n },
-  hi: { bookings: (n, first) => `${n} बुकिंग, पहली ${first}`, noBookings: "कोई बुकिंग नहीं", nothing: "कुछ नहीं", things: (n) => n },
-  ml: { bookings: (n, first) => `${n} ബുക്കിംഗുകൾ, ആദ്യത്തേത് ${first}`, noBookings: "ബുക്കിംഗുകൾ ഇല്ല", nothing: "ഒന്നുമില്ല", things: (n) => n },
-  kn: { bookings: (n, first) => `${n} ಬುಕಿಂಗ್‌ಗಳು, ಮೊದಲನೆಯದು ${first}`, noBookings: "ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ", nothing: "ಏನೂ ಇಲ್ಲ", things: (n) => n },
+  en: { bookings: (n, first) => `bookings: ${n}, the first at ${first}`, noBookings: "no bookings", nothing: "nothing", things: (n) => n },
+  hi: { bookings: (n, first) => `बुकिंग: ${n}, पहली ${first}`, noBookings: "कोई बुकिंग नहीं", nothing: "कुछ नहीं", things: (n) => n },
+  ml: { bookings: (n, first) => `ബുക്കിംഗുകൾ: ${n}, ആദ്യത്തേത് ${first}`, noBookings: "ബുക്കിംഗുകൾ ഇല്ല", nothing: "ഒന്നുമില്ല", things: (n) => n },
+  kn: { bookings: (n, first) => `ಬುಕಿಂಗ್‌ಗಳು: ${n}, ಮೊದಲನೆಯದು ${first}`, noBookings: "ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ", nothing: "ಏನೂ ಇಲ್ಲ", things: (n) => n },
 };
 
 /** The morning line's facts: today's bookings (count and the first start), money recorded yesterday, and how many things wait. */
