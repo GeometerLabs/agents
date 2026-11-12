@@ -84,7 +84,8 @@ export const MEENA = { id: "meena", whatsapp: "+919800000003", language: "en" as
 export const SECRET_OF: Record<string, string> = { ravi: "ravi-notify-secret-0123456789abcdef", meena: "meena-notify-secret-0123456789abcdef" };
 export const READER_ID = "relay-glow-salon";
 
-export async function startApprovalsWorld(options: { refundLimitInr?: number; approvalTtlSeconds?: number; relay?: Partial<RelayOptions>; ownerLanguage?: "en" | "hi" | "ml" | "kn"; group?: { people?: typeof RAVI[]; twoAboveInr?: number } } = {}): Promise<ApprovalsWorld> {
+/** `olderGuard`: the stand-in behaves as a Guard from before 12 Nov 2026, holding the identical call again after a no (guard-model.ts). */
+export async function startApprovalsWorld(options: { refundLimitInr?: number; approvalTtlSeconds?: number; relay?: Partial<RelayOptions>; ownerLanguage?: "en" | "hi" | "ml" | "kn"; group?: { people?: typeof RAVI[]; twoAboveInr?: number }; olderGuard?: boolean } = {}): Promise<ApprovalsWorld> {
   const base = JSON.parse(JSON.stringify(glowSalon()));
   const people = options.group ? options.group.people ?? [RAVI, MEENA] : [];
   const approvers = options.group ? { approvers: { people, ...(options.group.twoAboveInr !== undefined ? { twoAboveInr: options.group.twoAboveInr } : {}) } } : {};
@@ -94,7 +95,7 @@ export async function startApprovalsWorld(options: { refundLimitInr?: number; ap
   const spec = gatewayLimitsSpec(settings, HARNESS_GUARD, options.approvalTtlSeconds !== undefined ? { approvalTtlSeconds: options.approvalTtlSeconds } : {});
   // with other approvers the owner is `owner` in Guard's directory (bundle/generate/shop.ts ownerApproverId), as the runtime names them in Geo-Requested-By
   const ownerId = options.group ? "owner" : APPROVER_ID;
-  const model = createGuardModel(spec, clock, options.group ? { approvers: { owner: ownerId, people: people.map((p) => p.id), ...(options.group.twoAboveInr !== undefined ? { twoAbovePaise: options.group.twoAboveInr * 100 } : {}), reader: READER_ID } } : {});
+  const model = createGuardModel(spec, clock, { ...(options.group ? { approvers: { owner: ownerId, people: people.map((p) => p.id), ...(options.group.twoAboveInr !== undefined ? { twoAbovePaise: options.group.twoAboveInr * 100 } : {}), reader: READER_ID } } : {}), ...(options.olderGuard ? { olderGuard: true } : {}) });
   const payments = createFakePayments(clock, { guard: model });
   const lines: string[] = [];
   const { runtime, db } = kit.open({ settings, services: { calendar: kit.calendar, payments, messaging: kit.messaging }, log: (l) => lines.push(`runtime: ${l}`) });

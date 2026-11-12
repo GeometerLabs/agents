@@ -29,7 +29,7 @@ import { createRelay } from "../approvals/relay.ts";
 import { openRelayStore } from "../../../../modules/approvals/store.ts";
 import { createKit } from "./runtime-kit.ts";
 import { createHmac, randomUUID } from "node:crypto";
-import { GuardHeldError } from "../../../../modules/core/faults.ts";
+import { GuardDeniedError, GuardHeldError } from "../../../../modules/core/faults.ts";
 
 const BINARY = process.env.GEO_GUARD_BIN ?? "/Users/navaltharun/Work/geometer/monorepo/target/debug/geo-guard";
 const skip = existsSync(BINARY) ? false : `needs the built geo-guard binary, which is not at ${BINARY} (build it in the monorepo, or set GEO_GUARD_BIN); these tests run the real Guard`;
@@ -321,6 +321,14 @@ test("a denied refund against the real Guard: the owner says no, nothing is refu
     for (let i = 0; i < 3; i++) { await relay.poll(); await runtime.tick(); }
     assert.equal((await (await admin(guard, "/admin/approvals?state=pending")).json() as any).approvals.length, 0, "the agent did not ask Guard again, so Guard holds nothing new");
     assert.equal(whatsapp.sentTo(settings.owner.whatsapp).filter((m) => m.templateName === "owner_approval_request").length, 1);
+    // the identical refund sent again anyway (as a builder's agent does to find out): Guard refuses it as the owner's no and opens nothing (ADR-0061 addendum,
+    // 12 Nov 2026). Needs a geo-guard built with that change.
+    const paymentId = standins.fakes.payments.links()[0].payments[0].id;
+    await assert.rejects(payments.refund(paymentId, { amount: 20_000, receipt: `b-1:${paymentId}` }), (e: unknown) => e instanceof GuardDeniedError && typeof e.approval === "string" && e.untilMs !== undefined);
+    await relay.poll();
+    assert.equal((await (await admin(guard, "/admin/approvals?state=pending")).json() as any).approvals.length, 0, "Guard opened no new request");
+    assert.equal(whatsapp.sentTo(settings.owner.whatsapp).filter((m) => m.templateName === "owner_approval_request").length, 1, "and the owner was not asked again");
+    assert.equal(standins.fakes.payments.refunds().length, 0);
   } finally {
     store.close(); await runtimeServer.close(); await runtime.close(); kit.cleanup(); rmSync(dir, { recursive: true, force: true });
     await guard.stop(); await standins.close();

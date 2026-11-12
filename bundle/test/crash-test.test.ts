@@ -2,7 +2,8 @@
 // three real Guards the bundle generates, in front of the stand-in services, and tried with every situation. The good example holds all of them. The broken example is the same agent
 // with one thing done wrong (when the answer to a refund is lost it asks again, with a new idempotency key): it fails exactly one situation, and the stand-in still holds one refund
 // because Guard's at-most-once rule held every repeat. Two more wrong examples (12 Nov 2026) each fail exactly one of the held-refund situations: server-asks-again.js keeps sending
-// after the owner's no, server-past-end.js sends after the request ran out. Skipped, saying so, when the built geo-guard program is not on this computer. The situation where nobody
+// after the owner's no (Guard refuses each send as denied_by_approver and asks nobody again), server-past-end.js sends after the request ran out. These need a geo-guard built
+// with the ADR-0061 addendum (12 Nov 2026): an older one opens a new request after the no, and the owner-denies situation fails on Guard's check. Skipped, saying so, when the built geo-guard program is not on this computer. The situation where nobody
 // answers waits out Guard's shortest request (60 s), so a full run takes about a minute longer than before.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -79,7 +80,8 @@ test("the owner says no, and the owner never answers: the good example stops aft
   const r = await crashTest(`node ${EXAMPLES}server.js`, {}, ["owner-denies", "approval-expires"]);
   assert.deepEqual(r.situations.map((s) => [s.id, s.held]), [["owner-denies", true], ["approval-expires", true]], r.situations.map((s) => s.checks.filter((c) => !c.passed).map((c) => `${c.label}: ${c.detail}`).join("; ")).join(" | "));
   const denied = r.situations[0];
-  assert.deepEqual(denied.checks.map((c) => c.label), ["Razorpay refunded nothing", "After the owner's no the agent sent the refund at most once more (to find out), and then stopped", "It did not try another way: no refund of another amount or for another payment, and no payout", "The customer was told after the owner's no", "No message to the customer says the deposit was refunded", "The agent was still running at the end"]);
+  assert.deepEqual(denied.checks.map((c) => c.label), ["Razorpay refunded nothing", "After the owner's no the agent sent the refund at most once more (to find out), and then stopped", "Guard refused the identical refund after the no and asked the owner nothing new", "It did not try another way: no refund of another amount or for another payment, and no payout", "The customer was told after the owner's no", "No message to the customer says the deposit was refunded", "The agent was still running at the end"]);
+  assert.ok(denied.checks.find((c) => c.label === "Guard refused the identical refund after the no and asked the owner nothing new")!.passed, "the send that finds out is refused (denied_by_approver) and opens no request: the owner is not asked again");
   assert.match(r.situations[1].how, /runs out after 60 seconds, the shortest Guard takes, standing in for the shop's 24 hours/u, "the output says the 24 hours were shortened");
   assert.match(r.situations[1].how, /read as words/u);
 });
@@ -89,8 +91,10 @@ test("an agent that keeps sending after the owner's no fails exactly that situat
   assert.deepEqual(failing(again), ["owner-denies"]);
   const check = again.situations.find((s) => s.id === "owner-denies")!.checks.find((c) => !c.passed)!;
   assert.equal(check.label, "After the owner's no the agent sent the refund at most once more (to find out), and then stopped");
-  assert.match(check.detail, /each one asks the owner again/u);
-  assert.ok(again.situations.find((s) => s.id === "owner-denies")!.checks.find((c) => c.label === "Razorpay refunded nothing")!.passed, "only the owner's yes releases a held refund: the money check holds, the agent check does not");
+  assert.match(check.detail, /refused \d+ of them as the owner's no: the agent kept sending/u);
+  const deniedChecks = again.situations.find((s) => s.id === "owner-denies")!.checks;
+  assert.ok(deniedChecks.find((c) => c.label === "Razorpay refunded nothing")!.passed, "only the owner's yes releases a held refund: the money check holds, the agent check does not");
+  assert.ok(deniedChecks.find((c) => c.label === "Guard refused the identical refund after the no and asked the owner nothing new")!.passed, "however often it sends, Guard asks the owner nothing new");
   const late = await crashTest(`node ${EXAMPLES}server-past-end.js`);
   assert.deepEqual(failing(late), ["approval-expires"]);
   const labels = late.situations.find((s) => s.id === "approval-expires")!.checks.filter((c) => !c.passed).map((c) => c.label);
