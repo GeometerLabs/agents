@@ -22,6 +22,12 @@ import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createBookingsLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
 import { parseStore, serializeStore, keepStoreCounters, skipStoreCounters } from "./snapshot.ts";
+import { createRecord } from "../../../../modules/record/record.ts";
+import { channelMessaging } from "../../../../modules/channels/outbox.ts";
+import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
+import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
+import { bookingView, ownerView, publicServices, shopInfo } from "../src/channel.ts";
+import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import type { DurableStore } from "./store.ts";
 
 export const PATHWAY = "bookings";
@@ -87,6 +93,15 @@ function countByState(store: Store): Record<string, number> {
 export function createRuntime(options: RuntimeOptions): Runtime {
   const { settings, clock, services, parser } = options;
   const policy: AiPolicy = options.ai ?? {};
+  /**
+   * The agent over one step's store. Its messaging keeps a message to a booking page's conversation in that same store (item 11d, modules/channels/outbox.ts), so the
+   * words a web customer is given are saved whole or not at all with the step, and never go to WhatsApp.
+   */
+  const agentOver = (store: Store, record: ReturnType<typeof createRecord>, use: Services) => createAgent({
+    settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock),
+    calendar: use.calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy,
+    ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
+  });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
     pathway: PATHWAY,
     casesName: "bookings",
@@ -96,9 +111,42 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     skipCounters: skipStoreCounters,
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), calendar: (watched as unknown as Services).calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
+    createAgent: ({ store, record, services: watched }) => agentOver(store, record, watched as unknown as Services),
     countCases: countByState,
     casesOf: (store) => store.bookings.values(),
+    // Item 11d: the words of a channel's finished conversations go with the retention, like a WhatsApp chat's; the typed name of a booking that ended goes too. The number
+    // stays on the booking as a WhatsApp customer's does (it is how the owner reaches them), and the record is kept whole.
+    compactStore(store, beforeMs) {
+      const ended = (id: string) => { const b = store.bookings.get(id); return !b || ["cancelled", "completed", "expired"].includes(b.state) || (b.state === "enquiry" && b.startMs === undefined); };
+      let changed = compactChannel(store.channel, beforeMs, ended);
+      for (const b of store.bookings.values()) {
+        if (!b.contact?.name || !ended(b.id) || (b.endMs ?? 0) >= beforeMs) continue;
+        delete b.contact.name;
+        changed++;
+      }
+      // a channel conversation is one booking's: once that booking is over and its request gone, its customer entry (its language) has nothing left to serve
+      for (const conversation of [...store.customers.keys()]) {
+        if (!isChannelConversation(conversation) || Object.values(store.channel?.requests ?? {}).some((r) => r.booking !== undefined && store.bookings.get(r.booking)?.customer === conversation)) continue;
+        store.customers.delete(conversation);
+        changed++;
+      }
+      return changed;
+    },
+    // Item 11d: what the booking page, its API, the MCP endpoint and the owner's page read. Free times come from the agent's own freeOnDay, over the last saved state
+    // (the shop's holds) and the calendar (through its Guard, a read). Nothing here is saved: a fresh parse each time.
+    channel: {
+      async offer(store, query) {
+        const shop = shopInfo(settings, !(options.licence?.() ?? UNRESTRICTED).takesNewWork);
+        const base = { shop, services: publicServices(settings) };
+        if (!query.serviceId || !settings.services.some((x) => x.id === query.serviceId)) return base;
+        const from = query.fromDate ? (([y, m, d]) => ({ year: y, month: m, day: d }))(query.fromDate.split("-").map(Number)) : undefined;
+        const agent = agentOver(store, createRecord(clock, []), services);
+        try { return { ...base, serviceId: query.serviceId, days: await agent.freeStarts(query.serviceId, from, Math.min(query.days ?? 7, 14)) }; }
+        catch { return { ...base, serviceId: query.serviceId, days: [], calendarUnread: true }; }
+      },
+      view: (store, handleHash) => bookingView(settings, store, handleHash),
+      owner: (store) => ownerView(settings, store, clock.now()),
+    },
     refundContext(store, _settings, receipt) {
       const match = /^(b-\d+):/u.exec(receipt);
       const b = match ? store.bookings.get(match[1]) : undefined;
@@ -107,7 +155,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       const service = settings.services.find((s) => s.id === b.serviceId);
       if (!service) return null;
       return {
-        booking: b.id, customerPhone: b.customer, businessName: settings.name, timeZone: settings.timezone,
+        booking: b.id, customerPhone: b.contact?.phone ?? b.customer, businessName: settings.name, timeZone: settings.timezone, // a booking page's: the number its customer typed
         ownerLanguage: settings.owner.language, serviceName: serviceName(service, settings.owner.language), slotMs: b.startMs,
         paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs, ...(hold.requestedBy ? { requestedBy: hold.requestedBy } : {}),
       };

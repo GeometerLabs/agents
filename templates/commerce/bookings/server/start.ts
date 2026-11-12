@@ -32,6 +32,8 @@ export interface StartOptions {
   tokenFile: string | undefined;
   /** A file holding the record's key (RECORD_KEY_FILE, B69); needed in live mode. Left out: the environment's. */
   recordKeyFile?: string;
+  /** Item 11d: a file holding the channel token (CHANNEL_TOKEN_FILE) for the booking page, its API and the owner's page. Left out: the environment's, or none. */
+  channelTokenFile?: string;
   clock?: Clock;
   /** Instead of what runtime.json says (its `parser`, or the rule parser when it has none). A test seam. */
   parser?: IntentParser;
