@@ -102,7 +102,7 @@ const messageNotDelivered: ObligationKind = {
   detect(input) {
     const out: Obligation[] = [];
     for (const e of input.entries) {
-      if (e.action !== MESSAGE_STATUS_ENTRY || e.outcome !== "failed" || !reliedOn(e.refs.to, e.booking)) continue;
+      if (e.action !== MESSAGE_STATUS_ENTRY || e.outcome !== "failed" || e.refs.audio === "voice" || !reliedOn(e.refs.to, e.booking)) continue; // a spoken copy of a reply (B29) is a courtesy: its words went as text
       const since = timeOf(e);
       if (since !== null && input.nowMs - since >= UNANSWERED_KEEP_MS) continue;
       const ref = e.booking ?? `#${e.seq}`; // a message to the owner about no case is named by its line's number, the same on every read
