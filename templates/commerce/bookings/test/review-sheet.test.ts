@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { SAYS } from "../crash-test/situations.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
 import { sampleMessage } from "../report/whatsapp.ts";
-import { EXAMPLES, reviewSheet, sampleFacts } from "../scripts/review-sheet.ts";
+import { DAY_LIST_VARIANTS, EXAMPLES, missingWhen, reviewSheet, sampleFacts } from "../scripts/review-sheet.ts";
 import type { ReviewLanguage } from "../scripts/review-sheet.ts";
 import { LABELS } from "../src/language/interactive.ts";
 import { TEMPLATES, render } from "../src/language/templates.ts";
@@ -15,6 +15,13 @@ import type { TemplateId } from "../src/language/templates.ts";
 import { WORDS } from "../../../../modules/language/words.ts";
 
 const WARNING = "Machine-written. Must be reviewed by a native speaker before any real shop sees it.";
+/** A message as a table cell holds it: one line (the owner's day list is several), a | escaped. */
+const asCell = (text: string) => text.replace(/\|/gu, "\\|").replace(/\n/gu, " ");
+
+test("a template with no line saying when it is sent is refused in words, naming it, instead of crashing the generator", () => {
+  assert.deepEqual(missingWhen(Object.keys(TEMPLATES.en) as TemplateId[]), [], "every template has its WHEN line");
+  assert.deepEqual(missingWhen(["owner_day_bookings", "no_such_template" as TemplateId]), ["no_such_template"]);
+});
 
 for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]) {
   const committed = readFileSync(new URL(`../REVIEW-${language}.md`, import.meta.url), "utf8");
@@ -27,9 +34,14 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
   test(`REVIEW-${language}.md lists every template, as the agent really writes it`, () => {
     for (const id of Object.keys(TEMPLATES[language]) as TemplateId[]) {
       assert.ok(committed.includes(`\`${id}\``), `${id} is not in REVIEW-${language}.md`);
-      assert.ok(committed.includes(render(id, sampleFacts(language, id))), `${id} reads differently now: run  node templates/commerce/bookings/scripts/review-sheet.ts ${language} > templates/commerce/bookings/REVIEW-${language}.md  (and keep any reviewer notes)`);
-      assert.ok(committed.includes(render(id, sampleFacts("en", id))), `the English meaning of ${id} is missing`);
+      assert.ok(committed.includes(asCell(render(id, sampleFacts(language, id)))), `${id} reads differently now: run  node templates/commerce/bookings/scripts/review-sheet.ts ${language} > templates/commerce/bookings/REVIEW-${language}.md  (and keep any reviewer notes)`);
+      assert.ok(committed.includes(asCell(render(id, sampleFacts("en", id)))), `the English meaning of ${id} is missing`);
     }
+    // the owner's day list (B72): all four forms, today and tomorrow, with bookings and with none
+    for (const v of DAY_LIST_VARIANTS) {
+      assert.ok(committed.includes(asCell(render("owner_day_bookings", sampleFacts(language, "owner_day_bookings", v)))), `owner_day_bookings (${v.when}) is not on REVIEW-${language}.md`);
+    }
+    assert.ok(/\n- /u.test(render("owner_day_bookings", sampleFacts(language, "owner_day_bookings"))), "the sample day list has its booking rows, one line each");
   });
 
   test(`REVIEW-${language}.md lists every word on a button or a list, and each fits WhatsApp's limits`, () => {
