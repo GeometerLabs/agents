@@ -28,8 +28,17 @@ test("a sentence that takes values says them exactly as given: amounts, numbers,
     for (const [path, args] of Object.entries(SAMPLE_ARGS)) {
       const text = mine.get(path);
       assert.ok(text !== undefined, `${l}: ${path} is missing`);
+      const en = english.get(path) ?? "";
       for (const a of args) {
         if (typeof a === "boolean" || a === "") continue;
+        // A number the English sentence itself turns into another (the Gupshup credential's hours, said as days) is checked as what English
+        // shows: every language writes the same figures English does, so a derived "5" is never translated either.
+        if (typeof a === "number" && !en.includes(String(a))) {
+          const figures = (t: string) => (t.match(/\d[\d,.]*/gu) ?? []).sort();
+          assert.ok(figures(en).length > 0, `en: ${path} drops ${a}: it must show it, or a number made from it, but says: ${en}`);
+          assert.deepEqual(figures(text), figures(en), `${l}: ${path} must show the figures English shows (${figures(en).join(", ")}), but says: ${text}`);
+          continue;
+        }
         assert.ok(text.includes(String(a)), `${l}: ${path} must show ${JSON.stringify(a)} as given, but says: ${text}`);
       }
     }
