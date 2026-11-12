@@ -1,16 +1,15 @@
 // The Guards and the gate for a shop's voice notes (plan B29, decision 42), defined once like every Guard in guards.ts. Two Guards, both reached only by the shop's
 // runtime and never carrying a key outside Guard:
 //  - the SPEECH Guard (one per server, like the model Guard): by default in front of the speech service Geometer runs on the server's private network (no key; a shared token
-//    only if it is elsewhere), or, as an optional paid adapter, in front of api.sarvam.ai with its key from a file. It lists exactly the two routes the adapter calls
-//    (modules/voice/geometer.ts, sarvam.ts), caps calls a day for the whole server, and (Sarvam) pins the text-to-speech model;
+//    only if it is elsewhere), or, as an optional paid adapter, in front of api.sarvam.ai with its key from a file. It lists exactly the one route the adapter calls
+//    (modules/voice/geometer.ts `POST /stt`, or sarvam.ts), and caps calls a day for the whole server. Listening only: there is no route for speaking (owner, 12 Nov 2026);
 //  - the MEDIA Guard (one per shop, since a shop's WhatsApp token is its own): lists ONE route, GET /{version}/{media_id}, with the shop's own WhatsApp token. A Guard rule
 //    can only allow exact values, and a media id is not known ahead, so this Guard CANNOT tell a media id from any other id in that position: the same route also reads the
 //    shop's own phone number record, for example. It cannot send, upload or delete (no other route is listed), and a daily count bounds it. That is a looser fence than
 //    the WhatsApp Guard's, and a decision for the owner (Deferred.md), not a thing to be called tight. The download of the audio itself is a second host (Meta's page does not name it) and its route shape is not yet known, so its Guard spec waits for the
 //    first sandbox call (Deferred.md); until then nothing here can fetch audio.
 // WHAT A GUARD CANNOT BIND, said plainly: the speech-to-text model is a field of a multipart body, and an `argument_allowlist` reads a JSON field, so the Guard cannot pin it.
-// The adapter names the model it asks for and the record writes it down; the daily call cap and the route list are what the Guard enforces for listening. The text-to-speech
-// body is JSON, so its model IS pinned.
+// The adapter names the model it asks for and the record writes it down; the daily call cap and the route list are what the Guard enforces for listening.
 //
 // NOT PLACED YET: neither Guard is in compose.ts (the per-shop address slots are full, bundle/generate/compose.ts slotOf), so no server runs these. `speechProblem` below is
 // what refuses a shop's `speech` block until that is done.
@@ -42,22 +41,22 @@ export function speechGuardDef(provider: SpeechProviderKind = "geometer", o: { u
   };
 }
 
-export interface SpeechLimits { provider?: SpeechProviderKind; ttsModel?: string; listensPerDay: number; speaksPerDay: number }
+export interface SpeechLimits { provider?: SpeechProviderKind; listensPerDay: number }
 
 /**
- * The speech Guard's spec: the provider's two routes, a daily count for each, and (Sarvam only, whose text-to-speech body is JSON with a model field) the speaking model pinned.
- * Geometer's service has no model field in its contract: the service decides, so there is nothing to pin, and the routes and the counts are what Guard holds.
+ * The speech Guard's spec: the provider's one listening route and a daily count. Neither provider's request has a JSON model field Guard could pin (Sarvam's is multipart,
+ * Geometer's service chooses its own), so the route and the count are what Guard holds.
  */
 export function speechSpec(id: SpecIdentity, o: SpeechLimits): LimitsSpec {
   const provider = o.provider ?? "geometer";
   const routes = provider === "sarvam"
-    ? [{ method: "POST", path: SARVAM_ROUTES.listen, operation: "transcribe" }, { method: "POST", path: SARVAM_ROUTES.speak, operation: "synthesize" }]
-    : [{ method: "POST", path: GEOMETER_SPEECH_ROUTES.listen, operation: "transcribe" }, { method: "POST", path: GEOMETER_SPEECH_ROUTES.speak, operation: "synthesize" }];
+    ? [{ method: "POST", path: SARVAM_ROUTES.listen, operation: "transcribe" }]
+    : [{ method: "POST", path: GEOMETER_SPEECH_ROUTES.listen, operation: "transcribe" }];
   return {
     ...base(speechGuardDef(provider), id),
     routes,
-    rules: provider === "sarvam" ? [{ id: "speak-model-pin", kind: "argument_allowlist", operation: "synthesize", field: "model", match: "exact", allowed_values: [o.ttsModel ?? "bulbul:v3"] }] : [],
-    limits: [count("listens-per-day", "transcribe", o.listensPerDay, 86_400), count("speaks-per-day", "synthesize", o.speaksPerDay, 86_400)],
+    rules: [],
+    limits: [count("listens-per-day", "transcribe", o.listensPerDay, 86_400)],
     intents: [], fail_policy: [],
   };
 }

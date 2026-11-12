@@ -1,5 +1,5 @@
-// The speech provider interface (plan B29, decision 42): turn a customer's voice note into text, and a reply into audio. One small interface so Sarvam (sarvam.ts, the
-// first adapter) is not the only way in: a Google adapter or a model the builder hosts is one more file that returns the same shapes. Used by voice.ts (the one
+// The speech provider interface (plan B29, decision 42): turn a customer's voice note into text. (Listening only: the agent replies in text; spoken replies were removed by the owner, 12 Nov 2026.) One small interface so Geometer's own speech service (geometer.ts, the default)
+// is not the only way in: Sarvam (sarvam.ts, optional) or a model a builder hosts is one more file that returns the same shape. Used by voice.ts (the one
 // service the agents are handed) and by the tests' stand-in (standin.ts). Nothing here holds a key: the base URL an adapter is given is a Guard in front of the provider.
 import type { Language } from "../language/languages.ts";
 
@@ -18,30 +18,21 @@ export interface Transcript {
   confidence: number | null;
 }
 
-export interface Spoken { /** True when the provider already returned Ogg Opus (a voice-note bubble needs no conversion). */ opus?: true; audio: Audio; /** Characters sent to the provider: what its price is counted in. */ characters: number }
 
 export interface SpeechProvider {
   /** The provider's short name as the record and the cost meter write it: "sarvam". */
   name: string;
   /** The models the adapter is pinned to, as the record writes them. */
   sttModel: string;
-  ttsModel: string;
   /** Throws on any failure; the service turns every failure into "ask the customer to type". */
   transcribe(audio: Audio, shopLanguages: readonly Language[]): Promise<Transcript>;
-  /** The longest text one call takes; the service cuts a longer reply before asking. */
-  maxCharacters: number;
-  /** The languages this provider can speak in with the pinned model (Bulbul v4 Flash has no Malayalam, v3 has). */
-  speaks: readonly Language[];
-  synthesize(text: string, language: Language): Promise<Spoken>;
 }
 
-/** The provider's price, in rupees, as the BUILDER reads it off their invoice or the provider's page (runtime.json speech.rate). Never written in code. */
-export interface SpeechRate { sttInrPerMinute: number; ttsInrPer1000Characters: number }
+/** The provider's price per minute listened, in rupees, as the BUILDER reads it off their invoice or the provider's page (runtime.json speech.rate). Never written in code. Zero for Geometer's own service. */
+export interface SpeechRate { sttInrPerMinute: number }
 
 /** Micro-rupees (millionths) for listening to `seconds`, rounded up. */
 export const sttCostMicroInr = (rate: SpeechRate, seconds: number): number => Math.ceil(rate.sttInrPerMinute * (seconds / 60) * 1_000_000 - 1e-9);
-/** Micro-rupees for speaking `characters`, rounded up. */
-export const ttsCostMicroInr = (rate: SpeechRate, characters: number): number => Math.ceil(rate.ttsInrPer1000Characters * (characters / 1000) * 1_000_000 - 1e-9);
 
 /** A transcript below this probability is not trusted. A placeholder until real voice notes in Malayalam and Kannada have been listened to (Deferred.md). */
 export const LOW_CONFIDENCE_BELOW = 0.5;

@@ -1,7 +1,7 @@
 // The `speech` block of runtime.json (plan B29): voice notes for one shop, OFF unless the block is there. This file reads and checks it in plain words, and `buildVoice`
 // turns it into the service the agent is handed (voice.ts). The bundle refuses to write the block unless the server has the speech provider's key handed in through the
 // write-only intake when the provider is a paid one (bundle/generate/speech.ts speechProblem); this file is the runtime's half: no key goes in the block (the Guards hold them), the builder's price is
-// required (so every call has a known cost), and the spoken replies need the folder the report pages are served from.
+// required for a paid provider (so every call has a known cost; zero for Geometer's own service). Listening only: no spoken replies (owner, 12 Nov 2026).
 import { readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import type { Clock } from "../core/clock.ts";
@@ -12,9 +12,7 @@ import { createSarvam } from "./sarvam.ts";
 import { createGeometerSpeech } from "./geometer.ts";
 import { createWire } from "./wire.ts";
 import type { Wire } from "./wire.ts";
-import { folderAudioHost } from "./links.ts";
 import { createVoice } from "./voice.ts";
-import { opusEncoder } from "./encode.ts";
 import type { VoiceService } from "./voice.ts";
 import type { SpeechRate } from "./speech.ts";
 
@@ -34,21 +32,14 @@ export interface SpeechConfig {
   /** Where a voice note's audio is read from. `lookupBaseUrl` (Meta: a media id is looked up first) may be left out for a provider whose callback carries the address (Gupshup). */
   media: { lookupBaseUrl?: string; downloadBaseUrl: string; downloadHosts: string[]; agentTokenFile?: string; downloadTokenFile?: string };
   sttModel?: string;
-  ttsModel?: string;
-  speaker?: string;
   /** The builder's price from their provider invoice or price page, in rupees. Required: voice does not run on a call whose cost nobody can see. */
   rate: SpeechRate;
-  /** Spoken replies. Default true; false keeps listening and answers in text only. */
-  replies?: boolean;
-  /** The name or path of an Ogg Opus encoder program (`opusenc`). With it the reply is a real voice-note bubble; without, an MP3 audio message. See bundle/README.md "Voice notes". */
-  opusEncoder?: string;
   maxSeconds?: number;
   notesPerDay?: number;
-  replyCharacters?: number;
   timeoutMs?: number;
 }
 
-const KEYS = ["provider", "baseUrl", "agentTokenFile", "media", "sttModel", "ttsModel", "speaker", "rate", "replies", "opusEncoder", "maxSeconds", "notesPerDay", "replyCharacters", "timeoutMs"];
+const KEYS = ["provider", "baseUrl", "agentTokenFile", "media", "sttModel", "ttsModel", "rate", "maxSeconds", "notesPerDay", "timeoutMs"];
 const NO_KEY = "No key goes in runtime.json: the base URL is a Guard in front of the provider, and the Guard holds the key.";
 
 function httpUrl(v: unknown, what: string, errors: string[]): boolean {
@@ -80,30 +71,27 @@ export function readSpeech(raw: unknown, folder: string, errors: string[]): Spee
   const r = raw.rate;
   const price = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 0;
   // a paid provider needs the builder's price; Geometer's own service counts zero rupees unless a price is given
-  if (r === undefined && provider === "geometer") { /* zero */ } else if (!isObj(r) || Object.keys(r).some((k) => k !== "sttInrPerMinute" && k !== "ttsInrPer1000Characters") || !price(r.sttInrPerMinute) || !price(r.ttsInrPer1000Characters)) {
-    errors.push('speech.rate is needed: {"sttInrPerMinute": <rupees>, "ttsInrPer1000Characters": <rupees>}, the provider\'s price as the builder reads it on their invoice or the provider\'s price page. Voice does not run without a price, because then its cost could not be counted.');
+  if (r === undefined && provider === "geometer") { /* zero */ } else if (!isObj(r) || Object.keys(r).some((k) => k !== "sttInrPerMinute") || !price(r.sttInrPerMinute)) {
+    errors.push('speech.rate is needed: {"sttInrPerMinute": <rupees>}, the provider\'s price as the builder reads it on their invoice or the provider\'s price page. Voice does not run without a price, because then its cost could not be counted.');
   }
-  if (raw.opusEncoder !== undefined && !(isText(raw.opusEncoder) && /^[A-Za-z0-9._/-]{1,100}$/u.test(raw.opusEncoder))) errors.push('speech.opusEncoder must be the name or path of the encoder program, like "opusenc" (letters, digits and . _ / - only; no arguments).');
-  if (raw.replies !== undefined && typeof raw.replies !== "boolean") errors.push("speech.replies must be true or false (default true).");
-  for (const [k, max] of [["maxSeconds", 120], ["notesPerDay", 100_000], ["replyCharacters", 2500], ["timeoutMs", 60_000]] as const) {
+  for (const [k, max] of [["maxSeconds", 120], ["notesPerDay", 100_000], ["timeoutMs", 60_000]] as const) {
     if (raw[k] !== undefined && (!Number.isInteger(raw[k]) || (raw[k] as number) < 1 || (raw[k] as number) > max)) errors.push(`speech.${k} must be a whole number from 1 to ${max}.`);
   }
-  for (const k of ["sttModel", "ttsModel", "speaker"]) if (raw[k] !== undefined && !(isText(raw[k]) && /^[a-z0-9:._-]{1,60}$/iu.test(raw[k] as string))) errors.push(`speech.${k} must be a short name as the provider writes it.`);
+  for (const k of ["sttModel"]) if (raw[k] !== undefined && !(isText(raw[k]) && /^[a-z0-9:._-]{1,60}$/iu.test(raw[k] as string))) errors.push(`speech.${k} must be a short name as the provider writes it.`);
   if (errors.length > before) return undefined;
   const at = (p: string) => (isAbsolute(p) ? p : resolve(folder, p));
   const mm = m as Obj;
-  const rr = (r ?? { sttInrPerMinute: 0, ttsInrPer1000Characters: 0 }) as SpeechRate;
+  const rr = (r ?? { sttInrPerMinute: 0 }) as SpeechRate;
   return {
     provider: provider as SpeechConfig["provider"], baseUrl: raw.baseUrl as string, ...(raw.agentTokenFile !== undefined ? { agentTokenFile: at(raw.agentTokenFile as string) } : {}),
     media: {
       ...(mm.lookupBaseUrl !== undefined ? { lookupBaseUrl: mm.lookupBaseUrl as string } : {}), downloadBaseUrl: mm.downloadBaseUrl as string, downloadHosts: mm.downloadHosts as string[],
       ...(mm.agentTokenFile !== undefined ? { agentTokenFile: at(mm.agentTokenFile as string) } : {}), ...(mm.downloadTokenFile !== undefined ? { downloadTokenFile: at(mm.downloadTokenFile as string) } : {}),
     },
-    ...(raw.sttModel !== undefined ? { sttModel: raw.sttModel as string } : {}), ...(raw.ttsModel !== undefined ? { ttsModel: raw.ttsModel as string } : {}), ...(raw.speaker !== undefined ? { speaker: raw.speaker as string } : {}),
-    rate: { sttInrPerMinute: rr.sttInrPerMinute, ttsInrPer1000Characters: rr.ttsInrPer1000Characters },
-    ...(raw.replies !== undefined ? { replies: raw.replies as boolean } : {}), ...(raw.opusEncoder !== undefined ? { opusEncoder: raw.opusEncoder as string } : {}),
+    ...(raw.sttModel !== undefined ? { sttModel: raw.sttModel as string } : {}),
+    rate: { sttInrPerMinute: rr.sttInrPerMinute },
     ...(raw.maxSeconds !== undefined ? { maxSeconds: raw.maxSeconds as number } : {}), ...(raw.notesPerDay !== undefined ? { notesPerDay: raw.notesPerDay as number } : {}),
-    ...(raw.replyCharacters !== undefined ? { replyCharacters: raw.replyCharacters as number } : {}), ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}),
+    ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}),
   };
 }
 
@@ -112,19 +100,18 @@ const NO_LOOKUP: Wire = { async request() { throw new Error("This shop's voice s
 
 const tokenOf = (file: string | undefined): string | undefined => (file ? readFileSync(file, "utf8").trim() : undefined);
 
-/** The voice service for a shop whose runtime.json has a `speech` block. `languages` are the shop's; `report` is where the spoken replies are served from. */
-export function buildVoice(c: SpeechConfig, deps: { clock: Clock; languages: readonly Language[]; report: { dir: string; baseUrl: string }; log: (line: string) => void }): VoiceService {
+/** The voice service for a shop whose runtime.json has a `speech` block. `languages` are the shop's. */
+export function buildVoice(c: SpeechConfig, deps: { clock: Clock; languages: readonly Language[]; log: (line: string) => void }): VoiceService {
   const timeout = c.timeoutMs ?? (c.provider === "sarvam" ? 8_000 : 20_000);
-  const speech = c.provider === "sarvam" ? createSarvam({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), sttModel: c.sttModel, ttsModel: c.ttsModel, speaker: c.speaker, timeoutMs: timeout, ...(c.opusEncoder ? { codec: "wav" as const } : {}) }) : createGeometerSpeech({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), timeoutMs: c.timeoutMs });
+  const speech = c.provider === "sarvam" ? createSarvam({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), sttModel: c.sttModel, timeoutMs: timeout }) : createGeometerSpeech({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), timeoutMs: c.timeoutMs });
   return createVoice({
-    provider: speech, rate: c.rate, languages: deps.languages.filter((l) => LANGUAGES.includes(l)), clock: deps.clock, repliesOn: c.replies !== false, ...(c.opusEncoder ? { encoder: opusEncoder(c.opusEncoder) } : {}),
-    host: folderAudioHost({ dir: deps.report.dir, baseUrl: deps.report.baseUrl, log: deps.log }),
+    provider: speech, rate: c.rate, languages: deps.languages.filter((l) => LANGUAGES.includes(l)), clock: deps.clock,
     media: {
       lookup: c.media.lookupBaseUrl ? createWire(c.media.lookupBaseUrl, "WhatsApp", timeout, tokenOf(c.media.agentTokenFile)) : NO_LOOKUP,
       download: createWire(c.media.downloadBaseUrl, "WhatsApp media", timeout, tokenOf(c.media.downloadTokenFile)),
       version: GRAPH_VERSION, downloadHosts: c.media.downloadHosts,
     },
-    ...(c.maxSeconds !== undefined ? { maxSeconds: c.maxSeconds } : {}), ...(c.notesPerDay !== undefined ? { notesPerDay: c.notesPerDay } : {}), ...(c.replyCharacters !== undefined ? { replyCharacters: c.replyCharacters } : {}),
+    ...(c.maxSeconds !== undefined ? { maxSeconds: c.maxSeconds } : {}), ...(c.notesPerDay !== undefined ? { notesPerDay: c.notesPerDay } : {}),
     log: deps.log,
   });
 }

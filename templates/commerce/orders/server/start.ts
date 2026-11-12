@@ -71,7 +71,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
       // B29: voice notes, only for a shop whose runtime.json has a `speech` block (the bundle writes it only when the server holds the provider's key).
       const speech = client.runtime.speech;
-      const voice = speech && report ? buildVoice(speech, { clock, languages: client.settings.languages, report: { dir: report.pagesDir, baseUrl: report.pageBaseUrl }, log }) : undefined;
+      const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
       return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), log });
     },
   }) as RunningClient;

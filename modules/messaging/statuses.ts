@@ -70,9 +70,7 @@ export function recordMessageStatus(record: ActionRecord, status: MessageStatus,
   if (entries.some((e) => e.action === MESSAGE_STATUS_ENTRY && e.refs.messageId === kept && e.refs.status === status.status)) return undefined;
   const to = recipientOf(status, sent, ctx);
   const caseId = sent?.booking ?? null;
-  // A spoken copy of a reply (B29, refs.audio) is a courtesy: the same words went as text, so a spoken copy that never arrived (WhatsApp fetched the link late, say) is on the
-  // record but is not unfinished work for a person.
-  const listed = status.status === "failed" && sent?.refs.audio !== "voice" && reliedOn(to, caseId);
+  const listed = status.status === "failed" && reliedOn(to, caseId);
   const code = status.error?.code;
   return record.append({
     conversation: sent?.conversation ?? status.to ?? "unknown",
@@ -84,7 +82,6 @@ export function recordMessageStatus(record: ActionRecord, status: MessageStatus,
     notes: notesFor(status, listed, sent !== undefined),
     refs: {
       messageId, status: status.status, to,
-      ...(sent?.refs.audio === "voice" ? { audio: "voice" } : {}), // a spoken copy's report: the to-do list leaves it out (unfinished/builtin.ts)
       ...(sent ? { sent: String(sent.seq) } : {}),
       ...(status.timestamp > 0 ? { reportedAt: new Date(status.timestamp).toISOString() } : {}),
       ...(code !== undefined ? { errorCode: String(code) } : {}),

@@ -1,6 +1,6 @@
 // Stand-ins for the tests and the hand check (no account, no network): a speech provider that answers from a script, and a pair of wires that behave like Meta's
 // media routes. The Ogg Opus builder makes a file whose length `oggOpusSeconds` reads, so the length logic is tested on real bytes.
-import type { Audio, SpeechProvider, Spoken, Transcript } from "./speech.ts";
+import type { Audio, SpeechProvider, Transcript } from "./speech.ts";
 import type { Language } from "../language/languages.ts";
 import type { Wire, WireReply } from "./wire.ts";
 
@@ -21,23 +21,19 @@ export function fakeVoiceNote(seconds: number): Uint8Array {
 
 export interface ScriptedSpeech extends SpeechProvider {
   /** Calls made, in order, with what each was given: the test's independent witness that nothing was asked when it should not be. */
-  calls: { kind: "transcribe" | "synthesize"; detail: string }[];
+  calls: { kind: "transcribe"; detail: string }[];
   /** What the next transcribe answers (a function so a test can fail it). */
   nextTranscript: Transcript | Error;
 }
 
-export function scriptedSpeech(o: { speaks?: readonly Language[]; transcript?: Transcript } = {}): ScriptedSpeech {
+export function scriptedSpeech(o: { transcript?: Transcript } = {}): ScriptedSpeech {
   const s: ScriptedSpeech = {
-    name: "stand-in", sttModel: "stand-in-listen", ttsModel: "stand-in-speak", maxCharacters: 2_500, speaks: o.speaks ?? ["hi", "en", "ml", "kn"],
+    name: "stand-in", sttModel: "stand-in-listen",
     calls: [], nextTranscript: o.transcript ?? { text: "kal subah haircut book karna hai", language: "hi", confidence: 0.93 },
     async transcribe(audio: Audio): Promise<Transcript> {
       s.calls.push({ kind: "transcribe", detail: `${audio.mime} ${audio.bytes.length}` });
       if (s.nextTranscript instanceof Error) throw s.nextTranscript;
       return s.nextTranscript;
-    },
-    async synthesize(text: string, language: Language): Promise<Spoken> {
-      s.calls.push({ kind: "synthesize", detail: `${language} ${text}` });
-      return { audio: { bytes: new Uint8Array([0x49, 0x44, 0x33, 1, 2, 3]), mime: "audio/mpeg" }, characters: text.length };
     },
   };
   return s;

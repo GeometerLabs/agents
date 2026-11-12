@@ -323,9 +323,8 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
 
   const report = input.report !== undefined && isText(dataDir) ? readReport(input.report, folder, isAbsolute(dataDir) ? dataDir : resolve(folder, dataDir), errors) : undefined;
 
-  // B29: voice notes. Spoken replies are served from the report pages' folder, so a shop with voice needs the monthly report's address.
+  // B29: voice notes (listening only).
   const speech = input.speech !== undefined ? readSpeech(input.speech, folder, errors) : undefined;
-  if (input.speech !== undefined && input.report === undefined) errors.push('"speech" needs "report" as well: the spoken replies are served from the folder the report pages are served from (report.pagesDir at report.pageBaseUrl).');
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;

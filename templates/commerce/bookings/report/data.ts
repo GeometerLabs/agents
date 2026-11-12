@@ -335,7 +335,6 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const toOwner = { total: 0, byLanguage: zeroByLanguage() };
   let heldBack = 0;
   for (const e of month.filter((x) => MESSAGE_ACTIONS.includes(x.action))) {
-    if (e.refs.audio === "voice") continue; // B29: the spoken copy of a reply goes beside its words; the reply counts once (as in the cost meter's repliesByLanguage)
     if (e.outcome === "blocked") heldBack++;
     if (e.outcome !== "confirmed") continue;
     const side = e.refs.to === "customer" ? toCustomers : e.refs.to === "owner" ? toOwner : undefined;

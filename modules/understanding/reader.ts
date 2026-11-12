@@ -79,8 +79,8 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     }
   }
 
-  /** B29: add a voice note's listening cost, or a spoken reply's, to the month's AI spend (counts the cost in the allowance and in fleet's cap). */
-  const countSpeech = (kind: "notes" | "replies", costMicroInr: number): void => addSpeech(store, clock.now(), timeZone, kind, costMicroInr);
+  /** B29: add a voice note's listening cost to the month's AI spend (counts the cost in the allowance and in fleet's cap). */
+  const countSpeech = (costMicroInr: number): void => addSpeech(store, clock.now(), timeZone, costMicroInr);
 
   /** Put the pauses and resumptions of a step in the record, once each. No customer and no owner is told: nothing they see changes, and the builder reads the record. */
   function announceSteps(): void {

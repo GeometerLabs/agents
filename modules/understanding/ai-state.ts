@@ -48,10 +48,10 @@ export interface AiState {
   /** Estimated cost this month in micro-rupees, from the dated rate table: calls with a price only. */
   costMicroInr: number;
   /**
-   * Voice (plan B29): voice notes listened to and replies spoken this month, as counts. Their cost is in `costMicroInr` above, so the allowance and fleet's cap see it as
+   * Voice (plan B29): voice notes listened to this month, as a count. Their cost is in `costMicroInr` above, so the allowance and fleet's cap see it as
    * model spend and a runaway voice bill cannot hide. Left out until the first voice note (and in a store saved before it), so a shop with voice off saves the same bytes.
    */
-  speech?: { notes: number; replies: number; /** The shop's local day the `today` count is for, and how many notes were listened to that day: the day's limit survives a restart because it is kept here. */ day?: string; today?: number };
+  speech?: { notes: number; /** The shop's local day the `today` count is for, and how many notes were listened to that day: the day's limit survives a restart because it is kept here. */ day?: string; today?: number };
   /** Calls this month whose provider and model have no price in the table (their cost is not in the total). */
   unpriced: number;
   /** A model step failed: until this moment the agent reads with buttons and the rules only. */
@@ -113,15 +113,15 @@ export function stateFor(store: AiStore, nowMs: number, timeZone: string): AiSta
 }
 
 /**
- * Count a voice note listened to (`notes`) or a reply spoken (`replies`) and what it cost, in the month's AI spend. A cost is always known here: voice does not run
- * without the builder's rate (runtime.json speech.rate), so nothing is added as unpriced.
+ * Count a voice note listened to and what it cost (zero for Geometer's own speech service), in the month's AI spend. A cost is always known here: voice does not run
+ * without the rate (runtime.json speech.rate; zero by default for the default provider), so nothing is added as unpriced.
  */
-export function addSpeech(store: AiStore, nowMs: number, timeZone: string, kind: "notes" | "replies", costMicroInr: number): void {
+export function addSpeech(store: AiStore, nowMs: number, timeZone: string, costMicroInr: number): void {
   const s = stateFor(store, nowMs, timeZone);
   const day = dayLocal(nowMs, timeZone);
-  s.speech = { ...s.speech, notes: s.speech?.notes ?? 0, replies: s.speech?.replies ?? 0 };
-  s.speech[kind] += 1;
-  if (kind === "notes") { s.speech.today = (s.speech.day === day ? s.speech.today ?? 0 : 0) + 1; s.speech.day = day; }
+  s.speech = { ...s.speech, notes: (s.speech?.notes ?? 0) + 1 };
+  s.speech.today = (s.speech.day === day ? s.speech.today ?? 0 : 0) + 1;
+  s.speech.day = day;
   s.costMicroInr += costMicroInr;
 }
 

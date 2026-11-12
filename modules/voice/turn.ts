@@ -23,7 +23,7 @@ export function failedMarks(h: Extract<Heard, { ok: false }>): Record<string, st
 export interface VoiceTurnDeps {
   voice?: VoiceService;
   /** The agent's reader (modules/understanding/reader.ts). */
-  reader: { voiceAllowed(): boolean; countSpeech(kind: "notes" | "replies", costMicroInr: number): void; notesToday(): number };
+  reader: { voiceAllowed(): boolean; countSpeech(costMicroInr: number): void; notesToday(): number };
   /** The owner and the other approvers: their messages are commands and are typed, never listened to. */
   isCommander(phone: string): boolean;
   optedOut(phone: string): boolean;
@@ -39,7 +39,7 @@ export function createListener(d: VoiceTurnDeps) {
     if (!d.voice || !msg.media || d.isCommander(msg.from) || d.optedOut(msg.from) || !d.reader.voiceAllowed()) return null;
     const heard = await d.voice.hear(msg.media, { notesToday: d.reader.notesToday() });
     // a cached answer (a step that ran again) was counted by the first run, whose state was thrown away; counting it here is what makes the surviving state right
-    if (heard.ok || heard.costMicroInr > 0) d.reader.countSpeech("notes", heard.costMicroInr);
+    if (heard.ok || heard.costMicroInr > 0) d.reader.countSpeech(heard.costMicroInr);
     return heard;
   };
 }
