@@ -16,6 +16,8 @@
 // ops for the heartbeat, the refresher for Google) are on egress. Caddy is on front with the inbox, the relay and the panel, so
 // it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call). Item 11d: /s/* goes to
 // the inbox too, where the shops' public booking pages and the owners' private pages are served (modules/channels/front.ts), each shop's with its own channel token.
+// Item 11f, on a server that answers for the pages domain (geometer.json `pages`): one more container, `door` (services/door.ts), on `pages` (internal: Caddy, the door
+// and the inbox only) and `egress` (fleet's lookups and builders' servers). It holds no secret and reaches no panel, relay or Guard.
 //
 // The monthly report pages. The runtime writes them into <data volume>/data/reports/<32 random hex digits>/. Caddy mounts that one folder of each shop's data volume,
 // read-only, at /srv/r/<shop> (and nothing else of the volume: the database and the record are not in Caddy's reach), and serves https://<domain>/r/<shop>/<hex>/<file>
@@ -40,10 +42,13 @@ import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS } fro
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
+import { DOOR_PORT } from "../services/door.ts";
 
 export const FORWARDER_IMAGE = "busybox:1.37.0";
 export const ADMIN_FORWARD_PORT = 8190;
 export const INBOX_PORT = 8788;
+/** Item 11f: the pages domain's front door (services/door.ts), and the network only it, Caddy and the inbox are on. */
+export const PAGES_NETWORK = "pages";
 export const RELAY_PORT = 8795;
 export const REFRESHER_PORT = 8791;
 export const PANEL_PORT = 8790;
@@ -137,7 +142,7 @@ export interface Addressing {
 export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
-    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24` },
+    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, pages: `${base}.236.0/24` },
     panelIp(kind, index) {
       const n = 16 + index * 4 + slotOf(kind);
       return `${base}.${224 + (n >> 8)}.${n & 255}`;
@@ -283,7 +288,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   add("inbox", node(["node", "/app/bundle/services/inbox.ts"], {
     environment: { CONFIG: "/etc/geometer/inbox.json", PORT: String(INBOX_PORT), HOST: "0.0.0.0" },
     volumes: [appVolume, `${dirs.generated}/inbox:/etc/geometer:ro`, `${secretDir("inbox")}:/run/secrets:ro`],
-    networks: { front: {}, admin: {} }, healthcheck: healthWget(INBOX_PORT, "/healthz"),
+    networks: { front: {}, admin: {}, ...(server.pages && server.fleet ? { [PAGES_NETWORK]: {} } : {}) }, healthcheck: healthWget(INBOX_PORT, "/healthz"),
   }), [`${dirs.generated}/inbox/inbox.json`]);
   // DESK_PORT: the owner-marked desk (B71 part 2), served by the relay's process on a port of its own, for the agents' desk Guards (they reach it over `admin`)
   add("relay", node(["node", "/app/bundle/services/relay.ts"], {
@@ -323,12 +328,21 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       healthcheck: healthWget(PANEL_PORT, "/healthz"),
     });
   }
+  // item 11f: the pages domain's front door, only where geometer.json names a pages domain and fleet is known (it asks fleet where each slug lives)
+  const door = server.pages && server.fleet;
+  if (door) {
+    add("door", node(["node", "/app/bundle/services/door.ts"], {
+      environment: { CONFIG: "/etc/geometer/door.json", PORT: String(DOOR_PORT), HOST: "0.0.0.0" },
+      volumes: [appVolume, `${dirs.generated}/door:/etc/geometer:ro`],
+      networks: { [PAGES_NETWORK]: {}, egress: {} }, healthcheck: healthWget(DOOR_PORT, "/healthz"),
+    }), [`${dirs.generated}/door/door.json`]);
+  }
   add("caddy", {
     image: CADDY_IMAGE, restart: "unless-stopped", security_opt: ["no-new-privileges:true"],
     ports: [`${server.ports.http}:80`, `${server.ports.https}:443`],
     // each shop's reports folder, and only that folder of its data volume, read-only
     volumes: [`${dirs.generated}/Caddyfile:/etc/caddy/Caddyfile:ro`, "caddy-data:/data", "caddy-config:/config", ...shops.map((s): Y => ({ type: "volume", source: names.dataVolume(s.name), target: `${REPORTS_MOUNT}/${s.name}`, read_only: true, volume: { subpath: REPORTS_SUBPATH } }))],
-    networks: { front: {}, ...(agents.length > 0 ? { [agentNames.gate]: {} } : {}) },
+    networks: { front: {}, ...(agents.length > 0 ? { [agentNames.gate]: {} } : {}), ...(door ? { [PAGES_NETWORK]: {} } : {}) },
     ...(shops.length > 0 ? { depends_on: Object.fromEntries(shops.map((s) => [names.reportsDir(s.name), { condition: "service_completed_successfully" }])) } : {}),
   }, [`${dirs.generated}/Caddyfile`]);
 
@@ -339,6 +353,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     admin: { internal: true, ipam: { config: [{ subnet: net.subnets.admin }] } },
     ...(server.panel.enabled && features.panel ? { panel: { internal: true, ipam: { config: [{ subnet: net.subnets.panel }] } } } : {}),
     ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
+    ...(door ? { [PAGES_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.pages }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
   const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };
@@ -412,6 +427,8 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
     ...agents.flatMap((a) => a.guards.flatMap((g) => [`\thandle_path /g/${a.name}/${g.kind}/* {`, `\t\treverse_proxy ${g.service}:${GUARD_PORT}`, `\t}`])),
     // everything else is the panel's, when there is one: it serves from the root of its own address
     ...(server.panel.enabled ? [`\thandle {`, `\t\treverse_proxy panel:${PANEL_PORT}`, `\t}`] : [`\thandle {`, `\t\trespond "Geometer" 404`, `\t}`]), `}`, ``,
+    // item 11f: the pages domain and its extra domains, a site of their own that reaches ONLY the front door: no /c, /s, /r, /g or panel there
+    ...(server.pages && server.fleet ? [`${[server.pages.domain, ...server.pages.extraDomains].join(", ")} {`, `\treverse_proxy door:${DOOR_PORT}`, `}`, ``] : []),
   ].join("\n");
 }
 

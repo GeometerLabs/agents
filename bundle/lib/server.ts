@@ -155,6 +155,33 @@ export interface ServerConfig {
    * monorepo ADR-0070): a release's Guard runs a shop only under the lease. Optional here only so an older folder still loads and is told what to do.
    */
   licence?: { keys: string[] };
+  /**
+   * Item 11f: the pages domain this server answers for with the front door (bundle/services/door.ts), Geometer's partner server only. `domain` is the primary one
+   * (new links use it, and fleet's `pages.domain` must name the same); `extraDomains` are answered by redirecting to it (an old or a country domain). Never
+   * geometer.dev or under it: shop pages keep their own cookies and their own reputation (Explanation.md).
+   */
+  pages?: { domain: string; extraDomains: string[] };
+}
+
+/** A pages domain: a lowercase host name with a dot, no scheme, port or path (the same rule as fleet's `pages.domain`). */
+export const PAGES_DOMAIN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$/u;
+
+/** Every problem with geometer.json's `pages`, in plain words. */
+function pagesProblems(raw: unknown, domain: string, hosted: boolean): string[] {
+  if (raw === undefined) return [];
+  const shape = '"pages" must say {"domain": "<the pages domain>", "extraDomains": ["<an older domain>", ...]} (small letters, no https://, no port, no path).';
+  if (!isObj(raw)) return [shape];
+  const problems: string[] = [];
+  if (!hosted) problems.push('"pages" is for Geometer\'s partner server (panel mode "hosted"). A builder\'s clients reach the pages domain through it, and a builder\'s own domain serves them at /s/<shop>/ already.');
+  const unknown = Object.keys(raw).filter((k) => k !== "domain" && k !== "extraDomains");
+  if (unknown.length > 0) problems.push(`"pages" has ${unknown.map((k) => `"${k}"`).join(", ")}, which it does not know. ${shape}`);
+  const all = [raw.domain, ...(Array.isArray(raw.extraDomains) ? raw.extraDomains : raw.extraDomains === undefined ? [] : [null])];
+  if (!all.every((d) => typeof d === "string" && PAGES_DOMAIN.test(d))) problems.push(shape);
+  if (new Set(all).size !== all.length) problems.push('"pages" names a domain twice.');
+  // shop pages stay on a registrable domain of their own: no cookie or reputation shared with the product's site
+  if (all.some((d) => typeof d === "string" && (d === "geometer.dev" || d.endsWith(".geometer.dev")))) problems.push('"pages" cannot be geometer.dev or a name under it: shop pages keep their own domain, so they share no cookies or reputation with geometer.dev.');
+  if (all.includes(domain)) problems.push('"pages" cannot name this server\'s own domain: the pages domain gets a site of its own that reaches only the front door.');
+  return problems;
 }
 
 export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.2-pathways.1";
@@ -250,6 +277,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   if (o.fleet !== undefined && (!fleet || typeof fleet.url !== "string" || typeof fleet.keyFile !== "string")) errors.push('"fleet" must say {"url": "https://...", "keyFile": "<a file that holds this server\'s deployment key>"}.');
   if (fleet && typeof fleet.url === "string" && !/^https:\/\//u.test(fleet.url) && !/^http:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)/u.test(fleet.url)) errors.push('"fleet.url" must be https:// (the deployment key is a bearer secret).');
   const fleetId = fleet?.deploymentId;
+  errors.push(...pagesProblems(o.pages, typeof o.domain === "string" ? o.domain : "", isObj(o.panel) && o.panel.mode === "hosted"));
   if (o.gupshupTokenHeader !== undefined && o.gupshupTokenHeader !== "bearer" && o.gupshupTokenHeader !== "bare") errors.push('"gupshupTokenHeader" must be "bearer" or "bare": how a renewed Gupshup app token is sent.');
   if (fleetId !== undefined && (typeof fleetId !== "string" || serverIdProblem(fleetId))) errors.push('"fleet.deploymentId" must be the server id fleet gave this server when it was paired (pairing.json).');
   const config: ServerConfig = {
@@ -267,6 +295,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own", termsOnWhatsapp: isObj(o.panel) && o.panel.termsOnWhatsapp === true },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
+    ...(isObj(o.pages) && typeof o.pages.domain === "string" ? { pages: { domain: o.pages.domain, extraDomains: Array.isArray(o.pages.extraDomains) ? o.pages.extraDomains.filter((d): d is string => typeof d === "string") : [] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
   const notes: string[] = [];

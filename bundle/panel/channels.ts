@@ -7,6 +7,7 @@ import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile, readOwnerLink } from "..
 import type { OwnerLinkFile } from "../../modules/channels/owner-link.ts";
 import { textQrSvg } from "../../modules/qr/svg.ts";
 import { serverPaths } from "../lib/server.ts";
+import { readPagesStatus } from "../lib/pages.ts";
 import { stableJson, writeAtomic } from "../lib/util.ts";
 
 /** What the shop page shows: the addresses, the QR code of the booking page, and whether an owner's link is on (and since when). */
@@ -22,7 +23,9 @@ export function createChannels(serverDir: string, publicUrl: string | undefined)
       const b = base(id);
       if (!b) return undefined;
       const link = read(id);
-      return { bookingUrl: `${b}/`, mcpUrl: `${b}/mcp`, apiUrl: `${b}/api/v1`, qrSvg: textQrSvg(`${b}/`, { label: `${b}/`, width: 200 }), ...(link ? { ownerLink: { createdAt: link.createdAt } } : {}) };
+      // item 11f: the counter's QR carries the shop's STABLE page address once fleet gave one (it survives a rename and a new domain), else this server's page
+      const qr = readPagesStatus(serverDir, id)?.pageUrl ?? `${b}/`;
+      return { bookingUrl: `${b}/`, mcpUrl: `${b}/mcp`, apiUrl: `${b}/api/v1`, qrSvg: textQrSvg(qr, { label: qr, width: 200 }), ...(link ? { ownerLink: { createdAt: link.createdAt } } : {}) };
     },
     /** A new owner's link (any earlier one stops working at the deployer's next pass). Returns the whole address, to show once. */
     make(id: string, now: Date): string | undefined {
