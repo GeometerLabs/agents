@@ -5,9 +5,9 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { OWNER_LINK_FILE, readOwnerLink } from "../../modules/channels/owner-link.ts";
-import { secretFile, writeSecretFile } from "./secrets.ts";
+import { secretFile } from "./secrets.ts";
 import { serverPaths } from "./server.ts";
-import { stableJson } from "./util.ts";
+import { stableJson, writeAtomic } from "./util.ts";
 
 /** Where the panel writes a shop's link (its hash only). */
 export const ownerLinkSource = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), OWNER_LINK_FILE);
@@ -32,7 +32,7 @@ export function syncOwnerLinks(dir: string, shops: readonly string[]): string[] 
         continue;
       }
       if (!existsSync(dirname(copy)) || have?.trim() === text.trim()) continue;
-      writeSecretFile(copy, text); // only a hash and a date: the folder's usual mode
+      writeAtomic(copy, `${text}\n`, 0o644); // only a hash and a date, readable by the container's own user, like the files beside it
       lines.push(`${shop}: the owner's approvals link (made ${link!.createdAt}) is handed to ${copy.includes(`${join("secrets", "relay")}`) ? "the approvals relay" : "the runtime"}.`);
     }
   }
