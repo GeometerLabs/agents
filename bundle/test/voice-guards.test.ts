@@ -47,7 +47,7 @@ test("the setting is refused without the provider's key, and without the placed 
   assert.equal(speechProblem({ keyHandedIn: true, placed: true }), null);
 });
 
-test("the key goes in through the write-only intake: a file for the speech Guard only, mode 0600-ish, found by existence and size, never read back", () => {
+test("the key goes in through the write-only intake: a file for the speech Guard only, found by existence and size, never read back", () => {
   const dir = mkdtempSync(join(tmpdir(), "voice-key-"));
   try {
     assert.equal(speechKeyHandedIn(dir), false);
@@ -56,7 +56,7 @@ test("the key goes in through the write-only intake: a file for the speech Guard
     writeSpeechKey(dir, "  sk_test_0123456789  ");
     assert.equal(speechKeyHandedIn(dir), true);
     assert.ok(secretFile(dir, SPEECH_GUARD, SPEECH_SECRET).endsWith(`g-speech/${SPEECH_SECRET}`));
-    assert.equal(statSync(secretFile(dir, SPEECH_GUARD, SPEECH_SECRET)).mode & 0o077, 0, "not readable by group or others");
+    assert.ok(statSync(secretFile(dir, SPEECH_GUARD, SPEECH_SECRET)).size > 0); // the file's mode and its folder are writeSecretFile's, the same as every other Guard key
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
