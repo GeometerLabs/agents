@@ -24,7 +24,7 @@ import type { Runtime } from "./runtime.ts";
 import { buildServices } from "./services.ts";
 import { calendarModule } from "../src/settings.ts";
 import type { LiveModule } from "./services.ts";
-import { OWNER_UNDERSTANDING } from "../../../../modules/assistant/reading.ts";
+import { OWNER_UNDERSTANDING } from "../../../../modules/assistant/understanding.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 
 export { parserArguments, readToken };
