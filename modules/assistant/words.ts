@@ -101,6 +101,9 @@ const examples = (w: Writer, kinds: readonly string[]) => Object.entries(EXAMPLE
 const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageData["refusal"]) => string>> = {
   en: {
     no_case: (w, d) => `Nothing has the number ${w.lit(d.ref)}.`, not_yours: (w, d) => `${w.lit(d.ref)} is not something this assistant handles.`,
+    already_back: (w, d) => `The deposit on ${w.lit(d.ref)} is already going back, so I can't cancel it from here. Please tell the customer yourself.`,
+    cancel_first: (w, d) => `${w.lit(d.ref)} is still booked. To give the deposit back, cancel it: ${w.lit(`cancel ${d.ref}`)}.`,
+    not_booked: (w, d) => `${w.lit(d.ref)} is not booked yet, so there is nothing to cancel.`,
     not_live: (w, d) => `${w.lit(d.ref)} is already cancelled, done or expired.`, nothing_paid: (w, d) => `Nothing was paid on ${w.lit(d.ref)}, so there is nothing to refund.`,
     too_much: (w, d) => `That is more than was paid on ${w.lit(d.ref)} (${w.inr(d.paidPaise ?? 0)}).`, nothing_waiting: (w, d) => `Nothing on ${w.lit(d.ref)} is waiting for you.`,
     no_window: (w, d) => `${w.lit(d.who ?? d.ref)} has not written in the last ${w.n(24)} hours, so WhatsApp lets the shop send only approved messages. Please call them.`,
@@ -110,6 +113,9 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
   },
   hi: {
     no_case: (w, d) => `${w.lit(d.ref)} नंबर का कुछ नहीं मिला।`, not_yours: (w, d) => `${w.lit(d.ref)} यह असिस्टेंट नहीं संभालता।`,
+    already_back: (w, d) => `${w.lit(d.ref)} की जमा राशि पहले से वापस जा रही है, इसलिए मैं इसे यहाँ से रद्द नहीं कर सकता। कृपया ग्राहक को ख़ुद बताएँ।`,
+    cancel_first: (w, d) => `${w.lit(d.ref)} अभी बुक है। जमा राशि लौटाने के लिए इसे रद्द करें: ${w.lit(`cancel ${d.ref}`)}।`,
+    not_booked: (w, d) => `${w.lit(d.ref)} अभी बुक नहीं हुई है, इसलिए रद्द करने को कुछ नहीं है।`,
     not_live: (w, d) => `${w.lit(d.ref)} पहले ही रद्द, पूरा या ख़त्म हो चुका है।`, nothing_paid: (w, d) => `${w.lit(d.ref)} पर कुछ भी नहीं चुकाया गया, तो वापस करने को कुछ नहीं है।`,
     too_much: (w, d) => `यह ${w.lit(d.ref)} पर चुकाए गए पैसे (${w.inr(d.paidPaise ?? 0)}) से ज़्यादा है।`, nothing_waiting: (w, d) => `${w.lit(d.ref)} पर आपके लिए कुछ बाकी नहीं है।`,
     no_window: (w, d) => `${w.lit(d.who ?? d.ref)} ने पिछले ${w.n(24)} घंटे में मैसेज नहीं किया, इसलिए WhatsApp दुकान से सिर्फ़ मंज़ूर किए गए मैसेज भेजने देता है। कृपया उन्हें फ़ोन करें।`,
@@ -119,6 +125,9 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
   },
   ml: {
     no_case: (w, d) => `${w.lit(d.ref)} എന്ന നമ്പറിൽ ഒന്നുമില്ല.`, not_yours: (w, d) => `${w.lit(d.ref)} ഈ അസിസ്റ്റന്റ് കൈകാര്യം ചെയ്യുന്നതല്ല.`,
+    already_back: (w, d) => `${w.lit(d.ref)}-ന്റെ ഡെപ്പോസിറ്റ് ഇതിനകം തിരികെ പോകുന്നു, അതിനാൽ എനിക്ക് ഇവിടെ നിന്ന് റദ്ദാക്കാനാകില്ല. ദയവായി ഉപഭോക്താവിനോട് നേരിട്ട് പറയുക.`,
+    cancel_first: (w, d) => `${w.lit(d.ref)} ഇപ്പോഴും ബുക്ക് ചെയ്തിരിക്കുന്നു. ഡെപ്പോസിറ്റ് തിരികെ നൽകാൻ അത് റദ്ദാക്കുക: ${w.lit(`cancel ${d.ref}`)}.`,
+    not_booked: (w, d) => `${w.lit(d.ref)} ഇതുവരെ ബുക്ക് ചെയ്തിട്ടില്ല, അതിനാൽ റദ്ദാക്കാൻ ഒന്നുമില്ല.`,
     not_live: (w, d) => `${w.lit(d.ref)} ഇതിനകം റദ്ദാക്കിയതോ പൂർത്തിയായതോ കാലഹരണപ്പെട്ടതോ ആണ്.`, nothing_paid: (w, d) => `${w.lit(d.ref)}-ൽ ഒന്നും അടച്ചിട്ടില്ല, അതിനാൽ തിരികെ നൽകാൻ ഒന്നുമില്ല.`,
     too_much: (w, d) => `ഇത് ${w.lit(d.ref)}-ൽ അടച്ചതിനേക്കാൾ (${w.inr(d.paidPaise ?? 0)}) കൂടുതലാണ്.`, nothing_waiting: (w, d) => `${w.lit(d.ref)}-ൽ നിങ്ങൾക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല.`,
     no_window: (w, d) => `${w.lit(d.who ?? d.ref)} കഴിഞ്ഞ ${w.n(24)} മണിക്കൂറിൽ സന്ദേശം അയച്ചിട്ടില്ല, അതിനാൽ അംഗീകരിച്ച സന്ദേശങ്ങൾ മാത്രമേ WhatsApp അനുവദിക്കൂ. ദയവായി അവരെ വിളിക്കുക.`,
@@ -128,6 +137,9 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
   },
   kn: {
     no_case: (w, d) => `${w.lit(d.ref)} ಸಂಖ್ಯೆಯಲ್ಲಿ ಏನೂ ಇಲ್ಲ.`, not_yours: (w, d) => `${w.lit(d.ref)} ಅನ್ನು ಈ ಸಹಾಯಕ ನೋಡಿಕೊಳ್ಳುವುದಿಲ್ಲ.`,
+    already_back: (w, d) => `${w.lit(d.ref)} ನ ಠೇವಣಿ ಈಗಾಗಲೇ ಹಿಂತಿರುಗುತ್ತಿದೆ, ಹಾಗಾಗಿ ನಾನು ಇಲ್ಲಿಂದ ರದ್ದು ಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಗ್ರಾಹಕರಿಗೆ ನೀವೇ ತಿಳಿಸಿ.`,
+    cancel_first: (w, d) => `${w.lit(d.ref)} ಇನ್ನೂ ಬುಕ್ ಆಗಿದೆ. ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಲು ಅದನ್ನು ರದ್ದು ಮಾಡಿ: ${w.lit(`cancel ${d.ref}`)}.`,
+    not_booked: (w, d) => `${w.lit(d.ref)} ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ, ರದ್ದು ಮಾಡಲು ಏನೂ ಇಲ್ಲ.`,
     not_live: (w, d) => `${w.lit(d.ref)} ಈಗಾಗಲೇ ರದ್ದಾಗಿದೆ, ಮುಗಿದಿದೆ ಅಥವಾ ಅವಧಿ ಮೀರಿದೆ.`, nothing_paid: (w, d) => `${w.lit(d.ref)} ಮೇಲೆ ಏನೂ ಪಾವತಿಯಾಗಿಲ್ಲ, ಹಿಂತಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.`,
     too_much: (w, d) => `ಇದು ${w.lit(d.ref)} ಮೇಲೆ ಪಾವತಿಸಿದ್ದಕ್ಕಿಂತ (${w.inr(d.paidPaise ?? 0)}) ಹೆಚ್ಚು.`, nothing_waiting: (w, d) => `${w.lit(d.ref)} ಮೇಲೆ ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ.`,
     no_window: (w, d) => `${w.lit(d.who ?? d.ref)} ಕಳೆದ ${w.n(24)} ಗಂಟೆಗಳಲ್ಲಿ ಸಂದೇಶ ಕಳುಹಿಸಿಲ್ಲ, ಹಾಗಾಗಿ WhatsApp ಅನುಮೋದಿತ ಸಂದೇಶಗಳನ್ನು ಮಾತ್ರ ಬಿಡುತ್ತದೆ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಕರೆ ಮಾಡಿ.`,

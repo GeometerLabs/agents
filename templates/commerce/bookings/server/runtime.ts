@@ -22,6 +22,9 @@ import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createBookingsLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
 import { parseStore, serializeStore, keepStoreCounters, skipStoreCounters } from "./snapshot.ts";
+import { createMorningJob } from "../../../../modules/assistant/morning.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
+import { bookingsSkill } from "../src/assistant.ts";
 import type { DurableStore } from "./store.ts";
 
 export const PATHWAY = "bookings";
@@ -47,6 +50,8 @@ export interface RuntimeOptions {
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can agree to on WhatsApp (modules/terms/reader.ts). Left out: off. */
   terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
+  /** Item 11e: the owner's router for the shop's assistant (modules/assistant/reading.ts). Left out: the rules alone read the owner's words. */
+  ownerParser?: OwnerParser;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -96,7 +101,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     skipCounters: skipStoreCounters,
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), calendar: (watched as unknown as Services).calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
+    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), calendar: (watched as unknown as Services).calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.bookings.values(),
     refundContext(store, _settings, receipt) {
@@ -116,6 +121,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   return createRuntimeCore({
     settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
+    // Item 11e: the owner's morning line, from Bookings read-only over the store (no acts; the record's money lines are the job's own to read)
+    ...(settings.assistant ? { daily: createMorningJob<Store>({
+      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant },
+      skills: (store) => [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })],
+    }) } : {}),
     ...(options.licence ? { licence: options.licence, licenceNotice: createBookingsLicenceNotice(settings, options.licence) } : {}),
     ...(options.recordKey ? { recordKey: options.recordKey } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
   }) as unknown as Runtime;

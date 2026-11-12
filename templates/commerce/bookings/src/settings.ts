@@ -7,6 +7,8 @@ import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
+import { readAssistantSettings } from "../../../../modules/assistant/settings.ts";
+import type { AssistantSettings } from "../../../../modules/assistant/settings.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
 
@@ -54,6 +56,8 @@ export interface Settings {
    * shop set up from the panel). "google": the shop's Google Calendar. Left out: "google", as every shop before 12 Nov was. Read through `calendarModule`.
    */
   calendar?: { module: "own" | "google" };
+  /** Item 11e: the shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, as before. */
+  assistant?: AssistantSettings;
 }
 
 /** Which calendar this shop uses. A file with no "calendar" key is a Google Calendar shop, as it always was; only an explicit "own" drops the calendar. */
@@ -72,7 +76,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the business's name (\"name\").");
@@ -102,6 +106,8 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
     else calendar = { module: input.calendar.module };
   }
 
+  const assistant = readAssistantSettings(input.assistant, errors);
+
   if (errors.length > 0) return { ok: false, errors };
   const settings = {
     name: (name as string).trim(),
@@ -119,6 +125,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
   if (calendar) settings.calendar = calendar;
+  if (assistant) settings.assistant = assistant;
   settings.payment = payment as PaymentSettings; // last, as before: the order of keys is what an older settings file read back has
   return { ok: true, settings };
 }

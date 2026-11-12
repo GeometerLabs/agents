@@ -62,6 +62,9 @@ export type PrepareRefusal =
   | "no_case" // no case has that reference
   | "not_yours" // the reference is another skill's
   | "not_live" // it is cancelled, done or expired
+  | "not_booked" // still being asked about (no time agreed yet): nothing to cancel
+  | "already_back" // the deposit is already going back: the booking cannot be cancelled with a refund from here
+  | "cancel_first" // a refund of a booking that still stands: cancel it (its own card) to give the deposit back
   | "nothing_paid" // a refund with nothing paid
   | "too_much" // more than was paid
   | "nothing_waiting" // no answer is waiting on that case

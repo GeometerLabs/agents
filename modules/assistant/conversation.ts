@@ -201,13 +201,28 @@ export function createAssistant(deps: AssistantDeps) {
     return true;
   }
 
-  /** Prepare and offer; a refusal is said in words. */
+  /** Prepare and offer; a refusal is said in words. A message is offered only while the customer's window is open: a free text cannot go outside it. */
   async function propose(proposal: Proposal): Promise<void> {
     const skill = skillOf(proposal.case);
     if (!skill) { await tell("refusal", { why: "no_case", ref: proposal.case }); return; }
     const prepared = skill.prepare(proposal);
     if (!prepared.ok) { await tell("refusal", { why: prepared.why, ref: proposal.case }); return; }
+    if (prepared.action.kind === "message" && !(await windowOpen(String(prepared.action.fields.phone)))) { await tell("refusal", { why: "no_window", ref: proposal.case, who: prepared.shown.who }); return; }
     await offerCard(skill, proposal, prepared);
+  }
+
+  const windowOpen = (phone: string): Promise<boolean> => deps.messaging.isWindowOpen(phone).catch(() => false);
+
+  /**
+   * A message card's yes: the owner's words, as typed, under the shop's name, to the customer the card named. Only while their window is open (checked again: it may
+   * have closed since the card), through the outgoing check, and never after STOP (say() holds it back).
+   */
+  async function sendWords(card: CardRecord): Promise<{ ok: boolean; note: "sent" | "not_sent" }> {
+    const phone = String(card.action.fields.phone);
+    const words = String(card.action.fields.words);
+    if (!(await windowOpen(phone))) return { ok: false, note: "not_sent" };
+    const sent = await say({ booking: card.action.case, phone, to: "customer", templates: ["assistant_owner_words"], write: (language) => { const w = write("owner_words", { shop: shop.name, words }, language, tz); return { text: w.text, check: w.facts }; } });
+    return sent ? { ok: true, note: "sent" } : { ok: false, note: "not_sent" };
   }
 
   async function onCardReply(reply: CardReply): Promise<void> {
@@ -251,7 +266,7 @@ export function createAssistant(deps: AssistantDeps) {
     }
     // "do": the saved action, exactly, by the skill that owns it.
     const skill = skillNamed(card.action.skill)!;
-    const executed = await skill.execute(card.action);
+    const executed = card.action.kind === "message" ? await sendWords(card) : await skill.execute(card.action);
     closeCard(s, card, "done", now);
     logLine(caseId, ASSISTANT_ACTIONS.card, executed.ok ? "confirmed" : "failed", { card: card.id }, { ...refs(card, "yes"), result: executed.note }, "the owner tapped yes; the skill did the card's saved action");
     const note = executed.note === "done" ? (card.action.kind === "cancel" ? "cancelled" : card.action.kind === "refund" ? "refund_sent" : card.action.kind === "message" ? "sent" : "answered") : executed.note;
