@@ -1488,7 +1488,8 @@ export function createAgent(deps: AgentDeps): Agent {
     if (startMs <= now + settings.deposit.holdMinutes * MINUTE) return "too_soon";
     if (startMs > now + CHANNEL_LIMITS.daysAhead * 24 * HOUR) return "too_far";
     const hours = hoursOn(settings, weekdayOf(p));
-    if (!hours || minuteOfDay < hours.open || minuteOfDay + service.durationMinutes > hours.close) return "outside_hours";
+    // a date the owner closed through the assistant (item 11e) is outside the hours here too, so nothing is held for it (slotRules would refuse it later anyway)
+    if (!hours || closedDays().includes(isoDate(p)) || minuteOfDay < hours.open || minuteOfDay + service.durationMinutes > hours.close) return "outside_hours";
     return null;
   }
 
