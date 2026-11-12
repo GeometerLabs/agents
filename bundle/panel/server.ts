@@ -132,7 +132,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   // item 11d: a shop that moves to another partner loses the owner's link the old partner made; the new partner makes the owner a new one
   const handover = createHandover(shops, accounts, store, now, (shop) => channels.revoke(shop));
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
-  const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each Bookings shop's booking page, MCP endpoint and the owner's approvals link (channels.ts)
+  const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each shop's page, MCP endpoint and the owner's approvals link (channels.ts)
+  /** Item 11h: the templates whose shops have a page and an owner's page: Bookings (item 11d), Orders and Fees. */
+  const hasPage = (kind: string | undefined): boolean => kind === "bookings" || kind === "orders" || kind === "fees";
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
@@ -484,10 +486,10 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
-      // item 11d: only Bookings has a booking page (its runtime has the channel reads), and only a panel that knows the server's public address can show its links
-      ...(kindId === "bookings" && channels.view(id) ? { channels: channels.view(id)! } : {}),
+      // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
+      ...(hasPage(kindId) && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
       // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
-      ...(kindId === "bookings" ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own" } } : {}),
+      ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own" } } : {}),
       ...(pagesNotice === "ended" || pagesNotice === "bad" ? { pagesNotice } : {}),
       voiceLink: voiceLinkWord(c.lang),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
@@ -503,7 +505,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   // hash to the shop's runtime and relay, or takes it away, at its next pass (every 10 s), and they check every request against their own copy.
   on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-link$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
-    if (!ref || shops.kind(ref.id) !== "bookings") return notFound(r);
+    if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r);
     const link = channels.make(ref.id, new Date(now()));
     if (!link) return notFound(r);
     log(`owner's approvals link of ${ref.id} made by ${r.account!.id}`); // the link itself is never logged
@@ -521,7 +523,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   // their own. Only the choice is written (shops/<shop>/page.json): the deployer claims the name at fleet within a pass and writes what came of it for this page.
   on("POST", /^\/shops\/([a-z0-9-]{1,40})\/page$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
-    if (!ref || shops.kind(ref.id) !== "bookings") return notFound(r);
+    if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r); // item 11h: Orders' and Fees' shops have a page too
     const slug = (r.form.slug ?? "").trim().toLowerCase();
     const whatsapp = (r.form.whatsapp ?? "").replace(/[\s-]/gu, "");
     if ((slug !== "" && !SLUG_SHAPE.test(slug)) || (whatsapp !== "" && !WHATSAPP_NUMBER.test(whatsapp))) return redirect(r, `/shops/${ref.id}?pages=bad`);
@@ -534,7 +536,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   // from its next request and says so once in the record.
   on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-sessions\/end$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
-    if (!ref || shops.kind(ref.id) !== "bookings") return notFound(r);
+    if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r);
     endOwnerSessions(config.serverDir, ref.id, new Date(now()));
     log(`every owner session of ${ref.id} signed out by ${r.account!.id}`);
     redirect(r, `/shops/${ref.id}?pages=ended`);
