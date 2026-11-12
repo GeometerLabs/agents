@@ -182,11 +182,14 @@ refunds Guard holds) on a private page whose link the partner makes in the panel
 
 ## The shop's assistant (item 11e)
 
-With an `"assistant": {}` block in the settings, the owner can also write (or, once the voice notes job lands, speak) in their own words, in English, Hindi, Malayalam or
+With an `"assistant": {}` block in the settings, the owner can also write (or, with voice notes on, speak) in their own words, in English, Hindi, Malayalam or
 Kannada, and the assistant answers in text: "bookings on Sunday", "what needs me", "close Sunday" (the customers that day are asked to pick another day; "undo" opens it
 again), "move b-14 to 5pm" ("undo" moves it back), "cancel b-14", "refund ₹100 b-14", "message b-14 Running 15 minutes late". Anything that moves money, and a message to a customer, comes back as a card showing the
 exact change, and only a tap on it (or its exact code typed, "yes K7M2QX") does it. The fixed commands below keep working as they are. A short morning line goes to the owner
 from 08:00 (`"morning": {"at": "07:30"}` moves it, `false` turns it off), and the character has a name and a look (`"character"`). Limits are not changed from the chat.
+On a shop with a page, the owner's view (`<base>/owner`, after the WhatsApp sign-in, or the panel's link) is also the owner's app: the cards with their buttons,
+the talk box (typed, or hold-to-record where voice notes are on) and an installable app; what needs the owner there and in the chat is one list, and a day the
+owner closed is offered nowhere (WhatsApp, the page, the API, MCP). Tests: `test/assistant.test.ts`, `test/channels.test.ts`, `test/voice-notes.test.ts`.
 How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).
 
 ## The monthly report and the certificates

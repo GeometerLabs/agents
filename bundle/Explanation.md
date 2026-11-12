@@ -925,6 +925,10 @@ slug to another, gets the browser's same-origin treatment, and SameSite=Lax does
 
 1. **No script from anyone but Geometer's own code runs on the pages origin.** The partners' shops are served by item 11d's front (plain HTML, a policy with no script).
    A builder's server is another operator, so the door replaces its policy with one that allows no script, and drops its cookies and service-worker headers.
+   The one script of ours is the owner's app (item 11e, wired 13 Nov): its page alone gets a policy (`front.ts appPolicy`) that runs its one inline script by a fresh
+   nonce per response, and names the app's worker, manifest and recording POST by their full addresses under that shop's owner view, never `'self'` (every slug
+   shares the origin). The door passes our front's policy through as it is, and still replaces a builder's, so no other page there runs script or registers a worker.
+   The door's 64 KB body limit has one exception, a recording to a local shop's owner app (`<slug>/owner/voice`), up to the front's own 256 KB.
 2. **Every owner POST carries a token tied to the session** (`csrf`, a hidden field or the `x-owner-csrf` header), derived from the session the browser holds and checked
    in constant time. A form on another slug cannot read it. The Origin check stays as well.
 3. **The session is checked at that shop's runtime**, which made it: another shop's session, or a front that was taken over, gets nothing.
@@ -975,7 +979,8 @@ At `<base>/owner` (base: `https://<pages domain>/<slug>` for a shop the door ser
    `owner_signin` lines for a link sent, a sign-in, a sign-out and the panel's sign-out of every device. A handover between partners (B38) keeps the owner's sessions:
    they were made from the owner's own WhatsApp and no partner ever saw them (item 11d's panel-made link, which the old partner did see, is switched off by a handover).
 5. **What it opens.** Item 11d's owner page, with the session as the credential in place of the panel-made link: the runtime and the relay accept either (the relay asks the
-   runtime about a session, with its internal token, so the front is never trusted for it). The owner's app of item 11e mounts under the same `<base>/owner` when it lands.
+   runtime about a session, with its internal token, so the front is never trusted for it). With the shop's assistant, the owner's app of item 11e is the same page
+   at `<base>/owner/` (modules/Explanation.md, "The owner's app, wired").
 
 ### The partner's view, and builders' choice
 
