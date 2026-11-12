@@ -81,7 +81,9 @@ test("every report template, in every language, with long names in the shop's ow
   for (const t of REPORT_TEMPLATES) {
     for (const language of LANGUAGES) for (const byWord of t.upi ? [undefined] : [undefined, settled]) {
       const base = sampleReport();
-      const r = live({ preparedBy: names[language].by, shop: { ...base.shop, name: names[language].shop }, ...(t.badge ? { innovator: true as const } : {}), ...(t.upi ? { paidBy: "owner-marked" as const } : {}), ...(byWord ? { money: { ...base.money, settledByWord: byWord } } : {}) });
+      // The sample shop (Annapurna) takes UPI, so its report says paidBy "owner-marked"; a gateway template is tried on the same month without that mark.
+      const { paidBy: _sampleIsUpi, ...month } = live({ preparedBy: names[language].by, shop: { ...base.shop, name: names[language].shop }, ...(t.badge ? { innovator: true as const } : {}), ...(byWord ? { money: { ...base.money, settledByWord: byWord } } : {}) });
+      const r: OrdersReport = t.upi ? { ...month, paidBy: "owner-marked" } : month;
       const env = seal(r, privateKey);
       const summary = summaryLinkFor(env, reportSummaryFields(r), privateKey)!;
       const message = monthlyReportMessage(env, language, { link: page, check: summary });
