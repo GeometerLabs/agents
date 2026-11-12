@@ -24,7 +24,7 @@
 // over (none is kept to send later). Payments from links sent earlier are still counted, receipts still go, and refunds go on. In the FINAL STOP the agent also closes the
 // open fee links (where the module can cancel one) and sends nothing more. This is the runtime's own check of the lease: Guard's offline check (`subscription_suspended`)
 // is not built yet.
-import { RELAY_CODE_REPLY } from "../../../../modules/approvals/code.ts";
+import { isRelayReply } from "../../../../modules/approvals/buttons.ts"; // the relay's replies, typed or tapped (item 11e)
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
 import { handleOwnerTerms } from "../../../../modules/terms/owner.ts";
@@ -773,7 +773,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (markReply) return onOwnerMark(markReply, msg);
     if (msg.image) return; // a picture from the owner is not a mark: only the reply with its code is
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent.
-    if (RELAY_CODE_REPLY.test(msg.text)) return;
+    if (isRelayReply(msg)) return;
     // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
     const moving = parseHandoverReply(msg.text);
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
@@ -845,7 +845,7 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     store.seenMessages.add(msg.id);
     // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
-    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
+    if (approverDigits.has(msg.from.replace(/\D/gu, "")) && isRelayReply(msg)) return;
     if (msg.voiceNote) return onVoiceNote(msg);
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);

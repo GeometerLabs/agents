@@ -37,6 +37,7 @@ import type { CheckResult } from "../language/check.ts";
 import type { TemplateMessage } from "../messaging/messaging.ts";
 import { HOUR } from "../core/time.ts";
 import { NOT_A_REFUND, readHeld } from "./clients.ts";
+import { APPROVAL_LABELS, approvalButtonId, approvalButtonText } from "./buttons.ts";
 import type { GuardClient, Held, Notified, ReadHeld, RefundContext, RuntimeClient } from "./clients.ts";
 import { hashCode } from "./store.ts";
 import type { Ask, AskState, RelayStore } from "./store.ts";
@@ -185,13 +186,14 @@ export function createRelay(options: RelayOptions): Relay {
 
   // ---- WhatsApp -----------------------------------------------------------------------------------------------------------------
   /** "sent" went, or may have (a lost reply is not sent again); "not_sent" definitely did not. */
-  async function send(ids: string[], facts: { language: Language }, asTemplate: boolean, to: string = owner): Promise<"sent" | "not_sent"> {
+  async function send(ids: string[], facts: { language: Language }, asTemplate: boolean, to: string = owner, card?: { code: string }): Promise<"sent" | "not_sent"> {
     const text = voice.render(ids, facts);
     const verdict = voice.check(text, facts);
     if (!verdict.ok) throw new Error(`the message did not match its record: ${verdict.problems.join(" ")}`);
     const asTemplateMessage = () => messaging.sendTemplate(to, voice.templateMessage({ ids, language: facts.language, facts, text, generic: voice.ownerTemplate }));
     try {
       if (asTemplate || !(await messaging.isWindowOpen(to))) await asTemplateMessage();
+      else if (card && typeof messaging.sendInteractive === "function") await sendCard(to, text, facts.language, card.code);
       else await messaging.sendText(to, text);
       return "sent";
     } catch (e) {
@@ -199,6 +201,20 @@ export function createRelay(options: RelayOptions): Relay {
       if (mayHaveHappened(e)) return "sent"; // it may have gone out, and sending it again could ask twice
       if (e instanceof ApiError) return "not_sent";
       throw e;
+    }
+  }
+
+  /**
+   * Item 11e: the ask as a card. The same checked text, with an Approve and a Refuse button whose ids carry the ask's code (buttons.ts); the text keeps the code, so the
+   * typed reply works too. Refused outright (a 4xx, nothing went out): the same text alone. A lost reply or a 5xx may have gone out and is not sent again (the caller's rule).
+   */
+  async function sendCard(to: string, text: string, language: Language, code: string): Promise<void> {
+    const labels = APPROVAL_LABELS[language] ?? APPROVAL_LABELS.en;
+    try {
+      await messaging.sendInteractive!(to, { body: text, buttons: [{ id: approvalButtonId("approve", code), title: labels.approve }, { id: approvalButtonId("deny", code), title: labels.deny }] });
+    } catch (e) {
+      if (mayHaveHappened(e) || e instanceof WindowClosedError || !(e instanceof ApiError) || e.status >= 500) throw e;
+      await messaging.sendText(to, text);
     }
   }
 
@@ -221,7 +237,7 @@ export function createRelay(options: RelayOptions): Relay {
     const halt = (kind: string, note: string) => (isGroup(ask) ? stopOne(ask, kind, note) : stop(ask.approval, kind, note));
     if (!c || !ask.code || !to) { halt("lost_context", "The relay lost what it needs to word the request."); return; }
     let result: "sent" | "not_sent";
-    try { result = await send([voice.ids.ask], factsFor(ask, c), false, to); } catch (e) { halt("message_check", (e as Error).message); return; }
+    try { result = await send([voice.ids.ask], factsFor(ask, c), false, to, { code: ask.code }); } catch (e) { halt("message_check", (e as Error).message); return; }
     if (result === "sent") {
       store.moveAsk(ask, ["sending"], "asked", { askedAtMs: clock.now(), code: null });
       log(isGroup(ask) ? `Asked ${ask.approver} about approval ${ask.approval}.` : `Asked the owner about approval ${ask.approval}.`);
@@ -625,7 +641,9 @@ export function createRelay(options: RelayOptions): Relay {
 
   return {
     receive(messages) {
-      const result = store.saveMessages(messages, clock.now());
+      // Item 11e: a tap on the ask's card button is saved as the typed reply it stands for ("approve K7M2QX"), so it goes through exactly the same checks: the code, its
+      // one use, the sender's number and the count of wrong guesses. Any other tapped id is saved as its words, as before.
+      const result = store.saveMessages(messages.map((m) => { const typed = approvalButtonText(m.reply?.id); return typed ? { ...m, text: typed } : m; }), clock.now());
       void serial(processMessages).catch(() => undefined);
       return result;
     },
