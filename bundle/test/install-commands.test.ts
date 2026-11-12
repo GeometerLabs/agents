@@ -92,11 +92,18 @@ test("pair refuses before sending anything when the code or fleet's address is w
   } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
 });
 
+/**
+ * How long a `geometer pair` child process may take before execFile kills it. 90 s, not 30: the child is a fresh node loading the whole bundle CLI, and under the
+ * heavy lock (efficiency cores, nice 15) with the rest of the bundle suite running it was killed at 30 s with no output (the 12 Nov combined run; alone it takes ~9 s).
+ * Only the time is longer: what the cases check is unchanged.
+ */
+const PAIR_CHILD_TIMEOUT_MS = 90_000;
+
 test("`geometer pair` reads the code on standard input, never its command line, and prints neither the code nor the key", async () => {
   const fleet = await fakeFleet(() => goodAnswer());
   const root = mkdtempSync(join(tmpdir(), "geo-pair-"));
   try {
-    const child = promisify(execFile)(process.execPath, [GEOMETER, "pair", join(root, "server"), "--fleet-url", fleet.url], { timeout: 30_000 });
+    const child = promisify(execFile)(process.execPath, [GEOMETER, "pair", join(root, "server"), "--fleet-url", fleet.url], { timeout: PAIR_CHILD_TIMEOUT_MS });
     child.child.stdin!.end(`${CODE}\n`);
     const r = await child;
     assert.match(r.stdout, /Paired with Geometer's fleet for the account "Ravi Builds". This server is ravi-abcdef/u);
@@ -140,7 +147,7 @@ test("follow-up 8: a server set up with pairing skipped is paired by a second ru
     const before = JSON.parse(readFileSync(join(dir, "geometer.json"), "utf8"));
     assert.equal(before.fleet, undefined);
     // the second run, with a code: `geometer pair` on the existing folder
-    const child = promisify(execFile)(process.execPath, [GEOMETER, "pair", dir, "--fleet-url", fleet.url], { timeout: 30_000 });
+    const child = promisify(execFile)(process.execPath, [GEOMETER, "pair", dir, "--fleet-url", fleet.url], { timeout: PAIR_CHILD_TIMEOUT_MS });
     child.child.stdin!.end(`${CODE}\n`);
     const r = await child;
     assert.match(r.stdout, /Paired with Geometer's fleet for the account "Ravi Builds": heartbeats go to .* as ravi-abcdef \(the folder keeps its own id, server, for its containers and volumes\)\. Nothing else/u);
