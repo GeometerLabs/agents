@@ -176,6 +176,8 @@ export interface CostInput {
   assumptions?: Partial<Assumptions>;
   /** "gupshup" or "360dialog". Left out: the provider's own fee is unknown. */
   whatsappProvider?: string;
+  /** Item 11c: the shop is on its own Gupshup account, whose wallet pays Meta's charges and Gupshup's fee directly. Both WhatsApp lines are then an estimate of what the SHOP pays (payer "shop-pays-gupshup-wallet"), never the builder's or partner's. */
+  whatsappFromShopWallet?: boolean;
   /** This shop's share of the server, in paise a month. Left out: unknown until the bundle measures it. */
   hostingSharePaise?: number;
 }
@@ -183,7 +185,7 @@ export interface CostInput {
 export type LineId = "whatsapp" | "whatsapp-provider" | "gateway" | "geometer" | "hosting";
 export type LineState = "amount" | "unknown";
 /** Who pays whom. Geometer passes nothing through: its own line is the shop's plan (the AI model is in it, up to the allowance), and it never handles anyone else's money. */
-export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-gateway" | "builder-pays-geometer" | "builder-pays-licence" | "hosting";
+export type Payer = "builder-pays-whatsapp-provider" | "shop-pays-gupshup-wallet" | "shop-pays-gateway" | "builder-pays-geometer" | "builder-pays-licence" | "hosting";
 export type Caveat =
   | "early-estimate" | "assumed-exchange-rate" | "provider-not-chosen" | "provider-not-priced" | "fee-not-priced" | "hosting-not-measured"
   | "payment-link-fee-conflict" | "whatsapp-rate-second-hand" | "no-gateway-fee";
@@ -231,6 +233,8 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   const caveats = new Set<Caveat>();
   if (!observed) caveats.add("early-estimate");
   const lines: CostLine[] = [];
+  // item 11c: who pays for WhatsApp (both lines): a self-serve shop's own Gupshup wallet, else the builder or partner
+  const waPayer: Payer = input.whatsappFromShopWallet ? "shop-pays-gupshup-wallet" : "builder-pays-whatsapp-provider";
 
   const known = (id: LineId, payer: Payer, micro: bigint, quantities: Record<string, number>, uses: string[], quality: Quality): CostLine =>
     ({ id, payer, state: "amount", paise: paiseOf(micro), quantities, uses, quality });
@@ -246,9 +250,9 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     const free = BigInt(prices.rates["whatsapp.in.service"]?.freePerMonth ?? 0);
     const paidReplies = replies > free ? replies - free : 0n;
     const quantities = { templates: Number(templates), serviceReplies: Number(replies), freeServiceReplies: Number(free), paidServiceReplies: Number(paidReplies) };
-    if (!utility || !service) lines.push(unknown("whatsapp", "builder-pays-whatsapp-provider", quantities, ["whatsapp.in.utility", "whatsapp.in.service"]));
+    if (!utility || !service) lines.push(unknown("whatsapp", waPayer, quantities, ["whatsapp.in.utility", "whatsapp.in.service"]));
     else {
-      lines.push(known("whatsapp", "builder-pays-whatsapp-provider", templates * utility.value + paidReplies * service.value, quantities, ["whatsapp.in.utility", "whatsapp.in.service"], weakest(utility.quality, service.quality)));
+      lines.push(known("whatsapp", waPayer, templates * utility.value + paidReplies * service.value, quantities, ["whatsapp.in.utility", "whatsapp.in.service"], weakest(utility.quality, service.quality)));
       if (QUALITIES.indexOf(weakest(utility.quality, service.quality)) <= QUALITIES.indexOf("second-hand")) caveats.add("whatsapp-rate-second-hand");
     }
   }
@@ -258,15 +262,15 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
     const messages = bookings * (2n * BigInt(a.serviceRepliesPerBooking) + reminders + BigInt(a.ownerNoticesPerBooking)); // customers' messages come in about as often as replies go out
     const quantities = { messages: Number(messages) };
     const provider = input.whatsappProvider;
-    if (provider === undefined) { lines.push(unknown("whatsapp-provider", "builder-pays-whatsapp-provider", quantities)); caveats.add("provider-not-chosen"); }
+    if (provider === undefined) { lines.push(unknown("whatsapp-provider", waPayer, quantities)); caveats.add("provider-not-chosen"); }
     else {
       const id = `whatsapp.provider.${provider}`;
       const rate = prices.rates[id];
       const m = microPaise(prices, id);
-      if (!rate || !m) { lines.push(unknown("whatsapp-provider", "builder-pays-whatsapp-provider", quantities, [id])); caveats.add("provider-not-priced"); }
+      if (!rate || !m) { lines.push(unknown("whatsapp-provider", waPayer, quantities, [id])); caveats.add("provider-not-priced"); }
       else {
         const count = rate.per === "message" ? messages : 1n; // a flat fee per number a month is one number
-        lines.push(known("whatsapp-provider", "builder-pays-whatsapp-provider", count * m.value, rate.per === "message" ? quantities : { numbers: 1 }, [id], m.quality));
+        lines.push(known("whatsapp-provider", waPayer, count * m.value, rate.per === "message" ? quantities : { numbers: 1 }, [id], m.quality));
         if (m.assumedRate) caveats.add("assumed-exchange-rate");
       }
     }

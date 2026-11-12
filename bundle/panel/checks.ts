@@ -13,6 +13,7 @@ import { providerById } from "../../modules/payments/providers/index.ts";
 import { ApiError, GuardError, GuardUnauthenticatedError, NotSentError, TimeoutError } from "../../modules/core/faults.ts";
 import { GRAPH_VERSION } from "../../modules/messaging/whatsapp.ts";
 import { GUPSHUP_APP_ID, gupshupPath } from "../../modules/messaging/gupshup.ts";
+import { GUPSHUP_APP_NAME, GUPSHUP_SELFSERVE_APP_ID, readTemplateList, templateListPath } from "../../modules/messaging/gupshup-selfserve.ts";
 import { createHttp, isObject, str } from "../../modules/core/http.ts";
 import type { Http, HttpReply } from "../../modules/core/http.ts";
 
@@ -39,7 +40,7 @@ export interface CheckResult {
   ok: boolean;
   code: CheckCode;
   /** What the provider itself reported: ids, never what the shop typed. */
-  confirmed?: { phoneNumberId?: string; displayNumber?: string; verifiedName?: string; calendarId?: string; calendarName?: string; timeZone?: string; accessRole?: string; keyId?: string; mode?: "test" | "live"; /** Gupshup: the app the Guard pinned path named, which Gupshup answered for (not an id Gupshup's reply carries). */ appId?: string };
+  confirmed?: { phoneNumberId?: string; displayNumber?: string; verifiedName?: string; calendarId?: string; calendarName?: string; timeZone?: string; accessRole?: string; keyId?: string; mode?: "test" | "live"; /** Gupshup self-serve: the app name the shop gave, and how many of the templates its list shows are approved (the list is what the check read). */ appName?: string; templatesApproved?: number; templatesListed?: number; /** Gupshup: the app the Guard pinned path named, which Gupshup answered for (not an id Gupshup's reply carries). */ appId?: string };
   /** On a mismatch: the last four digits of the number that was found, so a person can see it is not theirs without the page showing a whole number. */
   foundEnding?: string;
   /** The calendar role found, or Guard's own reason. Plain words from the provider or Guard, never a credential. */
@@ -56,6 +57,8 @@ export interface ConnectionTargets {
   whatsapp?: { baseUrl: string; phoneNumberId: string; /** The number customers write to, with +country code. NOT the owner's number. */ businessNumber: string };
   /** A shop whose WhatsApp goes through Gupshup (item 11b): its WhatsApp Guard, and the shop's own Gupshup app id (runtime.json). Checked in place of `whatsapp`. */
   gupshup?: { baseUrl: string; appId: string };
+  /** A shop on its own Gupshup account (item 11c): its WhatsApp Guard, the app's name and (optional) id. Checked in place of `whatsapp`. */
+  gupshupSelfServe?: { baseUrl: string; appName: string; appId?: string };
   /** B71: the shop's gateway (its provider id), only for a shop that chose one. */
   gateway?: { provider: string; baseUrl: string; /** The key id the shop gave (it is public, not the secret). */ keyId?: string; expectedMode: "test" | "live"; /** The key id confirmed earlier: a different one now is an error. */ pinnedKeyId?: string };
   calendar?: { baseUrl: string; calendarId: string };
@@ -165,6 +168,33 @@ export async function checkGupshup(target: NonNullable<ConnectionTargets["gupshu
   }
 }
 
+// ---- WhatsApp through the shop's OWN Gupshup account (item 11c, self-serve) -----------------------------------------------------------------------
+// GET the app's template list (modules/messaging/gupshup-selfserve.ts templateListPath), the one read the shop's Guard allows. It answers only for a key that belongs to the
+// app, so a 200 shows the key and the app name go together and the list can be read; it also shows how many templates the app has approved. It does NOT name the number the
+// app sends from and does not send, so `which-number` and `sending` stay in notChecked and a page says "Gupshup answered for app <name>", never "number verified".
+
+export async function checkGupshupSelfServe(target: NonNullable<ConnectionTargets["gupshupSelfServe"]>, options: { timeoutMs?: number; agentToken?: string; http?: Http } = {}): Promise<CheckResult> {
+  const notChecked: NotChecked[] = ["which-number", "sending", "templates-approved"];
+  if (!GUPSHUP_APP_NAME.test(target.appName) || (target.appId !== undefined && !GUPSHUP_SELFSERVE_APP_ID.test(target.appId))) return result("whatsapp", "not_configured", { notChecked });
+  try {
+    const http = options.http ?? createHttp(target.baseUrl, "Gupshup", options.timeoutMs, options.agentToken);
+    const reply = await http.request("GET", templateListPath(target.appName, target.appId), target.appId ? { query: { pageSize: 100 } } : {});
+    const b = reply.body;
+    // Gupshup's refusals are { status: "error", message }; 400 is an app this key cannot see. Its words go with the result (never a credential).
+    if (reply.status === 400) {
+      const said = isObject(b) && !holdsSecret(b, [options.agentToken]) ? str(b.message) : undefined;
+      return result("whatsapp", "not_found", { notChecked, ...(said ? { detail: said.slice(0, 200) } : {}) });
+    }
+    const bad = providerStatus(reply, "gupshup", notChecked);
+    if (bad) return { ...bad, service: "whatsapp" };
+    if (!isObject(b) || !Array.isArray(b.templates) || b.status === "error" || holdsSecret(b, [options.agentToken])) return result("whatsapp", "unexpected_response", { notChecked });
+    const listed = [...readTemplateList(b).values()];
+    return result("whatsapp", "confirmed", { notChecked, confirmed: { appName: target.appName, templatesListed: listed.length, templatesApproved: listed.filter((t) => t.status === "APPROVED").length } });
+  } catch (e) {
+    return failure("whatsapp", e, notChecked);
+  }
+}
+
 // ---- a gateway: the key works, in the right mode, and is the key already confirmed -----------------------------------------------------------
 // One read its folder names (providers/<name>/index.ts, setup.probe): a call only a working key answers, through Guard with the panel's reading credential. What this
 // does NOT prove: whose account the key belongs to (a gateway may document no call that tells an ordinary key its own account). So the result says
@@ -236,7 +266,8 @@ export async function checkCalendar(target: NonNullable<ConnectionTargets["calen
 export async function checkConnections(targets: ConnectionTargets): Promise<ConnectionReport> {
   const o = { timeoutMs: targets.timeoutMs, agentToken: targets.agentToken };
   const jobs: Promise<CheckResult>[] = [];
-  if (targets.gupshup) jobs.push(checkGupshup(targets.gupshup, o));
+  if (targets.gupshupSelfServe) jobs.push(checkGupshupSelfServe(targets.gupshupSelfServe, o));
+  else if (targets.gupshup) jobs.push(checkGupshup(targets.gupshup, o));
   else if (targets.whatsapp) jobs.push(checkWhatsApp(targets.whatsapp, o));
   if (targets.gateway) jobs.push(checkGateway(targets.gateway, o));
   if (targets.calendar) jobs.push(checkCalendar(targets.calendar, o));

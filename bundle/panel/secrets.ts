@@ -26,6 +26,9 @@ export function checkSecret(name: SecretName, value: string): SecretCheck {
   if (gateway) return (name === gateway.secrets.key ? gateway.checkKey(v) : gateway.checkWebhookSecret(v)) ? { ok: true, text: v } : { ok: false };
   switch (name) {
     case "whatsapp_token": return NO_SPACE(20, 2000).test(v) ? { ok: true, text: v } : { ok: false };
+    // item 11c: the shop's own Gupshup API key (one line), and the secret word that ends the callback address Gupshup posts to (the inbox's path token)
+    case "gupshup_apikey": return NO_SPACE(16, 200).test(v) ? { ok: true, text: v } : { ok: false };
+    case "whatsapp_path_token": return /^[A-Za-z0-9_-]{16,100}$/u.test(v) ? { ok: true, text: v } : { ok: false };
     case "whatsapp_app_secret": return NO_SPACE(16, 200).test(v) ? { ok: true, text: v } : { ok: false };
 
     case "google_service_account.json": {

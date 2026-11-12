@@ -167,7 +167,7 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
 }
 
 // The ops container's config: where every Guard's admin port and every runtime is, plus the fleet link. Ops is the only place that holds all admin tokens, so this file names token FILES, never the tokens.
-export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string; pathway?: string })[], agents: AgentFacts[] = []): string {
+export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string; pathway?: string } & Route)[], agents: AgentFacts[] = []): string {
   // follow-up 2: where ops asks how the Gupshup token renewals are doing (the refresher's /healthz, on the admin network); only on a server that renews any
   const refresherUrl = shops.some((s) => s.gupshupRenewed) ? { refresherUrl: `http://refresher:${REFRESHER_PORT}` } : {};
   const net = addressing(server);
@@ -181,6 +181,8 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
     fleetDir: OPS_FLEET_DIR,
     shops: Object.fromEntries(shops.map((s) => [s.name, {
       pathway: s.pathway ?? "bookings", pathwayVersion: s.pathwayVersion,
+      // item 11c: a shop on its own Gupshup account pays WhatsApp from its own wallet, so the heartbeat leaves its WhatsApp counts out of fleet's pass-through
+      ...(s.whatsappRoute?.provider === "gupshup-selfserve" ? { whatsappPaidBy: "shop" } : {}),
       runtimeUrl: runtimeUrl(server, s), internalTokenFile: `/run/secrets/${s.name}/internal_token`,
       // where the deployer records the shop's backup times (the heartbeat reports their ages)
       statusFile: `${OPS_STATUS_DIR}/${s.name}.json`,
