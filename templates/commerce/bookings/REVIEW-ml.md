@@ -652,6 +652,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.lines.geometer` | Geometer-ന്റെ പ്ലാൻ | Geometer's plan |  |
 | `cost.lines.hosting` | ഹോസ്റ്റിംഗ് വിഹിതം | Hosting share |  |
 | `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or partner to their own WhatsApp provider |  |
+| `cost.payer.shop-pays-gupshup-wallet` | ഏകദേശ കണക്ക്; കടയുടെ സ്വന്തം Gupshup വാലറ്റിൽ നിന്നാണ് പോകുന്നത്, Geometer ബാലൻസിൽ നിന്നല്ല | an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance |  |
 | `cost.payer.shop-pays-gateway` | കട {gateway}-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to {gateway} |  |
 | `cost.payer.builder-pays-geometer` | ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു | paid to Geometer by the builder or partner; the AI model is included |  |
 | `cost.payer.builder-pays-licence` | ബിൽഡർ Geometer-ന് അടയ്ക്കും, പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും ഒരിക്കൽ; AI കീ ബിൽഡറുടെ സ്വന്തം | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
@@ -870,6 +871,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.problems.twoAboveBad` | രണ്ടുപേരുടെ അനുമതി വേണ്ട തുക മുഴുവൻ രൂപയിൽ എഴുതൂ, ഉദാഹരണം 5000, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the two-person amount in whole rupees, for example 5000, or leave it empty. |  |
 | `setup.problems.twoAboveAlone` | കുറഞ്ഞത് ഒരാളെക്കൂടി ചേർത്താൽ മാത്രമേ രണ്ടുപേർക്ക് അനുമതി നൽകാൻ കഴിയൂ. | Two people can only approve if you add at least one other person. |  |
 | `setup.problems.expectedBad` | മാസത്തിലെ ബുക്കിംഗുകളുടെ എണ്ണം പൂർണ്ണസംഖ്യയായി എഴുതൂ, ഉദാഹരണം 40, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
+| `setup.problems.appNameBad` | Gupshup ആപ്പിന്റെ പേര് അക്ഷരങ്ങളും അക്കങ്ങളും അണ്ടർസ്കോറും ആണ്, Gupshup കാണിക്കുന്നതുപോലെ (ഉദാഹരണം Glow_Salon). | The Gupshup app name is letters, digits and underscores, as Gupshup shows it (for example Glow_Salon). |  |
 | `setup.problems.numberIdBad` | ഫോൺ നമ്പർ ഐഡിയിൽ അക്കങ്ങൾ മാത്രമേ ഉണ്ടാകൂ (6 മുതൽ 20 വരെ). | The phone number ID is digits only (6 to 20 of them). |  |
 | `setup.problems.businessNumberBad` | കടയുടെ WhatsApp നമ്പർ രാജ്യത്തിന്റെ കോഡ് ചേർത്ത് എഴുതൂ. | Write the shop's WhatsApp number with the country code. |  |
 | `setup.problems.secretMissing` | the access token പൂരിപ്പിക്കൂ. | Fill in the access token. |  |
@@ -890,6 +892,21 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.whatsapp.numberId` | ഫോൺ നമ്പർ ഐഡി | Phone number ID |  |
 | `setup.accounts.whatsapp.token` | ആക്സസ് ടോക്കൺ | Access token |  |
 | `setup.accounts.whatsapp.appSecret` | ആപ്പ് സീക്രട്ട് | App secret |  |
+| `setup.accounts.whatsapp.selfServe.choiceMeta` | Meta നേരിട്ട് (കടയുടെ സ്വന്തം Meta ആപ്പ്) | Meta direct (the shop's own Meta app) |  |
+| `setup.accounts.whatsapp.selfServe.choiceGupshup` | Gupshup (കടയുടെ സ്വന്തം അക്കൗണ്ട്) | Gupshup (the shop's own account) |  |
+| `setup.accounts.whatsapp.selfServe.title` | Gupshup (കടയുടെ സ്വന്തം അക്കൗണ്ട്) | Gupshup (the shop's own account) |  |
+| `setup.accounts.whatsapp.selfServe.intro` | കട സ്വയം Gupshup-ൽ സൈൻ അപ്പ് ചെയ്യുന്നു, അക്കൗണ്ട് കടയുടേത് തന്നെ. Meta-യുടെ ചാർജും Gupshup-ന്റെ ഫീസും കടയുടെ സ്വന്തം Gupshup വാലറ്റിൽ നിന്നാണ് പോകുന്നത്; ആ പണം Geometer ഒരിക്കലും കൈവശം വയ്ക്കില്ല. | The shop signs up at Gupshup itself and keeps the account. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee; Geometer never holds that money. |  |
+| `setup.accounts.whatsapp.selfServe.signup` | Gupshup-ൽ സൈൻ അപ്പ് ചെയ്യൂ | Sign up at Gupshup |  |
+| `setup.accounts.whatsapp.selfServe.guide` | ആപ്പിന്റെ പേരും API key-യും എവിടെ കിട്ടും | How to find the app name and API key |  |
+| `setup.accounts.whatsapp.selfServe.steps.1` | കട Gupshup-ൽ സൈൻ അപ്പ് ചെയ്ത് തന്റെ നമ്പറിനായി ഒരു WhatsApp ആപ്പ് ഉണ്ടാക്കുന്നു. | The shop signs up at Gupshup and makes a WhatsApp app for its number. |  |
+| `setup.accounts.whatsapp.selfServe.steps.2` | Gupshup അക്കൗണ്ടിൽ പാർട്ണറെ അഡ്മിൻ ആയി ചേർക്കൂ. | Add the partner as an admin of the Gupshup account. |  |
+| `setup.accounts.whatsapp.selfServe.steps.3` | ആപ്പിൽ ഞങ്ങളുടെ മെസേജ് ടെംപ്ലേറ്റുകൾ ചേർത്ത്, Gupshup അവ അംഗീകരിച്ചതായി (approved) കാണിക്കുന്നതുവരെ കാത്തിരിക്കൂ. | In the app, add our message templates and wait until Gupshup shows them as approved. |  |
+| `setup.accounts.whatsapp.selfServe.steps.4` | Gupshup ഡാഷ്ബോർഡിൽ നിന്ന് ആപ്പിന്റെ പേരും API key-യും കോപ്പി ചെയ്ത് താഴെ ടൈപ്പ് ചെയ്യൂ, കൂടെ കോൾബാക്ക് വിലാസത്തിനുള്ള നിങ്ങളുടെ സ്വന്തം രഹസ്യവാക്കും. | Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address. |  |
+| `setup.accounts.whatsapp.selfServe.steps.5` | ആപ്പിന്റെ Webhooks ടാബിൽ താഴെ കാണുന്ന വിലാസം ചേർക്കൂ, അവസാനം ആ രഹസ്യവാക്ക് വരണം. | In the app's Webhooks tab, add the address shown below, ending with that secret word. |  |
+| `setup.accounts.whatsapp.selfServe.appName` | Gupshup ആപ്പിന്റെ പേര് | Gupshup app name |  |
+| `setup.accounts.whatsapp.selfServe.apiKey` | Gupshup API key | Gupshup API key |  |
+| `setup.accounts.whatsapp.selfServe.pathToken` | കോൾബാക്ക് വിലാസത്തിന്റെ രഹസ്യവാക്ക് (16 ഓ അതിലധികമോ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, _ അല്ലെങ്കിൽ -) | Secret word for the callback address (16 or more letters, digits, _ or -) |  |
+| `setup.accounts.whatsapp.selfServe.callback` | ഈ വിലാസം Gupshup ആപ്പിന്റെ Webhooks ടാബിൽ ചേർക്കൂ, SECRET-WORD എന്നതിന് പകരം നിങ്ങളുടെ രഹസ്യവാക്ക് ഇട്ട്: | Add this address in the Gupshup app's Webhooks tab, with your secret word in place of SECRET-WORD: |  |
 | `setup.accounts.calendar.title` | Google കലണ്ടർ | Calendar |  |
 | `setup.accounts.calendar.intro` | ബുക്കിംഗുകൾ കടയുടെ സ്വന്തം Google കലണ്ടറിൽ പോകും. | Bookings go into the shop's own Google Calendar. |  |
 | `setup.accounts.calendar.steps.1` | കമ്പ്യൂട്ടറിൽ Google Calendar തുറന്ന്, ആ കലണ്ടറിന്റെ ക്രമീകരണങ്ങൾ (settings) തുറക്കൂ. | Open Google Calendar on a computer, and open the calendar's settings. |  |
@@ -921,6 +938,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ഇത് ഈ കടയുടെ നമ്പർ ആണ് (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | കിട്ടിയ നമ്പറിന്റെ അവസാന അക്കങ്ങൾ 3210 ആണ്; ഇത് കടയുടെ നമ്പർ അല്ല. ഒന്നും മാറ്റിയിട്ടില്ല. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ആ ഫോൺ നമ്പർ ഐഡി ഈ അക്കൗണ്ടിൽ ഇല്ല. | That phone number ID is not on this account. |  |
+| `setup.checks.whatsapp.selfServeConfirmed` | Gupshup ആപ്പ് Glow_Salon-നായി മറുപടി നൽകി: key-യും ആപ്പിന്റെ പേരും പരസ്പരം ചേരുന്നു, പട്ടികയിലെ 5 ടെംപ്ലേറ്റുകളിൽ 4 എണ്ണം അംഗീകരിച്ചിട്ടുണ്ട്. ആപ്പ് ഏത് നമ്പറിൽ നിന്നാണ് അയയ്ക്കുന്നതെന്ന് ഈ പരിശോധന കാണിക്കുന്നില്ല, ഇത് ഒന്നും അയയ്ക്കുന്നുമില്ല. | Gupshup answered for app Glow_Salon: the key and the app name go together, and 4 of the 5 templates listed are approved. This check does not show which number the app sends from, and it sends nothing. |  |
 | `setup.checks.whatsapp.gupshupConfirmed` | ആപ്പ് 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8-നായി Gupshup മറുപടി നൽകി. ആപ്പ് ഏത് നമ്പറിൽ നിന്നാണ് അയയ്ക്കുന്നതെന്ന് ഈ പരിശോധന കാണിക്കുന്നില്ല. | Gupshup answered for app 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8. This check does not show which number the app sends from. |  |
 | `setup.checks.whatsapp.gupshupNotFound` | ഈ ടോക്കണിനൊപ്പം Gupshup ആ ആപ്പ് സ്വീകരിച്ചില്ല (അത് പറഞ്ഞത്: Invalid App Details). | Gupshup did not accept that app with this token (it said: Invalid App Details). |  |
 | `setup.checks.calendar.title` | Google കലണ്ടർ | Calendar |  |
@@ -1101,6 +1119,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `health.cost.notes.builderLicence` | ബിൽഡർ ലൈസൻസ് | Builder licence |  |
 | `health.cost.notes.included` | പ്ലാൻ ഫീസിൽ ഉൾപ്പെടുന്നു | Included in the plan fee |  |
 | `health.cost.notes.estimate` | ഈ മാസത്തെ എണ്ണത്തിൽ നിന്നുള്ള കണക്ക്, സൗജന്യ മറുപടികൾക്ക് മുമ്പ് | Estimate from this month's counts, before the free replies |  |
+| `health.cost.notes.shopWallet` | കടയുടെ സ്വന്തം Gupshup വാലറ്റിൽ നിന്നാണ് പോകുന്നത്, Geometer ബാലൻസിൽ നിന്നല്ല, അതിനാൽ ഈ ചെലവിൽ ഇല്ല | Paid from the shop's own Gupshup wallet, not from Geometer's balance, so it is not in this cost |  |
 | `health.cost.notes.noRecord` | രേഖ ഇതുവരെ പങ്കിട്ടിട്ടില്ല | No record shared yet |  |
 | `health.cost.notes.noPlan` | ഫ്ലീറ്റ് പ്ലാൻ നിശ്ചയിച്ചിട്ടില്ല | Fleet has not set a plan |  |
 | `health.cost.notes.noPrice` | പട്ടികയിൽ വിലയില്ല | No price in the list |  |
@@ -1199,4 +1218,3 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.actions.rotateDone` | പുതിയ ക്രെഡൻഷ്യലുകൾ ഉണ്ടാക്കി. പഴയവ 4 Nov 2026, 10:15-ന് നിൽക്കും. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
 | `agents.actions.rotateFailed` | പുതിയ ക്രെഡൻഷ്യലുകൾക്കുള്ള കഴിഞ്ഞ ആവശ്യം നടന്നില്ല; നിങ്ങളുടെ ഏജന്റിന് ഒന്നും മാറിയില്ല. കാരണം സെർവറിന്റെ ലോഗിൽ ഉണ്ട്. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
 | `agents.actions.cliOnly` | ഏജന്റിനെ നീക്കം ചെയ്യുന്നത് സെർവറിൽ മാത്രം: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
-
