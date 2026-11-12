@@ -36,6 +36,6 @@ ${o.problem ? html`<ul class="errors" role="alert"><li>${p.bad}</li></ul>` : ""}
   <button class="btn primary" type="submit">${p.save}</button></form>
 <div class="notice" role="status">${say}</div>
 ${s.state === "agreed" ? html`<p><a class="btn primary" href="/shops/${o.id}/terms/copy.txt">${p.copy}</a></p>` : ""}
-${s.state !== "details" ? html`<h2>${p.preview}</h2><pre class="addr" style="white-space:pre-wrap">${s.text}</pre>` : ""}
+${s.state !== "details" ? html`<h2>${p.preview}</h2><pre class="addr">${s.text}</pre>` : ""}
 <p><a href="/shops/${o.id}">${c.w.common.back}</a></p>`);
 }
