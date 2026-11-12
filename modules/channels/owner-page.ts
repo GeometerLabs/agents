@@ -22,16 +22,20 @@ button.no{background:#fff;color:var(--g9);border:1px solid var(--line)}ul{paddin
 `;
 
 export interface OwnerPageInput {
-  base: string; // https://<server>/s/<shop>/o/<token>: the page posts its answers to <base>/answer
+  base: string; // https://<server>/s/<shop>/o/<token>, or (item 11f) <the shop's address>/owner: the page posts its answers to <base>/answer
   language: Language;
   view: OwnerView;
   relayAsks: RelayAsk[];
   notice?: string;
+  /** Item 11f, a signed-in owner: the session's form token, put in every form (the shops share one origin, so a form from another page must not pass). */
+  csrf?: string;
+  /** Item 11f: where "Sign out" posts (with the form token), for a signed-in owner. */
+  signOut?: { action: string; label: string };
 }
 
 /** One answer button: posts what it stands for and the digest of what the page shows. */
-function button(base: string, f: { source: "runtime" | "relay"; action: string; case: string; digest: string }, label: string, quiet = false): Raw {
-  return html`<form method="post" action="${base}/answer"><input type="hidden" name="source" value="${f.source}"><input type="hidden" name="action" value="${f.action}"><input type="hidden" name="case" value="${f.case}"><input type="hidden" name="digest" value="${f.digest}"><button${quiet ? raw(' class="no"') : ""} type="submit">${label}</button></form>`;
+function button(base: string, f: { source: "runtime" | "relay"; action: string; case: string; digest: string }, label: string, quiet = false, csrf?: string): Raw {
+  return html`<form method="post" action="${base}/answer">${csrf ? html`<input type="hidden" name="csrf" value="${csrf}">` : ""}<input type="hidden" name="source" value="${f.source}"><input type="hidden" name="action" value="${f.action}"><input type="hidden" name="case" value="${f.case}"><input type="hidden" name="digest" value="${f.digest}"><button${quiet ? raw(' class="no"') : ""} type="submit">${label}</button></form>`;
 }
 
 export function ownerPage(o: OwnerPageInput): string {
@@ -43,14 +47,14 @@ export function ownerPage(o: OwnerPageInput): string {
   const who = (c: OwnerItemView["customer"], ch: OwnerItemView["channel"]) => w.who(c.name, c.phone, w.from[ch]);
   const item = (i: OwnerItemView): Raw => {
     const amount = formatInr(i.amountPaise / 100);
-    const b = (action: string, label: string, quiet = false) => button(o.base, { source: "runtime", action, case: i.case, digest: i.digest }, label, quiet);
+    const b = (action: string, label: string, quiet = false) => button(o.base, { source: "runtime", action, case: i.case, digest: i.digest }, label, quiet, o.csrf);
     if (i.kind === "deposit") return html`<div class="item"><p>${w.deposit(who(i.customer, i.channel), amount, what(i))}</p>${b("received", w.received(amount))}</div>`;
     if (i.kind === "refund_owed") return html`<div class="item"><p>${w.refundOwed(who(i.customer, i.channel), amount, i.why ?? "")}</p>${b("refunded", w.refundSent)}${i.actions.includes("kept") ? b("kept", w.kept, true) : ""}</div>`;
     if (i.kind === "late_refund") return html`<div class="item"><p>${w.lateRefund(who(i.customer, i.channel), what(i), amount)}</p>${b("approve", w.refundIt)}${b("deny", w.keepIt, true)}</div>`;
     return html`<div class="item"><p>${w.calendar(who(i.customer, i.channel), what(i), amount)}</p>${b("retry", w.retry)}${b("approve", w.cancelRefund, true)}</div>`;
   };
   const ask = (a: RelayAsk): Raw => {
-    const b = (action: "approve" | "deny", label: string, quiet = false) => button(o.base, { source: "relay", action, case: a.approval, digest: a.digest }, label, quiet);
+    const b = (action: "approve" | "deny", label: string, quiet = false) => button(o.base, { source: "relay", action, case: a.approval, digest: a.digest }, label, quiet, o.csrf);
     const detail = [a.serviceName, a.slotMs !== undefined ? formatSlot(a.slotMs, tz, o.language) : ""].filter(Boolean).join(", ");
     return html`<div class="item"><p>${w.guardRefund(a.customerPhone ?? "", formatInr(a.amountPaise / 100), detail || (a.booking ?? ""), formatSlot(a.untilMs, tz, o.language))}</p>${b("approve", w.approve)}${b("deny", w.deny, true)}</div>`;
   };
@@ -65,6 +69,7 @@ ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 ${waiting.length > 0 ? waiting : html`<p>${w.none}</p>`}
 <h2>${w.upcoming}</h2>
 ${v.upcoming.length > 0 ? html`<ul>${v.upcoming.map((u) => html`<li>${formatSlot(u.startMs, tz, o.language)}: ${service(u.serviceId)} · ${who(u.customer, u.channel)}</li>`)}</ul>` : html`<p>${w.noneComing}</p>`}
+${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
 }
 
