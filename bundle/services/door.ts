@@ -3,7 +3,7 @@
 // secret and keeps nothing but a minute's memory of fleet's answers.
 //
 //   GET  /                        a short page: what this domain is
-//   GET  /robots.txt              Disallow: /*/owner (an owner's page is nobody's search result)
+//   GET  /robots.txt              Disallow: /*/owner (an owner's page is nobody's search result), and (item 11h) a parent's page, a payment's and an order's
 //   GET  /healthz                 the process is up
 //   GET  /p/<id>                  the shop's STABLE page address (QR codes carry it): redirected to its current slug; "suspended" or "gone" otherwise
 //   ...  /<slug>[/<rest>]         the shop's page. A shop on this server: forwarded to the inbox's front as /s/<shop>/<rest>, with `x-geometer-door: <slug>`.
@@ -306,7 +306,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     if (o.extra.includes(host)) return go(res, 301, `${primaryOrigin}${url.pathname}${url.search}`);
     if (host !== o.primary) return nothing(res);
     if (method !== "GET" && method !== "HEAD" && method !== "POST") return own(res, 405, pageOf("Not here", "Use the page's links and buttons."), "text/html; charset=utf-8", { allow: "GET, HEAD, POST" });
-    if (url.pathname === "/robots.txt") return own(res, 200, "User-agent: *\nDisallow: /*/owner\nDisallow: /*/o/\n", "text/plain; charset=utf-8", { "cache-control": "public, max-age=3600" });
+    if (url.pathname === "/robots.txt") return own(res, 200, "User-agent: *\nDisallow: /*/owner\nDisallow: /*/o/\nDisallow: /*/f/\nDisallow: /*/fee/\nDisallow: /*/order/\n", "text/plain; charset=utf-8", { "cache-control": "public, max-age=3600" });
     if (url.pathname === "/") return own(res, 200, pageOf("Shop pages", "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner."), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
     const visitor = visitorOf(req);
     if (!take("all", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a minute."), "text/html; charset=utf-8", { "retry-after": "60" });

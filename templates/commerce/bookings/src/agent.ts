@@ -1542,6 +1542,8 @@ export function createAgent(deps: AgentDeps): Agent {
   /** A cancel or an "I have paid" for the booking with this handle: the same as the same button on WhatsApp, in the booking's own conversation. */
   async function onChannel(e: ChannelEvent & { kind: "channel_request" }): Promise<void> {
     if (e.op === "book") return onChannelBook(e);
+    // item 11h: an order or a parent's fee request is another template's; a Bookings shop does nothing with one
+    if (e.op !== "cancel" && e.op !== "paid") { log(null, owner, "channel_booking", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "a request this shop does not take (it is not an orders or fees shop): nothing was done" }); return; }
     const request = channelState().requests[e.handle];
     const b = request?.booking ? store.bookings.get(request.booking) : undefined;
     if (!b || b.handle !== e.handle) { log(null, owner, "channel_booking", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "no booking has this handle, so nothing was done" }); return; }

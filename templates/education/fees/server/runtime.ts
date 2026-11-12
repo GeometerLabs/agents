@@ -24,6 +24,12 @@ import { createMorningJob } from "../../../../modules/assistant/morning.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "../src/assistant.ts";
 import type { DurableStore } from "./store.ts";
+import type { OwnerSignin } from "../../../../modules/channels/owner-signin.ts";
+import type { PagesFile } from "../../../../modules/channels/pages-file.ts";
+import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
+import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
+import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import { feeConfirmView, feesOffer, ownerView, parentView } from "../src/channel.ts";
 
 export const PATHWAY = "fees";
 export { RETRY_DELAYS_MS };
@@ -53,6 +59,13 @@ export interface RuntimeOptions {
   terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
   /** Item 11e: the owner's router for the shop's assistant (modules/assistant/reading.ts). Left out: the rules alone read the owner's words. */
   ownerParser?: OwnerParser;
+  /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
+  ownerSignin?: OwnerSignin;
+  /**
+   * Item 11h: the centre's page addresses (its pages.json, read on every use), so a reminder can carry a parent's private link under the centre's page. Left out, or
+   * no file: no page, and the reminders are as they were.
+   */
+  pages?: () => PagesFile | undefined;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -93,9 +106,19 @@ function countByState(store: Store): Record<string, number> {
   return counts;
 }
 
+/** Item 11h: how long a confirmation page whose fee is settled is kept after its press, beyond the conversation retention: a parent may come back to it. */
+const CONFIRMATION_KEEP_MS = 90 * 24 * 3_600_000;
+
 export function createRuntime(options: RuntimeOptions): Runtime {
   const { settings, clock, services, parser } = options;
   const policy: AiPolicy = options.ai ?? {};
+  // item 11h: the parents' links this process made (in memory only: the store keeps their hashes), so a reminder resends the link a parent already has
+  const linkMemory = new Map<string, string>();
+  // the pages domain's address when the centre has one (that is where its QR codes and printed links point), else its own server's
+  const pageBase = () => { const p = options.pages?.(); return p ? p.url ?? p.base : undefined; };
+  // the owner's recordings from their page, in memory only until their step listens (only with a voice service and the assistant: otherwise there is no record button)
+  const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
+  const skillOver = (store: Store) => feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
     pathway: PATHWAY,
     casesName: "fees",
@@ -105,7 +128,35 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     skipCounters: skipStoreCounters,
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}) }),
+    createAgent: ({ store, record, services: watched }) => createAgent({
+      settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}),
+      pageBase, linkMemory, ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
+    }),
+    // Item 11h: a confirmation page is kept while its fee is open, and for CONFIRMATION_KEEP_MS after it was pressed once the fee is settled. A parent's link is never
+    // taken off here: it is the parent's until a new one replaces it or the owner switches it off.
+    compactStore(store, beforeMs) {
+      let changed = 0;
+      for (const [hash, c] of Object.entries(store.confirmations ?? {})) {
+        const due = store.dues.get(c.dueId);
+        // a refused press goes with the conversations' retention; a settled fee's page stays longer, so the parent can still open it
+        const keepFrom = c.refused !== undefined ? beforeMs : Math.min(beforeMs, clock.now() - CONFIRMATION_KEEP_MS);
+        if ((due?.state === "open" && c.refused === undefined) || c.atMs >= keepFrom) continue;
+        delete store.confirmations![hash];
+        changed++;
+      }
+      return changed;
+    },
+    // Item 11h: what the centre's page, a parent's private page, a payment's confirmation page and the owner's page read, each from the last saved state
+    channel: {
+      offer: async () => feesOffer(settings, !(options.licence?.() ?? UNRESTRICTED).takesNewWork),
+      view: (store, handleHash) => feeConfirmView(settings, store, handleHash),
+      parent: (store, linkHash) => parentView(settings, store, linkHash),
+      ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
+      owner: (store) => ({
+        ...ownerView(settings, store),
+        ...(settings.assistant ? { app: { ...ownerAppView({ skills: [skillOver(store)], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant }), listen: pageAudio !== undefined } } : {}),
+      }),
+    },
     countCases: countByState,
     casesOf: (store) => store.dues.values(),
     refundContext(store, _settings, receipt) {
@@ -128,9 +179,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     // Item 11e: the owner's morning line, from this template's skill read-only over the store
     ...(settings.assistant ? { daily: createMorningJob<Store>({
       shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant },
-      skills: (store) => [feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })],
+      skills: (store) => [skillOver(store)],
     }) } : {}),
     ...(options.licence ? { licence: options.licence, licenceNotice: createFeesLicenceNotice(settings, options.licence) } : {}),
-    ...(options.recordKey ? { recordKey: options.recordKey } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
+    ...(options.recordKey ? { recordKey: options.recordKey } : {}), ...(options.ownerSignin ? { ownerSignin: options.ownerSignin } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
   }) as unknown as Runtime;
 }

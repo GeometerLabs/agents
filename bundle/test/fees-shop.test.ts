@@ -174,7 +174,7 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     assert.ok(!("calendar" in onDisk.services));
     assert.ok(!existsSync(join(w.paths.secrets, "refresher", "bright")) && !existsSync(join(w.paths.secrets, "g-bright-calendar")), "no calendar credentials or folders were made");
     assert.deepEqual(readdirSync(join(w.paths.secrets, "ops", "bright")).filter((f) => f.startsWith("admin_")).sort(), ["admin_razorpay", "admin_whatsapp"]);
-    // item 11d mints every runtime its channel token (one shape for every runtime); Fees has no page yet, so nothing presents it
+    // item 11d mints every runtime its channel token (one shape for every runtime); item 11h: the front presents it for the centre's page and parents' private pages
     assert.deepEqual(readdirSync(join(w.paths.secrets, "rt-bright")).sort(), ["agent_model", "agent_razorpay", "agent_whatsapp", "channel_token", "internal_token", "record_key"]);
     const ops = JSON.parse(readFileSync(join(w.paths.generated, "ops", "ops.json"), "utf8"));
     assert.equal(ops.shops.bright.pathway, "fees");

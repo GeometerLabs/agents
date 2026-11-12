@@ -1,7 +1,9 @@
 // Start one centre's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep the clock ticking. main.ts is a thin command
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Fees' reading, its report and its runtime.
+import { join } from "node:path";
 import { buildVoice } from "../../../../modules/voice/config.ts";
+import { PAGES_FILE, pagesReader } from "../../../../modules/channels/pages-file.ts";
 import { folderQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
@@ -33,6 +35,8 @@ export interface StartOptions {
   tokenFile: string | undefined;
   /** A file holding the record's key (RECORD_KEY_FILE, B69); needed in live mode. Left out: the environment's. */
   recordKeyFile?: string;
+  /** Item 11h: a file holding the channel token (CHANNEL_TOKEN_FILE) for the centre's page, parents' private pages and the owner's page. Left out: the environment's, or none. */
+  channelTokenFile?: string;
   clock?: Clock;
   /** Instead of what runtime.json says (its `parser`, or the rule parser when it has none). A test seam. */
   parser?: IntentParser;
@@ -63,7 +67,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   return await startRuntimeClient<ClientFolder["settings"], Runtime>(options, {
     casesName: "fees",
     loadClient,
-    async build(client, { store, clock, log, recordKey }) {
+    async build(client, { store, clock, log, recordKey, ownerSignin }) {
       const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment });
       // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
@@ -76,7 +80,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
       // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
       const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
-      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), log });
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}),
+        // item 11h: the centre's page addresses, read on every use, so a reminder can carry a parent's private link (no file: no link, as before)
+        pages: pagesReader(join(client.folder, PAGES_FILE)), log });
     },
   }) as RunningClient;
 }
