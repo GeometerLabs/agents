@@ -19,8 +19,8 @@ export const API_ROUTES: Record<OperationName, { method: "GET" | "POST"; path: s
   list_services: { method: "GET", path: "/api/v1/services" },
   free_slots: { method: "GET", path: "/api/v1/slots" },
   start_booking: { method: "POST", path: "/api/v1/bookings" },
-  booking_status: { method: "GET", path: "/api/v1/bookings/{handle}" },
   payment_instructions: { method: "GET", path: "/api/v1/bookings/{handle}/payment" },
+  booking_status: { method: "GET", path: "/api/v1/bookings/{handle}" },
   cancel_booking: { method: "POST", path: "/api/v1/bookings/{handle}/cancel" },
 };
 
