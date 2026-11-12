@@ -11,6 +11,7 @@ import type { ShopForm } from "../../templates/commerce/bookings/demo/personalis
 import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../modules/payments/providers/index.ts";
 import { checkSecret } from "./secrets.ts";
+import { GUPSHUP_APP_NAME } from "../../modules/messaging/gupshup-selfserve.ts";
 import { DEFAULT_PROVIDER, gatewayOf, ownerMarkedOf, providerById } from "../../modules/payments/providers/index.ts";
 import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
@@ -37,7 +38,8 @@ export interface Draft {
   /** B37: up to MAX_PANEL_APPROVERS other people who approve refunds, and the amount above which two must. Optional; a draft from before has neither. */
   approvers?: { whatsapp: string; language: string }[];
   twoAboveInr?: string;
-  whatsapp: { businessNumber: string; numberId: string };
+  /** Item 11c: `provider` "gupshup-selfserve" means the shop's own Gupshup account (with its `appName`); left out is Meta direct, as before. A draft from before has neither. */
+  whatsapp: { businessNumber: string; numberId: string; provider?: "gupshup-selfserve"; appName?: string };
   /** B72: `use` is "own" (the shop's own booking list, the default) or "google" (a Google Calendar, which needs `id`). A draft saved before 12 Nov has no `use`: read as "own" for a new shop. */
   calendar: { id: string; use?: "own" | "google" };
   /** B71: the gateway key as typed, for a shop that chose a gateway: its mode and id. */
@@ -97,7 +99,8 @@ export function draftFromShop(id: string, accountId: string, templateId: string,
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: formFromSettings(settings), windowHours: String(settings.cancellation.windowHours),
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
     ...approversDraftOf(settings.approvers),
-    whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
+    whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""),
+      ...(runtime?.services?.messaging?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(runtime.services.messaging.appName ?? "") } : {}) },
     calendar: { id: String(runtime?.services?.calendar?.calendarId ?? ""), use: calendarModule(settings) }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" },
     payment: paymentFromSettings(settings.payment),
     expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings), done: Number.MAX_SAFE_INTEGER,
@@ -252,11 +255,21 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
     const business = normalizePhone(text(body.waNumber, 30));
     if (!business) problems.push(s.businessNumberBad);
     else if (draft.ownerNumber && digitsOf(business) === digitsOf(draft.ownerNumber)) problems.push(s.sameNumber);
-    const numberId = text(body.waNumberId, 30);
-    if (!/^\d{6,20}$/u.test(numberId)) problems.push(s.numberIdBad);
-    draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId };
-    take("whatsapp_token", body.waToken, label.whatsapp.token, true);
-    take("whatsapp_app_secret", body.waAppSecret, label.whatsapp.appSecret, true);
+    if (body.waProvider === "gupshup-selfserve") {
+      // Item 11c: the shop's own Gupshup account. Gupshup shows no Meta phone number id, so the number itself stands in for it (generate/shop.ts does the same). The API key and
+      // the callback's secret word are write-only, like every key; the token and app secret of Meta are not asked for.
+      const appName = text(body.waAppName, 64);
+      if (!GUPSHUP_APP_NAME.test(appName)) problems.push(s.appNameBad);
+      draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId: business ? digitsOf(business) : "", provider: "gupshup-selfserve", appName };
+      take("gupshup_apikey", body.waApiKey, label.whatsapp.selfServe.apiKey, true);
+      take("whatsapp_path_token", body.waPathToken, label.whatsapp.selfServe.pathToken, true);
+    } else {
+      const numberId = text(body.waNumberId, 30);
+      if (!/^\d{6,20}$/u.test(numberId)) problems.push(s.numberIdBad);
+      draft.whatsapp = { businessNumber: business ?? text(body.waNumber, 30), numberId };
+      take("whatsapp_token", body.waToken, label.whatsapp.token, true);
+      take("whatsapp_app_secret", body.waAppSecret, label.whatsapp.appSecret, true);
+    }
   }
   if (template.accounts.includes("calendar")) {
     // B72: the shop's own booking list is the default and asks for nothing. A form that ticks "also use Google Calendar" (calUse=google) must give a calendar id (and the key
@@ -340,10 +353,16 @@ export function buildSettings(draft: Draft, example: Settings): Built {
  * Item 11b: the WhatsApp provider runtime.json already names (`"provider": "gupshup"` and its `appId`), carried into a runtime.json the panel writes again. The panel has
  * no step for it yet (modules/Deferred.md), so a shop moved to Gupshup by hand keeps it when someone edits it here. A runtime.json with no provider is left as made.
  */
-export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: unknown): Record<string, unknown> {
-  const m = (before as { services?: { messaging?: { provider?: unknown; appId?: unknown } } } | undefined)?.services?.messaging;
-  if (!m || m.provider === undefined) return runtime;
+export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: unknown, whatsapp?: Draft["whatsapp"]): Record<string, unknown> {
   const services = runtime.services as { messaging: Record<string, unknown> };
+  // Item 11c: the setup now has the step for it. A shop whose draft picked its own Gupshup account is written as one; its number is `sourceNumber` (digits, with the country code).
+  if (whatsapp?.provider === "gupshup-selfserve") {
+    const prior = (before as { services?: { messaging?: { appId?: unknown } } } | undefined)?.services?.messaging;
+    return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: "gupshup-selfserve", appName: whatsapp.appName, sourceNumber: digitsOf(whatsapp.businessNumber), ...(prior?.appId !== undefined ? { appId: prior.appId } : {}) } } };
+  }
+  const m = (before as { services?: { messaging?: { provider?: unknown; appId?: unknown } } } | undefined)?.services?.messaging;
+  // no provider named before, or a self-serve shop whose draft now says Meta direct (the partner switched it on purpose): written as Meta, as made
+  if (!m || m.provider === undefined || m.provider === "gupshup-selfserve") return runtime;
   return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: m.provider, ...(m.appId !== undefined ? { appId: m.appId } : {}) } } };
 }
 

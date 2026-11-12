@@ -63,6 +63,8 @@ export interface BackupFacts { lastCopyAt?: string | null; lastDrillAt?: string 
 
 export interface ShopObservation {
   id: string;
+  /** Item 11c: this shop's own Gupshup wallet pays Meta and Gupshup for WhatsApp. Its WhatsApp counts are kept in the baseline but sent as zero, so fleet's WhatsApp pass-through (billed from the partner's balance) leaves it out. */
+  whatsappPaidBy?: "shop";
   pathway: string;
   pathwayVersion: string;
   up: boolean;
@@ -200,7 +202,7 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
       since_last: { ...delta, ...(used?.reportsSent !== undefined ? { reports_sent: used.reportsSent } : {}) },
       ...(snapshotAge !== undefined ? { backup_age_s: snapshotAge } : {}),
       ...(drillAge !== undefined && typeof drillOk === "boolean" ? { drill: { age_s: drillAge, ok: drillOk } } : {}),
-      ...(used?.send ? { usage: used.send } : {}),
+      ...(used?.send ? { usage: shop.whatsappPaidBy === "shop" ? { ...used.send, whatsapp: { service: 0, utility: 0, marketing: 0, est_micro_inr: 0 } } : used.send } : {}),
       ...(shop.obligations ? { open_obligations: obligationCounts(shop.obligations) } : {}),
     };
   });

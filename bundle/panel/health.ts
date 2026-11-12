@@ -94,7 +94,7 @@ export type EntryStore = ReturnType<typeof createEntries>;
 
 export type CostId = "plan" | "whatsapp" | "model" | "support";
 /** Why a line is what it is, as a code the view says in words. */
-export type CostNote = "builder-licence" | "included" | "floor" | "estimate" | "no-record" | "no-plan" | "no-price" | "no-minutes" | "no-rate";
+export type CostNote = "builder-licence" | "included" | "floor" | "estimate" | "no-record" | "no-plan" | "no-price" | "no-minutes" | "no-rate" | "shop-wallet";
 export interface CostItem { id: CostId; /** Whole paise, rounded up once. Null exactly when the line is unknown. */ paise: number | null; notes: CostNote[]; /** Only on the model line when some calls had no price: how many. */ unpriced?: number; /** Only on the support line: the minutes. */ minutes?: number }
 
 export interface ShopMargin {
@@ -176,6 +176,8 @@ export interface RunningCostInput {
   plan: { paise: number | null; notes: CostNote[] };
   /** This month from the record, or null when there is no export. */
   usage: UsageTotals | null;
+  /** Item 11c: the shop is on its own Gupshup account: its wallet pays Meta and Gupshup directly, so WhatsApp is no cost of the builder's or partner's (a note, no money). */
+  whatsappFromShopWallet?: boolean;
   /** True on a hosted (Geometer's partner) server: the model is inside the plan fee. False on the builder's own server, where the model key is the builder's own. */
   modelIncluded: boolean;
   entries: Entries | undefined;
@@ -186,7 +188,8 @@ export interface RunningCostInput {
 export function runningCostItems(i: RunningCostInput): CostItem[] {
   const items: CostItem[] = [{ id: "plan", paise: i.plan.paise, notes: i.plan.notes }];
   // WhatsApp at cost: the month's counts at the price list's rates, GST included, before the month's free replies (so it can be a little high, never low).
-  if (!i.usage) items.push({ id: "whatsapp", paise: null, notes: ["no-record"] });
+  if (i.whatsappFromShopWallet) items.push({ id: "whatsapp", paise: 0, notes: ["shop-wallet"] });
+  else if (!i.usage) items.push({ id: "whatsapp", paise: null, notes: ["no-record"] });
   else if (!i.usage.whatsapp.estimated) items.push({ id: "whatsapp", paise: null, notes: ["no-price"] });
   else items.push({ id: "whatsapp", paise: ceilDiv(i.usage.whatsapp.estMicroInr, 10_000), notes: ["estimate"] }); // 1 micro-rupee = 0.0001 paisa
   // The model: inside the plan fee on a hosted server; the builder's own key on their own server, from the cost the runtime recorded.
