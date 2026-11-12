@@ -73,7 +73,7 @@ test("the sign-in page has no number field, and a number posted with the request
   assert.equal(s.submitted[0].events.length, 1);
   assert.deepEqual(Object.keys(s.submitted[0].events[0]).sort(), ["id", "kind"], "only the kind and a fresh id");
   assert.equal(s.submitted[0].events[0].kind, "owner_signin");
-  assert.match(await (await s.get("/s/veena/owner?sent=1")).text(), /If you are this shop's owner/u, "the same words whatever happened");
+  assert.match(await (await s.get("/s/veena/owner?sent=1")).text(), /If you are this shop&#39;s owner, a sign-in link is on its way/u, "the same words whatever happened (the page escapes the apostrophe)");
   assert.equal((await s.post("/s/veena/owner/signin", "", { origin: "https://evil.example" })).status, 403, "a form from another site");
 });
 
