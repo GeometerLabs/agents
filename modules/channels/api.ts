@@ -57,7 +57,7 @@ export async function apiRequest(ops: Ops, o: { method: string; path: string; qu
       case "free_slots": value = await ops.free_slots({ service_id: o.query.get("service") ?? undefined, date: o.query.get("date") ?? undefined, days: o.query.get("days") ?? undefined }); break;
       case "start_booking": {
         const v = await ops.start_booking(body) as { status: string };
-        return { status: v.status === "pending" ? 202 : v.status === "refused" ? 409 : 201, body: v };
+        return { status: v.status === "pending" ? 202 : v.status === "refused" || v.status === "not_held" ? 409 : 201, body: v };
       }
       case "booking_status": value = await ops.booking_status({ handle, language: o.query.get("language") ?? undefined }); break;
       case "payment_instructions": value = await ops.payment_instructions({ handle }); break;

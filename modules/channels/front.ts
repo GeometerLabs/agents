@@ -246,7 +246,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     return { view, relayAsks: relayAsks ?? [] };
   }
 
-  type OwnerResult = "done" | "changed" | "expired" | "error" | "denied_link";
+  type OwnerResult = "done" | "sent" | "changed" | "expired" | "error" | "denied_link";
   /** One answer, to the authority it belongs to. The result names what happened; nothing is done unless the authority found exactly what was shown. */
   async function ownerAnswer(shop: FrontShop, token: string, state: NonNullable<Awaited<ReturnType<typeof ownerState>>>, a: { source?: unknown; action?: unknown; case?: unknown; digest?: unknown }): Promise<OwnerResult> {
     const action = typeof a.action === "string" ? a.action : ""; const theCase = typeof a.case === "string" ? a.case : ""; const digest = typeof a.digest === "string" ? a.digest : "";
@@ -264,8 +264,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       if (r === "refused") return "denied_link";
       // give the step a moment, so what the owner sees next shows the answer done
       const deadline = Date.now() + (options.waitMs ?? 3_000);
-      while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.items.some((i) => i.digest === digest)) break; await new Promise((r2) => setTimeout(r2, 200)); }
-      return "done";
+      while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.items.some((i) => i.digest === digest)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+      return "sent"; // saved, and not done yet when the page looked (a Guard the step waits for): the page says so, not "done"
     } catch (e) { log(`An owner's answer could not be passed on: ${(e as Error).message}`); return "error"; }
   }
 

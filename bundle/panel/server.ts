@@ -126,7 +126,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
   const confirmations = createConfirmations(store, now);
-  const handover = createHandover(shops, accounts, store, now);
+  // item 11d: a shop that moves to another partner loses the owner's link the old partner made; the new partner makes the owner a new one
+  const handover = createHandover(shops, accounts, store, now, (shop) => channels.revoke(shop));
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each Bookings shop's booking page, MCP endpoint and the owner's approvals link (channels.ts)
   const secure = isSecure(config);

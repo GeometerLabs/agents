@@ -219,7 +219,7 @@ export interface OwnerWords {
   lateRefund: (who: string, what: string, amount: string) => string; refundIt: string; keepIt: string;
   calendar: (who: string, what: string, amount: string) => string; retry: string; cancelRefund: string;
   guardRefund: (who: string, amount: string, what: string, until: string) => string; approve: string; deny: string;
-  result: Record<"done" | "changed" | "expired" | "error" | "denied_link", string>;
+  result: Record<"done" | "sent" | "changed" | "expired" | "error" | "denied_link", string>;
 }
 
 export const OWNER: W<OwnerWords> = {
@@ -241,6 +241,7 @@ export const OWNER: W<OwnerWords> = {
     approve: "Approve the refund", deny: "Do not refund",
     result: {
       done: "Done. The list below shows what waits now.",
+      sent: "Sent. It is not done yet: look at the list again in a minute.",
       changed: "That had changed before you pressed (it was answered, or the amount changed), so nothing was done. Look at the list again.",
       expired: "That ran out before your answer, so nothing was done.",
       error: "That could not be done just now. Please try again in a minute.",
@@ -265,6 +266,7 @@ export const OWNER: W<OwnerWords> = {
     approve: "रिफ़ंड मंज़ूर कीजिए", deny: "रिफ़ंड मत दीजिए",
     result: {
       done: "हो गया। नीचे की सूची में अब का बचा काम है।",
+      sent: "भेज दिया। अभी पूरा नहीं हुआ है: एक मिनट बाद सूची फिर देखिए।",
       changed: "आपके दबाने से पहले यह बदल गया था (जवाब दिया जा चुका था, या रक़म बदली), इसलिए कुछ नहीं किया गया। सूची फिर देखिए।",
       expired: "आपके जवाब से पहले समय ख़त्म हो गया, इसलिए कुछ नहीं किया गया।",
       error: "अभी यह नहीं हो सका। एक मिनट बाद फिर कोशिश कीजिए।",
@@ -289,6 +291,7 @@ export const OWNER: W<OwnerWords> = {
     approve: "റീഫണ്ട് അംഗീകരിക്കൂ", deny: "റീഫണ്ട് നൽകേണ്ട",
     result: {
       done: "ചെയ്തു. ഇപ്പോൾ കാത്തിരിക്കുന്നവ താഴെയുള്ള പട്ടികയിലുണ്ട്.",
+      sent: "അയച്ചു. ഇതുവരെ പൂർത്തിയായിട്ടില്ല: ഒരു മിനിറ്റ് കഴിഞ്ഞ് പട്ടിക വീണ്ടും നോക്കൂ.",
       changed: "നിങ്ങൾ അമർത്തുന്നതിനുമുമ്പ് ഇത് മാറിയിരുന്നു (മറുപടി നൽകിയിരുന്നു, അല്ലെങ്കിൽ തുക മാറി), അതിനാൽ ഒന്നും ചെയ്തില്ല. പട്ടിക വീണ്ടും നോക്കൂ.",
       expired: "നിങ്ങളുടെ മറുപടിക്കുമുമ്പ് സമയം കഴിഞ്ഞു, അതിനാൽ ഒന്നും ചെയ്തില്ല.",
       error: "ഇപ്പോൾ ഇത് ചെയ്യാനായില്ല. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ.",
@@ -313,6 +316,7 @@ export const OWNER: W<OwnerWords> = {
     approve: "ರೀಫಂಡ್ ಅನುಮೋದಿಸಿ", deny: "ರೀಫಂಡ್ ಬೇಡ",
     result: {
       done: "ಆಯಿತು. ಈಗ ಕಾಯುತ್ತಿರುವುದು ಕೆಳಗಿನ ಪಟ್ಟಿಯಲ್ಲಿದೆ.",
+      sent: "ಕಳುಹಿಸಲಾಗಿದೆ. ಇನ್ನೂ ಮುಗಿದಿಲ್ಲ: ಒಂದು ನಿಮಿಷದ ನಂತರ ಪಟ್ಟಿಯನ್ನು ಮತ್ತೆ ನೋಡಿ.",
       changed: "ನೀವು ಒತ್ತುವ ಮೊದಲೇ ಇದು ಬದಲಾಗಿತ್ತು (ಉತ್ತರಿಸಲಾಗಿತ್ತು, ಅಥವಾ ಮೊತ್ತ ಬದಲಾಯಿತು), ಆದ್ದರಿಂದ ಏನೂ ಮಾಡಲಿಲ್ಲ. ಪಟ್ಟಿಯನ್ನು ಮತ್ತೆ ನೋಡಿ.",
       expired: "ನಿಮ್ಮ ಉತ್ತರಕ್ಕೂ ಮೊದಲು ಸಮಯ ಮುಗಿಯಿತು, ಆದ್ದರಿಂದ ಏನೂ ಮಾಡಲಿಲ್ಲ.",
       error: "ಈಗ ಇದನ್ನು ಮಾಡಲಾಗಲಿಲ್ಲ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
