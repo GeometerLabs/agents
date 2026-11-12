@@ -175,7 +175,7 @@ test("\"I have paid\" on the page asks the owner to look and marks nothing; the 
 
     // the owner's page lists it, and the assistant's "what needs me" lists the same; the owner presses Received
     const ownerHtml = await w.ownerPage();
-    assert.match(ownerHtml, /Rohan Mehta, \+919844444444 should pay ₹1,800 for class 10, November 2026/u);
+    assert.match(ownerHtml, /Rohan Mehta, \+919844444444 should pay ₹1,800 for class 10, Nov 2026/u);
     const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: { kind: string; case: string; amount_paise: number }[] };
     const skill = feesSkill({ settings: w.settings, store: w.store(), nowMs: () => w.clock.now(), optedOut: () => false });
     assert.deepEqual(skill.waiting().map((i) => [i.kind, i.case, i.amountPaise]), state.waiting.map((x) => [x.kind, x.case, x.amount_paise]), "the assistant's list is the owner page's list");
@@ -184,7 +184,7 @@ test("\"I have paid\" on the page asks the owner to look and marks nothing; the 
     assert.match(done.headers.get("location") ?? "", /n=done/u);
     await w.client.runtime.idle();
     const confirmed = await (await w.page(`${confirmPath}?lang=en`)).text();
-    assert.match(confirmed, /Confirmed: the centre's record shows Rohan Mehta's November 2026 fee paid \(₹1,800\)/u);
+    assert.match(confirmed, /Confirmed: the centre's record shows Rohan Mehta's Nov 2026 fee paid \(₹1,800\)/u);
     const paidPage = await (await w.page(`/f/${link}?lang=en`)).text();
     assert.match(paidPage, /Paid\. The centre's record shows it\./u);
     const entries = w.record();
@@ -209,7 +209,7 @@ test("a waiver a parent asked for on WhatsApp waits on the owner's page and in \
     const skill = feesSkill({ settings: w.settings, store: w.store(), nowMs: () => w.clock.now(), optedOut: () => false });
     assert.deepEqual(skill.waiting().map((i) => [i.kind, i.case, i.amountPaise]), state.waiting.map((x) => [x.kind, x.case, x.amount_paise]));
     const ownerHtml = await w.ownerPage();
-    assert.match(ownerHtml, /Rohan Mehta's parent asked to take ₹300 off class 10, November 2026/u);
+    assert.match(ownerHtml, /Rohan Mehta's parent asked to take ₹300 off class 10, Nov 2026/u);
     const dueId = state.waiting[0].case;
     const pressed = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "deny", case: dueId, digest: digestOn(ownerHtml, "deny", dueId)! });
     assert.match(pressed.headers.get("location") ?? "", /n=done/u);
