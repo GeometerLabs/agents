@@ -64,7 +64,7 @@ import { buttonsFor, intentFromReply, ownerMarkButtons, serviceList, slotList } 
 import type { Choice } from "../../../../modules/language/interactive.ts";
 import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
 import type { OwedRefund, OwnerMark, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
-import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
+import { markButtonId, parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -74,8 +74,15 @@ import { calendarModule, hoursOn, serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
+import type { LocalDate } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import { conversationOf } from "../../../../modules/channels/handle.ts";
+import { phoneDigits } from "../../../../modules/channels/contact.ts";
+import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
+import type { ChannelState } from "../../../../modules/channels/state.ts";
+import type { ChannelBook, ChannelEvent, OwnerAction } from "../../../../modules/channels/events.ts";
+import { ownerItems } from "./channel.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -107,10 +114,14 @@ export type AgentEvent =
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
   // The panel's to-do list asks the agent to look again or ask again about one booking (modules/unfinished). It carries no authority: the agent does what it does every day, through Guard.
   | { kind: "recovery"; id: string; case: string; action: string }
+  // Item 11d: the shop's booking page, its API or the MCP endpoint (a channel_request), or the owner's private page (an owner_action). modules/channels/events.ts.
+  | ChannelEvent
   | { kind: "tick" }; // time has passed: let holds expire and send due reminders
 
 export interface Agent {
   handle(event: AgentEvent): Promise<void>;
+  /** Item 11d, a read: every free start of one service, day by day, from a date (today when left out), for the booking page and its API. Throws when the calendar cannot be read. */
+  freeStarts(serviceId: string, fromDate: LocalDate | undefined, days: number): Promise<{ date: string; starts: number[] }[]>;
   /** The wait for a Guard is over and this event's work is not done (modules/runtime/guard-wait.ts). With `tell`, the customer also gets the shop's words for it. */
   giveUp(event: AgentEvent, why: { service: string; tell: boolean }): Promise<void>;
 }
@@ -153,6 +164,8 @@ export function createAgent(deps: AgentDeps): Agent {
     return c;
   };
   const languageOf = (phone: string, b?: Booking | null) => b?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
+  /** The number a message names for this conversation: a channel booking's is the one its customer typed (item 11d), never its "web:..." conversation. */
+  const shownPhone = (phone: string, b: Booking | null): string => (b?.channel && b.contact ? b.contact.phone : phone);
 
   function log(b: Booking | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: b?.id || null, action, inputs, outcome, language: languageOf(phone, b), ...more });
@@ -203,7 +216,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, booking) => languageOf(phone, booking),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
     inputsOf: (a) => ({ refundInr: a.refundInr, slotMs: a.slotMs, ...(a.markedInr !== undefined ? { markedInr: a.markedInr } : {}) }), // never the owner's code
     gates: (a, optedOut) => [
@@ -248,6 +261,32 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /**
+   * Every start time on the shop's slot grid, on one day, that is free for this service: inside its opening hours, clear of everything in the calendar and of the shop's
+   * own holds (the same two rules a typed time must pass), and far enough ahead that the customer has the hold's time to pay. `others` is what is busy (calendar and holds).
+   * The one place free times are worked out: WhatsApp's list (freeSlots) and the booking page and its API (freeStarts, item 11d) both use it.
+   */
+  function freeOnDay(service: Settings["services"][number], date: LocalDate, others: BusyEvent[], now: number): number[] {
+    const hours = hoursOn(settings, weekdayOf(date));
+    if (!hours) return [];
+    const grid = settings.slotMinutes;
+    const free: number[] = [];
+    for (let m = Math.ceil(hours.open / grid) * grid; m + service.durationMinutes <= hours.close; m += grid) {
+      const startMs = zonedToMs(date, { hour: Math.floor(m / 60), minute: m % 60 }, tz);
+      if (startMs <= now + settings.deposit.holdMinutes * MINUTE) continue; // the customer needs the hold's time to pay before it starts
+      const clash = checkNoDoubleBooking({ startMs, endMs: startMs + service.durationMinutes * MINUTE, bufferMinutes: settings.bufferMinutes, ownBookingRef: "", nowMs: now, others });
+      if (clash.verdict !== "block") free.push(startMs);
+    }
+    return free;
+  }
+
+  /** What is busy from `from` to `to`: the calendar's events and the shop's own holds. Throws when the calendar cannot be read. */
+  async function busyBetween(from: number, to: number): Promise<BusyEvent[]> {
+    const events = await calendar.conflicts(from - settings.bufferMinutes * MINUTE, to + settings.bufferMinutes * MINUTE);
+    // the shop's own holds as well as the calendar's, so the list never offers a time a booking here already holds (the same two sources as slotRules)
+    return [...events.map(busyOf), ...heldByBookings("")];
+  }
+
+  /**
    * Up to nine start times the calendar shows free for this service in the next week, at most three a day (spread through the day), earliest first. Each is
    * on the shop's slot grid, inside its opening hours and clear of everything in the calendar, holds included: the same two rules a typed time must pass.
    * Empty when the calendar cannot be read, in which case the customer is asked to type a time, as before.
@@ -256,27 +295,37 @@ export function createAgent(deps: AgentDeps): Agent {
     const service = settings.services.find((x) => x.id === serviceId) ?? [...settings.services].sort((x, y) => x.durationMinutes - y.durationMinutes)[0];
     const now = clock.now();
     const today = localParts(now, tz);
-    const grid = settings.slotMinutes;
-    let events: CalendarEvent[];
-    try { events = await calendar.conflicts(now - settings.bufferMinutes * MINUTE, now + (OFFER_DAYS + 2) * 24 * HOUR + settings.bufferMinutes * MINUTE); } catch { return []; }
-    // the shop's own holds as well as the calendar's, so the list never offers a time a booking here already holds (the same two sources as slotRules)
-    const others = [...events.map(busyOf), ...heldByBookings("")];
+    let others: BusyEvent[];
+    try { others = await busyBetween(now, now + (OFFER_DAYS + 2) * 24 * HOUR); } catch { return []; }
     const out: number[] = [];
     for (let day = 0; day < OFFER_DAYS && out.length < limit; day++) {
-      const date = addDays(today, day);
-      const hours = hoursOn(settings, weekdayOf(date));
-      if (!hours) continue;
-      const free: number[] = [];
-      for (let m = Math.ceil(hours.open / grid) * grid; m + service.durationMinutes <= hours.close; m += grid) {
-        const startMs = zonedToMs(date, { hour: Math.floor(m / 60), minute: m % 60 }, tz);
-        if (startMs <= now + settings.deposit.holdMinutes * MINUTE) continue; // the customer needs the hold's time to pay before it starts
-        const clash = checkNoDoubleBooking({ startMs, endMs: startMs + service.durationMinutes * MINUTE, bufferMinutes: settings.bufferMinutes, ownBookingRef: "", nowMs: now, others });
-        if (clash.verdict !== "block") free.push(startMs);
-      }
-      if (free.length === 0) continue; // a day that is full
+      const free = freeOnDay(service, addDays(today, day), others, now);
+      if (free.length === 0) continue; // a day that is full, or closed
       for (const i of new Set([0, Math.floor((free.length - 1) / 2), free.length - 1])) if (out.length < limit) out.push(free[i]);
     }
     return out.sort((x, y) => x - y);
+  }
+
+  /**
+   * Item 11d: every free start time of one service, day by day, for the booking page and its API. The same rules and the same sources as WhatsApp's list (freeOnDay);
+   * a read only, so a time shown here is still checked again when the booking is made (tryHold). Throws when the calendar cannot be read: the page says so.
+   */
+  async function freeStarts(serviceId: string, fromDate: LocalDate | undefined, days: number): Promise<{ date: string; starts: number[] }[]> {
+    const service = settings.services.find((x) => x.id === serviceId);
+    if (!service) return [];
+    const now = clock.now();
+    const today = localParts(now, tz);
+    const first = fromDate && zonedToMs(fromDate, { hour: 0, minute: 0 }, tz) > zonedToMs(today, { hour: 0, minute: 0 }, tz) ? fromDate : today;
+    const firstMs = zonedToMs(first, { hour: 0, minute: 0 }, tz);
+    const lastAllowed = now + CHANNEL_LIMITS.daysAhead * 24 * HOUR;
+    const others = await busyBetween(Math.max(now, firstMs), firstMs + (days + 1) * 24 * HOUR);
+    const out: { date: string; starts: number[] }[] = [];
+    for (let day = 0; day < days; day++) {
+      const date = addDays(first, day);
+      if (zonedToMs(date, { hour: 0, minute: 0 }, tz) > lastAllowed) break;
+      out.push({ date: `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`, starts: freeOnDay(service, date, others, now).filter((t) => t <= lastAllowed) });
+    }
+    return out;
   }
 
   /** The same free times as the decision model may pick from: each as the calendar date and the clock time a customer could have written. */
@@ -437,14 +486,14 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!record.confirmedRefs(b.id, MARK_ACTIONS.request, "requestId").includes(request.id)) {
       log(b, b.customer, MARK_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId: request.id, reference: b.id, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the shop's own UPI ID; it counts as paid only when the owner marks it received" });
     }
-    await tellCustomer(b, b.customer, [...prefix, prefix.includes("price_floor") ? "upi_slot_and_link" : "upi_quote_and_link"], { shown, offer: paidCancelOrOwner, image: await qrOf(request) });
+    await tellCustomer(b, b.customer, [...prefix, prefix.includes("price_floor") ? "upi_slot_and_link" : "upi_quote_and_link"], { shown, offer: paidCancelOrOwner, image: b.channel ? undefined : await qrOf(request) }); // a booking page draws its own QR
     await tellOwner(b, b.customer, "owner_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
   }
 
   async function tellAlreadyWaiting(waiting: Booking): Promise<void> {
     const request = ownerConfirms ? requestOf(waiting) : undefined;
     if (!request) { await tellCustomer(waiting, waiting.customer, ["already_waiting"], { offer: cancelOrOwner }); return; }
-    await tellCustomer(waiting, waiting.customer, ["upi_already_waiting"], { offer: paidCancelOrOwner, image: await qrOf(request) });
+    await tellCustomer(waiting, waiting.customer, ["upi_already_waiting"], { offer: paidCancelOrOwner, image: waiting.channel ? undefined : await qrOf(request) });
   }
 
   /**
@@ -1086,7 +1135,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const rows = [...store.bookings.values()]
       .filter((x) => (x.state === "confirmed" || x.state === "needs_owner") && x.startMs !== undefined && x.startMs >= from && x.startMs < to)
       .sort((x, y) => (x.startMs as number) - (y.startMs as number))
-      .map((x) => ({ slotMs: x.startMs as number, serviceName: serviceName(settings.services.find((v) => v.id === x.serviceId) ?? settings.services[0], settings.owner.language), customerPhone: x.customer, ref: x.id }));
+      .map((x) => ({ slotMs: x.startMs as number, serviceName: serviceName(settings.services.find((v) => v.id === x.serviceId) ?? settings.services[0], settings.owner.language), customerPhone: shownPhone(x.customer, x), ref: x.id }));
     log(null, owner, "owner_day_list", "confirmed", { day }, { notes: `the owner asked for the bookings of ${day}; ${rows.length} listed from the shop's saved bookings`, refs: { day } });
     await say({ booking: null, phone: owner, to: "owner", templates: ["owner_day_bookings"], day, dayBookings: rows });
   }
@@ -1363,9 +1412,106 @@ export function createAgent(deps: AgentDeps): Agent {
     say("blocked", `the agent has no recovery called "${e.action}"`);
   }
 
+  // ---- item 11d: the booking page, its API and the MCP endpoint; the owner's private page --------------------------------------------------------------
+  //
+  // A channel booking goes through the SAME steps as a WhatsApp booking (proceedToHold: the hours and the double-booking limits, the hold in the shop's own list
+  // and the calendar, the deposit request through its Guard or the owner-marked ledger, "booked" only when the record holds the calendar and the deposit). What differs:
+  //  - its conversation is its own ("web:<16 hex>"), never the typed number, so no WhatsApp booking is ever found, changed or cancelled by it;
+  //  - its messages go to its page (modules/channels/outbox.ts), never to the typed number on WhatsApp;
+  //  - the request names an exact service and start, so no words are read and no model is asked;
+  //  - the per-number and per-shop limits below, which a WhatsApp booking does not need (WhatsApp says whose number it is; a web form does not).
+
+  const channelState = (): ChannelState => (store.channel ??= emptyChannelState());
+
+  /** Why a requested start cannot be booked before anything is held: off the shop's grid, too soon to pay in time, or too far ahead. Null when it may be tried. */
+  function channelTimeProblem(service: Settings["services"][number], startMs: number): string | null {
+    const now = clock.now();
+    const p = localParts(startMs, tz);
+    const minuteOfDay = p.hour * 60 + p.minute;
+    if (startMs % MINUTE !== 0 || minuteOfDay % settings.slotMinutes !== 0) return "off_grid";
+    if (startMs <= now + settings.deposit.holdMinutes * MINUTE) return "too_soon";
+    if (startMs > now + CHANNEL_LIMITS.daysAhead * 24 * HOUR) return "too_far";
+    const hours = hoursOn(settings, weekdayOf(p));
+    if (!hours || minuteOfDay < hours.open || minuteOfDay + service.durationMinutes > hours.close) return "outside_hours";
+    return null;
+  }
+
+  async function onChannelBook(e: ChannelBook): Promise<void> {
+    const state = channelState();
+    if (state.requests[e.handle]) return; // the same request again (its task key is the handle): one booking, however often it is sent
+    const now = clock.now();
+    const conversation = conversationOf(e.channel, e.handle);
+    const digits = phoneDigits(e.phone);
+    customerOf(conversation).language = settings.languages.includes(e.language) ? e.language : settings.languages[0];
+    // the name and number are inputs only: the record keeps their keyed digest (B69), never the words, in refs or notes
+    const inputs = { channel: e.channel, serviceId: e.serviceId, startMs: e.startMs, name: e.name, phone: e.phone };
+    const refuse = async (reason: string, notes: string, decisions: Decision[] = []) => {
+      state.requests[e.handle] = { atMs: now, channel: e.channel, refused: reason, phone: digits };
+      log(null, conversation, "channel_booking", "blocked", inputs, { decisions, refs: { channel: e.channel, reason }, notes });
+    };
+    if (!licence().takesNewWork) { await refuse("paused", "online booking is paused (the shop's licence): nothing is held and nothing is kept to do later"); return pausedReply(conversation, "book"); }
+    const service = settings.services.find((x) => x.id === e.serviceId);
+    if (!service) return refuse("unknown_service", "the shop has no such service");
+    const timeProblem = channelTimeProblem(service, e.startMs);
+    if (timeProblem) return refuse(timeProblem, "the start asked for is not one the shop can offer (off its slot grid, too soon to pay in time, too far ahead, or outside its hours); nothing was held");
+    // The typed number is not verified, so these only slow one person down; the per-shop cap and the hold's own end are what bound a flood.
+    const live = [...store.bookings.values()].filter((b) => b.channel !== undefined && b.state === "awaiting_deposit");
+    if (live.filter((b) => b.contact && phoneDigits(b.contact.phone) === digits).length >= CHANNEL_LIMITS.holdsPerPhone) return refuse("phone_busy", `this number already has ${CHANNEL_LIMITS.holdsPerPhone} unpaid holds from the booking page; nothing more is held for it until one is paid, cancelled or ends`);
+    if (Object.values(state.requests).filter((r) => r.phone === digits && now - r.atMs < DAY_MS).length >= CHANNEL_LIMITS.startsPerPhonePerDay) return refuse("phone_day", `this number started ${CHANNEL_LIMITS.startsPerPhonePerDay} bookings from the booking page in the last 24 hours; no more today`);
+    if (live.length >= CHANNEL_LIMITS.unpaidHoldsPerShop) return refuse("shop_busy", `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid holds from the booking page and its API; nothing more is held until one is paid, cancelled or ends`);
+
+    const b = register(store, newDraft(conversation, customerOf(conversation).language!));
+    b.channel = e.channel;
+    b.handle = e.handle;
+    b.contact = { name: e.name, phone: e.phone };
+    b.serviceId = service.id;
+    b.startMs = e.startMs;
+    b.endMs = e.startMs + service.durationMinutes * MINUTE;
+    const p = localParts(e.startMs, tz);
+    b.date = { year: p.year, month: p.month, day: p.day };
+    b.time = { hour: p.hour, minute: p.minute };
+    state.requests[e.handle] = { atMs: now, channel: e.channel, booking: b.id, phone: digits };
+    log(b, conversation, "channel_booking", "confirmed", inputs, { refs: { channel: e.channel }, notes: `asked for on the ${e.channel === "mcp" ? "MCP endpoint, by an AI assistant for its user" : "shop's booking page or its API"}: an exact service and start, so no words were read; the same hold, limits and deposit as a WhatsApp booking follow` });
+    await proceedToHold(b, [], []);
+  }
+
+  /** A cancel or an "I have paid" for the booking with this handle: the same as the same button on WhatsApp, in the booking's own conversation. */
+  async function onChannel(e: ChannelEvent & { kind: "channel_request" }): Promise<void> {
+    if (e.op === "book") return onChannelBook(e);
+    const request = channelState().requests[e.handle];
+    const b = request?.booking ? store.bookings.get(request.booking) : undefined;
+    if (!b || b.handle !== e.handle) { log(null, owner, "channel_booking", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "no booking has this handle, so nothing was done" }); return; }
+    log(b, b.customer, "channel_booking", "confirmed", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: e.op === "cancel" ? "the customer cancelled from the booking's page" : "the customer says they paid, from the booking's page; nothing is marked paid until the owner marks it" });
+    if (e.op === "cancel") return onCancel(b.customer); // its conversation holds only this booking, so this cancels exactly it
+    if (ownerConfirms) return onPaidClaim(b.customer, "button");
+  }
+
+  /**
+   * The owner pressed a button on their private approvals page. The page showed an action with a digest of exactly what it showed (channel.ts ownerItems); if what waits
+   * now has another digest (a mark was made since, the amount changed, it was already answered) nothing is done and the page shows what waits now. Otherwise it is handled
+   * by the same code as the owner's reply on WhatsApp: the one-use code's button for a UPI mark (bound to its request and the amount still asked), "approve b-3" and the like
+   * for what the agent asked the owner. A refund Guard holds is never here: the approvals relay answers it (it alone holds the owner's approver secret).
+   */
+  async function onOwnerAction(e: OwnerAction): Promise<void> {
+    const item = ownerItems(settings, store, clock.now()).items.find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
+    const b = store.bookings.get(e.case) ?? null;
+    if (!item) {
+      log(b, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "what the owner's page showed is not what waits now (already answered, a new mark or amount since, or gone): nothing was done" });
+      return;
+    }
+    log(b, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "pressed by the owner on their private approvals page; handled exactly as the same reply on WhatsApp" });
+    const base = { id: `owner-page:${e.id}`, from: owner, timestamp: clock.now() };
+    const msg: InboundMessage = item.code
+      ? { ...base, text: "", reply: { id: markButtonId(e.action === "received" ? "received" : e.action === "kept" ? "kept" : "refunded", item.code), kind: "button" } }
+      : { ...base, text: `${e.action} ${e.case}` };
+    await onOwnerMessage(msg);
+  }
+
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
+    if (event.kind === "channel_request") return onChannel(event);
+    if (event.kind === "owner_action") return onOwnerAction(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);
@@ -1391,5 +1537,5 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
-  return { handle, giveUp };
+  return { handle, giveUp, freeStarts };
 }

@@ -60,6 +60,8 @@ export interface DurableStore extends WindowStore {
   /** The Guard still does not answer: look again later. The task's attempts are not touched. */
   postponeTask(id: string, retryAt: number): void;
   taskCounts(): TaskCounts;
+  /** Where one task is, by its key (events.ts eventKey): a channel's status read asks this for a request the agent has not run yet. Undefined: no such task. */
+  taskState?(key: string): "pending" | "done" | "failed" | undefined;
   oldestPendingAt(): number | null;
   /** What the last saved step left: the agent's snapshot (null before the first step) and the whole record. */
   loadState(): { snapshot: string | null; record: RecordEntry[] };
@@ -303,6 +305,7 @@ export function openStore(dataDir: string): DurableStore {
   const postponeOne = db.prepare("UPDATE tasks SET retry_at = ? WHERE id = ?");
   const counts = db.prepare("SELECT state, count(*) AS n FROM tasks GROUP BY state");
   const oldestAt = db.prepare("SELECT min(received_at) AS at FROM tasks WHERE state = 'pending'");
+  const oneState = db.prepare("SELECT state FROM tasks WHERE id = ?");
   const readRecord = db.prepare("SELECT entry FROM record ORDER BY seq");
   const shapeVersion = db.prepare("SELECT version FROM state_shape WHERE id = 1");
   const addEntry = db.prepare("INSERT INTO record (seq, time, conversation, booking, action, outcome, entry) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -375,6 +378,7 @@ export function openStore(dataDir: string): DurableStore {
     lastInboundAt: (phone) => (lastInbound.get(phone) as { last_inbound_at: number } | undefined)?.last_inbound_at,
     compactTurns: (beforeMs) => Number(emptyOldFailed.run(beforeMs).changes),
     ping() { db.prepare("SELECT count(*) FROM sqlite_master").get(); },
+    taskState(key) { return (oneState.get(key) as { state: "pending" | "done" | "failed" } | undefined)?.state; },
     close() { if (db.isOpen) db.close(); },
   };
 }

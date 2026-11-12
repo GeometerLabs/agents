@@ -2,6 +2,8 @@
 // template; what a template gives is `hooks`: how to read its folder, and how to build its runtime from the store. main.ts is a thin command line around this; the tests
 // start it directly.
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { OWNER_LINK_FILE, ownerLinkReader } from "../channels/owner-link.ts";
 import { systemClock } from "../core/clock.ts";
 import type { Clock } from "../core/clock.ts";
 import { loadPrivateKey } from "../report/sign.ts";
@@ -27,6 +29,8 @@ export interface StartOptions<Services = unknown> {
   tokenFile: string | undefined;
   /** A file holding the record's key (RECORD_KEY_FILE, B69), or the environment's; needed in live mode (see `readRecordKey`). */
   recordKeyFile?: string;
+  /** A file holding the channel token (CHANNEL_TOKEN_FILE), or the environment's: the shop's booking page, API and owner page (modules/channels). Left out: none. */
+  channelTokenFile?: string;
   clock?: Clock;
   log?: (line: string) => void;
   /** A test seam: how the live adapters are loaded. */
@@ -145,6 +149,19 @@ export function readToken(file: string | undefined): string {
 }
 
 /**
+ * The channel token (modules/channels): what the public front presents to reach this runtime's channel routes, and nothing else. Optional: without the file the shop has
+ * no booking page. It is never the inbox's token, so the front cannot send a WhatsApp message or a payment event, and the inbox cannot book from the page.
+ */
+export function readChannelToken(file: string | undefined): string | undefined {
+  if (!file) return undefined;
+  let text: string;
+  try { text = readFileSync(file, "utf8"); } catch { throw new ClientError(`I could not read the channel token file ${file} (CHANNEL_TOKEN_FILE).`); }
+  const token = text.trim();
+  if (token.length < MIN_TOKEN_LENGTH) throw new ClientError(`The channel token in ${file} is too short to be safe (${token.length} characters; at least ${MIN_TOKEN_LENGTH}). Make a new one with: openssl rand -hex 32`);
+  return token;
+}
+
+/**
  * The record's key (B69, a key derived from the shop's own): in live mode it is required, because a live record must not write a customer's words as a plain digest that can be tested by
  * guessing, or a WhatsApp message id that can carry the number. The deployer writes the file and names it in RECORD_KEY_FILE. A local run with stand-in services needs none.
  */
@@ -175,6 +192,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const clock = options.clock ?? systemClock;
   const client = hooks.loadClient(options.clientFolder); // refuses a wrong pathway version before anything is opened
   const token = readToken(options.tokenFile);
+  const channelToken = readChannelToken(options.channelTokenFile ?? process.env.CHANNEL_TOKEN_FILE);
   const recordKey = readRecordKey(client.runtime.mode, options.recordKeyFile ?? process.env.RECORD_KEY_FILE);
 
   const store = openStore(client.runtime.dataDir);
@@ -192,7 +210,8 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   }
   let server: RunningServer;
   try {
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log });
+    // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
+    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}) });
   } catch (e) {
     await runtime.close();
     throw e;
