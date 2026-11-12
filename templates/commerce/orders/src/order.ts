@@ -16,7 +16,7 @@ import { formatDate, formatTime } from "../../../../modules/language/format.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { addDays, localParts, sameDate, zonedToMs, parseClock, timeFromMinutes } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
-import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
+import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -96,6 +96,8 @@ export interface Order {
   refundIssues?: RefundIssue[];
   /** Payments the agent must not ask Guard to refund again: the owner said no, the outcome is unclear, it failed for good, or the approval ran out. */
   stoppedRefunds?: string[];
+  /** Refunds the payments service's list settled whose customer has not been told yet (modules/payments/refunds.ts): listed on the to-do list until a message is accepted. */
+  refundsUntold?: UntoldRefund[];
   /** UPI: when the owner was last told that this customer says they paid (at most once an hour). */
   claimTellAtMs?: number;
 }

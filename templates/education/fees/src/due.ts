@@ -11,7 +11,7 @@ import { formatDate, MONTH_NAMES } from "../../../../modules/language/format.ts"
 import type { Language } from "../../../../modules/language/languages.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
-import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
+import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -78,6 +78,8 @@ export interface Due {
   waiverDenied: boolean;
   refundIssues?: RefundIssue[];
   stoppedRefunds?: string[];
+  /** Refunds the payments service's list settled whose customer has not been told yet (modules/payments/refunds.ts): listed on the to-do list until a message is accepted. */
+  refundsUntold?: UntoldRefund[];
   /** Each of these keeps one kind of notice from being sent again within its time, so one kind never keeps another quiet. */
   claimTellAtMs?: number; // the owner was told a parent says the fee is paid and the record shows nothing
   discountTellAtMs?: number; // the owner was told a parent asked for a discount without an amount
