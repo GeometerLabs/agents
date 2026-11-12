@@ -142,7 +142,7 @@ export interface Addressing {
 export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
-    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, pages: `${base}.236.0/24` },
+    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, speech: `${base}.233.0/24`, pages: `${base}.236.0/24` },
     panelIp(kind, index) {
       const n = 16 + index * 4 + slotOf(kind);
       return `${base}.${224 + (n >> 8)}.${n & 255}`;
@@ -200,6 +200,15 @@ export interface Composed {
   services: Record<string, { block: Service; files: string[] }>;
 }
 
+/**
+ * The optional speech-to-text service (plan 11d). `image` is built from bundle/services/speech/Dockerfile; `modelsDir` is a host folder filled by the operator's fetch-models
+ * and mounted READ-ONLY (the service never writes models and the image holds none); `tokenFile` only when the service is not on the same private network as its Guard.
+ */
+export interface SpeechOptions { image: string; modelsDir: string; tokenFile?: string }
+/** The service's name on the `speech` network, and the name the speech Guard's upstream uses (modules/voice/geometer.ts GEOMETER_SPEECH_UPSTREAM: geometer-speech:8080). */
+export const SPEECH_SERVICE = "geometer-speech";
+export const SPEECH_PORT = 8080;
+
 export interface PanelOptions {
   /** `uid:gid` the panel container runs as (the user who runs the deployer; see lib/secrets.ts panelUser). */
   user: string;
@@ -210,7 +219,7 @@ export interface PanelOptions {
 }
 
 // The whole server as compose services plus the files each needs. Pure: it returns text and touches neither disk nor Docker, so a deploy can be checked before anything starts.
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[] }): Composed {
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[]; /** Geometer's speech service (bundle/services/speech): left out = no container and no network. */ speech?: SpeechOptions }): Composed {
   const agents = features.agents ?? [];
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
   const net = addressing(server);
@@ -337,6 +346,19 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       networks: { [PAGES_NETWORK]: {}, egress: {} }, healthcheck: healthWget(DOOR_PORT, "/healthz"),
     }), [`${dirs.generated}/door/door.json`]);
   }
+  // -- the speech service (optional). It sits alone on `speech`, a network with no route out, and publishes no port: the speech Guard joins that network and is the only caller. It has no
+  // secrets of its own (a shared token only when asked), no Docker socket, a read-only root, and its models folder is mounted read-only. Memory is capped because the Indic model holds
+  // about 2.5 GB when loaded and a runaway request must not take the whole server's RAM.
+  if (features.speech) {
+    const sp = features.speech;
+    add(SPEECH_SERVICE, {
+      image: sp.image, restart: "unless-stopped", read_only: true, cap_drop: ["ALL"], security_opt: ["no-new-privileges:true"], tmpfs: ["/tmp:size=64m"], init: true,
+      environment: { SPEECH_MODELS_DIR: "/models", SPEECH_PORT: String(SPEECH_PORT), ...(sp.tokenFile ? { SPEECH_TOKEN_FILE: "/run/secrets/speech_token", SPEECH_REQUIRE_TOKEN: "1" } : {}) },
+      volumes: [`${sp.modelsDir}:/models:ro`, ...(sp.tokenFile ? [`${sp.tokenFile}:/run/secrets/speech_token:ro`] : [])],
+      networks: { speech: {} }, mem_limit: "6g", pids_limit: 256,
+      healthcheck: { test: ["CMD", "python", "-c", `import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:${SPEECH_PORT}/healthz', timeout=4).status == 200 else 1)`], interval: "30s", timeout: "5s", retries: 3, start_period: "120s" },
+    }, sp.tokenFile ? [sp.tokenFile] : []);
+  }
   add("caddy", {
     image: CADDY_IMAGE, restart: "unless-stopped", security_opt: ["no-new-privileges:true"],
     ports: [`${server.ports.http}:80`, `${server.ports.https}:443`],
@@ -354,6 +376,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(server.panel.enabled && features.panel ? { panel: { internal: true, ipam: { config: [{ subnet: net.subnets.panel }] } } } : {}),
     ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
     ...(door ? { [PAGES_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.pages }] } } } : {}),
+    ...(features.speech ? { speech: { internal: true, ipam: { config: [{ subnet: net.subnets.speech }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
   const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };

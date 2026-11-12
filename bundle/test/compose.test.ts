@@ -190,3 +190,44 @@ test("the panel reaches each shop's three Guards by name on its own network, at 
 test("hosted mode is passed to the panel", () => {
   assert.equal((build([shop("a", 1)], { panel: { enabled: true, mode: "hosted" } }).services.panel.block.environment as Record<string, string>).PANEL_MODE, "hosted");
 });
+
+// ---- the optional speech service (plan 11d, bundle/services/speech) ----------------------------------------------------------------------
+
+test("speech is OFF unless the server turns it on: no service, no network, no model folder in the Compose file", () => {
+  const c = two();
+  assert.equal(c.services["geometer-speech"], undefined);
+  assert.doesNotMatch(c.compose, /geometer-speech|\n  speech:/);
+  const parsed = serverConfig({ speech: { enabled: false } });
+  assert.equal(parsed.speech, undefined);
+});
+
+test("speech ON: one container alone on an internal network with no way out, no published port, a read-only root, models mounted read-only", () => {
+  const server = serverConfig({ panel: { enabled: true }, speech: { enabled: true } });
+  assert.equal(server.speech?.image, "geo-speech:0.1.0");
+  const c = composeServer(server, dirs, [shop("glow-salon", 1)], { speech: { image: server.speech!.image, modelsDir: "/srv/speech-models" } });
+  const s = c.services["geometer-speech"].block;
+  assert.deepEqual(Object.keys(s.networks as object), ["speech"], "the speech network is its only network");
+  assert.match(c.compose, /\n  speech:\n    internal: true/, "the speech network has no route out");
+  assert.equal(s.ports, undefined, "nothing is published on the host");
+  assert.equal(s.read_only, true);
+  assert.deepEqual(s.cap_drop, ["ALL"]);
+  assert.deepEqual(s.volumes, ["/srv/speech-models:/models:ro"]);
+  assert.equal(Object.keys(c.services).filter((n) => nets(c, n).includes("speech")).join(), "geometer-speech", "no other service shares its network until the speech Guard is placed");
+  assert.equal((s.environment as Record<string, string>).SPEECH_TOKEN_FILE, undefined, "no token on a private network");
+  assert.ok(addressing(server).subnets.speech.startsWith("10.231.233."), "its subnet is fixed and does not overlap the others");
+  assert.equal(new Set(Object.values(addressing(server).subnets)).size, Object.keys(addressing(server).subnets).length);
+});
+
+test("speech ON with a token file: the service refuses to start without it", () => {
+  const server = serverConfig({ speech: { enabled: true, image: "registry.example/geo-speech:9", modelsDir: "/data/models" } });
+  const c = composeServer(server, dirs, [], { speech: { image: server.speech!.image, modelsDir: server.speech!.modelsDir!, tokenFile: "/srv/secrets/speech_token" } });
+  const s = c.services["geometer-speech"].block;
+  assert.equal(s.image, "registry.example/geo-speech:9");
+  assert.deepEqual(s.environment, { SPEECH_MODELS_DIR: "/models", SPEECH_PORT: "8080", SPEECH_TOKEN_FILE: "/run/secrets/speech_token", SPEECH_REQUIRE_TOKEN: "1" });
+  assert.deepEqual(c.services["geometer-speech"].files, ["/srv/secrets/speech_token"]);
+});
+
+test("a malformed speech block in geometer.json is refused in words", () => {
+  assert.throws(() => serverConfig({ speech: { enabled: true, modelsDir: "relative/path" } }), /"speech" must say/);
+  assert.throws(() => serverConfig({ speech: "yes" }), /"speech" must say/);
+});
